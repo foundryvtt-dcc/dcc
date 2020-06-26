@@ -2,6 +2,9 @@
  * Extend the basic ActorSheet
  * @extends {ActorSheet}
  */
+
+import {DCC} from 'config.js';
+
 export class DCCActorSheet extends ActorSheet {
 
   /** @override */
@@ -19,13 +22,48 @@ export class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
+  /** @override */
   getData() {
-    const data = super.getData();
-    data.dtypes = ["String", "Number", "Boolean"];
-    for ( let attr of Object.values(data.data.attributes) ) {
-      attr.isCheckbox = attr.dtype === "Boolean";
+
+    // Basic data
+    let isOwner = this.entity.owner;
+    const data = {
+      owner: isOwner,
+      limited: this.entity.limited,
+      options: this.options,
+      editable: this.isEditable,
+      cssClass: isOwner ? "editable" : "locked",
+      isCharacter: this.entity.data.type === "character",
+      isNPC: this.entity.data.type === "npc",
+      config: CONFIG.DCC,
+    };
+
+    // The Actor and its Items
+    data.actor = duplicate(this.actor.data);
+    console.log(data.actor);
+    data.items = this.actor.items.map(i => {
+      i.data.labels = i.labels;
+      return i.data;
+    });
+    data.items.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    data.data = data.actor.data;
+    data.labels = this.actor.labels || {};
+    data.filters = this._filters;
+
+    // Ability Scores
+    for ( let [a, abl] of Object.entries(data.actor.data.abilities)) {
+      // abl.icon = this._getProficiencyIcon(abl.proficient);
+      abl.label = CONFIG.DCC.abilities[a];
     }
-    return data;
+
+    // Update traits
+    //this._prepareTraits(data.actor.data.traits);
+
+    // Prepare owned items
+    //this._prepareItems(data);
+
+    // Return data to the sheet
+    return data
   }
 
   /* -------------------------------------------- */

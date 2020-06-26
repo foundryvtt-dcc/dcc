@@ -229,6 +229,20 @@
         }
       }
     },
+    "level0": {
+      "templates": ["common"],
+      "attributes": {
+      },
+      "details": {
+        "background": "",
+        "xp": {
+          "value": 0,
+          "min": 0,
+          "max": 10
+        },
+        "trait": ""
+      }
+    },
     "npc": {
       "templates": ["common"],
       "details": {
