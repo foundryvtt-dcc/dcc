@@ -3,7 +3,7 @@
  * @extends {ActorSheet}
  */
 
-import {DCC} from 'config.js';
+import {DCC} from './config.js';
 
 export class DCCActorSheet extends ActorSheet {
 
@@ -22,9 +22,7 @@ export class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  /** @override */
   getData() {
-
     // Basic data
     let isOwner = this.entity.owner;
     const data = {
@@ -51,6 +49,7 @@ export class DCCActorSheet extends ActorSheet {
     data.filters = this._filters;
 
     // Ability Scores
+    console.log(data.actor.data);
     for ( let [a, abl] of Object.entries(data.actor.data.abilities)) {
       // abl.icon = this._getProficiencyIcon(abl.proficient);
       abl.label = CONFIG.DCC.abilities[a];

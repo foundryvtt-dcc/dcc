@@ -4,7 +4,7 @@
     <header class="sheet-header">
         <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
         <div class="header-fields">
-            <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
+            <h1 class="charname"><input name="name" type="text" value="DCC-{{actor.name}}" placeholder="Name"/></h1>
             <div class="resource">
                 <input type="text" name="data.health.value" value="{{data.health.value}}" data-dtype="Number"/>
                 <span> / </span>
@@ -24,6 +24,7 @@
     <section class="sheet-body">
 
         {{!-- Biography Tab --}}
+        HELLO1
         <div class="tab biography" data-group="primary" data-tab="description">
             {{editor content=data.biography target="data.biography" button=true owner=owner editable=editable}}
         </div>
