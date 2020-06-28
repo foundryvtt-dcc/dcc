@@ -84,7 +84,8 @@
                         <label for="data.attributes.init.value">Init</label>
                         <input class="init-value" type="text" id="data.attributes.init.value"
                                name="data.attributes.init.value"
-                               value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}" data-dtype="Number"/>
+                               value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                               data-dtype="Number"/>
                     </div>
                     <div class="speed">
                         <label for="data.attributes.speed.value">Speed</label>
@@ -94,30 +95,40 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-
-            {{!-- Biography Tab --}}
-            <div class="tab biography" data-group="primary" data-tab="description">
-                {{editor content=data.biography target="data.biography" button=true owner=owner editable=editable}}
+        {{!-- Notes Tab --}}
+        <div class="tab" data-group="primary" data-tab="notes">
+            <h4 class="notes-label">Notes</h4>
+            <div class="notes">
+                {{editor content=data.details.notes.value target="data.details.notes.value" button=true owner=owner
+                editable=editable}}
             </div>
 
-            {{!-- Owned Items Tab --}}
-            <div class="tab items" data-group="primary" data-tab="items">
-                <ol class="item-list">
-                    {{#each actor.items as |item id|}}
-                    <li class="item flexrow" data-item-id="{{item._id}}">
-                        <img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
-                        <h4 class="item-name">{{item.name}}</h4>
-                        <div class="item-controls">
-                            <a class="item-control item-edit" title="Edit Item"><i class="fas fa-edit"></i></a>
-                            <a class="item-control item-delete" title="Delete Item"><i class="fas fa-trash"></i></a>
-                        </div>
-                    </li>
-                    {{/each}}
-                </ol>
+            <h4 class="bio-label">Bio</h4>
+            <div class="bio">
+                {{editor content=data.details.biography.value target="data.details.biography.value" button=true
+                owner=owner
+                editable=editable}}
             </div>
+        </div>
 
-
+        {{!-- Owned Items Tab --}}
+        <div class="tab items" data-group="primary" data-tab="items">
+            <h4>Items</h4>
+            <ol class="item-list">
+                {{#each actor.items as |item id|}}
+                <li class="item flexrow" data-item-id="{{item._id}}">
+                    <img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
+                    <h4 class="item-name">{{item.name}}</h4>
+                    <div class="item-controls">
+                        <a class="item-control item-edit" title="Edit Item"><i class="fas fa-edit"></i></a>
+                        <a class="item-control item-delete" title="Delete Item"><i class="fas fa-trash"></i></a>
+                    </div>
+                </li>
+                {{/each}}
+            </ol>
+        </div>
     </section>
 </form>
 

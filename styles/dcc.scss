@@ -204,6 +204,30 @@
 }
 
 /* ----------------------------------------- */
+/*  Notes & Bio                              */
+/* ----------------------------------------- */
+.dcc .notes {
+  //margin: 15px 0 0 0;
+  border: 2px groove #eeede0;
+  font-size: 1.5rem;
+  height: 200px;
+}
+
+.dcc .notes-label,
+.dcc .bio-label {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-size: 1.5rem;
+  margin-top: 5px;
+}
+
+.dcc .bio {
+  margin: 0 0 0 0;
+  border: 2px groove #eeede0;
+  height: 200px;
+  font-size: 1.5rem;
+}
+
+/* ----------------------------------------- */
 /*  Tabs                                     */
 /* ----------------------------------------- */
 

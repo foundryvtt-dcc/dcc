@@ -181,6 +181,7 @@
       },
       "details": {
         "background": "",
+        "notes": "",
         "xp": {
           "value": 0,
           "min": 0,
