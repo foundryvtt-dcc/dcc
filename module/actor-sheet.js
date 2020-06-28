@@ -94,6 +94,17 @@ export class DCCActorSheet extends ActorSheet {
             this.actor.deleteOwnedItem(li.data("itemId"));
             li.slideUp(200, () => this.render(false));
         });
+
+        // Owner Only Listeners
+        if (this.actor.owner) {
+            // Ability Checks
+            html.find('.ability-name').click(this._onRollAbilityTest.bind(this));
+        }
+        // Otherwise remove rollable classes
+        else {
+            html.find(".rollable").each((i, el) => el.classList.remove("rollable"));
+        }
+
     }
 
     /* -------------------------------------------- */
@@ -129,4 +140,18 @@ export class DCCActorSheet extends ActorSheet {
         // Update the Actor
         return this.object.update(formData);
     }
+
+    /* -------------------------------------------- */
+
+    /**
+     * Handle rolling an Ability check, either a test or a saving throw
+     * @param {Event} event   The originating click event
+     * @private
+     */
+    _onRollAbilityTest(event) {
+        event.preventDefault();
+        let ability = event.currentTarget.parentElement.dataset.ability;
+        this.actor.rollAbility(ability, {event: event});
+    }
+
 }

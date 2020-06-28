@@ -187,7 +187,16 @@
   margin: 0 0 0 0;
   border: 2px groove #eeede0;
   height: 200px;
+  padding: 0;
   font-size: 1.5rem; }
+
+/* ----------------------------------------- */
+/*  Rollable                                 */
+/* ----------------------------------------- */
+.dcc .rollable:hover {
+  color: #000;
+  text-shadow: 0 0 10px red;
+  cursor: pointer; }
 
 /* ----------------------------------------- */
 /*  Tabs                                     */

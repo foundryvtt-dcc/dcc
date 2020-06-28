@@ -2,19 +2,19 @@
 
     {{!-- Sheet Header --}}
     <header class="sheet-header">
-        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
+        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100" alt="Character Portrait"/>
         <div class="flexrow">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
 
             <div class="occupation">
-                <label for="data.details.occupation.value">Occupation</label>
+                <label class="rollable" for="data.details.occupation.value">Occupation</label>
                 <input type="text" id="data.details.occupation.value" name="data.details.occupation.value"
                        value="{{data.details.occupation.value}}" maxlength="40"/>
             </div>
 
             <div class="alignment">
-                <label>{{localize "DCC.Alignment"}}</label>
-                <select name="data.details.alignment">
+                <label for="data.details.alignment">{{localize "DCC.Alignment"}}</label>
+                <select id="data.details.alignment" name="data.details.alignment">
                     {{#select data.details.alignment}}
                     {{#each config.alignments as |label alignment|}}
                     <option value="{{alignment}}">{{localize label}}</option>
@@ -81,7 +81,7 @@
                 {{!-- Init and Speed --}}
                 <div class="init-and-speed">
                     <div class="init">
-                        <label for="data.attributes.init.value">Init</label>
+                        <label class="box-title rollable" for="data.attributes.init.value">Init</label>
                         <input class="init-value" type="text" id="data.attributes.init.value"
                                name="data.attributes.init.value"
                                value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
