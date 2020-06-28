@@ -42,13 +42,12 @@
                 <ul class="ability-scores flexrow">
                     {{#each data.abilities as |ability id|}}
                     <li class="ability" data-ability="{{id}}">
-                        <h4 class="ability-name box-title rollable">{{localize ability.label}}</h4>
+                        <label class="ability-name box-title rollable">{{localize ability.label}}</label>
+                        <br/>
                         <input class="ability-score" name="data.abilities.{{id}}.value" type="text"
                                value="{{ability.value}}"
                                data-dtype="Number" placeholder="10"/>
-                        <div class="ability-modifiers flexrow">
-                            <span class="ability-mod"
-                                  title="Modifier">{{numberFormat ability.mod decimals=0 sign=true}}</span>
+                        <div class="ability-modifiers" title="Modifier">{{numberFormat ability.mod decimals=0 sign=true}}
                         </div>
                     </li>
                     {{/each}}
@@ -58,18 +57,19 @@
                 <ul class="saving-throws flexrow">
                     {{#each data.saves as |save id|}}
                     <li class="save" data-save="{{id}}">
-                        <h4 class="save-name box-title rollable">{{localize save.label}}: {{save.value}}</h4>
+                        <h4 class="box-title rollable">{{localize save.label}}:  <span>{{numberFormat save.value decimals=0 sign=true}}</span></h4>
                     </li>
                     {{/each}}
                 </ul>
 
                 {{!-- AC and HP --}}
-                <label for="data.attributes.hp.value">HP:</label>
-                <input type="text" id="data.attributes.hp.value" name="data.attributes.hp.value"
-                       value="{{data.attributes.hp.value}}" data-dtype="Number"/>
-                <span> / </span>
-                <input type="text" name="data.attributes.hp.max" value="{{data.attributes.hp.max}}"
-                       data-dtype="Number"/>
+                <div class="hp">
+                    <input class="current" type="text" id="data.attributes.hp.value" name="data.attributes.hp.value"
+                           value="{{data.attributes.hp.value}}" data-dtype="Number"/>
+                    <input class="max" type="text" name="data.attributes.hp.max" value="{{data.attributes.hp.max}}"
+                           data-dtype="Number"/>
+                    <label for="data.attributes.hp.value">HP</label>
+                </div>
             </div>
 
 

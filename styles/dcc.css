@@ -79,6 +79,32 @@
 .dcc .occupation label {
   margin: 0 0 0 4px; }
 
+.dcc .hp {
+  background-image: url("./images/hp-heart.png");
+  background-size: 90px 90px;
+  background-position-x: 4px;
+  background-repeat: no-repeat;
+  flex: 0 0 99px;
+  flex-flow: column;
+  display: flex;
+  height: 99px;
+  text-align: center; }
+
+.dcc .hp label {
+  margin: 10px auto 0 auto;
+  font-size: 1.1rem; }
+
+.dcc .hp .current {
+  width: 35px;
+  margin: 28px auto 0 auto;
+  font-size: 1.6rem;
+  height: 25px; }
+
+.dcc .hp .max {
+  width: 25px;
+  margin: 9px auto 0 72px;
+  height: 17px; }
+
 .dcc .tabs {
   height: 40px;
   border-top: 1px solid #AAA;
@@ -142,7 +168,6 @@
   list-style: none;
   margin: 7px;
   padding: 0;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 20px;
   border: 2px groove #eeede0;
   border-radius: 3px; }
@@ -165,30 +190,24 @@
   font-size: 24px; }
 
 .dcc.sheet.actor .ability-scores .ability .ability-modifiers {
-  height: 24px;
-  margin: -16px 0 0; }
-
-.dcc.sheet.actor .ability-scores .ability .ability-modifiers span.ability-mod {
   flex: 0 0 24px;
-  height: 22px;
+  height: 24px;
+  margin: -16px 0 0 110px;
+  width: 30px;
   line-height: 22px;
   font-size: 16px;
-  border-top: 2px groove #eeede0; }
-
-.dcc.sheet.actor .ability-scores .ability .ability-modifiers span.ability-mod {
-  border-left: 2px groove #eeede0;
-  margin-left: auto; }
+  border-top: 2px groove #eeede0;
+  border-left: 2px groove #eeede0; }
 
 /* ----------------------------------------- */
 /*  Saving Throws                            */
 /* ----------------------------------------- */
 .dcc.sheet.actor .saving-throws {
-  flex: 0 0 140px;
+  flex: 0 0 150px;
   height: 99px;
   list-style: none;
   margin: 7px;
   padding: 0;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 20px;
   border: 2px groove #eeede0;
   border-radius: 3px; }
@@ -202,3 +221,13 @@
 .dcc.sheet.actor .saving-throws .save:last-child {
   border-bottom: none;
   margin-bottom: -3px; }
+
+.dcc.sheet.actor .saving-throws h4 {
+  border-bottom: none;
+  margin-bottom: -3px;
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
+
+.dcc.sheet.actor .saving-throws span {
+  border-bottom: none;
+  margin-bottom: -3px;
+  font-family: "Book Antiqua", "Palatino Linotype", serif; }
