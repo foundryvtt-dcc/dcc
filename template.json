@@ -5,28 +5,22 @@
       "common": {
         "abilities": {
           "str": {
-            "value": 10,
-            "proficient": 0
+            "value": 10
           },
-          "dex": {
-            "value": 10,
-            "proficient": 0
+          "agl": {
+            "value": 10
           },
-          "con": {
-            "value": 10,
-            "proficient": 0
+          "sta": {
+            "value": 10
+          },
+          "per": {
+            "value": 10
           },
           "int": {
-            "value": 10,
-            "proficient": 0
+            "value": 10
           },
-          "wis": {
-            "value": 10,
-            "proficient": 0
-          },
-          "cha": {
-            "value": 10,
-            "proficient": 0
+          "lck": {
+            "value": 10
           }
         },
         "attributes": {
@@ -58,8 +52,16 @@
           },
           "race": ""
         },
-        "skills": {
-
+        "saves": {
+          "ref": {
+            "value": 0
+          },
+          "frt": {
+            "value": 0
+          },
+          "wil": {
+            "value": 0
+          }
         },
         "traits": {
           "size": "med",
@@ -175,12 +177,6 @@
     "character": {
       "templates": ["common"],
       "attributes": {
-        "death": {
-          "success": 0,
-          "failure": 0
-        },
-        "exhaustion": 0,
-        "inspiration": 0
       },
       "details": {
         "background": "",
@@ -188,11 +184,7 @@
           "value": 0,
           "min": 0,
           "max": 300
-        },
-        "trait": "",
-        "ideal": "",
-        "bond": "",
-        "flaw": ""
+        }
       },
       "resources": {
         "primary": {
@@ -231,8 +223,6 @@
     },
     "level0": {
       "templates": ["common"],
-      "attributes": {
-      },
       "details": {
         "background": "",
         "xp": {
