@@ -39,7 +39,7 @@
             "bonus": 0
           },
           "speed": {
-            "value": "30 ft",
+            "value": 30,
             "special": ""
           },
           "spellcasting": "int"

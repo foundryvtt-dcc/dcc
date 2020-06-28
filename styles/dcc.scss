@@ -110,7 +110,7 @@
   display: flex;
   height: 99px;
   text-align: center;
-  margin: 10px 0 0 10px;
+  margin: 10px 0 0 13px;
 }
 
 .dcc .ac label {
@@ -137,7 +137,7 @@
   display: flex;
   height: 99px;
   text-align: center;
-  margin: 0 0 0 10px;
+  margin: 0 0 0 12px;
 }
 
 .dcc .hp label {
@@ -157,6 +157,55 @@
   margin: 7px auto 0 63px;
   height: 17px;
 }
+
+/* ----------------------------------------- */
+/*  Init                                     */
+/* ----------------------------------------- */
+.dcc .init-and-speed {
+  flex: 0 0 70px;
+  display: flex;
+  flex-direction: column;
+  margin: 7px 0 0 12px;
+}
+
+.dcc .init {
+  flex: 0 0 30px;
+  text-align: center;
+}
+
+.dcc .init label {
+  //margin: 7px auto 0 28px;
+  font-size: 1.1rem;
+}
+
+.dcc .init .init-value {
+  width: 50px;
+  font-size: 1.6rem;
+}
+
+/* ----------------------------------------- */
+/*  Speed                                    */
+/* ----------------------------------------- */
+.dcc .speed {
+  flex: 0 0 30px;
+  text-align: center;
+  margin: 5px 0 0 0;
+}
+
+.dcc .speed label {
+  margin: 10px auto 0 0;
+  font-size: 1.1rem;
+}
+
+.dcc .speed .speed-value {
+  width: 50px;
+  font-size: 1.6rem;
+  height: 25px;
+}
+
+/* ----------------------------------------- */
+/*  Tabs                                     */
+/* ----------------------------------------- */
 
 .dcc .tabs {
   height: 40px;

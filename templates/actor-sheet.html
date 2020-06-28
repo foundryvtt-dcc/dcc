@@ -47,7 +47,8 @@
                         <input class="ability-score" name="data.abilities.{{id}}.value" type="text"
                                value="{{ability.value}}"
                                data-dtype="Number" placeholder="10"/>
-                        <div class="ability-modifiers" title="Modifier">{{numberFormat ability.mod decimals=0 sign=true}}
+                        <div class="ability-modifiers" title="Modifier">{{numberFormat ability.mod decimals=0
+                            sign=true}}
                         </div>
                     </li>
                     {{/each}}
@@ -57,7 +58,8 @@
                 <ul class="saving-throws">
                     {{#each data.saves as |save id|}}
                     <li class="save" data-save="{{id}}">
-                        <h4 class="box-title rollable">{{localize save.label}}:  <span>{{numberFormat save.value decimals=0 sign=true}}</span></h4>
+                        <h4 class="box-title rollable">{{localize save.label}}: <span>{{numberFormat save.value decimals=0 sign=true}}</span>
+                        </h4>
                     </li>
                     {{/each}}
                 </ul>
@@ -77,15 +79,19 @@
                 </div>
 
                 {{!-- Init and Speed --}}
-                <div class="init">
-                    <label for="data.attributes.init.value">Init</label>
-                    <input class="init-value" type="text" id="data.attributes.init.value" name="data.attributes.init.value"
-                           value="{{data.attributes.init.value}}" data-dtype="Number"/>
-                </div>
-                <div class="speed">
-                    <label for="data.attributes.speed.value">Speed</label>
-                    <input class="speed-value" type="text" id="data.attributes.speed.value" name="data.attributes.speed.value"
-                           value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                <div class="init-and-speed">
+                    <div class="init">
+                        <label for="data.attributes.init.value">Init</label>
+                        <input class="init-value" type="text" id="data.attributes.init.value"
+                               name="data.attributes.init.value"
+                               value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="speed">
+                        <label for="data.attributes.speed.value">Speed</label>
+                        <input class="speed-value" type="text" id="data.attributes.speed.value"
+                               name="data.attributes.speed.value"
+                               value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                    </div>
                 </div>
             </div>
 
