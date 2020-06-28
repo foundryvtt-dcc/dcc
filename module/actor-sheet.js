@@ -99,6 +99,9 @@ export class DCCActorSheet extends ActorSheet {
         if (this.actor.owner) {
             // Ability Checks
             html.find('.ability-name').click(this._onRollAbilityTest.bind(this));
+
+            // Saving Thows
+            html.find('.save-value').click(this._onRollSavingThrow.bind(this));
         }
         // Otherwise remove rollable classes
         else {
@@ -144,14 +147,25 @@ export class DCCActorSheet extends ActorSheet {
     /* -------------------------------------------- */
 
     /**
-     * Handle rolling an Ability check, either a test or a saving throw
+     * Handle rolling an Ability check
      * @param {Event} event   The originating click event
      * @private
      */
     _onRollAbilityTest(event) {
         event.preventDefault();
         let ability = event.currentTarget.parentElement.dataset.ability;
-        this.actor.rollAbility(ability, {event: event});
+        this.actor.rollAbilityTest(ability, {event: event});
+    }
+
+    /**
+     * Handle rolling a saving throw
+     * @param {Event} event   The originating click event
+     * @private
+     */
+    _onRollSavingThrow(event) {
+        event.preventDefault();
+        let save = event.currentTarget.parentElement.dataset.save;
+        this.actor.rollSavingThrow(save, {event: event});
     }
 
 }
