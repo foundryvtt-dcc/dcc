@@ -5,7 +5,7 @@
   "version": 0.01,
   "minimumCoreVersion": "0.5.6",
   "compatibleCoreVersion": "0.6.4",
-  "templateVersion": 2,
+  "templateVersion": 1,
   "author": "Tim L. White",
   "esmodules": [
     "module/dcc.js"

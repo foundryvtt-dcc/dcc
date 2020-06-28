@@ -24,10 +24,15 @@
   height: 100%;
   padding: 5px;
   overflow-y: hidden;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
 }
 
+.dcc .window-content label {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+}
+
+
 .dcc .sheet-header {
-  height: 100px;
   overflow: hidden;
   display: flex;
   flex-direction: row;
@@ -39,15 +44,11 @@
 .dcc .sheet-header .profile-img {
   flex: 0 0 100px;
   height: 100px;
-  margin-right: 10px;
-}
-
-.dcc .sheet-header .header-fields {
-  flex: 1;
-  height: 100px;
+  margin: 5px 10px 0 0;
 }
 
 .dcc .sheet-header h1.charname {
+  flex: 0 0 100%;
   height: 50px;
   padding: 0;
   margin: 5px 0;
@@ -60,18 +61,41 @@
   margin: 0;
 }
 
-.dcc .resource {
-  width: 50%;
-  height: 40px;
-  margin-top: 10px;
-  float: left;
-  text-align: left;
+.dcc .alignment {
+  margin-left: 15px;
+  text-align: center;
+  flex: 0 0 10%;
 }
 
-.dcc .resource input {
-  width: 50px;
+.dcc .alignment select {
+  font-family: inherit;
+  height: 24px;
+  width: 90px;
+}
+
+.dcc .class {
+  flex: 0 0 1;
+  height: 40px;
+  font-size: 1.1rem;
+  margin: 3px 0 0 5px;
+  text-align: center;
+}
+
+.dcc .class input {
   height: 28px;
   text-align: center;
+}
+
+.dcc .occupation {
+  flex: 1;
+}
+
+.dcc .occupation input {
+  width: 100%;
+}
+
+.dcc .occupation label {
+  margin: 0 0 0 4px;
 }
 
 .dcc .tabs {

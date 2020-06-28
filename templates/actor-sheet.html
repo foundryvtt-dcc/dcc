@@ -3,15 +3,24 @@
     {{!-- Sheet Header --}}
     <header class="sheet-header">
         <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
-        <div class="header-fields">
+        <div class="flexrow">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
-            <div class="resource">
-                <label for="data.attributes.hp.value">HP:</label>
-                <input type="text" id="data.attributes.hp.value" name="data.attributes.hp.value"
-                       value="{{data.attributes.hp.value}}" data-dtype="Number"/>
-                <span> / </span>
-                <input type="text" name="data.attributes.hp.max" value="{{data.attributes.hp.max}}"
-                       data-dtype="Number"/>
+
+            <div class="occupation">
+                <label for="data.details.occupation.value">Occupation</label>
+                <input type="text" id="data.details.occupation.value" name="data.details.occupation.value"
+                       value="{{data.details.occupation.value}}" maxlength="40"/>
+            </div>
+
+            <div class="alignment">
+                <label>{{localize "DCC.Alignment"}}</label>
+                <select name="data.details.alignment">
+                    {{#select data.details.alignment}}
+                    {{#each config.alignments as |label alignment|}}
+                    <option value="{{alignment}}">{{localize label}}</option>
+                    {{/each}}
+                    {{/select}}
+                </select>
             </div>
         </div>
     </header>
@@ -28,7 +37,6 @@
 
         {{!-- Character Tab --}}
         <div class="tab character" data-group="primary" data-tab="character">
-
             {{!-- Ability Scores --}}
             <div class="tab flexrow" data-group="primary">
                 <ul class="ability-scores flexrow">
@@ -54,6 +62,14 @@
                     </li>
                     {{/each}}
                 </ul>
+
+                {{!-- AC and HP --}}
+                <label for="data.attributes.hp.value">HP:</label>
+                <input type="text" id="data.attributes.hp.value" name="data.attributes.hp.value"
+                       value="{{data.attributes.hp.value}}" data-dtype="Number"/>
+                <span> / </span>
+                <input type="text" name="data.attributes.hp.max" value="{{data.attributes.hp.max}}"
+                       data-dtype="Number"/>
             </div>
 
 
