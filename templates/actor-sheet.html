@@ -54,7 +54,7 @@
                 </ul>
 
                 {{!-- Saving Throws --}}
-                <ul class="saving-throws flexrow">
+                <ul class="saving-throws">
                     {{#each data.saves as |save id|}}
                     <li class="save" data-save="{{id}}">
                         <h4 class="box-title rollable">{{localize save.label}}:  <span>{{numberFormat save.value decimals=0 sign=true}}</span></h4>
@@ -63,6 +63,11 @@
                 </ul>
 
                 {{!-- AC and HP --}}
+                <div class="ac">
+                    <input class="ac-value" type="text" id="data.attributes.ac.value" name="data.attributes.ac.value"
+                           value="{{data.attributes.ac.value}}" data-dtype="Number"/>
+                    <label for="data.attributes.ac.value">AC</label>
+                </div>
                 <div class="hp">
                     <input class="current" type="text" id="data.attributes.hp.value" name="data.attributes.hp.value"
                            value="{{data.attributes.hp.value}}" data-dtype="Number"/>

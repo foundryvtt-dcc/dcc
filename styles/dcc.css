@@ -79,30 +79,57 @@
 .dcc .occupation label {
   margin: 0 0 0 4px; }
 
+/* ----------------------------------------- */
+/*  Armor Class                              */
+/* ----------------------------------------- */
+.dcc .ac {
+  background-image: url("./images/ac-shield.png");
+  background-size: 60px 76px;
+  background-repeat: no-repeat;
+  flex: 0 0 60px;
+  flex-flow: column;
+  display: flex;
+  height: 99px;
+  text-align: center;
+  margin: 10px 0 0 10px; }
+
+.dcc .ac label {
+  margin: 31px auto 0 auto;
+  font-size: 1.1rem; }
+
+.dcc .ac .ac-value {
+  width: 35px;
+  margin: 21px auto 0 auto;
+  font-size: 1.6rem;
+  height: 25px; }
+
+/* ----------------------------------------- */
+/*  Hit Points                               */
+/* ----------------------------------------- */
 .dcc .hp {
   background-image: url("./images/hp-heart.png");
-  background-size: 90px 90px;
-  background-position-x: 4px;
+  background-size: 80px 90px;
   background-repeat: no-repeat;
   flex: 0 0 99px;
   flex-flow: column;
   display: flex;
   height: 99px;
-  text-align: center; }
+  text-align: center;
+  margin: 0 0 0 10px; }
 
 .dcc .hp label {
-  margin: 10px auto 0 auto;
+  margin: 7px auto 0 28px;
   font-size: 1.1rem; }
 
 .dcc .hp .current {
   width: 35px;
-  margin: 28px auto 0 auto;
+  margin: 31px auto 0 23px;
   font-size: 1.6rem;
   height: 25px; }
 
 .dcc .hp .max {
   width: 25px;
-  margin: 9px auto 0 72px;
+  margin: 7px auto 0 63px;
   height: 17px; }
 
 .dcc .tabs {
@@ -203,7 +230,7 @@
 /*  Saving Throws                            */
 /* ----------------------------------------- */
 .dcc.sheet.actor .saving-throws {
-  flex: 0 0 150px;
+  flex: 0 0 152px;
   height: 99px;
   list-style: none;
   margin: 7px;
@@ -213,17 +240,10 @@
   border-radius: 3px; }
 
 .dcc.sheet.actor .saving-throws .save {
-  height: 33px;
   text-align: left;
-  border-bottom: 2px groove #eeede0;
-  padding: 5px 0 0 7px; }
-
-.dcc.sheet.actor .saving-throws .save:last-child {
-  border-bottom: none;
-  margin-bottom: -3px; }
+  padding: 2px 0 5px 7px; }
 
 .dcc.sheet.actor .saving-throws h4 {
-  border-bottom: none;
   margin-bottom: -3px;
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
 
