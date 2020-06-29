@@ -35,11 +35,8 @@ export class DCCActor extends Actor {
         return data;
     }
 
-    /* -------------------------------------------- */
-
     /**
      * Roll an Ability Test
-     * Prompt the user for input any Situational Bonus
      * @param {String} abilityId    The ability ID (e.g. "str")
      * @param {Object} options      Options which configure how ability tests are rolled
      * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance
@@ -61,7 +58,6 @@ export class DCCActor extends Actor {
 
     /**
      * Roll a Saving Throw
-     * Prompt the user for input any Situational Bonus
      * @param {String} saveId    The save ID (e.g. "str")
      * @param {Object} options      Options which configure how ability tests are rolled
      * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance

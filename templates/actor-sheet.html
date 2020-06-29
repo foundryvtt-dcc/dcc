@@ -1,12 +1,12 @@
 <form class="{{cssClass}}" autocomplete="off">
 
     {{!-- Sheet Header --}}
-    <header class="sheet-header">
+    <header class="sheet-header flexrow">
         <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100" alt="Character Portrait"/>
         <div class="flexrow">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
 
-            <div class="occupation">
+            <div class="occupation flex1">
                 <label class="rollable" for="data.details.occupation.value">Occupation</label>
                 <input type="text" id="data.details.occupation.value" name="data.details.occupation.value"
                        value="{{data.details.occupation.value}}" maxlength="40"/>
@@ -29,7 +29,6 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">Character</a>
         <a class="item" data-tab="notes">Notes</a>
-        <a class="item" data-tab="items">Items</a>
     </nav>
 
     {{!-- Sheet Body --}}
@@ -39,7 +38,7 @@
         <div class="tab character" data-group="primary" data-tab="character">
             {{!-- Ability Scores --}}
             <div class="tab flexrow" data-group="primary">
-                <ul class="ability-scores flexrow">
+                <ul class="ability-scores flexcol">
                     {{#each data.abilities as |ability id|}}
                     <li class="ability" data-ability="{{id}}">
                         <label class="ability-name box-title rollable">{{localize ability.label}}</label>
@@ -65,12 +64,12 @@
                 </ul>
 
                 {{!-- AC and HP --}}
-                <div class="ac">
+                <div class="ac flexcol">
                     <input class="ac-value" type="text" id="data.attributes.ac.value" name="data.attributes.ac.value"
                            value="{{data.attributes.ac.value}}" data-dtype="Number"/>
                     <label for="data.attributes.ac.value">AC</label>
                 </div>
-                <div class="hp">
+                <div class="hp flexcol">
                     <input class="current" type="text" id="data.attributes.hp.value" name="data.attributes.hp.value"
                            value="{{data.attributes.hp.value}}" data-dtype="Number"/>
                     <input class="max" type="text" name="data.attributes.hp.max" value="{{data.attributes.hp.max}}"
@@ -79,7 +78,7 @@
                 </div>
 
                 {{!-- Init and Speed --}}
-                <div class="init-and-speed">
+                <div class="init-and-speed flexcol">
                     <div class="init">
                         <label class="box-title rollable" for="data.attributes.init.value">Init</label>
                         <input class="init-value" type="text" id="data.attributes.init.value"
@@ -111,23 +110,6 @@
                 owner=owner
                 editable=editable}}
             </div>
-        </div>
-
-        {{!-- Owned Items Tab --}}
-        <div class="tab items" data-group="primary" data-tab="items">
-            <h4>Items</h4>
-            <ol class="item-list">
-                {{#each actor.items as |item id|}}
-                <li class="item flexrow" data-item-id="{{item._id}}">
-                    <img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
-                    <h4 class="item-name">{{item.name}}</h4>
-                    <div class="item-controls">
-                        <a class="item-control item-edit" title="Edit Item"><i class="fas fa-edit"></i></a>
-                        <a class="item-control item-delete" title="Delete Item"><i class="fas fa-trash"></i></a>
-                    </div>
-                </li>
-                {{/each}}
-            </ol>
         </div>
     </section>
 </form>

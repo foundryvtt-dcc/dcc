@@ -1,3 +1,6 @@
+/* ----------------------------------------- */
+/*  Globals                                  */
+/* ----------------------------------------- */
 .dcc {
   /* Sheet Tabs */
   /* Items List */
@@ -6,10 +9,6 @@
 @font-face {
   font-family: "Book Antiqua";
   src: url("fonts/Book-Antiqua.otf"); }
-
-@font-face {
-  font-family: "Duvall";
-  src: url("fonts/Duvall.otf"); }
 
 @font-face {
   font-family: "DuvallSmallCaps";
@@ -24,11 +23,30 @@
 .dcc .window-content label {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
 
+/* ----------------------------------------- */
+/*  Rollable                                 */
+/* ----------------------------------------- */
+.dcc .rollable:hover {
+  color: #000;
+  text-shadow: 0 0 10px red;
+  cursor: pointer; }
+
+/* ----------------------------------------- */
+/*  Actor Sheet                              */
+/* ----------------------------------------- */
+.dcc.sheet.actor {
+  min-width: 560px;
+  min-height: 632px; }
+
+.dcc .editor,
+.dcc .editor-content {
+  height: 100%; }
+
+/* ----------------------------------------- */
+/*  Sheet Header                             */
+/* ----------------------------------------- */
 .dcc .sheet-header {
   overflow: hidden;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
   justify-content: flex-start;
   margin-bottom: 10px; }
 
@@ -59,25 +77,50 @@
   height: 24px;
   width: 90px; }
 
-.dcc .class {
-  flex: 0 0 1;
-  height: 40px;
-  font-size: 1.1rem;
-  margin: 3px 0 0 5px;
-  text-align: center; }
-
-.dcc .class input {
-  height: 28px;
-  text-align: center; }
-
-.dcc .occupation {
-  flex: 1; }
-
 .dcc .occupation input {
   width: 100%; }
 
 .dcc .occupation label {
   margin: 0 0 0 4px; }
+
+/* ----------------------------------------- */
+/*  Ability Scores                           */
+/* ----------------------------------------- */
+.dcc.sheet.actor .ability-scores {
+  flex: 0 0 140px;
+  height: 425px;
+  list-style: none;
+  margin: 7px;
+  padding: 0;
+  font-size: 20px;
+  border: 2px groove #eeede0;
+  border-radius: 5px; }
+
+.dcc.sheet.actor .ability-scores .ability {
+  height: 70px;
+  text-align: center;
+  border-bottom: 2px groove #eeede0;
+  padding-top: 3px; }
+
+.dcc.sheet.actor .ability-scores .ability:last-child {
+  border-bottom: none; }
+
+.dcc.sheet.actor .ability-scores .ability input.ability-score {
+  height: 30px;
+  width: 36px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px; }
+
+.dcc.sheet.actor .ability-scores .ability .ability-modifiers {
+  flex: 0 0 24px;
+  height: 23px;
+  margin: -16px 0 0 110px;
+  width: 30px;
+  line-height: 22px;
+  font-size: 16px;
+  border-top: 2px groove #eeede0;
+  border-left: 2px groove #eeede0; }
 
 /* ----------------------------------------- */
 /*  Armor Class                              */
@@ -87,8 +130,6 @@
   background-size: 60px 76px;
   background-repeat: no-repeat;
   flex: 0 0 60px;
-  flex-flow: column;
-  display: flex;
   height: 99px;
   text-align: center;
   margin: 10px 0 0 13px; }
@@ -111,8 +152,6 @@
   background-size: 80px 90px;
   background-repeat: no-repeat;
   flex: 0 0 99px;
-  flex-flow: column;
-  display: flex;
   height: 99px;
   text-align: center;
   margin: 0 0 0 12px; }
@@ -137,8 +176,6 @@
 /* ----------------------------------------- */
 .dcc .init-and-speed {
   flex: 0 0 70px;
-  display: flex;
-  flex-direction: column;
   margin: 7px 0 0 12px; }
 
 .dcc .init {
@@ -191,14 +228,6 @@
   font-size: 1.5rem; }
 
 /* ----------------------------------------- */
-/*  Rollable                                 */
-/* ----------------------------------------- */
-.dcc .rollable:hover {
-  color: #000;
-  text-shadow: 0 0 10px red;
-  cursor: pointer; }
-
-/* ----------------------------------------- */
 /*  Tabs                                     */
 /* ----------------------------------------- */
 .dcc .tabs {
@@ -221,80 +250,6 @@
   height: 100%;
   overflow-y: auto; }
 
-.dcc .editor,
-.dcc .editor-content {
-  height: 100%; }
-
-.dcc .item-list {
-  list-style: none;
-  margin: 7px 0;
-  padding: 0;
-  overflow-y: auto; }
-
-.dcc .item-list .item {
-  height: 30px;
-  line-height: 24px;
-  padding: 3px 0;
-  border-bottom: 1px solid #BBB; }
-
-.dcc .item-list .item img {
-  flex: 0 0 24px;
-  margin-right: 5px; }
-
-.dcc .item-list .item-name {
-  margin: 0; }
-
-.dcc .item-list .item-controls {
-  flex: 0 0 36px; }
-
-.dcc.sheet.actor {
-  min-width: 560px;
-  min-height: 632px; }
-
-.dcc.sheet.item {
-  min-width: 460px;
-  min-height: 400px; }
-
-/* ----------------------------------------- */
-/*  Ability Scores                           */
-/* ----------------------------------------- */
-.dcc.sheet.actor .ability-scores {
-  flex: 0 0 140px;
-  height: 425px;
-  list-style: none;
-  margin: 7px;
-  padding: 0;
-  font-size: 20px;
-  border: 2px groove #eeede0;
-  border-radius: 3px; }
-
-.dcc.sheet.actor .ability-scores .ability {
-  height: 70px;
-  text-align: center;
-  border-bottom: 2px groove #eeede0;
-  padding-top: 3px; }
-
-.dcc.sheet.actor .ability-scores .ability:last-child {
-  border-bottom: none;
-  margin-bottom: -3px; }
-
-.dcc.sheet.actor .ability-scores .ability input.ability-score {
-  height: 30px;
-  width: 36px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
-
-.dcc.sheet.actor .ability-scores .ability .ability-modifiers {
-  flex: 0 0 24px;
-  height: 24px;
-  margin: -16px 0 0 110px;
-  width: 30px;
-  line-height: 22px;
-  font-size: 16px;
-  border-top: 2px groove #eeede0;
-  border-left: 2px groove #eeede0; }
-
 /* ----------------------------------------- */
 /*  Saving Throws                            */
 /* ----------------------------------------- */
@@ -303,20 +258,18 @@
   height: 99px;
   list-style: none;
   margin: 7px;
-  padding: 0;
+  padding: 2px 0 3px 7px;
   font-size: 20px;
   border: 2px groove #eeede0;
-  border-radius: 3px; }
+  border-radius: 5px;
+  text-align: left; }
 
 .dcc.sheet.actor .saving-throws .save {
-  text-align: left;
-  padding: 2px 0 5px 7px; }
+  margin-bottom: .25rem; }
 
 .dcc.sheet.actor .saving-throws h4 {
-  margin-bottom: -3px;
+  margin-bottom: 0;
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
 
 .dcc.sheet.actor .saving-throws span {
-  border-bottom: none;
-  margin-bottom: -3px;
   font-family: "Book Antiqua", "Palatino Linotype", serif; }
