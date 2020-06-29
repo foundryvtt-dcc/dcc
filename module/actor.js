@@ -86,4 +86,21 @@ export class DCCActor extends Actor {
             flavor: game.i18n.localize(save.label) + " Save"
         });
     }
+
+     /**
+     * Roll a Weapon Attack
+     * @param {string} weapon    The weaponid
+     * @param {Object} options      Options which configure how ability tests are rolled
+     * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance
+     */
+    rollWeaponAttack(weaponId, options = {}) {
+        const weapon = this.data.data.items.weapons[weaponId];
+        let roll = new Roll("1d20+@hitBonus", {hitBonus: weapon.tohit});
+
+        // Convert the roll to a chat message
+        roll.toMessage({
+            speaker: ChatMessage.getSpeaker({actor: this}),
+            flavor: game.i18n.localize(weapon.name) + " Attack"
+        });
+    }
 }

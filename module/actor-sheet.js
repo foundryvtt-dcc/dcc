@@ -81,20 +81,6 @@ export class DCCActorSheet extends ActorSheet {
         // Everything below here is only needed if the sheet is editable
         if (!this.options.editable) return;
 
-        // Update Inventory Item
-        html.find('.item-edit').click(ev => {
-            const li = $(ev.currentTarget).parents(".item");
-            const item = this.actor.getOwnedItem(li.data("itemId"));
-            item.sheet.render(true);
-        });
-
-        // Delete Inventory Item
-        html.find('.item-delete').click(ev => {
-            const li = $(ev.currentTarget).parents(".item");
-            this.actor.deleteOwnedItem(li.data("itemId"));
-            li.slideUp(200, () => this.render(false));
-        });
-
         // Owner Only Listeners
         if (this.actor.owner) {
             // Ability Checks
@@ -102,6 +88,9 @@ export class DCCActorSheet extends ActorSheet {
 
             // Saving Thows
             html.find('.save-value').click(this._onRollSavingThrow.bind(this));
+
+            // Weapons
+            html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this));
         }
         // Otherwise remove rollable classes
         else {
@@ -166,6 +155,18 @@ export class DCCActorSheet extends ActorSheet {
         event.preventDefault();
         let save = event.currentTarget.parentElement.dataset.save;
         this.actor.rollSavingThrow(save, {event: event});
+    }
+
+    /**
+     * Handle rolling a weapon attack
+     * @param {Event} event   The originating click event
+     * @private
+     */
+    _onRollWeaponAttack(event) {
+        event.preventDefault();
+        console.log(event.currentTarget.parentElement.dataset);
+        let weaponId = event.currentTarget.parentElement.dataset.weaponId;
+        this.actor.rollWeaponAttack(weaponId, {event: event});
     }
 
 }

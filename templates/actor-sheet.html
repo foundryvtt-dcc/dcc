@@ -2,7 +2,8 @@
 
     {{!-- Sheet Header --}}
     <header class="sheet-header flexrow">
-        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100" alt="Character Portrait"/>
+        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"
+             alt="Character Portrait"/>
         <div class="flexrow">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
 
@@ -35,66 +36,99 @@
     <section class="sheet-body">
 
         {{!-- Character Tab --}}
-        <div class="tab character" data-group="primary" data-tab="character">
+        <div class="tab character flexrow" data-group="primary" data-tab="character">
             {{!-- Ability Scores --}}
-            <div class="tab flexrow" data-group="primary">
-                <ul class="ability-scores flexcol">
-                    {{#each data.abilities as |ability id|}}
-                    <li class="ability" data-ability="{{id}}">
-                        <label class="ability-name box-title rollable">{{localize ability.label}}</label>
-                        <br/>
-                        <input class="ability-score" name="data.abilities.{{id}}.value" type="text"
-                               value="{{ability.value}}"
-                               data-dtype="Number" placeholder="10"/>
-                        <div class="ability-modifiers" title="Modifier">{{numberFormat ability.mod decimals=0
-                            sign=true}}
-                        </div>
-                    </li>
-                    {{/each}}
-                </ul>
+            <ul class="ability-scores flexcol">
+                {{#each data.abilities as |ability id|}}
+                <li class="ability" data-ability="{{id}}">
+                    <label class="ability-name box-title rollable">{{localize ability.label}}</label>
+                    <br/>
+                    <input class="ability-score" name="data.abilities.{{id}}.value" type="text"
+                           value="{{ability.value}}"
+                           data-dtype="Number" placeholder="10"/>
+                    <div class="ability-modifiers" title="Modifier">{{numberFormat ability.mod decimals=0
+                        sign=true}}
+                    </div>
+                </li>
+                {{/each}}
+            </ul>
 
-                {{!-- Saving Throws --}}
-                <ul class="saving-throws">
-                    {{#each data.saves as |save id|}}
-                    <li class="save" data-save="{{id}}">
-                        <h4 class="box-title rollable save-value">{{localize save.label}}: <span>{{numberFormat save.value decimals=0 sign=true}}</span>
-                        </h4>
-                    </li>
-                    {{/each}}
-                </ul>
+            {{!-- Body Col To the Right of Abilities --}}
+            <div class="flexcol dcccol2">
+                {{!-- Top Row --}}
+                <div class="character-main-top-row flexrow">
+                    {{!-- Saving Throws --}}
+                    <ul class="saving-throws">
+                        {{#each data.saves as |save id|}}
+                        <li class="save" data-save="{{id}}">
+                            <h4 class="box-title rollable save-value">{{localize save.label}}: <span>{{numberFormat save.value decimals=0 sign=true}}</span>
+                            </h4>
+                        </li>
+                        {{/each}}
+                    </ul>
 
-                {{!-- AC and HP --}}
-                <div class="ac flexcol">
-                    <input class="ac-value" type="text" id="data.attributes.ac.value" name="data.attributes.ac.value"
-                           value="{{data.attributes.ac.value}}" data-dtype="Number"/>
-                    <label for="data.attributes.ac.value">AC</label>
-                </div>
-                <div class="hp flexcol">
-                    <input class="current" type="text" id="data.attributes.hp.value" name="data.attributes.hp.value"
-                           value="{{data.attributes.hp.value}}" data-dtype="Number"/>
-                    <input class="max" type="text" name="data.attributes.hp.max" value="{{data.attributes.hp.max}}"
-                           data-dtype="Number"/>
-                    <label for="data.attributes.hp.value">HP</label>
-                </div>
-
-                {{!-- Init and Speed --}}
-                <div class="init-and-speed flexcol">
-                    <div class="init">
-                        <label class="box-title rollable" for="data.attributes.init.value">Init</label>
-                        <input class="init-value" type="text" id="data.attributes.init.value"
-                               name="data.attributes.init.value"
-                               value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                    {{!-- AC and HP --}}
+                    <div class="ac flexcol">
+                        <input class="ac-value" type="text" id="data.attributes.ac.value"
+                               name="data.attributes.ac.value"
+                               value="{{data.attributes.ac.value}}" data-dtype="Number"/>
+                        <label for="data.attributes.ac.value">AC</label>
+                    </div>
+                    <div class="hp flexcol">
+                        <input class="current" type="text" id="data.attributes.hp.value"
+                               name="data.attributes.hp.value"
+                               value="{{data.attributes.hp.value}}" data-dtype="Number"/>
+                        <input class="max" type="text" name="data.attributes.hp.max"
+                               value="{{data.attributes.hp.max}}"
                                data-dtype="Number"/>
+                        <label for="data.attributes.hp.value">HP</label>
                     </div>
-                    <div class="speed">
-                        <label for="data.attributes.speed.value">Speed</label>
-                        <input class="speed-value" type="text" id="data.attributes.speed.value"
-                               name="data.attributes.speed.value"
-                               value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+
+                    {{!-- Init and Speed --}}
+                    <div class="init-and-speed flexcol">
+                        <div class="init">
+                            <label class="box-title rollable" for="data.attributes.init.value">Init</label>
+                            <input class="init-value" type="text" id="data.attributes.init.value"
+                                   name="data.attributes.init.value"
+                                   value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                                   data-dtype="Number"/>
+                        </div>
+                        <div class="speed">
+                            <label for="data.attributes.speed.value">Speed</label>
+                            <input class="speed-value" type="text" id="data.attributes.speed.value"
+                                   name="data.attributes.speed.value"
+                                   value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                        </div>
                     </div>
+                </div>
+
+                {{!-- Weapons --}}
+                <div class="weapons-heading">Weapons</div>
+                <div class="flexrow weapons">
+                    <ol class="flexcol weapon-list">
+                        <li class="flexrow weapon-list-header">
+                            <span style="margin: 0 0 0 30px">Name</span>
+                            <span>Hit Bonus</span>
+                            <span>Damage</span>
+                        </li>
+                        <li class="item flexrow" data-weapon-id="0">
+                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
+                            <input class="weapon-name" type="text" id="data.items.weapons.0.name"
+                                   name="data.items.weapons.0.name"
+                                   value="{{data.items.weapons.0.name}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.0.tohit"
+                                   name="data.items.weapons.0.tohit"
+                                   value="{{data.items.weapons.0.tohit}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.0.damage"
+                                   name="data.items.weapons.0.damage"
+                                   value="{{data.items.weapons.0.damage}}"/>
+                        </li>
+                    </ol>
                 </div>
             </div>
+
         </div>
+        {{!-- End Character Tab --}}
 
         {{!-- Notes Tab --}}
         <div class="tab" data-group="primary" data-tab="notes">
