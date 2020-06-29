@@ -100,7 +100,15 @@ export class DCCActor extends Actor {
         // Convert the roll to a chat message
         roll.toMessage({
             speaker: ChatMessage.getSpeaker({actor: this}),
-            flavor: game.i18n.localize(weapon.name) + " Attack"
+            flavor: game.i18n.localize(weapon.name) + " Attack Hits AC"
+        });
+
+        roll = new Roll("@damage", {damage: weapon.damage});
+
+        // Convert the roll to a chat message
+        roll.toMessage({
+            speaker: ChatMessage.getSpeaker({actor: this}),
+            flavor: game.i18n.localize(weapon.name) + " Attack Damage"
         });
     }
 }

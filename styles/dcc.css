@@ -35,7 +35,7 @@
 /*  Actor Sheet                              */
 /* ----------------------------------------- */
 .dcc.sheet.actor {
-  min-width: 560px;
+  min-width: 605px;
   min-height: 632px; }
 
 .dcc .editor,
@@ -290,20 +290,26 @@
   border-bottom: 2px groove #eeede0;
   flex: 0 0 10px;
   background-image: url("./images/weapon-sword.png");
-  background-size: 100px 18px;
-  background-position-x: 100px;
+  background-size: 90px 18px;
+  background-position-x: 155px;
   background-repeat: no-repeat; }
+
+.dcc .weapons-heading.ranged {
+  background-image: url("./images/weapon-longbow.png");
+  background-size: 90px 18px;
+  background-position-x: 160px;
+  margin: 15px 0 0 0; }
 
 .dcc .weapon-list {
   margin: 0 0 0 0;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   font-size: 1.1rem;
-  border-bottom: 2px groove #eeede0;
   flex: 0 0 1;
   padding: 0; }
 
 .dcc .weapon-list input {
-  margin: 0 8px 0 0; }
+  margin: 0 8px 0 0;
+  height: 30px; }
 
 .dcc .weapon-list-header {
   margin: 0 0 3px 0;
@@ -312,8 +318,11 @@
   flex: 0 0 10px;
   padding: 0; }
 
+.dcc .weapon {
+  flex: 0 0 35px; }
+
 .dcc .weapon-button {
-  margin: 2px 0 0 0;
+  margin: 5px 0 0 0;
   background-image: url("/icons/svg/d20-black.svg");
   background-size: 22px 22px;
   background-repeat: no-repeat; }
