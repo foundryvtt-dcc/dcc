@@ -90,7 +90,13 @@ export class DCCActorSheet extends ActorSheet {
             html.find('.save-value').click(this._onRollSavingThrow.bind(this));
 
             // Weapons
+            let handler = ev => this._onDragStart(ev);
             html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this));
+            html.find('li.weapon').each((i, li) => {
+                // Add draggable attribute and dragstart listener.
+                li.setAttribute("draggable", true);
+                li.addEventListener("dragstart", handler, false);
+            });
         }
         // Otherwise remove rollable classes
         else {
@@ -123,6 +129,20 @@ export class DCCActorSheet extends ActorSheet {
         const action = a.dataset.action;
         const attrs = this.object.data.data.attributes;
         const form = this.form;
+    }
+
+    /** @override */
+    _onDragStart(event) {
+        const li = event.currentTarget;
+        const weapon = this.actor.data.data.items.weapons[li.dataset.weaponId];
+        weapon.id = li.dataset.weaponId;
+        const dragData = {
+            type: "Item",
+            actorId: this.actor.id,
+            data: weapon
+        };
+        if (this.actor.isToken) dragData.tokenId = this.actor.token.id;
+        event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
     }
 
     /* -------------------------------------------- */
@@ -164,7 +184,6 @@ export class DCCActorSheet extends ActorSheet {
      */
     _onRollWeaponAttack(event) {
         event.preventDefault();
-        console.log(event.currentTarget.parentElement.dataset);
         let weaponId = event.currentTarget.parentElement.dataset.weaponId;
         this.actor.rollWeaponAttack(weaponId, {event: event});
     }

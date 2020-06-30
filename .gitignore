@@ -46,3 +46,5 @@ atlassian-ide-plugin.xml
 # Node Modules
 node_modules/
 package-lock.json
+!/foundry.js
+/foundry.js
