@@ -5,7 +5,6 @@
 
 // Import Modules
 import {DCCActor} from "./actor.js";
-import {DCCItemSheet} from "./item-sheet.js";
 import {DCCActorSheet} from "./actor-sheet.js";
 import {DCC} from './config.js';
 
@@ -38,8 +37,6 @@ Hooks.once("init", async function () {
     // Register sheet application classes
     Actors.unregisterSheet("core", ActorSheet);
     Actors.registerSheet("dcc", DCCActorSheet, {makeDefault: true});
-    Items.unregisterSheet("core", ItemSheet);
-    Items.registerSheet("dcc", DCCItemSheet, {makeDefault: true});
 
     Hooks.on("hotbarDrop", (bar, data, slot) => createDCCWeaponMacro(data, slot));
 
