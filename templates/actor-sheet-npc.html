@@ -1,0 +1,196 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    <header class="sheet-header flexrow">
+        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"
+             alt="Character Portrait"/>
+        <div class="flexrow">
+            <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
+
+            <div class="occupation flex1">
+                <label class="rollable" for="data.details.occupation.value">Occupation</label>
+                <input type="text" id="data.details.occupation.value" name="data.details.occupation.value"
+                       value="{{data.details.occupation.value}}" maxlength="40"/>
+            </div>
+
+            <div class="alignment">
+                <label for="data.details.alignment">{{localize "DCC.Alignment"}}</label>
+                <select id="data.details.alignment" name="data.details.alignment">
+                    {{#select data.details.alignment}}
+                        {{#each config.alignments as |label alignment|}}
+                            <option value="{{alignment}}">{{localize label}}</option>
+                        {{/each}}
+                    {{/select}}
+                </select>
+            </div>
+        </div>
+    </header>
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="character">Character</a>
+        <a class="item" data-tab="notes">Notes</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Character Tab --}}
+        <div class="tab character flexrow" data-group="primary" data-tab="character">
+            {{!-- Body Col To the Right of Abilities --}}
+            <div class="flexcol dcccol2">
+                {{!-- Top Row --}}
+                <div class="character-main-top-row flexrow">
+                    {{!-- Saving Throws --}}
+                    <ul class="saving-throws">
+                        {{#each data.saves as |save id|}}
+                            <li class="save" data-save="{{id}}">
+                                <h4 class="box-title rollable save-value">{{localize save.label}}: <span>{{numberFormat
+                                        save.value decimals=0 sign=true}}</span>
+                                </h4>
+                            </li>
+                        {{/each}}
+                    </ul>
+
+                    {{!-- AC and HP --}}
+                    <div class="ac flexcol">
+                        <input class="ac-value" type="text" id="data.attributes.ac.value"
+                               name="data.attributes.ac.value"
+                               value="{{data.attributes.ac.value}}" data-dtype="Number"/>
+                        <label for="data.attributes.ac.value">AC</label>
+                    </div>
+                    <div class="hp flexcol">
+                        <input class="current" type="text" id="data.attributes.hp.value"
+                               name="data.attributes.hp.value"
+                               value="{{data.attributes.hp.value}}" data-dtype="Number"/>
+                        <input class="max" type="text" name="data.attributes.hp.max"
+                               value="{{data.attributes.hp.max}}"
+                               data-dtype="Number"/>
+                        <label for="data.attributes.hp.value">HP</label>
+                    </div>
+
+                    {{!-- Init and Speed --}}
+                    <div class="init-and-speed flexcol">
+                        <div class="init">
+                            <label class="box-title rollable" for="data.attributes.init.value">Init</label>
+                            <input class="init-value" type="text" id="data.attributes.init.value"
+                                   name="data.attributes.init.value"
+                                   value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                                   data-dtype="Number"/>
+                        </div>
+                        <div class="speed">
+                            <label for="data.attributes.speed.value">Speed</label>
+                            <input class="speed-value" type="text" id="data.attributes.speed.value"
+                                   name="data.attributes.speed.value"
+                                   value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                        </div>
+                    </div>
+                </div>
+
+                {{!-- Melee Weapons --}}
+                <div class="weapons-heading">Melee Weapons</div>
+                <div class="flexrow weapons">
+                    <ol class="flexcol weapon-list">
+                        <li class="flexrow weapon-list-header">
+                            <span style="margin: 0 0 0 30px">Name</span>
+                            <span>Hit Bonus</span>
+                            <span>Damage</span>
+                        </li>
+                        <li class="weapon flexrow" data-weapon-id="0">
+                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
+                            <input class="weapon-name" type="text" id="data.items.weapons.0.name"
+                                   name="data.items.weapons.0.name"
+                                   value="{{data.items.weapons.0.name}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.0.tohit"
+                                   name="data.items.weapons.0.tohit"
+                                   value="{{data.items.weapons.0.tohit}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.0.damage"
+                                   name="data.items.weapons.0.damage"
+                                   value="{{data.items.weapons.0.damage}}"/>
+                        </li>
+                        <li class="weapon flexrow" data-weapon-id="1">
+                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
+                            <input class="weapon-name" type="text" id="data.items.weapons.1.name"
+                                   name="data.items.weapons.1.name"
+                                   value="{{data.items.weapons.1.name}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.1.tohit"
+                                   name="data.items.weapons.1.tohit"
+                                   value="{{data.items.weapons.1.tohit}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.1.damage"
+                                   name="data.items.weapons.1.damage"
+                                   value="{{data.items.weapons.1.damage}}"/>
+                        </li>
+                        <li class="weapon flexrow" data-weapon-id="2">
+                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
+                            <input class="weapon-name" type="text" id="data.items.weapons.2.name"
+                                   name="data.items.weapons.2.name"
+                                   value="{{data.items.weapons.2.name}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.2.tohit"
+                                   name="data.items.weapons.2.tohit"
+                                   value="{{data.items.weapons.2.tohit}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.2.damage"
+                                   name="data.items.weapons.2.damage"
+                                   value="{{data.items.weapons.2.damage}}"/>
+                        </li>
+                    </ol>
+                </div>
+
+                {{!-- Ranged Weapons --}}
+                <div class="ranged weapons-heading">Ranged Weapons</div>
+                <div class="flexrow weapons">
+                    <ol class="flexcol weapon-list">
+                        <li class="flexrow weapon-list-header">
+                            <span style="margin: 0 0 0 30px">Name</span>
+                            <span>Hit Bonus</span>
+                            <span>Damage</span>
+                        </li>
+                        <li class="weapon flexrow" data-weapon-id="3">
+                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
+                            <input class="weapon-name" type="text" id="data.items.weapons.3.name"
+                                   name="data.items.weapons.3.name"
+                                   value="{{data.items.weapons.3.name}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.3.tohit"
+                                   name="data.items.weapons.3.tohit"
+                                   value="{{data.items.weapons.3.tohit}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.3.damage"
+                                   name="data.items.weapons.3.damage"
+                                   value="{{data.items.weapons.3.damage}}"/>
+                        </li>
+                        <li class="weapon flexrow" data-weapon-id="4">
+                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
+                            <input class="weapon-name" type="text" id="data.items.weapons.4.name"
+                                   name="data.items.weapons.4.name"
+                                   value="{{data.items.weapons.4.name}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.4.tohit"
+                                   name="data.items.weapons.4.tohit"
+                                   value="{{data.items.weapons.4.tohit}}"/>
+                            <input class="weapon-name" type="text" id="data.items.weapons.4.damage"
+                                   name="data.items.weapons.4.damage"
+                                   value="{{data.items.weapons.4.damage}}"/>
+                        </li>
+                    </ol>
+                </div>
+
+            </div>
+
+        </div>
+        {{!-- End Character Tab --}}
+
+        {{!-- Notes Tab --}}
+        <div class="tab" data-group="primary" data-tab="notes">
+            <h4 class="notes-label">Notes</h4>
+            <div class="notes">
+                {{editor content=data.details.notes.value target="data.details.notes.value" button=true owner=owner
+                         editable=editable}}
+            </div>
+
+            <h4 class="bio-label">Bio</h4>
+            <div class="bio">
+                {{editor content=data.details.biography.value target="data.details.biography.value" button=true
+                         owner=owner
+                         editable=editable}}
+            </div>
+        </div>
+    </section>
+</form>
+
