@@ -87,6 +87,14 @@
   flex: 0 0 100px; }
 
 /* ----------------------------------------- */
+/*  Action Dice                                 */
+/* ----------------------------------------- */
+.dcc .action-dice {
+  flex: 0 0 100px;
+  text-align: center;
+  margin: 0 0 0 10px; }
+
+/* ----------------------------------------- */
 /*  Ability Scores                           */
 /* ----------------------------------------- */
 .dcc.sheet.actor .ability-scores {
@@ -148,6 +156,22 @@
   height: 25px; }
 
 /* ----------------------------------------- */
+/*  Crit Table                               */
+/* ----------------------------------------- */
+.dcc .crit-table {
+  flex: 0 0 80px;
+  text-align: center;
+  margin: 0 0 0 10px; }
+
+/* ----------------------------------------- */
+/*  Hit Dice                                 */
+/* ----------------------------------------- */
+.dcc .hd {
+  flex: 0 0 50px;
+  text-align: center;
+  margin: 0 0 0 0; }
+
+/* ----------------------------------------- */
 /*  Hit Points                               */
 /* ----------------------------------------- */
 .dcc .hp {
@@ -190,7 +214,7 @@
 
 .dcc .init .init-value {
   width: 50px;
-  font-size: 1.6rem; }
+  font-size: 1.4rem; }
 
 /* ----------------------------------------- */
 /*  Speed                                    */
@@ -206,7 +230,7 @@
 
 .dcc .speed .speed-value {
   width: 50px;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   height: 25px; }
 
 /* ----------------------------------------- */
@@ -231,27 +255,11 @@
   font-size: 1.5rem; }
 
 /* ----------------------------------------- */
-/*  Tabs                                     */
+/*  Special                                 */
 /* ----------------------------------------- */
-.dcc .tabs {
-  height: 40px;
-  border-top: 1px solid #AAA;
-  border-bottom: 1px solid #AAA; }
-
-.dcc .tabs .item {
-  line-height: 40px;
-  font-weight: bold; }
-
-.dcc .tabs .item.active {
-  text-decoration: underline;
-  text-shadow: none; }
-
-.dcc .sheet-body {
-  overflow: hidden; }
-
-.dcc .sheet-body .tab {
-  height: 100%;
-  overflow-y: auto; }
+.dcc .special {
+  flex: 0 0 160px;
+  margin: 0 0 0 0; }
 
 /* ----------------------------------------- */
 /*  Saving Throws                            */
@@ -276,6 +284,34 @@
 
 .dcc.sheet.actor .saving-throws span {
   font-family: "Book Antiqua", "Palatino Linotype", serif; }
+
+.dcc.sheet.actor .saving-throws input {
+  margin-bottom: 0;
+  width: 36px;
+  font-family: "Book Antiqua", "Palatino Linotype", serif; }
+
+/* ----------------------------------------- */
+/*  Tabs                                     */
+/* ----------------------------------------- */
+.dcc .tabs {
+  height: 40px;
+  border-top: 1px solid #AAA;
+  border-bottom: 1px solid #AAA; }
+
+.dcc .tabs .item {
+  line-height: 40px;
+  font-weight: bold; }
+
+.dcc .tabs .item.active {
+  text-decoration: underline;
+  text-shadow: none; }
+
+.dcc .sheet-body {
+  overflow: hidden; }
+
+.dcc .sheet-body .tab {
+  height: 100%;
+  overflow-y: auto; }
 
 /* ----------------------------------------- */
 /*  Weapons                                  */
@@ -326,3 +362,14 @@
   background-image: url("/icons/svg/d20-black.svg");
   background-size: 22px 22px;
   background-repeat: no-repeat; }
+
+.dcc .weapon-damage {
+  flex: 0 0 70px; }
+
+.dcc .weapon-tohit {
+  flex: 0 0 70px;
+  margin: 0 3px 0 -5px; }
+
+.dcc .weapon-special {
+  flex: 0 0 1;
+  text-align: center; }

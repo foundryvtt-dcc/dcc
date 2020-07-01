@@ -45,7 +45,6 @@ export class DCCActorSheet extends ActorSheet {
         if (data.isNPC) {
             this.options.template = "systems/dcc/templates/actor-sheet-npc.html"
         }
-        console.log(this.options);
         console.log(this.entity);
 
         return data;

@@ -40,12 +40,15 @@ export class DCCActor extends Actor {
             abl.label = CONFIG.DCC.abilities[id];
         }
 
-        data.saves["ref"].value = data.abilities["agl"].mod;
         data.saves["ref"].label = CONFIG.DCC.saves["ref"];
-        data.saves["frt"].value = data.abilities["sta"].mod;
         data.saves["frt"].label = CONFIG.DCC.saves["frt"];
-        data.saves["wil"].value = data.abilities["per"].mod;
         data.saves["wil"].label = CONFIG.DCC.saves["wil"];
+
+        if (data.isZero) {
+            data.saves["ref"].value = data.abilities["agl"].mod;
+            data.saves["frt"].value = data.abilities["sta"].mod;
+            data.saves["wil"].value = data.abilities["per"].mod;
+        }
     }
 
     /**
@@ -100,7 +103,7 @@ export class DCCActor extends Actor {
         });
     }
 
-     /**
+    /**
      * Roll a Weapon Attack
      * @param {string} weapon    The weaponid
      * @param {Object} options      Options which configure how ability tests are rolled

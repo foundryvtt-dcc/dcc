@@ -8,7 +8,7 @@
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
 
             <div class="occupation flex1">
-                <label class="rollable" for="data.details.occupation.value">Occupation</label>
+                <label for="data.details.occupation.value">Occupation</label>
                 <input type="text" id="data.details.occupation.value" name="data.details.occupation.value"
                        value="{{data.details.occupation.value}}" maxlength="40"/>
             </div>
@@ -43,7 +43,7 @@
                 <li class="ability" data-ability="{{id}}">
                     <label class="ability-name box-title rollable">{{localize ability.label}}</label>
                     <br/>
-                    <input class="ability-score" name="data.abilities.{{id}}.value" type="text"
+                    <input class="ability-score" id="data.abilities.{{id}}.value" name="data.abilities.{{id}}.value" type="text"
                            value="{{ability.value}}"
                            data-dtype="Number" placeholder="10"/>
                     <div class="ability-modifiers" title="Modifier">{{numberFormat ability.mod decimals=0
