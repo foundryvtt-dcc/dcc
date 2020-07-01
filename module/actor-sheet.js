@@ -15,7 +15,7 @@ export class DCCActorSheet extends ActorSheet {
             width: 600,
             height: 600,
             tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
-            dragDrop: [{dragSelector: ".item-list .item", dropSelector: null}]
+            dragDrop: [{dragSelector: ".weapon-list .weapon", dropSelector: null}]
         });
     }
 
@@ -37,39 +37,12 @@ export class DCCActorSheet extends ActorSheet {
             config: CONFIG.DCC,
         };
 
-        // The Actor and its Items
         data.actor = duplicate(this.actor.data);
-        console.log(data.actor.data);
-        data.items = this.actor.items.map(i => {
-            i.data.labels = i.labels;
-            return i.data;
-        });
-        data.items.sort((a, b) => (a.sort || 0) - (b.sort || 0));
         data.data = data.actor.data;
         data.labels = this.actor.labels || {};
         data.filters = this._filters;
 
-        // Ability modifiers and saves
-        for (let [id, abl] of Object.entries(data.actor.data.abilities)) {
-            abl.mod = data.config.abilities.modifiers[abl.value] || 0;
-            abl.label = CONFIG.DCC.abilities[id];
-        }
-
-        data.actor.data.saves["ref"].value = data.actor.data.abilities["agl"].mod;
-        data.actor.data.saves["ref"].label = CONFIG.DCC.saves["ref"];
-        data.actor.data.saves["frt"].value = data.actor.data.abilities["sta"].mod;
-        data.actor.data.saves["frt"].label = CONFIG.DCC.saves["frt"];
-        data.actor.data.saves["wil"].value = data.actor.data.abilities["per"].mod;
-        data.actor.data.saves["wil"].label = CONFIG.DCC.saves["wil"];
-
-        // Update traits
-        //this._prepareTraits(data.actor.data.traits);
-
-        // Prepare owned items
-        //this._prepareItems(data);
-
-        // Return data to the sheet
-        return data
+        return data;
     }
 
     /* -------------------------------------------- */
@@ -107,17 +80,6 @@ export class DCCActorSheet extends ActorSheet {
 
     /* -------------------------------------------- */
 
-    /** @override */
-    setPosition(options = {}) {
-        const position = super.setPosition(options);
-        const sheetBody = this.element.find(".sheet-body");
-        const bodyHeight = position.height - 192;
-        sheetBody.css("height", bodyHeight);
-        return position;
-    }
-
-    /* -------------------------------------------- */
-
     /**
      * Listen for click events on an attribute control to modify the composition of attributes in the sheet
      * @param {MouseEvent} event    The originating left click event
@@ -143,14 +105,6 @@ export class DCCActorSheet extends ActorSheet {
         };
         if (this.actor.isToken) dragData.tokenId = this.actor.token.id;
         event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
-    }
-
-    /* -------------------------------------------- */
-
-    /** @override */
-    _updateObject(event, formData) {
-        // Update the Actor
-        return this.object.update(formData);
     }
 
     /* -------------------------------------------- */
@@ -186,6 +140,25 @@ export class DCCActorSheet extends ActorSheet {
         event.preventDefault();
         let weaponId = event.currentTarget.parentElement.dataset.weaponId;
         this.actor.rollWeaponAttack(weaponId, {event: event});
+    }
+
+    /* -------------------------------------------- */
+
+    /** @override */
+    setPosition(options = {}) {
+        const position = super.setPosition(options);
+        const sheetBody = this.element.find(".sheet-body");
+        const bodyHeight = position.height - 192;
+        sheetBody.css("height", bodyHeight);
+        return position;
+    }
+
+    /* -------------------------------------------- */
+
+    /** @override */
+    _updateObject(event, formData) {
+        // Update the Actor
+        return this.object.update(formData);
     }
 
 }

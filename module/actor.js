@@ -19,20 +19,33 @@ export class DCCActor extends Actor {
             delete data.attributes;
         }
 
-        // Map all items data using their slugified names
-        data.items = this.data.items.reduce((obj, i) => {
-            let key = i.name.slugify({strict: true});
-            let itemData = duplicate(i.data);
-            if (!!shorthand) {
-                for (let [k, v] of Object.entries(itemData.attributes)) {
-                    if (!(k in itemData)) itemData[k] = v.value;
-                }
-                delete itemData["attributes"];
-            }
-            obj[key] = itemData;
-            return obj;
-        }, {});
         return data;
+    }
+
+    /** @override */
+    prepareData() {
+        super.prepareData();
+        console.log("PREPARE DATA");
+
+        const actorData = this.data;
+        const data = actorData.data;
+        const flags = actorData.flags;
+        console.log("ACTOR DATA");
+        console.log(data);
+
+
+        // Ability modifiers and saves
+        for (let [id, abl] of Object.entries(data.abilities)) {
+            abl.mod = CONFIG.DCC.abilities.modifiers[abl.value] || 0;
+            abl.label = CONFIG.DCC.abilities[id];
+        }
+
+        data.saves["ref"].value = data.abilities["agl"].mod;
+        data.saves["ref"].label = CONFIG.DCC.saves["ref"];
+        data.saves["frt"].value = data.abilities["sta"].mod;
+        data.saves["frt"].label = CONFIG.DCC.saves["frt"];
+        data.saves["wil"].value = data.abilities["per"].mod;
+        data.saves["wil"].label = CONFIG.DCC.saves["wil"];
     }
 
     /**
