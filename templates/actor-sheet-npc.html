@@ -3,24 +3,24 @@
     {{!-- Sheet Header --}}
     <header class="sheet-header flexrow">
         <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"
-             alt="Character Portrait"/>
+             alt="{{localize "DCC.CharacterPortrait"}}"/>
         <div class="flexrow">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
 
             <div class="hd">
-                <label for="data.attributes.hd.value">HD</label>
+                <label for="data.attributes.hd.value">{{localize "DCC.HD"}}</label>
                 <input type="text" id="data.attributes.hd.value" name="data.attributes.hd.value"
                        value="{{data.attributes.hd.value}}" maxlength="20"/>
             </div>
 
             <div class="action-dice">
-                <label for="data.attributes.action-dice.value">Action Dice</label>
+                <label for="data.attributes.action-dice.value">{{localize "DCC.ActionDice"}},</label>
                 <input type="text" id="data.attributes.action-dice.value" name="data.attributes.action-dice.value"
                        value="{{data.attributes.action-dice.value}}" maxlength="40"/>
             </div>
 
             <div class="crit-table">
-                <label for="data.attributes.crit-table.value">Crit Table</label>
+                <label for="data.attributes.crit-table.value">{{localize "DCC.CritTable"}}</label>
                 <input type="text" id="data.attributes.crit-table.value" name="data.attributes.crit-table.value"
                        value="{{data.attributes.crit-table.value}}" maxlength="40"/>
             </div>
@@ -40,8 +40,8 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="character">Character</a>
-        <a class="item" data-tab="notes">Notes</a>
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
     {{!-- Sheet Body --}}
@@ -55,7 +55,7 @@
                 <div class="character-main-top-row flexrow">
                     {{!-- Special --}}
                     <div class="special">
-                        <label for="data.attributes.special.value" class="box-title">Special</label>
+                        <label for="data.attributes.special.value" class="box-title">{{localize "DCC.Special"}}</label>
                         <textarea id="data.attributes.special.value" name="data.attributes.special.value" rows="5"
                                   cols="50">{{data.attributes.special.value}}</textarea>
                     </div>
@@ -79,7 +79,7 @@
                         <input class="ac-value" type="text" id="data.attributes.ac.value"
                                name="data.attributes.ac.value"
                                value="{{data.attributes.ac.value}}" data-dtype="Number"/>
-                        <label for="data.attributes.ac.value">AC</label>
+                        <label for="data.attributes.ac.value">{{localize "DCC.AC"}}</label>
                     </div>
                     <div class="hp flexcol">
                         <input class="current" type="text" id="data.attributes.hp.value"
@@ -88,20 +88,20 @@
                         <input class="max" type="text" name="data.attributes.hp.max"
                                value="{{data.attributes.hp.max}}"
                                data-dtype="Number"/>
-                        <label for="data.attributes.hp.value">HP</label>
+                        <label for="data.attributes.hp.value">{{localize "DCC.HP"}}</label>
                     </div>
 
                     {{!-- Init and Speed --}}
                     <div class="init-and-speed flexcol">
                         <div class="init">
-                            <label class="box-title rollable" for="data.attributes.init.value">Init</label>
+                            <label class="box-title rollable" for="data.attributes.init.value">{{localize "DCC.Init"}}</label>
                             <input class="init-value" type="text" id="data.attributes.init.value"
                                    name="data.attributes.init.value"
                                    value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
                                    data-dtype="Number"/>
                         </div>
                         <div class="speed">
-                            <label for="data.attributes.speed.value">Speed</label>
+                            <label for="data.attributes.speed.value">{{localize "DCC.Speed"}}</label>
                             <input class="speed-value" type="text" id="data.attributes.speed.value"
                                    name="data.attributes.speed.value"
                                    value="{{data.attributes.speed.value}}" data-dtype="Number"/>
@@ -113,7 +113,7 @@
                 {{#* inline "weaponRow"}}
                 <li class="weapon flexrow" data-weapon-id="{{weaponIndex}}">
                     <div class="rollable weapon-button">&nbsp;</div>
-                    <input class="weapon-name" type="text"
+                    <input type="text"
                            name="data.items.weapons.{{weaponIndex}}.name"
                            value="{{weapon.name}}"/>
                     <input class="weapon-tohit" type="text"
@@ -127,14 +127,14 @@
                            value="{{weapon.special}}"/>
                 </li>
                 {{/inline}}
-                <div class="weapons-heading">Melee Weapons</div>
+                <div class="weapons-heading">{{localize "DCC.MeleeWeapons"}}</div>
                 <div class="flexrow weapons">
                     <ol class="flexcol weapon-list">
                         <li class="flexrow weapon-list-header">
-                            <span style="margin: 0 0 0 30px">Name</span>
-                            <span class="weapon-tohit">To Hit</span>
-                            <span class="weapon-damage">Damage</span>
-                            <span class="weapon-special flex1">Special</span>
+                            <span class="weapon-name-label">{{localize "DCC.Name"}}</span>
+                            <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
+                            <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
+                            <span class="weapon-special flex1">{{localize "DCC.Special"}}</span>
                         </li>
                         {{> weaponRow weaponIndex='m1' weapon=data.items.weapons.m1}}
                         {{> weaponRow weaponIndex='m2' weapon=data.items.weapons.m2}}
@@ -143,7 +143,7 @@
                 </div>
 
                 {{!-- Ranged Weapons --}}
-                <div class="ranged weapons-heading">Ranged Weapons</div>
+                <div class="ranged weapons-heading">{{localize "DCC.RangedWeapons"}}</div>
                 <div class="flexrow weapons">
                     <ol class="flexcol weapon-list">
                         {{> weaponRow weaponIndex='r1' weapon=data.items.weapons.r1}}
@@ -158,13 +158,13 @@
 
         {{!-- Notes Tab --}}
         <div class="tab" data-group="primary" data-tab="notes">
-            <h4 class="notes-label">Notes</h4>
+            <h4 class="notes-label">{{localize "DCC.Notes"}}</h4>
             <div class="notes">
                 {{editor content=data.details.notes.value target="data.details.notes.value" button=true owner=owner
                 editable=editable}}
             </div>
 
-            <h4 class="bio-label">Bio</h4>
+            <h4 class="bio-label">{{localize "DCC.Bio"}}</h4>
             <div class="bio">
                 {{editor content=data.details.biography.value target="data.details.biography.value" button=true
                 owner=owner

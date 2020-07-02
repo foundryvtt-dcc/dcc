@@ -371,10 +371,13 @@
   flex: 0 0 70px; }
 
 .dcc .weapon-name {
-  margin: 0 0 0 30px; }
+  flex: 0 0 1; }
+
+.dcc .weapon-name-label {
+  padding: 0 0 0 30px; }
 
 .dcc .weapon-tohit {
-  flex: 0 0 50px;
+  flex: 0 0 70px;
   margin: 0 3px 0 -5px; }
 
 .dcc .weapon-special {

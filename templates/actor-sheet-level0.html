@@ -110,10 +110,10 @@
                     <input class="weapon-name" type="text"
                            name="data.items.weapons.{{weaponIndex}}.name"
                            value="{{weapon.name}}"/>
-                    <input class="weapon-name" type="text"
+                    <input class="weapon-tohit" type="text"
                            name="data.items.weapons.{{weaponIndex}}.tohit"
                            value="{{weapon.tohit}}"/>
-                    <input class="weapon-name" type="text"
+                    <input class="weapon-damage" type="text"
                            name="data.items.weapons.{{weaponIndex}}.damage"
                            value="{{weapon.damage}}"/>
                 </li>
@@ -122,9 +122,9 @@
                 <div class="flexrow weapons">
                     <ol class="flexcol weapon-list">
                         <li class="flexrow weapon-list-header">
-                            <span class="weapon-name">{{localize "DCC.Name"}}</span>
-                            <span>{{localize "DCC.HitBonus"}}</span>
-                            <span>{{localize "DCC.Damage"}}</span>
+                            <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
+                            <span class="weapon-tohit" >{{localize "DCC.ToHit"}}</span>
+                            <span class="weapon-damage" >{{localize "DCC.Damage"}}</span>
                         </li>
                         {{> weaponRow weaponIndex='m1' weapon=data.items.weapons.m1}}
                         {{> weaponRow weaponIndex='m2' weapon=data.items.weapons.m2}}
@@ -137,9 +137,9 @@
                 <div class="flexrow weapons">
                     <ol class="flexcol weapon-list">
                         <li class="flexrow weapon-list-header">
-                            <span class="weapon-name">{{localize "DCC.Name"}}</span>
-                            <span>{{localize "DCC.HitBonus"}}</span>
-                            <span>{{localize "DCC.Damage"}}</span>
+                            <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
+                            <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
+                            <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
                         </li>
                         {{> weaponRow weaponIndex='r1' weapon=data.items.weapons.r1}}
                         {{> weaponRow weaponIndex='r2' weapon=data.items.weapons.r2}}
