@@ -3,12 +3,12 @@
     {{!-- Sheet Header --}}
     <header class="sheet-header flexrow">
         <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"
-             alt="Character Portrait"/>
+             alt="{{localize 'Character Portrait'}}'"/>
         <div class="flexrow">
-            <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
+            <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="{{localize "DCC.CharacterName"}}"/></h1>
 
             <div class="occupation flex1">
-                <label for="data.details.occupation.value">Occupation</label>
+                <label for="data.details.occupation.value">{{localize "DCC.Occupation"}}</label>
                 <input type="text" id="data.details.occupation.value" name="data.details.occupation.value"
                        value="{{data.details.occupation.value}}" maxlength="40"/>
             </div>
@@ -28,8 +28,8 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="character">Character</a>
-        <a class="item" data-tab="notes">Notes</a>
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
     {{!-- Sheet Body --}}
@@ -73,7 +73,7 @@
                         <input class="ac-value" type="text" id="data.attributes.ac.value"
                                name="data.attributes.ac.value"
                                value="{{data.attributes.ac.value}}" data-dtype="Number"/>
-                        <label for="data.attributes.ac.value">AC</label>
+                        <label for="data.attributes.ac.value">{{localize "DCC.AC"}}</label>
                     </div>
                     <div class="hp flexcol">
                         <input class="current" type="text" id="data.attributes.hp.value"
@@ -82,20 +82,20 @@
                         <input class="max" type="text" name="data.attributes.hp.max"
                                value="{{data.attributes.hp.max}}"
                                data-dtype="Number"/>
-                        <label for="data.attributes.hp.value">HP</label>
+                        <label for="data.attributes.hp.value">{{localize "DCC.HP"}}</label>
                     </div>
 
                     {{!-- Init and Speed --}}
                     <div class="init-and-speed flexcol">
                         <div class="init">
-                            <label class="box-title rollable" for="data.attributes.init.value">Init</label>
+                            <label class="box-title rollable" for="data.attributes.init.value">{{localize "DCC.Init"}}</label>
                             <input class="init-value" type="text" id="data.attributes.init.value"
                                    name="data.attributes.init.value"
                                    value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
                                    data-dtype="Number"/>
                         </div>
                         <div class="speed">
-                            <label for="data.attributes.speed.value">Speed</label>
+                            <label for="data.attributes.speed.value">{{localize "DCC.Speed"}}</label>
                             <input class="speed-value" type="text" id="data.attributes.speed.value"
                                    name="data.attributes.speed.value"
                                    value="{{data.attributes.speed.value}}" data-dtype="Number"/>
@@ -118,13 +118,13 @@
                            value="{{weapon.damage}}"/>
                 </li>
                 {{/inline}}
-                <div class="weapons-heading">Melee Weapons</div>
+                <div class="weapons-heading">{{localize "DCC.MeleeWeapons"}}</div>
                 <div class="flexrow weapons">
                     <ol class="flexcol weapon-list">
                         <li class="flexrow weapon-list-header">
-                            <span style="margin: 0 0 0 30px">Name</span>
-                            <span>Hit Bonus</span>
-                            <span>Damage</span>
+                            <span class="weapon-name">{{localize "DCC.Name"}}</span>
+                            <span>{{localize "DCC.HitBonus"}}</span>
+                            <span>{{localize "DCC.Damage"}}</span>
                         </li>
                         {{> weaponRow weaponIndex='m1' weapon=data.items.weapons.m1}}
                         {{> weaponRow weaponIndex='m2' weapon=data.items.weapons.m2}}
@@ -133,13 +133,13 @@
                 </div>
 
                 {{!-- Ranged Weapons --}}
-                <div class="ranged weapons-heading">Ranged Weapons</div>
+                <div class="ranged weapons-heading">{{localize "DCC.RangedWeapons"}}</div>
                 <div class="flexrow weapons">
                     <ol class="flexcol weapon-list">
                         <li class="flexrow weapon-list-header">
-                            <span style="margin: 0 0 0 30px">Name</span>
-                            <span>Hit Bonus</span>
-                            <span>Damage</span>
+                            <span class="weapon-name">{{localize "DCC.Name"}}</span>
+                            <span>{{localize "DCC.HitBonus"}}</span>
+                            <span>{{localize "DCC.Damage"}}</span>
                         </li>
                         {{> weaponRow weaponIndex='r1' weapon=data.items.weapons.r1}}
                         {{> weaponRow weaponIndex='r2' weapon=data.items.weapons.r2}}
@@ -153,13 +153,13 @@
 
         {{!-- Notes Tab --}}
         <div class="tab" data-group="primary" data-tab="notes">
-            <h4 class="notes-label">Notes</h4>
+            <h4 class="notes-label">{{localize "DCC.Notes"}}</h4>
             <div class="notes">
                 {{editor content=data.details.notes.value target="data.details.notes.value" button=true owner=owner
                 editable=editable}}
             </div>
 
-            <h4 class="bio-label">Bio</h4>
+            <h4 class="bio-label">{{localize "DCC.Bio"}}</h4>
             <div class="bio">
                 {{editor content=data.details.biography.value target="data.details.biography.value" button=true
                 owner=owner
