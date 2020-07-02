@@ -55,12 +55,15 @@
         },
         "saves": {
           "ref": {
+            "label": "DCC.SavesReflex",
             "value": 0
           },
           "frt": {
+            "label": "DCC.SavesFortitude",
             "value": 0
           },
           "wil": {
+            "label": "DCC.SavesWill",
             "value": 0
           }
         },

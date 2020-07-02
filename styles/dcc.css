@@ -147,7 +147,8 @@
 
 .dcc .ac label {
   margin: 31px auto 0 auto;
-  font-size: 1.1rem; }
+  font-size: 1.1rem;
+  line-height: 1.6rem; }
 
 .dcc .ac .ac-value {
   width: 35px;
@@ -185,7 +186,8 @@
 
 .dcc .hp label {
   margin: 7px auto 0 28px;
-  font-size: 1.1rem; }
+  font-size: 1.1rem;
+  line-height: 1.6rem; }
 
 .dcc .hp .current {
   width: 35px;
@@ -325,6 +327,7 @@
   font-size: 1.1rem;
   border-bottom: 2px groove #eeede0;
   flex: 0 0 10px;
+  line-height: 1.5rem;
   background-image: url("./images/weapon-sword.png");
   background-size: 90px 18px;
   background-position-x: 155px;
@@ -332,7 +335,7 @@
 
 .dcc .weapons-heading.ranged {
   background-image: url("./images/weapon-longbow.png");
-  background-size: 90px 18px;
+  background-size: 90px 17px;
   background-position-x: 160px;
   margin: 15px 0 0 0; }
 

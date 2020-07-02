@@ -32,7 +32,7 @@ export class DCCActor extends Actor {
         const flags = actorData.flags;
         console.log("ACTOR DATA");
         console.log(data);
-
+        console.log(actorData.type);
 
         // Ability modifiers and saves
         for (let [id, abl] of Object.entries(data.abilities)) {
@@ -40,11 +40,7 @@ export class DCCActor extends Actor {
             abl.label = CONFIG.DCC.abilities[id];
         }
 
-        data.saves["ref"].label = CONFIG.DCC.saves["ref"];
-        data.saves["frt"].label = CONFIG.DCC.saves["frt"];
-        data.saves["wil"].label = CONFIG.DCC.saves["wil"];
-
-        if (data.isZero) {
+        if (actorData.type === "level0") {
             data.saves["ref"].value = data.abilities["agl"].mod;
             data.saves["frt"].value = data.abilities["sta"].mod;
             data.saves["wil"].value = data.abilities["per"].mod;
