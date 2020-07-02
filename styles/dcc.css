@@ -361,6 +361,7 @@
   flex: 0 0 35px; }
 
 .dcc .weapon-button {
+  flex: 0 0 30px;
   margin: 5px 0 0 0;
   background-image: url("/icons/svg/d20-black.svg");
   background-size: 22px 22px;
@@ -370,7 +371,7 @@
   flex: 0 0 70px; }
 
 .dcc .weapon-tohit {
-  flex: 0 0 70px;
+  flex: 0 0 50px;
   margin: 0 3px 0 -5px; }
 
 .dcc .weapon-special {

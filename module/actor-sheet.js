@@ -42,10 +42,14 @@ export class DCCActorSheet extends ActorSheet {
         data.labels = this.actor.labels || {};
         data.filters = this._filters;
 
+        data.data.utility = {};
+        data.data.utility.meleeWeapons = [0, 1, 2];
+        data.data.utility.rangedWeapons = [3, 4];
+        console.log(data.data);
+
         if (data.isNPC) {
             this.options.template = "systems/dcc/templates/actor-sheet-npc.html"
         }
-        console.log(this.entity);
 
         return data;
     }

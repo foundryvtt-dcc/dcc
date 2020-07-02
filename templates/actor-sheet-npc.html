@@ -29,9 +29,9 @@
                 <label for="data.details.alignment">{{localize "DCC.Alignment"}}</label>
                 <select id="data.details.alignment" name="data.details.alignment">
                     {{#select data.details.alignment}}
-                        {{#each config.alignments as |label alignment|}}
-                            <option value="{{alignment}}">{{localize label}}</option>
-                        {{/each}}
+                    {{#each config.alignments as |label alignment|}}
+                    <option value="{{alignment}}">{{localize label}}</option>
+                    {{/each}}
                     {{/select}}
                 </select>
             </div>
@@ -63,13 +63,14 @@
                     {{!-- Saving Throws --}}
                     <ul class="saving-throws">
                         {{#each data.saves as |save id|}}
-                            <li class="save" data-save="{{id}}">
-                                <label for="data.saves.{{id}}.value" class="save-name box-title rollable">{{localize save.label}}</label>
-                                <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
-                                       type="text"
-                                       value="{{ numberFormat save.value decimals=0 sign=true }}"
-                                       data-dtype="Number" placeholder="0"/>
-                            </li>
+                        <li class="save" data-save="{{id}}">
+                            <label for="data.saves.{{id}}.value" class="save-name box-title rollable">{{localize
+                                save.label}}</label>
+                            <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
+                                   type="text"
+                                   value="{{ numberFormat save.value decimals=0 sign=true }}"
+                                   data-dtype="Number" placeholder="0"/>
+                        </li>
                         {{/each}}
                     </ul>
 
@@ -109,6 +110,23 @@
                 </div>
 
                 {{!-- Melee Weapons --}}
+                {{#* inline "weaponRow"}}
+                <li class="weapon flexrow" data-weapon-id="{{weaponIndex}}">
+                    <div class="rollable weapon-button">&nbsp;</div>
+                    <input class="weapon-name" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.name"
+                           value="{{weapon.name}}"/>
+                    <input class="weapon-tohit" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.tohit"
+                           value="{{weapon.tohit}}"/>
+                    <input class="weapon-damage" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.damage"
+                           value="{{weapon.damage}}"/>
+                    <input class="weapon-special" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.special"
+                           value="{{weapon.special}}"/>
+                </li>
+                {{/inline}}
                 <div class="weapons-heading">Melee Weapons</div>
                 <div class="flexrow weapons">
                     <ol class="flexcol weapon-list">
@@ -118,51 +136,9 @@
                             <span class="weapon-damage">Damage</span>
                             <span class="weapon-special flex1">Special</span>
                         </li>
-                        <li class="weapon flexrow" data-weapon-id="0">
-                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
-                            <input class="weapon-name" type="text" id="data.items.weapons.0.name"
-                                   name="data.items.weapons.0.name"
-                                   value="{{data.items.weapons.0.name}}"/>
-                            <input class="weapon-tohit" type="text" id="data.items.weapons.0.tohit"
-                                   name="data.items.weapons.0.tohit"
-                                   value="{{data.items.weapons.0.tohit}}"/>
-                            <input class="weapon-damage" type="text" id="data.items.weapons.0.damage"
-                                   name="data.items.weapons.0.damage"
-                                   value="{{data.items.weapons.0.damage}}"/>
-                            <input class="weapon-special" type="text" id="data.items.weapons.0.special"
-                                   name="data.items.weapons.0.special"
-                                   value="{{data.items.weapons.0.special}}"/>
-                        </li>
-                        <li class="weapon flexrow" data-weapon-id="1">
-                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
-                            <input class="weapon-name" type="text" id="data.items.weapons.1.name"
-                                   name="data.items.weapons.1.name"
-                                   value="{{data.items.weapons.1.name}}"/>
-                            <input class="weapon-tohit" type="text" id="data.items.weapons.1.tohit"
-                                   name="data.items.weapons.1.tohit"
-                                   value="{{data.items.weapons.1.tohit}}"/>
-                            <input class="weapon-damage" type="text" id="data.items.weapons.1.damage"
-                                   name="data.items.weapons.1.damage"
-                                   value="{{data.items.weapons.1.damage}}"/>
-                            <input class="weapon-special" type="text" id="data.items.weapons.1.special"
-                                   name="data.items.weapons.1.special"
-                                   value="{{data.items.weapons.1.special}}"/>
-                        </li>
-                        <li class="weapon flexrow" data-weapon-id="2">
-                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
-                            <input class="weapon-name" type="text" id="data.items.weapons.2.name"
-                                   name="data.items.weapons.2.name"
-                                   value="{{data.items.weapons.2.name}}"/>
-                            <input class="weapon-tohit" type="text" id="data.items.weapons.2.tohit"
-                                   name="data.items.weapons.2.tohit"
-                                   value="{{data.items.weapons.2.tohit}}"/>
-                            <input class="weapon-damage" type="text" id="data.items.weapons.2.damage"
-                                   name="data.items.weapons.2.damage"
-                                   value="{{data.items.weapons.2.damage}}"/>
-                            <input class="weapon-special" type="text" id="data.items.weapons.2.special"
-                                   name="data.items.weapons.2.special"
-                                   value="{{data.items.weapons.2.special}}"/>
-                        </li>
+                        {{> weaponRow weaponIndex='m1' weapon=data.items.weapons.m1}}
+                        {{> weaponRow weaponIndex='m2' weapon=data.items.weapons.m2}}
+                        {{> weaponRow weaponIndex='m3' weapon=data.items.weapons.m3}}
                     </ol>
                 </div>
 
@@ -170,36 +146,8 @@
                 <div class="ranged weapons-heading">Ranged Weapons</div>
                 <div class="flexrow weapons">
                     <ol class="flexcol weapon-list">
-                        <li class="weapon flexrow" data-weapon-id="3">
-                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
-                            <input class="weapon-name" type="text" id="data.items.weapons.3.name"
-                                   name="data.items.weapons.3.name"
-                                   value="{{data.items.weapons.3.name}}"/>
-                            <input class="weapon-tohit" type="text" id="data.items.weapons.3.tohit"
-                                   name="data.items.weapons.3.tohit"
-                                   value="{{data.items.weapons.3.tohit}}"/>
-                            <input class="weapon-damage" type="text" id="data.items.weapons.3.damage"
-                                   name="data.items.weapons.3.damage"
-                                   value="{{data.items.weapons.3.damage}}"/>
-                            <input class="weapon-special" type="text" id="data.items.weapons.3.special"
-                                   name="data.items.weapons.3.special"
-                                   value="{{data.items.weapons.3.special}}"/>
-                        </li>
-                        <li class="weapon flexrow" data-weapon-id="4">
-                            <div class="rollable weapon-button" style="flex: 0 0 30px">&nbsp;</div>
-                            <input class="weapon-name" type="text" id="data.items.weapons.4.name"
-                                   name="data.items.weapons.4.name"
-                                   value="{{data.items.weapons.4.name}}"/>
-                            <input class="weapon-tohit" type="text" id="data.items.weapons.4.tohit"
-                                   name="data.items.weapons.4.tohit"
-                                   value="{{data.items.weapons.4.tohit}}"/>
-                            <input class="weapon-damage" type="text" id="data.items.weapons.4.damage"
-                                   name="data.items.weapons.4.damage"
-                                   value="{{data.items.weapons.4.damage}}"/>
-                            <input class="weapon-special" type="text" id="data.items.weapons.4.special"
-                                   name="data.items.weapons.4.special"
-                                   value="{{data.items.weapons.4.special}}"/>
-                        </li>
+                        {{> weaponRow weaponIndex='r1' weapon=data.items.weapons.r1}}
+                        {{> weaponRow weaponIndex='r2' weapon=data.items.weapons.r2}}
                     </ol>
                 </div>
 
@@ -213,14 +161,14 @@
             <h4 class="notes-label">Notes</h4>
             <div class="notes">
                 {{editor content=data.details.notes.value target="data.details.notes.value" button=true owner=owner
-                         editable=editable}}
+                editable=editable}}
             </div>
 
             <h4 class="bio-label">Bio</h4>
             <div class="bio">
                 {{editor content=data.details.biography.value target="data.details.biography.value" button=true
-                         owner=owner
-                         editable=editable}}
+                owner=owner
+                editable=editable}}
             </div>
         </div>
     </section>

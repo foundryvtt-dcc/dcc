@@ -96,6 +96,7 @@ function rollDCCWeaponMacro(itemId) {
     let actor;
     if (speaker.token) actor = game.actors.tokens[speaker.token];
     if (!actor) actor = game.actors.get(speaker.actor);
+    if (!actor) return ui.notifications.warn("You must select a token to run this macro.");
 
     // Trigger the item roll
     return actor.rollWeaponAttack(itemId);
