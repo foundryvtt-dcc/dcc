@@ -13,7 +13,15 @@
   "styles": [
     "styles/dcc.css"
   ],
-  "packs": [],
+  "packs": [
+    {
+      "name": "criticalhits",
+      "label": "Critical Hits",
+      "system": "dcc",
+      "path": "./packs/criticalhits.db",
+      "entity": "RollTable"
+    }
+  ],
   "languages": [
     {
       "lang": "en",
