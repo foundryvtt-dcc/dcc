@@ -86,8 +86,7 @@ async function createDCCWeaponMacro(data, slot) {
 }
 
 /**
- * Create a Macro from an Item drop.
- * Get an existing item macro if one exists, otherwise create a new one.
+ * Roll a weapon attack from a macro.
  * @param {string} itemId
  * @return {Promise}
  */
@@ -98,6 +97,22 @@ function rollDCCWeaponMacro(itemId) {
     if (!actor) actor = game.actors.get(speaker.actor);
     if (!actor) return ui.notifications.warn("You must select a token to run this macro.");
 
-    // Trigger the item roll
+    // Trigger the weapon roll
     return actor.rollWeaponAttack(itemId);
+}
+
+/**
+ * Roll critical hit from a macro.
+ * @param {string} itemId
+ * @return {Promise}
+ */
+function rollCriticalHit(itemId) {
+    const speaker = ChatMessage.getSpeaker();
+    let actor;
+    if (speaker.token) actor = game.actors.tokens[speaker.token];
+    if (!actor) actor = game.actors.get(speaker.actor);
+    if (!actor) return ui.notifications.warn("You must select a token to run this macro.");
+
+    // Trigger the crit roll
+    return actor.rollCriticalHit(itemId);
 }

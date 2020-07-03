@@ -172,7 +172,7 @@
   flex: 0 0 60px;
   height: 99px;
   text-align: center;
-  margin: 10px 0 0 13px;
+  margin: 10px 0 0 6px;
 }
 
 .dcc .ac label {
@@ -189,8 +189,14 @@
 }
 
 /* ----------------------------------------- */
-/*  Crit Table                               */
+/*  Criticals                                */
 /* ----------------------------------------- */
+
+.dcc .crit-die {
+  flex: 0 0 80px;
+  text-align: center;
+  margin: 0 0 0 10px;
+}
 
 .dcc .crit-table {
   flex: 0 0 80px;
@@ -220,11 +226,11 @@
   flex: 0 0 99px;
   height: 99px;
   text-align: center;
-  margin: 0 0 0 12px;
+  margin: 0 0 0 5px;
 }
 
-.dcc .hp label {
-  margin: 7px auto 0 28px;
+.dcc .hp .current-label {
+  margin: -8px auto 0 28px;
   font-size: 1.1rem;
   line-height: 1.6rem;
 }
@@ -242,18 +248,25 @@
   height: 17px;
 }
 
+.dcc .hp .max-label {
+  margin: 2px auto 0 65px;
+  font-size: .6rem;
+  line-height: .8rem;
+}
+
 /* ----------------------------------------- */
 /*  Init                                     */
 /* ----------------------------------------- */
 
 .dcc .init-and-speed {
-  flex: 0 0 70px;
-  margin: 7px 0 0 12px;
+  flex: 0 0 105px;
+  margin: 7px 0 0 0;
+  text-align: right;
 }
 
 .dcc .init {
   flex: 0 0 30px;
-  text-align: center;
+  align-items: center;
 }
 
 .dcc .init label {
@@ -261,8 +274,9 @@
 }
 
 .dcc .init .init-value {
-  width: 50px;
-  font-size: 1.4rem;
+  width: 40px;
+  font-size: 1.1rem;
+  text-align: center;
 }
 
 /* ----------------------------------------- */
@@ -271,7 +285,6 @@
 
 .dcc .speed {
   flex: 0 0 30px;
-  text-align: center;
   margin: 5px 0 0 0;
 }
 
@@ -280,10 +293,15 @@
   font-size: 1.1rem;
 }
 
+.dcc .speed .speed-special {
+  width: 105px;
+}
+
 .dcc .speed .speed-value {
-  width: 50px;
-  font-size: 1.4rem;
+  width: 40px;
+  font-size: 1.1rem;
   height: 25px;
+  text-align: center;
 }
 
 /* ----------------------------------------- */
@@ -311,14 +329,6 @@
   font-size: 1.5rem;
 }
 
-/* ----------------------------------------- */
-/*  Special                                 */
-/* ----------------------------------------- */
-
-.dcc .special {
-  flex: 0 0 160px;
-  margin: 0 0 0 0;
-}
 
 /* ----------------------------------------- */
 /*  Saving Throws                            */
@@ -326,9 +336,9 @@
 
 .dcc.sheet.actor .saving-throws {
   flex: 0 0 152px;
-  height: 99px;
+  height: 102px;
   list-style: none;
-  margin: 7px;
+  margin: 7px 0 0 0;
   padding: 2px 0 3px 7px;
   font-size: 20px;
   border: 2px groove #eeede0;
@@ -355,6 +365,14 @@
   font-family: "Book Antiqua", "Palatino Linotype", serif;
 }
 
+/* ----------------------------------------- */
+/*  Special                                 */
+/* ----------------------------------------- */
+
+.dcc .special {
+  flex: 0 0 155px;
+  margin: 0 8px 0 0;
+}
 
 /* ----------------------------------------- */
 /*  Tabs                                     */

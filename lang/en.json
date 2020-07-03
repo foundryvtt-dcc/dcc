@@ -122,6 +122,7 @@
   "DCC.CostGP": "Cost (GP)",
   "DCC.Critical": "Critical",
   "DCC.CriticalHit": "Critical Hit",
+  "DCC.CritDie": "Crit Die",
   "DCC.CritTable": "Crit Table",
   "DCC.Currency": "Currency",
   "DCC.CurrencyCP": "Copper",

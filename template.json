@@ -1,6 +1,10 @@
 {
   "Actor": {
-    "types": ["level0", "character", "npc"],
+    "types": [
+      "level0",
+      "character",
+      "npc"
+    ],
     "templates": {
       "common": {
         "abilities": {
@@ -27,6 +31,10 @@
           "ac": {
             "value": 10
           },
+          "critical": {
+            "die": "1d4",
+            "table": "I"
+          },
           "hp": {
             "value": 10,
             "min": 0,
@@ -35,8 +43,7 @@
             "tempmax": 0
           },
           "init": {
-            "value": 0,
-            "bonus": 0
+            "value": 0
           },
           "speed": {
             "value": 30,
@@ -168,14 +175,16 @@
             "save": "",
             "skill": ""
           },
-          "spell":  {
+          "spell": {
             "dc": ""
           }
         }
       }
     },
     "character": {
-      "templates": ["common"],
+      "templates": [
+        "common"
+      ],
       "attributes": {
       },
       "details": {
@@ -223,7 +232,9 @@
       }
     },
     "level0": {
-      "templates": ["common"],
+      "templates": [
+        "common"
+      ],
       "details": {
         "background": "",
         "xp": {
@@ -235,7 +246,15 @@
       }
     },
     "npc": {
-      "templates": ["common"],
+      "templates": [
+        "common"
+      ],
+      "attributes": {
+        "critical": {
+          "die": "1d4",
+          "table": "M"
+        }
+      },
       "details": {
         "type": "",
         "environment": "",
@@ -245,12 +264,21 @@
         "source": ""
       },
       "resources": {
-
       }
     }
   },
   "Item": {
-    "types": ["weapon", "equipment", "consumable", "tool", "loot", "class", "spell", "feat", "backpack"],
+    "types": [
+      "weapon",
+      "equipment",
+      "consumable",
+      "tool",
+      "loot",
+      "class",
+      "spell",
+      "feat",
+      "backpack"
+    ],
     "templates": {
       "itemDescription": {
         "description": {
@@ -304,7 +332,10 @@
       }
     },
     "backpack": {
-      "templates": ["itemDescription", "physicalItem"],
+      "templates": [
+        "itemDescription",
+        "physicalItem"
+      ],
       "capacity": {
         "type": "weight",
         "value": 0,
@@ -319,7 +350,9 @@
       }
     },
     "class": {
-      "templates": ["itemDescription"],
+      "templates": [
+        "itemDescription"
+      ],
       "levels": 1,
       "subclass": "",
       "hitDice": "d6",
@@ -329,14 +362,24 @@
       "spellcasting": "none"
     },
     "consumable": {
-      "templates": ["itemDescription", "physicalItem", "activatedEffect", "action"],
+      "templates": [
+        "itemDescription",
+        "physicalItem",
+        "activatedEffect",
+        "action"
+      ],
       "consumableType": "potion",
       "uses": {
         "autoDestroy": false
       }
     },
     "equipment": {
-      "templates": ["itemDescription", "physicalItem", "activatedEffect", "action"],
+      "templates": [
+        "itemDescription",
+        "physicalItem",
+        "activatedEffect",
+        "action"
+      ],
       "armor": {
         "type": "light",
         "value": 10,
@@ -347,16 +390,26 @@
       "proficient": true
     },
     "loot": {
-      "templates": ["itemDescription", "physicalItem"]
+      "templates": [
+        "itemDescription",
+        "physicalItem"
+      ]
     },
     "tool": {
-      "templates": ["itemDescription", "physicalItem"],
+      "templates": [
+        "itemDescription",
+        "physicalItem"
+      ],
       "ability": "int",
       "chatFlavor": "",
       "proficient": 0
     },
     "spell": {
-      "templates": ["itemDescription", "activatedEffect", "action"],
+      "templates": [
+        "itemDescription",
+        "activatedEffect",
+        "action"
+      ],
       "level": 1,
       "corruption": {},
       "components": {
@@ -368,7 +421,12 @@
       "results": {}
     },
     "weapon": {
-      "templates": ["itemDescription", "physicalItem" ,"activatedEffect", "action"],
+      "templates": [
+        "itemDescription",
+        "physicalItem",
+        "activatedEffect",
+        "action"
+      ],
       "properties": {},
       "proficient": true
     }

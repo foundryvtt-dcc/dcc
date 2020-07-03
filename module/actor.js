@@ -48,12 +48,12 @@ export class DCCActor extends Actor {
     }
 
     /**
-     * Roll an Ability Test
+     * Roll an Ability Check
      * @param {String} abilityId    The ability ID (e.g. "str")
-     * @param {Object} options      Options which configure how ability tests are rolled
+     * @param {Object} options      Options which configure how ability checks are rolled
      * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance
      */
-    rollAbilityTest(abilityId, options = {}) {
+    rollAbilityCheck(abilityId, options = {}) {
         const label = CONFIG.DCC.abilities[abilityId];
         const abl = this.data.data.abilities[abilityId];
         abl.mod = CONFIG.DCC.abilities.modifiers[abl.value] || 0;
@@ -65,6 +65,21 @@ export class DCCActor extends Actor {
         roll.toMessage({
             speaker: ChatMessage.getSpeaker({actor: this}),
             flavor: game.i18n.localize(abl.label) + " Check"
+        });
+    }
+
+    /**
+     * Roll Initiative
+     * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance
+     */
+    rollInitiative() {
+        const init = this.data.data.attributes.init.value;
+        let roll = new Roll("1d20+@init", {init: init});
+
+        // Convert the roll to a chat message
+        roll.toMessage({
+            speaker: ChatMessage.getSpeaker({actor: this}),
+            flavor: game.i18n.localize("DCC.Initiative")
         });
     }
 

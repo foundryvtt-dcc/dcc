@@ -21,8 +21,14 @@
 
             <div class="crit-table">
                 <label for="data.attributes.crit-table.value">{{localize "DCC.CritTable"}}</label>
-                <input type="text" id="data.attributes.crit-table.value" name="data.attributes.crit-table.value"
-                       value="{{data.attributes.crit-table.value}}" maxlength="40"/>
+                <input type="text" id="data.attributes.critical.table" name="data.attributes.critical.table"
+                       value="{{data.attributes.critical.table}}" maxlength="40"/>
+            </div>
+
+            <div class="crit-die">
+                <label for="data.attributes.critical.die">{{localize "DCC.CritDie"}}</label>
+                <input type="text" id="data.attributes.critical.die" name="data.attributes.critical.die"
+                       value="{{data.attributes.critical.die}}" maxlength="40"/>
             </div>
 
             <div class="alignment">
@@ -88,7 +94,8 @@
                         <input class="max" type="text" name="data.attributes.hp.max"
                                value="{{data.attributes.hp.max}}"
                                data-dtype="Number"/>
-                        <label for="data.attributes.hp.value">{{localize "DCC.HP"}}</label>
+                        <label class="max-label" for="data.attributes.hp.max">{{localize "DCC.Max"}}</label>
+                        <label class="current-label" for="data.attributes.hp.value">{{localize "DCC.HP"}}</label>
                     </div>
 
                     {{!-- Init and Speed --}}
@@ -106,6 +113,9 @@
                             <input class="speed-value" type="text" id="data.attributes.speed.value"
                                    name="data.attributes.speed.value"
                                    value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                            <input class="speed-special" type="text" id="data.attributes.speed.special"
+                                   name="data.attributes.speed.special"
+                                   value="{{data.attributes.speed.special}}"/>
                         </div>
                     </div>
                 </div>

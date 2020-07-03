@@ -68,7 +68,10 @@ export class DCCActorSheet extends ActorSheet {
             // Ability Checks
             html.find('.ability-name').click(this._onRollAbilityTest.bind(this));
 
-            // Saving Thows
+            // Initiative
+            html.find('.init').click(this._onRollInitiative.bind(this));
+
+            // Saving Throws
             html.find('.save-value').click(this._onRollSavingThrow.bind(this));
 
             // Weapons
@@ -126,7 +129,17 @@ export class DCCActorSheet extends ActorSheet {
     _onRollAbilityTest(event) {
         event.preventDefault();
         let ability = event.currentTarget.parentElement.dataset.ability;
-        this.actor.rollAbilityTest(ability, {event: event});
+        this.actor.rollAbilityCheck(ability, {event: event});
+    }
+
+    /**
+     * Handle rolling Initiative
+     * @param {Event} event   The originating click event
+     * @private
+     */
+    _onRollInitiative(event) {
+        event.preventDefault();
+        this.actor.rollInitiative({event: event});
     }
 
     /**
