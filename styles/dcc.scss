@@ -166,7 +166,7 @@
 /* ----------------------------------------- */
 
 .dcc .ac {
-  background-image: url("./images/ac-shield.png");
+  background-image: url("./images/shield.png");
   background-size: 60px 76px;
   background-repeat: no-repeat;
   flex: 0 0 60px;
@@ -213,9 +213,10 @@
 /* ----------------------------------------- */
 
 .dcc .hp {
-  background-image: url("./images/hp-heart.png");
-  background-size: 80px 90px;
+  background-image: url("./images/heart.png");
+  background-size: 80px 75px;
   background-repeat: no-repeat;
+  background-position-y: 9px;
   flex: 0 0 99px;
   height: 99px;
   text-align: center;
@@ -400,16 +401,16 @@
   border-bottom: 2px groove #eeede0;
   flex: 0 0 10px;
   line-height: 1.5rem;
-  background-image: url("./images/weapon-sword.png");
+  background-image: url("./images/axe.png");
   background-size: 90px 18px;
   background-position-x: 155px;
   background-repeat: no-repeat;
 }
 
 .dcc .weapons-heading.ranged {
-  background-image: url("./images/weapon-longbow.png");
+  background-image: url("./images/bow.png");
   background-size: 90px 17px;
-  background-position-x: 160px;
+  background-position-x: 165px;
   margin: 15px 0 0 0;
 }
 
