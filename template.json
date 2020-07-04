@@ -35,8 +35,11 @@
         "attributes": {
           "ac": {
             "value": 10,
-            "checkpenalty": 0,
-            "fumbledie": "1d4"
+            "checkPenalty": 0,
+            "fumbleDie": "1d4"
+          },
+          "actionDice": {
+            "value": "1d20"
           },
           "critical": {
             "die": "1d4",
@@ -260,7 +263,8 @@
         "critical": {
           "die": "1d4",
           "table": "M"
-        }
+        },
+        "hitDice": "1d6"
       },
       "details": {
         "type": "",

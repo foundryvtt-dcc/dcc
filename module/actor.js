@@ -130,8 +130,6 @@ export class DCCActor extends Actor {
         let critFailClass = "";
         if (Number(roll.dice[0].results[0]) === 20)  critFailClass = "critical ";
         else if (Number(roll.dice[0].results[0]) === 1) critFailClass = "fumble ";
-        console.log("CFCCCCC");
-        console.log(critFailClass);
 
         return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`;
     }

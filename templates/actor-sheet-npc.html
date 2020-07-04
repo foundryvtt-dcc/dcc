@@ -8,15 +8,15 @@
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
 
             <div class="hd">
-                <label for="data.attributes.hd.value">{{localize "DCC.HD"}}</label>
-                <input type="text" id="data.attributes.hd.value" name="data.attributes.hd.value"
-                       value="{{data.attributes.hd.value}}" maxlength="20"/>
+                <label for="data.attributes.hitDice.value">{{localize "DCC.HD"}}</label>
+                <input type="text" id="data.attributes.hitDice.value" name="data.attributes.hitDice.value"
+                       value="{{data.attributes.hitDice.value}}" maxlength="20"/>
             </div>
 
             <div class="action-dice">
                 <label for="data.attributes.action-dice.value">{{localize "DCC.ActionDice"}}</label>
-                <input type="text" id="data.attributes.action-dice.value" name="data.attributes.action-dice.value"
-                       value="{{data.attributes.action-dice.value}}" maxlength="40"/>
+                <input type="text" id="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
+                       value="{{data.attributes.actionDice.value}}" maxlength="40"/>
             </div>
 
             <div class="crit-table">
@@ -133,8 +133,8 @@
                                name="data.items.weapons.{{weaponIndex}}.name"
                                value="{{weapon.name}}"/>
                         <input class="weapon-tohit" type="text"
-                               name="data.items.weapons.{{weaponIndex}}.tohit"
-                               value="{{weapon.tohit}}"/>
+                               name="data.items.weapons.{{weaponIndex}}.toHit"
+                               value="{{weapon.toHit}}"/>
                         <input class="weapon-damage" type="text"
                                name="data.items.weapons.{{weaponIndex}}.damage"
                                value="{{weapon.damage}}"/>
@@ -184,11 +184,11 @@
                                name="data.items.armor.a0.bonus"
                                value="{{data.items.armor.a0.bonus}}"/>
                         <input class="armor-checkpenalty" type="text"
-                               name="data.items.armor.a0.checkpenalty"
-                               value="{{data.items.armor.a0.checkpenalty}}"/>
+                               name="data.items.armor.a0.checkPenalty"
+                               value="{{data.items.armor.a0.checkPenalty}}"/>
                         <input class="armor-fumbledie" type="text"
-                               name="data.items.armor.a0.fumbledie"
-                               value="{{data.items.armor.a0.fumbledie}}"/>
+                               name="data.items.armor.a0.fumbleDie"
+                               value="{{data.items.armor.a0.fumbleDie}}"/>
                         <input class="armor-notes" type="text"
                                name="data.items.armor.a0.notes"
                                value="{{data.items.armor.a0.notes}}"/>
