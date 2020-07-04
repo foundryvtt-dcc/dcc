@@ -63,7 +63,7 @@
                     <ul class="saving-throws">
                         {{#each data.saves as |save id|}}
                             <li class="save" data-save="{{id}}">
-                                <label for="data.saves.{{id}}.value" class="save-name box-title rollable">{{localize
+                                <label class="save-value" for="data.saves.{{id}}.value" class="save-name box-title rollable">{{localize
                                         save.label}}</label>
                                 <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
                                        type="text"
