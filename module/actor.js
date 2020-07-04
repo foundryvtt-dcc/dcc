@@ -21,7 +21,7 @@ export class DCCActor extends Actor {
         const flags = actorData.flags;
 
         // Ability modifiers
-        for (let [id,abl] of Object.entries(data.abilities)) {
+        for (let [id, abl] of Object.entries(data.abilities)) {
             abl.mod = CONFIG.DCC.abilities.modifiers[abl.value] || 0;
         }
     }
@@ -37,7 +37,10 @@ export class DCCActor extends Actor {
         abl.mod = CONFIG.DCC.abilities.modifiers[abl.value] || 0;
         abl.label = CONFIG.DCC.abilities[abilityId];
 
-        let roll = new Roll("1d20+@abilMod", {abilMod: abl.mod});
+        let roll = new Roll("1d20+@abilMod", {abilMod: abl.mod, critical: 20});
+        if ((abilityId === 'lck') && (options.event.currentTarget.className !== "ability-modifiers")) {
+            roll = new Roll("1d20");
+        }
 
         // Convert the roll to a chat message
         roll.toMessage({
@@ -68,18 +71,6 @@ export class DCCActor extends Actor {
         const label = CONFIG.DCC.saves[saveId];
         const save = this.data.data.saves[saveId];
         save.label = CONFIG.DCC.saves[saveId];
-        switch (saveId) {
-            case 'ref':
-                save.value = CONFIG.DCC.abilities.modifiers[this.data.data.abilities["agl"].value] || 0;
-                break;
-            case 'frt':
-                save.value = CONFIG.DCC.abilities.modifiers[this.data.data.abilities["sta"].value] || 0;
-                break;
-            case 'wil':
-                save.value = CONFIG.DCC.abilities.modifiers[this.data.data.abilities["per"].value] || 0;
-                break;
-        }
-
         let roll = new Roll("1d20+@saveMod", {saveMod: save.value});
 
         // Convert the roll to a chat message
@@ -98,7 +89,7 @@ export class DCCActor extends Actor {
         const weapon = this.data.data.items.weapons[weaponId];
         const speaker = {alias: this.name, _id: this._id};
         const formula = `1d20 + ${weapon.tohit}`
-        let roll = new Roll(formula);
+        let roll = new Roll(formula, {'critical': 20});
         roll.roll();
         const rollHTML = this._formatRoll(roll, formula);
 
@@ -134,6 +125,14 @@ export class DCCActor extends Actor {
      */
     _formatRoll(roll, formula) {
         const rollData = escape(JSON.stringify(roll));
-        return `<a class="inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`;
+
+        // Check for Crit/Fumble
+        let critFailClass = "";
+        if (Number(roll.dice[0].results[0]) === 20)  critFailClass = "critical ";
+        else if (Number(roll.dice[0].results[0]) === 1) critFailClass = "fumble ";
+        console.log("CFCCCCC");
+        console.log(critFailClass);
+
+        return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`;
     }
 }

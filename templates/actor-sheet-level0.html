@@ -47,9 +47,11 @@
                         <input class="ability-score" id="data.abilities.{{id}}.value" name="data.abilities.{{id}}.value"
                                type="text"
                                value="{{ability.value}}"
-                               data-dtype="Number" placeholder="10"/>
-                        <div class="ability-modifiers" title="Modifier">{{numberFormat ability.mod decimals=0
-                                                                                       sign=true}}
+                               data-dtype="Number"
+                               placeholder="10"
+                               />
+                        <div class="ability-modifiers" title="Modifier">
+                            {{numberFormat ability.mod decimals=0 sign=true}}
                         </div>
                     </li>
                 {{/each}}
@@ -69,7 +71,9 @@
                                 <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
                                        type="text"
                                        value="{{ numberFormat save.value decimals=0 sign=true }}"
-                                       data-dtype="Number" placeholder="0"/>
+                                       data-dtype="Number"
+                                       placeholder="0"
+                                />
                             </li>
                         {{/each}}
                     </ul>
@@ -95,7 +99,7 @@
                     {{!-- Init and Speed --}}
                     <div class="init-and-speed flexcol">
                         <div class="init">
-                            <label class="box-title rollable" for="data.attributes.init.value">{{localize
+                            <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize
                                     "DCC.Init"}}</label>
                             <input class="init-value" type="text" id="data.attributes.init.value"
                                    name="data.attributes.init.value"

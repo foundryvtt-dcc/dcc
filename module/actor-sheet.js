@@ -67,9 +67,10 @@ export class DCCActorSheet extends ActorSheet {
         if (this.actor.owner) {
             // Ability Checks
             html.find('.ability-name').click(this._onRollAbilityTest.bind(this));
+            html.find('.ability-modifiers').click(this._onRollAbilityTest.bind(this));
 
             // Initiative
-            html.find('.init').click(this._onRollInitiative.bind(this));
+            html.find('.init-label').click(this._onRollInitiative.bind(this));
 
             // Saving Throws
             html.find('.save-name').click(this._onRollSavingThrow.bind(this));
@@ -128,6 +129,11 @@ export class DCCActorSheet extends ActorSheet {
      */
     _onRollAbilityTest(event) {
         event.preventDefault();
+        console.log(event);
+        let options = {};
+        if (event.currentTarget.className === "ability-modifiers") {
+           options.modClick = true;
+        }
         let ability = event.currentTarget.parentElement.dataset.ability;
         this.actor.rollAbilityCheck(ability, {event: event});
     }

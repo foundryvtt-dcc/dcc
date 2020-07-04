@@ -7,6 +7,7 @@
 import {DCCActor} from "./actor.js";
 import {DCCActorSheet} from "./actor-sheet.js";
 import {DCC} from './config.js';
+import * as chat from "./chat.js";
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -44,6 +45,14 @@ Hooks.once("init", async function () {
 });
 
 /* -------------------------------------------- */
+/*  Other Hooks                                 */
+/* -------------------------------------------- */
+Hooks.on("renderChatMessage", (app, html, data) => {
+    // Highlight critical success or failure die
+    chat.highlightCriticalSuccessFailure(app, html, data);
+});
+
+/* -------------------------------------------- */
 /*  Hotbar Macros                               */
 
 /* -------------------------------------------- */
@@ -65,7 +74,7 @@ async function createDCCWeaponMacro(data, slot) {
     const command = `game.dcc.rollDCCWeaponMacro("${item.id}");`;
     let macro = game.macros.entities.find(m => (m.name === item.name) && (m.command === command));
     let img = '/systems/dcc/styles/images/axeIcon.png';
-    if (item.id[0]==='r') {
+    if (item.id[0] === 'r') {
         img = '/systems/dcc/styles/images/bowIcon.png';
     }
     if (!macro) {
