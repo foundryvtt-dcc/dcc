@@ -73,9 +73,9 @@ async function createDCCWeaponMacro(data, slot) {
     // Create the macro command
     const command = `game.dcc.rollDCCWeaponMacro("${item.id}");`;
     let macro = game.macros.entities.find(m => (m.name === item.name) && (m.command === command));
-    let img = '/systems/dcc/styles/images/axeIcon.png';
+    let img = '/systems/dcc/styles/images/axe-square.png';
     if (item.id[0] === 'r') {
-        img = '/systems/dcc/styles/images/bowIcon.png';
+        img = '/systems/dcc/styles/images/bow-square.png';
     }
     if (!macro) {
         macro = await Macro.create({

@@ -1,9 +1,8 @@
 {
   "Actor": {
     "types": [
-      "level0",
-      "character",
-      "npc"
+      "Zero-Level",
+      "NPC"
     ],
     "templates": {
       "common": {
@@ -189,7 +188,7 @@
         }
       }
     },
-    "character": {
+    "Character": {
       "templates": [
         "common"
       ],
@@ -239,7 +238,7 @@
         }
       }
     },
-    "level0": {
+    "Zero-Level": {
       "templates": [
         "common"
       ],
@@ -253,7 +252,7 @@
         "trait": ""
       }
     },
-    "npc": {
+    "NPC": {
       "templates": [
         "common"
       ],

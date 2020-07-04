@@ -11,7 +11,7 @@ export class DCCActorSheet extends ActorSheet {
     static get defaultOptions() {
         return mergeObject(super.defaultOptions, {
             classes: ["dcc", "sheet", "actor"],
-            template: "systems/dcc/templates/actor-sheet-level0.html",
+            template: "systems/dcc/templates/actor-sheet-zero-level.html",
             width: 600,
             height: 600,
             tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
@@ -32,8 +32,8 @@ export class DCCActorSheet extends ActorSheet {
             editable: this.isEditable,
             cssClass: isOwner ? "editable" : "locked",
             isCharacter: this.entity.data.type === "character",
-            isNPC: this.entity.data.type === "npc",
-            isZero: this.entity.data.type === "level0",
+            isNPC: this.entity.data.type === "NPC",
+            isZero: this.entity.data.type === "Zero-Level",
             config: CONFIG.DCC,
         };
 

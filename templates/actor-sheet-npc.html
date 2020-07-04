@@ -116,9 +116,11 @@
                             <input class="speed-value" type="text" id="data.attributes.speed.value"
                                    name="data.attributes.speed.value"
                                    value="{{data.attributes.speed.value}}" data-dtype="Number"/>
-                            <input class="speed-special" type="text" id="data.attributes.speed.special"
-                                   name="data.attributes.speed.special"
-                                   value="{{data.attributes.speed.special}}"/>
+                            <input class="speed-other" type="text" id="data.attributes.speed.other"
+                                   name="data.attributes.speed.other"
+                                   value="{{data.attributes.speed.other}}"/>
+                            <label class="speed-other-label" for="data.attributes.speed.other">{{localize
+                                    "DCC.OtherSpeeds"}}</label>
                         </div>
                     </div>
                 </div>
@@ -174,13 +176,9 @@
         <div class="tab" data-group="primary" data-tab="notes">
             <h4 class="notes-label">{{localize "DCC.Notes"}}</h4>
             <div class="notes">
-                {{editor content=data.details.notes.value target="data.details.notes.value" button=true owner=owner
-                         editable=editable}}
-            </div>
-
-            <h4 class="bio-label">{{localize "DCC.Bio"}}</h4>
-            <div class="bio">
-                {{editor content=data.details.biography.value target="data.details.biography.value" button=true
+                {{editor content=data.details.notes.value
+                         target="data.details.notes.value"
+                         button=true
                          owner=owner
                          editable=editable}}
             </div>
