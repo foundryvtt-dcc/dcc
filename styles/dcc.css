@@ -263,10 +263,9 @@
 .dcc .bio-label {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 1.5rem;
-  margin-top: 5px; }
+  margin-top: 20px; }
 
 .dcc .bio {
-  margin: 0 0 0 0;
   border: 2px groove #eeede0;
   height: 200px;
   padding: 0;

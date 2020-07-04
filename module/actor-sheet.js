@@ -139,7 +139,10 @@ export class DCCActorSheet extends ActorSheet {
      */
     _onRollInitiative(event) {
         event.preventDefault();
-        this.actor.rollInitiative({event: event});
+        //this.actor.rollInitiative({event: event});
+        this.toggleCombat();
+        event.currentTarget.classList.toggle("active", this.object.inCombat);
+
     }
 
     /**

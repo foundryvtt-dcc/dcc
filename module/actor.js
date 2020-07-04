@@ -102,20 +102,14 @@ export class DCCActor extends Actor {
      */
     rollWeaponAttack(weaponId, options = {}) {
         const weapon = this.data.data.items.weapons[weaponId];
-        let roll = new Roll("1d20+@hitBonus", {hitBonus: weapon.tohit});
+        const messageData = {
+            user: game.user._id,
+            alias: this.name,
+            type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+            content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC [[1d20 + ${weapon.tohit}]] for [[${weapon.damage}]] points of damage!`,
+            sound: CONFIG.sounds.dice
+        };
 
-        // Convert the roll to a chat message
-        roll.toMessage({
-            speaker: ChatMessage.getSpeaker({actor: this}),
-            flavor: game.i18n.localize(weapon.name) + " Attack Hits AC"
-        });
-
-        roll = new Roll("@damage", {damage: weapon.damage});
-
-        // Convert the roll to a chat message
-        roll.toMessage({
-            speaker: ChatMessage.getSpeaker({actor: this}),
-            flavor: game.i18n.localize(weapon.name) + " Attack Damage"
-        });
+        CONFIG.ChatMessage.entityClass.create(messageData);
     }
 }
