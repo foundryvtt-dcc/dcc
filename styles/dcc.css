@@ -270,7 +270,7 @@
 /*  Init                                     */
 /* ----------------------------------------- */
 .dcc .init-and-speed {
-  flex: 0 0 105px;
+  flex: 0 0 100px;
   margin: 7px 0 0 0;
   text-align: right; }
 
@@ -307,7 +307,7 @@
   font-size: 1.1rem; }
 
 .dcc .speed .speed-other {
-  width: 105px;
+  width: 100px;
   margin: 5px 0 0 0; }
 
 .dcc .speed .speed-other-label {
