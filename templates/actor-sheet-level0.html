@@ -63,8 +63,9 @@
                     <ul class="saving-throws">
                         {{#each data.saves as |save id|}}
                             <li class="save" data-save="{{id}}">
-                                <label class="save-value" for="data.saves.{{id}}.value" class="save-name box-title rollable">{{localize
-                                        save.label}}</label>
+                                <label for="data.saves.{{id}}.value"
+                                       class="save-name box-title rollable"
+                                >{{localize save.label}}</label>
                                 <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
                                        type="text"
                                        value="{{ numberFormat save.value decimals=0 sign=true }}"
@@ -123,6 +124,15 @@
                         <input class="weapon-damage" type="text"
                                name="data.items.weapons.{{weaponIndex}}.damage"
                                value="{{weapon.damage}}"/>
+                        {{#if weaponRanged}}
+                            <input class="weapon-notes" type="text"
+                                   name="data.items.weapons.{{weaponIndex}}.range"
+                                   value="{{weapon.range}}"/>
+                        {{else}}
+                            <input class="weapon-notes" type="text"
+                                   name="data.items.weapons.{{weaponIndex}}.notes"
+                                   value="{{weapon.notes}}"/>
+                        {{/if}}
                     </li>
                 {{/inline}}
                 <div class="weapons-heading">{{localize "DCC.MeleeWeapons"}}</div>
@@ -132,10 +142,10 @@
                             <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
                             <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
                             <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
+                            <span class="weapon-notes">{{localize "DCC.Notes"}}</span>
                         </li>
                         {{> weaponRow weaponIndex='m1' weapon=data.items.weapons.m1}}
                         {{> weaponRow weaponIndex='m2' weapon=data.items.weapons.m2}}
-                        {{> weaponRow weaponIndex='m3' weapon=data.items.weapons.m3}}
                     </ol>
                 </div>
 
@@ -147,11 +157,40 @@
                             <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
                             <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
                             <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
+                            <span class="weapon-notes">{{localize "DCC.Range"}}</span>
                         </li>
-                        {{> weaponRow weaponIndex='r1' weapon=data.items.weapons.r1}}
-                        {{> weaponRow weaponIndex='r2' weapon=data.items.weapons.r2}}
+                        {{> weaponRow weaponIndex='r1' weapon=data.items.weapons.r1 weaponRanged=true}}
+                        {{> weaponRow weaponIndex='r2' weapon=data.items.weapons.r2 weaponRanged=true}}
                     </ol>
                 </div>
+
+                <div class="armor-heading">{{localize "DCC.Armor"}}</div>
+                <ol class="flexcol armor-list">
+                    <li class="flexrow armor-list-header">
+                        <span class="armor-name armor-name-label">{{localize "DCC.Name"}}</span>
+                        <span class="armor-bonus">{{localize "DCC.Bonus"}}</span>
+                        <span class="armor-checkpenalty">{{localize "DCC.Penalty"}}</span>
+                        <span class="armor-fumbledie">{{localize "DCC.FumbleDie"}}</span>
+                        <span class="armor-notes">{{localize "DCC.Notes"}}</span>
+                    </li>
+                    <li class="armor flexrow" data-weapon-id="{{weaponIndex}}">
+                        <input class="armor-name" type="text"
+                               name="data.items.armor.a0.name"
+                               value="{{data.items.armor.a0.name}}"/>
+                        <input class="armor-bonus" type="text"
+                               name="data.items.armor.a0.bonus"
+                               value="{{data.items.armor.a0.bonus}}"/>
+                        <input class="armor-checkpenalty" type="text"
+                               name="data.items.armor.a0.checkpenalty"
+                               value="{{data.items.armor.a0.checkpenalty}}"/>
+                        <input class="armor-fumbledie" type="text"
+                               name="data.items.armor.a0.fumbledie"
+                               value="{{data.items.armor.a0.fumbledie}}"/>
+                        <input class="armor-notes" type="text"
+                               name="data.items.armor.a0.notes"
+                               value="{{data.items.armor.a0.notes}}"/>
+                    </li>
+                </ol>
 
             </div>
 

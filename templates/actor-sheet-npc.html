@@ -35,9 +35,9 @@
                 <label for="data.details.alignment">{{localize "DCC.Alignment"}}</label>
                 <select id="data.details.alignment" name="data.details.alignment">
                     {{#select data.details.alignment}}
-                    {{#each config.alignments as |label alignment|}}
-                    <option value="{{alignment}}">{{localize label}}</option>
-                    {{/each}}
+                        {{#each config.alignments as |label alignment|}}
+                            <option value="{{alignment}}">{{localize label}}</option>
+                        {{/each}}
                     {{/select}}
                 </select>
             </div>
@@ -69,14 +69,17 @@
                     {{!-- Saving Throws --}}
                     <ul class="saving-throws">
                         {{#each data.saves as |save id|}}
-                        <li class="save" data-save="{{id}}">
-                            <label for="data.saves.{{id}}.value" class="save-name box-title rollable">{{localize
-                                save.label}}</label>
-                            <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
-                                   type="text"
-                                   value="{{ numberFormat save.value decimals=0 sign=true }}"
-                                   data-dtype="Number" placeholder="0"/>
-                        </li>
+                            <li class="save" data-save="{{id}}">
+                                <label for="data.saves.{{id}}.value"
+                                       class="save-name box-title rollable"
+                                >{{localize save.label}}</label>
+                                <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
+                                       type="text"
+                                       value="{{ numberFormat save.value decimals=0 sign=true }}"
+                                       data-dtype="Number"
+                                       placeholder="0"
+                                />
+                            </li>
                         {{/each}}
                     </ul>
 
@@ -102,7 +105,7 @@
                     <div class="init-and-speed flexcol">
                         <div class="init">
                             <label class="box-title rollable" for="data.attributes.init.value">{{localize
-                                "DCC.Init"}}</label>
+                                    "DCC.Init"}}</label>
                             <input class="init-value" type="text" id="data.attributes.init.value"
                                    name="data.attributes.init.value"
                                    value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
@@ -122,21 +125,21 @@
 
                 {{!-- Melee Weapons --}}
                 {{#* inline "weaponRow"}}
-                <li class="weapon flexrow" data-weapon-id="{{weaponIndex}}">
-                    <div class="rollable weapon-button">&nbsp;</div>
-                    <input type="text"
-                           name="data.items.weapons.{{weaponIndex}}.name"
-                           value="{{weapon.name}}"/>
-                    <input class="weapon-tohit" type="text"
-                           name="data.items.weapons.{{weaponIndex}}.tohit"
-                           value="{{weapon.tohit}}"/>
-                    <input class="weapon-damage" type="text"
-                           name="data.items.weapons.{{weaponIndex}}.damage"
-                           value="{{weapon.damage}}"/>
-                    <input class="weapon-special" type="text"
-                           name="data.items.weapons.{{weaponIndex}}.special"
-                           value="{{weapon.special}}"/>
-                </li>
+                    <li class="weapon flexrow" data-weapon-id="{{weaponIndex}}">
+                        <div class="rollable weapon-button">&nbsp;</div>
+                        <input type="text"
+                               name="data.items.weapons.{{weaponIndex}}.name"
+                               value="{{weapon.name}}"/>
+                        <input class="weapon-tohit" type="text"
+                               name="data.items.weapons.{{weaponIndex}}.tohit"
+                               value="{{weapon.tohit}}"/>
+                        <input class="weapon-damage" type="text"
+                               name="data.items.weapons.{{weaponIndex}}.damage"
+                               value="{{weapon.damage}}"/>
+                        <input class="weapon-special" type="text"
+                               name="data.items.weapons.{{weaponIndex}}.special"
+                               value="{{weapon.special}}"/>
+                    </li>
                 {{/inline}}
                 <div class="weapons-heading">{{localize "DCC.MeleeWeapons"}}</div>
                 <div class="flexrow weapons">
@@ -172,14 +175,14 @@
             <h4 class="notes-label">{{localize "DCC.Notes"}}</h4>
             <div class="notes">
                 {{editor content=data.details.notes.value target="data.details.notes.value" button=true owner=owner
-                editable=editable}}
+                         editable=editable}}
             </div>
 
             <h4 class="bio-label">{{localize "DCC.Bio"}}</h4>
             <div class="bio">
                 {{editor content=data.details.biography.value target="data.details.biography.value" button=true
-                owner=owner
-                editable=editable}}
+                         owner=owner
+                         editable=editable}}
             </div>
         </div>
     </section>

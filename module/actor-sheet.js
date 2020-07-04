@@ -72,7 +72,7 @@ export class DCCActorSheet extends ActorSheet {
             html.find('.init').click(this._onRollInitiative.bind(this));
 
             // Saving Throws
-            html.find('.save-value').click(this._onRollSavingThrow.bind(this));
+            html.find('.save-name').click(this._onRollSavingThrow.bind(this));
 
             // Weapons
             let handler = ev => this._onDragStart(ev);
@@ -139,9 +139,7 @@ export class DCCActorSheet extends ActorSheet {
      */
     _onRollInitiative(event) {
         event.preventDefault();
-        //this.actor.rollInitiative({event: event});
-        this.toggleCombat();
-        event.currentTarget.classList.toggle("active", this.object.inCombat);
+        this.actor.rollInitiative({event: event});
 
     }
 

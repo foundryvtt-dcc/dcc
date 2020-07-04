@@ -1,11 +1,6 @@
 /* ----------------------------------------- */
 /*  Globals                                  */
 /* ----------------------------------------- */
-.dcc {
-  /* Sheet Tabs */
-  /* Items List */
-  /* Attributes */ }
-
 @font-face {
   font-family: "Book Antiqua";
   src: url("fonts/Book-Antiqua.otf"); }
@@ -36,7 +31,7 @@
 /* ----------------------------------------- */
 .dcc.sheet.actor {
   min-width: 605px;
-  min-height: 632px; }
+  min-height: 631px; }
 
 .dcc .editor,
 .dcc .editor-content {
@@ -132,6 +127,54 @@
   font-size: 16px;
   border-top: 2px groove #eeede0;
   border-left: 2px groove #eeede0; }
+
+/* ----------------------------------------- */
+/*  Armor                                  */
+/* ----------------------------------------- */
+.dcc .armor-heading {
+  margin: 8px 0 0 0;
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-size: 1.1rem;
+  border-bottom: 2px groove #eeede0;
+  flex: 0 0 10px;
+  line-height: 1.2rem;
+  background-image: url("./images/gauntlet.png");
+  background-size: 55px 17px;
+  background-position-x: 70px;
+  background-repeat: no-repeat; }
+
+.dcc .armor-list {
+  margin: 0 8px 0 0;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  padding: 0; }
+
+.dcc .armor-list input {
+  height: 30px; }
+
+.dcc .armor-list-header {
+  margin: 7px 0 2px 0;
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-size: .8rem;
+  flex: 0 0 10px;
+  padding: 0; }
+
+.dcc .armor-bonus {
+  flex: 0 0 50px;
+  margin: 0 8px 0 8px;
+  text-align: center; }
+
+.dcc .armor-checkpenalty {
+  flex: 0 0 65px;
+  margin: 0 8px 0 0;
+  text-align: center; }
+
+.dcc .armor-fumbledie {
+  flex: 0 0 80px;
+  text-align: center; }
+
+.dcc .armor-notes {
+  flex: 0 0 110px;
+  margin: 0 0 0 8px; }
 
 /* ----------------------------------------- */
 /*  Armor Class                              */
@@ -331,15 +374,15 @@
 /*  Weapons                                  */
 /* ----------------------------------------- */
 .dcc .weapons {
-  margin: 10px 0 0 10px; }
+  margin: 10px 0 0 0; }
 
 .dcc .weapons-heading {
-  margin: 10px 0 0 10px;
+  margin: 10px 0 0 0;
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 1.1rem;
   border-bottom: 2px groove #eeede0;
   flex: 0 0 10px;
-  line-height: 1.5rem;
+  line-height: 1.2rem;
   background-image: url("./images/axe.png");
   background-size: 90px 18px;
   background-position-x: 155px;
@@ -348,14 +391,11 @@
 .dcc .weapons-heading.ranged {
   background-image: url("./images/bow.png");
   background-size: 90px 17px;
-  background-position-x: 165px;
-  margin: 15px 0 0 0; }
+  background-position-x: 165px; }
 
 .dcc .weapon-list {
   margin: 0 0 0 0;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  font-size: 1.1rem;
-  flex: 0 0 1;
   padding: 0; }
 
 .dcc .weapon-list input {
@@ -363,9 +403,9 @@
   height: 30px; }
 
 .dcc .weapon-list-header {
-  margin: 0 0 3px 0;
+  margin: 0 0 1px 0;
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  font-size: 1.1rem;
+  font-size: .8rem;
   flex: 0 0 10px;
   padding: 0; }
 
@@ -381,18 +421,19 @@
 
 .dcc .weapon-damage {
   flex: 0 0 80px;
-  margin: 0 8px 0 0;
+  margin: 0 10px 0 0;
   text-align: center; }
-
-.dcc .weapon-name {
-  flex: 0 0 1; }
 
 .dcc .weapon-name-label {
   padding: 0 0 0 30px; }
 
+.dcc .weapon-notes {
+  flex: 0 0 110px;
+  margin: 0 8px 0 0; }
+
 .dcc .weapon-tohit {
   flex: 0 0 65px;
-  margin: 0 8px 0 0;
+  margin: 0 6px 0 0;
   text-align: center; }
 
 .dcc .weapon-special {

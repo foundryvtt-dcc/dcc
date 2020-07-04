@@ -9,27 +9,35 @@
       "common": {
         "abilities": {
           "str": {
+            "label": "DCC.AbilityStr",
             "value": 10
           },
           "agl": {
+            "label": "DCC.AbilityAgl",
             "value": 10
           },
           "sta": {
+            "label": "DCC.AbilitySta",
             "value": 10
           },
           "per": {
+            "label": "DCC.AbilityPer",
             "value": 10
           },
           "int": {
+            "label": "DCC.AbilityInt",
             "value": 10
           },
           "lck": {
+            "label": "DCC.AbilityLck",
             "value": 10
           }
         },
         "attributes": {
           "ac": {
-            "value": 10
+            "value": 10,
+            "checkpenalty": 0,
+            "fumbledie": "1d4"
           },
           "critical": {
             "die": "1d4",

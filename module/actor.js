@@ -21,9 +21,8 @@ export class DCCActor extends Actor {
         const flags = actorData.flags;
 
         // Ability modifiers
-        for (let [id, abl] of Object.entries(data.abilities)) {
+        for (let [id,abl] of Object.entries(data.abilities)) {
             abl.mod = CONFIG.DCC.abilities.modifiers[abl.value] || 0;
-            abl.label = CONFIG.DCC.abilities[id];
         }
     }
 
@@ -31,7 +30,6 @@ export class DCCActor extends Actor {
      * Roll an Ability Check
      * @param {String} abilityId    The ability ID (e.g. "str")
      * @param {Object} options      Options which configure how ability checks are rolled
-     * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance
      */
     rollAbilityCheck(abilityId, options = {}) {
         const label = CONFIG.DCC.abilities[abilityId];
@@ -50,7 +48,6 @@ export class DCCActor extends Actor {
 
     /**
      * Roll Initiative
-     * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance
      */
     rollInitiative() {
         const init = this.data.data.attributes.init.value;
@@ -65,11 +62,9 @@ export class DCCActor extends Actor {
 
     /**
      * Roll a Saving Throw
-     * @param {String} saveId    The save ID (e.g. "str")
-     * @param {Object} options      Options which configure how ability tests are rolled
-     * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance
+     * @param {String} saveId       The save ID (e.g. "str")
      */
-    rollSavingThrow(saveId, options = {}) {
+    rollSavingThrow(saveId) {
         const label = CONFIG.DCC.saves[saveId];
         const save = this.data.data.saves[saveId];
         save.label = CONFIG.DCC.saves[saveId];
@@ -96,20 +91,49 @@ export class DCCActor extends Actor {
 
     /**
      * Roll a Weapon Attack
-     * @param {string} weapon    The weaponid
+     * @param {string} weaponId     The weapon id (e.g. "m1", "r1")
      * @param {Object} options      Options which configure how ability tests are rolled
-     * @return {Promise<Roll>}      A Promise which resolves to the created Roll instance
      */
-    rollWeaponAttack(weaponId, options = {}) {
+    async rollWeaponAttack(weaponId, options = {}) {
         const weapon = this.data.data.items.weapons[weaponId];
+        const speaker = {alias: this.name, _id: this._id};
+        const formula = `1d20 + ${weapon.tohit}`
+        let roll = new Roll(formula);
+        roll.roll();
+        const rollHTML = this._formatRoll(roll, formula);
+
+        /** Handle Critical Hits **/
+        let crit = "";
+        if (Number(roll.dice[0].results[0]) === 20) {
+            const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`;
+            const pack = game.packs.get('dcc.criticalhits');
+            await pack.getIndex(); //Load the compendium index
+            let entry = pack.index.find(entity => entity.name.startsWith(critTableFilter));
+            const table = await pack.getEntity(entry._id);
+            const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`);
+            const critResult = await table.draw({'roll': roll, 'displayChat': false});
+            crit = ` <br><br><span style="color:red">Critical Hit!</span> ${critResult.results[0].text}</span>`;
+        }
+
+        /* Emote attack results */
         const messageData = {
             user: game.user._id,
-            alias: this.name,
+            speaker: speaker,
             type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-            content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC [[1d20 + ${weapon.tohit}]] for [[${weapon.damage}]] points of damage!`,
+            content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC ${rollHTML} for [[${weapon.damage}]] points of damage!${crit}`,
             sound: CONFIG.sounds.dice
         };
-
         CONFIG.ChatMessage.entityClass.create(messageData);
+    }
+
+    /**
+     * Format a roll for display in-line
+     * @param {Object<Roll>} roll   The roll to format
+     * @param {string} formula      Formula to show when hovering
+     * @return {string}             Formatted HTML containing roll
+     */
+    _formatRoll(roll, formula) {
+        const rollData = escape(JSON.stringify(roll));
+        return `<a class="inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`;
     }
 }
