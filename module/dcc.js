@@ -19,16 +19,8 @@ Hooks.once("init", async function () {
 
     game.dcc = {
         DCCActor,
-        rollDCCWeaponMacro
-    };
-
-    /**
-     * Set an initiative formula for the system
-     * @type {String}
-     */
-    CONFIG.Combat.initiative = {
-        formula: "1d20",
-        decimals: 2
+        rollDCCWeaponMacro,
+        rollCriticalHit
     };
 
     // Define custom Entity classes
@@ -72,11 +64,15 @@ async function createDCCWeaponMacro(data, slot) {
     // Create the macro command
     const command = `game.dcc.rollDCCWeaponMacro("${item.id}");`;
     let macro = game.macros.entities.find(m => (m.name === item.name) && (m.command === command));
+    let img = '/systems/dcc/styles/images/axeIcon.png';
+    if (item.id[0]==='r') {
+        img = '/systems/dcc/styles/images/bowIcon.png';
+    }
     if (!macro) {
         macro = await Macro.create({
             name: item.name,
             type: "script",
-            img: item.img,
+            img: img,
             command: command,
             flags: {"dcc.itemMacro": true}
         });

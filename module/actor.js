@@ -9,41 +9,21 @@ export class DCCActor extends Actor {
     /** @override */
     getRollData() {
         const data = super.getRollData();
-        const shorthand = game.settings.get("dcc", "macroShorthand");
-
-        // Re-map all attributes onto the base roll data
-        if (!!shorthand) {
-            for (let [k, v] of Object.entries(data.attributes)) {
-                if (!(k in data)) data[k] = v.value;
-            }
-            delete data.attributes;
-        }
-
         return data;
     }
 
     /** @override */
     prepareData() {
         super.prepareData();
-        console.log("PREPARE DATA");
 
         const actorData = this.data;
         const data = actorData.data;
         const flags = actorData.flags;
-        console.log("ACTOR DATA");
-        console.log(data);
-        console.log(actorData.type);
 
-        // Ability modifiers and saves
+        // Ability modifiers
         for (let [id, abl] of Object.entries(data.abilities)) {
             abl.mod = CONFIG.DCC.abilities.modifiers[abl.value] || 0;
             abl.label = CONFIG.DCC.abilities[id];
-        }
-
-        if (actorData.type === "level0") {
-            data.saves["ref"].value = data.abilities["agl"].mod;
-            data.saves["frt"].value = data.abilities["sta"].mod;
-            data.saves["wil"].value = data.abilities["per"].mod;
         }
     }
 

@@ -63,9 +63,12 @@
                     <ul class="saving-throws">
                         {{#each data.saves as |save id|}}
                             <li class="save" data-save="{{id}}">
-                                <h4 class="box-title rollable save-value">{{localize save.label}}: <span>{{numberFormat
-                                        save.value decimals=0 sign=true}}</span>
-                                </h4>
+                                <label for="data.saves.{{id}}.value" class="save-name box-title rollable">{{localize
+                                        save.label}}</label>
+                                <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
+                                       type="text"
+                                       value="{{ numberFormat save.value decimals=0 sign=true }}"
+                                       data-dtype="Number" placeholder="0"/>
                             </li>
                         {{/each}}
                     </ul>

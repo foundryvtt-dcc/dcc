@@ -289,20 +289,17 @@
 .dcc.sheet.actor .saving-throws .save {
   margin-bottom: .25rem; }
 
-.dcc.sheet.actor .saving-throws h4 {
-  margin-bottom: 0;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
-
 .dcc.sheet.actor .saving-throws span {
   font-family: "Book Antiqua", "Palatino Linotype", serif; }
 
 .dcc.sheet.actor .saving-throws input {
   margin-bottom: 0;
   width: 36px;
-  font-family: "Book Antiqua", "Palatino Linotype", serif; }
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  text-align: center; }
 
 /* ----------------------------------------- */
-/*  Special                                 */
+/*  Special                                  */
 /* ----------------------------------------- */
 .dcc .special {
   flex: 0 0 155px;
