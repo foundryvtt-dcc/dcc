@@ -45,7 +45,7 @@ export class DCCActorSheet extends ActorSheet {
         data.data.utility = {};
         data.data.utility.meleeWeapons = [0, 1, 2];
         data.data.utility.rangedWeapons = [3, 4];
-        console.log(data.data);
+        //console.log(data.data);
 
         if (data.isNPC) {
             this.options.template = "systems/dcc/templates/actor-sheet-npc.html"
@@ -129,7 +129,6 @@ export class DCCActorSheet extends ActorSheet {
      */
     _onRollAbilityTest(event) {
         event.preventDefault();
-        console.log(event);
         let options = {};
         if (event.currentTarget.className === "ability-modifiers") {
            options.modClick = true;
