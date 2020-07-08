@@ -88,7 +88,9 @@ export class DCCActor extends Actor {
     async rollWeaponAttack(weaponId, options = {}) {
         const weapon = this.data.data.items.weapons[weaponId];
         const speaker = {alias: this.name, _id: this._id};
-        const formula = `1d20 + ${weapon.tohit}`
+        const formula = `1d20 + ${weapon.toHit}`
+
+        /* Roll the Attack */
         let roll = new Roll(formula, {'critical': 20});
         roll.roll();
         const rollHTML = this._formatRoll(roll, formula);
