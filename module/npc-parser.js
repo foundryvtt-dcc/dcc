@@ -11,7 +11,7 @@ export function parseNPC(npcString) {
     npc["data.attributes.ac.value"] = npcString.replace(/.*AC ?(.+?);.*/, "$1");
     npc["data.attributes.hp.value"] = npcString.replace(/.*(?:HP|hp) ?(\d+).*?;.*/, "$1");
     npc["data.attributes.hp.max"] = npcString.replace(/.*(?:HP|hp) ?(\d+).*?;.*/, "$1");
-    npc["data.attributes.hitDice.value"] = npcString.replace(/.*HD ?(.+?);.*/, "$1");
+    if (npcString.includes("HD ")) npc["data.attributes.hitDice.value"] = npcString.replace(/.*HD ?(.+?);.*/, "$1");
     npc["data.attributes.speed.value"] = npcString.replace(/.*MV ?(.+?);.*/, "$1");
     npc["data.attributes.actionDice.value"] = npcString.replace(/.*Act ?(.+?);.*/, "$1");
     if (npcString.includes("SP ")) npc["data.attributes.special.value"] = npcString.replace(/.*SP ?(.+?);.*/, "$1");
@@ -20,43 +20,57 @@ export function parseNPC(npcString) {
     npc["data.saves.wil.value"] = npcString.replace(/.*Will ?(.+?);.*/, "$1");
     npc["data.details.alignment"] = npcString.replace(/.*AL ?(.+?)\..*/, "$1").toLowerCase();
 
-    /* Parse Out Attacks */
-    const m1 = {};
-    const m2 = {};
+    /* Speed */
+    if (npc["data.attributes.speed.value"].includes("or")) {
+        npc["data.attributes.speed.other"] = npc["data.attributes.speed.value"].replace(/.* or (.*)/, "$1");
+        npc["data.attributes.speed.value"] = npc["data.attributes.speed.value"].replace(/(.*) or.*/, "$1");
+    }
+
+    /* Attacks */
+    let attackStringOne, attackStringTwo;
     if (npc.attacks.includes(" or ")) {
-        m1.all = npc.attacks.replace(/(.*) or.*/, "$1");
-        m2.all = npc.attacks.replace(/.* or (.*)/, "$1");
+        attackStringTwo = npc.attacks.replace(/.* or (.*)/, "$1");
+        attackStringOne = npc.attacks.replace(/(.*) or.*/, "$1");
     } else {
-        m1.all = npc.attacks;
+        attackStringOne = npc.attacks;
     }
-
-    m1.name = m1.all.replace(/(.*) [+-]\d+ .*/, "$1");
-    m1.toHit = m1.all.replace(/.* ([+-]\d+) .*/, "$1");
-    if (npc.damage) {
-        m1.damage = npc.damage;
-    } else {
-        m1.damage = m1.all.replace(/.* \((\d+d\d*\+?\d*).*?\).*/, "$1");
-        m1.special = m1.all.replace(/.* \(\d+d\d*\+?\d* ?(.*?)\).*/, "$1");
-        npc["data.items.weapons.m1.special"] = m1.special;
+    const parsedAttackOne = _parseAttack(attackStringOne, npc.damage);
+    let attackOneName = "m1";
+    if (parsedAttackOne.type === "ranged") attackOneName = "r1"
+    npc[`data.items.weapons.${attackOneName}.name`] = parsedAttackOne.name;
+    npc[`data.items.weapons.${attackOneName}.toHit`] = parsedAttackOne.toHit;
+    npc[`data.items.weapons.${attackOneName}.damage`] = parsedAttackOne.damage;
+    npc[`data.items.weapons.${attackOneName}.special`] = parsedAttackOne.special;
+    if (attackStringTwo) {
+        const parsedAttackTwo = _parseAttack(attackStringTwo, npc.damage);
+        let attackTwoName = "m2";
+        if (parsedAttackTwo.type === "ranged") attackTwoName = "r1"
+        if (parsedAttackTwo.type === "ranged" && parsedAttackOne.type === "ranged") attackTwoName = "r2"
+        npc[`data.items.weapons.${attackTwoName}.name`] = parsedAttackTwo.name;
+        npc[`data.items.weapons.${attackTwoName}.toHit`] = parsedAttackTwo.toHit;
+        npc[`data.items.weapons.${attackTwoName}.damage`] = parsedAttackTwo.damage;
+        npc[`data.items.weapons.${attackTwoName}.special`] = parsedAttackTwo.special;
     }
-    npc["data.items.weapons.m1.name"] = m1.name;
-    npc["data.items.weapons.m1.toHit"] = m1.toHit;
-    npc["data.items.weapons.m1.damage"] = m1.damage;
-
-    if (m2.all) {
-        m2.name = m2.all.replace(/(.*) [+-]\d+ .*/, "$1");
-        m2.toHit = m2.all.replace(/.* ([+-]\d+) .*/, "$1");
-        if (npc.damage) {
-            m2.damage = npc.damage;
-        } else {
-            m2.damage = m2.all.replace(/.* \((\d+d\d*\+?\d*).*?\).*/, "$1");
-            m2.special = m2.all.replace(/.* \(\d+d\d*\+?\d* ?(.*?)\).*/, "$1");
-            npc["data.items.weapons.m2.special"] = m2.special;
-        }
-        npc["data.items.weapons.m2.name"] = m2.name;
-        npc["data.items.weapons.m2.toHit"] = m2.toHit;
-        npc["data.items.weapons.m2.damage"] = m2.damage;
-    }
-
     return npc;
+}
+
+/** Parse out a attack string into fields
+ * @param {string} attackString  Full weapon string for a single attack
+ * @param {string} damageString  Damage string for blocks with damage separate
+ */
+function _parseAttack(attackString, damageString) {
+    let attack = {}
+    attack.name = attackString.replace(/(.*?) [+-].*/, "$1");
+    attack.toHit = attackString.replace(/.*? (.*?) .*/, "$1");
+    attack.special = "";
+    attack.damage = "";
+    attack.type = "melee";
+    if (attackString.includes("ranged")) attack.type = "ranged";
+    if (damageString) {
+        attack.damage = damageString;
+    } else {
+        if (attackString.match(/.*\(\w+ (.*)\).*/)) attack.special = attackString.replace(/.*\(\w+ (.*)\).*/, "$1");
+        attack.damage = attackString.replace(/.*\((\w+).*\).*/, "$1");
+    }
+    return attack;
 }
