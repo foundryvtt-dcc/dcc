@@ -1,0 +1,34 @@
+{
+  "name": "dcc",
+  "version": "0.0.4",
+  "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
+  "main": "module/dcc.js",
+  "directories": {
+    "test": "module/tests"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cyface/foundryvtt-dcc.git"
+  },
+  "keywords": [
+    "FoundryVTT",
+    "DCC",
+    "Dungeon",
+    "Crawl",
+    "Classics"
+  ],
+  "author": "Tim L. White <tim@cyface.com>",
+  "license": "CC4 By-SA",
+  "bugs": {
+    "url": "https://github.com/cyface/foundryvtt-dcc/issues"
+  },
+  "homepage": "https://github.com/cyface/foundryvtt-dcc#readme",
+  "devDependencies": {
+    "@babel/preset-env": "^7.10.4",
+    "babel-jest": "^26.1.0",
+    "jest": "^26.1.0"
+  }
+}
