@@ -9,30 +9,62 @@ const slapThings = "Slap-Things (4): Init -1; Atk slam +3 melee (1d8); AC 14; HD
 const veganDead = "Vegidead (8): Init -3; Atk claw +2 melee (1d4+1); AC 13; HD 2d8; hp 10 each; MV 30’; Act 1d20; SP take 2× damage from fire, cannot move more than 60’ from Gerieah’s tree, immune to critical hits; SV Fort +1, Ref -1, Will -1; AL N."
 const wetAd = "Gerieah (in her tree): Init +1; Atk tree limb slam +5 melee (1d10); AC 15; HD 4d10; hp 30; MV none; Act 1d20; SP takes 2x damage from fire, can attack targets up to 20’ away with tree limbs; SV Fort +6, Ref -2, Will +4; AL N."
 
-
-
-function parseNPC(npcString) {
+export function parseNPC(npcString) {
     let npc = {};
     npc.name = npcString.replace(/(.*):.*/, "$1").replace(/ ?\(\d+\)/, "");
-    npc.init = npcString.replace(/.*Init ?(.+?);.*/, "$1");
+    npc["data.attributes.init.value"] = npcString.replace(/.*Init ?(.+?);.*/, "$1");
     npc.attacks = npcString.replace(/.*Atk ?(.+?);.*/, "$1");
     if (npcString.includes("Dmg ")) npc.damage = npcString.replace(/.*Dmg ?(.+?);.*/, "$1");
-    npc.ac = npcString.replace(/.*AC ?(.+?);.*/, "$1");
-    npc.hp = npcString.replace(/.*[HP|hp] ?(.+?);.*/, "$1");
-    npc.mv = npcString.replace(/.*MV ?(.+?);.*/, "$1");
-    npc.actionDice = npcString.replace(/.*Act ?(.+?);.*/, "$1");
-    if (npcString.includes("SP "))npc.special = npcString.replace(/.*SP ?(.+?);.*/, "$1");
-    npc.fortSave = npcString.replace(/.*Fort ?(.+?),.*/, "$1");
-    npc.refSave = npcString.replace(/.*Ref ?(.+?),.*/, "$1");
-    npc.willSave = npcString.replace(/.*Will ?(.+?);.*/, "$1");
-    npc.alignment = npcString.replace(/.*AL ?(.+?)\..*/, "$1");
+    npc["data.attributes.ac.value"] = npcString.replace(/.*AC ?(.+?);.*/, "$1");
+    npc["data.attributes.hp.value"] = npcString.replace(/.*(?:HP|hp) ?(\d+).*?;.*/, "$1");
+    npc["data.attributes.hp.max"] = npcString.replace(/.*(?:HP|hp) ?(\d+).*?;.*/, "$1");
+    npc["data.attributes.hitDice.value"] = npcString.replace(/.*HD ?(.+?);.*/, "$1");
+    npc["data.attributes.speed.value"] = npcString.replace(/.*MV ?(.+?);.*/, "$1");
+    npc["data.attributes.actionDice.value"] = npcString.replace(/.*Act ?(.+?);.*/, "$1");
+    if (npcString.includes("SP ")) npc["data.attributes.special.value"] = npcString.replace(/.*SP ?(.+?);.*/, "$1");
+    npc["data.saves.frt.value"] = npcString.replace(/.*Fort ?(.+?),.*/, "$1");
+    npc["data.saves.ref.value"] = npcString.replace(/.*Ref ?(.+?),.*/, "$1");
+    npc["data.saves.wil.value"] = npcString.replace(/.*Will ?(.+?);.*/, "$1");
+    npc["data.details.alignment"] = npcString.replace(/.*AL ?(.+?)\..*/, "$1").toLowerCase();
 
+    /* Parse Out Attacks */
+    const m1 = {};
+    const m2 = {};
     if (npc.attacks.includes(" or ")) {
-        npc.attackOne = npc.attacks.replace(/(.*) or.*/, "$1");
-        npc.attackTwo = npc.attacks.replace(/.* or (.*)/, "$1");
+        m1.all = npc.attacks.replace(/(.*) or.*/, "$1");
+        m2.all = npc.attacks.replace(/.* or (.*)/, "$1");
     } else {
-        npc.attackOne = npc.attacks;
+        m1.all = npc.attacks;
     }
+
+    m1.name = m1.all.replace(/(.*) [+-]\d+ .*/, "$1");
+    m1.toHit = m1.all.replace(/.* ([+-]\d+) .*/, "$1");
+    if (npc.damage) {
+        m1.damage = npc.damage;
+    } else {
+        m1.damage = m1.all.replace(/.* \((\d+d\d*\+?\d*).*?\).*/, "$1");
+        m1.special = m1.all.replace(/.* \(\d+d\d*\+?\d* ?(.*?)\).*/, "$1");
+        npc["data.items.weapons.m1.special"] = m1.special;
+    }
+    npc["data.items.weapons.m1.name"] = m1.name;
+    npc["data.items.weapons.m1.toHit"] = m1.toHit;
+    npc["data.items.weapons.m1.damage"] = m1.damage;
+
+    if (m2.all) {
+        m2.name = m2.all.replace(/(.*) [+-]\d+ .*/, "$1");
+        m2.toHit = m2.all.replace(/.* ([+-]\d+) .*/, "$1");
+        if (npc.damage) {
+            m2.damage = npc.damage;
+        } else {
+            m2.damage = m2.all.replace(/.* \((\d+d\d*\+?\d*).*?\).*/, "$1");
+            m2.special = m2.all.replace(/.* \(\d+d\d*\+?\d* ?(.*?)\).*/, "$1");
+            npc["data.items.weapons.m2.special"] = m2.special;
+        }
+        npc["data.items.weapons.m2.name"] = m2.name;
+        npc["data.items.weapons.m2.toHit"] = m2.toHit;
+        npc["data.items.weapons.m2.damage"] = m2.damage;
+    }
+
     return npc;
 }
 

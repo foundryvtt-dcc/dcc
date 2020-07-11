@@ -88,6 +88,7 @@ export class DCCActor extends Actor {
     async rollWeaponAttack(weaponId, options = {}) {
         const weapon = this.data.data.items.weapons[weaponId];
         const speaker = {alias: this.name, _id: this._id};
+        const toHit = myArray.filter(function (str) { return str.indexOf("+-") === -1; });
         const formula = `1d20 + ${weapon.toHit}`
 
         /* Roll the Attack */

@@ -4,6 +4,7 @@
  */
 
 import {DCC} from './config.js';
+import {parseNPC} from './npc-parser.js';
 
 export class DCCActorSheet extends ActorSheet {
 
@@ -17,6 +18,28 @@ export class DCCActorSheet extends ActorSheet {
             tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
             dragDrop: [{dragSelector: ".weapon-list .weapon", dropSelector: null}]
         });
+    }
+
+    /** @inheritdoc */
+    _getHeaderButtons() {
+        let buttons = super._getHeaderButtons();
+
+        buttons.unshift(
+            {
+                label: "Import Stat Block",
+                class: "paste-block",
+                icon: "fas fa-paste",
+                onclick: ev => this._onPasteStatBlock(ev)
+            },
+            {
+                label: "Clear All",
+                class: "clear-sheet",
+                icon: "fas fa-eraser",
+                onclick: ev => this._onClearSheet(ev)
+            }
+        );
+
+        return buttons
     }
 
     /* -------------------------------------------- */
@@ -91,6 +114,40 @@ export class DCCActorSheet extends ActorSheet {
 
     }
 
+    /**
+     * Prompt to Clear This Sheet
+     * @param {Event} event   The originating click event
+     * @private
+     */
+    _onClearSheet(event) {
+        event.preventDefault();
+        new Dialog({
+            title: game.i18n.localize("DCC.ClearSheet"),
+            content: `<p>${game.i18n.localize("DCC.ClearSheetExplain")}</p>`,
+            buttons: {
+                yes: {
+                    icon: '<i class="fas fa-check"></i>',
+                    label: "Yes",
+                    callback: () => this._clearSheet()
+                },
+                no: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: "No"
+                }
+            }
+        }).render(true);
+    }
+
+    /**
+     * Clear out all form fields on this sheet
+     * @private
+     */
+    _clearSheet() {
+        [...this.form.elements].forEach((el) => {
+            el.value = ""
+        });
+    }
+
     /* -------------------------------------------- */
 
     /**
@@ -120,6 +177,48 @@ export class DCCActorSheet extends ActorSheet {
         event.dataTransfer.setData("text/plain", JSON.stringify(dragData));
     }
 
+    /**
+     * Prompt for a stat block to import
+     * @param {Event} event   The originating click event
+     * @private
+     */
+    _onPasteStatBlock(event) {
+        event.preventDefault();
+        const html = `<form id="stat-block-form">
+            <textarea name="statblock"></textarea>
+        </form>`;
+        new Dialog({
+            title: game.i18n.localize("DCC.PasteBlock"),
+            content: html,
+            buttons: {
+                yes: {
+                    icon: '<i class="fas fa-check"></i>',
+                    label: "Import Stats",
+                    callback: html => this._pasteStateBlock(html)
+                },
+                no: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: "Cancel"
+                }
+            }
+        }).render(true);
+    }
+
+    /**
+     * Import a stat block
+     * @param {string} statBlockHTML   The stat block to import
+     * @private
+     */
+    _pasteStateBlock(statBlockHTML) {
+        const statBlock = statBlockHTML[0].querySelector("#stat-block-form")[0].value;
+        const parsedNPC = parseNPC(statBlock);
+        console.log(this.object.data.data);
+        Object.entries(parsedNPC).forEach(([key, value]) => {
+            console.log(key + ' ' + value);
+            if (this.form[key]) this.form[key].value = value;
+        });
+    }
+
     /* -------------------------------------------- */
 
     /**
@@ -131,7 +230,7 @@ export class DCCActorSheet extends ActorSheet {
         event.preventDefault();
         let options = {};
         if (event.currentTarget.className === "ability-modifiers") {
-           options.modClick = true;
+            options.modClick = true;
         }
         let ability = event.currentTarget.parentElement.dataset.ability;
         this.actor.rollAbilityCheck(ability, {event: event});
