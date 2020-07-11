@@ -61,7 +61,7 @@ export function parseNPC(npcString) {
 function _parseAttack(attackString, damageString) {
     let attack = {}
     attack.name = attackString.replace(/(.*?) [+-].*/, "$1");
-    attack.toHit = attackString.replace(/.*? (.*?) .*/, "$1");
+    attack.toHit = attackString.replace(/.*? ([+-].*?) .*/, "$1");
     attack.special = "";
     attack.damage = "";
     attack.type = "melee";

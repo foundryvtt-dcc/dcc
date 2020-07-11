@@ -125,7 +125,7 @@ test('wedad', () => {
         "data.saves.wil.value": "+4",
         "data.details.alignment": "n",
         "data.items.weapons.m1.name": "tree limb slam",
-        // "data.items.weapons.m1.toHit": "+5", // @TODO: Parse out this tohit
+        "data.items.weapons.m1.toHit": "+5",
         "data.items.weapons.m1.damage": "1d10",
     };
     expect(parsedNPC).toEqual(expect.objectContaining(expected));
