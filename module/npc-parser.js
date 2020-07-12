@@ -4,6 +4,7 @@
  **/
 export function parseNPC(npcString) {
     let npc = {};
+    npcString = npcString.replace("\n", "").replace("\r", "");
     npc.name = npcString.replace(/(.*):.*/, "$1").replace(/ ?\(\d+\)/, "");
     npc["data.attributes.init.value"] = npcString.replace(/.*Init ?(.+?);.*/, "$1");
     npc.attacks = npcString.replace(/.*Atk ?(.+?);.*/, "$1");

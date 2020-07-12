@@ -4,7 +4,7 @@ import {parseNPC} from '../npc-parser.js';
 
 /* Test snake */
 test('super snake', () => {
-    const parsedNPC = parseNPC("Very long, the power super-snake: Init +0; Atk bite +6 melee; Dmg 1d8; AC 13; HP 21; MV 20’; Act 1d20; SV Fort +8, Ref +4, Will +4; AL L.");
+    const parsedNPC = parseNPC("Very long, the power super-snake: Init +0; Atk bite +6 melee; Dmg 1d8;\r\n AC 13; HP 21; MV 20’; Act 1d20; SV Fort +8, Ref +4, Will +4; AL L.");
     const expected = {
         "name": "Very long, the power super-snake",
         "data.attributes.init.value": "+0",
@@ -27,7 +27,7 @@ test('super snake', () => {
 
 /* Test dry pile of bones */
 test('pile of bones', () => {
-    const parsedNPC = parseNPC("Seven items of dry stuff: Init -2; Atk bite +0 melee; Dmg 1d4-1; AC 8; HP 3; MV 5’; Act 1d20; SV Fort +0, Ref -4, Will +1; AL C.");
+    const parsedNPC = parseNPC("Seven items of dry stuff: Init -2; Atk bite +0 melee; Dmg 1d4-1; AC 8; HP 3; MV 5’;\r\n Act 1d20; SV Fort +0, Ref -4, Will +1; AL C.");
     const expected = {
         "name": "Seven items of dry stuff",
         "data.attributes.init.value": "-2",
@@ -50,7 +50,7 @@ test('pile of bones', () => {
 
 /* Test orcs */
 test('orcs', () => {
-    const parsedNPC = parseNPC("Cute-Infused Orcs (3): Init +2; Atk claw +1 melee (1d4) or spear +1 melee (1d8); AC 15; HD 2d8+2; hp 13 each; MV 30’; Act 1d20; SP none; SV Fort +3, Ref +0, Will -1; AL C.");
+    const parsedNPC = parseNPC("Cute-Infused Orcs (3): Init +2; Atk claw +1 melee (1d4) or spear +1 melee (1d8); AC 15;\n HD 2d8+2; hp 13 each; MV 30’; Act 1d20; SP none; SV Fort +3, Ref +0, Will -1; AL C.");
     const expected = {
         "name": "Cute-Infused Orcs",
         "data.attributes.init.value": "+2",
@@ -79,7 +79,7 @@ test('orcs', () => {
 
 /* Test spider */
 test('spider', () => {
-    const parsedNPC = parseNPC("Xformed, Unicorn-Filled Spider: Init +1; Atk bite +2 melee (1d4 plus poison) or web +4 ranged (restrained, 20’ range); AC 13; HD 2d12 +2; hp 20; MV 30’ or climb 30’; Act 1d20; SP poison (DC 14 Fort save or additional 3d4 damage and lose 1 point of Strength, 1d4 damage if successful), create web, filled with bats; SV Fort +2, Ref +4, Will +0; AL N.");
+    const parsedNPC = parseNPC("Xformed, Unicorn-Filled Spider: Init +1; Atk bite +2 melee (1d4 plus poison)\n or web +4 ranged (restrained, 20’ range); AC 13; HD 2d12 +2; hp 20; MV 30’ or climb 30’; Act 1d20; SP poison (DC 14 Fort save or additional 3d4 damage and lose 1 point of Strength, 1d4 damage if successful), create web, filled with bats; SV Fort +2, Ref +4, Will +0; AL N.");
     const expected = {
         "name": "Xformed, Unicorn-Filled Spider",
         "data.attributes.init.value": "+1",
@@ -109,7 +109,7 @@ test('spider', () => {
 
 /* Test wetad */
 test('wedad', () => {
-    const parsedNPC = parseNPC("Gerieah (in her tree): Init +1; Atk tree limb slam +5 melee (1d10); AC 15; HD 4d10; hp 30; MV none; Act 1d20; SP takes 2x damage from fire, can attack targets up to 20’ away with tree limbs; SV Fort +6, Ref -2, Will +4; AL N.");
+    const parsedNPC = parseNPC("Gerieah (in her tree): Init +1; Atk tree limb slam +5 melee (1d10); AC 15;\n HD 4d10; hp 30; MV none; Act 1d20; SP takes 2x damage from fire, can attack targets up to 20’ away with tree limbs; SV Fort +6, Ref -2, Will +4; AL N.");
     const expected = {
         "name": "Gerieah (in her tree)",
         "data.attributes.init.value": "+1",

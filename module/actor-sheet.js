@@ -26,13 +26,13 @@ export class DCCActorSheet extends ActorSheet {
 
         buttons.unshift(
             {
-                label: "Import Stat Block",
+                label: "Import Stats",
                 class: "paste-block",
                 icon: "fas fa-paste",
                 onclick: ev => this._onPasteStatBlock(ev)
             },
             {
-                label: "Clear All",
+                label: "Clear",
                 class: "clear-sheet",
                 icon: "fas fa-eraser",
                 onclick: ev => this._onClearSheet(ev)
