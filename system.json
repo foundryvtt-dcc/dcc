@@ -20,6 +20,13 @@
       "system": "dcc",
       "path": "./packs/criticalhits.db",
       "entity": "RollTable"
+    },
+    {
+      "name": "fumbles",
+      "label": "Fumbles",
+      "system": "dcc",
+      "path": "./packs/fumbles.db",
+      "entity": "RollTable"
     }
   ],
   "languages": [

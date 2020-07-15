@@ -103,7 +103,25 @@ export class DCCActor extends Actor {
             const table = await pack.getEntity(entry._id);
             const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`);
             const critResult = await table.draw({'roll': roll, 'displayChat': false});
-            crit = ` <br><br><span style="color:red">Critical Hit!</span> ${critResult.results[0].text}</span>`;
+            crit = ` <br><br><span style="color:red; font-weight: bolder">Critical Hit!</span> ${critResult.results[0].text}</span>`;
+        }
+
+        /** Handle Fumbles **/
+        let fumble = "";
+        let fumbleDie;
+        try {
+            fumbleDie = this.data.data.items.armor.a0.fumbleDie;
+        } catch (e) {
+            fumbleDie = "";
+        }
+        if (Number(roll.dice[0].results[0]) === 1 && fumbleDie) {
+            const pack = game.packs.get('dcc.fumbles');
+            await pack.getIndex(); //Load the compendium index
+            let entry = pack.index.find(entity => entity.name.startsWith("Fumble"));
+            const table = await pack.getEntity(entry._id);
+            const roll = new Roll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`);
+            const fumbleResult = await table.draw({'roll': roll, 'displayChat': false});
+            fumble = ` <br><br><span style="color:red; font-weight: bolder">Fumble!</span> ${fumbleResult.results[0].text}</span>`;
         }
 
         /* Emote attack results */
@@ -111,7 +129,7 @@ export class DCCActor extends Actor {
             user: game.user._id,
             speaker: speaker,
             type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-            content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC ${rollHTML} for [[${weapon.damage}]] points of damage!${crit}`,
+            content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC ${rollHTML} for [[${weapon.damage}]] points of damage!${crit}${fumble}`,
             sound: CONFIG.sounds.dice
         };
         CONFIG.ChatMessage.entityClass.create(messageData);
@@ -128,7 +146,7 @@ export class DCCActor extends Actor {
 
         // Check for Crit/Fumble
         let critFailClass = "";
-        if (Number(roll.dice[0].results[0]) === 20)  critFailClass = "critical ";
+        if (Number(roll.dice[0].results[0]) === 20) critFailClass = "critical ";
         else if (Number(roll.dice[0].results[0]) === 1) critFailClass = "fumble ";
 
         return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`;
