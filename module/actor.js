@@ -112,9 +112,9 @@ export class DCCActor extends Actor {
         try {
             fumbleDie = this.data.data.items.armor.a0.fumbleDie;
         } catch (e) {
-            fumbleDie = "";
+            fumbleDie = "1d4";
         }
-        if (Number(roll.dice[0].results[0]) === 1 && fumbleDie) {
+        if (Number(roll.dice[0].results[0]) === 1) {
             const pack = game.packs.get('dcc.fumbles');
             await pack.getIndex(); //Load the compendium index
             let entry = pack.index.find(entity => entity.name.startsWith("Fumble"));
