@@ -25,9 +25,6 @@
   "directories": {
     "test": "module/tests"
   },
-  "eslintConfig": {
-    "extends": "airbnb-base"
-  },
   "homepage": "https://github.com/cyface/foundryvtt-dcc#readme",
   "jest": {
     "verbose": true
@@ -47,6 +44,7 @@
     "url": "git+https://github.com/cyface/foundryvtt-dcc.git"
   },
   "scripts": {
+    "format": "standard --fix",
     "test": "jest"
   },
   "version": "0.0.4"
