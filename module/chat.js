@@ -13,7 +13,7 @@ export const highlightCriticalSuccessFailure = function (message, html, data) {
   const isD20 = (d.faces === 20) && (d.results.length === 1)
   if (!isD20) return
 
-  // Highlight successes and failures
+  // Highlight crits and fumbles
   if (d.total >= 20) html.find('.dice-total').addClass('critical')
   else if (d.total <= 1) html.find('.dice-total').addClass('fumble')
 }
