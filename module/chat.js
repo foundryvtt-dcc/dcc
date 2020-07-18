@@ -1,7 +1,7 @@
 /**
  * Highlight critical success or failure on d20 rolls
  */
-const highlightCriticalSuccessFailure = function (message, html, data) {
+export const highlightCriticalSuccessFailure = function (message, html, data) {
   if (!message.roll || !message.isContentVisible) return
 
   // Highlight rolls where the first part is a d20 roll
@@ -17,5 +17,3 @@ const highlightCriticalSuccessFailure = function (message, html, data) {
   if (d.total >= 20) html.find('.dice-total').addClass('critical')
   else if (d.total <= 1) html.find('.dice-total').addClass('fumble')
 }
-
-export default highlightCriticalSuccessFailure

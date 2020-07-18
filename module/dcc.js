@@ -19,7 +19,7 @@ Hooks.once('init', async function () {
 
   game.dcc = {
     DCCActor,
-    rollDCCWeaponMacro,
+    rollDCCWeaponMacro, // This is called from macros
     rollCriticalHit
   }
 
@@ -65,7 +65,7 @@ Hooks.on('renderChatMessage', (app, html, data) => {
  */
 async function createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Item') return
-  if (!('data' in data)) return ui.notifications.warn('You can only create macro buttons for owned Items')
+  if (!('data' in data)) return ui.notifications.warn('You can only create macro buttons for owned items')
   const item = data.data
 
   // Create the macro command
@@ -84,7 +84,7 @@ async function createDCCWeaponMacro (data, slot) {
       flags: { 'dcc.itemMacro': true }
     })
   }
-  game.user.assignHotbarMacro(macro, slot)
+  await game.user.assignHotbarMacro(macro, slot)
   return false
 }
 
