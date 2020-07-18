@@ -29,25 +29,25 @@ export const highlightCriticalSuccessFailure = function (message, html, data) {
  *
  * @return {Array}              The extended options Array including new context choices
  */
-export const addChatMessageContextOptions = function(html, options) {
-  let canApply = li => canvas.tokens.controlled.length && li.find(".damage-applyable").length;
+export const addChatMessageContextOptions = function (html, options) {
+  const canApply = li => canvas.tokens.controlled.length && li.find('.damage-applyable').length
   options.push(
     {
-      name: game.i18n.localize("DCC.ChatContextDamage"),
+      name: game.i18n.localize('DCC.ChatContextDamage'),
       icon: '<i class="fas fa-user-minus"></i>',
       condition: canApply,
       callback: li => applyChatCardDamage(li, 1)
-    },
-  );
+    }
+  )
   options.push(
     {
-      name: game.i18n.localize("DCC.ChatContextHealing"),
+      name: game.i18n.localize('DCC.ChatContextHealing'),
       icon: '<i class="fas fa-user-plus"></i>',
       condition: canApply,
       callback: li => applyChatCardDamage(li, -1)
-    },
-  );
-  return options;
+    }
+  )
+  return options
 }
 
 /* -------------------------------------------- */
@@ -60,11 +60,10 @@ export const addChatMessageContextOptions = function(html, options) {
  * @param {Number} multiplier   A damage multiplier to apply to the rolled damage.
  * @return {Promise}
  */
-function applyChatCardDamage(roll, multiplier) {
-  const amount = roll.find('.damage-applyable').text();
+function applyChatCardDamage (roll, multiplier) {
+  const amount = roll.find('.damage-applyable').text()
   return Promise.all(canvas.tokens.controlled.map(t => {
-    const a = t.actor;
-    return a.applyDamage(amount, multiplier);
-  }));
+    const a = t.actor
+    return a.applyDamage(amount, multiplier)
+  }))
 }
-

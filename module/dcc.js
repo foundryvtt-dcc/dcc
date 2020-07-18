@@ -51,7 +51,7 @@ Hooks.on('renderChatMessage', (app, html, data) => {
 })
 
 // Support context menu on chat cards
-Hooks.on("getChatLogEntryContext", chat.addChatMessageContextOptions);
+Hooks.on('getChatLogEntryContext', chat.addChatMessageContextOptions)
 
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
