@@ -72,6 +72,16 @@
   height: 24px;
   width: 90px; }
 
+.dcc .experience {
+  margin-left: 15px;
+  text-align: center;
+  flex: 0 0 10%; }
+
+.dcc .experience input {
+  font-family: inherit;
+  height: 24px;
+  width: 90px; }
+
 .dcc .occupation input {
   width: 100%; }
 
