@@ -18,7 +18,7 @@ Hooks.once('init', async function () {
 
   game.dcc = {
     DCCActor,
-    rollDCCWeaponMacro, // This is called from macros, don't remove
+    rollDCCWeaponMacro // This is called from macros, don't remove
   }
 
   // Define custom Entity classes
