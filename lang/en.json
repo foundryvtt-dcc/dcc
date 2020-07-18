@@ -71,6 +71,8 @@
   "DCC.Charges": "Charges",
   "DCC.ChatContextDamage": "Apply Damage",
   "DCC.ChatContextHealing": "Apply Healing",
+  "DCC.TakeDamage" : "{target} takes {damage} HP of damage.",
+  "DCC.HealDamage" : "{target} is healed for {damage} HP.",
   "DCC.ChatFlavor": "Chat Message Flavor",
   "DCC.Character": "Character",
   "DCC.CharacterName": "Character Name",
