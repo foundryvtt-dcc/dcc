@@ -6,5 +6,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="@types/jest" level="application" />
     <orderEntry type="library" name="Foundry" level="project" />
+    <orderEntry type="library" name="Foundry-Win" level="project" />
   </component>
 </module>
