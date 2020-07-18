@@ -1,3 +1,4 @@
+/* global Actors, ActorSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui */
 /**
  * DCC
  */

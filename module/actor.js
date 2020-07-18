@@ -1,3 +1,5 @@
+/* global Actor, ChatMessage, CONFIG, CONST, game, Roll */
+
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
  * @extends {Actor}
@@ -70,7 +72,6 @@ class DCCActor extends Actor {
    * @param {String} saveId       The save ID (e.g. "str")
    */
   rollSavingThrow (saveId) {
-    const label = CONFIG.DCC.saves[saveId]
     const save = this.data.data.saves[saveId]
     save.label = CONFIG.DCC.saves[saveId]
     const roll = new Roll('1d20+@saveMod', { saveMod: save.value })

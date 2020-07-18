@@ -1,3 +1,5 @@
+/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject */
+
 import parseNPC from './npc-parser.js'
 
 /**
