@@ -11,7 +11,6 @@ import * as chat from './chat.js'
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
 /* -------------------------------------------- */
-
 Hooks.once('init', async function () {
   console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
 
@@ -19,8 +18,7 @@ Hooks.once('init', async function () {
 
   game.dcc = {
     DCCActor,
-    rollDCCWeaponMacro, // This is called from macros
-    rollCriticalHit
+    rollDCCWeaponMacro, // This is called from macros, don't remove
   }
 
   // Define custom Entity classes
@@ -29,8 +27,6 @@ Hooks.once('init', async function () {
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
   Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true })
-
-  Hooks.on('hotbarDrop', (bar, data, slot) => createDCCWeaponMacro(data, slot))
 
   // Register system settings
   game.settings.register('dcc', 'macroShorthand', {
@@ -46,8 +42,11 @@ Hooks.once('init', async function () {
 /* -------------------------------------------- */
 /*  Other Hooks                                 */
 /* -------------------------------------------- */
+// Create a roll weapon macro when a weapon rollable is dropped on the hotbar
+Hooks.on('hotbarDrop', (bar, data, slot) => createDCCWeaponMacro(data, slot))
+
+// Highlight 1's and 20's for all regular rolls
 Hooks.on('renderChatMessage', (app, html, data) => {
-  // Highlight critical success or failure die
   chat.highlightCriticalSuccessFailure(app, html, data)
 })
 
@@ -102,20 +101,4 @@ function rollDCCWeaponMacro (itemId) {
 
   // Trigger the weapon roll
   return actor.rollWeaponAttack(itemId)
-}
-
-/**
- * Roll critical hit from a macro.
- * @param {string} itemId
- * @return {Promise}
- */
-function rollCriticalHit (itemId) {
-  const speaker = ChatMessage.getSpeaker()
-  let actor
-  if (speaker.token) actor = game.actors.tokens[speaker.token]
-  if (!actor) actor = game.actors.get(speaker.actor)
-  if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
-
-  // Trigger the crit roll
-  return actor.rollCriticalHit(itemId)
 }
