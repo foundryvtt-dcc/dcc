@@ -12,3 +12,8 @@ This system currently only implements Zero-Level characters for funnels, and bas
 ###### Contributors
 * Connor Stone (@ckwk)
 * Steve Barnett (@mooped)
+
+
+
+
+_Based on material ©2020 Goodman Games, used with permission._
