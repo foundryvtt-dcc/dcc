@@ -59,6 +59,23 @@ export class DCCActor extends Actor {
             speaker: ChatMessage.getSpeaker({actor: this}),
             flavor: game.i18n.localize("DCC.Initiative")
         });
+
+        // Set initiative value in the combat tracker
+        if (this.token)
+        {
+          const tokenId = this.token.id;
+
+          // Create or update combatant
+          let combatant = game.combat.getCombatantByToken(tokenId);
+          if (!combatant)
+          {
+            combatant = game.combat.createCombatant({tokenId: tokenId, hasRolled: true, initiative: roll.total});
+          }
+          else
+          {
+            game.combat.setInitiative(combatant._id, roll.total);
+          }
+        }
     }
 
     /**
