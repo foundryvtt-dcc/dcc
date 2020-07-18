@@ -50,6 +50,9 @@ Hooks.on('renderChatMessage', (app, html, data) => {
   chat.highlightCriticalSuccessFailure(app, html, data)
 })
 
+// Support context menu on chat cards
+Hooks.on("getChatLogEntryContext", chat.addChatMessageContextOptions);
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
 
