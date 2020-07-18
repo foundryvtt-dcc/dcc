@@ -1,56 +1,55 @@
 /**
  * DCC
- * Software License: GNU GPLv3
  */
 
 // Import Modules
-import {DCCActor} from "./actor.js";
-import {DCCActorSheet} from "./actor-sheet.js";
-import {DCC} from './config.js';
-import * as chat from "./chat.js";
+import DCCActor from './actor.js'
+import DCCActorSheet from './actor-sheet.js'
+import DCC from './config.js'
+import * as chat from './chat.js'
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
 /* -------------------------------------------- */
 
-Hooks.once("init", async function () {
-    console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`);
+Hooks.once('init', async function () {
+  console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
 
-    CONFIG.DCC = DCC;
+  CONFIG.DCC = DCC
 
-    game.dcc = {
-        DCCActor,
-        rollDCCWeaponMacro,
-        rollCriticalHit
-    };
+  game.dcc = {
+    DCCActor,
+    rollDCCWeaponMacro,
+    rollCriticalHit
+  }
 
-    // Define custom Entity classes
-    CONFIG.Actor.entityClass = DCCActor;
+  // Define custom Entity classes
+  CONFIG.Actor.entityClass = DCCActor
 
-    // Register sheet application classes
-    Actors.unregisterSheet("core", ActorSheet);
-    Actors.registerSheet("dcc", DCCActorSheet, {makeDefault: true});
+  // Register sheet application classes
+  Actors.unregisterSheet('core', ActorSheet)
+  Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true })
 
-    Hooks.on("hotbarDrop", (bar, data, slot) => createDCCWeaponMacro(data, slot));
+  Hooks.on('hotbarDrop', (bar, data, slot) => createDCCWeaponMacro(data, slot))
 
-    // Register system settings
-    game.settings.register("dcc", "macroShorthand", {
-        name: "Shortened Macro Syntax",
-        hint: "Enable a shortened macro syntax which allows referencing attributes directly, for example @str instead of @attributes.str.value. Disable this setting if you need the ability to reference the full attribute model, for example @attributes.str.label.",
-        scope: "world",
-        type: Boolean,
-        default: true,
-        config: true
-    });
-});
+  // Register system settings
+  game.settings.register('dcc', 'macroShorthand', {
+    name: 'Shortened Macro Syntax',
+    hint: 'Enable a shortened macro syntax which allows referencing attributes directly, for example @str instead of @attributes.str.value. Disable this setting if you need the ability to reference the full attribute model, for example @attributes.str.label.',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+})
 
 /* -------------------------------------------- */
 /*  Other Hooks                                 */
 /* -------------------------------------------- */
-Hooks.on("renderChatMessage", (app, html, data) => {
-    // Highlight critical success or failure die
-    chat.highlightCriticalSuccessFailure(app, html, data);
-});
+Hooks.on('renderChatMessage', (app, html, data) => {
+  // Highlight critical success or failure die
+  chat.highlightCriticalSuccessFailure(app, html, data)
+})
 
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
@@ -64,29 +63,29 @@ Hooks.on("renderChatMessage", (app, html, data) => {
  * @param {number} slot     The hotbar slot to use
  * @returns {Promise}
  */
-async function createDCCWeaponMacro(data, slot) {
-    if (data.type !== "Item") return;
-    if (!("data" in data)) return ui.notifications.warn("You can only create macro buttons for owned Items");
-    const item = data.data;
+async function createDCCWeaponMacro (data, slot) {
+  if (data.type !== 'Item') return
+  if (!('data' in data)) return ui.notifications.warn('You can only create macro buttons for owned Items')
+  const item = data.data
 
-    // Create the macro command
-    const command = `game.dcc.rollDCCWeaponMacro("${item.id}");`;
-    let macro = game.macros.entities.find(m => (m.name === item.name) && (m.command === command));
-    let img = '/systems/dcc/styles/images/axe-square.png';
-    if (item.id[0] === 'r') {
-        img = '/systems/dcc/styles/images/bow-square.png';
-    }
-    if (!macro) {
-        macro = await Macro.create({
-            name: item.name,
-            type: "script",
-            img: img,
-            command: command,
-            flags: {"dcc.itemMacro": true}
-        });
-    }
-    game.user.assignHotbarMacro(macro, slot);
-    return false;
+  // Create the macro command
+  const command = `game.dcc.rollDCCWeaponMacro("${item.id}");`
+  let macro = game.macros.entities.find(m => (m.name === item.name) && (m.command === command))
+  let img = '/systems/dcc/styles/images/axe-square.png'
+  if (item.id[0] === 'r') {
+    img = '/systems/dcc/styles/images/bow-square.png'
+  }
+  if (!macro) {
+    macro = await Macro.create({
+      name: item.name,
+      type: 'script',
+      img: img,
+      command: command,
+      flags: { 'dcc.itemMacro': true }
+    })
+  }
+  game.user.assignHotbarMacro(macro, slot)
+  return false
 }
 
 /**
@@ -94,15 +93,15 @@ async function createDCCWeaponMacro(data, slot) {
  * @param {string} itemId
  * @return {Promise}
  */
-function rollDCCWeaponMacro(itemId) {
-    const speaker = ChatMessage.getSpeaker();
-    let actor;
-    if (speaker.token) actor = game.actors.tokens[speaker.token];
-    if (!actor) actor = game.actors.get(speaker.actor);
-    if (!actor) return ui.notifications.warn("You must select a token to run this macro.");
+function rollDCCWeaponMacro (itemId) {
+  const speaker = ChatMessage.getSpeaker()
+  let actor
+  if (speaker.token) actor = game.actors.tokens[speaker.token]
+  if (!actor) actor = game.actors.get(speaker.actor)
+  if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
 
-    // Trigger the weapon roll
-    return actor.rollWeaponAttack(itemId);
+  // Trigger the weapon roll
+  return actor.rollWeaponAttack(itemId)
 }
 
 /**
@@ -110,13 +109,13 @@ function rollDCCWeaponMacro(itemId) {
  * @param {string} itemId
  * @return {Promise}
  */
-function rollCriticalHit(itemId) {
-    const speaker = ChatMessage.getSpeaker();
-    let actor;
-    if (speaker.token) actor = game.actors.tokens[speaker.token];
-    if (!actor) actor = game.actors.get(speaker.actor);
-    if (!actor) return ui.notifications.warn("You must select a token to run this macro.");
+function rollCriticalHit (itemId) {
+  const speaker = ChatMessage.getSpeaker()
+  let actor
+  if (speaker.token) actor = game.actors.tokens[speaker.token]
+  if (!actor) actor = game.actors.get(speaker.actor)
+  if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
 
-    // Trigger the crit roll
-    return actor.rollCriticalHit(itemId);
+  // Trigger the crit roll
+  return actor.rollCriticalHit(itemId)
 }
