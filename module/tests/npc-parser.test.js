@@ -1,4 +1,5 @@
 /* Tests for NPC Parser */
+/* eslint-env jest */
 
 import parseNPC from '../npc-parser.js'
 

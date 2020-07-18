@@ -4,8 +4,11 @@ Goodman Games' Dungeon Crawl Classics RPG system for the [Foundry Virtual Tablet
 
 Manifest URL: https://github.com/cyface/foundryvtt-dcc/raw/master/system.json
 
-**Maintainer**: Tim L. White (tim@cyface.com)
+This system currently only implements Zero-Level characters for funnels, and basic NPCs.
 
-This System currently only implements Zero-Level characters for funnels, and basic NPCs.
+###### Maintainers
+* Tim L. White (@cyface, tim@cyface.com)
 
-Character sheet and macro icons courtesy of @ckwk.
+###### Contributors
+* Connor Stone (@ckwk)
+* Steve Barnett (@mooped)

@@ -103,9 +103,8 @@ class DCCActorSheet extends ActorSheet {
         li.setAttribute('draggable', true)
         li.addEventListener('dragstart', handler, false)
       })
-    }
-    // Otherwise remove rollable classes
-    else {
+    } else {
+      // Otherwise remove rollable classes
       html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
     }
   }
@@ -144,22 +143,10 @@ class DCCActorSheet extends ActorSheet {
     })
   }
 
-  /* -------------------------------------------- */
-
   /**
-   * Listen for click events on an attribute control to modify the composition of attributes in the sheet
-   * @param {MouseEvent} event    The originating left click event
-   * @private
-   */
-  async _onClickAttributeControl (event) {
-    event.preventDefault()
-    const a = event.currentTarget
-    const action = a.dataset.action
-    const attrs = this.object.data.data.attributes
-    const form = this.form
-  }
-
-  /** @override */
+   * Create a macro when a rollable element is dragged
+   * @param {Event} event
+   * @override */
   _onDragStart (event) {
     const li = event.currentTarget
     const weapon = this.actor.data.data.items.weapons[li.dataset.weaponId]
