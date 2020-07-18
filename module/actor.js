@@ -97,9 +97,11 @@ class DCCActor extends Actor {
     roll.roll()
     const rollHTML = this._formatRoll(roll, formula)
 
-    /** Handle Critical Hits * */
+    const d20RollResult = roll.dice[0].total
+
+    /* Handle Critical Hits */
     let crit = ''
-    if (Number(roll.dice[0].results[0]) === 20) {
+    if (d20RollResult === 20) {
       const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
       const pack = game.packs.get('dcc.criticalhits')
       await pack.getIndex() // Load the compendium index
@@ -110,7 +112,7 @@ class DCCActor extends Actor {
       crit = ` <br><br><span style="color:red; font-weight: bolder">Critical Hit!</span> ${critResult.results[0].text}</span>`
     }
 
-    /** Handle Fumbles * */
+    /* Handle Fumbles */
     let fumble = ''
     let fumbleDie
     try {
@@ -118,7 +120,7 @@ class DCCActor extends Actor {
     } catch (e) {
       fumbleDie = '1d4'
     }
-    if (Number(roll.dice[0].results[0]) === 1) {
+    if (d20RollResult === 1) {
       const pack = game.packs.get('dcc.fumbles')
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name.startsWith('Fumble'))
