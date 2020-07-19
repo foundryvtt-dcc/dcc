@@ -135,7 +135,8 @@ class DCCActor extends Actor {
     const damageRoll = new Roll(weapon.damage)
     damageRoll.roll()
     const damageRollData = escape(JSON.stringify(damageRoll))
-    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" title="${weapon.damage}"><i class="fas fa-dice-d20"></i> ${damageRoll.total}</a>`
+    const damageRollTotal = damageRoll.total
+    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${weapon.damage}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
 
     /* Emote attack results */
     const messageData = {
@@ -167,8 +168,8 @@ class DCCActor extends Actor {
 
   /**
    * Apply damage to this actor
-   * @param {Number} weaponId     Damage amount to apply
-   * @param {Number} multiplier   Damage multiplier
+   * @param {Number} damageAmount   Damage amount to apply
+   * @param {Number} multiplier     Damage multiplier
    */
   applyDamage (damageAmount, multiplier) {
     const speaker = { alias: this.name, _id: this._id }

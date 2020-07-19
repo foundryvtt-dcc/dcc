@@ -63,7 +63,7 @@ export const addChatMessageContextOptions = function (html, options) {
  * @return {Promise}
  */
 function applyChatCardDamage (roll, multiplier) {
-  const amount = roll.find('.damage-applyable').text()
+  const amount = roll.find('.damage-applyable').attr('data-damage')
   return Promise.all(canvas.tokens.controlled.map(t => {
     const a = t.actor
     return a.applyDamage(amount, multiplier)
