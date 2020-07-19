@@ -131,12 +131,19 @@ class DCCActor extends Actor {
       fumble = ` <br><br><span style="color:red; font-weight: bolder">Fumble!</span> ${fumbleResult.results[0].text}</span>`
     }
 
+    /* Roll the Damage */
+    const damageRoll = new Roll(weapon.damage)
+    damageRoll.roll()
+    const damageRollData = escape(JSON.stringify(damageRoll))
+    const damageRollTotal = damageRoll.total
+    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${weapon.damage}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+
     /* Emote attack results */
     const messageData = {
       user: game.user._id,
-      speaker,
+      speaker: speaker,
       type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC ${rollHTML} for [[${weapon.damage}]] points of damage!${crit}${fumble}`,
+      content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC ${rollHTML} for ${damageRollHTML}  points of damage!${crit}${fumble}`,
       sound: CONFIG.sounds.dice
     }
     CONFIG.ChatMessage.entityClass.create(messageData)
@@ -157,6 +164,53 @@ class DCCActor extends Actor {
     else if (Number(roll.dice[0].results[0]) === 1) critFailClass = 'fumble '
 
     return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
+  }
+
+  /**
+   * Apply damage to this actor
+   * @param {Number} damageAmount   Damage amount to apply
+   * @param {Number} multiplier     Damage multiplier
+   */
+  applyDamage (damageAmount, multiplier) {
+    const speaker = { alias: this.name, _id: this._id }
+
+    // Calculate damage amount and current hit points
+    const amount = damageAmount * multiplier
+    const hp = this.data.data.attributes.hp.value
+
+    let newHp = hp;
+    if (amount > 0) {
+      // Taking damage - just subtract and allow damage to go below zero
+      newHp = newHp - amount
+    } else {
+      // Healing - don't allow HP to be brought above MaxHP, but if it's already there assume it's intentional
+      const maxHp = this.data.data.attributes.hp.max
+      if (hp >= maxHp) {
+        newHp = hp;
+      } else {
+        newHp = Math.min(newHp - amount, maxHp);
+      }
+    }
+
+    const deltaHp = newHp - hp
+
+    // Announce damage or healing results
+    if (Math.abs(deltaHp) > 0) {
+      const locstring = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
+      const messageData = {
+        user: game.user._id,
+        speaker: speaker,
+        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
+        sound: CONFIG.sounds.notification
+      }
+      CONFIG.ChatMessage.entityClass.create(messageData)
+    }
+
+    // Apply new HP
+    return this.update({
+      'data.attributes.hp.value': newHp
+    })
   }
 }
 
