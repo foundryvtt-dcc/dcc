@@ -178,23 +178,34 @@ class DCCActor extends Actor {
     const amount = damageAmount * multiplier
     const hp = this.data.data.attributes.hp.value
 
-    // Deduct damage from hit points
-    let newHp = hp - amount
+    let newHp = hp;
+    if (amount > 0) {
+      // Taking damage - just subtract and allow damage to go below zero
+      newHp = newHp - amount
+    } else {
+      // Healing - don't allow HP to be brought above MaxHP, but if it's already there assume it's intentional
+      const maxHp = this.data.data.attributes.hp.max
+      if (hp >= maxHp) {
+        newHp = hp;
+      } else {
+        newHp = Math.min(newHp - amount, maxHp);
+      }
+    }
 
-    // Clamp at max HP
-    newHp = Math.min(newHp, this.data.data.attributes.hp.max)
     const deltaHp = newHp - hp
 
     // Announce damage or healing results
-    const locstring = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
-    const messageData = {
-      user: game.user._id,
-      speaker: speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
-      sound: CONFIG.sounds.notification
+    if (Math.abs(deltaHp) > 0) {
+      const locstring = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
+      const messageData = {
+        user: game.user._id,
+        speaker: speaker,
+        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
+        sound: CONFIG.sounds.notification
+      }
+      CONFIG.ChatMessage.entityClass.create(messageData)
     }
-    CONFIG.ChatMessage.entityClass.create(messageData)
 
     // Apply new HP
     return this.update({
