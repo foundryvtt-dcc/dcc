@@ -20,6 +20,11 @@ class Actor {
             'int': { 'value': 14 },
             'per': { 'value': 16 },
             'lck': { 'value': 18 }
+          },
+          'saves': {
+            'frt': { 'value': -1 },
+            'ref': { 'value': 0 },
+            'wil': { 'value': +12 },
           }
         }
       }
@@ -94,4 +99,4 @@ global.Roll = jest.fn(() => {
   return {
     toMessage: rollToMessageMock
   }
-})
+}).mockName('Roll');

@@ -45,4 +45,25 @@ test('roll ability check', () => {
   expect(Roll).toHaveBeenCalledTimes(4)
   expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { 'abilMod': -1, 'critical': 20 })
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
+
+  Roll.mockClear()
+})
+
+test('roll saving throw', () => {
+  actor.rollSavingThrow('frt')
+  expect(Roll).toHaveBeenCalledTimes(1)
+  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { 'saveMod': -1})
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesFortitude Save', speaker: actor })
+
+  actor.rollSavingThrow('ref')
+  expect(Roll).toHaveBeenCalledTimes(2)
+  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { 'saveMod': 0})
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesReflex Save', speaker: actor })
+
+  actor.rollSavingThrow('wil')
+  expect(Roll).toHaveBeenCalledTimes(3)
+  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { 'saveMod': +12})
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesWill Save', speaker: actor })
+
+  Roll.mockClear()
 })
