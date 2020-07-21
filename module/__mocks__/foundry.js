@@ -85,24 +85,12 @@ global.game = new Game()
 /**
  * Roll
  */
-class Roll {
-  constructor (formula, data = {}) {
-    this.formula = formula
-    this.data = data
-    console.log('Mock Roll: constructor was called')
-  }
-
-  roll () {
-    console.log('Mock Roll: roll was called')
-  }
-
-  toMessage (messageData = {}, { rollMode = null, create = true } = {}) {
-    console.log(messageData)
-  }
-}
-
 global.Roll = jest.fn(() => {
   return {
-    toMessage: (data) => {console.log(data)}
+    toMessage: jest.fn((data) => {
+      console.log('Mock Roll: toMessage was called with:')
+      console.log(data)
+    }),
+    roll: () => {console.log('Mock Roll: roll was called')}
   }
 })

@@ -31,4 +31,5 @@ test('prepareData sets ability modifiers', () => {
 test('roll ability scores', () => {
   actor.rollAbilityCheck('str')
   expect(Roll).toHaveBeenCalledTimes(1)
+  expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { 'abilMod': -1, 'critical': 20 })
 })
