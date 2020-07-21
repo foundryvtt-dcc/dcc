@@ -43,7 +43,7 @@ class DCCActor extends Actor {
   /**
    * Roll Initiative
    */
-  rollInitiative () {
+  async rollInitiative () {
     const init = this.data.data.attributes.init.value
     const roll = new Roll('1d20+@init', { init })
 
@@ -60,9 +60,9 @@ class DCCActor extends Actor {
       // Create or update combatant
       let combatant = game.combat.getCombatantByToken(tokenId)
       if (!combatant) {
-        combatant = game.combat.createCombatant({ tokenId, hasRolled: true, initiative: roll.total })
+        await game.combat.createCombatant({ tokenId, hasRolled: true, initiative: roll.total })
       } else {
-        game.combat.setInitiative(combatant._id, roll.total)
+        await game.combat.setInitiative(combatant._id, roll.total)
       }
     }
   }
@@ -146,7 +146,7 @@ class DCCActor extends Actor {
       content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC ${rollHTML} for ${damageRollHTML}  points of damage!${crit}${fumble}`,
       sound: CONFIG.sounds.dice
     }
-    CONFIG.ChatMessage.entityClass.create(messageData)
+    await CONFIG.ChatMessage.entityClass.create(messageData)
   }
 
   /**
@@ -171,7 +171,7 @@ class DCCActor extends Actor {
    * @param {Number} damageAmount   Damage amount to apply
    * @param {Number} multiplier     Damage multiplier
    */
-  applyDamage (damageAmount, multiplier) {
+  async applyDamage (damageAmount, multiplier) {
     const speaker = { alias: this.name, _id: this._id }
 
     // Calculate damage amount and current hit points
@@ -204,7 +204,7 @@ class DCCActor extends Actor {
         content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
       }
-      CONFIG.ChatMessage.entityClass.create(messageData)
+      await CONFIG.ChatMessage.entityClass.create(messageData)
     }
 
     // Apply new HP
