@@ -32,6 +32,7 @@ class Actor {
   }
 }
 
+global.actor = new Actor()
 global.Actor = Actor
 
 /**
@@ -46,7 +47,7 @@ class ChatMessage {
   }
 
   static getSpeaker ({ scene, actor, token, alias } = {}) {
-    return global.Actor
+    return actor
   }
 }
 
@@ -85,12 +86,12 @@ global.game = new Game()
 /**
  * Roll
  */
+global.rollToMessageMock = jest.fn((data) => {
+  console.log('Mock Roll: toMessage was called with:')
+  console.log(data)
+})
 global.Roll = jest.fn(() => {
   return {
-    toMessage: jest.fn((data) => {
-      console.log('Mock Roll: toMessage was called with:')
-      console.log(data)
-    }),
-    roll: () => {console.log('Mock Roll: roll was called')}
+    toMessage: rollToMessageMock
   }
 })
