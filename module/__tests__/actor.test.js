@@ -36,7 +36,7 @@ test('roll ability check', () => {
 
   //Check that luck doesn't add ability mod
   actor.rollAbilityCheck('lck', { event: { currentTarget: { className: 'random' } } })
-  expect(Roll).toHaveBeenCalledTimes(3)
+  expect(Roll).toHaveBeenCalledTimes(3) //called once above, then set for default lck then reset for luck check
   expect(Roll).toHaveBeenCalledWith('1d20')
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 
