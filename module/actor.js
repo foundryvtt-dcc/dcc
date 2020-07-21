@@ -178,7 +178,7 @@ class DCCActor extends Actor {
     const amount = damageAmount * multiplier
     const hp = this.data.data.attributes.hp.value
 
-    let newHp = hp;
+    let newHp = hp
     if (amount > 0) {
       // Taking damage - just subtract and allow damage to go below zero
       newHp = newHp - amount
@@ -186,9 +186,9 @@ class DCCActor extends Actor {
       // Healing - don't allow HP to be brought above MaxHP, but if it's already there assume it's intentional
       const maxHp = this.data.data.attributes.hp.max
       if (hp >= maxHp) {
-        newHp = hp;
+        newHp = hp
       } else {
-        newHp = Math.min(newHp - amount, maxHp);
+        newHp = Math.min(newHp - amount, maxHp)
       }
     }
 
