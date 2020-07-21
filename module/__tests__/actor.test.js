@@ -28,7 +28,7 @@ test('prepareData sets ability modifiers', () => {
   expect(abilities.lck.mod).toEqual(3)
 })
 
-test('roll ability scores', () => {
+test('roll ability check', () => {
   actor.rollAbilityCheck('str')
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { 'abilMod': -1, 'critical': 20 })
