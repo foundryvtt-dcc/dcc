@@ -171,6 +171,7 @@ class DCCActorSheet extends ActorSheet {
   _onPasteStatBlock (event) {
     event.preventDefault()
     const html = `<form id="stat-block-form">
+            <p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize("DCC.PurpleSorcererPCLink")}</a></p>
             <textarea name="statblock"></textarea>
         </form>`
     new Dialog({
@@ -198,9 +199,9 @@ class DCCActorSheet extends ActorSheet {
   _pasteStateBlock (statBlockHTML) {
     const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
     const parsedNPC = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
-    console.log(this.object.data.data)
+    //console.log(this.object.data.data)
     Object.entries(parsedNPC).forEach(([key, value]) => {
-      console.log(key + ' ' + value)
+      //console.log(key + ' ' + value)
       // ToDo: Cannot set notes this way as the text editor is not a standard form input
       if (this.form[key]) this.form[key].value = value
     })
