@@ -90,7 +90,7 @@ function _parseJSONPC (pcObject) {
 }
 
 /**
- * Parses Purple Sorceror plain text character into a PC sheet
+ * Parses Purple Sorcerer plain text character into a PC sheet
  *
  *  @param {String}         pcString the plain text character to import
  *  @return {Object}        Player character object
