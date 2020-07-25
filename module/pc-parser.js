@@ -9,7 +9,7 @@ function parsePC (pcString) {
     const pcObject = JSON.parse(pcString)
     return _parseJSONPC(pcObject);
   } catch (e) {
-    return _parsePlainPC(pcString);
+    return _parseJSONPC(_parsePlainPCToJSON(pcString));
   }
 }
 
@@ -94,10 +94,62 @@ function _parseJSONPC (pcObject)
  *  @param {String}         pcString the plain text character to import
  *  @return {Object}        Player character object
  **/
- function _parsePlainPC (pcString)
+ function _parsePlainPCToJSON (pcString)
  {
-  let pc = {}
-  return pc;
+  let pcObject = {}
+  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/, '')
+
+  pcObject.occTitle = _firstMatch(pcString.match(/0-level Occupation:\s+(.+)[;\n$]/))
+
+  pcObject.strengthScore = _firstMatch(pcString.match(/Strength:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
+  pcObject.agilityScore = _firstMatch(pcString.match(/Agility:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
+  pcObject.staminaScore = _firstMatch(pcString.match(/Stamina:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
+  pcObject.personalityScore = _firstMatch(pcString.match(/Personality:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
+  pcObject.intelligenceScore = _firstMatch(pcString.match(/Intelligence:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
+  pcObject.luckScore = _firstMatch(pcString.match(/Luck:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
+
+  pcObject.armorClass = _firstMatch(pcString.match(/AC:\s+(\d+)[;\n$]/))
+  pcObject.hitPoints = _firstMatch(pcString.match(/HP:\s+(\d+)[;\n$]/))
+
+  const weaponString = pcString.match(/Weapon:\s+(.*)[;\n$]/)
+  const weapon = weaponString.length > 0 ? _parseWeapon(weaponString[1]) : null;
+  if (weapon) {
+    pcObject.weapon = weapon.name
+    pcObject.attackMod = weapon.attackMod
+    pcObject.attackDamage = weapon.attackDamage
+  }
+
+  pcObject.speed = _firstMatch(pcString.match(/Speed:\s+(\d+)[;\n$]/))
+  pcObject.initiative = _firstMatch(pcString.match(/Init:\s+([+-]?\d+)[;\n$]/))
+  pcObject.saveReflex = _firstMatch(pcString.match(/Ref:\s+([+-]?\d+)[;\n$]/))
+  pcObject.saveFort = _firstMatch(pcString.match(/Fort:\s+([+-]?\d+)[;\n$]/))
+  pcObject.saveWill = _firstMatch(pcString.match(/Will:\s+([+-]?\d+)[;\n$]/))
+
+  pcObject.equipment = _firstMatch(pcString.match(/Equipment:\s+(.*)[;\n$]/))
+  pcObject.tradeGood = _firstMatch(pcString.match(/Trade good:\s+(.*)[;\n$]/))
+  pcObject.startingFunds = _firstMatch(pcString.match(/Starting Funds:\s+(.*)[;\n$]/))
+  pcObject.luckySign = _firstMatch(pcString.match(/Lucky sign:\s+(.*)[;\n$]/))
+  pcObject.languages = _firstMatch(pcString.match(/Languages:\s+(.*)[;\n$]/))
+  pcObject.racialTraits = _firstMatch(pcString.match(/Racial Traits:\s+(.*)[;\n$]/))
+
+  return pcObject;
  }
+
+ function _firstMatch (result) {
+    return (result && result.length > 0) ? result[1] : null;
+ }
+
+function _parseWeapon (weaponString) {
+    const weaponData = weaponString.match(/^(.*)\s+([+-]?\d+)\s+\((.+)\)$/)
+    if (weaponData.length > 0) {
+        return {
+            name: weaponData[1],
+            attackMod: weaponData[2],
+            attackDamage: weaponData[3],
+        }
+    }
+
+    return null;
+}
 
 export default parsePC
