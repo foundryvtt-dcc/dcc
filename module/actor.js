@@ -143,7 +143,13 @@ class DCCActor extends Actor {
       user: game.user._id,
       speaker: speaker,
       type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      content: `Attacks with their ${game.i18n.localize(weapon.name)} and hits AC ${rollHTML} for ${damageRollHTML}  points of damage!${crit}${fumble}`,
+      content: game.i18n.format("DCC.AttackRollEmote", {
+        weaponName: weapon.name,
+        rollHTML: rollHTML,
+        damageRollHTML: damageRollHTML,
+        crit: crit,
+        fumble: fumble
+      }),
       sound: CONFIG.sounds.dice
     }
     await CONFIG.ChatMessage.entityClass.create(messageData)
