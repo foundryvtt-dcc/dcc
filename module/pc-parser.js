@@ -1,3 +1,5 @@
+/* global game */
+
 /**
  *  Parses Player Stat Blocks (e.g. from Purple Sorceror) into an NPC sheet
  *
@@ -7,9 +9,9 @@
 function parsePC (pcString) {
   try {
     const pcObject = JSON.parse(pcString)
-    return _parseJSONPC(pcObject);
+    return _parseJSONPC(pcObject)
   } catch (e) {
-    return _parseJSONPC(_parsePlainPCToJSON(pcString));
+    return _parseJSONPC(_parsePlainPCToJSON(pcString))
   }
 }
 
@@ -19,9 +21,8 @@ function parsePC (pcString) {
  *  @param {Object} pcObject the JSON object to import
  *  @return {Object}        Player character object
  **/
-function _parseJSONPC (pcObject)
-{
-  let pc = {}
+function _parseJSONPC (pcObject) {
+  const pc = {}
   pc['data.details.occupation.value'] = pcObject.occTitle || ''
   pc['data.abilities.str.value'] = pcObject.strengthScore || 10
   pc['data.abilities.agl.value'] = pcObject.agilityScore || 10
@@ -85,7 +86,7 @@ function _parseJSONPC (pcObject)
     notes = notes + pcObject.racialTraits + '\n'
   }
   pc['data.details.notes.value'] = notes
-  return pc;
+  return pc
 }
 
 /**
@@ -94,9 +95,8 @@ function _parseJSONPC (pcObject)
  *  @param {String}         pcString the plain text character to import
  *  @return {Object}        Player character object
  **/
- function _parsePlainPCToJSON (pcString)
- {
-  let pcObject = {}
+function _parsePlainPCToJSON (pcString) {
+  const pcObject = {}
   pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/, '')
 
   pcObject.occTitle = _firstMatch(pcString.match(/0-level Occupation:\s+(.+)[;\n$]/))
@@ -112,7 +112,7 @@ function _parseJSONPC (pcObject)
   pcObject.hitPoints = _firstMatch(pcString.match(/HP:\s+(\d+)[;\n$]/))
 
   const weaponString = pcString.match(/Weapon:\s+(.*)[;\n$]/)
-  const weapon = weaponString.length > 0 ? _parseWeapon(weaponString[1]) : null;
+  const weapon = weaponString.length > 0 ? _parseWeapon(weaponString[1]) : null
   if (weapon) {
     pcObject.weapon = weapon.name
     pcObject.attackMod = weapon.attackMod
@@ -132,24 +132,24 @@ function _parseJSONPC (pcObject)
   pcObject.languages = _firstMatch(pcString.match(/Languages:\s+(.*)[;\n$]/))
   pcObject.racialTraits = _firstMatch(pcString.match(/Racial Traits:\s+(.*)[;\n$]/))
 
-  return pcObject;
- }
+  return pcObject
+}
 
- function _firstMatch (result) {
-    return (result && result.length > 0) ? result[1] : null;
- }
+function _firstMatch (result) {
+  return (result && result.length > 0) ? result[1] : null
+}
 
 function _parseWeapon (weaponString) {
-    const weaponData = weaponString.match(/^(.*)\s+([+-]?\d+)\s+\((.+)\)$/)
-    if (weaponData.length > 0) {
-        return {
-            name: weaponData[1],
-            attackMod: weaponData[2],
-            attackDamage: weaponData[3],
-        }
+  const weaponData = weaponString.match(/^(.*)\s+([+-]?\d+)\s+\((.+)\)$/)
+  if (weaponData.length > 0) {
+    return {
+      name: weaponData[1],
+      attackMod: weaponData[2],
+      attackDamage: weaponData[3]
     }
+  }
 
-    return null;
+  return null
 }
 
 export default parsePC
