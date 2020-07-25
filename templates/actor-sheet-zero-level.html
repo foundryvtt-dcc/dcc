@@ -7,7 +7,7 @@
         <div class="flexrow">
             <h1 class="charname">
                 <input name="name" type="text" value="{{actor.name}}"
-                       placeholder="{{localize "DCC.CharacterName"}}"/>
+                       placeholder="{{localize 'DCC.CharacterName'}}"/>
             </h1>
 
             <div class="occupation flex1">
@@ -20,9 +20,9 @@
                 <label for="data.details.alignment">{{localize "DCC.Alignment"}}</label>
                 <select id="data.details.alignment" name="data.details.alignment">
                     {{#select data.details.alignment}}
-                        {{#each config.alignments as |label alignment|}}
-                            <option value="{{alignment}}">{{localize label}}</option>
-                        {{/each}}
+                    {{#each config.alignments as |label alignment|}}
+                    <option value="{{alignment}}">{{localize label}}</option>
+                    {{/each}}
                     {{/select}}
                 </select>
             </div>
@@ -49,19 +49,19 @@
             {{!-- Ability Scores --}}
             <ul class="ability-scores flexcol">
                 {{#each data.abilities as |ability id|}}
-                    <li class="ability" data-ability="{{id}}">
-                        <label class="ability-name box-title rollable">{{localize ability.label}}</label>
-                        <br/>
-                        <input class="ability-score" id="data.abilities.{{id}}.value" name="data.abilities.{{id}}.value"
-                               type="text"
-                               value="{{ability.value}}"
-                               data-dtype="Number"
-                               placeholder="10"
-                        />
-                        <div class="ability-modifiers" title="Modifier">
-                            {{numberFormat ability.mod decimals=0 sign=true}}
-                        </div>
-                    </li>
+                <li class="ability" data-ability="{{id}}">
+                    <label class="ability-name box-title rollable">{{localize ability.label}}</label>
+                    <br/>
+                    <input class="ability-score" id="data.abilities.{{id}}.value" name="data.abilities.{{id}}.value"
+                           type="text"
+                           value="{{ability.value}}"
+                           data-dtype="Number"
+                           placeholder="10"
+                    />
+                    <div class="ability-modifiers" title="Modifier">
+                        {{numberFormat ability.mod decimals=0 sign=true}}
+                    </div>
+                </li>
                 {{/each}}
             </ul>
 
@@ -72,17 +72,17 @@
                     {{!-- Saving Throws --}}
                     <ul class="saving-throws">
                         {{#each data.saves as |save id|}}
-                            <li class="save" data-save="{{id}}">
-                                <label for="data.saves.{{id}}.value"
-                                       class="save-name box-title rollable"
-                                >{{localize save.label}}</label>
-                                <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
-                                       type="text"
-                                       value="{{ numberFormat save.value decimals=0 sign=true }}"
-                                       data-dtype="Number"
-                                       placeholder="0"
-                                />
-                            </li>
+                        <li class="save" data-save="{{id}}">
+                            <label for="data.saves.{{id}}.value"
+                                   class="save-name box-title rollable"
+                            >{{localize save.label}}</label>
+                            <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
+                                   type="text"
+                                   value="{{ numberFormat save.value decimals=0 sign=true }}"
+                                   data-dtype="Number"
+                                   placeholder="0"
+                            />
+                        </li>
                         {{/each}}
                     </ul>
 
@@ -108,7 +108,7 @@
                     <div class="init-and-speed flexcol">
                         <div class="init">
                             <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize
-                                    "DCC.Init"}}</label>
+                                "DCC.Init"}}</label>
                             <input class="init-value" type="text" id="data.attributes.init.value"
                                    name="data.attributes.init.value"
                                    value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
@@ -125,27 +125,27 @@
 
                 {{!-- Melee Weapons --}}
                 {{#* inline "weaponRow"}}
-                    <li class="weapon flexrow" data-weapon-id="{{weaponIndex}}">
-                        <div class="rollable weapon-button">&nbsp;</div>
-                        <input class="weapon-name" type="text"
-                               name="data.items.weapons.{{weaponIndex}}.name"
-                               value="{{weapon.name}}"/>
-                        <input class="weapon-tohit" type="text"
-                               name="data.items.weapons.{{weaponIndex}}.toHit"
-                               value="{{weapon.toHit}}"/>
-                        <input class="weapon-damage" type="text"
-                               name="data.items.weapons.{{weaponIndex}}.damage"
-                               value="{{weapon.damage}}"/>
-                        {{#if weaponRanged}}
-                            <input class="weapon-notes" type="text"
-                                   name="data.items.weapons.{{weaponIndex}}.range"
-                                   value="{{weapon.range}}"/>
-                        {{else}}
-                            <input class="weapon-notes" type="text"
-                                   name="data.items.weapons.{{weaponIndex}}.notes"
-                                   value="{{weapon.notes}}"/>
-                        {{/if}}
-                    </li>
+                <li class="weapon flexrow" data-weapon-id="{{weaponIndex}}">
+                    <div class="rollable weapon-button">&nbsp;</div>
+                    <input class="weapon-name" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.name"
+                           value="{{weapon.name}}"/>
+                    <input class="weapon-tohit" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.toHit"
+                           value="{{weapon.toHit}}"/>
+                    <input class="weapon-damage" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.damage"
+                           value="{{weapon.damage}}"/>
+                    {{#if weaponRanged}}
+                    <input class="weapon-notes" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.range"
+                           value="{{weapon.range}}"/>
+                    {{else}}
+                    <input class="weapon-notes" type="text"
+                           name="data.items.weapons.{{weaponIndex}}.notes"
+                           value="{{weapon.notes}}"/>
+                    {{/if}}
+                </li>
                 {{/inline}}
                 <div class="weapons-heading">{{localize "DCC.MeleeWeapons"}}</div>
                 <div class="flexrow weapons">
@@ -215,7 +215,7 @@
             <h4 class="notes-label">{{localize "DCC.Notes"}}</h4>
             <div class="notes">
                 {{editor content=data.details.notes.value target="data.details.notes.value" button=true owner=owner
-                         editable=editable}}
+                editable=editable}}
             </div>
         </div>
     </section>

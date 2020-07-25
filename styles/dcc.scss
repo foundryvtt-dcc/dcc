@@ -38,7 +38,7 @@
 
 .dcc.sheet.actor {
   min-width: 605px;
-  min-height: 631px;
+  min-height: 633px;
 }
 
 .dcc .editor,
@@ -267,6 +267,16 @@
 .dcc .crit-table {
   flex: 0 0 80px;
   text-align: center;
+  margin: 0 0 0 10px;
+}
+
+/* ----------------------------------------- */
+/*  Experience                               */
+/* ----------------------------------------- */
+
+.dcc .experience {
+  flex: 0 0 40px;
+  text-align: left;
   margin: 0 0 0 10px;
 }
 
