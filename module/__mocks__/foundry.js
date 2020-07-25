@@ -1,6 +1,7 @@
-console.log('Loading Foundry Mocks')
-
+/* eslint-env jest */
 import DCC from '../config.js'
+
+console.log('Loading Foundry Mocks')
 
 /**
  * Actor
@@ -12,19 +13,19 @@ class Actor {
       this.data = data
     } else {
       this.data = {
-        'data': {
-          'abilities': {
-            'str': { 'value': 6 },
-            'agl': { 'value': 8 },
-            'sta': { 'value': 12 },
-            'int': { 'value': 14 },
-            'per': { 'value': 16 },
-            'lck': { 'value': 18 }
+        data: {
+          abilities: {
+            str: { value: 6 },
+            agl: { value: 8 },
+            sta: { value: 12 },
+            int: { value: 14 },
+            per: { value: 16 },
+            lck: { value: 18 }
           },
-          'saves': {
-            'frt': { 'value': -1 },
-            'ref': { 'value': 0 },
-            'wil': { 'value': +12 },
+          saves: {
+            frt: { value: -1 },
+            ref: { value: 0 },
+            wil: { value: +12 }
           }
         }
       }
@@ -62,14 +63,14 @@ global.ChatMessage = ChatMessage
  * CONFIG
  */
 global
-  .CONFIG = { 'DCC': DCC }
+  .CONFIG = { DCC: DCC }
 
 /**
  * Localization
  */
 class Localization {
   localize (stringId) {
-    //Just strip the DCC off the string ID to simulate the lookup
+    // Just strip the DCC off the string ID to simulate the lookup
     return stringId.replace('DCC.', '')
   }
 }
@@ -97,6 +98,6 @@ global.rollToMessageMock = jest.fn((data) => {
 })
 global.Roll = jest.fn(() => {
   return {
-    toMessage: rollToMessageMock
+    toMessage: global.rollToMessageMock
   }
-}).mockName('Roll');
+}).mockName('Roll')

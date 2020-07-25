@@ -1,9 +1,11 @@
 /* Tests for Actor.js using Foundry Mocks */
 /* Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js */
+/* eslint-env jest */
+/* global Roll, rollToMessageMock */
 
 import DCCActor from '../actor'
 
-//Create Base Test Actor
+// Create Base Test Actor
 const actor = new DCCActor()
 
 test('prepareData sets ability modifiers', () => {
@@ -31,19 +33,19 @@ test('prepareData sets ability modifiers', () => {
 test('roll ability check', () => {
   actor.rollAbilityCheck('str')
   expect(Roll).toHaveBeenCalledTimes(1)
-  expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { 'abilMod': -1, 'critical': 20 })
+  expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'AbilityStr Check', speaker: actor })
 
-  //Check that luck doesn't add ability mod
+  // Check that luck doesn't add ability mod
   actor.rollAbilityCheck('lck', { event: { currentTarget: { className: 'random' } } })
-  expect(Roll).toHaveBeenCalledTimes(3) //called once above, then set for default lck then reset for luck check
+  expect(Roll).toHaveBeenCalledTimes(3) // called once above, then set for default lck then reset for luck check
   expect(Roll).toHaveBeenCalledWith('1d20')
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 
-  //Unless they click on the ability mod of luck
+  // Unless they click on the ability mod of luck
   actor.rollAbilityCheck('lck', { event: { currentTarget: { className: 'ability-modifiers' } } })
   expect(Roll).toHaveBeenCalledTimes(4)
-  expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { 'abilMod': -1, 'critical': 20 })
+  expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 
   Roll.mockClear()
@@ -52,17 +54,17 @@ test('roll ability check', () => {
 test('roll saving throw', () => {
   actor.rollSavingThrow('frt')
   expect(Roll).toHaveBeenCalledTimes(1)
-  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { 'saveMod': -1})
+  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { saveMod: -1 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesFortitude Save', speaker: actor })
 
   actor.rollSavingThrow('ref')
   expect(Roll).toHaveBeenCalledTimes(2)
-  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { 'saveMod': 0})
+  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { saveMod: 0 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesReflex Save', speaker: actor })
 
   actor.rollSavingThrow('wil')
   expect(Roll).toHaveBeenCalledTimes(3)
-  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { 'saveMod': +12})
+  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { saveMod: +12 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesWill Save', speaker: actor })
 
   Roll.mockClear()

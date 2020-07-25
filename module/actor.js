@@ -58,7 +58,7 @@ class DCCActor extends Actor {
       const tokenId = this.token.id
 
       // Create or update combatant
-      let combatant = game.combat.getCombatantByToken(tokenId)
+      const combatant = game.combat.getCombatantByToken(tokenId)
       if (!combatant) {
         await game.combat.createCombatant({ tokenId, hasRolled: true, initiative: roll.total })
       } else {
@@ -143,7 +143,7 @@ class DCCActor extends Actor {
       user: game.user._id,
       speaker: speaker,
       type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      content: game.i18n.format("DCC.AttackRollEmote", {
+      content: game.i18n.format('DCC.AttackRollEmote', {
         weaponName: weapon.name,
         rollHTML: rollHTML,
         damageRollHTML: damageRollHTML,
