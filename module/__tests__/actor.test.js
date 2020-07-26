@@ -69,3 +69,27 @@ test('roll saving throw', () => {
 
   Roll.mockClear()
 })
+
+test('roll initiative', () => {
+  actor.rollInitiative()
+  expect(Roll).toHaveBeenCalledTimes(1)
+  expect(Roll).toHaveBeenCalledWith('1d20+@init', { init: -1 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Initiative', speaker: actor })
+
+  Roll.mockClear()
+})
+
+test('roll weapon attack', () => {
+  actor.rollWeaponAttack('m1')
+  expect(Roll).toHaveBeenCalledTimes(2)
+  expect(Roll).toHaveBeenCalledWith('1d20 + 1', { critical: 20 })
+  expect(CONFIG.ChatMessage.entityClass.create).toHaveBeenCalledWith({
+    user: 1,
+    speaker: { alias: 'test character', _id: 1 },
+    type: 'emote',
+    content: 'AttackRollEmote',
+    sound: 'diceSound'
+  })
+
+  Roll.mockClear()
+})

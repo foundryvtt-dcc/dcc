@@ -12,6 +12,8 @@ class Actor {
     if (data) {
       this.data = data
     } else {
+      this._id = 1
+      this.name = 'test character'
       this.data = {
         data: {
           abilities: {
@@ -21,6 +23,14 @@ class Actor {
             int: { value: 14 },
             per: { value: 16 },
             lck: { value: 18 }
+          },
+          attributes: {
+            init: { value: -1 }
+          },
+          items: {
+            weapons: {
+              m1: { toHit: 1, name: 'longsword' }
+            }
           },
           saves: {
             frt: { value: -1 },
@@ -62,8 +72,9 @@ global.ChatMessage = ChatMessage
 /**
  * CONFIG
  */
-global
-  .CONFIG = { DCC: DCC }
+global.CONFIG = { DCC: DCC }
+global.CONFIG.sounds = { dice: 'diceSound' }
+global.CONST = { CHAT_MESSAGE_TYPES: { EMOTE: 'emote' } }
 
 /**
  * Localization
@@ -71,6 +82,10 @@ global
 class Localization {
   localize (stringId) {
     // Just strip the DCC off the string ID to simulate the lookup
+    return stringId.replace('DCC.', '')
+  }
+
+  format (stringId, data = {}) {
     return stringId.replace('DCC.', '')
   }
 }
@@ -88,16 +103,29 @@ class Game {
 
 global.Game = Game
 global.game = new Game()
+global.game.user = { _id: 1 }
 
 /**
  * Roll
  */
-global.rollToMessageMock = jest.fn((data) => {
+global.rollToMessageMock = jest.fn((messageData = {}, { rollMode = null, create = true } = {}) => {
   //console.log('Mock Roll: toMessage was called with:')
   //console.log(data)
 })
-global.Roll = jest.fn(() => {
+global.rollRollMock = jest.fn(() => {
+  console.log('Mock Roll: roll was called')
+})
+global.Roll = jest.fn((formula, data = {}) => {
   return {
-    toMessage: global.rollToMessageMock
+    dice: [{ results: [10] }],
+    toMessage: global.rollToMessageMock,
+    roll: global.rollRollMock
   }
 }).mockName('Roll')
+
+/**
+ * ChatMessage
+ */
+global.CONFIG.ChatMessage = {
+  entityClass: { create: jest.fn(((messageData = {}) => {console.log(messageData)})) }
+}
