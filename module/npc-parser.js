@@ -1,3 +1,5 @@
+/* global Roll */
+
 /**
  *  Parses NPC Stat Blocks (e.g. from published modules) into an NPC sheet
  *  @param {string} npcString the NPC stat block to import
@@ -5,17 +7,16 @@
 function parseNPC (npcString) {
   const npc = {}
   npcString = npcString.replace(/[\n\r]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/, '')
-  npc.name = npcString.replace(/(.*):.*/, '$1').replace(/ ?\(\d+\)/, '')
-  npc['data.attributes.init.value'] = npcString.replace(/.*Init ?(.+?);.*/, '$1')
-  npc.attacks = npcString.replace(/.*Atk ?(.+?);.*/, '$1')
-  if (npcString.includes('Dmg ')) npc.damage = npcString.replace(/.*Dmg ?(.+?);.*/, '$1')
-  npc['data.attributes.ac.value'] = npcString.replace(/.*AC ?(.+?);.*/, '$1')
-  npc['data.attributes.hp.value'] = npcString.replace(/.*(?:HP|hp) ?(\d+).*?;.*/, '$1')
-  npc['data.attributes.hp.max'] = npcString.replace(/.*(?:HP|hp) ?(\d+).*?;.*/, '$1')
-  if (npcString.includes('HD ')) npc['data.attributes.hitDice.value'] = npcString.replace(/.*HD ?(.+?);.*/, '$1')
-  npc['data.attributes.speed.value'] = npcString.replace(/.*MV ?(.+?);.*/, '$1')
-  npc['data.attributes.actionDice.value'] = npcString.replace(/.*Act ?(.+?);.*/, '$1')
-  if (npcString.includes('SP ')) npc['data.attributes.special.value'] = npcString.replace(/.*SP ?(.+?);.*/, '$1')
+
+  npc.name = (_firstMatch(/(.*):.*/, npcString) || 'Unnamed')
+  npc.name = npc.name.replace(/ ?\(\d+\)/, '')
+  const hd = npc['data.attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?);.*/, npcString) || '1'
+  npc['data.attributes.init.value'] = _firstMatch(/.*Init ?(.+?);.*/, npcString) || 0
+  npc['data.attributes.ac.value'] = _firstMatch(/.*AC ?(.+?);.*/, npcString) || 10
+  npc['data.attributes.hp.max'] = npc['data.attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?;.*/, npcString) || new Roll(hd).roll().total
+  npc['data.attributes.speed.value'] = _firstMatch(/.*MV ?(.+?);.*/, npcString) || 30
+  npc['data.attributes.actionDice.value'] = _firstMatch(/.*Act ?(.+?);.*/, npcString) || '1d20'
+  npc['data.attributes.special.value'] = _firstMatch(/.*SP ?(.+?);.*/, npcString) || ''
   npc['data.saves.frt.value'] = npcString.replace(/.*Fort ?(.+?),.*/, '$1')
   npc['data.saves.ref.value'] = npcString.replace(/.*Ref ?(.+?),.*/, '$1')
   npc['data.saves.wil.value'] = npcString.replace(/.*Will ?(.+?);.*/, '$1')
@@ -23,15 +24,18 @@ function parseNPC (npcString) {
 
   /* Speed */
   if (npc['data.attributes.speed.value'].includes('or')) {
-    npc['data.attributes.speed.other'] = npc['data.attributes.speed.value'].replace(/.* or (.*)/, '$1')
-    npc['data.attributes.speed.value'] = npc['data.attributes.speed.value'].replace(/(.*) or.*/, '$1')
+    npc['data.attributes.speed.other'] = _firstMatch(/.* or (.*)/, npc['data.attributes.speed.value'])
+    npc['data.attributes.speed.value'] = _firstMatch(/(.*) or .*/, npc['data.attributes.speed.value'])
   }
+
+  npc.attacks = _firstMatch(/.*Atk ?(.+?);.*/, npcString) || ''
+  npc.damage = _firstMatch(/.*Dmg ?(.+?);.*/, npcString) || ''
 
   /* Attacks */
   let attackStringOne, attackStringTwo
   if (npc.attacks.includes(' or ')) {
-    attackStringTwo = npc.attacks.replace(/.* or (.*)/, '$1')
-    attackStringOne = npc.attacks.replace(/(.*) or.*/, '$1')
+    attackStringOne = _firstMatch(/(.*) or .*/, npc.attacks)
+    attackStringTwo = _firstMatch(/.* or (.*)/, npc.attacks)
   } else {
     attackStringOne = npc.attacks
   }
@@ -61,8 +65,8 @@ function parseNPC (npcString) {
  */
 function _parseAttack (attackString, damageString) {
   const attack = {}
-  attack.name = attackString.replace(/(.*?) [+-].*/, '$1')
-  attack.toHit = attackString.replace(/.*? ([+-].*?) .*/, '$1')
+  attack.name = _firstMatch(/(.*?) [+-].*/, attackString)
+  attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString)
   attack.special = ''
   attack.damage = ''
   attack.type = 'melee'
@@ -70,10 +74,21 @@ function _parseAttack (attackString, damageString) {
   if (damageString) {
     attack.damage = damageString
   } else {
-    if (attackString.match(/.*\(\w+ (.*)\).*/)) attack.special = attackString.replace(/.*\(\w+ (.*)\).*/, '$1')
-    attack.damage = attackString.replace(/.*\((\w+).*\).*/, '$1')
+    attack.special = _firstMatch(/.*\(\w+ (.*)\).*/, attackString) || ''
+    attack.damage = _firstMatch(/.*\((\w+).*\).*/, attackString) || ''
   }
   return attack
+}
+
+/** Match a regex against the string provided and return the first match group or null
+ * @param {Regex}       Regular expression to match against, containing at least one group
+ * @param {string}      The string to match against
+ *
+ * @ return {string} First matched group or null if no match
+ */
+function _firstMatch (regex, string) {
+  const result = string.match(regex)
+  return (result && result.length > 0) ? result[1] : null
 }
 
 export default parseNPC
