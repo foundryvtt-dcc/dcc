@@ -41,7 +41,7 @@ Languages: Common`)
     'data.saves.wil.value': '2',
     'data.items.weapons.m1.name': 'Hammer (as club)',
     'data.items.weapons.m1.toHit': '-1',
-    'data.items.weapons.m1.damage': '1d4-1',
+    'data.items.weapons.m1.damage': '1d4-1'
   }
   expect(parsedNPC).toEqual(expect.objectContaining(expected))
 })
@@ -105,7 +105,7 @@ test('beekeeper', () => {
     'data.saves.wil.value': '-1',
     'data.items.weapons.m1.name': 'Staff',
     'data.items.weapons.m1.toHit': '1',
-    'data.items.weapons.m1.damage': '1d4+1',
+    'data.items.weapons.m1.damage': '1d4+1'
   }
   expect(parsedNPC).toEqual(expect.objectContaining(expected))
 })

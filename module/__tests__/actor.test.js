@@ -1,7 +1,7 @@
 /* Tests for Actor.js using Foundry Mocks */
 /* Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js */
 /* eslint-env jest */
-/* global Roll, rollToMessageMock */
+/* global CONFIG, Roll, rollToMessageMock */
 
 import DCCActor from '../actor'
 
@@ -87,7 +87,7 @@ test('roll weapon attack', () => {
     user: 1,
     speaker: { alias: 'test character', _id: 1 },
     type: 'emote',
-    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class=\"inline-roll inline-result\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%7D%5D%7D\" title=\"1d20 + 1\"><i class=\"fas fa-dice-d20\"></i> undefined</a>,damageRollHTML:<a class=\"inline-roll inline-result damage-applyable\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%7D%5D%7D\" data-damage=\"undefined\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> undefined</a>,crit:,fumble:[object Object]',
+    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%7D%5D%7D" title="1d20 + 1"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%7D%5D%7D" data-damage="undefined" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,crit:,fumble:[object Object]',
     sound: 'diceSound'
   })
 

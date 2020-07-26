@@ -1,7 +1,7 @@
 /* eslint-env jest */
 import DCC from '../config.js'
 
-//console.log('Loading Foundry Mocks')
+// console.log('Loading Foundry Mocks')
 
 /**
  * Actor
@@ -44,7 +44,7 @@ class Actor {
   }
 
   prepareData () {
-    //console.log('Mock Actor: super prepareData was called')
+    // console.log('Mock Actor: super prepareData was called')
   }
 }
 
@@ -114,11 +114,11 @@ global.game.user = { _id: 1 }
  * Roll
  */
 global.rollToMessageMock = jest.fn((messageData = {}, { rollMode = null, create = true } = {}) => {
-  //console.log('Mock Roll: toMessage was called with:')
-  //console.log(data)
+  // console.log('Mock Roll: toMessage was called with:')
+  // console.log(data)
 })
 global.rollRollMock = jest.fn(() => {
-  //console.log('Mock Roll: roll was called')
+  // console.log('Mock Roll: roll was called')
 })
 global.Roll = jest.fn((formula, data = {}) => {
   return {
@@ -133,8 +133,8 @@ global.Roll = jest.fn((formula, data = {}) => {
  */
 global.CONFIG.ChatMessage = {
   entityClass: {
-    create: jest.fn(((messageData = {}) => {
+    create: jest.fn((messageData = {}) => {
       // console.log(messageData)
-    }))
+    })
   }
 }
