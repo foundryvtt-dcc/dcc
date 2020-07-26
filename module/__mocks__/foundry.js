@@ -86,7 +86,12 @@ class Localization {
   }
 
   format (stringId, data = {}) {
-    return stringId.replace('DCC.', '')
+    let returnString = stringId.replace('DCC.', '')
+    for (const datum in data) {
+      returnString += `,${datum}:${data[datum]}`
+    }
+    returnString += data.toString()
+    return returnString
   }
 }
 
@@ -113,7 +118,7 @@ global.rollToMessageMock = jest.fn((messageData = {}, { rollMode = null, create 
   //console.log(data)
 })
 global.rollRollMock = jest.fn(() => {
-  console.log('Mock Roll: roll was called')
+  //console.log('Mock Roll: roll was called')
 })
 global.Roll = jest.fn((formula, data = {}) => {
   return {
@@ -127,5 +132,9 @@ global.Roll = jest.fn((formula, data = {}) => {
  * ChatMessage
  */
 global.CONFIG.ChatMessage = {
-  entityClass: { create: jest.fn(((messageData = {}) => {console.log(messageData)})) }
+  entityClass: {
+    create: jest.fn(((messageData = {}) => {
+      // console.log(messageData)
+    }))
+  }
 }
