@@ -8,19 +8,19 @@ function parseNPC (npcString) {
   const npc = {}
   npcString = npcString.replace(/[\n\r]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/, '')
 
-  npc.name = (_firstMatch(/(.*):.*/, npcString) || 'Unnamed')
+  npc.name = _firstMatch(/(.*):.*/, npcString) || 'Unnamed'
   npc.name = npc.name.replace(/ ?\(\d+\)/, '')
   const hd = npc['data.attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?);.*/, npcString) || '1'
-  npc['data.attributes.init.value'] = _firstMatch(/.*Init ?(.+?);.*/, npcString) || 0
-  npc['data.attributes.ac.value'] = _firstMatch(/.*AC ?(.+?);.*/, npcString) || 10
+  npc['data.attributes.init.value'] = _firstMatch(/.*Init ?(.+?);.*/, npcString) || '+0'
+  npc['data.attributes.ac.value'] = _firstMatch(/.*AC ?(.+?);.*/, npcString) || '10'
   npc['data.attributes.hp.max'] = npc['data.attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?;.*/, npcString) || new Roll(hd).roll().total
-  npc['data.attributes.speed.value'] = _firstMatch(/.*MV ?(.+?);.*/, npcString) || 30
+  npc['data.attributes.speed.value'] = _firstMatch(/.*MV ?(.+?);.*/, npcString) || '30'
   npc['data.attributes.actionDice.value'] = _firstMatch(/.*Act ?(.+?);.*/, npcString) || '1d20'
   npc['data.attributes.special.value'] = _firstMatch(/.*SP ?(.+?);.*/, npcString) || ''
-  npc['data.saves.frt.value'] = npcString.replace(/.*Fort ?(.+?),.*/, '$1')
-  npc['data.saves.ref.value'] = npcString.replace(/.*Ref ?(.+?),.*/, '$1')
-  npc['data.saves.wil.value'] = npcString.replace(/.*Will ?(.+?);.*/, '$1')
-  npc['data.details.alignment'] = npcString.replace(/.*AL ?(.+?)\..*/, '$1').toLowerCase()
+  npc['data.saves.frt.value'] = _firstMatch(/.*Fort ?(.+?),.*/, npcString) || '+0'
+  npc['data.saves.ref.value'] = _firstMatch(/.*Ref ?(.+?),.*/, npcString) || '+0'
+  npc['data.saves.wil.value'] = _firstMatch(/.*Will ?(.+?);.*/, npcString) || '+0'
+  npc['data.details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
 
   /* Speed */
   if (npc['data.attributes.speed.value'].includes('or')) {

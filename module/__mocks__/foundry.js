@@ -96,8 +96,14 @@ global.rollToMessageMock = jest.fn((data) => {
   //console.log('Mock Roll: toMessage was called with:')
   //console.log(data)
 })
+global.rollRollMock = jest.fn(() => {
+  return {
+    total: 1
+  }
+})
 global.Roll = jest.fn(() => {
   return {
-    toMessage: global.rollToMessageMock
+    toMessage: global.rollToMessageMock,
+    roll: global.rollRollMock
   }
 }).mockName('Roll')
