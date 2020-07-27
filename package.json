@@ -36,9 +36,7 @@
   "keywords": [
     "FoundryVTT",
     "DCC",
-    "Dungeon",
-    "Crawl",
-    "Classics"
+    "Dungeon Crawl Classics"
   ],
   "license": "MIT",
   "main": "module/dcc.js",

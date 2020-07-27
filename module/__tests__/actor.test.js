@@ -1,7 +1,7 @@
 /* Tests for Actor.js using Foundry Mocks */
 /* Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js */
 /* eslint-env jest */
-/* global Roll, rollToMessageMock */
+/* global CONFIG, Roll, rollToMessageMock */
 
 import DCCActor from '../actor'
 
@@ -66,6 +66,30 @@ test('roll saving throw', () => {
   expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { saveMod: +12 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesWill Save', speaker: actor })
+
+  Roll.mockClear()
+})
+
+test('roll initiative', () => {
+  actor.rollInitiative()
+  expect(Roll).toHaveBeenCalledTimes(1)
+  expect(Roll).toHaveBeenCalledWith('1d20+@init', { init: -1 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Initiative', speaker: actor })
+
+  Roll.mockClear()
+})
+
+test('roll weapon attack', () => {
+  actor.rollWeaponAttack('m1')
+  expect(Roll).toHaveBeenCalledTimes(2)
+  expect(Roll).toHaveBeenCalledWith('1d20 + 1', { critical: 20 })
+  expect(CONFIG.ChatMessage.entityClass.create).toHaveBeenCalledWith({
+    user: 1,
+    speaker: { alias: 'test character', _id: 1 },
+    type: 'emote',
+    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%7D%5D%7D" title="1d20 + 1"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%7D%5D%7D" data-damage="undefined" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,crit:,fumble:[object Object]',
+    sound: 'diceSound'
+  })
 
   Roll.mockClear()
 })

@@ -36,7 +36,7 @@ class DCCActor extends Actor {
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: `${game.i18n.localize(ability.label)} Check`
+      flavor: `${game.i18n.localize(ability.label)} ${game.i18n.localize('DCC.Check')}`
     })
   }
 
@@ -79,7 +79,7 @@ class DCCActor extends Actor {
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: `${game.i18n.localize(save.label)} Save`
+      flavor: `${game.i18n.localize(save.label)} ${game.i18n.localize('DCC.Save')}`
     })
   }
 
@@ -108,9 +108,12 @@ class DCCActor extends Actor {
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
       const table = await pack.getEntity(entry._id)
-      const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
+      const roll = new Roll(
+        `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`
+      )
       const critResult = await table.draw({ roll, displayChat: false })
-      crit = ` <br><br><span style="color:red; font-weight: bolder">Critical Hit!</span> ${critResult.results[0].text}</span>`
+      crit =
+        ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${critResult.results[0].text}</span>`
     }
 
     /* Handle Fumbles */
@@ -126,9 +129,12 @@ class DCCActor extends Actor {
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name.startsWith('Fumble'))
       const table = await pack.getEntity(entry._id)
-      const roll = new Roll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`)
+      const roll = new Roll(
+        `${fumbleDie} - ${this.data.data.abilities.lck.mod}`
+      )
       const fumbleResult = await table.draw({ roll, displayChat: false })
-      fumble = ` <br><br><span style="color:red; font-weight: bolder">Fumble!</span> ${fumbleResult.results[0].text}</span>`
+      fumble =
+        ` <br><br><span style='color:red; font-weight: bolder'>Fumble!</span> ${fumbleResult.results[0].text}</span>`
     }
 
     /* Roll the Damage */
@@ -166,9 +172,7 @@ class DCCActor extends Actor {
 
     // Check for Crit/Fumble
     let critFailClass = ''
-    if (Number(roll.dice[0].results[0]) === 20) critFailClass = 'critical '
-    else if (Number(roll.dice[0].results[0]) === 1) critFailClass = 'fumble '
-
+    if (Number(roll.dice[0].results[0]) === 20) { critFailClass = 'critical ' } else if (Number(roll.dice[0].results[0]) === 1) { critFailClass = 'fumble ' }
     return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
   }
 
