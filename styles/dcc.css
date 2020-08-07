@@ -627,7 +627,7 @@
   font-size: 24px; }
 
 /* ----------------------------------------- */
-/*  Thief Class                              */
+/*  Thief/Halfling Class                     */
 /* ----------------------------------------- */
 .dcc .thief-skills-container  {
   display: flex;
@@ -690,21 +690,3 @@
   line-height: 32px;
   font-size: 24px; }
 
-/* ----------------------------------------- */
-/*  Thief/Halfling Class                     */
-/* ----------------------------------------- */
-.dcc .thief-skill {
-  flex: 0 0 100%;
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .thief-skill label {
-  flex: 1 0 30px;
-  margin: 0 0 0 4px; }
-
-.dcc .thief-skill input {
-  flex: 0 1 50px;
-  height: 30px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
