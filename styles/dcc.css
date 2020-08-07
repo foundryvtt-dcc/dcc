@@ -629,6 +629,29 @@
 /* ----------------------------------------- */
 /*  Thief Class                              */
 /* ----------------------------------------- */
+.dcc .thief-skills-container  {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 2%;
+  margin-right: 2%; }
+
+.dcc .thief-skills-container div {
+  flex: 0 48%;
+  margin-bottom: 2%;
+  text-align: center; }
+
+.dcc .thief-skills-container div label {
+  width: 100%;
+  flex-grow: 2;
+  margin: 0 0 0 4px; }
+
+.dcc .thief-skills-container div input {
+  height: 30px;
+  width: 100px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px; }
 
 /* ----------------------------------------- */
 /*  Warrior Class                            */
