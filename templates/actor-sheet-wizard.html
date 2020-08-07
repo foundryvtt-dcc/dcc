@@ -21,9 +21,35 @@
 
         {{!-- Class Tab --}}
         <div class="tab" data-group="primary" data-tab="class">
-          <h4 class="class-label">{{localize "DCC.Wizard"}}</h4>
+            <h4 class="class-label">{{localize "DCC.WizardAbilities"}}</h4>
             <div class="class">
-              <h1>{{localize "DCC.Wizard"}}</h1>
+                <div class="spell-check flexrow">
+                    <label for="data.class.spellcheck">{{localize "DCC.SpellCheck"}}</label>
+                    <input type="text" id="data.class.spellcheck" name="data.class.spellcheck" value="{{data.class.spellcheck}}" data-dtype="String"/>
+                </div>
+
+                <div class="patron flexrow">
+                    <label for="data.class.patron">{{localize "DCC.Patron"}}</label>
+                    <input type="text" id="data.class.patron" name="data.class.patron" value="{{data.class.patron}}" data-dtype="String"/>
+                </div>
+
+                <div class="familiar flexrow">
+                    <label for="data.class.familiar">{{localize "DCC.Familiar"}}</label>
+                    <input type="text" id="data.class.familiar" name="data.class.familiar" value="{{data.class.familiar}}" data-dtype="String"/>
+                </div>
+
+                <div class="corruption flexrow">
+                    <label for="data.class.corruption">{{localize "DCC.Corruption"}}</label>
+                    <input type="text" id="data.class.corruption" name="data.class.corruption" value="{{data.class.corruption}}" data-dtype="String"/>
+                </div>
+
+                <div class="spells-container flexcol">
+                    <label>{{localize "DCC.WizardSpells"}}</label>
+                    <div class="spells flexrow">
+
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
