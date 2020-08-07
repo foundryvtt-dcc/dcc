@@ -74,6 +74,11 @@ class DCCActorSheet extends ActorSheet {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
     }
 
+    if (data.data.classSheet) {
+      // TODO: Sanitise data.data.classSheet
+      this.options.template = 'systems/dcc/templates/' + data.data.classSheet + '.html'
+    }
+
     return data
   }
 

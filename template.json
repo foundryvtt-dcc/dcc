@@ -99,6 +99,8 @@
         "details": {
           "attackBonus": "+0",
           "birthAugur": "",
+          "critRange": "19",
+          "findSecretDoors": "+0",
           "xp": {
             "value": 0,
             "min": 0,
@@ -111,54 +113,75 @@
           "armor": [],
           "equipment": [],
           "mount": []
-        },
-        "findSecretDoors": "+0"
+        }
       },
       "cleric": {
-        "spells": [],
-        "deity": null,
-        "disapproval": 1,
-        "disapprovalTable": "Disapproval"
+        "classSheet": "actor-sheet-cleric",
+        "class": {
+          "spells": [],
+          "deity": null,
+          "disapproval": "1",
+          "disapprovalTable": "Disapproval"
+        }
       },
       "thief": {
-        "luckDie": "1d3",
-        "backstab": "0",
-        "sneakSilently": "0",
-        "hideInShadows": "0",
-        "pickPockets": "0",
-        "climbSheerSurfaces": "0",
-        "pickLock": "0",
-        "findTrap": "0",
-        "disableTrap": "0",
-        "forgeDocument": "0",
-        "disguiseSelf": "0",
-        "readLanguages": "0",
-        "handlePoison": "0",
-        "useScroll": "1d12"
+        "classSheet": "actor-sheet-thief",
+        "class": {
+          "luckDie": "1d3",
+          "backstab": "0",
+          "sneakSilently": "0",
+          "hideInShadows": "0",
+          "pickPockets": "0",
+          "climbSheerSurfaces": "0",
+          "pickLock": "0",
+          "findTrap": "0",
+          "disableTrap": "0",
+          "forgeDocument": "0",
+          "disguiseSelf": "0",
+          "readLanguages": "0",
+          "handlePoison": "0",
+          "useScroll": "1d12"
+        }
       },
       "halfling": {
-        "sneakAndHide": "+3"
+        "classSheet": "actor-sheet-halfling",
+        "class": {
+          "sneakAndHide": "+3"
+        }
       },
       "warrior": {
+        "classSheet": "actor-sheet-warrior",
         "details": {
-          "attackBonus": "+1d3"
+          "attackBonus": "+1d3",
+          "critRange": "19"
         },
-        "luckyWeapon": null
+        "class": {
+          "luckyWeapon": null
+        }
       },
       "wizard": {
-        "spells": [],
-        "patron": null,
-        "familiar": null,
-        "corruption": []
+        "classSheet": "actor-sheet-wizard",
+        "class": {
+          "spells": [],
+          "patron": null,
+          "familiar": null,
+          "corruption": []
+        }
       },
       "dwarf": {
+        "classSheet": "actor-sheet-dwarf",
         "details": {
           "attackBonus": "+1d3"
         },
-        "luckyWeapon": null
+        "class": {
+          "luckyWeapon": null
+        }
       },
       "elf": {
-        "findSecretDoors": "+4"
+        "classSheet": "actor-sheet-elf",
+        "details": {
+          "findSecretDoors": "+4"
+        }
       }
     },
     "Zero-Level": {
@@ -213,6 +236,7 @@
       "templates": [
         "common",
         "player",
+        "wizard",
         "elf"
       ]
     },

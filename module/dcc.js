@@ -29,6 +29,14 @@ Hooks.once('init', async function () {
   Actors.unregisterSheet('core', ActorSheet)
   Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true })
 
+  // Register shared template for upper level characters
+  const templatePaths = [
+    "systems/dcc/templates/actor-partial-pc-common.html",
+    "systems/dcc/templates/actor-partial-pc-header.html",
+    "systems/dcc/templates/actor-partial-pc-notes.html"
+  ]
+  loadTemplates( templatePaths )
+
   // Register system settings
   game.settings.register('dcc', 'macroShorthand', {
     name: 'Shortened Macro Syntax',
@@ -106,3 +114,4 @@ function rollDCCWeaponMacro (itemId) {
   // Trigger the weapon roll
   return actor.rollWeaponAttack(itemId)
 }
+

@@ -1,0 +1,41 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    {{> systems/dcc/templates/actor-partial-pc-header.html }}
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="class">{{localize "DCC.Halfling"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Character Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+
+        {{!-- Notes Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+
+        {{!-- Class Tab --}}
+        <div class="tab" data-group="primary" data-tab="class">
+            <h4 class="class-label">{{localize "DCC.HalflingAbilities"}}</h4>
+            <div class="class">
+                <div class="flexcol">
+                    <div class="crit-range flexrow">
+                        <label for="data.details.thiefSkill">{{localize "DCC.SneakAndHide"}}</label>
+                        <input type="text" id="data.class.sneakAndHide" name="data.class.sneakAndHide" value="{{data.class.sneakAndHide}}" data-dtype="Number"/>
+                    </div>
+                </div>
+
+                <ul class="class-note flexcol">
+                  <li>{{localize "DCC.Lucky"}}</li>
+                  <li>{{localize "DCC.TwoWeaponFighting"}}</li>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+

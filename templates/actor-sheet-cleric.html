@@ -1,0 +1,194 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    {{> systems/dcc/templates/actor-partial-pc-header.html }}
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="class">{{localize "DCC.Cleric"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Character Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+
+        {{!-- Notes Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+
+        {{!-- Class Tab --}}
+        <div class="tab" data-group="primary" data-tab="class">
+            <h4 class="class-label">{{localize "DCC.ClericAbilities"}}</h4>
+            <div class="class">
+                <div class="deity flexrow">
+                    <label for="data.class.deity">{{localize "DCC.Deity"}}</label>
+                    <input type="text" id="data.class.deity" name="data.class.deity" value="{{data.class.deity}}" data-dtype="String"/>
+                </div>
+
+                <div class="disapproval flexcol">
+                    <label>{{localize "DCC.Disapproval"}}</label>
+                    <div class="disapproval-range flexrow">
+                         <label for="data.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
+                         <label for="data.class.disapproval" class="one-to">1 - </label>
+                        <input type="text" id="data.class.disapproval" name="data.class.disapproval" value="{{data.class.disapproval}}" data-dtype="Number"/>
+                    </div>
+
+                    <div class="disapproval-table flexrow">
+                        <label for="data.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
+                        <input type="text" id="data.class.disapprovalTable" name="data.class.disapprovalTable" value="{{data.class.disapprovalTable}}" data-dtype="String"/>
+                    </div>
+                </div>
+    
+                <div class="divine-aid flexrow">
+                    <label for="data.class.divineAid">{{localize "DCC.DivineAid"}}</label>
+                    <input type="text" id="data.class.divineAid" name="data.class.divineAid" value="{{data.class.divineAid}}" data-dtype="String"/>
+                </div>
+
+                <div class="turn-unholy flexrow">
+                    <label for="data.class.turnUnholy">{{localize "DCC.TurnUnholy"}}</label>
+                    <input type="text" id="data.class.turnUnholy" name="data.class.turnUnholy" value="{{data.class.turnUnholy}}" data-dtype="String"/>
+                </div>
+
+                <div class="lay-on-hands flexrow">
+                    <label for="data.class.layOnHands">{{localize "DCC.LayOnHands"}}</label>
+                    <input type="text" id="data.class.layOnHands" name="data.class.layOnHands" value="{{data.class.layOnHands}}" data-dtype="String"/>
+                </div>
+
+                <div class="lay-on-hands flexrow">
+                    <div class="lay-on-hands container">
+                      <div class="header item">
+                        Result
+                      </div>
+                      <div class="header item">
+                        Same
+                      </div>
+                      <div class="header item">
+                        Adjacent
+                      </div>
+                      <div class="header item">
+                        Opposed
+                      </div>
+    
+                      <div class="header item">
+                        1-11
+                      </div>
+                      <div class="item">
+                        fail
+                      </div>
+                      <div class="item">
+                        fail
+                      </div>
+                      <div class="item">
+                        fail
+                      </div>
+    
+                      <div class="header item">
+                        12-13
+                      </div>
+                      <div class="item">
+                        2 dice
+                      </div>
+                      <div class="item">
+                        1 die
+                      </div>
+                      <div class="item">
+                        1 die
+                      </div>
+    
+                      <div class="header item">
+                        14-19
+                      </div>
+                      <div class="item">
+                        3 dice
+                      </div>
+                      <div class="item">
+                        2 dice
+                      </div>
+                      <div class="item">
+                        1 die
+                      </div>
+    
+                      <div class="header item">
+                        20-21
+                      </div>
+                      <div class="item">
+                        4 dice
+                      </div>
+                      <div class="item">
+                        3 dice
+                      </div>
+                      <div class="item">
+                        2 dice
+                      </div>
+    
+                      <div class="header item">
+                        22+
+                      </div>
+                      <div class="item">
+                        5 dice
+                      </div>
+                      <div class="item">
+                        4 dice
+                      </div>
+                      <div class="item">
+                        3 dice
+                      </div>
+                    </div>
+    
+                    <div class="condition-healing container">
+                      <div class="header item">
+                        Condition
+                      </div>
+                      <div class="header item">
+                        Dice
+                      </div>
+    
+                      <div class="header item">
+                        Broken Limbs
+                      </div>
+                      <div class="item">
+                        1
+                      </div>
+    
+                      <div class="header item">
+                        Organ Damage
+                      </div>
+                      <div class="item">
+                        2
+                      </div>
+    
+                      <div class="header item">
+                        Disease
+                      </div>
+                      <div class="item">
+                        2
+                      </div>
+    
+                      <div class="header item">
+                        Paralysis or Poison
+                      </div>
+                      <div class="item">
+                        3
+                      </div>
+    
+                      <div class="header item">
+                        Blindness or Deafness
+                      </div>
+                      <div class="item">
+                        4
+                      </div>
+                    </div>
+                </div>
+
+                <div class="spell-check flexrow">
+                    <label for="data.class.spellcheck">{{localize "DCC.SpellCheck"}}</label>
+                    <input type="text" id="data.class.spellcheck" name="data.class.spellcheck" value="{{data.class.spellcheck}}" data-dtype="String"/>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+
