@@ -7,6 +7,7 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
         <a class="item" data-tab="class">{{localize "DCC.Cleric"}}</a>
+        <a class="item" data-tab="spells">{{localize "DCC.ClericSpells"}}</a>
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
@@ -187,8 +188,18 @@
                       </div>
                     </div>
                 </div>
+
+                <div class="spells-container-cleric flexcol">
+                    <label>{{localize "DCC.ClericSpells"}}</label>
+                    <div class="spells flexrow">
+
+                    </div>
+                </div>
             </div>
         </div>
+
+        {{!-- Spells Tab --}}
+        {{> systems/dcc/templates/actor-partial-cleric-spells.html }}
     </section>
 </form>
 

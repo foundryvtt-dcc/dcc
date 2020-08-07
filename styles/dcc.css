@@ -626,6 +626,9 @@
   line-height: 32px;
   font-size: 24px; }
 
+.dcc .spells-container-cleric {
+  margin: 4px 4px 4px 4px; }
+
 /* ----------------------------------------- */
 /*  Thief/Halfling Class                     */
 /* ----------------------------------------- */
@@ -689,4 +692,54 @@
   margin: 0 auto;
   line-height: 32px;
   font-size: 24px; }
+
+/* ----------------------------------------- */
+/*  Wizard/Elf Class                         */
+/* ----------------------------------------- */
+.dcc .patron {
+  flex: 0 0 100%;
+  margin: 6px 6px 0 0;
+  text-align: left; }
+
+.dcc .patron label {
+  margin: 0 0 0 4px; }
+
+.dcc .patron input {
+  height: 30px;
+  width: 96%;
+  margin: 0 auto 0 15px;
+  line-height: 32px;
+  font-size: 24px; }
+
+.dcc .familiar {
+  flex: 0 0 100%;
+  margin: 6px 6px 0 0;
+  text-align: left; }
+
+.dcc .familiar label {
+  margin: 0 0 0 4px; }
+
+.dcc .familiar input {
+  height: 30px;
+  width: 96%;
+  margin: 0 auto 0 15px;
+  font-size: 24px; }
+
+.dcc .corruption {
+  flex: 0 0 100%;
+  margin: 6px 6px 0 0;
+  text-align: left; }
+
+.dcc .corruption label {
+  margin: 0 0 0 4px; }
+
+.dcc .corruption input {
+  height: 30px;
+  width: 96%;
+  margin: 0 auto 0 15px;
+  line-height: 32px;
+  font-size: 24px; }
+
+.dcc .spells-container-wizard {
+  margin: 4px 4px 4px 4px; }
 

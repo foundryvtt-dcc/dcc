@@ -33,7 +33,9 @@ Hooks.once('init', async function () {
   const templatePaths = [
     "systems/dcc/templates/actor-partial-pc-common.html",
     "systems/dcc/templates/actor-partial-pc-header.html",
-    "systems/dcc/templates/actor-partial-pc-notes.html"
+    "systems/dcc/templates/actor-partial-pc-notes.html",
+    "systems/dcc/templates/actor-partial-wizard-spells.html",
+    "systems/dcc/templates/actor-partial-cleric-spells.html"
   ]
   loadTemplates( templatePaths )
 
