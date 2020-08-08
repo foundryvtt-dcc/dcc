@@ -299,7 +299,8 @@
 .dcc .hp .max {
   width: 25px;
   margin: 7px auto 0 63px;
-  height: 17px; }
+  height: 17px;
+  font-size: 0.8rem; }
 
 .dcc .hp .max-label {
   margin: 2px auto 0 65px;
