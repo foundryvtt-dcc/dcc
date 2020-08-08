@@ -43,6 +43,7 @@
           <label for="data.languages.value" name="data.languages.value">
               {{localize "DCC.Languages"}}
           </label>
+          {{!-- TODO: Add list of select elements for languages --}}
         </li>
 
         {{!-- Birth Augur --}}
@@ -50,6 +51,9 @@
           <label for="data.details.birthAugur" name="data.details.birthAugur">
               {{localize "DCC.BirthAugur"}}
           </label>
+          <input class="ac-value" type="text" id="data.details.birthAugur"
+                 name="data.details.birthAugur"
+                 value="{{data.details.birthAugur}}" data-dtype="String"/>
         </li>
 
         {{!-- Rest of the sheet --}}
@@ -95,7 +99,7 @@
                            value="{{data.attributes.speed.value}}" data-dtype="Number"/>
                 </div>
                 <div class="action-dice">
-                    <label for="data.attributes.action-dice.value">{{localize "DCC.ActionDice"}}</label>
+                    <label for="data.attributes.actionDice.value">{{localize "DCC.ActionDice"}}</label>
                     <input type="text" id="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
                            value="{{data.attributes.actionDice.value}}" maxlength="40"/>
                 </div>
@@ -111,7 +115,7 @@
                            value="{{data.attributes.critical.die}}" maxlength="40"/>
                 </div>
                 <div class="crit-table">
-                    <label for="data.attributes.crit-table.value">{{localize "DCC.CritTable"}}</label>
+                    <label for="data.attributes.critical.table">{{localize "DCC.CritTable"}}</label>
                     <input type="text" id="data.attributes.critical.table" name="data.attributes.critical.table"
                            value="{{data.attributes.critical.table}}" maxlength="40"/>
                 </div>

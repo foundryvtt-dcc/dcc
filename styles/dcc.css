@@ -504,7 +504,7 @@
 /* ----------------------------------------- */
 .dcc .combat-basics {
   flex: 1 0 50%;
-  margin: 7px 0 0 0;
+  margin: 7px 0 0 7px;
   text-align: center;
   font-size: 0.8rem; }
 
