@@ -577,6 +577,148 @@
 /* ----------------------------------------- */
 /*  Upper Level                              */
 /* ----------------------------------------- */
+
+.dcc .character-grid {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  grid-template-rows: repeat(6, 70px);
+  padding: 0;
+  margin: 7px;
+  list-style: none;
+  font-size: 20px;
+  border-top: 2px groove #eeede0;
+}
+
+.dcc.sheet.actor .character-grid .ability {
+  text-align: center;
+  border-bottom: 2px groove #eeede0;
+  border-left: 2px groove #eeede0;
+  border-right: 2px groove #eeede0;
+  padding-top: 3px;
+}
+
+.dcc.sheet.actor .character-grid .ability input.ability-score {
+  height: 30px;
+  width: 36px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc.sheet.actor .character-grid .ability .ability-modifiers {
+  height: 23px;
+  margin: -16px 0 0 110px;
+  width: 30px;
+  line-height: 22px;
+  font-size: 16px;
+  border-top: 2px groove #eeede0;
+  border-left: 2px groove #eeede0;
+}
+
+.dcc.sheet.actor .character-grid .save {
+  text-align: center;
+  border-bottom: 2px groove #eeede0;
+  border-right: 2px groove #eeede0;
+  padding-top: 3px;
+}
+
+.dcc.sheet.actor .character-grid .save input {
+  height: 30px;
+  width: 36px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc.sheet.actor .character-grid .languages {
+  text-align: left;
+  border-bottom: 2px groove #eeede0;
+  border-right: 2px groove #eeede0;
+  padding-top: 3px;
+}
+
+.dcc.sheet.actor .character-grid .languages label {
+}
+
+.dcc.sheet.actor .character-grid .languages input {
+}
+
+.dcc.sheet.actor .character-grid .birth-augur {
+  text-align: left;
+  border-bottom: 2px groove #eeede0;
+  border-right: 2px groove #eeede0;
+  padding-top: 3px;
+}
+
+.dcc.sheet.actor .character-grid .birth-augur label {
+}
+
+.dcc.sheet.actor .character-grid .birth-augur input {
+}
+
+.dcc.sheet.actor .character-grid .remainder {
+  border-bottom: 2px groove #eeede0;
+  border-right: 2px groove #eeede0;
+}
+
+.dcc #str {
+  grid-column: 1;
+  grid-row: 1;
+}
+.dcc #agl {
+  grid-column: 1;
+  grid-row: 3;
+}
+.dcc #sta {
+  grid-column: 1;
+  grid-row: 2;
+}
+.dcc #per {
+  grid-column: 1;
+  grid-row: 4;
+}
+.dcc #int {
+  grid-column: 1;
+  grid-row: 5;
+}
+.dcc #lck {
+  grid-column: 1;
+  grid-row: 6;
+}
+
+.dcc #pad {
+  grid-column: 2;
+  grid-row: 1;
+  border-bottom: 2px groove #eeede0;
+}
+
+.dcc #ref {
+  grid-column: 2;
+  grid-row: 2;
+}
+.dcc #frt {
+  grid-column: 2;
+  grid-row: 3;
+}
+.dcc #wil {
+  grid-column: 2;
+  grid-row: 4;
+}
+
+.dcc #languages {
+  grid-column: 2 / span 2;
+  grid-row: 5;
+}
+.dcc #birth-augur {
+  grid-column: 2 / span 2;
+  grid-row: 6;
+}
+
+.dcc #remainder {
+  grid-column: 3;
+  grid-row: 1 / span 4;
+}
+
 .dcc .class {
   border: 2px groove #eeede0;
   font-size: 1.2rem;

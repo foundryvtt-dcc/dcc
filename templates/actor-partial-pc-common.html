@@ -1,9 +1,9 @@
 {{!-- Character Tab --}}
-<div class="tab character flexrow" data-group="primary" data-tab="character">
-    {{!-- Ability Scores --}}
-    <ul class="ability-scores flexcol">
+<div class="tab character flexcol" data-group="primary" data-tab="character">
+    <ul class="character-grid">
+        {{!-- Ability Scores --}}
         {{#each data.abilities as |ability id|}}
-        <li class="ability" data-ability="{{id}}">
+        <li class="ability" id="{{id}}" data-ability="{{id}}">
             <label class="ability-name box-title rollable">{{localize ability.label}}</label>
             <br/>
             <input class="ability-score" id="data.abilities.{{id}}.value"
@@ -18,96 +18,112 @@
             </div>
         </li>
         {{/each}}
-    </ul>
 
-    {{!-- Body Col To the Right of Abilities --}}
-    <div class="flexcol dcccol2">
-        {{!-- Top Row --}}
-        <div class="character-main-top-row flexrow">
-            {{!-- Saving Throws --}}
-            <ul class="saving-throws">
-                {{#each data.saves as |save id|}}
-                <li class="save" data-save="{{id}}">
-                    <label for="data.saves.{{id}}.value"
-                           class="save-name box-title rollable"
-                    >{{localize save.label}}</label>
-                    <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
-                           type="text"
-                           value="{{ numberFormat save.value decimals=0 sign=true }}"
-                           data-dtype="Number"
-                           placeholder="0"
-                    />
-                </li>
-                {{/each}}
-            </ul>
+        {{!-- Pad --}}
+        <li id="pad"></li>
 
-            {{!-- AC and HP --}}
-            <div class="flex-padding"></div>
-            <div class="ac flexcol">
-                <input class="ac-value" type="text" id="data.attributes.ac.value"
-                       name="data.attributes.ac.value"
-                       value="{{data.attributes.ac.value}}" data-dtype="Number"/>
-                <label for="data.attributes.ac.value">{{localize "DCC.AC"}}</label>
-            </div>
-            <div class="flex-padding"></div>
-            <div class="hp flexcol">
-                <input class="current" type="text" id="data.attributes.hp.value"
-                       name="data.attributes.hp.value"
-                       value="{{data.attributes.hp.value}}" data-dtype="Number"/>
-                <input class="max" type="text" name="data.attributes.hp.max"
-                       value="{{data.attributes.hp.max}}"
-                       data-dtype="Number"/>
-                <label class="max-label" for="data.attributes.hp.max">{{localize "DCC.Max"}}</label>
-                <label class="current-label" for="data.attributes.hp.value">{{localize "DCC.HP"}}</label>
-            </div>
+        {{!-- Saving Throws --}}
+        {{#each data.saves as |save id|}}
+        <li class="save" id="{{id}}" data-save="{{id}}">
+            <label for="data.saves.{{id}}.value"
+                   class="save-name box-title rollable"
+            >{{localize save.label}}</label>
+            <br/>
+            <input id="data.saves.{{id}}.value" name="data.saves.{{id}}.value"
+                   type="text"
+                   value="{{ numberFormat save.value decimals=0 sign=true }}"
+                   data-dtype="Number"
+                   placeholder="0"
+            />
+        </li>
+        {{/each}}
 
-            {{!-- Init and Speed --}}
-            <div class="init-and-speed flexcol">
-                <div class="init">
-                    <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize
-                        "DCC.Init"}}</label>
-                    <input class="init-value" type="text" id="data.attributes.init.value"
-                           name="data.attributes.init.value"
-                           value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+        {{!-- Languages --}}
+        <li class="languages" id="languages">
+          <label for="data.languages.value" name="data.languages.value">
+              {{localize "DCC.Languages"}}
+          </label>
+        </li>
+
+        {{!-- Birth Augur --}}
+        <li class="birth-augur" id="birth-augur">
+          <label for="data.details.birthAugur" name="data.details.birthAugur">
+              {{localize "DCC.BirthAugur"}}
+          </label>
+        </li>
+
+        {{!-- Rest of the sheet --}}
+        <li class="remainder" id="remainder">
+            {{!-- Top Row --}}
+            <div class="character-main-top-row flexrow">
+                {{!-- AC and HP --}}
+                <div class="flex-padding"></div>
+                <div class="ac flexcol">
+                    <input class="ac-value" type="text" id="data.attributes.ac.value"
+                           name="data.attributes.ac.value"
+                           value="{{data.attributes.ac.value}}" data-dtype="Number"/>
+                    <label for="data.attributes.ac.value">{{localize "DCC.AC"}}</label>
+                </div>
+                <div class="flex-padding"></div>
+                <div class="hp flexcol">
+                    <input class="current" type="text" id="data.attributes.hp.value"
+                           name="data.attributes.hp.value"
+                           value="{{data.attributes.hp.value}}" data-dtype="Number"/>
+                    <input class="max" type="text" name="data.attributes.hp.max"
+                           value="{{data.attributes.hp.max}}"
                            data-dtype="Number"/>
+                    <label class="max-label" for="data.attributes.hp.max">{{localize "DCC.Max"}}</label>
+                    <label class="current-label" for="data.attributes.hp.value">{{localize "DCC.HP"}}</label>
                 </div>
-                <div class="speed">
-                    <label for="data.attributes.speed.value">{{localize "DCC.Speed"}}</label>
-                    <input class="speed-value" type="text" id="data.attributes.speed.value"
-                           name="data.attributes.speed.value"
-                           value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                <div class="flex-padding"></div>
+            </div>
+    
+            {{!-- Sheet Body Row --}}
+            <div class="character-main-body-row flexrow">
+                {{!-- Combat Basics --}}
+                <div class="init-and-speed flexcol">
+                    <div class="init">
+                        <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize
+                            "DCC.Init"}}</label>
+                        <input class="init-value" type="text" id="data.attributes.init.value"
+                               name="data.attributes.init.value"
+                               value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                               data-dtype="Number"/>
+                    </div>
+                    <div class="speed">
+                        <label for="data.attributes.speed.value">{{localize "DCC.Speed"}}</label>
+                        <input class="speed-value" type="text" id="data.attributes.speed.value"
+                               name="data.attributes.speed.value"
+                               value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        {{!-- Sheet Body Row --}}
-        <div class="character-main-body-row flexrow">
-            {{!-- Combat Basics --}}
-            <div class="action-dice">
-                <label for="data.attributes.action-dice.value">{{localize "DCC.ActionDice"}}</label>
-                <input type="text" id="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
-                       value="{{data.attributes.actionDice.value}}" maxlength="40"/>
-            </div>
-            <div class="flex-padding"></div>
-            <div class="attack-bonus">
-                <label for="data.details.attackBonus">{{localize "DCC.AttackBonus"}}</label>
-                <input class="speed-value" type="text" id="data.details.attackBonus"
-                       name="data.details.attackBonus"
-                       value="{{data.details.attackBonus}}" data-dtype="Number"/>
-            </div>
-            <div class="flex-padding"></div>
-            <div class="crit-die">
-                <label for="data.attributes.critical.die">{{localize "DCC.CritDie"}}</label>
-                <input type="text" id="data.attributes.critical.die" name="data.attributes.critical.die"
-                       value="{{data.attributes.critical.die}}" maxlength="40"/>
-            </div>
-            <div class="flex-padding"></div>
-            <div class="crit-table">
-                <label for="data.attributes.crit-table.value">{{localize "DCC.CritTable"}}</label>
-                <input type="text" id="data.attributes.critical.table" name="data.attributes.critical.table"
-                       value="{{data.attributes.critical.table}}" maxlength="40"/>
-            </div>
-        </div>
+    
+                <div class="action-dice">
+                    <label for="data.attributes.action-dice.value">{{localize "DCC.ActionDice"}}</label>
+                    <input type="text" id="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
+                           value="{{data.attributes.actionDice.value}}" maxlength="40"/>
+                </div>
+                <div class="flex-padding"></div>
+                <div class="attack-bonus">
+                    <label for="data.details.attackBonus">{{localize "DCC.AttackBonus"}}</label>
+                    <input class="speed-value" type="text" id="data.details.attackBonus"
+                           name="data.details.attackBonus"
+                           value="{{data.details.attackBonus}}" data-dtype="Number"/>
+                </div>
+                <div class="flex-padding"></div>
+                <div class="crit-die">
+                    <label for="data.attributes.critical.die">{{localize "DCC.CritDie"}}</label>
+                    <input type="text" id="data.attributes.critical.die" name="data.attributes.critical.die"
+                           value="{{data.attributes.critical.die}}" maxlength="40"/>
+                </div>
+                <div class="flex-padding"></div>
+                <div class="crit-table">
+                    <label for="data.attributes.crit-table.value">{{localize "DCC.CritTable"}}</label>
+                    <input type="text" id="data.attributes.critical.table" name="data.attributes.critical.table"
+                           value="{{data.attributes.critical.table}}" maxlength="40"/>
+                </div>
+            </li>
+        </ul>
     </div>
 </div>
 {{!-- End Character Tab --}}
