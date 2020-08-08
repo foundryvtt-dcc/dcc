@@ -632,7 +632,7 @@
 /* ----------------------------------------- */
 /*  Thief/Halfling Class                     */
 /* ----------------------------------------- */
-.dcc .thief-skills-container  {
+.dcc .thief-skills-container {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -742,4 +742,3 @@
 
 .dcc .spells-container-wizard {
   margin: 4px 4px 4px 4px; }
-

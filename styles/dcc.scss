@@ -553,3 +553,341 @@
   flex: 0 0 1;
   text-align: center;
 }
+
+/* ----------------------------------------- */
+/*  Upper Level                              */
+/* ----------------------------------------- */
+.dcc .class {
+  border: 2px groove #eeede0;
+  font-size: 1.2rem;
+}
+
+.dcc .class-label {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-size: 1.5rem;
+  margin-top: 20px;
+}
+
+.dcc .class-note {
+  flex: 0 0 100%;
+  margin: 0 6px 0 0;
+  text-align: left;
+}
+
+.dcc .class-note li {
+  margin: 6px 6px 6px 6px;
+}
+
+/* ----------------------------------------- */
+/*  Cleric Class                             */
+/* ----------------------------------------- */
+.dcc .deity {
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .deity label {
+  width: 100px;
+  margin: 0 0 0 4px;
+}
+
+.dcc .deity input {
+  height: 30px;
+  width: 200px;
+  flex-grow: 2;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .disapproval {
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .disapproval .disapproval-range label {
+  width: 100%;
+  flex-grow: 4;
+  margin: 0 0 0 24px;
+}
+
+.dcc .disapproval .disapproval-range label.one-to {
+  width: 50px;
+  margin: 0 12px 0 4px;
+  text-align: right;
+}
+
+.dcc .disapproval .disapproval-range input {
+  height: 30px;
+  width: 50px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .disapproval .disapproval-table label {
+  width: 100px;
+  margin: 0 0 0 24px;
+}
+
+.dcc .disapproval .disapproval-table input {
+  height: 30px;
+  width: 200px;
+  flex-grow: 2;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .divine-aid {
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .divine-aid label {
+  width: 100%;
+  flex-grow: 2;
+  margin: 0 0 0 4px;
+}
+
+.dcc .divine-aid input {
+  height: 30px;
+  width: 100px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .turn-unholy {
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .turn-unholy label {
+  width: 100%;
+  flex-grow: 2;
+  margin: 0 0 0 4px;
+}
+
+.dcc .turn-unholy input {
+  height: 30px;
+  width: 100px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .lay-on-hands {
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .lay-on-hands label {
+  width: 100%;
+  flex-grow: 2;
+  margin: 0 0 0 4px;
+}
+
+.dcc .lay-on-hands input {
+  height: 30px;
+  width: 100px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .lay-on-hands.container {
+  border: 2px groove #eeede0;
+  font-size: 0.8rem;
+  flex: 1 0 69%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.dcc .lay-on-hands.container div.item {
+  flex: 0 24%;
+  margin-bottom: 2%;
+  text-align: center;
+}
+
+.dcc .lay-on-hands.container div.header {
+  font-weight: bold;
+}
+
+.dcc .condition-healing.container {
+  border: 2px groove #eeede0;
+  font-size: 0.8rem;
+  flex: 1 0 29%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.dcc .condition-healing.container div.item {
+  flex: 0 48%;
+  margin-bottom: 2%;
+  text-align: center;
+}
+
+.dcc .condition-healing.container div.header {
+  font-weight: bold;
+}
+
+.dcc .spell-check {
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .spell-check label {
+  width: 100%;
+  flex-grow: 2;
+  margin: 0 0 0 4px;
+}
+
+.dcc .spell-check input {
+  height: 30px;
+  width: 100px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .spells-container-cleric {
+  margin: 4px 4px 4px 4px;
+}
+
+/* ----------------------------------------- */
+/*  Thief/Halfling Class                     */
+/* ----------------------------------------- */
+.dcc .thief-skills-container  {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 2%;
+  margin-right: 2%;
+}
+
+.dcc .thief-skills-container div {
+  flex: 0 48%;
+  margin-bottom: 2%;
+  text-align: center;
+}
+
+.dcc .thief-skills-container div label {
+  width: 100%;
+  flex-grow: 2;
+  margin: 0 0 0 4px;
+}
+
+.dcc .thief-skills-container div input {
+  height: 30px;
+  width: 100px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+/* ----------------------------------------- */
+/*  Warrior Class                            */
+/* ----------------------------------------- */
+.dcc .crit-range {
+  flex: 0 0 100%;
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .crit-range label {
+  flex: 1 0 30px;
+  margin: 0 0 0 4px;
+}
+
+.dcc .crit-range input {
+  flex: 0 1 50px;
+  height: 30px;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+/* ----------------------------------------- */
+/*  Warrior/Dwarf Class                      */
+/* ----------------------------------------- */
+.dcc .lucky-weapon {
+  flex: 0 0 100%;
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .lucky-weapon label {
+  margin: 0 0 0 4px;
+}
+
+.dcc .lucky-weapon input {
+  height: 30px;
+  width: 100%;
+  margin: 0 auto;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+/* ----------------------------------------- */
+/*  Wizard/Elf Class                         */
+/* ----------------------------------------- */
+.dcc .patron {
+  flex: 0 0 100%;
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .patron label {
+  margin: 0 0 0 4px;
+}
+
+.dcc .patron input {
+  height: 30px;
+  width: 96%;
+  margin: 0 auto 0 15px;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .familiar {
+  flex: 0 0 100%;
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .familiar label {
+  margin: 0 0 0 4px;
+}
+
+.dcc .familiar input {
+  height: 30px;
+  width: 96%;
+  margin: 0 auto 0 15px;
+  font-size: 24px;
+}
+
+.dcc .corruption {
+  flex: 0 0 100%;
+  margin: 6px 6px 0 0;
+  text-align: left;
+}
+
+.dcc .corruption label {
+  margin: 0 0 0 4px;
+}
+
+.dcc .corruption input {
+  height: 30px;
+  width: 96%;
+  margin: 0 auto 0 15px;
+  line-height: 32px;
+  font-size: 24px;
+}
+
+.dcc .spells-container-wizard {
+  margin: 4px 4px 4px 4px;
+}
+
