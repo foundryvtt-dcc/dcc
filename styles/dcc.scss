@@ -114,20 +114,30 @@
 /*  Action Dice                              */
 /* ----------------------------------------- */
 
-.dcc .action-dice {
+.dcc .npc-sheet .action-dice {
   flex: 0 0 100px;
   text-align: center;
   margin: 0 0 0 10px;
+}
+
+.dcc .combat-basics .action-dice {
+  flex: 0 0 100px;
+  align-items: center;
 }
 
 /* ----------------------------------------- */
 /*  Attack Bonus                             */
 /* ----------------------------------------- */
 
-.dcc .attack-bonus {
+.dcc .npc-sheet .attack-bonus {
   flex: 0 0 125px;
   text-align: center;
   margin: 0 0 0 10px;
+}
+
+.dcc .combat-basics .attack-bonus {
+  flex: 0 0 100px;
+  align-items: center;
 }
 
 /* ----------------------------------------- */
@@ -278,16 +288,26 @@
 /*  Criticals                                */
 /* ----------------------------------------- */
 
-.dcc .crit-die {
+.dcc .npc-sheet .crit-die {
   flex: 0 0 80px;
   text-align: center;
   margin: 0 0 0 10px;
 }
 
-.dcc .crit-table {
+.dcc .npc-sheet .crit-table {
   flex: 0 0 80px;
   text-align: center;
   margin: 0 0 0 10px;
+}
+
+.dcc .combat-basics .crit-die {
+  flex: 0 0 100px;
+  align-items: center;
+}
+
+.dcc .combat-basics .crit-table {
+  flex: 0 0 100px;
+  align-items: center;
 }
 
 /* ----------------------------------------- */
@@ -360,19 +380,24 @@
   text-align: right;
 }
 
-.dcc .init {
+.dcc .init-and-speed .init {
   flex: 0 0 30px;
   align-items: center;
 }
 
-.dcc .init label {
+.dcc .init-and-speed .init label {
   font-size: 1.1rem;
 }
 
-.dcc .init .init-value {
+.dcc .init-and-speed .init .init-value {
   width: 40px;
   font-size: 1.1rem;
   text-align: center;
+}
+
+.dcc .combat-basics .init {
+  flex: 0 0 60px;
+  align-items: center;
 }
 
 /* ----------------------------------------- */
@@ -394,27 +419,32 @@
 /* ----------------------------------------- */
 /*  Speed                                    */
 /* ----------------------------------------- */
-.dcc .speed label {
+.dcc .init-and-speed.speed label {
   margin: 10px auto 0 0;
   font-size: 1.1rem;
 }
 
-.dcc .speed .speed-other {
+.dcc .init-and-speed .speed .speed-other {
   width: 100px;
   margin: 5px 0 0 0;
 }
 
-.dcc .speed .speed-other-label {
+.dcc .init-and-speed .speed .speed-other-label {
   font-size: .8rem;
   line-height: .8rem;
   margin: 0 7px 0 0;
 }
 
-.dcc .speed .speed-value {
+.dcc .init-and-speed .speed .speed-value {
   width: 40px;
   font-size: 1.1rem;
   height: 25px;
   text-align: center;
+}
+
+.dcc .combat-basics .speed {
+  flex: 0 0 60px;
+  align-items: center;
 }
 
 /* ----------------------------------------- */
@@ -578,6 +608,13 @@
 /*  Upper Level                              */
 /* ----------------------------------------- */
 
+.dcc .combat-basics {
+  flex: 1 0 50%;
+  margin: 7px 0 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
 .dcc .character-grid {
   display: grid;
   grid-template-columns: auto auto 1fr;
@@ -616,6 +653,7 @@
 }
 
 .dcc.sheet.actor .character-grid .save {
+  width: 100px;
   text-align: center;
   border-bottom: 2px groove #eeede0;
   border-right: 2px groove #eeede0;

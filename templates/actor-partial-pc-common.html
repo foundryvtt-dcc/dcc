@@ -53,7 +53,7 @@
         </li>
 
         {{!-- Rest of the sheet --}}
-        <li class="remainder" id="remainder">
+        <li class="remainder flexcol" id="remainder">
             {{!-- Top Row --}}
             <div class="character-main-top-row flexrow">
                 {{!-- AC and HP --}}
@@ -78,45 +78,38 @@
                 <div class="flex-padding"></div>
             </div>
     
-            {{!-- Sheet Body Row --}}
-            <div class="character-main-body-row flexrow">
-                {{!-- Combat Basics --}}
-                <div class="init-and-speed flexcol">
-                    <div class="init">
-                        <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize
-                            "DCC.Init"}}</label>
-                        <input class="init-value" type="text" id="data.attributes.init.value"
-                               name="data.attributes.init.value"
-                               value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
-                               data-dtype="Number"/>
-                    </div>
-                    <div class="speed">
-                        <label for="data.attributes.speed.value">{{localize "DCC.Speed"}}</label>
-                        <input class="speed-value" type="text" id="data.attributes.speed.value"
-                               name="data.attributes.speed.value"
-                               value="{{data.attributes.speed.value}}" data-dtype="Number"/>
-                    </div>
+            {{!-- Combat Basics --}}
+            <div class="character-main-body-row combat-basics flexrow">
+                <div class="init">
+                    <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize
+                        "DCC.Init"}}</label>
+                    <input class="init-value" type="text" id="data.attributes.init.value"
+                           name="data.attributes.init.value"
+                           value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                           data-dtype="Number"/>
                 </div>
-    
+                <div class="speed">
+                    <label for="data.attributes.speed.value">{{localize "DCC.Speed"}}</label>
+                    <input class="speed-value" type="text" id="data.attributes.speed.value"
+                           name="data.attributes.speed.value"
+                           value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                </div>
                 <div class="action-dice">
                     <label for="data.attributes.action-dice.value">{{localize "DCC.ActionDice"}}</label>
                     <input type="text" id="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
                            value="{{data.attributes.actionDice.value}}" maxlength="40"/>
                 </div>
-                <div class="flex-padding"></div>
                 <div class="attack-bonus">
                     <label for="data.details.attackBonus">{{localize "DCC.AttackBonus"}}</label>
                     <input class="speed-value" type="text" id="data.details.attackBonus"
                            name="data.details.attackBonus"
                            value="{{data.details.attackBonus}}" data-dtype="Number"/>
                 </div>
-                <div class="flex-padding"></div>
                 <div class="crit-die">
                     <label for="data.attributes.critical.die">{{localize "DCC.CritDie"}}</label>
                     <input type="text" id="data.attributes.critical.die" name="data.attributes.critical.die"
                            value="{{data.attributes.critical.die}}" maxlength="40"/>
                 </div>
-                <div class="flex-padding"></div>
                 <div class="crit-table">
                     <label for="data.attributes.crit-table.value">{{localize "DCC.CritTable"}}</label>
                     <input type="text" id="data.attributes.critical.table" name="data.attributes.critical.table"
