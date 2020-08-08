@@ -1,0 +1,85 @@
+{{!-- Equipment Tab --}}
+<div class="tab equipment flexcol" data-group="primary" data-tab="equipment">
+    {{!-- Melee Weapons --}}
+    {{#* inline "weaponRow"}}
+    <li class="weapon flexrow" data-weapon-id="{{weaponIndex}}">
+        <div class="rollable weapon-button">&nbsp;</div>
+        <input class="weapon-name" type="text"
+               name="data.items.weapons.{{weaponIndex}}.name"
+               value="{{weapon.name}}"/>
+        <input class="weapon-tohit" type="text"
+               name="data.items.weapons.{{weaponIndex}}.toHit"
+               value="{{weapon.toHit}}"/>
+        <input class="weapon-damage" type="text"
+               name="data.items.weapons.{{weaponIndex}}.damage"
+               value="{{weapon.damage}}"/>
+        {{#if weaponRanged}}
+        <input class="weapon-notes" type="text"
+               name="data.items.weapons.{{weaponIndex}}.range"
+               value="{{weapon.range}}"/>
+        {{else}}
+        <input class="weapon-notes" type="text"
+               name="data.items.weapons.{{weaponIndex}}.notes"
+               value="{{weapon.notes}}"/>
+        {{/if}}
+    </li>
+    {{/inline}}
+    <div class="weapons-heading">{{localize "DCC.MeleeWeapons"}}</div>
+    <div class="flexrow weapons">
+        <ol class="flexcol weapon-list">
+            <li class="flexrow weapon-list-header">
+                <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
+                <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
+                <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
+                <span class="weapon-notes">{{localize "DCC.Notes"}}</span>
+            </li>
+            {{> weaponRow weaponIndex='m1' weapon=data.items.weapons.m1}}
+            {{> weaponRow weaponIndex='m2' weapon=data.items.weapons.m2}}
+        </ol>
+    </div>
+
+    {{!-- Ranged Weapons --}}
+    <div class="ranged weapons-heading">{{localize "DCC.RangedWeapons"}}</div>
+    <div class="flexrow weapons">
+        <ol class="flexcol weapon-list">
+            <li class="flexrow weapon-list-header">
+                <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
+                <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
+                <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
+                <span class="weapon-notes">{{localize "DCC.Range"}}</span>
+            </li>
+            {{> weaponRow weaponIndex='r1' weapon=data.items.weapons.r1 weaponRanged=true}}
+            {{> weaponRow weaponIndex='r2' weapon=data.items.weapons.r2 weaponRanged=true}}
+        </ol>
+    </div>
+
+    {{!-- Armor --}}
+    <div class="armor-heading">{{localize "DCC.Armor"}}</div>
+    <ol class="flexcol armor-list">
+        <li class="flexrow armor-list-header">
+            <span class="armor-name armor-name-label">{{localize "DCC.Name"}}</span>
+            <span class="armor-bonus">{{localize "DCC.Bonus"}}</span>
+            <span class="armor-checkpenalty">{{localize "DCC.Penalty"}}</span>
+            <span class="armor-fumbledie">{{localize "DCC.FumbleDie"}}</span>
+            <span class="armor-notes">{{localize "DCC.Notes"}}</span>
+        </li>
+        <li class="armor flexrow" data-weapon-id="{{weaponIndex}}">
+            <input class="armor-name" type="text"
+                   name="data.items.armor.a0.name"
+                   value="{{data.items.armor.a0.name}}"/>
+            <input class="armor-bonus" type="text"
+                   name="data.items.armor.a0.bonus"
+                   value="{{data.items.armor.a0.bonus}}"/>
+            <input class="armor-checkpenalty" type="text"
+                   name="data.items.armor.a0.checkPenalty"
+                   value="{{data.items.armor.a0.checkPenalty}}"/>
+            <input class="armor-fumbledie" type="text"
+                   name="data.items.armor.a0.fumbleDie"
+                   value="{{data.items.armor.a0.fumbleDie}}"/>
+            <input class="armor-notes" type="text"
+                   name="data.items.armor.a0.notes"
+                   value="{{data.items.armor.a0.notes}}"/>
+        </li>
+    </ol>
+</div>
+{{!-- End Character Tab --}}

@@ -48,6 +48,7 @@
   "DCC.Armor": "Armor",
   "DCC.ArmorClass": "Armor Class",
   "DCC.Attack": "Attack",
+  "DCC.AttackBonus": "Attack Bonus",
   "DCC.AttackPl": "Attacks",
   "DCC.AttackRollEmote": "Attacks with their {weaponName} and hits AC {rollHTML} for {damageRollHTML}  points of damage!{crit}{fumble}",
   "DCC.Attributes": "Attributes",

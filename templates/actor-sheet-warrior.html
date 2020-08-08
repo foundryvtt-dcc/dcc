@@ -6,6 +6,7 @@
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
         <a class="item" data-tab="class">{{localize "DCC.Warrior"}}</a>
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
@@ -15,6 +16,9 @@
 
         {{!-- Character Tab --}}
         {{> systems/dcc/templates/actor-partial-pc-common.html }}
+
+        {{!-- Equipment Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
 
         {{!-- Notes Tab --}}
         {{> systems/dcc/templates/actor-partial-pc-notes.html }}

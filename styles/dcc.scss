@@ -22,6 +22,11 @@
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
 }
 
+.dcc .flex-padding {
+  flex: 1 0 0px;
+  margin: 0;
+}
+
 /* ----------------------------------------- */
 /*  Rollable                                 */
 /* ----------------------------------------- */
@@ -100,12 +105,27 @@
   flex: 0 0 100px;
 }
 
+.dcc.actor.sheet .character-main-body-row {
+  flex: 1 0 100px;
+  margin-top: 15px;
+}
+
 /* ----------------------------------------- */
-/*  Action Dice                                 */
+/*  Action Dice                              */
 /* ----------------------------------------- */
 
 .dcc .action-dice {
   flex: 0 0 100px;
+  text-align: center;
+  margin: 0 0 0 10px;
+}
+
+/* ----------------------------------------- */
+/*  Attack Bonus                             */
+/* ----------------------------------------- */
+
+.dcc .attack-bonus {
+  flex: 0 0 125px;
   text-align: center;
   margin: 0 0 0 10px;
 }
@@ -331,11 +351,11 @@
 }
 
 /* ----------------------------------------- */
-/*  Init                                     */
+/*  Initiative                               */
 /* ----------------------------------------- */
 
 .dcc .init-and-speed {
-  flex: 0 0 100px;
+  flex: 1 0 100px;
   margin: 7px 0 0 0;
   text-align: right;
 }
