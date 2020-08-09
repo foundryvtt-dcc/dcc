@@ -139,3 +139,9 @@ global.CONFIG.ChatMessage = {
     })
   }
 }
+
+/**
+ * Handlebars
+ */
+global.loadTemplates = jest.fn((templateList) => {}).mockName('loadTemplates')
+
