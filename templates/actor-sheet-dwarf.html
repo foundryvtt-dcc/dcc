@@ -27,16 +27,22 @@
         <div class="tab" data-group="primary" data-tab="class">
             <h4 class="class-label">{{localize "DCC.DwarfAbilities"}}</h4>
             <div class="class">
-                <div class="lucky-weapon flexcol">
-                    <label class="box-title" for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
-                    <input type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
+                <div class="skills-container">
+                    <div class="wide flexrow" data-skill="shieldBash">
+                        <label class="skill-check rollable" for="data.skills.shieldBash.die">{{localize "DCC.ShieldBash"}}</label>
+                        <input type="text" id="data.skills.shieldBash.die" name="data.skills.shieldBash.die" value="{{data.skills.shieldBash.die}}" data-dtype="String"/>
+                    </div>
+
+                    <div class="wide flexrow">
+                      <label class="box-title" for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
+                      <input type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
+                    </div">
                 </div>
     
                 <ul class="class-note flexcol">
                   <li>{{localize "DCC.Infravision"}}</li>
                   <li>{{localize "DCC.UndergroundSkills"}}</li>
                   <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
-                  <li>{{localize "DCC.ShieldBash"}}</li>
                 </div>
             </div>
         </div>

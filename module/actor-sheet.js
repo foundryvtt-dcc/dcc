@@ -54,9 +54,9 @@ class DCCActorSheet extends ActorSheet {
       options: this.options,
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
-      isCharacter: this.entity.data.type === 'character',
       isNPC: this.entity.data.type === 'NPC',
-      isZero: this.entity.data.type === 'Zero-Level',
+      izPC: this.entity.data.type === 'Player',
+      isZero: this.entity.data.data.details.level === 0,
       type: this.entity.data.type,
       config: CONFIG.DCC
     }
@@ -73,11 +73,8 @@ class DCCActorSheet extends ActorSheet {
 
     if (data.isNPC) {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
-    }
-
-    if (data.data.classSheet) {
-      // TODO: Sanitise data.data.classSheet
-      this.options.template = 'systems/dcc/templates/' + data.data.classSheet + '.html'
+    } else {
+      this.options.template = 'systems/dcc/templates/actor-sheet-zero-level.html'
     }
 
     return data
@@ -103,6 +100,15 @@ class DCCActorSheet extends ActorSheet {
 
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
+
+      // Skills
+      html.find('.skill-check').click(this._onRollSkillCheck.bind(this))
+
+      // Luck Die
+      html.find('.luck-die').click(this._onRollLuckDie.bind(this))
+
+      // Spell Checks
+      html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
 
       // Weapons
       const handler = ev => this._onDragStart(ev)
@@ -249,6 +255,39 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const save = event.currentTarget.parentElement.dataset.save
     this.actor.rollSavingThrow(save, { event: event })
+  }
+
+  /**
+   * Handle rolling a skill check
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollSkillCheck (event) {
+    event.preventDefault()
+    const skill = event.currentTarget.parentElement.dataset.skill
+    this.actor.rollSkillCheck(skill, { event: event })
+  }
+
+  /**
+   * Handle rolling the luck die
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollLuckDie (event) {
+    event.preventDefault()
+    this.actor.rollLuckDie({ event: event })
+  }
+
+  /**
+   * Handle rolling a spell check
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollSpellCheck (event) {
+    event.preventDefault()
+    const ability = event.currentTarget.parentElement.dataset.ability
+    const bonus = this.actor.data.data.class.spellCheck
+    this.actor.rollSpellCheck(bonus, ability, { event: event })
   }
 
   /**

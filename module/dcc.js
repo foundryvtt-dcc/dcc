@@ -6,6 +6,7 @@
 // Import Modules
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
+import * as DCCSheets from './actor-sheets-dcc.js'
 import DCC from './config.js'
 import * as chat from './chat.js'
 
@@ -28,6 +29,13 @@ Hooks.once('init', async function () {
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
   Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric)
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief)
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling)
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior)
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard)
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf)
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf)
 
   // Register shared template for upper level characters
   const templatePaths = [

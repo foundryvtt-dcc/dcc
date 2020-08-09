@@ -69,7 +69,7 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Saving Throw
-   * @param {String} saveId       The save ID (e.g. "str")
+   * @param {String} saveId       The save ID (e.g. "backstab")
    */
   rollSavingThrow (saveId) {
     const save = this.data.data.saves[saveId]
@@ -80,6 +80,61 @@ class DCCActor extends Actor {
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor: `${game.i18n.localize(save.label)} ${game.i18n.localize('DCC.Save')}`
+    })
+  }
+
+  /**
+   * Roll a Skill Check
+   * @param {String}  skillId       The skill ID (e.g. "sneakSilently")
+   */
+  rollSkillCheck (skillId) {
+    const skill = this.data.data.skills[skillId]
+    const die = skill.die || this.data.data.attributes.actionDice.value
+    const ability = skill.ability || null
+    var abilityLabel = ''
+    if (ability) {
+      abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
+    }
+
+    const roll = (!skill.value)
+      ? new Roll(die + '+@bonus', { bonus: skill.value })
+      : new Roll(die)
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
+    })
+  }
+
+  /**
+   * Roll the Luck Die
+   */
+  rollLuckDie () {
+    const roll = new Roll(this.data.data.class.luckDie)
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: `${game.i18n.localize('DCC.LuckDie')}`
+    })
+  }
+
+  /**
+   * Roll a Spell Check
+   * @param {String} bonus           Total bonus for the check
+   * @param {String} abilityId       The ability used for the check (e.g. "per")
+   */
+  rollSpellCheck (bonus, abilityId) {
+    const ability = this.data.data.abilities[abilityId]
+    ability.label = CONFIG.DCC.abilities[abilityId]
+
+    const roll = new Roll('1d20+@bonus', { bonus: bonus })
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: `${game.i18n.localize('DCC.SpellCheck')} (${game.i18n.localize(ability.label)})`
     })
   }
 

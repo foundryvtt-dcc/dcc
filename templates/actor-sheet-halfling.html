@@ -27,10 +27,10 @@
         <div class="tab" data-group="primary" data-tab="class">
             <h4 class="class-label">{{localize "DCC.HalflingAbilities"}}</h4>
             <div class="class">
-                <div class="thief-skills-container">
-                    <div class="wide flexrow">
-                        <label for="data.class.sneakAndHide">{{localize "DCC.SneakAndHide"}}</label>
-                        <input type="text" id="data.class.sneakAndHide" name="data.class.sneakAndHide" value="{{data.class.sneakAndHide}}" data-dtype="String"/>
+                <div class="skills-container">
+                    <div class="wide flexrow" data-skill="sneakAndHide">
+                        <label class="skill-check rollable" for="data.skills.sneakAndHide.value">{{localize "DCC.SneakAndHide"}}</label>
+                        <input type="text" id="data.skills.sneakAndHide.value" name="data.skills.sneakAndHide.value" value="{{data.skills.sneakAndHide.value}}" data-dtype="String"/>
                     </div>
                 </div>
 

@@ -28,10 +28,10 @@
         <div class="tab" data-group="primary" data-tab="class">
             <h4 class="class-label">{{localize "DCC.WizardAbilities"}}</h4>
             <div class="class">
-                <div class="thief-skills-container">
-                    <div class="wide flexrow">
-                        <label for="data.class.spellcheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="data.class.spellcheck" name="data.class.spellcheck" value="{{data.class.spellcheck}}" data-dtype="String"/>
+                <div class="skills-container">
+                    <div class="wide flexrow" data-ability="int">
+                        <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{data.class.spellCheck}}" data-dtype="String"/>
                     </div>
                 </div>
 

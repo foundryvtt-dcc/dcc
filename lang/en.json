@@ -56,7 +56,7 @@
   "DCC.Background": "Background",
   "DCC.Bio": "Bio",
   "DCC.Biography": "Biography",
-  "DCC.BirthAugur": "BirthAugur",
+  "DCC.BirthAugur": "Birth Augur",
   "DCC.Bonus": "Bonus",
   "DCC.BonusAbilityCheck": "Global Ability Check Bonus",
   "DCC.BonusAbilitySave": "Global Saving Throw Bonus",
@@ -449,7 +449,7 @@
   "DCC.Backstab": "Backstab",
   "DCC.SneakSilently": "Sneak Silently",
   "DCC.HideInShadows": "Hide in Shadows",
-  "DCC.PickPocket": "Pick Pocket",
+  "DCC.PickPockets": "Pick Pockets",
   "DCC.ClimbSheerSurfaces": "Climb Sheer Surfaces",
   "DCC.PickLock": "Pick Lock",
   "DCC.FindTrap": "Find Trap",
@@ -483,11 +483,13 @@
   "DCC.DwarfAbilities": "Dwarf Abilities",
   "DCC.Infravision": "Infravision",
   "DCC.UndergroundSkills": "Underground Skills: smell gold/gems, find construction",
-  "DCC.ShieldBash": "Shield Bash (1d14 action die, 1d3 damage die)",
+  "DCC.ShieldBash": "Shield Bash",
 
   "DCC.ElfAbilities": "Elf Abilities",
   "DCC.ElfSpells": "Elf Spells",
   "DCC.IronVulnerability": "Iron Vulnerability",
   "DCC.HeightenedSenses": "Find Secret Doors",
-  "DCC.ElfLuckMod": "Luck modifier to one level 1 spell"
+  "DCC.ElfLuckMod": "Luck modifier to one level 1 spell",
+
+  "DCC.ChooseClass": "Choose Class"
 }

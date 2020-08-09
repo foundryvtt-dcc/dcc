@@ -1,14 +1,7 @@
 {
   "Actor": {
     "types": [
-      "Zero-Level",
-      "Cleric",
-      "Thief",
-      "Halfling",
-      "Warrior",
-      "Wizard",
-      "Dwarf",
-      "Elf",
+      "Player",
       "NPC"
     ],
     "templates": {
@@ -103,11 +96,16 @@
           "attackBonus": "+0",
           "birthAugur": "",
           "critRange": "19",
-          "findSecretDoors": "+0",
           "xp": {
             "value": 0,
             "min": 0,
             "max": 10
+          }
+        },
+        "skills": {
+          "findSecretDoors": {
+            "label": "DCC.FindSecretDoors",
+            "value": "+0"
           }
         },
         "inventory": {
@@ -119,8 +117,8 @@
         }
       },
       "cleric": {
-        "classSheet": "actor-sheet-cleric",
         "class": {
+          "spellCheck": 1,
           "spells": [],
           "deity": null,
           "disapproval": "1",
@@ -128,32 +126,82 @@
         }
       },
       "thief": {
-        "classSheet": "actor-sheet-thief",
-        "class": {
+        "class" : {
           "luckDie": "1d3",
-          "backstab": "0",
-          "sneakSilently": "0",
-          "hideInShadows": "0",
-          "pickPockets": "0",
-          "climbSheerSurfaces": "0",
-          "pickLock": "0",
-          "findTrap": "0",
-          "disableTrap": "0",
-          "forgeDocument": "0",
-          "disguiseSelf": "0",
-          "readLanguages": "0",
-          "handlePoison": "0",
-          "useScroll": "1d12"
+          "backstab": "0"
+        },
+        "skills": {
+          "sneakSilently": {
+            "label": "DCC.SneakSilently",
+            "ability": "agl",
+            "value": "0"
+          },
+          "hideInShadows": {
+            "label": "DCC.HideInShadows",
+            "ability": "agl",
+            "value": "0"
+          },
+          "pickPockets": {
+            "label": "DCC.PickPockets",
+            "ability": "agl",
+            "value": "0"
+          },
+          "climbSheerSurfaces": {
+            "label": "DCC.ClimbSheerSurfaces",
+            "ability": "agl",
+            "value": "0"
+          },
+          "pickLock": {
+            "label": "DCC.PickLock",
+            "ability": "agl",
+            "value": "0"
+          },
+          "findTrap": {
+            "label": "DCC.FindTrap",
+            "ability": "int",
+            "value": "0"
+          },
+          "disableTrap": {
+            "label": "DCC.DisableTrap",
+            "ability": "agl",
+            "value": "0"
+          },
+          "forgeDocument": {
+            "label": "DCC.ForgeDocument",
+            "ability": "agl",
+            "value": "0"
+          },
+          "disguiseSelf": {
+            "label": "DCC.DisguiseSelf",
+            "ability": "per",
+            "value": "0"
+          },
+          "readLanguages": {
+            "label": "DCC.ReadLanguages",
+            "ability": "int",
+            "value": "0"
+          },
+          "handlePoison": {
+            "label": "DCC.HandlePoison",
+            "value": "0"
+          },
+          "castSpellFromScroll": {
+            "label": "DCC.CastSpellFromScroll",
+            "ability": "int",
+            "die": "1d10",
+            "value": "0"
+          }
         }
       },
       "halfling": {
-        "classSheet": "actor-sheet-halfling",
-        "class": {
-          "sneakAndHide": "+3"
+        "skills": {
+          "sneakAndHide": {
+            "label": "DCC.SneakAndHide",
+            "value": "+3"
+          }
         }
       },
       "warrior": {
-        "classSheet": "actor-sheet-warrior",
         "details": {
           "attackBonus": "+1d3",
           "critRange": "19"
@@ -163,8 +211,8 @@
         }
       },
       "wizard": {
-        "classSheet": "actor-sheet-wizard",
         "class": {
+          "spellCheck": 1,
           "spells": [],
           "patron": null,
           "familiar": null,
@@ -172,76 +220,48 @@
         }
       },
       "dwarf": {
-        "classSheet": "actor-sheet-dwarf",
         "details": {
           "attackBonus": "+1d3"
         },
         "class": {
           "luckyWeapon": null
+        },
+        "skills": {
+          "shieldBash": {
+            "label" : "DCC.ShieldBash",
+            "ability": "str",
+            "die": "1d14"
+          }
         }
       },
       "elf": {
-        "classSheet": "actor-sheet-elf",
-        "details": {
-          "findSecretDoors": "+4"
+        "class": {
+          "spellCheck": 1
+        },
+        "skills": {
+          "findSecretDoors": {
+            "label": "DCC.HeightenedSenses",
+            "ability" : "int",
+            "value": "+4"
+          }
         }
       }
     },
-    "Zero-Level": {
-      "templates": [
-        "common",
-        "player"
-      ]
-    },
-    "Cleric": {
+    "Player": {
       "templates": [
         "common",
         "player",
-        "cleric"
-      ]
-    },
-    "Thief": {
-      "templates": [
-        "common",
-        "player",
-        "thief"
-      ]
-    },
-    "Halfling": {
-      "templates": [
-        "common",
-        "player",
-        "halfling"
-      ]
-    },
-    "Warrior": {
-      "templates": [
-        "common",
-        "player",
-        "warrior"
-      ]
-    },
-    "Dwarf": {
-      "templates": [
-        "common",
-        "player",
-        "dwarf"
-      ]
-    },
-    "Wizard": {
-      "templates": [
-        "common",
-        "player",
-        "wizard"
-      ]
-    },
-    "Elf": {
-      "templates": [
-        "common",
-        "player",
+        "cleric",
+        "thief",
+        "halfling",
+        "warrior",
         "wizard",
+        "dwarf",
         "elf"
-      ]
+      ],
+      "class": {
+        "className": "Zero-Level"
+      }
     },
     "NPC": {
       "templates": [

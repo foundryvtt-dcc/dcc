@@ -28,14 +28,14 @@
         <div class="tab" data-group="primary" data-tab="class">
             <h4 class="class-label">{{localize "DCC.ElfAbilities"}}</h4>
             <div class="class">
-                <div class="thief-skills-container">
-                    <div class="flexrow">
-                        <label for="data.class.spellcheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="data.class.spellcheck" name="data.class.spellcheck" value="{{data.class.spellcheck}}" data-dtype="String"/>
+                <div class="skills-container">
+                    <div class="flexrow" data-ability="int">
+                        <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{data.class.spellCheck}}" data-dtype="String"/>
                     </div>
-                    <div class="flexrow">
-                        <label for="data.details.findSecretDoors">{{localize "DCC.HeightenedSenses"}}</label>
-                        <input type="text" id="data.class.findSecretDoors" name="data.class.findSecretDoors" value="{{data.class.findSecretDoors}}" data-dtype="String"/>
+                    <div class="flexrow" data-skill="findSecretDoors">
+                        <label class="skill-check rollable" for="data.details.findSecretDoors.value">{{localize "DCC.HeightenedSenses"}}</label>
+                        <input type="text" id="data.skills.findSecretDoors.value" name="data.skills.findSecretDoors.value" value="{{data.skills.findSecretDoors.value}}" data-dtype="String"/>
                     </div>
                 </div>
 
