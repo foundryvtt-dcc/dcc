@@ -96,9 +96,12 @@ class DCCActor extends Actor {
       abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
     }
 
-    const roll = (!skill.value)
-      ? new Roll(die + '+@bonus', { bonus: skill.value })
-      : new Roll(die)
+    var roll = null
+    if (skill.value) {
+      roll = new Roll(die + '+@bonus', { bonus: skill.value })
+    } else {
+      roll = new Roll(die)
+    }
 
     // Convert the roll to a chat message
     roll.toMessage({

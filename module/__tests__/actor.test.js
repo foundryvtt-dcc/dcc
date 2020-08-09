@@ -93,3 +93,58 @@ test('roll weapon attack', () => {
 
   Roll.mockClear()
 })
+
+test('roll skill check', () => {
+  actor.rollSkillCheck('customDieSkill')
+  expect(Roll).toHaveBeenCalledTimes(1)
+  expect(Roll).toHaveBeenCalledWith('1d14')
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill', speaker: actor })
+
+  actor.rollSkillCheck('customDieAndValueSkill')
+  expect(Roll).toHaveBeenCalledTimes(2)
+  expect(Roll).toHaveBeenCalledWith('1d14+@bonus', { bonus: +3 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill', speaker: actor })
+
+  actor.rollSkillCheck('actionDieSkill')
+  expect(Roll).toHaveBeenCalledTimes(3)
+  expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: -4 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill', speaker: actor })
+
+  actor.rollSkillCheck('customDieSkillWithInt')
+  expect(Roll).toHaveBeenCalledTimes(4)
+  expect(Roll).toHaveBeenCalledWith('1d14')
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill With Int (AbilityInt)', speaker: actor })
+
+  actor.rollSkillCheck('customDieAndValueSkillWithPer')
+  expect(Roll).toHaveBeenCalledTimes(5)
+  expect(Roll).toHaveBeenCalledWith('1d14+@bonus', { bonus: +3 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill With Per (AbilityPer)', speaker: actor })
+
+  actor.rollSkillCheck('actionDieSkillWithLck')
+  expect(Roll).toHaveBeenCalledTimes(6)
+  expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: -4 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill With Lck (AbilityLck)', speaker: actor })
+
+  Roll.mockClear()
+})
+
+test('roll luck die', () => {
+  actor.rollLuckDie()
+  expect(Roll).toHaveBeenCalledTimes(1)
+
+  Roll.mockClear()
+})
+
+test('roll spell check', () => {
+  actor.rollSpellCheck(+3, 'int')
+  expect(Roll).toHaveBeenCalledTimes(1)
+  expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: +3 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
+
+  actor.rollSpellCheck(-2, 'per')
+  expect(Roll).toHaveBeenCalledTimes(2)
+  expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: -2 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityPer)', speaker: actor })
+
+  Roll.mockClear()
+})
