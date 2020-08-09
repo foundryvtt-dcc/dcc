@@ -44,6 +44,9 @@
               {{localize "DCC.Languages"}}
           </label>
           {{!-- TODO: Add list of select elements for languages --}}
+          <input class="languages" type="text" id="data.details.languages"
+                 name="data.details.languages"
+                 value="{{data.details.languages}}" data-dtype="String"/>
         </li>
 
         {{!-- Birth Augur --}}
@@ -51,7 +54,7 @@
           <label for="data.details.birthAugur" name="data.details.birthAugur">
               {{localize "DCC.BirthAugur"}}
           </label>
-          <input class="ac-value" type="text" id="data.details.birthAugur"
+          <input class="birth-augur" type="text" id="data.details.birthAugur"
                  name="data.details.birthAugur"
                  value="{{data.details.birthAugur}}" data-dtype="String"/>
         </li>

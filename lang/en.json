@@ -486,7 +486,8 @@
   "DCC.ShieldBash": "Shield Bash (1d14 action die, 1d3 damage die)",
 
   "DCC.ElfAbilities": "Elf Abilities",
+  "DCC.ElfSpells": "Elf Spells",
   "DCC.IronVulnerability": "Iron Vulnerability",
-  "DCC.HeightenedSenses": "Heightened Senses: +4 to find secret doors",
+  "DCC.HeightenedSenses": "Find Secret Doors",
   "DCC.ElfLuckMod": "Luck modifier to one level 1 spell"
 }

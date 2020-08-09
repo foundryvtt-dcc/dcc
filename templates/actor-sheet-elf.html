@@ -7,8 +7,8 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a class="item" data-tab="class">{{localize "DCC.Wizard"}}</a>
-        <a class="item" data-tab="spells">{{localize "DCC.WizardSpells"}}</a>
+        <a class="item" data-tab="class">{{localize "DCC.Elf"}}</a>
+        <a class="item" data-tab="spells">{{localize "DCC.ElfSpells"}}</a>
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
@@ -28,9 +28,15 @@
         <div class="tab" data-group="primary" data-tab="class">
             <h4 class="class-label">{{localize "DCC.ElfAbilities"}}</h4>
             <div class="class">
-                <div class="spell-check flexrow">
-                    <label for="data.class.spellcheck">{{localize "DCC.SpellCheck"}}</label>
-                    <input type="text" id="data.class.spellcheck" name="data.class.spellcheck" value="{{data.class.spellcheck}}" data-dtype="String"/>
+                <div class="thief-skills-container">
+                    <div class="flexrow">
+                        <label for="data.class.spellcheck">{{localize "DCC.SpellCheck"}}</label>
+                        <input type="text" id="data.class.spellcheck" name="data.class.spellcheck" value="{{data.class.spellcheck}}" data-dtype="String"/>
+                    </div>
+                    <div class="flexrow">
+                        <label for="data.details.findSecretDoors">{{localize "DCC.HeightenedSenses"}}</label>
+                        <input type="text" id="data.class.findSecretDoors" name="data.class.findSecretDoors" value="{{data.class.findSecretDoors}}" data-dtype="String"/>
+                    </div>
                 </div>
 
                 <div class="patron flexcol">
@@ -50,7 +56,6 @@
 
                 <ul class="class-note flexcol">
                     <li>{{localize "DCC.IronVulnerability"}}</li>
-                    <li>{{localize "DCC.HeightenedSenses"}}</li>
                     <li>{{localize "DCC.ElfLuckMod"}}</li>
                 </ul>
 

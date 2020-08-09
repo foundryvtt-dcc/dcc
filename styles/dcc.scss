@@ -94,6 +94,10 @@
   padding: 0 0px 0 7px;
 }
 
+.dcc .sheet-header .upper-level div.level input {
+  text-align: center;
+}
+
 .dcc .alignment {
   margin-left: 15px;
   text-align: center;
@@ -687,12 +691,14 @@
   border-bottom: 2px groove #eeede0;
   border-right: 2px groove #eeede0;
   padding-top: 3px;
+  padding-right: 10px;
 }
 
 .dcc.sheet.actor .character-grid .languages label {
 }
 
 .dcc.sheet.actor .character-grid .languages input {
+  margin: 0 7px 0 7px;
 }
 
 .dcc.sheet.actor .character-grid .birth-augur {
@@ -950,25 +956,6 @@
   font-weight: bold;
 }
 
-.dcc .spell-check {
-  margin: 6px 6px 0 0;
-  text-align: left;
-}
-
-.dcc .spell-check label {
-  width: 100%;
-  flex-grow: 2;
-  margin: 0 0 0 4px;
-}
-
-.dcc .spell-check input {
-  height: 30px;
-  width: 100px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px;
-}
-
 .dcc .spells-container-cleric {
   margin: 4px 4px 4px 4px;
 }
@@ -986,6 +973,12 @@
 
 .dcc .thief-skills-container div {
   flex: 0 48%;
+  margin-bottom: 2%;
+  text-align: center;
+}
+
+.dcc .thief-skills-container div.wide {
+  flex: 0 96%;
   margin-bottom: 2%;
   text-align: center;
 }
