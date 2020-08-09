@@ -123,6 +123,23 @@
           "deity": null,
           "disapproval": "1",
           "disapprovalTable": "Disapproval"
+        },
+        "skills": {
+          "divineAid": {
+            "label": "DCC.DivineAid",
+            "ability": "per",
+            "value": 0
+          },
+          "turnUnholy": {
+            "label": "DCC.TurnUnholy",
+            "ability": "per",
+            "value": 0
+          },
+          "layOnHands": {
+            "label": "DCC.LayOnHands",
+            "ability": "per",
+            "value": 0
+          }
         }
       },
       "thief": {

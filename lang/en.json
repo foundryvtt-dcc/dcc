@@ -428,9 +428,7 @@
   "DCC.Elf": "Elf",
 
   "DCC.ClericAbilities": "Cleric Abilities",
-  "DCC.Disapproval": "Disapproval",
-  "DCC.DisapprovalRange": "Range",
-  "DCC.DisapprovalTable": "Table",
+  "DCC.DisapprovalRange": "Disapproval Range",
   "DCC.Deity": "Deity",
   "DCC.SpellCheck": "Spell Check",
   "DCC.DivineAid": "Divine Aid",

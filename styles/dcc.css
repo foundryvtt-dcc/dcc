@@ -674,97 +674,31 @@
   text-align: left; }
 
 .dcc .deity label {
-  width: 100px;
-  margin: 0 0 0 4px; }
+  margin: 0 0 0 4px;
+  text-align: center; }
 
 .dcc .deity input {
   height: 30px;
-  width: 200px;
-  flex-grow: 2;
   margin: 0 auto;
   line-height: 32px;
   font-size: 24px; }
 
 .dcc .disapproval {
-  margin: 6px 6px 0 0;
-  text-align: left; }
+  width: 50%;
+  margin: 6px 6px 12px 0; }
 
-.dcc .disapproval .disapproval-range label {
-  width: 100%;
-  flex-grow: 4;
-  margin: 0 0 0 24px; }
+.dcc .disapproval label {
+  margin: 0 0 0 4px;
+  text-align: center;
+  flex: 8; }
 
-.dcc .disapproval .disapproval-range label.one-to {
-  width: 50px;
+.dcc .disapproval label.one-to {
   margin: 0 12px 0 4px;
-  text-align: right; }
+  text-align: right;
+  flex: 2; }
 
-.dcc .disapproval .disapproval-range input {
-  height: 30px;
-  width: 50px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
-
-.dcc .disapproval .disapproval-table label {
-  width: 100px;
-  margin: 0 0 0 24px; }
-
-.dcc .disapproval .disapproval-table input {
-  height: 30px;
-  width: 200px;
-  flex-grow: 2;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
-
-.dcc .divine-aid {
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .divine-aid label {
-  width: 100%;
-  flex-grow: 2;
-  margin: 0 0 0 4px; }
-
-.dcc .divine-aid input {
-  height: 30px;
-  width: 100px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
-
-.dcc .turn-unholy {
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .turn-unholy label {
-  width: 100%;
-  flex-grow: 2;
-  margin: 0 0 0 4px; }
-
-.dcc .turn-unholy input {
-  height: 30px;
-  width: 100px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
-
-.dcc .lay-on-hands {
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .lay-on-hands label {
-  width: 100%;
-  flex-grow: 2;
-  margin: 0 0 0 4px; }
-
-.dcc .lay-on-hands input {
-  height: 30px;
-  width: 100px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
+.dcc .disapproval input {
+  flex: 1; }
 
 .dcc .lay-on-hands.container {
   border: 2px groove #eeede0;
@@ -837,38 +771,21 @@
 /*  Warrior Class                            */
 /* ----------------------------------------- */
 .dcc .crit-range {
-  flex: 0 0 100%;
-  margin: 6px 6px 0 0;
-  text-align: left; }
+  margin: 0 0 0 4px; }
 
 .dcc .crit-range label {
-  flex: 1 0 30px;
-  margin: 0 0 0 4px; }
+  margin: 0 0 0 4px;
+  text-align: center;
+  flex: 6; }
+
+.dcc .crit-range label.to-twenty {
+  margin: 0 4px 0 12px;
+  text-align: left;
+  flex: 2; }
 
 .dcc .crit-range input {
-  flex: 0 1 50px;
-  height: 30px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
-
-/* ----------------------------------------- */
-/*  Warrior/Dwarf Class                      */
-/* ----------------------------------------- */
-.dcc .lucky-weapon {
-  flex: 0 0 100%;
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .lucky-weapon label {
-  margin: 0 0 0 4px; }
-
-.dcc .lucky-weapon input {
-  height: 30px;
-  width: 100%;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
+  text-align: right;
+  flex: 1; }
 
 /* ----------------------------------------- */
 /*  Wizard/Elf Class                         */

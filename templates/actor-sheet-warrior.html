@@ -30,14 +30,16 @@
                 <div class="crit-range flexrow">
                     <label for="data.details.critRange">{{localize "DCC.CritRange"}}</label>
                     <input type="text" id="data.details.critRange" name="data.details.critRange" value="{{data.details.critRange}}" data-dtype="Number"/>
-                    <label for="data.details.critRange"> - 20</label>
+                    <label class="to-twenty" for="data.details.critRange"> - 20</label>
                 </div>
     
-                <div class="lucky-weapon flexcol">
-                    <label class="box-title" for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
-                    <input type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
+                <div class="skills-container">
+                    <div class="wide flexrow">
+                      <label class="box-title" for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
+                      <input type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
+                    </div">
                 </div>
-    
+
                 <ul class="class-note flexcol">
                   <li>{{localize "DCC.AddClassLevelToInitiative"}}</li>
                   <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
