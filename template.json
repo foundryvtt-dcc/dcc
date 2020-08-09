@@ -68,6 +68,9 @@
           }
         },
         "details": {
+          "level": {
+            "value": 0
+          },
           "alignment": "",
           "occupation": "",
           "notes": ""

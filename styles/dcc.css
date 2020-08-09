@@ -61,10 +61,20 @@
   margin: 5px 0;
   border-bottom: 0; }
 
+.dcc .sheet-header .upper-level div.charname {
+  flex: 0 0 100%; }
+
+.dcc .sheet-header .upper-level h1.charname {
+  flex: 1 0 75%; }
+
 .dcc .sheet-header h1.charname input {
   width: 100%;
   height: 100%;
   margin: 0; }
+
+.dcc .sheet-header .upper-level div.level {
+  flex: 1 0 25%;
+  padding: 0 0px 0 7px; }
 
 .dcc .alignment {
   margin-left: 15px;
@@ -565,7 +575,11 @@
   text-align: left;
   border-bottom: 2px groove #eeede0;
   border-right: 2px groove #eeede0;
-  padding-top: 3px; }
+  padding-top: 3px;
+  padding-right: 10px; }
+
+.dcc.sheet.actor .character-grid .birth-augur input {
+  margin: 0 7px 0 7px; }
 
 .dcc.sheet.actor .character-grid .remainder {
   border-bottom: 2px groove #eeede0;

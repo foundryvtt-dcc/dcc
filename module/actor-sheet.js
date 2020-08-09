@@ -57,6 +57,7 @@ class DCCActorSheet extends ActorSheet {
       isCharacter: this.entity.data.type === 'character',
       isNPC: this.entity.data.type === 'NPC',
       isZero: this.entity.data.type === 'Zero-Level',
+      type: this.entity.data.type,
       config: CONFIG.DCC
     }
 
