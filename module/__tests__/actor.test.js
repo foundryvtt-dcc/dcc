@@ -82,7 +82,7 @@ test('roll initiative', () => {
 test('roll weapon attack', () => {
   actor.rollWeaponAttack('m1')
   expect(Roll).toHaveBeenCalledTimes(2)
-  expect(Roll).toHaveBeenCalledWith('1d20 + 1', { critical: 20 })
+  expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
   expect(CONFIG.ChatMessage.entityClass.create).toHaveBeenCalledWith({
     user: 1,
     speaker: { alias: 'test character', _id: 1 },

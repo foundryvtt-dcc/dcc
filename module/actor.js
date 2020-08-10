@@ -149,10 +149,21 @@ class DCCActor extends Actor {
   async rollWeaponAttack (weaponId, options = {}) {
     const weapon = this.data.data.items.weapons[weaponId]
     const speaker = { alias: this.name, _id: this._id }
-    const formula = `1d20 + ${weapon.toHit}`
+    let formula = `1d20 + ${weapon.toHit}`
+
+    /* Determine attack bonus */
+    let attackBonusExpression = this.data.data.details.attackBonus || null
+    let attackBonus = 0
+    if (attackBonusExpression) {
+      const abRoll = new Roll(attackBonusExpression)
+      attackBonus = abRoll.roll().total
+    }
+
+    /* Determine crit range */
+    const critRange = this.data.data.details.critRange || 20
 
     /* Roll the Attack */
-    const roll = new Roll(formula, { critical: 20 })
+    const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
     roll.roll()
     const rollHTML = this._formatRoll(roll, formula)
 
@@ -160,7 +171,7 @@ class DCCActor extends Actor {
 
     /* Handle Critical Hits */
     let crit = ''
-    if (d20RollResult === 20) {
+    if (d20RollResult >= critRange) {
       const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
       const pack = game.packs.get('dcc.criticalhits')
       await pack.getIndex() // Load the compendium index
@@ -196,7 +207,7 @@ class DCCActor extends Actor {
     }
 
     /* Roll the Damage */
-    const damageRoll = new Roll(weapon.damage)
+    const damageRoll = new Roll(weapon.damage, { ab: attackBonus })
     damageRoll.roll()
     const damageRollData = escape(JSON.stringify(damageRoll))
     const damageRollTotal = damageRoll.total

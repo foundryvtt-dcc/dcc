@@ -1,4 +1,4 @@
-/* global Actors, ActorSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates */
+/* global Actors, ActorSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars */
 /**
  * DCC
  */
@@ -47,6 +47,16 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/actor-partial-cleric-spells.html'
   ]
   loadTemplates(templatePaths)
+
+  // Handlebars helper to format attack bonus correctly
+  Handlebars.registerHelper('formatAttackBonus', function(attackBonus) {
+    if (attackBonus === '') {
+      return '+0'
+    } else if (attackBonus[0] !== '+' && attackBonus[0] !== '-') {
+      return '+' + attackBonus
+    }
+    return attackBonus;
+  });
 
   // Register system settings
   game.settings.register('dcc', 'macroShorthand', {

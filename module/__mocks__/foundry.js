@@ -38,6 +38,9 @@ class Actor {
             ref: { value: 0 },
             wil: { value: +12 }
           },
+          details: {
+            attackBonus: 0
+          },
           class: {
             luckDie: '1d3'
           },
