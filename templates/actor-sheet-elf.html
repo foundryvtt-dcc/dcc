@@ -31,11 +31,11 @@
                 <div class="skills-container">
                     <div class="flexrow" data-ability="int">
                         <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{data.class.spellCheck}}" data-dtype="String"/>
+                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
                     <div class="flexrow" data-skill="findSecretDoors">
                         <label class="skill-check rollable" for="data.details.findSecretDoors.value">{{localize "DCC.HeightenedSenses"}}</label>
-                        <input type="text" id="data.skills.findSecretDoors.value" name="data.skills.findSecretDoors.value" value="{{data.skills.findSecretDoors.value}}" data-dtype="String"/>
+                        <input type="text" id="data.skills.findSecretDoors.value" name="data.skills.findSecretDoors.value" value="{{numberFormat data.skills.findSecretDoors.value decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
                 </div>
 

@@ -31,19 +31,19 @@
                 <div class="skills-container">
                     <div class="flexrow" data-ability="per">
                         <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{data.class.spellCheck}}" data-dtype="String"/>
+                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
                     <div class="flexrow" data-skill="divineAid">
                         <label class="skill-check rollable" for="data.details.divineAid.value">{{localize "DCC.DivineAid"}}</label>
-                        <input type="text" id="data.skills.divineAid.value" name="data.skills.divineAid.value" value="{{data.skills.divineAid.value}}" data-dtype="String"/>
+                        <input type="text" id="data.skills.divineAid.value" name="data.skills.divineAid.value" value="{{numberFormat data.skills.divineAid.value decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
                     <div class="flexrow" data-skill="turnUnholy">
                         <label class="skill-check rollable" for="data.details.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
-                        <input type="text" id="data.skills.turnUnholy.value" name="data.skills.turnUnholy.value" value="{{data.skills.turnUnholy.value}}" data-dtype="String"/>
+                        <input type="text" id="data.skills.turnUnholy.value" name="data.skills.turnUnholy.value" value="{{numberFormat data.skills.turnUnholy.value decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
                     <div class="flexrow" data-skill="layOnHands">
                         <label class="skill-check rollable" for="data.details.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
-                        <input type="text" id="data.skills.layOnHands.value" name="data.skills.layOnHands.value" value="{{data.skills.layOnHands.value}}" data-dtype="String"/>
+                        <input type="text" id="data.skills.layOnHands.value" name="data.skills.layOnHands.value" value="{{numberFormat data.skills.layOnHands.value decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
                 </div>
 
