@@ -149,10 +149,10 @@ class DCCActor extends Actor {
   async rollWeaponAttack (weaponId, options = {}) {
     const weapon = this.data.data.items.weapons[weaponId]
     const speaker = { alias: this.name, _id: this._id }
-    let formula = `1d20 + ${weapon.toHit}`
+    const formula = `1d20 + ${weapon.toHit}`
 
     /* Determine attack bonus */
-    let attackBonusExpression = this.data.data.details.attackBonus || null
+    const attackBonusExpression = this.data.data.details.attackBonus || null
     let attackBonus = 0
     if (attackBonusExpression) {
       const abRoll = new Roll(attackBonusExpression)

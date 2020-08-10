@@ -955,6 +955,7 @@
 /* ----------------------------------------- */
 /*  Wizard/Elf Class                         */
 /* ----------------------------------------- */
+
 .dcc .patron {
   flex: 0 0 100%;
   margin: 6px 6px 0 0;
@@ -1010,5 +1011,14 @@
 
 .dcc .spells-container-wizard {
   margin: 4px 4px 4px 4px;
+}
+
+/* ----------------------------------------- */
+/*  Item Sheet                               */
+/* ----------------------------------------- */
+
+.dcc.item .sheet-body .description {
+  height: 100%;
+  overflow-y: auto;
 }
 

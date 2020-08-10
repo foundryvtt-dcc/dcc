@@ -836,3 +836,10 @@
 
 .dcc .spells-container-wizard {
   margin: 4px 4px 4px 4px; }
+
+/* ----------------------------------------- */
+/*  Item Sheet                               */
+/* ----------------------------------------- */
+.dcc.item .sheet-body .description {
+  height: 100%;
+  overflow-y: auto; }

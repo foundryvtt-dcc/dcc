@@ -1,4 +1,4 @@
-/* global Actors, ActorSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars */
+/* global Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars */
 /**
  * DCC
  */
@@ -7,6 +7,8 @@
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
+import DCCItem from './item.js'
+import DCCItemSheet from './item-sheet.js'
 import DCC from './config.js'
 import * as chat from './chat.js'
 
@@ -25,6 +27,7 @@ Hooks.once('init', async function () {
 
   // Define custom Entity classes
   CONFIG.Actor.entityClass = DCCActor
+  CONFIG.Item.entityClass = DCCItem
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
@@ -36,6 +39,8 @@ Hooks.once('init', async function () {
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard)
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf)
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf)
+  Items.unregisterSheet('core', ItemSheet)
+  Items.registerSheet('dcc', DCCItemSheet)
 
   // Register shared template for upper level characters
   const templatePaths = [
@@ -44,19 +49,20 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/actor-partial-pc-equipment.html',
     'systems/dcc/templates/actor-partial-pc-notes.html',
     'systems/dcc/templates/actor-partial-wizard-spells.html',
-    'systems/dcc/templates/actor-partial-cleric-spells.html'
+    'systems/dcc/templates/actor-partial-cleric-spells.html',
+    'systems/dcc/templates/item-partial-header.html'
   ]
   loadTemplates(templatePaths)
 
   // Handlebars helper to format attack bonus correctly
-  Handlebars.registerHelper('formatAttackBonus', function(attackBonus) {
+  Handlebars.registerHelper('formatAttackBonus', function (attackBonus) {
     if (attackBonus === '') {
       return '+0'
     } else if (attackBonus[0] !== '+' && attackBonus[0] !== '-') {
       return '+' + attackBonus
     }
-    return attackBonus;
-  });
+    return attackBonus
+  })
 
   // Register system settings
   game.settings.register('dcc', 'macroShorthand', {

@@ -300,7 +300,8 @@
       "ammunition",
       "armor",
       "equipment",
-      "mount"
+      "mount",
+      "spell"
     ],
     "templates": {
       "itemDescription": {
@@ -334,6 +335,7 @@
         "activatedEffect"
       ],
       "properties": {
+        "toHitBonus": "+0",
         "damage": "1d3",
         "range": null,
         "twoHanded": 0,
@@ -349,15 +351,13 @@
     "ammunition": {
       "templates": [
         "itemDescription",
-        "physicalItem",
-        "activatedEffect"
+        "physicalItem"
       ]
     },
     "armor": {
       "templates": [
         "itemDescription",
-        "physicalItem",
-        "activatedEffect"
+        "physicalItem"
       ],
       "acBonus" : "+1",
       "checkPenalty": null,
@@ -367,8 +367,7 @@
     "equipment": {
       "templates": [
         "itemDescription",
-        "physicalItem",
-        "activatedEffect"
+        "physicalItem"
       ]
     },
     "mount": {
