@@ -23,6 +23,7 @@ export class DCCItemSheet extends ItemSheet {
   /** @override */
   getData () {
     const data = super.getData()
+
     return data
   }
 

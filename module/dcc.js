@@ -64,6 +64,11 @@ Hooks.once('init', async function () {
     return attackBonus
   })
 
+  // Handlebars helper to stringify JSON objects for debugging
+  Handlebars.registerHelper('stringify', function (object) {
+    return JSON.stringify(object)
+  })
+
   // Register system settings
   game.settings.register('dcc', 'macroShorthand', {
     name: 'Shortened Macro Syntax',

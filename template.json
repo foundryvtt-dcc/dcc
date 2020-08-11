@@ -385,7 +385,11 @@
       "corruption": {},
       "manifestation": {},
       "misfire": {},
-      "results": {}
+      "results": {},
+      "mercurialEffect": {
+        "value": -1,
+        "description": ""
+      }
     }
   }
 }

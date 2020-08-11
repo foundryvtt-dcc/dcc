@@ -45,6 +45,7 @@
   "DCC.AlignmentL": "Lawful",
   "DCC.AlignmentN": "Neutral",
   "DCC.AlignmentC": "Chaotic",
+  "DCC.Ammunition": "Ammunition",
   "DCC.Armor": "Armor",
   "DCC.ArmorClass": "Armor Class",
   "DCC.Attack": "Attack",
@@ -284,6 +285,7 @@
   "DCC.Max": "Max",
   "DCC.MeleeWeapons": "Melee Weapons",
   "DCC.Modifier": "Modifier",
+  "DCC.Mounts": "Mounts",
   "DCC.Name": "Name",
   "DCC.NoCharges": "No Charges",
   "DCC.None": "None",
@@ -342,6 +344,7 @@
   "DCC.SpellDetails": "Spell Details",
   "DCC.SpellEffects": "Spell Effects",
   "DCC.SpellLevel": "Spell Level",
+  "DCC.SpellLevelShort": "Level",
   "DCC.SpellLevel1": "1st Level",
   "DCC.SpellLevel2": "2nd Level",
   "DCC.SpellLevel3": "3rd Level",
@@ -487,7 +490,5 @@
   "DCC.ElfSpells": "Elf Spells",
   "DCC.IronVulnerability": "Iron Vulnerability",
   "DCC.HeightenedSenses": "Find Secret Doors",
-  "DCC.ElfLuckMod": "Luck modifier to one level 1 spell",
-
-  "DCC.ChooseClass": "Choose Class"
+  "DCC.ElfLuckMod": "Luck modifier to one level 1 spell"
 }
