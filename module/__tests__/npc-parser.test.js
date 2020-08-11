@@ -131,3 +131,51 @@ test('wedad', () => {
   }
   expect(parsedNPC).toEqual(expect.objectContaining(expected))
 })
+
+/* Test short statline */
+test('shortstats', () => {
+  const parsedNPC = parseNPC('Stunty, the short and muddled: Init +1; Atk kick +2 melee (1d3); AC 15;\n hp 4; Act 1d20; SV Ref +6, Fort -2, Will +4.')
+  const expected = {
+    name: 'Stunty, the short and muddled',
+    'data.attributes.init.value': '+1',
+    'data.attributes.ac.value': '15',
+    'data.attributes.hitDice.value': '1',
+    'data.attributes.hp.value': '4',
+    'data.attributes.hp.max': '4',
+    'data.attributes.speed.value': '30',
+    'data.attributes.actionDice.value': '1d20',
+    'data.attributes.special.value': '',
+    'data.saves.frt.value': '-2',
+    'data.saves.ref.value': '+6',
+    'data.saves.wil.value': '+4',
+    'data.details.alignment': 'n',
+    'data.items.weapons.m1.name': 'kick',
+    'data.items.weapons.m1.toHit': '+2',
+    'data.items.weapons.m1.damage': '1d3'
+  }
+  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+})
+
+/* Test the bad guy's familiar with a minimal stat line */
+test('familiar', () => {
+  const parsedNPC = parseNPC('The bad guy\'s familiar: Atk claw +3 melee (1d4), AC 15, HP 2.')
+  const expected = {
+    name: 'The bad guy\'s familiar',
+    'data.attributes.init.value': '+0',
+    'data.attributes.ac.value': '15',
+    'data.attributes.hitDice.value': '1',
+    'data.attributes.hp.value': '2',
+    'data.attributes.hp.max': '2',
+    'data.attributes.speed.value': '30',
+    'data.attributes.actionDice.value': '1d20',
+    'data.attributes.special.value': '',
+    'data.saves.frt.value': '+0',
+    'data.saves.ref.value': '+0',
+    'data.saves.wil.value': '+0',
+    'data.details.alignment': 'n',
+    'data.items.weapons.m1.name': 'claw',
+    'data.items.weapons.m1.toHit': '+3',
+    'data.items.weapons.m1.damage': '1d4'
+  }
+  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+})

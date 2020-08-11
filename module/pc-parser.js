@@ -135,6 +135,11 @@ function _parsePlainPCToJSON (pcString) {
   return pcObject
 }
 
+/** Return first match or null from a regex match result
+ * @param {Array} Match result
+ *
+ * @ return {string} First matched group or null if no match
+ */
 function _firstMatch (result) {
   return (result && result.length > 0) ? result[1] : null
 }
