@@ -1,0 +1,27 @@
+<form class="{{cssClass}}" autocomplete="off">
+    <header class="sheet-header">
+        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+        <div class="header-fields">
+            <div class="flexrow">
+                <div class="item-name">
+                    <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+                </div>
+                <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+            </div>
+
+            <div class="grid grid-1col">
+              <div class="resource">
+                <label class="resource-label">{{localize "DCC.SpellLevel"}}</label>
+                  <input type="text" name="data.level" value="{{data.level}}" data-dtype="Number"/>
+              </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="sheet-body">
+        <h1>{{localize "DCC.Description"}}</h1>
+        <div class="description">
+            {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
+        </div>
+    </div>
+</form>

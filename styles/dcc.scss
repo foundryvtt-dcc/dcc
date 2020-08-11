@@ -1,3 +1,5 @@
+@import 'grid';
+
 /* ----------------------------------------- */
 /*  Globals                                  */
 /* ----------------------------------------- */
@@ -1074,7 +1076,18 @@
 /*  Items Sheet                              */
 /* ----------------------------------------- */
 
-.dcc.item .sheet-body .description {
-  height: 100%;
-  overflow-y: auto;
+.dcc.item {
+  .sheet-body .description {
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .item-name {
+    flex: 1 1;
+  }
+
+  .item-type {
+    flex: 0 0 60px;
+  }
 }
+

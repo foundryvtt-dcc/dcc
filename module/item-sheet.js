@@ -1,4 +1,4 @@
-/* global ItemSheet, mergeObject */
+/* global ItemSheet, mergeObject, CONFIG */
 
 /**
  * Extend the basic ItemSheet for DCC RPG
@@ -17,12 +17,25 @@ export class DCCItemSheet extends ItemSheet {
 
   /** @override */
   get template () {
-    return 'systems/dcc/templates/item-sheet-equipment.html'
+    switch (this.object.data.type) {
+      case 'spell':
+        return 'systems/dcc/templates/item-sheet-spell.html'
+      case 'weapon':
+      case 'armor':
+      case 'ammunition':
+      case 'equipment':
+      case 'mount':
+      default:
+        return 'systems/dcc/templates/item-sheet-equipment.html'
+    }
   }
 
   /** @override */
   getData () {
     const data = super.getData()
+
+    // Lookup the localizable string for the item's type
+    data.item.data.typeString = CONFIG.DCC.items[data.item.type] || 'DCC.Unknown'
 
     return data
   }
