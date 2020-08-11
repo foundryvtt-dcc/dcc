@@ -1,0 +1,21 @@
+<header class="sheet-header">
+    <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+    <div class="header-fields">
+        <div class="flexrow">
+            <div class="item-name">
+                <h1 class="item-name charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+            </div>
+            <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+        </div>
+        <div class="grid grid-2col">
+          <div class="resource">
+            <label class="resource-label">Quantity</label>
+              <input type="text" name="data.quantity" value="{{data.quantity}}" data-dtype="Number"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label">Weight</label>
+              <input type="text" name="data.weight" value="{{data.weight}}" data-dtype="Number"/>
+          </div>
+        </div>
+    </div>
+</header>

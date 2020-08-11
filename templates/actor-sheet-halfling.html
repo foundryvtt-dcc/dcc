@@ -1,0 +1,45 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    {{> systems/dcc/templates/actor-partial-pc-header.html }}
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        <a class="item" data-tab="class">{{localize "DCC.Halfling"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Character Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+
+        {{!-- Equipment Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+
+        {{!-- Notes Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+
+        {{!-- Class Tab --}}
+        <div class="tab" data-group="primary" data-tab="class">
+            <h4 class="class-label">{{localize "DCC.HalflingAbilities"}}</h4>
+            <div class="class">
+                <div class="skills-container">
+                    <div class="wide flexrow" data-skill="sneakAndHide">
+                        <label class="skill-check rollable" for="data.skills.sneakAndHide.value">{{localize "DCC.SneakAndHide"}}</label>
+                        <input type="text" id="data.skills.sneakAndHide.value" name="data.skills.sneakAndHide.value" value="{{numberFormat data.skills.sneakAndHide.value decimals=0 sign=true}}" data-dtype="String"/>
+                    </div>
+                </div>
+
+                <ul class="class-note flexcol">
+                  <li>{{localize "DCC.Lucky"}}</li>
+                  <li>{{localize "DCC.TwoWeaponFighting"}}</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</form>
+

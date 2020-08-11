@@ -1,0 +1,193 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    {{> systems/dcc/templates/actor-partial-pc-header.html }}
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        <a class="item" data-tab="class">{{localize "DCC.Cleric"}}</a>
+        <a class="item" data-tab="spells">{{localize "DCC.ClericSpells"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Character Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+
+        {{!-- Equipment Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+
+        {{!-- Notes Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+
+        {{!-- Class Tab --}}
+        <div class="tab" data-group="primary" data-tab="class">
+            <h4 class="class-label">{{localize "DCC.ClericAbilities"}}</h4>
+            <div class="class">
+                <div class="skills-container">
+                    <div class="flexrow" data-ability="per">
+                        <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="String"/>
+                    </div>
+                    <div class="flexrow" data-skill="divineAid">
+                        <label class="skill-check rollable" for="data.details.divineAid.value">{{localize "DCC.DivineAid"}}</label>
+                        <input type="text" id="data.skills.divineAid.value" name="data.skills.divineAid.value" value="{{numberFormat data.skills.divineAid.value decimals=0 sign=true}}" data-dtype="String"/>
+                    </div>
+                    <div class="flexrow" data-skill="turnUnholy">
+                        <label class="skill-check rollable" for="data.details.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
+                        <input type="text" id="data.skills.turnUnholy.value" name="data.skills.turnUnholy.value" value="{{numberFormat data.skills.turnUnholy.value decimals=0 sign=true}}" data-dtype="String"/>
+                    </div>
+                    <div class="flexrow" data-skill="layOnHands">
+                        <label class="skill-check rollable" for="data.details.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
+                        <input type="text" id="data.skills.layOnHands.value" name="data.skills.layOnHands.value" value="{{numberFormat data.skills.layOnHands.value decimals=0 sign=true}}" data-dtype="String"/>
+                    </div>
+                </div>
+
+                <div class="deity flexrow">
+                    <label class="flex1" for="data.class.deity">{{localize "DCC.Deity"}}</label>
+                    <input class="flex2" type="text" id="data.class.deity" name="data.class.deity" value="{{data.class.deity}}" data-dtype="String"/>
+                </div>
+
+                <div class="disapproval flexrow">
+                    <label for="data.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
+                    <label class="one-to" for="data.class.disapproval">1 - </label>
+                    <input type="text" id="data.class.disapproval" name="data.class.disapproval" value="{{data.class.disapproval}}" data-dtype="Number"/>
+                </div>
+    
+                <div class="lay-on-hands flexrow">
+                    <div class="lay-on-hands container">
+                      <div class="header item">
+                        Result
+                      </div>
+                      <div class="header item">
+                        Same
+                      </div>
+                      <div class="header item">
+                        Adjacent
+                      </div>
+                      <div class="header item">
+                        Opposed
+                      </div>
+    
+                      <div class="header item">
+                        1-11
+                      </div>
+                      <div class="item">
+                        fail
+                      </div>
+                      <div class="item">
+                        fail
+                      </div>
+                      <div class="item">
+                        fail
+                      </div>
+    
+                      <div class="header item">
+                        12-13
+                      </div>
+                      <div class="item">
+                        2 dice
+                      </div>
+                      <div class="item">
+                        1 die
+                      </div>
+                      <div class="item">
+                        1 die
+                      </div>
+    
+                      <div class="header item">
+                        14-19
+                      </div>
+                      <div class="item">
+                        3 dice
+                      </div>
+                      <div class="item">
+                        2 dice
+                      </div>
+                      <div class="item">
+                        1 die
+                      </div>
+    
+                      <div class="header item">
+                        20-21
+                      </div>
+                      <div class="item">
+                        4 dice
+                      </div>
+                      <div class="item">
+                        3 dice
+                      </div>
+                      <div class="item">
+                        2 dice
+                      </div>
+    
+                      <div class="header item">
+                        22+
+                      </div>
+                      <div class="item">
+                        5 dice
+                      </div>
+                      <div class="item">
+                        4 dice
+                      </div>
+                      <div class="item">
+                        3 dice
+                      </div>
+                    </div>
+    
+                    <div class="condition-healing container">
+                      <div class="header item">
+                        Condition
+                      </div>
+                      <div class="header item">
+                        Dice
+                      </div>
+    
+                      <div class="header item">
+                        Broken Limbs
+                      </div>
+                      <div class="item">
+                        1
+                      </div>
+    
+                      <div class="header item">
+                        Organ Damage
+                      </div>
+                      <div class="item">
+                        2
+                      </div>
+    
+                      <div class="header item">
+                        Disease
+                      </div>
+                      <div class="item">
+                        2
+                      </div>
+    
+                      <div class="header item">
+                        Paralysis or Poison
+                      </div>
+                      <div class="item">
+                        3
+                      </div>
+    
+                      <div class="header item">
+                        Blindness or Deafness
+                      </div>
+                      <div class="item">
+                        4
+                      </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Spells Tab --}}
+        {{> systems/dcc/templates/actor-partial-cleric-spells.html }}
+    </section>
+</form>
+

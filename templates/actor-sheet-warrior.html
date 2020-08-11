@@ -1,0 +1,51 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    {{> systems/dcc/templates/actor-partial-pc-header.html }}
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        <a class="item" data-tab="class">{{localize "DCC.Warrior"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Character Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+
+        {{!-- Equipment Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+
+        {{!-- Notes Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+
+        {{!-- Class Tab --}}
+        <div class="tab" data-group="primary" data-tab="class">
+            <h4 class="class-label">{{localize "DCC.WarriorAbilities"}}</h4>
+            <div class="class">
+                <div class="crit-range flexrow">
+                    <label for="data.details.critRange">{{localize "DCC.CritRange"}}</label>
+                    <input type="text" id="data.details.critRange" name="data.details.critRange" value="{{data.details.critRange}}" data-dtype="Number"/>
+                    <label class="to-twenty" for="data.details.critRange"> - 20</label>
+                </div>
+    
+                <div class="skills-container">
+                    <div class="wide flexrow">
+                      <label class="box-title" for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
+                      <input type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
+                    </div">
+                </div>
+
+                <ul class="class-note flexcol">
+                  <li>{{localize "DCC.AddClassLevelToInitiative"}}</li>
+                  <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+

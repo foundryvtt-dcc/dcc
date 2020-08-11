@@ -1,0 +1,44 @@
+{{!-- Sheet Header --}}
+<header class="sheet-header flexrow" >
+    <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"
+         alt="{{localize 'Character Portrait'}}'"/>
+    <div class="upper-level flexrow">
+        <div class="charname flexrow">
+            <h1 class="charname">
+                <input name="name" type="text" value="{{actor.name}}"
+                       placeholder="{{localize 'DCC.CharacterName'}}"/>
+            </h1>
+            <div class="level">
+              <label for="data.details.level.value">{{data.class.className}} {{localize "DCC.Level"}}</label>
+                <input type="text" id="data.details.level.value" name="data.details.level.value"
+                       value="{{data.details.level.value}}" maxlength="6"
+                       data-dtype="Number"/>
+            </div>
+        </div>
+
+
+        <div class="occupation flex1">
+            <label for="data.details.occupation.value">{{localize "DCC.Occupation"}}</label>
+            <input type="text" id="data.details.occupation.value" name="data.details.occupation.value"
+                   value="{{data.details.occupation.value}}" maxlength="40"/>
+        </div>
+
+        <div class="alignment">
+            <label for="data.details.alignment">{{localize "DCC.Alignment"}}</label>
+            <select id="data.details.alignment" name="data.details.alignment">
+                {{#select data.details.alignment}}
+                {{#each config.alignments as |label alignment|}}
+                <option value="{{alignment}}">{{localize label}}</option>
+                {{/each}}
+                {{/select}}
+            </select>
+        </div>
+
+        <div class="experience">
+            <label for="data.details.experience.value">{{localize "DCC.Experience"}}</label>
+            <input type="text" id="data.details.experience.value" name="data.details.experience.value"
+                   value="{{data.details.experience.value}}" maxlength="40"/>
+        </div>
+    </div>
+</header>
+

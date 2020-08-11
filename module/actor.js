@@ -69,7 +69,7 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Saving Throw
-   * @param {String} saveId       The save ID (e.g. "str")
+   * @param {String} saveId       The save ID (e.g. "backstab")
    */
   rollSavingThrow (saveId) {
     const save = this.data.data.saves[saveId]
@@ -84,6 +84,64 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Roll a Skill Check
+   * @param {String}  skillId       The skill ID (e.g. "sneakSilently")
+   */
+  rollSkillCheck (skillId) {
+    const skill = this.data.data.skills[skillId]
+    const die = skill.die || this.data.data.attributes.actionDice.value
+    const ability = skill.ability || null
+    var abilityLabel = ''
+    if (ability) {
+      abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
+    }
+
+    var roll = null
+    if (skill.value) {
+      roll = new Roll(die + '+@bonus', { bonus: skill.value })
+    } else {
+      roll = new Roll(die)
+    }
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
+    })
+  }
+
+  /**
+   * Roll the Luck Die
+   */
+  rollLuckDie () {
+    const roll = new Roll(this.data.data.class.luckDie)
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: `${game.i18n.localize('DCC.LuckDie')}`
+    })
+  }
+
+  /**
+   * Roll a Spell Check
+   * @param {String} bonus           Total bonus for the check
+   * @param {String} abilityId       The ability used for the check (e.g. "per")
+   */
+  rollSpellCheck (bonus, abilityId) {
+    const ability = this.data.data.abilities[abilityId]
+    ability.label = CONFIG.DCC.abilities[abilityId]
+
+    const roll = new Roll('1d20+@bonus', { bonus: bonus })
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: `${game.i18n.localize('DCC.SpellCheck')} (${game.i18n.localize(ability.label)})`
+    })
+  }
+
+  /**
    * Roll a Weapon Attack
    * @param {string} weaponId     The weapon id (e.g. "m1", "r1")
    * @param {Object} options      Options which configure how ability tests are rolled
@@ -93,8 +151,19 @@ class DCCActor extends Actor {
     const speaker = { alias: this.name, _id: this._id }
     const formula = `1d20 + ${weapon.toHit}`
 
+    /* Determine attack bonus */
+    const attackBonusExpression = this.data.data.details.attackBonus || null
+    let attackBonus = 0
+    if (attackBonusExpression) {
+      const abRoll = new Roll(attackBonusExpression)
+      attackBonus = abRoll.roll().total
+    }
+
+    /* Determine crit range */
+    const critRange = this.data.data.details.critRange || 20
+
     /* Roll the Attack */
-    const roll = new Roll(formula, { critical: 20 })
+    const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
     roll.roll()
     const rollHTML = this._formatRoll(roll, formula)
 
@@ -102,7 +171,7 @@ class DCCActor extends Actor {
 
     /* Handle Critical Hits */
     let crit = ''
-    if (d20RollResult === 20) {
+    if (d20RollResult >= critRange) {
       const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
       const pack = game.packs.get('dcc.criticalhits')
       await pack.getIndex() // Load the compendium index
@@ -138,7 +207,7 @@ class DCCActor extends Actor {
     }
 
     /* Roll the Damage */
-    const damageRoll = new Roll(weapon.damage)
+    const damageRoll = new Roll(weapon.damage, { ab: attackBonus })
     damageRoll.roll()
     const damageRollData = escape(JSON.stringify(damageRoll))
     const damageRollTotal = damageRoll.total

@@ -80,6 +80,21 @@ DCC.saves = {
 /* -------------------------------------------- */
 
 /**
+ * Item entity types
+ * @type {Object}
+ */
+DCC.items = {
+  weapon: 'DCC.Weapon',
+  ammunition: 'DCC.Ammunition',
+  armor: 'DCC.Armor',
+  equipment: 'DCC.Equipment',
+  mount: 'DCC.Mount',
+  spell: 'DCC.Spell'
+}
+
+/* -------------------------------------------- */
+
+/**
  * This Object defines the various lengths of time which can occur in D&D5e
  * @type {Object}
  */

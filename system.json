@@ -2,7 +2,7 @@
   "name": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
-  "version": 0.07,
+  "version": 0.08,
   "minimumCoreVersion": "0.5.6",
   "compatibleCoreVersion": "0.7.0",
   "templateVersion": 2,

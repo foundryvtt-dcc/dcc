@@ -17,15 +17,16 @@ class Actor {
       this.data = {
         data: {
           abilities: {
-            str: { value: 6 },
-            agl: { value: 8 },
-            sta: { value: 12 },
-            int: { value: 14 },
-            per: { value: 16 },
-            lck: { value: 18 }
+            str: { value: 6, label: 'DCC.AbilityStr' },
+            agl: { value: 8, label: 'DCC.AbilityAgl' },
+            sta: { value: 12, label: 'DCC.AbilitySta' },
+            int: { value: 14, label: 'DCC.AbilityInt' },
+            per: { value: 16, label: 'DCC.AbilityPer' },
+            lck: { value: 18, label: 'DCC.AbilityLck' }
           },
           attributes: {
-            init: { value: -1 }
+            init: { value: -1 },
+            actionDice: { value: '1d20' }
           },
           items: {
             weapons: {
@@ -36,6 +37,43 @@ class Actor {
             frt: { value: -1 },
             ref: { value: 0 },
             wil: { value: +12 }
+          },
+          details: {
+            attackBonus: 0
+          },
+          class: {
+            luckDie: '1d3'
+          },
+          skills: {
+            customDieSkill: {
+              label: 'Custom Die Skill',
+              die: '1d14'
+            },
+            customDieAndValueSkill: {
+              label: 'Custom Die And Value Skill',
+              die: '1d14',
+              value: +3
+            },
+            actionDieSkill: {
+              label: 'Action Die Skill',
+              value: -4
+            },
+            customDieSkillWithInt: {
+              label: 'Custom Die Skill With Int',
+              ability: 'int',
+              die: '1d24'
+            },
+            customDieAndValueSkillWithPer: {
+              label: 'Custom Die And Value Skill With Per',
+              ability: 'per',
+              die: '1d24',
+              value: +3
+            },
+            actionDieSkillWithLck: {
+              label: 'Action Die Skill With Lck',
+              ability: 'lck',
+              value: +4
+            }
           }
         }
       }
@@ -139,3 +177,8 @@ global.CONFIG.ChatMessage = {
     })
   }
 }
+
+/**
+ * Handlebars
+ */
+global.loadTemplates = jest.fn((templateList) => {}).mockName('loadTemplates')

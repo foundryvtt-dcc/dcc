@@ -1,0 +1,92 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    {{> systems/dcc/templates/actor-partial-pc-header.html }}
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        <a class="item" data-tab="class">{{localize "DCC.Thief"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Character Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+
+        {{!-- Equipment Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+
+        {{!-- Notes Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+
+        {{!-- Class Tab --}}
+        <div class="tab" data-group="primary" data-tab="class">
+            <h4 class="class-label">{{localize "DCC.ThiefAbilities"}}</h4>
+            <div class="class">
+                <div class="skills-container">
+                    <div class="flexrow">
+                        <label class="luck-die rollable" for="data.class.luckDie">{{localize "DCC.LuckDie"}}</label>
+                        <input type="text" id="data.class.luckDie" name="data.class.luckDie" value="{{data.class.luckDie}}" data-dtype="String"/>
+                    </div>
+                    <div class="flexrow">
+                        <label class="skill-check" for="data.class.backstab">{{localize "DCC.Backstab"}}</label>
+                        <input type="text" id="data.class.backstab" name="data.class.backstab" value="{{numberFormat data.class.backstab decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="sneakSilently">
+                        <label class="skill-check rollable" for="data.skills.sneakSilently.value">{{localize "DCC.SneakSilently"}}</label>
+                        <input type="text" id="data.skills.sneakSilently.value" name="data.skills.sneakSilently.value" value="{{numberFormat data.skills.sneakSilently.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="hideInShadows">
+                        <label class="skill-check rollable" for="data.skills.hideInShadows.value">{{localize "DCC.HideInShadows"}}</label>
+                        <input type="text" id="data.skills.hideInShadows.value" name="data.skills.hideInShadows.value" value="{{numberFormat data.skills.hideInShadows.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="pickPockets">
+                        <label class="skill-check rollable" for="data.skills.pickPockets.value">{{localize "DCC.PickPockets"}}</label>
+                        <input type="text" id="data.skills.pickPockets.value" name="data.skills.pickPockets.value" value="{{numberFormat data.skills.pickPockets.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="climbSheerSurfaces">
+                        <label class="skill-check rollable" for="data.skills.climbSheerSurfaces.value">{{localize "DCC.ClimbSheerSurfaces"}}</label>
+                        <input type="text" id="data.skills.climbSheerSurfaces.value" name="data.skills.climbSheerSurfaces.value" value="{{numberFormat data.skills.climbSheerSurfaces.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="pickLock">
+                        <label class="skill-check rollable" for="data.skills.pickLock.value">{{localize "DCC.PickLock"}}</label>
+                        <input type="text" id="data.skills.pickLock.value" name="data.skills.pickLock.value" value="{{numberFormat data.skills.pickLock.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="findTrap">
+                        <label class="skill-check rollable" for="data.skills.findTrap.value">{{localize "DCC.FindTrap"}}</label>
+                        <input type="text" id="data.skills.findTrap.value" name="data.skills.findTrap.value" value="{{numberFormat data.skills.findTrap.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="disableTrap">
+                        <label class="skill-check rollable" for="data.skills.disableTrap.value">{{localize "DCC.DisableTrap"}}</label>
+                        <input type="text" id="data.skills.disableTrap.value" name="data.skills.disableTrap.value" value="{{numberFormat data.skills.disableTrap.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="forgeDocument">
+                        <label class="skill-check rollable" for="data.skills.forgeDocument.value">{{localize "DCC.ForgeDocument"}}</label>
+                        <input type="text" id="data.skills.forgeDocument.value" name="data.skills.forgeDocument.value" value="{{numberFormat data.skills.forgeDocument.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="disguiseSelf">
+                        <label class="skill-check rollable" for="data.skills.disguiseSelf.value">{{localize "DCC.DisguiseSelf"}}</label>
+                        <input type="text" id="data.skills.disguiseSelf.value" name="data.skills.disguiseSelf.value" value="{{numberFormat data.skills.disguiseSelf.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="readLanguages">
+                        <label class="skill-check rollable" for="data.skills.readLanguages.value">{{localize "DCC.ReadLanguages"}}</label>
+                        <input type="text" id="data.skills.readLanguages.value" name="data.skills.readLanguages.value" value="{{numberFormat data.skills.readLanguages.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="handlePoison">
+                        <label class="skill-check rollable" for="data.skills.handlePoison.value">{{localize "DCC.HandlePoison"}}</label>
+                        <input type="text" id="data.skills.handlePoison.value" name="data.skills.handlePoison.value" value="{{numberFormat data.skills.handlePoison.value decimals=0 sign=true}}" data-dtype="Number"/>
+                    </div>
+                    <div class="flexrow" data-skill="castSpellFromScroll">
+                        <label class="skill-check rollable" for="data.skills.castSpellFromScroll.value">{{localize "DCC.CastSpellFromScroll"}}</label>
+                        <input type="text" id="data.skills.castSpellFromScroll.value" name="data.skills.castSpellFromScroll.value" value="{{data.skills.castSpellFromScroll.value}}" data-dtype="String"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+

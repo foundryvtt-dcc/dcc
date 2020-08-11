@@ -1,0 +1,59 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    {{> systems/dcc/templates/actor-partial-pc-header.html }}
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        <a class="item" data-tab="class">{{localize "DCC.Wizard"}}</a>
+        <a class="item" data-tab="spells">{{localize "DCC.WizardSpells"}}</a>
+        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Character Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+
+        {{!-- Equipment Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+
+        {{!-- Notes Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+
+        {{!-- Class Tab --}}
+        <div class="tab" data-group="primary" data-tab="class">
+            <h4 class="class-label">{{localize "DCC.WizardAbilities"}}</h4>
+            <div class="class">
+                <div class="skills-container">
+                    <div class="wide flexrow" data-ability="int">
+                        <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="String"/>
+                    </div>
+                </div>
+
+                <div class="patron flexcol">
+                    <label for="data.class.patron">{{localize "DCC.Patron"}}</label>
+                    <input type="text" id="data.class.patron" name="data.class.patron" value="{{data.class.patron}}" data-dtype="String"/>
+                </div>
+
+                <div class="familiar flexcol">
+                    <label for="data.class.familiar">{{localize "DCC.Familiar"}}</label>
+                    <input type="text" id="data.class.familiar" name="data.class.familiar" value="{{data.class.familiar}}" data-dtype="String"/>
+                </div>
+
+                <div class="corruption flexcol">
+                    <label for="data.class.corruption">{{localize "DCC.Corruption"}}</label>
+                    <input type="text" id="data.class.corruption" name="data.class.corruption" value="{{data.class.corruption}}" data-dtype="String"/>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Spells Tab --}}
+        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
+    </section>
+</form>
+

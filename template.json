@@ -1,7 +1,7 @@
 {
   "Actor": {
     "types": [
-      "Zero-Level",
+      "Player",
       "NPC"
     ],
     "templates": {
@@ -58,17 +58,15 @@
           "speed": {
             "value": 30,
             "special": ""
-          },
-          "spellcasting": "int"
+          }
         },
         "details": {
-          "alignment": "",
-          "biography": {
-            "value": "",
-            "public": ""
+          "level": {
+            "value": 0
           },
+          "alignment": "",
           "occupation": "",
-          "race": ""
+          "notes": ""
         },
         "saves": {
           "frt": {
@@ -84,175 +82,202 @@
             "value": 0
           }
         },
-        "traits": {
-          "size": "med",
-          "senses": "",
-          "languages": {
-            "value": [],
-            "custom": ""
-          },
-          "di": {
-            "value": [],
-            "custom": ""
-          },
-          "dr": {
-            "value": [],
-            "custom": ""
-          },
-          "dv": {
-            "value": [],
-            "custom": ""
-          },
-          "ci": {
-            "value": [],
-            "custom": ""
-          }
+        "languages": {
+          "value": ""
         },
         "currency": {
-          "pp": 0,
           "gp": 0,
-          "ep": 0,
           "sp": 0,
           "cp": 0
-        },
-        "spells": {
-          "spell1": {
+        }
+      },
+      "player": {
+        "details": {
+          "attackBonus": "+0",
+          "birthAugur": "",
+          "critRange": "19",
+          "xp": {
             "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "spell2": {
-            "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "spell3": {
-            "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "spell4": {
-            "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "spell5": {
-            "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "spell6": {
-            "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "spell7": {
-            "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "spell8": {
-            "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "spell9": {
-            "value": 0,
-            "max": 0,
-            "override": null
-          },
-          "pact": {
-            "value": 0,
-            "max": 0,
-            "override": null
+            "min": 0,
+            "max": 10
           }
         },
-        "bonuses": {
-          "mwak": {
-            "attack": "",
-            "damage": ""
+        "skills": {
+          "findSecretDoors": {
+            "label": "DCC.FindSecretDoors",
+            "value": "+0"
+          }
+        },
+        "inventory": {
+          "weapons": [],
+          "ammunition": [],
+          "armor": [],
+          "equipment": [],
+          "mount": []
+        }
+      },
+      "cleric": {
+        "class": {
+          "spellCheck": 1,
+          "spells": [],
+          "deity": null,
+          "disapproval": "1",
+          "disapprovalTable": "Disapproval"
+        },
+        "skills": {
+          "divineAid": {
+            "label": "DCC.DivineAid",
+            "ability": "per",
+            "value": 0
           },
-          "rwak": {
-            "attack": "",
-            "damage": ""
+          "turnUnholy": {
+            "label": "DCC.TurnUnholy",
+            "ability": "per",
+            "value": 0
           },
-          "msak": {
-            "attack": "",
-            "damage": ""
+          "layOnHands": {
+            "label": "DCC.LayOnHands",
+            "ability": "per",
+            "value": 0
+          }
+        }
+      },
+      "thief": {
+        "class" : {
+          "luckDie": "1d3",
+          "backstab": "0"
+        },
+        "skills": {
+          "sneakSilently": {
+            "label": "DCC.SneakSilently",
+            "ability": "agl",
+            "value": "0"
           },
-          "abilities": {
-            "check": "",
-            "save": "",
-            "skill": ""
+          "hideInShadows": {
+            "label": "DCC.HideInShadows",
+            "ability": "agl",
+            "value": "0"
           },
-          "spell": {
-            "dc": ""
+          "pickPockets": {
+            "label": "DCC.PickPockets",
+            "ability": "agl",
+            "value": "0"
+          },
+          "climbSheerSurfaces": {
+            "label": "DCC.ClimbSheerSurfaces",
+            "ability": "agl",
+            "value": "0"
+          },
+          "pickLock": {
+            "label": "DCC.PickLock",
+            "ability": "agl",
+            "value": "0"
+          },
+          "findTrap": {
+            "label": "DCC.FindTrap",
+            "ability": "int",
+            "value": "0"
+          },
+          "disableTrap": {
+            "label": "DCC.DisableTrap",
+            "ability": "agl",
+            "value": "0"
+          },
+          "forgeDocument": {
+            "label": "DCC.ForgeDocument",
+            "ability": "agl",
+            "value": "0"
+          },
+          "disguiseSelf": {
+            "label": "DCC.DisguiseSelf",
+            "ability": "per",
+            "value": "0"
+          },
+          "readLanguages": {
+            "label": "DCC.ReadLanguages",
+            "ability": "int",
+            "value": "0"
+          },
+          "handlePoison": {
+            "label": "DCC.HandlePoison",
+            "value": "0"
+          },
+          "castSpellFromScroll": {
+            "label": "DCC.CastSpellFromScroll",
+            "ability": "int",
+            "die": "1d10",
+            "value": "0"
+          }
+        }
+      },
+      "halfling": {
+        "skills": {
+          "sneakAndHide": {
+            "label": "DCC.SneakAndHide",
+            "value": "+3"
+          }
+        }
+      },
+      "warrior": {
+        "details": {
+          "attackBonus": "+1d3",
+          "critRange": "19"
+        },
+        "class": {
+          "luckyWeapon": null
+        }
+      },
+      "wizard": {
+        "class": {
+          "spellCheck": 1,
+          "spells": [],
+          "patron": null,
+          "familiar": null,
+          "corruption": []
+        }
+      },
+      "dwarf": {
+        "details": {
+          "attackBonus": "+1d3"
+        },
+        "class": {
+          "luckyWeapon": null
+        },
+        "skills": {
+          "shieldBash": {
+            "label" : "DCC.ShieldBash",
+            "ability": "str",
+            "die": "1d14"
+          }
+        }
+      },
+      "elf": {
+        "class": {
+          "spellCheck": 1
+        },
+        "skills": {
+          "findSecretDoors": {
+            "label": "DCC.HeightenedSenses",
+            "ability" : "int",
+            "value": "+4"
           }
         }
       }
     },
-    "Character": {
+    "Player": {
       "templates": [
-        "common"
+        "common",
+        "player",
+        "cleric",
+        "thief",
+        "halfling",
+        "warrior",
+        "wizard",
+        "dwarf",
+        "elf"
       ],
-      "attributes": {
-      },
-      "details": {
-        "background": "",
-        "notes": "",
-        "xp": {
-          "value": 0,
-          "min": 0,
-          "max": 300
-        }
-      },
-      "resources": {
-        "primary": {
-          "value": 0,
-          "max": 0,
-          "sr": 0,
-          "lr": 0
-        },
-        "secondary": {
-          "value": 0,
-          "max": 0,
-          "sr": 0,
-          "lr": 0
-        },
-        "tertiary": {
-          "value": 0,
-          "max": 0,
-          "sr": 0,
-          "lr": 0
-        }
-      },
-      "traits": {
-        "weaponProf": {
-          "value": [],
-          "custom": ""
-        },
-        "armorProf": {
-          "value": [],
-          "custom": ""
-        },
-        "toolProf": {
-          "value": [],
-          "custom": ""
-        }
-      }
-    },
-    "Zero-Level": {
-      "templates": [
-        "common"
-      ],
-      "details": {
-        "background": "",
-        "xp": {
-          "value": 0,
-          "min": 0,
-          "max": 10
-        },
-        "trait": ""
+      "class": {
+        "className": "Zero-Level"
       }
     },
     "NPC": {
@@ -266,29 +291,17 @@
         },
         "hitDice": "1d6"
       },
-      "details": {
-        "type": "",
-        "environment": "",
-        "xp": {
-          "value": 10
-        },
-        "source": ""
-      },
-      "resources": {
-      }
+      "attacks": []
     }
   },
   "Item": {
     "types": [
       "weapon",
+      "ammunition",
+      "armor",
       "equipment",
-      "consumable",
-      "tool",
-      "loot",
-      "class",
-      "spell",
-      "feat",
-      "backpack"
+      "mount",
+      "spell"
     ],
     "templates": {
       "itemDescription": {
@@ -303,143 +316,80 @@
         "quantity": 1,
         "weight": 0,
         "price": 0,
-        "attuned": false,
         "equipped": false,
-        "rarity": "",
         "identified": true
       },
       "activatedEffect": {
-        "duration": {
-          "value": null,
-          "units": ""
-        },
-        "target": {
-          "value": null,
-          "units": "",
-          "type": ""
-        },
         "range": {
           "value": null,
           "long": null,
           "units": ""
-        }
-      },
-      "action": {
-        "ability": null,
-        "actionType": null,
-        "attackBonus": 0,
-        "chatFlavor": "",
-        "critical": null,
-        "damage": {
-          "parts": [],
-          "versatile": ""
         },
-        "formula": "",
-        "save": {
-          "ability": "",
-          "dc": null,
-          "scaling": "spell"
-        }
+        "specialProperties": ""
       }
-    },
-    "backpack": {
-      "templates": [
-        "itemDescription",
-        "physicalItem"
-      ],
-      "capacity": {
-        "type": "weight",
-        "value": 0,
-        "weightless": false
-      },
-      "currency": {
-        "cp": 0,
-        "sp": 0,
-        "ep": 0,
-        "gp": 0,
-        "pp": 0
-      }
-    },
-    "class": {
-      "templates": [
-        "itemDescription"
-      ],
-      "levels": 1,
-      "subclass": "",
-      "hitDice": "d6",
-      "hitDiceUsed": 0,
-      "skills": {
-      },
-      "spellcasting": "none"
-    },
-    "consumable": {
-      "templates": [
-        "itemDescription",
-        "physicalItem",
-        "activatedEffect",
-        "action"
-      ],
-      "consumableType": "potion",
-      "uses": {
-        "autoDestroy": false
-      }
-    },
-    "equipment": {
-      "templates": [
-        "itemDescription",
-        "physicalItem",
-        "activatedEffect",
-        "action"
-      ],
-      "armor": {
-        "type": "light",
-        "value": 10,
-        "dex": null
-      },
-      "strength": 0,
-      "stealth": false,
-      "proficient": true
-    },
-    "loot": {
-      "templates": [
-        "itemDescription",
-        "physicalItem"
-      ]
-    },
-    "tool": {
-      "templates": [
-        "itemDescription",
-        "physicalItem"
-      ],
-      "ability": "int",
-      "chatFlavor": "",
-      "proficient": 0
-    },
-    "spell": {
-      "templates": [
-        "itemDescription",
-        "activatedEffect",
-        "action"
-      ],
-      "level": 1,
-      "corruption": {},
-      "components": {
-        "value": "",
-        "concentration": false
-      },
-      "manifestation": {},
-      "misfire": {},
-      "results": {}
     },
     "weapon": {
       "templates": [
         "itemDescription",
         "physicalItem",
-        "activatedEffect",
-        "action"
+        "activatedEffect"
       ],
-      "properties": {},
+      "properties": {
+        "toHitBonus": "+0",
+        "damage": "1d3",
+        "range": null,
+        "twoHanded": 0,
+        "melee": 0,
+        "missile": 0,
+        "shortRangeStrength": 0,
+        "subdual": 0,
+        "backstabDamage": null,
+        "doubleIfMounted": 0
+      },
       "proficient": true
+    },
+    "ammunition": {
+      "templates": [
+        "itemDescription",
+        "physicalItem"
+      ]
+    },
+    "armor": {
+      "templates": [
+        "itemDescription",
+        "physicalItem"
+      ],
+      "acBonus" : "+1",
+      "checkPenalty": null,
+      "speed": null,
+      "fumbleDie": "1d4"
+    },
+    "equipment": {
+      "templates": [
+        "itemDescription",
+        "physicalItem"
+      ]
+    },
+    "mount": {
+      "templates": [
+        "itemDescription",
+        "physicalItem"
+      ]
+    },
+    "spell": {
+      "templates": [
+        "itemDescription",
+        "activatedEffect"
+      ],
+      "level": 1,
+      "corruption": {},
+      "manifestation": {},
+      "misfire": {},
+      "results": {},
+      "mercurialEffect": {
+        "value": -1,
+        "description": ""
+      }
     }
   }
 }

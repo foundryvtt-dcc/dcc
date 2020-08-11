@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject */
+/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, $ */
 
 import parsePC from './pc-parser.js'
 import parseNPC from './npc-parser.js'
@@ -54,9 +54,10 @@ class DCCActorSheet extends ActorSheet {
       options: this.options,
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
-      isCharacter: this.entity.data.type === 'character',
       isNPC: this.entity.data.type === 'NPC',
-      isZero: this.entity.data.type === 'Zero-Level',
+      izPC: this.entity.data.type === 'Player',
+      isZero: this.entity.data.data.details.level === 0,
+      type: this.entity.data.type,
       config: CONFIG.DCC
     }
 
@@ -72,11 +73,66 @@ class DCCActorSheet extends ActorSheet {
 
     if (data.isNPC) {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
+    } else {
+      this.options.template = 'systems/dcc/templates/actor-sheet-zero-level.html'
     }
+
+    // Prepare item lists by type
+    this._prepareItems(data)
 
     return data
   }
 
+  /**
+   * Organize and classify Items for Character sheets.
+   *
+   * @param {Object} actorData The actor to prepare.
+   * @return {undefined}
+   */
+  _prepareItems (sheetData) {
+    const actorData = sheetData.actor
+
+    // Initialize containers.
+    const equipment = []
+    const weapons = []
+    const armor = []
+    const ammunition = []
+    const mounts = []
+    const spells = {
+      1: [],
+      2: [],
+      3: [],
+      4: [],
+      5: []
+    }
+
+    // Iterate through items, allocating to containers
+    for (const i of actorData.items) {
+      if (i.type === 'weapon') {
+        weapons.push(i)
+      } if (i.type === 'ammunition') {
+        ammunition.push(i)
+      } else if (i.type === 'armor') {
+        armor.push(i)
+      } else if (i.type === 'equipment') {
+        equipment.push(i)
+      } if (i.type === 'mount') {
+        mounts.push(i)
+      } else if (i.type === 'spell') {
+        if (i.data.level !== undefined) {
+          spells[i.data.level].push(i)
+        }
+      }
+    }
+
+    // Assign and return
+    actorData.equipment = equipment
+    actorData.weapons = weapons
+    actorData.armor = armor
+    actorData.ammunition = ammunition
+    actorData.mounts = mounts
+    actorData.spells = spells
+  }
   /* -------------------------------------------- */
 
   /** @override */
@@ -98,6 +154,15 @@ class DCCActorSheet extends ActorSheet {
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
 
+      // Skills
+      html.find('.skill-check').click(this._onRollSkillCheck.bind(this))
+
+      // Luck Die
+      html.find('.luck-die').click(this._onRollLuckDie.bind(this))
+
+      // Spell Checks
+      html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
+
       // Weapons
       const handler = ev => this._onDragStart(ev)
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
@@ -106,6 +171,26 @@ class DCCActorSheet extends ActorSheet {
         li.setAttribute('draggable', true)
         li.addEventListener('dragstart', handler, false)
       })
+
+      // Only for editable sheets
+      if (this.options.editable) {
+        // Add Inventory Item
+        html.find('.item-create').click(this._onItemCreate.bind(this))
+
+        // Update Inventory Item
+        html.find('.item-edit').click(ev => {
+          const li = $(ev.currentTarget).parents('.item')
+          const item = this.actor.getOwnedItem(li.data('itemId'))
+          item.sheet.render(true)
+        })
+
+        // Delete Inventory Item
+        html.find('.item-delete').click(ev => {
+          const li = $(ev.currentTarget).parents('.item')
+          this.actor.deleteOwnedItem(li.data('itemId'))
+          li.slideUp(200, () => this.render(false))
+        })
+      }
     } else {
       // Otherwise remove rollable classes
       html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
@@ -246,6 +331,39 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /**
+   * Handle rolling a skill check
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollSkillCheck (event) {
+    event.preventDefault()
+    const skill = event.currentTarget.parentElement.dataset.skill
+    this.actor.rollSkillCheck(skill, { event: event })
+  }
+
+  /**
+   * Handle rolling the luck die
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollLuckDie (event) {
+    event.preventDefault()
+    this.actor.rollLuckDie({ event: event })
+  }
+
+  /**
+   * Handle rolling a spell check
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollSpellCheck (event) {
+    event.preventDefault()
+    const ability = event.currentTarget.parentElement.dataset.ability
+    const bonus = this.actor.data.data.class.spellCheck
+    this.actor.rollSpellCheck(bonus, ability, { event: event })
+  }
+
+  /**
    * Handle rolling a weapon attack
    * @param {Event} event   The originating click event
    * @private
@@ -254,6 +372,33 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const weaponId = event.currentTarget.parentElement.dataset.weaponId
     this.actor.rollWeaponAttack(weaponId, { event: event })
+  }
+
+  /**
+   * Handle creating a new Owned Item for the actor using initial data defined in the HTML dataset
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onItemCreate (event) {
+    event.preventDefault()
+    const header = event.currentTarget
+    // Get the type of item to create.
+    const type = header.dataset.type
+    // Grab any data associated with this control.
+    const data = duplicate(header.dataset)
+    // Initialize a default name.
+    const name = `New ${type.capitalize()}`
+    // Prepare the item object.
+    const itemData = {
+      name: name,
+      type: type,
+      data: data
+    }
+    // Remove the type from the dataset since it's in the itemData.type prop.
+    delete itemData.data.type
+
+    // Finally, create the item!
+    return this.actor.createOwnedItem(itemData)
   }
 
   /* -------------------------------------------- */
