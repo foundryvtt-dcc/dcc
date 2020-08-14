@@ -837,7 +837,7 @@
 /*  Warrior Class                            */
 /* ----------------------------------------- */
 .dcc .crit-range {
-  margin: 0 0 0 4px; }
+  margin: 12px 0 0 4px; }
 
 .dcc .crit-range label {
   margin: 0 0 0 4px;
@@ -958,4 +958,5 @@
   flex: 1 1; }
 
 .dcc.item .item-type {
-  flex: 0 0 60px; }
+  flex: 0 0 60px;
+  margin: 5px 0 0 5px; }
