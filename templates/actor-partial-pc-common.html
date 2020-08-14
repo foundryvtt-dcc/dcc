@@ -93,6 +93,7 @@
                     <input class="init-value" type="text" id="data.attributes.init.value"
                            name="data.attributes.init.value"
                            value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                           placeholder="+0"
                            data-dtype="Number"/>
                 </div>
                 <div class="speed">
@@ -115,12 +116,14 @@
                 <div class="crit-die">
                     <label for="data.attributes.critical.die">{{localize "DCC.CritDie"}}</label>
                     <input type="text" id="data.attributes.critical.die" name="data.attributes.critical.die"
-                           value="{{data.attributes.critical.die}}" maxlength="40"/>
+                           value="{{data.attributes.critical.die}}" maxlength="40"
+                           placeholder="1d4"/>
                 </div>
                 <div class="crit-table">
                     <label for="data.attributes.critical.table">{{localize "DCC.CritTable"}}</label>
                     <input type="text" id="data.attributes.critical.table" name="data.attributes.critical.table"
-                           value="{{data.attributes.critical.table}}" maxlength="40"/>
+                           value="{{data.attributes.critical.table}}" maxlength="40"
+                           placeholder="I"/>
                 </div>
             </li>
         </ul>

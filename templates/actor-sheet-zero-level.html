@@ -31,7 +31,7 @@
                 <label for="data.details.experience.value">{{localize "DCC.Experience"}}</label>
                 <input type="text" id="data.details.experience.value" name="data.details.experience.value"
                        value="{{numberFormat data.details.experience.value decimals=0 sign=false}}"
-                       maxlength="40" data-dtype="Number"/>
+                       placeholder="0" maxlength="40" data-dtype="Number"/>
             </div>
         </div>
     </header>
@@ -115,6 +115,7 @@
                             <input class="init-value" type="text" id="data.attributes.init.value"
                                    name="data.attributes.init.value"
                                    value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                                   placeholder="+0"
                                    data-dtype="Number"/>
                         </div>
                         <div class="speed">
