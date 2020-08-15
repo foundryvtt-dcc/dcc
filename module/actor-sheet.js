@@ -162,6 +162,7 @@ class DCCActorSheet extends ActorSheet {
 
       // Spell Checks
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
+      html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
 
       // Weapons
       const handler = ev => this._onDragStart(ev)
@@ -358,9 +359,11 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollSpellCheck (event) {
     event.preventDefault()
-    const ability = event.currentTarget.parentElement.dataset.ability
-    const bonus = this.actor.data.data.class.spellCheck
-    this.actor.rollSpellCheck(bonus, ability, { event: event })
+    const ability = event.currentTarget.parentElement.dataset.ability || 'int'
+    const die = event.currentTarget.parentElement.dataset.die || '1d20'
+    const bonus = this.actor.data.data.class.spellCheck || '+0'
+    const spellName = event.currentTarget.parentElement.dataset.spell || null
+    this.actor.rollSpellCheck(die, bonus, ability, spellName, { event: event })
   }
 
   /**

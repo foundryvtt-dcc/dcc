@@ -136,15 +136,25 @@ test('roll luck die', () => {
 })
 
 test('roll spell check', () => {
-  actor.rollSpellCheck(+3, 'int')
+  actor.rollSpellCheck('1d20', +3, 'int')
   expect(Roll).toHaveBeenCalledTimes(1)
-  expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: +3 })
+  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
 
-  actor.rollSpellCheck(-2, 'per')
+  actor.rollSpellCheck('1d20', -2, 'per')
   expect(Roll).toHaveBeenCalledTimes(2)
-  expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: -2 })
+  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: -2 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityPer)', speaker: actor })
+
+  actor.rollSpellCheck('1d16', +5)
+  expect(Roll).toHaveBeenCalledTimes(3)
+  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d16', bonus: +5 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
+
+  actor.rollSpellCheck('1d16', +5, 'int', 'Summon Moth')
+  expect(Roll).toHaveBeenCalledTimes(4)
+  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d16', bonus: +5 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Summon Moth (AbilityInt)', speaker: actor })
 
   Roll.mockClear()
 })

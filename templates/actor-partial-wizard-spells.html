@@ -5,6 +5,7 @@
         <ol class="item-list">
             <li class="item flexrow item-list-header">
               <div class="item-image"></div>
+              <div class="spell-item-button-heading"></div>
               <div class="item-level">{{localize "DCC.SpellLevelShort"}}</div>
               <div class="item-name">{{localize "DCC.SpellName"}}</div>
               <div class="item-notes">{{localize "DCC.MercurialEffect"}}</div>
@@ -14,11 +15,17 @@
             </li>
             {{#each actor.spells as |spells spelllevel|}}
             {{#each spells as |item id|}}
-            <li class="item flexrow" data-item-id="{{item._id}}">
-                <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+            <li class="item flexrow" data-item-id="{{item._id}}"
+                data-ability="int" data-die="{{item.data.spellCheck.die}}"
+                data-bonus="{{item.data.spellCheck.value}}"
+                data-spell="{{item.name}}">
+                <div class="item-image flexrow"><img class="flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                <div class="rollable spell-item-button">&nbsp;</div>
                 <h4 class="item-level">{{item.data.level}}</h4>
                 <h4 class="item-name flex3">{{item.name}}</h4>
-                <h4 class="item-name flex3">{{item.data.mercurialEffect.description}}</h4>
+                <h4 class="item-name flex3">
+                  {{item.data.mercurialEffect.value}} - {{item.data.mercurialEffect.summary}}
+                </h4>
                 <div class="item-controls">
                     <a class="item-control item-edit" title="Edit Item"><i class="fas fa-edit"></i></a>
                     <a class="item-control item-delete" title="Delete Item"><i class="fas fa-trash"></i></a>
