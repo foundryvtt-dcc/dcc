@@ -162,6 +162,7 @@ class DCCActorSheet extends ActorSheet {
 
       // Spell Checks
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
+      html.find('.spell-item-button').click(this._onRollSpellCheckFromItem.bind(this))
 
       // Weapons
       const handler = ev => this._onDragStart(ev)
@@ -360,7 +361,20 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const ability = event.currentTarget.parentElement.dataset.ability
     const bonus = this.actor.data.data.class.spellCheck
-    this.actor.rollSpellCheck(bonus, ability, { event: event })
+    this.actor.rollSpellCheck("1d20", bonus, ability, { event: event })
+  }
+
+  /**
+   * Handle rolling a spell check from an item list
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollSpellCheckFromItem (event) {
+    event.preventDefault()
+    const ability = event.currentTarget.parentElement.dataset.ability
+    const die = event.currentTarget.parentElement.dataset.die
+    const bonus = event.currentTarget.parentElement.dataset.bonus
+    this.actor.rollSpellCheck(die, bonus, ability, { event: event })
   }
 
   /**

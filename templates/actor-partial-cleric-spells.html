@@ -5,6 +5,7 @@
         <ol class="item-list">
             <li class="item flexrow item-list-header">
               <div class="item-image"></div>
+              <div class="spell-item-button-heading"></div>
               <div class="item-level">{{localize "DCC.SpellLevelShort"}}</div>
               <div class="item-name">{{localize "DCC.SpellName"}}</div>
               <div class="item-controls">
@@ -13,8 +14,11 @@
             </li>
             {{#each actor.spells as |spells spelllevel|}}
             {{#each spells as |item id|}}
-            <li class="item flexrow" data-item-id="{{item._id}}">
+            <li class="item flexrow" data-item-id="{{item._id}}"
+                data-ability="per" data-die="{{item.data.spellCheck.die}}"
+                data-bonus="{{item.data.spellCheck.value}}">
                 <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                <div class="rollable spell-item-button">&nbsp;</div>
                 <h4 class="item-level">{{item.data.level}}</h4>
                 <h4 class="item-name flex3">{{item.name}}</h4>
                 <div class="item-controls">

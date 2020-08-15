@@ -9,19 +9,44 @@
                 <label class="item-type" for="name">{{localize item.data.typeString}}</label>
             </div>
 
-            <div class="grid grid-1col">
+            <div class="grid grid-2col">
               <div class="resource">
-                <label class="resource-label">{{localize "DCC.SpellLevel"}}</label>
-                  <input type="text" name="data.level" value="{{data.level}}" data-dtype="Number"/>
+                <label class="resource-label" for="data.level">{{localize "DCC.SpellLevel"}}</label>
+                <input type="text" name="data.level"
+                       value="{{numberFormat data.level decimals=0 sign=false}}"
+                       placeholder="1" data-dtype="Number"/>
+              </div>
+              <div class="resource">
+                <label class="resource-label" for="data.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
+                <div class="flexrow">
+                  <input type="text" name="data.spellCheck.die" class="flex1"
+                         value="{{data.spellCheck.die}}"
+                         placeholder="1d20" data-dtype="String"/>
+                  <input type="text" name="data.spellCheck.value" class="flex1"
+                         value="{{numberFormat data.spellCheck.value decimals=0 sign=true}}"
+                         placeholder="+0" data-dtype="Number"/>
+                </div>
               </div>
             </div>
         </div>
     </header>
 
-    <section class="sheet-body">
-        <h1>{{localize "DCC.Description"}}</h1>
+    <section class="sheet-body spell">
+        <h1 class="description-heading">{{localize "DCC.Description"}}</h1>
         <div class="description">
             {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
         </div>
-    </div>
+        <h1 class="mercurial-effect-heading">{{localize "DCC.MercurialEffect"}}</h1>
+        <div class="mercurial-effect-value">
+          <label class="resource-label" for="data.mercurialEffect.value">{{localize "DCC.MercurialEffectValue"}}</label>
+          <input type="text" name="data.mercurialEffect.value" value="{{data.mercurialEffect.value}}" data-dtype="Number"/>
+        </div>
+        <div class="mercurial-effect-summary">
+          <label class="resource-label" for="data.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
+          <input type="text" name="data.mercurialEffect.summary" value="{{data.mercurialEffect.summary}}" data-dtype="String"/>
+        </div>
+        <div class="mercurial-effect-description">
+            {{editor content=data.mercurialEffect.description target="data.mercurialEffect.description" button=true owner=owner editable=editable}}
+        </div>
+    </section>
 </form>

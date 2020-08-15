@@ -321,6 +321,8 @@
   "DCC.Max": "Max",
   "DCC.MeleeWeapons": "Melee Weapons",
   "DCC.MercurialEffect": "Mercurial Effect",
+  "DCC.MercurialEffectSummary": "Summary",
+  "DCC.MercurialEffectValue": "Roll",
   "DCC.MightyDeedsOfArms": "Mighty Deeds of Arms",
   "DCC.Modifier": "Modifier",
   "DCC.Mount": "Mounts",

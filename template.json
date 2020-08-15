@@ -386,8 +386,13 @@
       "manifestation": {},
       "misfire": {},
       "results": {},
+      "spellCheck": {
+        "die" : "1d20",
+        "value": "+0"
+      },
       "mercurialEffect": {
-        "value": -1,
+        "value": "",
+        "summary": "",
         "description": ""
       }
     }

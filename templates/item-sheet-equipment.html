@@ -1,10 +1,10 @@
 <form class="{{cssClass}}" autocomplete="off">
     {{> systems/dcc/templates/item-partial-header.html }}
 
-    <section class="sheet-body">
-        <h1>{{localize "DCC.Description"}}</h1>
+    <section class="sheet-body item">
+        <h1 class="description-heading">{{localize "DCC.Description"}}</h1>
         <div class="description">
             {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
         </div>
-    </div>
+    </section>
 </form>
