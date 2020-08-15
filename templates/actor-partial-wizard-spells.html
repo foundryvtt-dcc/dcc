@@ -17,7 +17,8 @@
             {{#each spells as |item id|}}
             <li class="item flexrow" data-item-id="{{item._id}}"
                 data-ability="int" data-die="{{item.data.spellCheck.die}}"
-                data-bonus="{{item.data.spellCheck.value}}">
+                data-bonus="{{item.data.spellCheck.value}}"
+                data-spell="{{item.name}}">
                 <div class="item-image flexrow"><img class="flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
                 <div class="rollable spell-item-button">&nbsp;</div>
                 <h4 class="item-level">{{item.data.level}}</h4>

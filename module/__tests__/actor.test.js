@@ -151,5 +151,10 @@ test('roll spell check', () => {
   expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d16', bonus: +5 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
 
+  actor.rollSpellCheck('1d16', +5, 'int', 'Summon Moth')
+  expect(Roll).toHaveBeenCalledTimes(4)
+  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d16', bonus: +5 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Summon Moth (AbilityInt)', speaker: actor })
+
   Roll.mockClear()
 })
