@@ -2,6 +2,7 @@
 
 import parsePC from './pc-parser.js'
 import parseNPC from './npc-parser.js'
+import DCCActorConfig from './actor-config.js'
 
 /**
  * Extend the basic ActorSheet
@@ -28,13 +29,19 @@ class DCCActorSheet extends ActorSheet {
     if (this.actor.permission === ENTITY_PERMISSIONS.OWNER) {
       buttons.unshift(
         {
-          label: 'Import Stats',
+          label: game.i18n.localize('DCC.ConfigureSheet'),
+          class: 'configure-actor',
+          icon: 'fas fa-code',
+          onclick: ev => this._onConfigureActor(ev)
+        },
+        {
+          label: game.i18n.localize('DCC.ImportStats'),
           class: 'paste-block',
           icon: 'fas fa-paste',
           onclick: ev => this._onPasteStatBlock(ev)
         },
         {
-          label: 'Clear',
+          label: game.i18n.localize('DCC.Clear'),
           class: 'clear-sheet',
           icon: 'fas fa-eraser',
           onclick: ev => this._onClearSheet(ev)
@@ -199,6 +206,19 @@ class DCCActorSheet extends ActorSheet {
       // Otherwise remove rollable classes
       html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
     }
+  }
+
+  /**
+   * Display sheet specific configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onConfigureActor (event) {
+    event.preventDefault()
+    new DCCActorConfig(this.actor, {
+      top: this.position.top + 40,
+      left: this.position.left + (this.position.width - 400) / 2
+    }).render(true)
   }
 
   /**

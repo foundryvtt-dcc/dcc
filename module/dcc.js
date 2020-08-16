@@ -56,7 +56,7 @@ Hooks.once('init', async function () {
 
   // Handlebars helper to format attack bonus correctly
   Handlebars.registerHelper('formatAttackBonus', function (attackBonus) {
-    if (attackBonus === '') {
+    if (!attackBonus) {
       return '+0'
     } else if (attackBonus[0] !== '+' && attackBonus[0] !== '-') {
       return '+' + attackBonus

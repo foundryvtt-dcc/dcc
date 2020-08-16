@@ -262,11 +262,21 @@
             "value": "+4"
           }
         }
+      },
+      "config": {
+        "config": {
+          "capLevel": false,
+          "maxLevel" : 10,
+          "rollAttackBonus": false,
+          "computeAC": false,
+          "baseACAbility": "agl"
+        }
       }
     },
     "Player": {
       "templates": [
         "common",
+        "config",
         "player",
         "cleric",
         "thief",

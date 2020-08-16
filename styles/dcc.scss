@@ -737,11 +737,11 @@ $border-style: 2px groove #eeede0;
 }
 .dcc #agl {
   grid-column: 1;
-  grid-row: 3;
+  grid-row: 2;
 }
 .dcc #sta {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 3;
 }
 .dcc #per {
   grid-column: 1;
@@ -1149,6 +1149,31 @@ $border-style: 2px groove #eeede0;
   .item-type {
     flex: 0 0 60px;
     margin: 5px 0 0 5px;
+  }
+}
+
+/* ----------------------------------------- */
+/*  Config Dialogs                           */
+/* ----------------------------------------- */
+
+.config-dialog {
+  .form-group {
+    display: flex;
+    margin: 5px 0 5px 0;
+    padding-bottom: 5px;
+    border-bottom: $border-style;
+
+    label {
+      flex: 0 0 48%;
+    }
+
+    div.form-fields {
+      flex: 0 1 48%;
+    }
+
+    input {
+      text-align: right;
+    }
   }
 }
 

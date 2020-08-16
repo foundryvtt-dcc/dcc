@@ -14,6 +14,46 @@ class DCCActor extends Actor {
     for (const abilityId in abilities) {
       abilities[abilityId].mod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].value] || 0
     }
+
+    // Get configuration data
+    const config = this._getConfig()
+    const data = this.data.data
+
+    // Cap level if required
+    if (config.capLevel) {
+      data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
+    }
+
+    // Compute AC if required
+    if (config.computeAC) {
+      const baseACAbility = data.abilities[config.baseACAbility] || { mod: 0 }
+      const abilityMod = baseACAbility.mod
+      const armorBonus = parseInt(data.items.armor.a0.bonus || 0)
+      data.attributes.ac.value = 10 + abilityMod + armorBonus
+    }
+  }
+
+  /**
+   * Get per actor configuration
+   *
+   * @return {Object}       Configuration data
+   */
+  _getConfig() {
+    let defaultConfig = {
+      capLevel: false,
+      maxLevel: 0,
+      rollAttackBonus: false,
+      computeAC: false,
+      baseACAbility: 'agl'
+    }
+
+    // Merge any existing data with defaults to implicitly migrate missing config fields
+    if (this.data.data.config) {
+      defaultConfig = Object.assign(defaultConfig, this.data.data.config)
+      this.data.data.config = defaultConfig
+    }
+
+    return defaultConfig
   }
 
   /**

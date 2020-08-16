@@ -669,11 +669,11 @@
 
 .dcc #agl {
   grid-column: 1;
-  grid-row: 3; }
+  grid-row: 2; }
 
 .dcc #sta {
   grid-column: 1;
-  grid-row: 2; }
+  grid-row: 3; }
 
 .dcc #per {
   grid-column: 1;
@@ -1008,3 +1008,18 @@
 .dcc.item .item-type {
   flex: 0 0 60px;
   margin: 5px 0 0 5px; }
+
+/* ----------------------------------------- */
+/*  Config Dialogs                           */
+/* ----------------------------------------- */
+.config-dialog .form-group {
+  display: flex;
+  margin: 5px 0 5px 0;
+  padding-bottom: 5px;
+  border-bottom: 2px groove #eeede0; }
+  .config-dialog .form-group label {
+    flex: 0 0 48%; }
+  .config-dialog .form-group div.form-fields {
+    flex: 0 1 48%; }
+  .config-dialog .form-group input {
+    text-align: right; }
