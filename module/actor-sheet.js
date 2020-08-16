@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, $ */
+/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, $, ENTITY_PERMISSIONS */
 
 import parsePC from './pc-parser.js'
 import parseNPC from './npc-parser.js'
@@ -24,20 +24,23 @@ class DCCActorSheet extends ActorSheet {
   _getHeaderButtons () {
     const buttons = super._getHeaderButtons()
 
-    buttons.unshift(
-      {
-        label: 'Import Stats',
-        class: 'paste-block',
-        icon: 'fas fa-paste',
-        onclick: ev => this._onPasteStatBlock(ev)
-      },
-      {
-        label: 'Clear',
-        class: 'clear-sheet',
-        icon: 'fas fa-eraser',
-        onclick: ev => this._onClearSheet(ev)
-      }
-    )
+    // Header buttons shown only with Owner permissions
+    if (this.actor.permission === ENTITY_PERMISSIONS.OWNER) {
+      buttons.unshift(
+        {
+          label: 'Import Stats',
+          class: 'paste-block',
+          icon: 'fas fa-paste',
+          onclick: ev => this._onPasteStatBlock(ev)
+        },
+        {
+          label: 'Clear',
+          class: 'clear-sheet',
+          icon: 'fas fa-eraser',
+          onclick: ev => this._onClearSheet(ev)
+        }
+      )
+    }
 
     return buttons
   }
