@@ -13,6 +13,9 @@
   src: url("fonts/DuvallSmallCaps.otf");
 }
 
+/* Common style elements */
+$border-style: 2px groove #eeede0;
+
 .dcc .window-content {
   height: 100%;
   padding: 5px;
@@ -175,14 +178,14 @@
   margin: 7px;
   padding: 0;
   font-size: 20px;
-  border: 2px groove #eeede0;
+  border: $border-style;
   border-radius: 5px;
 }
 
 .dcc.sheet.actor .ability-scores .ability {
   height: 70px;
   text-align: center;
-  border-bottom: 2px groove #eeede0;
+  border-bottom: $border-style;
   padding-top: 3px;
 }
 
@@ -205,8 +208,8 @@
   width: 30px;
   line-height: 22px;
   font-size: 16px;
-  border-top: 2px groove #eeede0;
-  border-left: 2px groove #eeede0;
+  border-top: $border-style;
+  border-left: $border-style;
 }
 
 /* ----------------------------------------- */
@@ -217,7 +220,7 @@
   margin: 8px 0 0 0;
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 1.1rem;
-  border-bottom: 2px groove #eeede0;
+  border-bottom: $border-style;
   flex: 0 0 10px;
   line-height: 1.2rem;
   background-image: url("./images/gauntlet.png");
@@ -430,7 +433,7 @@
 /* ----------------------------------------- */
 
 .dcc .notes {
-  border: 2px groove #eeede0;
+  border: $border-style;
   font-size: 1.2rem;
   height: 85%;
 }
@@ -483,7 +486,7 @@
   margin: 7px 0 0 0;
   padding: 2px 0 3px 7px;
   font-size: 20px;
-  border: 2px groove #eeede0;
+  border: $border-style;
   border-radius: 5px;
   text-align: left;
 }
@@ -523,7 +526,7 @@
 .dcc .tabs .item {
   line-height: 35px;
   font-weight: bold;
-  border: 2px groove #eeede0;
+  border: $border-style;
   border-radius: 5px 5px 0 0;
   margin-bottom: 10px
 }
@@ -557,7 +560,7 @@
   margin: 10px 0 0 0;
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 1.1rem;
-  border-bottom: 2px groove #eeede0;
+  border-bottom: $border-style;
   flex: 0 0 10px;
   line-height: 1.2rem;
   background-image: url("./images/axe.png");
@@ -648,14 +651,14 @@
   margin: 7px;
   list-style: none;
   font-size: 20px;
-  border-top: 2px groove #eeede0;
+  border-top: $border-style;
 }
 
 .dcc.sheet.actor .character-grid .ability {
   text-align: center;
   border-bottom: 2px groove #eeede0;
-  border-left: 2px groove #eeede0;
-  border-right: 2px groove #eeede0;
+  border-left: $border-style;
+  border-right: $border-style;
   padding-top: 3px;
 }
 
@@ -673,15 +676,15 @@
   width: 30px;
   line-height: 22px;
   font-size: 16px;
-  border-top: 2px groove #eeede0;
-  border-left: 2px groove #eeede0;
+  border-top: $border-style;
+  border-left: $border-style;
 }
 
 .dcc.sheet.actor .character-grid .save {
   width: 100px;
   text-align: center;
-  border-bottom: 2px groove #eeede0;
-  border-right: 2px groove #eeede0;
+  border-bottom: $border-style;
+  border-right: $border-style;
   padding-top: 3px;
 }
 
@@ -695,8 +698,8 @@
 
 .dcc.sheet.actor .character-grid .languages {
   text-align: left;
-  border-bottom: 2px groove #eeede0;
-  border-right: 2px groove #eeede0;
+  border-bottom: $border-style;
+  border-right: $border-style;
   padding-top: 3px;
   padding-right: 10px;
 }
@@ -710,8 +713,8 @@
 
 .dcc.sheet.actor .character-grid .birth-augur {
   text-align: left;
-  border-bottom: 2px groove #eeede0;
-  border-right: 2px groove #eeede0;
+  border-bottom: $border-style;
+  border-right: $border-style;
   padding-top: 3px;
   padding-right: 10px;
 }
@@ -724,8 +727,8 @@
 }
 
 .dcc.sheet.actor .character-grid .remainder {
-  border-bottom: 2px groove #eeede0;
-  border-right: 2px groove #eeede0;
+  border-bottom: $border-style;
+  border-right: $border-style;
 }
 
 .dcc #str {
@@ -756,7 +759,7 @@
 .dcc #pad {
   grid-column: 2;
   grid-row: 1;
-  border-bottom: 2px groove #eeede0;
+  border-bottom: $border-style;
 }
 
 .dcc #ref {
@@ -787,7 +790,7 @@
 }
 
 .dcc .class {
-  border: 2px groove #eeede0;
+  border: $border-style;
   font-size: 1.2rem;
 }
 
@@ -850,7 +853,7 @@
 }
 
 .dcc .lay-on-hands.container {
-  border: 2px groove #eeede0;
+  border: $border-style;
   font-size: 0.8rem;
   flex: 1 0 69%;
   display: flex;
@@ -869,7 +872,7 @@
 }
 
 .dcc .condition-healing.container {
-  border: 2px groove #eeede0;
+  border: $border-style;
   font-size: 0.8rem;
   flex: 1 0 29%;
   display: flex;
@@ -1028,7 +1031,7 @@
   margin: 8px 0 0 0;
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 1.1rem;
-  border-bottom: 2px groove #eeede0;
+  border-bottom: $border-style;
   flex: 0 0 10px;
   line-height: 1.2rem;
 }

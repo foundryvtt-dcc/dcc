@@ -75,6 +75,7 @@
   font-family: "DuvallSmallCaps";
   src: url("fonts/DuvallSmallCaps.otf"); }
 
+/* Common style elements */
 .dcc .window-content {
   height: 100%;
   padding: 5px;
