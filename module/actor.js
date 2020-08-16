@@ -195,8 +195,10 @@ class DCCActor extends Actor {
       const abRoll = new Roll(attackBonusExpression, { critical: 3 })
 
       // Store the result for use in attack and damage rolls
-      this.data.data.details.lastRolledAttackBonus = abRoll.roll().total
-      this.update(this.data)
+      const lastRoll = this.data.data.details.lastRolledAttackBonus = abRoll.roll().total
+      this.update({
+        'data.details.lastRolledAttackBonus': lastRoll
+      })
 
       // Convert the roll to a chat message
       abRoll.toMessage({
