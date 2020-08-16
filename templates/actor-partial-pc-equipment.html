@@ -1,6 +1,15 @@
 {{!-- Equipment Tab --}}
 <div class="tab equipment flexcol" data-group="primary" data-tab="equipment">
   <div class="equipment-container">
+    {{!-- Deed Roll --}}
+    {{#if data.config.rollAttackBonus}}
+    <div class="skills-container">
+      <div class="flexrow wide">
+        <label class="rollable attack-bonus" for="data.details.lastRolledAttackBonus">{{localize "DCC.DeedRoll"}}</label>
+        <input type="text" id="data.details.lastRolledAttackBonus" name="data.details.lastRolledAttackBonus" value="{{data.details.lastRolledAttackBonus}}" data-dtype="Number" disabled/>
+      </div>
+    </div>
+    {{/if}}
     {{!-- Melee Weapons --}}
     {{#* inline "weaponRow"}}
     <li class="weapon flexrow" data-weapon-id="{{weaponIndex}}">

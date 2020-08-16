@@ -14,6 +14,46 @@ class DCCActor extends Actor {
     for (const abilityId in abilities) {
       abilities[abilityId].mod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].value] || 0
     }
+
+    // Get configuration data
+    const config = this._getConfig()
+    const data = this.data.data
+
+    // Cap level if required
+    if (config.capLevel) {
+      data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
+    }
+
+    // Compute AC if required
+    if (config.computeAC) {
+      const baseACAbility = data.abilities[config.baseACAbility] || { mod: 0 }
+      const abilityMod = baseACAbility.mod
+      const armorBonus = parseInt(data.items.armor.a0.bonus || 0)
+      data.attributes.ac.value = 10 + abilityMod + armorBonus
+    }
+  }
+
+  /**
+   * Get per actor configuration
+   *
+   * @return {Object}       Configuration data
+   */
+  _getConfig () {
+    let defaultConfig = {
+      capLevel: false,
+      maxLevel: 0,
+      rollAttackBonus: false,
+      computeAC: false,
+      baseACAbility: 'agl'
+    }
+
+    // Merge any existing data with defaults to implicitly migrate missing config fields
+    if (this.data.data.config) {
+      defaultConfig = Object.assign(defaultConfig, this.data.data.config)
+      this.data.data.config = defaultConfig
+    }
+
+    return defaultConfig
   }
 
   /**
@@ -145,6 +185,30 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Roll Attack Bonus
+   */
+  async rollAttackBonus (options) {
+    /* Determine attack bonus */
+    const attackBonusExpression = this.data.data.details.attackBonus || '0'
+
+    if (attackBonusExpression) {
+      const abRoll = new Roll(attackBonusExpression, { critical: 3 })
+
+      // Store the result for use in attack and damage rolls
+      const lastRoll = this.data.data.details.lastRolledAttackBonus = abRoll.roll().total
+      this.update({
+        'data.details.lastRolledAttackBonus': lastRoll
+      })
+
+      // Convert the roll to a chat message
+      abRoll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor: game.i18n.localize('DCC.DeedRoll')
+      })
+    }
+  }
+
+  /**
    * Roll a Weapon Attack
    * @param {string} weaponId     The weapon id (e.g. "m1", "r1")
    * @param {Object} options      Options which configure how ability tests are rolled
@@ -153,13 +217,12 @@ class DCCActor extends Actor {
     const weapon = this.data.data.items.weapons[weaponId]
     const speaker = { alias: this.name, _id: this._id }
     const formula = `1d20 + ${weapon.toHit}`
+    const config = this._getConfig()
 
     /* Determine attack bonus */
-    const attackBonusExpression = this.data.data.details.attackBonus || null
     let attackBonus = 0
-    if (attackBonusExpression) {
-      const abRoll = new Roll(attackBonusExpression)
-      attackBonus = abRoll.roll().total
+    if (config.rollAttackBonus) {
+      attackBonus = this.data.data.details.lastRolledAttackBonus || 0
     }
 
     /* Determine crit range */

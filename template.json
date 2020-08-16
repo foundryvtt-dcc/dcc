@@ -94,6 +94,7 @@
       "player": {
         "details": {
           "attackBonus": "+0",
+          "lastRolledAttackBonus": "+0",
           "birthAugur": "",
           "critRange": "19",
           "xp": {
@@ -262,11 +263,21 @@
             "value": "+4"
           }
         }
+      },
+      "config": {
+        "config": {
+          "capLevel": false,
+          "maxLevel" : 10,
+          "rollAttackBonus": false,
+          "computeAC": false,
+          "baseACAbility": "agl"
+        }
       }
     },
     "Player": {
       "templates": [
         "common",
+        "config",
         "player",
         "cleric",
         "thief",

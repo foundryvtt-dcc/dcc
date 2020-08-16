@@ -2,6 +2,7 @@
 
 import parsePC from './pc-parser.js'
 import parseNPC from './npc-parser.js'
+import DCCActorConfig from './actor-config.js'
 
 /**
  * Extend the basic ActorSheet
@@ -28,13 +29,19 @@ class DCCActorSheet extends ActorSheet {
     if (this.actor.permission === ENTITY_PERMISSIONS.OWNER) {
       buttons.unshift(
         {
-          label: 'Import Stats',
+          label: game.i18n.localize('DCC.ConfigureSheet'),
+          class: 'configure-actor',
+          icon: 'fas fa-code',
+          onclick: ev => this._onConfigureActor(ev)
+        },
+        {
+          label: game.i18n.localize('DCC.ImportStats'),
           class: 'paste-block',
           icon: 'fas fa-paste',
           onclick: ev => this._onPasteStatBlock(ev)
         },
         {
-          label: 'Clear',
+          label: game.i18n.localize('DCC.Clear'),
           class: 'clear-sheet',
           icon: 'fas fa-eraser',
           onclick: ev => this._onClearSheet(ev)
@@ -167,6 +174,9 @@ class DCCActorSheet extends ActorSheet {
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
       html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
 
+      // Attack Bonus
+      html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
+
       // Weapons
       const handler = ev => this._onDragStart(ev)
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
@@ -199,6 +209,19 @@ class DCCActorSheet extends ActorSheet {
       // Otherwise remove rollable classes
       html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
     }
+  }
+
+  /**
+   * Display sheet specific configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onConfigureActor (event) {
+    event.preventDefault()
+    new DCCActorConfig(this.actor, {
+      top: this.position.top + 40,
+      left: this.position.left + (this.position.width - 400) / 2
+    }).render(true)
   }
 
   /**
@@ -367,6 +390,18 @@ class DCCActorSheet extends ActorSheet {
     const bonus = this.actor.data.data.class.spellCheck || '+0'
     const spellName = event.currentTarget.parentElement.dataset.spell || null
     this.actor.rollSpellCheck(die, bonus, ability, spellName, { event: event })
+  }
+
+  /**
+   * Handle rolling attack bonus
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollAttackBonus (event) {
+    if (this.actor._getConfig().rollAttackBonus) {
+      event.preventDefault()
+      this.actor.rollAttackBonus({ event: event })
+    }
   }
 
   /**
