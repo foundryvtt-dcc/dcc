@@ -7,13 +7,10 @@ Manifest URL: https://github.com/cyface/foundryvtt-dcc/raw/master/system.json
 This system currently only implements Zero-Level characters for funnels, and basic NPCs.
 
 ###### Maintainers
+* Steve Barnett (@mooped)
 * Tim L. White (@cyface, tim@cyface.com)
 
 ###### Contributors
 * Connor Stone (@ckwk)
-* Steve Barnett (@mooped)
-
-
-
 
 _Based on material ©2020 Goodman Games, used with permission._
