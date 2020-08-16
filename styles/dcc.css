@@ -1019,6 +1019,10 @@
   border-bottom: 2px groove #eeede0; }
   .config-dialog .form-group label {
     flex: 0 0 48%; }
+  .config-dialog .form-group label.span {
+    flex: 0 0 96%; }
+  .config-dialog .form-group label.attack-bonus-info {
+    text-align: center; }
   .config-dialog .form-group div.form-fields {
     flex: 0 1 48%; }
   .config-dialog .form-group input {

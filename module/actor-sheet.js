@@ -174,6 +174,9 @@ class DCCActorSheet extends ActorSheet {
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
       html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
 
+      // Attack Bonus
+      html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
+
       // Weapons
       const handler = ev => this._onDragStart(ev)
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
@@ -387,6 +390,18 @@ class DCCActorSheet extends ActorSheet {
     const bonus = this.actor.data.data.class.spellCheck || '+0'
     const spellName = event.currentTarget.parentElement.dataset.spell || null
     this.actor.rollSpellCheck(die, bonus, ability, spellName, { event: event })
+  }
+
+  /**
+   * Handle rolling attack bonus
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollAttackBonus (event) {
+    if (this.actor._getConfig().rollAttackBonus) {
+      event.preventDefault()
+      this.actor.rollAttackBonus({ event: event })
+    }
   }
 
   /**

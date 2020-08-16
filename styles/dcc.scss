@@ -1167,6 +1167,14 @@ $border-style: 2px groove #eeede0;
       flex: 0 0 48%;
     }
 
+    label.span {
+      flex: 0 0 96%;
+    }
+
+    label.attack-bonus-info {
+      text-align: center;
+    }
+
     div.form-fields {
       flex: 0 1 48%;
     }
