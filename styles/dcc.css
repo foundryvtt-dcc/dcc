@@ -1027,3 +1027,19 @@
     flex: 0 1 48%; }
   .config-dialog .form-group input {
     text-align: right; }
+
+.sheet-config .tabs {
+  height: 40px; }
+
+.sheet-config .tabs .item {
+  line-height: 35px;
+  font-weight: bold;
+  border: 2px groove #eeede0;
+  border-radius: 5px 5px 0 0;
+  margin-bottom: 10px; }
+
+.sheet-config .tabs .item.active {
+  text-decoration: underline;
+  text-shadow: none;
+  border-bottom: none;
+  margin-bottom: 11px; }

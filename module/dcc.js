@@ -12,11 +12,25 @@ import DCCItemSheet from './item-sheet.js'
 import DCC from './config.js'
 import * as chat from './chat.js'
 
+// Override the template for sheet configuration
+class DCCSheetConfig extends EntitySheetConfig {
+  /** @override */
+  static get defaultOptions() {
+    const options = super.defaultOptions
+    options.template = 'systems/dcc/templates/sheet-config.html',
+    options.tabs.unshift({ navSelector: '.config-tabs', contentSelector: '.config-body', initial: 'this-sheet' })
+    return options
+  }
+}
+
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
 /* -------------------------------------------- */
 Hooks.once('init', async function () {
   console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
+
+  // Override sheet selection dialog
+  EntitySheetConfig = DCCSheetConfig
 
   CONFIG.DCC = DCC
 

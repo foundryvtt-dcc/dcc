@@ -498,5 +498,14 @@
   "DCC.description": "A comprehensive game system for running games of Dungeon Crawl Classics in the Foundry VTT environment.",
   "DCC.of": "of",
   "DCC.spell": "spell",
-  "DCC.title": "Dungeon Crawl Classics"
+  "DCC.title": "Dungeon Crawl Classics",
+
+  "dcc.DCCActorSheet": "Zero / NPC",
+  "dcc.DCCActorSheetCleric": "Cleric",
+  "dcc.DCCActorSheetDwarf": "Dwarf",
+  "dcc.DCCActorSheetElf": "Elf",
+  "dcc.DCCActorSheetHalfling": "Halfling",
+  "dcc.DCCActorSheetThief": "Thief",
+  "dcc.DCCActorSheetWarrior": "Warrior",
+  "dcc.DCCActorSheetWizard": "Wizard"
 }
