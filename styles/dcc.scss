@@ -1082,6 +1082,23 @@ $border-style: 2px groove #eeede0;
     flex: 0 0 70px;
   }
 
+  .item-is-coins {
+    flex: 0 1 100px;
+    text-align: left;
+  }
+
+  .item-gp {
+    flex: 0 0 70px;
+  }
+
+  .item-sp {
+    flex: 0 0 70px;
+  }
+
+  .item-cp {
+    flex: 0 0 70px;
+  }
+
   .item-controls {
     flex: 0 0 80px;
   }

@@ -1,4 +1,4 @@
-/* global Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars */
+/* global Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars, EntitySheetConfig */
 /**
  * DCC
  */
@@ -15,9 +15,9 @@ import * as chat from './chat.js'
 // Override the template for sheet configuration
 class DCCSheetConfig extends EntitySheetConfig {
   /** @override */
-  static get defaultOptions() {
+  static get defaultOptions () {
     const options = super.defaultOptions
-    options.template = 'systems/dcc/templates/sheet-config.html',
+    options.template = 'systems/dcc/templates/sheet-config.html'
     options.tabs.unshift({ navSelector: '.config-tabs', contentSelector: '.config-body', initial: 'this-sheet' })
     return options
   }

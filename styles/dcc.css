@@ -955,6 +955,19 @@
 .dcc .item-list .item-quantity {
   flex: 0 0 70px; }
 
+.dcc .item-list .item-is-coins {
+  flex: 0 1 100px;
+  text-align: left; }
+
+.dcc .item-list .item-gp {
+  flex: 0 0 70px; }
+
+.dcc .item-list .item-sp {
+  flex: 0 0 70px; }
+
+.dcc .item-list .item-cp {
+  flex: 0 0 70px; }
+
 .dcc .item-list .item-controls {
   flex: 0 0 80px; }
 

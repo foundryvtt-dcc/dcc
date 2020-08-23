@@ -20,6 +20,8 @@ export class DCCItemSheet extends ItemSheet {
     switch (this.object.data.type) {
       case 'spell':
         return 'systems/dcc/templates/item-sheet-spell.html'
+      case 'treasure':
+        return 'systems/dcc/templates/item-sheet-treasure.html'
       case 'weapon':
       case 'armor':
       case 'ammunition':

@@ -1,0 +1,38 @@
+<form class="{{cssClass}}" autocomplete="off">
+    <header class="sheet-header">
+        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+        <div class="header-fields">
+            <div class="flexrow">
+                <div class="item-name">
+                    <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+                </div>
+                <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+            </div>
+
+            <div class="flexrow">
+              <div class="resource">
+                <label class="resource-label" for="data.isCoins">{{localize "DCC.AsCoins"}}</label>
+                <input type="checkbox" name="data.isCoins" id="data.isCoins"
+                    {{checked data.isCoins}} data-dtype="Boolean"/>
+              </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="sheet-body item">
+      <div class="grid grid-3col">
+        <div class="resource">
+          <label class="resource-label">{{localize "DCC.CurrencyGP"}}</label>
+          <input type="text" name="data.value.gp" value="{{data.value.gp}}" data-dtype="Number"/>
+        </div>
+        <div class="resource">
+          <label class="resource-label">{{localize "DCC.CurrencySP"}}</label>
+          <input type="text" name="data.value.sp" value="{{data.value.sp}}" data-dtype="Number"/>
+        </div>
+        <div class="resource">
+          <label class="resource-label">{{localize "DCC.CurrencyCP"}}</label>
+          <input type="text" name="data.value.cp" value="{{data.value.cp}}" data-dtype="Number"/>
+        </div>
+      </div>
+    </section>
+</form>

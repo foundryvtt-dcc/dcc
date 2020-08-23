@@ -115,9 +115,17 @@ class DCCActorSheet extends ActorSheet {
       4: [],
       5: []
     }
+    const treasure = []
+    const coins = []
 
     // Iterate through items, allocating to containers
     for (const i of actorData.items) {
+      // Remove physical items with zero quantity
+      if (i.quantity && i.quantity <= 0) {
+        this.actor.deleteOwnedItem(i._id, {})
+        continue
+      }
+
       if (i.type === 'weapon') {
         weapons.push(i)
       } if (i.type === 'ammunition') {
@@ -126,13 +134,32 @@ class DCCActorSheet extends ActorSheet {
         armor.push(i)
       } else if (i.type === 'equipment') {
         equipment.push(i)
-      } if (i.type === 'mount') {
+      } else if (i.type === 'mount') {
         mounts.push(i)
       } else if (i.type === 'spell') {
         if (i.data.level !== undefined) {
           spells[i.data.level].push(i)
         }
+      } else if (i.type === 'treasure') {
+        if (i.data.isCoins) {
+          coins.push(i)
+        } else {
+          treasure.push(i)
+        }
       }
+    }
+
+    // Combine any coins into a single item
+    if (coins.length) {
+      const wallet = coins.shift()
+      for (const c of coins) {
+        wallet.data.value.gp += c.data.value.gp
+        wallet.data.value.sp += c.data.value.sp
+        wallet.data.value.cp += c.data.value.cp
+        this.actor.deleteOwnedItem(c._id, {})
+      }
+      this.actor.updateOwnedItem(wallet, { diff: true })
+      treasure.push(wallet)
     }
 
     // Assign and return
@@ -142,6 +169,7 @@ class DCCActorSheet extends ActorSheet {
     actorData.ammunition = ammunition
     actorData.mounts = mounts
     actorData.spells = spells
+    actorData.treasure = treasure
   }
   /* -------------------------------------------- */
 
