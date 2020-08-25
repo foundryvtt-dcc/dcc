@@ -415,6 +415,10 @@
       "manifestation": {},
       "misfire": {},
       "results": {},
+      "range": "",
+      "duration": "",
+      "castingTime": "",
+      "save": "",
       "spellCheck": {
         "die" : "1d20",
         "value": "+0"
