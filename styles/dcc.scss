@@ -1112,51 +1112,48 @@ $border-style: 2px groove #eeede0;
   .sheet-body.item {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 50px auto;
+    grid-template-rows: 50px minmax(80px, auto);
   }
 
   .sheet-body.spell {
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px auto 50px 80px;
+    grid-template-rows: 50px 50px minmax(80px, auto) 50px 80px;
+  }
+
+  .sheet-body .spell-header-overflow {
+    grid-column: 1 / span 3;
   }
 
   .sheet-body .description-heading {
     grid-column: 1 / span 3;
-    grid-row: 1;
   }
 
   .sheet-body .description {
     overflow-y: scroll;
     grid-column: 1 / span 3;
-    grid-row: 2;
   }
 
   .sheet-body .description {
     overflow-y: scroll;
     grid-column: 1 / span 3;
-    grid-row: 2;
   }
 
   .sheet-body .mercurial-effect-heading {
     grid-column: 1;
-    grid-row: 3;
   }
 
   .sheet-body .mercurial-effect-value {
     grid-column: 2;
-    grid-row: 3;
   }
 
   .sheet-body .mercurial-effect-summary {
     grid-column: 3;
-    grid-row: 3;
   }
 
   .sheet-body .mercurial-effect-description {
     overflow-y: scroll;
     grid-column: 1 / span 3;
-    grid-row: 4;
   }
 
   .item-name {

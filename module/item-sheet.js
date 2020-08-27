@@ -9,8 +9,6 @@ export class DCCItemSheet extends ItemSheet {
   static get defaultOptions () {
     return mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
-      width: 520,
-      height: 480,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }]
     })
   }

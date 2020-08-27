@@ -413,11 +413,20 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollSpellCheck (event) {
     event.preventDefault()
-    const ability = event.currentTarget.parentElement.dataset.ability || 'int'
-    const die = event.currentTarget.parentElement.dataset.die || '1d20'
-    const bonus = this.actor.data.data.class.spellCheck || '+0'
-    const spellName = event.currentTarget.parentElement.dataset.spell || null
-    this.actor.rollSpellCheck(die, bonus, ability, spellName, { event: event })
+    const dataset = event.currentTarget.parentElement.dataset
+    if (dataset.itemId) {
+      // Roll through a spell item
+      const item = this.actor.items.find(i => i.id === dataset.itemId)
+      const ability = dataset.ability || 'int'
+      item.rollSpellCheck(ability, {event: event})
+    } else {
+      // Roll a raw spell check for the actor
+      const ability = dataset.ability || 'int'
+      const die = dataset.die || '1d20'
+      const bonus = this.actor.data.data.class.spellCheck || '+0'
+      const spellName = dataset.spell || null
+      this.actor.rollSpellCheck(die, bonus, ability, spellName, { event: event })
+    }
   }
 
   /**
