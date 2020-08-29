@@ -1,4 +1,4 @@
-/* global Item */
+/* global Item, game, ChatMessage, Roll, CONFIG */
 
 /**
  * Extend the base Item entity for DCC RPG
@@ -34,7 +34,7 @@ class DCCItem extends Item {
 
     // Lookup the appropriate table
     const resultsRef = this.data.data.results
-    const predicate = t => t.name === resultsRef.table || t._id == resultsRef.table
+    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table
     let resultsTable = game.tables.entities.find(predicate)
     if (!resultsTable) {
       const pack = game.packs.get(resultsRef.collection)
@@ -47,7 +47,7 @@ class DCCItem extends Item {
 
     // Draw from the table if found, otherwise display the roll
     if (resultsTable) {
-      const results = resultsTable.roll({roll})
+      const results = resultsTable.roll({ roll })
       resultsTable.draw(results)
     } else {
       // Fall back to displaying just the roll

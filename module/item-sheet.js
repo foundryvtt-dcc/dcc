@@ -1,4 +1,4 @@
-/* global ItemSheet, mergeObject, CONFIG */
+/* global ItemSheet, game, mergeObject, CONFIG, ENTITY_PERMISSIONS */
 
 import DCCItemConfig from './item-config.js'
 
@@ -60,20 +60,20 @@ export class DCCItemSheet extends ItemSheet {
     if (!this.options.editable) return
     // Make this droppable for RollTables if this is a spell
     if (this.item.type === 'spell') {
-      this.form.ondragover = ev => this._onDragOver(ev);
-      this.form.ondrop = ev => this._onDrop(ev);
+      this.form.ondragover = ev => this._onDragOver(ev)
+      this.form.ondrop = ev => this._onDrop(ev)
     }
   }
 
-  async _onDrop(event) {
+  async _onDrop (event) {
     event.preventDefault()
     event.stopPropagation()
 
-    let data;
+    let data
     try {
-      data = JSON.parse(event.dataTransfer.getData('text/plain'));
+      data = JSON.parse(event.dataTransfer.getData('text/plain'))
     } catch (err) {
-      return false;
+      return false
     }
 
     if (this.item.type === 'spell') {
@@ -92,12 +92,11 @@ export class DCCItemSheet extends ItemSheet {
         this.object.update({
           data: { results }
         })
-        return
       }
     }
   }
 
-  _onDragOver(event) {
+  _onDragOver (event) {
     event.preventDefault()
     return false
   }
@@ -135,7 +134,6 @@ export class DCCItemSheet extends ItemSheet {
       left: this.position.left + (this.position.width - 400) / 2
     }).render(true)
   }
-
 }
 
 export default DCCItemSheet

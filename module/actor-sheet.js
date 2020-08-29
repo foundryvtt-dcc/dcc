@@ -418,7 +418,7 @@ class DCCActorSheet extends ActorSheet {
       // Roll through a spell item
       const item = this.actor.items.find(i => i.id === dataset.itemId)
       const ability = dataset.ability || 'int'
-      item.rollSpellCheck(ability, {event: event})
+      item.rollSpellCheck(ability, { event: event })
     } else {
       // Roll a raw spell check for the actor
       const ability = dataset.ability || 'int'
