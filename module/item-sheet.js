@@ -57,9 +57,49 @@ export class DCCItemSheet extends ItemSheet {
     super.activateListeners(html)
 
     // Everything below here is only needed if the sheet is editable
-    // if (!this.options.editable) return
+    if (!this.options.editable) return
+    // Make this droppable for RollTables if this is a spell
+    if (this.item.type === 'spell') {
+      this.form.ondragover = ev => this._onDragOver(ev);
+      this.form.ondrop = ev => this._onDrop(ev);
+    }
+  }
 
-    // Roll handlers, click handlers, etc. would go here.
+  async _onDrop(event) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    let data;
+    try {
+      data = JSON.parse(event.dataTransfer.getData('text/plain'));
+    } catch (err) {
+      return false;
+    }
+
+    if (this.item.type === 'spell') {
+      // Handle dropping a roll table to set the spells table
+      if (data.type === 'RollTable') {
+        // Expected format from the tables tab
+        // {type: "RollTable", id: "y3X7GKu7qzDhUGto"}
+        // Expected format from a compendium
+        // {type: "RollTable", pack: "dcc-compendium.spell-tables", id: "NGsI5F12GngHsbA1"}
+        const results = {
+          table: data.id
+        }
+        if (data.pack) {
+          results.collection = data.pack
+        }
+        this.object.update({
+          data: { results }
+        })
+        return
+      }
+    }
+  }
+
+  _onDragOver(event) {
+    event.preventDefault()
+    return false
   }
 
   /** @inheritdoc */

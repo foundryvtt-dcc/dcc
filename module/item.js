@@ -34,32 +34,27 @@ class DCCItem extends Item {
 
     // Lookup the appropriate table
     const resultsRef = this.data.data.results
-    let resultsTable = game.tables.entities.find(t => t.name === resultsRef.table)
+    const predicate = t => t.name === resultsRef.table || t._id == resultsRef.table
+    let resultsTable = game.tables.entities.find(predicate)
     if (!resultsTable) {
       const pack = game.packs.get(resultsRef.collection)
-      await pack.getIndex()
-      const entry = pack.index.find(e => e.name === resultsRef.table)
-      resultsTable = await pack.getEntity(entry._id)
+      if (pack) {
+        await pack.getIndex()
+        const entry = pack.index.find(predicate)
+        resultsTable = await pack.getEntity(entry._id)
+      }
     }
-    const results = resultsTable.roll({roll})
-    resultsTable.draw(results)
-  }
 
-  /**
-   * Pre-load a table 
-   * @param {Object} tableRef    Object containing a table reference or fixed result text
-   * @return {Object}            { text: <static text>, table: <table object> }
-   * @private
-   */
-  async _preloadTable (tableRef) {
-    const result = {}
-    if (tableRef.text) {
-      result.text = tableRef.text
-    }
-    if (tableRef.table) {
-      return 
+    // Draw from the table if found, otherwise display the roll
+    if (resultsTable) {
+      const results = resultsTable.roll({roll})
+      resultsTable.draw(results)
     } else {
-      return result
+      // Fall back to displaying just the roll
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor: `${spell} (${game.i18n.localize(ability.label)})`
+      })
     }
   }
 }
