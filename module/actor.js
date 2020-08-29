@@ -109,7 +109,7 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Saving Throw
-   * @param {String} saveId       The save ID (e.g. "backstab")
+   * @param {String} saveId       The save ID (e.g. "ref")
    */
   rollSavingThrow (saveId) {
     const save = this.data.data.saves[saveId]
