@@ -84,7 +84,8 @@ export class DCCItemSheet extends ItemSheet {
         // Expected format from a compendium
         // {type: "RollTable", pack: "dcc-compendium.spell-tables", id: "NGsI5F12GngHsbA1"}
         const results = {
-          table: data.id
+          table: data.id,
+          collection: null
         }
         if (data.pack) {
           results.collection = data.pack
