@@ -1,5 +1,7 @@
 /* global ItemSheet, mergeObject, CONFIG */
 
+import DCCItemConfig from './item-config.js'
+
 /**
  * Extend the basic ItemSheet for DCC RPG
  * @extends {ItemSheet}
@@ -9,7 +11,8 @@ export class DCCItemSheet extends ItemSheet {
   static get defaultOptions () {
     return mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }]
+      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
+      dragDrop: [{ dragSelector: null, dropSelector: null }]
     })
   }
 
@@ -58,6 +61,41 @@ export class DCCItemSheet extends ItemSheet {
 
     // Roll handlers, click handlers, etc. would go here.
   }
+
+  /** @inheritdoc */
+  _getHeaderButtons () {
+    const buttons = super._getHeaderButtons()
+
+    // Header buttons shown only with Owner permissions
+    if (this.object.permission === ENTITY_PERMISSIONS.OWNER) {
+      if (this.object.data.type === 'spell') {
+        buttons.unshift(
+          {
+            label: game.i18n.localize('DCC.ConfigureItem'),
+            class: 'configure-item',
+            icon: 'fas fa-code',
+            onclick: ev => this._onConfigureItem(ev)
+          }
+        )
+      }
+    }
+
+    return buttons
+  }
+
+  /**
+   * Display item specific configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onConfigureItem (event) {
+    event.preventDefault()
+    new DCCItemConfig(this.item, {
+      top: this.position.top + 40,
+      left: this.position.left + (this.position.width - 400) / 2
+    }).render(true)
+  }
+
 }
 
 export default DCCItemSheet

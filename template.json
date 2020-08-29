@@ -410,6 +410,9 @@
         "itemDescription",
         "activatedEffect"
       ],
+      "config": {
+        "inheritSpellCheck": true
+      },
       "level": 1,
       "corruption": {},
       "manifestation": {},

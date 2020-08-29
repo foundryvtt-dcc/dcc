@@ -7,6 +7,11 @@
 class DCCItem extends Item {
   prepareData () {
     super.prepareData()
+
+    // If this is a spell owned by an actor, check if it should inherit the actor's spell check
+    if (this.actor && this.data.data.config && this.data.data.config.inheritSpellCheck) {
+      this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck
+    }
   }
 
   /**

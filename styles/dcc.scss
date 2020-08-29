@@ -1118,7 +1118,7 @@ $border-style: 2px groove #eeede0;
   .sheet-body.spell {
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px 50px minmax(80px, auto) 50px 80px;
+    grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px;
   }
 
   .sheet-body .spell-header-overflow {
@@ -1195,6 +1195,10 @@ $border-style: 2px groove #eeede0;
 
     input {
       text-align: right;
+    }
+
+    input.string {
+      text-align: left;
     }
   }
 }
