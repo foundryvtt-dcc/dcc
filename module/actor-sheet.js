@@ -180,38 +180,80 @@ class DCCActorSheet extends ActorSheet {
     // Everything below here is only needed if the sheet is editable
     if (!this.options.editable) return
 
+    // Drag event handler
+    const dragHandler = ev => this._onDragStart(ev)
+
     // Owner Only Listeners
     if (this.actor.owner) {
       // Ability Checks
       html.find('.ability-name').click(this._onRollAbilityTest.bind(this))
       html.find('.ability-modifiers').click(this._onRollAbilityTest.bind(this))
+      html.find('li.ability').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Initiative
       html.find('.init-label').click(this._onRollInitiative.bind(this))
+      html.find('div.init').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
+      html.find('li.save').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Skills
       html.find('.skill-check').click(this._onRollSkillCheck.bind(this))
+      html.find('label.skill-check').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Luck Die
       html.find('.luck-die').click(this._onRollLuckDie.bind(this))
+      html.find('label.luck-die').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Spell Checks
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
       html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
+      html.find('label.spell-check').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+      html.find('label.spell-item-button').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.parentElement.setAttribute('draggable', true)
+        li.parentElement.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Attack Bonus
       html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
+      html.find('.attack-bonus').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Weapons
-      const handler = ev => this._onDragStart(ev)
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
       html.find('li.weapon').each((i, li) => {
         // Add draggable attribute and dragstart listener.
         li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', handler, false)
+        li.addEventListener('dragstart', dragHandler, false)
       })
 
       // Only for editable sheets
@@ -291,16 +333,82 @@ class DCCActorSheet extends ActorSheet {
    * @param {Event} event
    * @override */
   _onDragStart (event) {
-    const li = event.currentTarget
-    const weapon = this.actor.data.data.items.weapons[li.dataset.weaponId]
-    weapon.id = li.dataset.weaponId
-    const dragData = {
-      type: 'Item',
-      actorId: this.actor.id,
-      data: weapon
+    let dragData = null
+
+    // Handle the various draggable elements on the sheet
+    const classes = event.target.classList
+    if (classes.contains('ability')) {
+      dragData = {
+        type: 'Ability',
+        actorId: this.actor.id,
+        data: event.currentTarget.dataset.ability
+      }
+    } else if (classes.contains('init')) {
+      dragData = {
+        type: 'Initiative',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('save')) {
+      dragData = {
+        type: 'Save',
+        actorId: this.actor.id,
+        data: event.currentTarget.dataset.save
+      }
+    } else if (classes.contains('skill-check')) {
+      const skillId = event.currentTarget.parentElement.dataset.skill 
+      dragData = {
+        type: 'Skill',
+        actorId: this.actor.id,
+        data: {
+          skillId: skillId,
+          skillName: this.actor.data.data.skills[skillId].label
+        }
+      }
+    } else if (classes.contains('luck-die')) {
+      dragData = {
+        type: 'Luck Die',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('spell-check')) {
+      dragData = {
+        type: 'Spell Check',
+        actorId: this.actor.id,
+        data: {
+          ability: event.currentTarget.parentElement.dataset.ability,
+        }
+      }
+    } else if (classes.contains('spell-item-button')) {
+      dragData = {
+        type: 'Spell Check',
+        actorId: this.actor.id,
+        data: {
+          ability: event.currentTarget.dataset.ability,
+          spell: dataset.itemId
+        }
+      }
+    } else if (classes.contains('attack-bonus')) {
+      dragData = {
+        type: 'Attack Bonus',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('weapon')) {
+      const li = event.currentTarget
+      const weapon = this.actor.data.data.items.weapons[li.dataset.weaponId]
+      weapon.id = li.dataset.weaponId
+      dragData = {
+        type: 'Weapon',
+        actorId: this.actor.id,
+        data: weapon
+      }
     }
-    if (this.actor.isToken) dragData.tokenId = this.actor.token.id
-    event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+
+    if (dragData) {
+      if (this.actor.isToken) dragData.tokenId = this.actor.token.id
+      event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+    }
   }
 
   /**

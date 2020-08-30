@@ -69,7 +69,7 @@ class DCCActor extends Actor {
     let roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
 
     // Override the Roll for Luck Checks unless they explicitly click on the modifier
-    if ((abilityId === 'lck') && (options.event.currentTarget.className !== 'ability-modifiers')) {
+    if ((abilityId === 'lck') && (!options.event || options.event.currentTarget.className !== 'ability-modifiers')) {
       roll = new Roll('1d20')
     }
 
