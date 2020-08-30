@@ -107,7 +107,7 @@ export class DCCItemSheet extends ItemSheet {
     const buttons = super._getHeaderButtons()
 
     // Header buttons shown only with Owner permissions
-    if (this.object.permission === ENTITY_PERMISSIONS.OWNER) {
+    if (this.options.editable) {
       if (this.object.data.type === 'spell') {
         buttons.unshift(
           {
