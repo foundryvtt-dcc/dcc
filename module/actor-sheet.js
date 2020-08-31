@@ -406,12 +406,19 @@ class DCCActorSheet extends ActorSheet {
         }
       }
     } else if (classes.contains('spell-item')) {
+      const spell = event.currentTarget.dataset.spell
+      const spellItem = this.actor.items.find(i => i.name === spell)
+      let img
+      if (spellItem) {
+        img = spellItem.data.img
+      }
       dragData = {
         type: 'Spell Check',
         actorId: this.actor.id,
         data: {
           ability: event.currentTarget.dataset.ability,
-          spell: event.currentTarget.dataset.spell
+          spell: spell,
+          img: img
         }
       }
     } else if (classes.contains('attack-bonus')) {
