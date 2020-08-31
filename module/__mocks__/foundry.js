@@ -43,7 +43,8 @@ class Actor {
           },
           class: {
             luckDie: '1d3',
-            spellCheck: 3
+            spellCheck: 3,
+            spellCheckAbility: 'int'
           },
           skills: {
             customDieSkill: {

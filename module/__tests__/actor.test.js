@@ -136,13 +136,21 @@ test('roll luck die', () => {
 })
 
 test('roll spell check', () => {
-  actor.rollSpellCheck('int')
+  // Spell check with ability from actor data
+  actor.rollSpellCheck()
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
 
-  actor.rollSpellCheck('per')
+  // Force int for display purposes
+  actor.rollSpellCheck('int')
   expect(Roll).toHaveBeenCalledTimes(2)
+  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
+
+  // Force personality for display purposes
+  actor.rollSpellCheck('per')
+  expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityPer)', speaker: actor })
 

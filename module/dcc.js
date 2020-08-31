@@ -275,7 +275,7 @@ function _createDCCSpellCheckMacro (data, slot) {
   const spell = data.data.spell || null
   const macroData = {
     name: game.i18n.localize('DCC.SpellCheck'),
-    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSpellCheck("${abilityId}") }`,
+    command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSpellCheck() }',
     img: '/systems/dcc/styles/images/critical.png'
   }
 

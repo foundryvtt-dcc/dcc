@@ -560,8 +560,7 @@ class DCCActorSheet extends ActorSheet {
       item.rollSpellCheck(ability)
     } else {
       // Roll a raw spell check for the actor
-      const ability = dataset.ability || 'int'
-      this.actor.rollSpellCheck(ability)
+      this.actor.rollSpellCheck()
     }
   }
 

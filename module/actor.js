@@ -169,7 +169,10 @@ class DCCActor extends Actor {
    * Roll a Spell Check
    * @param {String} abilityId       The ability used for the check (e.g. "per")
    */
-  rollSpellCheck (abilityId = 'int') {
+  rollSpellCheck (abilityId = null) {
+    if (!abilityId) {
+      abilityId = this.data.data.class.spellCheckAbility || 'int'
+    }
     const ability = this.data.data.abilities[abilityId]
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = game.i18n.localize('DCC.SpellCheck')

@@ -27,6 +27,8 @@
         {{!-- Class Tab --}}
         <div class="tab" data-group="primary" data-tab="class">
             <h4 class="class-label">{{localize "DCC.WizardAbilities"}}</h4>
+            {{!-- Update spell check ability to use Intelligence --}}
+            <input type="hidden" id="data.class.spellCheckAbility" name="data.class.spellCheckAbility" value="int">
             <div class="class">
                 <div class="skills-container">
                     <div class="wide flexrow" data-ability="int">
