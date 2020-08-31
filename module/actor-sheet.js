@@ -186,12 +186,19 @@ class DCCActorSheet extends ActorSheet {
     // Owner Only Listeners
     if (this.actor.owner) {
       // Ability Checks
-      html.find('.ability-name').click(this._onRollAbilityTest.bind(this))
-      html.find('.ability-modifiers').click(this._onRollAbilityTest.bind(this))
+      html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-modifiers').click(this._onRollAbilityCheck.bind(this))
       html.find('li.ability').each((i, li) => {
         // Add draggable attribute and dragstart listener.
         li.setAttribute('draggable', true)
         li.addEventListener('dragstart', dragHandler, false)
+      })
+      html.find('div.ability-modifiers').each((i, li) => {
+        // Also make the luck modifier draggable for non-standard luck checks
+        if (li.parentElement.dataset.ability === 'lck') {
+          li.setAttribute('draggable', true)
+          li.addEventListener('dragstart', dragHandler, false)
+        }
       })
 
       // Initiative
@@ -338,10 +345,29 @@ class DCCActorSheet extends ActorSheet {
     // Handle the various draggable elements on the sheet
     const classes = event.target.classList
     if (classes.contains('ability')) {
+      // Normal ability rolls and DCC d20 roll under luck rolls
+      const abilityId = event.currentTarget.dataset.ability
+      const rollUnder = (abilityId === 'lck')
       dragData = {
         type: 'Ability',
         actorId: this.actor.id,
-        data: event.currentTarget.dataset.ability
+        data: {
+          abilityId: abilityId,
+          rollUnder: rollUnder
+        }
+      }
+    } else if (classes.contains('ability-modifiers')) {
+      // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
+      const abilityId = event.currentTarget.parentElement.dataset.ability
+      if (abilityId) {
+        dragData = {
+          type: 'Ability',
+          actorId: this.actor.id,
+          data: {
+            abilityId: abilityId,
+            rollUnder: false
+          }
+        }
       }
     } else if (classes.contains('init')) {
       dragData = {
@@ -356,7 +382,7 @@ class DCCActorSheet extends ActorSheet {
         data: event.currentTarget.dataset.save
       }
     } else if (classes.contains('skill-check')) {
-      const skillId = event.currentTarget.parentElement.dataset.skill 
+      const skillId = event.currentTarget.parentElement.dataset.skill
       dragData = {
         type: 'Skill',
         actorId: this.actor.id,
@@ -376,7 +402,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Spell Check',
         actorId: this.actor.id,
         data: {
-          ability: event.currentTarget.parentElement.dataset.ability,
+          ability: event.currentTarget.parentElement.dataset.ability
         }
       }
     } else if (classes.contains('spell-item-button')) {
@@ -385,7 +411,7 @@ class DCCActorSheet extends ActorSheet {
         actorId: this.actor.id,
         data: {
           ability: event.currentTarget.dataset.ability,
-          spell: dataset.itemId
+          spell: event.currentTarget.dataset.itemId
         }
       }
     } else if (classes.contains('attack-bonus')) {
@@ -462,14 +488,19 @@ class DCCActorSheet extends ActorSheet {
    * @param {Event} event   The originating click event
    * @private
    */
-  _onRollAbilityTest (event) {
+  _onRollAbilityCheck (event) {
     event.preventDefault()
     const options = {}
     if (event.currentTarget.className === 'ability-modifiers') {
       options.modClick = true
     }
+
     const ability = event.currentTarget.parentElement.dataset.ability
-    this.actor.rollAbilityCheck(ability, { event: event })
+
+    // Luck checks are roll under unless the user explicitly clicks the modifier
+    const rollUnder = (ability === 'lck') && (event.currentTarget.className !== 'ability-modifiers')
+
+    this.actor.rollAbilityCheck(ability, { rollUnder: rollUnder })
   }
 
   /**

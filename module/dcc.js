@@ -37,7 +37,7 @@ Hooks.once('init', async function () {
   game.dcc = {
     DCCActor,
     rollDCCWeaponMacro, // This is called from macros, don't remove
-    getMacroActor       // This is called from macros, don't remove
+    getMacroActor // This is called from macros, don't remove
   }
 
   // Define custom Entity classes
@@ -123,14 +123,14 @@ Hooks.on('getChatLogEntryContext', chat.addChatMessageContextOptions)
  */
 async function createDCCMacro (data, slot) {
   const handlers = {
-    'Ability': _createDCCAbilityMacro,
-    'Initiative': _createDCCInitiativeMacro,
-    'Save': _createDCCSaveMacro,
-    'Skill': _createDCCSkillMacro,
+    Ability: _createDCCAbilityMacro,
+    Initiative: _createDCCInitiativeMacro,
+    Save: _createDCCSaveMacro,
+    Skill: _createDCCSkillMacro,
     'Luck Die': _createDCCLuckDieMacro,
     'Spell Check': _createDCCSpellCheckMacro,
     'Attack Bonus': _createDCCAttackBonusMacro,
-    'Weapon': _createDCCWeaponMacro
+    Weapon: _createDCCWeaponMacro
   }
   if (!handlers[data.type]) return
   if (!('data' in data)) return ui.notifications.warn('You can only create macro buttons for owned items')
@@ -166,11 +166,17 @@ function _createDCCAbilityMacro (data, slot) {
   if (data.type !== 'Ability') return
 
   // Create the macro command
-  const abilityId = data.data
+  const abilityId = data.data.abilityId
+  const rollUnder = data.data.rollUnder
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
-    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollAbilityCheck("${abilityId}") }`,
-    img: '/systems/dcc/styles/images/critical.png',
+    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollAbilityCheck("${abilityId}", { rollUnder: ${rollUnder} } ) }`,
+    img: '/systems/dcc/styles/images/critical.png'
+  }
+
+  // If this is a roll under check make it clear in the macro name
+  if (rollUnder) {
+    macroData.name = game.i18n.format('DCC.RollUnder', { name: macroData.name })
   }
 
   return macroData
@@ -188,8 +194,8 @@ function _createDCCInitiativeMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.Initiative'),
-    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollInitiative() }`,
-    img: '/systems/dcc/styles/images/critical.png',
+    command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollInitiative() }',
+    img: '/systems/dcc/styles/images/critical.png'
   }
 
   return macroData
@@ -209,7 +215,7 @@ function _createDCCSaveMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
     command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSavingThrow("${saveId}") }`,
-    img: '/systems/dcc/styles/images/critical.png',
+    img: '/systems/dcc/styles/images/critical.png'
   }
 
   return macroData
@@ -230,7 +236,7 @@ function _createDCCSkillMacro (data, slot) {
   const macroData = {
     name: skillName,
     command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSkillCheck("${skillId}") }`,
-    img: '/systems/dcc/styles/images/critical.png',
+    img: '/systems/dcc/styles/images/critical.png'
   }
 
   return macroData
@@ -248,8 +254,8 @@ function _createDCCLuckDieMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.LuckDie'),
-    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollLuckDie() }`,
-    img: '/systems/dcc/styles/images/critical.png',
+    command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollLuckDie() }',
+    img: '/systems/dcc/styles/images/critical.png'
   }
 
   return macroData
@@ -270,7 +276,7 @@ function _createDCCSpellCheckMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.SpellCheck'),
     command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSpellCheck("${abilityId}") }`,
-    img: '/systems/dcc/styles/images/critical.png',
+    img: '/systems/dcc/styles/images/critical.png'
   }
 
   if (spell) {
@@ -292,8 +298,8 @@ function _createDCCAttackBonusMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.AttackBonus'),
-    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollAttackBonus() }`,
-    img: '/systems/dcc/styles/images/critical.png',
+    command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollAttackBonus() }',
+    img: '/systems/dcc/styles/images/critical.png'
   }
 
   return macroData
@@ -313,7 +319,7 @@ function _createDCCWeaponMacro (data, slot) {
   const macroData = {
     name: item.name,
     command: `game.dcc.rollDCCWeaponMacro("${item.id}");`,
-    img: '/systems/dcc/styles/images/axe-square.png',
+    img: '/systems/dcc/styles/images/axe-square.png'
   }
 
   if (item.id[0] === 'r') {
@@ -353,4 +359,3 @@ function getMacroActor () {
   // Return the actor if found
   return actor
 }
-

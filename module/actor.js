@@ -66,11 +66,13 @@ class DCCActor extends Actor {
     ability.mod = CONFIG.DCC.abilities.modifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
 
-    let roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
+    let roll
 
-    // Override the Roll for Luck Checks unless they explicitly click on the modifier
-    if ((abilityId === 'lck') && (!options.event || options.event.currentTarget.className !== 'ability-modifiers')) {
+    // Allow requesting roll under (for Luck Checks)
+    if (options.rollUnder) {
       roll = new Roll('1d20')
+    } else {
+      roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
     }
 
     // Convert the roll to a chat message

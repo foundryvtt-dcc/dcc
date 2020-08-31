@@ -371,6 +371,7 @@
   "DCC.RollExample": "e.g. +1d4",
   "DCC.RollMode": "Roll Mode",
   "DCC.RollSituationalBonus": "Situational Bonus?",
+  "DCC.RollUnder": "{name} (Roll Under)",
   "DCC.SameAlignment": "Same",
   "DCC.Save": "Save",
   "DCC.SaveItemConfig": "Save Config",

@@ -36,15 +36,15 @@ test('roll ability check', () => {
   expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'AbilityStr Check', speaker: actor })
 
-  // Check that luck doesn't add ability mod
-  actor.rollAbilityCheck('lck', { event: { currentTarget: { className: 'random' } } })
-  expect(Roll).toHaveBeenCalledTimes(3) // called once above, then set for default lck then reset for luck check
+  // Check that rollUnder option is interpreted correctly
+  actor.rollAbilityCheck('lck', { rollUnder: true })
+  expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d20')
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 
-  // Unless they click on the ability mod of luck
-  actor.rollAbilityCheck('lck', { event: { currentTarget: { className: 'ability-modifiers' } } })
-  expect(Roll).toHaveBeenCalledTimes(4)
+  // ...both ways
+  actor.rollAbilityCheck('lck', { rollUnder: false })
+  expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 

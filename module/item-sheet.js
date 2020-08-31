@@ -1,4 +1,4 @@
-/* global ItemSheet, game, mergeObject, CONFIG, ENTITY_PERMISSIONS */
+/* global ItemSheet, game, mergeObject, CONFIG */
 
 import DCCItemConfig from './item-config.js'
 
