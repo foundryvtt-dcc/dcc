@@ -406,6 +406,8 @@
   "DCC.SpellCastingHeader": "Spell Casting",
   "DCC.SpellCastingTime": "Casting Time",
   "DCC.SpellCheck": "Spell Check",
+  "DCC.SpellCheckNonSpellWarning": "Cannot roll a spell check with a non-spell item.",
+  "DCC.SpellCheckNoOwnedItemWarning": "Cannot roll a spell check with a spell you don't own.",
   "DCC.SpellCreate": "Create Spell",
   "DCC.SpellDC": "Spell DC",
   "DCC.SpellDetails": "Spell Details",

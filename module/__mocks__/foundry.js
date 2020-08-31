@@ -4,6 +4,24 @@ import DCC from '../config.js'
 // console.log('Loading Foundry Mocks')
 
 /**
+ * Item
+ */
+const Item = jest.fn().mockImplementation(() => {
+}).mockName('Item')
+global.Item = Item
+
+/**
+ * Collection
+ */
+global.collectionFindMock = jest.fn()
+const Collection = jest.fn().mockImplementation(() => {
+  return {
+    find: global.collectionFindMock
+  }
+}).mockName('Collection')
+global.Collection = Collection
+
+/**
  * Actor
  */
 class Actor {
@@ -80,6 +98,7 @@ class Actor {
         }
       }
     }
+    this.items = new Collection()
     this.prepareData()
   }
 
@@ -178,6 +197,21 @@ global.CONFIG.ChatMessage = {
       // console.log(messageData)
     })
   }
+}
+
+/**
+ * Notifications
+ */
+global.uiNotificationsWarnMock = jest.fn((message, options) => {})
+global.uiNotificationsErrorMock = jest.fn((message, type, permenant) => {})
+const Notifications = jest.fn().mockImplementation(() => {
+  return {
+    warn: global.uiNotificationsWarnMock,
+    error: global.uiNotificationsErrorMock
+  }
+}).mockName('Notifications')
+global.ui = {
+  notifications: new Notifications()
 }
 
 /**

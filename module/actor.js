@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, Roll */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -173,6 +173,24 @@ class DCCActor extends Actor {
     if (!options.abilityId) {
       options.abilityId = this.data.data.class.spellCheckAbility || 'int'
     }
+
+    // If a spell name is provided attempt to look up an item with that name for the roll
+    if (options.spell) {
+      const item = this.items.find(i => i.name === options.spell)
+      if (item) {
+        if (item.data.type === 'spell') {
+          // Roll through the item and return so we don't also roll a basic spell check
+          item.rollSpellCheck(options.abilityId)
+          return
+        } else {
+          return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNonSpellWarning'))
+        }
+      } else {
+        return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNoOwnedItemWarning'))
+      }
+    }
+
+    // Otherwise fall back to a raw dice roll with appropriate flavor
     const ability = this.data.data.abilities[options.abilityId]
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')

@@ -271,10 +271,9 @@ function _createDCCSpellCheckMacro (data, slot) {
   if (data.type !== 'Spell Check') return
 
   // Create the macro command
-  const abilityId = data.data.ability
   const spell = data.data.spell || null
   const macroData = {
-    name: spell ? spell : game.i18n.localize('DCC.SpellCheck'),
+    name: spell || game.i18n.localize('DCC.SpellCheck'),
     command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSpellCheck() }',
     img: '/systems/dcc/styles/images/critical.png'
   }
