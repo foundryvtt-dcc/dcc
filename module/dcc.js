@@ -171,7 +171,7 @@ function _createDCCAbilityMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
     command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollAbilityCheck("${abilityId}", { rollUnder: ${rollUnder} } ) }`,
-    img: '/systems/dcc/styles/images/critical.png'
+    img: 'icons/dice/d20black.svg'
   }
 
   // If this is a roll under check make it clear in the macro name
@@ -195,7 +195,7 @@ function _createDCCInitiativeMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.Initiative'),
     command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollInitiative() }',
-    img: '/systems/dcc/styles/images/critical.png'
+    img: 'icons/svg/up.svg'
   }
 
   return macroData
@@ -215,7 +215,7 @@ function _createDCCSaveMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
     command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSavingThrow("${saveId}") }`,
-    img: '/systems/dcc/styles/images/critical.png'
+    img: 'icons/svg/shield.svg'
   }
 
   return macroData
@@ -236,7 +236,7 @@ function _createDCCSkillMacro (data, slot) {
   const macroData = {
     name: skillName,
     command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSkillCheck("${skillId}") }`,
-    img: '/systems/dcc/styles/images/critical.png'
+    img: 'icons/dice/d20black.svg'
   }
 
   return macroData
@@ -255,7 +255,7 @@ function _createDCCLuckDieMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.LuckDie'),
     command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollLuckDie() }',
-    img: '/systems/dcc/styles/images/critical.png'
+    img: 'icons/dice/d4black.svg'
   }
 
   return macroData
@@ -299,7 +299,7 @@ function _createDCCAttackBonusMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.AttackBonus'),
     command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollAttackBonus() }',
-    img: '/systems/dcc/styles/images/critical.png'
+    img: 'icons/dice/d4black.svg'
   }
 
   return macroData
