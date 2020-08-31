@@ -14,7 +14,7 @@
             </li>
             {{#each actor.spells as |spells spelllevel|}}
             {{#each spells as |item id|}}
-            <li class="item flexrow" data-item-id="{{item._id}}"
+            <li class="item spell-item flexrow" data-item-id="{{item._id}}"
                 data-ability="per" data-die="{{item.data.spellCheck.die}}"
                 data-bonus="{{item.data.spellCheck.value}}"
                 data-spell="{{item.name}}">

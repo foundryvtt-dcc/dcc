@@ -241,10 +241,10 @@ class DCCActorSheet extends ActorSheet {
         li.setAttribute('draggable', true)
         li.addEventListener('dragstart', dragHandler, false)
       })
-      html.find('label.spell-item-button').each((i, li) => {
+      html.find('li.spell-item').each((i, li) => {
         // Add draggable attribute and dragstart listener.
-        li.parentElement.setAttribute('draggable', true)
-        li.parentElement.addEventListener('dragstart', dragHandler, false)
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
       })
 
       // Attack Bonus
@@ -405,13 +405,13 @@ class DCCActorSheet extends ActorSheet {
           ability: event.currentTarget.parentElement.dataset.ability
         }
       }
-    } else if (classes.contains('spell-item-button')) {
+    } else if (classes.contains('spell-item')) {
       dragData = {
         type: 'Spell Check',
         actorId: this.actor.id,
         data: {
           ability: event.currentTarget.dataset.ability,
-          spell: event.currentTarget.dataset.itemId
+          spell: event.currentTarget.dataset.spell
         }
       }
     } else if (classes.contains('attack-bonus')) {
