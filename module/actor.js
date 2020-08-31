@@ -167,16 +167,14 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Spell Check
-   * @param {String} die             Die to roll for this check
-   * @param {String} bonus           Total bonus for the check
    * @param {String} abilityId       The ability used for the check (e.g. "per")
-   * @param {String} spellName       The spell being rolled for, if known
    */
-  rollSpellCheck (die = '1d20', bonus = '+0', abilityId = 'int', spellName = null) {
+  rollSpellCheck (abilityId = 'int') {
     const ability = this.data.data.abilities[abilityId]
     ability.label = CONFIG.DCC.abilities[abilityId]
-    const spell = spellName || game.i18n.localize('DCC.SpellCheck')
-
+    const spell = game.i18n.localize('DCC.SpellCheck')
+    const die = '1d20'
+    const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
 
     // Convert the roll to a chat message

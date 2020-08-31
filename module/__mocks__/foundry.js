@@ -42,7 +42,8 @@ class Actor {
             attackBonus: 0
           },
           class: {
-            luckDie: '1d3'
+            luckDie: '1d3',
+            spellCheck: 3
           },
           skills: {
             customDieSkill: {
