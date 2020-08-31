@@ -1,4 +1,6 @@
-/* global ItemSheet, mergeObject, CONFIG */
+/* global ItemSheet, game, mergeObject, CONFIG */
+
+import DCCItemConfig from './item-config.js'
 
 /**
  * Extend the basic ItemSheet for DCC RPG
@@ -9,9 +11,8 @@ export class DCCItemSheet extends ItemSheet {
   static get defaultOptions () {
     return mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
-      width: 520,
-      height: 480,
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }]
+      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
+      dragDrop: [{ dragSelector: null, dropSelector: null }]
     })
   }
 
@@ -20,6 +21,8 @@ export class DCCItemSheet extends ItemSheet {
     switch (this.object.data.type) {
       case 'spell':
         return 'systems/dcc/templates/item-sheet-spell.html'
+      case 'treasure':
+        return 'systems/dcc/templates/item-sheet-treasure.html'
       case 'weapon':
       case 'armor':
       case 'ammunition':
@@ -54,9 +57,83 @@ export class DCCItemSheet extends ItemSheet {
     super.activateListeners(html)
 
     // Everything below here is only needed if the sheet is editable
-    // if (!this.options.editable) return
+    if (!this.options.editable) return
+    // Make this droppable for RollTables if this is a spell
+    if (this.item.type === 'spell') {
+      this.form.ondragover = ev => this._onDragOver(ev)
+      this.form.ondrop = ev => this._onDrop(ev)
+    }
+  }
 
-    // Roll handlers, click handlers, etc. would go here.
+  async _onDrop (event) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    let data
+    try {
+      data = JSON.parse(event.dataTransfer.getData('text/plain'))
+    } catch (err) {
+      return false
+    }
+
+    if (this.item.type === 'spell') {
+      // Handle dropping a roll table to set the spells table
+      if (data.type === 'RollTable') {
+        // Expected format from the tables tab
+        // {type: "RollTable", id: "y3X7GKu7qzDhUGto"}
+        // Expected format from a compendium
+        // {type: "RollTable", pack: "dcc-compendium.spell-tables", id: "NGsI5F12GngHsbA1"}
+        const results = {
+          table: data.id,
+          collection: null
+        }
+        if (data.pack) {
+          results.collection = data.pack
+        }
+        this.object.update({
+          data: { results }
+        })
+      }
+    }
+  }
+
+  _onDragOver (event) {
+    event.preventDefault()
+    return false
+  }
+
+  /** @inheritdoc */
+  _getHeaderButtons () {
+    const buttons = super._getHeaderButtons()
+
+    // Header buttons shown only with Owner permissions
+    if (this.options.editable) {
+      if (this.object.data.type === 'spell') {
+        buttons.unshift(
+          {
+            label: game.i18n.localize('DCC.ConfigureItem'),
+            class: 'configure-item',
+            icon: 'fas fa-code',
+            onclick: ev => this._onConfigureItem(ev)
+          }
+        )
+      }
+    }
+
+    return buttons
+  }
+
+  /**
+   * Display item specific configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onConfigureItem (event) {
+    event.preventDefault()
+    new DCCItemConfig(this.item, {
+      top: this.position.top + 40,
+      left: this.position.left + (this.position.width - 400) / 2
+    }).render(true)
   }
 }
 

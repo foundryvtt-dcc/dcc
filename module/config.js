@@ -89,7 +89,8 @@ DCC.items = {
   armor: 'DCC.Armor',
   equipment: 'DCC.Equipment',
   mount: 'DCC.Mount',
-  spell: 'DCC.Spell'
+  spell: 'DCC.Spell',
+  treasure: 'DCC.Treasure'
 }
 
 /* -------------------------------------------- */

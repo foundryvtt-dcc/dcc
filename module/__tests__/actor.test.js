@@ -1,7 +1,8 @@
 /* Tests for Actor.js using Foundry Mocks */
 /* Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js */
+/* Mocks for DCCItem Class are found in __mocks__/item.js */
 /* eslint-env jest */
-/* global CONFIG, Roll, rollToMessageMock */
+/* global CONFIG, Roll, DCCItem, rollToMessageMock, collectionFindMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock */
 
 import DCCActor from '../actor'
 
@@ -36,15 +37,15 @@ test('roll ability check', () => {
   expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'AbilityStr Check', speaker: actor })
 
-  // Check that luck doesn't add ability mod
-  actor.rollAbilityCheck('lck', { event: { currentTarget: { className: 'random' } } })
-  expect(Roll).toHaveBeenCalledTimes(3) // called once above, then set for default lck then reset for luck check
+  // Check that rollUnder option is interpreted correctly
+  actor.rollAbilityCheck('lck', { rollUnder: true })
+  expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d20')
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 
-  // Unless they click on the ability mod of luck
-  actor.rollAbilityCheck('lck', { event: { currentTarget: { className: 'ability-modifiers' } } })
-  expect(Roll).toHaveBeenCalledTimes(4)
+  // ...both ways
+  actor.rollAbilityCheck('lck', { rollUnder: false })
+  expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 
@@ -136,25 +137,49 @@ test('roll luck die', () => {
 })
 
 test('roll spell check', () => {
-  actor.rollSpellCheck('1d20', +3, 'int')
+  // Spell check with ability from actor data
+  actor.rollSpellCheck()
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
+  expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
-  actor.rollSpellCheck('1d20', -2, 'per')
+  // Force int for display purposes
+  actor.rollSpellCheck({ abilityId: 'int' })
   expect(Roll).toHaveBeenCalledTimes(2)
-  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: -2 })
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityPer)', speaker: actor })
-
-  actor.rollSpellCheck('1d16', +5)
-  expect(Roll).toHaveBeenCalledTimes(3)
-  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d16', bonus: +5 })
+  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
+  expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
-  actor.rollSpellCheck('1d16', +5, 'int', 'Summon Moth')
-  expect(Roll).toHaveBeenCalledTimes(4)
-  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d16', bonus: +5 })
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Summon Moth (AbilityInt)', speaker: actor })
+  // Force personality for display purposes
+  actor.rollSpellCheck({ abilityId: 'per' })
+  expect(Roll).toHaveBeenCalledTimes(3)
+  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityPer)', speaker: actor })
+  expect(collectionFindMock).toHaveBeenCalledTimes(0)
+
+  // Roll a spell check with an item
+  collectionFindMock.mockReturnValue(new DCCItem('The Gloaming', { type: 'spell' }))
+  actor.rollSpellCheck({ spell: 'The Gloaming' })
+  expect(collectionFindMock).toHaveBeenCalledTimes(1)
+  expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
+  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(0)
+
+  // Roll a spell check with an item of the wrong type
+  collectionFindMock.mockReturnValue(new DCCItem('Swordfish', { type: 'weapon' }))
+  actor.rollSpellCheck({ spell: 'Swordfish' })
+  expect(collectionFindMock).toHaveBeenCalledTimes(2)
+  expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
+  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+  expect(uiNotificationsWarnMock).toHaveBeenCalledWith('SpellCheckNonSpellWarning')
+
+  // Roll a spell check with an unowned item
+  collectionFindMock.mockReturnValue(null)
+  actor.rollSpellCheck({ spell: 'Missing Spell' })
+  expect(collectionFindMock).toHaveBeenCalledTimes(3)
+  expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
+  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(2)
+  expect(uiNotificationsWarnMock).toHaveBeenCalledWith('SpellCheckNoOwnedItemWarning')
 
   Roll.mockClear()
 })

@@ -120,6 +120,7 @@
       "cleric": {
         "class": {
           "spellCheck": 1,
+          "spellCheckAbility": "int",
           "spells": [],
           "deity": null,
           "disapproval": "1",
@@ -231,6 +232,7 @@
       "wizard": {
         "class": {
           "spellCheck": 1,
+          "spellCheckAbility": "per",
           "spells": [],
           "patron": null,
           "familiar": null,
@@ -312,7 +314,8 @@
       "armor",
       "equipment",
       "mount",
-      "spell"
+      "spell",
+      "treasure"
     ],
     "templates": {
       "itemDescription": {
@@ -326,7 +329,6 @@
       "physicalItem": {
         "quantity": 1,
         "weight": 0,
-        "price": 0,
         "equipped": false,
         "identified": true
       },
@@ -337,12 +339,20 @@
           "units": ""
         },
         "specialProperties": ""
+      },
+      "currency": {
+        "value": {
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
       }
     },
     "weapon": {
       "templates": [
         "itemDescription",
         "physicalItem",
+        "currency",
         "activatedEffect"
       ],
       "properties": {
@@ -362,13 +372,15 @@
     "ammunition": {
       "templates": [
         "itemDescription",
-        "physicalItem"
+        "physicalItem",
+        "currency"
       ]
     },
     "armor": {
       "templates": [
         "itemDescription",
-        "physicalItem"
+        "physicalItem",
+        "currency"
       ],
       "acBonus" : "+1",
       "checkPenalty": null,
@@ -378,25 +390,40 @@
     "equipment": {
       "templates": [
         "itemDescription",
-        "physicalItem"
+        "physicalItem",
+        "currency"
       ]
     },
     "mount": {
       "templates": [
         "itemDescription",
-        "physicalItem"
+        "physicalItem",
+        "currency"
       ]
+    },
+    "treasure": {
+      "templates": [
+        "currency"
+      ],
+      "isCoins": false
     },
     "spell": {
       "templates": [
         "itemDescription",
         "activatedEffect"
       ],
+      "config": {
+        "inheritSpellCheck": true
+      },
       "level": 1,
       "corruption": {},
       "manifestation": {},
       "misfire": {},
       "results": {},
+      "range": "",
+      "duration": "",
+      "castingTime": "",
+      "save": "",
       "spellCheck": {
         "die" : "1d20",
         "value": "+0"

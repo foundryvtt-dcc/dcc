@@ -1082,6 +1082,23 @@ $border-style: 2px groove #eeede0;
     flex: 0 0 70px;
   }
 
+  .item-is-coins {
+    flex: 0 1 100px;
+    text-align: left;
+  }
+
+  .item-gp {
+    flex: 0 0 70px;
+  }
+
+  .item-sp {
+    flex: 0 0 70px;
+  }
+
+  .item-cp {
+    flex: 0 0 70px;
+  }
+
   .item-controls {
     flex: 0 0 80px;
   }
@@ -1095,51 +1112,48 @@ $border-style: 2px groove #eeede0;
   .sheet-body.item {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 50px auto;
+    grid-template-rows: 50px minmax(80px, auto);
   }
 
   .sheet-body.spell {
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px auto 50px 80px;
+    grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px;
+  }
+
+  .sheet-body .spell-header-overflow {
+    grid-column: 1 / span 3;
   }
 
   .sheet-body .description-heading {
     grid-column: 1 / span 3;
-    grid-row: 1;
   }
 
   .sheet-body .description {
     overflow-y: scroll;
     grid-column: 1 / span 3;
-    grid-row: 2;
   }
 
   .sheet-body .description {
     overflow-y: scroll;
     grid-column: 1 / span 3;
-    grid-row: 2;
   }
 
   .sheet-body .mercurial-effect-heading {
     grid-column: 1;
-    grid-row: 3;
   }
 
   .sheet-body .mercurial-effect-value {
     grid-column: 2;
-    grid-row: 3;
   }
 
   .sheet-body .mercurial-effect-summary {
     grid-column: 3;
-    grid-row: 3;
   }
 
   .sheet-body .mercurial-effect-description {
     overflow-y: scroll;
     grid-column: 1 / span 3;
-    grid-row: 4;
   }
 
   .item-name {
@@ -1181,6 +1195,10 @@ $border-style: 2px groove #eeede0;
 
     input {
       text-align: right;
+    }
+
+    input.string {
+      text-align: left;
     }
   }
 }

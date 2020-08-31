@@ -115,9 +115,17 @@ class DCCActorSheet extends ActorSheet {
       4: [],
       5: []
     }
+    const treasure = []
+    const coins = []
 
     // Iterate through items, allocating to containers
     for (const i of actorData.items) {
+      // Remove physical items with zero quantity
+      if (i.quantity && i.quantity <= 0) {
+        this.actor.deleteOwnedItem(i._id, {})
+        continue
+      }
+
       if (i.type === 'weapon') {
         weapons.push(i)
       } if (i.type === 'ammunition') {
@@ -126,13 +134,32 @@ class DCCActorSheet extends ActorSheet {
         armor.push(i)
       } else if (i.type === 'equipment') {
         equipment.push(i)
-      } if (i.type === 'mount') {
+      } else if (i.type === 'mount') {
         mounts.push(i)
       } else if (i.type === 'spell') {
         if (i.data.level !== undefined) {
           spells[i.data.level].push(i)
         }
+      } else if (i.type === 'treasure') {
+        if (i.data.isCoins) {
+          coins.push(i)
+        } else {
+          treasure.push(i)
+        }
       }
+    }
+
+    // Combine any coins into a single item
+    if (coins.length) {
+      const wallet = coins.shift()
+      for (const c of coins) {
+        wallet.data.value.gp += c.data.value.gp
+        wallet.data.value.sp += c.data.value.sp
+        wallet.data.value.cp += c.data.value.cp
+        this.actor.deleteOwnedItem(c._id, {})
+      }
+      this.actor.updateOwnedItem(wallet, { diff: true })
+      treasure.push(wallet)
     }
 
     // Assign and return
@@ -142,6 +169,7 @@ class DCCActorSheet extends ActorSheet {
     actorData.ammunition = ammunition
     actorData.mounts = mounts
     actorData.spells = spells
+    actorData.treasure = treasure
   }
   /* -------------------------------------------- */
 
@@ -152,38 +180,87 @@ class DCCActorSheet extends ActorSheet {
     // Everything below here is only needed if the sheet is editable
     if (!this.options.editable) return
 
+    // Drag event handler
+    const dragHandler = ev => this._onDragStart(ev)
+
     // Owner Only Listeners
     if (this.actor.owner) {
       // Ability Checks
-      html.find('.ability-name').click(this._onRollAbilityTest.bind(this))
-      html.find('.ability-modifiers').click(this._onRollAbilityTest.bind(this))
+      html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-modifiers').click(this._onRollAbilityCheck.bind(this))
+      html.find('li.ability').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+      html.find('div.ability-modifiers').each((i, li) => {
+        // Also make the luck modifier draggable for non-standard luck checks
+        if (li.parentElement.dataset.ability === 'lck') {
+          li.setAttribute('draggable', true)
+          li.addEventListener('dragstart', dragHandler, false)
+        }
+      })
 
       // Initiative
       html.find('.init-label').click(this._onRollInitiative.bind(this))
+      html.find('div.init').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
+      html.find('li.save').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Skills
       html.find('.skill-check').click(this._onRollSkillCheck.bind(this))
+      html.find('label.skill-check').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Luck Die
       html.find('.luck-die').click(this._onRollLuckDie.bind(this))
+      html.find('label.luck-die').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Spell Checks
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
       html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
+      html.find('label.spell-check').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+      html.find('li.spell-item').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Attack Bonus
       html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
+      html.find('.attack-bonus').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
 
       // Weapons
-      const handler = ev => this._onDragStart(ev)
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
       html.find('li.weapon').each((i, li) => {
         // Add draggable attribute and dragstart listener.
         li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', handler, false)
+        li.addEventListener('dragstart', dragHandler, false)
       })
 
       // Only for editable sheets
@@ -263,16 +340,108 @@ class DCCActorSheet extends ActorSheet {
    * @param {Event} event
    * @override */
   _onDragStart (event) {
-    const li = event.currentTarget
-    const weapon = this.actor.data.data.items.weapons[li.dataset.weaponId]
-    weapon.id = li.dataset.weaponId
-    const dragData = {
-      type: 'Item',
-      actorId: this.actor.id,
-      data: weapon
+    let dragData = null
+
+    // Handle the various draggable elements on the sheet
+    const classes = event.target.classList
+    if (classes.contains('ability')) {
+      // Normal ability rolls and DCC d20 roll under luck rolls
+      const abilityId = event.currentTarget.dataset.ability
+      const rollUnder = (abilityId === 'lck')
+      dragData = {
+        type: 'Ability',
+        actorId: this.actor.id,
+        data: {
+          abilityId: abilityId,
+          rollUnder: rollUnder
+        }
+      }
+    } else if (classes.contains('ability-modifiers')) {
+      // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
+      const abilityId = event.currentTarget.parentElement.dataset.ability
+      if (abilityId) {
+        dragData = {
+          type: 'Ability',
+          actorId: this.actor.id,
+          data: {
+            abilityId: abilityId,
+            rollUnder: false
+          }
+        }
+      }
+    } else if (classes.contains('init')) {
+      dragData = {
+        type: 'Initiative',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('save')) {
+      dragData = {
+        type: 'Save',
+        actorId: this.actor.id,
+        data: event.currentTarget.dataset.save
+      }
+    } else if (classes.contains('skill-check')) {
+      const skillId = event.currentTarget.parentElement.dataset.skill
+      dragData = {
+        type: 'Skill',
+        actorId: this.actor.id,
+        data: {
+          skillId: skillId,
+          skillName: this.actor.data.data.skills[skillId].label
+        }
+      }
+    } else if (classes.contains('luck-die')) {
+      dragData = {
+        type: 'Luck Die',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('spell-check')) {
+      dragData = {
+        type: 'Spell Check',
+        actorId: this.actor.id,
+        data: {
+          ability: event.currentTarget.parentElement.dataset.ability
+        }
+      }
+    } else if (classes.contains('spell-item')) {
+      const spell = event.currentTarget.dataset.spell
+      const spellItem = this.actor.items.find(i => i.name === spell)
+      let img
+      if (spellItem) {
+        img = spellItem.data.img
+      }
+      dragData = {
+        type: 'Spell Check',
+        actorId: this.actor.id,
+        data: {
+          ability: event.currentTarget.dataset.ability,
+          spell: spell,
+          img: img
+        }
+      }
+    } else if (classes.contains('attack-bonus')) {
+      dragData = {
+        type: 'Attack Bonus',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('weapon')) {
+      const li = event.currentTarget
+      const weapon = this.actor.data.data.items.weapons[li.dataset.weaponId]
+      weapon.id = li.dataset.weaponId
+      dragData = {
+        type: 'Weapon',
+        actorId: this.actor.id,
+        data: weapon
+      }
     }
-    if (this.actor.isToken) dragData.tokenId = this.actor.token.id
-    event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+
+    if (dragData) {
+      if (this.actor.isToken) dragData.tokenId = this.actor.token.id
+      event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+    }
   }
 
   /**
@@ -326,14 +495,19 @@ class DCCActorSheet extends ActorSheet {
    * @param {Event} event   The originating click event
    * @private
    */
-  _onRollAbilityTest (event) {
+  _onRollAbilityCheck (event) {
     event.preventDefault()
     const options = {}
     if (event.currentTarget.className === 'ability-modifiers') {
       options.modClick = true
     }
+
     const ability = event.currentTarget.parentElement.dataset.ability
-    this.actor.rollAbilityCheck(ability, { event: event })
+
+    // Luck checks are roll under unless the user explicitly clicks the modifier
+    const rollUnder = (ability === 'lck') && (event.currentTarget.className !== 'ability-modifiers')
+
+    this.actor.rollAbilityCheck(ability, { rollUnder: rollUnder })
   }
 
   /**
@@ -385,11 +559,16 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollSpellCheck (event) {
     event.preventDefault()
-    const ability = event.currentTarget.parentElement.dataset.ability || 'int'
-    const die = event.currentTarget.parentElement.dataset.die || '1d20'
-    const bonus = this.actor.data.data.class.spellCheck || '+0'
-    const spellName = event.currentTarget.parentElement.dataset.spell || null
-    this.actor.rollSpellCheck(die, bonus, ability, spellName, { event: event })
+    const dataset = event.currentTarget.parentElement.dataset
+    if (dataset.itemId) {
+      // Roll through a spell item
+      const item = this.actor.items.find(i => i.id === dataset.itemId)
+      const ability = dataset.ability || 'int'
+      item.rollSpellCheck(ability)
+    } else {
+      // Roll a raw spell check for the actor
+      this.actor.rollSpellCheck()
+    }
   }
 
   /**

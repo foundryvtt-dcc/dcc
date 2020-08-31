@@ -29,7 +29,8 @@
   "homepage": "https://github.com/cyface/foundryvtt-dcc#readme",
   "jest": {
     "setupFiles": [
-      "<rootDir>/module/__mocks__/foundry.js"
+      "<rootDir>/module/__mocks__/foundry.js",
+      "<rootDir>/module/__mocks__/item.js"
     ],
     "verbose": true
   },

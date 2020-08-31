@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, Roll */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -66,11 +66,13 @@ class DCCActor extends Actor {
     ability.mod = CONFIG.DCC.abilities.modifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
 
-    let roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
+    let roll
 
-    // Override the Roll for Luck Checks unless they explicitly click on the modifier
-    if ((abilityId === 'lck') && (options.event.currentTarget.className !== 'ability-modifiers')) {
+    // Allow requesting roll under (for Luck Checks)
+    if (options.rollUnder) {
       roll = new Roll('1d20')
+    } else {
+      roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
     }
 
     // Convert the roll to a chat message
@@ -109,7 +111,7 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Saving Throw
-   * @param {String} saveId       The save ID (e.g. "backstab")
+   * @param {String} saveId       The save ID (e.g. "ref")
    */
   rollSavingThrow (saveId) {
     const save = this.data.data.saves[saveId]
@@ -165,16 +167,35 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Spell Check
-   * @param {String} die             Die to roll for this check
-   * @param {String} bonus           Total bonus for the check
    * @param {String} abilityId       The ability used for the check (e.g. "per")
-   * @param {String} spellName       The spell being rolled for, if known
    */
-  rollSpellCheck (die = '1d20', bonus = '+0', abilityId = 'int', spellName = null) {
-    const ability = this.data.data.abilities[abilityId]
-    ability.label = CONFIG.DCC.abilities[abilityId]
-    const spell = spellName || game.i18n.localize('DCC.SpellCheck')
+  rollSpellCheck (options = {}) {
+    if (!options.abilityId) {
+      options.abilityId = this.data.data.class.spellCheckAbility || 'int'
+    }
 
+    // If a spell name is provided attempt to look up an item with that name for the roll
+    if (options.spell) {
+      const item = this.items.find(i => i.name === options.spell)
+      if (item) {
+        if (item.data.type === 'spell') {
+          // Roll through the item and return so we don't also roll a basic spell check
+          item.rollSpellCheck(options.abilityId)
+          return
+        } else {
+          return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNonSpellWarning'))
+        }
+      } else {
+        return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNoOwnedItemWarning'))
+      }
+    }
+
+    // Otherwise fall back to a raw dice roll with appropriate flavor
+    const ability = this.data.data.abilities[options.abilityId]
+    ability.label = CONFIG.DCC.abilities[options.abilityId]
+    const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
+    const die = '1d20'
+    const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
 
     // Convert the roll to a chat message

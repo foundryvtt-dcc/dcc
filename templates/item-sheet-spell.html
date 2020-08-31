@@ -24,6 +24,7 @@
                          placeholder="1d20" data-dtype="String"/>
                   <input type="text" name="data.spellCheck.value" class="flex1"
                          value="{{numberFormat data.spellCheck.value decimals=0 sign=true}}"
+                         {{#if data.config.inheritSpellCheck}}disabled{{/if}}
                          placeholder="+0" data-dtype="Number"/>
                 </div>
               </div>
@@ -32,6 +33,28 @@
     </header>
 
     <section class="sheet-body spell">
+        <div class="spell-header-extras grid grid-4col">
+          <div class="resource">
+            <label class="resource-label" for="data.range">{{localize "DCC.SpellRange"}}</label>
+            <input type="text" name="data.range" value="{{data.range}}"
+                   placeholder="Varies" data-dtype="String"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.duration">{{localize "DCC.SpellDuration"}}</label>
+            <input type="text" name="data.duration" value="{{data.duration}}"
+                   placeholder="Varies" data-dtype="String"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.castingTime">{{localize "DCC.SpellCastingTime"}}</label>
+            <input type="text" name="data.castingTime" value="{{data.castingTime}}"
+                   placeholder="Varies" data-dtype="String"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.save">{{localize "DCC.SpellSave"}}</label>
+            <input type="text" name="data.save" value="{{data.save}}"
+                   placeholder="None" data-dtype="String"/>
+          </div>
+        </div>
         <h1 class="description-heading">{{localize "DCC.Description"}}</h1>
         <div class="description">
             {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}

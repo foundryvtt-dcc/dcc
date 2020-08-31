@@ -1,4 +1,4 @@
-/* global Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars */
+/* global Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars, EntitySheetConfig */
 /**
  * DCC
  */
@@ -15,9 +15,9 @@ import * as chat from './chat.js'
 // Override the template for sheet configuration
 class DCCSheetConfig extends EntitySheetConfig {
   /** @override */
-  static get defaultOptions() {
+  static get defaultOptions () {
     const options = super.defaultOptions
-    options.template = 'systems/dcc/templates/sheet-config.html',
+    options.template = 'systems/dcc/templates/sheet-config.html'
     options.tabs.unshift({ navSelector: '.config-tabs', contentSelector: '.config-body', initial: 'this-sheet' })
     return options
   }
@@ -30,13 +30,14 @@ Hooks.once('init', async function () {
   console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
 
   // Override sheet selection dialog
-  EntitySheetConfig = DCCSheetConfig
+  EntitySheetConfig = DCCSheetConfig // eslint-disable-line no-global-assign
 
   CONFIG.DCC = DCC
 
   game.dcc = {
     DCCActor,
-    rollDCCWeaponMacro // This is called from macros, don't remove
+    rollDCCWeaponMacro, // This is called from macros, don't remove
+    getMacroActor // This is called from macros, don't remove
   }
 
   // Define custom Entity classes
@@ -97,8 +98,8 @@ Hooks.once('init', async function () {
 /* -------------------------------------------- */
 /*  Other Hooks                                 */
 /* -------------------------------------------- */
-// Create a roll weapon macro when a weapon rollable is dropped on the hotbar
-Hooks.on('hotbarDrop', (bar, data, slot) => createDCCWeaponMacro(data, slot))
+// Create a macro when a rollable is dropped on the hotbar
+Hooks.on('hotbarDrop', (bar, data, slot) => createDCCMacro(data, slot))
 
 // Highlight 1's and 20's for all regular rolls
 Hooks.on('renderChatMessage', (app, html, data) => {
@@ -114,35 +115,218 @@ Hooks.on('getChatLogEntryContext', chat.addChatMessageContextOptions)
 /* -------------------------------------------- */
 
 /**
- * Create a Macro from an weapon drop.
- * Get an existing item macro if one exists, otherwise create a new one.
+ * Create a Macro from a hotbar drop.
+ * Dispatch to the appropriate function for the item type
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
  * @returns {Promise}
  */
-async function createDCCWeaponMacro (data, slot) {
-  if (data.type !== 'Item') return
+async function createDCCMacro (data, slot) {
+  const handlers = {
+    Ability: _createDCCAbilityMacro,
+    Initiative: _createDCCInitiativeMacro,
+    Save: _createDCCSaveMacro,
+    Skill: _createDCCSkillMacro,
+    'Luck Die': _createDCCLuckDieMacro,
+    'Spell Check': _createDCCSpellCheckMacro,
+    'Attack Bonus': _createDCCAttackBonusMacro,
+    Weapon: _createDCCWeaponMacro
+  }
+  if (!handlers[data.type]) return
   if (!('data' in data)) return ui.notifications.warn('You can only create macro buttons for owned items')
-  const item = data.data
+
+  // Call the appropriate function to generate a macro
+  const macroData = handlers[data.type](data, slot)
+  if (macroData) {
+    // Create or reuse existing macro
+    let macro = game.macros.entities.find(
+      m => (m.name === macroData.name) && (m.command === macroData.command)
+    )
+    if (!macro) {
+      macro = await Macro.create({
+        name: macroData.name,
+        type: 'script',
+        img: macroData.img,
+        command: macroData.command,
+        flags: { 'dcc.itemMacro': true }
+      })
+    }
+    await game.user.assignHotbarMacro(macro, slot)
+  }
+  return false
+}
+
+/**
+ * Create a macro from an ability check drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCAbilityMacro (data, slot) {
+  if (data.type !== 'Ability') return
 
   // Create the macro command
-  const command = `game.dcc.rollDCCWeaponMacro("${item.id}");`
-  let macro = game.macros.entities.find(m => (m.name === item.name) && (m.command === command))
-  let img = '/systems/dcc/styles/images/axe-square.png'
+  const abilityId = data.data.abilityId
+  const rollUnder = data.data.rollUnder
+  const macroData = {
+    name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
+    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollAbilityCheck("${abilityId}", { rollUnder: ${rollUnder} } ) }`,
+    img: 'icons/dice/d20black.svg'
+  }
+
+  // If this is a roll under check make it clear in the macro name
+  if (rollUnder) {
+    macroData.name = game.i18n.format('DCC.RollUnder', { name: macroData.name })
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from an initiative drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCInitiativeMacro (data, slot) {
+  if (data.type !== 'Initiative') return
+
+  // Create the macro command
+  const macroData = {
+    name: game.i18n.localize('DCC.Initiative'),
+    command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollInitiative() }',
+    img: 'icons/svg/up.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from a saving throw drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCSaveMacro (data, slot) {
+  if (data.type !== 'Save') return
+
+  // Create the macro command
+  const saveId = data.data
+  const macroData = {
+    name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
+    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSavingThrow("${saveId}") }`,
+    img: 'icons/svg/shield.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from a skill roll drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCSkillMacro (data, slot) {
+  if (data.type !== 'Skill') return
+
+  // Create the macro command
+  const skillId = data.data.skillId
+  const skillName = game.i18n.localize(data.data.skillName)
+  const macroData = {
+    name: skillName,
+    command: `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSkillCheck("${skillId}") }`,
+    img: 'icons/dice/d20black.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from a luck die drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCLuckDieMacro (data, slot) {
+  if (data.type !== 'Luck Die') return
+
+  // Create the macro command
+  const macroData = {
+    name: game.i18n.localize('DCC.LuckDie'),
+    command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollLuckDie() }',
+    img: 'icons/dice/d4black.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from a spell check drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCSpellCheckMacro (data, slot) {
+  if (data.type !== 'Spell Check') return
+
+  // Create the macro command
+  const spell = data.data.spell || null
+  const img = data.data.img || null
+  const macroData = {
+    name: spell || game.i18n.localize('DCC.SpellCheck'),
+    command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSpellCheck() }',
+    img: img || '/systems/dcc/styles/images/critical.png'
+  }
+
+  if (spell) {
+    macroData.command = `const actor = game.dcc.getMacroActor(); if (actor) { actor.rollSpellCheck({ spell: "${spell}" }) }`
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from an attack bonus drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCAttackBonusMacro (data, slot) {
+  if (data.type !== 'Attack Bonus') return
+
+  // Create the macro command
+  const macroData = {
+    name: game.i18n.localize('DCC.AttackBonus'),
+    command: 'const actor = game.dcc.getMacroActor(); if (actor) { actor.rollAttackBonus() }',
+    img: 'icons/dice/d4black.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Create a Macro from a weapon drop.
+ * Get an existing macro if one exists, otherwise create a new one.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCWeaponMacro (data, slot) {
+  if (data.type !== 'Weapon') return
+  const item = data.data
+
+  const macroData = {
+    name: item.name,
+    command: `game.dcc.rollDCCWeaponMacro("${item.id}");`,
+    img: '/systems/dcc/styles/images/axe-square.png'
+  }
+
   if (item.id[0] === 'r') {
-    img = '/systems/dcc/styles/images/bow-square.png'
+    macroData.img = '/systems/dcc/styles/images/bow-square.png'
   }
-  if (!macro) {
-    macro = await Macro.create({
-      name: item.name,
-      type: 'script',
-      img: img,
-      command: command,
-      flags: { 'dcc.itemMacro': true }
-    })
-  }
-  await game.user.assignHotbarMacro(macro, slot)
-  return false
+
+  return macroData
 }
 
 /**
@@ -159,4 +343,19 @@ function rollDCCWeaponMacro (itemId) {
 
   // Trigger the weapon roll
   return actor.rollWeaponAttack(itemId)
+}
+
+/**
+ * Get the current actor - for use in macros
+ * @return {Promise}
+ */
+function getMacroActor () {
+  const speaker = ChatMessage.getSpeaker()
+  let actor
+  if (speaker.token) actor = game.actors.tokens[speaker.token]
+  if (!actor) actor = game.actors.get(speaker.actor)
+  if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
+
+  // Return the actor if found
+  return actor
 }
