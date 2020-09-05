@@ -13,7 +13,7 @@ global.Item = Item
 /**
  * Collection
  */
-global.collectionFindMock = jest.fn()
+global.collectionFindMock = jest.fn().mockName('Collection.find')
 const Collection = jest.fn().mockImplementation(() => {
   return {
     find: global.collectionFindMock
@@ -24,6 +24,7 @@ global.Collection = Collection
 /**
  * Actor
  */
+global.itemTypesMock = jest.fn().mockName('Actor.itemTypes getter')
 class Actor {
   constructor (data, options) {
     // If test-specific data is passed in use it, otherwise use default data
@@ -94,12 +95,24 @@ class Actor {
               ability: 'lck',
               value: +4
             }
+          },
+          config: {
+            capLevel: false,
+            maxLevel: 0,
+            rollAttackBonus: false,
+            computeAC: false,
+            baseACAbility: 'agl',
+            sortInventory: true,
+            removeEmptyItems: true
           }
         }
       }
     }
     this.items = new Collection()
     this.prepareData()
+    Object.defineProperty(this, 'itemTypes', {
+      get: global.itemTypesMock
+    })
   }
 
   prepareData () {
@@ -202,8 +215,8 @@ global.CONFIG.ChatMessage = {
 /**
  * Notifications
  */
-global.uiNotificationsWarnMock = jest.fn((message, options) => {})
-global.uiNotificationsErrorMock = jest.fn((message, type, permenant) => {})
+global.uiNotificationsWarnMock = jest.fn((message, options) => {}).mockName('ui.notifications.warn')
+global.uiNotificationsErrorMock = jest.fn((message, type, permenant) => {}).mockName('ui.notifications.error')
 const Notifications = jest.fn().mockImplementation(() => {
   return {
     warn: global.uiNotificationsWarnMock,
