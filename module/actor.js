@@ -50,10 +50,8 @@ class DCCActor extends Actor {
     }
 
     // Merge any existing data with defaults to implicitly migrate missing config fields
-    if (this.data.data.config) {
-      defaultConfig = Object.assign(defaultConfig, this.data.data.config)
-      this.data.data.config = defaultConfig
-    }
+    defaultConfig = Object.assign(defaultConfig, this.data.data.config)
+    this.data.data.config = defaultConfig
 
     return defaultConfig
   }

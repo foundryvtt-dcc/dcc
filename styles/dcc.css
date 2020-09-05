@@ -281,7 +281,7 @@
   text-align: center; }
 
 .dcc .armor-notes {
-  flex: 0 0 110px;
+  flex: 0.2 0 55px;
   margin: 0 0 0 8px; }
 
 .dcc .armor-controls {
@@ -575,7 +575,7 @@
   padding: 0 0 0 30px; }
 
 .dcc .weapon-notes {
-  flex: 0 0 110px;
+  flex: 0.2 0 55px;
   margin: 0 8px 0 0; }
 
 .dcc .weapon-tohit {
