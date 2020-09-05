@@ -118,8 +118,14 @@ class DCCActorSheet extends ActorSheet {
     const treasure = []
     const coins = []
 
+    let inventory = actorData.items
+    if (sheetData.data.config.sortInventory) {
+      // Shallow copy and lexical sort
+      inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
+    }
+
     // Iterate through items, allocating to containers
-    for (const i of actorData.items) {
+    for (const i of inventory) {
       // Remove physical items with zero quantity
       if (i.quantity && i.quantity <= 0) {
         this.actor.deleteOwnedItem(i._id, {})

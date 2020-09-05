@@ -1185,8 +1185,10 @@ $border-style: 2px groove #eeede0;
       flex: 0 0 96%;
     }
 
-    label.attack-bonus-info {
+    label.info {
       text-align: center;
+      padding-left: 10px;
+      padding-right: 10px;
     }
 
     div.form-fields {

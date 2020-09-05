@@ -120,7 +120,7 @@
       "cleric": {
         "class": {
           "spellCheck": 1,
-          "spellCheckAbility": "int",
+          "spellCheckAbility": "per",
           "spells": [],
           "deity": null,
           "disapproval": "1",
@@ -222,7 +222,6 @@
       },
       "warrior": {
         "details": {
-          "attackBonus": "+1d3",
           "critRange": "19"
         },
         "class": {
@@ -232,7 +231,7 @@
       "wizard": {
         "class": {
           "spellCheck": 1,
-          "spellCheckAbility": "per",
+          "spellCheckAbility": "int",
           "spells": [],
           "patron": null,
           "familiar": null,
@@ -241,7 +240,6 @@
       },
       "dwarf": {
         "details": {
-          "attackBonus": "+1d3"
         },
         "class": {
           "luckyWeapon": null
@@ -272,7 +270,10 @@
           "maxLevel" : 10,
           "rollAttackBonus": false,
           "computeAC": false,
-          "baseACAbility": "agl"
+          "baseACAbility": "agl",
+          "sortInventory" : true,
+          "removeEmptyItems" : true,
+          "weaponsAsItems": true
         }
       }
     },
@@ -332,14 +333,6 @@
         "equipped": false,
         "identified": true
       },
-      "activatedEffect": {
-        "range": {
-          "value": null,
-          "long": null,
-          "units": ""
-        },
-        "specialProperties": ""
-      },
       "currency": {
         "value": {
           "gp": 0,
@@ -352,13 +345,12 @@
       "templates": [
         "itemDescription",
         "physicalItem",
-        "currency",
-        "activatedEffect"
+        "currency"
       ],
       "properties": {
-        "toHitBonus": "+0",
+        "toHit": "+0",
         "damage": "1d3",
-        "range": null,
+        "range": "",
         "twoHanded": 0,
         "melee": 0,
         "missile": 0,
@@ -409,8 +401,7 @@
     },
     "spell": {
       "templates": [
-        "itemDescription",
-        "activatedEffect"
+        "itemDescription"
       ],
       "config": {
         "inheritSpellCheck": true

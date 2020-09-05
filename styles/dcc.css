@@ -1030,8 +1030,10 @@
     flex: 0 0 48%; }
   .config-dialog .form-group label.span {
     flex: 0 0 96%; }
-  .config-dialog .form-group label.attack-bonus-info {
-    text-align: center; }
+  .config-dialog .form-group label.info {
+    text-align: center;
+    padding-left: 10px;
+    padding-right: 10px; }
   .config-dialog .form-group div.form-fields {
     flex: 0 1 48%; }
   .config-dialog .form-group input {
