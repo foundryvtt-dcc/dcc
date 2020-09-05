@@ -44,7 +44,9 @@ class DCCActor extends Actor {
       maxLevel: 0,
       rollAttackBonus: false,
       computeAC: false,
-      baseACAbility: 'agl'
+      baseACAbility: 'agl',
+      sortInventory: true,
+      removeEmptyItems: true
     }
 
     // Merge any existing data with defaults to implicitly migrate missing config fields
@@ -231,13 +233,39 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Weapon Attack
-   * @param {string} weaponId     The weapon id (e.g. "m1", "r1")
+   * @param {string} weaponId     The weapon name or slot id (e.g. "m1", "r1")
    * @param {Object} options      Options which configure how ability tests are rolled
    */
   async rollWeaponAttack (weaponId, options = {}) {
-    const weapon = this.data.data.items.weapons[weaponId]
+    // First try and find the item by name or id
+    let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
+
+    // If not found try finding it by slot
+    if (!weapon) {
+      try {
+        // Verify this is a valid slot name
+        const result = weaponId.match(/^([mr])(\d+)$/)
+        if (!result) {
+          throw new Error('Invalid slot name')
+        }
+        const isMelee = weaponId[0] === 'm' // 'm' or 'r'
+        const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
+        let weapons = this.itemTypes.weapon
+        if (this.data.data.config.sortInventory) {
+          // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
+          weapons = [...weapons].sort((a, b) => a.data.name.localeCompare(b.data.name))
+        }
+        weapon = weapons.filter(i => !!i.data.data.melee === isMelee)[weaponIndex]
+      } catch (err) { }
+    }
+
+    // If all lookups fail, give up and show a warning
+    if (!weapon) {
+      return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
+    }
+
     const speaker = { alias: this.name, _id: this._id }
-    const formula = `1d20 + ${weapon.toHit}`
+    const formula = `1d20 + ${weapon.data.data.toHit}`
     const config = this._getConfig()
 
     /* Determine attack bonus */
@@ -304,11 +332,11 @@ class DCCActor extends Actor {
     }
 
     /* Roll the Damage */
-    const damageRoll = new Roll(weapon.damage, { ab: attackBonus })
+    const damageRoll = new Roll(weapon.data.data.damage, { ab: attackBonus })
     damageRoll.roll()
     const damageRollData = escape(JSON.stringify(damageRoll))
     const damageRollTotal = damageRoll.total
-    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${weapon.damage}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${weapon.data.data.damage}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
 
     /* Emote attack results */
     const messageData = {

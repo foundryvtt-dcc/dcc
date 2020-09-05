@@ -272,8 +272,7 @@
           "computeAC": false,
           "baseACAbility": "agl",
           "sortInventory" : true,
-          "removeEmptyItems" : true,
-          "weaponsAsItems": true
+          "removeEmptyItems" : true
         }
       }
     },
@@ -347,18 +346,16 @@
         "physicalItem",
         "currency"
       ],
-      "properties": {
-        "toHit": "+0",
-        "damage": "1d3",
-        "range": "",
-        "twoHanded": 0,
-        "melee": 0,
-        "missile": 0,
-        "shortRangeStrength": 0,
-        "subdual": 0,
-        "backstabDamage": null,
-        "doubleIfMounted": 0
-      },
+      "toHit": "+0",
+      "damage": "1d3",
+      "range": "",
+      "twoHanded": 0,
+      "melee": 0,
+      "missile": 0,
+      "shortRangeStrength": 0,
+      "subdual": 0,
+      "backstabDamage": null,
+      "doubleIfMounted": 0,
       "proficient": true
     },
     "ammunition": {

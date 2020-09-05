@@ -269,6 +269,11 @@ $border-style: 2px groove #eeede0;
   margin: 0 0 0 8px;
 }
 
+.dcc .armor-controls {
+  flex: 0 0 60px;
+  padding-left: 10px;
+}
+
 /* ----------------------------------------- */
 /*  Armor Class                              */
 /* ----------------------------------------- */
@@ -630,6 +635,11 @@ $border-style: 2px groove #eeede0;
 .dcc .weapon-special {
   flex: 0 0 1;
   text-align: center;
+}
+
+.dcc .weapon-controls {
+  flex: 0 0 60px;
+  padding-left: 10px;
 }
 
 /* ----------------------------------------- */
@@ -1100,7 +1110,8 @@ $border-style: 2px groove #eeede0;
   }
 
   .item-controls {
-    flex: 0 0 80px;
+    flex: 0 0 60px;
+    padding-left: 10px;
   }
 }
 

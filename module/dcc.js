@@ -79,6 +79,11 @@ Hooks.once('init', async function () {
     return attackBonus
   })
 
+  // Handlebars helper for simple addition
+  Handlebars.registerHelper('add', function (object1, object2) {
+    return parseInt(object1) + parseInt(object2)
+  })
+
   // Handlebars helper to stringify JSON objects for debugging
   Handlebars.registerHelper('stringify', function (object) {
     return JSON.stringify(object)
@@ -314,15 +319,16 @@ function _createDCCAttackBonusMacro (data, slot) {
  */
 function _createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Weapon') return
-  const item = data.data
+  const item = data.data.weapon
+  const weaponSlot = data.data.slot
 
   const macroData = {
     name: item.name,
-    command: `game.dcc.rollDCCWeaponMacro("${item.id}");`,
+    command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}");`,
     img: '/systems/dcc/styles/images/axe-square.png'
   }
 
-  if (item.id[0] === 'r') {
+  if (weaponSlot[0] === 'r') {
     macroData.img = '/systems/dcc/styles/images/bow-square.png'
   }
 

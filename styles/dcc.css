@@ -284,6 +284,10 @@
   flex: 0 0 110px;
   margin: 0 0 0 8px; }
 
+.dcc .armor-controls {
+  flex: 0 0 60px;
+  padding-left: 10px; }
+
 /* ----------------------------------------- */
 /*  Armor Class                              */
 /* ----------------------------------------- */
@@ -582,6 +586,10 @@
 .dcc .weapon-special {
   flex: 0 0 1;
   text-align: center; }
+
+.dcc .weapon-controls {
+  flex: 0 0 60px;
+  padding-left: 10px; }
 
 /* ----------------------------------------- */
 /*  Upper Level                              */
@@ -969,7 +977,8 @@
   flex: 0 0 70px; }
 
 .dcc .item-list .item-controls {
-  flex: 0 0 80px; }
+  flex: 0 0 60px;
+  padding-left: 10px; }
 
 /* ----------------------------------------- */
 /*  Items Sheet                              */

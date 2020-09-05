@@ -104,7 +104,10 @@ class DCCActorSheet extends ActorSheet {
 
     // Initialize containers.
     const equipment = []
-    const weapons = []
+    const weapons = {
+      melee: [],
+      ranged: []
+    }
     const armor = []
     const ammunition = []
     const mounts = []
@@ -124,6 +127,23 @@ class DCCActorSheet extends ActorSheet {
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
     }
 
+    // Migrate any legacy weapons
+    if (sheetData.data.items.weapons) {
+      // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
+      this.actor.update({ data: { items: { weapons: null } } })
+      this._migrateWeapon(sheetData.data.items.weapons.m1, false)
+      this._migrateWeapon(sheetData.data.items.weapons.m2, false)
+      this._migrateWeapon(sheetData.data.items.weapons.r1, true)
+      this._migrateWeapon(sheetData.data.items.weapons.r2, true)
+    }
+
+    // ... and armor
+    if (sheetData.data.items.armor) {
+      // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
+      this.actor.update({ data: { items: { armor: null } } })
+      this._migrateArmor(sheetData.data.items.armor.a0)
+    }
+
     // Iterate through items, allocating to containers
     const removeEmptyItems = sheetData.data.config.removeEmptyItems
     for (const i of inventory) {
@@ -134,7 +154,11 @@ class DCCActorSheet extends ActorSheet {
       }
 
       if (i.type === 'weapon') {
-        weapons.push(i)
+        if (i.data.melee) {
+          weapons.melee.push(i)
+        } else {
+          weapons.ranged.push(i)
+        }
       } if (i.type === 'ammunition') {
         ammunition.push(i)
       } else if (i.type === 'armor') {
@@ -178,6 +202,69 @@ class DCCActorSheet extends ActorSheet {
     actorData.spells = spells
     actorData.treasure = treasure
   }
+
+  /**
+   * Create an embedded object from a legacy weapon object
+   *
+   * @param {Object} weapon   The legacy weapon object.
+   * @param {Object} ranged   Indicate that a ranged weapon should be created.
+   * @return {Object}         The newly created item
+   */
+  _migrateWeapon (weapon, ranged = false) {
+    if (!weapon.name) { return }
+    const weaponData = {
+      name: weapon.name,
+      type: 'weapon',
+      data: {
+        toHit: weapon.toHit,
+        damage: weapon.damage,
+        range: weapon.range,
+        melee: !ranged,
+        description: {
+          value: weapon.notes
+        }
+      }
+    }
+
+    // Create and return an equivalent item
+    return this.actor.createOwnedItem(weaponData)
+  }
+
+  /**
+   * Create an embedded object from a legacy armor object
+   *
+   * @param {Object} armor    The legacy armor object.
+   * @return {Object}         The newly created item
+   */
+  _migrateArmor (armor) {
+    if (!armor.name) { return }
+    const armorData = {
+      name: armor.name,
+      type: 'armor',
+      data: {
+        acBonus: armor.bonus,
+        checkPenalty: armor.checkPenalty,
+        speed: '+0',
+        fumbleDie: armor.fumbleDie,
+        description: {
+          value: armor.notes
+        },
+        quantity: 1,
+        weight: 0,
+        equipped: true,
+        identified: true,
+        value: {
+          gp: 0,
+          sp: 0,
+          cp: 0
+        }
+      }
+    }
+
+    // Create and return an equivalent item
+    return this.actor.createOwnedItem(armorData)
+  }
+
   /* -------------------------------------------- */
 
   /** @override */
@@ -436,12 +523,14 @@ class DCCActorSheet extends ActorSheet {
       }
     } else if (classes.contains('weapon')) {
       const li = event.currentTarget
-      const weapon = this.actor.data.data.items.weapons[li.dataset.weaponId]
-      weapon.id = li.dataset.weaponId
+      const weapon = this.actor.items.get(li.dataset.itemId)
       dragData = {
         type: 'Weapon',
         actorId: this.actor.id,
-        data: weapon
+        data: {
+          weapon: weapon,
+          slot: li.dataset.itemSlot
+        }
       }
     }
 
@@ -597,8 +686,8 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollWeaponAttack (event) {
     event.preventDefault()
-    const weaponId = event.currentTarget.parentElement.dataset.weaponId
-    this.actor.rollWeaponAttack(weaponId, { event: event })
+    const slot = event.currentTarget.parentElement.dataset.itemSlot
+    this.actor.rollWeaponAttack(slot, { event: event })
   }
 
   /**
