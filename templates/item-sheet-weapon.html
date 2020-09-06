@@ -1,0 +1,73 @@
+<form class="{{cssClass}}" autocomplete="off">
+    <header class="sheet-header">
+        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+        <div class="header-fields">
+            <div class="flexrow">
+                <div class="item-name">
+                    <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+                </div>
+                <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+            </div>
+
+            <div class="grid grid-2col">
+              <div class="resource">
+                <label class="resource-label" for="data.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
+                <div class="flexrow">
+                  <input type="text" name="data.actionDie" class="flex1"
+                         value="{{data.actionDie}}"
+                         {{#if data.config.inheritActionDie}}disabled{{/if}}
+                         placeholder="1d20" data-dtype="String"/>
+                  <input type="text" name="data.toHit" class="flex1"
+                         value="{{data.toHit}}"
+                         placeholder="+0" data-dtype="Number"/>
+                </div>
+              </div>
+              <div class="resource">
+                <label class="resource-label" for="data.level">{{localize "DCC.WeaponPropertiesDamage"}}</label>
+                <input type="text" name="data.damage"
+                       value="{{data.damage}}"
+                       placeholder="1d3" data-dtype="String"/>
+              </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="sheet-body weapon">
+        <div class="weapon-header-extras">
+          <div class="resource">
+            <label class="resource-label" for="data.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
+            <input type="checkbox" name="data.melee" data-dtype="Boolean" {{checked data.melee}}/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.range">{{localize "DCC.WeaponPropertiesRange"}}</label>
+            <input type="text" name="data.range" value="{{data.range}}"
+                   {{#if data.melee}}disabled{{/if}}
+                   placeholder="" data-dtype="String"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.twoHanded">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
+            <input type="checkbox" name="data.twoHanded" data-dtype="Boolean"
+                   {{checked data.twoHanded}}/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.backstab">{{localize "DCC.WeaponPropertiesBackstab"}}</label>
+            <input type="checkbox" name="data.backstab" data-dtype="Boolean"
+                   {{checked data.backstab}}/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.backstabDamage">{{localize "DCC.WeaponPropertiesBackstabDamage"}}</label>
+            <input type="text" name="data.backstabDamage" value="{{data.backstabDamage}}"
+                   {{#if data.backstab}}{{else}}disabled{{/if}}
+                   placeholder="1d6" data-dtype="String"/>
+          </div>
+        </div>
+        <h1 class="weapon-description-heading">{{localize "DCC.Description"}}</h1>
+        <div class="weapon-summary">
+          <label class="resource-label" for="data.description.summary">{{localize "DCC.ItemSummary"}}</label>
+          <input type="text" name="data.description.summary" value="{{data.description.summary}}" data-dtype="String"/>
+        </div>
+        <div class="description">
+            {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
+        </div>
+    </section>
+</form>

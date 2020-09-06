@@ -375,8 +375,8 @@
         "currency"
       ],
       "acBonus" : "+1",
-      "checkPenalty": null,
-      "speed": null,
+      "checkPenalty": "-0",
+      "speed": "-0",
       "fumbleDie": "1d4"
     },
     "equipment": {

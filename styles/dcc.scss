@@ -1120,9 +1120,26 @@ $border-style: 2px groove #eeede0;
 /* ----------------------------------------- */
 
 .dcc.item {
+  .sheet-header .armor-header {
+    display: grid;
+    grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
+  }
+
   .sheet-body.item {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 50px minmax(80px, auto);
+  }
+
+  .sheet-body.weapon {
+    display: grid;
+    grid-template-columns: 3fr 1fr 2fr;
+    grid-template-rows: 60px 50px minmax(80px, auto);
+  }
+
+  .sheet-body.armor {
+    display: grid;
+    grid-template-columns: 3fr 1fr 2fr;
     grid-template-rows: 50px minmax(80px, auto);
   }
 
@@ -1130,12 +1147,6 @@ $border-style: 2px groove #eeede0;
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
     grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px;
-  }
-
-  .sheet-body.weapon {
-    display: grid;
-    grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 60px 50px minmax(80px, auto);
   }
 
   .sheet-body {
@@ -1155,7 +1166,6 @@ $border-style: 2px groove #eeede0;
     .weapon-header-extras {
       display: grid;
       grid-template-columns: minmax(55px, auto) minmax(90px, auto) minmax(100px, auto) minmax(85px, auto) minmax(145px, auto);
-      grid-template-rows: repeat(auto);
       grid-column: 1 / span 3;
     }
 
@@ -1164,6 +1174,14 @@ $border-style: 2px groove #eeede0;
     }
   
     .weapon-summary {
+      grid-column: 2 / span 2;
+    }
+  
+    .armor-description-heading {
+      grid-column: 1 / span 1;
+    }
+  
+    .armor-summary {
       grid-column: 2 / span 2;
     }
   

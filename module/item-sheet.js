@@ -19,15 +19,16 @@ export class DCCItemSheet extends ItemSheet {
   /** @override */
   get template () {
     switch (this.object.data.type) {
+      case 'weapon':
+        return 'systems/dcc/templates/item-sheet-weapon.html'
+      case 'armor':
+        return 'systems/dcc/templates/item-sheet-armor.html'
       case 'spell':
         return 'systems/dcc/templates/item-sheet-spell.html'
       case 'treasure':
         return 'systems/dcc/templates/item-sheet-treasure.html'
-      case 'weapon':
-        return 'systems/dcc/templates/item-sheet-weapon.html'
-      case 'armor':
-      case 'ammunition':
       case 'equipment':
+      case 'ammunition':
       case 'mount':
       default:
         return 'systems/dcc/templates/item-sheet-equipment.html'

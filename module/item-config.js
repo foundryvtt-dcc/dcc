@@ -8,7 +8,6 @@ export class DCCItemConfig extends FormApplication {
     return options
   }
 
-
   /** @override */
   get template () {
     switch (this.object.data.type) {
@@ -17,7 +16,6 @@ export class DCCItemConfig extends FormApplication {
       case 'spell':
         return 'systems/dcc/templates/dialog-item-config-spell.html'
       default:
-        return
     }
   }
 
