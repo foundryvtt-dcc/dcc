@@ -347,17 +347,19 @@
         "physicalItem",
         "currency"
       ],
+      "config": {
+        "inheritActionDie": true
+      },
+      "actionDie": "1d20",
       "toHit": "+0",
       "damage": "1d3",
       "range": "",
       "twoHanded": 0,
       "melee": 0,
-      "missile": 0,
       "shortRangeStrength": 0,
       "subdual": 0,
       "backstabDamage": null,
-      "doubleIfMounted": 0,
-      "proficient": true
+      "doubleIfMounted": 0
     },
     "ammunition": {
       "templates": [

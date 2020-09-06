@@ -993,6 +993,11 @@
   grid-template-columns: 3fr 1fr 2fr;
   grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px; }
 
+.dcc.item .sheet-body.weapon {
+  display: grid;
+  grid-template-columns: 3fr 1fr 2fr;
+  grid-template-rows: 60px 50px minmax(80px, auto); }
+
 .dcc.item .sheet-body .spell-header-overflow {
   grid-column: 1 / span 3; }
 
@@ -1003,9 +1008,17 @@
   overflow-y: scroll;
   grid-column: 1 / span 3; }
 
-.dcc.item .sheet-body .description {
-  overflow-y: scroll;
+.dcc.item .sheet-body .weapon-header-extras {
+  display: grid;
+  grid-template-columns: minmax(55px, auto) minmax(90px, auto) minmax(100px, auto) minmax(85px, auto) minmax(145px, auto);
+  grid-template-rows: repeat(auto);
   grid-column: 1 / span 3; }
+
+.dcc.item .sheet-body .weapon-description-heading {
+  grid-column: 1 / span 1; }
+
+.dcc.item .sheet-body .weapon-summary {
+  grid-column: 2 / span 2; }
 
 .dcc.item .sheet-body .mercurial-effect-heading {
   grid-column: 1; }

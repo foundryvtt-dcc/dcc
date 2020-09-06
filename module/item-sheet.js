@@ -24,6 +24,7 @@ export class DCCItemSheet extends ItemSheet {
       case 'treasure':
         return 'systems/dcc/templates/item-sheet-treasure.html'
       case 'weapon':
+        return 'systems/dcc/templates/item-sheet-weapon.html'
       case 'armor':
       case 'ammunition':
       case 'equipment':
@@ -108,7 +109,7 @@ export class DCCItemSheet extends ItemSheet {
 
     // Header buttons shown only with Owner permissions
     if (this.options.editable) {
-      if (this.object.data.type === 'spell') {
+      if (this.object.data.type === 'spell' || this.object.data.type === 'weapon') {
         buttons.unshift(
           {
             label: game.i18n.localize('DCC.ConfigureItem'),
