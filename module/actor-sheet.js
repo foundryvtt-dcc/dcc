@@ -127,21 +127,23 @@ class DCCActorSheet extends ActorSheet {
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
     }
 
-    // Migrate any legacy weapons
-    if (sheetData.data.items.weapons) {
-      // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
-      this.actor.update({ data: { items: { weapons: null } } })
-      this._migrateWeapon(sheetData.data.items.weapons.m1, false)
-      this._migrateWeapon(sheetData.data.items.weapons.m2, false)
-      this._migrateWeapon(sheetData.data.items.weapons.r1, true)
-      this._migrateWeapon(sheetData.data.items.weapons.r2, true)
-    }
-
-    // ... and armor
-    if (sheetData.data.items.armor) {
-      // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
-      this.actor.update({ data: { items: { armor: null } } })
-      this._migrateArmor(sheetData.data.items.armor.a0)
+    if (sheetData.data.items) {
+      // Migrate any legacy weapons
+      if (sheetData.data.items.weapons) {
+        // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
+        this.actor.update({ data: { items: { weapons: null } } })
+        this._migrateWeapon(sheetData.data.items.weapons.m1, false)
+        this._migrateWeapon(sheetData.data.items.weapons.m2, false)
+        this._migrateWeapon(sheetData.data.items.weapons.r1, true)
+        this._migrateWeapon(sheetData.data.items.weapons.r2, true)
+      }
+  
+      // ... and armor
+      if (sheetData.data.items.armor) {
+        // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
+        this.actor.update({ data: { items: { armor: null } } })
+        this._migrateArmor(sheetData.data.items.armor.a0)
+      }
     }
 
     // Iterate through items, allocating to containers
