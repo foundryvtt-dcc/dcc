@@ -676,6 +676,7 @@ class DCCActorSheet extends ActorSheet {
     if (this.actor._getConfig().rollAttackBonus) {
       event.preventDefault()
       this.actor.rollAttackBonus({ event: event })
+      this.render(false)
     }
   }
 

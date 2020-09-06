@@ -266,7 +266,7 @@ class DCCActor extends Actor {
     }
 
     const speaker = { alias: this.name, _id: this._id }
-    const formula = `1d20 + ${weapon.data.data.toHit}`
+    const formula = `${weapon.data.data.actionDie} + ${weapon.data.data.toHit}`
     const config = this._getConfig()
 
     /* Determine attack bonus */

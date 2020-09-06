@@ -94,7 +94,6 @@
       "player": {
         "details": {
           "attackBonus": "+0",
-          "lastRolledAttackBonus": "+0",
           "birthAugur": "",
           "critRange": "19",
           "xp": {

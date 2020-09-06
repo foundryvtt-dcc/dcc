@@ -5,8 +5,9 @@
     {{#if data.config.rollAttackBonus}}
     <div class="skills-container">
       <div class="flexrow wide">
-        <label class="rollable attack-bonus" for="data.details.lastRolledAttackBonus">{{localize "DCC.DeedRoll"}}</label>
-        <input type="text" id="data.details.lastRolledAttackBonus" name="data.details.lastRolledAttackBonus" value="{{data.details.lastRolledAttackBonus}}" data-dtype="Number" disabled/>
+        <label class="rollable attack-bonus" for="dummyAttackBonus">{{localize "DCC.DeedRoll"}}</label>
+        <input type="text" id="dummyAttackBonus"
+               value="{{data.details.lastRolledAttackBonus}}" disabled/>
       </div>
     </div>
     {{/if}}
