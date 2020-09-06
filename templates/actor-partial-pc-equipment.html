@@ -16,21 +16,21 @@
     <li class="weapon item flexrow" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
         <div class="rollable weapon-button">&nbsp;</div>
         <input class="weapon-name" type="text"
-               name="embeddedupdates.{{id}}.name"
+               name="itemUpdates.{{id}}.name"
                value="{{weapon.name}}"/>
         <input class="weapon-tohit" type="text"
-               name="embeddedupdates.{{id}}.data.toHit"
+               name="itemUpdates.{{id}}.data.toHit"
                value="{{weapon.data.toHit}}"/>
         <input class="weapon-damage" type="text"
-               name="embeddedupdates.{{id}}.data.damage"
+               name="itemUpdates.{{id}}.data.damage"
                value="{{weapon.data.damage}}"/>
         {{#if weapon.melee}}
         <input class="weapon-notes" type="text"
-               name="embeddedupdates.{{id}}.data.description.value"
-               value="{{{weapon.data.description.value}}}"/>
+               name="itemUpdates.{{id}}.data.description.summary"
+               value="{{{weapon.data.description.summary}}}"/>
         {{else}}
         <input class="weapon-notes" type="text"
-               name="embeddedupdates.{{id}}.data.range"
+               name="itemUpdates.{{id}}.data.range"
                value="{{weapon.data.range}}"/>
         {{/if}}
         <div class="weapon-controls">
@@ -80,20 +80,20 @@
     {{#* inline "armorRow"}}
     <li class="armor item flexrow" data-item-id="{{id}}" data-item-index="{{index}}">
         <input class="armor-name" type="text"
-               name="entityupdates.{{id}}.name"
+               name="itemUpdates.{{id}}.name"
                value="{{armor.name}}"/>
         <input class="armor-bonus" type="text"
-               name="entityupdates.{{id}}.data.bonus"
+               name="itemUpdates.{{id}}.data.bonus"
                value="{{armor.data.acBonus}}"/>
         <input class="armor-checkpenalty" type="text"
-               name="entityupdates.{{id}}.data.checkPenalty"
+               name="itemUpdates.{{id}}.data.checkPenalty"
                value="{{armor.data.checkPenalty}}"/>
         <input class="armor-fumbledie" type="text"
-               name="entityupdates.{{id}}.data.fumbleDie"
+               name="itemUpdates.{{id}}.data.fumbleDie"
                value="{{armor.data.fumbleDie}}"/>
         <input class="armor-notes" type="text"
-               name="entityupdates.{{id}}.data.description.value"
-               value="{{{armor.data.description.value}}}"/>
+               name="itemUpdates.{{id}}.data.description.summary"
+               value="{{{armor.data.description.summary}}}"/>
         <div class="armor-controls">
             <a class="item-control item-edit" title="Edit Item"><i class="fas fa-edit"></i></a>
             <a class="item-control item-delete" title="Delete Item"><i class="fas fa-trash"></i></a>

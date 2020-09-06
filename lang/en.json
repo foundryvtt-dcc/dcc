@@ -284,6 +284,7 @@
   "DCC.ItemNew": "New {type}",
   "DCC.ItemNoUses": "{name} has no available uses remaining.",
   "DCC.ItemRequiredStr": "Required Strength",
+  "DCC.ItemSummary": "Summary",
   "DCC.ItemToolProficiency": "Tool Proficiency",
   "DCC.ItemTypeClass": "Class",
   "DCC.ItemTypeClassPl": "Class Levels",

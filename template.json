@@ -322,7 +322,8 @@
         "description": {
           "value": "",
           "chat": "",
-          "unidentified": ""
+          "unidentified": "",
+          "summary": ""
         },
         "source": ""
       },
