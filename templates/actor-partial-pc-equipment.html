@@ -83,8 +83,8 @@
                name="itemUpdates.{{id}}.name"
                value="{{armor.name}}"/>
         <input class="armor-bonus" type="text"
-               name="itemUpdates.{{id}}.data.bonus"
-               value="{{armor.data.acBonus}}"/>
+               name="itemUpdates.{{id}}.data.acBonus"
+               value="{{numberFormat armor.data.acBonus decimals=0 sign=true}}"/>
         <input class="armor-checkpenalty" type="text"
                name="itemUpdates.{{id}}.data.checkPenalty"
                value="{{armor.data.checkPenalty}}"/>

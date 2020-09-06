@@ -28,7 +28,10 @@ class DCCActor extends Actor {
     if (config.computeAC) {
       const baseACAbility = data.abilities[config.baseACAbility] || { mod: 0 }
       const abilityMod = baseACAbility.mod
-      const armorBonus = parseInt(data.items.armor.a0.bonus || 0)
+      let armorBonus = 0
+      for (const armorItem of this.itemTypes.armor) {
+        armorBonus += parseInt(armorItem.data.data.acBonus) || 0
+      }
       data.attributes.ac.value = 10 + abilityMod + armorBonus
     }
   }
