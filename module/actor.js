@@ -294,7 +294,7 @@ class DCCActor extends Actor {
 
     /* Handle Critical Hits */
     let crit = ''
-    if (d20RollResult >= critRange) {
+    if (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) {
       const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
       const pack = game.packs.get('dcc.criticalhits')
       await pack.getIndex() // Load the compendium index
