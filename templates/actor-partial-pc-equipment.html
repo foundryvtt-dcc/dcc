@@ -16,6 +16,9 @@
     {{#* inline "weaponRow"}}
     <li class="weapon item flexrow" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
         <div class="rollable weapon-button">&nbsp;</div>
+        {{#if canBackstab}}
+        <div class="rollable backstab-button">&nbsp;</div>
+        {{/if}}
         <input class="weapon-name" type="text"
                name="itemUpdates.{{id}}.name"
                value="{{weapon.name}}"/>
@@ -44,6 +47,9 @@
     <div class="flexrow weapons">
         <ol class="flexcol weapon-list">
             <li class="flexrow weapon-list-header">
+                {{#if canBackstab}}
+                  <div class="backstab-padding"></div>
+                {{/if}}
                 <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
                 <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
                 <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
@@ -53,7 +59,7 @@
                 </span>
             </li>
             {{#each actor.weapons.melee as |weapon index|}}
-            {{> weaponRow weapon=weapon id=weapon._id type='m' index=index}}
+              {{> weaponRow weapon=weapon id=weapon._id type='m' index=index canBackstab=../canBackstab}}
             {{/each}}
         </ol>
     </div>
@@ -63,6 +69,9 @@
     <div class="flexrow weapons">
         <ol class="flexcol weapon-list">
             <li class="flexrow weapon-list-header">
+                {{#if canBackstab}}
+                  <div class="backstab-padding"></div>
+                {{/if}}
                 <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
                 <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
                 <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
@@ -72,7 +81,7 @@
                 </span>
             </li>
             {{#each actor.weapons.ranged as |weapon index|}}
-            {{> weaponRow weapon=weapon id=weapon._id type='r' index=index}}
+              {{> weaponRow weapon=weapon id=weapon._id type='r' index=index canBackstab=../canBackstab}}
             {{/each}}
         </ol>
     </div>

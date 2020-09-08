@@ -62,6 +62,7 @@
   "DCC.Attuned": "Attuned",
   "DCC.Background": "Background",
   "DCC.Backstab": "Backstab",
+  "DCC.BackstabEmote": "Backstabs with their {weaponName} and hits AC {rollHTML} for {damageRollHTML}  points of damage!{crit}{fumble}",
   "DCC.BaseACAbilityConfig": "Base AC Ability",
   "DCC.Bio": "Bio",
   "DCC.Biography": "Biography",

@@ -17,7 +17,7 @@ class DCCActorSheet extends ActorSheet {
       width: 600,
       height: 600,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
-      dragDrop: [{ dragSelector: '.weapon-list .weapon', dropSelector: null }]
+      dragDrop: [{ dragSelector: null, dropSelector: null }]
     })
   }
 
@@ -353,7 +353,13 @@ class DCCActorSheet extends ActorSheet {
 
       // Weapons
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
-      html.find('li.weapon').each((i, li) => {
+      html.find('.backstab-button').click(this._onRollWeaponAttack.bind(this))
+      html.find('div.weapon-button').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+      html.find('div.backstab-button').each((i, li) => {
         // Add draggable attribute and dragstart listener.
         li.setAttribute('draggable', true)
         li.addEventListener('dragstart', dragHandler, false)
@@ -523,15 +529,16 @@ class DCCActorSheet extends ActorSheet {
         actorId: this.actor.id,
         data: {}
       }
-    } else if (classes.contains('weapon')) {
-      const li = event.currentTarget
+    } else if (classes.contains('weapon-button') || classes.contains('backstab-button')) {
+      const li = event.currentTarget.parentElement
       const weapon = this.actor.items.get(li.dataset.itemId)
       dragData = {
         type: 'Weapon',
         actorId: this.actor.id,
         data: {
           weapon: weapon,
-          slot: li.dataset.itemSlot
+          slot: li.dataset.itemSlot,
+          backstab: classes.contains('backstab-button')
         }
       }
     }
@@ -690,7 +697,11 @@ class DCCActorSheet extends ActorSheet {
   _onRollWeaponAttack (event) {
     event.preventDefault()
     const slot = event.currentTarget.parentElement.dataset.itemSlot
-    this.actor.rollWeaponAttack(slot, { event: event })
+    const options = {
+      event: event,
+      backstab: event.currentTarget.classList.contains('backstab-button')
+    }
+    this.actor.rollWeaponAttack(slot, options)
   }
 
   /**

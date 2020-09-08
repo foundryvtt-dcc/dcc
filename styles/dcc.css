@@ -566,10 +566,20 @@
   background-size: 22px 22px;
   background-repeat: no-repeat; }
 
+.dcc .backstab-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("./images/backstab.png");
+  background-size: 22px 22px;
+  background-repeat: no-repeat; }
+
 .dcc .weapon-damage {
   flex: 0 0 80px;
   margin: 0 10px 0 0;
   text-align: center; }
+
+.dcc .backstab-padding {
+  flex: 0 0 30px; }
 
 .dcc .weapon-name-label {
   padding: 0 0 0 30px; }

@@ -240,6 +240,7 @@ class DCCActor extends Actor {
   async rollWeaponAttack (weaponId, options = {}) {
     // First try and find the item by name or id
     let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
+    const backstab = options.backstab
 
     // If not found try finding it by slot
     if (!weapon) {
@@ -265,8 +266,14 @@ class DCCActor extends Actor {
       return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
     }
 
+    /* Determine backstab bonus if used */
+    let toHit = weapon.data.data.toHit
+    if (backstab) {
+      toHit = toHit + ' + ' + parseInt(this.data.data.class.backstab)
+    }
+
     const speaker = { alias: this.name, _id: this._id }
-    const formula = `${weapon.data.data.actionDie} + ${weapon.data.data.toHit}`
+    const formula = `${weapon.data.data.actionDie} + ${toHit}`
     const config = this._getConfig()
 
     /* Determine attack bonus */
@@ -340,11 +347,12 @@ class DCCActor extends Actor {
     const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${weapon.data.data.damage}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
 
     /* Emote attack results */
+    const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
     const messageData = {
       user: game.user._id,
       speaker: speaker,
       type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      content: game.i18n.format('DCC.AttackRollEmote', {
+      content: game.i18n.format(emote, {
         weaponName: weapon.name,
         rollHTML: rollHTML,
         damageRollHTML: damageRollHTML,

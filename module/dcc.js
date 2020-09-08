@@ -321,15 +321,23 @@ function _createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Weapon') return
   const item = data.data.weapon
   const weaponSlot = data.data.slot
+  const backstab = data.data.backstab
+  const options = {
+    backstab: backstab
+  }
 
   const macroData = {
     name: item.name,
-    command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}");`,
+    command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}", ${JSON.stringify(options)});`,
     img: '/systems/dcc/styles/images/axe-square.png'
   }
 
   if (weaponSlot[0] === 'r') {
     macroData.img = '/systems/dcc/styles/images/bow-square.png'
+  }
+
+  if (backstab) {
+    macroData.img = '/systems/dcc/styles/images/backstab.png'
   }
 
   return macroData
@@ -340,7 +348,7 @@ function _createDCCWeaponMacro (data, slot) {
  * @param {string} itemId
  * @return {Promise}
  */
-function rollDCCWeaponMacro (itemId) {
+function rollDCCWeaponMacro (itemId, options = {}) {
   const speaker = ChatMessage.getSpeaker()
   let actor
   if (speaker.token) actor = game.actors.tokens[speaker.token]
@@ -348,7 +356,7 @@ function rollDCCWeaponMacro (itemId) {
   if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
 
   // Trigger the weapon roll
-  return actor.rollWeaponAttack(itemId)
+  return actor.rollWeaponAttack(itemId, options)
 }
 
 /**
