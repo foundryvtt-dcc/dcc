@@ -263,13 +263,18 @@ class DCCActor extends Actor {
       const pack = game.packs.get('dcc.criticalhits')
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
-      const table = await pack.getEntity(entry._id)
-      const roll = new Roll(
-        `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`
-      )
-      const critResult = await table.draw({ roll, displayChat: false })
-      crit =
-        ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${critResult.results[0].text}</span>`
+      if (entry) {
+        const table = await pack.getEntity(entry._id)
+        const roll = new Roll(
+          `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`
+        )
+        const critResult = await table.draw({ roll, displayChat: false })
+        crit =
+          ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${critResult.results[0].text}`
+      } else {
+        crit =
+          ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span>`
+      }
     }
 
     /* Handle Fumbles */
@@ -284,13 +289,18 @@ class DCCActor extends Actor {
       const pack = game.packs.get('dcc.fumbles')
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name.startsWith('Fumble'))
-      const table = await pack.getEntity(entry._id)
-      const roll = new Roll(
-        `${fumbleDie} - ${this.data.data.abilities.lck.mod}`
-      )
-      const fumbleResult = await table.draw({ roll, displayChat: false })
-      fumble =
-        ` <br><br><span style='color:red; font-weight: bolder'>Fumble!</span> ${fumbleResult.results[0].text}</span>`
+      if (entry) {
+        const table = await pack.getEntity(entry._id)
+        const roll = new Roll(
+          `${fumbleDie} - ${this.data.data.abilities.lck.mod}`
+        )
+        const fumbleResult = await table.draw({ roll, displayChat: false })
+        fumble =
+            ` <br><br><span style='color:red; font-weight: bolder'>Fumble!</span> ${fumbleResult.results[0].text}`
+      } else {
+        fumble =
+          ' <br><br><span style=\'color:red; font-weight: bolder\'>Fumble!</span>'
+      }
     }
 
     /* Roll the Damage */
