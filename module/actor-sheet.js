@@ -127,25 +127,6 @@ class DCCActorSheet extends ActorSheet {
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
     }
 
-    if (sheetData.data.items) {
-      // Migrate any legacy weapons
-      if (sheetData.data.items.weapons) {
-        // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
-        this.actor.update({ data: { items: { weapons: null } } })
-        this._migrateWeapon(sheetData.data.items.weapons.m1, false)
-        this._migrateWeapon(sheetData.data.items.weapons.m2, false)
-        this._migrateWeapon(sheetData.data.items.weapons.r1, true)
-        this._migrateWeapon(sheetData.data.items.weapons.r2, true)
-      }
-
-      // ... and armor
-      if (sheetData.data.items.armor) {
-        // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
-        this.actor.update({ data: { items: { armor: null } } })
-        this._migrateArmor(sheetData.data.items.armor.a0)
-      }
-    }
-
     // Iterate through items, allocating to containers
     const removeEmptyItems = sheetData.data.config.removeEmptyItems
     for (const i of inventory) {
@@ -203,68 +184,6 @@ class DCCActorSheet extends ActorSheet {
     actorData.mounts = mounts
     actorData.spells = spells
     actorData.treasure = treasure
-  }
-
-  /**
-   * Create an embedded object from a legacy weapon object
-   *
-   * @param {Object} weapon   The legacy weapon object.
-   * @param {Object} ranged   Indicate that a ranged weapon should be created.
-   * @return {Object}         The newly created item
-   */
-  _migrateWeapon (weapon, ranged = false) {
-    if (!weapon.name) { return }
-    const weaponData = {
-      name: weapon.name,
-      type: 'weapon',
-      data: {
-        toHit: weapon.toHit,
-        damage: weapon.damage,
-        range: weapon.range,
-        melee: !ranged,
-        description: {
-          value: weapon.notes
-        }
-      }
-    }
-
-    // Create and return an equivalent item
-    return this.actor.createOwnedItem(weaponData)
-  }
-
-  /**
-   * Create an embedded object from a legacy armor object
-   *
-   * @param {Object} armor    The legacy armor object.
-   * @return {Object}         The newly created item
-   */
-  _migrateArmor (armor) {
-    if (!armor.name) { return }
-    const armorData = {
-      name: armor.name,
-      type: 'armor',
-      data: {
-        acBonus: armor.bonus,
-        checkPenalty: armor.checkPenalty,
-        speed: '+0',
-        fumbleDie: armor.fumbleDie,
-        description: {
-          value: armor.notes
-        },
-        quantity: 1,
-        weight: 0,
-        equipped: true,
-        identified: true,
-        value: {
-          gp: 0,
-          sp: 0,
-          cp: 0
-        }
-      }
-    }
-
-    // Create and return an equivalent item
-    return this.actor.createOwnedItem(armorData)
   }
 
   /* -------------------------------------------- */
@@ -745,14 +664,18 @@ class DCCActorSheet extends ActorSheet {
     // Handle owned item updates separately
     if (event.currentTarget) {
       const parentElement = event.currentTarget.parentElement
-      if (formData.itemUpdates &&
-          (parentElement.classList.contains('weapon') || parentElement.classList.contains('armor'))) {
-        const itemId = parentElement.dataset.itemId
-        const item = this.actor.getOwnedItem(itemId)
-        if (item) {
-          const updateData = formData.itemUpdates[itemId]
-          item.update(updateData)
+      if (formData.itemUpdates) {
+        if (parentElement.classList.contains('weapon') || parentElement.classList.contains('armor')) {
+          const itemId = parentElement.dataset.itemId
+          const item = this.actor.getOwnedItem(itemId)
+          if (item) {
+            const updateData = formData.itemUpdates[itemId]
+            item.update(updateData)
+          }
         }
+
+        // Do not write itemUpdates into the object
+        delete formData.itemUpdates
       }
     }
 

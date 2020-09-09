@@ -11,6 +11,8 @@ import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
 import DCC from './config.js'
 import * as chat from './chat.js'
+import * as migrations from './migrations.js'
+import { registerSystemSettings } from './settings.js'
 
 // Override the template for sheet configuration
 class DCCSheetConfig extends EntitySheetConfig {
@@ -90,14 +92,22 @@ Hooks.once('init', async function () {
   })
 
   // Register system settings
-  game.settings.register('dcc', 'macroShorthand', {
-    name: 'Shortened Macro Syntax',
-    hint: 'Enable a shortened macro syntax which allows referencing attributes directly, for example @str instead of @attributes.str.value. Disable this setting if you need the ability to reference the full attribute model, for example @attributes.str.label.',
-    scope: 'world',
-    type: Boolean,
-    default: true,
-    config: true
-  })
+  registerSystemSettings()
+})
+
+/* -------------------------------------------- */
+/*  Post initialization hook                    */
+/* -------------------------------------------- */
+Hooks.once('ready', function () {
+  // Determine whether a system migration is required and feasible
+  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
+  const NEEDS_MIGRATION_VERSION = 0.10
+  const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
+
+  // Perform the migration
+  if (needMigration && game.user.isGM) {
+    migrations.migrateWorld()
+  }
 })
 
 /* -------------------------------------------- */

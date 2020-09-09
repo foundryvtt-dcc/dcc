@@ -357,6 +357,7 @@
       "melee": 0,
       "shortRangeStrength": 0,
       "subdual": 0,
+      "backstab": false,
       "backstabDamage": null,
       "doubleIfMounted": 0
     },
