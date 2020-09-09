@@ -35,9 +35,24 @@ function _parseJSONPC (pcObject) {
     pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
   }
   if (pcObject.weapon) {
-    pc['data.items.weapons.m1.name'] = pcObject.weapon
-    pc['data.items.weapons.m1.toHit'] = pcObject.attackMod || 0
-    pc['data.items.weapons.m1.damage'] = pcObject.attackDamage || '1d3'
+    pc.items = [{
+      name: pcObject.weapon,
+      type: 'weapon',
+      data: {
+        config: { inheritActionDie: true },
+        actionDie: '1d20',
+        toHit: pcObject.attackMod || '0',
+        damage: pcObject.attackDamage || '1d3',
+        melee: true, // No way to know, but melee is most likely
+        range: '',
+        twoHanded: false,
+        backstab: false,
+        backstabDamage: null,
+        description: {
+          value: ''
+        }
+      }
+    }]
   }
   pc['data.attributes.speed.value'] = pcObject.speed || 30
   if (pcObject.initiative) {

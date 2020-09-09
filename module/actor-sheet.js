@@ -505,6 +505,14 @@ class DCCActorSheet extends ActorSheet {
     const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
     const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
 
+    // Handle any items
+    const items = parsedCharacter.items
+    delete parsedCharacter.items
+    for (const item of items) {
+      this.actor.createOwnedItem(item)
+    }
+
+    // Update the actor itself
     this.object.update(parsedCharacter)
   }
 
