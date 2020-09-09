@@ -92,6 +92,7 @@ test('roll weapon attack', () => {
   collectionFindMock.mockReturnValue(new DCCItem('longsword', {
     type: 'weapon',
     data: {
+      actionDie: '1d20',
       toHit: 1,
       melee: true
     }
@@ -116,7 +117,7 @@ test('roll weapon attack', () => {
     weapon: [
       new DCCItem('axe', { name: 'axe', data: { melee: true } }),
       new DCCItem('javelin', { name: 'javelin', data: { melee: false } }),
-      new DCCItem('longsword', { name: 'longsword', data: { toHit: 2, melee: true } })
+      new DCCItem('longsword', { name: 'longsword', data: { actionDie: '1d20', toHit: 2, melee: true } })
     ]
   })
   actor.rollWeaponAttack('m2')
