@@ -137,7 +137,7 @@ class DCCActorSheet extends ActorSheet {
         this._migrateWeapon(sheetData.data.items.weapons.r1, true)
         this._migrateWeapon(sheetData.data.items.weapons.r2, true)
       }
-  
+
       // ... and armor
       if (sheetData.data.items.armor) {
         // Remove the legacy data first to avoid duplicating items when item creation triggers additional updates
@@ -584,13 +584,9 @@ class DCCActorSheet extends ActorSheet {
    */
   _pasteStateBlock (statBlockHTML) {
     const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
-    const parsedNPC = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
-    // console.log(this.object.data.data)
-    Object.entries(parsedNPC).forEach(([key, value]) => {
-      // console.log(key + ' ' + value)
-      // ToDo: Cannot set notes this way as the text editor is not a standard form input
-      if (this.form[key]) this.form[key].value = value
-    })
+    const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
+
+    this.object.update(parsedCharacter)
   }
 
   /* -------------------------------------------- */
