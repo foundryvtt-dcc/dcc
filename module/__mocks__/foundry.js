@@ -45,7 +45,8 @@ class Actor {
           },
           attributes: {
             init: { value: -1 },
-            actionDice: { value: '1d20' }
+            actionDice: { value: '1d20' },
+            fumble: { die: '1d4' }
           },
           items: {
             weapons: {
@@ -225,6 +226,14 @@ const Notifications = jest.fn().mockImplementation(() => {
 }).mockName('Notifications')
 global.ui = {
   notifications: new Notifications()
+}
+
+/**
+ * Global helper functions function
+ */
+// TODO: This really needs to be the real Foundry mergeObject function or there will be side effects that make the tests invalid
+global.mergeObject = function (original, other = {}) {
+  return original
 }
 
 /**

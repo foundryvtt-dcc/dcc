@@ -12,6 +12,7 @@ import DCCItemSheet from './item-sheet.js'
 import DCC from './config.js'
 import * as chat from './chat.js'
 import * as migrations from './migrations.js'
+import DiceChain from './dice-chain.js'
 import { registerSystemSettings } from './settings.js'
 
 // Override the template for sheet configuration
@@ -38,6 +39,7 @@ Hooks.once('init', async function () {
 
   game.dcc = {
     DCCActor,
+    DiceChain,
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor // This is called from macros, don't remove
   }

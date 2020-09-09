@@ -45,6 +45,9 @@
             "die": "1d4",
             "table": "I"
           },
+          "fumble": {
+            "die": "1d4"
+          },
           "hp": {
             "value": 10,
             "min": 0,

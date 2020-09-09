@@ -7,7 +7,7 @@ export const registerSystemSettings = function () {
   game.settings.register('dcc', 'systemMigrationVersion', {
     name: 'System Migration Version',
     scope: 'world',
-    config: true,
+    config: false,
     type: Number,
     default: 0
   })

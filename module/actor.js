@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -33,6 +33,28 @@ class DCCActor extends Actor {
         armorBonus += parseInt(armorItem.data.data.acBonus) || 0
       }
       data.attributes.ac.value = 10 + abilityMod + armorBonus
+    }
+
+    // Determine the correct fumble die to use based on armor
+    try {
+      let fumbleDieRank = 0
+      let fumbleDie = '1d4'
+      if (this.itemTypes) {
+        for (const armorItem of this.itemTypes.armor) {
+          const expression = armorItem.data.data.fumbleDie
+          const rank = game.dcc.DiceChain.rankDiceExpression(expression)
+          if (rank > fumbleDieRank) {
+            fumbleDieRank = rank
+            fumbleDie = expression
+          }
+        }
+      }
+      data.attributes.fumble = mergeObject(
+        data.attributes.fumble || {},
+        { die: fumbleDie }
+      )
+    } catch (err) {
+      ui.notifications.warn(game.i18n.localize('DCC.FumbleDieCalculationError') + '\n' + err)
     }
   }
 
@@ -315,12 +337,7 @@ class DCCActor extends Actor {
 
     /* Handle Fumbles */
     let fumble = ''
-    let fumbleDie
-    try {
-      fumbleDie = this.data.data.items.armor.a0.fumbleDie
-    } catch (e) {
-      fumbleDie = '1d4'
-    }
+    const fumbleDie = this.data.data.attributes.fumble.die || '1d4'
     if (d20RollResult === 1) {
       const pack = game.packs.get('dcc.fumbles')
       await pack.getIndex() // Load the compendium index
