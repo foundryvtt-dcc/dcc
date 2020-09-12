@@ -39,22 +39,19 @@ function parseNPC (npcString) {
   } else {
     attackStringOne = npc.attacks
   }
-  const parsedAttackOne = _parseAttack(attackStringOne, npc.damage)
-  let attackOneName = 'm1'
-  if (parsedAttackOne.type === 'ranged') attackOneName = 'r1'
-  npc[`data.items.weapons.${attackOneName}.name`] = parsedAttackOne.name
-  npc[`data.items.weapons.${attackOneName}.toHit`] = parsedAttackOne.toHit
-  npc[`data.items.weapons.${attackOneName}.damage`] = parsedAttackOne.damage
-  npc[`data.items.weapons.${attackOneName}.special`] = parsedAttackOne.special
+
+  npc.items = []
+  if (attackStringOne) {
+    const parsedAttackOne = _parseAttack(attackStringOne, npc.damage)
+    if (parsedAttackOne.name) {
+      npc.items.push(parsedAttackOne)
+    }
+  }
   if (attackStringTwo) {
     const parsedAttackTwo = _parseAttack(attackStringTwo, npc.damage)
-    let attackTwoName = 'm2'
-    if (parsedAttackTwo.type === 'ranged') attackTwoName = 'r1'
-    if (parsedAttackTwo.type === 'ranged' && parsedAttackOne.type === 'ranged') attackTwoName = 'r2'
-    npc[`data.items.weapons.${attackTwoName}.name`] = parsedAttackTwo.name
-    npc[`data.items.weapons.${attackTwoName}.toHit`] = parsedAttackTwo.toHit
-    npc[`data.items.weapons.${attackTwoName}.damage`] = parsedAttackTwo.damage
-    npc[`data.items.weapons.${attackTwoName}.special`] = parsedAttackTwo.special
+    if (parsedAttackTwo.name) {
+      npc.items.push(parsedAttackTwo)
+    }
   }
   return npc
 }
@@ -64,20 +61,32 @@ function parseNPC (npcString) {
  * @param {string} damageString  Damage string for blocks with damage separate
  */
 function _parseAttack (attackString, damageString) {
-  const attack = {}
-  attack.name = _firstMatch(/(.*?) [+-].*/, attackString)
+  const attack = {
+    config: { inheritActionDie: true },
+    actionDie: '1d20',
+    range: '',
+    twoHanded: false,
+    backstab: false,
+    backstabDamage: null,
+    description: {
+      value: ''
+    }
+  }
+  const name = _firstMatch(/(.*?) [+-].*/, attackString)
   attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString)
-  attack.special = ''
   attack.damage = ''
-  attack.type = 'melee'
-  if (attackString.includes('ranged')) attack.type = 'ranged'
+  attack.melee = !attackString.includes('ranged')
   if (damageString) {
     attack.damage = damageString
   } else {
-    attack.special = _firstMatch(/.*\(\w+ (.*)\).*/, attackString) || ''
+    attack.description.value = _firstMatch(/.*\(\w+ (.*)\).*/, attackString) || ''
     attack.damage = _firstMatch(/.*\((\w+).*\).*/, attackString) || ''
   }
-  return attack
+  return {
+    name: name,
+    type: 'weapon',
+    data: attack
+  }
 }
 
 /** Match a regex against the string provided and return the first match group or null

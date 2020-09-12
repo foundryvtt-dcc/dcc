@@ -11,6 +11,9 @@ import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
 import DCC from './config.js'
 import * as chat from './chat.js'
+import * as migrations from './migrations.js'
+import DiceChain from './dice-chain.js'
+import { registerSystemSettings } from './settings.js'
 
 // Override the template for sheet configuration
 class DCCSheetConfig extends EntitySheetConfig {
@@ -36,6 +39,7 @@ Hooks.once('init', async function () {
 
   game.dcc = {
     DCCActor,
+    DiceChain,
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor // This is called from macros, don't remove
   }
@@ -79,20 +83,33 @@ Hooks.once('init', async function () {
     return attackBonus
   })
 
+  // Handlebars helper for simple addition
+  Handlebars.registerHelper('add', function (object1, object2) {
+    return parseInt(object1) + parseInt(object2)
+  })
+
   // Handlebars helper to stringify JSON objects for debugging
   Handlebars.registerHelper('stringify', function (object) {
     return JSON.stringify(object)
   })
 
   // Register system settings
-  game.settings.register('dcc', 'macroShorthand', {
-    name: 'Shortened Macro Syntax',
-    hint: 'Enable a shortened macro syntax which allows referencing attributes directly, for example @str instead of @attributes.str.value. Disable this setting if you need the ability to reference the full attribute model, for example @attributes.str.label.',
-    scope: 'world',
-    type: Boolean,
-    default: true,
-    config: true
-  })
+  registerSystemSettings()
+})
+
+/* -------------------------------------------- */
+/*  Post initialization hook                    */
+/* -------------------------------------------- */
+Hooks.once('ready', function () {
+  // Determine whether a system migration is required and feasible
+  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
+  const NEEDS_MIGRATION_VERSION = 0.10
+  const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
+
+  // Perform the migration
+  if (needMigration && game.user.isGM) {
+    migrations.migrateWorld()
+  }
 })
 
 /* -------------------------------------------- */
@@ -194,7 +211,7 @@ function _createDCCInitiativeMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.Initiative'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative() }',
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token) }',
     img: 'icons/svg/up.svg'
   }
 
@@ -314,16 +331,25 @@ function _createDCCAttackBonusMacro (data, slot) {
  */
 function _createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Weapon') return
-  const item = data.data
+  const item = data.data.weapon
+  const weaponSlot = data.data.slot
+  const backstab = data.data.backstab
+  const options = {
+    backstab: backstab
+  }
 
   const macroData = {
     name: item.name,
-    command: `game.dcc.rollDCCWeaponMacro("${item.id}");`,
+    command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}", ${JSON.stringify(options)});`,
     img: '/systems/dcc/styles/images/axe-square.png'
   }
 
-  if (item.id[0] === 'r') {
+  if (weaponSlot[0] === 'r') {
     macroData.img = '/systems/dcc/styles/images/bow-square.png'
+  }
+
+  if (backstab) {
+    macroData.img = '/systems/dcc/styles/images/backstab.png'
   }
 
   return macroData
@@ -334,7 +360,7 @@ function _createDCCWeaponMacro (data, slot) {
  * @param {string} itemId
  * @return {Promise}
  */
-function rollDCCWeaponMacro (itemId) {
+function rollDCCWeaponMacro (itemId, options = {}) {
   const speaker = ChatMessage.getSpeaker()
   let actor
   if (speaker.token) actor = game.actors.tokens[speaker.token]
@@ -342,7 +368,7 @@ function rollDCCWeaponMacro (itemId) {
   if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
 
   // Trigger the weapon roll
-  return actor.rollWeaponAttack(itemId)
+  return actor.rollWeaponAttack(itemId, options)
 }
 
 /**

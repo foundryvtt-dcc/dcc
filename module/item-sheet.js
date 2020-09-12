@@ -19,14 +19,16 @@ export class DCCItemSheet extends ItemSheet {
   /** @override */
   get template () {
     switch (this.object.data.type) {
+      case 'weapon':
+        return 'systems/dcc/templates/item-sheet-weapon.html'
+      case 'armor':
+        return 'systems/dcc/templates/item-sheet-armor.html'
       case 'spell':
         return 'systems/dcc/templates/item-sheet-spell.html'
       case 'treasure':
         return 'systems/dcc/templates/item-sheet-treasure.html'
-      case 'weapon':
-      case 'armor':
-      case 'ammunition':
       case 'equipment':
+      case 'ammunition':
       case 'mount':
       default:
         return 'systems/dcc/templates/item-sheet-equipment.html'
@@ -108,7 +110,7 @@ export class DCCItemSheet extends ItemSheet {
 
     // Header buttons shown only with Owner permissions
     if (this.options.editable) {
-      if (this.object.data.type === 'spell') {
+      if (this.object.data.type === 'spell' || this.object.data.type === 'weapon') {
         buttons.unshift(
           {
             label: game.i18n.localize('DCC.ConfigureItem'),

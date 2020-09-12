@@ -18,12 +18,20 @@ test('super snake', () => {
     'data.saves.ref.value': '+4',
     'data.saves.wil.value': '+4',
     'data.details.alignment': 'l',
-    'data.items.weapons.m1.name': 'bite',
-    'data.items.weapons.m1.toHit': '+6',
-    'data.items.weapons.m1.damage': '1d8',
-    'data.items.weapons.m1.special': ''
+    items: [
+      {
+        name: 'bite',
+        type: 'weapon',
+        data: {
+          toHit: '+6',
+          damage: '1d8',
+          description: { value: '' },
+          melee: true
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })
 
 /* Test dry pile of bones */
@@ -41,12 +49,18 @@ test('pile of bones', () => {
     'data.saves.ref.value': '-4',
     'data.saves.wil.value': '+1',
     'data.details.alignment': 'c',
-    'data.items.weapons.m1.name': 'bite',
-    'data.items.weapons.m1.toHit': '+0',
-    'data.items.weapons.m1.damage': '1d4-1',
-    'data.items.weapons.m1.special': ''
+    items: [
+      {
+        name: 'bite',
+        type: 'weapon',
+        data: {
+          toHit: '+0',
+          melee: true
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })
 
 /* Test orcs */
@@ -66,16 +80,30 @@ test('orcs', () => {
     'data.saves.ref.value': '+0',
     'data.saves.wil.value': '-1',
     'data.details.alignment': 'c',
-    'data.items.weapons.m1.name': 'claw',
-    'data.items.weapons.m1.toHit': '+1',
-    'data.items.weapons.m1.damage': '1d4',
-    'data.items.weapons.m1.special': '',
-    'data.items.weapons.m2.name': 'spear',
-    'data.items.weapons.m2.toHit': '+1',
-    'data.items.weapons.m2.damage': '1d8',
-    'data.items.weapons.m2.special': ''
+    items: [
+      {
+        name: 'claw',
+        type: 'weapon',
+        data: {
+          toHit: '+1',
+          damage: '1d4',
+          description: { value: '' },
+          melee: true
+        }
+      },
+      {
+        name: 'spear',
+        type: 'weapon',
+        data: {
+          toHit: '+1',
+          damage: '1d8',
+          description: { value: '' },
+          melee: true
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })
 
 /* Test spider */
@@ -96,16 +124,30 @@ test('spider', () => {
     'data.saves.ref.value': '+4',
     'data.saves.wil.value': '+0',
     'data.details.alignment': 'n',
-    'data.items.weapons.m1.name': 'bite',
-    'data.items.weapons.m1.toHit': '+2',
-    'data.items.weapons.m1.damage': '1d4',
-    'data.items.weapons.m1.special': 'plus poison',
-    'data.items.weapons.r1.name': 'web',
-    'data.items.weapons.r1.toHit': '+4'
-    // "data.items.weapons.r1.damage": "0", //@TODO: change damage to 0 when there is no die roll
-    // "data.items.weapons.r1.special": "restrained, 20’ range"  // @TODO: Parse out this special
+    items: [
+      {
+        name: 'bite',
+        type: 'weapon',
+        data: {
+          toHit: '+2',
+          damage: '1d4',
+          description: { value: 'plus poison' },
+          melee: true
+        }
+      },
+      {
+        name: 'web',
+        type: 'weapon',
+        data: {
+          toHit: '+4',
+          melee: false
+          // damage": '0', //@TODO: change damage to 0 when there is no die roll
+          // description: { value: 'restrained, 20’ range' }  // @TODO: Parse out this special
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })
 
 /* Test wetad */
@@ -125,11 +167,20 @@ test('wedad', () => {
     'data.saves.ref.value': '-2',
     'data.saves.wil.value': '+4',
     'data.details.alignment': 'n',
-    'data.items.weapons.m1.name': 'tree limb slam',
-    'data.items.weapons.m1.toHit': '+5',
-    'data.items.weapons.m1.damage': '1d10'
+    items: [
+      {
+        name: 'tree limb slam',
+        type: 'weapon',
+        data: {
+          toHit: '+5',
+          damage: '1d10',
+          description: { value: '' },
+          melee: true
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })
 
 /* Test short statline */
@@ -149,11 +200,20 @@ test('shortstats', () => {
     'data.saves.ref.value': '+6',
     'data.saves.wil.value': '+4',
     'data.details.alignment': 'n',
-    'data.items.weapons.m1.name': 'kick',
-    'data.items.weapons.m1.toHit': '+2',
-    'data.items.weapons.m1.damage': '1d3'
+    items: [
+      {
+        name: 'kick',
+        type: 'weapon',
+        data: {
+          toHit: '+2',
+          damage: '1d3',
+          description: { value: '' },
+          melee: true
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })
 
 /* Test the bad guy's familiar with a minimal stat line */
@@ -173,9 +233,18 @@ test('familiar', () => {
     'data.saves.ref.value': '+0',
     'data.saves.wil.value': '+0',
     'data.details.alignment': 'n',
-    'data.items.weapons.m1.name': 'claw',
-    'data.items.weapons.m1.toHit': '+3',
-    'data.items.weapons.m1.damage': '1d4'
+    items: [
+      {
+        name: 'claw',
+        type: 'weapon',
+        data: {
+          toHit: '+3',
+          damage: '1d4',
+          description: { value: '' },
+          melee: true
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })

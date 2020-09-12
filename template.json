@@ -45,6 +45,9 @@
             "die": "1d4",
             "table": "I"
           },
+          "fumble": {
+            "die": "1d4"
+          },
           "hp": {
             "value": 10,
             "min": 0,
@@ -94,9 +97,8 @@
       "player": {
         "details": {
           "attackBonus": "+0",
-          "lastRolledAttackBonus": "+0",
           "birthAugur": "",
-          "critRange": "19",
+          "critRange": "20",
           "xp": {
             "value": 0,
             "min": 0,
@@ -120,7 +122,7 @@
       "cleric": {
         "class": {
           "spellCheck": 1,
-          "spellCheckAbility": "int",
+          "spellCheckAbility": "per",
           "spells": [],
           "deity": null,
           "disapproval": "1",
@@ -222,8 +224,7 @@
       },
       "warrior": {
         "details": {
-          "attackBonus": "+1d3",
-          "critRange": "19"
+          "critRange": "20"
         },
         "class": {
           "luckyWeapon": null
@@ -232,7 +233,7 @@
       "wizard": {
         "class": {
           "spellCheck": 1,
-          "spellCheckAbility": "per",
+          "spellCheckAbility": "int",
           "spells": [],
           "patron": null,
           "familiar": null,
@@ -241,7 +242,6 @@
       },
       "dwarf": {
         "details": {
-          "attackBonus": "+1d3"
         },
         "class": {
           "luckyWeapon": null
@@ -272,7 +272,9 @@
           "maxLevel" : 10,
           "rollAttackBonus": false,
           "computeAC": false,
-          "baseACAbility": "agl"
+          "baseACAbility": "agl",
+          "sortInventory" : true,
+          "removeEmptyItems" : true
         }
       }
     },
@@ -322,7 +324,8 @@
         "description": {
           "value": "",
           "chat": "",
-          "unidentified": ""
+          "unidentified": "",
+          "summary": ""
         },
         "source": ""
       },
@@ -331,14 +334,6 @@
         "weight": 0,
         "equipped": false,
         "identified": true
-      },
-      "activatedEffect": {
-        "range": {
-          "value": null,
-          "long": null,
-          "units": ""
-        },
-        "specialProperties": ""
       },
       "currency": {
         "value": {
@@ -352,22 +347,22 @@
       "templates": [
         "itemDescription",
         "physicalItem",
-        "currency",
-        "activatedEffect"
+        "currency"
       ],
-      "properties": {
-        "toHitBonus": "+0",
-        "damage": "1d3",
-        "range": null,
-        "twoHanded": 0,
-        "melee": 0,
-        "missile": 0,
-        "shortRangeStrength": 0,
-        "subdual": 0,
-        "backstabDamage": null,
-        "doubleIfMounted": 0
+      "config": {
+        "inheritActionDie": true
       },
-      "proficient": true
+      "actionDie": "1d20",
+      "toHit": "+0",
+      "damage": "1d3",
+      "range": "",
+      "twoHanded": 0,
+      "melee": 0,
+      "shortRangeStrength": 0,
+      "subdual": 0,
+      "backstab": false,
+      "backstabDamage": null,
+      "doubleIfMounted": 0
     },
     "ammunition": {
       "templates": [
@@ -383,8 +378,8 @@
         "currency"
       ],
       "acBonus" : "+1",
-      "checkPenalty": null,
-      "speed": null,
+      "checkPenalty": "-0",
+      "speed": "-0",
       "fumbleDie": "1d4"
     },
     "equipment": {
@@ -409,8 +404,7 @@
     },
     "spell": {
       "templates": [
-        "itemDescription",
-        "activatedEffect"
+        "itemDescription"
       ],
       "config": {
         "inheritSpellCheck": true

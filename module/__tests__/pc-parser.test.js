@@ -39,11 +39,20 @@ Languages: Common`)
     'data.saves.frt.value': '0',
     'data.saves.ref.value': '-1',
     'data.saves.wil.value': '2',
-    'data.items.weapons.m1.name': 'Hammer (as club)',
-    'data.items.weapons.m1.toHit': '-1',
-    'data.items.weapons.m1.damage': '1d4-1'
+    items: [
+      {
+        name: 'Hammer (as club)',
+        type: 'weapon',
+        data: {
+          toHit: '-1',
+          damage: '1d4-1',
+          description: { value: '' },
+          melee: true
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })
 
 /* Test beekeeper json */
@@ -103,9 +112,18 @@ test('beekeeper', () => {
     'data.saves.frt.value': '2',
     'data.saves.ref.value': '-2',
     'data.saves.wil.value': '-1',
-    'data.items.weapons.m1.name': 'Staff',
-    'data.items.weapons.m1.toHit': '1',
-    'data.items.weapons.m1.damage': '1d4+1'
+    items: [
+      {
+        name: 'Staff',
+        type: 'weapon',
+        data: {
+          toHit: '1',
+          damage: '1d4+1',
+          description: { value: '' },
+          melee: true
+        }
+      }
+    ]
   }
-  expect(parsedNPC).toEqual(expect.objectContaining(expected))
+  expect(parsedNPC).toMatchObject(expected)
 })

@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -24,13 +24,41 @@ class DCCActor extends Actor {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
     }
 
+    // Make sure items are initialised before computing any data derived from them
+    if (!this.items) { return }
+
     // Compute AC if required
     if (config.computeAC) {
       const baseACAbility = data.abilities[config.baseACAbility] || { mod: 0 }
       const abilityMod = baseACAbility.mod
-      const armorBonus = parseInt(data.items.armor.a0.bonus || 0)
+      let armorBonus = 0
+      for (const armorItem of this.itemTypes.armor) {
+        armorBonus += parseInt(armorItem.data.data.acBonus) || 0
+      }
       data.attributes.ac.value = 10 + abilityMod + armorBonus
     }
+
+    // Determine the correct fumble die to use based on armor
+    let fumbleDieRank = 0
+    let fumbleDie = '1d4'
+    if (this.itemTypes) {
+      for (const armorItem of this.itemTypes.armor) {
+        try {
+          const expression = armorItem.data.data.fumbleDie
+          const rank = game.dcc.DiceChain.rankDiceExpression(expression)
+          if (rank > fumbleDieRank) {
+            fumbleDieRank = rank
+            fumbleDie = expression
+          }
+        } catch (err) {
+          // Ignore bad fumble die expressions
+        }
+      }
+    }
+    data.attributes.fumble = mergeObject(
+      data.attributes.fumble || {},
+      { die: fumbleDie }
+    )
   }
 
   /**
@@ -44,14 +72,14 @@ class DCCActor extends Actor {
       maxLevel: 0,
       rollAttackBonus: false,
       computeAC: false,
-      baseACAbility: 'agl'
+      baseACAbility: 'agl',
+      sortInventory: true,
+      removeEmptyItems: true
     }
 
     // Merge any existing data with defaults to implicitly migrate missing config fields
-    if (this.data.data.config) {
-      defaultConfig = Object.assign(defaultConfig, this.data.data.config)
-      this.data.data.config = defaultConfig
-    }
+    defaultConfig = Object.assign(defaultConfig, this.data.data.config)
+    this.data.data.config = defaultConfig
 
     return defaultConfig
   }
@@ -84,8 +112,9 @@ class DCCActor extends Actor {
 
   /**
    * Roll Initiative
+   * @param {Object} token    The token to roll initiative for
    */
-  async rollInitiative () {
+  async rollInitiative (token) {
     const init = this.data.data.attributes.init.value
     const roll = new Roll('1d20+@init', { init })
 
@@ -96,8 +125,8 @@ class DCCActor extends Actor {
     })
 
     // Set initiative value in the combat tracker if there is an active combat
-    if (this.token && game.combat) {
-      const tokenId = this.token.id
+    if (token && game.combat) {
+      const tokenId = token.id
 
       // Create or update combatant
       const combatant = game.combat.getCombatantByToken(tokenId)
@@ -231,13 +260,46 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Weapon Attack
-   * @param {string} weaponId     The weapon id (e.g. "m1", "r1")
+   * @param {string} weaponId     The weapon name or slot id (e.g. "m1", "r1")
    * @param {Object} options      Options which configure how ability tests are rolled
    */
   async rollWeaponAttack (weaponId, options = {}) {
-    const weapon = this.data.data.items.weapons[weaponId]
+    // First try and find the item by name or id
+    let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
+    const backstab = options.backstab
+
+    // If not found try finding it by slot
+    if (!weapon) {
+      try {
+        // Verify this is a valid slot name
+        const result = weaponId.match(/^([mr])(\d+)$/)
+        if (!result) {
+          throw new Error('Invalid slot name')
+        }
+        const isMelee = weaponId[0] === 'm' // 'm' or 'r'
+        const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
+        let weapons = this.itemTypes.weapon
+        if (this.data.data.config.sortInventory) {
+          // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
+          weapons = [...weapons].sort((a, b) => a.data.name.localeCompare(b.data.name))
+        }
+        weapon = weapons.filter(i => !!i.data.data.melee === isMelee)[weaponIndex]
+      } catch (err) { }
+    }
+
+    // If all lookups fail, give up and show a warning
+    if (!weapon) {
+      return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
+    }
+
+    /* Determine backstab bonus if used */
+    let toHit = weapon.data.data.toHit
+    if (backstab) {
+      toHit = toHit + ' + ' + parseInt(this.data.data.class.backstab)
+    }
+
     const speaker = { alias: this.name, _id: this._id }
-    const formula = `1d20 + ${weapon.toHit}`
+    const formula = `${weapon.data.data.actionDie} + ${toHit}`
     const config = this._getConfig()
 
     /* Determine attack bonus */
@@ -258,7 +320,7 @@ class DCCActor extends Actor {
 
     /* Handle Critical Hits */
     let crit = ''
-    if (d20RollResult >= critRange) {
+    if (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) {
       const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
       const pack = game.packs.get('dcc.criticalhits')
       await pack.getIndex() // Load the compendium index
@@ -279,13 +341,13 @@ class DCCActor extends Actor {
 
     /* Handle Fumbles */
     let fumble = ''
-    let fumbleDie
-    try {
-      fumbleDie = this.data.data.items.armor.a0.fumbleDie
-    } catch (e) {
-      fumbleDie = '1d4'
-    }
     if (d20RollResult === 1) {
+      let fumbleDie
+      try {
+        fumbleDie = this.data.data.attributes.fumble.die
+      } catch (err) {
+        fumbleDie = '1d4'
+      }
       const pack = game.packs.get('dcc.fumbles')
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name.startsWith('Fumble'))
@@ -304,18 +366,19 @@ class DCCActor extends Actor {
     }
 
     /* Roll the Damage */
-    const damageRoll = new Roll(weapon.damage, { ab: attackBonus })
+    const damageRoll = new Roll(weapon.data.data.damage, { ab: attackBonus })
     damageRoll.roll()
     const damageRollData = escape(JSON.stringify(damageRoll))
     const damageRollTotal = damageRoll.total
-    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${weapon.damage}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${weapon.data.data.damage}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
 
     /* Emote attack results */
+    const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
     const messageData = {
       user: game.user._id,
       speaker: speaker,
       type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      content: game.i18n.format('DCC.AttackRollEmote', {
+      content: game.i18n.format(emote, {
         weaponName: weapon.name,
         rollHTML: rollHTML,
         damageRollHTML: damageRollHTML,

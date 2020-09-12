@@ -2,7 +2,7 @@
 /* Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js */
 /* Mocks for DCCItem Class are found in __mocks__/item.js */
 /* eslint-env jest */
-/* global CONFIG, Roll, DCCItem, rollToMessageMock, collectionFindMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock */
+/* global CONFIG, Roll, DCCItem, rollToMessageMock, collectionFindMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock */
 
 import DCCActor from '../actor'
 
@@ -81,7 +81,26 @@ test('roll initiative', () => {
 })
 
 test('roll weapon attack', () => {
-  actor.rollWeaponAttack('m1')
+  // Roll a weapon we don't have
+  actor.rollWeaponAttack('r123')
+  expect(collectionFindMock).toHaveBeenCalledTimes(1)
+  expect(itemTypesMock).toHaveBeenCalledTimes(1)
+  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+  expect(uiNotificationsWarnMock).toHaveBeenCalledWith('WeaponNotFound,id:r123[object Object]')
+
+  // Roll a weapon we do have - by name
+  collectionFindMock.mockReturnValue(new DCCItem('longsword', {
+    type: 'weapon',
+    data: {
+      actionDie: '1d20',
+      toHit: 1,
+      melee: true
+    }
+  }))
+  actor.rollWeaponAttack('longsword')
+  expect(collectionFindMock).toHaveBeenCalledTimes(2)
+  expect(itemTypesMock).toHaveBeenCalledTimes(1)
+  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
   expect(CONFIG.ChatMessage.entityClass.create).toHaveBeenCalledWith({
@@ -92,7 +111,32 @@ test('roll weapon attack', () => {
     sound: 'diceSound'
   })
 
+  // Roll a weapon we do have - by slot
+  collectionFindMock.mockReturnValue(null)
+  itemTypesMock.mockReturnValue({
+    weapon: [
+      new DCCItem('axe', { name: 'axe', data: { melee: true } }),
+      new DCCItem('javelin', { name: 'javelin', data: { melee: false } }),
+      new DCCItem('longsword', { name: 'longsword', data: { actionDie: '1d20', toHit: 2, melee: true } })
+    ]
+  })
+  actor.rollWeaponAttack('m2')
+  expect(collectionFindMock).toHaveBeenCalledTimes(3)
+  expect(itemTypesMock).toHaveBeenCalledTimes(2)
+  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+  expect(Roll).toHaveBeenCalledTimes(4)
+  expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
+  expect(CONFIG.ChatMessage.entityClass.create).toHaveBeenCalledWith({
+    user: 1,
+    speaker: { alias: 'test character', _id: 1 },
+    type: 'emote',
+    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%7D%5D%7D" title="1d20 + 1"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%7D%5D%7D" data-damage="undefined" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,crit:,fumble:[object Object]',
+    sound: 'diceSound'
+  })
+
   Roll.mockClear()
+  collectionFindMock.mockReset()
+  uiNotificationsWarnMock.mockClear()
 })
 
 test('roll skill check', () => {

@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, $, ENTITY_PERMISSIONS */
+/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, ENTITY_PERMISSIONS */
 
 import parsePC from './pc-parser.js'
 import parseNPC from './npc-parser.js'
@@ -17,7 +17,7 @@ class DCCActorSheet extends ActorSheet {
       width: 600,
       height: 600,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
-      dragDrop: [{ dragSelector: '.weapon-list .weapon', dropSelector: null }]
+      dragDrop: [{ dragSelector: null, dropSelector: null }]
     })
   }
 
@@ -104,7 +104,10 @@ class DCCActorSheet extends ActorSheet {
 
     // Initialize containers.
     const equipment = []
-    const weapons = []
+    const weapons = {
+      melee: [],
+      ranged: []
+    }
     const armor = []
     const ammunition = []
     const mounts = []
@@ -118,16 +121,27 @@ class DCCActorSheet extends ActorSheet {
     const treasure = []
     const coins = []
 
+    let inventory = actorData.items
+    if (sheetData.data.config.sortInventory) {
+      // Shallow copy and lexical sort
+      inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
+    }
+
     // Iterate through items, allocating to containers
-    for (const i of actorData.items) {
+    const removeEmptyItems = sheetData.data.config.removeEmptyItems
+    for (const i of inventory) {
       // Remove physical items with zero quantity
-      if (i.quantity && i.quantity <= 0) {
+      if (removeEmptyItems && i.data.quantity !== undefined && i.data.quantity <= 0) {
         this.actor.deleteOwnedItem(i._id, {})
         continue
       }
 
       if (i.type === 'weapon') {
-        weapons.push(i)
+        if (i.data.melee) {
+          weapons.melee.push(i)
+        } else {
+          weapons.ranged.push(i)
+        }
       } if (i.type === 'ammunition') {
         ammunition.push(i)
       } else if (i.type === 'armor') {
@@ -171,6 +185,7 @@ class DCCActorSheet extends ActorSheet {
     actorData.spells = spells
     actorData.treasure = treasure
   }
+
   /* -------------------------------------------- */
 
   /** @override */
@@ -257,7 +272,13 @@ class DCCActorSheet extends ActorSheet {
 
       // Weapons
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
-      html.find('li.weapon').each((i, li) => {
+      html.find('.backstab-button').click(this._onRollWeaponAttack.bind(this))
+      html.find('div.weapon-button').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+      html.find('div.backstab-button').each((i, li) => {
         // Add draggable attribute and dragstart listener.
         li.setAttribute('draggable', true)
         li.addEventListener('dragstart', dragHandler, false)
@@ -427,14 +448,17 @@ class DCCActorSheet extends ActorSheet {
         actorId: this.actor.id,
         data: {}
       }
-    } else if (classes.contains('weapon')) {
-      const li = event.currentTarget
-      const weapon = this.actor.data.data.items.weapons[li.dataset.weaponId]
-      weapon.id = li.dataset.weaponId
+    } else if (classes.contains('weapon-button') || classes.contains('backstab-button')) {
+      const li = event.currentTarget.parentElement
+      const weapon = this.actor.items.get(li.dataset.itemId)
       dragData = {
         type: 'Weapon',
         actorId: this.actor.id,
-        data: weapon
+        data: {
+          weapon: weapon,
+          slot: li.dataset.itemSlot,
+          backstab: classes.contains('backstab-button')
+        }
       }
     }
 
@@ -479,13 +503,17 @@ class DCCActorSheet extends ActorSheet {
    */
   _pasteStateBlock (statBlockHTML) {
     const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
-    const parsedNPC = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
-    // console.log(this.object.data.data)
-    Object.entries(parsedNPC).forEach(([key, value]) => {
-      // console.log(key + ' ' + value)
-      // ToDo: Cannot set notes this way as the text editor is not a standard form input
-      if (this.form[key]) this.form[key].value = value
-    })
+    const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
+
+    // Handle any items
+    const items = parsedCharacter.items
+    delete parsedCharacter.items
+    for (const item of items) {
+      this.actor.createOwnedItem(item)
+    }
+
+    // Update the actor itself
+    this.object.update(parsedCharacter)
   }
 
   /* -------------------------------------------- */
@@ -517,7 +545,7 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollInitiative (event) {
     event.preventDefault()
-    this.actor.rollInitiative({ event: event })
+    this.actor.rollInitiative(this.token)
   }
 
   /**
@@ -528,7 +556,7 @@ class DCCActorSheet extends ActorSheet {
   _onRollSavingThrow (event) {
     event.preventDefault()
     const save = event.currentTarget.parentElement.dataset.save
-    this.actor.rollSavingThrow(save, { event: event })
+    this.actor.rollSavingThrow(save)
   }
 
   /**
@@ -539,7 +567,7 @@ class DCCActorSheet extends ActorSheet {
   _onRollSkillCheck (event) {
     event.preventDefault()
     const skill = event.currentTarget.parentElement.dataset.skill
-    this.actor.rollSkillCheck(skill, { event: event })
+    this.actor.rollSkillCheck(skill)
   }
 
   /**
@@ -549,7 +577,7 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollLuckDie (event) {
     event.preventDefault()
-    this.actor.rollLuckDie({ event: event })
+    this.actor.rollLuckDie()
   }
 
   /**
@@ -579,7 +607,8 @@ class DCCActorSheet extends ActorSheet {
   _onRollAttackBonus (event) {
     if (this.actor._getConfig().rollAttackBonus) {
       event.preventDefault()
-      this.actor.rollAttackBonus({ event: event })
+      this.actor.rollAttackBonus()
+      this.render(false)
     }
   }
 
@@ -590,8 +619,12 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollWeaponAttack (event) {
     event.preventDefault()
-    const weaponId = event.currentTarget.parentElement.dataset.weaponId
-    this.actor.rollWeaponAttack(weaponId, { event: event })
+    const slot = event.currentTarget.parentElement.dataset.itemSlot
+    const options = {
+      event: event,
+      backstab: event.currentTarget.classList.contains('backstab-button')
+    }
+    this.actor.rollWeaponAttack(slot, options)
   }
 
   /**
@@ -636,6 +669,22 @@ class DCCActorSheet extends ActorSheet {
 
   /** @override */
   _updateObject (event, formData) {
+    // Handle owned item updates separately
+    if (event.currentTarget) {
+      const parentElement = event.currentTarget.parentElement
+      const expanded = expandObject(formData)
+      if (expanded.itemUpdates) {
+        if (parentElement.classList.contains('weapon') || parentElement.classList.contains('armor')) {
+          const itemId = parentElement.dataset.itemId
+          const item = this.actor.getOwnedItem(itemId)
+          if (item) {
+            const updateData = expanded.itemUpdates[itemId]
+            item.update(updateData)
+          }
+        }
+      }
+    }
+
     // Update the Actor
     return this.object.update(formData)
   }

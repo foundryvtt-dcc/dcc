@@ -1,0 +1,50 @@
+<form class="{{cssClass}}" autocomplete="off">
+    <header class="sheet-header">
+        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+        <div class="header-fields">
+            <div class="flexrow">
+                <div class="item-name">
+                    <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+                </div>
+                <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+            </div>
+
+            <div class="armor-header">
+              <div class="resource">
+                <label class="resource-label" for="data.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
+                <input type="text" name="data.acBonus"
+                       value="{{numberFormat data.acBonus decimals=0 sign=true}}"
+                       placeholder="+0" data-dtype="Number"/>
+              </div>
+              <div class="resource">
+                <label class="resource-label" for="data.checkPenalty">{{localize "DCC.ArmorPropertiesCheckPenalty"}}</label>
+                <input type="text" name="data.checkPenalty"
+                       value="{{numberFormat data.checkPenalty decimals=0 sign=true}}"
+                       placeholder="-0" data-dtype="Number"/>
+              </div>
+              <div class="resource">
+                <label class="resource-label" for="data.fumbleDie">{{localize "DCC.ArmorPropertiesFumbleDie"}}</label>
+                <input type="text" name="data.fumbleDie" value="{{data.fumbleDie}}"
+                       placeholder="1d4" data-dtype="String"/>
+              </div>
+              <div class="resource">
+                <label class="resource-label" for="data.speed">{{localize "DCC.ArmorPropertiesSpeed"}}</label>
+                <input type="text" name="data.speed" value="{{data.speed}}"
+                       value="{{numberFormat data.speed decimals=0 sign=true}}"
+                       placeholder="-0" data-dtype="Number"/>
+              </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="sheet-body armor">
+        <h1 class="armor-description-heading">{{localize "DCC.Description"}}</h1>
+        <div class="armor-summary">
+          <label class="resource-label" for="data.description.summary">{{localize "DCC.ItemSummary"}}</label>
+          <input type="text" name="data.description.summary" value="{{data.description.summary}}" data-dtype="String"/>
+        </div>
+        <div class="description">
+            {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
+        </div>
+    </section>
+</form>

@@ -4,10 +4,19 @@ export class DCCItemConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.id = 'sheet-config'
-    options.template =
-      'systems/dcc/templates/dialog-item-config.html'
     options.width = 380
     return options
+  }
+
+  /** @override */
+  get template () {
+    switch (this.object.data.type) {
+      case 'weapon':
+        return 'systems/dcc/templates/dialog-item-config-weapon.html'
+      case 'spell':
+        return 'systems/dcc/templates/dialog-item-config-spell.html'
+      default:
+    }
   }
 
   /* -------------------------------------------- */

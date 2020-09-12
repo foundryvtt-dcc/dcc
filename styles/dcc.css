@@ -281,8 +281,12 @@
   text-align: center; }
 
 .dcc .armor-notes {
-  flex: 0 0 110px;
+  flex: 0.2 0 55px;
   margin: 0 0 0 8px; }
+
+.dcc .armor-controls {
+  flex: 0 0 60px;
+  padding-left: 10px; }
 
 /* ----------------------------------------- */
 /*  Armor Class                              */
@@ -562,16 +566,26 @@
   background-size: 22px 22px;
   background-repeat: no-repeat; }
 
+.dcc .backstab-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("./images/backstab.png");
+  background-size: 22px 22px;
+  background-repeat: no-repeat; }
+
 .dcc .weapon-damage {
   flex: 0 0 80px;
   margin: 0 10px 0 0;
   text-align: center; }
 
+.dcc .backstab-padding {
+  flex: 0 0 30px; }
+
 .dcc .weapon-name-label {
   padding: 0 0 0 30px; }
 
 .dcc .weapon-notes {
-  flex: 0 0 110px;
+  flex: 0.2 0 55px;
   margin: 0 8px 0 0; }
 
 .dcc .weapon-tohit {
@@ -582,6 +596,10 @@
 .dcc .weapon-special {
   flex: 0 0 1;
   text-align: center; }
+
+.dcc .weapon-controls {
+  flex: 0 0 60px;
+  padding-left: 10px; }
 
 /* ----------------------------------------- */
 /*  Upper Level                              */
@@ -969,14 +987,29 @@
   flex: 0 0 70px; }
 
 .dcc .item-list .item-controls {
-  flex: 0 0 80px; }
+  flex: 0 0 60px;
+  padding-left: 10px; }
 
 /* ----------------------------------------- */
 /*  Items Sheet                              */
 /* ----------------------------------------- */
+.dcc.item .sheet-header .armor-header {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto); }
+
 .dcc.item .sheet-body.item {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.weapon {
+  display: grid;
+  grid-template-columns: 3fr 1fr 2fr;
+  grid-template-rows: 60px 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.armor {
+  display: grid;
+  grid-template-columns: 3fr 1fr 2fr;
   grid-template-rows: 50px minmax(80px, auto); }
 
 .dcc.item .sheet-body.spell {
@@ -994,9 +1027,22 @@
   overflow-y: scroll;
   grid-column: 1 / span 3; }
 
-.dcc.item .sheet-body .description {
-  overflow-y: scroll;
+.dcc.item .sheet-body .weapon-header-extras {
+  display: grid;
+  grid-template-columns: minmax(55px, auto) minmax(90px, auto) minmax(100px, auto) minmax(85px, auto) minmax(145px, auto);
   grid-column: 1 / span 3; }
+
+.dcc.item .sheet-body .weapon-description-heading {
+  grid-column: 1 / span 1; }
+
+.dcc.item .sheet-body .weapon-summary {
+  grid-column: 2 / span 2; }
+
+.dcc.item .sheet-body .armor-description-heading {
+  grid-column: 1 / span 1; }
+
+.dcc.item .sheet-body .armor-summary {
+  grid-column: 2 / span 2; }
 
 .dcc.item .sheet-body .mercurial-effect-heading {
   grid-column: 1; }
@@ -1030,8 +1076,10 @@
     flex: 0 0 48%; }
   .config-dialog .form-group label.span {
     flex: 0 0 96%; }
-  .config-dialog .form-group label.attack-bonus-info {
-    text-align: center; }
+  .config-dialog .form-group label.info {
+    text-align: center;
+    padding-left: 10px;
+    padding-right: 10px; }
   .config-dialog .form-group div.form-fields {
     flex: 0 1 48%; }
   .config-dialog .form-group input {

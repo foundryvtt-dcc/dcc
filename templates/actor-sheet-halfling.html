@@ -1,5 +1,9 @@
 <form class="{{cssClass}}" autocomplete="off">
 
+    {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
+    <input type="hidden" id="data.details.sheetClass" name="data.details.sheetClass" value="Halfling" data-dtype="String"/>
+    <input type="hidden" id="data.details.critRange" name="data.details.critRange" value="20" data-dtype="Number"/>
+
     {{!-- Sheet Header --}}
     {{> systems/dcc/templates/actor-partial-pc-header.html }}
 

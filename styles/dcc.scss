@@ -265,8 +265,13 @@ $border-style: 2px groove #eeede0;
 }
 
 .dcc .armor-notes {
-  flex: 0 0 110px;
+  flex: 0.2 0 55px;
   margin: 0 0 0 8px;
+}
+
+.dcc .armor-controls {
+  flex: 0 0 60px;
+  padding-left: 10px;
 }
 
 /* ----------------------------------------- */
@@ -606,10 +611,22 @@ $border-style: 2px groove #eeede0;
   background-repeat: no-repeat;
 }
 
+.dcc .backstab-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("./images/backstab.png");
+  background-size: 22px 22px;
+  background-repeat: no-repeat;
+}
+
 .dcc .weapon-damage {
   flex: 0 0 80px;
   margin: 0 10px 0 0;
   text-align: center;
+}
+
+.dcc .backstab-padding {
+  flex: 0 0 30px;
 }
 
 .dcc .weapon-name-label {
@@ -617,7 +634,7 @@ $border-style: 2px groove #eeede0;
 }
 
 .dcc .weapon-notes {
-  flex: 0 0 110px;
+  flex: 0.2 0 55px;
   margin: 0 8px 0 0;
 }
 
@@ -630,6 +647,11 @@ $border-style: 2px groove #eeede0;
 .dcc .weapon-special {
   flex: 0 0 1;
   text-align: center;
+}
+
+.dcc .weapon-controls {
+  flex: 0 0 60px;
+  padding-left: 10px;
 }
 
 /* ----------------------------------------- */
@@ -1100,7 +1122,8 @@ $border-style: 2px groove #eeede0;
   }
 
   .item-controls {
-    flex: 0 0 80px;
+    flex: 0 0 60px;
+    padding-left: 10px;
   }
 }
 
@@ -1109,9 +1132,26 @@ $border-style: 2px groove #eeede0;
 /* ----------------------------------------- */
 
 .dcc.item {
+  .sheet-header .armor-header {
+    display: grid;
+    grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
+  }
+
   .sheet-body.item {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 50px minmax(80px, auto);
+  }
+
+  .sheet-body.weapon {
+    display: grid;
+    grid-template-columns: 3fr 1fr 2fr;
+    grid-template-rows: 60px 50px minmax(80px, auto);
+  }
+
+  .sheet-body.armor {
+    display: grid;
+    grid-template-columns: 3fr 1fr 2fr;
     grid-template-rows: 50px minmax(80px, auto);
   }
 
@@ -1121,39 +1161,58 @@ $border-style: 2px groove #eeede0;
     grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px;
   }
 
-  .sheet-body .spell-header-overflow {
-    grid-column: 1 / span 3;
-  }
+  .sheet-body {
+    .spell-header-overflow {
+      grid-column: 1 / span 3;
+    }
+  
+    .description-heading {
+      grid-column: 1 / span 3;
+    }
+  
+    .description {
+      overflow-y: scroll;
+      grid-column: 1 / span 3;
+    }
+  
+    .weapon-header-extras {
+      display: grid;
+      grid-template-columns: minmax(55px, auto) minmax(90px, auto) minmax(100px, auto) minmax(85px, auto) minmax(145px, auto);
+      grid-column: 1 / span 3;
+    }
 
-  .sheet-body .description-heading {
-    grid-column: 1 / span 3;
-  }
-
-  .sheet-body .description {
-    overflow-y: scroll;
-    grid-column: 1 / span 3;
-  }
-
-  .sheet-body .description {
-    overflow-y: scroll;
-    grid-column: 1 / span 3;
-  }
-
-  .sheet-body .mercurial-effect-heading {
-    grid-column: 1;
-  }
-
-  .sheet-body .mercurial-effect-value {
-    grid-column: 2;
-  }
-
-  .sheet-body .mercurial-effect-summary {
-    grid-column: 3;
-  }
-
-  .sheet-body .mercurial-effect-description {
-    overflow-y: scroll;
-    grid-column: 1 / span 3;
+    .weapon-description-heading {
+      grid-column: 1 / span 1;
+    }
+  
+    .weapon-summary {
+      grid-column: 2 / span 2;
+    }
+  
+    .armor-description-heading {
+      grid-column: 1 / span 1;
+    }
+  
+    .armor-summary {
+      grid-column: 2 / span 2;
+    }
+  
+    .mercurial-effect-heading {
+      grid-column: 1;
+    }
+  
+    .mercurial-effect-value {
+      grid-column: 2;
+    }
+  
+    .mercurial-effect-summary {
+      grid-column: 3;
+    }
+  
+    .mercurial-effect-description {
+      overflow-y: scroll;
+      grid-column: 1 / span 3;
+    }
   }
 
   .item-name {
@@ -1185,8 +1244,10 @@ $border-style: 2px groove #eeede0;
       flex: 0 0 96%;
     }
 
-    label.attack-bonus-info {
+    label.info {
       text-align: center;
+      padding-left: 10px;
+      padding-right: 10px;
     }
 
     div.form-fields {

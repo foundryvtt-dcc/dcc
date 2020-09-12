@@ -35,9 +35,24 @@ function _parseJSONPC (pcObject) {
     pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
   }
   if (pcObject.weapon) {
-    pc['data.items.weapons.m1.name'] = pcObject.weapon
-    pc['data.items.weapons.m1.toHit'] = pcObject.attackMod || 0
-    pc['data.items.weapons.m1.damage'] = pcObject.attackDamage || '1d3'
+    pc.items = [{
+      name: pcObject.weapon,
+      type: 'weapon',
+      data: {
+        config: { inheritActionDie: true },
+        actionDie: '1d20',
+        toHit: pcObject.attackMod || '0',
+        damage: pcObject.attackDamage || '1d3',
+        melee: true, // No way to know, but melee is most likely
+        range: '',
+        twoHanded: false,
+        backstab: false,
+        backstabDamage: null,
+        description: {
+          value: ''
+        }
+      }
+    }]
   }
   pc['data.attributes.speed.value'] = pcObject.speed || 30
   if (pcObject.initiative) {
@@ -57,33 +72,33 @@ function _parseJSONPC (pcObject) {
   let notes = ''
   // Equipment block
   if (pcObject.equipment || pcObject.equipment2 || pcObject.equipment3 || pcObject.tradeGood) {
-    notes = notes + game.i18n.localize('DCC.Equipment') + ':\n'
+    notes = notes + game.i18n.localize('DCC.Equipment') + ':<br/>'
     if (pcObject.equipment) {
-      notes = notes + '  ' + pcObject.equipment + '\n'
+      notes = notes + '  ' + pcObject.equipment + '<br/>'
     }
     if (pcObject.equipment2) {
-      notes = notes + '  ' + pcObject.equipment2 + '\n'
+      notes = notes + '  ' + pcObject.equipment2 + '<br/>'
     }
     if (pcObject.equipment3) {
-      notes = notes + '  ' + pcObject.equipment3 + '\n'
+      notes = notes + '  ' + pcObject.equipment3 + '<br/>'
     }
     if (pcObject.tradeGood) {
-      notes = notes + '  ' + pcObject.tradeGood + ' (' + game.i18n.localize('DCC.TradeGoods') + ')\n'
+      notes = notes + '  ' + pcObject.tradeGood + ' (' + game.i18n.localize('DCC.TradeGoods') + ')<br/>'
     }
-    notes = notes + '\n'
+    notes = notes + '<br/>'
   }
   // Other attributes if present
   if (pcObject.startingFunds) {
-    notes = notes + game.i18n.localize('DCC.StartingFunds') + ': ' + pcObject.startingFunds + '\n'
+    notes = notes + game.i18n.localize('DCC.StartingFunds') + ': ' + pcObject.startingFunds + '<br/>'
   }
   if (pcObject.luckySign) {
-    notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '\n'
+    notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '<br/>'
   }
   if (pcObject.languages) {
-    notes = notes + game.i18n.localize('DCC.Languages') + ': ' + pcObject.languages + '\n'
+    notes = notes + game.i18n.localize('DCC.Languages') + ': ' + pcObject.languages + '<br/>'
   }
   if (pcObject.racialTraits) {
-    notes = notes + pcObject.racialTraits + '\n'
+    notes = notes + pcObject.racialTraits + '<br/>'
   }
   pc['data.details.notes.value'] = notes
   return pc
