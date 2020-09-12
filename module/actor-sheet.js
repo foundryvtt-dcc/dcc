@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, $, ENTITY_PERMISSIONS */
+/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, ENTITY_PERMISSIONS */
 
 import parsePC from './pc-parser.js'
 import parseNPC from './npc-parser.js'
