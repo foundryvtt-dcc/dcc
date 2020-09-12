@@ -24,6 +24,9 @@ class DCCActor extends Actor {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
     }
 
+    // Make sure items are initialised before computing any data derived from them
+    if (!this.items) { return }
+
     // Compute AC if required
     if (config.computeAC) {
       const baseACAbility = data.abilities[config.baseACAbility] || { mod: 0 }
@@ -36,26 +39,26 @@ class DCCActor extends Actor {
     }
 
     // Determine the correct fumble die to use based on armor
-    try {
-      let fumbleDieRank = 0
-      let fumbleDie = '1d4'
-      if (this.itemTypes) {
-        for (const armorItem of this.itemTypes.armor) {
+    let fumbleDieRank = 0
+    let fumbleDie = '1d4'
+    if (this.itemTypes) {
+      for (const armorItem of this.itemTypes.armor) {
+        try {
           const expression = armorItem.data.data.fumbleDie
           const rank = game.dcc.DiceChain.rankDiceExpression(expression)
           if (rank > fumbleDieRank) {
             fumbleDieRank = rank
             fumbleDie = expression
           }
+        } catch (err) {
+          // Ignore bad fumble die expressions
         }
       }
-      data.attributes.fumble = mergeObject(
-        data.attributes.fumble || {},
-        { die: fumbleDie }
-      )
-    } catch (err) {
-      ui.notifications.warn(game.i18n.localize('DCC.FumbleDieCalculationError') + '\n' + err)
     }
+    data.attributes.fumble = mergeObject(
+      data.attributes.fumble || {},
+      { die: fumbleDie }
+    )
   }
 
   /**
@@ -338,8 +341,13 @@ class DCCActor extends Actor {
 
     /* Handle Fumbles */
     let fumble = ''
-    const fumbleDie = this.data.data.attributes.fumble.die || '1d4'
     if (d20RollResult === 1) {
+      let fumbleDie
+      try {
+        fumbleDie = this.data.data.attributes.fumble.die
+      } catch (err) {
+        fumbleDie = '1d4'
+      }
       const pack = game.packs.get('dcc.fumbles')
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name.startsWith('Fumble'))

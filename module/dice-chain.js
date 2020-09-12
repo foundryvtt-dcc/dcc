@@ -13,6 +13,7 @@ class DiceChain {
   static rankDiceExpression (expression) {
     const roll = new Roll(expression)
     let rank = 0
+    roll.roll() // Need to roll to fill in the dice array on 0.6.6
     for (const die of roll.dice) {
       const dieRank = CONFIG.DCC.DICE_CHAIN.indexOf(die.faces)
       if (dieRank > rank) {
