@@ -672,18 +672,16 @@ class DCCActorSheet extends ActorSheet {
     // Handle owned item updates separately
     if (event.currentTarget) {
       const parentElement = event.currentTarget.parentElement
-      if (formData.itemUpdates) {
+      const expanded = expandObject(formData)
+      if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') || parentElement.classList.contains('armor')) {
           const itemId = parentElement.dataset.itemId
           const item = this.actor.getOwnedItem(itemId)
           if (item) {
-            const updateData = formData.itemUpdates[itemId]
+            const updateData = expanded.itemUpdates[itemId]
             item.update(updateData)
           }
         }
-
-        // Do not write itemUpdates into the object
-        delete formData.itemUpdates
       }
     }
 
