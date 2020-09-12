@@ -211,7 +211,7 @@ function _createDCCInitiativeMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.Initiative'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative() }',
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token) }',
     img: 'icons/svg/up.svg'
   }
 

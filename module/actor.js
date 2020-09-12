@@ -109,8 +109,9 @@ class DCCActor extends Actor {
 
   /**
    * Roll Initiative
+   * @param {Object} token    The token to roll initiative for
    */
-  async rollInitiative () {
+  async rollInitiative (token) {
     const init = this.data.data.attributes.init.value
     const roll = new Roll('1d20+@init', { init })
 
@@ -121,8 +122,8 @@ class DCCActor extends Actor {
     })
 
     // Set initiative value in the combat tracker if there is an active combat
-    if (this.token && game.combat) {
-      const tokenId = this.token.id
+    if (token && game.combat) {
+      const tokenId = token.id
 
       // Create or update combatant
       const combatant = game.combat.getCombatantByToken(tokenId)

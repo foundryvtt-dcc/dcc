@@ -545,7 +545,7 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollInitiative (event) {
     event.preventDefault()
-    this.actor.rollInitiative({ event: event })
+    this.actor.rollInitiative(this.token)
   }
 
   /**
@@ -556,7 +556,7 @@ class DCCActorSheet extends ActorSheet {
   _onRollSavingThrow (event) {
     event.preventDefault()
     const save = event.currentTarget.parentElement.dataset.save
-    this.actor.rollSavingThrow(save, { event: event })
+    this.actor.rollSavingThrow(save)
   }
 
   /**
@@ -567,7 +567,7 @@ class DCCActorSheet extends ActorSheet {
   _onRollSkillCheck (event) {
     event.preventDefault()
     const skill = event.currentTarget.parentElement.dataset.skill
-    this.actor.rollSkillCheck(skill, { event: event })
+    this.actor.rollSkillCheck(skill)
   }
 
   /**
@@ -577,7 +577,7 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollLuckDie (event) {
     event.preventDefault()
-    this.actor.rollLuckDie({ event: event })
+    this.actor.rollLuckDie()
   }
 
   /**
@@ -607,7 +607,7 @@ class DCCActorSheet extends ActorSheet {
   _onRollAttackBonus (event) {
     if (this.actor._getConfig().rollAttackBonus) {
       event.preventDefault()
-      this.actor.rollAttackBonus({ event: event })
+      this.actor.rollAttackBonus()
       this.render(false)
     }
   }
