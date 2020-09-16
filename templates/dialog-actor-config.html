@@ -1,4 +1,6 @@
 <form class="actor config-dialog" autocomplete="off">
+  {{#if isNPC}}
+  {{else}}
   <div class="form-group">
     <label for="data.config.capLevel">{{localize "DCC.CapLevelConfig"}}</label>
     <div class="form-fields">
@@ -35,6 +37,7 @@
       </select>
     </div>
   </div>
+  {{/if}}
   <div class="form-group">
     <label for="data.config.sortInventory">{{localize "DCC.SortInventory"}}</label>
     <div class="form-fields">
