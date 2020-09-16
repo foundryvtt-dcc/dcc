@@ -11,13 +11,47 @@ export const highlightCriticalSuccessFailure = function (message, html, data) {
   if (!roll.dice.length) return
   const d = roll.dice[0]
 
-  // Ensure it is a d20 roll
-  const isD20 = (d.faces === 20) && (d.results.length === 1)
-  if (!isD20) return
+  // Ensure it is a d20 roll or a custom roll
+  const rollData = d.options.dcc
+  const needsHighlight = ((d.faces === 20) && (d.results.length === 1)) || rollData
+  if (!needsHighlight) return
 
-  // Highlight crits and fumbles
-  if (d.total >= 20) html.find('.dice-total').addClass('critical')
-  else if (d.total <= 1) html.find('.dice-total').addClass('fumble')
+  // Default highlight settings for a d20
+  let upperThreshold = 20
+  let lowerThreshold = 1
+
+  let upperClass = 'critical'
+  let lowerClass = 'fumble'
+
+  // Apply DCC specific highlighting settings
+  if (rollData) {
+    // Highlight max result on any die if requested
+    if (rollData.highlightMax) {
+      upperThreshold = d.faces
+    }
+    // Otherwise apply upper threshold if provided
+    else if (rollData.upperThreshold) {
+      upperThreshold = rollData.upperThreshold
+    }
+
+    // Apply a lower threshold if provided
+    if (rollData.lowerThreshold) {
+      lowerThreshold = rollData.lowerThreshold
+    }
+
+    // Swap class for rolls above or below the threshold if rolling under
+    if (rollData.rollUnder) {
+      upperClass = 'fumble'
+      lowerClass = 'critical'
+    }
+  }
+
+  // Apply highlights
+  if (d.total >= upperThreshold) {
+    html.find('.dice-total').addClass(upperClass)
+  } else if (d.total <= lowerThreshold) {
+    html.find('.dice-total').addClass(lowerClass)
+  }
 }
 
 /* -------------------------------------------- */

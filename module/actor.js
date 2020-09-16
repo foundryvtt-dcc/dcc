@@ -99,6 +99,13 @@ class DCCActor extends Actor {
     // Allow requesting roll under (for Luck Checks)
     if (options.rollUnder) {
       roll = new Roll('1d20')
+
+      // Apply custom roll options
+      roll.roll()
+      roll.dice[0].options.dcc = {
+        rollUnder: true
+      }
+
     } else {
       roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
     }
@@ -249,6 +256,12 @@ class DCCActor extends Actor {
       this.update({
         'data.details.lastRolledAttackBonus': lastRoll
       })
+
+      // Apply custom roll options
+      abRoll.dice[0].options.dcc = {
+        lowerThreshold: 2,
+        upperThreshold: 3
+      }
 
       // Convert the roll to a chat message
       abRoll.toMessage({
