@@ -33,6 +33,10 @@
                        value="{{numberFormat data.speed decimals=0 sign=true}}"
                        placeholder="-0" data-dtype="Number"/>
               </div>
+              <div class="resource">
+                <label class="resource-label" for="data.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
+                <input type="checkbox" name="data.equipped" data-dtype="Boolean" {{checked data.equipped}}/>
+              </div>
             </div>
         </div>
     </header>

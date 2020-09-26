@@ -33,7 +33,9 @@ class DCCActor extends Actor {
       const abilityMod = baseACAbility.mod
       let armorBonus = 0
       for (const armorItem of this.itemTypes.armor) {
-        armorBonus += parseInt(armorItem.data.data.acBonus) || 0
+        if (armorItem.data.data.equipped) {
+          armorBonus += parseInt(armorItem.data.data.acBonus) || 0
+        }
       }
       data.attributes.ac.value = 10 + abilityMod + armorBonus
     }
@@ -43,15 +45,17 @@ class DCCActor extends Actor {
     let fumbleDie = '1d4'
     if (this.itemTypes) {
       for (const armorItem of this.itemTypes.armor) {
-        try {
-          const expression = armorItem.data.data.fumbleDie
-          const rank = game.dcc.DiceChain.rankDiceExpression(expression)
-          if (rank > fumbleDieRank) {
-            fumbleDieRank = rank
-            fumbleDie = expression
+        if (armorItem.data.data.equipped) {
+          try {
+            const expression = armorItem.data.data.fumbleDie
+            const rank = game.dcc.DiceChain.rankDiceExpression(expression)
+            if (rank > fumbleDieRank) {
+              fumbleDieRank = rank
+              fumbleDie = expression
+            }
+          } catch (err) {
+            // Ignore bad fumble die expressions
           }
-        } catch (err) {
-          // Ignore bad fumble die expressions
         }
       }
     }

@@ -266,6 +266,10 @@
   flex: 0 0 10px;
   padding: 0; }
 
+.dcc .armor-equipped {
+  flex: 0 0 20px;
+  margin: 0 8px 0 8px; }
+
 .dcc .armor-bonus {
   flex: 0 0 45px;
   margin: 0 8px 0 8px;

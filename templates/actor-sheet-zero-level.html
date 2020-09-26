@@ -199,6 +199,9 @@
                 {{!-- Armor --}}
                 {{#* inline "armorRow"}}
                 <li class="armor item flexrow" data-item-id="{{id}}" data-item-index="{{index}}">
+                    <input class="armor-equipped" type="checkbox"
+                           name="itemUpdates.{{id}}.data.equipped"
+                           data-dtype="Boolean" {{checked armor.data.equipped}}/>
                     <input class="armor-name" type="text"
                            name="itemUpdates.{{id}}.name"
                            value="{{armor.name}}"/>
@@ -211,9 +214,6 @@
                     <input class="armor-fumbledie" type="text"
                            name="itemUpdates.{{id}}.data.fumbleDie"
                            value="{{armor.data.fumbleDie}}"/>
-                    <input class="armor-notes" type="text"
-                           name="itemUpdates.{{id}}.data.description.summary"
-                           value="{{{armor.data.description.summary}}}"/>
                     <div class="armor-controls">
                         <a class="item-control item-edit" title="Edit Item"><i class="fas fa-edit"></i></a>
                         <a class="item-control item-delete" title="Delete Item"><i class="fas fa-trash"></i></a>
@@ -223,11 +223,11 @@
                 <div class="armor-heading">{{localize "DCC.Armor"}}</div>
                 <ol class="flexcol armor-list">
                     <li class="flexrow armor-list-header">
+                        <span class="armor-equipped"></span>
                         <span class="armor-name armor-name-label">{{localize "DCC.Name"}}</span>
                         <span class="armor-bonus">{{localize "DCC.Bonus"}}</span>
                         <span class="armor-checkpenalty">{{localize "DCC.Penalty"}}</span>
                         <span class="armor-fumbledie">{{localize "DCC.FumbleDie"}}</span>
-                        <span class="armor-notes">{{localize "DCC.Notes"}}</span>
                         <span class="armor-controls">
                           <a class="item-control item-create" title="Create item" data-type="armor"><i class="fas fa-plus"></i> Add</a>
                         </span>
