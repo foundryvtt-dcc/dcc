@@ -169,7 +169,14 @@ export const migrateActorData = function (actor) {
 export const migrateItemData = function (item) {
   const updateData = {}
 
-  // No-op currently
+  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
+
+  // If migrating from 0.11 mark all physicalItems as equipped
+  if ((currentVersion <= 0.11) || (currentVersion == null)) {
+    if (item.data.equipped !== undefined) {
+      updateData.data = { equipped: true }
+    }
+  }
 
   // Return the migrated update data
   return updateData

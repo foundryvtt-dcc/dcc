@@ -103,8 +103,8 @@ Hooks.once('init', async function () {
 Hooks.once('ready', function () {
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const NEEDS_MIGRATION_VERSION = 0.10
-  const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
+  const NEEDS_MIGRATION_VERSION = 0.11
+  const needMigration = (currentVersion <= NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration
   if (needMigration && game.user.isGM) {
