@@ -109,7 +109,6 @@ class DCCActor extends Actor {
       roll.dice[0].options.dcc = {
         rollUnder: true
       }
-
     } else {
       roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
     }

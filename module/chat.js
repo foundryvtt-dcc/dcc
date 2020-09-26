@@ -28,9 +28,8 @@ export const highlightCriticalSuccessFailure = function (message, html, data) {
     // Highlight max result on any die if requested
     if (rollData.highlightMax) {
       upperThreshold = d.faces
-    }
     // Otherwise apply upper threshold if provided
-    else if (rollData.upperThreshold) {
+    } else if (rollData.upperThreshold) {
       upperThreshold = rollData.upperThreshold
     }
 
