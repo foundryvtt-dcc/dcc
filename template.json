@@ -409,6 +409,7 @@
       "config": {
         "inheritSpellCheck": true
       },
+      "available": true,
       "level": 1,
       "corruption": {},
       "manifestation": {},

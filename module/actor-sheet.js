@@ -674,7 +674,9 @@ class DCCActorSheet extends ActorSheet {
       const parentElement = event.currentTarget.parentElement
       const expanded = expandObject(formData)
       if (expanded.itemUpdates) {
-        if (parentElement.classList.contains('weapon') || parentElement.classList.contains('armor')) {
+        if (parentElement.classList.contains('weapon') ||
+            parentElement.classList.contains('armor') ||
+            parentElement.classList.contains('spell-item')) {
           const itemId = parentElement.dataset.itemId
           const item = this.actor.getOwnedItem(itemId)
           if (item) {

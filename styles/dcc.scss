@@ -1072,8 +1072,14 @@ $border-style: 2px groove #eeede0;
 }
 
 .dcc .item-list {
+  .item-equipped {
+    flex: 0 0 20px;
+    margin: 0 8px 0 0;
+  }
+
   .item-image {
     flex: 0 0 24px;
+    margin-right: 8px;
   }
 
   .spell-item-button-heading {
@@ -1130,6 +1136,8 @@ $border-style: 2px groove #eeede0;
     flex: 0 0 60px;
     padding-left: 10px;
   }
+
+  padding-left: 8px;
 }
 
 /* ----------------------------------------- */
