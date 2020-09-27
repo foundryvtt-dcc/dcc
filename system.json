@@ -2,7 +2,7 @@
   "name": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
-  "version": 0.11,
+  "version": 0.12,
   "minimumCoreVersion": "0.5.6",
   "compatibleCoreVersion": "0.7.2",
   "templateVersion": 2,
@@ -12,22 +12,6 @@
   ],
   "styles": [
     "styles/dcc.css"
-  ],
-  "packs": [
-    {
-      "name": "criticalhits",
-      "label": "Critical Hits",
-      "system": "dcc",
-      "path": "./packs/criticalhits.db",
-      "entity": "RollTable"
-    },
-    {
-      "name": "fumbles",
-      "label": "Fumbles",
-      "system": "dcc",
-      "path": "./packs/fumbles.db",
-      "entity": "RollTable"
-    }
   ],
   "languages": [
     {

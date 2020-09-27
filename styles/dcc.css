@@ -266,6 +266,10 @@
   flex: 0 0 10px;
   padding: 0; }
 
+.dcc .armor-equipped {
+  flex: 0 0 20px;
+  margin: 0 8px 0 8px; }
+
 .dcc .armor-bonus {
   flex: 0 0 45px;
   margin: 0 8px 0 8px;
@@ -944,51 +948,45 @@
   flex: 0 0 10px;
   padding: 0; }
 
-.dcc .item-list .item-image {
-  flex: 0 0 24px; }
-
-.dcc .item-list .spell-item-button-heading {
-  flex: 0 0 40px; }
-
-.dcc .item-list .spell-item-button {
-  flex: 0 0 40px;
-  background-image: url("/icons/svg/d20-black.svg");
-  background-size: 22px 22px;
-  background-position: center;
-  background-repeat: no-repeat; }
-
-.dcc .item-list .item-level {
-  flex: 0 0 60px;
-  text-align: center; }
-
-.dcc .item-list .item-name {
-  flex: 1 0 1; }
-
-.dcc .item-list .item-description {
-  flex: 1 0 1; }
-
-.dcc .item-list .item-weight {
-  flex: 0 0 60px; }
-
-.dcc .item-list .item-quantity {
-  flex: 0 0 70px; }
-
-.dcc .item-list .item-is-coins {
-  flex: 0 1 100px;
-  text-align: left; }
-
-.dcc .item-list .item-gp {
-  flex: 0 0 70px; }
-
-.dcc .item-list .item-sp {
-  flex: 0 0 70px; }
-
-.dcc .item-list .item-cp {
-  flex: 0 0 70px; }
-
-.dcc .item-list .item-controls {
-  flex: 0 0 60px;
-  padding-left: 10px; }
+.dcc .item-list {
+  padding-left: 8px; }
+  .dcc .item-list .item-equipped {
+    flex: 0 0 20px;
+    margin: 0 8px 0 0; }
+  .dcc .item-list .item-image {
+    flex: 0 0 24px;
+    margin-right: 8px; }
+  .dcc .item-list .spell-item-button-heading {
+    flex: 0 0 40px; }
+  .dcc .item-list .spell-item-button {
+    flex: 0 0 40px;
+    background-image: url("/icons/svg/d20-black.svg");
+    background-size: 22px 22px;
+    background-position: center;
+    background-repeat: no-repeat; }
+  .dcc .item-list .item-level {
+    flex: 0 0 60px;
+    text-align: center; }
+  .dcc .item-list .item-name {
+    flex: 1 0 1; }
+  .dcc .item-list .item-description {
+    flex: 1 0 1; }
+  .dcc .item-list .item-weight {
+    flex: 0 0 60px; }
+  .dcc .item-list .item-quantity {
+    flex: 0 0 70px; }
+  .dcc .item-list .item-is-coins {
+    flex: 0 1 100px;
+    text-align: left; }
+  .dcc .item-list .item-gp {
+    flex: 0 0 70px; }
+  .dcc .item-list .item-sp {
+    flex: 0 0 70px; }
+  .dcc .item-list .item-cp {
+    flex: 0 0 70px; }
+  .dcc .item-list .item-controls {
+    flex: 0 0 60px;
+    padding-left: 10px; }
 
 /* ----------------------------------------- */
 /*  Items Sheet                              */

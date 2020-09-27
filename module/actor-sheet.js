@@ -17,7 +17,12 @@ class DCCActorSheet extends ActorSheet {
       width: 600,
       height: 600,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
-      dragDrop: [{ dragSelector: null, dropSelector: null }]
+      dragDrop: [{ dragSelector: null, dropSelector: null }],
+      scrollY: [
+        '.tab.character',
+        '.tab.equipment .equipment-container',
+        '.tab.spells'
+      ]
     })
   }
 
@@ -486,7 +491,7 @@ class DCCActorSheet extends ActorSheet {
         yes: {
           icon: '<i class="fas fa-check"></i>',
           label: 'Import Stats',
-          callback: html => this._pasteStateBlock(html)
+          callback: html => this._pasteStatBlock(html)
         },
         no: {
           icon: '<i class="fas fa-times"></i>',
@@ -501,7 +506,7 @@ class DCCActorSheet extends ActorSheet {
    * @param {string} statBlockHTML   The stat block to import
    * @private
    */
-  _pasteStateBlock (statBlockHTML) {
+  _pasteStatBlock (statBlockHTML) {
     const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
     const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
 
@@ -674,7 +679,9 @@ class DCCActorSheet extends ActorSheet {
       const parentElement = event.currentTarget.parentElement
       const expanded = expandObject(formData)
       if (expanded.itemUpdates) {
-        if (parentElement.classList.contains('weapon') || parentElement.classList.contains('armor')) {
+        if (parentElement.classList.contains('weapon') ||
+            parentElement.classList.contains('armor') ||
+            parentElement.classList.contains('spell-item')) {
           const itemId = parentElement.dataset.itemId
           const item = this.actor.getOwnedItem(itemId)
           if (item) {

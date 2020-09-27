@@ -1,6 +1,6 @@
 /* global game */
 
-export const registerSystemSettings = function () {
+export const registerSystemSettings = async function () {
   /**
    * Track the last system version to which the world was migrated
    */
@@ -10,6 +10,51 @@ export const registerSystemSettings = function () {
     config: false,
     type: Number,
     default: 0
+  })
+
+  /**
+   * Gather a list of available compendium packs with RollTables
+   */
+  const tableCompendiumNames = { '': '-' }
+  const tableCompendiums = []
+  game.packs.forEach(function (pack) {
+    if (pack.metadata.entity === 'RollTable') {
+      tableCompendiums.push(pack)
+      tableCompendiumNames[pack.metadata.package + '.' + pack.metadata.name] = pack.metadata.label
+    }
+  })
+
+  /**
+   * Compendium to look in for crit tables
+   */
+  game.settings.register('dcc', 'critsCompendium', {
+    name: 'DCC.SettingCriticalHitsCompendium',
+    hint: 'DCC.SettingCriticalHitsCompendiumHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: tableCompendiumNames
+  })
+
+  /**
+   * Table to use for fumbles
+   */
+  const rollTables = { '': '-' }
+  for (const pack of tableCompendiums) {
+    await pack.getIndex()
+    pack.index.forEach(function (value, key, map) {
+      rollTables[pack.metadata.package + '.' + pack.metadata.name + '.' + value.name] = pack.metadata.label + ': ' + value.name
+    })
+  }
+  game.settings.register('dcc', 'fumbleTable', {
+    name: 'DCC.SettingFumbleTable',
+    hint: 'DCC.SettingFumbleTableHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: rollTables
   })
 
   /**

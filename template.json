@@ -332,7 +332,7 @@
       "physicalItem": {
         "quantity": 1,
         "weight": 0,
-        "equipped": false,
+        "equipped": true,
         "identified": true
       },
       "currency": {
@@ -409,6 +409,7 @@
       "config": {
         "inheritSpellCheck": true
       },
+      "available": true,
       "level": 1,
       "corruption": {},
       "manifestation": {},

@@ -92,19 +92,19 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('stringify', function (object) {
     return JSON.stringify(object)
   })
-
-  // Register system settings
-  registerSystemSettings()
 })
 
 /* -------------------------------------------- */
 /*  Post initialization hook                    */
 /* -------------------------------------------- */
 Hooks.once('ready', function () {
+  // Register system settings - needs to happen after packs are initialised
+  registerSystemSettings()
+
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const NEEDS_MIGRATION_VERSION = 0.10
-  const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
+  const NEEDS_MIGRATION_VERSION = 0.11
+  const needMigration = (currentVersion <= NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration
   if (needMigration && game.user.isGM) {

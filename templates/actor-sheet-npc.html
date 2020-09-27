@@ -194,6 +194,9 @@
                 {{!-- Armor --}}
                 {{#* inline "armorRow"}}
                 <li class="armor item flexrow" data-item-id="{{id}}" data-item-index="{{index}}">
+                    <input class="armor-equipped" type="checkbox"
+                           name="itemUpdates.{{id}}.data.equipped"
+                           data-dtype="Boolean" {{checked armor.data.equipped}}/>
                     <input class="armor-name" type="text"
                            name="itemUpdates.{{id}}.name"
                            value="{{armor.name}}"/>
@@ -218,6 +221,7 @@
                 <div class="armor-heading">{{localize "DCC.Armor"}}</div>
                 <ol class="flexcol armor-list">
                     <li class="flexrow armor-list-header">
+                        <span class="armor-equipped"></span>
                         <span class="armor-name armor-name-label">{{localize "DCC.Name"}}</span>
                         <span class="armor-bonus">{{localize "DCC.Bonus"}}</span>
                         <span class="armor-checkpenalty">{{localize "DCC.Penalty"}}</span>

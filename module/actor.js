@@ -33,7 +33,9 @@ class DCCActor extends Actor {
       const abilityMod = baseACAbility.mod
       let armorBonus = 0
       for (const armorItem of this.itemTypes.armor) {
-        armorBonus += parseInt(armorItem.data.data.acBonus) || 0
+        if (armorItem.data.data.equipped) {
+          armorBonus += parseInt(armorItem.data.data.acBonus) || 0
+        }
       }
       data.attributes.ac.value = 10 + abilityMod + armorBonus
     }
@@ -43,15 +45,17 @@ class DCCActor extends Actor {
     let fumbleDie = '1d4'
     if (this.itemTypes) {
       for (const armorItem of this.itemTypes.armor) {
-        try {
-          const expression = armorItem.data.data.fumbleDie
-          const rank = game.dcc.DiceChain.rankDiceExpression(expression)
-          if (rank > fumbleDieRank) {
-            fumbleDieRank = rank
-            fumbleDie = expression
+        if (armorItem.data.data.equipped) {
+          try {
+            const expression = armorItem.data.data.fumbleDie
+            const rank = game.dcc.DiceChain.rankDiceExpression(expression)
+            if (rank > fumbleDieRank) {
+              fumbleDieRank = rank
+              fumbleDie = expression
+            }
+          } catch (err) {
+            // Ignore bad fumble die expressions
           }
-        } catch (err) {
-          // Ignore bad fumble die expressions
         }
       }
     }
@@ -99,6 +103,12 @@ class DCCActor extends Actor {
     // Allow requesting roll under (for Luck Checks)
     if (options.rollUnder) {
       roll = new Roll('1d20')
+
+      // Apply custom roll options
+      roll.roll()
+      roll.dice[0].options.dcc = {
+        rollUnder: true
+      }
     } else {
       roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
     }
@@ -250,6 +260,12 @@ class DCCActor extends Actor {
         'data.details.lastRolledAttackBonus': lastRoll
       })
 
+      // Apply custom roll options
+      abRoll.dice[0].options.dcc = {
+        lowerThreshold: 2,
+        upperThreshold: 3
+      }
+
       // Convert the roll to a chat message
       abRoll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
@@ -321,16 +337,28 @@ class DCCActor extends Actor {
     /* Handle Critical Hits */
     let crit = ''
     if (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) {
-      const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
-      const pack = game.packs.get('dcc.criticalhits')
-      await pack.getIndex() // Load the compendium index
-      const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
-      if (entry) {
-        const table = await pack.getEntity(entry._id)
-        const roll = new Roll(
-          `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`
-        )
-        const critResult = await table.draw({ roll, displayChat: false })
+      let critResult = null
+
+      // Look up the crit table
+      const critsPackName = game.settings.get('dcc', 'critsCompendium')
+      if (critsPackName) {
+        const pack = game.packs.get(critsPackName)
+        if (pack) {
+          await pack.getIndex() // Load the compendium index
+          const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
+          const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
+          if (entry) {
+            const table = await pack.getEntity(entry._id)
+            const roll = new Roll(
+              `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`
+            )
+            critResult = await table.draw({ roll, displayChat: false })
+          }
+        }
+      }
+
+      // Display crit result or just a notification of the crit
+      if (critResult) {
         crit =
           ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${critResult.results[0].text}`
       } else {
@@ -348,15 +376,32 @@ class DCCActor extends Actor {
       } catch (err) {
         fumbleDie = '1d4'
       }
-      const pack = game.packs.get('dcc.fumbles')
-      await pack.getIndex() // Load the compendium index
-      const entry = pack.index.find((entity) => entity.name.startsWith('Fumble'))
-      if (entry) {
-        const table = await pack.getEntity(entry._id)
-        const roll = new Roll(
-          `${fumbleDie} - ${this.data.data.abilities.lck.mod}`
-        )
-        const fumbleResult = await table.draw({ roll, displayChat: false })
+
+      // Look up the fumble table
+      let fumbleResult = null
+
+      const fumbleTableName = game.settings.get('dcc', 'fumbleTable')
+      if (fumbleTableName) {
+        const fumbleTablePath = fumbleTableName.split('.')
+        let pack
+        if (fumbleTablePath.length === 3) {
+          pack = game.packs.get(fumbleTablePath[0] + '.' + fumbleTablePath[1])
+        }
+        if (pack) {
+          await pack.getIndex() // Load the compendium index
+          const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
+          if (entry) {
+            const table = await pack.getEntity(entry._id)
+            const roll = new Roll(
+              `${fumbleDie} - ${this.data.data.abilities.lck.mod}`
+            )
+            fumbleResult = await table.draw({ roll, displayChat: false })
+          }
+        }
+      }
+
+      // Display fumble result or just a notification of the fumble
+      if (fumbleResult) {
         fumble =
             ` <br><br><span style='color:red; font-weight: bolder'>Fumble!</span> ${fumbleResult.results[0].text}`
       } else {
