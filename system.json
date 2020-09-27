@@ -13,22 +13,6 @@
   "styles": [
     "styles/dcc.css"
   ],
-  "packs": [
-    {
-      "name": "criticalhits",
-      "label": "Critical Hits",
-      "system": "dcc",
-      "path": "./packs/criticalhits.db",
-      "entity": "RollTable"
-    },
-    {
-      "name": "fumbles",
-      "label": "Fumbles",
-      "system": "dcc",
-      "path": "./packs/fumbles.db",
-      "entity": "RollTable"
-    }
-  ],
   "languages": [
     {
       "lang": "en",
