@@ -17,7 +17,12 @@ class DCCActorSheet extends ActorSheet {
       width: 600,
       height: 600,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
-      dragDrop: [{ dragSelector: null, dropSelector: null }]
+      dragDrop: [{ dragSelector: null, dropSelector: null }],
+      scrollY: [
+        ".tab.character",
+        ".tab.equipment .equipment-container",
+        ".tab.spells"
+      ]
     })
   }
 
