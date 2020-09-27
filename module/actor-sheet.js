@@ -491,7 +491,7 @@ class DCCActorSheet extends ActorSheet {
         yes: {
           icon: '<i class="fas fa-check"></i>',
           label: 'Import Stats',
-          callback: html => this._pasteStateBlock(html)
+          callback: html => this._pasteStatBlock(html)
         },
         no: {
           icon: '<i class="fas fa-times"></i>',
@@ -506,7 +506,7 @@ class DCCActorSheet extends ActorSheet {
    * @param {string} statBlockHTML   The stat block to import
    * @private
    */
-  _pasteStateBlock (statBlockHTML) {
+  _pasteStatBlock (statBlockHTML) {
     const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
     const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
 

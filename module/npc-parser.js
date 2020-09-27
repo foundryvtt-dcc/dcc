@@ -75,7 +75,7 @@ function _parseAttack (attackString, damageString) {
   const name = _firstMatch(/(.*?) [+-].*/, attackString)
   attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString)
   attack.damage = ''
-  attack.melee = !attackString.includes('ranged')
+  attack.melee = !(attackString.includes('ranged') || attackString.includes('missile'))
   if (damageString) {
     attack.damage = damageString
   } else {
