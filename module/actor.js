@@ -399,7 +399,7 @@ class DCCActor extends Actor {
           }
         }
       }
-  
+
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {
         fumble =

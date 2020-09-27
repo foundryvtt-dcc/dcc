@@ -15,10 +15,10 @@ export const registerSystemSettings = async function () {
   /**
    * Gather a list of available compendium packs with RollTables
    */
-  let tableCompendiumNames = { '': '-' }
-  let tableCompendiums = []
+  const tableCompendiumNames = { '': '-' }
+  const tableCompendiums = []
   game.packs.forEach(function (pack) {
-    if (pack.metadata.entity == 'RollTable') {
+    if (pack.metadata.entity === 'RollTable') {
       tableCompendiums.push(pack)
       tableCompendiumNames[pack.metadata.package + '.' + pack.metadata.name] = pack.metadata.label
     }
@@ -40,7 +40,7 @@ export const registerSystemSettings = async function () {
   /**
    * Table to use for fumbles
    */
-  let rollTables = { '' : '-' }
+  const rollTables = { '': '-' }
   for (const pack of tableCompendiums) {
     await pack.getIndex()
     pack.index.forEach(function (value, key, map) {
@@ -69,4 +69,3 @@ export const registerSystemSettings = async function () {
     config: true
   })
 }
-
