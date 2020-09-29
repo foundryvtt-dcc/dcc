@@ -48,6 +48,7 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
@@ -340,6 +341,9 @@
                          editable=editable}}
             </div>
         </div>
+
+        {{!-- Spells Tab --}}
+        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
     </section>
 </form>
 
