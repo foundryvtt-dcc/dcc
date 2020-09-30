@@ -318,7 +318,8 @@
       "equipment",
       "mount",
       "spell",
-      "treasure"
+      "treasure",
+      "skill"
     ],
     "templates": {
       "itemDescription": {
@@ -429,6 +430,17 @@
         "summary": "",
         "description": ""
       }
+    },
+    "skill": {
+      "templates": [
+        "itemDescription"
+      ],
+      "useAbility": false,
+      "useDie": false,
+      "useValue": true,
+      "ability": "int",
+      "die": "1d20",
+      "value": "+0"
     }
   }
 }

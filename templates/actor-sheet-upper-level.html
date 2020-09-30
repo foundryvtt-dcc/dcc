@@ -11,7 +11,8 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a class="item" data-tab="class">{{localize "DCC.UnknownClass"}}</a>
+        <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
+        <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
@@ -24,16 +25,15 @@
         {{!-- Equipment Tab --}}
         {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
 
+        {{!-- Spells Tab --}}
+        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
+
+        {{!-- Skills Tab --}}
+        {{> systems/dcc/templates/actor-partial-skills.html }}
+
         {{!-- Notes Tab --}}
         {{> systems/dcc/templates/actor-partial-pc-notes.html }}
 
-        {{!-- Class Tab --}}
-        <div class="tab" data-group="primary" data-tab="class">
-            <h4 class="class-label">{{localize "DCC.UnknownClass"}}</h4>
-            <div class="class">
-              <h1>{{localize "DCC.UnknownClass"}}</h1>
-            </div>
-        </div>
     </section>
 </form>
 

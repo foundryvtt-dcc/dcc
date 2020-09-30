@@ -169,7 +169,24 @@ class DCCActor extends Actor {
    * @param {String}  skillId       The skill ID (e.g. "sneakSilently")
    */
   rollSkillCheck (skillId) {
-    const skill = this.data.data.skills[skillId]
+    let skill = this.data.data.skills[skillId]
+    if (!skill) {
+      const skillItem = this.itemTypes.skill.find(i => i.name === skillId)
+      if (skillItem) {
+        skill = {
+          label: skillItem.name
+        }
+        if (skillItem.data.data.useAbility) {
+          skill.ability = skillItem.data.data.ability
+        }
+        if (skillItem.data.data.useDie) {
+          skill.die = skillItem.data.data.die
+        }
+        if (skillItem.data.data.useValue) {
+          skill.value = skillItem.data.data.value
+        }
+      }
+    }
     const die = skill.die || this.data.data.attributes.actionDice.value
     const ability = skill.ability || null
     var abilityLabel = ''

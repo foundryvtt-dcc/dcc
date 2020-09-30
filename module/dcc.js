@@ -58,6 +58,7 @@ Hooks.once('init', async function () {
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard)
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf)
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf)
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric)
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet)
 
@@ -67,6 +68,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/actor-partial-pc-common.html',
     'systems/dcc/templates/actor-partial-pc-equipment.html',
     'systems/dcc/templates/actor-partial-pc-notes.html',
+    'systems/dcc/templates/actor-partial-skills.html',
     'systems/dcc/templates/actor-partial-wizard-spells.html',
     'systems/dcc/templates/actor-partial-cleric-spells.html',
     'systems/dcc/templates/item-partial-header.html'

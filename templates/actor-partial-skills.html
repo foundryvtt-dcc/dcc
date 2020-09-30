@@ -1,0 +1,34 @@
+{{!-- Spells Tab --}}
+<div class="tab skills" data-group="primary" data-tab="skills">
+    <h4 class="class-label">{{localize "DCC.Skills"}}</h4>
+    <div class="skill-controls">
+      <a class="item-control item-create" title="Create skill" data-type="skill"><i class="fas fa-plus"></i> Add</a>
+    </div>
+    <div class="class">
+        <div class="skills-container">
+            <ol class="item-list">
+                {{#each actor.skills as |skill id|}}
+                <div class="wide flexrow skill-item item"
+                     data-item-id="{{skill._id}}" data-skill="{{skill.name}}">
+                    <label class="skill-check rollable" for="skill.data.value">{{skill.name}}</label>
+                    {{#if skill.data.useDie}}
+                    <input type="text" id="skill.data.die"
+                           name="itemUpdates.{{skill._id}}.data.die"
+                           value="{{skill.data.die}}" data-dtype="String"/>
+                    {{/if}}
+                    {{#if skill.data.useValue}}
+                    <input type="text" id="skill.data.value"
+                           name="itemUpdates.{{skill._id}}.data.value"
+                           value="{{numberFormat skill.data.value decimals=0 sign=true}}"
+                           data-dtype="Number"/>
+                    {{/if}}
+                    <div class="item-controls">
+                        <a class="item-control item-edit" title="Edit Item"><i class="fas fa-edit"></i></a>
+                        <a class="item-control item-delete" title="Delete Item"><i class="fas fa-trash"></i></a>
+                    </div>
+                </div>
+                {{/each}}
+            </ol>
+        </div>
+    </div>
+</div>

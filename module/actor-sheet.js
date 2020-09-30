@@ -123,6 +123,7 @@ class DCCActorSheet extends ActorSheet {
       4: [],
       5: []
     }
+    const skills = []
     const treasure = []
     const coins = []
 
@@ -159,6 +160,8 @@ class DCCActorSheet extends ActorSheet {
         if (i.data.level !== undefined) {
           spells[i.data.level].push(i)
         }
+      } else if (i.type === 'skill') {
+        skills.push(i)
       } else if (i.type === 'treasure') {
         if (i.data.isCoins) {
           coins.push(i)
@@ -188,6 +191,7 @@ class DCCActorSheet extends ActorSheet {
     actorData.ammunition = ammunition
     actorData.mounts = mounts
     actorData.spells = spells
+    actorData.skills = skills
     actorData.treasure = treasure
   }
 
@@ -681,7 +685,8 @@ class DCCActorSheet extends ActorSheet {
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
             parentElement.classList.contains('armor') ||
-            parentElement.classList.contains('spell-item')) {
+            parentElement.classList.contains('spell-item') ||
+            parentElement.classList.contains('skill-item')) {
           const itemId = parentElement.dataset.itemId
           const item = this.actor.getOwnedItem(itemId)
           if (item) {

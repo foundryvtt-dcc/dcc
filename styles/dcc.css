@@ -988,6 +988,9 @@
     flex: 0 0 60px;
     padding-left: 10px; }
 
+.dcc .skill-controls {
+  text-align: right; }
+
 /* ----------------------------------------- */
 /*  Items Sheet                              */
 /* ----------------------------------------- */

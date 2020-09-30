@@ -15,20 +15,31 @@
       <div class="grid grid-3col">
         <div class="resource">
           <label class="resource-label">{{localize "DCC.SkillAbility"}}</label>
-          <input type="text" name="data.ability" value="{{data.ability}}"
-                 {{#if data.useAbility}}{{else}}disabled{{/if}}
-                 data-dtype="String"/>
+          <div>
+            <select name="data.ability" id="data.ability"
+                    {{#if data.useAbility}}{{else}}disabled{{/if}}>
+              {{#select data.ability}}
+              <option value="str">Strength</option>
+              <option value="agl">Agility</option>
+              <option value="sta">Stamina</option>
+              <option value="per">Personality</option>
+              <option value="int">Intelligence</option>
+              <option value="lck">Luck</option>
+              {{/select}}
+            </select>
+          </div>
         </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.SkillDie"}}</label>
           <input type="text" name="data.die" value="{{data.die}}"
-                 {{#if data.useAbility}}{{else}}disabled{{/if}}
+                 {{#if data.useDie}}{{else}}disabled{{/if}}
                  data-dtype="String"/>
         </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.SkillValue"}}</label>
-          <input type="text" name="data.value" value="{{data.value}}"
-                 {{#if data.useAbility}}{{else}}disabled{{/if}}
+          <input type="text" name="data.value"
+                 value="{{numberFormat data.value decimals=0 sign=true}}"
+                 {{#if data.useValue}}{{else}}disabled{{/if}}
                  data-dtype="Number"/>
         </div>
 
