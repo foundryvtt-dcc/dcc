@@ -21,6 +21,7 @@ class DCCActorSheet extends ActorSheet {
       scrollY: [
         '.tab.character',
         '.tab.equipment .equipment-container',
+        '.tab.skills',
         '.tab.spells'
       ]
     })
