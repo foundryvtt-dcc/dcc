@@ -272,7 +272,9 @@
           "computeAC": false,
           "baseACAbility": "agl",
           "sortInventory" : true,
-          "removeEmptyItems" : true
+          "removeEmptyItems" : true,
+          "showSpells" : false,
+          "showSkills" : false
         }
       }
     },

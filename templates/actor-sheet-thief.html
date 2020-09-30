@@ -13,6 +13,9 @@
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
         <a class="item" data-tab="class">{{localize "DCC.Thief"}}</a>
         <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
+        {{#if data.config.showSpells}}
+        <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
+        {{/if}}
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
@@ -27,6 +30,9 @@
 
         {{!-- Skills Tab --}}
         {{> systems/dcc/templates/actor-partial-skills.html }}
+
+        {{!-- Spells Tab --}}
+        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
 
         {{!-- Notes Tab --}}
         {{> systems/dcc/templates/actor-partial-pc-notes.html }}
