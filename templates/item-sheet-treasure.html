@@ -8,44 +8,30 @@
                 </div>
                 <label class="item-type" for="name">{{localize item.data.typeString}}</label>
             </div>
+
+            <div class="flexrow">
+              <div class="resource">
+                <label class="resource-label" for="data.isCoins">{{localize "DCC.AsCoins"}}</label>
+                <input type="checkbox" name="data.isCoins" id="data.isCoins"
+                    {{checked data.isCoins}} data-dtype="Boolean"/>
+              </div>
+            </div>
         </div>
     </header>
 
     <section class="sheet-body item">
       <div class="grid grid-3col">
         <div class="resource">
-          <label class="resource-label">{{localize "DCC.SkillAbility"}}</label>
-          <input type="text" name="data.ability" value="{{data.ability}}"
-                 {{#if data.useAbility}}{{else}}disabled{{/if}}
-                 data-dtype="String"/>
+          <label class="resource-label">{{localize "DCC.CurrencyGP"}}</label>
+          <input type="text" name="data.value.gp" value="{{data.value.gp}}" data-dtype="Number"/>
         </div>
         <div class="resource">
-          <label class="resource-label">{{localize "DCC.SkillDie"}}</label>
-          <input type="text" name="data.die" value="{{data.die}}"
-                 {{#if data.useAbility}}{{else}}disabled{{/if}}
-                 data-dtype="String"/>
+          <label class="resource-label">{{localize "DCC.CurrencySP"}}</label>
+          <input type="text" name="data.value.sp" value="{{data.value.sp}}" data-dtype="Number"/>
         </div>
         <div class="resource">
-          <label class="resource-label">{{localize "DCC.SkillValue"}}</label>
-          <input type="text" name="data.value" value="{{data.value}}"
-                 {{#if data.useAbility}}{{else}}disabled{{/if}}
-                 data-dtype="Number"/>
-        </div>
-
-        <div class="resource">
-          <label class="resource-label">{{localize "DCC.SkillUseAbility"}}</label>
-          <input type="checkbox" name="data.useAbility" {{checked data.useAbility}}
-                 data-dtype="Boolean"/>
-        </div>
-        <div class="resource">
-          <label class="resource-label">{{localize "DCC.SkillUseDie"}}</label>
-          <input type="checkbox" name="data.useDie" {{checked data.useDie}}
-                 data-dtype="Boolean"/>
-        </div>
-        <div class="resource">
-          <label class="resource-label">{{localize "DCC.SkillUseValue"}}</label>
-          <input type="checkbox" name="data.useValue" {{checked data.useValue}}
-                 data-dtype="Boolean"/>
+          <label class="resource-label">{{localize "DCC.CurrencyCP"}}</label>
+          <input type="text" name="data.value.cp" value="{{data.value.cp}}" data-dtype="Number"/>
         </div>
       </div>
     </section>
