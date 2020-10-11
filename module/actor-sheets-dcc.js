@@ -102,6 +102,20 @@ class DCCActorSheetElf extends DCCActorSheet {
   }
 }
 
+/**
+ * Extend the zero-level/NPC sheet for a generic upper level character
+ * @extends {DCCActorSheet}
+ */
+class DCCActorSheetGeneric extends DCCActorSheet {
+  /** @override */
+  getData () {
+    const data = super.getData()
+    this.options.template = 'systems/dcc/templates/actor-sheet-upper-level.html'
+    data.data.class.className = 'Generic'
+    return data
+  }
+}
+
 export {
   DCCActorSheetCleric,
   DCCActorSheetThief,
@@ -109,5 +123,6 @@ export {
   DCCActorSheetWarrior,
   DCCActorSheetWizard,
   DCCActorSheetDwarf,
-  DCCActorSheetElf
+  DCCActorSheetElf,
+  DCCActorSheetGeneric
 }

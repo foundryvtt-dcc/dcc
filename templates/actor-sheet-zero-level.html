@@ -43,6 +43,12 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        {{#if data.config.showSpells}}
+        <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
+        {{/if}}
+        {{#if data.config.showSkills}}
+        <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
+        {{/if}}
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
@@ -329,6 +335,12 @@
           </div>
         </div>
         {{!-- End Equipment Tab --}}
+
+        {{!-- Skills Tab --}}
+        {{> systems/dcc/templates/actor-partial-skills.html }}
+
+        {{!-- Spells Tab --}}
+        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
 
         {{!-- Notes Tab --}}
         <div class="tab" data-group="primary" data-tab="notes">

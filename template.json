@@ -123,7 +123,6 @@
         "class": {
           "spellCheck": 1,
           "spellCheckAbility": "per",
-          "spells": [],
           "deity": null,
           "disapproval": "1",
           "disapprovalTable": "Disapproval"
@@ -234,7 +233,6 @@
         "class": {
           "spellCheck": 1,
           "spellCheckAbility": "int",
-          "spells": [],
           "patron": null,
           "familiar": null,
           "corruption": []
@@ -274,7 +272,9 @@
           "computeAC": false,
           "baseACAbility": "agl",
           "sortInventory" : true,
-          "removeEmptyItems" : true
+          "removeEmptyItems" : true,
+          "showSpells" : false,
+          "showSkills" : false
         }
       }
     },
@@ -306,7 +306,10 @@
         },
         "hitDice": "1d6"
       },
-      "attacks": []
+      "class": {
+        "spellCheck": 1,
+        "spellCheckAbility": "int"
+      }
     }
   },
   "Item": {
@@ -317,7 +320,8 @@
       "equipment",
       "mount",
       "spell",
-      "treasure"
+      "treasure",
+      "skill"
     ],
     "templates": {
       "itemDescription": {
@@ -428,6 +432,22 @@
         "summary": "",
         "description": ""
       }
+    },
+    "skill": {
+      "templates": [
+        "itemDescription"
+      ],
+      "config" : {
+        "freeform": false,
+        "useAbility": false,
+        "useDie": false,
+        "useValue": true,
+        "showLastResult": false
+      },
+      "ability": "int",
+      "die": "1d20",
+      "value": "+0",
+      "lastResult": "0"
     }
   }
 }

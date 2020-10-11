@@ -90,6 +90,7 @@ DCC.items = {
   equipment: 'DCC.Equipment',
   mount: 'DCC.Mount',
   spell: 'DCC.Spell',
+  skill: 'DCC.Skill',
   treasure: 'DCC.Treasure'
 }
 

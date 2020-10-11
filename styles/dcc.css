@@ -964,6 +964,17 @@
     background-size: 22px 22px;
     background-position: center;
     background-repeat: no-repeat; }
+  .dcc .item-list .skill-name {
+    flex: 1 0 1; }
+  .dcc .item-list .skill-die {
+    flex: 0 0 60px; }
+  .dcc .item-list .skill-modifier {
+    flex: 0 0 60px; }
+  .dcc .item-list .skill-last-roll {
+    flex: 0 0 60px;
+    text-align: right; }
+  .dcc .item-list .skill-freeform {
+    flex: 0 0 180px; }
   .dcc .item-list .item-level {
     flex: 0 0 60px;
     text-align: center; }
@@ -987,6 +998,9 @@
   .dcc .item-list .item-controls {
     flex: 0 0 60px;
     padding-left: 10px; }
+
+.dcc .skill-controls {
+  text-align: right; }
 
 /* ----------------------------------------- */
 /*  Items Sheet                              */

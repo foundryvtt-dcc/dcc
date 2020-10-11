@@ -169,7 +169,25 @@ class DCCActor extends Actor {
    * @param {String}  skillId       The skill ID (e.g. "sneakSilently")
    */
   rollSkillCheck (skillId) {
-    const skill = this.data.data.skills[skillId]
+    let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
+    let skillItem = null
+    if (!skill) {
+      skillItem = this.itemTypes.skill.find(i => i.name === skillId)
+      if (skillItem) {
+        skill = {
+          label: skillItem.name
+        }
+        if (skillItem.data.data.config.useAbility) {
+          skill.ability = skillItem.data.data.ability
+        }
+        if (skillItem.data.data.config.useDie) {
+          skill.die = skillItem.data.data.die
+        }
+        if (skillItem.data.data.config.useValue) {
+          skill.value = skillItem.data.data.value
+        }
+      }
+    }
     const die = skill.die || this.data.data.attributes.actionDice.value
     const ability = skill.ability || null
     var abilityLabel = ''
@@ -189,6 +207,11 @@ class DCCActor extends Actor {
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
     })
+
+    // Store last result if required
+    if (skillItem && skillItem.data.data.config.showLastResult) {
+      skillItem.update({ 'data.lastResult': roll.total })
+    }
   }
 
   /**
@@ -330,7 +353,7 @@ class DCCActor extends Actor {
     /* Roll the Attack */
     const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
     roll.roll()
-    const rollHTML = this._formatRoll(roll, formula)
+    const rollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms))
 
     const d20RollResult = roll.dice[0].total
 
@@ -411,11 +434,15 @@ class DCCActor extends Actor {
     }
 
     /* Roll the Damage */
-    const damageRoll = new Roll(weapon.data.data.damage, { ab: attackBonus })
+    let damageFormula = weapon.data.data.damage
+    if (backstab && weapon.data.data.backstab) {
+      damageFormula = weapon.data.data.backstabDamage
+    }
+    const damageRoll = new Roll(damageFormula, { ab: attackBonus })
     damageRoll.roll()
     const damageRollData = escape(JSON.stringify(damageRoll))
     const damageRollTotal = damageRoll.total
-    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${weapon.data.data.damage}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${Roll.cleanFormula(damageRoll.terms)}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
 
     /* Emote attack results */
     const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'

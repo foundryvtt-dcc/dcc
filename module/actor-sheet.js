@@ -21,6 +21,7 @@ class DCCActorSheet extends ActorSheet {
       scrollY: [
         '.tab.character',
         '.tab.equipment .equipment-container',
+        '.tab.skills',
         '.tab.spells'
       ]
     })
@@ -123,6 +124,7 @@ class DCCActorSheet extends ActorSheet {
       4: [],
       5: []
     }
+    const skills = []
     const treasure = []
     const coins = []
 
@@ -159,6 +161,8 @@ class DCCActorSheet extends ActorSheet {
         if (i.data.level !== undefined) {
           spells[i.data.level].push(i)
         }
+      } else if (i.type === 'skill') {
+        skills.push(i)
       } else if (i.type === 'treasure') {
         if (i.data.isCoins) {
           coins.push(i)
@@ -188,6 +192,7 @@ class DCCActorSheet extends ActorSheet {
     actorData.ammunition = ammunition
     actorData.mounts = mounts
     actorData.spells = spells
+    actorData.skills = skills
     actorData.treasure = treasure
   }
 
@@ -573,6 +578,7 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const skill = event.currentTarget.parentElement.dataset.skill
     this.actor.rollSkillCheck(skill)
+    this.render(false)
   }
 
   /**
@@ -676,12 +682,17 @@ class DCCActorSheet extends ActorSheet {
   _updateObject (event, formData) {
     // Handle owned item updates separately
     if (event.currentTarget) {
-      const parentElement = event.currentTarget.parentElement
+      let parentElement = event.currentTarget.parentElement
       const expanded = expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
             parentElement.classList.contains('armor') ||
-            parentElement.classList.contains('spell-item')) {
+            parentElement.classList.contains('spell-item') ||
+            parentElement.classList.contains('skill-field')) {
+          // Handle extra nesting in skill lists
+          if (parentElement.classList.contains('skill-field')) {
+            parentElement = parentElement.parentElement
+          }
           const itemId = parentElement.dataset.itemId
           const item = this.actor.getOwnedItem(itemId)
           if (item) {
