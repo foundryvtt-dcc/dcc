@@ -578,6 +578,7 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const skill = event.currentTarget.parentElement.dataset.skill
     this.actor.rollSkillCheck(skill)
+    this.render(false)
   }
 
   /**
@@ -681,13 +682,17 @@ class DCCActorSheet extends ActorSheet {
   _updateObject (event, formData) {
     // Handle owned item updates separately
     if (event.currentTarget) {
-      const parentElement = event.currentTarget.parentElement
+      let parentElement = event.currentTarget.parentElement
       const expanded = expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
             parentElement.classList.contains('armor') ||
             parentElement.classList.contains('spell-item') ||
-            parentElement.classList.contains('skill-item')) {
+            parentElement.classList.contains('skill-field')) {
+          // Handle extra nesting in skill lists
+          if (parentElement.classList.contains('skill-field')) {
+            parentElement = parentElement.parentElement
+          }
           const itemId = parentElement.dataset.itemId
           const item = this.actor.getOwnedItem(itemId)
           if (item) {

@@ -1094,6 +1094,27 @@ $border-style: 2px groove #eeede0;
     background-repeat: no-repeat;
   }
 
+  .skill-name {
+    flex: 1 0 1;
+  }
+
+  .skill-die {
+    flex: 0 0 60px;
+  }
+
+  .skill-modifier {
+    flex: 0 0 60px;
+  }
+
+  .skill-last-roll {
+    flex: 0 0 60px;
+    text-align: right;
+  }
+
+  .skill-freeform {
+    flex: 0 0 180px;
+  }
+
   .item-level {
     flex: 0 0 60px;
     text-align: center;

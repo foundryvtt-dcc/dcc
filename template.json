@@ -442,13 +442,12 @@
         "useAbility": false,
         "useDie": false,
         "useValue": true,
-        "showLastResult": false,
-        "wide": false
+        "showLastResult": false
       },
       "ability": "int",
       "die": "1d20",
       "value": "+0",
-      "lastResult": ""
+      "lastResult": "0"
     }
   }
 }

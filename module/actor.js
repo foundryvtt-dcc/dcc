@@ -170,8 +170,9 @@ class DCCActor extends Actor {
    */
   rollSkillCheck (skillId) {
     let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
+    let skillItem = null
     if (!skill) {
-      const skillItem = this.itemTypes.skill.find(i => i.name === skillId)
+      skillItem = this.itemTypes.skill.find(i => i.name === skillId)
       if (skillItem) {
         skill = {
           label: skillItem.name
@@ -206,6 +207,11 @@ class DCCActor extends Actor {
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
     })
+
+    // Store last result if required
+    if (skillItem && skillItem.data.data.config.showLastResult) {
+      skillItem.update({'data.lastResult': roll.total})
+    }
   }
 
   /**
