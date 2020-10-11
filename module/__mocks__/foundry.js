@@ -194,6 +194,9 @@ global.rollRollMock = jest.fn(() => {
   // console.log('Mock Roll: roll was called')
   return { total: 1 }
 })
+global.rollCleanFormulaMock = jest.fn((terms) => {
+  return terms
+})
 global.Roll = jest.fn((formula, data = {}) => {
   return {
     dice: [{ results: [10], options: {} }],
@@ -201,6 +204,7 @@ global.Roll = jest.fn((formula, data = {}) => {
     roll: global.rollRollMock
   }
 }).mockName('Roll')
+global.Roll.cleanFormula = global.rollCleanFormulaMock
 
 /**
  * ChatMessage

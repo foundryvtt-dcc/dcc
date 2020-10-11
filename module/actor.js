@@ -210,7 +210,7 @@ class DCCActor extends Actor {
 
     // Store last result if required
     if (skillItem && skillItem.data.data.config.showLastResult) {
-      skillItem.update({'data.lastResult': roll.total})
+      skillItem.update({ 'data.lastResult': roll.total })
     }
   }
 
