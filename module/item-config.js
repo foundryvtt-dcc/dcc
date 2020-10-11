@@ -15,6 +15,8 @@ export class DCCItemConfig extends FormApplication {
         return 'systems/dcc/templates/dialog-item-config-weapon.html'
       case 'spell':
         return 'systems/dcc/templates/dialog-item-config-spell.html'
+      case 'skill':
+        return 'systems/dcc/templates/dialog-item-config-skill.html'
       default:
     }
   }

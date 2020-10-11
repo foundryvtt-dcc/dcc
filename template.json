@@ -437,12 +437,18 @@
       "templates": [
         "itemDescription"
       ],
-      "useAbility": false,
-      "useDie": false,
-      "useValue": true,
+      "config" : {
+        "freeform": false,
+        "useAbility": false,
+        "useDie": false,
+        "useValue": true,
+        "showLastResult": false,
+        "wide": false
+      },
       "ability": "int",
       "die": "1d20",
-      "value": "+0"
+      "value": "+0",
+      "lastResult": ""
     }
   }
 }

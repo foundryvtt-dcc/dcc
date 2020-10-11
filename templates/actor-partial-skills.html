@@ -11,12 +11,12 @@
                 <div class="wide flexrow skill-item item"
                      data-item-id="{{skill._id}}" data-skill="{{skill.name}}">
                     <label class="skill-check rollable" for="skill.data.value">{{skill.name}}</label>
-                    {{#if skill.data.useDie}}
+                    {{#if skill.data.config.useDie}}
                     <input type="text" id="skill.data.die"
                            name="itemUpdates.{{skill._id}}.data.die"
                            value="{{skill.data.die}}" data-dtype="String"/>
                     {{/if}}
-                    {{#if skill.data.useValue}}
+                    {{#if skill.data.config.useValue}}
                     <input type="text" id="skill.data.value"
                            name="itemUpdates.{{skill._id}}.data.value"
                            value="{{numberFormat skill.data.value decimals=0 sign=true}}"

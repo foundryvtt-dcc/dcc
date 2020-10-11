@@ -1,0 +1,39 @@
+<form class="item config-dialog" autocomplete="off">
+  <div class="form-group">
+    <label for="data.config.freeform">{{localize "DCC.SkillFreeform"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.freeform" id="data.config.freeform"
+             {{checked data.config.freeform}} data-dtype="Boolean"/>
+    </div>
+    <label for="data.config.useAbility">{{localize "DCC.SkillUseAbility"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.useAbility" id="data.config.useAbility"
+             {{checked data.config.useAbility}} data-dtype="Boolean"/>
+    </div>
+    <label for="data.config.useDie">{{localize "DCC.SkillUseDie"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.useDie" id="data.config.useDie"
+             {{checked data.config.useDie}} data-dtype="Boolean"/>
+    </div>
+    <label for="data.config.useValue">{{localize "DCC.SkillUseValue"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.useValue" id="data.config.useValue"
+             {{checked data.config.useValue}} data-dtype="Boolean"/>
+    </div>
+    <label for="data.config.showLastResult">{{localize "DCC.SkillShowLastResult"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.showLastResult" id="data.config.showLastResult"
+             {{checked data.config.showLastResult}} data-dtype="Boolean"/>
+    </div>
+    <label for="data.config.wide">{{localize "DCC.SkillWide"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.wide" id="data.config.wide"
+             {{checked data.config.wide}} data-dtype="Boolean"/>
+    </div>
+  </div>
+  <footer class="sheet-footer">
+    <button type="submit">
+      <i class="fas fa-save"></i>{{localize "DCC.SaveItemConfig"}}
+    </button>
+  </footer>
+</form>
