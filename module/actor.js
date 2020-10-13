@@ -353,7 +353,8 @@ class DCCActor extends Actor {
     /* Roll the Attack */
     const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
     roll.roll()
-    const rollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms))
+    // TODO: Remove call to roll.parts - it's deprecated in favour of roll.terms, but is required for backwards compatibility
+    const rollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms || roll.formula))
 
     const d20RollResult = roll.dice[0].total
 
@@ -442,7 +443,7 @@ class DCCActor extends Actor {
     damageRoll.roll()
     const damageRollData = escape(JSON.stringify(damageRoll))
     const damageRollTotal = damageRoll.total
-    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${Roll.cleanFormula(damageRoll.terms)}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${Roll.cleanFormula(damageRoll.terms || damageRoll.formula)}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
 
     /* Emote attack results */
     const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
