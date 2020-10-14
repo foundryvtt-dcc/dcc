@@ -1114,3 +1114,9 @@
   text-shadow: none;
   border-bottom: none;
   margin-bottom: 11px; }
+
+/* ----------------------------------------- */
+/*  Fix sheet tabs in 0.7.4                  */
+/* ----------------------------------------- */
+.dcc.sheet .sheet-tabs.tabs {
+  border: none; }
