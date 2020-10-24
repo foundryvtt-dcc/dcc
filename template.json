@@ -344,6 +344,8 @@
       },
       "currency": {
         "value": {
+          "pp": 0,
+          "ep": 0,
           "gp": 0,
           "sp": 0,
           "cp": 0

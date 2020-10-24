@@ -1010,12 +1010,16 @@
   .dcc .item-list .item-is-coins {
     flex: 0 1 100px;
     text-align: left; }
+  .dcc .item-list .item-pp {
+    flex: 0 0 50px; }
+  .dcc .item-list .item-ep {
+    flex: 0 0 50px; }
   .dcc .item-list .item-gp {
-    flex: 0 0 70px; }
+    flex: 0 0 50px; }
   .dcc .item-list .item-sp {
-    flex: 0 0 70px; }
+    flex: 0 0 50px; }
   .dcc .item-list .item-cp {
-    flex: 0 0 70px; }
+    flex: 0 0 50px; }
   .dcc .item-list .item-controls {
     flex: 0 0 60px;
     padding-left: 10px; }
@@ -1051,14 +1055,20 @@
   grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px; }
 
 .dcc.item .sheet-body.treasure {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 85px 50px minmax(80px, auto); }
+
+.dcc.item .value-row {
   height: 150px;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: space-between; }
-  .dcc.item .sheet-body.treasure .resource {
+  .dcc.item .value-row .resource {
     flex: 3 0 75px; }
-  .dcc.item .sheet-body.treasure .conversions {
+  .dcc.item .value-row .conversions {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;

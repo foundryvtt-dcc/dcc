@@ -95,8 +95,9 @@ class DCCItem extends Item {
   /**
    * Roll to determine the value of this item
    */
-  rollValue() {
+  async rollValue() {
     const updates = {}
+    const valueRolls = {}
 
     for (const currency in CONFIG.DCC.currencies) {
       const formula = this.data.data.value[currency]
@@ -105,10 +106,28 @@ class DCCItem extends Item {
         const roll = new Roll(formula.toString())
         roll.evaluate()
         updates['data.value.' + currency] = roll.total
+        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
       }
     }
+
+    const speaker = { alias: this.actor.name, _id: this.actor._id }
+    const messageData = {
+      user: game.user._id,
+      speaker: speaker,
+      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      content: game.i18n.format('DCC.ResolveValueEmote', {
+        itemName: this.name,
+        pp: valueRolls.pp,
+        ep: valueRolls.ep,
+        gp: valueRolls.gp,
+        sp: valueRolls.sp,
+        cp: valueRolls.cp,
+      }),
+      sound: CONFIG.sounds.dice
+    }
+    await CONFIG.ChatMessage.entityClass.create(messageData)
 
     this.update(updates)
   }

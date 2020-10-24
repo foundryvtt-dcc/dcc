@@ -45,7 +45,11 @@ export class DCCItemSheet extends ItemSheet {
     data.item.data.typeString = CONFIG.DCC.items[data.item.type] || 'DCC.Unknown'
 
     if (data.item.type === 'treasure') {
-      data.needsRoll = this.item.needsValueRoll()
+      // Allow rolling the item's value if it's unresolved and owned by an actor
+      data.unresolved = this.item.needsValueRoll()
+      data.allowResolve = data.unresolved && !!this.actor && !this.limited
+      // Only allow currency conversion on items representing coins that have a resolved value
+      data.allowConversions = data.item.data.isCoins && !data.unresolved && !this.limited
     }
 
     return data
@@ -55,7 +59,7 @@ export class DCCItemSheet extends ItemSheet {
   setPosition (options = {}) {
     const position = super.setPosition(options)
     const sheetBody = this.element.find('.sheet-body')
-    const bodyHeight = position.height - 192
+    const bodyHeight = position.height - 160
     sheetBody.css('height', bodyHeight)
     return position
   }

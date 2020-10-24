@@ -1165,16 +1165,24 @@ $border-style: 2px groove #eeede0;
     text-align: left;
   }
 
+  .item-pp {
+    flex: 0 0 50px;
+  }
+
+  .item-ep {
+    flex: 0 0 50px;
+  }
+
   .item-gp {
-    flex: 0 0 70px;
+    flex: 0 0 50px;
   }
 
   .item-sp {
-    flex: 0 0 70px;
+    flex: 0 0 50px;
   }
 
   .item-cp {
-    flex: 0 0 70px;
+    flex: 0 0 50px;
   }
 
   .item-controls {
@@ -1224,6 +1232,13 @@ $border-style: 2px groove #eeede0;
   }
 
   .sheet-body.treasure {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 85px 50px minmax(80px, auto);
+  }
+
+  .value-row {
     height: 150px;
     display: flex;
     flex-direction: row;
