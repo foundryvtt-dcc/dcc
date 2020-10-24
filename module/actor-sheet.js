@@ -292,6 +292,13 @@ class DCCActorSheet extends ActorSheet {
         li.addEventListener('dragstart', dragHandler, false)
       })
 
+      // Action Dice
+      html.find('.action-dice').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+
       // Weapons
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
       html.find('.backstab-button').click(this._onRollWeaponAttack.bind(this))
@@ -469,6 +476,14 @@ class DCCActorSheet extends ActorSheet {
         type: 'Attack Bonus',
         actorId: this.actor.id,
         data: {}
+      }
+    } else if (classes.contains('action-dice')) {
+      dragData = {
+        type: 'Action Dice',
+        actorId: this.actor.id,
+        data: {
+          die: this.actor.data.data.attributes.actionDice.value
+        }
       }
     } else if (classes.contains('weapon-button') || classes.contains('backstab-button')) {
       const li = event.currentTarget.parentElement

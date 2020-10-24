@@ -30,6 +30,7 @@
   "DCC.Action": "Action",
   "DCC.ActionAbil": "Ability Check",
   "DCC.ActionDice": "Action Dice",
+  "DCC.ActionDiceMacroName": "Action Dice ({die})",
   "DCC.ActionHeal": "Healing",
   "DCC.ActionMSAK": "Melee Spell Attack",
   "DCC.ActionMWAK": "Melee Weapon Attack",

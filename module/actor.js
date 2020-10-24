@@ -323,6 +323,15 @@ class DCCActor extends Actor {
     }
   }
 
+  /*
+   * Set Action Dice
+   */
+  async setActionDice (die) {
+    this.update({
+      'data.attributes.actionDice.value': die
+    })
+  }
+
   /**
    * Roll a Weapon Attack
    * @param {string} weaponId     The weapon name or slot id (e.g. "m1", "r1")
