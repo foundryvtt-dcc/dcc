@@ -36,7 +36,7 @@ test('roll ability check', () => {
 
   actor.rollAbilityCheck('str')
   expect(Roll).toHaveBeenCalledTimes(1)
-  expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { abilMod: -1, critical: 20 })
+  expect(Roll).toHaveBeenCalledWith('@die+@abilMod', { die: '1d20', abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'AbilityStr Check', speaker: actor })
 
   // Check that rollUnder option is interpreted correctly
@@ -48,7 +48,7 @@ test('roll ability check', () => {
   // ...both ways
   actor.rollAbilityCheck('lck', { rollUnder: false })
   expect(Roll).toHaveBeenCalledTimes(3)
-  expect(Roll).toHaveBeenCalledWith('1d20+@abilMod', { abilMod: -1, critical: 20 })
+  expect(Roll).toHaveBeenCalledWith('@die+@abilMod', { die: '1d20', abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 })
 
@@ -57,17 +57,17 @@ test('roll saving throw', () => {
 
   actor.rollSavingThrow('frt')
   expect(Roll).toHaveBeenCalledTimes(1)
-  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { saveMod: -1 })
+  expect(Roll).toHaveBeenCalledWith('@die+@saveMod', { die: '1d20', saveMod: -1 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesFortitude Save', speaker: actor })
 
   actor.rollSavingThrow('ref')
   expect(Roll).toHaveBeenCalledTimes(2)
-  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { saveMod: 0 })
+  expect(Roll).toHaveBeenCalledWith('@die+@saveMod', { die: '1d20', saveMod: 0 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesReflex Save', speaker: actor })
 
   actor.rollSavingThrow('wil')
   expect(Roll).toHaveBeenCalledTimes(3)
-  expect(Roll).toHaveBeenCalledWith('1d20+@saveMod', { saveMod: +12 })
+  expect(Roll).toHaveBeenCalledWith('@die+@saveMod', { die: '1d20', saveMod: +12 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesWill Save', speaker: actor })
 })
 
@@ -76,7 +76,7 @@ test('roll initiative', () => {
 
   actor.rollInitiative()
   expect(Roll).toHaveBeenCalledTimes(1)
-  expect(Roll).toHaveBeenCalledWith('1d20+@init', { init: -1 })
+  expect(Roll).toHaveBeenCalledWith('@die+@init', { die: '1d20', init: -1 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Initiative', speaker: actor })
 })
 

@@ -162,7 +162,7 @@ export class DCCItemSheet extends ItemSheet {
   /**
    * Roll the value of this item
    */
-  _onRollValue(event) {
+  _onRollValue (event) {
     event.preventDefault()
     this.item.rollValue()
     this.render(false)
@@ -171,7 +171,7 @@ export class DCCItemSheet extends ItemSheet {
   /**
    * Convert currency upwards
    */
-  _onConvertUpward(event) {
+  _onConvertUpward (event) {
     event.preventDefault()
     this.item.convertCurrencyUpward(event.currentTarget.dataset.currency)
     this.render(false)
@@ -180,7 +180,7 @@ export class DCCItemSheet extends ItemSheet {
   /**
    * Convert currency downwards
    */
-  _onConvertDownward(event) {
+  _onConvertDownward (event) {
     event.preventDefault()
     this.item.convertCurrencyDownward(event.currentTarget.dataset.currency)
     this.render(false)

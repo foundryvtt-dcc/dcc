@@ -1,4 +1,4 @@
-/* global Item, game, ChatMessage, Roll, CONFIG */
+/* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
 
 /**
  * Extend the base Item entity for DCC RPG
@@ -70,7 +70,7 @@ class DCCItem extends Item {
    * Determine if this item needs to have its treasure value rolled
    * @return {Boolean}  True if any value field contains a rollable formula
    */
-  needsValueRoll() {
+  needsValueRoll () {
     let needsRoll = false
 
     for (const currency in CONFIG.DCC.currencies) {
@@ -95,7 +95,7 @@ class DCCItem extends Item {
   /**
    * Roll to determine the value of this item
    */
-  async rollValue() {
+  async rollValue () {
     const updates = {}
     const valueRolls = {}
 
@@ -123,7 +123,7 @@ class DCCItem extends Item {
         ep: valueRolls.ep,
         gp: valueRolls.gp,
         sp: valueRolls.sp,
-        cp: valueRolls.cp,
+        cp: valueRolls.cp
       }),
       sound: CONFIG.sounds.dice
     }
@@ -135,7 +135,7 @@ class DCCItem extends Item {
   /**
    * Shift currency to the next highest denomination
    */
-  convertCurrencyUpward(currency) {
+  convertCurrencyUpward (currency) {
     const currencyRank = CONFIG.DCC.currencyRank
     const currencyValue = CONFIG.DCC.currencyValue
     // Don't do currency conversions if the value isn't resolved
@@ -147,14 +147,14 @@ class DCCItem extends Item {
     // Make sure there's a currency to convert to
     if (rank >= 0 && rank < currencyRank.length - 1) {
       // What are we converting to?
-      const toCurrency = currencyRank[rank+1]
+      const toCurrency = currencyRank[rank + 1]
       // Calculate the conversion factor
       const conversionFactor = currencyValue[toCurrency] / currencyValue[currency]
       // Check we have enough currency
       if (this.data.data.value[currency] >= conversionFactor) {
         // Apply the conversion
         const updates = {}
-        updates[`data.value.${currency}`] = parseInt(this.data.data.value[currency]) - conversionFactor,
+        updates[`data.value.${currency}`] = parseInt(this.data.data.value[currency]) - conversionFactor
         updates[`data.value.${toCurrency}`] = parseInt(this.data.data.value[toCurrency]) + 1
         this.update(updates)
       }
@@ -164,7 +164,7 @@ class DCCItem extends Item {
   /**
    * Shift currency to the next lowest denomination
    */
-  convertCurrencyDownward(currency) {
+  convertCurrencyDownward (currency) {
     const currencyRank = CONFIG.DCC.currencyRank
     const currencyValue = CONFIG.DCC.currencyValue
     // Don't do currency conversions if the value isn't resolved
@@ -176,14 +176,14 @@ class DCCItem extends Item {
     // Make sure there's a currency to convert to
     if (rank >= 1) {
       // What are we converting to?
-      const toCurrency = currencyRank[rank-1]
+      const toCurrency = currencyRank[rank - 1]
       // Check we have enough currency
       if (this.data.data.value[currency] >= 1) {
         // Calculate the conversion factor
         const conversionFactor = currencyValue[currency] / currencyValue[toCurrency]
         // Apply the conversion
         const updates = {}
-        updates[`data.value.${currency}`] = parseInt(this.data.data.value[currency]) - 1,
+        updates[`data.value.${currency}`] = parseInt(this.data.data.value[currency]) - 1
         updates[`data.value.${toCurrency}`] = parseInt(this.data.data.value[toCurrency]) + conversionFactor
         this.update(updates)
       }
