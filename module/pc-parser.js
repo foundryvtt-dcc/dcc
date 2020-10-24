@@ -30,6 +30,12 @@ function _parseJSONPC (pcObject) {
   pc['data.abilities.per.value'] = pcObject.personalityScore || 10
   pc['data.abilities.int.value'] = pcObject.intelligenceScore || 10
   pc['data.abilities.lck.value'] = pcObject.luckScore || 10
+  pc['data.abilities.str.max'] = pc['data.abilities.str.value']
+  pc['data.abilities.agl.max'] = pc['data.abilities.agl.value']
+  pc['data.abilities.sta.max'] = pc['data.abilities.sta.value']
+  pc['data.abilities.per.max'] = pc['data.abilities.per.value']
+  pc['data.abilities.int.max'] = pc['data.abilities.int.value']
+  pc['data.abilities.lck.max'] = pc['data.abilities.lck.value']
   pc['data.attributes.ac.value'] = pcObject.armorClass || 10
   if (pcObject.hitPoints) {
     pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
