@@ -125,8 +125,9 @@ class DCCActor extends Actor {
    * @param {Object} token    The token to roll initiative for
    */
   async rollInitiative (token) {
+    const die = this.data.data.attributes.init.die || "1d20"
     const init = this.data.data.attributes.init.value
-    const roll = new Roll('1d20+@init', { init })
+    const roll = new Roll('@die+@init', { die, init })
 
     // Convert the roll to a chat message
     roll.toMessage({

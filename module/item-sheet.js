@@ -44,6 +44,10 @@ export class DCCItemSheet extends ItemSheet {
     // Lookup the localizable string for the item's type
     data.item.data.typeString = CONFIG.DCC.items[data.item.type] || 'DCC.Unknown'
 
+    if (data.item.type === 'treasure') {
+      data.needsRoll = this.item.needsValueRoll()
+    }
+
     return data
   }
 
@@ -62,10 +66,21 @@ export class DCCItemSheet extends ItemSheet {
 
     // Everything below here is only needed if the sheet is editable
     if (!this.options.editable) return
+
     // Make this droppable for RollTables if this is a spell
     if (this.item.type === 'spell') {
       this.form.ondragover = ev => this._onDragOver(ev)
       this.form.ondrop = ev => this._onDrop(ev)
+    }
+
+    // Owner only listeners
+    if (this.item.owner) {
+      // Roll value and currency conversions for treasure
+      if (this.item.type === 'treasure') {
+        html.find('.roll-button').click(this._onRollValue.bind(this))
+        html.find('.left-arrow-button').click(this._onConvertUpward.bind(this))
+        html.find('.right-arrow-button').click(this._onConvertDownward.bind(this))
+      }
     }
   }
 
@@ -138,6 +153,33 @@ export class DCCItemSheet extends ItemSheet {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 400) / 2
     }).render(true)
+  }
+
+  /**
+   * Roll the value of this item
+   */
+  _onRollValue(event) {
+    event.preventDefault()
+    this.item.rollValue()
+    this.render(false)
+  }
+
+  /**
+   * Convert currency upwards
+   */
+  _onConvertUpward(event) {
+    event.preventDefault()
+    this.item.convertCurrencyUpward(event.currentTarget.dataset.currency)
+    this.render(false)
+  }
+
+  /**
+   * Convert currency downwards
+   */
+  _onConvertDownward(event) {
+    event.preventDefault()
+    this.item.convertCurrencyDownward(event.currentTarget.dataset.currency)
+    this.render(false)
   }
 }
 

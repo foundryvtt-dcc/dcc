@@ -10,7 +10,7 @@
             </div>
 
             <div class="flexrow">
-              <div class="resource">
+              <div class="resource flex1">
                 <label class="resource-label" for="data.isCoins">{{localize "DCC.AsCoins"}}</label>
                 <input type="checkbox" name="data.isCoins" id="data.isCoins"
                     {{checked data.isCoins}} data-dtype="Boolean"/>
@@ -19,19 +19,68 @@
         </div>
     </header>
 
-    <section class="sheet-body item">
-      <div class="grid grid-3col">
+    <section class="sheet-body item treasure">
+      <div class="flexrow">
+        {{#if needsRoll}}
+        <div class="rollable roll-button">&nbsp;</div>
+        {{/if}}
+        <div class="resource">
+          <label class="resource-label">{{localize "DCC.CurrencyPP"}}</label>
+          <input type="text" name="data.value.pp" value="{{data.value.pp}}" data-dtype="String"/>
+          {{#if data.isCoins}}
+          {{#if needsRoll}}{{else}}
+          <div class="conversions">
+            <div class="rollable right-arrow-button" data-currency="pp">&nbsp;</div>
+          </div>
+          {{/if}}
+          {{/if}}
+        </div>
+        <div class="resource">
+          <label class="resource-label">{{localize "DCC.CurrencyEP"}}</label>
+          <input type="text" name="data.value.ep" value="{{data.value.ep}}" data-dtype="String"/>
+          {{#if data.isCoins}}
+          {{#if needsRoll}}{{else}}
+          <div class="conversions">
+            <div class="rollable left-arrow-button" data-currency="ep">&nbsp;</div>
+            <div class="rollable right-arrow-button" data-currency="ep">&nbsp;</div>
+          </div>
+          {{/if}}
+          {{/if}}
+        </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.CurrencyGP"}}</label>
-          <input type="text" name="data.value.gp" value="{{data.value.gp}}" data-dtype="Number"/>
+          <input type="text" name="data.value.gp" value="{{data.value.gp}}" data-dtype="String"/>
+          {{#if data.isCoins}}
+          {{#if needsRoll}}{{else}}
+          <div class="conversions">
+            <div class="rollable left-arrow-button" data-currency="gp">&nbsp;</div>
+            <div class="rollable right-arrow-button" data-currency="gp">&nbsp;</div>
+          </div>
+          {{/if}}
+          {{/if}}
         </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.CurrencySP"}}</label>
-          <input type="text" name="data.value.sp" value="{{data.value.sp}}" data-dtype="Number"/>
+          <input type="text" name="data.value.sp" value="{{data.value.sp}}" data-dtype="String"/>
+          {{#if data.isCoins}}
+          {{#if needsRoll}}{{else}}
+          <div class="conversions">
+            <div class="rollable left-arrow-button" data-currency="sp">&nbsp;</div>
+            <div class="rollable right-arrow-button" data-currency="sp">&nbsp;</div>
+          </div>
+          {{/if}}
+          {{/if}}
         </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.CurrencyCP"}}</label>
-          <input type="text" name="data.value.cp" value="{{data.value.cp}}" data-dtype="Number"/>
+          <input type="text" name="data.value.cp" value="{{data.value.cp}}" data-dtype="String"/>
+          {{#if data.isCoins}}
+          {{#if needsRoll}}{{else}}
+          <div class="conversions">
+            <div class="rollable left-arrow-button" data-currency="cp">&nbsp;</div>
+          </div>
+          {{/if}}
+          {{/if}}
         </div>
       </div>
     </section>

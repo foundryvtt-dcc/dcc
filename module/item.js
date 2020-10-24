@@ -65,6 +65,111 @@ class DCCItem extends Item {
       })
     }
   }
+
+  /**
+   * Determine if this item needs to have its treasure value rolled
+   * @return {Boolean}  True if any value field contains a rollable formula
+   */
+  needsValueRoll() {
+    let needsRoll = false
+
+    for (const currency in CONFIG.DCC.currencies) {
+      const formula = this.data.data.value[currency]
+      if (!formula) continue
+      try {
+        const roll = new Roll(formula.toString())
+        roll.evaluate()
+        const terms = roll.terms || roll.parts
+        if (terms.length > 1 || roll.dice.length > 0) {
+          needsRoll = true
+          break
+        }
+      } catch (e) {
+        ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
+      }
+    }
+
+    return needsRoll
+  }
+
+  /**
+   * Roll to determine the value of this item
+   */
+  rollValue() {
+    const updates = {}
+
+    for (const currency in CONFIG.DCC.currencies) {
+      const formula = this.data.data.value[currency]
+      if (!formula) continue
+      try {
+        const roll = new Roll(formula.toString())
+        roll.evaluate()
+        updates['data.value.' + currency] = roll.total
+      } catch (e) {
+        ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
+      }
+    }
+
+    this.update(updates)
+  }
+
+  /**
+   * Shift currency to the next highest denomination
+   */
+  convertCurrencyUpward(currency) {
+    const currencyRank = CONFIG.DCC.currencyRank
+    const currencyValue = CONFIG.DCC.currencyValue
+    // Don't do currency conversions if the value isn't resolved
+    if (this.needsValueRoll()) {
+      return
+    }
+    // Find the rank of this currency
+    const rank = currencyRank.indexOf(currency)
+    // Make sure there's a currency to convert to
+    if (rank >= 0 && rank < currencyRank.length - 1) {
+      // What are we converting to?
+      const toCurrency = currencyRank[rank+1]
+      // Calculate the conversion factor
+      const conversionFactor = currencyValue[toCurrency] / currencyValue[currency]
+      // Check we have enough currency
+      if (this.data.data.value[currency] >= conversionFactor) {
+        // Apply the conversion
+        const updates = {}
+        updates[`data.value.${currency}`] = parseInt(this.data.data.value[currency]) - conversionFactor,
+        updates[`data.value.${toCurrency}`] = parseInt(this.data.data.value[toCurrency]) + 1
+        this.update(updates)
+      }
+    }
+  }
+
+  /**
+   * Shift currency to the next lowest denomination
+   */
+  convertCurrencyDownward(currency) {
+    const currencyRank = CONFIG.DCC.currencyRank
+    const currencyValue = CONFIG.DCC.currencyValue
+    // Don't do currency conversions if the value isn't resolved
+    if (this.needsValueRoll()) {
+      return
+    }
+    // Find the rank of this currency
+    const rank = currencyRank.indexOf(currency)
+    // Make sure there's a currency to convert to
+    if (rank >= 1) {
+      // What are we converting to?
+      const toCurrency = currencyRank[rank-1]
+      // Check we have enough currency
+      if (this.data.data.value[currency] >= 1) {
+        // Calculate the conversion factor
+        const conversionFactor = currencyValue[currency] / currencyValue[toCurrency]
+        // Apply the conversion
+        const updates = {}
+        updates[`data.value.${currency}`] = parseInt(this.data.data.value[currency]) - 1,
+        updates[`data.value.${toCurrency}`] = parseInt(this.data.data.value[toCurrency]) + conversionFactor
+        this.update(updates)
+      }
+    }
+  }
 }
 
 export default DCCItem

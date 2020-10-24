@@ -434,7 +434,7 @@ $border-style: 2px groove #eeede0;
 }
 
 .dcc .combat-basics .init {
-  flex: 0 0 60px;
+  flex: 0 0 120px;
   align-items: center;
 }
 
@@ -620,6 +620,30 @@ $border-style: 2px groove #eeede0;
   flex: 0 0 30px;
   margin: 5px 0 0 0;
   background-image: url("./images/backstab.png");
+  background-size: 22px 22px;
+  background-repeat: no-repeat;
+}
+
+.dcc .roll-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("/icons/svg/d20-black.svg");
+  background-size: 22px 22px;
+  background-repeat: no-repeat;
+}
+
+.dcc .left-arrow-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("./images/left-arrow.png");
+  background-size: 22px 22px;
+  background-repeat: no-repeat;
+}
+
+.dcc .right-arrow-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("./images/right-arrow.png");
   background-size: 22px 22px;
   background-repeat: no-repeat;
 }
@@ -1197,6 +1221,25 @@ $border-style: 2px groove #eeede0;
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
     grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px;
+  }
+
+  .sheet-body.treasure {
+    height: 150px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+
+    .resource {
+      flex: 3 0 75px;
+    }
+
+    .conversions {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-around;
+    }
   }
 
   .sheet-body {

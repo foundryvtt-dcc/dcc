@@ -56,6 +56,7 @@
             "tempmax": 0
           },
           "init": {
+            "die": "1d20",
             "value": 0
           },
           "speed": {
@@ -89,6 +90,8 @@
           "value": ""
         },
         "currency": {
+          "pp": 0,
+          "ep": 0,
           "gp": 0,
           "sp": 0,
           "cp": 0
@@ -402,6 +405,7 @@
     },
     "treasure": {
       "templates": [
+        "itemDescription",
         "currency"
       ],
       "isCoins": false
