@@ -39,7 +39,8 @@
             "fumbleDie": "1d4"
           },
           "actionDice": {
-            "value": "1d20"
+            "value": "1d20",
+            "options": ["1d20"]
           },
           "critical": {
             "die": "1d4",
@@ -269,6 +270,7 @@
       },
       "config": {
         "config": {
+          "actionDice" : "1d20",
           "capLevel": false,
           "maxLevel" : 10,
           "rollAttackBonus": false,

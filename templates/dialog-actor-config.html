@@ -1,4 +1,10 @@
 <form class="actor config-dialog" autocomplete="off">
+  <div class="form-group">
+    <label for="data.config.actionDice">{{localize "DCC.ActionDice"}}</label>
+    <div class="form-fields">
+      <input type="text" name="data.config.actionDice" id="data.config.actionDice" value="{{data.config.actionDice}}" data-dtype="string"/>
+    </div>
+  </div>
   {{#if isNPC}}
   {{else}}
   <div class="form-group">

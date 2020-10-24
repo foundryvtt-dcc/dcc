@@ -14,9 +14,16 @@
             </div>
 
             <div class="action-dice">
-                <label for="data.attributes.action-dice.value">{{localize "DCC.ActionDice"}}</label>
-                <input type="text" id="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
-                       value="{{data.attributes.actionDice.value}}" maxlength="40"/>
+                <label for="data.attributes.actionDice.value">{{localize "DCC.ActionDice"}}</label>
+                <select name="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
+                        value="{{data.attributes.actionDice.value}}">
+                    {{stringify data.attributes.actionDice}}
+                    {{#select data.attributes.actionDice.value}}
+                    {{#each data.attributes.actionDice.options as |actionDie index|}}
+                    <option value="{{actionDie}}">{{actionDie}}</option>
+                    {{/each}}
+                    {{/select}}
+                </select>
             </div>
 
             <div class="crit-table">

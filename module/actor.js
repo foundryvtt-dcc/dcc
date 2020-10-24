@@ -63,6 +63,29 @@ class DCCActor extends Actor {
       data.attributes.fumble || {},
       { die: fumbleDie }
     )
+
+    // Gather available action dice
+    try {
+      // Implicit migration for legacy actors
+      if (!this.data.data.config.actionDice) {
+        this.data.data.config.actionDice = this.data.data.attributes.actionDice.value
+      }
+      // Parse the action dice expression from the config and produce a list of available dice
+      const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
+      actionDieExpression.evaluate()
+      const terms = actionDieExpression.terms || actionDieExpression.parts
+      const actionDice = []
+      for (const term of terms) {
+        if (typeof (term) === 'object') {
+          const termDie = `1d${term.faces}`
+          const termCount = term.number
+          for (let i = 0; i < termCount; ++i) {
+            actionDice.push(termDie)
+          }
+        }
+      }
+      this.data.data.attributes.actionDice.options = actionDice
+    } catch (err) { }
   }
 
   /**
