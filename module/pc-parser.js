@@ -40,25 +40,29 @@ function _parseJSONPC (pcObject) {
   if (pcObject.hitPoints) {
     pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
   }
-  if (pcObject.weapon) {
-    pc.items = [{
+  pc.items = []
+  if (pcObject.weapons) {
+    for (const weapon of pcObject.weapons) {
+      pc.items.push({
+        name: weapon.name,
+        type: 'weapon',
+        data: {
+          toHit: weapon.attackMod || '0',
+          damage: weapon.attackDamage || '1d3',
+          melee: weapon.melee,
+        }
+      })
+    }
+  } else if (pcObject.weapon) {
+    pc.items.push({
       name: pcObject.weapon,
       type: 'weapon',
       data: {
-        config: { inheritActionDie: true },
-        actionDie: '1d20',
         toHit: pcObject.attackMod || '0',
         damage: pcObject.attackDamage || '1d3',
         melee: true, // No way to know, but melee is most likely
-        range: '',
-        twoHanded: false,
-        backstab: false,
-        backstabDamage: null,
-        description: {
-          value: ''
-        }
       }
-    }]
+    })
   }
   pc['data.attributes.speed.value'] = pcObject.speed || 30
   if (pcObject.initiative) {
@@ -87,7 +91,7 @@ function _parseJSONPC (pcObject) {
   if (pcObject.level) {
     pc['data.details.level.value'] = pcObject.level
   }
-  
+
   // Crit die and table
   if (pcObject.critDie) {
     pc['data.attributes.critical.die'] = pcObject.critDie
@@ -107,6 +111,13 @@ function _parseJSONPC (pcObject) {
   if (pcObject.attackBonus) {
     pc['data.details.attackBonus'] = pcObject.attackBonus
   }
+  // Armor
+  if (pcObject.armorData) {
+    const armor = _parseArmor(pcObject.armorData)
+    if (armor) {
+      pc.items.push(armor)
+    }
+  }
 
   // Remaining character attributes go in notes until there is a better place
   let notes = ''
@@ -115,21 +126,38 @@ function _parseJSONPC (pcObject) {
     notes = notes + game.i18n.localize('DCC.Equipment') + ':<br/>'
     if (pcObject.equipment) {
       notes = notes + '  ' + pcObject.equipment + '<br/>'
+      pc.items.push({
+        name: pcObject.equipment,
+        type: 'equipment'
+      })
     }
     if (pcObject.equipment2) {
       notes = notes + '  ' + pcObject.equipment2 + '<br/>'
+      pc.items.push({
+        name: pcObject.equipment2,
+        type: 'equipment'
+      })
     }
     if (pcObject.equipment3) {
       notes = notes + '  ' + pcObject.equipment3 + '<br/>'
+      pc.items.push({
+        name: pcObject.equipment3,
+        type: 'equipment'
+      })
     }
     if (pcObject.tradeGood) {
       notes = notes + '  ' + pcObject.tradeGood + ' (' + game.i18n.localize('DCC.TradeGoods') + ')<br/>'
+      pc.items.push({
+        name: pcObject.tradeGood,
+        type: 'equipment'
+      })
     }
     notes = notes + '<br/>'
   }
   // Other attributes if present
   if (pcObject.startingFunds) {
     notes = notes + game.i18n.localize('DCC.StartingFunds') + ': ' + pcObject.startingFunds + '<br/>'
+    pc.items.push(_parseStartingFunds(pcObject.startingFunds))
   }
   if (pcObject.luckySign) {
     notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '<br/>'
@@ -143,8 +171,20 @@ function _parseJSONPC (pcObject) {
     notes = notes + pcObject.racialTraits + '<br/>'
   }
   if (pcObject.spells) {
+    notes = notes + '<br/>Spells:<br/>'
     for (const spell of pcObject.spells) {
       notes = notes + spell.level + ') ' + spell.name + '<br/>'
+      pc.items.push({
+        name: spell.name,
+        type: 'spell',
+        data: {
+          level: spell.level,
+          spellCheck: {
+            die: '1d20',
+            value: pcObject.spellCheck || '0'
+          }
+        }
+      })
     }
   }
   pc['data.details.notes.value'] = notes
@@ -199,6 +239,7 @@ function _parsePlainPCToJSON (pcString) {
   if (!pcObject.occTitle) {
     pcObject.occTitle = _firstMatch(pcString.match(/Occupation:\s+(.+)[;\n$]/))
     pcObject.armorClass = _firstMatch(pcString.match(/AC:\s+\((\d+)\)\*?/)) || pcObject.armorClass
+    pcObject.armorData = _firstMatch(pcString.match(/AC:\s+\(\d+\)\*?\s+\((.*)\)/))
     pcObject.critDie = _firstMatch(pcString.match(/Crit Die\/Table:\s+(1d\d+)\/.*[;\n$]/))
     pcObject.critTable = _firstMatch(pcString.match(/Crit Die\/Table:\s+1d\d+\/(.*)[;\n$]/))
     pcObject.actionDice = _firstMatch(pcString.match(/Attack Dice:\s+(1d\d+)[;\n$]/))
@@ -206,17 +247,17 @@ function _parsePlainPCToJSON (pcString) {
     pcObject.spellCheck = _firstMatch(pcString.match(/Spells:\s+\(Spell Check:\s+d20([+-]\d+)\)/))
 
     const alignmentLevelClass = pcString.match(/(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$]/)
-    if (alignmentLevelClass && alignmentLevelClass.length == 4) {
+    if (alignmentLevelClass && alignmentLevelClass.length === 4) {
       pcObject.alignment = alignmentLevelClass[1][0].toLowerCase()
       pcObject.className = alignmentLevelClass[2]
       pcObject.level = alignmentLevelClass[3]
     }
 
     if (pcObject.spellCheck) {
-      const spellsSection = _firstMatch(pcString.match(/Spells:\s+\(Spell Check:\s+d20[+-]\d+\)\n(.*)/))
+      const spellsSection = _firstMatch(pcString.match(/Spells:\s+\(Spell Check:\s+d20[+-]\d+\)\n((?:.|\n)*)/))
       const spells = spellsSection.split('\n')
       pcObject.spells = []
-      for (const spell in spells) {
+      for (const spell of spells) {
         const levelName = spell.match(/(\d+)\)\s+(.*)$/)
         if (levelName) {
           pcObject.spells.push({
@@ -225,6 +266,38 @@ function _parsePlainPCToJSON (pcString) {
           })
         }
       }
+    }
+
+    pcObject.weapons = []
+    const weapon1String = pcString.match(/Occupation Weapon:\s+(.*)[;\n$]/)
+    const weapon1 = weapon1String.length > 0 ? _parseWeapon(weapon1String[1]) : null
+    if (weapon1) {
+      pcObject.weapons.push({
+        name: weapon1.name,
+        attackMod: weapon1.attackMod,
+        attackDamage: weapon1.attackDamage,
+        melee: weapon1.melee
+      })
+    }
+    const weapon2String = pcString.match(/Main Weapon:\s+(.*)[;\n$]/)
+    const weapon2 = weapon2String.length > 0 ? _parseWeapon(weapon2String[1]) : null
+    if (weapon2) {
+      pcObject.weapons.push({
+        name: weapon2.name,
+        attackMod: weapon2.attackMod,
+        attackDamage: weapon2.attackDamage,
+        melee: weapon2.melee
+      })
+    }
+    const weapon3String = pcString.match(/Secondary Weapon:\s+(.*)[;\n$]/)
+    const weapon3 = weapon3String.length > 0 ? _parseWeapon(weapon3String[1]) : null
+    if (weapon3) {
+      pcObject.weapons.push({
+        name: weapon3.name,
+        attackMod: weapon3.attackMod,
+        attackDamage: weapon3.attackDamage,
+        melee: weapon3.melee
+      })
     }
   }
 
@@ -241,16 +314,60 @@ function _firstMatch (result) {
 }
 
 function _parseWeapon (weaponString) {
-  const weaponData = weaponString.match(/^(.*)\s+([+-]?\d+)\s+\((.+)\)$/)
+  const weaponData = weaponString.match(/^(.*)\s+([+-]?\d+)\s+\((?:dmg\s+)?(.+)\)$/)
+  let melee = true
+  if (!weaponString.match(/melee/)) {
+    melee = false
+  }
+  const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
   if (weaponData.length > 0) {
     return {
-      name: weaponData[1],
+      name: name,
       attackMod: weaponData[2],
-      attackDamage: weaponData[3]
+      attackDamage: weaponData[3],
+      melee: melee
     }
   }
 
   return null
+}
+
+function _parseArmor (armorString) {
+  const armorFields = armorString.match(/(.*)\s+\(([+-]?\d+)\)\s+Check penalty\s+\(([+-]?\d+)\)\s+Fumble die\s+\((d\d+)\)/)
+
+  if (armorFields && armorFields.length === 5) {
+    return {
+      name: armorFields[1],
+      type: 'armor',
+      data: {
+        acBonus: armorFields[2],
+        checkPenalty: armorFields[3],
+        fumbleDie: '1' + armorFields[4],
+      }
+    }
+  }
+
+  return null
+}
+
+function _parseStartingFunds (startingFundsString) {
+  const pp = _firstMatch(startingFundsString.match(/(\d+)\s+pp/)) || '0'
+  const ep = _firstMatch(startingFundsString.match(/(\d+)\s+ep/)) || '0'
+  const gp = _firstMatch(startingFundsString.match(/(\d+)\s+gp/)) || '0'
+  const sp = _firstMatch(startingFundsString.match(/(\d+)\s+sp/)) || '0'
+  const cp = _firstMatch(startingFundsString.match(/(\d+)\s+cp/)) || '0'
+  return {
+    name: 'Coins',
+    type: 'treasure',
+    data: {
+      pp,
+      ep,
+      gp,
+      sp,
+      cp,
+      isCoins: true
+    }
+  }
 }
 
 export default parsePC

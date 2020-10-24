@@ -52,8 +52,27 @@ Languages: Common`)
         data: {
           toHit: '-1',
           damage: '1d4-1',
-          description: { value: '' },
           melee: true
+        }
+      },
+      {
+        name: 'Crowbar (2 gp)',
+        type: 'equipment',
+      },
+      {
+        name: 'Steel tongs',
+        type: 'equipment',
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        data: {
+          cp: '42',
+          ep: '0',
+          gp: '0',
+          pp: '0',
+          sp: '0',
+          isCoins: true,
         }
       }
     ]
@@ -131,8 +150,31 @@ test('beekeeper', () => {
         data: {
           toHit: '1',
           damage: '1d4+1',
-          description: { value: '' },
           melee: true
+        }
+      },
+      {
+        name: 'Sack (small) (8 cp)',
+        type: 'equipment',
+      },
+      {
+        name: 'Water skin',
+        type: 'equipment',
+      },
+      {
+        name: 'Jar of honey',
+        type: 'equipment',
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        data: {
+          cp: '31',
+          ep: '0',
+          gp: '0',
+          pp: '0',
+          sp: '0',
+          isCoins: true,
         }
       }
     ]
@@ -214,9 +256,8 @@ Spells: (Spell Check: d20+2)
         name: 'Dagger',
         type: 'weapon',
         data: {
-          toHit: '0',
+          toHit: '+0',
           damage: '1d4',
-          description: { value: '' },
           melee: true
         }
       },
@@ -226,7 +267,6 @@ Spells: (Spell Check: d20+2)
         data: {
           toHit: '+1',
           damage: '1d4',
-          description: { value: '' },
           melee: false
         }
       },
@@ -236,7 +276,6 @@ Spells: (Spell Check: d20+2)
         data: {
           toHit: '+0',
           damage: '1d8',
-          description: { value: '' },
           melee: true
         }
       },
@@ -247,22 +286,15 @@ Spells: (Spell Check: d20+2)
           acBonus: '+4',
           checkPenalty: '-4',
           fumbleDie: '1d12',
-          description: { value: '' },
         }
       },
       {
         name: 'Waterskin (5 sp)',
         type: 'equipment',
-        data: {
-          description: { value: '' }
-        }
       },
       {
         name: 'Shoehorn',
         type: 'equipment',
-        data: {
-          description: { value: '' }
-        }
       },
       {
         name: 'Coins',
@@ -273,39 +305,51 @@ Spells: (Spell Check: d20+2)
           ep: '0',
           gp: '40',
           sp: '0',
-          cp: '36'
+          cp: '36',
         }
       },
       {
         name: 'Darkness',
         type: 'spell',
         data: {
-          available: true,
-          level: 1
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+2'
+          }
         }
       },
       {
         name: 'Detect Evil',
         type: 'spell',
         data: {
-          available: true,
-          level: 1
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+2'
+          }
         }
       },
       {
         name: 'Detect Magic',
         type: 'spell',
         data: {
-          available: true,
-          level: 1
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+2'
+          }
         }
       },
       {
         name: 'Word of Command',
         type: 'spell',
         data: {
-          available: true,
-          level: 1
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+2'
+          }
         }
       }
     ]
