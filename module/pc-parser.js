@@ -74,6 +74,40 @@ function _parseJSONPC (pcObject) {
     pc['data.saves.wil.value'] = pcObject.saveWill
   }
 
+  // Attributes only in upper level exports
+  // Alignment
+  if (pcObject.alignment) {
+    pc['data.details.alignment'] = pcObject.alignment
+  }
+  // Class
+  if (pcObject.className) {
+    pc['data.class.className'] = pcObject.className
+  }
+  // Level
+  if (pcObject.level) {
+    pc['data.details.level.value'] = pcObject.level
+  }
+  
+  // Crit die and table
+  if (pcObject.critDie) {
+    pc['data.attributes.critical.die'] = pcObject.critDie
+  }
+  if (pcObject.critTable) {
+    pc['data.attributes.critical.table'] = pcObject.critTable
+  }
+  // Spell Check
+  if (pcObject.spellCheck) {
+    pc['data.class.spellCheck'] = pcObject.spellCheck
+  }
+  // Action Die
+  if (pcObject.actionDice) {
+    pc['data.config.actionDice'] = pcObject.actionDice
+  }
+  // Attack Bonus
+  if (pcObject.attackBonus) {
+    pc['data.details.attackBonus'] = pcObject.attackBonus
+  }
+
   // Remaining character attributes go in notes until there is a better place
   let notes = ''
   // Equipment block
@@ -99,12 +133,19 @@ function _parseJSONPC (pcObject) {
   }
   if (pcObject.luckySign) {
     notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '<br/>'
+    pc['data.details.birthAugur'] = pcObject.luckySign
   }
   if (pcObject.languages) {
     notes = notes + game.i18n.localize('DCC.Languages') + ': ' + pcObject.languages + '<br/>'
+    pc['data.details.languages'] = pcObject.languages
   }
   if (pcObject.racialTraits) {
     notes = notes + pcObject.racialTraits + '<br/>'
+  }
+  if (pcObject.spells) {
+    for (const spell of pcObject.spells) {
+      notes = notes + spell.level + ') ' + spell.name + '<br/>'
+    }
   }
   pc['data.details.notes.value'] = notes
   return pc
@@ -120,6 +161,7 @@ function _parsePlainPCToJSON (pcString) {
   const pcObject = {}
   pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/, '')
 
+  // Try parsing as a zero level first
   pcObject.occTitle = _firstMatch(pcString.match(/0-level Occupation:\s+(.+)[;\n$]/))
 
   pcObject.strengthScore = _firstMatch(pcString.match(/Strength:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
@@ -152,6 +194,39 @@ function _parsePlainPCToJSON (pcString) {
   pcObject.luckySign = _firstMatch(pcString.match(/Lucky sign:\s+(.*)[;\n$]/))
   pcObject.languages = _firstMatch(pcString.match(/Languages:\s+(.*)[;\n$]/))
   pcObject.racialTraits = _firstMatch(pcString.match(/Racial Traits:\s+(.*)[;\n$]/))
+
+  // See if upper level fields are present
+  if (!pcObject.occTitle) {
+    pcObject.occTitle = _firstMatch(pcString.match(/Occupation:\s+(.+)[;\n$]/))
+    pcObject.armorClass = _firstMatch(pcString.match(/AC:\s+\((\d+)\)\*?/)) || pcObject.armorClass
+    pcObject.critDie = _firstMatch(pcString.match(/Crit Die\/Table:\s+(1d\d+)\/.*[;\n$]/))
+    pcObject.critTable = _firstMatch(pcString.match(/Crit Die\/Table:\s+1d\d+\/(.*)[;\n$]/))
+    pcObject.actionDice = _firstMatch(pcString.match(/Attack Dice:\s+(1d\d+)[;\n$]/))
+    pcObject.attackBonus = _firstMatch(pcString.match(/Base Attack Mod:\s+(\d+)[;\n$]/))
+    pcObject.spellCheck = _firstMatch(pcString.match(/Spells:\s+\(Spell Check:\s+d20([+-]\d+)\)/))
+
+    const alignmentLevelClass = pcString.match(/(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$]/)
+    if (alignmentLevelClass && alignmentLevelClass.length == 4) {
+      pcObject.alignment = alignmentLevelClass[1][0].toLowerCase()
+      pcObject.className = alignmentLevelClass[2]
+      pcObject.level = alignmentLevelClass[3]
+    }
+
+    if (pcObject.spellCheck) {
+      const spellsSection = _firstMatch(pcString.match(/Spells:\s+\(Spell Check:\s+d20[+-]\d+\)\n(.*)/))
+      const spells = spellsSection.split('\n')
+      pcObject.spells = []
+      for (const spell in spells) {
+        const levelName = spell.match(/(\d+)\)\s+(.*)$/)
+        if (levelName) {
+          pcObject.spells.push({
+            level: levelName[1],
+            name: levelName[2]
+          })
+        }
+      }
+    }
+  }
 
   return pcObject
 }

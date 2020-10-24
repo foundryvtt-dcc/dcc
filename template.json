@@ -70,6 +70,7 @@
             "value": 0
           },
           "alignment": "",
+          "languages": "",
           "occupation": "",
           "notes": ""
         },
@@ -86,9 +87,6 @@
             "label": "DCC.SavesWill",
             "value": 0
           }
-        },
-        "languages": {
-          "value": ""
         },
         "currency": {
           "pp": 0,
