@@ -201,7 +201,7 @@
 /*  Ability Scores                           */
 /* ----------------------------------------- */
 .dcc.sheet.actor .ability-scores {
-  flex: 0 0 140px;
+  flex: 0 0 150px;
   height: 425px;
   list-style: none;
   margin: 7px;
@@ -229,7 +229,7 @@
 .dcc.sheet.actor .ability-scores .ability .ability-modifiers {
   flex: 0 0 24px;
   height: 23px;
-  margin: -16px 0 0 110px;
+  margin: -16px 0 0 116px;
   width: 30px;
   line-height: 22px;
   font-size: 16px;
@@ -637,7 +637,7 @@
 
 .dcc .character-grid {
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: 150px 105px 1fr;
   grid-template-rows: repeat(6, 70px);
   padding: 0;
   margin: 7px;
@@ -661,7 +661,7 @@
 
 .dcc.sheet.actor .character-grid .ability .ability-modifiers {
   height: 23px;
-  margin: -16px 0 0 110px;
+  margin: -16px 0 0 116px;
   width: 30px;
   line-height: 22px;
   font-size: 16px;
@@ -669,7 +669,7 @@
   border-left: 2px groove #eeede0; }
 
 .dcc.sheet.actor .character-grid .save {
-  width: 100px;
+  width: 105px;
   text-align: center;
   border-bottom: 2px groove #eeede0;
   border-right: 2px groove #eeede0;

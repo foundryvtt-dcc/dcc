@@ -13,6 +13,16 @@
                    data-dtype="Number"
                    placeholder="10"
             />
+            {{#if ../data.config.showMaxAttributes}}
+            <label>/</label>
+            <input class="ability-score" id="data.abilities.{{id}}.max"
+                   name="data.abilities.{{id}}.max"
+                   type="text"
+                   value="{{ability.max}}"
+                   data-dtype="Number"
+                   placeholder="10"
+            />
+            {{/if}}
             <div class="ability-modifiers" title="Modifier">
                 {{numberFormat ability.mod decimals=0 sign=true}}
             </div>
