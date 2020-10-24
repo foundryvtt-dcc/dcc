@@ -110,7 +110,8 @@ class DCCActor extends Actor {
         rollUnder: true
       }
     } else {
-      roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
+      const die = this.data.data.attributes.actionDice.value
+      roll = new Roll('@die+@abilMod', { die, abilMod: ability.mod, critical: 20 })
     }
 
     // Convert the roll to a chat message
@@ -125,7 +126,7 @@ class DCCActor extends Actor {
    * @param {Object} token    The token to roll initiative for
    */
   async rollInitiative (token) {
-    const die = this.data.data.attributes.init.die || "1d20"
+    const die = this.data.data.attributes.init.die || '1d20'
     const init = this.data.data.attributes.init.value
     const roll = new Roll('@die+@init', { die, init })
 
@@ -155,8 +156,9 @@ class DCCActor extends Actor {
    */
   rollSavingThrow (saveId) {
     const save = this.data.data.saves[saveId]
+    const die = this.data.data.attributes.actionDice.value
     save.label = CONFIG.DCC.saves[saveId]
-    const roll = new Roll('1d20+@saveMod', { saveMod: save.value })
+    const roll = new Roll('@die+@saveMod', { die, saveMod: save.value })
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -257,7 +259,7 @@ class DCCActor extends Actor {
     const ability = this.data.data.abilities[options.abilityId]
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
-    const die = '1d20'
+    const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
 
