@@ -156,7 +156,7 @@ class DCCActor extends Actor {
    */
   rollSavingThrow (saveId) {
     const save = this.data.data.saves[saveId]
-    const die = this.data.data.attributes.actionDice.value
+    const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
     const roll = new Roll('@die+@saveMod', { die, saveMod: save.value })
 
