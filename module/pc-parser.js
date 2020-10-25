@@ -187,6 +187,20 @@ function _parseJSONPC (pcObject) {
       })
     }
   }
+  if (pcObject.thiefSkills) {
+    // Dump raw skills as notes
+    notes = notes + '<br/>Skills:<br/>' + pcObject.thiefSkills.raw.replace(/\n/g, '<br/>')
+    delete pcObject.thiefSkills.raw
+    // Handle special case thief skills
+    pc['data.class.backstab'] = pcObject.thiefSkills.backstab || '0'
+    delete pcObject.thiefSkills.backstab
+    pc['data.skills.castSpellFromScroll.die'] = `1${pcObject.thiefSkills.castSpellFromScroll || 'd10'}`
+    delete pcObject.thiefSkills.castSpellFromScroll
+    // Handle standard thief skills
+    for (const skill in pcObject.thiefSkills) {
+      pc[`data.skills.${skill}.value`] = pcObject.thiefSkills[skill] || '0'
+    }
+  }
   pc['data.details.notes.value'] = notes
   return pc
 }
@@ -199,7 +213,7 @@ function _parseJSONPC (pcObject) {
  **/
 function _parsePlainPCToJSON (pcString) {
   const pcObject = {}
-  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/, '')
+  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
 
   // Try parsing as a zero level first
   pcObject.occTitle = _firstMatch(pcString.match(/0-level Occupation:\s+(.+)[;\n$]/))
@@ -242,7 +256,7 @@ function _parsePlainPCToJSON (pcString) {
     pcObject.armorData = _firstMatch(pcString.match(/AC:\s+\(\d+\)\*?\s+\((.*)\)/))
     pcObject.critDie = _firstMatch(pcString.match(/Crit Die\/Table:\s+(1d\d+)\/.*[;\n$]/))
     pcObject.critTable = _firstMatch(pcString.match(/Crit Die\/Table:\s+1d\d+\/(.*)[;\n$]/))
-    pcObject.actionDice = _firstMatch(pcString.match(/Attack Dice:\s+(1d\d+)[;\n$]/))
+    pcObject.actionDice = _firstMatch(pcString.match(/Attack Dice:\s+((?:1d\d+\+?)+)[;\n$]/))
     pcObject.attackBonus = _firstMatch(pcString.match(/Base Attack Mod:\s+(\d+)[;\n$]/))
     pcObject.spellCheck = _firstMatch(pcString.match(/Spells:\s+\(Spell Check:\s+d20([+-]\d+)\)/))
 
@@ -265,6 +279,26 @@ function _parsePlainPCToJSON (pcString) {
             name: levelName[2]
           })
         }
+      }
+    }
+
+    const thiefSkills = _firstMatch(pcString.match(/Thief Skills:\n((?:.|\n)*)/))
+    if (thiefSkills) {
+      pcObject.thiefSkills = {
+        raw: thiefSkills,
+        backstab: _firstMatch(thiefSkills.match(/Backstab:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        sneakSilently: _firstMatch(thiefSkills.match(/Sneak Silently:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        hideInShadows: _firstMatch(thiefSkills.match(/Hide In Shadows:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        pickPockets: _firstMatch(thiefSkills.match(/Pick Pocket:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        climbSheerSurfaces: _firstMatch(thiefSkills.match(/Climb Sheer Surfaces:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        pickLock: _firstMatch(thiefSkills.match(/Pick Lock:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        findTrap: _firstMatch(thiefSkills.match(/Find Trap:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        disableTrap: _firstMatch(thiefSkills.match(/Disable Trap:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        forgeDocument: _firstMatch(thiefSkills.match(/Forge Document:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        disguiseSelf: _firstMatch(thiefSkills.match(/Disguise Self:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        readLanguages: _firstMatch(thiefSkills.match(/Read Languages:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        handlePoison: _firstMatch(thiefSkills.match(/Handle Poison:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
+        castSpellFromScroll: _firstMatch(thiefSkills.match(/Cast Spell From Scroll\s+\((d\d+)\)[;\n$]?/))
       }
     }
 

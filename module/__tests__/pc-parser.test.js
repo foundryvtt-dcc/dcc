@@ -67,12 +67,14 @@ Languages: Common`)
         name: 'Coins',
         type: 'treasure',
         data: {
-          cp: '42',
-          ep: '0',
-          gp: '0',
-          pp: '0',
-          sp: '0',
-          isCoins: true,
+          value: {
+            cp: '42',
+            ep: '0',
+            gp: '0',
+            pp: '0',
+            sp: '0'
+          },
+          isCoins: true
         }
       }
     ]
@@ -169,11 +171,13 @@ test('beekeeper', () => {
         name: 'Coins',
         type: 'treasure',
         data: {
-          cp: '31',
-          ep: '0',
-          gp: '0',
-          pp: '0',
-          sp: '0',
+          value: {
+            cp: '31',
+            ep: '0',
+            gp: '0',
+            pp: '0',
+            sp: '0',
+          },
           isCoins: true,
         }
       }
@@ -300,12 +304,14 @@ Spells: (Spell Check: d20+2)
         name: 'Coins',
         type: 'treasure',
         data: {
-          isCoins: true,
-          pp: '0',
-          ep: '0',
-          gp: '40',
-          sp: '0',
-          cp: '36',
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '40',
+            sp: '0',
+            cp: '36',
+          },
+          isCoins: true
         }
       },
       {
@@ -350,6 +356,161 @@ Spells: (Spell Check: d20+2)
             die: '1d20',
             value: '+2'
           }
+        }
+      }
+    ]
+  }
+  expect(parsedNPC).toMatchObject(expected)
+})
+
+/* Test Thief's text */
+test('thief', () => {
+  const parsedNPC = parsePC(
+`Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Neutral Thief (6th level)
+Occupation: Ditch digger
+Strength: 10 (0)
+Agility: 15 (+1)
+Stamina: 8 (-1)
+Personality: 9 (0)
+Intelligence: 10 (0)
+Luck: 10 (0)
+
+HP: 25; Speed: 30; Init: 1
+Ref: 5; Fort: 1; Will: 2
+
+Base Attack Mod: 4
+Attack Dice: 1d20+1d14; Crit Die/Table: 1d24/II
+Occupation Weapon: Staff melee +4 (dmg 1d4)
+Main Weapon: +1 Shortbow ranged +6 (dmg 1d6)
+Secondary Weapon: +1 Blowgun ranged +6 (dmg 1d3)
+
+AC: (12) (Padded (+1) Check penalty (0) Fumble die (d8))
+Equipment: Holy symbol (25 gp)
+Trade good: Fine dirt (1 lb.)
+Starting Funds: 30 cp + 508 gp
+Lucky sign: Fox's cunning (Find/disable traps) (+0)
+Languages: Common, Thieves' Cant
+Thief Ability: When expending luck, roll d8 for each point expended
+
+Thief Skills:
+Backstab: 5 (0)
+Sneak Silently: 12 (1)
+Hide In Shadows: 10 (1)
+Pick Pocket: 12 (1)
+Climb Sheer Surfaces: 12 (1)
+Pick Lock: 10 (1)
+Find Trap: 9 (0)
+Disable Trap: 10 (1)
+Forge Document: 12 (1)
+Disguise Self: 4 (0)
+Read Languages: 5 (0)
+Handle Poison: 4 (0)
+Cast Spell From Scroll (d16)`
+  )
+  const expected = {
+    'data.attributes.init.value': '1',
+    'data.attributes.speed.value': '30',
+    'data.details.occupation.value': 'Ditch digger',
+    'data.attributes.ac.value': '12',
+    'data.attributes.hp.value': '25',
+    'data.attributes.hp.max': '25',
+    'data.attributes.critical.die': '1d24',
+    'data.attributes.critical.table': 'II',
+    'data.abilities.str.value': '10',
+    'data.abilities.agl.value': '15',
+    'data.abilities.sta.value': '8',
+    'data.abilities.per.value': '9',
+    'data.abilities.int.value': '10',
+    'data.abilities.lck.value': '10',
+    'data.abilities.str.max': '10',
+    'data.abilities.agl.max': '15',
+    'data.abilities.sta.max': '8',
+    'data.abilities.per.max': '9',
+    'data.abilities.int.max': '10',
+    'data.abilities.lck.max': '10',
+    'data.class.className': 'Thief',
+    'data.config.actionDice': '1d20+1d14',
+    'data.details.alignment': 'n',
+    'data.details.attackBonus': '4',
+    'data.details.birthAugur': 'Fox\'s cunning (Find/disable traps) (+0)',
+    'data.details.languages': 'Common, Thieves\' Cant',
+    'data.details.level.value': '6',
+    'data.saves.frt.value': '1',
+    'data.saves.ref.value': '5',
+    'data.saves.wil.value': '2',
+    'data.class.backstab': '5',
+    'data.skills.sneakSilently.value': '12',
+    'data.skills.hideInShadows.value': '10',
+    'data.skills.pickPockets.value': '12',
+    'data.skills.climbSheerSurfaces.value': '12',
+    'data.skills.pickLock.value': '10',
+    'data.skills.findTrap.value': '9',
+    'data.skills.disableTrap.value': '10',
+    'data.skills.forgeDocument.value': '12',
+    'data.skills.disguiseSelf.value': '4',
+    'data.skills.readLanguages.value': '5',
+    'data.skills.handlePoison.value': '4',
+    'data.skills.castSpellFromScroll.die': '1d16',
+    items: [
+      {
+        name: 'Staff',
+        type: 'weapon',
+        data: {
+          toHit: '+4',
+          damage: '1d4',
+          melee: true
+        }
+      },
+      {
+        name: '+1 Shortbow',
+        type: 'weapon',
+        data: {
+          toHit: '+6',
+          damage: '1d6',
+          melee: false
+        }
+      },
+      {
+        name: '+1 Blowgun',
+        type: 'weapon',
+        data: {
+          toHit: '+6',
+          damage: '1d3',
+          melee: false
+        }
+      },
+      {
+        name: 'Padded',
+        type: 'armor',
+        data: {
+          acBonus: '+1',
+          checkPenalty: '0',
+          fumbleDie: '1d8',
+        }
+      },
+      {
+        name: 'Holy symbol (25 gp)',
+        type: 'equipment',
+      },
+      {
+        name: 'Fine dirt (1 lb.)',
+        type: 'equipment',
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        data: {
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '508',
+            sp: '0',
+            cp: '30',
+          },
+          isCoins: true
         }
       }
     ]
