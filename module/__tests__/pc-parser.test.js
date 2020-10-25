@@ -781,9 +781,8 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
 })
 
 /* Test Wizard's text */
-/*
 test('wizard', () => {
-  const parsedNPC = parsePC() {
+  const parsedNPC = parsePC(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -831,42 +830,425 @@ Spells: (Spell Check: d20+12)
 5) Hepsoj's Fecund Fungi
 5) Magic Bulwark
 5) Mind Purge`
-  }
+  )
   const expected = {
     'data.attributes.init.value': '-1',
     'data.attributes.speed.value': '30',
-    'data.details.occupation.value': 'Blacksmith',
+    'data.details.occupation.value': 'Woodcutter',
     'data.attributes.ac.value': '9',
-    'data.attributes.hp.value': '3',
-    'data.attributes.hp.max': '3',
-    'data.abilities.str.value': '7',
+    'data.attributes.hp.value': '15',
+    'data.attributes.hp.max': '15',
+    'data.attributes.critical.die': '1d14',
+    'data.attributes.critical.table': 'I',
+    'data.abilities.str.value': '14',
     'data.abilities.agl.value': '7',
-    'data.abilities.sta.value': '12',
-    'data.abilities.per.value': '17',
-    'data.abilities.int.value': '5',
+    'data.abilities.sta.value': '8',
+    'data.abilities.per.value': '14',
+    'data.abilities.int.value': '17',
     'data.abilities.lck.value': '12',
-    'data.abilities.str.max': '7',
+    'data.abilities.str.max': '14',
     'data.abilities.agl.max': '7',
-    'data.abilities.sta.max': '12',
-    'data.abilities.per.max': '17',
-    'data.abilities.int.max': '5',
+    'data.abilities.sta.max': '8',
+    'data.abilities.per.max': '14',
+    'data.abilities.int.max': '17',
     'data.abilities.lck.max': '12',
-    'data.saves.frt.value': '0',
-    'data.saves.ref.value': '-1',
-    'data.saves.wil.value': '2',
+    'data.class.className': 'Wizard',
+    'data.class.spellCheck': '+12',
+    'data.config.actionDice': '1d20+1d20+1d14',
+    'data.details.alignment': 'c',
+    'data.details.attackBonus': '4',
+    'data.details.birthAugur': 'Warrior\'s arm (Critical hit tables) (+0)',
+    'data.details.languages': 'Common, Harpy, Alignment, Kobold, Orc',
+    'data.details.level.value': '10',
+    'data.saves.frt.value': '2',
+    'data.saves.ref.value': '3',
+    'data.saves.wil.value': '7',
     items: [
       {
-        name: 'Hammer (as club)',
+        name: 'Handaxe',
         type: 'weapon',
         data: {
-          toHit: '-1',
-          damage: '1d4-1',
-          description: { value: '' },
+          toHit: '+5',
+          damage: '1d6+1',
           melee: true
+        }
+      },
+      {
+        name: '+3 Staff',
+        type: 'weapon',
+        data: {
+          toHit: '+8',
+          damage: '1d4+4',
+          melee: true
+        }
+      },
+      {
+        name: '+2 Shortbow',
+        type: 'weapon',
+        data: {
+          toHit: '+5',
+          damage: '1d6',
+          melee: false
+        }
+      },
+      {
+        name: 'Unarmored',
+        type: 'armor',
+        data: {
+          acBonus: '+0',
+          checkPenalty: '0',
+          fumbleDie: '1d4'
+        }
+      },
+      {
+        name: 'Sack (small) (8 cp)',
+        type: 'equipment'
+      },
+      {
+        name: 'Bundle of wood',
+        type: 'equipment'
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        data: {
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '1115',
+            sp: '0',
+            cp: '34'
+          },
+          isCoins: true
+        }
+      },
+      {
+        name: 'Chill Touch',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Ekim\'s Mystical Mask',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Flaming Hands',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Magic Missile',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Read Magic',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Ropework',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Runic Alphabet',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Mirror Image',
+        type: 'spell',
+        data: {
+          level: '2',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Phantasm',
+        type: 'spell',
+        data: {
+          level: '2',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Fly',
+        type: 'spell',
+        data: {
+          level: '3',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Turn to Stone',
+        type: 'spell',
+        data: {
+          level: '3',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Control Fire',
+        type: 'spell',
+        data: {
+          level: '4',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Lokerimon\'s Orderly Assistance',
+        type: 'spell',
+        data: {
+          level: '4',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Polymorph',
+        type: 'spell',
+        data: {
+          level: '4',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Wizard Sense',
+        type: 'spell',
+        data: {
+          level: '4',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Hepsoj\'s Fecund Fungi',
+        type: 'spell',
+        data: {
+          level: '5',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Magic Bulwark',
+        type: 'spell',
+        data: {
+          level: '5',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
+        }
+      },
+      {
+        name: 'Mind Purge',
+        type: 'spell',
+        data: {
+          level: '5',
+          spellCheck: {
+            die: '1d20',
+            value: '+12'
+          }
         }
       }
     ]
   }
   expect(parsedNPC).toMatchObject(expected)
 })
-*/
+
+/* Test Dwarf's text */
+test('dwarf', () => {
+  const parsedNPC = parsePC(
+`Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Neutral Dwarf (3rd level)
+Occupation: Dwarven apothacarist
+Strength: 13 (+1)
+Agility: 5 (-2)
+Stamina: 13 (+1)
+Personality: 8 (-1)
+Intelligence: 11 (0)
+Luck: 8 (-1)
+
+HP: 24; Speed: 15; Init: -2
+Ref: -1; Fort: 3; Will: 0
+
+Base Attack Mod: d5
+Attack Dice: 1d20; Crit Die/Table: 1d14/III
+Occupation Weapon: Staff melee d5+1 (dmg 1d4+1+deed)
+Main Weapon: Longbow ranged d5-2 (dmg 1d6+deed)
+Secondary Weapon: Lance melee d5+1 (dmg 1d12+1+deed)
+
+AC: (13)* (Scale Mail + Shield (+5) Check penalty (-5) Fumble die (d12) Speed (-5))
+Equipment: Iron spike (1 sp)
+Trade good: Steel vial
+Starting Funds: 27 cp + 2027 gp
+Lucky sign: Raised by wolves (Unarmed attack rolls) (-1)
+Languages: Common, Dwarf, Alignment
+Racial Traits: Dwarven ability: Infravision
+Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damage)`
+  )
+  const expected = {
+    'data.attributes.init.value': '-2',
+    'data.attributes.speed.value': '15',
+    'data.details.occupation.value': 'Dwarven apothacarist',
+    'data.attributes.ac.value': '13',
+    'data.attributes.hp.value': '24',
+    'data.attributes.hp.max': '24',
+    'data.attributes.critical.die': '1d14',
+    'data.attributes.critical.table': 'III',
+    'data.abilities.str.value': '13',
+    'data.abilities.agl.value': '5',
+    'data.abilities.sta.value': '13',
+    'data.abilities.per.value': '8',
+    'data.abilities.int.value': '11',
+    'data.abilities.lck.value': '8',
+    'data.abilities.str.max': '13',
+    'data.abilities.agl.max': '5',
+    'data.abilities.sta.max': '13',
+    'data.abilities.per.max': '8',
+    'data.abilities.int.max': '11',
+    'data.abilities.lck.max': '8',
+    'data.class.className': 'Dwarf',
+    'data.config.actionDice': '1d20',
+    'data.details.alignment': 'n',
+    'data.details.attackBonus': 'd5',
+    'data.details.birthAugur': 'Raised by wolves (Unarmed attack rolls) (-1)',
+    'data.details.languages': 'Common, Dwarf, Alignment',
+    'data.details.level.value': '3',
+    'data.saves.frt.value': '3',
+    'data.saves.ref.value': '-1',
+    'data.saves.wil.value': '0',
+    items: [
+      {
+        name: 'Staff',
+        type: 'weapon',
+        data: {
+          toHit: 'd5+1',
+          damage: '1d4+1+@ab',
+          melee: true
+        }
+      },
+      {
+        name: 'Longbow',
+        type: 'weapon',
+        data: {
+          toHit: 'd5-2',
+          damage: '1d6+@ab',
+          melee: false
+        }
+      },
+      {
+        name: 'Lance',
+        type: 'weapon',
+        data: {
+          toHit: 'd5+1',
+          damage: '1d12+1+@ab',
+          melee: true
+        }
+      },
+      {
+        name: 'Scale Mail + Shield',
+        type: 'armor',
+        data: {
+          acBonus: '+5',
+          checkPenalty: '-5',
+          fumbleDie: '1d12'
+        }
+      },
+      {
+        name: 'Iron spike (1 sp)',
+        type: 'equipment'
+      },
+      {
+        name: 'Steel vial',
+        type: 'equipment'
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        data: {
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '2027',
+            sp: '0',
+            cp: '27'
+          },
+          isCoins: true
+        }
+      }
+    ]
+  }
+  expect(parsedNPC).toMatchObject(expected)
+})
