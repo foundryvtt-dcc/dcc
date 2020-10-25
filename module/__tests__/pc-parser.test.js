@@ -1252,3 +1252,217 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
   }
   expect(parsedNPC).toMatchObject(expected)
 })
+
+/* Test Elf's text */
+test('elf', () => {
+  const parsedNPC = parsePC(
+`Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Neutral Elf (3rd level)
+Occupation: Elven navigator
+Strength: 13 (+1)
+Agility: 15 (+1)
+Stamina: 6 (-1)
+Personality: 9 (0)
+Intelligence: 17 (+2)
+Luck: 9 (0)
+
+HP: 10; Speed: 30; Init: 1
+Ref: 2; Fort: 0; Will: 2
+
+Base Attack Mod: 2
+Attack Dice: 1d20; Crit Die/Table: 1d8/II
+Occupation Weapon: Shortbow ranged +3 (dmg 1d6)
+Main Weapon: Spear melee +3 (dmg 1d8+1)
+Secondary Weapon: Club melee +3 (dmg 1d4+1)
+
+AC: (14) (Studded Leather (+3) Check penalty (-2) Fumble die (d8))
+Equipment: Iron spike (1 sp)
+Trade good: Spyglass
+Starting Funds: 30 cp + 2025 gp
+Lucky sign: Pack hunter (Attack/damage rolls for 0-level weapon) (+0)
+Languages: Common, Elf, Dragon, Demonic, Naga
+Racial Traits: Elven traits: Heightened senses, iron vulnerability, Infravision
+Elf trait: Lucky spell - choose one spell that you apply your luck mod to
+
+Spells: (Spell Check: d20+5)
+1) Patron Bond
+1) Invoke Patron
+1) Color Spray
+1) Ekim's Mystical Mask
+1) Ventriloquism
+1) Ward Portal
+2) Monster Summoning`
+  )
+  const expected = {
+    'data.attributes.init.value': '1',
+    'data.attributes.speed.value': '30',
+    'data.details.occupation.value': 'Elven navigator',
+    'data.attributes.ac.value': '14',
+    'data.attributes.hp.value': '10',
+    'data.attributes.hp.max': '10',
+    'data.attributes.critical.die': '1d8',
+    'data.attributes.critical.table': 'II',
+    'data.abilities.str.value': '13',
+    'data.abilities.agl.value': '15',
+    'data.abilities.sta.value': '6',
+    'data.abilities.per.value': '9',
+    'data.abilities.int.value': '17',
+    'data.abilities.lck.value': '9',
+    'data.abilities.str.max': '13',
+    'data.abilities.agl.max': '15',
+    'data.abilities.sta.max': '6',
+    'data.abilities.per.max': '9',
+    'data.abilities.int.max': '17',
+    'data.abilities.lck.max': '9',
+    'data.class.className': 'Elf',
+    'data.class.spellCheck': '+5',
+    'data.config.actionDice': '1d20',
+    'data.details.alignment': 'n',
+    'data.details.attackBonus': '2',
+    'data.details.birthAugur': 'Pack hunter (Attack/damage rolls for 0-level weapon) (+0)',
+    'data.details.languages': 'Common, Elf, Dragon, Demonic, Naga',
+    'data.details.level.value': '3',
+    'data.saves.frt.value': '0',
+    'data.saves.ref.value': '2',
+    'data.saves.wil.value': '2',
+    items: [
+      {
+        name: 'Shortbow',
+        type: 'weapon',
+        data: {
+          toHit: '+3',
+          damage: '1d6',
+          melee: false
+        }
+      },
+      {
+        name: 'Spear',
+        type: 'weapon',
+        data: {
+          toHit: '+3',
+          damage: '1d8+1',
+          melee: true
+        }
+      },
+      {
+        name: 'Club',
+        type: 'weapon',
+        data: {
+          toHit: '+3',
+          damage: '1d4+1',
+          melee: true
+        }
+      },
+      {
+        name: 'Studded Leather',
+        type: 'armor',
+        data: {
+          acBonus: '+3',
+          checkPenalty: '-2',
+          fumbleDie: '1d8'
+        }
+      },
+      {
+        name: 'Iron spike (1 sp)',
+        type: 'equipment'
+      },
+      {
+        name: 'Spyglass',
+        type: 'equipment'
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        data: {
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '2025',
+            sp: '0',
+            cp: '30'
+          },
+          isCoins: true
+        }
+      },
+      {
+        name: 'Patron Bond',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+5'
+          }
+        }
+      },
+      {
+        name: 'Invoke Patron',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+5'
+          }
+        }
+      },
+      {
+        name: 'Color Spray',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+5'
+          }
+        }
+      },
+      {
+        name: 'Ekim\'s Mystical Mask',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+5'
+          }
+        }
+      },
+      {
+        name: 'Ventriloquism',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+5'
+          }
+        }
+      },
+      {
+        name: 'Ward Portal',
+        type: 'spell',
+        data: {
+          level: '1',
+          spellCheck: {
+            die: '1d20',
+            value: '+5'
+          }
+        }
+      },
+      {
+        name: 'Monster Summoning',
+        type: 'spell',
+        data: {
+          level: '2',
+          spellCheck: {
+            die: '1d20',
+            value: '+5'
+          }
+        }
+      }]
+  }
+  expect(parsedNPC).toMatchObject(expected)
+})
