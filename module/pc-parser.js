@@ -256,10 +256,10 @@ function _parsePlainPCToJSON (pcString) {
     pcObject.occTitle = _firstMatch(pcString.match(/Occupation:\s+(.+)[;\n$]/))
     pcObject.armorClass = _firstMatch(pcString.match(/AC:\s+\((\d+)\)\*?/)) || pcObject.armorClass
     pcObject.armorData = _firstMatch(pcString.match(/AC:\s+\(\d+\)\*?\s+\((.*)\)/))
-    pcObject.critDie = _firstMatch(pcString.match(/Crit Die\/Table:\s+(1d\d+)\/.*[;\n$]/))
-    pcObject.critTable = _firstMatch(pcString.match(/Crit Die\/Table:\s+1d\d+\/(.*)[;\n$]/))
+    pcObject.critDie = _firstMatch(pcString.match(/Crit Die\/Table:\s+(\d+d\d+)\/.*[;\n$]/))
+    pcObject.critTable = _firstMatch(pcString.match(/Crit Die\/Table:\s+\d+d\d+\/(.*)[;\n$]/))
     pcObject.actionDice = _firstMatch(pcString.match(/Attack Dice:\s+((?:1d\d+\+?)+)[;\n$]/))
-    pcObject.attackBonus = _firstMatch(pcString.match(/Base Attack Mod:\s+(\d+)[;\n$]/))
+    pcObject.attackBonus = _firstMatch(pcString.match(/Base Attack Mod:\s+(.+)[;\n$]/))
     pcObject.spellCheck = _firstMatch(pcString.match(/Spells:\s+\(Spell Check:\s+d20([+-]\d+)\)/))
 
     const alignmentLevelClass = pcString.match(/(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$]/)
@@ -350,17 +350,18 @@ function _firstMatch (result) {
 }
 
 function _parseWeapon (weaponString) {
-  const weaponData = weaponString.match(/^(.*)\s+([+-]?\d+)\s+\((?:dmg\s+)?(.+)\)$/)
+  const weaponData = weaponString.match(/^(.*)\s+(.+)\s+\((?:dmg\s+)?(.+)\)$/)
   let melee = true
   if (!weaponString.match(/melee/)) {
     melee = false
   }
+  const damage = weaponData[3].replace('deed', '@ab')
   const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
   if (weaponData.length > 0) {
     return {
       name: name,
       attackMod: weaponData[2],
-      attackDamage: weaponData[3],
+      attackDamage: damage,
       melee: melee
     }
   }

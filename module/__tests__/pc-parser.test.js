@@ -653,6 +653,133 @@ Hide In Shadows: 11 (-4)`
   expect(parsedNPC).toMatchObject(expected)
 })
 
+/* Test Warrior's text */
+test('warrior', () => {
+  const parsedNPC = parsePC(
+`Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Lawful Warrior (8th level)
+Occupation: Orphan
+Strength: 12 (0)
+Agility: 8 (-1)
+Stamina: 13 (+1)
+Personality: 8 (-1)
+Intelligence: 10 (0)
+Luck: 11 (0)
+
+HP: 62; Speed: 25; Init: 7
+Ref: 2; Fort: 6; Will: 1
+
+Base Attack Mod: d10+2
+Attack Dice: 1d20+1d20; Crit Die/Table: 2d20/V
+Occupation Weapon: Club melee d10+2 (dmg 1d4+deed)
+Main Weapon: +2 Flail melee d10+2+2 (dmg 1d6+2+deed)
+Secondary Weapon: +1 Club melee d10+2+1 (dmg 1d4+1+deed)
+
+AC: (13) (Scale Mail (+4) Check penalty (-4) Fumble die (d12) Speed (-5))
+Equipment: Chest - empty (2 gp)
+Trade good: Rag doll
+Starting Funds: 34 cp + 1520 gp
+Lucky sign: Resisted temptation (Willpower saving throws) (+0)
+Languages: Common
+Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
+  )
+  const expected = {
+    'data.attributes.init.value': '7',
+    'data.attributes.speed.value': '25',
+    'data.details.occupation.value': 'Orphan',
+    'data.attributes.ac.value': '13',
+    'data.attributes.hp.value': '62',
+    'data.attributes.hp.max': '62',
+    'data.attributes.critical.die': '2d20',
+    'data.attributes.critical.table': 'V',
+    'data.abilities.str.value': '12',
+    'data.abilities.agl.value': '8',
+    'data.abilities.sta.value': '13',
+    'data.abilities.per.value': '8',
+    'data.abilities.int.value': '10',
+    'data.abilities.lck.value': '11',
+    'data.abilities.str.max': '12',
+    'data.abilities.agl.max': '8',
+    'data.abilities.sta.max': '13',
+    'data.abilities.per.max': '8',
+    'data.abilities.int.max': '10',
+    'data.abilities.lck.max': '11',
+    'data.class.className': 'Warrior',
+    'data.config.actionDice': '1d20+1d20',
+    'data.details.alignment': 'l',
+    'data.details.attackBonus': 'd10+2',
+    'data.details.birthAugur': 'Resisted temptation (Willpower saving throws) (+0)',
+    'data.details.languages': 'Common',
+    'data.details.level.value': '8',
+    'data.saves.frt.value': '6',
+    'data.saves.ref.value': '2',
+    'data.saves.wil.value': '1',
+    items: [
+      {
+        name: 'Club',
+        type: 'weapon',
+        data: {
+          toHit: 'd10+2',
+          damage: '1d4+@ab',
+          melee: true
+        }
+      },
+      {
+        name: '+2 Flail',
+        type: 'weapon',
+        data: {
+          toHit: 'd10+2+2',
+          damage: '1d6+2+@ab',
+          melee: true
+        }
+      },
+      {
+        name: '+1 Club',
+        type: 'weapon',
+        data: {
+          toHit: 'd10+2+1',
+          damage: '1d4+1+@ab',
+          melee: true
+        }
+      },
+      {
+        name: 'Scale Mail',
+        type: 'armor',
+        data: {
+          acBonus: '+4',
+          checkPenalty: '-4',
+          fumbleDie: '1d12'
+        }
+      },
+      {
+        name: 'Chest - empty (2 gp)',
+        type: 'equipment'
+      },
+      {
+        name: 'Rag doll',
+        type: 'equipment'
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        data: {
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '1520',
+            sp: '0',
+            cp: '34'
+          },
+          isCoins: true
+        }
+      }
+    ]
+  }
+  expect(parsedNPC).toMatchObject(expected)
+})
+
 /* Test Wizard's text */
 /*
 test('wizard', () => {
