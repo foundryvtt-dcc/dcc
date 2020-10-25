@@ -360,11 +360,13 @@ function _parseStartingFunds (startingFundsString) {
     name: 'Coins',
     type: 'treasure',
     data: {
-      pp,
-      ep,
-      gp,
-      sp,
-      cp,
+      value: {
+        pp,
+        ep,
+        gp,
+        sp,
+        cp,
+      },
       isCoins: true
     }
   }

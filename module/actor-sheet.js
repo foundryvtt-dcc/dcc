@@ -105,7 +105,7 @@ class DCCActorSheet extends ActorSheet {
    * @param {Object} actorData The actor to prepare.
    * @return {undefined}
    */
-  _prepareItems (sheetData) {
+  async _prepareItems (sheetData) {
     const actorData = sheetData.actor
 
     // Initialize containers.
@@ -182,20 +182,25 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    // Combine any coins into a single item
+    // Combine any extra coins into a single item
     if (coins.length) {
       const wallet = coins.shift()
+      let needsUpdate = false
       for (const c of coins) {
         wallet.data.value.pp = parseInt(wallet.data.value.pp) + parseInt(c.data.value.pp)
         wallet.data.value.ep = parseInt(wallet.data.value.ep) + parseInt(c.data.value.ep)
         wallet.data.value.gp = parseInt(wallet.data.value.gp) + parseInt(c.data.value.gp)
         wallet.data.value.sp = parseInt(wallet.data.value.sp) + parseInt(c.data.value.sp)
         wallet.data.value.cp = parseInt(wallet.data.value.cp) + parseInt(c.data.value.cp)
-        this.actor.deleteOwnedItem(c._id, {})
+        await this.actor.deleteOwnedItem(c._id, {})
+        needsUpdate = true
       }
-      this.actor.updateOwnedItem(wallet, { diff: true })
+      if (needsUpdate) {
+        await this.actor.updateOwnedItem(wallet, { diff: true })
+      }
       treasure.push(wallet)
     }
+
 
     // Assign and return
     actorData.equipment = equipment
@@ -538,7 +543,7 @@ class DCCActorSheet extends ActorSheet {
    * @param {string} statBlockHTML   The stat block to import
    * @private
    */
-  _pasteStatBlock (statBlockHTML) {
+  async _pasteStatBlock (statBlockHTML) {
     const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
     const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
 
@@ -546,11 +551,11 @@ class DCCActorSheet extends ActorSheet {
     const items = parsedCharacter.items
     delete parsedCharacter.items
     for (const item of items) {
-      this.actor.createOwnedItem(item)
+      await this.actor.createOwnedItem(item)
     }
 
     // Update the actor itself
-    this.object.update(parsedCharacter)
+    await this.object.update(parsedCharacter)
   }
 
   /* -------------------------------------------- */
