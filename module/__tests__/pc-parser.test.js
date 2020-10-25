@@ -57,11 +57,11 @@ Languages: Common`)
       },
       {
         name: 'Crowbar (2 gp)',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Steel tongs',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Coins',
@@ -157,15 +157,15 @@ test('beekeeper', () => {
       },
       {
         name: 'Sack (small) (8 cp)',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Water skin',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Jar of honey',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Coins',
@@ -176,9 +176,9 @@ test('beekeeper', () => {
             ep: '0',
             gp: '0',
             pp: '0',
-            sp: '0',
+            sp: '0'
           },
-          isCoins: true,
+          isCoins: true
         }
       }
     ]
@@ -289,16 +289,16 @@ Spells: (Spell Check: d20+2)
         data: {
           acBonus: '+4',
           checkPenalty: '-4',
-          fumbleDie: '1d12',
+          fumbleDie: '1d12'
         }
       },
       {
         name: 'Waterskin (5 sp)',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Shoehorn',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Coins',
@@ -309,7 +309,7 @@ Spells: (Spell Check: d20+2)
             ep: '0',
             gp: '40',
             sp: '0',
-            cp: '36',
+            cp: '36'
           },
           isCoins: true
         }
@@ -488,16 +488,16 @@ Cast Spell From Scroll (d16)`
         data: {
           acBonus: '+1',
           checkPenalty: '0',
-          fumbleDie: '1d8',
+          fumbleDie: '1d8'
         }
       },
       {
         name: 'Holy symbol (25 gp)',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Fine dirt (1 lb.)',
-        type: 'equipment',
+        type: 'equipment'
       },
       {
         name: 'Coins',
@@ -508,7 +508,7 @@ Cast Spell From Scroll (d16)`
             ep: '0',
             gp: '508',
             sp: '0',
-            cp: '30',
+            cp: '30'
           },
           isCoins: true
         }
@@ -519,7 +519,6 @@ Cast Spell From Scroll (d16)`
 })
 
 /* Test Halfling's text */
-/*
 test('halfling', () => {
   const parsedNPC = parsePC(
 `Generator Settings
@@ -557,43 +556,102 @@ Sneak Silently: 11 (-4)
 Hide In Shadows: 11 (-4)`
   )
   const expected = {
-    'data.attributes.init.value': '-1',
-    'data.attributes.speed.value': '30',
-    'data.details.occupation.value': 'Blacksmith',
-    'data.attributes.ac.value': '9',
-    'data.attributes.hp.value': '3',
-    'data.attributes.hp.max': '3',
-    'data.abilities.str.value': '7',
-    'data.abilities.agl.value': '7',
-    'data.abilities.sta.value': '12',
-    'data.abilities.per.value': '17',
-    'data.abilities.int.value': '5',
-    'data.abilities.lck.value': '12',
-    'data.abilities.str.max': '7',
-    'data.abilities.agl.max': '7',
-    'data.abilities.sta.max': '12',
-    'data.abilities.per.max': '17',
-    'data.abilities.int.max': '5',
-    'data.abilities.lck.max': '12',
-    'data.saves.frt.value': '0',
-    'data.saves.ref.value': '-1',
-    'data.saves.wil.value': '2',
+    'data.attributes.init.value': '0',
+    'data.attributes.speed.value': '15',
+    'data.details.occupation.value': 'Halfling gypsy',
+    'data.attributes.ac.value': '14',
+    'data.attributes.hp.value': '48',
+    'data.attributes.hp.max': '48',
+    'data.attributes.critical.die': '1d16',
+    'data.attributes.critical.table': 'III',
+    'data.abilities.str.value': '11',
+    'data.abilities.agl.value': '11',
+    'data.abilities.sta.value': '13',
+    'data.abilities.per.value': '15',
+    'data.abilities.int.value': '12',
+    'data.abilities.lck.value': '11',
+    'data.abilities.str.max': '11',
+    'data.abilities.agl.max': '11',
+    'data.abilities.sta.max': '13',
+    'data.abilities.per.max': '15',
+    'data.abilities.int.max': '12',
+    'data.abilities.lck.max': '11',
+    'data.class.className': 'Halfling',
+    'data.config.actionDice': '1d20+1d20',
+    'data.details.alignment': 'c',
+    'data.details.attackBonus': '8',
+    'data.details.birthAugur': 'Harsh winter (All attack rolls) (+0)',
+    'data.details.languages': 'Common, Halfling, Alignment',
+    'data.details.level.value': '10',
+    'data.saves.frt.value': '5',
+    'data.saves.ref.value': '6',
+    'data.saves.wil.value': '7',
+    'data.skills.sneakAndHide.value': '11',
+    'data.skills.sneakSilently.value': '11',
+    'data.skills.hideInShadows.value': '11',
     items: [
       {
-        name: 'Hammer (as club)',
+        name: 'Sling',
         type: 'weapon',
         data: {
-          toHit: '-1',
-          damage: '1d4-1',
-          description: { value: '' },
+          toHit: '+8',
+          damage: '1d4',
+          melee: false
+        }
+      },
+      {
+        name: '+3 Crossbow',
+        type: 'weapon',
+        data: {
+          toHit: '+11',
+          damage: '1d6',
+          melee: false
+        }
+      },
+      {
+        name: '+2 Dagger',
+        type: 'weapon',
+        data: {
+          toHit: '+10',
+          damage: '1d4+2',
           melee: true
+        }
+      },
+      {
+        name: 'Scale Mail',
+        type: 'armor',
+        data: {
+          acBonus: '+4',
+          checkPenalty: '-4',
+          fumbleDie: '1d12'
+        }
+      },
+      {
+        name: 'Iron spike (1 sp)',
+        type: 'equipment'
+      },
+      {
+        name: 'Hex doll',
+        type: 'equipment'
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        data: {
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '1535',
+            sp: '0',
+            cp: '33'
+          },
+          isCoins: true
         }
       }
     ]
   }
   expect(parsedNPC).toMatchObject(expected)
 })
-*/
 
 /* Test Wizard's text */
 /*

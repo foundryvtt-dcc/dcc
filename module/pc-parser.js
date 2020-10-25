@@ -49,7 +49,7 @@ function _parseJSONPC (pcObject) {
         data: {
           toHit: weapon.attackMod || '0',
           damage: weapon.attackDamage || '1d3',
-          melee: weapon.melee,
+          melee: weapon.melee
         }
       })
     }
@@ -60,7 +60,7 @@ function _parseJSONPC (pcObject) {
       data: {
         toHit: pcObject.attackMod || '0',
         damage: pcObject.attackDamage || '1d3',
-        melee: true, // No way to know, but melee is most likely
+        melee: true // No way to know, but melee is most likely
       }
     })
   }
@@ -196,6 +196,8 @@ function _parseJSONPC (pcObject) {
     delete pcObject.thiefSkills.backstab
     pc['data.skills.castSpellFromScroll.die'] = `1${pcObject.thiefSkills.castSpellFromScroll || 'd10'}`
     delete pcObject.thiefSkills.castSpellFromScroll
+    // Halflings use the sneakSilently and hideInShadowsSkills according to the generator
+    pc['data.skills.sneakAndHide.value'] = pcObject.thiefSkills.sneakSilently || '0'
     // Handle standard thief skills
     for (const skill in pcObject.thiefSkills) {
       pc[`data.skills.${skill}.value`] = pcObject.thiefSkills[skill] || '0'
@@ -286,19 +288,19 @@ function _parsePlainPCToJSON (pcString) {
     if (thiefSkills) {
       pcObject.thiefSkills = {
         raw: thiefSkills,
-        backstab: _firstMatch(thiefSkills.match(/Backstab:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        sneakSilently: _firstMatch(thiefSkills.match(/Sneak Silently:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        hideInShadows: _firstMatch(thiefSkills.match(/Hide In Shadows:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        pickPockets: _firstMatch(thiefSkills.match(/Pick Pocket:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        climbSheerSurfaces: _firstMatch(thiefSkills.match(/Climb Sheer Surfaces:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        pickLock: _firstMatch(thiefSkills.match(/Pick Lock:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        findTrap: _firstMatch(thiefSkills.match(/Find Trap:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        disableTrap: _firstMatch(thiefSkills.match(/Disable Trap:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        forgeDocument: _firstMatch(thiefSkills.match(/Forge Document:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        disguiseSelf: _firstMatch(thiefSkills.match(/Disguise Self:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        readLanguages: _firstMatch(thiefSkills.match(/Read Languages:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        handlePoison: _firstMatch(thiefSkills.match(/Handle Poison:\s+([+-]?\d+)\s+\([+-]?\d+\)[;\n$]/)),
-        castSpellFromScroll: _firstMatch(thiefSkills.match(/Cast Spell From Scroll\s+\((d\d+)\)[;\n$]?/))
+        backstab: _firstMatch(thiefSkills.match(/Backstab:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        sneakSilently: _firstMatch(thiefSkills.match(/Sneak Silently:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        hideInShadows: _firstMatch(thiefSkills.match(/Hide In Shadows:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        pickPockets: _firstMatch(thiefSkills.match(/Pick Pocket:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        climbSheerSurfaces: _firstMatch(thiefSkills.match(/Climb Sheer Surfaces:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        pickLock: _firstMatch(thiefSkills.match(/Pick Lock:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        findTrap: _firstMatch(thiefSkills.match(/Find Trap:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        disableTrap: _firstMatch(thiefSkills.match(/Disable Trap:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        forgeDocument: _firstMatch(thiefSkills.match(/Forge Document:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        disguiseSelf: _firstMatch(thiefSkills.match(/Disguise Self:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        readLanguages: _firstMatch(thiefSkills.match(/Read Languages:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        handlePoison: _firstMatch(thiefSkills.match(/Handle Poison:\s+([+-]?\d+)\s+\([+-]?\d+\)/)),
+        castSpellFromScroll: _firstMatch(thiefSkills.match(/Cast Spell From Scroll\s+\((d\d+)\)/))
       }
     }
 
@@ -376,7 +378,7 @@ function _parseArmor (armorString) {
       data: {
         acBonus: armorFields[2],
         checkPenalty: armorFields[3],
-        fumbleDie: '1' + armorFields[4],
+        fumbleDie: '1' + armorFields[4]
       }
     }
   }
@@ -399,7 +401,7 @@ function _parseStartingFunds (startingFundsString) {
         ep,
         gp,
         sp,
-        cp,
+        cp
       },
       isCoins: true
     }

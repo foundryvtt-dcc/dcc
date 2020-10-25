@@ -201,7 +201,6 @@ class DCCActorSheet extends ActorSheet {
       treasure.push(wallet)
     }
 
-
     // Assign and return
     actorData.equipment = equipment
     actorData.weapons = weapons
