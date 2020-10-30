@@ -259,7 +259,7 @@ class DCCActor extends Actor {
    */
   rollSpellCheck (options = {}) {
     if (!options.abilityId) {
-      options.abilityId = this.data.data.class.spellCheckAbility || 'int'
+      options.abilityId = this.data.data.class.spellCheckAbility || ''
     }
 
     // If a spell name is provided attempt to look up an item with that name for the roll
@@ -279,17 +279,22 @@ class DCCActor extends Actor {
     }
 
     // Otherwise fall back to a raw dice roll with appropriate flavor
-    const ability = this.data.data.abilities[options.abilityId]
+    const ability = this.data.data.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
     const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
 
+    let flavor = spell
+    if (ability.label) {
+      flavor += ` (${game.i18n.localize(ability.label)})`
+    }
+
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: `${spell} (${game.i18n.localize(ability.label)})`
+      flavor
     })
   }
 
