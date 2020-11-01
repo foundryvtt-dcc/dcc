@@ -78,7 +78,7 @@ class DCCItem extends Item {
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        roll.evaluate()
+        roll.roll()
         const terms = roll.terms || roll.parts
         if (terms.length > 1 || roll.dice.length > 0) {
           needsRoll = true
@@ -104,7 +104,7 @@ class DCCItem extends Item {
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        roll.evaluate()
+        roll.roll()
         updates['data.value.' + currency] = roll.total
         valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
