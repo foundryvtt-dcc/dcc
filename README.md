@@ -1,4 +1,4 @@
-# Dungeon Crawl Classics for Foundry VTT
+# Dungeon Crawl Classics Support for Foundry VTT
 
 Goodman Games' Dungeon Crawl Classics RPG system for the [Foundry Virtual Tabletop](https://foundryvtt.com).
 
@@ -7,6 +7,8 @@ Goodman Games' Dungeon Crawl Classics RPG system for the [Foundry Virtual Tablet
 Join us on the [virtual-tabletop channel](https://discord.gg/2PR9YH9) on the Goodman Games discord for help and discussion.
 
 Manifest URL: https://github.com/cyface/foundryvtt-dcc/raw/master/system.json
+
+Note that this product does not contain content from the DCC rulebook, only rollable character sheets.  Once Foundry supports discrete copyright-protectable compendia, we will work with Goodman Games to get that content ready for out-of-the-box use in FoundryVTT.  Please see the user guide for how to import content from the PDF rulebook for personal use.
 
 ###### Maintainers
 * Steve Barnett (@mooped)
