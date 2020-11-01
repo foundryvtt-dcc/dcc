@@ -94,6 +94,16 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('stringify', function (object) {
     return JSON.stringify(object)
   })
+
+  // Handlebars helper for distances with an apostrophe
+  Handlebars.registerHelper('distanceFormat', function (object) {
+    const fields = String(object).match(/(\d+)'?/)
+    if (fields) {
+      return fields[1] + '\''
+    } else {
+      return ''
+    }
+  })
 })
 
 /* -------------------------------------------- */
@@ -149,6 +159,7 @@ async function createDCCMacro (data, slot) {
     'Luck Die': _createDCCLuckDieMacro,
     'Spell Check': _createDCCSpellCheckMacro,
     'Attack Bonus': _createDCCAttackBonusMacro,
+    'Action Dice': _createDCCActionDiceMacro,
     Weapon: _createDCCWeaponMacro
   }
   if (!handlers[data.type]) return
@@ -319,6 +330,26 @@ function _createDCCAttackBonusMacro (data, slot) {
     name: game.i18n.localize('DCC.AttackBonus'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus() }',
     img: 'icons/dice/d4black.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from an action die drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCActionDiceMacro (data, slot) {
+  if (data.type !== 'Action Dice') return
+  const die = data.data.die
+
+  // Create the macro command
+  const macroData = {
+    name: game.i18n.format('DCC.ActionDiceMacroName', { die }),
+    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.setActionDice('${die}') }`,
+    img: 'icons/dice/d20black.svg'
   }
 
   return macroData

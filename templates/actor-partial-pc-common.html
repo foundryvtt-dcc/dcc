@@ -13,6 +13,16 @@
                    data-dtype="Number"
                    placeholder="10"
             />
+            {{#if ../data.config.showMaxAbilities}}
+            <label>/</label>
+            <input class="ability-score" id="data.abilities.{{id}}.max"
+                   name="data.abilities.{{id}}.max"
+                   type="text"
+                   value="{{ability.max}}"
+                   data-dtype="Number"
+                   placeholder="10"
+            />
+            {{/if}}
             <div class="ability-modifiers" title="Modifier">
                 {{numberFormat ability.mod decimals=0 sign=true}}
             </div>
@@ -90,22 +100,36 @@
                 <div class="init">
                     <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize
                         "DCC.Init"}}</label>
-                    <input class="init-value" type="text" id="data.attributes.init.value"
-                           name="data.attributes.init.value"
-                           value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
-                           placeholder="+0"
-                           data-dtype="Number"/>
+                    <div class="flexrow">
+                        <input class="init-die" type="text" id="data.attributes.init.die"
+                               name="data.attributes.init.die"
+                               value="{{data.attributes.init.die}}"
+                               placeholder="1d20"
+                               data-dtype="String"/>
+                        <input class="init-value" type="text" id="data.attributes.init.value"
+                               name="data.attributes.init.value"
+                               value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
+                               placeholder="+0"
+                               data-dtype="Number"/>
+                    </div>
                 </div>
                 <div class="speed">
                     <label for="data.attributes.speed.value">{{localize "DCC.Speed"}}</label>
                     <input class="speed-value" type="text" id="data.attributes.speed.value"
                            name="data.attributes.speed.value"
-                           value="{{data.attributes.speed.value}}" data-dtype="Number"/>
+                           value="{{distanceFormat data.attributes.speed.value}}" data-dtype="String"/>
                 </div>
                 <div class="action-dice">
                     <label for="data.attributes.actionDice.value">{{localize "DCC.ActionDice"}}</label>
-                    <input type="text" id="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
-                           value="{{data.attributes.actionDice.value}}" maxlength="40"/>
+                    <select name="data.attributes.actionDice.value" name="data.attributes.actionDice.value"
+                            value="{{data.attributes.actionDice.value}}">
+                      {{stringify data.attributes.actionDice}}
+                      {{#select data.attributes.actionDice.value}}
+                      {{#each data.attributes.actionDice.options as |actionDie index|}}
+                      <option value="{{actionDie}}">{{actionDie}}</option>
+                      {{/each}}
+                      {{/select}}
+                    </select>
                 </div>
                 <div class="attack-bonus">
                     <label class="attack-bonus {{#if data.config.rollAttackBonus}}rollable{{/if}}"

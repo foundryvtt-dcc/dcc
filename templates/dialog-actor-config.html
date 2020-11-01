@@ -1,4 +1,10 @@
 <form class="actor config-dialog" autocomplete="off">
+  <div class="form-group">
+    <label for="data.config.actionDice">{{localize "DCC.ActionDice"}}</label>
+    <div class="form-fields">
+      <input type="text" name="data.config.actionDice" id="data.config.actionDice" value="{{data.config.actionDice}}" data-dtype="string"/>
+    </div>
+  </div>
   {{#if isNPC}}
   {{else}}
   <div class="form-group">
@@ -37,13 +43,19 @@
       </select>
     </div>
   </div>
+  <div class="form-group">
+    <label for="data.config.showMaxAbilities">{{localize "DCC.ShowMaxAbilitiesConfig"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.showMaxAbilities" id="data.config.showMaxAbilities" {{checked data.config.showMaxAbilities}} data-dtype="boolean"/>
+    </div>
+  </div>
   {{/if}}
   <div class="form-group">
-    <label for="data.config.showSpells">{{localize "DCC.ShowSpells"}}</label>
+    <label for="data.config.showSpells">{{localize "DCC.ShowSpellsConfig"}}</label>
     <div class="form-fields">
       <input type="checkbox" name="data.config.showSpells" id="data.config.showSpells" {{checked data.config.showSpells}} data-dtype="boolean"/>
     </div>
-    <label for="data.config.showSkills">{{localize "DCC.ShowSkills"}}</label>
+    <label for="data.config.showSkills">{{localize "DCC.ShowSkillsConfig"}}</label>
     <div class="form-fields">
       <input type="checkbox" name="data.config.showSkills" id="data.config.showSkills" {{checked data.config.showSkills}} data-dtype="boolean"/>
     </div>

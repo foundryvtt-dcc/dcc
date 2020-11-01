@@ -39,7 +39,8 @@
             "fumbleDie": "1d4"
           },
           "actionDice": {
-            "value": "1d20"
+            "value": "1d20",
+            "options": ["1d20"]
           },
           "critical": {
             "die": "1d4",
@@ -56,6 +57,7 @@
             "tempmax": 0
           },
           "init": {
+            "die": "1d20",
             "value": 0
           },
           "speed": {
@@ -68,6 +70,7 @@
             "value": 0
           },
           "alignment": "",
+          "languages": "",
           "occupation": "",
           "notes": ""
         },
@@ -85,10 +88,9 @@
             "value": 0
           }
         },
-        "languages": {
-          "value": ""
-        },
         "currency": {
+          "pp": 0,
+          "ep": 0,
           "gp": 0,
           "sp": 0,
           "cp": 0
@@ -266,6 +268,7 @@
       },
       "config": {
         "config": {
+          "actionDice" : "1d20",
           "capLevel": false,
           "maxLevel" : 10,
           "rollAttackBonus": false,
@@ -274,7 +277,8 @@
           "sortInventory" : true,
           "removeEmptyItems" : true,
           "showSpells" : false,
-          "showSkills" : false
+          "showSkills" : false,
+          "showMaxAbilities": false
         }
       }
     },
@@ -341,6 +345,8 @@
       },
       "currency": {
         "value": {
+          "pp": 0,
+          "ep": 0,
           "gp": 0,
           "sp": 0,
           "cp": 0
@@ -402,6 +408,7 @@
     },
     "treasure": {
       "templates": [
+        "itemDescription",
         "currency"
       ],
       "isCoins": false
@@ -415,13 +422,10 @@
       },
       "available": true,
       "level": 1,
-      "corruption": {},
-      "manifestation": {},
-      "misfire": {},
-      "results": {},
       "range": "",
       "duration": "",
       "castingTime": "",
+      "results": {},
       "save": "",
       "spellCheck": {
         "die" : "1d20",

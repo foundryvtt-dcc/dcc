@@ -98,7 +98,8 @@
                     </div>
                     <div class="flexrow" data-skill="castSpellFromScroll">
                         <label class="skill-check rollable" for="data.skills.castSpellFromScroll.value">{{localize "DCC.CastSpellFromScroll"}}</label>
-                        <input type="text" id="data.skills.castSpellFromScroll.value" name="data.skills.castSpellFromScroll.value" value="{{data.skills.castSpellFromScroll.value}}" data-dtype="String"/>
+                        <input type="text" id="data.skills.castSpellFromScroll.die" name="data.skills.castSpellFromScroll.die" value="{{data.skills.castSpellFromScroll.die}}" data-dtype="String"/>
+                        <input type="text" id="data.skills.castSpellFromScroll.value" name="data.skills.castSpellFromScroll.value" value="{{numberFormat data.skills.castSpellFromScroll.value decimals=0 sign=true}}" data-dtype="Number"/>
                     </div>
                 </div>
             </div>

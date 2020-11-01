@@ -105,7 +105,7 @@ class DCCActorSheet extends ActorSheet {
    * @param {Object} actorData The actor to prepare.
    * @return {undefined}
    */
-  _prepareItems (sheetData) {
+  async _prepareItems (sheetData) {
     const actorData = sheetData.actor
 
     // Initialize containers.
@@ -164,7 +164,17 @@ class DCCActorSheet extends ActorSheet {
       } else if (i.type === 'skill') {
         skills.push(i)
       } else if (i.type === 'treasure') {
+        let treatAsCoins = false
+
         if (i.data.isCoins) {
+          // Safe to treat as coins if the item's value is resolved
+          const item = this.actor.getOwnedItem(i._id)
+          if (!item.needsValueRoll()) {
+            treatAsCoins = true
+          }
+        }
+
+        if (treatAsCoins) {
           coins.push(i)
         } else {
           treasure.push(i)
@@ -172,16 +182,22 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    // Combine any coins into a single item
+    // Combine any extra coins into a single item
     if (coins.length) {
       const wallet = coins.shift()
+      let needsUpdate = false
       for (const c of coins) {
-        wallet.data.value.gp += c.data.value.gp
-        wallet.data.value.sp += c.data.value.sp
-        wallet.data.value.cp += c.data.value.cp
-        this.actor.deleteOwnedItem(c._id, {})
+        wallet.data.value.pp = parseInt(wallet.data.value.pp) + parseInt(c.data.value.pp)
+        wallet.data.value.ep = parseInt(wallet.data.value.ep) + parseInt(c.data.value.ep)
+        wallet.data.value.gp = parseInt(wallet.data.value.gp) + parseInt(c.data.value.gp)
+        wallet.data.value.sp = parseInt(wallet.data.value.sp) + parseInt(c.data.value.sp)
+        wallet.data.value.cp = parseInt(wallet.data.value.cp) + parseInt(c.data.value.cp)
+        await this.actor.deleteOwnedItem(c._id, {})
+        needsUpdate = true
       }
-      this.actor.updateOwnedItem(wallet, { diff: true })
+      if (needsUpdate) {
+        await this.actor.updateOwnedItem(wallet, { diff: true })
+      }
       treasure.push(wallet)
     }
 
@@ -275,6 +291,13 @@ class DCCActorSheet extends ActorSheet {
       // Attack Bonus
       html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
       html.find('.attack-bonus').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+
+      // Action Dice
+      html.find('.action-dice').each((i, li) => {
         // Add draggable attribute and dragstart listener.
         li.setAttribute('draggable', true)
         li.addEventListener('dragstart', dragHandler, false)
@@ -458,6 +481,14 @@ class DCCActorSheet extends ActorSheet {
         actorId: this.actor.id,
         data: {}
       }
+    } else if (classes.contains('action-dice')) {
+      dragData = {
+        type: 'Action Dice',
+        actorId: this.actor.id,
+        data: {
+          die: this.actor.data.data.attributes.actionDice.value
+        }
+      }
     } else if (classes.contains('weapon-button') || classes.contains('backstab-button')) {
       const li = event.currentTarget.parentElement
       const weapon = this.actor.items.get(li.dataset.itemId)
@@ -511,7 +542,7 @@ class DCCActorSheet extends ActorSheet {
    * @param {string} statBlockHTML   The stat block to import
    * @private
    */
-  _pasteStatBlock (statBlockHTML) {
+  async _pasteStatBlock (statBlockHTML) {
     const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
     const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
 
@@ -519,11 +550,11 @@ class DCCActorSheet extends ActorSheet {
     const items = parsedCharacter.items
     delete parsedCharacter.items
     for (const item of items) {
-      this.actor.createOwnedItem(item)
+      await this.actor.createOwnedItem(item)
     }
 
     // Update the actor itself
-    this.object.update(parsedCharacter)
+    await this.object.update(parsedCharacter)
   }
 
   /* -------------------------------------------- */

@@ -63,6 +63,29 @@ class DCCActor extends Actor {
       data.attributes.fumble || {},
       { die: fumbleDie }
     )
+
+    // Gather available action dice
+    try {
+      // Implicit migration for legacy actors
+      if (!this.data.data.config.actionDice) {
+        this.data.data.config.actionDice = this.data.data.attributes.actionDice.value
+      }
+      // Parse the action dice expression from the config and produce a list of available dice
+      const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
+      actionDieExpression.roll()
+      const terms = actionDieExpression.terms || actionDieExpression.parts
+      const actionDice = []
+      for (const term of terms) {
+        if (typeof (term) === 'object') {
+          const termDie = `1d${term.faces}`
+          const termCount = term.number || 1
+          for (let i = 0; i < termCount; ++i) {
+            actionDice.push(termDie)
+          }
+        }
+      }
+      this.data.data.attributes.actionDice.options = actionDice
+    } catch (err) { }
   }
 
   /**
@@ -110,7 +133,8 @@ class DCCActor extends Actor {
         rollUnder: true
       }
     } else {
-      roll = new Roll('1d20+@abilMod', { abilMod: ability.mod, critical: 20 })
+      const die = this.data.data.attributes.actionDice.value
+      roll = new Roll('@die+@abilMod', { die, abilMod: ability.mod, critical: 20 })
     }
 
     // Convert the roll to a chat message
@@ -125,8 +149,9 @@ class DCCActor extends Actor {
    * @param {Object} token    The token to roll initiative for
    */
   async rollInitiative (token) {
+    const die = this.data.data.attributes.init.die || '1d20'
     const init = this.data.data.attributes.init.value
-    const roll = new Roll('1d20+@init', { init })
+    const roll = new Roll('@die+@init', { die, init })
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -154,8 +179,9 @@ class DCCActor extends Actor {
    */
   rollSavingThrow (saveId) {
     const save = this.data.data.saves[saveId]
+    const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
-    const roll = new Roll('1d20+@saveMod', { saveMod: save.value })
+    const roll = new Roll('@die+@saveMod', { die, saveMod: save.value })
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -233,7 +259,7 @@ class DCCActor extends Actor {
    */
   rollSpellCheck (options = {}) {
     if (!options.abilityId) {
-      options.abilityId = this.data.data.class.spellCheckAbility || 'int'
+      options.abilityId = this.data.data.class.spellCheckAbility || ''
     }
 
     // If a spell name is provided attempt to look up an item with that name for the roll
@@ -253,17 +279,22 @@ class DCCActor extends Actor {
     }
 
     // Otherwise fall back to a raw dice roll with appropriate flavor
-    const ability = this.data.data.abilities[options.abilityId]
+    const ability = this.data.data.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
-    const die = '1d20'
+    const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
+
+    let flavor = spell
+    if (ability.label) {
+      flavor += ` (${game.i18n.localize(ability.label)})`
+    }
 
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: `${spell} (${game.i18n.localize(ability.label)})`
+      flavor
     })
   }
 
@@ -295,6 +326,15 @@ class DCCActor extends Actor {
         flavor: game.i18n.localize('DCC.DeedRoll')
       })
     }
+  }
+
+  /*
+   * Set Action Dice
+   */
+  async setActionDice (die) {
+    this.update({
+      'data.attributes.actionDice.value': die
+    })
   }
 
   /**

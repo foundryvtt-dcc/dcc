@@ -201,7 +201,7 @@
 /*  Ability Scores                           */
 /* ----------------------------------------- */
 .dcc.sheet.actor .ability-scores {
-  flex: 0 0 140px;
+  flex: 0 0 150px;
   height: 425px;
   list-style: none;
   margin: 7px;
@@ -229,7 +229,7 @@
 .dcc.sheet.actor .ability-scores .ability .ability-modifiers {
   flex: 0 0 24px;
   height: 23px;
-  margin: -16px 0 0 110px;
+  margin: -16px 0 0 116px;
   width: 30px;
   line-height: 22px;
   font-size: 16px;
@@ -420,7 +420,7 @@
   text-align: center; }
 
 .dcc .combat-basics .init {
-  flex: 0 0 60px;
+  flex: 0 0 120px;
   align-items: center; }
 
 /* ----------------------------------------- */
@@ -577,6 +577,27 @@
   background-size: 22px 22px;
   background-repeat: no-repeat; }
 
+.dcc .roll-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("/icons/svg/d20-black.svg");
+  background-size: 22px 22px;
+  background-repeat: no-repeat; }
+
+.dcc .left-arrow-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("./images/left-arrow.png");
+  background-size: 22px 22px;
+  background-repeat: no-repeat; }
+
+.dcc .right-arrow-button {
+  flex: 0 0 30px;
+  margin: 5px 0 0 0;
+  background-image: url("./images/right-arrow.png");
+  background-size: 22px 22px;
+  background-repeat: no-repeat; }
+
 .dcc .weapon-damage {
   flex: 0 0 80px;
   margin: 0 10px 0 0;
@@ -616,7 +637,7 @@
 
 .dcc .character-grid {
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: 150px 105px 1fr;
   grid-template-rows: repeat(6, 70px);
   padding: 0;
   margin: 7px;
@@ -640,7 +661,7 @@
 
 .dcc.sheet.actor .character-grid .ability .ability-modifiers {
   height: 23px;
-  margin: -16px 0 0 110px;
+  margin: -16px 0 0 116px;
   width: 30px;
   line-height: 22px;
   font-size: 16px;
@@ -648,7 +669,7 @@
   border-left: 2px groove #eeede0; }
 
 .dcc.sheet.actor .character-grid .save {
-  width: 100px;
+  width: 105px;
   text-align: center;
   border-bottom: 2px groove #eeede0;
   border-right: 2px groove #eeede0;
@@ -989,12 +1010,16 @@
   .dcc .item-list .item-is-coins {
     flex: 0 1 100px;
     text-align: left; }
+  .dcc .item-list .item-pp {
+    flex: 0 0 50px; }
+  .dcc .item-list .item-ep {
+    flex: 0 0 50px; }
   .dcc .item-list .item-gp {
-    flex: 0 0 70px; }
+    flex: 0 0 50px; }
   .dcc .item-list .item-sp {
-    flex: 0 0 70px; }
+    flex: 0 0 50px; }
   .dcc .item-list .item-cp {
-    flex: 0 0 70px; }
+    flex: 0 0 50px; }
   .dcc .item-list .item-controls {
     flex: 0 0 60px;
     padding-left: 10px; }
@@ -1028,6 +1053,26 @@
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
   grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px; }
+
+.dcc.item .sheet-body.treasure {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 85px 50px minmax(80px, auto); }
+
+.dcc.item .value-row {
+  height: 150px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between; }
+  .dcc.item .value-row .resource {
+    flex: 3 0 75px; }
+  .dcc.item .value-row .conversions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around; }
 
 .dcc.item .sheet-body .spell-header-overflow {
   grid-column: 1 / span 3; }

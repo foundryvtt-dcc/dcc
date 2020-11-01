@@ -168,15 +168,35 @@ DCC.equipmentTypes = {
 /* -------------------------------------------- */
 
 /**
- * The valid currency denominations supported by the 5e system
+ * The valid currency denominations supported by the DCC system
  * @type {Object}
  */
 DCC.currencies = {
   pp: 'DCC.CurrencyPP',
-  gp: 'DCC.CurrencyGP',
   ep: 'DCC.CurrencyEP',
+  gp: 'DCC.CurrencyGP',
   sp: 'DCC.CurrencySP',
   cp: 'DCC.CurrencyCP'
+}
+
+/**
+ * The currencies supported by the DCC system ranked by value from low to high
+ * @type {Array}
+ */
+DCC.currencyRank = [
+  'cp', 'sp', 'gp', 'ep', 'pp'
+]
+
+/**
+ * The currencies supported by the DCC system expressed in terms of the lowest denomination
+ * @type {Object}
+ */
+DCC.currencyValue = {
+  pp: 10000,
+  ep: 1000,
+  gp: 100,
+  sp: 10,
+  cp: 1
 }
 
 /* -------------------------------------------- */
