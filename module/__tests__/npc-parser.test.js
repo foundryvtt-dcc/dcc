@@ -248,3 +248,41 @@ test('familiar', () => {
   }
   expect(parsedNPC).toMatchObject(expected)
 })
+
+/* Test damage modifiers */
+test('bonusguy', () => {
+  const parsedNPC = parseNPC('Bonus Guy: Init -1; Atk big club +3 melee (1d4+2) or small club -2 melee (1d4 - 3); AC 13; HD 1d8+2; MV 30’; Act 1d20; SV Fort +2, Ref +1, Will -2; AL C.')
+  const expected = {
+    name: 'Bonus Guy',
+    'data.attributes.init.value': '-1',
+    'data.attributes.ac.value': '13',
+    'data.attributes.hitDice.value': '1d8+2',
+    'data.attributes.speed.value': '30’',
+    'data.config.actionDice': '1d20',
+    'data.saves.frt.value': '+2',
+    'data.saves.ref.value': '+1',
+    'data.saves.wil.value': '-2',
+    'data.details.alignment': 'c',
+    items: [
+      {
+        name: 'big club',
+        type: 'weapon',
+        data: {
+          toHit: '+3',
+          damage: '1d4+2',
+          melee: true
+        }
+      },
+      {
+        name: 'small club',
+        type: 'weapon',
+        data: {
+          toHit: '-2',
+          damage: '1d4 - 3',
+          melee: true
+        }
+      }
+    ]
+  }
+  expect(parsedNPC).toMatchObject(expected)
+})
