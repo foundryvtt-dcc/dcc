@@ -315,9 +315,11 @@ class DCCActor extends Actor {
       })
 
       // Apply custom roll options
-      abRoll.dice[0].options.dcc = {
-        lowerThreshold: 2,
-        upperThreshold: 3
+      if (abRoll.dice.length > 0) {
+        abRoll.dice[0].options.dcc = {
+          lowerThreshold: 2,
+          upperThreshold: 3
+        }
       }
 
       // Convert the roll to a chat message
