@@ -160,6 +160,12 @@
   height: 24px;
   width: 90px; }
 
+.dcc .title input {
+  width: 100%; }
+
+.dcc .title label {
+  margin: 0 0 0 4px; }
+
 .dcc .occupation input {
   width: 100%; }
 
