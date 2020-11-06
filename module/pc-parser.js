@@ -305,8 +305,8 @@ function _parsePlainPCToJSON (pcString) {
     }
 
     pcObject.weapons = []
-    const weapon1String = pcString.match(/Occupation Weapon:\s+(.*)[;\n$]/)
-    const weapon1 = weapon1String.length > 0 ? _parseWeapon(weapon1String[1]) : null
+    const weapon1String = pcString.match(/Occupation Weapon:[^\n]\s*(.*)[;\n$]/)
+    const weapon1 = (weapon1String && weapon1String.length > 0) ? _parseWeapon(weapon1String[1]) : null
     if (weapon1) {
       pcObject.weapons.push({
         name: weapon1.name,
@@ -315,8 +315,8 @@ function _parsePlainPCToJSON (pcString) {
         melee: weapon1.melee
       })
     }
-    const weapon2String = pcString.match(/Main Weapon:\s+(.*)[;\n$]/)
-    const weapon2 = weapon2String.length > 0 ? _parseWeapon(weapon2String[1]) : null
+    const weapon2String = pcString.match(/Main Weapon:[^\n]\s*(.*)[;\n$]/)
+    const weapon2 = (weapon2String && weapon2String.length > 0) ? _parseWeapon(weapon2String[1]) : null
     if (weapon2) {
       pcObject.weapons.push({
         name: weapon2.name,
@@ -325,8 +325,8 @@ function _parsePlainPCToJSON (pcString) {
         melee: weapon2.melee
       })
     }
-    const weapon3String = pcString.match(/Secondary Weapon:\s+(.*)[;\n$]/)
-    const weapon3 = weapon3String.length > 0 ? _parseWeapon(weapon3String[1]) : null
+    const weapon3String = pcString.match(/Secondary Weapon:[^\n]\s*(.*)[;\n$]/)
+    const weapon3 = (weapon3String && weapon3String.length > 0) ? _parseWeapon(weapon3String[1]) : null
     if (weapon3) {
       pcObject.weapons.push({
         name: weapon3.name,
@@ -351,13 +351,13 @@ function _firstMatch (result) {
 
 function _parseWeapon (weaponString) {
   const weaponData = weaponString.match(/^(.*)\s+(.+)\s+\((?:dmg\s+)?(.+)\)$/)
-  let melee = true
-  if (!weaponString.match(/melee/)) {
-    melee = false
-  }
-  const damage = weaponData[3].replace('deed', '@ab')
-  const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
-  if (weaponData.length > 0) {
+  if (weaponData && weaponData.length == 4) {
+    let melee = true
+    if (!weaponString.match(/melee/)) {
+      melee = false
+    }
+    const damage = weaponData[3].replace('deed', '@ab')
+    const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
     return {
       name: name,
       attackMod: weaponData[2],
