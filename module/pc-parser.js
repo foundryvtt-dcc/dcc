@@ -351,7 +351,7 @@ function _firstMatch (result) {
 
 function _parseWeapon (weaponString) {
   const weaponData = weaponString.match(/^(.*)\s+(.+)\s+\((?:dmg\s+)?(.+)\)$/)
-  if (weaponData && weaponData.length == 4) {
+  if (weaponData && weaponData.length === 4) {
     let melee = true
     if (!weaponString.match(/melee/)) {
       melee = false

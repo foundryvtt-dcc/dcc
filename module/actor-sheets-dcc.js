@@ -38,7 +38,7 @@ class DCCActorSheetThief extends DCCActorSheet {
     this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
     data.data.class.className = 'Thief'
 
-    if (data.data.details.sheetClass != 'Thief') {
+    if (data.data.details.sheetClass !== 'Thief') {
       this.actor.update({
         'data.details.sheetClass': 'Thief',
         'data.details.critRange': 20,
@@ -61,7 +61,7 @@ class DCCActorSheetHalfling extends DCCActorSheet {
     this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
     data.data.class.className = 'Halfling'
 
-    if (data.data.details.sheetClass != 'Halfling') {
+    if (data.data.details.sheetClass !== 'Halfling') {
       this.actor.update({
         'data.details.sheetClass': 'Halfling',
         'data.details.critRange': 20
@@ -83,7 +83,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
     this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
     data.data.class.className = 'Warrior'
 
-    if (data.data.details.sheetClass != 'Warrior') {
+    if (data.data.details.sheetClass !== 'Warrior') {
       this.actor.update({
         'data.details.sheetClass': 'Warrior',
         'data.config.rollAttackBonus': true
@@ -105,7 +105,7 @@ class DCCActorSheetWizard extends DCCActorSheet {
     this.options.template = 'systems/dcc/templates/actor-sheet-wizard.html'
     data.data.class.className = 'Wizard'
 
-    if (data.data.details.sheetClass != 'Wizard') {
+    if (data.data.details.sheetClass !== 'Wizard') {
       this.actor.update({
         'data.details.sheetClass': 'Wizard',
         'data.class.spellCheckAbility': 'int',
@@ -128,7 +128,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
     this.options.template = 'systems/dcc/templates/actor-sheet-dwarf.html'
     data.data.class.className = 'Dwarf'
 
-    if (data.data.details.sheetClass != 'Dwarf') {
+    if (data.data.details.sheetClass !== 'Dwarf') {
       this.actor.update({
         'data.details.sheetClass': 'Dwarf',
         'data.config.rollAttackBonus': true
@@ -150,7 +150,7 @@ class DCCActorSheetElf extends DCCActorSheet {
     this.options.template = 'systems/dcc/templates/actor-sheet-elf.html'
     data.data.class.className = 'Elf'
 
-    if (data.data.details.sheetClass != 'Elf') {
+    if (data.data.details.sheetClass !== 'Elf') {
       this.actor.update({
         'data.details.sheetClass': 'Elf',
         'data.class.spellCheckAbility': 'int',
