@@ -14,6 +14,11 @@ class DCCActorSheetCleric extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-cleric.html'
     data.data.class.className = 'Cleric'
+
+    if (data.data.details.sheetClass !== 'Cleric') {
+      this.actor.update({'data.details.sheetClass': 'Cleric'})
+    }
+
     return data
   }
 }
@@ -28,6 +33,11 @@ class DCCActorSheetThief extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
     data.data.class.className = 'Thief'
+
+    if (data.data.details.sheetClass != 'Thief') {
+      this.actor.update({'data.details.sheetClass': 'Thief'})
+    }
+
     return data
   }
 }
@@ -42,6 +52,11 @@ class DCCActorSheetHalfling extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
     data.data.class.className = 'Halfling'
+
+    if (data.data.details.sheetClass != 'Halfling') {
+      this.actor.update({'data.details.sheetClass': 'Halfling'})
+    }
+
     return data
   }
 }
@@ -56,6 +71,11 @@ class DCCActorSheetWarrior extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
     data.data.class.className = 'Warrior'
+
+    if (data.data.details.sheetClass != 'Halfling') {
+      this.actor.update({'data.details.sheetClass': 'Halfling'})
+    }
+
     return data
   }
 }
@@ -70,6 +90,11 @@ class DCCActorSheetWizard extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-wizard.html'
     data.data.class.className = 'Wizard'
+
+    if (data.data.details.sheetClass != 'Wizard') {
+      this.actor.update({'data.details.sheetClass': 'Wizard'})
+    }
+
     return data
   }
 }
@@ -84,6 +109,11 @@ class DCCActorSheetDwarf extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-dwarf.html'
     data.data.class.className = 'Dwarf'
+
+    if (data.data.details.sheetClass != 'Dwarf') {
+      this.actor.update({'data.details.sheetClass': 'Dwarf'})
+    }
+
     return data
   }
 }
@@ -98,6 +128,11 @@ class DCCActorSheetElf extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-elf.html'
     data.data.class.className = 'Elf'
+
+    if (data.data.details.sheetClass != 'Elf') {
+      this.actor.update({'data.details.sheetClass': 'Elf'})
+    }
+
     return data
   }
 }
