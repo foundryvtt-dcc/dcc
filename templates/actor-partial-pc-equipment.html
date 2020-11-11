@@ -59,7 +59,7 @@
                 </span>
             </li>
             {{#each actor.weapons.melee as |weapon index|}}
-              {{> weaponRow weapon=weapon id=weapon._id type='m' index=index canBackstab=../canBackstab}}
+              {{> weaponRow weapon=weapon id=weapon._id type='m' index=index canBackstab=../data.config.showBackstab}}
             {{/each}}
         </ol>
     </div>

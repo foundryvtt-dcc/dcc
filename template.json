@@ -279,7 +279,8 @@
           "removeEmptyItems" : true,
           "showSpells" : false,
           "showSkills" : false,
-          "showMaxAbilities": false
+          "showMaxAbilities": false,
+          "showBackstab": false
         }
       }
     },

@@ -412,6 +412,7 @@
   "DCC.SettingFumbleTableHint": "Roll Table to use for fumbles - must be in a compendium pack",
   "DCC.SheetConfig": "Sheet Configuration",
   "DCC.ShieldBash": "Shield Bash",
+  "DCC.ShowBackstabConfig": "Show Backstab",
   "DCC.ShowMaxAbilitiesConfig": "Show Max Abilities",
   "DCC.ShowSkillsConfig": "Show Custom Skills Tab",
   "DCC.ShowSpellsConfig": "Show Custom Spells Tab",

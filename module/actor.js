@@ -95,13 +95,18 @@ class DCCActor extends Actor {
    */
   _getConfig () {
     let defaultConfig = {
+      actionDice: '1d20',
       capLevel: false,
       maxLevel: 0,
       rollAttackBonus: false,
       computeAC: false,
       baseACAbility: 'agl',
       sortInventory: true,
-      removeEmptyItems: true
+      removeEmptyItems: true,
+      showSpells: false,
+      showSkills: false,
+      showMaxAttributes: false,
+      showBackstab: false
     }
 
     // Merge any existing data with defaults to implicitly migrate missing config fields

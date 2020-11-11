@@ -16,7 +16,11 @@ class DCCActorSheetCleric extends DCCActorSheet {
     data.data.class.className = 'Cleric'
 
     if (data.data.details.sheetClass !== 'Cleric') {
-      this.actor.update({'data.details.sheetClass': 'Cleric'})
+      this.actor.update({
+        'data.details.sheetClass': 'Cleric',
+        'data.class.spellCheckAbility': 'per',
+        'data.details.critRange': 20
+      })
     }
 
     return data
@@ -35,7 +39,11 @@ class DCCActorSheetThief extends DCCActorSheet {
     data.data.class.className = 'Thief'
 
     if (data.data.details.sheetClass != 'Thief') {
-      this.actor.update({'data.details.sheetClass': 'Thief'})
+      this.actor.update({
+        'data.details.sheetClass': 'Thief',
+        'data.details.critRange': 20,
+        'data.details.showBackstab': true
+      })
     }
 
     return data
@@ -54,7 +62,10 @@ class DCCActorSheetHalfling extends DCCActorSheet {
     data.data.class.className = 'Halfling'
 
     if (data.data.details.sheetClass != 'Halfling') {
-      this.actor.update({'data.details.sheetClass': 'Halfling'})
+      this.actor.update({
+        'data.details.sheetClass': 'Halfling',
+        'data.details.critRange': 20
+      })
     }
 
     return data
@@ -72,8 +83,11 @@ class DCCActorSheetWarrior extends DCCActorSheet {
     this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
     data.data.class.className = 'Warrior'
 
-    if (data.data.details.sheetClass != 'Halfling') {
-      this.actor.update({'data.details.sheetClass': 'Halfling'})
+    if (data.data.details.sheetClass != 'Warrior') {
+      this.actor.update({
+        'data.details.sheetClass': 'Warrior',
+        'data.config.rollAttackBonus': true
+      })
     }
 
     return data
@@ -92,7 +106,11 @@ class DCCActorSheetWizard extends DCCActorSheet {
     data.data.class.className = 'Wizard'
 
     if (data.data.details.sheetClass != 'Wizard') {
-      this.actor.update({'data.details.sheetClass': 'Wizard'})
+      this.actor.update({
+        'data.details.sheetClass': 'Wizard',
+        'data.class.spellCheckAbility': 'int',
+        'data.details.critRange': 20
+      })
     }
 
     return data
@@ -111,7 +129,10 @@ class DCCActorSheetDwarf extends DCCActorSheet {
     data.data.class.className = 'Dwarf'
 
     if (data.data.details.sheetClass != 'Dwarf') {
-      this.actor.update({'data.details.sheetClass': 'Dwarf'})
+      this.actor.update({
+        'data.details.sheetClass': 'Dwarf',
+        'data.config.rollAttackBonus': true
+      })
     }
 
     return data
@@ -130,7 +151,11 @@ class DCCActorSheetElf extends DCCActorSheet {
     data.data.class.className = 'Elf'
 
     if (data.data.details.sheetClass != 'Elf') {
-      this.actor.update({'data.details.sheetClass': 'Elf'})
+      this.actor.update({
+        'data.details.sheetClass': 'Elf',
+        'data.class.spellCheckAbility': 'int',
+        'data.details.critRange': 20
+      })
     }
 
     return data
