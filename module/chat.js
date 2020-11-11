@@ -65,7 +65,12 @@ export const highlightCriticalSuccessFailure = function (message, html, data) {
  * @return {Array}              The extended options Array including new context choices
  */
 export const addChatMessageContextOptions = function (html, options) {
-  const canApply = li => canvas.tokens.controlled.length && li.find('.damage-applyable').length
+  const canApply = function(li) {
+    if (canvas.tokens.controlled.length === 0) return false
+    if (li.find('.damage-applyable').length) return true
+    if (li.find('.dice-total').length) return true
+  }
+
   options.push(
     {
       name: game.i18n.localize('DCC.ChatContextDamage'),
@@ -97,6 +102,7 @@ export const addChatMessageContextOptions = function (html, options) {
  */
 function applyChatCardDamage (roll, multiplier) {
   const amount = roll.find('.damage-applyable').attr('data-damage')
+                   || roll.find('.dice-total').text()
   return Promise.all(canvas.tokens.controlled.map(t => {
     const a = t.actor
     return a.applyDamage(amount, multiplier)
