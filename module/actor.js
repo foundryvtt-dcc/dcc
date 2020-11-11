@@ -439,9 +439,16 @@ class DCCActor extends Actor {
   }
 
   async rollCritical () {
-    let critResult = null
 
-    // Look up the crit table
+    // Roll the crit
+    const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
+    roll.roll()
+    const rollData = escape(JSON.stringify(roll))
+    const rollTotal = roll.total
+    const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+
+    // Lookup the crit table if available
+    let critResult = null
     const critsPackName = game.settings.get('dcc', 'critsCompendium')
     if (critsPackName) {
       const pack = game.packs.get(critsPackName)
@@ -451,7 +458,6 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
         if (entry) {
           const table = await pack.getEntity(entry._id)
-          const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
           critResult = await table.draw({ roll, displayChat: false })
         }
       }
@@ -459,9 +465,9 @@ class DCCActor extends Actor {
 
     // Display crit result or just a notification of the crit
     if (critResult) {
-      return ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${critResult.results[0].text}`
+      return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].text}`
     } else {
-      return ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span>`
+      return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
     }
   }
 
@@ -473,9 +479,15 @@ class DCCActor extends Actor {
       fumbleDie = '1d4'
     }
 
-    // Look up the fumble table
-    let fumbleResult = null
+    // Roll the fumble
+    const roll = new Roll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`)
+    roll.roll()
+    const rollData = escape(JSON.stringify(roll))
+    const rollTotal = roll.total
+    const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
+    // Lookup the fumble table if available
+    let fumbleResult = null
     const fumbleTableName = game.settings.get('dcc', 'fumbleTable')
     if (fumbleTableName) {
       const fumbleTablePath = fumbleTableName.split('.')
@@ -488,7 +500,6 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
         if (entry) {
           const table = await pack.getEntity(entry._id)
-          const roll = new Roll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`)
           fumbleResult = await table.draw({ roll, displayChat: false })
         }
       }
@@ -496,9 +507,9 @@ class DCCActor extends Actor {
 
     // Display fumble result or just a notification of the fumble
     if (fumbleResult) {
-      return ` <br><br><span style='color:red; font-weight: bolder'>Fumble!</span> ${fumbleResult.results[0].text}`
+      return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}<br/>${fumbleResult.results[0].text}`
     } else {
-      return ' <br><br><span style=\'color:red; font-weight: bolder\'>Fumble!</span>'
+      return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}`
     }
   }
 
