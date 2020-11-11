@@ -326,9 +326,7 @@ class DCCActorSheet extends ActorSheet {
 
         // Delete Inventory Item
         html.find('.item-delete').click(ev => {
-          const li = $(ev.currentTarget).parents('.item')
-          this.actor.deleteOwnedItem(li.data('itemId'))
-          li.slideUp(200, () => this.render(false))
+          this._onDeleteItem(ev)
         })
       }
     } else {
@@ -382,6 +380,44 @@ class DCCActorSheet extends ActorSheet {
     [...this.form.elements].forEach((el) => {
       el.value = ''
     })
+  }
+
+  /** Prompt to delete an item
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _onDeleteItem (event) {
+    event.preventDefault()
+    if (game.settings.get('dcc', 'promptForItemDeletion')) {
+      new Dialog({
+        title: game.i18n.localize('DCC.DeleteItem'),
+        content: `<p>${game.i18n.localize('DCC.DeleteItemExplain')}</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: 'Yes',
+            callback: () => this._deleteItem(event)
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: 'No'
+          }
+        }
+      }).render(true)
+    } else {
+      this._deleteItem(event)
+    }
+  }
+
+  /**
+   * Delete an item
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _deleteItem (event) {
+    const li = $(event.currentTarget).parents('.item')
+    this.actor.deleteOwnedItem(li.data('itemId'))
+    li.slideUp(200, () => this.render(false))
   }
 
   /**

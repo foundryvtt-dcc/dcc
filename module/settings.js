@@ -68,4 +68,16 @@ export const registerSystemSettings = async function () {
     default: true,
     config: true
   })
+
+  /**
+   * Macro Shorthand setting
+   */
+  game.settings.register('dcc', 'promptForItemDeletion', {
+    name: 'DCC.DeleteItemConfig',
+    hint: 'DCC.DeleteItemConfigHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
 }
