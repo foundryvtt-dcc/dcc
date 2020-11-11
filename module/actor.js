@@ -438,6 +438,9 @@ class DCCActor extends Actor {
     await CONFIG.ChatMessage.entityClass.create(messageData)
   }
 
+  /**
+   * Roll a Critical Hit
+   */
   async rollCritical () {
 
     // Roll the crit
@@ -471,6 +474,9 @@ class DCCActor extends Actor {
     }
   }
 
+  /**
+   * Roll a Fumble
+   */
   async rollFumble () {
     let fumbleDie
     try {
