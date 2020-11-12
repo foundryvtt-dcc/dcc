@@ -442,7 +442,6 @@ class DCCActor extends Actor {
    * Roll a Critical Hit
    */
   async rollCritical () {
-
     // Roll the crit
     const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
     roll.roll()
@@ -579,6 +578,82 @@ class DCCActor extends Actor {
     return this.update({
       'data.attributes.hp.value': newHp
     })
+  }
+
+  /**
+   * Apply a point of disapproval
+   */
+  applyDisapproval () {
+    this.update({
+      'data.class.disapproval': this.data.data.class.disapproval + 1
+    })
+  }
+
+  /**
+   * Prompt and roll for disapproval
+   */
+  async rollDisapproval () {
+    const html = `<form id="disapproval-formula-form">
+                    <label for="formula">${game.i18n.localize('DCC.DisapprovalRollFormula')}</label>
+                    <input type="text" name="formula" placeholder="1d4 - luck modifier" value="1d4 - ${this.data.data.abilities.lck.mod}"/>
+                  </form>`
+    new Dialog({
+      title: game.i18n.localize('DCC.DisapprovalRollFormula'),
+      content: html,
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-check"></i>',
+          label: 'Roll Disapproval',
+          callback: html => this._onRollDisapproval(html)
+        },
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: 'Cancel'
+        }
+      }
+    }).render(true)
+  }
+
+  /**
+   * Roll disapproval
+   * @param {Object} disapprovalRollHTML  form with disapproval formula input
+   * @private
+   */
+  async _onRollDisapproval (disapprovalRollHTML) {
+    const formula = disapprovalRollHTML[0].querySelector('#disapproval-formula-form')[0].value
+
+    try {
+      const roll = new Roll(formula)
+  
+      // Lookup the disapproval table if available
+      let disapprovalTable = null
+      const disapprovalPackName = game.settings.get('dcc', 'disapprovalCompendium')
+      const disapprovalTableName = this.data.data.class.disapprovalTable
+      if (disapprovalPackName && disapprovalTableName) {
+        const pack = game.packs.get(disapprovalPackName)
+        if (pack) {
+          await pack.getIndex() // Load the compendium index
+          const entry = pack.index.find((entity) => entity.name === disapprovalTableName)
+          if (entry) {
+            disapprovalTable = await pack.getEntity(entry._id)
+          }
+        }
+      }
+  
+      // Draw from the table if found, otherwise display the roll
+      if (disapprovalTable) {
+        const results = disapprovalTable.roll({ roll })
+        disapprovalTable.draw(results)
+      } else {
+        // Fall back to displaying just the roll
+        roll.toMessage({
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          flavor: game.i18n.localize('DCC.DisapprovalRoll')
+        })
+      }
+    } catch (err) {
+      ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning', { formula }))
+    }
   }
 }
 

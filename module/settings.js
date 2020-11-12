@@ -58,6 +58,19 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Compendium to look in for disapproval tables
+   */
+  game.settings.register('dcc', 'disapprovalCompendium', {
+    name: 'DCC.SettingDisapprovalTablesCompendium',
+    hint: 'DCC.SettingDisapprovalTablesCompendiumHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: tableCompendiumNames
+  })
+
+  /**
    * Macro Shorthand setting
    */
   game.settings.register('dcc', 'macroShorthand', {
@@ -73,8 +86,8 @@ export const registerSystemSettings = async function () {
    * Macro Shorthand setting
    */
   game.settings.register('dcc', 'promptForItemDeletion', {
-    name: 'DCC.DeleteItemConfig',
-    hint: 'DCC.DeleteItemConfigHint',
+    name: 'DCC.SettingDeleteItem',
+    hint: 'DCC.SettingDeleteItemHint',
     scope: 'world',
     type: Boolean,
     default: true,

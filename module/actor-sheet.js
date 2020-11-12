@@ -283,6 +283,20 @@ class DCCActorSheet extends ActorSheet {
         li.addEventListener('dragstart', dragHandler, false)
       })
 
+      // Disapproval
+      html.find('.disapproval-range').click(this._onApplyDisapproval.bind(this))
+      html.find('.disapproval-table').click(this._onRollDisapproval.bind(this))
+      html.find('label.disapproval-range').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+      html.find('label.disapproval-table').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+
       // Attack Bonus
       html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
       html.find('.attack-bonus').each((i, li) => {
@@ -532,6 +546,18 @@ class DCCActorSheet extends ActorSheet {
           backstab: classes.contains('backstab-button')
         }
       }
+    } else if (classes.contains('disapproval-range')) {
+      dragData = {
+        type: 'Apply Disapproval',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('disapproval-table')) {
+      dragData = {
+        type: 'Roll Disapproval',
+        actorId: this.actor.id,
+        data: {}
+      }
     }
 
     if (dragData) {
@@ -673,6 +699,24 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /**
+   * Handle applying disapproval
+   * @private
+   */
+  _onApplyDisapproval (event) {
+    event.preventDefault()
+    this.actor.applyDisapproval()
+  }
+
+  /**
+   * Prompt and roll for disapproval
+   * @private
+   */
+  _onRollDisapproval (event) {
+    event.preventDefault()
+    this.actor.rollDisapproval()
+  }
+
+  /**
    * Handle rolling attack bonus
    * @param {Event} event   The originating click event
    * @private
@@ -703,7 +747,7 @@ class DCCActorSheet extends ActorSheet {
   /**
    * Handle creating a new Owned Item for the actor using initial data defined in the HTML dataset
    * @param {Event} event   The originating click event
-   * @private
+   * @privat?
    */
   _onItemCreate (event) {
     event.preventDefault()
