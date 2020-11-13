@@ -71,7 +71,7 @@ class DCCActorSheet extends ActorSheet {
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
       isNPC: this.entity.data.type === 'NPC',
-      izPC: this.entity.data.type === 'Player',
+      isPC: this.entity.data.type === 'Player',
       isZero: this.entity.data.data.details.level === 0,
       type: this.entity.data.type,
       config: CONFIG.DCC
@@ -573,10 +573,11 @@ class DCCActorSheet extends ActorSheet {
    */
   _onPasteStatBlock (event) {
     event.preventDefault()
+    const psgLinkHtml = (this.entity.data.type === 'Player') ? `<p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize('DCC.PurpleSorcererPCLink')}</a></p>` : ''
     const html = `<form id="stat-block-form">
-            <p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize('DCC.PurpleSorcererPCLink')}</a></p>
-            <textarea name="statblock"></textarea>
-        </form>`
+                    ${psgLinkHtml}
+                    <textarea name="statblock"></textarea>
+                  </form>`
     new Dialog({
       title: game.i18n.localize('DCC.PasteBlock'),
       content: html,
