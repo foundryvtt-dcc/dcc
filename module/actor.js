@@ -350,6 +350,9 @@ class DCCActor extends Actor {
    * @param {Object} options      Options which configure how ability tests are rolled
    */
   async rollWeaponAttack (weaponId, options = {}) {
+    // Display standard cards in chat?
+    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+
     // First try and find the item by name or id
     let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
     const backstab = options.backstab
@@ -400,10 +403,14 @@ class DCCActor extends Actor {
     /* Roll the Attack */
     const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
     roll.roll()
-    // TODO: Remove call to roll.parts - it's deprecated in favour of roll.terms, but is required for backwards compatibility
-    const rollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms || roll.formula))
-
     const d20RollResult = roll.dice[0].total
+
+    if (displayStandardCards) {
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor: game.i18n.localize('DCC.AttackRoll')
+      })
+    }
 
     /* Handle Critical Hits and fumbles */
     const crit = (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) ? await this.rollCritical() : ''
@@ -416,32 +423,47 @@ class DCCActor extends Actor {
     }
     const damageRoll = new Roll(damageFormula, { ab: attackBonus })
     damageRoll.roll()
-    const damageRollData = escape(JSON.stringify(damageRoll))
-    const damageRollTotal = damageRoll.total
-    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${Roll.cleanFormula(damageRoll.terms || damageRoll.formula)}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+
+    if (displayStandardCards) {
+      damageRoll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor: game.i18n.localize(backstab ? 'DCC.Backstab' : 'DCC.DamageRoll')
+      })
+    }
 
     /* Emote attack results */
-    const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
-    const messageData = {
-      user: game.user._id,
-      speaker: speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      content: game.i18n.format(emote, {
-        weaponName: weapon.name,
-        rollHTML: rollHTML,
-        damageRollHTML: damageRollHTML,
-        crit: crit,
-        fumble: fumble
-      }),
-      sound: CONFIG.sounds.dice
+    if (!displayStandardCards) {
+      // TODO: Remove call to roll.parts - it's deprecated in favour of roll.terms, but is required for backwards compatibility
+      const attackRollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms || roll.formula))
+      const damageRollData = escape(JSON.stringify(damageRoll))
+      const damageRollTotal = damageRoll.total
+      const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${Roll.cleanFormula(damageRoll.terms || damageRoll.formula)}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+
+      const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
+      const messageData = {
+        user: game.user._id,
+        speaker: speaker,
+        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        content: game.i18n.format(emote, {
+          weaponName: weapon.name,
+          rollHTML: attackRollHTML,
+          damageRollHTML: damageRollHTML,
+          crit: crit,
+          fumble: fumble
+        }),
+        sound: CONFIG.sounds.dice
+      }
+      await CONFIG.ChatMessage.entityClass.create(messageData)
     }
-    await CONFIG.ChatMessage.entityClass.create(messageData)
   }
 
   /**
    * Roll a Critical Hit
    */
   async rollCritical () {
+    // Display standard cards in chat?
+    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+
     // Roll the crit
     const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
     roll.roll()
@@ -460,16 +482,18 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
         if (entry) {
           const table = await pack.getEntity(entry._id)
-          critResult = await table.draw({ roll, displayChat: false })
+          critResult = await table.draw({ roll, displayChat: displayStandardCards })
         }
       }
     }
 
-    // Display crit result or just a notification of the crit
-    if (critResult) {
-      return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].text}`
-    } else {
-      return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
+    if (!displayStandardCards) {
+      // Display crit result or just a notification of the crit
+      if (critResult) {
+        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].text}`
+      } else {
+        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
+      }
     }
   }
 
@@ -477,6 +501,9 @@ class DCCActor extends Actor {
    * Roll a Fumble
    */
   async rollFumble () {
+    // Display standard cards in chat?
+    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+
     let fumbleDie
     try {
       fumbleDie = this.data.data.attributes.fumble.die
@@ -505,16 +532,18 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
         if (entry) {
           const table = await pack.getEntity(entry._id)
-          fumbleResult = await table.draw({ roll, displayChat: false })
+          fumbleResult = await table.draw({ roll, displayChat: displayStandardCards })
         }
       }
     }
 
-    // Display fumble result or just a notification of the fumble
-    if (fumbleResult) {
-      return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}<br/>${fumbleResult.results[0].text}`
-    } else {
-      return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}`
+    if (!displayStandardCards) {
+      // Display fumble result or just a notification of the fumble
+      if (fumbleResult) {
+        return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}<br/>${fumbleResult.results[0].text}`
+      } else {
+        return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}`
+      }
     }
   }
 

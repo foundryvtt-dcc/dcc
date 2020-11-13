@@ -71,11 +71,11 @@ export const registerSystemSettings = async function () {
   })
 
   /**
-   * Macro Shorthand setting
+   * Prompt for item deletion
    */
-  game.settings.register('dcc', 'macroShorthand', {
-    name: 'Shortened Macro Syntax',
-    hint: 'Enable a shortened macro syntax which allows referencing attributes directly, for example @str instead of @attributes.str.value. Disable this setting if you need the ability to reference the full attribute model, for example @attributes.str.label.',
+  game.settings.register('dcc', 'promptForItemDeletion', {
+    name: 'DCC.SettingDeleteItem',
+    hint: 'DCC.SettingDeleteItemHint',
     scope: 'world',
     type: Boolean,
     default: true,
@@ -83,11 +83,23 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Roll attacks with standard dice roller
+   */
+  game.settings.register('dcc', 'useStandardDiceRoller', {
+    name: 'DCC.SettingStandardDiceRoller',
+    hint: 'DCC.SettingStandardDiceRollerHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Macro Shorthand setting
    */
-  game.settings.register('dcc', 'promptForItemDeletion', {
-    name: 'DCC.SettingDeleteItem',
-    hint: 'DCC.SettingDeleteItemHint',
+  game.settings.register('dcc', 'macroShorthand', {
+    name: 'Shortened Macro Syntax',
+    hint: 'Enable a shortened macro syntax which allows referencing attributes directly, for example @str instead of @attributes.str.value. Disable this setting if you need the ability to reference the full attribute model, for example @attributes.str.label.',
     scope: 'world',
     type: Boolean,
     default: true,
