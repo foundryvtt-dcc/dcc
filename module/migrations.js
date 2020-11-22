@@ -106,7 +106,12 @@ export const migrateCompendium = async function (pack) {
  * @return {Object}       The updateData to apply
  */
 export const migrateActorData = function (actor) {
-  const updateData = {}
+  const updateData = {
+    // Add useDisapprovalRange to cleric skills
+    'data.skills.divineAid.useDisapprovalRange': true,
+    'data.skills.turnUnholy.useDisapprovalRange': true,
+    'data.skills.layOnHands.useDisapprovalRange': true,
+  }
 
   // Migrate Owned Items
   let hasItemUpdates = false

@@ -134,17 +134,20 @@
           "divineAid": {
             "label": "DCC.DivineAid",
             "ability": "per",
-            "value": 0
+            "value": 0,
+            "useDisapprovalRange": true
           },
           "turnUnholy": {
             "label": "DCC.TurnUnholy",
             "ability": "per",
-            "value": 0
+            "value": 0,
+            "useDisapprovalRange": true
           },
           "layOnHands": {
             "label": "DCC.LayOnHands",
             "ability": "per",
-            "value": 0
+            "value": 0,
+            "useDisapprovalRange": true
           }
         }
       },

@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, Dialog, mergeObject */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -232,6 +232,16 @@ class DCCActor extends Actor {
     } else {
       roll = new Roll(die)
     }
+    roll.roll()
+
+    // Handle special cleric spellchecks that are treated as skills
+    if (skill.useDisapprovalRange) {
+      if (roll.dice.length > 0) {
+        roll.dice[0].options.dcc = {
+          lowerThreshold: this.data.data.class.disapproval
+        }
+      }
+    }
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -290,6 +300,13 @@ class DCCActor extends Actor {
     const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
+    roll.roll()
+
+    if (roll.dice.length > 0) {
+      roll.dice[0].options.dcc = {
+        lowerThreshold: this.data.data.class.disapproval
+      }
+    }
 
     let flavor = spell
     if (ability.label) {
@@ -351,7 +368,10 @@ class DCCActor extends Actor {
    */
   async rollWeaponAttack (weaponId, options = {}) {
     // Display standard cards in chat?
-    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+    let displayStandardCards = false
+    try {
+      displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+    } catch (err) { }
 
     // First try and find the item by name or id
     let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
@@ -653,7 +673,7 @@ class DCCActor extends Actor {
 
     try {
       const roll = new Roll(formula)
-  
+
       // Lookup the disapproval table if available
       let disapprovalTable = null
       const disapprovalPackName = game.settings.get('dcc', 'disapprovalCompendium')
@@ -668,7 +688,7 @@ class DCCActor extends Actor {
           }
         }
       }
-  
+
       // Draw from the table if found, otherwise display the roll
       if (disapprovalTable) {
         const results = disapprovalTable.roll({ roll })

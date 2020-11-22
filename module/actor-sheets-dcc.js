@@ -42,6 +42,7 @@ class DCCActorSheetThief extends DCCActorSheet {
       this.actor.update({
         'data.details.sheetClass': 'Thief',
         'data.details.critRange': 20,
+        'data.class.disapproval': 1,
         'data.details.showBackstab': true
       })
     }
@@ -64,7 +65,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
     if (data.data.details.sheetClass !== 'Halfling') {
       this.actor.update({
         'data.details.sheetClass': 'Halfling',
-        'data.details.critRange': 20
+        'data.details.critRange': 20,
+        'data.class.disapproval': 1
       })
     }
 
@@ -86,6 +88,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
     if (data.data.details.sheetClass !== 'Warrior') {
       this.actor.update({
         'data.details.sheetClass': 'Warrior',
+        'data.class.disapproval': 1,
         'data.config.rollAttackBonus': true
       })
     }
@@ -109,7 +112,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
       this.actor.update({
         'data.details.sheetClass': 'Wizard',
         'data.class.spellCheckAbility': 'int',
-        'data.details.critRange': 20
+        'data.details.critRange': 20,
+        'data.class.disapproval': 1
       })
     }
 
@@ -131,6 +135,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
     if (data.data.details.sheetClass !== 'Dwarf') {
       this.actor.update({
         'data.details.sheetClass': 'Dwarf',
+        'data.class.disapproval': 1,
         'data.config.rollAttackBonus': true
       })
     }
@@ -154,7 +159,8 @@ class DCCActorSheetElf extends DCCActorSheet {
       this.actor.update({
         'data.details.sheetClass': 'Elf',
         'data.class.spellCheckAbility': 'int',
-        'data.details.critRange': 20
+        'data.details.critRange': 20,
+        'data.class.disapproval': 1
       })
     }
 
