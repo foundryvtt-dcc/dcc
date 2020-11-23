@@ -748,7 +748,7 @@ class DCCActorSheet extends ActorSheet {
   /**
    * Handle creating a new Owned Item for the actor using initial data defined in the HTML dataset
    * @param {Event} event   The originating click event
-   * @privat?
+   * @private
    */
   _onItemCreate (event) {
     event.preventDefault()
