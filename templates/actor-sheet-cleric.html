@@ -64,8 +64,20 @@
                     <input class="flex2" type="text" id="data.class.deity" name="data.class.deity" value="{{data.class.deity}}" data-dtype="String"/>
                 </div>
 
+                <div class="deity flexrow">
+                    <label class="disapproval-table rollable" for="data.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
+                    <select name="data.class.disapprovalTable" name="data.class.disapprovalTable"
+                            value="{{data.class.disapprovalTable}}">
+                      {{#select data.class.disapprovalTable}}
+                      {{#each config.disapprovalTables}}
+                      <option value="{{name}}">{{name}}</option>
+                      {{/each}}
+                      {{/select}}
+                    </select>
+                </div>
+
                 <div class="disapproval flexrow">
-                    <label for="data.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
+                    <label class="disapproval-range rollable" for="data.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
                     <label class="one-to" for="data.class.disapproval">1 - </label>
                     <input type="text" id="data.class.disapproval" name="data.class.disapproval" value="{{data.class.disapproval}}" data-dtype="Number"/>
                 </div>

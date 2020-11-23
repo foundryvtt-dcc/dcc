@@ -39,6 +39,13 @@ class DCCItem extends Item {
       die: this.data.data.spellCheck.die,
       bonus: this.data.data.spellCheck.value
     })
+    roll.roll()
+
+    if (roll.dice.length > 0) {
+      roll.dice[0].options.dcc = {
+        lowerThreshold: actor.data.data.class.disapproval
+      }
+    }
 
     // Lookup the appropriate table
     const resultsRef = this.data.data.results

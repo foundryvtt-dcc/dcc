@@ -58,6 +58,43 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Compendium to look in for disapproval tables
+   */
+  game.settings.register('dcc', 'disapprovalCompendium', {
+    name: 'DCC.SettingDisapprovalTablesCompendium',
+    hint: 'DCC.SettingDisapprovalTablesCompendiumHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: tableCompendiumNames
+  })
+
+  /**
+   * Prompt for item deletion
+   */
+  game.settings.register('dcc', 'promptForItemDeletion', {
+    name: 'DCC.SettingDeleteItem',
+    hint: 'DCC.SettingDeleteItemHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  /**
+   * Roll attacks with standard dice roller
+   */
+  game.settings.register('dcc', 'useStandardDiceRoller', {
+    name: 'DCC.SettingStandardDiceRoller',
+    hint: 'DCC.SettingStandardDiceRollerHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Macro Shorthand setting
    */
   game.settings.register('dcc', 'macroShorthand', {

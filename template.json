@@ -72,6 +72,7 @@
           "alignment": "",
           "languages": "",
           "occupation": "",
+          "title": "",
           "notes": ""
         },
         "saves": {
@@ -133,17 +134,20 @@
           "divineAid": {
             "label": "DCC.DivineAid",
             "ability": "per",
-            "value": 0
+            "value": 0,
+            "useDisapprovalRange": true
           },
           "turnUnholy": {
             "label": "DCC.TurnUnholy",
             "ability": "per",
-            "value": 0
+            "value": 0,
+            "useDisapprovalRange": true
           },
           "layOnHands": {
             "label": "DCC.LayOnHands",
             "ability": "per",
-            "value": 0
+            "value": 0,
+            "useDisapprovalRange": true
           }
         }
       },
@@ -278,7 +282,8 @@
           "removeEmptyItems" : true,
           "showSpells" : false,
           "showSkills" : false,
-          "showMaxAbilities": false
+          "showMaxAbilities": false,
+          "showBackstab": false
         }
       }
     },

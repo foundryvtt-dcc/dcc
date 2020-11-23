@@ -109,18 +109,30 @@ Hooks.once('init', async function () {
 /* -------------------------------------------- */
 /*  Post initialization hook                    */
 /* -------------------------------------------- */
-Hooks.once('ready', function () {
+Hooks.once('ready', async function () {
   // Register system settings - needs to happen after packs are initialised
-  registerSystemSettings()
+  await registerSystemSettings()
 
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const NEEDS_MIGRATION_VERSION = 0.11
+  const NEEDS_MIGRATION_VERSION = 0.16
   const needMigration = (currentVersion <= NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration
   if (needMigration && game.user.isGM) {
     migrations.migrateWorld()
+  }
+
+  // Load the list of disapproval tables
+  const disapprovalTablesPackName = game.settings.get('dcc', 'disapprovalCompendium')
+  if (disapprovalTablesPackName) {
+    const pack = game.packs.get(disapprovalTablesPackName)
+    if (pack) {
+      await pack.getIndex()
+      pack.index.forEach(function (value, key, map) {
+        CONFIG.DCC.disapprovalTables[key] = value
+      })
+    }
   }
 })
 
@@ -160,7 +172,9 @@ async function createDCCMacro (data, slot) {
     'Spell Check': _createDCCSpellCheckMacro,
     'Attack Bonus': _createDCCAttackBonusMacro,
     'Action Dice': _createDCCActionDiceMacro,
-    Weapon: _createDCCWeaponMacro
+    Weapon: _createDCCWeaponMacro,
+    'Apply Disapproval': _createDCCApplyDisapprovalMacro,
+    'Roll Disapproval': _createDCCRollDisapprovalMacro
   }
   if (!handlers[data.type]) return
   if (!('data' in data)) return ui.notifications.warn('You can only create macro buttons for owned items')
@@ -383,6 +397,44 @@ function _createDCCWeaponMacro (data, slot) {
 
   if (backstab) {
     macroData.img = '/systems/dcc/styles/images/backstab.png'
+  }
+
+  return macroData
+}
+
+/**
+ * Apply disapproval to an actor
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Object}
+ */
+function _createDCCApplyDisapprovalMacro (data, slot) {
+  if (data.type !== 'Apply Disapproval') return
+
+  // Create the macro command
+  const macroData = {
+    name: game.i18n.format('DCC.ApplyDisapprovalMacroName'),
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.applyDisapproval() }',
+    img: 'icons/svg/clockwork.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Roll disapproval for an actor
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Object}
+ */
+function _createDCCRollDisapprovalMacro (data, slot) {
+  if (data.type !== 'Roll Disapproval') return
+
+  // Create the macro command
+  const macroData = {
+    name: game.i18n.format('DCC.RollDisapprovalMacroName'),
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollDisapproval() }',
+    img: 'icons/svg/explosion.svg'
   }
 
   return macroData

@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, Dialog, mergeObject */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -95,13 +95,18 @@ class DCCActor extends Actor {
    */
   _getConfig () {
     let defaultConfig = {
+      actionDice: '1d20',
       capLevel: false,
       maxLevel: 0,
       rollAttackBonus: false,
       computeAC: false,
       baseACAbility: 'agl',
       sortInventory: true,
-      removeEmptyItems: true
+      removeEmptyItems: true,
+      showSpells: false,
+      showSkills: false,
+      showMaxAttributes: false,
+      showBackstab: false
     }
 
     // Merge any existing data with defaults to implicitly migrate missing config fields
@@ -227,6 +232,16 @@ class DCCActor extends Actor {
     } else {
       roll = new Roll(die)
     }
+    roll.roll()
+
+    // Handle special cleric spellchecks that are treated as skills
+    if (skill.useDisapprovalRange) {
+      if (roll.dice.length > 0) {
+        roll.dice[0].options.dcc = {
+          lowerThreshold: this.data.data.class.disapproval
+        }
+      }
+    }
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -285,6 +300,13 @@ class DCCActor extends Actor {
     const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
+    roll.roll()
+
+    if (roll.dice.length > 0) {
+      roll.dice[0].options.dcc = {
+        lowerThreshold: this.data.data.class.disapproval
+      }
+    }
 
     let flavor = spell
     if (ability.label) {
@@ -315,9 +337,11 @@ class DCCActor extends Actor {
       })
 
       // Apply custom roll options
-      abRoll.dice[0].options.dcc = {
-        lowerThreshold: 2,
-        upperThreshold: 3
+      if (abRoll.dice.length > 0) {
+        abRoll.dice[0].options.dcc = {
+          lowerThreshold: 2,
+          upperThreshold: 3
+        }
       }
 
       // Convert the roll to a chat message
@@ -343,6 +367,12 @@ class DCCActor extends Actor {
    * @param {Object} options      Options which configure how ability tests are rolled
    */
   async rollWeaponAttack (weaponId, options = {}) {
+    // Display standard cards in chat?
+    let displayStandardCards = false
+    try {
+      displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+    } catch (err) { }
+
     // First try and find the item by name or id
     let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
     const backstab = options.backstab
@@ -393,86 +423,18 @@ class DCCActor extends Actor {
     /* Roll the Attack */
     const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
     roll.roll()
-    // TODO: Remove call to roll.parts - it's deprecated in favour of roll.terms, but is required for backwards compatibility
-    const rollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms || roll.formula))
-
     const d20RollResult = roll.dice[0].total
 
-    /* Handle Critical Hits */
-    let crit = ''
-    if (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) {
-      let critResult = null
-
-      // Look up the crit table
-      const critsPackName = game.settings.get('dcc', 'critsCompendium')
-      if (critsPackName) {
-        const pack = game.packs.get(critsPackName)
-        if (pack) {
-          await pack.getIndex() // Load the compendium index
-          const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
-          const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
-          if (entry) {
-            const table = await pack.getEntity(entry._id)
-            const roll = new Roll(
-              `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`
-            )
-            critResult = await table.draw({ roll, displayChat: false })
-          }
-        }
-      }
-
-      // Display crit result or just a notification of the crit
-      if (critResult) {
-        crit =
-          ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${critResult.results[0].text}`
-      } else {
-        crit =
-          ` <br><br><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span>`
-      }
+    if (displayStandardCards) {
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor: game.i18n.localize('DCC.AttackRoll')
+      })
     }
 
-    /* Handle Fumbles */
-    let fumble = ''
-    if (d20RollResult === 1) {
-      let fumbleDie
-      try {
-        fumbleDie = this.data.data.attributes.fumble.die
-      } catch (err) {
-        fumbleDie = '1d4'
-      }
-
-      // Look up the fumble table
-      let fumbleResult = null
-
-      const fumbleTableName = game.settings.get('dcc', 'fumbleTable')
-      if (fumbleTableName) {
-        const fumbleTablePath = fumbleTableName.split('.')
-        let pack
-        if (fumbleTablePath.length === 3) {
-          pack = game.packs.get(fumbleTablePath[0] + '.' + fumbleTablePath[1])
-        }
-        if (pack) {
-          await pack.getIndex() // Load the compendium index
-          const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
-          if (entry) {
-            const table = await pack.getEntity(entry._id)
-            const roll = new Roll(
-              `${fumbleDie} - ${this.data.data.abilities.lck.mod}`
-            )
-            fumbleResult = await table.draw({ roll, displayChat: false })
-          }
-        }
-      }
-
-      // Display fumble result or just a notification of the fumble
-      if (fumbleResult) {
-        fumble =
-            ` <br><br><span style='color:red; font-weight: bolder'>Fumble!</span> ${fumbleResult.results[0].text}`
-      } else {
-        fumble =
-          ' <br><br><span style=\'color:red; font-weight: bolder\'>Fumble!</span>'
-      }
-    }
+    /* Handle Critical Hits and fumbles */
+    const crit = (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) ? await this.rollCritical() : ''
+    const fumble = (d20RollResult === 1) ? await this.rollFumble() : ''
 
     /* Roll the Damage */
     let damageFormula = weapon.data.data.damage
@@ -481,26 +443,128 @@ class DCCActor extends Actor {
     }
     const damageRoll = new Roll(damageFormula, { ab: attackBonus })
     damageRoll.roll()
-    const damageRollData = escape(JSON.stringify(damageRoll))
-    const damageRollTotal = damageRoll.total
-    const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${Roll.cleanFormula(damageRoll.terms || damageRoll.formula)}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+
+    if (displayStandardCards) {
+      damageRoll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor: game.i18n.localize(backstab ? 'DCC.Backstab' : 'DCC.DamageRoll')
+      })
+    }
 
     /* Emote attack results */
-    const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
-    const messageData = {
-      user: game.user._id,
-      speaker: speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-      content: game.i18n.format(emote, {
-        weaponName: weapon.name,
-        rollHTML: rollHTML,
-        damageRollHTML: damageRollHTML,
-        crit: crit,
-        fumble: fumble
-      }),
-      sound: CONFIG.sounds.dice
+    if (!displayStandardCards) {
+      // TODO: Remove call to roll.parts - it's deprecated in favour of roll.terms, but is required for backwards compatibility
+      const attackRollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms || roll.formula))
+      const damageRollData = escape(JSON.stringify(damageRoll))
+      const damageRollTotal = damageRoll.total
+      const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${Roll.cleanFormula(damageRoll.terms || damageRoll.formula)}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
+
+      const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
+      const messageData = {
+        user: game.user._id,
+        speaker: speaker,
+        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        content: game.i18n.format(emote, {
+          weaponName: weapon.name,
+          rollHTML: attackRollHTML,
+          damageRollHTML: damageRollHTML,
+          crit: crit,
+          fumble: fumble
+        }),
+        sound: CONFIG.sounds.dice
+      }
+      await CONFIG.ChatMessage.entityClass.create(messageData)
     }
-    await CONFIG.ChatMessage.entityClass.create(messageData)
+  }
+
+  /**
+   * Roll a Critical Hit
+   */
+  async rollCritical () {
+    // Display standard cards in chat?
+    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+
+    // Roll the crit
+    const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
+    roll.roll()
+    const rollData = escape(JSON.stringify(roll))
+    const rollTotal = roll.total
+    const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+
+    // Lookup the crit table if available
+    let critResult = null
+    const critsPackName = game.settings.get('dcc', 'critsCompendium')
+    if (critsPackName) {
+      const pack = game.packs.get(critsPackName)
+      if (pack) {
+        await pack.getIndex() // Load the compendium index
+        const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
+        const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
+        if (entry) {
+          const table = await pack.getEntity(entry._id)
+          critResult = await table.draw({ roll, displayChat: displayStandardCards })
+        }
+      }
+    }
+
+    if (!displayStandardCards) {
+      // Display crit result or just a notification of the crit
+      if (critResult) {
+        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].text}`
+      } else {
+        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
+      }
+    }
+  }
+
+  /**
+   * Roll a Fumble
+   */
+  async rollFumble () {
+    // Display standard cards in chat?
+    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+
+    let fumbleDie
+    try {
+      fumbleDie = this.data.data.attributes.fumble.die
+    } catch (err) {
+      fumbleDie = '1d4'
+    }
+
+    // Roll the fumble
+    const roll = new Roll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`)
+    roll.roll()
+    const rollData = escape(JSON.stringify(roll))
+    const rollTotal = roll.total
+    const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+
+    // Lookup the fumble table if available
+    let fumbleResult = null
+    const fumbleTableName = game.settings.get('dcc', 'fumbleTable')
+    if (fumbleTableName) {
+      const fumbleTablePath = fumbleTableName.split('.')
+      let pack
+      if (fumbleTablePath.length === 3) {
+        pack = game.packs.get(fumbleTablePath[0] + '.' + fumbleTablePath[1])
+      }
+      if (pack) {
+        await pack.getIndex() // Load the compendium index
+        const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
+        if (entry) {
+          const table = await pack.getEntity(entry._id)
+          fumbleResult = await table.draw({ roll, displayChat: displayStandardCards })
+        }
+      }
+    }
+
+    if (!displayStandardCards) {
+      // Display fumble result or just a notification of the fumble
+      if (fumbleResult) {
+        return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}<br/>${fumbleResult.results[0].text}`
+      } else {
+        return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}`
+      }
+    }
   }
 
   /**
@@ -563,6 +627,82 @@ class DCCActor extends Actor {
     return this.update({
       'data.attributes.hp.value': newHp
     })
+  }
+
+  /**
+   * Apply a point of disapproval
+   */
+  applyDisapproval () {
+    this.update({
+      'data.class.disapproval': this.data.data.class.disapproval + 1
+    })
+  }
+
+  /**
+   * Prompt and roll for disapproval
+   */
+  async rollDisapproval () {
+    const html = `<form id="disapproval-formula-form">
+                    <label for="formula">${game.i18n.localize('DCC.DisapprovalRollFormula')}</label>
+                    <input type="text" name="formula" placeholder="1d4 - luck modifier" value="1d4 - ${this.data.data.abilities.lck.mod}"/>
+                  </form>`
+    new Dialog({
+      title: game.i18n.localize('DCC.DisapprovalRollFormula'),
+      content: html,
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-check"></i>',
+          label: 'Roll Disapproval',
+          callback: html => this._onRollDisapproval(html)
+        },
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: 'Cancel'
+        }
+      }
+    }).render(true)
+  }
+
+  /**
+   * Roll disapproval
+   * @param {Object} disapprovalRollHTML  form with disapproval formula input
+   * @private
+   */
+  async _onRollDisapproval (disapprovalRollHTML) {
+    const formula = disapprovalRollHTML[0].querySelector('#disapproval-formula-form')[0].value
+
+    try {
+      const roll = new Roll(formula)
+
+      // Lookup the disapproval table if available
+      let disapprovalTable = null
+      const disapprovalPackName = game.settings.get('dcc', 'disapprovalCompendium')
+      const disapprovalTableName = this.data.data.class.disapprovalTable
+      if (disapprovalPackName && disapprovalTableName) {
+        const pack = game.packs.get(disapprovalPackName)
+        if (pack) {
+          await pack.getIndex() // Load the compendium index
+          const entry = pack.index.find((entity) => entity.name === disapprovalTableName)
+          if (entry) {
+            disapprovalTable = await pack.getEntity(entry._id)
+          }
+        }
+      }
+
+      // Draw from the table if found, otherwise display the roll
+      if (disapprovalTable) {
+        const results = disapprovalTable.roll({ roll })
+        disapprovalTable.draw(results)
+      } else {
+        // Fall back to displaying just the roll
+        roll.toMessage({
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          flavor: game.i18n.localize('DCC.DisapprovalRoll')
+        })
+      }
+    } catch (err) {
+      ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning', { formula }))
+    }
   }
 }
 

@@ -71,7 +71,7 @@ class DCCActorSheet extends ActorSheet {
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
       isNPC: this.entity.data.type === 'NPC',
-      izPC: this.entity.data.type === 'Player',
+      isPC: this.entity.data.type === 'Player',
       isZero: this.entity.data.data.details.level === 0,
       type: this.entity.data.type,
       config: CONFIG.DCC
@@ -81,11 +81,6 @@ class DCCActorSheet extends ActorSheet {
     data.data = data.actor.data
     data.labels = this.actor.labels || {}
     data.filters = this._filters
-
-    data.data.utility = {}
-    data.data.utility.meleeWeapons = [0, 1, 2]
-    data.data.utility.rangedWeapons = [3, 4]
-    // console.log(data.data);
 
     if (data.isNPC) {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
@@ -288,6 +283,20 @@ class DCCActorSheet extends ActorSheet {
         li.addEventListener('dragstart', dragHandler, false)
       })
 
+      // Disapproval
+      html.find('.disapproval-range').click(this._onApplyDisapproval.bind(this))
+      html.find('.disapproval-table').click(this._onRollDisapproval.bind(this))
+      html.find('label.disapproval-range').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+      html.find('label.disapproval-table').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+
       // Attack Bonus
       html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
       html.find('.attack-bonus').each((i, li) => {
@@ -331,9 +340,7 @@ class DCCActorSheet extends ActorSheet {
 
         // Delete Inventory Item
         html.find('.item-delete').click(ev => {
-          const li = $(ev.currentTarget).parents('.item')
-          this.actor.deleteOwnedItem(li.data('itemId'))
-          li.slideUp(200, () => this.render(false))
+          this._onDeleteItem(ev)
         })
       }
     } else {
@@ -387,6 +394,44 @@ class DCCActorSheet extends ActorSheet {
     [...this.form.elements].forEach((el) => {
       el.value = ''
     })
+  }
+
+  /** Prompt to delete an item
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _onDeleteItem (event) {
+    event.preventDefault()
+    if (game.settings.get('dcc', 'promptForItemDeletion')) {
+      new Dialog({
+        title: game.i18n.localize('DCC.DeleteItem'),
+        content: `<p>${game.i18n.localize('DCC.DeleteItemExplain')}</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: 'Yes',
+            callback: () => this._deleteItem(event)
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: 'No'
+          }
+        }
+      }).render(true)
+    } else {
+      this._deleteItem(event)
+    }
+  }
+
+  /**
+   * Delete an item
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _deleteItem (event) {
+    const li = $(event.currentTarget).parents('.item')
+    this.actor.deleteOwnedItem(li.data('itemId'))
+    li.slideUp(200, () => this.render(false))
   }
 
   /**
@@ -501,6 +546,18 @@ class DCCActorSheet extends ActorSheet {
           backstab: classes.contains('backstab-button')
         }
       }
+    } else if (classes.contains('disapproval-range')) {
+      dragData = {
+        type: 'Apply Disapproval',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('disapproval-table')) {
+      dragData = {
+        type: 'Roll Disapproval',
+        actorId: this.actor.id,
+        data: {}
+      }
     }
 
     if (dragData) {
@@ -516,10 +573,11 @@ class DCCActorSheet extends ActorSheet {
    */
   _onPasteStatBlock (event) {
     event.preventDefault()
+    const psgLinkHtml = (this.entity.data.type === 'Player') ? `<p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize('DCC.PurpleSorcererPCLink')}</a></p>` : ''
     const html = `<form id="stat-block-form">
-            <p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize('DCC.PurpleSorcererPCLink')}</a></p>
-            <textarea name="statblock"></textarea>
-        </form>`
+                    ${psgLinkHtml}
+                    <textarea name="statblock"></textarea>
+                  </form>`
     new Dialog({
       title: game.i18n.localize('DCC.PasteBlock'),
       content: html,
@@ -642,6 +700,24 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /**
+   * Handle applying disapproval
+   * @private
+   */
+  _onApplyDisapproval (event) {
+    event.preventDefault()
+    this.actor.applyDisapproval()
+  }
+
+  /**
+   * Prompt and roll for disapproval
+   * @private
+   */
+  _onRollDisapproval (event) {
+    event.preventDefault()
+    this.actor.rollDisapproval()
+  }
+
+  /**
    * Handle rolling attack bonus
    * @param {Event} event   The originating click event
    * @private
@@ -672,7 +748,7 @@ class DCCActorSheet extends ActorSheet {
   /**
    * Handle creating a new Owned Item for the actor using initial data defined in the HTML dataset
    * @param {Event} event   The originating click event
-   * @private
+   * @privat?
    */
   _onItemCreate (event) {
     event.preventDefault()

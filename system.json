@@ -2,9 +2,9 @@
   "name": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
-  "version": 0.16,
+  "version": 0.17,
   "minimumCoreVersion": "0.6.6",
-  "compatibleCoreVersion": "0.7.5",
+  "compatibleCoreVersion": "0.7.7",
   "templateVersion": 2,
   "author": "Tim L. White",
   "contributors": { "name" : "Steve Barnett", "email" : "mooped@gmail.com" },
@@ -29,6 +29,6 @@
   "initiative": "1d20 + @attributes.init.value",
   "url": "https://github.com/cyface/foundryvtt-dcc",
   "manifest": "https://github.com/cyface/foundryvtt-dcc/raw/master/system.json",
-  "download": "https://github.com/cyface/foundryvtt-dcc/archive/v0.0.16.zip",
+  "download": "https://github.com/cyface/foundryvtt-dcc/archive/v0.0.17.zip",
   "license": "LICENSE.txt"
 }

@@ -79,8 +79,8 @@ function _parseAttack (attackString, damageString) {
   if (damageString) {
     attack.damage = damageString
   } else {
-    attack.description.value = _firstMatch(/.*\(\w+ (.*)\).*/, attackString) || ''
-    attack.damage = _firstMatch(/.*\((\w+).*\).*/, attackString) || ''
+    attack.description.value = _firstMatch(/.*\(\w+(?:\s*[+-]\s*\d+)? (.*)\).*/, attackString) || ''
+    attack.damage = _firstMatch(/.*\((\w+(?:\s*[+-]\s*\d+)?).*\).*/, attackString) || ''
   }
   return {
     name: name,
