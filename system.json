@@ -19,7 +19,12 @@
       "lang": "en",
       "name": "English",
       "path": "lang/en.json"
-    }
+    },
+    {
+      "lang": "de",
+      "name": "Deutsch",
+      "path": "lang/de.json"
+    }    
   ],
   "gridDistance": 5,
   "gridUnits": "ft",
