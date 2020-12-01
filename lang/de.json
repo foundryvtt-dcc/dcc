@@ -416,7 +416,7 @@
   "DCC.SenseUS": "Untergrundfertigkeiten",
   "DCC.Senses": "Sinne",
   "DCC.SettingCriticalHitsCompendium": "Kompendium für Kritische Treffer",
-  "DCC.SettingCriticalHitsCompendiumHint": "Kompendium, dass die Kritischen Treffertabellen enthält. Die Namen der jeweiligen Tabellen muss mit "Crit Table XXX" beginnen (wobei XXX das jeweilige Kürzel für den Tabelleneintrag auf dem Charakterbogen ist)",
+  "DCC.SettingCriticalHitsCompendiumHint": "Kompendium, dass die Kritischen Treffertabellen enthält. Die Namen der jeweiligen Tabellen muss mit 'Crit Table XXX' beginnen (wobei XXX das jeweilige Kürzel für den Tabelleneintrag auf dem Charakterbogen ist)",
   "DCC.SettingDeleteItem": "Löschen von Eintärägen bestätigen",
   "DCC.SettingDeleteItemHint": "Zusätzliche Bestätigung vor dem Löschen von Ausrüstung, Zaubern, oder eigenen Fertigkeiten von Charakterbögen.",
   "DCC.SettingDisapprovalTablesCompendium": "Kompendium für Ungnadetabellen",
