@@ -9,7 +9,7 @@
                 <label class="item-type" for="name">{{localize item.data.typeString}}</label>
             </div>
 
-            <div class="grid grid-2col">
+            <div class="grid grid-3col">
               <div class="resource">
                 <label class="resource-label" for="data.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
                 <div class="flexrow">
@@ -17,6 +17,10 @@
                          value="{{data.actionDie}}"
                          {{#if data.config.inheritActionDie}}disabled{{/if}}
                          placeholder="1d20" data-dtype="String"/>
+                  <input type="text" name="data.critRange" class="flex1"
+                         value="{{data.critRange}}"
+                         {{#if data.config.inheritActionDie}}disabled{{/if}}
+                         placeholder="20" data-dtype="Number"/>
                   <input type="text" name="data.toHit" class="flex1"
                          value="{{data.toHit}}"
                          placeholder="+0" data-dtype="String"/>

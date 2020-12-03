@@ -418,7 +418,7 @@ class DCCActor extends Actor {
     }
 
     /* Determine crit range */
-    const critRange = this.data.data.details.critRange || 20
+    const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
 
     /* Roll the Attack */
     const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
