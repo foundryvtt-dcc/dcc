@@ -198,7 +198,7 @@
   "DCC.Description": "Beschreibung",
   "DCC.Details": "Details",
   "DCC.DisableTrap": "Fallen entschärfen",
-  "DCC.Disadvantage": "Nachteil",
+  "UNUSED.Disadvantage": "Nachteil",
   "DCC.DisapprovalFormulaWarning": "Ungültige Würfelformel für Ungnade '{formula}'.",
   "DCC.DisapprovalRange": "Ungnadebereich",
   "DCC.DisapprovalRoll": "Ungenadewurf",
