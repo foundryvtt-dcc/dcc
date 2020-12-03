@@ -567,6 +567,7 @@
   "DCC.WeaponNotFound" : "Es gibt keine Waffe mit id '{id}'.",
   "DCC.WeaponPropertiesBackstab": "Hinterh. Ang.",
   "DCC.WeaponPropertiesBackstabDamage": "Extraschaden",
+  "DCC.WeaponPropertiesCritOn": "Krit ab",
   "DCC.WeaponPropertiesDamage": "Schaden",
   "DCC.WeaponPropertiesToHit": "Angriff",
   "DCC.WeaponPropertiesMelee": "Nahk.",
