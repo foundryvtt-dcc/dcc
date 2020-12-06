@@ -9,7 +9,7 @@
         <div class="skill-modifier">{{localize "DCC.SkillValue"}}</div>
         <div class="skill-last-roll">{{localize "DCC.SkillResult"}}</div>
         <div class="item-controls">
-          <a class="item-control item-create" title="{{DCC.ItemCreate}}" data-type="skill"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+          <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="skill"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
         </div>
       </li>
       {{#each actor.skills as |skill id|}}
@@ -49,8 +49,8 @@
         </div>
         {{/if}}
         <div class="item-controls">
-            <a class="item-control item-edit" title="{{DCC.ItemEdit}}"><i class="fas fa-edit"></i></a>
-            <a class="item-control item-delete" title="{{DCC.ItemDelete}}"><i class="fas fa-trash"></i></a>
+            <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
+            <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
         </div>
       </li>
       {{/each}}

@@ -9,7 +9,7 @@
               <div class="item-level">{{localize "DCC.SpellLevelShort"}}</div>
               <div class="item-name">{{localize "DCC.SpellName"}}</div>
               <div class="item-controls">
-                <a class="item-control item-create" title="{{DCC.ItemCreate}}" data-type="spell"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+                <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="spell"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
               </div>
             </li>
             {{#each actor.spells as |spells spelllevel|}}
@@ -23,8 +23,8 @@
                 <h4 class="item-level">{{item.data.level}}</h4>
                 <h4 class="item-name flex3">{{item.name}}</h4>
                 <div class="item-controls">
-                    <a class="item-control item-edit" title="{{DCC.ItemEdit}}"><i class="fas fa-edit"></i></a>
-                    <a class="item-control item-delete" title="{{DCC.ItemDelete}}"><i class="fas fa-trash"></i></a>
+                    <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
+                    <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
                 </div>
             </li>
             {{/each}}
