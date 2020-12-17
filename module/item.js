@@ -17,9 +17,9 @@ class DCCItem extends Item {
 
       // Set default inherit crit range for legacy items
       if (this.data.data.config.inheritCritRange === undefined) {
-        this.data.data.config.inheritCritRange == true
+        this.data.data.config.inheritCritRange = true
         this.update({
-          "data.config.inheritCritRange": true
+          'data.config.inheritCritRange': true
         })
       }
 
@@ -30,11 +30,11 @@ class DCCItem extends Item {
         // If not inheriting crit range make sure there is a value (for legacy items)
         if (this.data.data.critRange === null || this.data.data.critRange === undefined) {
           this.update({
-            "data.critRange": 20
+            'data.critRange': 20
           })
         }
       }
-        
+
       // Spells can inherit the owner's spell check
       if (this.data.data.config.inheritSpellCheck) {
         this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck

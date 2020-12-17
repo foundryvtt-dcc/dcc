@@ -1,3 +1,5 @@
+/* global game */
+
 /**
  * DCC specific character sheet overrides
  */

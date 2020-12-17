@@ -110,7 +110,7 @@ export const migrateActorData = function (actor) {
     // Add useDisapprovalRange to cleric skills
     'data.skills.divineAid.useDisapprovalRange': true,
     'data.skills.turnUnholy.useDisapprovalRange': true,
-    'data.skills.layOnHands.useDisapprovalRange': true,
+    'data.skills.layOnHands.useDisapprovalRange': true
   }
 
   // Migrate Owned Items
