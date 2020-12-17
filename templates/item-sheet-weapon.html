@@ -10,17 +10,26 @@
             </div>
 
             <div class="grid grid-2col">
-              <div class="resource">
-                <label class="resource-label" for="data.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
-                <div class="flexrow">
-                  <input type="text" name="data.actionDie" class="flex1"
-                         value="{{data.actionDie}}"
+              <div class="flexrow">
+                <div class="resource">
+                  <label class="resource-label" for="data.critRange">{{localize "DCC.WeaponPropertiesCritOn"}}</label>
+                  <input type="text" name="data.critRange"
+                         value="{{data.critRange}}"
                          {{#if data.config.inheritActionDie}}disabled{{/if}}
-                         placeholder="1d20" data-dtype="String"/>
-                  <input type="text" name="data.toHit" class="flex1"
-                         value="{{data.toHit}}"
-                         placeholder="+0" data-dtype="String"/>
+                         placeholder="20" data-dtype="Number"/>
                 </div>
+                <div class="resource">
+                  <label class="resource-label" for="data.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
+                  <div class="flexrow">
+                    <input type="text" name="data.actionDie" class="flex1"
+                           value="{{data.actionDie}}"
+                           {{#if data.config.inheritActionDie}}disabled{{/if}}
+                           placeholder="1d20" data-dtype="String"/>
+                    <input type="text" name="data.toHit" class="flex1"
+                           value="{{data.toHit}}"
+                           placeholder="+0" data-dtype="String"/>
+                  </div>
+                </div>    
               </div>
               <div class="resource">
                 <label class="resource-label" for="data.level">{{localize "DCC.WeaponPropertiesDamage"}}</label>

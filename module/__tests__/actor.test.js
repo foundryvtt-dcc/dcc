@@ -137,6 +137,18 @@ test('roll weapon attack', () => {
     content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="undefined" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,crit:,fumble:[object Object]',
     sound: 'diceSound'
   })
+
+  collectionFindMock.mockReturnValue(new DCCItem('lefthand dagger', {
+    type: 'weapon',
+    data: {
+      actionDie: '1d16',
+      toHit: 2,
+      critRange: 16,
+      melee: true
+    }
+  }))
+  actor.rollWeaponAttack('lefthand dagger')
+  expect(Roll).toHaveBeenCalledWith('1d16 + 2', { ab: 0, critical: 16 })
 })
 
 test('roll skill check', () => {

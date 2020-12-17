@@ -13,6 +13,7 @@ class DCCItem extends Item {
       // Weapons can inherit the owner's action die
       if (this.data.data.config.inheritActionDie) {
         this.data.data.actionDie = this.actor.data.data.attributes.actionDice.value
+        this.data.data.critRange = this.actor.data.data.details.critRange
       }
 
       // Spells can inherit the owner's spell check
