@@ -8,14 +8,33 @@ class DCCItem extends Item {
   prepareData () {
     super.prepareData()
 
-    // If this is a weapon owned by an actor, check for config settings to apply
+    // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.data.data.config) {
       // Weapons can inherit the owner's action die
       if (this.data.data.config.inheritActionDie) {
         this.data.data.actionDie = this.actor.data.data.attributes.actionDice.value
-        this.data.data.critRange = this.actor.data.data.details.critRange
       }
 
+      // Set default inherit crit range for legacy items
+      if (this.data.data.config.inheritCritRange === undefined) {
+        this.data.data.config.inheritCritRange == true
+        this.update({
+          "data.config.inheritCritRange": true
+        })
+      }
+
+      // And inherit crit range if set
+      if (this.data.data.config.inheritCritRange) {
+        this.data.data.critRange = this.actor.data.data.details.critRange
+      } else {
+        // If not inheriting crit range make sure there is a value (for legacy items)
+        if (this.data.data.critRange === null || this.data.data.critRange === undefined) {
+          this.update({
+            "data.critRange": 20
+          })
+        }
+      }
+        
       // Spells can inherit the owner's spell check
       if (this.data.data.config.inheritSpellCheck) {
         this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck

@@ -365,7 +365,8 @@
         "currency"
       ],
       "config": {
-        "inheritActionDie": true
+        "inheritActionDie": true,
+        "inheritCritRange": true
       },
       "actionDie": "1d20",
       "toHit": "+0",
@@ -377,7 +378,8 @@
       "subdual": 0,
       "backstab": false,
       "backstabDamage": null,
-      "doubleIfMounted": 0
+      "doubleIfMounted": 0,
+      "critRange": 20
     },
     "ammunition": {
       "templates": [
