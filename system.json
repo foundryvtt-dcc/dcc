@@ -4,7 +4,7 @@
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": 0.17,
   "minimumCoreVersion": "0.6.6",
-  "compatibleCoreVersion": "0.7.7",
+  "compatibleCoreVersion": "0.7.8",
   "templateVersion": 2,
   "author": "Tim L. White",
   "contributors": { "name" : "Steve Barnett", "email" : "mooped@gmail.com" },

@@ -17,5 +17,6 @@ Manifest URL: https://github.com/cyface/foundryvtt-dcc/raw/master/system.json
 ###### Contributors
 * Connor Stone (@ckwk)
 * Christian Ovsenik (@algnc)
+* @adotor
 
 _Based on material ©2020 Goodman Games, used with permission._
