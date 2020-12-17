@@ -424,6 +424,9 @@ class DCCActor extends Actor {
     const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
     roll.roll()
     const d20RollResult = roll.dice[0].total
+    roll.dice[0].options.dcc = {
+      upperThreshold: critRange
+    }
 
     if (displayStandardCards) {
       roll.toMessage({
@@ -484,12 +487,8 @@ class DCCActor extends Actor {
     // Display standard cards in chat?
     const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
 
-    // Roll the crit
-    const roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
-    roll.roll()
-    const rollData = escape(JSON.stringify(roll))
-    const rollTotal = roll.total
-    const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+    // Roll object for the crit die
+    let roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
 
     // Lookup the crit table if available
     let critResult = null
@@ -507,13 +506,31 @@ class DCCActor extends Actor {
       }
     }
 
+    // Either roll the die or grab the roll from the table lookup
+    if (!critResult) {
+      roll.roll()
+    } else {
+      roll = critResult.roll
+    }
+
     if (!displayStandardCards) {
+      // Create the roll emote
+      const rollData = escape(JSON.stringify(roll))
+      const rollTotal = roll.total
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+
       // Display crit result or just a notification of the crit
       if (critResult) {
         return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].text}`
       } else {
         return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
       }
+    } else if (!critResult) {
+      // Display the raw crit roll
+      await roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor: `${game.i18n.localize('DCC.CriticalHit')}!`
+      })
     }
   }
 
@@ -531,12 +548,8 @@ class DCCActor extends Actor {
       fumbleDie = '1d4'
     }
 
-    // Roll the fumble
-    const roll = new Roll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`)
-    roll.roll()
-    const rollData = escape(JSON.stringify(roll))
-    const rollTotal = roll.total
-    const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+    // Roll object for the fumble die
+    let roll = new Roll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`)
 
     // Lookup the fumble table if available
     let fumbleResult = null
@@ -557,13 +570,31 @@ class DCCActor extends Actor {
       }
     }
 
+    // Either roll the die or grab the roll from the table lookup
+    if (!fumbleResult) {
+      roll.roll()
+    } else {
+      roll = fumbleResult.roll
+    }
+
     if (!displayStandardCards) {
+      // Create the roll emote
+      const rollData = escape(JSON.stringify(roll))
+      const rollTotal = roll.total
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {
-        return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}<br/>${fumbleResult.results[0].text}`
+        return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}<br/>${fumbleResult.results[0].text}`
       } else {
-        return ` <br/><br/><span style='color:red; font-weight: bolder'>Fumble!</span> ${rollHTML}`
+        return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}`
       }
+    } else if (!fumbleResult) {
+      // Display the raw fumble roll
+      await roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor: `${game.i18n.localize('DCC.Fumble')}!`
+      })
     }
   }
 
