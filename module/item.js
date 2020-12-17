@@ -18,9 +18,6 @@ class DCCItem extends Item {
       // Set default inherit crit range for legacy items
       if (this.data.data.config.inheritCritRange === undefined) {
         this.data.data.config.inheritCritRange = true
-        this.update({
-          'data.config.inheritCritRange': true
-        })
       }
 
       // And inherit crit range if set
@@ -29,9 +26,7 @@ class DCCItem extends Item {
       } else {
         // If not inheriting crit range make sure there is a value (for legacy items)
         if (this.data.data.critRange === null || this.data.data.critRange === undefined) {
-          this.update({
-            'data.critRange': 20
-          })
+          this.data.data.critRange = 20
         }
       }
 
