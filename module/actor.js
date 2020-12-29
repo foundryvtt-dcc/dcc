@@ -431,7 +431,7 @@ class DCCActor extends Actor {
     if (displayStandardCards) {
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: game.i18n.localize('DCC.AttackRoll')
+        flavor: game.i18n.localize(backstab ? 'DCC.Backstab' : 'DCC.AttackRoll')
       })
     }
 
@@ -450,7 +450,7 @@ class DCCActor extends Actor {
     if (displayStandardCards) {
       damageRoll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: game.i18n.localize(backstab ? 'DCC.Backstab' : 'DCC.DamageRoll')
+        flavor: game.i18n.localize('DCC.DamageRoll')
       })
     }
 

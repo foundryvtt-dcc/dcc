@@ -275,7 +275,7 @@
             {{/inline}}
             {{#* inline "ItemRow"}}
             <li class="item flexrow" data-item-id="{{item._id}}">
-                <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                <div class="item-image flexrow"><img class="flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
                 <h4 class="item-name flex3">{{item.name}}</h4>
                 <h4 class="item-weight flex3">{{item.data.weight}}</h4>
                 <h4 class="item-quantity flex1">{{item.data.quantity}}</h4>
@@ -314,7 +314,7 @@
             {{!-- Treasure --}}
             {{#* inline "TreasureRow"}}
             <li class="item flexrow" data-item-id="{{item._id}}">
-                <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                <div class="item-image flexrow"><img class="flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
                 <h4 class="item-name">{{item.name}}</h4>
                 <h4 class="item-is-coins">{{#if item.data.isCoins}}({{localize "DCC.AsCoins"}}){{/if}}</h4>
                 <h4 class="item-pp">{{item.data.value.pp}}</h4>
