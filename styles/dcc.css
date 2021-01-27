@@ -1055,6 +1055,14 @@
   grid-template-columns: 3fr 1fr 2fr;
   grid-template-rows: 50px minmax(80px, auto); }
 
+.dcc.item .sheet-body .spell-header-extras {
+  display: grid;
+  grid-column: span 5 / span 5;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 0.5fr);
+  gap: 10px;
+  margin: 10px 0;
+  padding: 0; }
+
 .dcc.item .sheet-body.spell {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;

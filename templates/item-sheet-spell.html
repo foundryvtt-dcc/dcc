@@ -33,7 +33,7 @@
     </header>
 
     <section class="sheet-body spell">
-        <div class="spell-header-extras grid grid-4col">
+        <div class="spell-header-extras">
           <div class="resource">
             <label class="resource-label" for="data.range">{{localize "DCC.SpellRange"}}</label>
             <input type="text" name="data.range" value="{{data.range}}"
@@ -53,6 +53,12 @@
             <label class="resource-label" for="data.save">{{localize "DCC.SpellSave"}}</label>
             <input type="text" name="data.save" value="{{data.save}}"
                    placeholder="None" data-dtype="String"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.page">{{localize "DCC.SpellPage"}}</label>
+            <input type="text" name="data.page"
+                   value="{{data.page}}"
+                   placeholder="" data-dtype="String"/>
           </div>
         </div>
         <h1 class="description-heading">{{localize "DCC.Description"}}</h1>
