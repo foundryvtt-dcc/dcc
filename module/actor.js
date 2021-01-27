@@ -442,7 +442,7 @@ class DCCActor extends Actor {
     /* Roll the Damage */
     let damageFormula = weapon.data.data.damage
     if (backstab && weapon.data.data.backstab) {
-      damageFormula = weapon.data.data.backstabDamage
+      damageFormula = weapon.data.data.backstabDamage || weapon.data.data.damage
     }
     const damageRoll = new Roll(damageFormula, { ab: attackBonus })
     damageRoll.roll()
