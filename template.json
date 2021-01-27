@@ -49,6 +49,9 @@
           "fumble": {
             "die": "1d4"
           },
+          "hitDice": {
+            "value": "1d4"
+          },
           "hp": {
             "value": 10,
             "min": 0,
@@ -313,7 +316,9 @@
           "die": "1d4",
           "table": "M"
         },
-        "hitDice": "1d6"
+        "hitDice": {
+          "value": "1d6"
+        }
       },
       "class": {
         "spellCheck": 1,
