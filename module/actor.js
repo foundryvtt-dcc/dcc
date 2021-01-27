@@ -179,6 +179,29 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Roll Hit Dice
+   */
+  async rollHitDice () {
+    let roll
+
+    if (this.data.type === 'Player') {
+      const die = this.data.data.attributes.hitDice.value || '1d4'
+      const sta = this.data.data.abilities.sta || {}
+      sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : 0
+      roll = new Roll('@die+@mod', { die, mod: sta.mod })
+    } else {
+      const die = this.data.data.attributes.hitDice.value || '1d4'
+      roll = new Roll('@die', { die })
+    }
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: game.i18n.localize('DCC.HitDice')
+    })
+  }
+
+  /**
    * Roll a Saving Throw
    * @param {String} saveId       The save ID (e.g. "ref")
    */

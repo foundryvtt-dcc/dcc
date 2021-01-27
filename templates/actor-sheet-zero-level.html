@@ -131,8 +131,7 @@
                     {{!-- Init, Speed, and HD --}}
                     <div class="init-and-speed flexcol">
                         <div class="init">
-                            <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize
-                                "DCC.Init"}}</label>
+                            <label class="init-label box-title rollable" for="data.attributes.init.value">{{localize "DCC.Init"}}</label>
                             <input class="init-value" type="text" id="data.attributes.init.value"
                                    name="data.attributes.init.value"
                                    value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}"
@@ -146,7 +145,7 @@
                                    value="{{distanceFormat data.attributes.speed.value}}" data-dtype="String"/>
                         </div>
                         <div class="hd">
-                            <label for="data.attributes.hitDice.value">{{localize "DCC.HD"}}</label>
+                            <label class="hd-label rollable" for="data.attributes.hitDice.value">{{localize "DCC.HD"}}</label>
                             <input class="hd-value" type="text" id="data.attributes.hitDice.value"
                                    name="data.attributes.hitDice.value"
                                    value="{{data.attributes.hitDice.value}}" maxlength="20" data-dtype="String"/>

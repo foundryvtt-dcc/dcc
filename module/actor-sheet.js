@@ -245,6 +245,14 @@ class DCCActorSheet extends ActorSheet {
         li.addEventListener('dragstart', dragHandler, false)
       })
 
+      // Hit Dice
+      html.find('.hd-label').click(this._onRollHitDice.bind(this))
+      html.find('div.hd').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      });
+
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
       html.find('li.save').each((i, li) => {
@@ -474,6 +482,12 @@ class DCCActorSheet extends ActorSheet {
         actorId: this.actor.id,
         data: {}
       }
+    } else if (classes.contains('hd')) {
+      dragData = {
+        type: 'Hit Dice',
+        actorId: this.actor.id,
+        data: {}
+      }
     } else if (classes.contains('save')) {
       dragData = {
         type: 'Save',
@@ -645,6 +659,16 @@ class DCCActorSheet extends ActorSheet {
   _onRollInitiative (event) {
     event.preventDefault()
     this.actor.rollInitiative(this.token)
+  }
+
+  /**
+   * Handle rolling Hit Dice
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollHitDice (event) {
+    event.preventDefault()
+    this.actor.rollHitDice()
   }
 
   /**

@@ -166,6 +166,7 @@ async function createDCCMacro (data, slot) {
   const handlers = {
     Ability: _createDCCAbilityMacro,
     Initiative: _createDCCInitiativeMacro,
+    'Hit Dice': _createDCCHitDiceMacro,
     Save: _createDCCSaveMacro,
     Skill: _createDCCSkillMacro,
     'Luck Die': _createDCCLuckDieMacro,
@@ -240,6 +241,25 @@ function _createDCCInitiativeMacro (data, slot) {
     name: game.i18n.localize('DCC.Initiative'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token) }',
     img: 'icons/svg/up.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from a hit dice drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCHitDiceMacro (data, slot) {
+  if (data.type !== 'Hit Dice') return
+
+  // Create the macro command
+  const macroData = {
+    name: game.i18n.localize('DCC.HitDiceRoll'),
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice() }',
+    img: 'icons/dice/d4black.svg'
   }
 
   return macroData
