@@ -1,7 +1,5 @@
 /* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, ENTITY_PERMISSIONS */
 
-import parsePC from './pc-parser.js'
-import parseNPC from './npc-parser.js'
 import DCCActorConfig from './actor-config.js'
 
 /**
@@ -39,18 +37,6 @@ class DCCActorSheet extends ActorSheet {
           class: 'configure-actor',
           icon: 'fas fa-code',
           onclick: ev => this._onConfigureActor(ev)
-        },
-        {
-          label: game.i18n.localize('DCC.ImportStats'),
-          class: 'paste-block',
-          icon: 'fas fa-paste',
-          onclick: ev => this._onPasteStatBlock(ev)
-        },
-        {
-          label: game.i18n.localize('DCC.Clear'),
-          class: 'clear-sheet',
-          icon: 'fas fa-eraser',
-          onclick: ev => this._onClearSheet(ev)
         }
       )
     }
@@ -251,7 +237,7 @@ class DCCActorSheet extends ActorSheet {
         // Add draggable attribute and dragstart listener.
         li.setAttribute('draggable', true)
         li.addEventListener('dragstart', dragHandler, false)
-      });
+      })
 
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
@@ -368,40 +354,6 @@ class DCCActorSheet extends ActorSheet {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 400) / 2
     }).render(true)
-  }
-
-  /**
-   * Prompt to Clear This Sheet
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onClearSheet (event) {
-    event.preventDefault()
-    new Dialog({
-      title: game.i18n.localize('DCC.ClearSheet'),
-      content: `<p>${game.i18n.localize('DCC.ClearSheetExplain')}</p>`,
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-check"></i>',
-          label: 'Yes',
-          callback: () => this._clearSheet()
-        },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: 'No'
-        }
-      }
-    }).render(true)
-  }
-
-  /**
-   * Clear out all form fields on this sheet
-   * @private
-   */
-  _clearSheet () {
-    [...this.form.elements].forEach((el) => {
-      el.value = ''
-    })
   }
 
   /** Prompt to delete an item
@@ -578,55 +530,6 @@ class DCCActorSheet extends ActorSheet {
       if (this.actor.isToken) dragData.tokenId = this.actor.token.id
       event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
     }
-  }
-
-  /**
-   * Prompt for a stat block to import
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onPasteStatBlock (event) {
-    event.preventDefault()
-    const psgLinkHtml = (this.entity.data.type === 'Player') ? `<p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize('DCC.PurpleSorcererPCLink')}</a></p>` : ''
-    const html = `<form id="stat-block-form">
-                    ${psgLinkHtml}
-                    <textarea name="statblock"></textarea>
-                  </form>`
-    new Dialog({
-      title: game.i18n.localize('DCC.PasteBlock'),
-      content: html,
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-check"></i>',
-          label: 'Import Stats',
-          callback: html => this._pasteStatBlock(html)
-        },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: 'Cancel'
-        }
-      }
-    }).render(true)
-  }
-
-  /**
-   * Import a stat block
-   * @param {string} statBlockHTML   The stat block to import
-   * @private
-   */
-  async _pasteStatBlock (statBlockHTML) {
-    const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
-    const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
-
-    // Handle any items
-    const items = parsedCharacter.items
-    delete parsedCharacter.items
-    for (const item of items) {
-      await this.actor.createOwnedItem(item)
-    }
-
-    // Update the actor itself
-    await this.object.update(parsedCharacter)
   }
 
   /* -------------------------------------------- */

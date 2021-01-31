@@ -13,6 +13,8 @@ import DCC from './config.js'
 import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
+import parser from './parser.js'
+
 import { registerSystemSettings } from './settings.js'
 
 // Override the template for sheet configuration
@@ -149,6 +151,11 @@ Hooks.on('renderChatMessage', (app, html, data) => {
 
 // Support context menu on chat cards
 Hooks.on('getChatLogEntryContext', chat.addChatMessageContextOptions)
+
+// Quick import for actors
+Hooks.on('renderActorDirectory', (app, html) => {
+  parser.onRenderActorDirectory(app, html)
+})
 
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */

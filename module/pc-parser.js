@@ -23,6 +23,9 @@ function parsePC (pcString) {
  **/
 function _parseJSONPC (pcObject) {
   const pc = {}
+  if (pcObject.name) {
+    pc.name = pcObject.name
+  }
   pc['data.details.occupation.value'] = pcObject.occTitle || ''
   pc['data.abilities.str.value'] = pcObject.strengthScore || 10
   pc['data.abilities.agl.value'] = pcObject.agilityScore || 10
@@ -216,6 +219,9 @@ function _parseJSONPC (pcObject) {
 function _parsePlainPCToJSON (pcString) {
   const pcObject = {}
   pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
+
+  // Name is non-standard, but it's handy to be able to add it to the text before pasting
+  pcObject.name = _firstMatch(pcString.match(/Name:\s+(.+)[;\n$]/))
 
   // Try parsing as a zero level first
   pcObject.occTitle = _firstMatch(pcString.match(/0-level Occupation:\s+(.+)[;\n$]/))

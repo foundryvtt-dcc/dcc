@@ -53,6 +53,10 @@ function parseNPC (npcString) {
       npc.items.push(parsedAttackTwo)
     }
   }
+
+  /* Put the full statline into the notes field for reference and to handle data that doesn't get parsed */
+  npc['data.details.notes.value'] = npcString
+
   return npc
 }
 
