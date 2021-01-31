@@ -1,8 +1,8 @@
 /* global Dialog, game, expandObject ui, $ */
 
 import DCCActor from './actor.js'
-import parsePC from './pc-parser.js'
-import parseNPC from './npc-parser.js'
+import parsePCs from './pc-parser.js'
+import parseNPCs from './npc-parser.js'
 
 /**
  * Hook to create the Actor Directory buttons for quick import
@@ -96,7 +96,7 @@ async function _createActors (type, folderId, actorData) {
   // Process the statblock
   let parsedCharacters
   try {
-    parsedCharacters = (type === 'Player') ? parsePC(actorData) : parseNPC(actorData)
+    parsedCharacters = (type === 'Player') ? parsePCs(actorData) : parseNPCs(actorData)
   } catch (e) {
     if (type === 'Player') {
       return ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))

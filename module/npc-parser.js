@@ -1,9 +1,43 @@
 /* global Roll */
 
 /**
+ *  Parses one or more NPC Stat Blocks (e.g. from published modules) into actor data
+ *  @param {string} npcString The NPC stat block to import
+ *  @return {Array}           Array of NPC data for actor creation (currently a single NPC)
+ **/
+function parseNPCs (npcString) {
+  npcString = npcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
+
+  // Make sure we match the last period if there's no trailing newline
+  npcString += '\n'
+
+  const npcObjects = []
+
+  // Match the period followed by a newline at the end of each stat block
+  let matches = npcString.matchAll(/\.[\n$]/gm)
+
+  let previousIndex = 0
+  for (const match of matches) {
+    const matchIndex = match.index
+
+    // Parse each section between the end of the last NPC (or start of the string) and the period
+    const npcSection = npcString.substring(previousIndex, matchIndex + 1)
+    try {
+      npcObjects.push(parseNPC(npcSection))
+    } catch (e) {
+      ui.notifications.warn(game.i18n.localize('DCC.ParseSingleNPCWarning'))
+    }
+
+    previousIndex = matchIndex + 1
+  }
+
+  return npcObjects
+}
+
+/**
  *  Parses NPC Stat Blocks (e.g. from published modules) into an NPC sheet
- *  @param {string} npcString the NPC stat block to import
- *  @return {Array} array of NPC data for actor creation (currently a single NPC)
+ *  @param {string} npcString The NPC stat block to import
+ *  @return {Object}            NPC data for actor creation (currently a single NPC)
  **/
 function parseNPC (npcString) {
   const npc = {}
@@ -58,7 +92,7 @@ function parseNPC (npcString) {
   /* Put the full statline into the notes field for reference and to handle data that doesn't get parsed */
   npc['data.details.notes.value'] = npcString
 
-  return [npc]
+  return npc
 }
 
 /** Parse out a attack string into fields
@@ -105,4 +139,4 @@ function _firstMatch (regex, string) {
   return (result && result.length > 0) ? result[1] : null
 }
 
-export default parseNPC
+export default parseNPCs

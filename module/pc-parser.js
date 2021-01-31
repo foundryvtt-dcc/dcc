@@ -6,12 +6,12 @@
  *  @param {string} pcString The player stat block to import
  *  @return {Array}          Array of player character objects to create
  **/
-function parsePC (pcString) {
+function parsePCs (pcString) {
   try {
     const pcObject = JSON.parse(pcString)
-    return _parseJSONPC(pcObject)
+    return _parseJSONPCs(pcObject)
   } catch (e) {
-    return _parseJSONPC(_splitAndParsePlainPCsToJSON(pcString))
+    return _parseJSONPCs(_splitAndParsePlainPCsToJSON(pcString))
   }
 }
 
@@ -21,7 +21,7 @@ function parsePC (pcString) {
  *  @param {Object} pcObject The JSON object to import
  *  @return {Array}          Array of character objects
  **/
-function _parseJSONPC (pcObject) {
+function _parseJSONPCs (pcObject) {
   // A full 500 character JSON object has a 'characters' array at the root
   if (pcObject.characters) {
     return pcObject.characters.map(x => _parseJSONPC(x)[0])
@@ -471,4 +471,4 @@ function _parseStartingFunds (startingFundsString) {
   }
 }
 
-export default parsePC
+export default parsePCs
