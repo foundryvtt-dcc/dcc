@@ -99,14 +99,29 @@ async function _createActors (type, folderId, actorData) {
       name = nameParts.join(' ')
     }
 
+    // Enable Compute AC for imported player actors since they have armor items
+    if (type === 'Player') {
+      parsedCharacter['data.config.computeAC'] = true
+    }
+
     // Create the actor
-    await DCCActor.create({
+    const actor = await DCCActor.create({
       name,
       type,
       folder: folderId,
       data: expandObject(parsedCharacter).data,
       items
     })
+
+    // Try and pick a sheet of player characters by matching sheet names to the actor's class name
+    if (type === 'Player' && parsedCharacter['data.class.className']) {
+      const classes = Object.keys(CONFIG.Actor.sheetClasses[type])
+      for (const sheetClass of classes) {
+        if (sheetClass.includes(parsedCharacter['data.class.className'])) {
+          actor.setFlag('core', 'sheetClass', sheetClass)
+        }
+      }
+    }
   }
 }
 
