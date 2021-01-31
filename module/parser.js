@@ -4,85 +4,57 @@ import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
 import parseNPCs from './npc-parser.js'
 
-/**
- * Hook to create the Actor Directory buttons for quick import
- * @param {object} app
- * @param {object}   html
- * @return {Promise}
- */
-function onRenderActorDirectory (app, html) {
-  if (!game.user.isGM) {
-    return
+class DCCActorParser extends FormApplication {
+  /**
+   * Specify the default options for this class
+   * @return {Object}
+   */
+  static get defaultOptions () {
+    const options = super.defaultOptions
+    options.id = 'actor-parser'
+    options.width = 600
+    options.height = 800
+    options.template = 'systems/dcc/templates/dialog-actor-import.html'
+    return options
   }
-  const playerButton = $(`<button class="create-actor-player"><i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImportPlayer')}</button>`)
-  const npcButton = $(`<button class="create-actor-npc"><i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImportNPC')}</button>`)
-  playerButton.on('click', () => {
-    _onImportActor('Player')
-  })
-  npcButton.on('click', () => {
-    _onImportActor('NPC')
-  })
-  let footer = html.find('.directory-footer')
-  if (footer.length === 0) {
-    footer = $('<footer class="directory-footer"></footer>')
-    html.append(footer)
-  }
-  footer.append(playerButton)
-  footer.append(npcButton)
-}
 
-/**
- * Import actor dialog
- * @param {string} type - Player or NPC entity?
- * @return {Promise}
- */
-function _onImportActor (type) {
-  const psgLinkHtml = (type === 'Player') ? `<p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize('DCC.PurpleSorcererPCLink')}</a></p>` : ''
-  let folderOptions = ''
-  for (const folder of game.actors.directory.folders) {
-    folderOptions += `<option value="${folder.data._id}">${folder.data.name}</option>`
+  /**
+   * Title
+   * @type {String}
+   */
+  get title () {
+    return 'Import Actors'
   }
-  const html = `<form id="stat-block-form">
-                  ${psgLinkHtml}
-                  <div class="form-group">
-                    <label for="statblock">
-                      ${game.i18n.localize(type === 'Player' ? 'DCC.StatblockPlayer' : 'DCC.StatblockNPC')}
-                    </label>
-                    <div class="form-fields">
-                      <textarea name="statblock"></textarea>
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label for="folder">
-                      ${game.i18n.localize('DCC.Folder')}
-                    </label>
-                    <div class="form-fields">
-                      <select name="folder">
-                        <option value="" selected>-</option>
-                        ${folderOptions}
-                      </select>
-                    </div>
-                  </div>
-                </form>`
-  new Dialog({
-    title: game.i18n.localize('DCC.PasteBlock'),
-    content: html,
-    buttons: {
-      yes: {
-        icon: '<i class="fas fa-check"></i>',
-        label: 'Import Stats',
-        callback: (html) => {
-          const actorData = html[0].querySelector('#stat-block-form')[0].value
-          const folderId = html[0].querySelector('#stat-block-form')[1].value
-          _createActors(type, folderId, actorData)
-        }
-      },
-      no: {
-        icon: '<i class="fas fa-times"></i>',
-        label: 'Cancel'
-      }
+
+  /**
+   * Construct and return the data object used to render the HTML template for this form application.
+   * @return {Object}
+   */
+  getData () {
+    const data = {}
+    data.user = game.user
+    data.config = CONFIG.DCC
+    data.folders = []
+
+    // Gather the list of actor folders
+    for (const folder of game.actors.directory.folders) {
+      data.folders.push({ id: folder.data._id, name: folder.data.name })
     }
-  }).render(true)
+
+    return data
+  }
+
+  /**
+   * Handle form submission
+   * @param {Object} event     Submission event
+   * @param {Object} formData  Data from the form
+   * @return {Object}
+   */
+  async _updateObject (event, formData) {
+    event.preventDefault()
+
+    _createActors(formData.type, formData.folderId, formData.statblocks)
+  }
 }
 
 /**
@@ -136,6 +108,28 @@ async function _createActors (type, folderId, actorData) {
       items
     })
   }
+}
+
+/**
+ * Hook to create the Actor Directory buttons for quick import
+ * @param {object} app
+ * @param {object}   html
+ * @return {Promise}
+ */
+function onRenderActorDirectory (app, html) {
+  if (!game.user.isGM) {
+    return
+  }
+  const button = $(`<button class="import-actors"><i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImport')}</button>`)
+  button.on('click', () => {
+    new DCCActorParser().render(true)
+  })
+  let footer = html.find('.directory-footer')
+  if (footer.length === 0) {
+    footer = $('<footer class="directory-footer"></footer>')
+    html.append(footer)
+  }
+  footer.append(button)
 }
 
 export default { onRenderActorDirectory }

@@ -24,7 +24,7 @@ function parsePCs (pcString) {
 function _parseJSONPCs (pcObject) {
   // A full 500 character JSON object has a 'characters' array at the root
   if (pcObject.characters) {
-    return pcObject.characters.map(x => _parseJSONPC(x)[0])
+    return pcObject.characters.map(x => _parseJSONPCs(x)[0])
   // Otherwise we're looking at a JSON object representing a single character
   } else {
     const pc = {}
