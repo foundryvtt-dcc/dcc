@@ -1,4 +1,4 @@
-/* global game */
+/* global game, ui */
 
 /**
  *  Parses Player Stat Blocks (e.g. from Purple Sorceror) into an NPC sheet
@@ -11,7 +11,7 @@ function parsePC (pcString) {
     const pcObject = JSON.parse(pcString)
     return _parseJSONPC(pcObject)
   } catch (e) {
-    return _parseJSONPC(_parsePlainPCToJSON(pcString))
+    return _parseJSONPC(_splitAndParsePlainPCsToJSON(pcString))
   }
 }
 
@@ -218,10 +218,59 @@ function _parseJSONPC (pcObject) {
 }
 
 /**
+ * Splits a set of Purple Sorceror plain text characters and parses each character
+ *
+ *  @param {String} pcString The plain text characters to import
+ *  @return {Array}          Array of player character objects
+ **/
+function _splitAndParsePlainPCsToJSON (pcString) {
+  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
+
+  const pcObjects = []
+
+  // Match the start of either a zero level or an upper level statblock
+  let matches = pcString.matchAll(/(0-level Occupation:\s+(.+)[;\n$]|(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$])/gm)
+
+  let first = true
+  let previousIndex = 0
+  for (const match of matches) {
+    const matchIndex = match.index
+
+    // First iteration is the PSG header and not a character - skip it
+    if (!first) {
+      // Parse the previous character using the string up to the next section start
+      const pcSection = pcString.substring(previousIndex, matchIndex)
+      try {
+        pcObjects.push(_parsePlainPCToJSON(pcSection))
+      } catch (e) {
+        ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
+      }
+    }
+    first = false
+
+    previousIndex = matchIndex
+  }
+
+  // Parse the final character (if we found any)
+  if (!first) {
+    const pcSection = pcString.substring(previousIndex, pcString.length)
+    try {
+      pcObjects.push(_parsePlainPCToJSON(pcSection))
+    } catch (e) {
+      ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
+    }
+  }
+
+  return {
+    characters: pcObjects
+  }
+}
+
+/**
  * Parses Purple Sorcerer plain text character into a PC sheet
  *
  *  @param {String} pcString The plain text character to import
- *  @return {Array}          Array of player character objects
+ *  @return {Array}          Player character object
  **/
 function _parsePlainPCToJSON (pcString) {
   const pcObject = {}
@@ -350,7 +399,7 @@ function _parsePlainPCToJSON (pcString) {
     }
   }
 
-  return [pcObject]
+  return pcObject
 }
 
 /** Return first match or null from a regex match result
