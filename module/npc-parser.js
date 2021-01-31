@@ -3,6 +3,7 @@
 /**
  *  Parses NPC Stat Blocks (e.g. from published modules) into an NPC sheet
  *  @param {string} npcString the NPC stat block to import
+ *  @return {Array} array of NPC data for actor creation (currently a single NPC)
  **/
 function parseNPC (npcString) {
   const npc = {}
@@ -57,7 +58,7 @@ function parseNPC (npcString) {
   /* Put the full statline into the notes field for reference and to handle data that doesn't get parsed */
   npc['data.details.notes.value'] = npcString
 
-  return npc
+  return [npc]
 }
 
 /** Parse out a attack string into fields

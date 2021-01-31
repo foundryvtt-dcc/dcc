@@ -38,9 +38,31 @@ function onRenderActorDirectory (app, html) {
  */
 function _onImportActor (type) {
   const psgLinkHtml = (type === 'Player') ? `<p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize('DCC.PurpleSorcererPCLink')}</a></p>` : ''
+  let folderOptions = ''
+  for (const folder of game.actors.directory.folders) {
+    folderOptions += `<option value="${folder.data._id}">${folder.data.name}</option>`
+  }
   const html = `<form id="stat-block-form">
                   ${psgLinkHtml}
-                  <textarea name="statblock"></textarea>
+                  <div class="form-group">
+                    <label for="statblock">
+                      ${game.i18n.localize(type === 'Player' ? 'DCC.StatblockPlayer' : 'DCC.StatblockNPC')}
+                    </label>
+                    <div class="form-fields">
+                      <textarea name="statblock"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="folder">
+                      ${game.i18n.localize('DCC.Folder')}
+                    </label>
+                    <div class="form-fields">
+                      <select name="folder">
+                        <option value="" selected>-</option>
+                        ${folderOptions}
+                      </select>
+                    </div>
+                  </div>
                 </form>`
   new Dialog({
     title: game.i18n.localize('DCC.PasteBlock'),
@@ -51,7 +73,8 @@ function _onImportActor (type) {
         label: 'Import Stats',
         callback: (html) => {
           const actorData = html[0].querySelector('#stat-block-form')[0].value
-          _createActor(type, actorData)
+          const folderId = html[0].querySelector('#stat-block-form')[1].value
+          _createActors(type, folderId, actorData)
         }
       },
       no: {
@@ -63,16 +86,17 @@ function _onImportActor (type) {
 }
 
 /**
- * Create and import an actor from PSG text, JSON, or a DCC statline
+ * Create and import actors from PSG text, JSON, or a DCC statline
  * @param {string} type      - Player or NPC entity?
+ * @param {string} folderId  - ID of the folder to import actors into
  * @param {string} actorData - Actor data (PSG text or JSON for Players, or a DCC statline for NPCs)
  * @return {Promise}
  */
-async function _createActor (type, actorData) {
+async function _createActors (type, folderId, actorData) {
   // Process the statblock
-  let parsedCharacter
+  let parsedCharacters
   try {
-    parsedCharacter = (type === 'Player') ? parsePC(actorData) : parseNPC(actorData)
+    parsedCharacters = (type === 'Player') ? parsePC(actorData) : parseNPC(actorData)
   } catch (e) {
     if (type === 'Player') {
       return ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
@@ -81,34 +105,37 @@ async function _createActor (type, actorData) {
     }
   }
 
-  // Separate out owned items
-  const items = parsedCharacter.items
-  delete parsedCharacter.items
+  for (const parsedCharacter of parsedCharacters) {
+    // Separate out owned items
+    const items = parsedCharacter.items
+    delete parsedCharacter.items
 
-  // Figure out the name
-  let name = game.i18n.format('DCC.NewActorName', { type })
-  const nameParts = []
-  // If there's a name (from NPCs or Player imports with a name added) then use it
-  if (parsedCharacter.name) {
-    name = parsedCharacter.name
-  } else {
-    // Otherwise combine the occupation and class if available to come up with something descriptive
-    if (parsedCharacter['data.details.occupation.value']) {
-      nameParts.push(parsedCharacter['data.details.occupation.value'])
+    // Figure out the name
+    let name = game.i18n.format('DCC.NewActorName', { type })
+    const nameParts = []
+    // If there's a name (from NPCs or Player imports with a name added) then use it
+    if (parsedCharacter.name) {
+      name = parsedCharacter.name
+    } else {
+      // Otherwise combine the occupation and class if available to come up with something descriptive
+      if (parsedCharacter['data.details.occupation.value']) {
+        nameParts.push(parsedCharacter['data.details.occupation.value'])
+      }
+      if (parsedCharacter['data.class.className']) {
+        nameParts.push(parsedCharacter['data.class.className'])
+      }
+      name = nameParts.join(' ')
     }
-    if (parsedCharacter['data.class.className']) {
-      nameParts.push(parsedCharacter['data.class.className'])
-    }
-    name = nameParts.join(' ')
+
+    // Create the actor
+    await DCCActor.create({
+      name,
+      type,
+      folder: folderId,
+      data: expandObject(parsedCharacter).data,
+      items
+    })
   }
-
-  // Create the actor
-  await DCCActor.create({
-    name,
-    type,
-    data: expandObject(parsedCharacter).data,
-    items
-  })
 }
 
 export default { onRenderActorDirectory }
