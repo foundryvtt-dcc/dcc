@@ -1,11 +1,11 @@
 /* Tests for PC Parser */
 /* eslint-env jest */
 
-import parsePC from '../pc-parser.js'
+import parsePCs from '../pc-parser.js'
 
 /* Test blacksmith text */
 test('blacksmith', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
     `0-level Occupation: Blacksmith
 Strength: 7 (-1)
 Agility: 7 (-1)
@@ -79,12 +79,12 @@ Languages: Common`)
       }
     ]
   }
-  expect(parsedNPC).toMatchObject(expected)
+  expect(parsedNPC).toMatchObject([expected])
 })
 
 /* Test beekeeper json */
 test('beekeeper', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
     `{
   "occTitle": "Beekeeper",
   "strengthScore": "15",
@@ -183,12 +183,171 @@ test('beekeeper', () => {
       }
     ]
   }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
+/* Test multiple zeroes */
+test('zeroes', () => {
+  const parsedNPC = parsePCs(
+    `Some banner text
+That should be ignored
+
+0-level Occupation: Blacksmith
+Strength: 7 (-1)
+Agility: 7 (-1)
+Stamina: 12 (0)
+Personality: 17 (+2)
+Intelligence: 5 (-2)
+Luck: 12 (0)
+
+AC: 9; HP: 3
+Weapon: Hammer (as club) -1 (1d4-1)
+Speed: 30; Init: -1; Ref: -1; Fort: 0; Will: 2
+
+Equipment: Crowbar (2 gp)
+Trade good: Steel tongs
+Starting Funds: 42 cp
+Lucky sign: Fox's cunning (Find/disable traps)
+Languages: Common
+
+
+0-level Occupation: Woodcutter
+Strength: 8 (-1)
+Agility: 11 (0)
+Stamina: 10 (0)
+Personality: 12 (0)
+Intelligence: 11 (0)
+Luck: 10 (0)
+
+AC: 10; HP: 1
+Weapon: Handaxe -1 (1d6-1)
+Speed: 30; Init: 0; Ref: 0; Fort: 0; Will: 0
+
+Equipment: Torch (1 cp)
+Trade good: Bundle of wood
+Starting Funds: 29 cp
+Lucky sign: Survived the plague (Magical healing) (+0)
+Languages: Common `)
+  const expected = [
+    {
+      'data.attributes.init.value': '-1',
+      'data.attributes.speed.value': '30',
+      'data.details.occupation.value': 'Blacksmith',
+      'data.attributes.ac.value': '9',
+      'data.attributes.hp.value': '3',
+      'data.attributes.hp.max': '3',
+      'data.abilities.str.value': '7',
+      'data.abilities.agl.value': '7',
+      'data.abilities.sta.value': '12',
+      'data.abilities.per.value': '17',
+      'data.abilities.int.value': '5',
+      'data.abilities.lck.value': '12',
+      'data.abilities.str.max': '7',
+      'data.abilities.agl.max': '7',
+      'data.abilities.sta.max': '12',
+      'data.abilities.per.max': '17',
+      'data.abilities.int.max': '5',
+      'data.abilities.lck.max': '12',
+      'data.saves.frt.value': '0',
+      'data.saves.ref.value': '-1',
+      'data.saves.wil.value': '2',
+      items: [
+        {
+          name: 'Hammer (as club)',
+          type: 'weapon',
+          data: {
+            toHit: '-1',
+            damage: '1d4-1',
+            melee: true
+          }
+        },
+        {
+          name: 'Crowbar (2 gp)',
+          type: 'equipment'
+        },
+        {
+          name: 'Steel tongs',
+          type: 'equipment'
+        },
+        {
+          name: 'Coins',
+          type: 'treasure',
+          data: {
+            value: {
+              cp: '42',
+              ep: '0',
+              gp: '0',
+              pp: '0',
+              sp: '0'
+            },
+            isCoins: true
+          }
+        }
+      ]
+    },
+    {
+      'data.attributes.init.value': '0',
+      'data.attributes.speed.value': '30',
+      'data.details.occupation.value': 'Woodcutter',
+      'data.attributes.ac.value': '10',
+      'data.attributes.hp.value': '1',
+      'data.attributes.hp.max': '1',
+      'data.abilities.str.value': '8',
+      'data.abilities.agl.value': '11',
+      'data.abilities.sta.value': '10',
+      'data.abilities.per.value': '12',
+      'data.abilities.int.value': '11',
+      'data.abilities.lck.value': '10',
+      'data.abilities.str.max': '8',
+      'data.abilities.agl.max': '11',
+      'data.abilities.sta.max': '10',
+      'data.abilities.per.max': '12',
+      'data.abilities.int.max': '11',
+      'data.abilities.lck.max': '10',
+      'data.saves.frt.value': '0',
+      'data.saves.ref.value': '0',
+      'data.saves.wil.value': '0',
+      items: [
+        {
+          name: 'Handaxe',
+          type: 'weapon',
+          data: {
+            toHit: '-1',
+            damage: '1d6-1',
+            melee: true
+          }
+        },
+        {
+          name: 'Torch (1 cp)',
+          type: 'equipment'
+        },
+        {
+          name: 'Bundle of wood',
+          type: 'equipment'
+        },
+        {
+          name: 'Coins',
+          type: 'treasure',
+          data: {
+            value: {
+              cp: '29',
+              ep: '0',
+              gp: '0',
+              pp: '0',
+              sp: '0'
+            },
+            isCoins: true
+          }
+        }
+      ]
+    }
+  ]
   expect(parsedNPC).toMatchObject(expected)
 })
 
 /* Test Cleric's text */
 test('cleric', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -360,12 +519,12 @@ Spells: (Spell Check: d20+2)
       }
     ]
   }
-  expect(parsedNPC).toMatchObject(expected)
+  expect(parsedNPC).toMatchObject([expected])
 })
 
 /* Test Thief's text */
 test('thief', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -515,12 +674,12 @@ Cast Spell From Scroll (d16)`
       }
     ]
   }
-  expect(parsedNPC).toMatchObject(expected)
+  expect(parsedNPC).toMatchObject([expected])
 })
 
 /* Test Halfling's text */
 test('halfling', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -650,12 +809,12 @@ Hide In Shadows: 11 (-4)`
       }
     ]
   }
-  expect(parsedNPC).toMatchObject(expected)
+  expect(parsedNPC).toMatchObject([expected])
 })
 
 /* Test Warrior's text */
 test('warrior', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -777,12 +936,12 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
       }
     ]
   }
-  expect(parsedNPC).toMatchObject(expected)
+  expect(parsedNPC).toMatchObject([expected])
 })
 
 /* Test Wizard's text */
 test('wizard', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -1122,12 +1281,12 @@ Spells: (Spell Check: d20+12)
       }
     ]
   }
-  expect(parsedNPC).toMatchObject(expected)
+  expect(parsedNPC).toMatchObject([expected])
 })
 
 /* Test Dwarf's text */
 test('dwarf', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -1250,12 +1409,12 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       }
     ]
   }
-  expect(parsedNPC).toMatchObject(expected)
+  expect(parsedNPC).toMatchObject([expected])
 })
 
 /* Test Elf's text */
 test('elf', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -1464,12 +1623,12 @@ Spells: (Spell Check: d20+5)
         }
       }]
   }
-  expect(parsedNPC).toMatchObject(expected)
+  expect(parsedNPC).toMatchObject([expected])
 })
 
 /* Missing weapons test */
 test('underarmed_warrior', () => {
-  const parsedNPC = parsePC(
+  const parsedNPC = parsePCs(
 `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
@@ -1572,5 +1731,341 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         }
       }]
   }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
+/* Test multiple uppers */
+test('uppers', () => {
+  const parsedNPC = parsePCs(
+`Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Neutral Elf (3rd level)
+Occupation: Elven navigator
+Strength: 13 (+1)
+Agility: 15 (+1)
+Stamina: 6 (-1)
+Personality: 9 (0)
+Intelligence: 17 (+2)
+Luck: 9 (0)
+
+HP: 10; Speed: 30; Init: 1
+Ref: 2; Fort: 0; Will: 2
+
+Base Attack Mod: 2
+Attack Dice: 1d20; Crit Die/Table: 1d8/II
+Occupation Weapon: Shortbow ranged +3 (dmg 1d6)
+Main Weapon: Spear melee +3 (dmg 1d8+1)
+Secondary Weapon: Club melee +3 (dmg 1d4+1)
+
+AC: (14) (Studded Leather (+3) Check penalty (-2) Fumble die (d8))
+Equipment: Iron spike (1 sp)
+Trade good: Spyglass
+Starting Funds: 30 cp + 2025 gp
+Lucky sign: Pack hunter (Attack/damage rolls for 0-level weapon) (+0)
+Languages: Common, Elf, Dragon, Demonic, Naga
+Racial Traits: Elven traits: Heightened senses, iron vulnerability, Infravision
+Elf trait: Lucky spell - choose one spell that you apply your luck mod to
+
+Spells: (Spell Check: d20+5)
+1) Patron Bond
+1) Invoke Patron
+1) Color Spray
+1) Ekim's Mystical Mask
+1) Ventriloquism
+1) Ward Portal
+2) Monster Summoning
+
+Neutral Dwarf (3rd level)
+Occupation: Dwarven apothacarist
+Strength: 13 (+1)
+Agility: 5 (-2)
+Stamina: 13 (+1)
+Personality: 8 (-1)
+Intelligence: 11 (0)
+Luck: 8 (-1)
+
+HP: 24; Speed: 15; Init: -2
+Ref: -1; Fort: 3; Will: 0
+
+Base Attack Mod: d5
+Attack Dice: 1d20; Crit Die/Table: 1d14/III
+Occupation Weapon: Staff melee d5+1 (dmg 1d4+1+deed)
+Main Weapon: Longbow ranged d5-2 (dmg 1d6+deed)
+Secondary Weapon: Lance melee d5+1 (dmg 1d12+1+deed)
+
+AC: (13)* (Scale Mail + Shield (+5) Check penalty (-5) Fumble die (d12) Speed (-5))
+Equipment: Iron spike (1 sp)
+Trade good: Steel vial
+Starting Funds: 27 cp + 2027 gp
+Lucky sign: Raised by wolves (Unarmed attack rolls) (-1)
+Languages: Common, Dwarf, Alignment
+Racial Traits: Dwarven ability: Infravision
+Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damage)`
+  )
+  const expected = [
+    {
+      'data.attributes.init.value': '1',
+      'data.attributes.speed.value': '30',
+      'data.details.occupation.value': 'Elven navigator',
+      'data.attributes.ac.value': '14',
+      'data.attributes.hp.value': '10',
+      'data.attributes.hp.max': '10',
+      'data.attributes.critical.die': '1d8',
+      'data.attributes.critical.table': 'II',
+      'data.abilities.str.value': '13',
+      'data.abilities.agl.value': '15',
+      'data.abilities.sta.value': '6',
+      'data.abilities.per.value': '9',
+      'data.abilities.int.value': '17',
+      'data.abilities.lck.value': '9',
+      'data.abilities.str.max': '13',
+      'data.abilities.agl.max': '15',
+      'data.abilities.sta.max': '6',
+      'data.abilities.per.max': '9',
+      'data.abilities.int.max': '17',
+      'data.abilities.lck.max': '9',
+      'data.class.className': 'Elf',
+      'data.class.spellCheck': '+5',
+      'data.config.actionDice': '1d20',
+      'data.details.alignment': 'n',
+      'data.details.attackBonus': '2',
+      'data.details.birthAugur': 'Pack hunter (Attack/damage rolls for 0-level weapon) (+0)',
+      'data.details.languages': 'Common, Elf, Dragon, Demonic, Naga',
+      'data.details.level.value': '3',
+      'data.saves.frt.value': '0',
+      'data.saves.ref.value': '2',
+      'data.saves.wil.value': '2',
+      items: [
+        {
+          name: 'Shortbow',
+          type: 'weapon',
+          data: {
+            toHit: '+3',
+            damage: '1d6',
+            melee: false
+          }
+        },
+        {
+          name: 'Spear',
+          type: 'weapon',
+          data: {
+            toHit: '+3',
+            damage: '1d8+1',
+            melee: true
+          }
+        },
+        {
+          name: 'Club',
+          type: 'weapon',
+          data: {
+            toHit: '+3',
+            damage: '1d4+1',
+            melee: true
+          }
+        },
+        {
+          name: 'Studded Leather',
+          type: 'armor',
+          data: {
+            acBonus: '+3',
+            checkPenalty: '-2',
+            fumbleDie: '1d8'
+          }
+        },
+        {
+          name: 'Iron spike (1 sp)',
+          type: 'equipment'
+        },
+        {
+          name: 'Spyglass',
+          type: 'equipment'
+        },
+        {
+          name: 'Coins',
+          type: 'treasure',
+          data: {
+            value: {
+              pp: '0',
+              ep: '0',
+              gp: '2025',
+              sp: '0',
+              cp: '30'
+            },
+            isCoins: true
+          }
+        },
+        {
+          name: 'Patron Bond',
+          type: 'spell',
+          data: {
+            level: '1',
+            spellCheck: {
+              die: '1d20',
+              value: '+5'
+            }
+          }
+        },
+        {
+          name: 'Invoke Patron',
+          type: 'spell',
+          data: {
+            level: '1',
+            spellCheck: {
+              die: '1d20',
+              value: '+5'
+            }
+          }
+        },
+        {
+          name: 'Color Spray',
+          type: 'spell',
+          data: {
+            level: '1',
+            spellCheck: {
+              die: '1d20',
+              value: '+5'
+            }
+          }
+        },
+        {
+          name: 'Ekim\'s Mystical Mask',
+          type: 'spell',
+          data: {
+            level: '1',
+            spellCheck: {
+              die: '1d20',
+              value: '+5'
+            }
+          }
+        },
+        {
+          name: 'Ventriloquism',
+          type: 'spell',
+          data: {
+            level: '1',
+            spellCheck: {
+              die: '1d20',
+              value: '+5'
+            }
+          }
+        },
+        {
+          name: 'Ward Portal',
+          type: 'spell',
+          data: {
+            level: '1',
+            spellCheck: {
+              die: '1d20',
+              value: '+5'
+            }
+          }
+        },
+        {
+          name: 'Monster Summoning',
+          type: 'spell',
+          data: {
+            level: '2',
+            spellCheck: {
+              die: '1d20',
+              value: '+5'
+            }
+          }
+        }]
+    },
+    {
+      'data.attributes.init.value': '-2',
+      'data.attributes.speed.value': '15',
+      'data.details.occupation.value': 'Dwarven apothacarist',
+      'data.attributes.ac.value': '13',
+      'data.attributes.hp.value': '24',
+      'data.attributes.hp.max': '24',
+      'data.attributes.critical.die': '1d14',
+      'data.attributes.critical.table': 'III',
+      'data.abilities.str.value': '13',
+      'data.abilities.agl.value': '5',
+      'data.abilities.sta.value': '13',
+      'data.abilities.per.value': '8',
+      'data.abilities.int.value': '11',
+      'data.abilities.lck.value': '8',
+      'data.abilities.str.max': '13',
+      'data.abilities.agl.max': '5',
+      'data.abilities.sta.max': '13',
+      'data.abilities.per.max': '8',
+      'data.abilities.int.max': '11',
+      'data.abilities.lck.max': '8',
+      'data.class.className': 'Dwarf',
+      'data.config.actionDice': '1d20',
+      'data.details.alignment': 'n',
+      'data.details.attackBonus': 'd5',
+      'data.details.birthAugur': 'Raised by wolves (Unarmed attack rolls) (-1)',
+      'data.details.languages': 'Common, Dwarf, Alignment',
+      'data.details.level.value': '3',
+      'data.saves.frt.value': '3',
+      'data.saves.ref.value': '-1',
+      'data.saves.wil.value': '0',
+      items: [
+        {
+          name: 'Staff',
+          type: 'weapon',
+          data: {
+            toHit: 'd5+1',
+            damage: '1d4+1+@ab',
+            melee: true
+          }
+        },
+        {
+          name: 'Longbow',
+          type: 'weapon',
+          data: {
+            toHit: 'd5-2',
+            damage: '1d6+@ab',
+            melee: false
+          }
+        },
+        {
+          name: 'Lance',
+          type: 'weapon',
+          data: {
+            toHit: 'd5+1',
+            damage: '1d12+1+@ab',
+            melee: true
+          }
+        },
+        {
+          name: 'Scale Mail + Shield',
+          type: 'armor',
+          data: {
+            acBonus: '+5',
+            checkPenalty: '-5',
+            fumbleDie: '1d12'
+          }
+        },
+        {
+          name: 'Iron spike (1 sp)',
+          type: 'equipment'
+        },
+        {
+          name: 'Steel vial',
+          type: 'equipment'
+        },
+        {
+          name: 'Coins',
+          type: 'treasure',
+          data: {
+            value: {
+              pp: '0',
+              ep: '0',
+              gp: '2027',
+              sp: '0',
+              cp: '27'
+            },
+            isCoins: true
+          }
+        }
+      ]
+    }
+  ]
   expect(parsedNPC).toMatchObject(expected)
 })
+
