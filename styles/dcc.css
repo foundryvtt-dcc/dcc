@@ -1062,17 +1062,26 @@
 .dcc.item .sheet-body.item {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 50px minmax(80px, auto); }
+  grid-template-rows: 50px 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.item .value-row {
+  grid-column: span 3 / span 3; }
 
 .dcc.item .sheet-body.weapon {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 60px 50px minmax(80px, auto); }
+  grid-template-rows: 60px 60px 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.weapon .value-row {
+  grid-column: span 3 / span 3; }
 
 .dcc.item .sheet-body.armor {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 50px minmax(80px, auto); }
+  grid-template-rows: 50px 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.armor .value-row {
+  grid-column: span 3 / span 3; }
 
 .dcc.item .sheet-body .spell-header-extras {
   display: grid;

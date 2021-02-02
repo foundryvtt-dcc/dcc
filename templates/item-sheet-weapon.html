@@ -68,6 +68,59 @@
                    placeholder="{{data.damage}}" data-dtype="String"/>
           </div>
         </div>
+        <div class="value-row">
+          {{#if allowResolve}}
+          <div class="rollable roll-button">&nbsp;</div>
+          {{/if}}
+          <div class="resource">
+            <label class="resource-label">{{localize "DCC.CurrencyPP"}}</label>
+            <input type="text" name="data.value.pp" value="{{data.value.pp}}" data-dtype="String"/>
+            {{#if allowConversions}}
+            <div class="conversions">
+              <div class="rollable right-arrow-button" data-currency="pp">&nbsp;</div>
+            </div>
+            {{/if}}
+          </div>
+          <div class="resource">
+            <label class="resource-label">{{localize "DCC.CurrencyEP"}}</label>
+            <input type="text" name="data.value.ep" value="{{data.value.ep}}" data-dtype="String"/>
+            {{#if allowConversions}}
+            <div class="conversions">
+              <div class="rollable left-arrow-button" data-currency="ep">&nbsp;</div>
+              <div class="rollable right-arrow-button" data-currency="ep">&nbsp;</div>
+            </div>
+            {{/if}}
+          </div>
+          <div class="resource">
+            <label class="resource-label">{{localize "DCC.CurrencyGP"}}</label>
+            <input type="text" name="data.value.gp" value="{{data.value.gp}}" data-dtype="String"/>
+            {{#if allowConversions}}
+            <div class="conversions">
+              <div class="rollable left-arrow-button" data-currency="gp">&nbsp;</div>
+              <div class="rollable right-arrow-button" data-currency="gp">&nbsp;</div>
+            </div>
+            {{/if}}
+          </div>
+          <div class="resource">
+            <label class="resource-label">{{localize "DCC.CurrencySP"}}</label>
+            <input type="text" name="data.value.sp" value="{{data.value.sp}}" data-dtype="String"/>
+            {{#if allowConversions}}
+            <div class="conversions">
+              <div class="rollable left-arrow-button" data-currency="sp">&nbsp;</div>
+              <div class="rollable right-arrow-button" data-currency="sp">&nbsp;</div>
+            </div>
+            {{/if}}
+          </div>
+          <div class="resource">
+            <label class="resource-label">{{localize "DCC.CurrencyCP"}}</label>
+            <input type="text" name="data.value.cp" value="{{data.value.cp}}" data-dtype="String"/>
+            {{#if allowConversions}}
+            <div class="conversions">
+              <div class="rollable left-arrow-button" data-currency="cp">&nbsp;</div>
+            </div>
+            {{/if}}
+          </div>
+        </div>
         <h1 class="weapon-description-heading">{{localize "DCC.Description"}}</h1>
         <div class="weapon-summary">
           <label class="resource-label" for="data.description.summary">{{localize "DCC.ItemSummary"}}</label>
