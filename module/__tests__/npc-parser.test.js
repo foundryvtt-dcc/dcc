@@ -183,6 +183,39 @@ test('wedad', () => {
   expect(parsedNPC).toMatchObject([expected])
 })
 
+/* Test smultist */
+test('smultist', () => {
+  const parsedNPC = parseNPCs('Green-robed smultist (1): Init +4; Atk dagger +5 melee (1d4+3); AC 11; HD 5d4+5; hp 21; MV 20’; SP 3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges; see stats below); Act 1d20; SV Fort +3, Ref +4, Will +0; AL C. Equipment: bird-shaped talisman of gold tied on a leather thong (worth 10 gp; see level 3).')
+  const expected = {
+    name: 'Green-robed smultist',
+    'data.attributes.init.value': '+4',
+    'data.attributes.ac.value': '11',
+    'data.attributes.hitDice.value': '5d4+5',
+    'data.attributes.hp.value': '21',
+    'data.attributes.hp.max': '21',
+    'data.attributes.speed.value': '20’',
+    'data.attributes.special.value': '3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges', // TODO: Is it worth finding a way to ignore colons inside brackets?
+    'data.config.actionDice': '1d20',
+    'data.saves.frt.value': '+3',
+    'data.saves.ref.value': '+4',
+    'data.saves.wil.value': '+0',
+    'data.details.alignment': 'c',
+    items: [
+      {
+        name: 'dagger',
+        type: 'weapon',
+        data: {
+          toHit: '+5',
+          damage: '1d4+3',
+          description: { value: '' },
+          melee: true
+        }
+      }
+    ]
+  }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
 /* Test short statline */
 test('shortstats', () => {
   const parsedNPC = parseNPCs('Stunty, the short and muddled: Init +1; Atk kick +2 melee (1d3); AC 15;\n hp 4; Act 1d20; SV Ref +6, Fort -2, Will +4.')
