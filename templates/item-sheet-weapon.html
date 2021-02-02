@@ -10,14 +10,7 @@
             </div>
 
             <div class="flexrow">
-              <div class="flex1">
-                <label class="resource-label" for="data.critRange">{{localize "DCC.WeaponPropertiesCritOn"}}</label>
-                <input type="text" name="data.critRange"
-                       value="{{data.critRange}}"
-                       {{#if data.config.inheritCritRange}}disabled{{/if}}
-                       placeholder="20" data-dtype="Number"/>
-              </div>
-              <div class="flex2">
+              <div class="resource flex2">
                 <label class="resource-label" for="data.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
                 <div class="flexrow">
                   <input type="text" name="data.actionDie" class="flex1"
@@ -29,11 +22,22 @@
                          placeholder="+0" data-dtype="String"/>
                 </div>
               </div>    
-              <div class="flex2">
-                <label class="resource-label" for="data.level">{{localize "DCC.WeaponPropertiesDamage"}}</label>
+              <div class="resource flex1">
+                <label class="resource-label" for="data.critRange">{{localize "DCC.WeaponPropertiesCritOn"}}</label>
+                <input type="text" name="data.critRange"
+                       value="{{data.critRange}}"
+                       {{#if data.config.inheritCritRange}}disabled{{/if}}
+                       placeholder="20" data-dtype="Number"/>
+              </div>
+              <div class="resource flex2">
+                <label class="resource-label" for="data.damage">{{localize "DCC.WeaponPropertiesDamage"}}</label>
                 <input type="text" name="data.damage"
                        value="{{data.damage}}"
                        placeholder="1d3" data-dtype="String"/>
+              </div>
+              <div class="resource flex1">
+                <label class="resource-label">{{localize "DCC.Weight"}}</label>
+                  <input type="text" name="data.weight" value="{{data.weight}}" data-dtype="Number"/>
               </div>
             </div>
         </div>

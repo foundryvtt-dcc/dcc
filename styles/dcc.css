@@ -1055,10 +1055,6 @@
 /* ----------------------------------------- */
 /*  Items Sheet                              */
 /* ----------------------------------------- */
-.dcc.item .sheet-header .armor-header {
-  display: grid;
-  grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto); }
-
 .dcc.item .sheet-body.item {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1078,7 +1074,7 @@
 .dcc.item .sheet-body.armor {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 50px 50px minmax(80px, auto); }
+  grid-template-rows: 50px 50px 50px minmax(80px, auto); }
 
 .dcc.item .sheet-body.armor .value-row {
   grid-column: span 3 / span 3; }
@@ -1124,6 +1120,11 @@
 
 .dcc.item .sheet-body .description {
   overflow-y: scroll;
+  grid-column: 1 / span 3; }
+
+.dcc.item .sheet-body .armor-header-extras {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
   grid-column: 1 / span 3; }
 
 .dcc.item .sheet-body .weapon-header-extras {

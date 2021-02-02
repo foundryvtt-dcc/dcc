@@ -9,39 +9,45 @@
                 <label class="item-type" for="name">{{localize item.data.typeString}}</label>
             </div>
 
-            <div class="armor-header">
-              <div class="resource">
-                <label class="resource-label" for="data.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
-                <input type="text" name="data.acBonus"
-                       value="{{numberFormat data.acBonus decimals=0 sign=true}}"
-                       placeholder="+0" data-dtype="Number"/>
-              </div>
-              <div class="resource">
-                <label class="resource-label" for="data.checkPenalty">{{localize "DCC.ArmorPropertiesCheckPenalty"}}</label>
-                <input type="text" name="data.checkPenalty"
-                       value="{{numberFormat data.checkPenalty decimals=0 sign=true}}"
-                       placeholder="-0" data-dtype="Number"/>
-              </div>
-              <div class="resource">
-                <label class="resource-label" for="data.fumbleDie">{{localize "DCC.ArmorPropertiesFumbleDie"}}</label>
-                <input type="text" name="data.fumbleDie" value="{{data.fumbleDie}}"
-                       placeholder="1d4" data-dtype="String"/>
-              </div>
-              <div class="resource">
-                <label class="resource-label" for="data.speed">{{localize "DCC.ArmorPropertiesSpeed"}}</label>
-                <input type="text" name="data.speed" value="{{data.speed}}"
-                       value="{{numberFormat data.speed decimals=0 sign=true}}"
-                       placeholder="-0" data-dtype="Number"/>
-              </div>
-              <div class="resource">
+            <div class="flexrow">
+              <div class="resource flex1">
                 <label class="resource-label" for="data.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
                 <input type="checkbox" name="data.equipped" data-dtype="Boolean" {{checked data.equipped}}/>
+              </div>
+              <div class="resource flex1">
+                <label class="resource-label">{{localize "DCC.Weight"}}</label>
+                <input type="text" name="data.weight" value="{{data.weight}}" data-dtype="Number"/>
               </div>
             </div>
         </div>
     </header>
 
     <section class="sheet-body armor">
+        <div class="armor-header-extras">
+          <div class="resource">
+            <label class="resource-label" for="data.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
+            <input type="text" name="data.acBonus"
+                   value="{{numberFormat data.acBonus decimals=0 sign=true}}"
+                   placeholder="+0" data-dtype="Number"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.checkPenalty">{{localize "DCC.ArmorPropertiesCheckPenalty"}}</label>
+            <input type="text" name="data.checkPenalty"
+                   value="{{numberFormat data.checkPenalty decimals=0 sign=true}}"
+                   placeholder="-0" data-dtype="Number"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.fumbleDie">{{localize "DCC.ArmorPropertiesFumbleDie"}}</label>
+            <input type="text" name="data.fumbleDie" value="{{data.fumbleDie}}"
+                   placeholder="1d4" data-dtype="String"/>
+          </div>
+          <div class="resource">
+            <label class="resource-label" for="data.speed">{{localize "DCC.ArmorPropertiesSpeed"}}</label>
+            <input type="text" name="data.speed" value="{{data.speed}}"
+                   value="{{numberFormat data.speed decimals=0 sign=true}}"
+                   placeholder="-0" data-dtype="Number"/>
+          </div>
+        </div>
         <div class="value-row">
           {{#if allowResolve}}
           <div class="rollable roll-button">&nbsp;</div>
