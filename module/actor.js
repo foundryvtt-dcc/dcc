@@ -423,16 +423,6 @@ class DCCActor extends Actor {
     // Damage roll
     const damageRollResult = this.rollWeaponDamage (weapon, options)
 
-    // Check for crits or fumbles
-    let critResult = ''
-    let fumbleResult = ''
-
-    if (attackRollResult.crit) {
-      critResult = await this.rollCritical(options)
-    } else if (attackRollResult.fumble) {
-      fumbleResult = await this.rollFumble(options)
-    }
-
     // Speaker object for the chat cards
     const speaker = { alias: this.name, _id: this._id }
 
@@ -476,12 +466,26 @@ class DCCActor extends Actor {
         await CONFIG.ChatMessage.entityClass.create(messageData)
       }
 
-      // TODO: Crit or fumble cards
-      
+      // Roll crits or fumbles
+	    if (attackRollResult.crit) {
+	      critResult = await this.rollCritical(options)
+	    } else if (attackRollResult.fumble) {
+	      fumbleResult = await this.rollFumble(options)
+	    }
     } else {
       const attackRollHTML = this._formatAttackRoll(attackRollResult)//attackRollResult.roll, attackRollResult.formula)
       const damageRollData = escape(JSON.stringify(damageRollResult.roll))
       const damageRollHTML = this._formatDamageRoll(damageRollResult)
+
+	    // Check for crits or fumbles
+	    let critResult = ''
+	    let fumbleResult = ''
+	
+	    if (attackRollResult.crit) {
+	      critResult = await this.rollCritical(options)
+	    } else if (attackRollResult.fumble) {
+	      fumbleResult = await this.rollFumble(options)
+	    }
 
       const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
       const messageData = {
