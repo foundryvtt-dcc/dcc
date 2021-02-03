@@ -468,9 +468,9 @@ class DCCActor extends Actor {
 
       // Roll crits or fumbles
 	    if (attackRollResult.crit) {
-	      critResult = await this.rollCritical(options)
+	      this.rollCritical(options)
 	    } else if (attackRollResult.fumble) {
-	      fumbleResult = await this.rollFumble(options)
+	      this.rollFumble(options)
 	    }
     } else {
       const attackRollHTML = this._formatAttackRoll(attackRollResult)//attackRollResult.roll, attackRollResult.formula)
