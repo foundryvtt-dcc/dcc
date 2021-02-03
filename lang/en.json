@@ -64,7 +64,7 @@
   "DCC.Attack": "Attack",
   "DCC.AttackBonus": "Attack Bonus",
   "DCC.AttackPl": "Attacks",
-  "DCC.AttackRoll": "Attack Roll with ({weapon})",
+  "DCC.AttackRoll": "Attack Roll with {weapon}",
   "DCC.AttackRollEmote": "Attacks with their {weaponName} and hits AC {rollHTML} for {damageRollHTML}  points of damage!{crit}{fumble}",
   "DCC.AttackRollInvalidFormula": "Invalid To Hit formula {formula} with {weapon}",
   "DCC.AttackRollInvalidFormulaInline": "<b>Invalid To Hit formula '{formula}'</b>",
