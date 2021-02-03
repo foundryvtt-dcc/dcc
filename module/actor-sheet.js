@@ -666,10 +666,10 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const slot = event.currentTarget.parentElement.dataset.itemSlot
     const options = {
-      event: event,
+      displayStandardCards: game.settings.get('dcc', 'useStandardDiceRoller'),
       backstab: event.currentTarget.classList.contains('backstab-button')
     }
-    this.actor.rollWeaponAttack(slot, options)
+    this.actor.rollWeapon(slot, options)
   }
 
   /**

@@ -86,7 +86,7 @@ test('roll weapon attack', () => {
   uiNotificationsWarnMock.mockClear()
 
   // Roll a weapon we don't have
-  actor.rollWeaponAttack('r123')
+  actor.rollWeapon('r123')
   expect(collectionFindMock).toHaveBeenCalledTimes(1)
   expect(itemTypesMock).toHaveBeenCalledTimes(1)
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
@@ -101,7 +101,7 @@ test('roll weapon attack', () => {
       melee: true
     }
   }))
-  actor.rollWeaponAttack('longsword')
+  actor.rollWeapon('longsword')
   expect(collectionFindMock).toHaveBeenCalledTimes(2)
   expect(itemTypesMock).toHaveBeenCalledTimes(1)
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
@@ -124,7 +124,7 @@ test('roll weapon attack', () => {
       new DCCItem('longsword', { name: 'longsword', data: { actionDie: '1d20', toHit: 2, melee: true } })
     ]
   })
-  actor.rollWeaponAttack('m2')
+  actor.rollWeapon('m2')
   expect(collectionFindMock).toHaveBeenCalledTimes(3)
   expect(itemTypesMock).toHaveBeenCalledTimes(2)
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
@@ -147,7 +147,7 @@ test('roll weapon attack', () => {
       melee: true
     }
   }))
-  actor.rollWeaponAttack('lefthand dagger')
+  actor.rollWeapon('lefthand dagger')
   expect(Roll).toHaveBeenCalledWith('1d16 + 2', { ab: 0, critical: 16 })
 })
 

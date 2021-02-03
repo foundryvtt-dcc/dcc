@@ -385,20 +385,13 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a Weapon Attack
-   * @param {string} weaponId     The weapon name or slot id (e.g. "m1", "r1")
-   * @param {Object} options      Options which configure how ability tests are rolled
+   * Roll attack and damage for a weapon through the configured flow
+   * @param {string} weaponId    The weapon name or slot id (e.g. "m1", "r1")
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
-  async rollWeaponAttack (weaponId, options = {}) {
-    // Display standard cards in chat?
-    let displayStandardCards = false
-    try {
-      displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
-    } catch (err) { }
-
+  async rollWeapon (weaponId, options = {}) {
     // First try and find the item by name or id
     let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
-    const backstab = options.backstab
 
     // If not found try finding it by slot
     if (!weapon) {
@@ -423,6 +416,17 @@ class DCCActor extends Actor {
     if (!weapon) {
       return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
     }
+
+    await this.rollWeaponAttack (weapon, options)
+  }
+
+  /**
+   * Roll a Weapon Attack
+   * @param {Object} weaponId               The weapon object being used for the roll
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
+   */
+  async rollWeaponAttack (weapon, options = {}) {
+    const backstab = options.backstab
 
     /* Determine backstab bonus if used */
     let toHit = weapon.data.data.toHit
@@ -451,7 +455,7 @@ class DCCActor extends Actor {
       upperThreshold: critRange
     }
 
-    if (displayStandardCards) {
+    if (options.displayStandardCards) {
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: game.i18n.localize(backstab ? 'DCC.Backstab' : 'DCC.AttackRoll')
@@ -459,8 +463,8 @@ class DCCActor extends Actor {
     }
 
     /* Handle Critical Hits and fumbles */
-    const crit = (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) ? await this.rollCritical() : ''
-    const fumble = (d20RollResult === 1) ? await this.rollFumble() : ''
+    const crit = (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) ? await this.rollCritical(options) : ''
+    const fumble = (d20RollResult === 1) ? await this.rollFumble(options) : ''
 
     /* Roll the Damage */
     let damageFormula = weapon.data.data.damage
@@ -470,7 +474,7 @@ class DCCActor extends Actor {
     const damageRoll = new Roll(damageFormula, { ab: attackBonus })
     damageRoll.roll()
 
-    if (displayStandardCards) {
+    if (options.displayStandardCards) {
       damageRoll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: game.i18n.localize('DCC.DamageRoll')
@@ -478,7 +482,7 @@ class DCCActor extends Actor {
     }
 
     /* Emote attack results */
-    if (!displayStandardCards) {
+    if (!options.displayStandardCards) {
       // TODO: Remove call to roll.parts - it's deprecated in favour of roll.terms, but is required for backwards compatibility
       const attackRollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms || roll.formula))
       const damageRollData = escape(JSON.stringify(damageRoll))
@@ -505,11 +509,9 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Critical Hit
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
-  async rollCritical () {
-    // Display standard cards in chat?
-    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
-
+  async rollCritical (options) {
     // Roll object for the crit die
     let roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
 
@@ -524,7 +526,7 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
         if (entry) {
           const table = await pack.getEntity(entry._id)
-          critResult = await table.draw({ roll, displayChat: displayStandardCards })
+          critResult = await table.draw({ roll, displayChat: options.displayStandardCards })
         }
       }
     }
@@ -536,7 +538,7 @@ class DCCActor extends Actor {
       roll = critResult.roll
     }
 
-    if (!displayStandardCards) {
+    if (!options.displayStandardCards) {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
@@ -559,11 +561,9 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Fumble
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
-  async rollFumble () {
-    // Display standard cards in chat?
-    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
-
+  async rollFumble (options) {
     let fumbleDie
     try {
       fumbleDie = this.data.data.attributes.fumble.die
@@ -588,7 +588,7 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
         if (entry) {
           const table = await pack.getEntity(entry._id)
-          fumbleResult = await table.draw({ roll, displayChat: displayStandardCards })
+          fumbleResult = await table.draw({ roll, displayChat: options.displayStandardCards })
         }
       }
     }
@@ -600,7 +600,7 @@ class DCCActor extends Actor {
       roll = fumbleResult.roll
     }
 
-    if (!displayStandardCards) {
+    if (!options.displayStandardCards) {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
