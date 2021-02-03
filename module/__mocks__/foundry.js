@@ -192,7 +192,7 @@ global.rollToMessageMock = jest.fn((messageData = {}, { rollMode = null, create 
 })
 global.rollRollMock = jest.fn(() => {
   // console.log('Mock Roll: roll was called')
-  return { total: 1 }
+  return { total: 2 }
 })
 global.rollCleanFormulaMock = jest.fn((terms) => {
   return terms
