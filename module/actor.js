@@ -438,24 +438,50 @@ class DCCActor extends Actor {
 
     // Output the results
     if (options.displayStandardCards) {
-      // Attack roll card
-      attackRoll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: game.i18n.localize(options.backstab ? 'DCC.Backstab' : 'DCC.AttackRoll')
-      })
+	    // Attack roll card
+      if (attackRollResult.rolled) {
+	      attackRollResult.roll.toMessage({
+	        speaker: ChatMessage.getSpeaker({ actor: this }),
+	        flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name })
+	      })
+      } else {
+        const messageData = {
+          user: game.user._id,
+          speaker: speaker,
+          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          content: game.i18n.format('DCC.AttackRollInvalidFormula', {
+            formula: attackRollResult.formula,
+            weapon: weapon.name
+          })
+        }
+        await CONFIG.ChatMessage.entityClass.create(messageData)
+      }
 
-      // Damage roll card
-      damageRoll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: game.i18n.localize('DCC.DamageRoll')
-      })
+	    // Damage roll card
+      if (damageRollResult.rolled) {
+	      damageRollResult.roll.toMessage({
+	        speaker: ChatMessage.getSpeaker({ actor: this }),
+	        flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name })
+	      })
+      } else {
+        const messageData = {
+          user: game.user._id,
+          speaker: speaker,
+          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          content: game.i18n.format('DCC.DamageRollInvalidFormula', {
+            formula: damageRollResult.formula,
+            weapon: weapon.name,
+          })
+        }
+        await CONFIG.ChatMessage.entityClass.create(messageData)
+      }
 
-      // Crit or fumble cards
+      // TODO: Crit or fumble cards
       
     } else {
-      const attackRollHTML = this._formatRoll(attackRollResult.roll, attackRollResult.formula)
+      const attackRollHTML = this._formatAttackRoll(attackRollResult)//attackRollResult.roll, attackRollResult.formula)
       const damageRollData = escape(JSON.stringify(damageRollResult.roll))
-      const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollResult.damage}" title="${damageRollResult.formula}"><i class="fas fa-dice-d20"></i> ${damageRollResult.damage}</a>`
+      const damageRollHTML = this._formatDamageRoll(damageRollResult)
 
       const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
       const messageData = {
@@ -504,6 +530,14 @@ class DCCActor extends Actor {
     /* Determine crit range */
     const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
 
+    /* If we don't have a valid formula, bail out here */
+    if (!Roll.validate(formula)) {
+      return {
+        rolled: false,
+        formula: weapon.data.data.toHit
+      }
+    }
+
     /* Roll the Attack */
     const attackRoll = new Roll(formula, { ab: attackBonus, critical: critRange })
     attackRoll.roll()
@@ -518,6 +552,7 @@ class DCCActor extends Actor {
     const fumble = (d20RollResult === 1)
 
     return {
+      rolled: true,
       roll: attackRoll,
       formula: Roll.cleanFormula(attackRoll.terms || attackRoll.formula),
       hitsAc: attackRoll.total,
@@ -537,11 +572,11 @@ class DCCActor extends Actor {
     const config = this._getConfig()
 
     /* Grab the the formula */
-    let damageFormula = weapon.data.data.damage
+    let formula = weapon.data.data.damage
 
     /* Are we backstabbing and the weapon has special backstab damage? */
     if (options.backstab && weapon.data.data.backstab) {
-      damageFormula = weapon.data.data.backstabDamage || weapon.data.data.damage
+      formula = weapon.data.data.backstabDamage || weapon.data.data.damage
     }
 
     /* Determine attack bonus */
@@ -550,11 +585,19 @@ class DCCActor extends Actor {
       attackBonus = this.data.data.details.lastRolledAttackBonus || 0
     }
 
+    /* If we don't have a valid formula, bail out here */
+    if (!Roll.validate(formula)) {
+      return {
+        rolled: false,
+        formula: weapon.data.data.damage
+      }
+    }
     /* Roll the damage */
-    const damageRoll = new Roll(damageFormula, { ab: attackBonus })
+    const damageRoll = new Roll(formula, { ab: attackBonus })
     damageRoll.roll()
 
     return {
+      rolled: true,
       roll: damageRoll,
       formula: Roll.cleanFormula(damageRoll.terms || damageRoll.formula),
       damage: damageRoll.total,
@@ -676,18 +719,36 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Format a roll for display in-line
-   * @param {Object<Roll>} roll   The roll to format
-   * @param {string} formula      Formula to show when hovering
+   * Format an attack roll for display in-line
+   * @param {Object} rollResult   The roll result object for the roll
    * @return {string}             Formatted HTML containing roll
    */
-  _formatRoll (roll, formula) {
-    const rollData = escape(JSON.stringify(roll))
+  _formatAttackRoll (rollResult) {
+    if (rollResult.rolled) {
+      const rollData = escape(JSON.stringify(rollResult.roll))
 
-    // Check for Crit/Fumble
-    let critFailClass = ''
-    if (Number(roll.dice[0].results[0]) === 20) { critFailClass = 'critical ' } else if (Number(roll.dice[0].results[0]) === 1) { critFailClass = 'fumble ' }
-    return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
+      // Check for Crit/Fumble
+      let critFailClass = ''
+      if (Number(rollResult.roll.dice[0].results[0]) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].results[0]) === 1) { critFailClass = 'fumble ' }
+
+      return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.hitsAc}</a>`
+    } else {
+      return game.i18n.format('DCC.AttackRollInvalidFormulaInline', { formula: rollResult.formula })
+    }
+  }
+
+  /**
+   * Format a damage roll for display in-line
+   * @param {Object} rollResult   The roll result object for the roll
+   * @return {string}             Formatted HTML containing roll
+   */
+  _formatDamageRoll (rollResult) {
+    if (rollResult.rolled) {
+      const rollData = escape(JSON.stringify(rollResult.roll))
+      return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>`
+    } else {
+      return game.i18n.format('DCC.DamageRollInvalidFormulaInline', { formula: rollResult.formula })
+    }
   }
 
   /**
