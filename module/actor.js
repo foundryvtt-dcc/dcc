@@ -390,6 +390,11 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollWeaponAttack (weaponId, options = {}) {
+    if (options.displayStandardCards === undefined) {
+      try {
+        options.displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+      } catch (e) { }
+    }
     // First try and find the item by name or id
     let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
 
