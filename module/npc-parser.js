@@ -120,6 +120,15 @@ function _parseAttack (attackString, damageString) {
   } else {
     attack.description.value = _firstMatch(/.*\(\w+(?:\s*[+-]\s*\d+)? (.*)\).*/, attackString) || ''
     attack.damage = _firstMatch(/.*\((\w+(?:\s*[+-]\s*\d+)?).*\).*/, attackString) || ''
+
+    /*
+     * If damage doesn't start with a number assume it's special
+     * Checking for a dice expression would exclude constant damage values
+     */
+    if (_firstMatch(/\d+.*/, attack.damage) === null) {
+      attack.description.summary = _firstMatch(/.*\((.*)\).*/, attackString) || attack.damage
+      attack.damage = '0'
+    }
   }
   return {
     name: name,

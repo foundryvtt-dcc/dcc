@@ -140,9 +140,11 @@ test('spider', () => {
         type: 'weapon',
         data: {
           toHit: '+4',
-          melee: false
-          // damage": '0', //@TODO: change damage to 0 when there is no die roll
-          // description: { value: 'restrained, 20’ range' }  // @TODO: Parse out this special
+          melee: false,
+          damage: '0',
+          description: {
+            summary: 'restrained, 20’ range'
+          }
         }
       }
     ]
@@ -194,7 +196,7 @@ test('smultist', () => {
     'data.attributes.hp.value': '21',
     'data.attributes.hp.max': '21',
     'data.attributes.speed.value': '20’',
-    'data.attributes.special.value': '3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges', // TODO: Is it worth finding a way to ignore colons inside brackets?
+    'data.attributes.special.value': '3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges', // @TODO: Is it worth finding a way to ignore colons inside brackets?
     'data.config.actionDice': '1d20',
     'data.saves.frt.value': '+3',
     'data.saves.ref.value': '+4',
