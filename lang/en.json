@@ -71,6 +71,7 @@
   "DCC.Attributes": "Attributes",
   "DCC.Attuned": "Attuned",
   "DCC.Background": "Background",
+  "DCC.Backstab": "Backstab",
   "DCC.BackstabRoll": "Backstab Roll with {weapon}",
   "DCC.BackstabEmote": "Backstabs with their {weaponName} and hits AC {rollHTML} for {damageRollHTML}  points of damage!{crit}{fumble}",
   "DCC.BackstabRollInvalidFormula": "Invalid Damage formula {formula} backstabbing with {weapon}",
