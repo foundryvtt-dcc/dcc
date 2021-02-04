@@ -539,7 +539,7 @@ class DCCActor extends Actor {
     const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
 
     /* If we don't have a valid formula, bail out here */
-    if (!Roll.validate(formula)) {
+    if (Roll.validate !== undefined && !Roll.validate(formula)) {
       return {
         rolled: false,
         formula: weapon.data.data.toHit
@@ -594,7 +594,7 @@ class DCCActor extends Actor {
     }
 
     /* If we don't have a valid formula, bail out here */
-    if (!Roll.validate(formula)) {
+    if (Roll.validate !== undefined && !Roll.validate(formula)) {
       return {
         rolled: false,
         formula: weapon.data.data.damage
