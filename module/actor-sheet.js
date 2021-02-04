@@ -669,7 +669,7 @@ class DCCActorSheet extends ActorSheet {
       displayStandardCards: game.settings.get('dcc', 'useStandardDiceRoller'),
       backstab: event.currentTarget.classList.contains('backstab-button')
     }
-    this.actor.rollWeapon(slot, options)
+    this.actor.rollWeaponAttack(slot, options)
   }
 
   /**

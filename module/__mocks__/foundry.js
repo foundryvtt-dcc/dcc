@@ -204,7 +204,7 @@ global.Roll = jest.fn((formula, data = {}) => {
   return {
     dice: [{ results: [10], options: {} }],
     toMessage: global.rollToMessageMock,
-    roll: global.rollRollMock,
+    roll: global.rollRollMock
   }
 }).mockName('Roll')
 global.Roll.cleanFormula = global.rollCleanFormulaMock

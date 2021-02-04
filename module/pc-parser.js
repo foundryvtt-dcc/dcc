@@ -229,7 +229,7 @@ function _splitAndParsePlainPCsToJSON (pcString) {
   const pcObjects = []
 
   // Match the start of either a zero level or an upper level statblock
-  let matches = pcString.matchAll(/(0-level Occupation:\s+(.+)[;\n$]|(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$])/gm)
+  const matches = pcString.matchAll(/(0-level Occupation:\s+(.+)[;\n$]|(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$])/gm)
 
   let first = true
   let previousIndex = 0

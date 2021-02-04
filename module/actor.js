@@ -389,7 +389,7 @@ class DCCActor extends Actor {
    * @param {string} weaponId    The weapon name or slot id (e.g. "m1", "r1")
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
-  async rollWeapon (weaponId, options = {}) {
+  async rollWeaponAttack (weaponId, options = {}) {
     // First try and find the item by name or id
     let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
 
@@ -418,22 +418,22 @@ class DCCActor extends Actor {
     }
 
     // Attack roll
-    const attackRollResult = this.rollWeaponAttack (weapon, options)
+    const attackRollResult = this.rollToHit(weapon, options)
 
     // Damage roll
-    const damageRollResult = this.rollWeaponDamage (weapon, options)
+    const damageRollResult = this.rollDamage(weapon, options)
 
     // Speaker object for the chat cards
     const speaker = { alias: this.name, _id: this._id }
 
     // Output the results
     if (options.displayStandardCards) {
-	    // Attack roll card
+      // Attack roll card
       if (attackRollResult.rolled) {
-	      attackRollResult.roll.toMessage({
-	        speaker: ChatMessage.getSpeaker({ actor: this }),
-	        flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name })
-	      })
+        attackRollResult.roll.toMessage({
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name })
+        })
       } else {
         const messageData = {
           user: game.user._id,
@@ -447,12 +447,12 @@ class DCCActor extends Actor {
         await CONFIG.ChatMessage.entityClass.create(messageData)
       }
 
-	    // Damage roll card
+      // Damage roll card
       if (damageRollResult.rolled) {
-	      damageRollResult.roll.toMessage({
-	        speaker: ChatMessage.getSpeaker({ actor: this }),
-	        flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name })
-	      })
+        damageRollResult.roll.toMessage({
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name })
+        })
       } else {
         const messageData = {
           user: game.user._id,
@@ -460,32 +460,31 @@ class DCCActor extends Actor {
           type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
           content: game.i18n.format('DCC.DamageRollInvalidFormula', {
             formula: damageRollResult.formula,
-            weapon: weapon.name,
+            weapon: weapon.name
           })
         }
         await CONFIG.ChatMessage.entityClass.create(messageData)
       }
 
       // Roll crits or fumbles
-	    if (attackRollResult.crit) {
-	      this.rollCritical(options)
-	    } else if (attackRollResult.fumble) {
-	      this.rollFumble(options)
-	    }
+      if (attackRollResult.crit) {
+        this.rollCritical(options)
+      } else if (attackRollResult.fumble) {
+        this.rollFumble(options)
+      }
     } else {
-      const attackRollHTML = this._formatAttackRoll(attackRollResult)//attackRollResult.roll, attackRollResult.formula)
-      const damageRollData = escape(JSON.stringify(damageRollResult.roll))
+      const attackRollHTML = this._formatAttackRoll(attackRollResult)// attackRollResult.roll, attackRollResult.formula)
       const damageRollHTML = this._formatDamageRoll(damageRollResult)
 
-	    // Check for crits or fumbles
-	    let critResult = ''
-	    let fumbleResult = ''
-	
-	    if (attackRollResult.crit) {
-	      critResult = await this.rollCritical(options)
-	    } else if (attackRollResult.fumble) {
-	      fumbleResult = await this.rollFumble(options)
-	    }
+      // Check for crits or fumbles
+      let critResult = ''
+      let fumbleResult = ''
+
+      if (attackRollResult.crit) {
+        critResult = await this.rollCritical(options)
+      } else if (attackRollResult.fumble) {
+        fumbleResult = await this.rollFumble(options)
+      }
 
       const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
       const messageData = {
@@ -506,12 +505,12 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a weapon's attack
+   * Roll a weapon's attack roll
    * @param {Object} weaponId    The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
-  rollWeaponAttack (weapon, options = {}) {
+  rollToHit (weapon, options = {}) {
     const config = this._getConfig()
 
     /* Grab the To Hit modifier */
@@ -562,7 +561,7 @@ class DCCActor extends Actor {
       hitsAc: attackRoll.total,
       d20Roll: d20RollResult,
       crit,
-      fumble,
+      fumble
     }
   }
 
@@ -572,7 +571,7 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
-  rollWeaponDamage (weapon, options = {}) {
+  rollDamage (weapon, options = {}) {
     const config = this._getConfig()
 
     /* Grab the the formula */
@@ -604,7 +603,7 @@ class DCCActor extends Actor {
       rolled: true,
       roll: damageRoll,
       formula: Roll.cleanFormula(damageRoll.terms || damageRoll.formula),
-      damage: damageRoll.total,
+      damage: damageRoll.total
     }
   }
 

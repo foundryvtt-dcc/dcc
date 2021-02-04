@@ -1,4 +1,4 @@
-/* global Dialog, game, expandObject ui, $ */
+/* global CONFIG, FormApplication, game, expandObject ui, $ */
 
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'

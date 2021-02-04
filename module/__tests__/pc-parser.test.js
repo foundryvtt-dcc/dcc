@@ -2068,4 +2068,3 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
   ]
   expect(parsedNPC).toMatchObject(expected)
 })
-

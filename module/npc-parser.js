@@ -1,4 +1,4 @@
-/* global Roll */
+/* global game, Roll, ui */
 
 /**
  *  Parses one or more NPC Stat Blocks (e.g. from published modules) into actor data
@@ -14,7 +14,7 @@ function parseNPCs (npcString) {
   const npcObjects = []
 
   // Match the period followed by a newline at the end of each stat block
-  let matches = npcString.matchAll(/\.[\n$]/gm)
+  const matches = npcString.matchAll(/\.[\n$]/gm)
 
   let previousIndex = 0
   for (const match of matches) {
