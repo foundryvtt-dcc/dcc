@@ -31,4 +31,13 @@
   "manifest": "https://github.com/cyface/foundryvtt-dcc/raw/preview/system.json",
   "download": "https://github.com/cyface/foundryvtt-dcc/archive/v0.0.21_preview.zip",
   "license": "LICENSE.txt"
+  "packs": [
+     {
+      "name": "dcc-core-userGuide",
+      "label": "User Guide",
+      "path": "packs/dcc-core-userguide.db",
+      "system": "dcc",
+      "entity": "JournalEntry"
+    }
+]	
 }
