@@ -23,9 +23,9 @@
   ],
   "packs": [
      {
-      "name": "dcc-core-userGuide",
+      "name": "dcc-userguide",
       "label": "User Guide",
-      "path": "packs/dcc-core-userguide.db",
+      "path": "packs/dcc-userguide.db",
       "system": "dcc",
       "entity": "JournalEntry"
     }
