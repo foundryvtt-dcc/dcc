@@ -292,7 +292,7 @@ class DCCActorSheet extends ActorSheet {
       })
 
       // Attack Bonus
-      html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
+      html.find('.attack-bonus-label').click(this._onRollAttackBonus.bind(this))
       html.find('.attack-bonus').each((i, li) => {
         // Add draggable attribute and dragstart listener.
         li.setAttribute('draggable', true)
