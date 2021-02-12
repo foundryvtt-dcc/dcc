@@ -21,6 +21,15 @@
       "path": "lang/en.json"
     }
   ],
+  "packs": [
+     {
+      "name": "dcc-userguide",
+      "label": "User Guide",
+      "path": "packs/dcc-userguide.db",
+      "system": "dcc",
+      "entity": "JournalEntry"
+    }
+  ],
   "gridDistance": 5,
   "gridUnits": "ft",
   "primaryTokenAttribute": "health",
