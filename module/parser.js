@@ -53,7 +53,7 @@ class DCCActorParser extends FormApplication {
   async _updateObject (event, formData) {
     event.preventDefault()
 
-    _createActors(formData.type, formData.folderId, formData.statblocks)
+    createActors(formData.type, formData.folderId, formData.statblocks)
   }
 }
 
@@ -64,7 +64,7 @@ class DCCActorParser extends FormApplication {
  * @param {string} actorData - Actor data (PSG text or JSON for Players, or a DCC statline for NPCs)
  * @return {Promise}
  */
-async function _createActors (type, folderId, actorData) {
+async function createActors (type, folderId, actorData) {
   // Process the statblock
   let parsedCharacters
   try {
@@ -76,6 +76,8 @@ async function _createActors (type, folderId, actorData) {
       return ui.notifications.warn(game.i18n.localize('DCC.ParseNPCWarning'))
     }
   }
+
+  let actors = []
 
   for (const parsedCharacter of parsedCharacters) {
     // Separate out owned items
@@ -122,7 +124,11 @@ async function _createActors (type, folderId, actorData) {
         }
       }
     }
+
+    actors.push(actor)
   }
+
+  return actors
 }
 
 /**
@@ -147,4 +153,4 @@ function onRenderActorDirectory (app, html) {
   footer.append(button)
 }
 
-export default { onRenderActorDirectory }
+export default { onRenderActorDirectory, createActors }
