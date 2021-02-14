@@ -5,7 +5,7 @@
   "version": 0.21,
   "minimumCoreVersion": "0.6.6",
   "compatibleCoreVersion": "0.7.9",
-  "templateVersion": 2,
+  "templateVersion": 3,
   "author": "Tim L. White",
   "contributors": { "name" : "Steve Barnett", "email" : "mooped@gmail.com" },
   "esmodules": [
