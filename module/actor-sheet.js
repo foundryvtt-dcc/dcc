@@ -1,7 +1,5 @@
 /* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, ENTITY_PERMISSIONS */
 
-import parsePC from './pc-parser.js'
-import parseNPC from './npc-parser.js'
 import DCCActorConfig from './actor-config.js'
 
 /**
@@ -39,18 +37,6 @@ class DCCActorSheet extends ActorSheet {
           class: 'configure-actor',
           icon: 'fas fa-code',
           onclick: ev => this._onConfigureActor(ev)
-        },
-        {
-          label: game.i18n.localize('DCC.ImportStats'),
-          class: 'paste-block',
-          icon: 'fas fa-paste',
-          onclick: ev => this._onPasteStatBlock(ev)
-        },
-        {
-          label: game.i18n.localize('DCC.Clear'),
-          class: 'clear-sheet',
-          icon: 'fas fa-eraser',
-          onclick: ev => this._onClearSheet(ev)
         }
       )
     }
@@ -245,6 +231,14 @@ class DCCActorSheet extends ActorSheet {
         li.addEventListener('dragstart', dragHandler, false)
       })
 
+      // Hit Dice
+      html.find('.hd-label').click(this._onRollHitDice.bind(this))
+      html.find('div.hd').each((i, li) => {
+        // Add draggable attribute and dragstart listener.
+        li.setAttribute('draggable', true)
+        li.addEventListener('dragstart', dragHandler, false)
+      })
+
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
       html.find('li.save').each((i, li) => {
@@ -362,40 +356,6 @@ class DCCActorSheet extends ActorSheet {
     }).render(true)
   }
 
-  /**
-   * Prompt to Clear This Sheet
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onClearSheet (event) {
-    event.preventDefault()
-    new Dialog({
-      title: game.i18n.localize('DCC.ClearSheet'),
-      content: `<p>${game.i18n.localize('DCC.ClearSheetExplain')}</p>`,
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-check"></i>',
-          label: 'Yes',
-          callback: () => this._clearSheet()
-        },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: 'No'
-        }
-      }
-    }).render(true)
-  }
-
-  /**
-   * Clear out all form fields on this sheet
-   * @private
-   */
-  _clearSheet () {
-    [...this.form.elements].forEach((el) => {
-      el.value = ''
-    })
-  }
-
   /** Prompt to delete an item
    * @param {Event}  event   The originating click event
    * @private
@@ -471,6 +431,12 @@ class DCCActorSheet extends ActorSheet {
     } else if (classes.contains('init')) {
       dragData = {
         type: 'Initiative',
+        actorId: this.actor.id,
+        data: {}
+      }
+    } else if (classes.contains('hd')) {
+      dragData = {
+        type: 'Hit Dice',
         actorId: this.actor.id,
         data: {}
       }
@@ -566,55 +532,6 @@ class DCCActorSheet extends ActorSheet {
     }
   }
 
-  /**
-   * Prompt for a stat block to import
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onPasteStatBlock (event) {
-    event.preventDefault()
-    const psgLinkHtml = (this.entity.data.type === 'Player') ? `<p><a href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">${game.i18n.localize('DCC.PurpleSorcererPCLink')}</a></p>` : ''
-    const html = `<form id="stat-block-form">
-                    ${psgLinkHtml}
-                    <textarea name="statblock"></textarea>
-                  </form>`
-    new Dialog({
-      title: game.i18n.localize('DCC.PasteBlock'),
-      content: html,
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-check"></i>',
-          label: 'Import Stats',
-          callback: html => this._pasteStatBlock(html)
-        },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: 'Cancel'
-        }
-      }
-    }).render(true)
-  }
-
-  /**
-   * Import a stat block
-   * @param {string} statBlockHTML   The stat block to import
-   * @private
-   */
-  async _pasteStatBlock (statBlockHTML) {
-    const statBlock = statBlockHTML[0].querySelector('#stat-block-form')[0].value
-    const parsedCharacter = this.getData().isNPC ? parseNPC(statBlock) : parsePC(statBlock)
-
-    // Handle any items
-    const items = parsedCharacter.items
-    delete parsedCharacter.items
-    for (const item of items) {
-      await this.actor.createOwnedItem(item)
-    }
-
-    // Update the actor itself
-    await this.object.update(parsedCharacter)
-  }
-
   /* -------------------------------------------- */
 
   /**
@@ -645,6 +562,16 @@ class DCCActorSheet extends ActorSheet {
   _onRollInitiative (event) {
     event.preventDefault()
     this.actor.rollInitiative(this.token)
+  }
+
+  /**
+   * Handle rolling Hit Dice
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollHitDice (event) {
+    event.preventDefault()
+    this.actor.rollHitDice()
   }
 
   /**
@@ -739,7 +666,6 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const slot = event.currentTarget.parentElement.dataset.itemSlot
     const options = {
-      event: event,
       backstab: event.currentTarget.classList.contains('backstab-button')
     }
     this.actor.rollWeaponAttack(slot, options)

@@ -8,9 +8,9 @@
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
 
             <div class="hd">
-                <label for="data.attributes.hitDice.value">{{localize "DCC.HD"}}</label>
+                <label class="hd-label rollable" for="data.attributes.hitDice.value">{{localize "DCC.HD"}}</label>
                 <input type="text" id="data.attributes.hitDice.value" name="data.attributes.hitDice.value"
-                       value="{{data.attributes.hitDice.value}}" maxlength="20"/>
+                       value="{{data.attributes.hitDice.value}}" maxlength="20" data-dtype="String"/>
             </div>
 
             <div class="action-dice">

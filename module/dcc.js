@@ -13,6 +13,8 @@ import DCC from './config.js'
 import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
+import parser from './parser.js'
+
 import { registerSystemSettings } from './settings.js'
 
 // Override the template for sheet configuration
@@ -51,14 +53,14 @@ Hooks.once('init', async function () {
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
   Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric)
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief)
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling)
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior)
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard)
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf)
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf)
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric)
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, { types: ['Player'] })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet)
 
@@ -150,6 +152,11 @@ Hooks.on('renderChatMessage', (app, html, data) => {
 // Support context menu on chat cards
 Hooks.on('getChatLogEntryContext', chat.addChatMessageContextOptions)
 
+// Quick import for actors
+Hooks.on('renderActorDirectory', (app, html) => {
+  parser.onRenderActorDirectory(app, html)
+})
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
 
@@ -166,6 +173,7 @@ async function createDCCMacro (data, slot) {
   const handlers = {
     Ability: _createDCCAbilityMacro,
     Initiative: _createDCCInitiativeMacro,
+    'Hit Dice': _createDCCHitDiceMacro,
     Save: _createDCCSaveMacro,
     Skill: _createDCCSkillMacro,
     'Luck Die': _createDCCLuckDieMacro,
@@ -240,6 +248,25 @@ function _createDCCInitiativeMacro (data, slot) {
     name: game.i18n.localize('DCC.Initiative'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token) }',
     img: 'icons/svg/up.svg'
+  }
+
+  return macroData
+}
+
+/**
+ * Create a macro from a hit dice drop.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+function _createDCCHitDiceMacro (data, slot) {
+  if (data.type !== 'Hit Dice') return
+
+  // Create the macro command
+  const macroData = {
+    name: game.i18n.localize('DCC.HitDiceRoll'),
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice() }',
+    img: 'icons/dice/d4black.svg'
   }
 
   return macroData

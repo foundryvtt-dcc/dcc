@@ -17,12 +17,14 @@ export const registerSystemSettings = async function () {
    */
   const tableCompendiumNames = { '': '-' }
   const tableCompendiums = []
-  game.packs.forEach(function (pack) {
-    if (pack.metadata.entity === 'RollTable') {
-      tableCompendiums.push(pack)
-      tableCompendiumNames[pack.metadata.package + '.' + pack.metadata.name] = pack.metadata.label
-    }
-  })
+  try {
+    game.packs.forEach(function (pack) {
+      if (pack.metadata.entity === 'RollTable') {
+        tableCompendiums.push(pack)
+        tableCompendiumNames[pack.metadata.package + '.' + pack.metadata.name] = pack.metadata.label
+      }
+    })
+  } catch (e) { }
 
   /**
    * Compendium to look in for crit tables
@@ -41,12 +43,14 @@ export const registerSystemSettings = async function () {
    * Table to use for fumbles
    */
   const rollTables = { '': '-' }
-  for (const pack of tableCompendiums) {
-    await pack.getIndex()
-    pack.index.forEach(function (value, key, map) {
-      rollTables[pack.metadata.package + '.' + pack.metadata.name + '.' + value.name] = pack.metadata.label + ': ' + value.name
-    })
-  }
+  try {
+    for (const pack of tableCompendiums) {
+      await pack.getIndex()
+      pack.index.forEach(function (value, key, map) {
+        rollTables[pack.metadata.package + '.' + pack.metadata.name + '.' + value.name] = pack.metadata.label + ': ' + value.name
+      })
+    }
+  } catch (e) { }
   game.settings.register('dcc', 'fumbleTable', {
     name: 'DCC.SettingFumbleTable',
     hint: 'DCC.SettingFumbleTableHint',

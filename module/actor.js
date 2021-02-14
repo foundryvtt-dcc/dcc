@@ -179,6 +179,29 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Roll Hit Dice
+   */
+  async rollHitDice () {
+    let roll
+
+    if (this.data.type === 'Player') {
+      const die = this.data.data.attributes.hitDice.value || '1d4'
+      const sta = this.data.data.abilities.sta || {}
+      sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : 0
+      roll = new Roll('@die+@mod', { die, mod: sta.mod })
+    } else {
+      const die = this.data.data.attributes.hitDice.value || '1d4'
+      roll = new Roll('@die', { die })
+    }
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: game.i18n.localize('DCC.HitDice')
+    })
+  }
+
+  /**
    * Roll a Saving Throw
    * @param {String} saveId       The save ID (e.g. "ref")
    */
@@ -362,20 +385,18 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a Weapon Attack
-   * @param {string} weaponId     The weapon name or slot id (e.g. "m1", "r1")
-   * @param {Object} options      Options which configure how ability tests are rolled
+   * Roll a weapon's attack, damage, and handle any crits
+   * @param {string} weaponId    The weapon name or slot id (e.g. "m1", "r1")
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollWeaponAttack (weaponId, options = {}) {
-    // Display standard cards in chat?
-    let displayStandardCards = false
-    try {
-      displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
-    } catch (err) { }
-
+    if (options.displayStandardCards === undefined) {
+      try {
+        options.displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+      } catch (e) { }
+    }
     // First try and find the item by name or id
     let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
-    const backstab = options.backstab
 
     // If not found try finding it by slot
     if (!weapon) {
@@ -401,15 +422,112 @@ class DCCActor extends Actor {
       return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
     }
 
-    /* Determine backstab bonus if used */
+    // Attack roll
+    const attackRollResult = this.rollToHit(weapon, options)
+
+    // Damage roll
+    const damageRollResult = this.rollDamage(weapon, options)
+
+    // Speaker object for the chat cards
+    const speaker = { alias: this.name, _id: this._id }
+
+    // Output the results
+    if (options.displayStandardCards) {
+      // Attack roll card
+      if (attackRollResult.rolled) {
+        attackRollResult.roll.toMessage({
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name })
+        })
+      } else {
+        const messageData = {
+          user: game.user._id,
+          speaker: speaker,
+          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          content: game.i18n.format('DCC.AttackRollInvalidFormula', {
+            formula: attackRollResult.formula,
+            weapon: weapon.name
+          })
+        }
+        await CONFIG.ChatMessage.entityClass.create(messageData)
+      }
+
+      // Damage roll card
+      if (damageRollResult.rolled) {
+        damageRollResult.roll.toMessage({
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name })
+        })
+      } else {
+        const messageData = {
+          user: game.user._id,
+          speaker: speaker,
+          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          content: game.i18n.format('DCC.DamageRollInvalidFormula', {
+            formula: damageRollResult.formula,
+            weapon: weapon.name
+          })
+        }
+        await CONFIG.ChatMessage.entityClass.create(messageData)
+      }
+
+      // Roll crits or fumbles
+      if (attackRollResult.crit) {
+        this.rollCritical(options)
+      } else if (attackRollResult.fumble) {
+        this.rollFumble(options)
+      }
+    } else {
+      const attackRollHTML = this._formatAttackRoll(attackRollResult)// attackRollResult.roll, attackRollResult.formula)
+      const damageRollHTML = this._formatDamageRoll(damageRollResult)
+
+      // Check for crits or fumbles
+      let critResult = ''
+      let fumbleResult = ''
+
+      if (attackRollResult.crit) {
+        critResult = await this.rollCritical(options)
+      } else if (attackRollResult.fumble) {
+        fumbleResult = await this.rollFumble(options)
+      }
+
+      const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
+      const messageData = {
+        user: game.user._id,
+        speaker: speaker,
+        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        content: game.i18n.format(emote, {
+          weaponName: weapon.name,
+          rollHTML: attackRollHTML,
+          damageRollHTML: damageRollHTML,
+          crit: critResult,
+          fumble: fumbleResult
+        }),
+        sound: CONFIG.sounds.dice
+      }
+      await CONFIG.ChatMessage.entityClass.create(messageData)
+    }
+  }
+
+  /**
+   * Roll a weapon's attack roll
+   * @param {Object} weaponId    The weapon object being used for the roll
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
+   * @return {Object}            Object representing the results of the attack roll
+   */
+  rollToHit (weapon, options = {}) {
+    const config = this._getConfig()
+
+    /* Grab the To Hit modifier */
     let toHit = weapon.data.data.toHit
-    if (backstab) {
+
+    /* Determine backstab bonus if used */
+    if (options.backstab) {
       toHit = toHit + ' + ' + parseInt(this.data.data.class.backstab)
     }
 
-    const speaker = { alias: this.name, _id: this._id }
+    // Determine the formula
     const formula = `${weapon.data.data.actionDie} + ${toHit}`
-    const config = this._getConfig()
 
     /* Determine attack bonus */
     let attackBonus = 0
@@ -420,73 +538,85 @@ class DCCActor extends Actor {
     /* Determine crit range */
     const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
 
+    /* If we don't have a valid formula, bail out here */
+    if (Roll.validate !== undefined && !Roll.validate(formula)) {
+      return {
+        rolled: false,
+        formula: weapon.data.data.toHit
+      }
+    }
+
     /* Roll the Attack */
-    const roll = new Roll(formula, { ab: attackBonus, critical: critRange })
-    roll.roll()
-    const d20RollResult = roll.dice[0].total
-    roll.dice[0].options.dcc = {
+    const attackRoll = new Roll(formula, { ab: attackBonus, critical: critRange })
+    attackRoll.roll()
+
+    const d20RollResult = attackRoll.dice[0].total
+    attackRoll.dice[0].options.dcc = {
       upperThreshold: critRange
     }
 
-    if (displayStandardCards) {
-      roll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: game.i18n.localize(backstab ? 'DCC.Backstab' : 'DCC.AttackRoll')
-      })
+    /* Check for crit or fumble */
+    const crit = (d20RollResult > 1 && (d20RollResult >= critRange || options.backstab))
+    const fumble = (d20RollResult === 1)
+
+    return {
+      rolled: true,
+      roll: attackRoll,
+      formula: Roll.cleanFormula(attackRoll.terms || attackRoll.formula),
+      hitsAc: attackRoll.total,
+      d20Roll: d20RollResult,
+      crit,
+      fumble
+    }
+  }
+
+  /**
+   * Roll a weapon's damage
+   * @param {Object} weaponId    The weapon object being used for the roll
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
+   * @return {Object}            Object representing the results of the attack roll
+   */
+  rollDamage (weapon, options = {}) {
+    const config = this._getConfig()
+
+    /* Grab the the formula */
+    let formula = weapon.data.data.damage
+
+    /* Are we backstabbing and the weapon has special backstab damage? */
+    if (options.backstab && weapon.data.data.backstab) {
+      formula = weapon.data.data.backstabDamage || weapon.data.data.damage
     }
 
-    /* Handle Critical Hits and fumbles */
-    const crit = (d20RollResult > 1 && (d20RollResult >= critRange || backstab)) ? await this.rollCritical() : ''
-    const fumble = (d20RollResult === 1) ? await this.rollFumble() : ''
-
-    /* Roll the Damage */
-    let damageFormula = weapon.data.data.damage
-    if (backstab && weapon.data.data.backstab) {
-      damageFormula = weapon.data.data.backstabDamage
+    /* Determine attack bonus */
+    let attackBonus = 0
+    if (config.rollAttackBonus) {
+      attackBonus = this.data.data.details.lastRolledAttackBonus || 0
     }
-    const damageRoll = new Roll(damageFormula, { ab: attackBonus })
+
+    /* If we don't have a valid formula, bail out here */
+    if (Roll.validate !== undefined && !Roll.validate(formula)) {
+      return {
+        rolled: false,
+        formula: weapon.data.data.damage
+      }
+    }
+    /* Roll the damage */
+    const damageRoll = new Roll(formula, { ab: attackBonus })
     damageRoll.roll()
 
-    if (displayStandardCards) {
-      damageRoll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: game.i18n.localize('DCC.DamageRoll')
-      })
-    }
-
-    /* Emote attack results */
-    if (!displayStandardCards) {
-      // TODO: Remove call to roll.parts - it's deprecated in favour of roll.terms, but is required for backwards compatibility
-      const attackRollHTML = this._formatRoll(roll, Roll.cleanFormula(roll.terms || roll.formula))
-      const damageRollData = escape(JSON.stringify(damageRoll))
-      const damageRollTotal = damageRoll.total
-      const damageRollHTML = `<a class="inline-roll inline-result damage-applyable" data-roll="${damageRollData}" data-damage="${damageRollTotal}" title="${Roll.cleanFormula(damageRoll.terms || damageRoll.formula)}"><i class="fas fa-dice-d20"></i> ${damageRollTotal}</a>`
-
-      const emote = backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
-      const messageData = {
-        user: game.user._id,
-        speaker: speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-        content: game.i18n.format(emote, {
-          weaponName: weapon.name,
-          rollHTML: attackRollHTML,
-          damageRollHTML: damageRollHTML,
-          crit: crit,
-          fumble: fumble
-        }),
-        sound: CONFIG.sounds.dice
-      }
-      await CONFIG.ChatMessage.entityClass.create(messageData)
+    return {
+      rolled: true,
+      roll: damageRoll,
+      formula: Roll.cleanFormula(damageRoll.terms || damageRoll.formula),
+      damage: damageRoll.total
     }
   }
 
   /**
    * Roll a Critical Hit
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
-  async rollCritical () {
-    // Display standard cards in chat?
-    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
-
+  async rollCritical (options) {
     // Roll object for the crit die
     let roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
 
@@ -501,7 +631,7 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
         if (entry) {
           const table = await pack.getEntity(entry._id)
-          critResult = await table.draw({ roll, displayChat: displayStandardCards })
+          critResult = await table.draw({ roll, displayChat: options.displayStandardCards })
         }
       }
     }
@@ -513,7 +643,7 @@ class DCCActor extends Actor {
       roll = critResult.roll
     }
 
-    if (!displayStandardCards) {
+    if (!options.displayStandardCards) {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
@@ -536,11 +666,9 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Fumble
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
-  async rollFumble () {
-    // Display standard cards in chat?
-    const displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
-
+  async rollFumble (options) {
     let fumbleDie
     try {
       fumbleDie = this.data.data.attributes.fumble.die
@@ -565,7 +693,7 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
         if (entry) {
           const table = await pack.getEntity(entry._id)
-          fumbleResult = await table.draw({ roll, displayChat: displayStandardCards })
+          fumbleResult = await table.draw({ roll, displayChat: options.displayStandardCards })
         }
       }
     }
@@ -577,7 +705,7 @@ class DCCActor extends Actor {
       roll = fumbleResult.roll
     }
 
-    if (!displayStandardCards) {
+    if (!options.displayStandardCards) {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
@@ -599,18 +727,36 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Format a roll for display in-line
-   * @param {Object<Roll>} roll   The roll to format
-   * @param {string} formula      Formula to show when hovering
+   * Format an attack roll for display in-line
+   * @param {Object} rollResult   The roll result object for the roll
    * @return {string}             Formatted HTML containing roll
    */
-  _formatRoll (roll, formula) {
-    const rollData = escape(JSON.stringify(roll))
+  _formatAttackRoll (rollResult) {
+    if (rollResult.rolled) {
+      const rollData = escape(JSON.stringify(rollResult.roll))
 
-    // Check for Crit/Fumble
-    let critFailClass = ''
-    if (Number(roll.dice[0].results[0]) === 20) { critFailClass = 'critical ' } else if (Number(roll.dice[0].results[0]) === 1) { critFailClass = 'fumble ' }
-    return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${formula}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
+      // Check for Crit/Fumble
+      let critFailClass = ''
+      if (Number(rollResult.roll.dice[0].results[0]) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].results[0]) === 1) { critFailClass = 'fumble ' }
+
+      return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.hitsAc}</a>`
+    } else {
+      return game.i18n.format('DCC.AttackRollInvalidFormulaInline', { formula: rollResult.formula })
+    }
+  }
+
+  /**
+   * Format a damage roll for display in-line
+   * @param {Object} rollResult   The roll result object for the roll
+   * @return {string}             Formatted HTML containing roll
+   */
+  _formatDamageRoll (rollResult) {
+    if (rollResult.rolled) {
+      const rollData = escape(JSON.stringify(rollResult.roll))
+      return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>`
+    } else {
+      return game.i18n.format('DCC.DamageRollInvalidFormulaInline', { formula: rollResult.formula })
+    }
   }
 
   /**

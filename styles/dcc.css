@@ -188,7 +188,7 @@
   margin: 0 0 0 10px; }
 
 .dcc .combat-basics .action-dice {
-  flex: 0 0 100px;
+  flex: 0 0 80px;
   align-items: center; }
 
 /* ----------------------------------------- */
@@ -370,6 +370,22 @@
   text-align: center;
   margin: 0 0 0 0; }
 
+.dcc .init-and-speed .hd {
+  flex: 0 0 30px;
+  text-align: right;
+  align-items: center;
+  margin: 0 0 0 0; }
+
+.dcc .init-and-speed.hd label {
+  margin: 10px auto 0 0;
+  font-size: 1.1rem; }
+
+.dcc .init-and-speed .hd .hd-value {
+  width: 40px;
+  font-size: 1.1rem;
+  height: 25px;
+  text-align: center; }
+
 /* ----------------------------------------- */
 /*  Hit Points                               */
 /* ----------------------------------------- */
@@ -445,7 +461,10 @@
 /* ----------------------------------------- */
 /*  Speed                                    */
 /* ----------------------------------------- */
-.dcc .init-and-speed.speed label {
+.dcc .init-and-speed .speed {
+  flex: 0 0 30px; }
+
+.dcc .init-and-speed .speed label {
   margin: 10px auto 0 0;
   font-size: 1.1rem; }
 
@@ -1036,24 +1055,37 @@
 /* ----------------------------------------- */
 /*  Items Sheet                              */
 /* ----------------------------------------- */
-.dcc.item .sheet-header .armor-header {
-  display: grid;
-  grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto); }
-
 .dcc.item .sheet-body.item {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 50px minmax(80px, auto); }
+  grid-template-rows: 50px 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.item .value-row {
+  grid-column: span 3 / span 3; }
 
 .dcc.item .sheet-body.weapon {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 60px 50px minmax(80px, auto); }
+  grid-template-rows: 60px 60px 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.weapon .value-row {
+  grid-column: span 3 / span 3; }
 
 .dcc.item .sheet-body.armor {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 50px minmax(80px, auto); }
+  grid-template-rows: 50px 50px 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.armor .value-row {
+  grid-column: span 3 / span 3; }
+
+.dcc.item .sheet-body .spell-header-extras {
+  display: grid;
+  grid-column: span 5 / span 5;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 0.5fr);
+  gap: 10px;
+  margin: 10px 0;
+  padding: 0; }
 
 .dcc.item .sheet-body.spell {
   display: grid;
@@ -1088,6 +1120,11 @@
 
 .dcc.item .sheet-body .description {
   overflow-y: scroll;
+  grid-column: 1 / span 3; }
+
+.dcc.item .sheet-body .armor-header-extras {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
   grid-column: 1 / span 3; }
 
 .dcc.item .sheet-body .weapon-header-extras {

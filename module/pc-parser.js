@@ -1,221 +1,283 @@
-/* global game */
+/* global game, ui */
 
 /**
  *  Parses Player Stat Blocks (e.g. from Purple Sorceror) into an NPC sheet
  *
- *  @param {string} pcString the player stat block to import
- *  @return {Object}        Player character object
+ *  @param {string} pcString The player stat block to import
+ *  @return {Array}          Array of player character objects to create
  **/
-function parsePC (pcString) {
+function parsePCs (pcString) {
   try {
     const pcObject = JSON.parse(pcString)
-    return _parseJSONPC(pcObject)
+    return _parseJSONPCs(pcObject)
   } catch (e) {
-    return _parseJSONPC(_parsePlainPCToJSON(pcString))
+    return _parseJSONPCs(_splitAndParsePlainPCsToJSON(pcString))
   }
 }
 
 /**
  *  Parses Purple Sorcerer JSON zero level character into a PC sheet
  *
- *  @param {Object} pcObject the JSON object to import
- *  @return {Object}        Player character object
+ *  @param {Object} pcObject The JSON object to import
+ *  @return {Array}          Array of character objects
  **/
-function _parseJSONPC (pcObject) {
-  const pc = {}
-  pc['data.details.occupation.value'] = pcObject.occTitle || ''
-  pc['data.abilities.str.value'] = pcObject.strengthScore || 10
-  pc['data.abilities.agl.value'] = pcObject.agilityScore || 10
-  pc['data.abilities.sta.value'] = pcObject.staminaScore || 10
-  pc['data.abilities.per.value'] = pcObject.personalityScore || 10
-  pc['data.abilities.int.value'] = pcObject.intelligenceScore || 10
-  pc['data.abilities.lck.value'] = pcObject.luckScore || 10
-  pc['data.abilities.str.max'] = pc['data.abilities.str.value']
-  pc['data.abilities.agl.max'] = pc['data.abilities.agl.value']
-  pc['data.abilities.sta.max'] = pc['data.abilities.sta.value']
-  pc['data.abilities.per.max'] = pc['data.abilities.per.value']
-  pc['data.abilities.int.max'] = pc['data.abilities.int.value']
-  pc['data.abilities.lck.max'] = pc['data.abilities.lck.value']
-  pc['data.attributes.ac.value'] = pcObject.armorClass || 10
-  if (pcObject.hitPoints) {
-    pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
-  }
-  pc.items = []
-  if (pcObject.weapons) {
-    for (const weapon of pcObject.weapons) {
+function _parseJSONPCs (pcObject) {
+  // A full 500 character JSON object has a 'characters' array at the root
+  if (pcObject.characters) {
+    return pcObject.characters.map(x => _parseJSONPCs(x)[0])
+  // Otherwise we're looking at a JSON object representing a single character
+  } else {
+    const pc = {}
+    if (pcObject.name) {
+      pc.name = pcObject.name
+    }
+    pc['data.details.occupation.value'] = pcObject.occTitle || ''
+    pc['data.abilities.str.value'] = pcObject.strengthScore || 10
+    pc['data.abilities.agl.value'] = pcObject.agilityScore || 10
+    pc['data.abilities.sta.value'] = pcObject.staminaScore || 10
+    pc['data.abilities.per.value'] = pcObject.personalityScore || 10
+    pc['data.abilities.int.value'] = pcObject.intelligenceScore || 10
+    pc['data.abilities.lck.value'] = pcObject.luckScore || 10
+    pc['data.abilities.str.max'] = pc['data.abilities.str.value']
+    pc['data.abilities.agl.max'] = pc['data.abilities.agl.value']
+    pc['data.abilities.sta.max'] = pc['data.abilities.sta.value']
+    pc['data.abilities.per.max'] = pc['data.abilities.per.value']
+    pc['data.abilities.int.max'] = pc['data.abilities.int.value']
+    pc['data.abilities.lck.max'] = pc['data.abilities.lck.value']
+    pc['data.attributes.ac.value'] = pcObject.armorClass || 10
+    if (pcObject.hitPoints) {
+      pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
+    }
+    pc.items = []
+    if (pcObject.weapons) {
+      for (const weapon of pcObject.weapons) {
+        pc.items.push({
+          name: weapon.name,
+          type: 'weapon',
+          data: {
+            toHit: weapon.attackMod || '0',
+            damage: weapon.attackDamage || '1d3',
+            melee: weapon.melee
+          }
+        })
+      }
+    } else if (pcObject.weapon) {
       pc.items.push({
-        name: weapon.name,
+        name: pcObject.weapon,
         type: 'weapon',
         data: {
-          toHit: weapon.attackMod || '0',
-          damage: weapon.attackDamage || '1d3',
-          melee: weapon.melee
+          toHit: pcObject.attackMod || '0',
+          damage: pcObject.attackDamage || '1d3',
+          melee: true // No way to know, but melee is most likely
         }
       })
     }
-  } else if (pcObject.weapon) {
-    pc.items.push({
-      name: pcObject.weapon,
-      type: 'weapon',
-      data: {
-        toHit: pcObject.attackMod || '0',
-        damage: pcObject.attackDamage || '1d3',
-        melee: true // No way to know, but melee is most likely
+    pc['data.attributes.speed.value'] = pcObject.speed || 30
+    if (pcObject.initiative) {
+      pc['data.attributes.init.value'] = pcObject.initiative
+    }
+    if (pcObject.saveReflex) {
+      pc['data.saves.ref.value'] = pcObject.saveReflex
+    }
+    if (pcObject.saveFort) {
+      pc['data.saves.frt.value'] = pcObject.saveFort
+    }
+    if (pcObject.saveWill) {
+      pc['data.saves.wil.value'] = pcObject.saveWill
+    }
+
+    // Attributes only in upper level exports
+    // Alignment
+    if (pcObject.alignment) {
+      pc['data.details.alignment'] = pcObject.alignment
+    }
+    // Class
+    if (pcObject.className) {
+      pc['data.class.className'] = pcObject.className
+    }
+    // Level
+    if (pcObject.level) {
+      pc['data.details.level.value'] = pcObject.level
+    }
+
+    // Crit die and table
+    if (pcObject.critDie) {
+      pc['data.attributes.critical.die'] = pcObject.critDie
+    }
+    if (pcObject.critTable) {
+      pc['data.attributes.critical.table'] = pcObject.critTable
+    }
+    // Spell Check
+    if (pcObject.spellCheck) {
+      pc['data.class.spellCheck'] = pcObject.spellCheck
+    }
+    // Action Die
+    if (pcObject.actionDice) {
+      pc['data.config.actionDice'] = pcObject.actionDice
+    }
+    // Attack Bonus
+    if (pcObject.attackBonus) {
+      pc['data.details.attackBonus'] = pcObject.attackBonus
+    }
+    // Armor
+    if (pcObject.armorData) {
+      const armor = _parseArmor(pcObject.armorData)
+      if (armor) {
+        pc.items.push(armor)
       }
-    })
-  }
-  pc['data.attributes.speed.value'] = pcObject.speed || 30
-  if (pcObject.initiative) {
-    pc['data.attributes.init.value'] = pcObject.initiative
-  }
-  if (pcObject.saveReflex) {
-    pc['data.saves.ref.value'] = pcObject.saveReflex
-  }
-  if (pcObject.saveFort) {
-    pc['data.saves.frt.value'] = pcObject.saveFort
-  }
-  if (pcObject.saveWill) {
-    pc['data.saves.wil.value'] = pcObject.saveWill
-  }
+    }
 
-  // Attributes only in upper level exports
-  // Alignment
-  if (pcObject.alignment) {
-    pc['data.details.alignment'] = pcObject.alignment
-  }
-  // Class
-  if (pcObject.className) {
-    pc['data.class.className'] = pcObject.className
-  }
-  // Level
-  if (pcObject.level) {
-    pc['data.details.level.value'] = pcObject.level
-  }
-
-  // Crit die and table
-  if (pcObject.critDie) {
-    pc['data.attributes.critical.die'] = pcObject.critDie
-  }
-  if (pcObject.critTable) {
-    pc['data.attributes.critical.table'] = pcObject.critTable
-  }
-  // Spell Check
-  if (pcObject.spellCheck) {
-    pc['data.class.spellCheck'] = pcObject.spellCheck
-  }
-  // Action Die
-  if (pcObject.actionDice) {
-    pc['data.config.actionDice'] = pcObject.actionDice
-  }
-  // Attack Bonus
-  if (pcObject.attackBonus) {
-    pc['data.details.attackBonus'] = pcObject.attackBonus
-  }
-  // Armor
-  if (pcObject.armorData) {
-    const armor = _parseArmor(pcObject.armorData)
-    if (armor) {
-      pc.items.push(armor)
+    // Remaining character attributes go in notes until there is a better place
+    let notes = ''
+    // Equipment block
+    if (pcObject.equipment || pcObject.equipment2 || pcObject.equipment3 || pcObject.tradeGood) {
+      notes = notes + game.i18n.localize('DCC.Equipment') + ':<br/>'
+      if (pcObject.equipment) {
+        notes = notes + '  ' + pcObject.equipment + '<br/>'
+        pc.items.push({
+          name: pcObject.equipment,
+          type: 'equipment'
+        })
+      }
+      if (pcObject.equipment2) {
+        notes = notes + '  ' + pcObject.equipment2 + '<br/>'
+        pc.items.push({
+          name: pcObject.equipment2,
+          type: 'equipment'
+        })
+      }
+      if (pcObject.equipment3) {
+        notes = notes + '  ' + pcObject.equipment3 + '<br/>'
+        pc.items.push({
+          name: pcObject.equipment3,
+          type: 'equipment'
+        })
+      }
+      if (pcObject.tradeGood) {
+        notes = notes + '  ' + pcObject.tradeGood + ' (' + game.i18n.localize('DCC.TradeGoods') + ')<br/>'
+        pc.items.push({
+          name: pcObject.tradeGood,
+          type: 'equipment'
+        })
+      }
+      notes = notes + '<br/>'
     }
-  }
-
-  // Remaining character attributes go in notes until there is a better place
-  let notes = ''
-  // Equipment block
-  if (pcObject.equipment || pcObject.equipment2 || pcObject.equipment3 || pcObject.tradeGood) {
-    notes = notes + game.i18n.localize('DCC.Equipment') + ':<br/>'
-    if (pcObject.equipment) {
-      notes = notes + '  ' + pcObject.equipment + '<br/>'
-      pc.items.push({
-        name: pcObject.equipment,
-        type: 'equipment'
-      })
+    // Other attributes if present
+    if (pcObject.startingFunds) {
+      notes = notes + game.i18n.localize('DCC.StartingFunds') + ': ' + pcObject.startingFunds + '<br/>'
+      pc.items.push(_parseStartingFunds(pcObject.startingFunds))
     }
-    if (pcObject.equipment2) {
-      notes = notes + '  ' + pcObject.equipment2 + '<br/>'
-      pc.items.push({
-        name: pcObject.equipment2,
-        type: 'equipment'
-      })
+    if (pcObject.luckySign) {
+      notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '<br/>'
+      pc['data.details.birthAugur'] = pcObject.luckySign
     }
-    if (pcObject.equipment3) {
-      notes = notes + '  ' + pcObject.equipment3 + '<br/>'
-      pc.items.push({
-        name: pcObject.equipment3,
-        type: 'equipment'
-      })
+    if (pcObject.languages) {
+      notes = notes + game.i18n.localize('DCC.Languages') + ': ' + pcObject.languages + '<br/>'
+      pc['data.details.languages'] = pcObject.languages
     }
-    if (pcObject.tradeGood) {
-      notes = notes + '  ' + pcObject.tradeGood + ' (' + game.i18n.localize('DCC.TradeGoods') + ')<br/>'
-      pc.items.push({
-        name: pcObject.tradeGood,
-        type: 'equipment'
-      })
+    if (pcObject.racialTraits) {
+      notes = notes + pcObject.racialTraits + '<br/>'
     }
-    notes = notes + '<br/>'
-  }
-  // Other attributes if present
-  if (pcObject.startingFunds) {
-    notes = notes + game.i18n.localize('DCC.StartingFunds') + ': ' + pcObject.startingFunds + '<br/>'
-    pc.items.push(_parseStartingFunds(pcObject.startingFunds))
-  }
-  if (pcObject.luckySign) {
-    notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '<br/>'
-    pc['data.details.birthAugur'] = pcObject.luckySign
-  }
-  if (pcObject.languages) {
-    notes = notes + game.i18n.localize('DCC.Languages') + ': ' + pcObject.languages + '<br/>'
-    pc['data.details.languages'] = pcObject.languages
-  }
-  if (pcObject.racialTraits) {
-    notes = notes + pcObject.racialTraits + '<br/>'
-  }
-  if (pcObject.spells) {
-    notes = notes + '<br/>Spells:<br/>'
-    for (const spell of pcObject.spells) {
-      notes = notes + spell.level + ') ' + spell.name + '<br/>'
-      pc.items.push({
-        name: spell.name,
-        type: 'spell',
-        data: {
-          level: spell.level,
-          spellCheck: {
-            die: '1d20',
-            value: pcObject.spellCheck || '0'
+    if (pcObject.spells) {
+      notes = notes + '<br/>Spells:<br/>'
+      for (const spell of pcObject.spells) {
+        notes = notes + spell.level + ') ' + spell.name + '<br/>'
+        pc.items.push({
+          name: spell.name,
+          type: 'spell',
+          data: {
+            level: spell.level,
+            spellCheck: {
+              die: '1d20',
+              value: pcObject.spellCheck || '0'
+            }
           }
-        }
-      })
+        })
+      }
+    }
+    if (pcObject.thiefSkills) {
+      // Dump raw skills as notes
+      notes = notes + '<br/>Skills:<br/>' + pcObject.thiefSkills.raw.replace(/\n/g, '<br/>')
+      delete pcObject.thiefSkills.raw
+      // Handle special case thief skills
+      pc['data.class.backstab'] = pcObject.thiefSkills.backstab || '0'
+      delete pcObject.thiefSkills.backstab
+      pc['data.skills.castSpellFromScroll.die'] = `1${pcObject.thiefSkills.castSpellFromScroll || 'd10'}`
+      delete pcObject.thiefSkills.castSpellFromScroll
+      // Halflings use the sneakSilently and hideInShadowsSkills according to the generator
+      pc['data.skills.sneakAndHide.value'] = pcObject.thiefSkills.sneakSilently || '0'
+      // Handle standard thief skills
+      for (const skill in pcObject.thiefSkills) {
+        pc[`data.skills.${skill}.value`] = pcObject.thiefSkills[skill] || '0'
+      }
+    }
+    pc['data.details.notes.value'] = notes
+
+    return [pc]
+  }
+}
+
+/**
+ * Splits a set of Purple Sorceror plain text characters and parses each character
+ *
+ *  @param {String} pcString The plain text characters to import
+ *  @return {Array}          Array of player character objects
+ **/
+function _splitAndParsePlainPCsToJSON (pcString) {
+  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
+
+  const pcObjects = []
+
+  // Match the start of either a zero level or an upper level statblock
+  const matches = pcString.matchAll(/(0-level Occupation:\s+(.+)[;\n$]|(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$])/gm)
+
+  let first = true
+  let previousIndex = 0
+  for (const match of matches) {
+    const matchIndex = match.index
+
+    // First iteration is the PSG header and not a character - skip it
+    if (!first) {
+      // Parse the previous character using the string up to the next section start
+      const pcSection = pcString.substring(previousIndex, matchIndex)
+      try {
+        pcObjects.push(_parsePlainPCToJSON(pcSection))
+      } catch (e) {
+        ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
+      }
+    }
+    first = false
+
+    previousIndex = matchIndex
+  }
+
+  // Parse the final character (if we found any)
+  if (!first) {
+    const pcSection = pcString.substring(previousIndex, pcString.length)
+    try {
+      pcObjects.push(_parsePlainPCToJSON(pcSection))
+    } catch (e) {
+      ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
     }
   }
-  if (pcObject.thiefSkills) {
-    // Dump raw skills as notes
-    notes = notes + '<br/>Skills:<br/>' + pcObject.thiefSkills.raw.replace(/\n/g, '<br/>')
-    delete pcObject.thiefSkills.raw
-    // Handle special case thief skills
-    pc['data.class.backstab'] = pcObject.thiefSkills.backstab || '0'
-    delete pcObject.thiefSkills.backstab
-    pc['data.skills.castSpellFromScroll.die'] = `1${pcObject.thiefSkills.castSpellFromScroll || 'd10'}`
-    delete pcObject.thiefSkills.castSpellFromScroll
-    // Halflings use the sneakSilently and hideInShadowsSkills according to the generator
-    pc['data.skills.sneakAndHide.value'] = pcObject.thiefSkills.sneakSilently || '0'
-    // Handle standard thief skills
-    for (const skill in pcObject.thiefSkills) {
-      pc[`data.skills.${skill}.value`] = pcObject.thiefSkills[skill] || '0'
-    }
+
+  return {
+    characters: pcObjects
   }
-  pc['data.details.notes.value'] = notes
-  return pc
 }
 
 /**
  * Parses Purple Sorcerer plain text character into a PC sheet
  *
- *  @param {String}         pcString the plain text character to import
- *  @return {Object}        Player character object
+ *  @param {String} pcString The plain text character to import
+ *  @return {Array}          Player character object
  **/
 function _parsePlainPCToJSON (pcString) {
   const pcObject = {}
   pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
+
+  // Name is non-standard, but it's handy to be able to add it to the text before pasting
+  pcObject.name = _firstMatch(pcString.match(/Name:\s+(.+)[;\n$]/))
 
   // Try parsing as a zero level first
   pcObject.occTitle = _firstMatch(pcString.match(/0-level Occupation:\s+(.+)[;\n$]/))
@@ -409,4 +471,4 @@ function _parseStartingFunds (startingFundsString) {
   }
 }
 
-export default parsePC
+export default parsePCs
