@@ -77,7 +77,7 @@ async function createActors (type, folderId, actorData) {
     }
   }
 
-  let actors = []
+  const actors = []
 
   for (const parsedCharacter of parsedCharacters) {
     // Separate out owned items
