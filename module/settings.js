@@ -1,4 +1,4 @@
-/* global game */
+/* global game, Hooks */
 
 export const registerSystemSettings = async function () {
   /**
@@ -36,7 +36,10 @@ export const registerSystemSettings = async function () {
     config: true,
     default: '',
     type: String,
-    choices: tableCompendiumNames
+    choices: tableCompendiumNames,
+    onChange: value => {
+      Hooks.callAll('dcc.registerCriticalHitsPack', value, true)
+    }
   })
 
   /**
@@ -58,7 +61,10 @@ export const registerSystemSettings = async function () {
     config: true,
     default: '',
     type: String,
-    choices: rollTables
+    choices: rollTables,
+    onChange: value => {
+      Hooks.callAll('dcc.setFumbleTable', value, true)
+    }
   })
 
   /**
@@ -71,7 +77,10 @@ export const registerSystemSettings = async function () {
     config: true,
     default: '',
     type: String,
-    choices: tableCompendiumNames
+    choices: tableCompendiumNames,
+    onChange: value => {
+      Hooks.callAll('dcc.registerDisapprovalPack', value, true)
+    }
   })
 
   /**

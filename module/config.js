@@ -350,7 +350,13 @@ DCC.DICE_CHAIN = [
   3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30
 ]
 
-// Disapproval tables - updated at runtime from compendiums
+// Critical Hit and Disapproval Compendiums, Fumble table
+// Updated at runtime from settings
+DCC.criticalHitPacks = null
+DCC.disapprovalPacks = null
+DCC.fumbleTable = null
+
+// List of available disapproval tables for the cleric sheet, generated from disapprovalPacks
 DCC.disapprovalTables = {}
 
 export default DCC
