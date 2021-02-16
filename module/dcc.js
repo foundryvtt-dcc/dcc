@@ -158,6 +158,9 @@ Hooks.once('ready', async function () {
   if (fumbleTable) {
     CONFIG.DCC.fumbleTable = fumbleTable
   }
+
+  // Let modules know the DCC system is ready
+  Hooks.callAll('dcc.ready')
 })
 
 /* -------------------------------------------- */
