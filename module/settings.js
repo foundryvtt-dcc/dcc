@@ -38,7 +38,7 @@ export const registerSystemSettings = async function () {
     type: String,
     choices: tableCompendiumNames,
     onChange: value => {
-      Hooks.callAll('dcc.registerCriticalHitPack', value, true)
+      Hooks.callAll('dcc.registerCriticalHitsPack', value, true)
     }
   })
 
