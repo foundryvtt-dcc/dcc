@@ -27,6 +27,19 @@ export const registerSystemSettings = async function () {
   } catch (e) { }
 
   /**
+   * Gather a list of available RollTables from compendium packs
+   */
+  const rollTables = { '': '-' }
+  try {
+    for (const pack of tableCompendiums) {
+      await pack.getIndex()
+      pack.index.forEach(function (value, key, map) {
+        rollTables[pack.metadata.package + '.' + pack.metadata.name + '.' + value.name] = pack.metadata.label + ': ' + value.name
+      })
+    }
+  } catch (e) { }
+
+  /**
    * Compendium to look in for crit tables
    */
   game.settings.register('dcc', 'critsCompendium', {
@@ -45,15 +58,6 @@ export const registerSystemSettings = async function () {
   /**
    * Table to use for fumbles
    */
-  const rollTables = { '': '-' }
-  try {
-    for (const pack of tableCompendiums) {
-      await pack.getIndex()
-      pack.index.forEach(function (value, key, map) {
-        rollTables[pack.metadata.package + '.' + pack.metadata.name + '.' + value.name] = pack.metadata.label + ': ' + value.name
-      })
-    }
-  } catch (e) { }
   game.settings.register('dcc', 'fumbleTable', {
     name: 'DCC.SettingFumbleTable',
     hint: 'DCC.SettingFumbleTableHint',
@@ -80,6 +84,22 @@ export const registerSystemSettings = async function () {
     choices: tableCompendiumNames,
     onChange: value => {
       Hooks.callAll('dcc.registerDisapprovalPack', value, true)
+    }
+  })
+
+  /**
+   * Table to use for mercurial magic
+   */
+  game.settings.register('dcc', 'mercurialMagicTable', {
+    name: 'DCC.SettingMercurialMagicTable',
+    hint: 'DCC.SettingMercurialMagicTableHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: rollTables,
+    onChange: value => {
+      Hooks.callAll('dcc.setMercurialMagicTable', value, true)
     }
   })
 

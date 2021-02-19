@@ -67,7 +67,7 @@
         </div>
         <h1 class="mercurial-effect-heading">{{localize "DCC.MercurialEffect"}}</h1>
         <div class="mercurial-effect-value">
-          <label class="resource-label" for="data.mercurialEffect.value">{{localize "DCC.MercurialEffectValue"}}</label>
+          <label class="mercurial-roll resource-label{{#if allowMercurialRoll}} rollable{{/if}}" for="data.mercurialEffect.value">{{#if allowMercurialRoll}}<i class="fas fa-dice-d20"></i> {{/if}}{{localize "DCC.MercurialEffectValue"}}</label>
           <input type="text" name="data.mercurialEffect.value" value="{{data.mercurialEffect.value}}" data-dtype="Number"/>
         </div>
         <div class="mercurial-effect-summary">

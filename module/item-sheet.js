@@ -1,4 +1,4 @@
-/* global ItemSheet, game, mergeObject, CONFIG */
+/* global Dialog, ItemSheet, game, mergeObject, CONFIG */
 
 import DCCItemConfig from './item-config.js'
 
@@ -44,7 +44,10 @@ export class DCCItemSheet extends ItemSheet {
     // Lookup the localizable string for the item's type
     data.item.data.typeString = CONFIG.DCC.items[data.item.type] || 'DCC.Unknown'
 
-    if (data.item.type === 'treasure') {
+    if (data.item.type === 'spell') {
+      // Allow mercurial magic roll only if owned by an actor
+      data.allowMercurialRoll = !!this.actor
+    } else if (data.item.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = this.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
@@ -79,6 +82,11 @@ export class DCCItemSheet extends ItemSheet {
 
     // Owner only listeners
     if (this.item.owner) {
+      // Roll mercurial effect for spells
+      if (this.item.type === 'spell') {
+        html.find('.mercurial-roll').click(this._onRollMercurialMagic.bind(this))
+      }
+
       // Roll value and currency conversions for treasure
       if (this.item.type === 'treasure') {
         html.find('.roll-button').click(this._onRollValue.bind(this))
@@ -160,11 +168,49 @@ export class DCCItemSheet extends ItemSheet {
   }
 
   /**
+   * Roll a new Mercurial Magic effect, prompting to replace if necessary
+   */
+  _onRollMercurialMagic (event) {
+    event.preventDefault()
+    if (this.item.hasExistingMercurialMagic()) {
+      new Dialog({
+        title: game.i18n.localize('DCC.MercurialMagicRerollPrompt'),
+        content: `<p>${game.i18n.localize('DCC.MercurialMagicRerollExplain')}</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: 'Yes',
+            callback: () => this._rollMercurialMagic(event)
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: 'No'
+          }
+        }
+      }).render(true)
+    } else {
+      this._rollMercurialMagic(event)
+    }
+  }
+
+  /**
+   * Roll a new Mercurial Magic effect
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _rollMercurialMagic (event) {
+    this.item.rollMercurialMagic()
+    this.render(false)
+  }
+
+  /**
    * Roll the value of this item
    */
   _onRollValue (event) {
     event.preventDefault()
-    this.item.rollValue()
+    if (!this.item.hasExistingMercurialMagic()) {
+      this.item.rollValue()
+    }
     this.render(false)
   }
 

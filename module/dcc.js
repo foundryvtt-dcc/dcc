@@ -159,6 +159,12 @@ Hooks.once('ready', async function () {
     CONFIG.DCC.fumbleTable = fumbleTable
   }
 
+  // Set mercurial magic table from the system setting
+  const mercurialMagicTable = game.settings.get('dcc', 'mercurialMagicTable')
+  if (mercurialMagicTable) {
+    CONFIG.DCC.mercurialMagicTable = mercurialMagicTable
+  }
+
   // Let modules know the DCC system is ready
   Hooks.callAll('dcc.ready')
 })
@@ -170,8 +176,9 @@ Hooks.once('ready', async function () {
 Hooks.on('hotbarDrop', (bar, data, slot) => createDCCMacro(data, slot))
 
 // Highlight 1's and 20's for all regular rolls
-Hooks.on('renderChatMessage', (app, html, data) => {
-  chat.highlightCriticalSuccessFailure(app, html, data)
+Hooks.on('renderChatMessage', (message, html, data) => {
+  message.setFlag('core', 'canPopout', true)
+  chat.highlightCriticalSuccessFailure(message, html, data)
 })
 
 // Support context menu on chat cards
@@ -205,6 +212,14 @@ Hooks.on('dcc.setFumbleTable', (value, fromSystemSetting = false) => {
   // Set fumble table if unset, or if applying the system setting (which takes precedence)
   if (fromSystemSetting || !CONFIG.DCC.fumbleTable) {
     CONFIG.DCC.fumbleTable = value
+  }
+})
+
+// Mercurial Magic mable
+Hooks.on('dcc.setMercurialMagicTable', (value, fromSystemSetting = false) => {
+  // Set mercurial magic table if unset, or if applying the system setting (which takes precedence)
+  if (fromSystemSetting || !CONFIG.DCC.mercurialMagicTable) {
+    CONFIG.DCC.mercurialMagicTable = value
   }
 })
 
