@@ -10,29 +10,36 @@ class DCCItem extends Item {
 
     // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.data.data.config) {
-      // Weapons can inherit the owner's action die
-      if (this.data.data.config.inheritActionDie) {
-        this.data.data.actionDie = this.actor.data.data.attributes.actionDice.value
-      }
-
-      // Set default inherit crit range for legacy items
-      if (this.data.data.config.inheritCritRange === undefined) {
-        this.data.data.config.inheritCritRange = true
-      }
-
-      // And inherit crit range if set
-      if (this.data.data.config.inheritCritRange) {
-        this.data.data.critRange = this.actor.data.data.details.critRange
-      } else {
-        // If not inheriting crit range make sure there is a value (for legacy items)
-        if (this.data.data.critRange === null || this.data.data.critRange === undefined) {
-          this.data.data.critRange = 20
+      if (this.data.type === 'weapon') {
+        // Weapons can inherit the owner's action die
+        if (this.data.data.config.inheritActionDie) {
+          this.data.data.actionDie = this.actor.data.data.attributes.actionDice.value
         }
-      }
 
-      // Spells can inherit the owner's spell check
-      if (this.data.data.config.inheritSpellCheck) {
-        this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck
+        // Set default inherit crit range for legacy items
+        if (this.data.data.config.inheritCritRange === undefined) {
+          this.data.data.config.inheritCritRange = true
+        }
+
+        // And inherit crit range if set
+        if (this.data.data.config.inheritCritRange) {
+          this.data.data.critRange = this.actor.data.data.details.critRange
+        } else {
+          // If not inheriting crit range make sure there is a value (for legacy items)
+          if (this.data.data.critRange === null || this.data.data.critRange === undefined) {
+            this.data.data.critRange = 20
+          }
+        }
+      } else if (this.data.type === 'spell') {
+        // Weapons can use the owner's action die for the spell check
+        if (this.data.data.config.inheritActionDie) {
+          this.data.data.spellCheck.die = this.actor.data.data.attributes.actionDice.value
+        }
+
+        // Spells can inherit the owner's spell check and action die
+        if (this.data.data.config.inheritSpellCheck) {
+          this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck
+        }
       }
     }
   }

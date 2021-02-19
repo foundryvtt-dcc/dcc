@@ -183,6 +183,13 @@ export const migrateItemData = function (item) {
     }
   }
 
+  // If migrating from 0.21 mark all spells as inheritActionDie
+  if ((currentVersion <= 0.21) || (currentVersion == null)) {
+    if (item.data.type === 'spell' && !item.data.config.inheritActionDie) {
+      item.data.config.inheritActionDie = true
+    }
+  }
+
   // Return the migrated update data
   return updateData
 }

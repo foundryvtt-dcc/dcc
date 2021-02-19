@@ -436,6 +436,7 @@
         "itemDescription"
       ],
       "config": {
+        "inheritActionDie": true,
         "inheritSpellCheck": true
       },
       "available": true,

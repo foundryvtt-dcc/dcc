@@ -118,7 +118,7 @@ Hooks.once('ready', async function () {
 
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const NEEDS_MIGRATION_VERSION = 0.16
+  const NEEDS_MIGRATION_VERSION = 0.21
   const needMigration = (currentVersion <= NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration
