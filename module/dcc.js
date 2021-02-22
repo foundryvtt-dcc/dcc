@@ -223,6 +223,35 @@ Hooks.on('dcc.setMercurialMagicTable', (value, fromSystemSetting = false) => {
   }
 })
 
+// Entity creation hook
+Hooks.on('createActor', async (entity, options, userId) => {
+  if (!game.user.isGM) { return }
+
+  // Assign default DCC actor image
+  await entity.update({
+    img: 'systems/dcc/styles/images/actor.webp'
+  })
+})
+
+Hooks.on('createItem', async (entity, options, userId) => {
+  if (!game.user.isGM) { return }
+
+  let img = 'systems/dcc/styles/images/item.webp'
+
+  if (entity.type === 'armor') {
+    img = 'systems/dcc/styles/images/armor.webp'
+  } else if (entity.type === 'treasure') {
+    img = 'systems/dcc/styles/images/coins.webp'
+  } else if (entity.type === 'weapon') {
+    img = 'systems/dcc/styles/images/weapon.webp'
+  }
+
+  // Assign default DCC item image
+  await entity.update({
+    img
+  })
+})
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
 /* -------------------------------------------- */
