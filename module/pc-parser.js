@@ -1,5 +1,7 @@
 /* global game, ui */
 
+import EntityImages from './entity-images.js'
+
 /**
  *  Parses Player Stat Blocks (e.g. from Purple Sorceror) into an NPC sheet
  *
@@ -137,7 +139,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: pcObject.equipment,
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp'
+          img: EntityImages.imageForItem('equipment')
         })
       }
       if (pcObject.equipment2) {
@@ -145,7 +147,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: pcObject.equipment2,
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp'
+          img: EntityImages.imageForItem('equipment')
         })
       }
       if (pcObject.equipment3) {
@@ -153,7 +155,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: pcObject.equipment3,
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp'
+          img: EntityImages.imageForItem('equipment')
         })
       }
       if (pcObject.tradeGood) {
@@ -161,7 +163,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: pcObject.tradeGood,
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp'
+          img: EntityImages.imageForItem('equipment')
         })
       }
       notes = notes + '<br/>'
@@ -188,6 +190,7 @@ function _parseJSONPCs (pcObject) {
         notes = notes + spell.level + ') ' + spell.name + '<br/>'
         pc.items.push({
           name: spell.name,
+          img: EntityImages.imageForItem('spell'),
           type: 'spell',
           data: {
             level: spell.level,
@@ -443,7 +446,7 @@ function _parseArmor (armorString) {
     return {
       name: armorFields[1],
       type: 'armor',
-      img: 'systems/dcc/styles/images/armor.webp',
+      img: EntityImages.imageForItem('armor'),
       data: {
         acBonus: armorFields[2],
         checkPenalty: armorFields[3],
@@ -464,7 +467,7 @@ function _parseStartingFunds (startingFundsString) {
   return {
     name: 'Coins',
     type: 'treasure',
-    img: 'systems/dcc/styles/images/coins.webp',
+    img: EntityImages.imageForItem('treasure'),
     data: {
       value: {
         pp,
