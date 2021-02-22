@@ -137,7 +137,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: pcObject.equipment,
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp',
+          img: 'systems/dcc/styles/images/item.webp'
         })
       }
       if (pcObject.equipment2) {
@@ -145,7 +145,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: pcObject.equipment2,
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp',
+          img: 'systems/dcc/styles/images/item.webp'
         })
       }
       if (pcObject.equipment3) {
@@ -153,7 +153,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: pcObject.equipment3,
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp',
+          img: 'systems/dcc/styles/images/item.webp'
         })
       }
       if (pcObject.tradeGood) {
@@ -161,7 +161,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: pcObject.tradeGood,
           type: 'equipment',
-          img: 'systems/dcc/styles/images/item.webp',
+          img: 'systems/dcc/styles/images/item.webp'
         })
       }
       notes = notes + '<br/>'
