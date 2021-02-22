@@ -136,28 +136,32 @@ function _parseJSONPCs (pcObject) {
         notes = notes + '  ' + pcObject.equipment + '<br/>'
         pc.items.push({
           name: pcObject.equipment,
-          type: 'equipment'
+          type: 'equipment',
+          img: 'systems/dcc/styles/images/item.webp',
         })
       }
       if (pcObject.equipment2) {
         notes = notes + '  ' + pcObject.equipment2 + '<br/>'
         pc.items.push({
           name: pcObject.equipment2,
-          type: 'equipment'
+          type: 'equipment',
+          img: 'systems/dcc/styles/images/item.webp',
         })
       }
       if (pcObject.equipment3) {
         notes = notes + '  ' + pcObject.equipment3 + '<br/>'
         pc.items.push({
           name: pcObject.equipment3,
-          type: 'equipment'
+          type: 'equipment',
+          img: 'systems/dcc/styles/images/item.webp',
         })
       }
       if (pcObject.tradeGood) {
         notes = notes + '  ' + pcObject.tradeGood + ' (' + game.i18n.localize('DCC.TradeGoods') + ')<br/>'
         pc.items.push({
           name: pcObject.tradeGood,
-          type: 'equipment'
+          type: 'equipment',
+          img: 'systems/dcc/styles/images/item.webp',
         })
       }
       notes = notes + '<br/>'
@@ -422,6 +426,7 @@ function _parseWeapon (weaponString) {
     const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
     return {
       name: name,
+      img: 'systems/dcc/styles/images/weapon.webp',
       attackMod: weaponData[2],
       attackDamage: damage,
       melee: melee
@@ -438,6 +443,7 @@ function _parseArmor (armorString) {
     return {
       name: armorFields[1],
       type: 'armor',
+      img: 'systems/dcc/styles/images/armor.webp',
       data: {
         acBonus: armorFields[2],
         checkPenalty: armorFields[3],
@@ -458,6 +464,7 @@ function _parseStartingFunds (startingFundsString) {
   return {
     name: 'Coins',
     type: 'treasure',
+    img: 'systems/dcc/styles/images/coins.webp',
     data: {
       value: {
         pp,
