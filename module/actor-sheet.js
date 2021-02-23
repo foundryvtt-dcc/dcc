@@ -1,6 +1,7 @@
 /* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, ENTITY_PERMISSIONS */
 
 import DCCActorConfig from './actor-config.js'
+import EntityImages from './entity-images.js'
 
 /**
  * Extend the basic ActorSheet
@@ -688,6 +689,7 @@ class DCCActorSheet extends ActorSheet {
     // Prepare the item object.
     const itemData = {
       name: name,
+      img: EntityImages.imageForItem(type),
       type: type,
       data: data
     }

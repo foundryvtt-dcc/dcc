@@ -15,6 +15,7 @@ import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
 import parser from './parser.js'
 import TablePackManager from './tablePackManager.js'
+import EntityImages from './entity-images.js'
 
 import { registerSystemSettings } from './settings.js'
 
@@ -220,6 +221,31 @@ Hooks.on('dcc.setMercurialMagicTable', (value, fromSystemSetting = false) => {
   // Set mercurial magic table if unset, or if applying the system setting (which takes precedence)
   if (fromSystemSetting || !CONFIG.DCC.mercurialMagicTable) {
     CONFIG.DCC.mercurialMagicTable = value
+  }
+})
+
+// Entity creation hook
+Hooks.on('createActor', (entity, options, userId) => {
+  if (!game.user.isGM || entity.data.img) { return }
+
+  // Assign an appropriate DCC actor image
+  const img = EntityImages.imageForActor(entity.type)
+  if (img) {
+    entity.update({
+      img
+    })
+  }
+})
+
+Hooks.on('createItem', (entity, options, userId) => {
+  if (!game.user.isGM || entity.data.img) { return }
+
+  // Assign an appropriate DCC item image
+  const img = EntityImages.imageForItem(entity.type)
+  if (img) {
+    entity.update({
+      img
+    })
   }
 })
 

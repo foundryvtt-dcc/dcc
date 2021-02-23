@@ -360,4 +360,18 @@ DCC.mercurialMagicTable = null
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks
 DCC.disapprovalTables = {}
 
+// Default actor images
+DCC.defaultActorImages = {
+  default: 'systems/dcc/styles/images/actor.webp'
+}
+
+// Default item tokens
+DCC.defaultItemImages = {
+  default: 'systems/dcc/styles/images/item.webp',
+  armor: 'systems/dcc/styles/images/armor.webp',
+  spell: 'systems/dcc/styles/images/spell.webp',
+  treasure: 'systems/dcc/styles/images/coins.webp',
+  weapon: 'systems/dcc/styles/images/weapon.webp'
+}
+
 export default DCC
