@@ -178,7 +178,9 @@ Hooks.on('hotbarDrop', (bar, data, slot) => createDCCMacro(data, slot))
 
 // Highlight 1's and 20's for all regular rolls
 Hooks.on('renderChatMessage', (message, html, data) => {
-  message.setFlag('core', 'canPopout', true)
+  if (game.user.isGM) {
+    message.setFlag('core', 'canPopout', true)
+  }
   chat.highlightCriticalSuccessFailure(message, html, data)
 })
 

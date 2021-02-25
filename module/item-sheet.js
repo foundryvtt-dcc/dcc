@@ -208,9 +208,7 @@ export class DCCItemSheet extends ItemSheet {
    */
   _onRollValue (event) {
     event.preventDefault()
-    if (!this.item.hasExistingMercurialMagic()) {
-      this.item.rollValue()
-    }
+    this.item.rollValue()
     this.render(false)
   }
 
