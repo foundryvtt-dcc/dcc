@@ -73,6 +73,15 @@ class DCCActorSheet extends ActorSheet {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
     } else {
       this.options.template = 'systems/dcc/templates/actor-sheet-zero-level.html'
+
+      if (!data.isZero) {
+        // Reorder saves on upper level sheet to define tabbing order
+        data.data.saves = {
+          ref: data.data.saves.ref,
+          frt: data.data.saves.frt,
+          wil: data.data.saves.wil
+        }
+      }
     }
 
     // Prepare item lists by type
