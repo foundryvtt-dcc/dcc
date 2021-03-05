@@ -7,12 +7,12 @@
             </div>
             <label class="item-type" for="name">{{localize item.data.typeString}}</label>
         </div>
-        <div class="grid grid-2col">
-          <div class="resource">
+        <div class="flexrow">
+          <div class="resource flex1">
             <label class="resource-label">{{localize "DCC.Quantity"}}</label>
               <input type="text" name="data.quantity" value="{{data.quantity}}" data-dtype="Number"/>
           </div>
-          <div class="resource">
+          <div class="resource flex1">
             <label class="resource-label">{{localize "DCC.Weight"}}</label>
               <input type="text" name="data.weight" value="{{data.weight}}" data-dtype="Number"/>
           </div>

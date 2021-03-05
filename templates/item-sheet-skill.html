@@ -16,8 +16,8 @@
                      data-dtype="String"/>
             </div>
             {{else}}
-            <div class="grid grid-3col">
-              <div class="resource">
+            <div class="flexrow">
+              <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.SkillAbility"}}</label>
                 <div>
                   <select name="data.ability" id="data.ability"
@@ -33,13 +33,13 @@
                   </select>
                 </div>
               </div>
-              <div class="resource">
+              <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.SkillDie"}}</label>
                 <input type="text" name="data.die" value="{{data.die}}"
                        {{#if data.config.useDie}}{{else}}disabled{{/if}}
                        data-dtype="String"/>
               </div>
-              <div class="resource">
+              <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.SkillValue"}}</label>
                 <input type="text" name="data.value"
                        value="{{numberFormat data.value decimals=0 sign=true}}"
@@ -51,7 +51,7 @@
         </div>
     </header>
 
-    <section class="sheet-body item">
+    <section class="sheet-body skill">
         <h1 class="description-heading">{{localize "DCC.Description"}}</h1>
         <div class="description">
             {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}

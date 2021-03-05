@@ -8,6 +8,11 @@
   "templateVersion": 4,
   "author": "Tim L. White",
   "contributors": { "name" : "Steve Barnett", "email" : "mooped@gmail.com" },
+  "dependencies": [
+    {
+      "name": "bug-reporter"
+    }
+  ],
   "esmodules": [
     "module/dcc.js"
   ],
@@ -38,6 +43,8 @@
   "initiative": "1d20 + @attributes.init.value",
   "url": "https://github.com/cyface/foundryvtt-dcc",
   "manifest": "https://github.com/cyface/foundryvtt-dcc/raw/preview_v0.0.22/system.json",
-  "download": "https://github.com/cyface/foundryvtt-dcc/archive/v0.0.22-preview.3.zip",
+  "download": "https://github.com/cyface/foundryvtt-dcc/archive/v0.0.22-preview.4.zip",
+  "bugs": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/issues",
+  "allowBugReporter": true,
   "license": "LICENSE.txt"
 }

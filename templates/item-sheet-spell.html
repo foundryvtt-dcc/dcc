@@ -9,14 +9,14 @@
                 <label class="item-type" for="name">{{localize item.data.typeString}}</label>
             </div>
 
-            <div class="grid grid-2col">
-              <div class="resource">
+            <div class="flexrow">
+              <div class="resource flex1">
                 <label class="resource-label" for="data.level">{{localize "DCC.SpellLevel"}}</label>
                 <input type="text" name="data.level"
                        value="{{numberFormat data.level decimals=0 sign=false}}"
                        placeholder="1" data-dtype="Number"/>
               </div>
-              <div class="resource">
+              <div class="resource flex1">
                 <label class="resource-label" for="data.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
                 <div class="flexrow">
                   <input type="text" name="data.spellCheck.die" class="flex1"

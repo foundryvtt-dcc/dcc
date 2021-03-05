@@ -1287,7 +1287,7 @@ $border-style: 2px groove #eeede0;
   .sheet-body.spell {
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px;
+    grid-template-rows: 60px 50px minmax(80px, auto) 50px minmax(80px, auto);
   }
 
   .sheet-body.treasure {
@@ -1295,6 +1295,13 @@ $border-style: 2px groove #eeede0;
     display: grid;
     grid-template-columns: 100%;
     grid-template-rows: 85px 50px minmax(80px, auto);
+  }
+
+  .sheet-body.skill {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 50px minmax(80px, auto);
   }
 
   .value-row {
