@@ -1,4 +1,4 @@
-/* global CONFIG, FormApplication, game, expandObject ui, $ */
+/* global CONFIG, expandObject, FormApplication, game, Hooks, ui, $ */
 
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
@@ -126,6 +126,9 @@ async function createActors (type, folderId, actorData) {
     }
 
     actors.push(actor)
+
+    // Call a hook for postprocessing of actors
+    Hooks.callAll('dcc.postActorImport', { actor })
   }
 
   return actors

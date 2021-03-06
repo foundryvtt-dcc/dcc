@@ -14,6 +14,8 @@ import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
 import parser from './parser.js'
+import TablePackManager from './tablePackManager.js'
+import EntityImages from './entity-images.js'
 
 import { registerSystemSettings } from './settings.js'
 
@@ -117,7 +119,7 @@ Hooks.once('ready', async function () {
 
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const NEEDS_MIGRATION_VERSION = 0.16
+  const NEEDS_MIGRATION_VERSION = 0.21
   const needMigration = (currentVersion <= NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration
@@ -125,17 +127,47 @@ Hooks.once('ready', async function () {
     migrations.migrateWorld()
   }
 
-  // Load the list of disapproval tables
-  const disapprovalTablesPackName = game.settings.get('dcc', 'disapprovalCompendium')
-  if (disapprovalTablesPackName) {
-    const pack = game.packs.get(disapprovalTablesPackName)
-    if (pack) {
-      await pack.getIndex()
-      pack.index.forEach(function (value, key, map) {
-        CONFIG.DCC.disapprovalTables[key] = value
-      })
+  // Create manager for disapproval tables and register the system setting
+  CONFIG.DCC.disapprovalPacks = new TablePackManager({
+    updateHook: async (manager) => {
+      // Clear disapproval tables
+      CONFIG.DCC.disapprovalTables = {}
+
+      // For each valid pack, update the list of disapproval tables available to a cleric
+      for (const packName of manager.packs) {
+        const pack = game.packs.get(packName)
+        if (pack) {
+          await pack.getIndex()
+          pack.index.forEach(function (value, key, map) {
+            CONFIG.DCC.disapprovalTables[key] = {
+              name: value.name,
+              path: `${packName}.${value.name}`
+            }
+          })
+        }
+      }
     }
+  })
+  CONFIG.DCC.disapprovalPacks.addPack(game.settings.get('dcc', 'disapprovalCompendium'), true)
+
+  // Create manager for critical hit table packs and register the system setting
+  CONFIG.DCC.criticalHitPacks = new TablePackManager()
+  CONFIG.DCC.criticalHitPacks.addPack(game.settings.get('dcc', 'critsCompendium'), true)
+
+  // Set fumble table from the system setting
+  const fumbleTable = game.settings.get('dcc', 'fumbleTable')
+  if (fumbleTable) {
+    CONFIG.DCC.fumbleTable = fumbleTable
   }
+
+  // Set mercurial magic table from the system setting
+  const mercurialMagicTable = game.settings.get('dcc', 'mercurialMagicTable')
+  if (mercurialMagicTable) {
+    CONFIG.DCC.mercurialMagicTable = mercurialMagicTable
+  }
+
+  // Let modules know the DCC system is ready
+  Hooks.callAll('dcc.ready')
 })
 
 /* -------------------------------------------- */
@@ -145,8 +177,11 @@ Hooks.once('ready', async function () {
 Hooks.on('hotbarDrop', (bar, data, slot) => createDCCMacro(data, slot))
 
 // Highlight 1's and 20's for all regular rolls
-Hooks.on('renderChatMessage', (app, html, data) => {
-  chat.highlightCriticalSuccessFailure(app, html, data)
+Hooks.on('renderChatMessage', (message, html, data) => {
+  if (game.user.isGM) {
+    message.setFlag('core', 'canPopout', true)
+  }
+  chat.highlightCriticalSuccessFailure(message, html, data)
 })
 
 // Support context menu on chat cards
@@ -157,9 +192,67 @@ Hooks.on('renderActorDirectory', (app, html) => {
   parser.onRenderActorDirectory(app, html)
 })
 
+// Disapproval table packs
+Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting) => {
+  const disapprovalPacks = CONFIG.DCC.disapprovalPacks
+
+  if (disapprovalPacks) {
+    disapprovalPacks.addPack(value, fromSystemSetting)
+  }
+})
+
+// Critical hit table packs
+Hooks.on('dcc.registerCriticalHitsPack', (value, fromSystemSetting) => {
+  const criticalHitPacks = CONFIG.DCC.criticalHitPacks
+
+  if (criticalHitPacks) {
+    criticalHitPacks.addPack(value, fromSystemSetting)
+  }
+})
+
+// Fumble table
+Hooks.on('dcc.setFumbleTable', (value, fromSystemSetting = false) => {
+  // Set fumble table if unset, or if applying the system setting (which takes precedence)
+  if (fromSystemSetting || !CONFIG.DCC.fumbleTable) {
+    CONFIG.DCC.fumbleTable = value
+  }
+})
+
+// Mercurial Magic mable
+Hooks.on('dcc.setMercurialMagicTable', (value, fromSystemSetting = false) => {
+  // Set mercurial magic table if unset, or if applying the system setting (which takes precedence)
+  if (fromSystemSetting || !CONFIG.DCC.mercurialMagicTable) {
+    CONFIG.DCC.mercurialMagicTable = value
+  }
+})
+
+// Entity creation hook
+Hooks.on('createActor', (entity, options, userId) => {
+  if (!game.user.isGM || entity.data.img) { return }
+
+  // Assign an appropriate DCC actor image
+  const img = EntityImages.imageForActor(entity.type)
+  if (img) {
+    entity.update({
+      img
+    })
+  }
+})
+
+Hooks.on('createItem', (entity, options, userId) => {
+  if (!game.user.isGM || entity.data.img) { return }
+
+  // Assign an appropriate DCC item image
+  const img = EntityImages.imageForItem(entity.type)
+  if (img) {
+    entity.update({
+      img
+    })
+  }
+})
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
-
 /* -------------------------------------------- */
 
 /**
