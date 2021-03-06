@@ -1,5 +1,9 @@
 <form class="item config-dialog" autocomplete="off">
   <div class="form-group">
+    <label for="data.config.inheritActionDie">{{localize "DCC.InheritActionDie"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.inheritActionDie" id="data.config.inheritActionDie" {{checked data.config.inheritActionDie}} data-dtype="boolean"/>
+    </div>
     <label for="data.config.inheritSpellCheck">{{localize "DCC.InheritSpellCheck"}}</label>
     <div class="form-fields">
       <input type="checkbox" name="data.config.inheritSpellCheck" id="data.config.inheritSpellCheck" {{checked data.config.inheritSpellCheck}} data-dtype="boolean"/>

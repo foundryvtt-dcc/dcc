@@ -10,29 +10,36 @@ class DCCItem extends Item {
 
     // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.data.data.config) {
-      // Weapons can inherit the owner's action die
-      if (this.data.data.config.inheritActionDie) {
-        this.data.data.actionDie = this.actor.data.data.attributes.actionDice.value
-      }
-
-      // Set default inherit crit range for legacy items
-      if (this.data.data.config.inheritCritRange === undefined) {
-        this.data.data.config.inheritCritRange = true
-      }
-
-      // And inherit crit range if set
-      if (this.data.data.config.inheritCritRange) {
-        this.data.data.critRange = this.actor.data.data.details.critRange
-      } else {
-        // If not inheriting crit range make sure there is a value (for legacy items)
-        if (this.data.data.critRange === null || this.data.data.critRange === undefined) {
-          this.data.data.critRange = 20
+      if (this.data.type === 'weapon') {
+        // Weapons can inherit the owner's action die
+        if (this.data.data.config.inheritActionDie) {
+          this.data.data.actionDie = this.actor.data.data.attributes.actionDice.value
         }
-      }
 
-      // Spells can inherit the owner's spell check
-      if (this.data.data.config.inheritSpellCheck) {
-        this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck
+        // Set default inherit crit range for legacy items
+        if (this.data.data.config.inheritCritRange === undefined) {
+          this.data.data.config.inheritCritRange = true
+        }
+
+        // And inherit crit range if set
+        if (this.data.data.config.inheritCritRange) {
+          this.data.data.critRange = this.actor.data.data.details.critRange
+        } else {
+          // If not inheriting crit range make sure there is a value (for legacy items)
+          if (this.data.data.critRange === null || this.data.data.critRange === undefined) {
+            this.data.data.critRange = 20
+          }
+        }
+      } else if (this.data.type === 'spell') {
+        // Weapons can use the owner's action die for the spell check
+        if (this.data.data.config.inheritActionDie) {
+          this.data.data.spellCheck.die = this.actor.data.data.attributes.actionDice.value
+        }
+
+        // Spells can inherit the owner's spell check and action die
+        if (this.data.data.config.inheritSpellCheck) {
+          this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck
+        }
       }
     }
   }
@@ -86,6 +93,85 @@ class DCCItem extends Item {
         flavor: `${spell} (${game.i18n.localize(ability.label)})`
       })
     }
+  }
+
+  /**
+   * Check for an existing mercurial magic effect
+   * @return
+   */
+  hasExistingMercurialMagic () {
+    return this.data.data.mercurialEffect.value || this.data.data.mercurialEffect.summary || this.data.data.mercurialEffect.description
+  }
+
+  /**
+   * Roll a new mercurial effect for a spell item
+   * @return
+   */
+  async rollMercurialMagic () {
+    if (this.data.type !== 'spell') { return }
+
+    const actor = this.options.actor
+    if (!actor) { return }
+
+    const abilityId = 'lck'
+    const ability = actor.data.data.abilities[abilityId]
+    ability.label = CONFIG.DCC.abilities[abilityId]
+
+    // Roll for a mercurial effect
+    let roll = new Roll('@die+@bonus', {
+      die: '1d100',
+      bonus: ability.mod * 10
+    })
+
+    // Lookup the mercurial magic table if available
+    let mercurialMagicResult = null
+    const mercurialMagicTableName = CONFIG.DCC.mercurialMagicTable
+    if (mercurialMagicTableName) {
+      const mercurialMagicTablePath = mercurialMagicTableName.split('.')
+      let pack
+      if (mercurialMagicTablePath.length === 3) {
+        pack = game.packs.get(mercurialMagicTablePath[0] + '.' + mercurialMagicTablePath[1])
+      }
+      if (pack) {
+        await pack.getIndex() // Load the compendium index
+        const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
+        if (entry) {
+          const table = await pack.getEntity(entry._id)
+          mercurialMagicResult = await table.draw({ roll })
+        }
+      }
+    }
+
+    // Grab the result from the table if present
+    if (mercurialMagicResult) {
+      roll = mercurialMagicResult.roll
+    } else {
+      // Fall back to displaying just the roll
+      roll.roll()
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor: game.i18n.localize('DCC.MercurialMagicRoll')
+      })
+    }
+
+    // Stow away the data in the appropriate fields
+    const updates = {}
+    updates['data.mercurialEffect.value'] = roll.total
+    updates['data.mercurialEffect.summary'] = ''
+    updates['data.mercurialEffect.description'] = ''
+
+    if (mercurialMagicResult) {
+      try {
+        const result = mercurialMagicResult.results[0].text
+        const split = result.split('.')
+        updates['data.mercurialEffect.summary'] = split[0]
+        updates['data.mercurialEffect.description'] = `<p>${result}</p>`
+      } catch (err) {
+        console.error(`Couldn't extract Mercurial Magic result from table:\n${err}`)
+      }
+    }
+
+    this.update(updates)
   }
 
   /**

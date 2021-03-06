@@ -1,5 +1,7 @@
 /* global game, ui */
 
+import EntityImages from './entity-images.js'
+
 /**
  *  Parses Player Stat Blocks (e.g. from Purple Sorceror) into an NPC sheet
  *
@@ -136,28 +138,32 @@ function _parseJSONPCs (pcObject) {
         notes = notes + '  ' + pcObject.equipment + '<br/>'
         pc.items.push({
           name: pcObject.equipment,
-          type: 'equipment'
+          type: 'equipment',
+          img: EntityImages.imageForItem('equipment')
         })
       }
       if (pcObject.equipment2) {
         notes = notes + '  ' + pcObject.equipment2 + '<br/>'
         pc.items.push({
           name: pcObject.equipment2,
-          type: 'equipment'
+          type: 'equipment',
+          img: EntityImages.imageForItem('equipment')
         })
       }
       if (pcObject.equipment3) {
         notes = notes + '  ' + pcObject.equipment3 + '<br/>'
         pc.items.push({
           name: pcObject.equipment3,
-          type: 'equipment'
+          type: 'equipment',
+          img: EntityImages.imageForItem('equipment')
         })
       }
       if (pcObject.tradeGood) {
         notes = notes + '  ' + pcObject.tradeGood + ' (' + game.i18n.localize('DCC.TradeGoods') + ')<br/>'
         pc.items.push({
           name: pcObject.tradeGood,
-          type: 'equipment'
+          type: 'equipment',
+          img: EntityImages.imageForItem('equipment')
         })
       }
       notes = notes + '<br/>'
@@ -184,6 +190,7 @@ function _parseJSONPCs (pcObject) {
         notes = notes + spell.level + ') ' + spell.name + '<br/>'
         pc.items.push({
           name: spell.name,
+          img: EntityImages.imageForItem('spell'),
           type: 'spell',
           data: {
             level: spell.level,
@@ -422,6 +429,7 @@ function _parseWeapon (weaponString) {
     const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
     return {
       name: name,
+      img: 'systems/dcc/styles/images/weapon.webp',
       attackMod: weaponData[2],
       attackDamage: damage,
       melee: melee
@@ -438,6 +446,7 @@ function _parseArmor (armorString) {
     return {
       name: armorFields[1],
       type: 'armor',
+      img: EntityImages.imageForItem('armor'),
       data: {
         acBonus: armorFields[2],
         checkPenalty: armorFields[3],
@@ -458,6 +467,7 @@ function _parseStartingFunds (startingFundsString) {
   return {
     name: 'Coins',
     type: 'treasure',
+    img: EntityImages.imageForItem('treasure'),
     data: {
       value: {
         pp,

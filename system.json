@@ -2,12 +2,30 @@
   "name": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
-  "version": 0.21,
+  "version": 0.22,
   "minimumCoreVersion": "0.6.6",
   "compatibleCoreVersion": "0.7.9",
-  "templateVersion": 3,
-  "author": "Tim L. White",
-  "contributors": { "name" : "Steve Barnett", "email" : "mooped@gmail.com" },
+  "templateVersion": 4,
+  "author": "DCC Foundry Volunteer Team (https://discord.gg/2PR9YH9)",
+  "contributors": [
+    {
+      "name": "Tim L. White",
+      "email": "tim@cyface.com"
+    },
+    {
+      "name": "Steve Barnett",
+      "email": "mooped@gmail.com"
+    },
+    {
+      "name": "Christian Ovsenik",
+      "email": "ceovsenik@gmail.com"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "bug-reporter"
+    }
+  ],
   "esmodules": [
     "module/dcc.js"
   ],
@@ -32,12 +50,14 @@
   ],
   "gridDistance": 5,
   "gridUnits": "ft",
-  "primaryTokenAttribute": "health",
-  "secondaryTokenAttribute": "luck",
+  "primaryTokenAttribute": "attributes.hp",
+  "secondaryTokenAttribute": "abilities.lck.value",
   "socket": true,
   "initiative": "1d20 + @attributes.init.value",
   "url": "https://github.com/cyface/foundryvtt-dcc",
-  "manifest": "https://github.com/cyface/foundryvtt-dcc/raw/master/system.json",
-  "download": "https://github.com/cyface/foundryvtt-dcc/archive/v0.0.21.zip",
+  "manifest": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/raw/master/system.json",
+  "download": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/archive/v0.0.22.zip",
+  "bugs": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/issues",
+  "allowBugReporter": true,
   "license": "LICENSE.txt"
 }

@@ -1,4 +1,4 @@
-/* global game */
+/* global game, Hooks */
 
 export const registerSystemSettings = async function () {
   /**
@@ -27,20 +27,7 @@ export const registerSystemSettings = async function () {
   } catch (e) { }
 
   /**
-   * Compendium to look in for crit tables
-   */
-  game.settings.register('dcc', 'critsCompendium', {
-    name: 'DCC.SettingCriticalHitsCompendium',
-    hint: 'DCC.SettingCriticalHitsCompendiumHint',
-    scope: 'world',
-    config: true,
-    default: '',
-    type: String,
-    choices: tableCompendiumNames
-  })
-
-  /**
-   * Table to use for fumbles
+   * Gather a list of available RollTables from compendium packs
    */
   const rollTables = { '': '-' }
   try {
@@ -51,6 +38,26 @@ export const registerSystemSettings = async function () {
       })
     }
   } catch (e) { }
+
+  /**
+   * Compendium to look in for crit tables
+   */
+  game.settings.register('dcc', 'critsCompendium', {
+    name: 'DCC.SettingCriticalHitsCompendium',
+    hint: 'DCC.SettingCriticalHitsCompendiumHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: tableCompendiumNames,
+    onChange: value => {
+      Hooks.callAll('dcc.registerCriticalHitsPack', value, true)
+    }
+  })
+
+  /**
+   * Table to use for fumbles
+   */
   game.settings.register('dcc', 'fumbleTable', {
     name: 'DCC.SettingFumbleTable',
     hint: 'DCC.SettingFumbleTableHint',
@@ -58,7 +65,10 @@ export const registerSystemSettings = async function () {
     config: true,
     default: '',
     type: String,
-    choices: rollTables
+    choices: rollTables,
+    onChange: value => {
+      Hooks.callAll('dcc.setFumbleTable', value, true)
+    }
   })
 
   /**
@@ -71,7 +81,26 @@ export const registerSystemSettings = async function () {
     config: true,
     default: '',
     type: String,
-    choices: tableCompendiumNames
+    choices: tableCompendiumNames,
+    onChange: value => {
+      Hooks.callAll('dcc.registerDisapprovalPack', value, true)
+    }
+  })
+
+  /**
+   * Table to use for mercurial magic
+   */
+  game.settings.register('dcc', 'mercurialMagicTable', {
+    name: 'DCC.SettingMercurialMagicTable',
+    hint: 'DCC.SettingMercurialMagicTableHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: rollTables,
+    onChange: value => {
+      Hooks.callAll('dcc.setMercurialMagicTable', value, true)
+    }
   })
 
   /**

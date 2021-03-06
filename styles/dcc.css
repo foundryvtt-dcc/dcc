@@ -90,6 +90,15 @@
   margin: 0; }
 
 /* ----------------------------------------- */
+/*  Headings
+/* ----------------------------------------- */
+.journal-sheet h1 {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
+
+.journal-sheet h2 {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
+
+/* ----------------------------------------- */
 /*  Rollable                                 */
 /* ----------------------------------------- */
 .dcc .rollable:hover {
@@ -1090,13 +1099,19 @@
 .dcc.item .sheet-body.spell {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 60px 50px minmax(80px, auto) 50px 80px; }
+  grid-template-rows: 60px 50px minmax(80px, auto) 50px minmax(80px, auto); }
 
 .dcc.item .sheet-body.treasure {
   width: 100%;
   display: grid;
   grid-template-columns: 100%;
   grid-template-rows: 85px 50px minmax(80px, auto); }
+
+.dcc.item .sheet-body.skill {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 50px minmax(80px, auto); }
 
 .dcc.item .value-row {
   height: 150px;
@@ -1119,7 +1134,6 @@
   grid-column: 1 / span 3; }
 
 .dcc.item .sheet-body .description {
-  overflow-y: scroll;
   grid-column: 1 / span 3; }
 
 .dcc.item .sheet-body .armor-header-extras {
@@ -1154,7 +1168,6 @@
   grid-column: 3; }
 
 .dcc.item .sheet-body .mercurial-effect-description {
-  overflow-y: scroll;
   grid-column: 1 / span 3; }
 
 .dcc.item .item-name {

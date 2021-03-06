@@ -1,6 +1,7 @@
 /* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, ENTITY_PERMISSIONS */
 
 import DCCActorConfig from './actor-config.js'
+import EntityImages from './entity-images.js'
 
 /**
  * Extend the basic ActorSheet
@@ -72,6 +73,15 @@ class DCCActorSheet extends ActorSheet {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
     } else {
       this.options.template = 'systems/dcc/templates/actor-sheet-zero-level.html'
+
+      if (!data.isZero) {
+        // Reorder saves on upper level sheet to define tabbing order
+        data.data.saves = {
+          ref: data.data.saves.ref,
+          frt: data.data.saves.frt,
+          wil: data.data.saves.wil
+        }
+      }
     }
 
     // Prepare item lists by type
@@ -688,6 +698,7 @@ class DCCActorSheet extends ActorSheet {
     // Prepare the item object.
     const itemData = {
       name: name,
+      img: EntityImages.imageForItem(type),
       type: type,
       data: data
     }

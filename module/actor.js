@@ -622,16 +622,17 @@ class DCCActor extends Actor {
 
     // Lookup the crit table if available
     let critResult = null
-    const critsPackName = game.settings.get('dcc', 'critsCompendium')
-    if (critsPackName) {
-      const pack = game.packs.get(critsPackName)
-      if (pack) {
-        await pack.getIndex() // Load the compendium index
-        const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
-        const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
-        if (entry) {
-          const table = await pack.getEntity(entry._id)
-          critResult = await table.draw({ roll, displayChat: options.displayStandardCards })
+    for (const criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
+      if (criticalHitPackName) {
+        const pack = game.packs.get(criticalHitPackName)
+        if (pack) {
+          await pack.getIndex() // Load the compendium index
+          const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
+          const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
+          if (entry) {
+            const table = await pack.getEntity(entry._id)
+            critResult = await table.draw({ roll, displayChat: options.displayStandardCards })
+          }
         }
       }
     }
@@ -681,7 +682,7 @@ class DCCActor extends Actor {
 
     // Lookup the fumble table if available
     let fumbleResult = null
-    const fumbleTableName = game.settings.get('dcc', 'fumbleTable')
+    const fumbleTableName = CONFIG.DCC.fumbleTable
     if (fumbleTableName) {
       const fumbleTablePath = fumbleTableName.split('.')
       let pack
@@ -853,15 +854,16 @@ class DCCActor extends Actor {
 
       // Lookup the disapproval table if available
       let disapprovalTable = null
-      const disapprovalPackName = game.settings.get('dcc', 'disapprovalCompendium')
-      const disapprovalTableName = this.data.data.class.disapprovalTable
-      if (disapprovalPackName && disapprovalTableName) {
-        const pack = game.packs.get(disapprovalPackName)
-        if (pack) {
-          await pack.getIndex() // Load the compendium index
-          const entry = pack.index.find((entity) => entity.name === disapprovalTableName)
-          if (entry) {
-            disapprovalTable = await pack.getEntity(entry._id)
+      for (const disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
+        const disapprovalTableName = this.data.data.class.disapprovalTable
+        if (disapprovalPackName && disapprovalTableName) {
+          const pack = game.packs.get(disapprovalPackName)
+          if (pack) {
+            await pack.getIndex() // Load the compendium index
+            const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
+            if (entry) {
+              disapprovalTable = await pack.getEntity(entry._id)
+            }
           }
         }
       }
