@@ -1134,7 +1134,6 @@
   grid-column: 1 / span 3; }
 
 .dcc.item .sheet-body .description {
-  overflow-y: scroll;
   grid-column: 1 / span 3; }
 
 .dcc.item .sheet-body .armor-header-extras {
@@ -1169,7 +1168,6 @@
   grid-column: 3; }
 
 .dcc.item .sheet-body .mercurial-effect-description {
-  overflow-y: scroll;
   grid-column: 1 / span 3; }
 
 .dcc.item .item-name {

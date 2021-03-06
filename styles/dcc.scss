@@ -1333,7 +1333,6 @@ $border-style: 2px groove #eeede0;
     }
   
     .description {
-      overflow-y: scroll;
       grid-column: 1 / span 3;
     }
   
@@ -1378,7 +1377,6 @@ $border-style: 2px groove #eeede0;
     }
   
     .mercurial-effect-description {
-      overflow-y: scroll;
       grid-column: 1 / span 3;
     }
   }
