@@ -6,8 +6,20 @@
   "minimumCoreVersion": "0.6.6",
   "compatibleCoreVersion": "0.7.9",
   "templateVersion": 4,
-  "author": "Tim L. White",
-  "contributors": { "name" : "Steve Barnett", "email" : "mooped@gmail.com" },
+  "author": "DCC Foundry Volunteer Team (https://discord.gg/2PR9YH9)",
+  "contributors": [
+    {
+      "name": "Tim L. White",
+      "email": "tim@cyface.com"
+    },
+    {
+      "name": "Steve Barnett",
+      "email": "mooped@gmail.com"
+    },
+    {
+      "name": "Christian Ovsenik"
+    }
+  ],
   "dependencies": [
     {
       "name": "bug-reporter"
