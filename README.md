@@ -8,15 +8,15 @@ Join us on the [virtual-tabletop channel](https://discord.gg/2PR9YH9) on the Goo
 
 Manifest URL: https://github.com/cyface/foundryvtt-dcc/raw/master/system.json
 
-*Note that this system does not contain content from the DCC rulebook, only rollable character sheets.  Once Foundry supports discrete copyright-protectable compendia, we will work with Goodman Games to get that content ready for out-of-the-box use.  In the mean time, please see the user guide for how to import content from the PDF rulebook for your personal use.*
+*Note that this system does not contain content from copyrighted DCC products, only rollable character sheets.  Work is in progress to support a paid module containing copyrighted Goodman Games content ready for out-of-the-box use.  In the mean time, please see the user guide for how to import content from the PDF rulebook for your personal use.*
 
 ###### Maintainers
 * Steve Barnett (@mooped)
+* Christian Ovsenik (@algnc)
 * Tim L. White (@cyface, tim@cyface.com)
 
 ###### Contributors
 * Connor Stone (@ckwk)
-* Christian Ovsenik (@algnc)
 * @adotor
 
-_Based on material ©2020 Goodman Games, used with permission._
+_Based on material ©2012 Goodman Games, used with permission._
