@@ -17,7 +17,8 @@
       "email": "mooped@gmail.com"
     },
     {
-      "name": "Christian Ovsenik"
+      "name": "Christian Ovsenik",
+      "email": "ceovsenik@gmail.com"
     }
   ],
   "dependencies": [
@@ -54,8 +55,8 @@
   "socket": true,
   "initiative": "1d20 + @attributes.init.value",
   "url": "https://github.com/cyface/foundryvtt-dcc",
-  "manifest": "https://github.com/cyface/foundryvtt-dcc/raw/master/system.json",
-  "download": "https://github.com/cyface/foundryvtt-dcc/archive/v0.0.22.zip",
+  "manifest": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/raw/master/system.json",
+  "download": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/archive/v0.0.22.zip",
   "bugs": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/issues",
   "allowBugReporter": true,
   "license": "LICENSE.txt"
