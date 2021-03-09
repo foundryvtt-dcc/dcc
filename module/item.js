@@ -72,14 +72,19 @@ class DCCItem extends Item {
     // Lookup the appropriate table
     const resultsRef = this.data.data.results
     const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table
-    let resultsTable = game.tables.entities.find(predicate)
-    if (!resultsTable) {
+    let resultsTable
+    // If a collection is specified then check the appropriate pack for the spell
+    if (resultsRef.collection) {
       const pack = game.packs.get(resultsRef.collection)
       if (pack) {
         await pack.getIndex()
         const entry = pack.index.find(predicate)
         resultsTable = await pack.getEntity(entry._id)
       }
+    }
+    // Otherwise fall back to searching the world
+    if (!resultsTable) {
+      resultsTable = game.tables.entities.find(predicate)
     }
 
     // Draw from the table if found, otherwise display the roll
