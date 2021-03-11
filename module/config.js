@@ -374,4 +374,9 @@ DCC.defaultItemImages = {
   weapon: 'systems/dcc/styles/images/weapon.webp'
 }
 
+// Templates
+DCC.templates = {
+  spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
+}
+
 export default DCC

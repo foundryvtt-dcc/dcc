@@ -341,6 +341,51 @@ $border-style: 2px groove #eeede0;
 }
 
 /* ----------------------------------------- */
+/*  Spell Check Chat Card                    */
+/* ----------------------------------------- */
+.table-draw {
+  .table-results {
+    .table-result {
+      .result-range {
+        flex: 0 0 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+  }
+
+  .spell-check-mod {
+    height: 24px;
+    position: relative;
+    margin-top: 5px;
+    line-height: 24px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #999;
+    border-radius: 3px;
+    box-shadow: 0 0 2px #FFF inset;
+    word-break: break-all;
+ 
+    h4 {
+      flex: 0;
+      font-size: 20px;
+    }
+
+    .critical {
+      color: green;
+      font-weight: 900;
+    }
+
+    .fumble {
+      color: red;
+      font-weight: 900;
+    }
+  }
+}
+
+/* ----------------------------------------- */
 /*  Criticals                                */
 /* ----------------------------------------- */
 

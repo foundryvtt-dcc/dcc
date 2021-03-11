@@ -1,0 +1,33 @@
+<div class="table-draw" data-table-id="{{ table._id }}">
+    {{#if description}}
+    <div class="table-description">{{{description}}}</div>
+    {{/if}}
+    {{{ rollHTML }}}
+    {{#if crit}}
+      <div class="spell-check-mod">
+        <h4 class="critical">{{localize "DCC.SpellCheckCrit"}}</h4>
+      </div>
+    {{/if}}
+    {{#if fumble}}
+      <div class="spell-check-mod">
+        <h4 class="fumble">{{localize "DCC.SpellCheckFumble"}}</h4>
+      </div>
+    {{/if}}
+    <ol class="table-results">
+        {{#each results}}
+        <li class="table-result flexrow" data-result-id="{{ this._id }}">
+          <div class="result-range">
+            {{#if (gt this.range.[0] 0)}}
+              <i class="fas fa-sort-up spell-shift-down"></i>
+              <p>{{this.range.[0]}}</p>
+            {{/if}}
+            {{#if (lt this.range.[1] 99)}}
+              <p>{{this.range.[1]}}</p>
+              <i class="fas fa-sort-down spell-shift-up"></i>
+            {{/if}}
+          </div>
+          <div class="result-text">{{{this.text}}}</div>
+        </li>
+        {{/each}}
+    </ol>
+</div>
