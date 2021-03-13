@@ -1,0 +1,221 @@
+<html>
+<head>
+    <style>
+        @font-face {
+            font-family: "Cooper Black";
+            src: url("styles/fonts/Cooper.otf") format("otf");
+        }
+
+        @font-face {
+            font-family: "Book Antiqua";
+            src: url("styles/fonts/Book-Antiqua.otf") format("otf");
+        }
+
+        .outer {
+            height: 588px;
+            width: 627px;
+            border: 3px solid black;
+            padding: 10px;
+        }
+
+        .attributes {
+            height: 500px;
+            width: 235px;
+            grid-template-columns: 165px 65px;
+            grid-template-rows: 79px 79px 79px 79px 79px 79px 79px;
+            display: grid;
+        }
+
+        .attribute-box {
+            height: 65px;
+            width: 230px;
+            grid-template-columns: 165px 65px;
+            grid-template-rows: 23px 40px;
+            display: grid;
+            padding-bottom:  7px;
+        }
+
+        .attribute-name-box {
+            height: 23px;
+            width: 163px;
+            background-color: rgba(0, 0, 0, 0.75);
+            grid-column-start: 1;
+            grid-column-end: 1;
+            grid-row-start: 1;
+            grid-row-end: 2;
+            padding: 1px;
+            text-align: center;
+        }
+
+        .attribute-name {
+            font-family: "Cooper Black", serif;
+            letter-spacing: 1px;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.95);
+            margin: 1px auto 1px auto;
+        }
+
+        .attribute-score-box {
+            height: 44px;
+            width: 44px;
+            border: 5px solid rgba(0, 0, 0, 0.75);
+            grid-column-start: 2;
+            grid-column-end: 2;
+            grid-row-start: 1;
+            grid-row-end: 2;
+            padding: 7px;
+        }
+
+        .attribute-score-box input {
+            height: 44px;
+            width: 44px;
+            font-size: 24px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 0, 0, 0.20);
+            padding: 5px;
+            background-color: rgba(255, 255, 255, 0.95);
+            text-align: center;
+            font-family: "Book Antiqua", serif;
+        }
+
+        .attribute-sub-box {
+            height: 40px;
+            width: 153px;
+            padding: 5px;
+            grid-column-start: 1;
+            grid-column-end: 1;
+            grid-row-start: 2;
+            grid-row-end: 3;
+            display: grid;
+            grid-template-columns: 124px 30px;
+            grid-template-rows: 19px 19px;
+        }
+
+        .attribute-sub-box-modifier-label {
+            font-family: "Cooper Black", serif;
+            font-size: 14px;
+            grid-row-start: 1;
+            grid-row-end: 1;
+        }
+
+        .attribute-sub-box-modifier-input {
+            font-family: "Book Antiqua", serif;
+            font-size: 12px;
+            grid-row-start: 1;
+            grid-row-end: 1;
+            text-align: center;
+            height: 17px;
+        }
+
+        .attribute-sub-box-max-val-label {
+            font-family: "Cooper Black", serif;
+            font-size: 14px;
+            grid-row-start: 2;
+            grid-row-end: 2;
+            margin-top: 2px;
+            align-self: end;
+            margin-bottom: 1px;
+        }
+
+        .attribute-sub-box-max-val-input {
+            font-family: "Book Antiqua", serif;
+            font-size: 12px;
+            grid-row-start: 2;
+            grid-row-end: 2;
+            text-align: center;
+            align-self: end;
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+<div class="outer">
+    <div class="attributes">
+        <div class="attribute-box" style="grid-row-start: 1; grid-row-end: 1; border-bottom: 2px dashed rgba(0, 0, 0, 0.20)">
+            <div class="attribute-name-box">
+                <div class="attribute-name">Strength</div>
+            </div>
+            <div class="attribute-score-box">
+                <input name="strength-value" value="18" size="3">
+            </div>
+            <div class="attribute-sub-box">
+                <label for="strength-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
+                <input id="strength-max-value" class="attribute-sub-box-modifier-input" value="+3" size="3">
+                <label for="strength-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
+                <input id="strength-modifier" class="attribute-sub-box-max-val-input" value="18" size="3">
+            </div>
+        </div>
+        <div class="attribute-box" style="grid-row-start: 2; grid-row-end: 2; border-bottom: 2px dashed rgba(0, 0, 0, 0.20)"">
+            <div class="attribute-name-box">
+                <div class="attribute-name">Agility</div>
+            </div>
+            <div class="attribute-score-box">
+                <input name="strength-value" value="16" size="3">
+            </div>
+            <div class="attribute-sub-box">
+                <label for="agility-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
+                <input id="agility-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
+                <label for="agility-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
+                <input id="agility-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            </div>
+        </div>
+        <div class="attribute-box" style="grid-row-start: 3; grid-row-end: 3; border-bottom: 2px dashed rgba(0, 0, 0, 0.20)"">
+            <div class="attribute-name-box">
+                <div class="attribute-name">Stamina</div>
+            </div>
+            <div class="attribute-score-box">
+                <input name="strength-value" value="16" size="3">
+            </div>
+            <div class="attribute-sub-box">
+                <label for="agility-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
+                <input id="agility-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
+                <label for="agility-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
+                <input id="agility-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            </div>
+        </div>
+        <div class="attribute-box" style="grid-row-start: 4; grid-row-end: 4; border-bottom: 2px dashed rgba(0, 0, 0, 0.20)"">
+            <div class="attribute-name-box">
+                <div class="attribute-name">Personality</div>
+            </div>
+            <div class="attribute-score-box">
+                <input name="strength-value" value="16" size="3">
+            </div>
+            <div class="attribute-sub-box">
+                <label for="agility-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
+                <input id="agility-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
+                <label for="agility-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
+                <input id="agility-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            </div>
+        </div>
+        <div class="attribute-box" style="grid-row-start: 5; grid-row-end: 5; border-bottom: 2px dashed rgba(0, 0, 0, 0.20)"">
+            <div class="attribute-name-box">
+                <div class="attribute-name">Luck</div>
+            </div>
+            <div class="attribute-score-box">
+                <input name="strength-value" value="16" size="3">
+            </div>
+            <div class="attribute-sub-box">
+                <label for="agility-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
+                <input id="agility-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
+                <label for="agility-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
+                <input id="agility-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            </div>
+        </div>
+        <div class="attribute-box" style="grid-row-start: 6; grid-row-end: 6">
+            <div class="attribute-name-box">
+                <div class="attribute-name">Intelligence</div>
+            </div>
+            <div class="attribute-score-box">
+                <input name="strength-value" value="16" size="3">
+            </div>
+            <div class="attribute-sub-box">
+                <label for="agility-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
+                <input id="agility-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
+                <label for="agility-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
+                <input id="agility-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
