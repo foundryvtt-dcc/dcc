@@ -1,16 +1,12 @@
 <component name="libraryTable">
   <library name="Foundry-Win" type="javaScript">
-    <properties>
-      <sourceFilesUrls>
-        <item url="file://$PROJECT_DIR$/../../../../../../Program Files/FoundryVTT/resources/app/public/scripts/foundry.js" />
-      </sourceFilesUrls>
-    </properties>
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/../../../../../../Program Files/FoundryVTT/resources/app/public/scripts/foundry.js" />
+      <root url="file:///Program Files/FoundryVTT/resources/app/public/scripts/foundry.js" />
     </CLASSES>
     <DOCUMENTATION>
       <root url="https://foundryvtt.com/api/" />
     </DOCUMENTATION>
+    <JAVADOC />
     <SOURCES />
   </library>
 </component>
