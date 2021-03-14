@@ -449,6 +449,7 @@ class DCCActor extends Actor {
             weapon: weapon.name
           })
         }
+        ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
         await CONFIG.ChatMessage.entityClass.create(messageData)
       }
 
@@ -468,6 +469,7 @@ class DCCActor extends Actor {
             weapon: weapon.name
           })
         }
+        ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
         await CONFIG.ChatMessage.entityClass.create(messageData)
       }
 
@@ -505,6 +507,7 @@ class DCCActor extends Actor {
         }),
         sound: CONFIG.sounds.dice
       }
+      ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
       await CONFIG.ChatMessage.entityClass.create(messageData)
     }
   }
@@ -798,6 +801,7 @@ class DCCActor extends Actor {
         content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
       }
+      ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
       await CONFIG.ChatMessage.entityClass.create(messageData)
     }
 

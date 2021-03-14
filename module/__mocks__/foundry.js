@@ -138,6 +138,10 @@ class ChatMessage {
   static getSpeaker ({ scene, actor, token, alias } = {}) {
     return actor
   }
+
+  static applyRollMode (messageData, rollMode) {
+
+  }
 }
 
 global.ChatMessage = ChatMessage
@@ -182,6 +186,19 @@ class Game {
 global.Game = Game
 global.game = new Game()
 global.game.user = { _id: 1 }
+
+/**
+ * Settings
+ */
+global.gameSettingsGetMock = jest.fn((module, key) => {}).mockName('game.settings.get')
+
+class ClientSettings {
+  constructor (worldSettings) {
+    this.get = global.gameSettingsGetMock
+  }
+}
+
+global.game.settings = new ClientSettings()
 
 /**
  * Roll
