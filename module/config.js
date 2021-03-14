@@ -97,6 +97,15 @@ DCC.items = {
   treasure: 'DCC.Treasure'
 }
 
+/**
+ * Spell casting modes
+ * @type {String}
+ */
+DCC.castingModes = {
+  wizard: 'DCC.SpellCastingModeWizard',
+  cleric: 'DCC.SpellCastingModeCleric'
+}
+
 /* -------------------------------------------- */
 
 /**
