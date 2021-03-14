@@ -1,323 +1,18 @@
 <html>
 <head>
-    <style>
-        @font-face {
-            font-family: "Cooper Black";
-            src: url("styles/fonts/Cooper.otf") format("otf");
-        }
-
-        @font-face {
-            font-family: "Book Antiqua";
-            src: url("styles/fonts/Book-Antiqua.otf") format("otf");
-        }
-
-        :root {
-            --dark-color: rgba(0, 0, 0, 0.75);
-            --medium-color: rgba(0, 0, 0, 0.5);
-            --light-color: rgba(255, 255, 255, 0.87);
-            --dark-bg: url("styles/images/denim.png");
-            --data-font: "Book Antiqua", serif;
-            --label-font: "Cooper Black", serif;
-        }
-
-        .outer {
-            height: 588px;
-            width: 627px;
-            border: 2px solid var(--dark-color);
-            padding: 10px;
-            display: grid;
-            grid-template-rows: 130px 70px 9px 70px 9px 70px 9px 70px 9px 70px 9px 70px;
-            grid-template-columns: 250px 155px 111px 111px;
-            font-size: 16px;
-            font-family: var(--label-font);
-            background: url("styles/images/parchment.jpeg");
-            color: var(--dark-color);
-            text-align: center;
-        }
-
-        .outer input,
-        .outer select {
-            background: none;
-            border-width: 0 0 1px 0;
-            text-align: center;
-            text-align-last: center;
-        }
-
-        .attribute-box {
-            height: 65px;
-            width: 230px;
-            grid-template-columns: 165px 65px;
-            grid-template-rows: 23px 40px;
-            display: grid;
-            padding-bottom: 7px;
-        }
-
-        .attribute-name {
-            background: var(--dark-bg);
-            color: var(--light-color);
-            height: 21px;
-            grid-row-start: 1;
-            grid-row-end: 2;
-            letter-spacing: 1px;
-            padding: 1px;
-            text-align: center;
-            width: 163px;
-        }
-
-        .attribute-score-box {
-            height: 57px;
-            width: 57px;
-            border: 5px solid var(--dark-color);
-            grid-column: 2;
-            grid-row-start: 1;
-            grid-row-end: 2;
-        }
-
-        .attribute-score-box input {
-            height: 44px;
-            width: 44px;
-            font-size: 28px;
-            border: none;
-            text-align: center;
-            font-family: var(--data-font);
-            margin: 7px 0 0 0;
-        }
-
-        .attribute-sub-box {
-            height: 40px;
-            width: 153px;
-            padding: 4px;
-            grid-column: 1;
-            grid-row-start: 2;
-            grid-row-end: 3;
-            display: grid;
-            grid-template-columns: 124px 30px;
-            grid-template-rows: 19px 19px;
-        }
-
-        .attribute-sub-box label {
-            font-family: var(--label-font);
-            font-size: 14px;
-            margin-top: 2px;
-            align-self: end;
-            margin-bottom: 1px;
-            text-align: left;
-        }
-
-        .attribute-sub-box input {
-            font-family: var(--data-font);
-            font-size: 12px;
-            text-align: center;
-            align-self: end;
-            height: 18px;
-            border-width: 0 0 1px 0;
-        }
-
-        .ac-and-hp-box {
-            display: grid;
-            grid-template-columns: 100px 100px;
-            grid-template-rows: 65px 20px 20px;
-            margin: 7px 0 0 15px;
-        }
-
-        .ac-and-hp-box input {
-            font-family: var(--data-font);
-            font-size: 24px;
-            border: none;
-        }
-
-        .combat-basics {
-            display: grid;
-            grid-template-columns: 90px 130px 90px 39px;
-            grid-template-rows: 30px 25px 26px 25px;
-            border-color: var(--dark-color);
-            border-style: solid;
-            border-width: 0 4px 4px 4px;
-            font-size: 13px;
-            height: 106px;
-            width: 370px;
-        }
-
-        .combat-basics label {
-            text-align: left;
-            margin-left: 7px;
-        }
-
-        .combat-basics input,
-        .combat-basics select {
-            font-size: 13px;
-            font-family: var(--data-font);
-            height: 16px;
-        }
-
-        .combat-basics-title {
-            background: var(--dark-bg);
-            color: var(--light-color);
-            font-family: var(--label-font);
-            font-size: 16px;
-            grid-row: 1;
-            grid-column-start: 1;
-            grid-column-end: 3;
-            height: 22px;
-            margin: 0 0 0 -1px;
-            padding-top: 2px;
-            width: 371px;
-        }
-
-        .hit-bonus-box {
-            display: grid;
-            grid-template-rows: 30px 30px;
-            width: 89px;
-            height: 63px;
-            border-color: var(--dark-color);
-            border-style: solid;
-            border-width: 0 4px 4px 4px;
-            margin-left: 10px;
-        }
-
-        .hit-bonus-box label {
-            background: var(--dark-bg);
-            color: var(--light-color);
-            font-size: 12px;
-            grid-row: 1;
-            width: 91px;
-            padding-top: 1px;
-            margin-left: -1px;
-            height: 31px;
-        }
-
-        .hit-bonus-box input {
-            border: none;
-            grid-row: 2;
-            font-size: 18px;
-            width: 70px;
-            margin: 8px auto 0 auto;
-            height: 20px;
-            font-family: var(--data-font);
-        }
-
-        .languages-box {
-            display: grid;
-            grid-template-rows: 17px 30px;
-            width: 369px;
-            height: 63px;
-            border-color: var(--dark-color);
-            border-style: solid;
-            border-width: 0 4px 4px 4px;
-        }
-
-        .languages-box label {
-            background: var(--dark-bg);
-            color: var(--light-color);
-            font-size: 12px;
-            grid-row: 1;
-            width: 370px;
-            padding-top: 1px;
-            padding-left: 4px;
-            margin-left: -1px;
-            text-align: left;
-        }
-
-        .languages-box textarea {
-            background: none;
-            border: none;
-            grid-row: 2;
-            font-size: 12px;
-            width: 362px;
-            margin: 3px;
-            height: 40px;
-            font-family: var(--data-font);
-        }
-
-        .lucky-roll-box {
-            display: grid;
-            grid-template-rows: 17px 30px;
-            width: 138px;
-            height: 63px;
-            border-color: var(--dark-color);
-            border-style: solid;
-            border-width: 0 4px 4px 4px;
-        }
-
-        .lucky-roll-box textarea {
-            border: none;
-            grid-row: 2;
-            font-size: 12px;
-            width: 134px;
-            margin: 3px;
-            height: 40px;
-            font-family: var(--data-font);
-            background: none;
-        }
-
-        .lucky-roll-box label {
-            background: var(--dark-bg);
-            color: var(--light-color);
-            font-size: 12px;
-            grid-row: 1;
-            width: 141px;
-            padding-top: 1px;
-            margin-left: -1px;
-        }
-
-        .portrait {
-            border: 2px solid black;
-            margin: 0 0 8px 10px;
-            display: grid;
-            grid-template-rows: 18px 195px;
-            height: 220px;
-        }
-
-        .portrait label {
-            background: var(--dark-bg);
-            color: var(--light-color);
-            font-size: 14px;
-        }
-
-        .row-separator {
-            border-bottom: 2px dotted var(--medium-color);
-            margin: 1px 0 5px 0;
-        }
-
-        .saving-throw-box {
-            display: grid;
-            grid-template-columns: 55px 40px;
-            background: var(--dark-bg);
-            color: var(--light-color);
-            padding-top: 10px;
-            height: 56px;
-            width: 146px;
-            margin-right: 25px;
-        }
-
-        .saving-throw-box input {
-            grid-column: 1;
-            background: #DBD9CD;
-            border-radius: 100px;
-            font-size: 18px;
-            font-family: var(--data-font);
-            margin-left: 6px;
-            height: 50px;
-            width: 50px;
-        }
-
-        .saving-throw-box label {
-            grid-column: 2;
-            margin: 5px 0 0 7px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/character.css">
 </head>
 <body>
 <div class="outer">
     <div style="grid-area: 1 / 1;" class="ac-and-hp-box">
-        <svg style="grid-area: 1 / 1; margin: 0 0 0 15px" width="68" height="64" viewBox="0 0 68 64"
+        <svg style="grid-area: 1 / 1; justify-self: center" width="68" height="65" viewBox="0 0 68 64"
              fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M65 3H3C2.99995 22.5946 7.3056 61 35.2917 61C63.2778 61 65 11.6216 65 3Z" stroke="black"
                   stroke-opacity="0.75" stroke-width="5"/>
         </svg>
         <input style="grid-area: 1 / 1" id="ac-value" value="14">
         <label for="ac-value" style="grid-row-start: 2; grid-row-end: 4; grid-column: 1">Armor<br/>Class</label>
-        <svg style="grid-area: 1 / 2; margin: 0 0 0 14px" width="70" height="64" viewBox="0 0 70 64"
+        <svg style="grid-area: 1 / 2; justify-self: center" width="70" height="65" viewBox="0 0 70 64"
              fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"/>
         </svg>
@@ -334,10 +29,10 @@
         <label for="initiative-value" style="grid-area: 2 / 1">Initiative:</label>
         <input id="initiative-value" style="grid-area: 2 / 2" value="+3" size="3">
         <label for="action-dice-value" style="grid-area: 3 / 1; ">Action Dice:</label>
-        <select name="action-dice-value" id="action-dice-value" style="grid-area: 3 / 2; width: 120px">
+        <select name="action-dice-value" id="action-dice-value" style="grid-area: 3 / 2; width: 129px">
             <option value="1d20">1d20</option>
             <option value="1d20-1d20">1d20/1d16</option>
-            <option value="1d16-1d20-1d16">1d20/1d20/1d16</option>
+            <option value="1d20-1d20-1d16">1d20/1d20/1d16</option>
         </select>
         <label for="attack-value" style="grid-area: 4 / 1">Attack:</label>
         <input id="attack-value" style="grid-area: 4 / 2" value="+3" size="3">
@@ -348,17 +43,15 @@
         <label for="speed-value" style="grid-area: 4 / 3">Speed:</label>
         <input id="speed-value" class="combat-basics-input" style="grid-area: 4 / 4" value="30'" size="3">
     </div>
-    <div style="grid-area: 2 / 1" class="attribute-box">
-        <label for="strength-value" class="attribute-name">Strength</label>
-        <div class="attribute-score-box">
-            <input id="strength-value" value="18" size="3">
+    <div style="grid-area: 2 / 1" class="ability-box">
+        <label for="strength-value" class="ability-name">Strength</label>
+        <div class="ability-score-box">
+            <input id="strength-value" value="18" size="2">
         </div>
-        <div class="attribute-sub-box">
-            <label for="strength-max-value" style="grid-area: 1 / 1">Modifier:</label>
-            <input id="strength-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-            <label for="strength-modifier" style="grid-area: 2 / 1">Maximum Value:</label>
-            <input id="strength-modifier" style="grid-area: 1 / 2" value="18" size="3">
-        </div>
+        <label for="strength-max-value" style="grid-area: 2 / 1">Modifier:</label>
+        <input id="strength-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+        <label for="strength-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+        <input id="strength-modifier" style="grid-area: 3 / 2" value="18" size="2">
     </div>
     <div style="grid-area: 2 / 2">
         <img src="styles/images/dccrpg-logo.png" height="60px" width="110px" style="opacity: 0.35; margin-top: 0px">
@@ -367,24 +60,22 @@
         <label for="melee-attack-value">Melee<br/>Attack</label>
         <input id="melee-attack-value" value="+2">
     </div>
-    <div style="grid-area: 2 / 4; margin-left: 14px" class="hit-bonus-box">
+    <div style="grid-area: 2 / 4" class="hit-bonus-box">
         <label for="melee-damage-value">Melee<br/>Damage</label>
         <input id="melee-damage-value" value="1d6+2">
     </div>
 
     <div style="grid-row: 3; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
 
-    <div style="grid-area: 4 / 1" class="attribute-box">
-        <label for="agility-value" class="attribute-name">Agility</label>
-        <div class="attribute-score-box">
-            <input id="agility-value" value="16" size="3">
+    <div style="grid-area: 4 / 1" class="ability-box">
+        <label for="agility-value" class="ability-name">Agility</label>
+        <div class="ability-score-box">
+            <input id="agility-value" value="16" size="2">
         </div>
-        <div class="attribute-sub-box">
-            <label for="agility-max-value" style="grid-area: 1 / 1">Modifier:</label>
-            <input id="agility-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-            <label for="agility-modifier" style="grid-area: 2 / 1">Maximum Value:</label>
-            <input id="agility-modifier" style="grid-area: 1 / 2" value="18" size="3">
-        </div>
+        <label for="agility-max-value" style="grid-area: 2 / 1">Modifier:</label>
+        <input id="agility-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+        <label for="agility-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+        <input id="agility-modifier" style="grid-area: 3 / 2" value="18" size="2">
     </div>
     <div style="grid-area: 4 / 2" class="saving-throw-box">
         <input id="reflex-save-value" value="+2">
@@ -394,89 +85,81 @@
         <label for="ranged-attack-value">Ranged<br/>Attack</label>
         <input id="ranged-attack-value" value="+2">
     </div>
-    <div style="grid-area: 4 / 4; margin-left: 14px" class="hit-bonus-box">
+    <div style="grid-area: 4 / 4" class="hit-bonus-box">
         <label for="ranged-damage-value">Ranged<br/>Damage</label>
         <input id="ranged-damage-value" value="1d6+2">
     </div>
 
     <div style="grid-row: 5; grid-column-start: 1; grid-column-end: 5" class="row-separator"></div>
 
-    <div style="grid-row: 6; grid-column: 1" class="attribute-box">
-        <label for="stamina-value" class="attribute-name">Stamina</label>
-        <div class="attribute-score-box">
-            <input id="stamina-value" value="16" size="3">
+    <div style="grid-row: 6; grid-column: 1" class="ability-box">
+        <label for="stamina-value" class="ability-name">Stamina</label>
+        <div class="ability-score-box">
+            <input id="stamina-value" value="16" size="2">
         </div>
-        <div class="attribute-sub-box">
-            <label for="stamina-max-value" style="grid-area: 1 / 1">Modifier:</label>
-            <input id="stamina-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-            <label for="stamina-modifier" style="grid-area: 2 / 1">Maximum Value:</label>
-            <input id="stamina-modifier" style="grid-area: 1 / 2" value="18" size="3">
-        </div>
+        <label for="stamina-max-value" style="grid-area: 2 / 1">Modifier:</label>
+        <input id="stamina-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+        <label for="stamina-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+        <input id="stamina-modifier" style="grid-area: 3 / 2" value="18" size="2">
     </div>
     <div style="grid-row: 6; grid-column: 2" class="saving-throw-box">
         <input id="fortitude-save-value" value="+2">
-        <label for="fortitude-save-value">Fortitude<br/>Save</label>
+        <label for="fortitude-save-value" style="letter-spacing: 0">Fortitude<br/>Save</label>
     </div>
-    <div style="grid-row-start: 6; grid-row-end: 11; grid-column-start: 3; grid-column-end: 7" class="portrait">
+    <div style="grid-row-start: 6; grid-row-end: 11; grid-column-start: 3; grid-column-end: 5" class="portrait">
         <label for="portrait" style="grid-row: 1">Portrait</label>
-        <img id="portrait" style="grid-row: 2; margin: 5px 0 0 7px" src="styles/images/hugh.png" height="193px"
+        <img id="portrait" style="grid-row: 2; margin: 6px 0 0 15px" src="styles/images/hugh.png" height="193px"
              width="193x">
     </div>
 
-    <div style="grid-row: 7; grid-column-start: 1; grid-column-end: 3; width: 396px" class="row-separator"></div>
+    <div style="grid-row: 7; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
-    <div style="grid-row: 8; grid-column: 1" class="attribute-box">
-        <label for="personality-value" class="attribute-name">Personality</label>
-        <div class="attribute-score-box">
-            <input id="personality-value" value="16" size="3">
+    <div style="grid-row: 8; grid-column: 1" class="ability-box">
+        <label for="personality-value" class="ability-name">Personality</label>
+        <div class="ability-score-box">
+            <input id="personality-value" value="16" size="2">
         </div>
-        <div class="attribute-sub-box">
-            <label for="personality-max-value" style="grid-area: 1 / 1">Modifier:</label>
-            <input id="personality-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-            <label for="personality-modifier" style="grid-area: 2 / 1">Maximum Value:</label>
-            <input id="personality-modifier" style="grid-area: 1 / 2" value="18" size="3">
-        </div>
+        <label for="personality-max-value" style="grid-area: 2 / 1">Modifier:</label>
+        <input id="personality-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+        <label for="personality-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+        <input id="personality-modifier" style="grid-area: 3 / 2" value="18" size="2">
     </div>
     <div style="grid-row: 8; grid-column: 2" class="saving-throw-box">
         <input id="will-save-value" value="+2">
         <label for="will-save-value">Will<br/>Save</label>
     </div>
 
-    <div style="grid-row: 9; grid-column-start: 1; grid-column-end: 3; width: 396px" class="row-separator"></div>
+    <div style="grid-row: 9; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
-    <div style="grid-row: 10; grid-column: 1" class="attribute-box">
-        <label for="luck-value" class="attribute-name">Luck</label>
-        <div class="attribute-score-box">
-            <input id="luck-value" value="16" size="3">
+    <div style="grid-row: 10; grid-column: 1" class="ability-box">
+        <label for="luck-value" class="ability-name">Luck</label>
+        <div class="ability-score-box">
+            <input id="luck-value" value="16" size="2">
         </div>
-        <div class="attribute-sub-box">
-            <label for="luck-max-value" style="grid-area: 1 / 1">Modifier:</label>
-            <input id="luck-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-            <label for="luck-modifier" style="grid-area: 2 / 1">Maximum Value:</label>
-            <input id="luck-modifier" style="grid-area: 1 / 2" value="18" size="3">
-        </div>
+        <label for="luck-max-value" style="grid-area: 2 / 1">Modifier:</label>
+        <input id="luck-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+        <label for="luck-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+        <input id="luck-modifier" style="grid-area: 3 / 2" value="18" size="2">
     </div>
     <div style="grid-row: 10; grid-column: 2" class="lucky-roll-box">
         <label for="lucky-roll-value">Lucky Roll</label>
-        <textarea id="lucky-roll-value" rows="2">The Bull - +1 to Hit Rolls</textarea>
+        <textarea id="lucky-roll-value" rows="4">The Bull - +1 to Hit Rolls</textarea>
     </div>
 
     <div style="grid-row: 11; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
 
-    <div style="grid-row: 12; grid-column: 1" class="attribute-box">
-        <label for="intelligence-value" class="attribute-name">Intelligence</label>
-        <div class="attribute-score-box">
-            <input id="intelligence-value" value="16" size="3">
+    <div style="grid-row: 12; grid-column: 1" class="ability-box">
+        <label for="intelligence-value" class="ability-name">Intelligence</label>
+        <div class="ability-score-box">
+            <input id="intelligence-value" value="16" size="2">
         </div>
-        <div class="attribute-sub-box">
-            <label for="intelligence-max-value" style="grid-area: 1 / 1">Modifier:</label>
-            <input id="intelligence-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-            <label for="intelligence-modifier" style="grid-area: 2 / 1">Maximum Value:</label>
-            <input id="intelligence-modifier" style="grid-area: 1 / 2" value="18" size="3">
-        </div>
+        <label for="intelligence-max-value" style="grid-area: 2 / 1">Modifier:</label>
+        <input id="intelligence-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+        <label for="intelligence-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+        <input id="intelligence-modifier" style="grid-area: 3 / 2" value="18" size="2">
     </div>
 
-    <div style="grid-row: 12; grid-column: 2" class="languages-box">
+    <div style="grid-row: 12; grid-column-start: 2; grid-column-end: 5" class="languages-box">
         <label for="languages-value">Languages</label>
         <textarea id="languages-value" rows="2">Common, Elven, Neutral</textarea>
     </div>
