@@ -11,18 +11,27 @@
             src: url("styles/fonts/Book-Antiqua.otf") format("otf");
         }
 
+        :root {
+            --dark-color: rgba(0, 0, 0, 0.75);
+            --medium-color: rgba(0, 0, 0, 0.5);
+            --light-color: rgba(255, 255, 255, 0.87);
+            --dark-bg: url("styles/images/denim.png");
+            --data-font: "Book Antiqua", serif;
+            --label-font: "Cooper Black", serif;
+        }
+
         .outer {
             height: 588px;
             width: 627px;
-            border: 2px solid black;
+            border: 2px solid var(--dark-color);
             padding: 10px;
             display: grid;
             grid-template-rows: 130px 70px 9px 70px 9px 70px 9px 70px 9px 70px 9px 70px;
             grid-template-columns: 250px 155px 111px 111px;
             font-size: 16px;
-            font-family: "Cooper Black", serif;
+            font-family: var(--label-font);
             background: url("styles/images/parchment.jpeg");
-            color: rgba(0, 0, 0, 0.75);
+            color: var(--dark-color);
             text-align: center;
         }
 
@@ -44,8 +53,8 @@
         }
 
         .attribute-name {
-            background: url("styles/images/denim.png");
-            color: rgba(255, 255, 255, 0.87);
+            background: var(--dark-bg);
+            color: var(--light-color);
             height: 21px;
             grid-row-start: 1;
             grid-row-end: 2;
@@ -58,7 +67,7 @@
         .attribute-score-box {
             height: 57px;
             width: 57px;
-            border: 5px solid rgba(0, 0, 0, 0.75);
+            border: 5px solid var(--dark-color);
             grid-column: 2;
             grid-row-start: 1;
             grid-row-end: 2;
@@ -70,7 +79,7 @@
             font-size: 28px;
             border: none;
             text-align: center;
-            font-family: "Book Antiqua", serif;
+            font-family: var(--data-font);
             margin: 7px 0 0 0;
         }
 
@@ -87,7 +96,7 @@
         }
 
         .attribute-sub-box label {
-            font-family: "Cooper Black", serif;
+            font-family: var(--label-font);
             font-size: 14px;
             margin-top: 2px;
             align-self: end;
@@ -96,7 +105,7 @@
         }
 
         .attribute-sub-box input {
-            font-family: "Book Antiqua", serif;
+            font-family: var(--data-font);
             font-size: 12px;
             text-align: center;
             align-self: end;
@@ -112,7 +121,7 @@
         }
 
         .ac-and-hp-box input {
-            font-family: "Book Antiqua", serif;
+            font-family: var(--data-font);
             font-size: 24px;
             border: none;
         }
@@ -121,7 +130,7 @@
             display: grid;
             grid-template-columns: 90px 130px 90px 39px;
             grid-template-rows: 30px 25px 26px 25px;
-            border-color: rgba(0, 0, 0, 0.75);
+            border-color: var(--dark-color);
             border-style: solid;
             border-width: 0 4px 4px 4px;
             font-size: 13px;
@@ -137,14 +146,14 @@
         .combat-basics input,
         .combat-basics select {
             font-size: 13px;
-            font-family: "Book Antiqua", serif;
+            font-family: var(--data-font);
             height: 16px;
         }
 
         .combat-basics-title {
-            background: url("styles/images/denim.png");
-            color: rgba(255, 255, 255, 0.85);
-            font-family: "Cooper Black", serif;
+            background: var(--dark-bg);
+            color: var(--light-color);
+            font-family: var(--label-font);
             font-size: 16px;
             grid-row: 1;
             grid-column-start: 1;
@@ -160,15 +169,15 @@
             grid-template-rows: 30px 30px;
             width: 89px;
             height: 63px;
-            border-color: rgba(0, 0, 0, 0.75);
+            border-color: var(--dark-color);
             border-style: solid;
             border-width: 0 4px 4px 4px;
             margin-left: 10px;
         }
 
         .hit-bonus-box label {
-            background: url("styles/images/denim.png");
-            color: rgba(255, 255, 255, 0.85);
+            background: var(--dark-bg);
+            color: var(--light-color);
             font-size: 12px;
             grid-row: 1;
             width: 91px;
@@ -184,7 +193,7 @@
             width: 70px;
             margin: 8px auto 0 auto;
             height: 20px;
-            font-family: "Book Antiqua", serif;
+            font-family: var(--data-font);
         }
 
         .languages-box {
@@ -192,14 +201,14 @@
             grid-template-rows: 17px 30px;
             width: 369px;
             height: 63px;
-            border-color: rgba(0, 0, 0, 0.75);
+            border-color: var(--dark-color);
             border-style: solid;
             border-width: 0 4px 4px 4px;
         }
 
         .languages-box label {
-            background: url("styles/images/denim.png");
-            color: rgba(255, 255, 255, 0.85);
+            background: var(--dark-bg);
+            color: var(--light-color);
             font-size: 12px;
             grid-row: 1;
             width: 370px;
@@ -217,7 +226,7 @@
             width: 362px;
             margin: 3px;
             height: 40px;
-            font-family: "Book Antiqua", serif;
+            font-family: var(--data-font);
         }
 
         .lucky-roll-box {
@@ -225,7 +234,7 @@
             grid-template-rows: 17px 30px;
             width: 138px;
             height: 63px;
-            border-color: rgba(0, 0, 0, 0.75);
+            border-color: var(--dark-color);
             border-style: solid;
             border-width: 0 4px 4px 4px;
         }
@@ -237,13 +246,13 @@
             width: 134px;
             margin: 3px;
             height: 40px;
-            font-family: "Book Antiqua", serif;
+            font-family: var(--data-font);
             background: none;
         }
 
         .lucky-roll-box label {
-            background: url("styles/images/denim.png");
-            color: rgba(255, 255, 255, 0.85);
+            background: var(--dark-bg);
+            color: var(--light-color);
             font-size: 12px;
             grid-row: 1;
             width: 141px;
@@ -260,21 +269,21 @@
         }
 
         .portrait label {
-            background: url("styles/images/denim.png");
-            color: rgba(255, 255, 255, 0.85);
+            background: var(--dark-bg);
+            color: var(--light-color);
             font-size: 14px;
         }
 
         .row-separator {
-            border-bottom: 2px dotted rgba(0, 0, 0, 0.5);
+            border-bottom: 2px dotted var(--medium-color);
             margin: 1px 0 5px 0;
         }
 
         .saving-throw-box {
             display: grid;
             grid-template-columns: 55px 40px;
-            background: url("styles/images/denim.png");
-            color: rgba(255, 255, 255, 0.85);
+            background: var(--dark-bg);
+            color: var(--light-color);
             padding-top: 10px;
             height: 56px;
             width: 146px;
@@ -286,7 +295,7 @@
             background: #DBD9CD;
             border-radius: 100px;
             font-size: 18px;
-            font-family: "Book Antiqua", serif;
+            font-family: var(--data-font);
             margin-left: 6px;
             height: 50px;
             width: 50px;
