@@ -130,13 +130,14 @@
         .ac-and-hp-box {
             display: grid;
             grid-template-columns: 100px 100px;
-            grid-template-rows: 20px 80px;
+            grid-template-rows: 65px 20px 20px;
             margin: 7px 0 0 15px;
         }
 
-        .ac-box {
-            grid-column: 1;
-            margin-right: 20px;
+        .ac-and-hp-box input {
+            font-family: "Book Antiqua", serif;
+            font-size: 24px;
+            border: none;
         }
 
         .combat-basics {
@@ -196,6 +197,7 @@
             width: 91px;
             padding-top: 1px;
             margin-left: -1;
+            height: 31;
         }
 
         .hit-bonus-box input {
@@ -203,7 +205,7 @@
             grid-row: 2;
             font-size: 18px;
             width: 70px;
-            margin: 7px auto 7px auto;
+            margin: 8px auto 0 auto;
             height: 20px;
             font-family: "Book Antiqua", serif;
         }
@@ -274,7 +276,7 @@
 
         .portrait {
             border: 2px solid black;
-            margin: 1px 0 8px 10px;
+            margin: 0 0 8px 10px;
             display: grid;
             grid-template-rows: 18px 195px;
             height: 220px;
@@ -322,20 +324,22 @@
 <body>
 <div class="outer">
     <div style="grid-row: 1; grid-column: 1;" class="ac-and-hp-box">
-        <div class="ac-box">
-            <svg width="68" height="64" viewBox="0 0 68 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M65 3H3C2.99995 22.5946 7.3056 61 35.2917 61C63.2778 61 65 11.6216 65 3Z" stroke="black"
-                      stroke-opacity="0.75" stroke-width="5"/>
-            </svg>
-            <div style="grid-row-start:2; grid-row-end: 3">Armor<br/>Class</div>
-        </div>
-        <div class="hp-box">
-            <svg width="70" height="64" viewBox="0 0 70 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"/>
-            </svg>
-            <div style="grid-row: 2">Hit Points</div>
-            <label style="grid-row: 3; font-size: 13px" for="hp-max-value">Max:</label>
-            <input id="hp-max-value" value="22" size="3">
+        <svg style="grid-row: 1; grid-column: 1; margin: 0 0 0 15px" width="68" height="64" viewBox="0 0 68 64"
+             fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M65 3H3C2.99995 22.5946 7.3056 61 35.2917 61C63.2778 61 65 11.6216 65 3Z" stroke="black"
+                  stroke-opacity="0.75" stroke-width="5"/>
+        </svg>
+        <input style="grid-row: 1; grid-column: 1" id="ac-value" value="14">
+        <div style="grid-row-start: 2; grid-row-end: 4; grid-column: 1">Armor<br/>Class</div>
+        <svg style="grid-row: 1; grid-column: 2; margin: 0 0 0 14px" width="70" height="64" viewBox="0 0 70 64"
+             fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"/>
+        </svg>
+        <input style="grid-row: 1; grid-column: 2" id="hp-value" value="31">
+        <div style="grid-row: 2">Hit Points</div>
+        <div style="grid-row: 3; grid-column: 2; font-size: 13px">
+            <label style="font-size: 15px" for="hp-max-value">Max:</label>
+            <input style="font-size: 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.5)" id="hp-max-value" value="22" size="3">
         </div>
     </div>
     <div style="grid-row: 1; grid-column-start: 2; grid-column-end: 5;" class="combat-basics">
@@ -383,7 +387,7 @@
         </div>
     </div>
     <div style="grid-row: 2; grid-column: 2">
-        <img src="styles/images/dccrpg-logo.png" height="58px" width="93px" style="opacity: 0.35; margin-top: 5px">
+        <img src="styles/images/dccrpg-logo.png" height="56px" width="93px" style="opacity: 0.35; margin-top: 5px">
     </div>
     <div style="grid-row: 2; grid-column: 3" class="hit-bonus-box">
         <label for="melee-attack-value">Melee<br/>Attack</label>
