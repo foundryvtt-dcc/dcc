@@ -26,8 +26,13 @@
     </div>
     <div style="grid-row: 1; grid-column-start: 2; grid-column-end: 5;" class="combat-basics">
         <div class="combat-basics-title dark-title">Combat Basics</div>
-        <label for="initiative-value" style="grid-area: 2 / 1">Initiative:</label>
-        <input id="initiative-value" style="grid-area: 2 / 2" value="+3" size="3">
+        <label for="initiative-die-value" style="grid-area: 2 / 1">Initiative Die:</label>
+        <select name="initiative-die-value" id="initiative-die-value" style="grid-area: 2 / 2; width: 129px">
+            <option value="1d20">1d20</option>
+            <option value="1d14">1d14</option>
+        </select>
+        <label for="initiative-value" style="grid-area: 2 / 3">Initiative:</label>
+        <input id="initiative-value" style="grid-area: 2 / 4" value="+3" size="3">
         <label for="action-dice-value" style="grid-area: 3 / 1; ">Action Dice:</label>
         <select name="action-dice-value" id="action-dice-value" style="grid-area: 3 / 2; width: 129px">
             <option value="1d20">1d20</option>
@@ -36,12 +41,14 @@
         </select>
         <label for="attack-value" style="grid-area: 4 / 1">Attack:</label>
         <input id="attack-value" style="grid-area: 4 / 2" value="+3" size="3">
-        <label for="crit-die-value" style="grid-area: 2 / 3">Crit Die:</label>
-        <input id="crit-die-value" style="grid-area: 2 / 4" value="1d4" size="3">
-        <label for="crit-table-value" style="grid-area: 3 / 3">Crit Table:</label>
-        <input id="crit-table-value" style="grid-area: 3 / 4" value="III" size="3">
-        <label for="speed-value" style="grid-area: 4 / 3">Speed:</label>
-        <input id="speed-value" class="combat-basics-input" style="grid-area: 4 / 4" value="30'" size="3">
+        <label for="attack-value" style="grid-area: 5 / 1">Hit Die:</label>
+        <input id="attack-value" style="grid-area: 5 / 2" value="1d8" size="3">
+        <label for="crit-die-value" style="grid-area: 3 / 3">Crit Die:</label>
+        <input id="crit-die-value" style="grid-area: 3 / 4" value="1d4" size="3">
+        <label for="crit-table-value" style="grid-area: 4 / 3">Crit Table:</label>
+        <input id="crit-table-value" style="grid-area: 4 / 4" value="III" size="3">
+        <label for="speed-value" style="grid-area: 5 / 3">Speed:</label>
+        <input id="speed-value" style="grid-area: 5 / 4" value="30'" size="3">
     </div>
     <div style="grid-area: 2 / 1" class="ability-box">
         <label for="strength-value" class="ability-name dark-title">Strength</label>
