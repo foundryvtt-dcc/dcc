@@ -47,7 +47,6 @@
             background: url("styles/images/denim.png");
             color: rgba(255, 255, 255, 0.87);
             height: 21px;
-            grid-column: 1;
             grid-row-start: 1;
             grid-row-end: 2;
             letter-spacing: 1px;
@@ -63,7 +62,6 @@
             grid-column: 2;
             grid-row-start: 1;
             grid-row-end: 2;
-            /* padding: 7px; */
         }
 
         .attribute-score-box input {
@@ -88,36 +86,18 @@
             grid-template-rows: 19px 19px;
         }
 
-        .attribute-sub-box-modifier-label {
-            font-size: 14px;
-            grid-row: 1;
-            text-align: left;
-        }
-
-        .attribute-sub-box-modifier-input {
-            font-family: "Book Antiqua", serif;
-            font-size: 12px;
-            grid-row: 1;
-            text-align: center;
-            height: 17px;
-            border-width: 0 0 1px 0;
-        }
-
-        .attribute-sub-box-max-val-label {
+        .attribute-sub-box label {
             font-family: "Cooper Black", serif;
             font-size: 14px;
-            grid-row: 2;
             margin-top: 2px;
             align-self: end;
             margin-bottom: 1px;
             text-align: left;
         }
 
-        .attribute-sub-box-max-val-input {
+        .attribute-sub-box input {
             font-family: "Book Antiqua", serif;
             font-size: 12px;
-            grid-row-start: 2;
-            grid-row-end: 2;
             text-align: center;
             align-self: end;
             height: 18px;
@@ -365,14 +345,14 @@
             <input id="strength-value" value="18" size="3">
         </div>
         <div class="attribute-sub-box">
-            <label for="strength-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
-            <input id="strength-max-value" class="attribute-sub-box-modifier-input" value="+3" size="3">
-            <label for="strength-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
-            <input id="strength-modifier" class="attribute-sub-box-max-val-input" value="18" size="3">
+            <label for="strength-max-value" style="grid-row: 1; grid-column: 1">Modifier:</label>
+            <input id="strength-max-value" style="grid-column: 2; grid-row: 2" value="+3" size="3">
+            <label for="strength-modifier" style="grid-row: 2; grid-column: 1">Maximum Value:</label>
+            <input id="strength-modifier" style="grid-row: 1; grid-column: 2" value="18" size="3">
         </div>
     </div>
     <div style="grid-row: 2; grid-column: 2">
-        <img src="styles/images/dccrpg-logo.png" height="56px" width="93px" style="opacity: 0.35; margin-top: 5px">
+        <img src="styles/images/dccrpg-logo.png" height="60px" width="110px" style="opacity: 0.35; margin-top: 0px">
     </div>
     <div style="grid-row: 2; grid-column: 3" class="hit-bonus-box">
         <label for="melee-attack-value">Melee<br/>Attack</label>
@@ -391,10 +371,10 @@
             <input id="agility-value" value="16" size="3">
         </div>
         <div class="attribute-sub-box">
-            <label for="agility-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
-            <input id="agility-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
-            <label for="agility-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
-            <input id="agility-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            <label for="agility-max-value" style="grid-row: 1; grid-column: 1">Modifier:</label>
+            <input id="agility-max-value" style="grid-column: 2; grid-row: 2" value="+3" size="3">
+            <label for="agility-modifier" style="grid-row: 2; grid-column: 1">Maximum Value:</label>
+            <input id="agility-modifier" style="grid-row: 1; grid-column: 2" value="18" size="3">
         </div>
     </div>
     <div style="grid-row: 4; grid-column: 2" class="saving-throw-box">
@@ -418,10 +398,10 @@
             <input id="stamina-value" value="16" size="3">
         </div>
         <div class="attribute-sub-box">
-            <label for="stamina-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
-            <input id="stamina-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
-            <label for="stamina-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
-            <input id="stamina-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            <label for="stamina-max-value" style="grid-row: 1; grid-column: 1">Modifier:</label>
+            <input id="stamina-max-value" style="grid-column: 2; grid-row: 2" value="+3" size="3">
+            <label for="stamina-modifier" style="grid-row: 2; grid-column: 1">Maximum Value:</label>
+            <input id="stamina-modifier" style="grid-row: 1; grid-column: 2" value="18" size="3">
         </div>
     </div>
     <div style="grid-row: 6; grid-column: 2" class="saving-throw-box">
@@ -442,10 +422,10 @@
             <input id="personality-value" value="16" size="3">
         </div>
         <div class="attribute-sub-box">
-            <label for="personality-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
-            <input id="personality-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
-            <label for="personality-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
-            <input id="personality-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            <label for="personality-max-value" style="grid-row: 1; grid-column: 1">Modifier:</label>
+            <input id="personality-max-value" style="grid-column: 2; grid-row: 2" value="+3" size="3">
+            <label for="personality-modifier" style="grid-row: 2; grid-column: 1">Maximum Value:</label>
+            <input id="personality-modifier" style="grid-row: 1; grid-column: 2" value="18" size="3">
         </div>
     </div>
     <div style="grid-row: 8; grid-column: 2" class="saving-throw-box">
@@ -461,10 +441,10 @@
             <input id="luck-value" value="16" size="3">
         </div>
         <div class="attribute-sub-box">
-            <label for="luck-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
-            <input id="luck-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
-            <label for="luck-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
-            <input id="luck-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            <label for="luck-max-value" style="grid-row: 1; grid-column: 1">Modifier:</label>
+            <input id="luck-max-value" style="grid-column: 2; grid-row: 2" value="+3" size="3">
+            <label for="luck-modifier" style="grid-row: 2; grid-column: 1">Maximum Value:</label>
+            <input id="luck-modifier" style="grid-row: 1; grid-column: 2" value="18" size="3">
         </div>
     </div>
     <div style="grid-row: 10; grid-column: 2" class="lucky-roll-box">
@@ -480,10 +460,10 @@
             <input id="intelligence-value" value="16" size="3">
         </div>
         <div class="attribute-sub-box">
-            <label for="intelligence-max-value" class="attribute-sub-box-modifier-label">Modifier:</label>
-            <input id="intelligence-max-value" class="attribute-sub-box-modifier-input" value="+2" size="3">
-            <label for="intelligence-modifier" class="attribute-sub-box-max-val-label">Maximum Value:</label>
-            <input id="intelligence-modifier" class="attribute-sub-box-max-val-input" value="16" size="3">
+            <label for="intelligence-max-value" style="grid-row: 1; grid-column: 1">Modifier:</label>
+            <input id="intelligence-max-value" style="grid-column: 2; grid-row: 2" value="+3" size="3">
+            <label for="intelligence-modifier" style="grid-row: 2; grid-column: 1">Maximum Value:</label>
+            <input id="intelligence-modifier" style="grid-row: 1; grid-column: 2" value="18" size="3">
         </div>
     </div>
 
