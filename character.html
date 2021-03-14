@@ -76,7 +76,7 @@
             border: none;
             text-align: center;
             font-family: "Book Antiqua", serif;
-            margin: 7px 0 0 0px;
+            margin: 7px 0 0 0;
         }
 
         .attribute-sub-box {
@@ -196,8 +196,8 @@
             grid-row: 1;
             width: 91px;
             padding-top: 1px;
-            margin-left: -1;
-            height: 31;
+            margin-left: -1px;
+            height: 31px;
         }
 
         .hit-bonus-box input {
@@ -228,7 +228,7 @@
             width: 370px;
             padding-top: 1px;
             padding-left: 4px;
-            margin-left: -1;
+            margin-left: -1px;
             text-align: left;
         }
 
@@ -271,7 +271,7 @@
             grid-row: 1;
             width: 141px;
             padding-top: 1px;
-            margin-left: -1;
+            margin-left: -1px;
         }
 
         .portrait {
@@ -330,13 +330,13 @@
                   stroke-opacity="0.75" stroke-width="5"/>
         </svg>
         <input style="grid-row: 1; grid-column: 1" id="ac-value" value="14">
-        <div style="grid-row-start: 2; grid-row-end: 4; grid-column: 1">Armor<br/>Class</div>
+        <label for="ac-value" style="grid-row-start: 2; grid-row-end: 4; grid-column: 1">Armor<br/>Class</label>
         <svg style="grid-row: 1; grid-column: 2; margin: 0 0 0 14px" width="70" height="64" viewBox="0 0 70 64"
              fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"/>
         </svg>
         <input style="grid-row: 1; grid-column: 2" id="hp-value" value="31">
-        <div style="grid-row: 2">Hit Points</div>
+        <label for="hp-value" style="grid-row: 2">Hit Points</label>
         <div style="grid-row: 3; grid-column: 2; font-size: 13px">
             <label style="font-size: 15px" for="hp-max-value">Max:</label>
             <input style="font-size: 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.5)" id="hp-max-value" value="22" size="3">
