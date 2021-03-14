@@ -65,7 +65,7 @@
     grid-column-start: 1;
     grid-column-end: 3;
     letter-spacing: 1px;
-    padding: 1px;
+    padding-top: 1px;
     text-align: center;
     align-self: stretch;
 }
@@ -105,7 +105,7 @@
     font-size: 14px;
     column-gap: 8px;
     grid-template-columns: 94px 130px 90px 36px;
-    grid-template-rows: 24px 25px 26px 25px;
+    grid-template-rows: 24px 25px 26px 20px;
     margin-bottom: 12px;
     align-items: center;
 }
@@ -137,8 +137,9 @@
     border: var(--dark-border);
     border-top: none;
     display: grid;
-    grid-template-rows: 33px 29px;
-    grid-template-columns: 104px;
+    grid-template-rows: 32px 29px;
+    grid-template-columns: 100px;
+    align-items: center;
 }
 
 .hit-bonus-box label {
@@ -147,8 +148,8 @@
     font-size: 12px;
     grid-row: 1;
     letter-spacing: 1px;
-    margin-left: -1px;
-    padding: 1px;
+    align-self: stretch;
+    padding-top: 1px;
 }
 
 .hit-bonus-box input {
