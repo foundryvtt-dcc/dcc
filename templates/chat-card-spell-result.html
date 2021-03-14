@@ -15,14 +15,14 @@
     {{/if}}
     <ol class="table-results">
         {{#each results}}
-        <li class="table-result flexrow" data-result-id="{{ this._id }}" data-crit="{{ crit }}" data-fumble="{{ fumble }}">
+        <li class="table-result flexrow" data-result-id="{{ this._id }}" data-crit="{{ ../crit }}" data-fumble="{{ ../fumble }}">
           <div class="result-range">
             {{#if (gt this.range.[0] 0)}}
               <i class="fas fa-sort-up spell-shift-down"></i>
-              <p>{{this.range.[0]}}</p>
+              <p class="spell-shift-down">{{this.range.[0]}}</p>
             {{/if}}
             {{#if (lt this.range.[1] 99)}}
-              <p>{{this.range.[1]}}</p>
+              <p class="spell-shift-up">{{this.range.[1]}}</p>
               <i class="fas fa-sort-down spell-shift-up"></i>
             {{/if}}
           </div>

@@ -57,8 +57,8 @@ class SpellResult {
     const tableId = event.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-table-id')
     const tableCompendium = event.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-table-compendium')
     const resultId = event.target.parentElement.parentElement.getAttribute('data-result-id')
-    const crit = event.target.parentElement.parentElement.getAttribute('data-crit')
-    const fumble = event.target.parentElement.parentElement.getAttribute('data-fumble')
+    const crit = event.target.parentElement.parentElement.getAttribute('data-crit') === 'true'
+    const fumble = event.target.parentElement.parentElement.getAttribute('data-fumble') === 'true'
 
     // Lookup the appropriate table
     let rollTable
@@ -103,8 +103,8 @@ class SpellResult {
     const tableId = event.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-table-id')
     const tableCompendium = event.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-table-compendium')
     const resultId = event.target.parentElement.parentElement.getAttribute('data-result-id')
-    const crit = event.target.parentElement.parentElement.getAttribute('data-crit')
-    const fumble = event.target.parentElement.parentElement.getAttribute('data-fumble')
+    const crit = event.target.parentElement.parentElement.getAttribute('data-crit') === 'true'
+    const fumble = event.target.parentElement.parentElement.getAttribute('data-fumble') === 'true'
 
     // Lookup the appropriate table
     let rollTable
