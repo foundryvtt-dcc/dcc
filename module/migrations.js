@@ -185,8 +185,23 @@ export const migrateItemData = function (item) {
 
   // If migrating from 0.21 mark all spells as inheritActionDie
   if ((currentVersion <= 0.21) || (currentVersion == null)) {
-    if (item.data.type === 'spell' && !item.data.config.inheritActionDie) {
-      item.data.config.inheritActionDie = true
+    if (item.type === 'spell' && !item.data.config.inheritActionDie) {
+      updateData.data = {
+        config: {
+          inheritActionDie: true
+        }
+      }
+    }
+  }
+
+  // If migrating from 0.22 mark all spells as castingMode: wizard
+  if ((currentVersion <= 0.22) || (currentVersion == null)) {
+    if (item.type === 'spell' && !item.data.config.castingMode) {
+      updateData.data = {
+        config: {
+          castingMode: 'wizard'
+        }
+      }
     }
   }
 
