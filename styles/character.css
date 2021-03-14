@@ -45,7 +45,7 @@
 
 .ability-box {
     display: grid;
-    grid-template-columns: 125px 37px 66px;
+    grid-template-columns: 125px 37px 70px;
     grid-template-rows: 20px 25px 25px;
     font-size: 14px;
     text-align: left;
@@ -218,7 +218,6 @@
     display: grid;
     column-gap: 7px;
     grid-template-columns: 54px 84px;
-    width: 146px;
     align-items: center;
     text-align: left;
 }
@@ -237,4 +236,5 @@
 .saving-throw-box label {
     grid-column: 2;
     letter-spacing: 1px;
+    font-size: 15px;
 }
