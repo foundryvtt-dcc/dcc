@@ -67,7 +67,6 @@
 .ability-box input {
     border-width: 0 0 1px 0;
     font-size: 14px;
-    margin-right: 5px;
 }
 
 .ability-name {
@@ -107,7 +106,7 @@
     column-gap: 8px;
     display: grid;
     font-size: 14px;
-    grid-template-columns: 102px 130px 80px 36px;
+    grid-template-columns: 102px 120px 80px 50px;
     grid-template-rows: 24px 20px 20px 20px 20px;
     margin-bottom: 12px;
 }

@@ -27,26 +27,39 @@
     <div style="grid-row: 1; grid-column-start: 2; grid-column-end: 5;" class="combat-basics">
         <div class="combat-basics-title dark-title">Combat Basics</div>
         <label for="initiative-die-value" style="grid-area: 2 / 1">Initiative Die:</label>
-        <select name="initiative-die-value" id="initiative-die-value" style="grid-area: 2 / 2; width: 129px">
-            <option value="1d20">1d20</option>
-            <option value="1d14">1d14</option>
+        <select name="initiative-die-value" id="initiative-die-value" style="grid-area: 2 / 2">
+            <option value="d20">d20</option>
+            <option value="d14">d14</option>
         </select>
         <label for="initiative-value" style="grid-area: 2 / 3">Initiative:</label>
         <input id="initiative-value" style="grid-area: 2 / 4" value="+3" size="3">
         <label for="action-dice-value" style="grid-area: 3 / 1; ">Action Dice:</label>
-        <select name="action-dice-value" id="action-dice-value" style="grid-area: 3 / 2; width: 129px">
-            <option value="1d20">1d20</option>
-            <option value="1d20-1d20">1d20/1d16</option>
-            <option value="1d20-1d20-1d16">1d20/1d20/1d16</option>
+        <select name="action-dice-value" id="action-dice-value" style="grid-area: 3 / 2">
+            <option value="d20">d20</option>
+            <option value="d20-d14">d20/d14</option>
+            <option value="d20-d16">d20/d16</option>
+            <option value="d20-d20">d20/d20</option>
+            <option value="d20-d20-d14">d20/d20/d14</option>
         </select>
         <label for="attack-value" style="grid-area: 4 / 1">Attack:</label>
         <input id="attack-value" style="grid-area: 4 / 2" value="+3" size="3">
-        <label for="attack-value" style="grid-area: 5 / 1">Hit Die:</label>
-        <input id="attack-value" style="grid-area: 5 / 2" value="1d8" size="3">
+        <label for="hit-die-value" style="grid-area: 5 / 1">Hit Die:</label>
+        <input id="hit-die-value" style="grid-area: 5 / 2" value="1d8" size="3">
         <label for="crit-die-value" style="grid-area: 3 / 3">Crit Die:</label>
         <input id="crit-die-value" style="grid-area: 3 / 4" value="1d4" size="3">
         <label for="crit-table-value" style="grid-area: 4 / 3">Crit Table:</label>
-        <input id="crit-table-value" style="grid-area: 4 / 4" value="III" size="3">
+        <select name="crit-table-value" id="crit-table-value" style="grid-area: 4 / 4">
+            <option value="I">I</option>
+            <option value="II">II</option>
+            <option value="III">III</option>
+            <option value="IV">IV</option>
+            <option value="V">V</option>
+            <option value="DN">DN</option>
+            <option value="DR">DR</option>
+            <option value="G">G</option>
+            <option value="M">M</option>
+            <option value="U">U</option>
+        </select>
         <label for="speed-value" style="grid-area: 5 / 3">Speed:</label>
         <input id="speed-value" style="grid-area: 5 / 4" value="30'" size="3">
     </div>
