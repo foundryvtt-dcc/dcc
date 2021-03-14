@@ -70,6 +70,7 @@ async function createActors (type, folderId, actorData) {
   try {
     parsedCharacters = (type === 'Player') ? parsePCs(actorData) : parseNPCs(actorData)
   } catch (e) {
+    console.error(e)
     if (type === 'Player') {
       return ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
     } else {

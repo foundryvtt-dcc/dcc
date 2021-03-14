@@ -1,4 +1,4 @@
-/* global game, ui */
+/* global game, ui, CONFIG */
 
 import EntityImages from './entity-images.js'
 
@@ -50,6 +50,36 @@ function _parseJSONPCs (pcObject) {
     if (pcObject.hitPoints) {
       pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
     }
+    let hitDice = '1d4'
+    let findSecretDoors = CONFIG.DCC.abilities.modifiers[pcObject.intelligenceScore] || 0
+    if (pcObject.className) {
+      switch (pcObject.className.toLowerCase()) {
+        case 'cleric':
+          hitDice = '1d8'
+          break
+        case 'thief':
+          hitDice = '1d6'
+          break
+        case 'halfling':
+          hitDice = '1d6'
+          break
+        case 'warrior':
+          hitDice = '1d12'
+          break
+        case 'wizard':
+          hitDice = '1d4'
+          break
+        case 'dwarf':
+          hitDice = '1d10'
+          break
+        case 'elf':
+          hitDice = '1d6'
+          findSecretDoors += 4
+          break
+      }
+    }
+    pc['data.attributes.hitDice.value'] = hitDice
+    pc['data.skills.findSecretDoors.value'] = findSecretDoors
     pc.items = []
     if (pcObject.weapons) {
       for (const weapon of pcObject.weapons) {
@@ -251,6 +281,7 @@ function _splitAndParsePlainPCsToJSON (pcString) {
         pcObjects.push(_parsePlainPCToJSON(pcSection))
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
+        console.error(e)
       }
     }
     first = false
@@ -265,6 +296,7 @@ function _splitAndParsePlainPCsToJSON (pcString) {
       pcObjects.push(_parsePlainPCToJSON(pcSection))
     } catch (e) {
       ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
+      console.error(e)
     }
   }
 

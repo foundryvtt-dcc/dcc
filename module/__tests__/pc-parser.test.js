@@ -30,6 +30,7 @@ Languages: Common`)
     'data.attributes.ac.value': '9',
     'data.attributes.hp.value': '3',
     'data.attributes.hp.max': '3',
+    'data.attributes.hitDice.value': '1d4',
     'data.abilities.str.value': '7',
     'data.abilities.agl.value': '7',
     'data.abilities.sta.value': '12',
@@ -45,6 +46,7 @@ Languages: Common`)
     'data.saves.frt.value': '0',
     'data.saves.ref.value': '-1',
     'data.saves.wil.value': '2',
+    'data.skills.findSecretDoors.value': -2,
     items: [
       {
         name: 'Hammer (as club)',
@@ -130,6 +132,7 @@ test('beekeeper', () => {
     'data.attributes.ac.value': '8',
     'data.attributes.hp.value': '6',
     'data.attributes.hp.max': '6',
+    'data.attributes.hitDice.value': '1d4',
     'data.abilities.str.value': '15',
     'data.abilities.agl.value': '5',
     'data.abilities.sta.value': '17',
@@ -145,6 +148,7 @@ test('beekeeper', () => {
     'data.saves.frt.value': '2',
     'data.saves.ref.value': '-2',
     'data.saves.wil.value': '-1',
+    'data.skills.findSecretDoors.value': -1,
     items: [
       {
         name: 'Staff',
@@ -236,6 +240,7 @@ Languages: Common `)
       'data.attributes.ac.value': '9',
       'data.attributes.hp.value': '3',
       'data.attributes.hp.max': '3',
+      'data.attributes.hitDice.value': '1d4',
       'data.abilities.str.value': '7',
       'data.abilities.agl.value': '7',
       'data.abilities.sta.value': '12',
@@ -251,6 +256,7 @@ Languages: Common `)
       'data.saves.frt.value': '0',
       'data.saves.ref.value': '-1',
       'data.saves.wil.value': '2',
+      'data.skills.findSecretDoors.value': -2,
       items: [
         {
           name: 'Hammer (as club)',
@@ -292,6 +298,7 @@ Languages: Common `)
       'data.attributes.ac.value': '10',
       'data.attributes.hp.value': '1',
       'data.attributes.hp.max': '1',
+      'data.attributes.hitDice.value': '1d4',
       'data.abilities.str.value': '8',
       'data.abilities.agl.value': '11',
       'data.abilities.sta.value': '10',
@@ -307,6 +314,7 @@ Languages: Common `)
       'data.saves.frt.value': '0',
       'data.saves.ref.value': '0',
       'data.saves.wil.value': '0',
+      'data.skills.findSecretDoors.value': 0,
       items: [
         {
           name: 'Handaxe',
@@ -389,6 +397,7 @@ Spells: (Spell Check: d20+2)
     'data.attributes.ac.value': '15',
     'data.attributes.hp.value': '4',
     'data.attributes.hp.max': '4',
+    'data.attributes.hitDice.value': '1d8',
     'data.attributes.critical.die': '1d8',
     'data.attributes.critical.table': 'III',
     'data.abilities.str.value': '10',
@@ -414,6 +423,7 @@ Spells: (Spell Check: d20+2)
     'data.saves.frt.value': '0',
     'data.saves.ref.value': '1',
     'data.saves.wil.value': '2',
+    'data.skills.findSecretDoors.value': 1,
     items: [
       {
         name: 'Dagger',
@@ -576,6 +586,7 @@ Cast Spell From Scroll (d16)`
     'data.attributes.ac.value': '12',
     'data.attributes.hp.value': '25',
     'data.attributes.hp.max': '25',
+    'data.attributes.hitDice.value': '1d6',
     'data.attributes.critical.die': '1d24',
     'data.attributes.critical.table': 'II',
     'data.abilities.str.value': '10',
@@ -600,6 +611,7 @@ Cast Spell From Scroll (d16)`
     'data.saves.frt.value': '1',
     'data.saves.ref.value': '5',
     'data.saves.wil.value': '2',
+    'data.skills.findSecretDoors.value': 0,
     'data.class.backstab': '5',
     'data.skills.sneakSilently.value': '12',
     'data.skills.hideInShadows.value': '10',
@@ -721,6 +733,7 @@ Hide In Shadows: 11 (-4)`
     'data.attributes.ac.value': '14',
     'data.attributes.hp.value': '48',
     'data.attributes.hp.max': '48',
+    'data.attributes.hitDice.value': '1d6',
     'data.attributes.critical.die': '1d16',
     'data.attributes.critical.table': 'III',
     'data.abilities.str.value': '11',
@@ -745,6 +758,7 @@ Hide In Shadows: 11 (-4)`
     'data.saves.frt.value': '5',
     'data.saves.ref.value': '6',
     'data.saves.wil.value': '7',
+    'data.skills.findSecretDoors.value': 0,
     'data.skills.sneakAndHide.value': '11',
     'data.skills.sneakSilently.value': '11',
     'data.skills.hideInShadows.value': '11',
@@ -851,6 +865,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'data.attributes.ac.value': '13',
     'data.attributes.hp.value': '62',
     'data.attributes.hp.max': '62',
+    'data.attributes.hitDice.value': '1d12',
     'data.attributes.critical.die': '2d20',
     'data.attributes.critical.table': 'V',
     'data.abilities.str.value': '12',
@@ -875,6 +890,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'data.saves.frt.value': '6',
     'data.saves.ref.value': '2',
     'data.saves.wil.value': '1',
+    'data.skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Club',
@@ -997,6 +1013,7 @@ Spells: (Spell Check: d20+12)
     'data.attributes.ac.value': '9',
     'data.attributes.hp.value': '15',
     'data.attributes.hp.max': '15',
+    'data.attributes.hitDice.value': '1d4',
     'data.attributes.critical.die': '1d14',
     'data.attributes.critical.table': 'I',
     'data.abilities.str.value': '14',
@@ -1022,6 +1039,7 @@ Spells: (Spell Check: d20+12)
     'data.saves.frt.value': '2',
     'data.saves.ref.value': '3',
     'data.saves.wil.value': '7',
+    'data.skills.findSecretDoors.value': 2,
     items: [
       {
         name: 'Handaxe',
@@ -1324,6 +1342,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
     'data.attributes.ac.value': '13',
     'data.attributes.hp.value': '24',
     'data.attributes.hp.max': '24',
+    'data.attributes.hitDice.value': '1d10',
     'data.attributes.critical.die': '1d14',
     'data.attributes.critical.table': 'III',
     'data.abilities.str.value': '13',
@@ -1348,6 +1367,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
     'data.saves.frt.value': '3',
     'data.saves.ref.value': '-1',
     'data.saves.wil.value': '0',
+    'data.skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Staff',
@@ -1461,6 +1481,7 @@ Spells: (Spell Check: d20+5)
     'data.attributes.ac.value': '14',
     'data.attributes.hp.value': '10',
     'data.attributes.hp.max': '10',
+    'data.attributes.hitDice.value': '1d6',
     'data.attributes.critical.die': '1d8',
     'data.attributes.critical.table': 'II',
     'data.abilities.str.value': '13',
@@ -1486,6 +1507,7 @@ Spells: (Spell Check: d20+5)
     'data.saves.frt.value': '0',
     'data.saves.ref.value': '2',
     'data.saves.wil.value': '2',
+    'data.skills.findSecretDoors.value': 6,
     items: [
       {
         name: 'Shortbow',
@@ -1665,6 +1687,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'data.attributes.ac.value': '10',
     'data.attributes.hp.value': '13',
     'data.attributes.hp.max': '13',
+    'data.attributes.hitDice.value': '1d12',
     'data.attributes.critical.die': '1d12',
     'data.attributes.critical.table': 'III',
     'data.abilities.str.value': '13',
@@ -1689,6 +1712,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'data.saves.frt.value': '2',
     'data.saves.ref.value': '1',
     'data.saves.wil.value': '1',
+    'data.skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Dagger',
@@ -1811,6 +1835,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       'data.attributes.ac.value': '14',
       'data.attributes.hp.value': '10',
       'data.attributes.hp.max': '10',
+      'data.attributes.hitDice.value': '1d6',
       'data.attributes.critical.die': '1d8',
       'data.attributes.critical.table': 'II',
       'data.abilities.str.value': '13',
@@ -1836,6 +1861,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       'data.saves.frt.value': '0',
       'data.saves.ref.value': '2',
       'data.saves.wil.value': '2',
+      'data.skills.findSecretDoors.value': 6,
       items: [
         {
           name: 'Shortbow',
@@ -1980,6 +2006,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       'data.attributes.ac.value': '13',
       'data.attributes.hp.value': '24',
       'data.attributes.hp.max': '24',
+      'data.attributes.hitDice.value': '1d10',
       'data.attributes.critical.die': '1d14',
       'data.attributes.critical.table': 'III',
       'data.abilities.str.value': '13',
@@ -2004,6 +2031,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       'data.saves.frt.value': '3',
       'data.saves.ref.value': '-1',
       'data.saves.wil.value': '0',
+      'data.skills.findSecretDoors.value': 0,
       items: [
         {
           name: 'Staff',
