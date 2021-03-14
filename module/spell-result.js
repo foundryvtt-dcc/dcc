@@ -17,7 +17,10 @@ class SpellResult {
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
       roll: roll,
       sound: roll ? CONFIG.sounds.dice : null,
-      flags: { 'core.RollTable': result.id }
+      flags: {
+        'core.RollTable': result.id,
+        'dcc.SpellCheck': true
+      }
     }, messageData)
 
     // Render the chat card which combines the dice roll with the drawn results
@@ -37,6 +40,108 @@ class SpellResult {
 
     // Create the chat message
     return ChatMessage.create(messageData, messageOptions)
+  }
+
+  static async processChatMessage(message, html, data) {
+    // No hooks for players, avoid shenanigans
+    if (!game.user.isGM) { return; }
+  
+    if (message.getFlag('dcc', 'SpellCheck')) {
+      html.find('.spell-shift-up').click(SpellResult._onNextResult.bind(message))
+      html.find('.spell-shift-down').click(SpellResult._onPreviousResult.bind(message))
+    }
+  }
+
+  static async _onPreviousResult(event) {
+    // Pull out the relevant data from the existing HTML
+    const tableId = event.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-table-id')
+    const tableCompendium = event.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-table-compendium')
+    const resultId = event.target.parentElement.parentElement.getAttribute('data-result-id')
+    const crit = event.target.parentElement.parentElement.getAttribute('data-crit')
+    const fumble = event.target.parentElement.parentElement.getAttribute('data-fumble')
+
+    // Lookup the appropriate table
+    let rollTable
+    const predicate = t => t._id === tableId
+    // If a collection is specified then check the appropriate pack for the spell
+    if (tableCompendium) {
+      const pack = game.packs.get(tableCompendium)
+      if (pack) {
+        await pack.getIndex()
+        const entry = pack.index.find(predicate)
+        rollTable = await pack.getEntity(entry._id)
+      }
+    }
+    // Otherwise fall back to searching the world
+    if (!rollTable) {
+      rollTable = game.tables.entities.find(predicate)
+    }
+
+    if (rollTable) {
+      const entryIndex = rollTable.results.findIndex(r => r._id === resultId)
+      const newResult = rollTable.results[entryIndex - 1]
+      let newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
+        description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),
+        results: [newResult].map(r => {
+          r = duplicate(r)
+          r.text = TextEditor.enrichHTML(rollTable._getResultChatText(r), { entities: true }),
+          r.icon = r.img || CONFIG.RollTable.resultIcon
+          return r
+        }),
+        rollHTML: rollTable.data.displayRoll ? await this.roll.render() : null,
+        table: rollTable,
+        crit,
+        fumble
+      })
+  
+      this.update({ content: newContent })
+    }
+  }
+
+  static async _onNextResult(event) {
+    // Pull out the relevant data from the existing HTML
+    const tableId = event.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-table-id')
+    const tableCompendium = event.target.parentElement.parentElement.parentElement.parentElement.getAttribute('data-table-compendium')
+    const resultId = event.target.parentElement.parentElement.getAttribute('data-result-id')
+    const crit = event.target.parentElement.parentElement.getAttribute('data-crit')
+    const fumble = event.target.parentElement.parentElement.getAttribute('data-fumble')
+
+    // Lookup the appropriate table
+    let rollTable
+    const predicate = t => t._id === tableId
+    // If a collection is specified then check the appropriate pack for the spell
+    if (tableCompendium) {
+      const pack = game.packs.get(tableCompendium)
+      if (pack) {
+        await pack.getIndex()
+        const entry = pack.index.find(predicate)
+        rollTable = await pack.getEntity(entry._id)
+      }
+    }
+    // Otherwise fall back to searching the world
+    if (!rollTable) {
+      rollTable = game.tables.entities.find(predicate)
+    }
+
+    if (rollTable) {
+      const entryIndex = rollTable.results.findIndex(r => r._id === resultId)
+      const newResult = rollTable.results[entryIndex + 1]
+      let newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
+        description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),
+        results: [newResult].map(r => {
+          r = duplicate(r)
+          r.text = TextEditor.enrichHTML(rollTable._getResultChatText(r), { entities: true }),
+          r.icon = r.img || CONFIG.RollTable.resultIcon
+          return r
+        }),
+        rollHTML: rollTable.data.displayRoll ? await this.roll.render() : null,
+        table: rollTable,
+        crit,
+        fumble
+      })
+  
+      this.update({ content: newContent })
+    }
   }
 }
 

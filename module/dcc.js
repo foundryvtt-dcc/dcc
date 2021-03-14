@@ -16,6 +16,7 @@ import DiceChain from './dice-chain.js'
 import parser from './parser.js'
 import TablePackManager from './tablePackManager.js'
 import EntityImages from './entity-images.js'
+import SpellResult from './spell-result.js'
 
 import { registerSystemSettings } from './settings.js'
 
@@ -176,12 +177,13 @@ Hooks.once('ready', async function () {
 // Create a macro when a rollable is dropped on the hotbar
 Hooks.on('hotbarDrop', (bar, data, slot) => createDCCMacro(data, slot))
 
-// Highlight 1's and 20's for all regular rolls
+// Highlight 1's and 20's for all regular rolls, special spell check handling
 Hooks.on('renderChatMessage', (message, html, data) => {
   if (game.user.isGM) {
     message.setFlag('core', 'canPopout', true)
   }
   chat.highlightCriticalSuccessFailure(message, html, data)
+  SpellResult.processChatMessage(message, html, data)
 })
 
 // Support context menu on chat cards

@@ -1,4 +1,4 @@
-<div class="table-draw" data-table-id="{{ table._id }}">
+<div class="table-draw" data-table-id="{{ table._id }}" data-table-compendium="{{ table.compendium.metadata.package }}.{{ table.compendium.metadata.name }}">
     {{#if description}}
     <div class="table-description">{{{description}}}</div>
     {{/if}}
@@ -15,7 +15,7 @@
     {{/if}}
     <ol class="table-results">
         {{#each results}}
-        <li class="table-result flexrow" data-result-id="{{ this._id }}">
+        <li class="table-result flexrow" data-result-id="{{ this._id }}" data-crit="{{ crit }}" data-fumble="{{ fumble }}">
           <div class="result-range">
             {{#if (gt this.range.[0] 0)}}
               <i class="fas fa-sort-up spell-shift-down"></i>
