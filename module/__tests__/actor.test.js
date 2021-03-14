@@ -74,7 +74,10 @@ test('roll saving throw', () => {
 test('roll initiative', () => {
   Roll.mockClear()
 
-  actor.rollInitiative()
+  actor.rollInitiative({
+    name: 'Test Actor',
+    id: 'xxxxxxxxxx'
+  })
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('@die+@init', { die: '1d20', init: -1 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Initiative', speaker: actor })

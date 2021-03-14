@@ -154,6 +154,12 @@ class DCCActor extends Actor {
    * @param {Object} token    The token to roll initiative for
    */
   async rollInitiative (token) {
+    // No selected token - bail out
+    if (!token) {
+      return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoTokenWarning'))
+    }
+
+    // Setup the roll
     const die = this.data.data.attributes.init.die || '1d20'
     const init = this.data.data.attributes.init.value
     const roll = new Roll('@die+@init', { die, init })
@@ -164,18 +170,21 @@ class DCCActor extends Actor {
       flavor: game.i18n.localize('DCC.Initiative')
     })
 
-    // Set initiative value in the combat tracker if there is an active combat
-    if (token && game.combat) {
-      const tokenId = token.id
-
-      // Create or update combatant
-      const combatant = game.combat.getCombatantByToken(tokenId)
-      if (!combatant) {
-        await game.combat.createCombatant({ tokenId, hasRolled: true, initiative: roll.total })
-      } else {
-        await game.combat.setInitiative(combatant._id, roll.total)
-      }
+    // No combat active
+    if (!game.combat) {
+      return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoCombatWarning'))
     }
+
+    // Set initiative value in the combat tracker if appropriate
+    const tokenId = token.id
+    const combatant = game.combat.getCombatantByToken(tokenId)
+    if (!combatant) {
+      return ui.notifications.warn(game.i18n.format('DCC.InitiativeNoCombatantWarning', {
+        name: token.name
+      }))
+    }
+
+    await game.combat.setInitiative(combatant._id, roll.total)
   }
 
   /**
