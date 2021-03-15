@@ -149,8 +149,13 @@ class DCCActorSheet extends ActorSheet {
       } else if (i.type === 'mount') {
         mounts.push(i)
       } else if (i.type === 'spell') {
-        if (i.data.level !== undefined) {
+        if (!i.data.level) {
+          i.data.level = 0
+        }
+        if (spells[i.data.level]) {
           spells[i.data.level].push(i)
+        } else {
+          spells[i.data.level] = [i]
         }
       } else if (i.type === 'skill') {
         skills.push(i)
