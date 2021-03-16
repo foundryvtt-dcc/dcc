@@ -383,6 +383,22 @@ DCC.defaultItemImages = {
   weapon: 'systems/dcc/styles/images/weapon.webp'
 }
 
+// Default macro images
+DCC.macroImages = {
+  ability: 'icons/dice/d20black.svg',
+  actionDice: 'icons/dice/d20black.svg',
+  applyDisapproval: 'icons/svg/clockwork.svg',
+  attackBonus: 'icons/dice/d4black.svg',
+  backstab: '/systems/dcc/styles/images/backstab.png',
+  hitDice: 'icons/dice/d4black.svg',
+  initiative: 'icons/svg/up.svg',
+  luckDie: 'icons/dice/d4black.svg',
+  rollDisapproval: 'icons/svg/explosion.svg',
+  savingThrow: 'icons/svg/shield.svg',
+  skillCheck: 'icons/dice/d20black.svg',
+  spellCheck: '/systems/dcc/styles/images/critical.png'
+}
+
 // Templates
 DCC.templates = {
   spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
