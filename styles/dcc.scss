@@ -1290,6 +1290,10 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   
     .description-heading {
       grid-column: 1 / span 3;
+
+      h1 {
+        display: inline-block;
+      }
     }
   
     .description {
@@ -1310,6 +1314,10 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
 
     .weapon-description-heading {
       grid-column: 1 / span 1;
+
+      h1 {
+        display: inline-block;
+      }
     }
   
     .weapon-summary {
@@ -1318,6 +1326,10 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   
     .armor-description-heading {
       grid-column: 1 / span 1;
+
+      h1 {
+        display: inline-block;
+      }
     }
   
     .armor-summary {
@@ -1326,6 +1338,10 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   
     .mercurial-effect-heading {
       grid-column: 1;
+
+      h1 {
+        display: inline-block;
+      }
     }
   
     .mercurial-effect-value {

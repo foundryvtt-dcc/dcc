@@ -62,11 +62,15 @@
                    placeholder="" data-dtype="String"/>
           </div>
         </div>
-        <h1 class="description-heading">{{localize "DCC.Description"}}</h1>
+        <div class="description-heading">
+          <h1>{{localize "DCC.Description"}}</h1>
+        </div>
         <div class="description">
             {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
         </div>
-        <h1 class="mercurial-effect-heading">{{localize "DCC.MercurialEffect"}}</h1>
+        <div class="mercurial-effect-heading">
+          <h1>{{localize "DCC.MercurialEffect"}}</h1>
+        </div>
         <div class="mercurial-effect-value">
           <label class="mercurial-roll resource-label{{#if allowMercurialRoll}} rollable{{/if}}" for="data.mercurialEffect.value">{{#if allowMercurialRoll}}<i class="fas fa-dice-d20"></i> {{/if}}{{localize "DCC.MercurialEffectValue"}}</label>
           <input type="text" name="data.mercurialEffect.value" value="{{data.mercurialEffect.value}}" data-dtype="Number"/>

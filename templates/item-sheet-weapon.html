@@ -125,7 +125,9 @@
             {{/if}}
           </div>
         </div>
-        <h1 class="weapon-description-heading">{{localize "DCC.Description"}}</h1>
+        <div class="weapon-description-heading">
+          <h1>{{localize "DCC.Description"}}</h1>
+        </div>
         <div class="weapon-summary">
           <label class="resource-label" for="data.description.summary">{{localize "DCC.ItemSummary"}}</label>
           <input type="text" name="data.description.summary" value="{{data.description.summary}}" data-dtype="String"/>

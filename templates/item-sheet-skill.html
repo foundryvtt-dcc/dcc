@@ -52,7 +52,9 @@
     </header>
 
     <section class="sheet-body skill">
-        <h1 class="description-heading">{{localize "DCC.Description"}}</h1>
+        <div class="description-heading">
+          <h1>{{localize "DCC.Description"}}</h1>
+        </div>
         <div class="description">
             {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
         </div>

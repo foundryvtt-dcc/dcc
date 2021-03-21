@@ -1077,6 +1077,8 @@
 
 .dcc.item .sheet-body .description-heading {
   grid-column: 1 / span 3; }
+  .dcc.item .sheet-body .description-heading h1 {
+    display: inline-block; }
 
 .dcc.item .sheet-body .description {
   grid-column: 1 / span 3; }
@@ -1093,18 +1095,24 @@
 
 .dcc.item .sheet-body .weapon-description-heading {
   grid-column: 1 / span 1; }
+  .dcc.item .sheet-body .weapon-description-heading h1 {
+    display: inline-block; }
 
 .dcc.item .sheet-body .weapon-summary {
   grid-column: 2 / span 2; }
 
 .dcc.item .sheet-body .armor-description-heading {
   grid-column: 1 / span 1; }
+  .dcc.item .sheet-body .armor-description-heading h1 {
+    display: inline-block; }
 
 .dcc.item .sheet-body .armor-summary {
   grid-column: 2 / span 2; }
 
 .dcc.item .sheet-body .mercurial-effect-heading {
   grid-column: 1; }
+  .dcc.item .sheet-body .mercurial-effect-heading h1 {
+    display: inline-block; }
 
 .dcc.item .sheet-body .mercurial-effect-value {
   grid-column: 2; }
