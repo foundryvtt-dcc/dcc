@@ -98,6 +98,9 @@
 .journal-sheet h2 {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
 
+.journal-sheet form input[name="name"] {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
+
 /* ----------------------------------------- */
 /*  Rollable                                 */
 /* ----------------------------------------- */

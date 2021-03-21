@@ -46,6 +46,10 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-family: $duvall;
 }
 
+.journal-sheet form input[name="name"] {
+  font-family: $duvall;
+}
+
 /* ----------------------------------------- */
 /*  Rollable                                 */
 /* ----------------------------------------- */
