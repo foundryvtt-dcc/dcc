@@ -905,8 +905,6 @@
   .dcc .skills-container div.wide {
     flex: 0 96%;
     grid-template-columns: 50% 50%; }
-  .dcc .skills-container div.sneak-and-hide label {
-    text-align: left; }
   .dcc .skills-container div.split-50-50 {
     grid-template-columns: 50% 50%; }
   .dcc .skills-container div.split-25-75 {
