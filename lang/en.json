@@ -284,7 +284,7 @@
   "DCC.HitDiceWarn": "{name} has no available {formula} Hit Dice remaining!",
   "DCC.HitPoints": "HitPoints",
   "DCC.Identified": "Identified",
-  "DCC.Infravision": "Infravision",
+  "DCC.Infravision": "Infravision 60'",
   "DCC.InheritActionDie": "Inherit Action Die",
   "DCC.InheritCritRange": "Inherit Crit Range",
   "DCC.InheritSpellCheck": "Inherit Spell Check",

@@ -42,15 +42,15 @@
         <div class="tab" data-group="primary" data-tab="class">
             <h4 class="class-label">{{localize "DCC.WarriorAbilities"}}</h4>
             <div class="class">
-                <div class="crit-range flexrow">
-                    <label for="data.details.critRange">{{localize "DCC.CritRange"}}</label>
-                    <input type="text" id="data.details.critRange" name="data.details.critRange" value="{{data.details.critRange}}" data-dtype="Number"/>
-                    <label class="to-twenty" for="data.details.critRange"> - 20</label>
-                </div>
-    
                 <div class="skills-container">
-                    <div class="wide flexrow">
-                      <label class="box-title" for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
+                    <div class="wide split-50-12-12">
+                        <label for="data.details.critRange">{{localize "DCC.CritRange"}}</label>
+                        <input type="text" id="data.details.critRange" name="data.details.critRange" value="{{data.details.critRange}}" data-dtype="Number"/>
+                        <label class="to-twenty" for="data.details.critRange"> - 20</label>
+                    </div>
+    
+                    <div class="wide split-25-75">
+                      <label for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
                       <input type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
                     </div">
                 </div>

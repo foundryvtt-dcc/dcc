@@ -41,48 +41,47 @@
             <input type="hidden" id="data.class.spellCheckAbility" name="data.class.spellCheckAbility" value="per">
             <div class="class">
                 <div class="skills-container">
-                    <div class="flexrow" data-ability="per">
+                    <div data-ability="per">
                         <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
                         <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
-                    <div class="flexrow" data-skill="divineAid">
+                    <div data-skill="divineAid">
                         <label class="skill-check rollable" for="data.details.divineAid.value">{{localize "DCC.DivineAid"}}</label>
                         <input type="text" id="data.skills.divineAid.value" name="data.skills.divineAid.value" value="{{numberFormat data.skills.divineAid.value decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
-                    <div class="flexrow" data-skill="turnUnholy">
+                    <div data-skill="turnUnholy">
                         <label class="skill-check rollable" for="data.details.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
                         <input type="text" id="data.skills.turnUnholy.value" name="data.skills.turnUnholy.value" value="{{numberFormat data.skills.turnUnholy.value decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
-                    <div class="flexrow" data-skill="layOnHands">
+                    <div data-skill="layOnHands">
                         <label class="skill-check rollable" for="data.details.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
                         <input type="text" id="data.skills.layOnHands.value" name="data.skills.layOnHands.value" value="{{numberFormat data.skills.layOnHands.value decimals=0 sign=true}}" data-dtype="String"/>
                     </div>
-                </div>
 
-                <div class="deity flexrow">
-                    <label class="flex1" for="data.class.deity">{{localize "DCC.Deity"}}</label>
-                    <input class="flex2" type="text" id="data.class.deity" name="data.class.deity" value="{{data.class.deity}}" data-dtype="String"/>
-                </div>
+                    <div class="deity">
+                        <label class="flex1" for="data.class.deity">{{localize "DCC.Deity"}}</label>
+                        <input class="flex2" type="text" id="data.class.deity" name="data.class.deity" value="{{data.class.deity}}" data-dtype="String"/>
+                    </div>
+    
+                    <div>
+                        <label class="split-25-75 rollable" for="data.class.disapproval">{{localize "DCC.DisapprovalRange"}} 1 - </label>
+                        <input type="text" id="data.class.disapproval" name="data.class.disapproval" value="{{data.class.disapproval}}" data-dtype="Number"/>
+                    </div>
 
-                <div class="deity flexrow">
-                    <label class="disapproval-table rollable" for="data.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
-                    <select name="data.class.disapprovalTable" name="data.class.disapprovalTable"
-                            value="{{data.class.disapprovalTable}}">
-                      {{#select data.class.disapprovalTable}}
-                      {{#each config.disapprovalTables}}
-                      <option value="{{path}}">{{name}}</option>
-                      {{/each}}
-                      {{/select}}
-                    </select>
-                </div>
-
-                <div class="disapproval flexrow">
-                    <label class="disapproval-range rollable" for="data.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
-                    <label class="one-to" for="data.class.disapproval">1 - </label>
-                    <input type="text" id="data.class.disapproval" name="data.class.disapproval" value="{{data.class.disapproval}}" data-dtype="Number"/>
+                    <div class="wide split-50-50">
+                        <label class="disapproval-table rollable" for="data.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
+                        <select name="data.class.disapprovalTable" name="data.class.disapprovalTable"
+                                value="{{data.class.disapprovalTable}}">
+                          {{#select data.class.disapprovalTable}}
+                          {{#each config.disapprovalTables}}
+                          <option value="{{path}}">{{name}}</option>
+                          {{/each}}
+                          {{/select}}
+                        </select>
+                    </div>
                 </div>
     
-                <div class="lay-on-hands flexrow">
+                <div class="flexrow lay-on-hands">
                     <div class="lay-on-hands container">
                       <div class="header item">
                         Result

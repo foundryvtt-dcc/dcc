@@ -844,37 +844,6 @@
 /* ----------------------------------------- */
 /*  Cleric Class                             */
 /* ----------------------------------------- */
-.dcc .deity {
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .deity label {
-  margin: 0 0 0 4px;
-  text-align: center; }
-
-.dcc .deity input {
-  height: 30px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
-
-.dcc .disapproval {
-  width: 50%;
-  margin: 6px 6px 12px 0; }
-
-.dcc .disapproval label {
-  margin: 0 0 0 4px;
-  text-align: center;
-  flex: 8; }
-
-.dcc .disapproval label.one-to {
-  margin: 0 12px 0 4px;
-  text-align: right;
-  flex: 2; }
-
-.dcc .disapproval input {
-  flex: 1; }
-
 .dcc .lay-on-hands.container {
   border: 2px groove #eeede0;
   font-size: 0.8rem;
@@ -916,99 +885,43 @@
 .dcc .skills-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  margin-top: 2%;
-  margin-right: 2%; }
-
-.dcc .skills-container div {
-  flex: 0 48%;
-  margin-bottom: 2%;
-  text-align: center; }
-
-.dcc .skills-container div.wide {
-  flex: 0 96%;
-  margin-bottom: 2%;
-  text-align: center; }
-
-.dcc .skills-container div label {
-  width: 100%;
-  flex-grow: 2;
-  margin: 0 0 0 4px; }
-
-.dcc .skills-container div input {
-  height: 30px;
-  width: 100px;
-  margin: 0 auto;
-  line-height: 32px;
-  font-size: 24px; }
-
-/* ----------------------------------------- */
-/*  Warrior Class                            */
-/* ----------------------------------------- */
-.dcc .crit-range {
-  margin: 12px 0 0 4px; }
-
-.dcc .crit-range label {
-  margin: 0 0 0 4px;
-  text-align: center;
-  flex: 6; }
-
-.dcc .crit-range label.to-twenty {
-  margin: 0 4px 0 12px;
-  text-align: left;
-  flex: 2; }
-
-.dcc .crit-range input {
-  text-align: right;
-  flex: 1; }
+  margin-top: 6px;
+  justify-content: center;
+  align-items: center; }
+  .dcc .skills-container div {
+    flex: 0 48%;
+    display: grid;
+    grid-template-columns: auto 25%;
+    grid-template-rows: auto;
+    margin-bottom: 6px; }
+    .dcc .skills-container div label {
+      padding-right: 6px;
+      text-align: right;
+      font-family: "Book Antiqua", "Palatino Linotype", serif;
+      font-weight: bold; }
+    .dcc .skills-container div input {
+      height: 30px;
+      text-align: center; }
+  .dcc .skills-container div.wide {
+    flex: 0 96%;
+    grid-template-columns: 50% 50%; }
+  .dcc .skills-container div.sneak-and-hide label {
+    text-align: left; }
+  .dcc .skills-container div.split-50-50 {
+    grid-template-columns: 50% 50%; }
+  .dcc .skills-container div.split-25-75 {
+    grid-template-columns: 25% 75%; }
+  .dcc .skills-container div.split-50-25-25 {
+    grid-template-columns: 50% 25% 25%; }
+  .dcc .skills-container div.split-50-12-12 {
+    grid-template-columns: 50% 12% 12%; }
+    .dcc .skills-container div.split-50-12-12 label.to-twenty {
+      margin-left: 4px;
+      text-align: left; }
 
 /* ----------------------------------------- */
 /*  Wizard/Elf Class                         */
 /* ----------------------------------------- */
-.dcc .patron {
-  flex: 0 0 100%;
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .patron label {
-  margin: 0 0 0 4px; }
-
-.dcc .patron input {
-  height: 30px;
-  width: 96%;
-  margin: 0 auto 0 15px;
-  line-height: 32px;
-  font-size: 24px; }
-
-.dcc .familiar {
-  flex: 0 0 100%;
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .familiar label {
-  margin: 0 0 0 4px; }
-
-.dcc .familiar input {
-  height: 30px;
-  width: 96%;
-  margin: 0 auto 0 15px;
-  font-size: 24px; }
-
-.dcc .corruption {
-  flex: 0 0 100%;
-  margin: 6px 6px 0 0;
-  text-align: left; }
-
-.dcc .corruption label {
-  margin: 0 0 0 4px; }
-
-.dcc .corruption input {
-  height: 30px;
-  width: 96%;
-  margin: 0 auto 0 15px;
-  line-height: 32px;
-  font-size: 24px; }
-
 .dcc .spells-container-wizard {
   margin: 4px 4px 4px 4px; }
 
