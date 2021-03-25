@@ -905,6 +905,8 @@
     .dcc .skills-container div input {
       height: 30px;
       text-align: center; }
+    .dcc .skills-container div input.string {
+      text-align: left; }
   .dcc .skills-container div.wide {
     flex: 0 96%;
     grid-template-columns: 50% 50%; }
