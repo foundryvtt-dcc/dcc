@@ -116,7 +116,7 @@ class SpellResult {
 
     if (rollTable) {
       const entryIndex = rollTable.results.findIndex(r => r._id === resultId)
-      const newResult = rollTable.results[entryIndex + 1]
+      const newResult = rollTable.results[entryIndex + direction]
       const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
         description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),
         results: [newResult].map(r => {
