@@ -936,7 +936,6 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
 }
 
 .dcc .class {
-  border: $border-style;
   font-size: 1.2rem;
 }
 
@@ -1014,7 +1013,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   align-items: center;
 
   // Standard skill cards
-  div {
+  > div {
     flex: 0 48%;
     display: grid;
     grid-template-columns: auto 25%;
@@ -1041,34 +1040,51 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
       margin-left: 2px;
       margin-right: 2px;
     }
-
   }
 
   // Wide skill cards
-  div.wide {
+  > div.wide {
     flex: 0 96%;
     grid-template-columns: 50% 50%;
   }
 
   // Special case grids
-  div.split-50-50 {
+  > div.split-50-50 {
     grid-template-columns: 50% 50%;
   }
 
-  div.split-25-75 {
+  > div.split-25-75 {
     grid-template-columns: 25% 75%;
   }
 
-  div.split-50-25-25 {
+  > div.split-50-25-25 {
     grid-template-columns: 50% 25% 25%;
   }
 
-  div.split-50-12-12 {
+  > div.split-50-12-12 {
     grid-template-columns: 50% 12% 12%;
 
     label.to-twenty {
       margin-left: 4px;
       text-align:left;
+    }
+  }
+
+  > div.nosplit {
+    grid-template-columns: 100%;
+  }
+
+  > div.textarea {
+    border: $border-style;
+    grid-template-columns: 25% 75%;
+    grid-template-rows: auto minmax(100px, auto);
+
+    label {
+      text-align: left;
+    }
+
+    > div.editor {
+      grid-column: 1 / span 2;
     }
   }
 }

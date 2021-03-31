@@ -161,7 +161,7 @@
   "DCC.ConsumeWarningNoSource": "The designated {type} source that {name} consumes no longer exists!",
   "DCC.ConsumeWarningZeroAttribute": "{name} has run out of it's designated attribute resource pool!",
   "DCC.Consumed": "Consumed",
-  "DCC.Corruption": "Corruption",
+  "DCC.Corruptions": "Corruptions",
   "DCC.CostGP": "Cost (GP)",
   "DCC.CritDie": "Crit Die",
   "DCC.CritRange": "Critical Threat Range",

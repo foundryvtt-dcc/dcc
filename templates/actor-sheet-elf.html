@@ -59,9 +59,10 @@
                         <input class="string" type="text" id="data.class.familiar" name="data.class.familiar" value="{{data.class.familiar}}" data-dtype="String"/>
                     </div>
     
-                    <div class="wide split-25-75">
-                        <label for="data.class.corruption">{{localize "DCC.Corruption"}}</label>
-                        <input class="string" type="text" id="data.class.corruption" name="data.class.corruption" value="{{data.class.corruption}}" data-dtype="String"/>
+                    <div class="wide textarea">
+                        <label for="data.class.corruption">{{localize "DCC.Corruptions"}}:</label>
+                        <label></label>
+                        {{editor content=data.class.corruption target="data.class.corruption" button=true owner=owner editable=editable}}
                     </div>
                 </div>
 
