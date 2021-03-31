@@ -10,7 +10,7 @@ Manifest URL: https://github.com/cyface/foundryvtt-dcc/raw/master/system.json
 
 *Note that this system does not contain content from copyrighted DCC products, only rollable character sheets.*
 
-You can purchase a module containing copyrighted Goodman Games content ready for out-of-the-box use in Foundry VTT from the [Goodman Games Web Store]](https://goodman-games.com/blog/2021/03/31/new-in-the-online-store-dcc-rpg-for-foundry-vtt/) .
+You can purchase a module containing copyrighted Goodman Games content ready for out-of-the-box use in Foundry VTT from the [Goodman Games Web Store](https://goodman-games.com/blog/2021/03/31/new-in-the-online-store-dcc-rpg-for-foundry-vtt/) .
 
 ###### Maintainers
 * Steve Barnett (@mooped)
