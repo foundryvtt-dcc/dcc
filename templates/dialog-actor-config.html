@@ -6,6 +6,12 @@
     </div>
   </div>
   {{#if isNPC}}
+  <div class="form-group">
+    <label for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+    <div class="form-fields">
+      <input type="text" name="data.class.spellCheck" id="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="number"/>
+    </div>
+  </div>
   {{else}}
   <div class="form-group">
     <label for="data.config.capLevel">{{localize "DCC.CapLevelConfig"}}</label>
