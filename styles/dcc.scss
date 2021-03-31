@@ -1040,6 +1040,10 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
       margin-left: 2px;
       margin-right: 2px;
     }
+
+    select.number {
+      text-align-last: right;
+    }
   }
 
   // Wide skill cards

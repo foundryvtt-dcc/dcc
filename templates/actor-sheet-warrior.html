@@ -8,58 +8,80 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
-        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a class="item" data-tab="class">{{localize "DCC.Warrior"}}</a>
-        {{#if data.config.showSpells}}
-        <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
-        {{/if}}
-        {{#if data.config.showSkills}}
-        <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
-        {{/if}}
-        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+      <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
+      <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+      <a class="item" data-tab="class">{{localize "DCC.Warrior"}}</a>
+      {{#if data.config.showSpells}}
+      <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
+      {{/if}}
+      {{#if data.config.showSkills}}
+      <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
+      {{/if}}
+      <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
     {{!-- Sheet Body --}}
     <section class="sheet-body">
+      {{!-- Character Tab --}}
+      {{> systems/dcc/templates/actor-partial-pc-common.html }}
 
-        {{!-- Character Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+      {{!-- Equipment Tab --}}
+      {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
 
-        {{!-- Equipment Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+      {{!-- Spells Tab --}}
+      {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
 
-        {{!-- Spells Tab --}}
-        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
+      {{!-- Skills Tab --}}
+      {{> systems/dcc/templates/actor-partial-skills.html }}
 
-        {{!-- Skills Tab --}}
-        {{> systems/dcc/templates/actor-partial-skills.html }}
+      {{!-- Notes Tab --}}
+      {{> systems/dcc/templates/actor-partial-pc-notes.html }}
 
-        {{!-- Notes Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
-
-        {{!-- Class Tab --}}
-        <div class="tab" data-group="primary" data-tab="class">
-            <div class="class">
-                <div class="skills-container">
-                    <div class="wide split-50-12-12">
-                        <label for="data.details.critRange">{{localize "DCC.CritRange"}}</label>
-                        <input type="text" id="data.details.critRange" name="data.details.critRange" value="{{data.details.critRange}}" data-dtype="Number"/>
-                        <label class="to-twenty" for="data.details.critRange"> - 20</label>
-                    </div>
-    
-                    <div class="wide split-50-50">
-                      <label for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
-                      <input class="string" type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
-                    </div">
-                </div>
-
-                <ul class="class-note flexcol">
-                  <li>{{localize "DCC.AddClassLevelToInitiative"}}</li>
-                  <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
-                </div>
+      {{!-- Class Tab --}}
+      <div class="tab" data-group="primary" data-tab="class">
+        <div class="class">
+          <div class="skills-container">
+            <div class="wide split-50-12-12">
+              <label for="data.details.critRange">{{localize "DCC.CritRange"}}</label>
+              <select class="number" name="data.details.critRange" id="data.details.critRange">
+                {{#select data.details.critRange}}
+                  <option value="20" default>20</option>
+                  <option value="19" default>19</option>
+                  <option value="18" default>18</option>
+                  <option value="17" default>17</option>
+                  <option value="16" default>16</option>
+                  <option value="15" default>15</option>
+                  <option value="14" default>14</option>
+                  <option value="13" default>13</option>
+                  <option value="12" default>12</option>
+                  <option value="11" default>11</option>
+                  <option value="10" default>10</option>
+                  <option value="9" default>9</option>
+                  <option value="8" default>8</option>
+                  <option value="7" default>7</option>
+                  <option value="6" default>6</option>
+                  <option value="5" default>5</option>
+                  <option value="4" default>4</option>
+                  <option value="3" default>3</option>
+                  <option value="2" default>2</option>
+                  <option value="1" default>1</option>
+                {{/select}}
+              </select>
+              <label class="to-twenty" for="data.details.critRange"> - 20</label>
             </div>
+ 
+            <div class="wide split-50-50">
+              <label for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
+              <input class="string" type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
+            </div">
+          </div>
+
+          <ul class="class-note flexcol">
+            <li>{{localize "DCC.AddClassLevelToInitiative"}}</li>
+            <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
+          </div>
         </div>
+      </div>
     </section>
 </form>
 
