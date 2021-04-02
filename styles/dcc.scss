@@ -965,42 +965,43 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
 /*  Cleric Class                             */
 /* ----------------------------------------- */
 
-.dcc .lay-on-hands.container {
-  border: $border-style;
-  font-size: 0.8rem;
-  flex: 1 0 69%;
+.dcc .lay-on-hands {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
+  flex-direction: row;
+  justify-content: space-around;
 
-.dcc .lay-on-hands.container div.item {
-  flex: 0 24%;
-  margin-bottom: 2%;
-  text-align: center;
-}
+  .container {
+    border: $border-style;
+    font-size: 0.8rem;
+    display: grid;
+  }
 
-.dcc .lay-on-hands.container div.header {
-  font-weight: bold;
-}
+  .lay-on-hands {
+    flex: 0 0 60%;
+    grid-template-columns: repeat(4, 1fr);
+  }
 
-.dcc .condition-healing.container {
-  border: $border-style;
-  font-size: 0.8rem;
-  flex: 1 0 29%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
+  .condition-healing {
+    flex: 0 0 34%;
+    grid-template-columns: 2fr 1fr;
+  }
 
-.dcc .condition-healing.container div.item {
-  flex: 0 48%;
-  margin-bottom: 2%;
-  text-align: center;
-}
+  div.item {
+    text-align: center;
+    margin: 0;
+  }
 
-.dcc .condition-healing.container div.header {
-  font-weight: bold;
+  div.header {
+    font-weight: bold;
+  }
+
+  div.top {
+    border-bottom: $border-style;
+  }
+
+  div.left {
+    border-right: $border-style;
+  }
 }
 
 .dcc .spells-container-cleric {

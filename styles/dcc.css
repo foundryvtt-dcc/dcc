@@ -851,37 +851,29 @@
 /* ----------------------------------------- */
 /*  Cleric Class                             */
 /* ----------------------------------------- */
-.dcc .lay-on-hands.container {
-  border: 2px groove #eeede0;
-  font-size: 0.8rem;
-  flex: 1 0 69%;
+.dcc .lay-on-hands {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between; }
-
-.dcc .lay-on-hands.container div.item {
-  flex: 0 24%;
-  margin-bottom: 2%;
-  text-align: center; }
-
-.dcc .lay-on-hands.container div.header {
-  font-weight: bold; }
-
-.dcc .condition-healing.container {
-  border: 2px groove #eeede0;
-  font-size: 0.8rem;
-  flex: 1 0 29%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between; }
-
-.dcc .condition-healing.container div.item {
-  flex: 0 48%;
-  margin-bottom: 2%;
-  text-align: center; }
-
-.dcc .condition-healing.container div.header {
-  font-weight: bold; }
+  flex-direction: row;
+  justify-content: space-around; }
+  .dcc .lay-on-hands .container {
+    border: 2px groove #eeede0;
+    font-size: 0.8rem;
+    display: grid; }
+  .dcc .lay-on-hands .lay-on-hands {
+    flex: 0 0 60%;
+    grid-template-columns: repeat(4, 1fr); }
+  .dcc .lay-on-hands .condition-healing {
+    flex: 0 0 34%;
+    grid-template-columns: 2fr 1fr; }
+  .dcc .lay-on-hands div.item {
+    text-align: center;
+    margin: 0; }
+  .dcc .lay-on-hands div.header {
+    font-weight: bold; }
+  .dcc .lay-on-hands div.top {
+    border-bottom: 2px groove #eeede0; }
+  .dcc .lay-on-hands div.left {
+    border-right: 2px groove #eeede0; }
 
 .dcc .spells-container-cleric {
   margin: 4px 4px 4px 4px; }
