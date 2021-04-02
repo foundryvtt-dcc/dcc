@@ -927,9 +927,6 @@
     grid-template-columns: 50% 25% 25%; }
   .dcc .skills-container > div.split-50-12-12 {
     grid-template-columns: 50% 12% 12%; }
-    .dcc .skills-container > div.split-50-12-12 label.to-twenty {
-      margin-left: 4px;
-      text-align: left; }
   .dcc .skills-container > div.nosplit {
     grid-template-columns: 100%; }
   .dcc .skills-container > div.textarea {
