@@ -761,7 +761,8 @@
   padding-right: 10px; }
 
 .dcc.sheet.actor .character-grid .languages input {
-  margin: 0 7px 0 7px; }
+  margin: 0 7px 0 7px;
+  font-size: 14px; }
 
 .dcc.sheet.actor .character-grid .birth-augur {
   text-align: left;
@@ -771,7 +772,8 @@
   padding-right: 10px; }
 
 .dcc.sheet.actor .character-grid .birth-augur input {
-  margin: 0 7px 0 7px; }
+  margin: 0 7px 0 7px;
+  font-size: 14px; }
 
 .dcc.sheet.actor .character-grid .remainder {
   border-bottom: 2px groove #eeede0;
