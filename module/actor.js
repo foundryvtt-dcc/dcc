@@ -608,7 +608,7 @@ class DCCActor extends Actor {
       rolled: true,
       roll: damageRoll,
       formula: Roll.cleanFormula(damageRoll.terms || damageRoll.formula),
-      damage: damageRoll.total
+      damage: Math.max(damageRoll.total,1)
     }
   }
 
