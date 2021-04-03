@@ -109,6 +109,16 @@ Hooks.once('init', async function () {
       return ''
     }
   })
+
+  // Handlebars helper to check if a pack exists
+  Handlebars.registerHelper('dccPackExists', function (pack, options) {
+    return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
+  })
+
+  // Handlebars helper to enrich HTML
+  Handlebars.registerHelper('dccLocalizeAndEnrich', function (object) {
+    return TextEditor.enrichHTML(game.i18n.localize(object))
+  })
 })
 
 /* -------------------------------------------- */
