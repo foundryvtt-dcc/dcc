@@ -23,7 +23,7 @@ You can purchase a module containing copyrighted Goodman Games content ready for
 
 ###### Contributing
 * Thanks for considering helping out!
-* All PRs must mass the automated unit tests in this project to be considered for merging.
+* All PRs must pass the automated unit tests in this project to be considered for merging.
 * All PRs must implement Internationalization support in en.json to be considered for merging.
 * We have lots of changes in progress, so don't be sad if we don't merge your PR because we have conflicting changes already in progress.
 * Chat with us on the Discord channel if you have questions!
