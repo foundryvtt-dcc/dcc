@@ -1,4 +1,4 @@
-/* global Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars, EntitySheetConfig */
+/* global Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars, EntitySheetConfig, TextEditor */
 /**
  * DCC
  */
@@ -525,7 +525,6 @@ function _createDCCWeaponMacro (data, slot) {
 
   // Replace missing or default weapon icon with our default
   if (!macroData.img || macroData.img === 'icons/svg/mystery-man.svg') {
-    data
     if (weaponSlot[0] === 'r') {
       macroData.img = EntityImages.imageForItem(data.data.weapon.type)
     }
