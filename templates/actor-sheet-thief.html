@@ -101,7 +101,11 @@
                         <input type="text" id="data.skills.castSpellFromScroll.die" name="data.skills.castSpellFromScroll.die" value="{{data.skills.castSpellFromScroll.die}}" data-dtype="String"/>
                         <input type="text" id="data.skills.castSpellFromScroll.value" name="data.skills.castSpellFromScroll.value" value="{{numberFormat data.skills.castSpellFromScroll.value decimals=0 sign=true}}" data-dtype="Number"/>
                     </div>
-                </div>
+                </div>	
+	     <br>
+	     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+		    {{{dccLocalizeAndEnrich "DCC.ThiefClassLink"}}}
+	     {{/dccPackExists}}
             </div>
         </div>
     </section>
