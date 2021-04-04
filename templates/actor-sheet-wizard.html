@@ -61,7 +61,11 @@
                         <label></label>
                         {{editor content=data.class.corruption target="data.class.corruption" button=true owner=owner editable=editable}}
                     </div>
-                </div>
+		</div>
+			<br>
+		     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+		        {{{dccLocalizeAndEnrich "DCC.WizardClassLink"}}}
+		    {{/dccPackExists}}
             </div>
         </div>
 

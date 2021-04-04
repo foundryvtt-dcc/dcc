@@ -69,11 +69,13 @@
                   <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
 			<ul class="class-note flexcol">
                           {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                            {{{dccLocalizeAndEnrich "DCC.MightyDeedsLink"}}}
+                            <li>{{{dccLocalizeAndEnrich "DCC.MightyDeedsLink"}}}</li>
                           {{/dccPackExists}} 
 			  {{#dccPackExists "dcc.dcc-userguide"}}
-                            {{{dccLocalizeAndEnrich "DCC.MightyDeedsHowtoLink"}}}
+                            <li>{{{dccLocalizeAndEnrich "DCC.MightyDeedsHowtoLink"}}}</li>
                           {{/dccPackExists}} 
+			</ul>
+		  </ul>
                 </div>
             </div>
         </div>
