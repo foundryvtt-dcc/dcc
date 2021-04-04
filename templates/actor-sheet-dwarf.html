@@ -56,9 +56,24 @@
                 </div>
     
                 <ul class="class-note flexcol">
+                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}</li>
+                    <li>{{{dccLocalizeAndEnrich "DCC.DwarfClassLink"}}}</li>
+                  {{/dccPackExists}}
                   <li>{{localize "DCC.Infravision"}}</li>
+		  <ul class="class-note flexcol">
+		    {{#dccPackExists "dcc.dcc-userguide"}}</li>
+                      <li>{{{dccLocalizeAndEnrich "DCC.InfravisionLink"}}}</li>
+                    {{/dccPackExists}}
+		  </ul>
                   <li>{{localize "DCC.UndergroundSkills"}}</li>
                   <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
+			<ul class="class-note flexcol">
+                          {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                            {{{dccLocalizeAndEnrich "DCC.MightyDeedsLink"}}}
+                          {{/dccPackExists}} 
+			  {{#dccPackExists "dcc.dcc-userguide"}}
+                            {{{dccLocalizeAndEnrich "DCC.MightyDeedsHowtoLink"}}}
+                          {{/dccPackExists}} 
                 </div>
             </div>
         </div>
