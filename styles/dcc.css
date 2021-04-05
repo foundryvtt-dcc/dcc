@@ -1023,7 +1023,7 @@
 .dcc.item .sheet-body.item {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 50px 50px minmax(80px, auto); }
+  grid-template-rows: 50px minmax(80px, auto); }
 
 .dcc.item .sheet-body.item .value-row {
   grid-column: span 3 / span 3; }
@@ -1031,7 +1031,7 @@
 .dcc.item .sheet-body.weapon {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 60px 60px 50px minmax(80px, auto); }
+  grid-template-rows: 50px 50px 50px minmax(80px, auto); }
 
 .dcc.item .sheet-body.weapon .value-row {
   grid-column: span 3 / span 3; }
@@ -1055,19 +1055,19 @@
 .dcc.item .sheet-body.spell {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 60px 50px minmax(80px, auto) 50px minmax(80px, auto); }
+  grid-template-rows: 60px minmax(80px, auto) 50px minmax(80px, auto); }
 
 .dcc.item .sheet-body.treasure {
   width: 100%;
   display: grid;
   grid-template-columns: 100%;
-  grid-template-rows: 85px 50px minmax(80px, auto); }
+  grid-template-rows: 50px minmax(80px, auto); }
 
 .dcc.item .sheet-body.skill {
   width: 100%;
   display: grid;
   grid-template-columns: 100%;
-  grid-template-rows: 50px minmax(80px, auto); }
+  grid-template-rows: minmax(80px, auto); }
 
 .dcc.item .value-row {
   height: 150px;
@@ -1086,13 +1086,9 @@
 .dcc.item .sheet-body .spell-header-overflow {
   grid-column: 1 / span 3; }
 
-.dcc.item .sheet-body .description-heading {
-  grid-column: 1 / span 3; }
-  .dcc.item .sheet-body .description-heading h1 {
-    display: inline-block; }
-
 .dcc.item .sheet-body .description {
-  grid-column: 1 / span 3; }
+  grid-column: 1 / span 3;
+  border: 2px groove #eeede0; }
 
 .dcc.item .sheet-body .armor-header-extras {
   display: grid;
@@ -1104,26 +1100,17 @@
   grid-template-columns: minmax(55px, auto) minmax(90px, auto) minmax(100px, auto) minmax(85px, auto) minmax(145px, auto);
   grid-column: 1 / span 3; }
 
-.dcc.item .sheet-body .weapon-description-heading {
-  grid-column: 1 / span 1; }
-  .dcc.item .sheet-body .weapon-description-heading h1 {
-    display: inline-block; }
-
 .dcc.item .sheet-body .weapon-summary {
-  grid-column: 2 / span 2; }
-
-.dcc.item .sheet-body .armor-description-heading {
-  grid-column: 1 / span 1; }
-  .dcc.item .sheet-body .armor-description-heading h1 {
-    display: inline-block; }
+  grid-column: 1 / span 3; }
 
 .dcc.item .sheet-body .armor-summary {
-  grid-column: 2 / span 2; }
+  grid-column: 1 / span 3; }
 
 .dcc.item .sheet-body .mercurial-effect-heading {
   grid-column: 1; }
   .dcc.item .sheet-body .mercurial-effect-heading h1 {
-    display: inline-block; }
+    display: inline-block;
+    border: 0; }
 
 .dcc.item .sheet-body .mercurial-effect-value {
   grid-column: 2; }
@@ -1132,7 +1119,8 @@
   grid-column: 3; }
 
 .dcc.item .sheet-body .mercurial-effect-description {
-  grid-column: 1 / span 3; }
+  grid-column: 1 / span 3;
+  border: 2px groove #eeede0; }
 
 .dcc.item .item-name {
   flex: 1 1; }

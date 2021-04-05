@@ -1248,7 +1248,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   .sheet-body.item {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 50px 50px minmax(80px, auto);
+    grid-template-rows: 50px minmax(80px, auto);
   }
 
   .sheet-body.item .value-row {
@@ -1258,7 +1258,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   .sheet-body.weapon {
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 60px 60px 50px minmax(80px, auto);
+    grid-template-rows: 50px 50px 50px minmax(80px, auto);
   }
 
   .sheet-body.weapon .value-row {
@@ -1287,21 +1287,21 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   .sheet-body.spell {
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 60px 50px minmax(80px, auto) 50px minmax(80px, auto);
+    grid-template-rows: 60px minmax(80px, auto) 50px minmax(80px, auto);
   }
 
   .sheet-body.treasure {
     width: 100%;
     display: grid;
     grid-template-columns: 100%;
-    grid-template-rows: 85px 50px minmax(80px, auto);
+    grid-template-rows: 50px minmax(80px, auto);
   }
 
   .sheet-body.skill {
     width: 100%;
     display: grid;
     grid-template-columns: 100%;
-    grid-template-rows: 50px minmax(80px, auto);
+    grid-template-rows: minmax(80px, auto);
   }
 
   .value-row {
@@ -1328,16 +1328,9 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
       grid-column: 1 / span 3;
     }
 
-    .description-heading {
-      grid-column: 1 / span 3;
-
-      h1 {
-        display: inline-block;
-      }
-    }
-
     .description {
       grid-column: 1 / span 3;
+      border: $border-style;
     }
 
     .armor-header-extras {
@@ -1352,28 +1345,12 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
       grid-column: 1 / span 3;
     }
 
-    .weapon-description-heading {
-      grid-column: 1 / span 1;
-
-      h1 {
-        display: inline-block;
-      }
-    }
-
     .weapon-summary {
-      grid-column: 2 / span 2;
-    }
-
-    .armor-description-heading {
-      grid-column: 1 / span 1;
-
-      h1 {
-        display: inline-block;
-      }
+      grid-column: 1 / span 3;
     }
 
     .armor-summary {
-      grid-column: 2 / span 2;
+      grid-column: 1 / span 3;
     }
 
     .mercurial-effect-heading {
@@ -1381,6 +1358,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
 
       h1 {
         display: inline-block;
+        border: 0;
       }
     }
 
@@ -1394,6 +1372,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
 
     .mercurial-effect-description {
       grid-column: 1 / span 3;
+      border: $border-style;
     }
   }
 

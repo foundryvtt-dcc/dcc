@@ -101,15 +101,12 @@
             {{/if}}
           </div>
         </div>
-        <div class="armor-description-heading">
-          <h1>{{localize "DCC.Description"}}</h1>
-        </div>
         <div class="armor-summary">
           <label class="resource-label" for="data.description.summary">{{localize "DCC.ItemSummary"}}</label>
           <input type="text" name="data.description.summary" value="{{data.description.summary}}" data-dtype="String"/>
         </div>
         <div class="description">
-            {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
+          {{editor content=data.description.value target="data.description.value" button=true owner=owner editable=editable}}
         </div>
     </section>
 </form>
