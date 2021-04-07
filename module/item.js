@@ -54,7 +54,7 @@ class DCCItem extends Item {
     if (this.data.type !== 'spell') { return }
 
     const actor = this.options.actor
-    const ability = actor.data.data.abilities[abilityId]
+    const ability = actor.data.data.abilities[abilityId] || {}
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
 
@@ -89,6 +89,11 @@ class DCCItem extends Item {
       resultsTable = game.tables.entities.find(predicate)
     }
 
+    let flavor = spell
+    if (ability.label) {
+      flavor += ` (${game.i18n.localize(ability.label)})`
+    }
+
     // Draw from the table if found, otherwise display the roll
     if (resultsTable) {
       const results = await resultsTable.draw({ roll, displayChat: false })
@@ -119,7 +124,7 @@ class DCCItem extends Item {
       // Fall back to displaying just the roll
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
-        flavor: `${spell} (${game.i18n.localize(ability.label)})`
+        flavor
       })
     }
   }
