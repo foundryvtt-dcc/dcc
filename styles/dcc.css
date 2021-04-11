@@ -96,10 +96,13 @@
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
 
 .journal-sheet h2 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  line-height: 1.5em; }
 
 .journal-sheet form input[name="name"] {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-size: 24px;
+  }
 
 .journal-sheet div.editor-content {
   font-family: "Book Antiqua", "Palatino Linotype", serif; }
