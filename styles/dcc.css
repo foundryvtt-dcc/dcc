@@ -86,7 +86,7 @@
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
 
 .dcc .flex-padding {
-  flex: 1 0 0px;
+  flex: 1 0 0;
   margin: 0; }
 
 /* ----------------------------------------- */
@@ -96,7 +96,8 @@
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
 
 .journal-sheet h2 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  line-height: 1.5em; }
 
 .journal-sheet form input[name="name"] {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif; }
@@ -160,7 +161,7 @@
 
 .dcc .sheet-header .upper-level div.level {
   flex: 1 0 25%;
-  padding: 0 0px 0 7px; }
+  padding: 0 0 0 7px; }
 
 .dcc .sheet-header .upper-level div.level input {
   text-align: center; }
@@ -975,7 +976,7 @@
     background-position: center;
     background-repeat: no-repeat; }
   .dcc .item-list .skill-name {
-    flex: 1 0 1; }
+    flex: 1 0 1px; }
   .dcc .item-list .skill-die {
     flex: 0 0 60px; }
   .dcc .item-list .skill-modifier {

@@ -31,7 +31,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
 }
 
 .dcc .flex-padding {
-  flex: 1 0 0px;
+  flex: 1 0 0;
   margin: 0;
 }
 
@@ -44,6 +44,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
 
 .journal-sheet h2 {
   font-family: $duvall;
+  line-height: 1.5em;
 }
 
 .journal-sheet form input[name="name"] {
@@ -123,7 +124,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
 
 .dcc .sheet-header .upper-level div.level {
   flex: 1 0 25%;
-  padding: 0 0px 0 7px;
+  padding: 0 0 0 7px;
 }
 
 .dcc .sheet-header .upper-level div.level input {
@@ -378,7 +379,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
     border-radius: 3px;
     box-shadow: 0 0 2px #FFF inset;
     word-break: break-all;
- 
+
     h4 {
       flex: 0;
       font-size: 20px;
@@ -887,22 +888,27 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   grid-column: 1;
   grid-row: 1;
 }
+
 .dcc #agl {
   grid-column: 1;
   grid-row: 2;
 }
+
 .dcc #sta {
   grid-column: 1;
   grid-row: 3;
 }
+
 .dcc #per {
   grid-column: 1;
   grid-row: 4;
 }
+
 .dcc #int {
   grid-column: 1;
   grid-row: 5;
 }
+
 .dcc #lck {
   grid-column: 1;
   grid-row: 6;
@@ -918,10 +924,12 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   grid-column: 2;
   grid-row: 2;
 }
+
 .dcc #frt {
   grid-column: 2;
   grid-row: 3;
 }
+
 .dcc #wil {
   grid-column: 2;
   grid-row: 4;
@@ -931,6 +939,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   grid-column: 2 / span 2;
   grid-row: 5;
 }
+
 .dcc #birth-augur {
   grid-column: 2 / span 2;
   grid-row: 6;
@@ -1026,14 +1035,14 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
     grid-template-columns: auto 25%;
     grid-template-rows: auto;
     margin-bottom: 6px;
-  
+
     label {
       padding-right: 6px;
       text-align: right;
       font-family: $book-antiqua;
       font-weight: bold;
     }
-  
+
     input {
       height: 30px;
       text-align: center;
@@ -1153,7 +1162,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   }
 
   .skill-name {
-    flex: 1 0 1;
+    flex: 1 0 1px;
   }
 
   .skill-die {
@@ -1318,7 +1327,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
     .spell-header-overflow {
       grid-column: 1 / span 3;
     }
-  
+
     .description-heading {
       grid-column: 1 / span 3;
 
@@ -1326,11 +1335,11 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
         display: inline-block;
       }
     }
-  
+
     .description {
       grid-column: 1 / span 3;
     }
-  
+
     .armor-header-extras {
       display: grid;
       grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
@@ -1350,11 +1359,11 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
         display: inline-block;
       }
     }
-  
+
     .weapon-summary {
       grid-column: 2 / span 2;
     }
-  
+
     .armor-description-heading {
       grid-column: 1 / span 1;
 
@@ -1362,11 +1371,11 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
         display: inline-block;
       }
     }
-  
+
     .armor-summary {
       grid-column: 2 / span 2;
     }
-  
+
     .mercurial-effect-heading {
       grid-column: 1;
 
@@ -1374,15 +1383,15 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
         display: inline-block;
       }
     }
-  
+
     .mercurial-effect-value {
       grid-column: 2;
     }
-  
+
     .mercurial-effect-summary {
       grid-column: 3;
     }
-  
+
     .mercurial-effect-description {
       grid-column: 1 / span 3;
     }
@@ -1441,7 +1450,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
   .tabs {
     height: 40px;
   }
-  
+
   .tabs .item {
     line-height: 35px;
     font-weight: bold;
@@ -1449,7 +1458,7 @@ $duvall: "DuvallSmallCaps", "Palatino Linotype", serif;
     border-radius: 5px 5px 0 0;
     margin-bottom: 10px
   }
-  
+
   .tabs .item.active {
     text-decoration: underline;
     text-shadow: none;
