@@ -102,7 +102,7 @@ Hooks.once('init', async function () {
 
   // Handlebars helper for distances with an apostrophe
   Handlebars.registerHelper('distanceFormat', function (object) {
-    const fields = String(object).match(/(\d+)'?/)
+    const fields = String(object).match(/(-?\d+)'?/)
     if (fields) {
       return fields[1] + '\''
     } else {
