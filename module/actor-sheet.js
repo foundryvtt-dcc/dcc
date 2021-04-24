@@ -493,9 +493,11 @@ class DCCActorSheet extends ActorSheet {
         img = spellItem.data.img
       }
       dragData = {
-        type: 'Spell Check',
+        type: 'Item',
+        dccType: 'Spell Check',
         actorId: this.actor.id,
-        data: {
+        data: spellItem,
+        dccData: {
           ability: event.currentTarget.dataset.ability,
           spell: spell,
           img: img
@@ -519,9 +521,11 @@ class DCCActorSheet extends ActorSheet {
       const li = event.currentTarget.parentElement
       const weapon = this.actor.items.get(li.dataset.itemId)
       dragData = {
-        type: 'Weapon',
+        type: 'Item',
+        dccType: 'Weapon',
         actorId: this.actor.id,
-        data: {
+        data: weapon,
+        dccData: {
           weapon: weapon,
           slot: li.dataset.itemSlot,
           backstab: classes.contains('backstab-button')

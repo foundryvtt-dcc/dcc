@@ -289,7 +289,17 @@ async function createDCCMacro (data, slot) {
     'Apply Disapproval': _createDCCApplyDisapprovalMacro,
     'Roll Disapproval': _createDCCRollDisapprovalMacro
   }
-  if (!handlers[data.type]) return
+  // Pull out the DCC data from the drop handler (it may be packaged inside Foundry Item data)
+  const type = handlers.dccType || handlers.type
+  if (data.dccType) {
+    data.type = data.dccType
+    delete data.dccType
+  }
+  if (data.dccData) {
+    data.data = data.dccData
+    delete data.dccData
+  }
+  if (!data.type) return
   if (!('data' in data)) return ui.notifications.warn('You can only create macro buttons for owned items')
 
   // Call the appropriate function to generate a macro
