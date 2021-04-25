@@ -327,9 +327,13 @@
 .dcc .armor-list {
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   margin: 0 8px 0 0;
-  padding: 0;
+  padding-left: 8px;
 }
-
+.dcc .armor-list .item-image {
+  flex: 0 0 24px;
+  margin-right: 8px;
+  margin-top: 3px;
+}
 .dcc .armor-list input {
   height: 30px;
 }
@@ -728,9 +732,13 @@
 .dcc .weapon-list {
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   margin: 0;
-  padding: 0;
+  padding-left: 8px;
 }
-
+.dcc .weapon-list .item-image {
+  flex: 0 0 24px;
+  margin-right: 8px;
+  margin-top: 3px;
+}
 .dcc .weapon-list input {
   height: 30px;
   margin: 0 8px 0 0;

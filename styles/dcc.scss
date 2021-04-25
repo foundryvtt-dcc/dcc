@@ -263,11 +263,17 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 .dcc .armor-list {
   font-family: $book-antiqua;
   margin: 0 8px 0 0;
-  padding: 0;
-}
+  padding-left: 8px;
 
-.dcc .armor-list input {
-  height: 30px;
+  .item-image {
+    flex: 0 0 24px;
+    margin-right: 8px;
+    margin-top: 3px;
+  }
+
+  input {
+    height: 30px;
+  }
 }
 
 .dcc .armor-list-header {
@@ -688,12 +694,18 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 .dcc .weapon-list {
   font-family: $book-antiqua;
   margin: 0;
-  padding: 0;
-}
+  padding-left: 8px;
 
-.dcc .weapon-list input {
-  height: 30px;
-  margin: 0 8px 0 0;
+  .item-image {
+    flex: 0 0 24px;
+    margin-right: 8px;
+    margin-top: 3px;
+  }
+
+  input {
+    height: 30px;
+    margin: 0 8px 0 0;
+  }
 }
 
 .dcc .weapon-list-header {
@@ -1133,7 +1145,6 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 }
 
 .dcc .item-list {
-
   padding-left: 8px;
 
   .item-equipped {
