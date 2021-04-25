@@ -220,120 +220,72 @@ class DCCActorSheet extends ActorSheet {
     // Drag event handler
     const dragHandler = ev => this._onDragStart(ev)
 
+    // Helper function to make things draggable
+    const makeDraggable = function (index, element) {
+      // Add draggable attribute and dragstart listener.
+      element.setAttribute('draggable', true)
+      element.addEventListener('dragstart', dragHandler, false)
+    }
+
     // Owner Only Listeners
     if (this.actor.owner) {
       // Ability Checks
       html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
       html.find('.ability-modifiers').click(this._onRollAbilityCheck.bind(this))
-      html.find('li.ability').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
-      html.find('div.ability-modifiers').each((i, li) => {
+      html.find('li.ability').each(makeDraggable)
+      html.find('div.ability-modifiers').each((index, element) => {
         // Also make the luck modifier draggable for non-standard luck checks
-        if (li.parentElement.dataset.ability === 'lck') {
-          li.setAttribute('draggable', true)
-          li.addEventListener('dragstart', dragHandler, false)
+        if (element.parentElement.dataset.ability === 'lck') {
+          makeDraggable(index, element)
         }
       })
 
       // Initiative
       html.find('.init-label').click(this._onRollInitiative.bind(this))
-      html.find('div.init').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('div.init').each(makeDraggable)
 
       // Hit Dice
       html.find('.hd-label').click(this._onRollHitDice.bind(this))
-      html.find('div.hd').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('div.hd').each(makeDraggable)
 
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
-      html.find('li.save').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('li.save').each(makeDraggable)
 
       // Skills
       html.find('.skill-check').click(this._onRollSkillCheck.bind(this))
-      html.find('label.skill-check').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('label.skill-check').each(makeDraggable)
 
       // Luck Die
       html.find('.luck-die').click(this._onRollLuckDie.bind(this))
-      html.find('label.luck-die').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('label.luck-die').each(makeDraggable)
 
       // Spell Checks
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
       html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
-      html.find('label.spell-check').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
-      html.find('li.spell-item').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('label.spell-check').each(makeDraggable)
+      html.find('.spell-draggable').each(makeDraggable)
 
       // Disapproval
       html.find('.disapproval-range').click(this._onApplyDisapproval.bind(this))
       html.find('.disapproval-table').click(this._onRollDisapproval.bind(this))
-      html.find('label.disapproval-range').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
-      html.find('label.disapproval-table').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('label.disapproval-range').each(makeDraggable)
+      html.find('label.disapproval-table').each(makeDraggable)
 
       // Attack Bonus
       html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
-      html.find('.attack-bonus').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('.attack-bonus').each(makeDraggable)
 
       // Action Dice
-      html.find('.action-dice').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('.action-dice').each(makeDraggable)
 
       // Weapons
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
       html.find('.backstab-button').click(this._onRollWeaponAttack.bind(this))
-      html.find('div.weapon-button').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
-      html.find('div.backstab-button').each((i, li) => {
-        // Add draggable attribute and dragstart listener.
-        li.setAttribute('draggable', true)
-        li.addEventListener('dragstart', dragHandler, false)
-      })
+      html.find('.weapon-draggable').each(makeDraggable)
+
+      // Draggable items, including armor
+      html.find('.item-draggable').each(makeDraggable)
 
       // Only for editable sheets
       if (this.options.editable) {
@@ -410,6 +362,21 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /**
+   * Search the object and then its parent elements for a dataset attribute
+   * @param {Object} element    The starting element
+   * @param {String} attribute  The name of the dataset attribute
+   */
+  _findDataset (element, attribute) {
+    while (element && !(attribute in element.dataset)) {
+      element = element.parentElement
+    }
+    if (attribute in element.dataset) {
+      return element.dataset[attribute]
+    }
+    return null
+  }
+
+  /**
    * Create a macro when a rollable element is dragged
    * @param {Event} event
    * @override */
@@ -420,7 +387,7 @@ class DCCActorSheet extends ActorSheet {
     const classes = event.target.classList
     if (classes.contains('ability')) {
       // Normal ability rolls and DCC d20 roll under luck rolls
-      const abilityId = event.currentTarget.dataset.ability
+      const abilityId = this._findDataset(event.currentTarget, 'ability')
       const rollUnder = (abilityId === 'lck')
       dragData = {
         type: 'Ability',
@@ -432,7 +399,7 @@ class DCCActorSheet extends ActorSheet {
       }
     } else if (classes.contains('ability-modifiers')) {
       // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
-      const abilityId = event.currentTarget.parentElement.dataset.ability
+      const abilityId = this._findDataset(event.currentTarget, 'ability')
       if (abilityId) {
         dragData = {
           type: 'Ability',
@@ -459,16 +426,18 @@ class DCCActorSheet extends ActorSheet {
       dragData = {
         type: 'Save',
         actorId: this.actor.id,
-        data: event.currentTarget.dataset.save
+        data: this._findDataset(event.currentTarget, 'save')
       }
     } else if (classes.contains('skill-check')) {
-      const skillId = event.currentTarget.parentElement.dataset.skill
+      const skillId = this._findDataset(event.currentTarget, 'skill')
+      const actorSkill = this.actor.data.data.skills[skillId]
+      const skillName = actorSkill ? actorSkill.label : skillId
       dragData = {
         type: 'Skill',
         actorId: this.actor.id,
         data: {
           skillId: skillId,
-          skillName: this.actor.data.data.skills[skillId].label
+          skillName: skillName
         }
       }
     } else if (classes.contains('luck-die')) {
@@ -482,11 +451,11 @@ class DCCActorSheet extends ActorSheet {
         type: 'Spell Check',
         actorId: this.actor.id,
         data: {
-          ability: event.currentTarget.parentElement.dataset.ability
+          ability: this._findDataset(event.currentTarget, 'ability')
         }
       }
-    } else if (classes.contains('spell-item')) {
-      const spell = event.currentTarget.dataset.spell
+    } else if (classes.contains('spell-draggable')) {
+      const spell = this._findDataset(event.currentTarget, 'spell')
       const spellItem = this.actor.items.find(i => i.name === spell)
       let img
       if (spellItem) {
@@ -498,7 +467,7 @@ class DCCActorSheet extends ActorSheet {
         actorId: this.actor.id,
         data: spellItem,
         dccData: {
-          ability: event.currentTarget.dataset.ability,
+          ability: this._findDataset(event.currentTarget, 'ability'),
           spell: spell,
           img: img
         }
@@ -517,9 +486,9 @@ class DCCActorSheet extends ActorSheet {
           die: this.actor.data.data.attributes.actionDice.value
         }
       }
-    } else if (classes.contains('weapon-button') || classes.contains('backstab-button')) {
-      const li = event.currentTarget.parentElement
-      const weapon = this.actor.items.get(li.dataset.itemId)
+    } else if (classes.contains('weapon-draggable')) {
+      const itemId = this._findDataset(event.currentTarget, 'itemId')
+      const weapon = this.actor.items.get(itemId)
       dragData = {
         type: 'Item',
         dccType: 'Weapon',
@@ -527,9 +496,16 @@ class DCCActorSheet extends ActorSheet {
         data: weapon,
         dccData: {
           weapon: weapon,
-          slot: li.dataset.itemSlot,
+          slot: this._findDataset(event.currentTarget, 'itemSlot'),
           backstab: classes.contains('backstab-button')
         }
+      }
+    } else if (classes.contains('item-draggable')) {
+      const itemId = this._findDataset(event.currentTarget, 'itemId')
+      const item = this.actor.items.get(itemId)
+      dragData = {
+        type: 'Item',
+        data: item
       }
     } else if (classes.contains('disapproval-range')) {
       dragData = {

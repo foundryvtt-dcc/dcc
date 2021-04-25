@@ -164,6 +164,8 @@
   "DCC.Consumed": "Consumed",
   "DCC.Corruptions": "Corruptions",
   "DCC.CostGP": "Cost (GP)",
+  "DCC.CreateMacroNoHandlerWarning": "Could not create a macro from the dropped item",
+  "DCC.CreateMacroNotOwnedWarning": "You can only create macro buttons for owned items",
   "DCC.CritDie": "Crit Die",
   "DCC.CritRange": "Critical Threat Range",
   "DCC.CritTable": "Crit Table",
