@@ -86,6 +86,7 @@ function _parseJSONPCs (pcObject) {
         pc.items.push({
           name: weapon.name,
           type: 'weapon',
+          img: weapon.img,
           data: {
             toHit: weapon.attackMod || '0',
             damage: weapon.attackDamage || '1d3',
@@ -97,6 +98,7 @@ function _parseJSONPCs (pcObject) {
       pc.items.push({
         name: pcObject.weapon,
         type: 'weapon',
+        img: EntityImages.imageForItem('weapon'),
         data: {
           toHit: pcObject.attackMod || '0',
           damage: pcObject.attackDamage || '1d3',
@@ -411,6 +413,7 @@ function _parsePlainPCToJSON (pcString) {
     if (weapon1) {
       pcObject.weapons.push({
         name: weapon1.name,
+        img: EntityImages.imageForItem('weapon'),
         attackMod: weapon1.attackMod,
         attackDamage: weapon1.attackDamage,
         melee: weapon1.melee
@@ -421,6 +424,7 @@ function _parsePlainPCToJSON (pcString) {
     if (weapon2) {
       pcObject.weapons.push({
         name: weapon2.name,
+        img: EntityImages.imageForItem('weapon'),
         attackMod: weapon2.attackMod,
         attackDamage: weapon2.attackDamage,
         melee: weapon2.melee
@@ -431,6 +435,7 @@ function _parsePlainPCToJSON (pcString) {
     if (weapon3) {
       pcObject.weapons.push({
         name: weapon3.name,
+        img: EntityImages.imageForItem('weapon'),
         attackMod: weapon3.attackMod,
         attackDamage: weapon3.attackDamage,
         melee: weapon3.melee
@@ -461,7 +466,7 @@ function _parseWeapon (weaponString) {
     const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
     return {
       name: name,
-      img: 'systems/dcc/styles/images/weapon.webp',
+      img: EntityImages.imageForItem('weapon'),
       attackMod: weaponData[2],
       attackDamage: damage,
       melee: melee

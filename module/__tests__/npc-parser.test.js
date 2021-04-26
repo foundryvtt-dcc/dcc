@@ -22,6 +22,7 @@ test('super snake', () => {
       {
         name: 'bite',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+6',
           damage: '1d8',
@@ -84,6 +85,7 @@ test('orcs', () => {
       {
         name: 'claw',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+1',
           damage: '1d4',
@@ -94,6 +96,7 @@ test('orcs', () => {
       {
         name: 'spear',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+1',
           damage: '1d8',
@@ -128,6 +131,7 @@ test('spider', () => {
       {
         name: 'bite',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+2',
           damage: '1d4',
@@ -138,6 +142,7 @@ test('spider', () => {
       {
         name: 'web',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+4',
           melee: false,
@@ -173,6 +178,7 @@ test('wedad', () => {
       {
         name: 'tree limb slam',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+5',
           damage: '1d10',
@@ -206,6 +212,7 @@ test('smultist', () => {
       {
         name: 'dagger',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+5',
           damage: '1d4+3',
@@ -239,6 +246,7 @@ test('shortstats', () => {
       {
         name: 'kick',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+2',
           damage: '1d3',
@@ -272,6 +280,7 @@ test('familiar', () => {
       {
         name: 'claw',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+3',
           damage: '1d4',
@@ -302,6 +311,7 @@ test('bonusguy', () => {
       {
         name: 'big club',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '+3',
           damage: '1d4+2',
@@ -311,6 +321,7 @@ test('bonusguy', () => {
       {
         name: 'small club',
         type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
         data: {
           toHit: '-2',
           damage: '1d4 - 3',
@@ -353,6 +364,7 @@ Ref +4, Will +2; AL C.`
         {
           name: 'claws',
           type: 'weapon',
+          img: 'systems/dcc/styles/images/weapon.webp',
           data: {
             toHit: '+6',
             damage: '1d8+3',
@@ -376,6 +388,7 @@ Ref +4, Will +2; AL C.`
         {
           name: 'teeth',
           type: 'weapon',
+          img: 'systems/dcc/styles/images/weapon.webp',
           data: {
             toHit: '+2',
             damage: '1d6',
@@ -385,6 +398,7 @@ Ref +4, Will +2; AL C.`
         {
           name: 'tail',
           type: 'weapon',
+          img: 'systems/dcc/styles/images/weapon.webp',
           data: {
             toHit: '+3',
             damage: '1d4',
@@ -408,6 +422,7 @@ Ref +4, Will +2; AL C.`
         {
           name: 'bite',
           type: 'weapon',
+          img: 'systems/dcc/styles/images/weapon.webp',
           data: {
             toHit: '+2',
             damage: '1d3-1',

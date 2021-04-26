@@ -1,5 +1,7 @@
 /* global game, Roll, ui */
 
+import EntityImages from './entity-images.js'
+
 /**
  *  Parses one or more NPC Stat Blocks (e.g. from published modules) into actor data
  *  @param {string} npcString The NPC stat block to import
@@ -133,6 +135,7 @@ function _parseAttack (attackString, damageString) {
   return {
     name: name,
     type: 'weapon',
+    img: EntityImages.imageForItem('weapon'),
     data: attack
   }
 }
