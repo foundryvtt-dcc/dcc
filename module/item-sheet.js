@@ -1,6 +1,7 @@
 /* global Dialog, ItemSheet, game, mergeObject, CONFIG */
 
 import DCCItemConfig from './item-config.js'
+import EntityImages from './entity-images.js'
 
 /**
  * Extend the basic ItemSheet for DCC RPG
@@ -53,6 +54,10 @@ export class DCCItemSheet extends ItemSheet {
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
       // Only allow currency conversion on items representing coins that have a resolved value
       data.allowConversions = data.item.data.isCoins && !data.unresolved && !this.limited
+    }
+
+    if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
+      data.item.img = EntityImages.imageForItem(data.item.type)
     }
 
     return data

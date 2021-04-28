@@ -69,6 +69,10 @@ class DCCActorSheet extends ActorSheet {
     data.labels = this.actor.labels || {}
     data.filters = this._filters
 
+    if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
+      data.actor.img = EntityImages.imageForActor(data.type)
+    }
+
     if (data.isNPC) {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
     } else {
@@ -132,6 +136,11 @@ class DCCActorSheet extends ActorSheet {
       if (removeEmptyItems && i.data.quantity !== undefined && i.data.quantity <= 0) {
         this.actor.deleteOwnedItem(i._id, {})
         continue
+      }
+
+      // Fix the icon for items Foundry created with no icon or the mystery-man icon
+      if (!i.img || i.img === 'icons/svg/mystery-man.svg') {
+        i.img = EntityImages.imageForItem(i.type)
       }
 
       if (i.type === 'weapon') {
