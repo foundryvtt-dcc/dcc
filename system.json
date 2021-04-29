@@ -57,7 +57,7 @@
   "url": "https://github.com/foundryvtt-dcc/dcc",
   "manifest": "https://github.com/foundryvtt-dcc/dcc/raw/main/system.json",
   "download": "https://github.com/foundryvtt-dcc/dcc/archive/v0.26.0.zip",
-  "bugs": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/issues",
+  "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "allowBugReporter": true,
   "license": "LICENSE.txt"
 }
