@@ -54,9 +54,9 @@
   "secondaryTokenAttribute": "abilities.lck.value",
   "socket": true,
   "initiative": "1d20 + @attributes.init.value",
-  "url": "https://github.com/cyface/foundryvtt-dcc",
-  "manifest": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/raw/master/system.json",
-  "download": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/archive/v0.26.0.zip",
+  "url": "https://github.com/foundryvtt-dcc/dcc",
+  "manifest": "https://github.com/foundryvtt-dcc/dcc/raw/main/system.json",
+  "download": "https://github.com/foundryvtt-dcc/dcc/archive/v0.26.0.zip",
   "bugs": "https://github.com/foundryvtt-dcc/foundryvtt-dcc/issues",
   "allowBugReporter": true,
   "license": "LICENSE.txt"

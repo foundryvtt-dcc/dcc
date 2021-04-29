@@ -13,7 +13,7 @@
     ]
   },
   "bugs": {
-    "url": "https://github.com/cyface/foundryvtt-dcc/issues"
+    "url": "https://github.com/foundryvtt-dcc/dcc/issues"
   },
   "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
   "devDependencies": {
@@ -28,7 +28,7 @@
   "directories": {
     "test": "module/tests"
   },
-  "homepage": "https://github.com/cyface/foundryvtt-dcc#readme",
+  "homepage": "https://github.com/foundryvtt-dcc/dcc#readme",
   "jest": {
     "setupFiles": [
       "<rootDir>/module/__mocks__/setup.js",
@@ -47,7 +47,7 @@
   "name": "dcc",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cyface/foundryvtt-dcc.git"
+    "url": "git+https://github.com/foundryvtt-dcc/dcc.git"
   },
   "scripts": {
     "format": "standard --fix; npx stylelint '**/*.scss'",

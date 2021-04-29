@@ -1,0 +1,19 @@
+# git files
+.gitattributes export-ignore
+.gitignore export-ignore
+
+# NPM package
+package.json export-ignore
+package-lock.json export-ignore
+
+# Scripts
+scripts export-ignore
+.stylelintrc.json export-ignore
+README_RELEASE_PROCESS.md export-ignore
+.github export-ignore
+
+# Entity Metadata
+metadata export-ignore
+
+# Jetbrains stuff
+.idea export-ignore
