@@ -17,3 +17,6 @@ metadata export-ignore
 
 # Jetbrains stuff
 .idea export-ignore
+
+# Version File
+version.txt export-ignore

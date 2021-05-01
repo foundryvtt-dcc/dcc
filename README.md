@@ -6,8 +6,6 @@ Goodman Games' Dungeon Crawl Classics RPG system for the [Foundry Virtual Tablet
 
 Join us on the [virtual-tabletop channel](https://discord.gg/2PR9YH9) on the Goodman Games discord for help and discussion.
 
-Manifest URL: https://github.com/foundryvtt-dcc/dcc/raw/main/system.json
-
 *Note that this system does not contain content from copyrighted DCC products, only rollable character sheets.*
 
 You can purchase a module containing copyrighted Goodman Games content ready for out-of-the-box use in Foundry VTT from the [Goodman Games Web Store](https://goodman-games.com/store/product/foundryvtt-dcc-compendium-license-key/) .
