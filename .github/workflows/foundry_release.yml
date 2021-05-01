@@ -1,0 +1,18 @@
+on:
+  push:
+    paths:
+      - 'version.txt'
+
+jobs:
+  create_foundry_release:
+    runs-on: ubuntu-latest
+    name: Foundry Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Foundry Release
+        id: foundry-release
+        uses: foundryvtt-dcc/foundry-release-action@main
+        with:
+          actionToken: ${{ secrets.GITHUB_TOKEN }}
+          manifestFileName: 'system.json'
