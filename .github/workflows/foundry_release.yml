@@ -1,3 +1,5 @@
+name: Create Foundry Release
+
 on:
   push:
     paths:
