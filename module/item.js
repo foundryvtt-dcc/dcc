@@ -11,7 +11,7 @@ class DCCItem extends Item {
     super.prepareData()
 
     // If this item is owned by an actor, check for config settings to apply
-    if (this.actor && this.data.data.config) {
+    if (this.actor && this.actor.data && this.data.data.config) {
       if (this.data.type === 'weapon') {
         // Weapons can inherit the owner's action die
         if (this.data.data.config.inheritActionDie) {
@@ -53,7 +53,7 @@ class DCCItem extends Item {
   async rollSpellCheck (abilityId = 'int', options = {}) {
     if (this.data.type !== 'spell') { return }
 
-    const actor = this.options.actor
+    const actor = this.actor
     const ability = actor.data.data.abilities[abilityId] || {}
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
@@ -63,7 +63,7 @@ class DCCItem extends Item {
       die: this.data.data.spellCheck.die,
       bonus: this.data.data.spellCheck.value
     })
-    roll.roll()
+    await roll.roll()
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -86,7 +86,7 @@ class DCCItem extends Item {
     }
     // Otherwise fall back to searching the world
     if (!resultsTable) {
-      resultsTable = game.tables.entities.find(predicate)
+      resultsTable = game.tables.contents.find(predicate)
     }
 
     let flavor = spell
@@ -108,8 +108,8 @@ class DCCItem extends Item {
             results.results = fumbleResult.results
             fumble = true
           } else if (naturalRoll === 20) {
-            if (this.options.actor.data.type === 'Player') {
-              const newRoll = results.roll._total + this.options.actor.data.data.details.level.value
+            if (this.actor.data.type === 'Player') {
+              const newRoll = results.roll._total + this.actor.data.data.details.level.value
               const critResult = await resultsTable.draw({ roll: new Roll(String(newRoll)), displayChat: false })
               results.results = critResult.results
               crit = true
@@ -144,7 +144,7 @@ class DCCItem extends Item {
   async rollMercurialMagic () {
     if (this.data.type !== 'spell') { return }
 
-    const actor = this.options.actor
+    const actor = this.actor
     if (!actor) { return }
 
     const abilityId = 'lck'
@@ -181,7 +181,7 @@ class DCCItem extends Item {
       roll = mercurialMagicResult.roll
     } else {
       // Fall back to displaying just the roll
-      roll.roll()
+      await roll.roll()
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor: game.i18n.localize('DCC.MercurialMagicRoll')
@@ -212,7 +212,7 @@ class DCCItem extends Item {
    * Determine if this item needs to have its treasure value rolled
    * @return {Boolean}  True if any value field contains a rollable formula
    */
-  needsValueRoll () {
+  async needsValueRoll () {
     let needsRoll = false
 
     for (const currency in CONFIG.DCC.currencies) {
@@ -220,7 +220,7 @@ class DCCItem extends Item {
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        roll.roll()
+        await roll.roll()
         const terms = roll.terms || roll.parts
         if (terms.length > 1 || roll.dice.length > 0) {
           needsRoll = true
@@ -246,9 +246,9 @@ class DCCItem extends Item {
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        roll.roll()
+        await roll.roll()
         updates['data.value.' + currency] = roll.total
-        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
+        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${Roll.getFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
       }
@@ -277,11 +277,11 @@ class DCCItem extends Item {
   /**
    * Shift currency to the next highest denomination
    */
-  convertCurrencyUpward (currency) {
+  async convertCurrencyUpward (currency) {
     const currencyRank = CONFIG.DCC.currencyRank
     const currencyValue = CONFIG.DCC.currencyValue
     // Don't do currency conversions if the value isn't resolved
-    if (this.needsValueRoll()) {
+    if (await this.needsValueRoll()) {
       return
     }
     // Find the rank of this currency
@@ -306,7 +306,7 @@ class DCCItem extends Item {
   /**
    * Shift currency to the next lowest denomination
    */
-  convertCurrencyDownward (currency) {
+  async convertCurrencyDownward (currency) {
     const currencyRank = CONFIG.DCC.currencyRank
     const currencyValue = CONFIG.DCC.currencyValue
     // Don't do currency conversions if the value isn't resolved

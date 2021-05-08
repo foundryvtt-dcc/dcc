@@ -72,7 +72,7 @@ class DCCActor extends Actor {
       }
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
-      actionDieExpression.roll()
+      actionDieExpression.roll(async = false)
       const terms = actionDieExpression.terms || actionDieExpression.parts
       const actionDice = []
       for (const term of terms) {
@@ -121,7 +121,7 @@ class DCCActor extends Actor {
    * @param {String} abilityId    The ability ID (e.g. "str")
    * @param {Object} options      Options which configure how ability checks are rolled
    */
-  rollAbilityCheck (abilityId, options = {}) {
+  async rollAbilityCheck (abilityId, options = {}) {
     const ability = this.data.data.abilities[abilityId]
     ability.mod = CONFIG.DCC.abilities.modifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
@@ -133,7 +133,7 @@ class DCCActor extends Actor {
       roll = new Roll('1d20')
 
       // Apply custom roll options
-      roll.roll()
+      await roll.roll()
       roll.dice[0].options.dcc = {
         rollUnder: true
       }
@@ -214,7 +214,7 @@ class DCCActor extends Actor {
    * Roll a Saving Throw
    * @param {String} saveId       The save ID (e.g. "ref")
    */
-  rollSavingThrow (saveId) {
+  async rollSavingThrow (saveId) {
     const save = this.data.data.saves[saveId]
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
@@ -231,7 +231,7 @@ class DCCActor extends Actor {
    * Roll a Skill Check
    * @param {String}  skillId       The skill ID (e.g. "sneakSilently")
    */
-  rollSkillCheck (skillId) {
+  async rollSkillCheck (skillId) {
     let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
     let skillItem = null
     if (!skill) {
@@ -264,7 +264,7 @@ class DCCActor extends Actor {
     } else {
       roll = new Roll(die)
     }
-    roll.roll()
+    await roll.roll()
 
     // Handle special cleric spellchecks that are treated as skills
     if (skill.useDisapprovalRange) {
@@ -304,7 +304,7 @@ class DCCActor extends Actor {
    * Roll a Spell Check
    * @param {String} abilityId       The ability used for the check (e.g. "per")
    */
-  rollSpellCheck (options = {}) {
+  async rollSpellCheck (options = {}) {
     if (!options.abilityId) {
       options.abilityId = this.data.data.class.spellCheckAbility || ''
     }
@@ -332,7 +332,7 @@ class DCCActor extends Actor {
     const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
-    roll.roll()
+    await roll.roll()
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -363,7 +363,7 @@ class DCCActor extends Actor {
       const abRoll = new Roll(attackBonusExpression, { critical: 3 })
 
       // Store the result for use in attack and damage rolls
-      const lastRoll = this.data.data.details.lastRolledAttackBonus = abRoll.roll().total
+      const lastRoll = this.data.data.details.lastRolledAttackBonus = (await abRoll.roll()).total
       this.update({
         'data.details.lastRolledAttackBonus': lastRoll
       })
@@ -432,10 +432,10 @@ class DCCActor extends Actor {
     }
 
     // Attack roll
-    const attackRollResult = this.rollToHit(weapon, options)
+    const attackRollResult = await this.rollToHit(weapon, options)
 
     // Damage roll
-    const damageRollResult = this.rollDamage(weapon, options)
+    const damageRollResult = await this.rollDamage(weapon, options)
 
     // Speaker object for the chat cards
     const speaker = { alias: this.name, _id: this._id }
@@ -459,7 +459,7 @@ class DCCActor extends Actor {
           })
         }
         ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
-        await CONFIG.ChatMessage.entityClass.create(messageData)
+        await CONFIG.ChatMessage.documentClass.create(messageData)
       }
 
       // Damage roll card
@@ -479,7 +479,7 @@ class DCCActor extends Actor {
           })
         }
         ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
-        await CONFIG.ChatMessage.entityClass.create(messageData)
+        await CONFIG.ChatMessage.documentClass.create(messageData)
       }
 
       // Roll crits or fumbles
@@ -517,7 +517,7 @@ class DCCActor extends Actor {
         sound: CONFIG.sounds.dice
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
-      await CONFIG.ChatMessage.entityClass.create(messageData)
+      await CONFIG.ChatMessage.documentClass.create(messageData)
     }
   }
 
@@ -527,7 +527,7 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
-  rollToHit (weapon, options = {}) {
+  async rollToHit (weapon, options = {}) {
     const config = this._getConfig()
 
     /* Grab the To Hit modifier */
@@ -560,7 +560,7 @@ class DCCActor extends Actor {
 
     /* Roll the Attack */
     const attackRoll = new Roll(formula, { ab: attackBonus, critical: critRange })
-    attackRoll.roll()
+    await attackRoll.roll()
 
     const d20RollResult = attackRoll.dice[0].total
     attackRoll.dice[0].options.dcc = {
@@ -574,7 +574,7 @@ class DCCActor extends Actor {
     return {
       rolled: true,
       roll: attackRoll,
-      formula: Roll.cleanFormula(attackRoll.terms || attackRoll.formula),
+      formula: Roll.getFormula(attackRoll.terms),
       hitsAc: attackRoll.total,
       d20Roll: d20RollResult,
       crit,
@@ -588,7 +588,7 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
-  rollDamage (weapon, options = {}) {
+  async rollDamage (weapon, options = {}) {
     const config = this._getConfig()
 
     /* Grab the the formula */
@@ -614,12 +614,12 @@ class DCCActor extends Actor {
     }
     /* Roll the damage */
     const damageRoll = new Roll(formula, { ab: attackBonus })
-    damageRoll.roll()
+    await damageRoll.roll()
 
     return {
       rolled: true,
       roll: damageRoll,
-      formula: Roll.cleanFormula(damageRoll.terms || damageRoll.formula),
+      formula: Roll.getFormula(damageRoll.terms),
       damage: damageRoll.total
     }
   }
@@ -651,7 +651,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!critResult) {
-      roll.roll()
+      await roll.roll()
     } else {
       roll = critResult.roll
     }
@@ -660,7 +660,7 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.getFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
       // Display crit result or just a notification of the crit
       if (critResult) {
@@ -713,7 +713,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!fumbleResult) {
-      roll.roll()
+      await roll.roll()
     } else {
       roll = fumbleResult.roll
     }
@@ -722,7 +722,7 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.getFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {
@@ -811,7 +811,7 @@ class DCCActor extends Actor {
         sound: CONFIG.sounds.notification
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
-      await CONFIG.ChatMessage.entityClass.create(messageData)
+      await CONFIG.ChatMessage.documentClass.create(messageData)
     }
 
     // Apply new HP

@@ -50,8 +50,8 @@ Hooks.once('init', async function () {
   }
 
   // Define custom Entity classes
-  CONFIG.Actor.entityClass = DCCActor
-  CONFIG.Item.entityClass = DCCItem
+  CONFIG.Actor.documentClass = DCCActor
+  CONFIG.Item.documentClass = DCCItem
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)

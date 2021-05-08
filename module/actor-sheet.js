@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, ENTITY_PERMISSIONS */
+/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, CONST */
 
 import DCCActorConfig from './actor-config.js'
 import EntityImages from './entity-images.js'
@@ -31,7 +31,7 @@ class DCCActorSheet extends ActorSheet {
     const buttons = super._getHeaderButtons()
 
     // Header buttons shown only with Owner permissions
-    if (this.actor.permission === ENTITY_PERMISSIONS.OWNER) {
+    if (this.actor.permission === CONST.ENTITY_PERMISSIONS.OWNER) {
       buttons.unshift(
         {
           label: game.i18n.localize('DCC.ConfigureSheet'),

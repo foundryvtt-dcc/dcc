@@ -224,14 +224,14 @@ global.Roll = jest.fn((formula, data = {}) => {
     roll: global.rollRollMock
   }
 }).mockName('Roll')
-global.Roll.cleanFormula = global.rollCleanFormulaMock
+global.Roll.getFormula = global.rollCleanFormulaMock
 global.Roll.validate = global.rollValidateMock
 
 /**
  * ChatMessage
  */
 global.CONFIG.ChatMessage = {
-  entityClass: {
+  documentClass: {
     create: jest.fn((messageData = {}) => {
       // console.log(messageData)
     })

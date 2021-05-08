@@ -110,7 +110,7 @@ test('roll weapon attack', () => {
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
-  expect(CONFIG.ChatMessage.entityClass.create).toHaveBeenCalledWith({
+  expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
     user: 1,
     speaker: { alias: 'test character', _id: 1 },
     type: 'emote',
@@ -133,7 +133,7 @@ test('roll weapon attack', () => {
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledTimes(4)
   expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
-  expect(CONFIG.ChatMessage.entityClass.create).toHaveBeenCalledWith({
+  expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
     user: 1,
     speaker: { alias: 'test character', _id: 1 },
     type: 'emote',
