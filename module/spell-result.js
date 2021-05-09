@@ -21,7 +21,7 @@ class SpellResult {
     // Construct chat data
     messageData = mergeObject({
       flavor: game.i18n.localize('DCC.SpellCheckCardMessage'),
-      user: game.user._id,
+      user: game.user.id,
       speaker: speaker,
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
       roll: roll,
@@ -99,14 +99,14 @@ class SpellResult {
 
     // Lookup the appropriate table
     let rollTable
-    const predicate = t => t._id === tableId
+    const predicate = t => t.id === tableId
     // If a collection is specified then check the appropriate pack for the spell
     if (tableCompendium) {
       const pack = game.packs.get(tableCompendium)
       if (pack) {
         await pack.getIndex()
         const entry = pack.index.find(predicate)
-        rollTable = await pack.getEntity(entry._id)
+        rollTable = await pack.getEntity(entry.id)
       }
     }
     // Otherwise fall back to searching the world
@@ -115,7 +115,7 @@ class SpellResult {
     }
 
     if (rollTable) {
-      const entryIndex = rollTable.results.findIndex(r => r._id === resultId)
+      const entryIndex = rollTable.results.findIndex(r => r.id === resultId)
       const newResult = rollTable.results[entryIndex + direction]
       const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
         description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),

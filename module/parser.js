@@ -38,7 +38,7 @@ class DCCActorParser extends FormApplication {
 
     // Gather the list of actor folders
     for (const folder of game.actors.directory.folders) {
-      data.folders.push({ id: folder.data._id, name: folder.data.name })
+      data.folders.push({ id: folder.data.id, name: folder.data.name })
     }
 
     return data

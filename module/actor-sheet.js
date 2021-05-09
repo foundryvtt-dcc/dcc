@@ -30,7 +30,7 @@ class DCCActorSheet extends ActorSheet {
   _getHeaderButtons () {
     const buttons = super._getHeaderButtons()
 
-    // Header buttons shown only with Owner permissions
+    // Header buttons shown only with Owner permission
     if (this.actor.permission === CONST.ENTITY_PERMISSIONS.OWNER) {
       buttons.unshift(
         {
@@ -50,17 +50,17 @@ class DCCActorSheet extends ActorSheet {
   /** @override */
   getData () {
     // Basic data
-    const isOwner = this.entity.owner
+    const isOwner = this.document.isOwner
     const data = {
-      owner: isOwner,
-      limited: this.entity.limited,
+      isOwner: isOwner,
+      limited: this.document.limited,
       options: this.options,
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
-      isNPC: this.entity.data.type === 'NPC',
-      isPC: this.entity.data.type === 'Player',
-      isZero: this.entity.data.data.details.level === 0,
-      type: this.entity.data.type,
+      isNPC: this.document.data.type === 'NPC',
+      isPC: this.document.data.type === 'Player',
+      isZero: this.document.data.data.details.level === 0,
+      type: this.document.data.type,
       config: CONFIG.DCC
     }
 
@@ -69,9 +69,9 @@ class DCCActorSheet extends ActorSheet {
     data.labels = this.actor.labels || {}
     data.filters = this._filters
 
-    if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-      data.actor.img = EntityImages.imageForActor(data.type)
-    }
+    //if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
+    //  data.actor.img = EntityImages.imageForActor(data.type)
+    //}
 
     if (data.isNPC) {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
@@ -134,7 +134,7 @@ class DCCActorSheet extends ActorSheet {
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.data.quantity !== undefined && i.data.quantity <= 0) {
-        this.actor.deleteOwnedItem(i._id, {})
+        this.actor.deleteOwnedItem(i.id, {})
         continue
       }
 
@@ -173,7 +173,7 @@ class DCCActorSheet extends ActorSheet {
 
         if (i.data.isCoins) {
           // Safe to treat as coins if the item's value is resolved
-          const item = this.actor.getOwnedItem(i._id)
+          const item = this.actor.items.get(i.id)
           if (!item.needsValueRoll()) {
             treatAsCoins = true
           }
@@ -197,7 +197,7 @@ class DCCActorSheet extends ActorSheet {
         wallet.data.value.gp = parseInt(wallet.data.value.gp) + parseInt(c.data.value.gp)
         wallet.data.value.sp = parseInt(wallet.data.value.sp) + parseInt(c.data.value.sp)
         wallet.data.value.cp = parseInt(wallet.data.value.cp) + parseInt(c.data.value.cp)
-        await this.actor.deleteOwnedItem(c._id, {})
+        await this.actor.deleteOwnedItem(c.id, {})
         needsUpdate = true
       }
       if (needsUpdate) {
@@ -237,7 +237,7 @@ class DCCActorSheet extends ActorSheet {
     }
 
     // Owner Only Listeners
-    if (this.actor.owner) {
+    if (this.actor.isOwner) {
       // Ability Checks
       html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
       html.find('.ability-modifiers').click(this._onRollAbilityCheck.bind(this))
@@ -304,7 +304,7 @@ class DCCActorSheet extends ActorSheet {
         // Update Inventory Item
         html.find('.item-edit').click(ev => {
           const li = $(ev.currentTarget).parents('.item')
-          const item = this.actor.getOwnedItem(li.data('itemId'))
+          const item = this.actor.items.get(li.data('itemId'))
           item.sheet.render(true)
         })
 
@@ -732,7 +732,7 @@ class DCCActorSheet extends ActorSheet {
             parentElement = parentElement.parentElement
           }
           const itemId = parentElement.dataset.itemId
-          const item = this.actor.getOwnedItem(itemId)
+          const item = this.actor.items.get(itemId)
           if (item) {
             const updateData = expanded.itemUpdates[itemId]
             item.update(updateData)

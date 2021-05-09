@@ -84,7 +84,7 @@ export const migrateCompendium = async function (pack) {
       else if (entity === 'Scene') updateData = migrateSceneData(ent.data)
       if (!isObjectEmpty(updateData)) {
         expandObject(updateData)
-        updateData._id = ent._id
+        updateData.id = ent.id
         await pack.updateEntity(updateData)
         console.log(`Migrated ${entity} entity ${ent.name} in Compendium ${pack.collection}`)
       }

@@ -56,9 +56,9 @@ export class DCCItemSheet extends ItemSheet {
       data.allowConversions = data.item.data.isCoins && !data.unresolved && !this.limited
     }
 
-    if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
-      data.item.img = EntityImages.imageForItem(data.item.type)
-    }
+    //if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
+    //  data.item.img = EntityImages.imageForItem(data.item.type)
+    //}
 
     return data
   }
@@ -86,7 +86,7 @@ export class DCCItemSheet extends ItemSheet {
     }
 
     // Owner only listeners
-    if (this.item.owner) {
+    if (this.item.isOwner) {
       // Roll mercurial effect for spells
       if (this.item.type === 'spell') {
         html.find('.mercurial-roll').click(this._onRollMercurialMagic.bind(this))

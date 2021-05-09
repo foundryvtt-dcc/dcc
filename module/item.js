@@ -63,7 +63,7 @@ class DCCItem extends Item {
       die: this.data.data.spellCheck.die,
       bonus: this.data.data.spellCheck.value
     })
-    await roll.roll()
+    await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -73,7 +73,7 @@ class DCCItem extends Item {
 
     // Lookup the appropriate table
     const resultsRef = this.data.data.results
-    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table
+    const predicate = t => t.name === resultsRef.table || t.id === resultsRef.table
     let resultsTable
     // If a collection is specified then check the appropriate pack for the spell
     if (resultsRef.collection) {
@@ -81,7 +81,7 @@ class DCCItem extends Item {
       if (pack) {
         await pack.getIndex()
         const entry = pack.index.find(predicate)
-        resultsTable = await pack.getEntity(entry._id)
+        resultsTable = await pack.getEntity(entry.id)
       }
     }
     // Otherwise fall back to searching the world
@@ -170,7 +170,7 @@ class DCCItem extends Item {
         await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
         if (entry) {
-          const table = await pack.getEntity(entry._id)
+          const table = await pack.getEntity(entry.id)
           mercurialMagicResult = await table.draw({ roll })
         }
       }
@@ -181,7 +181,7 @@ class DCCItem extends Item {
       roll = mercurialMagicResult.roll
     } else {
       // Fall back to displaying just the roll
-      await roll.roll()
+      await roll.evaluate({ async: true })
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor: game.i18n.localize('DCC.MercurialMagicRoll')
@@ -220,7 +220,7 @@ class DCCItem extends Item {
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        await roll.roll()
+        await roll.evaluate({ async: true })
         const terms = roll.terms || roll.parts
         if (terms.length > 1 || roll.dice.length > 0) {
           needsRoll = true
@@ -246,7 +246,7 @@ class DCCItem extends Item {
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        await roll.roll()
+        await roll.evaluate({ async: true })
         updates['data.value.' + currency] = roll.total
         valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${Roll.getFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
@@ -254,9 +254,9 @@ class DCCItem extends Item {
       }
     }
 
-    const speaker = { alias: this.actor.name, _id: this.actor._id }
+    const speaker = { alias: this.actor.name, id: this.actor.id }
     const messageData = {
-      user: game.user._id,
+      user: game.user.id,
       speaker: speaker,
       type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
       content: game.i18n.format('DCC.ResolveValueEmote', {

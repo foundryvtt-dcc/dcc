@@ -133,7 +133,7 @@ class DCCActor extends Actor {
       roll = new Roll('1d20')
 
       // Apply custom roll options
-      await roll.roll()
+      await roll.evaluate({ async: true })
       roll.dice[0].options.dcc = {
         rollUnder: true
       }
@@ -184,7 +184,7 @@ class DCCActor extends Actor {
       }))
     }
 
-    await game.combat.setInitiative(combatant._id, roll.total)
+    await game.combat.setInitiative(combatant.id, roll.total)
   }
 
   /**
@@ -264,7 +264,7 @@ class DCCActor extends Actor {
     } else {
       roll = new Roll(die)
     }
-    await roll.roll()
+    await roll.evaluate({ async: true })
 
     // Handle special cleric spellchecks that are treated as skills
     if (skill.useDisapprovalRange) {
@@ -332,7 +332,7 @@ class DCCActor extends Actor {
     const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
-    await roll.roll()
+    await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -363,7 +363,7 @@ class DCCActor extends Actor {
       const abRoll = new Roll(attackBonusExpression, { critical: 3 })
 
       // Store the result for use in attack and damage rolls
-      const lastRoll = this.data.data.details.lastRolledAttackBonus = (await abRoll.roll()).total
+      const lastRoll = this.data.data.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
       this.update({
         'data.details.lastRolledAttackBonus': lastRoll
       })
@@ -405,7 +405,7 @@ class DCCActor extends Actor {
       } catch (e) { }
     }
     // First try and find the item by name or id
-    let weapon = this.items.find(i => i.name === weaponId || i._id === weaponId)
+    let weapon = this.items.find(i => i.name === weaponId || i.id === weaponId)
 
     // If not found try finding it by slot
     if (!weapon) {
@@ -438,7 +438,7 @@ class DCCActor extends Actor {
     const damageRollResult = await this.rollDamage(weapon, options)
 
     // Speaker object for the chat cards
-    const speaker = { alias: this.name, _id: this._id }
+    const speaker = { alias: this.name, id: this.id }
 
     // Output the results
     if (options.displayStandardCards) {
@@ -450,7 +450,7 @@ class DCCActor extends Actor {
         })
       } else {
         const messageData = {
-          user: game.user._id,
+          user: game.user.id,
           speaker: speaker,
           type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
           content: game.i18n.format('DCC.AttackRollInvalidFormula', {
@@ -470,7 +470,7 @@ class DCCActor extends Actor {
         })
       } else {
         const messageData = {
-          user: game.user._id,
+          user: game.user.id,
           speaker: speaker,
           type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
           content: game.i18n.format('DCC.DamageRollInvalidFormula', {
@@ -504,7 +504,7 @@ class DCCActor extends Actor {
 
       const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
       const messageData = {
-        user: game.user._id,
+        user: game.user.id,
         speaker: speaker,
         type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
         content: game.i18n.format(emote, {
@@ -551,7 +551,7 @@ class DCCActor extends Actor {
     const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
 
     /* If we don't have a valid formula, bail out here */
-    if (Roll.validate !== undefined && !Roll.validate(formula)) {
+    if (!await Roll.validate(formula)) {
       return {
         rolled: false,
         formula: weapon.data.data.toHit
@@ -560,7 +560,7 @@ class DCCActor extends Actor {
 
     /* Roll the Attack */
     const attackRoll = new Roll(formula, { ab: attackBonus, critical: critRange })
-    await attackRoll.roll()
+    await attackRoll.evaluate({ async: true })
 
     const d20RollResult = attackRoll.dice[0].total
     attackRoll.dice[0].options.dcc = {
@@ -614,7 +614,7 @@ class DCCActor extends Actor {
     }
     /* Roll the damage */
     const damageRoll = new Roll(formula, { ab: attackBonus })
-    await damageRoll.roll()
+    await damageRoll.evaluate({ async: true })
 
     return {
       rolled: true,
@@ -642,7 +642,7 @@ class DCCActor extends Actor {
           const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
           const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
           if (entry) {
-            const table = await pack.getEntity(entry._id)
+            const table = await pack.getEntity(entry.id)
             critResult = await table.draw({ roll, displayChat: options.displayStandardCards })
           }
         }
@@ -651,7 +651,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!critResult) {
-      await roll.roll()
+      await roll.evaluate({ async: true })
     } else {
       roll = critResult.roll
     }
@@ -705,7 +705,7 @@ class DCCActor extends Actor {
         await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
         if (entry) {
-          const table = await pack.getEntity(entry._id)
+          const table = await pack.getEntity(entry.id)
           fumbleResult = await table.draw({ roll, displayChat: options.displayStandardCards })
         }
       }
@@ -713,7 +713,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!fumbleResult) {
-      await roll.roll()
+      await roll.evaluate({ async: true })
     } else {
       roll = fumbleResult.roll
     }
@@ -778,7 +778,7 @@ class DCCActor extends Actor {
    * @param {Number} multiplier     Damage multiplier
    */
   async applyDamage (damageAmount, multiplier) {
-    const speaker = { alias: this.name, _id: this._id }
+    const speaker = { alias: this.name, id: this.id }
 
     // Calculate damage amount and current hit points
     const amount = damageAmount * multiplier
@@ -804,7 +804,7 @@ class DCCActor extends Actor {
     if (Math.abs(deltaHp) > 0) {
       const locstring = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
       const messageData = {
-        user: game.user._id,
+        user: game.user.id,
         speaker: speaker,
         type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
         content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
@@ -875,7 +875,7 @@ class DCCActor extends Actor {
             await pack.getIndex() // Load the compendium index
             const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
             if (entry) {
-              disapprovalTable = await pack.getEntity(entry._id)
+              disapprovalTable = await pack.getEntity(entry.id)
             }
           }
         }
