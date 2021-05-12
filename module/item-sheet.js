@@ -56,6 +56,9 @@ export class DCCItemSheet extends ItemSheet {
       data.allowConversions = data.item.data.isCoins && !data.unresolved && !this.limited
     }
 
+    // Pass through the item data in the format we expect
+    data.data = data.item.data.data
+
     //if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
     //  data.item.img = EntityImages.imageForItem(data.item.type)
     //}
