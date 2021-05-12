@@ -173,7 +173,7 @@ class DCCActorSheet extends ActorSheet {
 
         if (i.data.isCoins) {
           // Safe to treat as coins if the item's value is resolved
-          const item = this.actor.items.get(i.id)
+          const item = this.actor.items.get(i._id)
           if (!item.needsValueRoll()) {
             treatAsCoins = true
           }

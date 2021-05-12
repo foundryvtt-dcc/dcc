@@ -81,7 +81,7 @@ class DCCItem extends Item {
       if (pack) {
         await pack.getIndex()
         const entry = pack.index.find(predicate)
-        resultsTable = await pack.getEntity(entry.id)
+        resultsTable = await pack.getDocument(entry.id)
       }
     }
     // Otherwise fall back to searching the world
@@ -100,9 +100,9 @@ class DCCItem extends Item {
       let crit = false
       let fumble = false
       try {
-        if (results.roll.results.length > 0) {
+        if (results.roll.terms.length > 0) {
           const rollObject = results.roll
-          const naturalRoll = rollObject.results[0]
+          const naturalRoll = rollObject.terms[0].results[0]
           if (naturalRoll === 1) {
             const fumbleResult = await resultsTable.draw({ roll: new Roll('1'), displayChat: false })
             results.results = fumbleResult.results
@@ -170,7 +170,7 @@ class DCCItem extends Item {
         await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
         if (entry) {
-          const table = await pack.getEntity(entry.id)
+          const table = await pack.getDocument(entry.id)
           mercurialMagicResult = await table.draw({ roll })
         }
       }

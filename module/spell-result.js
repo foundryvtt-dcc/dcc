@@ -37,8 +37,8 @@ class SpellResult {
       description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),
       results: result.results.map(r => {
         r = duplicate(r)
-        r.text = rollTable._getResultChatText(r)
-        r.icon = r.img || CONFIG.RollTable.resultIcon
+        //r.text = rollTable.getResultForRoll(r)
+        //r.icon = r.img || CONFIG.RollTable.resultIcon
         return r
       }),
       rollHTML: rollTable.data.displayRoll ? await roll.render() : null,
@@ -99,7 +99,7 @@ class SpellResult {
 
     // Lookup the appropriate table
     let rollTable
-    const predicate = t => t.id === tableId
+    const predicate = t => t._id === tableId
     // If a collection is specified then check the appropriate pack for the spell
     if (tableCompendium) {
       const pack = game.packs.get(tableCompendium)
