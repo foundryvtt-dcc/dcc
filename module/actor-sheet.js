@@ -64,9 +64,9 @@ class DCCActorSheet extends ActorSheet {
       config: CONFIG.DCC
     }
 
-    data.actor = duplicate(this.actor.data)
-    data.data = data.actor.data
-    data.labels = this.actor.labels || {}
+    data.actor = duplicate(this.document.data)
+    data.data = duplicate(this.document.data.data)
+    data.labels = this.document.labels || {}
     data.filters = this._filters
 
     //if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {

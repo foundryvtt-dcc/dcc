@@ -6,8 +6,8 @@
  */
 class DCCActor extends Actor {
   /** @override */
-  prepareData () {
-    super.prepareData()
+  prepareBaseData () {
+    super.prepareBaseData()
 
     // Ability modifiers
     const abilities = this.data.data.abilities
@@ -23,9 +23,15 @@ class DCCActor extends Actor {
     if (config.capLevel) {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
     }
+  }
 
-    // Make sure items are initialised before computing any data derived from them
-    if (!this.items) { return }
+  /** @override */
+  prepareDerivedData () {
+    super.prepareDerivedData()
+
+    // Get configuration data
+    const config = this._getConfig()
+    const data = this.data.data
 
     // Compute AC if required
     if (config.computeAC) {
