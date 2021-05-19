@@ -282,7 +282,7 @@ class DCCActorSheet extends ActorSheet {
       html.find('label.disapproval-table').each(makeDraggable)
 
       // Attack Bonus
-      html.find('.attack-bonus').click(this._onRollAttackBonus.bind(this))
+      html.find('.attack-bonus.rollable').click(this._onRollAttackBonus.bind(this))
       html.find('.attack-bonus').each(makeDraggable)
 
       // Action Dice
