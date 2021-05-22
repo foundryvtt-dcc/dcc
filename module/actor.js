@@ -881,7 +881,7 @@ class DCCActor extends Actor {
             await pack.getIndex() // Load the compendium index
             const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
             if (entry) {
-              disapprovalTable = await pack.getDocumenDocument(entry.id)
+              disapprovalTable = await pack.getDocument(entry.id)
             }
           }
         }
