@@ -648,7 +648,7 @@ class DCCActor extends Actor {
           const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
           const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
           if (entry) {
-            const table = await pack.getDocument(entry.id)
+            const table = await pack.getDocument(entry._id)
             critResult = await table.draw({ roll, displayChat: options.displayStandardCards })
           }
         }
@@ -711,7 +711,7 @@ class DCCActor extends Actor {
         await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
         if (entry) {
-          const table = await pack.getDocument(entry.id)
+          const table = await pack.getDocument(entry._id)
           fumbleResult = await table.draw({ roll, displayChat: options.displayStandardCards })
         }
       }
@@ -881,7 +881,7 @@ class DCCActor extends Actor {
             await pack.getIndex() // Load the compendium index
             const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
             if (entry) {
-              disapprovalTable = await pack.getDocument(entry.id)
+              disapprovalTable = await pack.getDocument(entry._id)
             }
           }
         }

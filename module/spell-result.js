@@ -102,7 +102,7 @@ class SpellResult {
       if (pack) {
         await pack.getIndex()
         const entry = pack.index.get(tableId)
-        rollTable = await pack.getDocument(entry.id)
+        rollTable = await pack.getDocument(entry._id)
       }
     }
     // Otherwise fall back to searching the world

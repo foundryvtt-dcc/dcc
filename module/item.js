@@ -81,7 +81,7 @@ class DCCItem extends Item {
       if (pack) {
         await pack.getIndex()
         const entry = pack.index.find(predicate)
-        resultsTable = await pack.getDocument(entry.id)
+        resultsTable = await pack.getDocument(entry._id)
       }
     }
     // Otherwise fall back to searching the world
@@ -170,7 +170,7 @@ class DCCItem extends Item {
         await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
         if (entry) {
-          const table = await pack.getDocument(entry.id)
+          const table = await pack.getDocument(entry._id)
           mercurialMagicResult = await table.draw({ roll })
         }
       }
