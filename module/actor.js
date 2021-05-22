@@ -648,7 +648,7 @@ class DCCActor extends Actor {
           const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
           const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
           if (entry) {
-            const table = await pack.getEntity(entry.id)
+            const table = await pack.getDocument(entry.id)
             critResult = await table.draw({ roll, displayChat: options.displayStandardCards })
           }
         }
@@ -670,7 +670,7 @@ class DCCActor extends Actor {
 
       // Display crit result or just a notification of the crit
       if (critResult) {
-        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].text}`
+        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].getChatText()}`
       } else {
         return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
       }
@@ -711,7 +711,7 @@ class DCCActor extends Actor {
         await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
         if (entry) {
-          const table = await pack.getEntity(entry.id)
+          const table = await pack.getDocument(entry.id)
           fumbleResult = await table.draw({ roll, displayChat: options.displayStandardCards })
         }
       }
@@ -732,7 +732,7 @@ class DCCActor extends Actor {
 
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {
-        return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}<br/>${fumbleResult.results[0].text}`
+        return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}<br/>${fumbleResult.results[0].getChatText()}`
       } else {
         return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}`
       }
@@ -881,7 +881,7 @@ class DCCActor extends Actor {
             await pack.getIndex() // Load the compendium index
             const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
             if (entry) {
-              disapprovalTable = await pack.getEntity(entry.id)
+              disapprovalTable = await pack.getDocumenDocument(entry.id)
             }
           }
         }
