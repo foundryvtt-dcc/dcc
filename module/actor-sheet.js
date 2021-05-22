@@ -262,7 +262,7 @@ class DCCActorSheet extends ActorSheet {
       html.find('li.save').each(makeDraggable)
 
       // Skills
-      html.find('.skill-check').click(this._onRollSkillCheck.bind(this))
+      html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
       html.find('label.skill-check').each(makeDraggable)
 
       // Luck Die
