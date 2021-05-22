@@ -36,10 +36,7 @@ class SpellResult {
     messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
       description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),
       results: result.results.map(r => {
-        r = duplicate(r)
-        //r.text = rollTable.getResultForRoll(r)
-        //r.icon = r.img || CONFIG.RollTable.resultIcon
-        return r
+        return duplicate(r)
       }),
       rollHTML: rollTable.data.displayRoll ? await roll.render() : null,
       table: rollTable,
@@ -99,31 +96,29 @@ class SpellResult {
 
     // Lookup the appropriate table
     let rollTable
-    const predicate = t => t._id === tableId
     // If a collection is specified then check the appropriate pack for the spell
     if (tableCompendium) {
       const pack = game.packs.get(tableCompendium)
       if (pack) {
         await pack.getIndex()
-        const entry = pack.index.find(predicate)
-        rollTable = await pack.getEntity(entry.id)
+        const entry = pack.index.get(tableId)
+        rollTable = await pack.getDocument(entry.id)
       }
     }
     // Otherwise fall back to searching the world
     if (!rollTable) {
-      rollTable = game.tables.entities.find(predicate)
+      rollTable = game.tables.get(tableId)
     }
 
     if (rollTable) {
-      const entryIndex = rollTable.results.findIndex(r => r.id === resultId)
-      const newResult = rollTable.results[entryIndex + direction]
+      // Find the next result up or down, if available
+      const entry = rollTable.results.get(resultId)
+      const newResultRoll = (direction > 0) ? (entry.data.range[1]) + 1 : (entry.data.range[0] - 1)
+      const newResult = rollTable.getResultsForRoll(newResultRoll)[0]
       const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
         description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),
         results: [newResult].map(r => {
-          r = duplicate(r)
-          r.text = TextEditor.enrichHTML(rollTable._getResultChatText(r), { entities: true })
-          r.icon = r.img || CONFIG.RollTable.resultIcon
-          return r
+          return duplicate(r)
         }),
         rollHTML: rollTable.data.displayRoll ? await this.roll.render() : null,
         table: rollTable,
