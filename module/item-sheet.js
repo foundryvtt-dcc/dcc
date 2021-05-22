@@ -59,9 +59,9 @@ export class DCCItemSheet extends ItemSheet {
     // Pass through the item data in the format we expect
     data.data = data.item.data.data
 
-    //if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
-    //  data.item.img = EntityImages.imageForItem(data.item.type)
-    //}
+    if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
+      data.item.data.img = EntityImages.imageForItem(data.item.type)
+    }
 
     return data
   }

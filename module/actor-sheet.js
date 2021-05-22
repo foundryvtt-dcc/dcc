@@ -69,9 +69,9 @@ class DCCActorSheet extends ActorSheet {
     data.labels = this.document.labels || {}
     data.filters = this._filters
 
-    //if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-    //  data.actor.img = EntityImages.imageForActor(data.type)
-    //}
+    if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
+      data.actor.data.img = EntityImages.imageForActor(data.type)
+    }
 
     if (data.isNPC) {
       this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
