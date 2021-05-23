@@ -494,7 +494,7 @@ class DCCActor extends Actor {
         this.rollFumble(options)
       }
     } else {
-      const attackRollHTML = this._formatAttackRoll(attackRollResult)// attackRollResult.roll, attackRollResult.formula)
+      const attackRollHTML = this._formatAttackRoll(attackRollResult)
       const damageRollHTML = this._formatDamageRoll(damageRollResult)
 
       // Check for crits or fumbles
@@ -771,7 +771,11 @@ class DCCActor extends Actor {
   _formatDamageRoll (rollResult) {
     if (rollResult.rolled) {
       const rollData = escape(JSON.stringify(rollResult.roll))
-      return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>`
+      if (rollResult.damage > 0) {
+        return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>`
+      } else {
+        return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="1" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> 1 (${rollResult.damage})</a>`
+      }
     } else {
       return game.i18n.format('DCC.DamageRollInvalidFormulaInline', { formula: rollResult.formula })
     }
