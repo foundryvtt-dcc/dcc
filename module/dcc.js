@@ -14,7 +14,7 @@ import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
 import parser from './parser.js'
-import TablePackManager from './tablePackManager.js'
+import TablePackManager from './table-pack-manager.js'
 import EntityImages from './entity-images.js'
 import SpellResult from './spell-result.js'
 
