@@ -56,7 +56,7 @@
   "initiative": "1d20 + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
   "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.27.0/system.json",
-  "download": "",
+  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.27.0/dcc.zip",
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "allowBugReporter": true,
   "license": "LICENSE.txt"
