@@ -40,7 +40,7 @@ class Actor {
             agl: { value: 8, mod: -1, label: 'DCC.AbilityAgl' },
             sta: { value: 12, mod: 0, label: 'DCC.AbilitySta' },
             int: { value: 14, mod: 1, label: 'DCC.AbilityInt' },
-            per: { value: 16, mod: 2,label: 'DCC.AbilityPer' },
+            per: { value: 16, mod: 2, label: 'DCC.AbilityPer' },
             lck: { value: 18, mod: 3, label: 'DCC.AbilityLck' }
           },
           attributes: {
@@ -211,9 +211,6 @@ global.rollEvaluateMock = jest.fn(() => {
   // console.log('Mock Roll: roll was called')
   return { total: 2 }
 })
-global.rollCleanFormulaMock = jest.fn((terms) => {
-  return terms
-})
 global.rollValidateMock = jest.fn((formula) => {
   return true
 })
@@ -225,7 +222,6 @@ global.Roll = jest.fn((formula, data = {}) => {
     roll: global.rollEvaluateMock
   }
 }).mockName('Roll')
-global.Roll.getFormula = global.rollCleanFormulaMock
 global.Roll.validate = global.rollValidateMock
 
 /**

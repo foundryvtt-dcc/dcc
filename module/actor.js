@@ -1,5 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, Dialog, mergeObject */
 
+import DCCRoll from './dcc-roll.js'
+
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
  * @extends {Actor}
@@ -579,7 +581,7 @@ class DCCActor extends Actor {
     return {
       rolled: true,
       roll: attackRoll,
-      formula: Roll.getFormula(attackRoll.terms),
+      formula: DCCRoll.cleanFormula(attackRoll.terms),
       hitsAc: attackRoll.total,
       d20Roll: d20RollResult,
       crit,
@@ -624,7 +626,7 @@ class DCCActor extends Actor {
     return {
       rolled: true,
       roll: damageRoll,
-      formula: Roll.getFormula(damageRoll.terms),
+      formula: DCCRoll.cleanFormula(damageRoll.terms),
       damage: damageRoll.total
     }
   }
@@ -665,7 +667,7 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.getFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
       // Display crit result or just a notification of the crit
       if (critResult) {
@@ -727,7 +729,7 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${Roll.getFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {

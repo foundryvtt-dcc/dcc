@@ -1,5 +1,6 @@
 /* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
 
+import DCCRoll from './dcc-roll.js'
 import SpellResult from './spell-result.js'
 
 /**
@@ -248,7 +249,7 @@ class DCCItem extends Item {
         const roll = new Roll(formula.toString())
         await roll.evaluate({ async: true })
         updates['data.value.' + currency] = roll.total
-        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${Roll.getFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
+        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
       }
