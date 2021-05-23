@@ -55,7 +55,7 @@
   "socket": true,
   "initiative": "1d20 + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
-  "manifest": "https://raw.githubusercontent.com/foundryvtt-dcc/dcc-content/main/dcc/v0.27.0/system.json",
+  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.27.0/system.json",
   "download": "",
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "allowBugReporter": true,
