@@ -31,50 +31,50 @@ test('prepareData sets ability modifiers', () => {
   expect(abilities.lck.mod).toEqual(3)
 })
 
-test('roll ability check', () => {
+test('roll ability check', async () => {
   Roll.mockClear()
 
-  actor.rollAbilityCheck('str')
+  await actor.rollAbilityCheck('str')
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('@die+@abilMod', { die: '1d20', abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'AbilityStr Check', speaker: actor })
 
   // Check that rollUnder option is interpreted correctly
-  actor.rollAbilityCheck('lck', { rollUnder: true })
+  await actor.rollAbilityCheck('lck', { rollUnder: true })
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d20')
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 
   // ...both ways
-  actor.rollAbilityCheck('lck', { rollUnder: false })
+  await actor.rollAbilityCheck('lck', { rollUnder: false })
   expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('@die+@abilMod', { die: '1d20', abilMod: -1, critical: 20 })
   expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
 })
 
-test('roll saving throw', () => {
+test('roll saving throw', async () => {
   Roll.mockClear()
 
-  actor.rollSavingThrow('frt')
+  await actor.rollSavingThrow('frt')
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('@die+@saveMod', { die: '1d20', saveMod: -1 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesFortitude Save', speaker: actor })
 
-  actor.rollSavingThrow('ref')
+  await actor.rollSavingThrow('ref')
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('@die+@saveMod', { die: '1d20', saveMod: 0 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesReflex Save', speaker: actor })
 
-  actor.rollSavingThrow('wil')
+  await actor.rollSavingThrow('wil')
   expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('@die+@saveMod', { die: '1d20', saveMod: +12 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesWill Save', speaker: actor })
 })
 
-test('roll initiative', () => {
+test('roll initiative', async () => {
   Roll.mockClear()
 
-  actor.rollInitiative({
+  await actor.rollInitiative({
     name: 'Test Actor',
     id: 'xxxxxxxxxx'
   })
@@ -83,13 +83,13 @@ test('roll initiative', () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Initiative', speaker: actor })
 })
 
-test('roll weapon attack', () => {
+test('roll weapon attack', async () => {
   Roll.mockClear()
   collectionFindMock.mockClear()
   uiNotificationsWarnMock.mockClear()
 
   // Roll a weapon we don't have
-  actor.rollWeaponAttack('r123')
+  await actor.rollWeaponAttack('r123')
   expect(collectionFindMock).toHaveBeenCalledTimes(1)
   expect(itemTypesMock).toHaveBeenCalledTimes(1)
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
@@ -104,15 +104,14 @@ test('roll weapon attack', () => {
       melee: true
     }
   }))
-  actor.rollWeaponAttack('longsword')
+  await actor.rollWeaponAttack('longsword')
   expect(collectionFindMock).toHaveBeenCalledTimes(2)
   expect(itemTypesMock).toHaveBeenCalledTimes(1)
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
   expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
-    user: 1,
-    speaker: { alias: 'test character', _id: 1 },
+    speaker: { alias: 'test character' },
     type: 'emote',
     content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="undefined" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,crit:,fumble:[object Object]',
     sound: 'diceSound'
@@ -127,15 +126,14 @@ test('roll weapon attack', () => {
       new DCCItem('longsword', { name: 'longsword', data: { actionDie: '1d20', toHit: 2, melee: true } })
     ]
   })
-  actor.rollWeaponAttack('m2')
+  await actor.rollWeaponAttack('m2')
   expect(collectionFindMock).toHaveBeenCalledTimes(3)
   expect(itemTypesMock).toHaveBeenCalledTimes(2)
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledTimes(4)
   expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
   expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
-    user: 1,
-    speaker: { alias: 'test character', _id: 1 },
+    speaker: { alias: 'test character' },
     type: 'emote',
     content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="undefined" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,crit:,fumble:[object Object]',
     sound: 'diceSound'
@@ -150,72 +148,72 @@ test('roll weapon attack', () => {
       melee: true
     }
   }))
-  actor.rollWeaponAttack('lefthand dagger')
+  await actor.rollWeaponAttack('lefthand dagger')
   expect(Roll).toHaveBeenCalledWith('1d16 + 2', { ab: 0, critical: 16 })
 })
 
-test('roll skill check', () => {
+test('roll skill check', async () => {
   Roll.mockClear()
 
-  actor.rollSkillCheck('customDieSkill')
+  await actor.rollSkillCheck('customDieSkill')
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('1d14')
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill', speaker: actor })
 
-  actor.rollSkillCheck('customDieAndValueSkill')
+  await actor.rollSkillCheck('customDieAndValueSkill')
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d14+@bonus', { bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill', speaker: actor })
 
-  actor.rollSkillCheck('actionDieSkill')
+  await actor.rollSkillCheck('actionDieSkill')
   expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: -4 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill', speaker: actor })
 
-  actor.rollSkillCheck('customDieSkillWithInt')
+  await actor.rollSkillCheck('customDieSkillWithInt')
   expect(Roll).toHaveBeenCalledTimes(4)
   expect(Roll).toHaveBeenCalledWith('1d14')
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill With Int (AbilityInt)', speaker: actor })
 
-  actor.rollSkillCheck('customDieAndValueSkillWithPer')
+  await actor.rollSkillCheck('customDieAndValueSkillWithPer')
   expect(Roll).toHaveBeenCalledTimes(5)
   expect(Roll).toHaveBeenCalledWith('1d14+@bonus', { bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill With Per (AbilityPer)', speaker: actor })
 
-  actor.rollSkillCheck('actionDieSkillWithLck')
+  await actor.rollSkillCheck('actionDieSkillWithLck')
   expect(Roll).toHaveBeenCalledTimes(6)
   expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: -4 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill With Lck (AbilityLck)', speaker: actor })
 })
 
-test('roll luck die', () => {
+test('roll luck die', async () => {
   Roll.mockClear()
 
-  actor.rollLuckDie()
+  await actor.rollLuckDie()
   expect(Roll).toHaveBeenCalledTimes(1)
 })
 
-test('roll spell check', () => {
+test('roll spell check', async () => {
   Roll.mockClear()
   collectionFindMock.mockReset()
   uiNotificationsWarnMock.mockReset()
 
   // Spell check with ability from actor data
-  actor.rollSpellCheck()
+  await actor.rollSpellCheck()
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
   // Force int for display purposes
-  actor.rollSpellCheck({ abilityId: 'int' })
+  await actor.rollSpellCheck({ abilityId: 'int' })
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
   // Force personality for display purposes
-  actor.rollSpellCheck({ abilityId: 'per' })
+  await actor.rollSpellCheck({ abilityId: 'per' })
   expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityPer)', speaker: actor })
@@ -223,14 +221,14 @@ test('roll spell check', () => {
 
   // Roll a spell check with an item
   collectionFindMock.mockReturnValue(new DCCItem('The Gloaming', { type: 'spell' }))
-  actor.rollSpellCheck({ spell: 'The Gloaming' })
+  await actor.rollSpellCheck({ spell: 'The Gloaming' })
   expect(collectionFindMock).toHaveBeenCalledTimes(1)
   expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(0)
 
   // Roll a spell check with an item of the wrong type
   collectionFindMock.mockReturnValue(new DCCItem('Swordfish', { type: 'weapon' }))
-  actor.rollSpellCheck({ spell: 'Swordfish' })
+  await actor.rollSpellCheck({ spell: 'Swordfish' })
   expect(collectionFindMock).toHaveBeenCalledTimes(2)
   expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
@@ -238,7 +236,7 @@ test('roll spell check', () => {
 
   // Roll a spell check with an unowned item
   collectionFindMock.mockReturnValue(null)
-  actor.rollSpellCheck({ spell: 'Missing Spell' })
+  await actor.rollSpellCheck({ spell: 'Missing Spell' })
   expect(collectionFindMock).toHaveBeenCalledTimes(3)
   expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(2)
