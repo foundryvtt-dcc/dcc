@@ -298,7 +298,7 @@ async function createDCCMacro (data, slot) {
     data.data = data.dccData
     delete data.dccData
   }
-  if (!data.type) return
+  if (!data.type || data.type === 'Macro') return
   if (!('data' in data)) return ui.notifications.warn(game.i18n.localize('DCC.CreateMacroNotOwnedWarning'))
   if (!handlers[data.type]) return ui.notifications.warn(game.i18n.localize('DCC.CreateMacroNoHandlerWarning'))
 
