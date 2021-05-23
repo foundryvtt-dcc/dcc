@@ -19,6 +19,8 @@ You can purchase a module containing copyrighted Goodman Games content ready for
 * Connor Stone (@ckwk)
 * @adotor
 
+Contains some icon art from game-icons.net.
+
 ###### Contributing
 * Thanks for considering helping out!
 * All PRs must pass the automated unit tests in this project to be considered for merging.

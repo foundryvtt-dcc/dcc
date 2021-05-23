@@ -429,7 +429,9 @@ class DCCActorSheet extends ActorSheet {
       dragData = {
         type: 'Hit Dice',
         actorId: this.actor.id,
-        data: {}
+        data: {
+          dice: this.actor.data.data.attributes.hitDice.value
+        }
       }
     } else if (classes.contains('save')) {
       dragData = {

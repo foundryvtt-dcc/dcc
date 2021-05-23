@@ -78,11 +78,10 @@ class DCCActor extends Actor {
       }
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
-      actionDieExpression.roll(async = false)
       const terms = actionDieExpression.terms || actionDieExpression.parts
       const actionDice = []
       for (const term of terms) {
-        if (typeof (term) === 'object') {
+        if (typeof (term) === 'object' && term.faces) {
           const termDie = `1d${term.faces}`
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {

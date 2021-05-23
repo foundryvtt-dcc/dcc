@@ -306,7 +306,7 @@ async function createDCCMacro (data, slot) {
   const macroData = handlers[data.type](data, slot)
   if (macroData) {
     // Create or reuse existing macro
-    let macro = game.macros.entities.find(
+    let macro = game.macros.contents.find(
       m => (m.name === macroData.name) && (m.command === macroData.command)
     )
     if (!macro) {
@@ -338,7 +338,7 @@ function _createDCCAbilityMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAbilityCheck("${abilityId}", { rollUnder: ${rollUnder} } ) }`,
-    img: CONFIG.DCC.macroImages.ability
+    img: EntityImages.imageForMacro(abilityId, rollUnder ? 'abilityRollUnder' : 'ability')
   }
 
   // If this is a roll under check make it clear in the macro name
@@ -362,7 +362,7 @@ function _createDCCInitiativeMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.Initiative'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token) }',
-    img: CONFIG.DCC.macroImages.initiative
+    img: EntityImages.imageForMacro('initiative')
   }
 
   return macroData
@@ -381,7 +381,7 @@ function _createDCCHitDiceMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.HitDiceRoll'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice() }',
-    img: CONFIG.DCC.macroImages.hitDice
+    img: EntityImages.imageForMacro(data.data.dice, 'hitDice')
   }
 
   return macroData
@@ -401,7 +401,7 @@ function _createDCCSaveMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSavingThrow("${saveId}") }`,
-    img: CONFIG.DCC.macroImages.savingThrow
+    img: EntityImages.imageForMacro(saveId, 'savingThrow')
   }
 
   return macroData
@@ -422,7 +422,7 @@ function _createDCCSkillMacro (data, slot) {
   const macroData = {
     name: skillName,
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSkillCheck("${skillId}") }`,
-    img: CONFIG.DCC.macroImages.skillCheck
+    img: EntityImages.imageForMacro(skillId, 'skillCheck')
   }
 
   return macroData
@@ -441,7 +441,7 @@ function _createDCCLuckDieMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.LuckDie'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollLuckDie() }',
-    img: CONFIG.DCC.macroImages.luckDie
+    img: EntityImages.imageForMacro(data.data.dice, 'luckDie')
   }
 
   return macroData
@@ -462,7 +462,7 @@ function _createDCCSpellCheckMacro (data, slot) {
   const macroData = {
     name: spell || game.i18n.localize('DCC.SpellCheck'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSpellCheck() }',
-    img: img || CONFIG.DCC.macroImages.spellCheck
+    img: img || EntityImages.imageForMacro('spellCheck')
   }
 
   if (spell) {
@@ -485,7 +485,7 @@ function _createDCCAttackBonusMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.AttackBonus'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus() }',
-    img: CONFIG.DCC.macroImages.attackBonus
+    img: EntityImages.imageForMacro(data.data.dice, 'attackBonus')
   }
 
   return macroData
@@ -505,7 +505,7 @@ function _createDCCActionDiceMacro (data, slot) {
   const macroData = {
     name: game.i18n.format('DCC.ActionDiceMacroName', { die }),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.setActionDice('${die}') }`,
-    img: CONFIG.DCC.macroImages.actionDice
+    img: EntityImages.imageForMacro(die, 'defaultDice')
   }
 
   return macroData
@@ -542,7 +542,7 @@ function _createDCCWeaponMacro (data, slot) {
 
   // If dragging a backstab use the backstab icon
   if (backstab) {
-    macroData.img = CONFIG.DCC.macroImages.backstab
+    macroData.img = EntityImages.imageForMacro('backstab')
   }
 
   return macroData
@@ -561,7 +561,7 @@ function _createDCCApplyDisapprovalMacro (data, slot) {
   const macroData = {
     name: game.i18n.format('DCC.ApplyDisapprovalMacroName'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.applyDisapproval() }',
-    img: CONFIG.DCC.macroImages.applyDisapproval
+    img: EntityImages.imageForMacro('applyDisapproval')
   }
 
   return macroData
@@ -580,7 +580,7 @@ function _createDCCRollDisapprovalMacro (data, slot) {
   const macroData = {
     name: game.i18n.format('DCC.RollDisapprovalMacroName'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollDisapproval() }',
-    img: CONFIG.DCC.macroImages.rollDisapproval
+    img: EntityImages.imageForMacro('rollDisapproval')
   }
 
   return macroData
