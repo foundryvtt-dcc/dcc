@@ -455,7 +455,9 @@ class DCCActorSheet extends ActorSheet {
       dragData = {
         type: 'Luck Die',
         actorId: this.actor.id,
-        data: {}
+        data: {
+          die: this.actor.data.data.class.luckDie
+        }
       }
     } else if (classes.contains('spell-check')) {
       dragData = {
@@ -487,7 +489,9 @@ class DCCActorSheet extends ActorSheet {
       dragData = {
         type: 'Attack Bonus',
         actorId: this.actor.id,
-        data: {}
+        data: {
+          die: this.actor.data.data.details.attackBonus
+        }
       }
     } else if (classes.contains('action-dice')) {
       dragData = {

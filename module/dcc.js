@@ -381,7 +381,7 @@ function _createDCCHitDiceMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.HitDiceRoll'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice() }',
-    img: EntityImages.imageForMacro(data.data.dice, 'hitDice')
+    img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
   }
 
   return macroData
@@ -436,12 +436,13 @@ function _createDCCSkillMacro (data, slot) {
  */
 function _createDCCLuckDieMacro (data, slot) {
   if (data.type !== 'Luck Die') return
+  const die = data.data.die
 
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.LuckDie'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollLuckDie() }',
-    img: EntityImages.imageForMacro(data.data.dice, 'luckDie')
+    img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(die), 'luckDie')
   }
 
   return macroData
@@ -480,12 +481,13 @@ function _createDCCSpellCheckMacro (data, slot) {
  */
 function _createDCCAttackBonusMacro (data, slot) {
   if (data.type !== 'Attack Bonus') return
+  const die = data.data.die
 
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.AttackBonus'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus() }',
-    img: EntityImages.imageForMacro(data.data.dice, 'attackBonus')
+    img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(die), 'attackBonus')
   }
 
   return macroData
@@ -505,7 +507,7 @@ function _createDCCActionDiceMacro (data, slot) {
   const macroData = {
     name: game.i18n.format('DCC.ActionDiceMacroName', { die }),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.setActionDice('${die}') }`,
-    img: EntityImages.imageForMacro(die, 'defaultDice')
+    img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(die), 'defaultDice')
   }
 
   return macroData
