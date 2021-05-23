@@ -2,7 +2,7 @@
   "name": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
-  "version": 0.26,
+  "version": 0.27,
   "minimumCoreVersion": "0.7.9",
   "compatibleCoreVersion": "0.7.9",
   "templateVersion": 5,
@@ -56,7 +56,7 @@
   "initiative": "1d20 + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
   "manifest": "https://raw.githubusercontent.com/foundryvtt-dcc/dcc/main/system.json",
-  "download": "https://github.com/foundryvtt-dcc/dcc/archive/v0.26.0.zip",
+  "download": "https://github.com/foundryvtt-dcc/dcc/archive/v0.27.0.zip",
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "allowBugReporter": true,
   "license": "LICENSE.txt"
