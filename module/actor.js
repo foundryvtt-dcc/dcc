@@ -30,11 +30,13 @@ class DCCActor extends Actor {
     let fumbleDieRank = 0
     let fumbleDie = '1d4'
     let checkPenalty = 0
+    let speedPenalty = 0
     if (this.itemTypes) {
       for (const armorItem of this.itemTypes.armor) {
         if (armorItem.data.data.equipped) {
           try {
-            checkPenalty += parseInt(armorItem.data.data.checkPenalty)
+            checkPenalty += parseInt(armorItem.data.data.checkPenalty || 0)
+            speedPenalty += parseInt(armorItem.data.data.speed || 0)
             const expression = armorItem.data.data.fumbleDie
             const rank = game.dcc.DiceChain.rankDiceExpression(expression)
             if (rank > fumbleDieRank) {
@@ -52,7 +54,7 @@ class DCCActor extends Actor {
       { die: fumbleDie }
     )
     data.attributes.ac.checkPenalty = checkPenalty
-
+    data.attributes.ac.speedPenalty = speedPenalty
   }
 
   /** @override */
@@ -270,7 +272,7 @@ class DCCActor extends Actor {
     }
 
     // Collate modifiers for the roll
-    let modifiers = {}
+    const modifiers = {}
     if (skill.value) {
       // Skill modifier
       modifiers.bonus = parseInt(skill.value)

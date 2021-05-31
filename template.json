@@ -41,7 +41,8 @@
         "attributes": {
           "ac": {
             "value": 10,
-            "checkPenalty": 0
+            "checkPenalty": 0,
+            "speedPenalty": 0
           },
           "actionDice": {
             "value": "1d20",

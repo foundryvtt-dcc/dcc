@@ -1,4 +1,4 @@
-/* global Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars, EntitySheetConfig, TextEditor */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars, EntitySheetConfig, TextEditor */
 /**
  * DCC
  */
@@ -17,6 +17,7 @@ import parser from './parser.js'
 import TablePackManager from './table-pack-manager.js'
 import EntityImages from './entity-images.js'
 import SpellResult from './spell-result.js'
+import ReleaseNotes from './release-notes.js'
 
 import { registerSystemSettings } from './settings.js'
 
@@ -128,6 +129,38 @@ Hooks.once('ready', async function () {
   // Register system settings - needs to happen after packs are initialised
   await registerSystemSettings()
 
+  checkReleaseNotes()
+  checkMigrations()
+  registerTables()
+
+  // Let modules know the DCC system is ready
+  Hooks.callAll('dcc.ready')
+})
+
+function checkReleaseNotes () {
+  // Determine if we should show the Release Notes/Credits chat card per user
+  const lastSeenVersion = game.user.getFlag('dcc', 'lastSeenSystemVersion')
+  const currentVersion = game.system.data.version
+
+  if (lastSeenVersion !== currentVersion) {
+    ReleaseNotes.addChatCard()
+    game.user.setFlag('dcc', 'lastSeenSystemVersion', currentVersion)
+  }
+
+  // Register listeners for the buttons
+  $(document).on('click', '.dcc-release-notes', () => _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog'))
+  $(document).on('click', '.dcc-credits', () => _onShowJournal('dcc.dcc-userguide', 'Credits'))
+}
+
+async function _onShowJournal (packName, journalName) {
+  const pack = game.packs.get(packName)
+  const index = await pack.getIndex()
+  const metadata = await index.getName(journalName)
+  const doc = await pack.getDocument(metadata._id)
+  doc.sheet.render(true)
+}
+
+function checkMigrations () {
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
   const NEEDS_MIGRATION_VERSION = 0.22
@@ -137,7 +170,9 @@ Hooks.once('ready', async function () {
   if (needMigration && game.user.isGM) {
     migrations.migrateWorld()
   }
+}
 
+function registerTables () {
   // Create manager for disapproval tables and register the system setting
   CONFIG.DCC.disapprovalPacks = new TablePackManager({
     updateHook: async (manager) => {
@@ -176,10 +211,7 @@ Hooks.once('ready', async function () {
   if (mercurialMagicTable) {
     CONFIG.DCC.mercurialMagicTable = mercurialMagicTable
   }
-
-  // Let modules know the DCC system is ready
-  Hooks.callAll('dcc.ready')
-})
+}
 
 /* -------------------------------------------- */
 /*  Other Hooks                                 */
