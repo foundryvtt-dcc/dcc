@@ -589,8 +589,8 @@
 /* ----------------------------------------- */
 .dcc .notes {
   border: 2px groove #eeede0;
-  height: 98%;
   font-size: 14px;
+  height: 98%;
   line-height: 24px;
   padding: 2px;
 }
