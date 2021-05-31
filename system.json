@@ -5,10 +5,7 @@
   "version": "0.27.0",
   "minimumCoreVersion": "0.7.9",
   "compatibleCoreVersion": "0.7.9",
-  "version": 0.27,
-  "minimumCoreVersion": "0.8.5",
-  "compatibleCoreVersion": "0.8.5",
-  "templateVersion": 5,
+  "templateVersion": 6,
   "author": "DCC Foundry Volunteer Team (https://discord.gg/2PR9YH9)",
   "contributors": [
     {

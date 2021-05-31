@@ -265,12 +265,22 @@ class DCCActor extends Actor {
       abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
     }
 
-    var roll = null
+    // Collate modifiers for the roll
+    let modifiers = {}
     if (skill.value) {
-      roll = new Roll(die + '+@bonus', { bonus: skill.value })
-    } else {
-      roll = new Roll(die)
+      // Skill modifier
+      modifiers.bonus = parseInt(skill.value)
     }
+    if (skill.useDeed && this.data.data.details.lastRolledAttackBonus) {
+      // Last deed roll
+      modifiers.ab = parseInt(this.data.data.details.lastRolledAttackBonus)
+    }
+
+    let rollExpression = die
+    for (const modifier in modifiers) {
+      rollExpression += `+@${modifier}`
+    }
+    const roll = new Roll(rollExpression, modifiers)
     await roll.evaluate({ async: true })
 
     // Handle special cleric spellchecks that are treated as skills
