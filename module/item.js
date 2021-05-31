@@ -213,7 +213,7 @@ class DCCItem extends Item {
    * Determine if this item needs to have its treasure value rolled
    * @return {Boolean}  True if any value field contains a rollable formula
    */
-  async needsValueRoll () {
+  needsValueRoll () {
     let needsRoll = false
 
     for (const currency in CONFIG.DCC.currencies) {
@@ -221,9 +221,7 @@ class DCCItem extends Item {
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        await roll.evaluate({ async: true })
-        const terms = roll.terms || roll.parts
-        if (terms.length > 1 || roll.dice.length > 0) {
+        if (roll.dice.length > 0) {
           needsRoll = true
           break
         }
@@ -243,8 +241,7 @@ class DCCItem extends Item {
     const valueRolls = {}
 
     for (const currency in CONFIG.DCC.currencies) {
-      const formula = this.data.data.value[currency]
-      if (!formula) continue
+      const formula = this.data.data.value[currency] || '0'
       try {
         const roll = new Roll(formula.toString())
         await roll.evaluate({ async: true })
@@ -270,7 +267,7 @@ class DCCItem extends Item {
       }),
       sound: CONFIG.sounds.dice
     }
-    await CONFIG.ChatMessage.entityClass.create(messageData)
+    await CONFIG.ChatMessage.documentClass.create(messageData)
 
     this.update(updates)
   }

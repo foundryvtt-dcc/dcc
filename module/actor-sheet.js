@@ -197,7 +197,7 @@ class DCCActorSheet extends ActorSheet {
         wallet.data.value.gp = parseInt(wallet.data.value.gp) + parseInt(c.data.value.gp)
         wallet.data.value.sp = parseInt(wallet.data.value.sp) + parseInt(c.data.value.sp)
         wallet.data.value.cp = parseInt(wallet.data.value.cp) + parseInt(c.data.value.cp)
-        await this.actor.deleteOwnedItem(c.id, {})
+        await this.actor.deleteOwnedItem(c._id, {})
         needsUpdate = true
       }
       if (needsUpdate) {
