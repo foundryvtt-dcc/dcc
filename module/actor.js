@@ -25,6 +25,34 @@ class DCCActor extends Actor {
     if (config.capLevel) {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
     }
+
+    // Determine the correct fumble die and check penalty to use based on armor
+    let fumbleDieRank = 0
+    let fumbleDie = '1d4'
+    let checkPenalty = 0
+    if (this.itemTypes) {
+      for (const armorItem of this.itemTypes.armor) {
+        if (armorItem.data.data.equipped) {
+          try {
+            checkPenalty += parseInt(armorItem.data.data.checkPenalty)
+            const expression = armorItem.data.data.fumbleDie
+            const rank = game.dcc.DiceChain.rankDiceExpression(expression)
+            if (rank > fumbleDieRank) {
+              fumbleDieRank = rank
+              fumbleDie = expression
+            }
+          } catch (err) {
+            // Ignore bad fumble die expressions
+          }
+        }
+      }
+    }
+    data.attributes.fumble = mergeObject(
+      data.attributes.fumble || {},
+      { die: fumbleDie }
+    )
+    data.attributes.ac.checkPenalty = checkPenalty
+
   }
 
   /** @override */
@@ -47,30 +75,6 @@ class DCCActor extends Actor {
       }
       data.attributes.ac.value = 10 + abilityMod + armorBonus
     }
-
-    // Determine the correct fumble die to use based on armor
-    let fumbleDieRank = 0
-    let fumbleDie = '1d4'
-    if (this.itemTypes) {
-      for (const armorItem of this.itemTypes.armor) {
-        if (armorItem.data.data.equipped) {
-          try {
-            const expression = armorItem.data.data.fumbleDie
-            const rank = game.dcc.DiceChain.rankDiceExpression(expression)
-            if (rank > fumbleDieRank) {
-              fumbleDieRank = rank
-              fumbleDie = expression
-            }
-          } catch (err) {
-            // Ignore bad fumble die expressions
-          }
-        }
-      }
-    }
-    data.attributes.fumble = mergeObject(
-      data.attributes.fumble || {},
-      { die: fumbleDie }
-    )
 
     // Gather available action dice
     try {

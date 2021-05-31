@@ -41,8 +41,7 @@
         "attributes": {
           "ac": {
             "value": 10,
-            "checkPenalty": 0,
-            "fumbleDie": "1d4"
+            "checkPenalty": 0
           },
           "actionDice": {
             "value": "1d20",
@@ -439,6 +438,7 @@
       "config": {
         "inheritActionDie": true,
         "inheritSpellCheck": true,
+        "inheritCheckPenalty": true,
         "castingMode": "wizard"
       },
       "available": true,
@@ -451,7 +451,8 @@
       "save": "",
       "spellCheck": {
         "die" : "1d20",
-        "value": "+0"
+        "value": "+0",
+        "penalty": "-0"
       },
       "mercurialEffect": {
         "value": "",

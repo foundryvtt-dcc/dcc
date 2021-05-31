@@ -8,8 +8,8 @@ import SpellResult from './spell-result.js'
  * @extends {Item}
  */
 class DCCItem extends Item {
-  prepareData () {
-    super.prepareData()
+  prepareBaseData () {
+    super.prepareBaseData()
 
     // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.actor.data && this.data.data.config) {
@@ -34,14 +34,19 @@ class DCCItem extends Item {
           }
         }
       } else if (this.data.type === 'spell') {
-        // Weapons can use the owner's action die for the spell check
+        // Spells can use the owner's action die for the spell check
         if (this.data.data.config.inheritActionDie) {
           this.data.data.spellCheck.die = this.actor.data.data.attributes.actionDice.value
         }
 
-        // Spells can inherit the owner's spell check and action die
+        // Spells can inherit the owner's spell check
         if (this.data.data.config.inheritSpellCheck) {
           this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck
+        }
+
+        // Spells can inherit the owner's check penalty
+        if (this.data.data.config.inheritCheckPenalty) {
+          this.data.data.spellCheck.penalty = this.actor.data.data.attributes.ac.checkPenalty
         }
       }
     }
@@ -59,11 +64,21 @@ class DCCItem extends Item {
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
 
+    // Generate the spell check expression
+    const modifiers = {
+      bonus: parseInt(this.data.data.spellCheck.value || 0)
+    }
+    if (this.data.data.config.inheritCheckPenalty) {
+      modifiers.checkPenalty = parseInt(actor.data.data.attributes.ac.checkPenalty || 0)
+    } else {
+      modifiers.checkPenalty = parseInt(this.data.data.spellCheck.penalty || 0)
+    }
+    let rollExpression = this.data.data.spellCheck.die
+    for (const modifier in modifiers) {
+      rollExpression += `+@${modifier}`
+    }
     // Roll the spell check
-    const roll = new Roll('@die+@bonus', {
-      die: this.data.data.spellCheck.die,
-      bonus: this.data.data.spellCheck.value
-    })
+    const roll = new Roll(rollExpression, modifiers)
     await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {

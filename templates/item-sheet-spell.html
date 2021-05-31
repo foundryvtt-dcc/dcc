@@ -10,23 +10,32 @@
             </div>
 
             <div class="flexrow">
-              <div class="resource flex1">
-                <label class="resource-label" for="data.level">{{localize "DCC.SpellLevel"}}</label>
+              <div class="flex1">
+                <label class="resource-label" for="data.level">{{localize "DCC.Level"}}</label>
                 <input type="text" name="data.level"
                        value="{{numberFormat data.level decimals=0 sign=false}}"
                        placeholder="1" data-dtype="Number"/>
               </div>
-              <div class="resource flex1">
+              <div class="flex2">
+                <label class="resource-label" for="data.spellCheck.die">{{localize "DCC.ActionDie"}}</label>
+                <input type="text" name="data.spellCheck.die" class="flex1"
+                       value="{{data.spellCheck.die}}"
+                       {{#if data.config.inheritActionDie}}disabled{{/if}}
+                       placeholder="1d20" data-dtype="String"/>
+              </div>
+              <div class="flex2">
                 <label class="resource-label" for="data.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
-                <div class="flexrow">
-                  <input type="text" name="data.spellCheck.die" class="flex1"
-                         value="{{data.spellCheck.die}}"
-                         {{#if data.config.inheritActionDie}}disabled{{/if}}
-                         placeholder="1d20" data-dtype="String"/>
                   <input type="text" name="data.spellCheck.value" class="flex1"
                          value="{{numberFormat data.spellCheck.value decimals=0 sign=true}}"
                          {{#if data.config.inheritSpellCheck}}disabled{{/if}}
                          placeholder="+0" data-dtype="Number"/>
+              </div>
+              <div class="flex2">
+                <label class="resource-label" for="data.spellCheck.penalty">{{localize "DCC.CheckPenalty"}}</label>
+                  <input type="text" name="data.spellCheck.penalty" class="flex1"
+                         value="{{numberFormat data.spellCheck.penalty decimals=0 sign=true}}"
+                         {{#if data.config.inheritCheckPenalty}}disabled{{/if}}
+                         placeholder="-0" data-dtype="Number"/>
                 </div>
               </div>
             </div>
