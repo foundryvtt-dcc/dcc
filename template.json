@@ -288,6 +288,7 @@
           "rollAttackBonus": false,
           "computeAC": false,
           "baseACAbility": "agl",
+          "computeCheckPenalty": false,
           "sortInventory" : true,
           "removeEmptyItems" : true,
           "showSpells" : false,

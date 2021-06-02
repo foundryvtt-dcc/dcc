@@ -2,9 +2,41 @@
 
 /**
  * DCC Roll
- * Dungeon Crawl Classics specific Roll class for applying modifiers and custom behaviours cleanly
+ * Dungeon Crawl Classics specific Roll helpers applying modifiers and custom behaviours cleanly
  */
-class DCCRoll extends Roll {
+class DCCRoll {
+  /**
+   * Build a simplified roll expression from a die and set of modifiers
+   * @param {String} die        Base die for the roll
+   * @param {Array} modifiers   An array of static modifiers
+   * @return {string}
+   */
+  static createSimpleRoll (die, modifiers, options={}) {
+    const isNumeric = /^([+-]?)(\d)+$/
+
+    let rollExpression = die
+    for (const modifier in modifiers) {
+      const value = modifiers[modifier]
+      if (value) {
+        const match = String(value).match(isNumeric)
+        if (match === null) {
+          // Non-numeric - add it to the roll
+          rollExpression += `+@${modifier}`
+        } else if (match[1] === '-') {
+          // Explicitly a negative number, no need for an addition operator
+          rollExpression += String(value)
+        } else {
+          // Positive number - strip sign and add if non-zero
+          if (parseInt(value)) {
+            rollExpression += `+${parseInt(value)}`
+          }
+        }
+      }
+    }
+
+    return new Roll(rollExpression, modifiers)
+  }
+
   /**
    * Create a formula string from an array of Dice terms.
    * @return {string}

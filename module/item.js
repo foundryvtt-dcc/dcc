@@ -1,6 +1,5 @@
 /* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
 
-import DCCRoll from './dcc-roll.js'
 import SpellResult from './spell-result.js'
 
 /**
@@ -73,12 +72,9 @@ class DCCItem extends Item {
     } else {
       modifiers.checkPenalty = parseInt(this.data.data.spellCheck.penalty || 0)
     }
-    let rollExpression = this.data.data.spellCheck.die
-    for (const modifier in modifiers) {
-      rollExpression += `+@${modifier}`
-    }
+
     // Roll the spell check
-    const roll = new Roll(rollExpression, modifiers)
+    const roll = game.dcc.DCCRoll.createSimpleRoll(this.data.data.spellCheck.die, modifiers)
     await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
@@ -261,7 +257,7 @@ class DCCItem extends Item {
         const roll = new Roll(formula.toString())
         await roll.evaluate({ async: true })
         updates['data.value.' + currency] = roll.total
-        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
+        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
       }

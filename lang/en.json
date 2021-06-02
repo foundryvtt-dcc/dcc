@@ -121,6 +121,7 @@
   "DCC.ComponentSomatic": "Somatic",
   "DCC.ComponentVerbal": "Verbal",
   "DCC.ComputeACConfig": "Compute AC",
+  "DCC.ComputeCheckPenaltyConfig": "Compute Check Penalty",
   "DCC.ConBlinded": "Blinded",
   "DCC.ConCharmed": "Charmed",
   "DCC.ConDeafened": "Deafened",

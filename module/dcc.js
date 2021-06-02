@@ -9,6 +9,7 @@ import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
 import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
+import DCCRoll from './dcc-roll.js'
 import DCC from './config.js'
 import * as chat from './chat.js'
 import * as migrations from './migrations.js'
@@ -45,6 +46,7 @@ Hooks.once('init', async function () {
 
   game.dcc = {
     DCCActor,
+    DCCRoll,
     DiceChain,
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor // This is called from macros, don't remove

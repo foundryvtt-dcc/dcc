@@ -1,7 +1,5 @@
 /* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, Dialog, mergeObject */
 
-import DCCRoll from './dcc-roll.js'
-
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
  * @extends {Actor}
@@ -53,7 +51,9 @@ class DCCActor extends Actor {
       data.attributes.fumble || {},
       { die: fumbleDie }
     )
-    data.attributes.ac.checkPenalty = checkPenalty
+    if (data.config.computeCheckPenalty) {
+      data.attributes.ac.checkPenalty = checkPenalty
+    }
     data.attributes.ac.speedPenalty = speedPenalty
   }
 
@@ -272,21 +272,15 @@ class DCCActor extends Actor {
     }
 
     // Collate modifiers for the roll
-    const modifiers = {}
-    if (skill.value) {
-      // Skill modifier
-      modifiers.bonus = parseInt(skill.value)
+    const modifiers = {
+      bonus: skill.value
     }
     if (skill.useDeed && this.data.data.details.lastRolledAttackBonus) {
       // Last deed roll
       modifiers.ab = parseInt(this.data.data.details.lastRolledAttackBonus)
     }
 
-    let rollExpression = die
-    for (const modifier in modifiers) {
-      rollExpression += `+@${modifier}`
-    }
-    const roll = new Roll(rollExpression, modifiers)
+    const roll = game.dcc.DCCRoll.createSimpleRoll(die, modifiers)
     await roll.evaluate({ async: true })
 
     // Handle special cleric spellchecks that are treated as skills
@@ -353,8 +347,15 @@ class DCCActor extends Actor {
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
     const die = this.data.data.attributes.actionDice.value
-    const bonus = this.data.data.class.spellCheck || '+0'
-    const roll = new Roll('@die+@bonus', { die: die, bonus: bonus })
+    const bonus = parseInt(this.data.data.class.spellCheck || 0)
+    const checkPenalty = parseInt(this.data.data.attributes.ac.checkPenalty || 0)
+
+    // Collate modifiers for the roll
+    const modifiers = {
+      bonus,
+      checkPenalty
+    }
+    const roll = game.dcc.DCCRoll.createSimpleRoll (die, modifiers)
     await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
@@ -597,7 +598,7 @@ class DCCActor extends Actor {
     return {
       rolled: true,
       roll: attackRoll,
-      formula: DCCRoll.cleanFormula(attackRoll.terms),
+      formula: game.dcc.DCCRoll.cleanFormula(attackRoll.terms),
       hitsAc: attackRoll.total,
       d20Roll: d20RollResult,
       crit,
@@ -642,7 +643,7 @@ class DCCActor extends Actor {
     return {
       rolled: true,
       roll: damageRoll,
-      formula: DCCRoll.cleanFormula(damageRoll.terms),
+      formula: game.dcc.DCCRoll.cleanFormula(damageRoll.terms),
       damage: damageRoll.total
     }
   }
@@ -683,7 +684,7 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
       // Display crit result or just a notification of the crit
       if (critResult) {
@@ -745,7 +746,7 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = escape(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {
