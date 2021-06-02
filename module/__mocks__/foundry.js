@@ -1,5 +1,6 @@
 /* eslint-env jest */
 import DCC from '../config.js'
+import DCCRoll from '../dcc-roll.js'
 
 // console.log('Loading Foundry Mocks')
 
@@ -44,6 +45,9 @@ class Actor {
             lck: { value: 18, mod: 3, label: 'DCC.AbilityLck' }
           },
           attributes: {
+            ac: {
+              checkPenalty: 0
+            },
             init: { value: -1 },
             actionDice: { value: '1d20' },
             fumble: { die: '1d4' }
@@ -186,6 +190,9 @@ class Game {
 global.Game = Game
 global.game = new Game()
 global.game.user = { _id: 1 }
+global.game.dcc = {
+  DCCRoll
+}
 
 /**
  * Settings

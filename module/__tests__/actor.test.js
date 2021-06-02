@@ -157,32 +157,32 @@ test('roll skill check', async () => {
 
   await actor.rollSkillCheck('customDieSkill')
   expect(Roll).toHaveBeenCalledTimes(1)
-  expect(Roll).toHaveBeenCalledWith('1d14')
+  expect(Roll).toHaveBeenCalledWith('1d14', {})
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill', speaker: actor })
 
   await actor.rollSkillCheck('customDieAndValueSkill')
   expect(Roll).toHaveBeenCalledTimes(2)
-  expect(Roll).toHaveBeenCalledWith('1d14+@bonus', { bonus: +3 })
+  expect(Roll).toHaveBeenCalledWith('1d14+3', { bonus: 3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill', speaker: actor })
 
   await actor.rollSkillCheck('actionDieSkill')
   expect(Roll).toHaveBeenCalledTimes(3)
-  expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: -4 })
+  expect(Roll).toHaveBeenCalledWith('1d20-4', { bonus: -4 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill', speaker: actor })
 
   await actor.rollSkillCheck('customDieSkillWithInt')
   expect(Roll).toHaveBeenCalledTimes(4)
-  expect(Roll).toHaveBeenCalledWith('1d14')
+  expect(Roll).toHaveBeenCalledWith('1d14', {})
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill With Int (AbilityInt)', speaker: actor })
 
   await actor.rollSkillCheck('customDieAndValueSkillWithPer')
   expect(Roll).toHaveBeenCalledTimes(5)
-  expect(Roll).toHaveBeenCalledWith('1d14+@bonus', { bonus: +3 })
+  expect(Roll).toHaveBeenCalledWith('1d14+3', { bonus: 3 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill With Per (AbilityPer)', speaker: actor })
 
   await actor.rollSkillCheck('actionDieSkillWithLck')
   expect(Roll).toHaveBeenCalledTimes(6)
-  expect(Roll).toHaveBeenCalledWith('1d20+@bonus', { bonus: -4 })
+  expect(Roll).toHaveBeenCalledWith('1d20-4', { bonus: -4 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill With Lck (AbilityLck)', speaker: actor })
 })
 
@@ -201,21 +201,21 @@ test('roll spell check', async () => {
   // Spell check with ability from actor data
   await actor.rollSpellCheck()
   expect(Roll).toHaveBeenCalledTimes(1)
-  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
+  expect(Roll).toHaveBeenCalledWith('1d20+3', { bonus: 3, checkPenalty: 0 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
   // Force int for display purposes
   await actor.rollSpellCheck({ abilityId: 'int' })
   expect(Roll).toHaveBeenCalledTimes(2)
-  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
+  expect(Roll).toHaveBeenCalledWith('1d20+3', { bonus: 3, checkPenalty: 0 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
   // Force personality for display purposes
   await actor.rollSpellCheck({ abilityId: 'per' })
   expect(Roll).toHaveBeenCalledTimes(3)
-  expect(Roll).toHaveBeenCalledWith('@die+@bonus', { die: '1d20', bonus: +3 })
+  expect(Roll).toHaveBeenCalledWith('1d20+3', { bonus: 3, checkPenalty: 0 })
   expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityPer)', speaker: actor })
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
