@@ -272,8 +272,9 @@ class DCCActor extends Actor {
     }
 
     // Collate modifiers for the roll
-    const modifiers = {
-      bonus: skill.value
+    const modifiers = {}
+    if (skill.value) {
+      modifiers.bonus = skill.value
     }
     if (skill.useDeed && this.data.data.details.lastRolledAttackBonus) {
       // Last deed roll
