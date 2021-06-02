@@ -221,7 +221,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 }
 
 .dcc.sheet.actor .ability-scores .ability:last-child {
-  border-bottom: none;
+  border-bottom: 0;
 }
 
 .dcc.sheet.actor .ability-scores .ability input.ability-score {
@@ -650,7 +650,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 }
 
 .dcc .tabs .item.active {
-  border-bottom: none;
+  border-bottom: 0;
   margin-bottom: 11px;
   text-decoration: underline;
   text-shadow: none;
@@ -1447,7 +1447,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   }
 
   .tabs .item.active {
-    border-bottom: none;
+    border-bottom: 0;
     margin-bottom: 11px;
     text-decoration: underline;
     text-shadow: none;
@@ -1460,7 +1460,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
 .dcc.sheet {
   .sheet-tabs.tabs {
-    border: none;
+    border: 0;
   }
 }
 

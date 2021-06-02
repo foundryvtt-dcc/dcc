@@ -2,8 +2,6 @@
   "extends": "stylelint-config-sass-guidelines",
   "rules": {
     "selector-no-qualifying-type": null,
-    "declaration-property-unit-disallowed-list": null,
-    "declaration-property-value-disallowed-list": null,
     "selector-max-compound-selectors": null,
     "selector-max-id": null,
     "max-nesting-depth": null,
