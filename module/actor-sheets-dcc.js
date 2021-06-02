@@ -138,7 +138,8 @@ class DCCActorSheetDwarf extends DCCActorSheet {
       this.actor.update({
         'data.details.sheetClass': 'Dwarf',
         'data.class.disapproval': 1,
-        'data.config.rollAttackBonus': true
+        'data.config.rollAttackBonus': true,
+        'data.skills.shieldBash.useDeed': true
       })
     }
 

@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, ENTITY_PERMISSIONS */
+/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, CONST */
 
 import DCCActorConfig from './actor-config.js'
 import EntityImages from './entity-images.js'
@@ -30,8 +30,8 @@ class DCCActorSheet extends ActorSheet {
   _getHeaderButtons () {
     const buttons = super._getHeaderButtons()
 
-    // Header buttons shown only with Owner permissions
-    if (this.actor.permission === ENTITY_PERMISSIONS.OWNER) {
+    // Header buttons shown only with Owner permission
+    if (this.actor.permission === CONST.ENTITY_PERMISSIONS.OWNER) {
       buttons.unshift(
         {
           label: game.i18n.localize('DCC.ConfigureSheet'),
@@ -50,27 +50,27 @@ class DCCActorSheet extends ActorSheet {
   /** @override */
   getData () {
     // Basic data
-    const isOwner = this.entity.owner
+    const isOwner = this.document.isOwner
     const data = {
-      owner: isOwner,
-      limited: this.entity.limited,
+      isOwner: isOwner,
+      limited: this.document.limited,
       options: this.options,
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
-      isNPC: this.entity.data.type === 'NPC',
-      isPC: this.entity.data.type === 'Player',
-      isZero: this.entity.data.data.details.level === 0,
-      type: this.entity.data.type,
+      isNPC: this.document.data.type === 'NPC',
+      isPC: this.document.data.type === 'Player',
+      isZero: this.document.data.data.details.level === 0,
+      type: this.document.data.type,
       config: CONFIG.DCC
     }
 
-    data.actor = duplicate(this.actor.data)
-    data.data = data.actor.data
-    data.labels = this.actor.labels || {}
+    data.actor = duplicate(this.document.data)
+    data.data = duplicate(this.document.data.data)
+    data.labels = this.document.labels || {}
     data.filters = this._filters
 
     if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-      data.actor.img = EntityImages.imageForActor(data.type)
+      data.actor.data.img = EntityImages.imageForActor(data.type)
     }
 
     if (data.isNPC) {
@@ -134,7 +134,7 @@ class DCCActorSheet extends ActorSheet {
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.data.quantity !== undefined && i.data.quantity <= 0) {
-        this.actor.deleteOwnedItem(i._id, {})
+        this.actor.deleteOwnedItem(i.id, {})
         continue
       }
 
@@ -173,7 +173,7 @@ class DCCActorSheet extends ActorSheet {
 
         if (i.data.isCoins) {
           // Safe to treat as coins if the item's value is resolved
-          const item = this.actor.getOwnedItem(i._id)
+          const item = this.actor.items.get(i._id)
           if (!item.needsValueRoll()) {
             treatAsCoins = true
           }
@@ -237,7 +237,7 @@ class DCCActorSheet extends ActorSheet {
     }
 
     // Owner Only Listeners
-    if (this.actor.owner) {
+    if (this.actor.isOwner) {
       // Ability Checks
       html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
       html.find('.ability-modifiers').click(this._onRollAbilityCheck.bind(this))
@@ -262,7 +262,7 @@ class DCCActorSheet extends ActorSheet {
       html.find('li.save').each(makeDraggable)
 
       // Skills
-      html.find('.skill-check').click(this._onRollSkillCheck.bind(this))
+      html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
       html.find('label.skill-check').each(makeDraggable)
 
       // Luck Die
@@ -304,7 +304,7 @@ class DCCActorSheet extends ActorSheet {
         // Update Inventory Item
         html.find('.item-edit').click(ev => {
           const li = $(ev.currentTarget).parents('.item')
-          const item = this.actor.getOwnedItem(li.data('itemId'))
+          const item = this.actor.items.get(li.data('itemId'))
           item.sheet.render(true)
         })
 
@@ -429,7 +429,9 @@ class DCCActorSheet extends ActorSheet {
       dragData = {
         type: 'Hit Dice',
         actorId: this.actor.id,
-        data: {}
+        data: {
+          dice: this.actor.data.data.attributes.hitDice.value
+        }
       }
     } else if (classes.contains('save')) {
       dragData = {
@@ -453,7 +455,9 @@ class DCCActorSheet extends ActorSheet {
       dragData = {
         type: 'Luck Die',
         actorId: this.actor.id,
-        data: {}
+        data: {
+          die: this.actor.data.data.class.luckDie
+        }
       }
     } else if (classes.contains('spell-check')) {
       dragData = {
@@ -485,7 +489,9 @@ class DCCActorSheet extends ActorSheet {
       dragData = {
         type: 'Attack Bonus',
         actorId: this.actor.id,
-        data: {}
+        data: {
+          die: this.actor.data.data.details.attackBonus
+        }
       }
     } else if (classes.contains('action-dice')) {
       dragData = {
@@ -732,7 +738,7 @@ class DCCActorSheet extends ActorSheet {
             parentElement = parentElement.parentElement
           }
           const itemId = parentElement.dataset.itemId
-          const item = this.actor.getOwnedItem(itemId)
+          const item = this.actor.items.get(itemId)
           if (item) {
             const updateData = expanded.itemUpdates[itemId]
             item.update(updateData)

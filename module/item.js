@@ -7,11 +7,11 @@ import SpellResult from './spell-result.js'
  * @extends {Item}
  */
 class DCCItem extends Item {
-  prepareData () {
-    super.prepareData()
+  prepareBaseData () {
+    super.prepareBaseData()
 
     // If this item is owned by an actor, check for config settings to apply
-    if (this.actor && this.data.data.config) {
+    if (this.actor && this.actor.data && this.data.data.config) {
       if (this.data.type === 'weapon') {
         // Weapons can inherit the owner's action die
         if (this.data.data.config.inheritActionDie) {
@@ -33,14 +33,19 @@ class DCCItem extends Item {
           }
         }
       } else if (this.data.type === 'spell') {
-        // Weapons can use the owner's action die for the spell check
+        // Spells can use the owner's action die for the spell check
         if (this.data.data.config.inheritActionDie) {
           this.data.data.spellCheck.die = this.actor.data.data.attributes.actionDice.value
         }
 
-        // Spells can inherit the owner's spell check and action die
+        // Spells can inherit the owner's spell check
         if (this.data.data.config.inheritSpellCheck) {
           this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck
+        }
+
+        // Spells can inherit the owner's check penalty
+        if (this.data.data.config.inheritCheckPenalty) {
+          this.data.data.spellCheck.penalty = this.actor.data.data.attributes.ac.checkPenalty
         }
       }
     }
@@ -53,17 +58,24 @@ class DCCItem extends Item {
   async rollSpellCheck (abilityId = 'int', options = {}) {
     if (this.data.type !== 'spell') { return }
 
-    const actor = this.options.actor
+    const actor = this.actor
     const ability = actor.data.data.abilities[abilityId] || {}
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
 
+    // Generate the spell check expression
+    const modifiers = {
+      bonus: parseInt(this.data.data.spellCheck.value || 0)
+    }
+    if (this.data.data.config.inheritCheckPenalty) {
+      modifiers.checkPenalty = parseInt(actor.data.data.attributes.ac.checkPenalty || 0)
+    } else {
+      modifiers.checkPenalty = parseInt(this.data.data.spellCheck.penalty || 0)
+    }
+
     // Roll the spell check
-    const roll = new Roll('@die+@bonus', {
-      die: this.data.data.spellCheck.die,
-      bonus: this.data.data.spellCheck.value
-    })
-    roll.roll()
+    const roll = game.dcc.DCCRoll.createSimpleRoll(this.data.data.spellCheck.die, modifiers)
+    await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -73,7 +85,7 @@ class DCCItem extends Item {
 
     // Lookup the appropriate table
     const resultsRef = this.data.data.results
-    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table
+    const predicate = t => t.name === resultsRef.table || t.id === resultsRef.table
     let resultsTable
     // If a collection is specified then check the appropriate pack for the spell
     if (resultsRef.collection) {
@@ -81,12 +93,12 @@ class DCCItem extends Item {
       if (pack) {
         await pack.getIndex()
         const entry = pack.index.find(predicate)
-        resultsTable = await pack.getEntity(entry._id)
+        resultsTable = await pack.getDocument(entry._id)
       }
     }
     // Otherwise fall back to searching the world
     if (!resultsTable) {
-      resultsTable = game.tables.entities.find(predicate)
+      resultsTable = game.tables.contents.find(predicate)
     }
 
     let flavor = spell
@@ -100,16 +112,16 @@ class DCCItem extends Item {
       let crit = false
       let fumble = false
       try {
-        if (results.roll.results.length > 0) {
+        if (results.roll.terms.length > 0) {
           const rollObject = results.roll
-          const naturalRoll = rollObject.results[0]
+          const naturalRoll = rollObject.terms[0].results[0]
           if (naturalRoll === 1) {
             const fumbleResult = await resultsTable.draw({ roll: new Roll('1'), displayChat: false })
             results.results = fumbleResult.results
             fumble = true
           } else if (naturalRoll === 20) {
-            if (this.options.actor.data.type === 'Player') {
-              const newRoll = results.roll._total + this.options.actor.data.data.details.level.value
+            if (this.actor.data.type === 'Player') {
+              const newRoll = results.roll._total + this.actor.data.data.details.level.value
               const critResult = await resultsTable.draw({ roll: new Roll(String(newRoll)), displayChat: false })
               results.results = critResult.results
               crit = true
@@ -144,7 +156,7 @@ class DCCItem extends Item {
   async rollMercurialMagic () {
     if (this.data.type !== 'spell') { return }
 
-    const actor = this.options.actor
+    const actor = this.actor
     if (!actor) { return }
 
     const abilityId = 'lck'
@@ -170,7 +182,7 @@ class DCCItem extends Item {
         await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
         if (entry) {
-          const table = await pack.getEntity(entry._id)
+          const table = await pack.getDocument(entry._id)
           mercurialMagicResult = await table.draw({ roll })
         }
       }
@@ -181,7 +193,7 @@ class DCCItem extends Item {
       roll = mercurialMagicResult.roll
     } else {
       // Fall back to displaying just the roll
-      roll.roll()
+      await roll.evaluate({ async: true })
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor: game.i18n.localize('DCC.MercurialMagicRoll')
@@ -220,9 +232,7 @@ class DCCItem extends Item {
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        roll.roll()
-        const terms = roll.terms || roll.parts
-        if (terms.length > 1 || roll.dice.length > 0) {
+        if (roll.dice.length > 0) {
           needsRoll = true
           break
         }
@@ -242,21 +252,20 @@ class DCCItem extends Item {
     const valueRolls = {}
 
     for (const currency in CONFIG.DCC.currencies) {
-      const formula = this.data.data.value[currency]
-      if (!formula) continue
+      const formula = this.data.data.value[currency] || '0'
       try {
         const roll = new Roll(formula.toString())
-        roll.roll()
+        await roll.evaluate({ async: true })
         updates['data.value.' + currency] = roll.total
-        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${Roll.cleanFormula(roll.terms || roll.formula)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
+        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
       }
     }
 
-    const speaker = { alias: this.actor.name, _id: this.actor._id }
+    const speaker = { alias: this.actor.name, id: this.actor.id }
     const messageData = {
-      user: game.user._id,
+      user: game.user.id,
       speaker: speaker,
       type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
       content: game.i18n.format('DCC.ResolveValueEmote', {
@@ -269,7 +278,7 @@ class DCCItem extends Item {
       }),
       sound: CONFIG.sounds.dice
     }
-    await CONFIG.ChatMessage.entityClass.create(messageData)
+    await CONFIG.ChatMessage.documentClass.create(messageData)
 
     this.update(updates)
   }
@@ -277,11 +286,11 @@ class DCCItem extends Item {
   /**
    * Shift currency to the next highest denomination
    */
-  convertCurrencyUpward (currency) {
+  async convertCurrencyUpward (currency) {
     const currencyRank = CONFIG.DCC.currencyRank
     const currencyValue = CONFIG.DCC.currencyValue
     // Don't do currency conversions if the value isn't resolved
-    if (this.needsValueRoll()) {
+    if (await this.needsValueRoll()) {
       return
     }
     // Find the rank of this currency
@@ -306,7 +315,7 @@ class DCCItem extends Item {
   /**
    * Shift currency to the next lowest denomination
    */
-  convertCurrencyDownward (currency) {
+  async convertCurrencyDownward (currency) {
     const currencyRank = CONFIG.DCC.currencyRank
     const currencyValue = CONFIG.DCC.currencyValue
     // Don't do currency conversions if the value isn't resolved

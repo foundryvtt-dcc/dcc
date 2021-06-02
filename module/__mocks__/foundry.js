@@ -1,5 +1,6 @@
 /* eslint-env jest */
 import DCC from '../config.js'
+import DCCRoll from '../dcc-roll.js'
 
 // console.log('Loading Foundry Mocks')
 
@@ -36,14 +37,17 @@ class Actor {
       this.data = {
         data: {
           abilities: {
-            str: { value: 6, label: 'DCC.AbilityStr' },
-            agl: { value: 8, label: 'DCC.AbilityAgl' },
-            sta: { value: 12, label: 'DCC.AbilitySta' },
-            int: { value: 14, label: 'DCC.AbilityInt' },
-            per: { value: 16, label: 'DCC.AbilityPer' },
-            lck: { value: 18, label: 'DCC.AbilityLck' }
+            str: { value: 6, mod: -1, label: 'DCC.AbilityStr' },
+            agl: { value: 8, mod: -1, label: 'DCC.AbilityAgl' },
+            sta: { value: 12, mod: 0, label: 'DCC.AbilitySta' },
+            int: { value: 14, mod: 1, label: 'DCC.AbilityInt' },
+            per: { value: 16, mod: 2, label: 'DCC.AbilityPer' },
+            lck: { value: 18, mod: 3, label: 'DCC.AbilityLck' }
           },
           attributes: {
+            ac: {
+              checkPenalty: 0
+            },
             init: { value: -1 },
             actionDice: { value: '1d20' },
             fumble: { die: '1d4' }
@@ -186,6 +190,9 @@ class Game {
 global.Game = Game
 global.game = new Game()
 global.game.user = { _id: 1 }
+global.game.dcc = {
+  DCCRoll
+}
 
 /**
  * Settings
@@ -207,12 +214,9 @@ global.rollToMessageMock = jest.fn((messageData = {}, { rollMode = null, create 
   // console.log('Mock Roll: toMessage was called with:')
   // console.log(data)
 })
-global.rollRollMock = jest.fn(() => {
+global.rollEvaluateMock = jest.fn(() => {
   // console.log('Mock Roll: roll was called')
   return { total: 2 }
-})
-global.rollCleanFormulaMock = jest.fn((terms) => {
-  return terms
 })
 global.rollValidateMock = jest.fn((formula) => {
   return true
@@ -221,17 +225,17 @@ global.Roll = jest.fn((formula, data = {}) => {
   return {
     dice: [{ results: [10], options: {} }],
     toMessage: global.rollToMessageMock,
-    roll: global.rollRollMock
+    evaluate: global.rollEvaluateMock,
+    roll: global.rollEvaluateMock
   }
 }).mockName('Roll')
-global.Roll.cleanFormula = global.rollCleanFormulaMock
 global.Roll.validate = global.rollValidateMock
 
 /**
  * ChatMessage
  */
 global.CONFIG.ChatMessage = {
-  entityClass: {
+  documentClass: {
     create: jest.fn((messageData = {}) => {
       // console.log(messageData)
     })

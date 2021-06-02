@@ -48,6 +48,14 @@
         {{/select}}
       </select>
     </div>
+    <label for="data.config.computeCheckPenalty">{{localize "DCC.ComputeCheckPenaltyConfig"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.computeCheckPenalty" id="data.config.computeCheckPenalty" {{checked data.config.computeCheckPenalty}} data-dtype="boolean"/>
+    </div>
+    <label for="data.attributes.ac.checkPenalty">{{localize "DCC.CheckPenalty"}}</label>
+    <div class="form-fields">
+      <input type="text" name="data.attributes.ac.checkPenalty" id="data.attributes.ac.checkPenalty" value="{{numberFormat data.attributes.ac.checkPenalty decimals=0 sign=true}}" data-dtype="number"/>
+    </div>
   </div>
   <div class="form-group">
     <label for="data.config.showMaxAbilities">{{localize "DCC.ShowMaxAbilitiesConfig"}}</label>

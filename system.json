@@ -3,9 +3,9 @@
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": "0.27.0",
-  "minimumCoreVersion": "0.7.9",
-  "compatibleCoreVersion": "0.7.9",
-  "templateVersion": 5,
+  "minimumCoreVersion": "0.8.6",
+  "compatibleCoreVersion": "0.8.6",
+  "templateVersion": 6,
   "author": "DCC Foundry Volunteer Team (https://discord.gg/2PR9YH9)",
   "contributors": [
     {
@@ -23,7 +23,8 @@
   ],
   "dependencies": [
     {
-      "name": "bug-reporter"
+      "name": "bug-reporter",
+      "type": "module"
     }
   ],
   "esmodules": [
