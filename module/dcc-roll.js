@@ -11,7 +11,7 @@ class DCCRoll {
    * @param {Array} modifiers   An array of static modifiers
    * @return {string}
    */
-  static createSimpleRoll (die, modifiers, options={}) {
+  static createSimpleRoll (die, modifiers, options = {}) {
     const isNumeric = /^([+-]?)(\d)+$/
 
     let rollExpression = die

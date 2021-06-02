@@ -355,7 +355,7 @@ class DCCActor extends Actor {
       bonus,
       checkPenalty
     }
-    const roll = game.dcc.DCCRoll.createSimpleRoll (die, modifiers)
+    const roll = game.dcc.DCCRoll.createSimpleRoll(die, modifiers)
     await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
