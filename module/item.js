@@ -106,30 +106,7 @@ class DCCItem extends Item {
 
     // Draw from the table if found, otherwise display the roll
     if (resultsTable) {
-      const results = await resultsTable.draw({ roll, displayChat: false })
-      let crit = false
-      let fumble = false
-      try {
-        if (results.roll.terms.length > 0) {
-          const rollObject = results.roll
-          const naturalRoll = rollObject.terms[0].results[0]
-          if (naturalRoll === 1) {
-            const fumbleResult = await resultsTable.draw({ roll: new Roll('1'), displayChat: false })
-            results.results = fumbleResult.results
-            fumble = true
-          } else if (naturalRoll === 20) {
-            if (this.actor.data.type === 'Player') {
-              const newRoll = results.roll._total + this.actor.data.data.details.level.value
-              const critResult = await resultsTable.draw({ roll: new Roll(String(newRoll)), displayChat: false })
-              results.results = critResult.results
-              crit = true
-            }
-          }
-        }
-      } catch (ex) {
-        console.error(ex)
-      }
-      game.dcc.SpellResult.addChatMessage(resultsTable, results, { crit, fumble })
+      game.dcc.processSpellCheck(resultsTable, roll)
     } else {
       // Fall back to displaying just the roll
       roll.toMessage({

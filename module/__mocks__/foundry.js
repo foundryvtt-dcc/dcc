@@ -190,8 +190,10 @@ class Game {
 global.Game = Game
 global.game = new Game()
 global.game.user = { _id: 1 }
+global.getDCCSkillTableMock = jest.fn((skillName) => { return null }).mockName('game.dcc.getSkillTable')
 global.game.dcc = {
-  DCCRoll
+  DCCRoll,
+  getSkillTable: global.getDCCSkillTableMock
 }
 
 /**
