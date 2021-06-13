@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, ui, loadTemplates, Handlebars, EntitySheetConfig, TextEditor */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars, EntitySheetConfig, TextEditor */
 /**
  * DCC
  */
@@ -50,6 +50,7 @@ Hooks.once('init', async function () {
     DiceChain,
     SpellResult,
     getSkillTable,
+    processSpellCheck,
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor // This is called from macros, don't remove
   }
@@ -240,13 +241,13 @@ function registerTables () {
  * @param {string} skillName     The name of the skill
  * @returns {Promise}            RollTable object or null
  */
-async function getSkillTable(skillName) {
+async function getSkillTable (skillName) {
   // Convert skill name to a property name on CONFIG.DCC
   const tableProperty = CONFIG.DCC.skillTables[skillName] || null
 
   // Look up the property if the skill was found
   const tableName = tableProperty ? (CONFIG.DCC[tableProperty] || null) : null
- 
+
   // Load the table defined by the property if available
   if (tableName) {
     const tablePath = tableName.split('.')
@@ -264,6 +265,40 @@ async function getSkillTable(skillName) {
   }
 
   return null
+}
+
+/**
+ * Apply a roll to a table and apply spell check logic for crits and fumbles
+ * @param {Object} rollTable     The table being rolled against
+ * @param {Object} roll          The roll object to use
+ * @returns {Object}            Table result object
+ */
+async function processSpellCheck (rollTable, roll) {
+  // Apply the roll to the table
+  const results = await rollTable.draw({ roll, displayChat: false })
+  let crit = false
+  let fumble = false
+  try {
+    if (results.roll.terms.length > 0) {
+      const rollObject = results.roll
+      const naturalRoll = rollObject.terms[0].results[0]
+      if (naturalRoll === 1) {
+        const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
+        results.results = fumbleResult.results
+        fumble = true
+      } else if (naturalRoll === 20) {
+        if (this.actor.data.type === 'Player') {
+          const newRoll = results.roll._total + this.actor.data.data.details.level.value
+          const critResult = await rollTable.draw({ roll: new Roll(String(newRoll)), displayChat: false })
+          results.results = critResult.results
+          crit = true
+        }
+      }
+    }
+  } catch (ex) {
+    console.error(ex)
+  }
+  game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble })
 }
 
 /* -------------------------------------------- */

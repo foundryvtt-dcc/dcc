@@ -375,9 +375,9 @@ DCC.disapprovalTables = {}
 // Registry for skills that use a table lookup - maps skill name to config property
 // System defaults defined here, modules can register their own
 DCC.skillTables = {
-  'divineAid': 'divineAidTable',
-  'layOnHands': 'layOnHandsTable',
-  'turnUnholy': 'turnUnholyTable'
+  divineAid: 'divineAidTable',
+  layOnHands: 'layOnHandsTable',
+  turnUnholy: 'turnUnholyTable'
 }
 
 // Default actor images
