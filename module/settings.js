@@ -88,6 +88,54 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Table to use for turn unholy
+   */
+  game.settings.register('dcc', 'turnUnholyTable', {
+    name: 'DCC.SettingTurnUnholyTable',
+    hint: 'DCC.SettingTurnUnholyTableHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: rollTables,
+    onChange: value => {
+      Hooks.callAll('dcc.setTurnUnholyTable', value, true)
+    }
+  })
+
+  /**
+   * Table to use for lay on hands
+   */
+  game.settings.register('dcc', 'layOnHandsTable', {
+    name: 'DCC.SettingLayOnHandsTable',
+    hint: 'DCC.SettingLayOnHandsTableHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: rollTables,
+    onChange: value => {
+      Hooks.callAll('dcc.setLayOnHandsTable', value, true)
+    }
+  })
+
+  /**
+   * Table to use for divine aid
+   */
+  game.settings.register('dcc', 'divineAidTable', {
+    name: 'DCC.SettingDivineAidTable',
+    hint: 'DCC.SettingDivineAidTableHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: rollTables,
+    onChange: value => {
+      Hooks.callAll('dcc.setDivineAidTable', value, true)
+    }
+  })
+
+  /**
    * Table to use for mercurial magic
    */
   game.settings.register('dcc', 'mercurialMagicTable', {
