@@ -282,7 +282,6 @@ class DCCActor extends Actor {
     }
 
     const roll = game.dcc.DCCRoll.createSimpleRoll(die, modifiers)
-    await roll.evaluate({ async: true })
 
     // Handle special cleric spellchecks that are treated as skills
     if (skill.useDisapprovalRange) {
@@ -293,11 +292,42 @@ class DCCActor extends Actor {
       }
     }
 
-    // Convert the roll to a chat message
-    roll.toMessage({
-      speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
-    })
+    // Check if there's a special RollTable for this skill
+    const skillTable = await game.dcc.getSkillTable(skillId)
+    if (skillTable) {
+      // Apply the roll to the table
+      const results = await skillTable.draw({ roll, displayChat: false })
+      let crit = false
+      let fumble = false
+      try {
+        if (results.roll.terms.length > 0) {
+          const rollObject = results.roll
+          const naturalRoll = rollObject.terms[0].results[0]
+          if (naturalRoll === 1) {
+            const fumbleResult = await skillTable.draw({ roll: new Roll('1'), displayChat: false })
+            results.results = fumbleResult.results
+            fumble = true
+          } else if (naturalRoll === 20) {
+            if (this.actor.data.type === 'Player') {
+              const newRoll = results.roll._total + this.actor.data.data.details.level.value
+              const critResult = await skillTable.draw({ roll: new Roll(String(newRoll)), displayChat: false })
+              results.results = critResult.results
+              crit = true
+            }
+          }
+        }
+      } catch (ex) {
+        console.error(ex)
+      }
+      game.dcc.SpellResult.addChatMessage(skillTable, results, { crit, fumble })
+    } else {
+      await roll.evaluate({ async: true })
+      // Convert the roll to a chat message
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
+      })
+    }
 
     // Store last result if required
     if (skillItem && skillItem.data.data.config.showLastResult) {

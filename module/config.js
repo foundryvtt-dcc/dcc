@@ -363,11 +363,22 @@ DCC.DICE_CHAIN = [
 // Updated at runtime from settings
 DCC.criticalHitPacks = null
 DCC.disapprovalPacks = null
+DCC.divineAidTable = null
 DCC.fumbleTable = null
+DCC.layOnHandsTable = null
 DCC.mercurialMagicTable = null
+DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks
 DCC.disapprovalTables = {}
+
+// Registry for skills that use a table lookup - maps skill name to config property
+// System defaults defined here, modules can register their own
+DCC.skillTables = {
+  'divineAid': 'divineAidTable',
+  'layOnHands': 'layOnHandsTable',
+  'turnUnholy': 'turnUnholyTable'
+}
 
 // Default actor images
 DCC.defaultActorImages = {

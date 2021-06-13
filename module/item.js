@@ -1,7 +1,5 @@
 /* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
 
-import SpellResult from './spell-result.js'
-
 /**
  * Extend the base Item entity for DCC RPG
  * @extends {Item}
@@ -131,7 +129,7 @@ class DCCItem extends Item {
       } catch (ex) {
         console.error(ex)
       }
-      SpellResult.addChatMessage(resultsTable, results, { crit, fumble })
+      game.dcc.SpellResult.addChatMessage(resultsTable, results, { crit, fumble })
     } else {
       // Fall back to displaying just the roll
       roll.toMessage({

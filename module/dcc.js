@@ -48,6 +48,8 @@ Hooks.once('init', async function () {
     DCCActor,
     DCCRoll,
     DiceChain,
+    SpellResult,
+    getSkillTable,
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor // This is called from macros, don't remove
   }
@@ -202,10 +204,22 @@ function registerTables () {
   CONFIG.DCC.criticalHitPacks = new TablePackManager()
   CONFIG.DCC.criticalHitPacks.addPack(game.settings.get('dcc', 'critsCompendium'), true)
 
+  // Set divine aid table from the system setting
+  const divineAidTable = game.settings.get('dcc', 'divineAidTable')
+  if (divineAidTable) {
+    CONFIG.DCC.divineAidTable = divineAidTable
+  }
+
   // Set fumble table from the system setting
   const fumbleTable = game.settings.get('dcc', 'fumbleTable')
   if (fumbleTable) {
     CONFIG.DCC.fumbleTable = fumbleTable
+  }
+
+  // Set lay on hands table from the system setting
+  const layOnHandsTable = game.settings.get('dcc', 'layOnHandsTable')
+  if (layOnHandsTable) {
+    CONFIG.DCC.layOnHandsTable = layOnHandsTable
   }
 
   // Set mercurial magic table from the system setting
@@ -213,6 +227,43 @@ function registerTables () {
   if (mercurialMagicTable) {
     CONFIG.DCC.mercurialMagicTable = mercurialMagicTable
   }
+
+  // Set turn unholy table from the system setting
+  const turnUnholyTable = game.settings.get('dcc', 'turnUnholyTable')
+  if (turnUnholyTable) {
+    CONFIG.DCC.turnUnholyTable = turnUnholyTable
+  }
+}
+
+/**
+ * Look up a table for a given skill, if present
+ * @param {string} skillName     The name of the skill
+ * @returns {Promise}            RollTable object or null
+ */
+async function getSkillTable(skillName) {
+  // Convert skill name to a property name on CONFIG.DCC
+  const tableProperty = CONFIG.DCC.skillTables[skillName] || null
+
+  // Look up the property if the skill was found
+  const tableName = tableProperty ? (CONFIG.DCC[tableProperty] || null) : null
+ 
+  // Load the table defined by the property if available
+  if (tableName) {
+    const tablePath = tableName.split('.')
+    let pack
+    if (tablePath.length === 3) {
+      pack = game.packs.get(tablePath[0] + '.' + tablePath[1])
+    }
+    if (pack) {
+      await pack.getIndex() // Load the compendium index
+      const entry = pack.index.find((entity) => entity.name === tablePath[2])
+      if (entry) {
+        return await pack.getDocument(entry._id)
+      }
+    }
+  }
+
+  return null
 }
 
 /* -------------------------------------------- */
@@ -256,6 +307,14 @@ Hooks.on('dcc.registerCriticalHitsPack', (value, fromSystemSetting) => {
   }
 })
 
+// Divine aid table
+Hooks.on('dcc.setDivineAidTable', (value, fromSystemSetting = false) => {
+  // Set divine aid table if unset, or if applying the system setting (which takes precedence)
+  if (fromSystemSetting || !CONFIG.DCC.divineAidTable) {
+    CONFIG.DCC.divineAidTable = value
+  }
+})
+
 // Fumble table
 Hooks.on('dcc.setFumbleTable', (value, fromSystemSetting = false) => {
   // Set fumble table if unset, or if applying the system setting (which takes precedence)
@@ -264,11 +323,27 @@ Hooks.on('dcc.setFumbleTable', (value, fromSystemSetting = false) => {
   }
 })
 
-// Mercurial Magic mable
+// Lay on hands table
+Hooks.on('dcc.setLayOnHandsTable', (value, fromSystemSetting = false) => {
+  // Set lay on hands table if unset, or if applying the system setting (which takes precedence)
+  if (fromSystemSetting || !CONFIG.DCC.layOnHandsTable) {
+    CONFIG.DCC.layOnHandsTable = value
+  }
+})
+
+// Mercurial Magic table
 Hooks.on('dcc.setMercurialMagicTable', (value, fromSystemSetting = false) => {
   // Set mercurial magic table if unset, or if applying the system setting (which takes precedence)
   if (fromSystemSetting || !CONFIG.DCC.mercurialMagicTable) {
     CONFIG.DCC.mercurialMagicTable = value
+  }
+})
+
+// Turn unholy table
+Hooks.on('dcc.setTurnUnholyTable', (value, fromSystemSetting = false) => {
+  // Set turn unholy table if unset, or if applying the system setting (which takes precedence)
+  if (fromSystemSetting || !CONFIG.DCC.turnUnholyTable) {
+    CONFIG.DCC.turnUnholyTable = value
   }
 })
 
