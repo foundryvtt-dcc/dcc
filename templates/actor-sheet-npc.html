@@ -2,8 +2,9 @@
 
     {{!-- Sheet Header --}}
     <header class="sheet-header npc-sheet flexrow">
-        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"
-             alt="{{localize 'DCC.CharacterPortrait'}}"/>
+        <div class="profile-div">
+            <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100" alt="{{localize 'DCC.CharacterPortrait'}}"/>
+        </div>
         <div class="flexrow">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
 
