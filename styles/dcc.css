@@ -162,12 +162,20 @@
   overflow: hidden;
 }
 
-.dcc .sheet-header .profile-img {
+.dcc .sheet-header .profile-div {
+  align-items: center;
+  display: flex;
   flex: 0 0 100px;
-  height: auto;
   margin: 5px 10px 0 0;
+}
+
+.dcc .sheet-header .profile-div .profile-img {
+  height: auto;
+  margin-left: auto;
+  margin-right: auto;
   max-height: 100px;
-  width: 100px;
+  max-width: 100px;
+  width: auto;
 }
 
 .dcc .sheet-header h1.charname {
