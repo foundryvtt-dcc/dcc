@@ -295,7 +295,12 @@ class DCCActor extends Actor {
     // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
     if (skillTable) {
-      game.dcc.processSpellCheck(skillTable, roll)
+      game.dcc.processSpellCheck(this, {
+        rollTable: skillTable,
+        roll,
+        item: skillItem,
+        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
+      })
     } else {
       await roll.evaluate({ async: true })
       // Convert the roll to a chat message
@@ -363,7 +368,6 @@ class DCCActor extends Actor {
       checkPenalty
     }
     const roll = game.dcc.DCCRoll.createSimpleRoll(die, modifiers)
-    await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -376,10 +380,12 @@ class DCCActor extends Actor {
       flavor += ` (${game.i18n.localize(ability.label)})`
     }
 
-    // Convert the roll to a chat message
-    roll.toMessage({
-      speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor
+    // Tell the system to handle the spell check result
+    game.dcc.processSpellCheck(this, {
+      rollTable: null,
+      roll,
+      item: null,
+      flavor: flavor
     })
   }
 

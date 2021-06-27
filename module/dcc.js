@@ -268,37 +268,61 @@ async function getSkillTable (skillName) {
 }
 
 /**
+ * Handle the results of a spell check cast through any mechanism
  * Apply a roll to a table and apply spell check logic for crits and fumbles
  * @param {Object} rollTable     The table being rolled against
- * @param {Object} roll          The roll object to use
+ * @param {Object} spellData     Information about the spell being cast
  * @returns {Object}            Table result object
  */
-async function processSpellCheck (rollTable, roll) {
-  // Apply the roll to the table
-  const results = await rollTable.draw({ roll, displayChat: false })
+async function processSpellCheck (actor, spellData) {
+  // Unpack spellData
+  // - rollTable (optional): the roll table for the spell's results
+  // - roll: the roll object to evaluate for the spell
+  // - item (optional): the item representing the spell or spell-like skill
+  // - flavor: flavor text for the spell if no table is available to provide it
+  let rollTable = spellData.rollTable
+  let roll = spellData.roll
+  let item = spellData.item
+  let flavor = spellData.flavor
+
   let crit = false
   let fumble = false
+
   try {
-    if (results.roll.terms.length > 0) {
-      const rollObject = results.roll
-      const naturalRoll = rollObject.terms[0].results[0]
-      if (naturalRoll === 1) {
-        const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
-        results.results = fumbleResult.results
-        fumble = true
-      } else if (naturalRoll === 20) {
-        if (this.actor.data.type === 'Player') {
-          const newRoll = results.roll._total + this.actor.data.data.details.level.value
-          const critResult = await rollTable.draw({ roll: new Roll(String(newRoll)), displayChat: false })
-          results.results = critResult.results
-          crit = true
+    // Apply the roll to the table if present
+    if (rollTable) {
+      const results = await rollTable.draw({ roll, displayChat: false })
+
+      if (results.roll.terms.length > 0) {
+        const rollObject = results.roll
+        const naturalRoll = rollObject.terms[0].results[0].result
+        if (naturalRoll === 1) {
+          const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
+          results.results = fumbleResult.results
+          fumble = true
+        } else if (naturalRoll === 20) {
+          if (this.actor.data.type === 'Player') {
+            const newRoll = results.roll._total + this.actor.data.data.details.level.value
+            const critResult = await rollTable.draw({ roll: new Roll(String(newRoll)), displayChat: false })
+            results.results = critResult.results
+            crit = true
+          }
         }
       }
+      game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble })
+    // Otherwise just roll the dice
+    } else {
+      await roll.evaluate({ async: true })
+
+      // Display the roll
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor
+      })
     }
   } catch (ex) {
     console.error(ex)
   }
-  game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble })
 }
 
 /* -------------------------------------------- */

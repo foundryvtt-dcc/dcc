@@ -104,16 +104,13 @@ class DCCItem extends Item {
       flavor += ` (${game.i18n.localize(ability.label)})`
     }
 
-    // Draw from the table if found, otherwise display the roll
-    if (resultsTable) {
-      game.dcc.processSpellCheck(resultsTable, roll)
-    } else {
-      // Fall back to displaying just the roll
-      roll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor }),
-        flavor
-      })
-    }
+    // Tell the system to handle the spell check result
+    game.dcc.processSpellCheck(actor, {
+      rollTable: resultsTable,
+      roll,
+      item: this,
+      flavor
+    })
   }
 
   /**
