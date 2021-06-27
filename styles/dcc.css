@@ -164,9 +164,10 @@
 
 .dcc .sheet-header .profile-img {
   flex: 0 0 100px;
+  height: auto;
   margin: 5px 10px 0 0;
   max-height: 100px;
-  max-width: 100px;
+  width: 100px;
 }
 
 .dcc .sheet-header h1.charname {
