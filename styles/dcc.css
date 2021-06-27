@@ -164,8 +164,9 @@
 
 .dcc .sheet-header .profile-img {
   flex: 0 0 100px;
-  height: 100px;
   margin: 5px 10px 0 0;
+  max-height: 100px;
+  max-width: 100px;
 }
 
 .dcc .sheet-header h1.charname {
@@ -286,7 +287,7 @@
 }
 
 .dcc.sheet.actor .ability-scores .ability:last-child {
-  border-bottom: none;
+  border-bottom: 0;
 }
 
 .dcc.sheet.actor .ability-scores .ability input.ability-score {
@@ -690,7 +691,7 @@
 }
 
 .dcc .tabs .item.active {
-  border-bottom: none;
+  border-bottom: 0;
   margin-bottom: 11px;
   text-decoration: underline;
   text-shadow: none;
@@ -1390,7 +1391,7 @@
   margin-bottom: 10px;
 }
 .sheet-config .tabs .item.active {
-  border-bottom: none;
+  border-bottom: 0;
   margin-bottom: 11px;
   text-decoration: underline;
   text-shadow: none;
@@ -1400,7 +1401,7 @@
 /*  Fix sheet tabs in 0.7.4                  */
 /* ----------------------------------------- */
 .dcc.sheet .sheet-tabs.tabs {
-  border: none;
+  border: 0;
 }
 
 /*# sourceMappingURL=dcc.css.map */
