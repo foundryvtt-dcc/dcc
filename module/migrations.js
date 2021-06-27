@@ -56,7 +56,8 @@ export const migrateWorld = async function () {
   }
 
   // Set the migration as complete
-  game.settings.set('dcc', 'systemMigrationVersion', game.system.data.version)
+  // parseFloat will pull out the major and minor version ignoring the patch version
+  game.settings.set('dcc', 'systemMigrationVersion', parseFloat(game.system.data.version))
   ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.data.version }, { permenant: true }))
 }
 
