@@ -194,7 +194,7 @@ function registerTables () {
               name: value.name,
               path: `${packName}.${value.name}`
             }
-          })
+          }
         }
       }
     }
