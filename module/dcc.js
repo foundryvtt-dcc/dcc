@@ -186,7 +186,7 @@ function registerTables () {
         const pack = game.packs.get(packName)
         if (pack) {
           await pack.getIndex()
-          pack.index.forEach(function (value, key, map) {
+          for (const [key, value] of pack.index.entries()) {
             CONFIG.DCC.disapprovalTables[key] = {
               name: value.name,
               path: `${packName}.${value.name}`
