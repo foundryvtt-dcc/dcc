@@ -54,7 +54,7 @@
   "primaryTokenAttribute": "attributes.hp",
   "secondaryTokenAttribute": "abilities.lck.value",
   "socket": true,
-  "initiative": "1d20 + @attributes.init.value",
+  "initiative": "@attributes.init.die + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
   "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.28.0/system.json",
   "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.28.0/dcc.zip",
