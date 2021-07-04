@@ -478,14 +478,14 @@ class DCCActor extends Actor {
     const damageRollResult = await this.rollDamage(weapon, options)
 
     // Speaker object for the chat cards
-    const speaker = { alias: this.name, id: this.id }
+    const speaker = ChatMessage.getSpeaker({ actor: this })
 
     // Output the results
     if (options.displayStandardCards) {
       // Attack roll card
       if (attackRollResult.rolled) {
         attackRollResult.roll.toMessage({
-          speaker: ChatMessage.getSpeaker({ actor: this }),
+          speaker: speaker,
           flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name })
         })
       } else {
@@ -505,7 +505,7 @@ class DCCActor extends Actor {
       // Damage roll card
       if (damageRollResult.rolled) {
         damageRollResult.roll.toMessage({
-          speaker: ChatMessage.getSpeaker({ actor: this }),
+          speaker: speaker,
           flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name })
         })
       } else {
@@ -822,7 +822,7 @@ class DCCActor extends Actor {
    * @param {Number} multiplier     Damage multiplier
    */
   async applyDamage (damageAmount, multiplier) {
-    const speaker = { alias: this.name, id: this.id }
+    const speaker = ChatMessage.getSpeaker({ actor: this })
 
     // Calculate damage amount and current hit points
     const amount = damageAmount * multiplier
