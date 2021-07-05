@@ -18,6 +18,7 @@ You can purchase a module containing copyrighted Goodman Games content ready for
 ###### Contributors
 * Connor Stone (@ckwk)
 * @adotor
+* Radoslaw Grzanka (@radoslawg)
 
 Contains some icon art from game-icons.net.
 

@@ -177,8 +177,8 @@ class DCCActor extends Actor {
     const init = this.data.data.attributes.init.value
     const roll = new Roll('@die+@init', { die, init })
 
-    //evaluate roll, otherwise roll.total is undefined
-    roll.evaluate()
+    // evaluate roll, otherwise roll.total is undefined
+    await roll.evaluate({ async: true })
 
     // Convert the roll to a chat message
     roll.toMessage({
