@@ -83,7 +83,7 @@ class DCCItem extends Item {
 
     // Lookup the appropriate table
     const resultsRef = this.data.data.results
-    const predicate = t => t.name === resultsRef.table || t.id === resultsRef.table
+    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table
     let resultsTable
     // If a collection is specified then check the appropriate pack for the spell
     if (resultsRef.collection) {
