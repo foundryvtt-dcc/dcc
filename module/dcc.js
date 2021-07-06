@@ -280,10 +280,9 @@ async function processSpellCheck (actor, spellData) {
   // - roll: the roll object to evaluate for the spell
   // - item (optional): the item representing the spell or spell-like skill
   // - flavor: flavor text for the spell if no table is available to provide it
-  let rollTable = spellData.rollTable
-  let roll = spellData.roll
-  let item = spellData.item
-  let flavor = spellData.flavor
+  const rollTable = spellData.rollTable
+  const roll = spellData.roll
+  const flavor = spellData.flavor
 
   let crit = false
   let fumble = false

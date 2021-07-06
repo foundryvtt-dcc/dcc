@@ -2,7 +2,7 @@
 /* Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js */
 /* Mocks for DCCItem Class are found in __mocks__/item.js */
 /* eslint-env jest */
-/* global CONFIG, Roll, DCCItem, rollToMessageMock, collectionFindMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock */
+/* global CONFIG, Roll, DCCItem, rollToMessageMock, collectionFindMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock, game */
 
 import DCCActor from '../actor'
 
@@ -197,32 +197,86 @@ test('roll spell check', async () => {
   Roll.mockClear()
   collectionFindMock.mockReset()
   uiNotificationsWarnMock.mockReset()
+  game.dcc.processSpellCheck.mockClear()
 
   // Spell check with ability from actor data
   await actor.rollSpellCheck()
   expect(Roll).toHaveBeenCalledTimes(1)
   expect(Roll).toHaveBeenCalledWith('1d20+3', { bonus: 3, checkPenalty: 0 })
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(1)
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
+    actor,
+    {
+      rollTable: null,
+      roll: expect.objectContaining({
+        dice: [
+          expect.objectContaining({
+            results: [
+              10
+            ]
+          })
+        ]
+      }),
+      item: null,
+      flavor: 'SpellCheck (AbilityInt)'
+    }
+  )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
   // Force int for display purposes
   await actor.rollSpellCheck({ abilityId: 'int' })
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d20+3', { bonus: 3, checkPenalty: 0 })
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityInt)', speaker: actor })
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(2)
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
+    actor,
+    {
+      rollTable: null,
+      roll: expect.objectContaining({
+        dice: [
+          expect.objectContaining({
+            results: [
+              10
+            ]
+          })
+        ]
+      }),
+      item: null,
+      flavor: 'SpellCheck (AbilityInt)'
+    }
+  )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
   // Force personality for display purposes
   await actor.rollSpellCheck({ abilityId: 'per' })
   expect(Roll).toHaveBeenCalledTimes(3)
   expect(Roll).toHaveBeenCalledWith('1d20+3', { bonus: 3, checkPenalty: 0 })
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SpellCheck (AbilityPer)', speaker: actor })
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
+    actor,
+    {
+      rollTable: null,
+      roll: expect.objectContaining({
+        dice: [
+          expect.objectContaining({
+            results: [
+              10
+            ]
+          })
+        ]
+      }),
+      item: null,
+      flavor: 'SpellCheck (AbilityPer)'
+    }
+  )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
   // Roll a spell check with an item
-  collectionFindMock.mockReturnValue(new DCCItem('The Gloaming', { type: 'spell' }))
+  const dummyItem = new DCCItem('The Gloaming', { type: 'spell' })
+  collectionFindMock.mockReturnValue(dummyItem)
   await actor.rollSpellCheck({ spell: 'The Gloaming' })
   expect(collectionFindMock).toHaveBeenCalledTimes(1)
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
   expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(0)
 
@@ -230,6 +284,7 @@ test('roll spell check', async () => {
   collectionFindMock.mockReturnValue(new DCCItem('Swordfish', { type: 'weapon' }))
   await actor.rollSpellCheck({ spell: 'Swordfish' })
   expect(collectionFindMock).toHaveBeenCalledTimes(2)
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
   expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(uiNotificationsWarnMock).toHaveBeenCalledWith('SpellCheckNonSpellWarning')
@@ -238,6 +293,7 @@ test('roll spell check', async () => {
   collectionFindMock.mockReturnValue(null)
   await actor.rollSpellCheck({ spell: 'Missing Spell' })
   expect(collectionFindMock).toHaveBeenCalledTimes(3)
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
   expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int')
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(2)
   expect(uiNotificationsWarnMock).toHaveBeenCalledWith('SpellCheckNoOwnedItemWarning')
