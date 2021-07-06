@@ -111,7 +111,7 @@ test('roll weapon attack', async () => {
   expect(Roll).toHaveBeenCalledTimes(2)
   expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
   expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
-    speaker: { alias: 'test character' },
+    speaker: actor,
     type: 'emote',
     content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%7D" title=""><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="1" title=""><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,crit:,fumble:[object Object]',
     sound: 'diceSound'
@@ -133,7 +133,7 @@ test('roll weapon attack', async () => {
   expect(Roll).toHaveBeenCalledTimes(4)
   expect(Roll).toHaveBeenCalledWith('1d20 + 1', { ab: 0, critical: 20 })
   expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
-    speaker: { alias: 'test character' },
+    speaker: actor,
     type: 'emote',
     content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%7D" title=""><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="1" title=""><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,crit:,fumble:[object Object]',
     sound: 'diceSound'
