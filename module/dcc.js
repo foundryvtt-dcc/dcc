@@ -311,7 +311,9 @@ async function processSpellCheck (actor, spellData) {
       game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble })
     // Otherwise just roll the dice
     } else {
-      await roll.evaluate({ async: true })
+      if (!roll._evaluated) {
+        await roll.evaluate({ async: true })
+      }
 
       // Display the roll
       roll.toMessage({
