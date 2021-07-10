@@ -74,19 +74,23 @@
         <div class="description">
           {{editor content=data.description.value target="data.description.value" button=true isOwner=isOwner editable=editable}}
         </div>
-        <div class="mercurial-effect-heading">
-          <h1>{{localize "DCC.MercurialEffect"}}</h1>
-        </div>
-        <div class="mercurial-effect-value">
-          <label class="mercurial-roll resource-label{{#if allowMercurialRoll}} rollable{{/if}}" for="data.mercurialEffect.value">{{#if allowMercurialRoll}}<i class="fas fa-dice-d20"></i> {{/if}}{{localize "DCC.MercurialEffectValue"}}</label>
-          <input type="text" name="data.mercurialEffect.value" value="{{data.mercurialEffect.value}}" data-dtype="Number"/>
-        </div>
-        <div class="mercurial-effect-summary">
-          <label class="resource-label" for="data.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
-          <input type="text" name="data.mercurialEffect.summary" value="{{data.mercurialEffect.summary}}" data-dtype="String"/>
-        </div>
+        {{#if showMercurialRoll}}
         <div class="mercurial-effect-description">
-            {{editor content=data.mercurialEffect.description target="data.mercurialEffect.description" button=true isOwner=isOwner editable=editable}}
+          <div class="mercurial-effect-header">
+            <div class="mercurial-effect-heading">
+              <h1>{{localize "DCC.MercurialEffect"}}</h1>
+            </div>
+            <div class="mercurial-effect-value">
+              <label class="mercurial-roll resource-label rollable" for="data.mercurialEffect.value"><i class="fas fa-dice-d20"></i> {{localize "DCC.MercurialEffectValue"}}</label>
+              <input type="text" name="data.mercurialEffect.value" value="{{data.mercurialEffect.value}}" data-dtype="Number"/>
+            </div>
+            <div class="mercurial-effect-summary">
+              <label class="resource-label" for="data.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
+              <input type="text" name="data.mercurialEffect.summary" value="{{data.mercurialEffect.summary}}" data-dtype="String"/>
+            </div>
+          </div>
+          {{editor content=data.mercurialEffect.description target="data.mercurialEffect.description" button=true isOwner=isOwner editable=editable}}
         </div>
+        {{/if}}
     </section>
 </form>
