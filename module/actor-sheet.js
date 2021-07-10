@@ -723,7 +723,7 @@ class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  _updateObject (event, formData) {
+  async _updateObject (event, formData) {
     // Handle owned item updates separately
     if (event.currentTarget) {
       let parentElement = event.currentTarget.parentElement
@@ -741,7 +741,7 @@ class DCCActorSheet extends ActorSheet {
           const item = this.actor.items.get(itemId)
           if (item) {
             const updateData = expanded.itemUpdates[itemId]
-            item.update(updateData)
+            await item.update(updateData)
           }
         }
       }
