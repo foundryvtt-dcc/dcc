@@ -350,7 +350,7 @@ class DCCActorSheet extends ActorSheet {
           },
           no: {
             icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.No'),
+            label: game.i18n.localize('DCC.No')
           }
         }
       }).render(true)
