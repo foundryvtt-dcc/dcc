@@ -1309,8 +1309,15 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
   .sheet-body.spell {
     display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 60px minmax(80px, auto) repeat(auto-fit, minmax(130px, auto));
+    width: 100%;
+  }
+
+  .sheet-body.spell .mercurial-effect-header {
+    display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 60px minmax(80px, auto) 50px minmax(80px, auto);
+    grid-template-rows: 50px;
   }
 
   .sheet-body.treasure {
