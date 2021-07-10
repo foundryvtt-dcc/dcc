@@ -24,6 +24,7 @@ class DiceChain {
    */
   static getPrimaryDieFaces (expression) {
     const roll = new Roll(expression)
+    roll.evaluate({async: false})
     let maxFaces = 0
     for (const die of roll.dice) {
       if (die.faces > maxFaces) {
@@ -42,6 +43,7 @@ class DiceChain {
    */
   static rankDiceExpression (expression) {
     const roll = new Roll(expression)
+    roll.evaluate({async: false})
     let rank = 0
     for (const die of roll.dice) {
       const dieRank = CONFIG.DCC.DICE_CHAIN.indexOf(die.faces)
