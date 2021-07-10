@@ -443,8 +443,8 @@
         "inheritCheckPenalty": true,
         "castingMode": "wizard"
       },
-      "available": true,
       "level": 1,
+      "lost": false,
       "range": "",
       "duration": "",
       "page": "",
