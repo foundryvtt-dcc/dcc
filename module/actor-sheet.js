@@ -345,12 +345,12 @@ class DCCActorSheet extends ActorSheet {
         buttons: {
           yes: {
             icon: '<i class="fas fa-check"></i>',
-            label: 'Yes',
+            label: game.i18n.localize('DCC.Yes'),
             callback: () => this._deleteItem(event)
           },
           no: {
             icon: '<i class="fas fa-times"></i>',
-            label: 'No'
+            label: game.i18n.localize('DCC.No'),
           }
         }
       }).render(true)

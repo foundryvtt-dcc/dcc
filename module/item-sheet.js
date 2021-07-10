@@ -186,14 +186,19 @@ export class DCCItemSheet extends ItemSheet {
         title: game.i18n.localize('DCC.MercurialMagicRerollPrompt'),
         content: `<p>${game.i18n.localize('DCC.MercurialMagicRerollExplain')}</p>`,
         buttons: {
-          yes: {
+          reroll: {
             icon: '<i class="fas fa-check"></i>',
-            label: 'Yes',
+            label: game.i18n.localize('DCC.MercurialMagicButtonReroll'),
             callback: () => this._rollMercurialMagic(event)
           },
-          no: {
+          lookup: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.MercurialMagicButtonLookup'),
+            callback: () => this._lookupMercurialMagic(event)
+          },
+          cancel: {
             icon: '<i class="fas fa-times"></i>',
-            label: 'No'
+            label: game.i18n.localize('DCC.MercurialMagicButtonCancel')
           }
         }
       }).render(true)
@@ -209,6 +214,16 @@ export class DCCItemSheet extends ItemSheet {
    */
   _rollMercurialMagic (event) {
     this.item.rollMercurialMagic()
+    this.render(false)
+  }
+
+  /**
+   * Look up a Mercurial Magic effect
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _lookupMercurialMagic (event) {
+    this.item.rollMercurialMagic(this.item.data.data.mercurialEffect.value)
     this.render(false)
   }
 

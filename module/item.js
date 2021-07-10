@@ -122,10 +122,11 @@ class DCCItem extends Item {
   }
 
   /**
-   * Roll a new mercurial effect for a spell item
+   * Roll a or lookup new mercurial effect for a spell item
+   * @param {Number} lookup   Optional entry number to lookup instead of rolling
    * @return
    */
-  async rollMercurialMagic () {
+  async rollMercurialMagic (lookup = undefined) {
     if (this.data.type !== 'spell') { return }
 
     const actor = this.actor
@@ -140,6 +141,13 @@ class DCCItem extends Item {
       die: '1d100',
       bonus: ability.mod * 10
     })
+
+    // If looking up then replace the roll
+    if (lookup) {
+      roll = new Roll('@value', {
+        value: lookup
+      })
+    }
 
     // Lookup the mercurial magic table if available
     let mercurialMagicResult = null
