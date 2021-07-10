@@ -849,7 +849,7 @@ class DCCActor extends Actor {
       const locstring = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
       const messageData = {
         user: game.user.id,
-        speaker: speaker,
+        speaker,
         type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
         content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
@@ -865,47 +865,101 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Lose a wizard spell through a casting failure
+   */
+  async loseSpell (item) {
+    const speaker = ChatMessage.getSpeaker({ actor: this })
+
+    // Mark the spell as lost - if the item is known
+    if (item) {
+      item.update({
+        'data.lost': true
+      })
+    }
+
+    // Announce that the spell (or a spell) was lost
+    const locString = item ? game.i18n.format('DCC.SpellLostMessageFormat', { spell: item.name }) : game.i18n.localize('DCC.SpellLostMessage')
+    const messageData = {
+      user: game.user.id,
+      speaker,
+      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      content: locString,
+      sound: CONFIG.sounds.notification
+    }
+    ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
+    await CONFIG.ChatMessage.documentClass.create(messageData)
+  }
+
+  /**
    * Apply a point of disapproval
    */
-  applyDisapproval () {
+  async applyDisapproval () {
+    const speaker = ChatMessage.getSpeaker({ actor: this })
+
+    // Calculate new disapproval
+    const newRange = Math.min(parseInt(this.data.data.class.disapproval) + 1, 20)
+
+    // Apply the new disapproval range
     this.update({
-      'data.class.disapproval': this.data.data.class.disapproval + 1
+      'data.class.disapproval': newRange
     })
+
+    // Announce that disapproval was increased
+    const messageData = {
+      user: game.user.id,
+      speaker,
+      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
+      sound: CONFIG.sounds.notification
+    }
+    ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
+    await CONFIG.ChatMessage.documentClass.create(messageData)
   }
 
   /**
    * Prompt and roll for disapproval
+   * @param {Number} naturalRoll   Optional - the natural roll for the last spell check
    */
-  async rollDisapproval () {
-    const html = `<form id="disapproval-formula-form">
-                    <label for="formula">${game.i18n.localize('DCC.DisapprovalRollFormula')}</label>
-                    <input type="text" name="formula" placeholder="1d4 - luck modifier" value="1d4 - ${this.data.data.abilities.lck.mod}"/>
-                  </form>`
-    new Dialog({
-      title: game.i18n.localize('DCC.DisapprovalRollFormula'),
-      content: html,
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-check"></i>',
-          label: 'Roll Disapproval',
-          callback: html => this._onRollDisapproval(html)
-        },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: 'Cancel'
+  async rollDisapproval (naturalRoll) {
+    // Generate a formula, placeholder if the natural roll is not known
+    const formula = `${naturalRoll || 1}d4 - ${this.data.data.abilities.lck.mod}`
+
+    if (naturalRoll === undefined) {
+      // If we don't know the actual roll pop up a prompt with the placeholder formula
+      const html = `<form id="disapproval-formula-form">
+                      <label for="formula">${game.i18n.localize('DCC.DisapprovalRollFormula')}</label>
+                      <input type="text" name="formula" placeholder="1d4 - luck modifier" value="${formula}"/>
+                    </form>`
+      new Dialog({
+        title: game.i18n.localize('DCC.DisapprovalRollFormula'),
+        content: html,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: 'Roll Disapproval',
+            callback: html => {
+              const formula = html[0].querySelector('#disapproval-formula-form')[0].value
+              this._onRollDisapproval(formula)
+            }
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: 'Cancel'
+          }
         }
-      }
-    }).render(true)
+      }).render(true)
+    } else {
+      // If we know the formula just roll it
+      this._onRollDisapproval(formula)
+    }
   }
 
   /**
    * Roll disapproval
-   * @param {Object} disapprovalRollHTML  form with disapproval formula input
+   * @param {String} formula  Disapproval roll formula
    * @private
    */
-  async _onRollDisapproval (disapprovalRollHTML) {
-    const formula = disapprovalRollHTML[0].querySelector('#disapproval-formula-form')[0].value
-
+  async _onRollDisapproval (formula) {
     try {
       const roll = new Roll(formula)
 
@@ -927,8 +981,7 @@ class DCCActor extends Actor {
 
       // Draw from the table if found, otherwise display the roll
       if (disapprovalTable) {
-        const results = disapprovalTable.roll({ roll })
-        disapprovalTable.draw(results)
+        disapprovalTable.draw({ roll, displayChat: true })
       } else {
         // Fall back to displaying just the roll
         roll.toMessage({
