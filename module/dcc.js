@@ -281,11 +281,13 @@ async function processSpellCheck (actor, spellData) {
   // - item (optional): the item representing the spell or spell-like skill
   // - flavor: flavor text for the spell if no table is available to provide it
   const rollTable = spellData.rollTable
-  const roll = spellData.roll
+  let roll = spellData.roll
+  const item = spellData.item
   const flavor = spellData.flavor
 
   let crit = false
   let fumble = false
+  let naturalRoll = null
 
   try {
     // Apply the roll to the table if present
@@ -293,16 +295,17 @@ async function processSpellCheck (actor, spellData) {
       const results = await rollTable.draw({ roll, displayChat: false })
 
       if (results.roll.terms.length > 0) {
-        const rollObject = results.roll
-        const naturalRoll = rollObject.terms[0].results[0].result
+        roll = results.roll
+        naturalRoll = roll.terms[0].results[0].result
         if (naturalRoll === 1) {
           const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
           results.results = fumbleResult.results
           fumble = true
         } else if (naturalRoll === 20) {
-          if (this.actor.data.type === 'Player') {
-            const newRoll = results.roll._total + this.actor.data.data.details.level.value
-            const critResult = await rollTable.draw({ roll: new Roll(String(newRoll)), displayChat: false })
+          if (actor.data.type === 'Player') {
+            const newRoll = results.roll._total + actor.data.data.details.level.value
+            roll = new Roll(String(newRoll))
+            const critResult = await rollTable.draw({ roll, displayChat: false })
             results.results = critResult.results
             crit = true
           }
@@ -316,10 +319,50 @@ async function processSpellCheck (actor, spellData) {
       }
 
       // Display the roll
-      roll.toMessage({
+      await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor
       })
+    }
+
+    // Determine the natural value of the roll if not yet known
+    if (!naturalRoll && roll.terms.length > 0) {
+      naturalRoll = roll.terms[0].results[0].result
+    }
+
+    // Determine casting mode from the item or actor - default to wizard
+    let castingMode = item ? item.data.data.config.castingMode : 'wizard'
+    if (!item && actor.data.data.details.sheetClass === 'Cleric') {
+      // Cleric sheets will use the cleric casting mode if not set by the item
+      castingMode = 'cleric'
+    }
+
+    // Spell check threshold is 10 + spell level * 2, anything below this is a failure
+    const level = item ? item.data.data.level : 1
+    let success = roll.total >= (10 + level * 2)
+
+    // Handle spell failure based on casting mode
+    if (castingMode === 'wizard') {
+      // Check for failed casting
+      if (!success) {
+        // Lose the spell
+        actor.loseSpell(item)
+      }
+    } else if (castingMode === 'cleric') {
+      // Check if our natural roll was inside the disapproval range
+      if (naturalRoll <= actor.data.data.class.disapproval) {
+        // Trigger disapproval
+        actor.rollDisapproval(naturalRoll)
+
+        // This is an automatic failure!
+        success = false
+      }
+
+      // Check for a failure to cast
+      if (!success) {
+        // Add a point of disapproval
+        actor.applyDisapproval()
+      }
     }
   } catch (ex) {
     console.error(ex)
