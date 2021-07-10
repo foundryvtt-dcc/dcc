@@ -311,7 +311,7 @@ async function processSpellCheck (actor, spellData) {
           }
         }
       }
-      game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble })
+      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble })
     // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
