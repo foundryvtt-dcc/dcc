@@ -343,14 +343,20 @@ async function processSpellCheck (actor, spellData) {
 
     // Handle spell failure based on casting mode
     if (castingMode === 'wizard') {
+      // Check if automation is enabled for Wizard spells
+      const automate = game.settings.get('dcc', 'automateWizardSpellLoss')
+
       // Check for failed casting
-      if (!success) {
+      if (automate && !success) {
         // Lose the spell
         actor.loseSpell(item)
       }
     } else if (castingMode === 'cleric') {
+      // Check if automation is enabled for Cleric spells
+      const automate = game.settings.get('dcc', 'automateClericDisapproval')
+
       // Check if our natural roll was inside the disapproval range
-      if (naturalRoll <= actor.data.data.class.disapproval) {
+      if (automate && naturalRoll <= actor.data.data.class.disapproval) {
         // Trigger disapproval
         actor.rollDisapproval(naturalRoll)
 
@@ -359,7 +365,7 @@ async function processSpellCheck (actor, spellData) {
       }
 
       // Check for a failure to cast
-      if (!success) {
+      if (automate && !success) {
         // Add a point of disapproval
         actor.applyDisapproval()
       }

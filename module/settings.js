@@ -174,4 +174,28 @@ export const registerSystemSettings = async function () {
     default: false,
     config: true
   })
+
+  /**
+   * Enable automation of Cleric Disapproval
+   */
+  game.settings.register('dcc', 'automateClericDisapproval', {
+    name: 'DCC.SettingAutomateClericDisapproval',
+    hint: 'DCC.SettingAutomateClericDisapprovalHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Enable automation of Wizard/Elf spell loss
+   */
+  game.settings.register('dcc', 'automateWizardSpellLoss', {
+    name: 'DCC.SettingAutomateWizardSpellLoss',
+    hint: 'DCC.SettingAutomateWizardSpellLossHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
 }

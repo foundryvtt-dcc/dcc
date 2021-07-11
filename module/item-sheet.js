@@ -48,7 +48,8 @@ export class DCCItemSheet extends ItemSheet {
     if (data.item.type === 'spell') {
       // Allow mercurial magic roll only on wizard spells owned by an actor
       const castingMode = data.item.data.data.config.castingMode || 'wizard'
-      data.showMercurialRoll = !!this.actor && castingMode === 'wizard'
+      const forceShowMercurialEffect = data.item.data.data.config.showMercurialEffect
+      data.showMercurialRoll = !!this.actor && (castingMode === 'wizard' || forceShowMercurialEffect)
     } else if (data.item.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = this.item.needsValueRoll()
