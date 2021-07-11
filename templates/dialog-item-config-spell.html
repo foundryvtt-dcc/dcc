@@ -24,6 +24,12 @@
         {{/select}}
       </select>
     </div>
+    <label class="info span">{{localize "DCC.SpellCastingModeInfo"}}</label>
+    <label for="data.config.showMercurialEffect">{{localize "DCC.ShowMercurialEffectConfig"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" name="data.config.showMercurialEffect" id="data.config.showMercurialEffect" {{checked data.config.showMercurialEffect}} data-dtype="boolean"/>
+    </div>
+    <label class="info span">{{localize "DCC.ShowMercurialEffectInfo"}}</label>
   </div>
   <div class="form-group">
     <label for="data.results.table">{{localize "DCC.SpellResultTable"}}</label>

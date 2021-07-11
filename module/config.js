@@ -102,6 +102,7 @@ DCC.items = {
  * @type {String}
  */
 DCC.castingModes = {
+  generic: 'DCC.SpellCastingModeGeneric',
   wizard: 'DCC.SpellCastingModeWizard',
   cleric: 'DCC.SpellCastingModeCleric'
 }

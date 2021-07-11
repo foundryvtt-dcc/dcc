@@ -441,7 +441,8 @@
         "inheritActionDie": true,
         "inheritSpellCheck": true,
         "inheritCheckPenalty": true,
-        "castingMode": "wizard"
+        "castingMode": "wizard",
+        "showMercurialEffect": false
       },
       "level": 1,
       "lost": false,
