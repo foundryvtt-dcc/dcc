@@ -112,6 +112,7 @@ class DCCActor extends Actor {
       capLevel: false,
       maxLevel: 0,
       rollAttackBonus: false,
+      rollABWithAttack: false,
       computeAC: false,
       baseACAbility: 'agl',
       sortInventory: true,

@@ -442,6 +442,7 @@
   "DCC.Roll": "Roll",
   "DCC.RollAttackBonusConfig": "Roll Attack Bonus",
   "DCC.RollAttackBonusInfo": "Use @ab in ToHit or Damage for last roll",
+  "DCC.RollABWithAttackConfig": "Roll Attack Bonus with every attack",
   "DCC.RollDisapprovalMacroName": "Roll for Disapproval",
   "DCC.RollExample": "e.g. +1d4",
   "DCC.RollMode": "Roll Mode",
