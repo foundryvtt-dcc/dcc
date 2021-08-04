@@ -19,6 +19,7 @@ class DCCActorSheetCleric extends DCCActorSheet {
 
     if (data.data.details.sheetClass !== 'Cleric') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Cleric'),
         'data.details.sheetClass': 'Cleric',
         'data.class.spellCheckAbility': 'per',
         'data.details.critRange': 20
@@ -42,6 +43,7 @@ class DCCActorSheetThief extends DCCActorSheet {
 
     if (data.data.details.sheetClass !== 'Thief') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Thief'),
         'data.details.sheetClass': 'Thief',
         'data.details.critRange': 20,
         'data.class.disapproval': 1,
@@ -66,6 +68,7 @@ class DCCActorSheetHalfling extends DCCActorSheet {
 
     if (data.data.details.sheetClass !== 'Halfling') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Halfling'),
         'data.details.sheetClass': 'Halfling',
         'data.details.critRange': 20,
         'data.class.disapproval': 1
@@ -89,6 +92,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
 
     if (data.data.details.sheetClass !== 'Warrior') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Warrior'),
         'data.details.sheetClass': 'Warrior',
         'data.class.disapproval': 1,
         'data.config.rollAttackBonus': true
@@ -112,6 +116,7 @@ class DCCActorSheetWizard extends DCCActorSheet {
 
     if (data.data.details.sheetClass !== 'Wizard') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Wizard'),
         'data.details.sheetClass': 'Wizard',
         'data.class.spellCheckAbility': 'int',
         'data.details.critRange': 20,
@@ -136,6 +141,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
 
     if (data.data.details.sheetClass !== 'Dwarf') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Dwarf'),
         'data.details.sheetClass': 'Dwarf',
         'data.class.disapproval': 1,
         'data.config.rollAttackBonus': true,
@@ -160,6 +166,7 @@ class DCCActorSheetElf extends DCCActorSheet {
 
     if (data.data.details.sheetClass !== 'Elf') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Elf'),
         'data.details.sheetClass': 'Elf',
         'data.class.spellCheckAbility': 'int',
         'data.details.critRange': 20,
@@ -181,6 +188,11 @@ class DCCActorSheetGeneric extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-upper-level.html'
     data.data.class.className = game.i18n.localize('DCC.Generic')
+    
+    this.actor.update({
+      'data.class.className': game.i18n.localize('DCC.Generic')
+    })
+
     return data
   }
 }
