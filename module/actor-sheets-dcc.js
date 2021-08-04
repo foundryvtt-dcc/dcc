@@ -15,10 +15,10 @@ class DCCActorSheetCleric extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-cleric.html'
-    data.data.class.className = game.i18n.localize('DCC.Cleric')
 
     if (data.data.details.sheetClass !== 'Cleric') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Cleric'),
         'data.details.sheetClass': 'Cleric',
         'data.class.spellCheckAbility': 'per',
         'data.details.critRange': 20
@@ -38,10 +38,10 @@ class DCCActorSheetThief extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
-    data.data.class.className = game.i18n.localize('DCC.Thief')
 
     if (data.data.details.sheetClass !== 'Thief') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Thief'),
         'data.details.sheetClass': 'Thief',
         'data.details.critRange': 20,
         'data.class.disapproval': 1,
@@ -62,10 +62,10 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
-    data.data.class.className = game.i18n.localize('DCC.Halfling')
 
     if (data.data.details.sheetClass !== 'Halfling') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Halfling'),
         'data.details.sheetClass': 'Halfling',
         'data.details.critRange': 20,
         'data.class.disapproval': 1
@@ -85,10 +85,10 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
-    data.data.class.className = game.i18n.localize('DCC.Warrior')
 
     if (data.data.details.sheetClass !== 'Warrior') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Warrior'),
         'data.details.sheetClass': 'Warrior',
         'data.class.disapproval': 1,
         'data.config.rollAttackBonus': true
@@ -108,10 +108,10 @@ class DCCActorSheetWizard extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-wizard.html'
-    data.data.class.className = game.i18n.localize('DCC.Wizard')
 
     if (data.data.details.sheetClass !== 'Wizard') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Wizard'),
         'data.details.sheetClass': 'Wizard',
         'data.class.spellCheckAbility': 'int',
         'data.details.critRange': 20,
@@ -132,10 +132,10 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-dwarf.html'
-    data.data.class.className = game.i18n.localize('DCC.Dwarf')
 
     if (data.data.details.sheetClass !== 'Dwarf') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Dwarf'),
         'data.details.sheetClass': 'Dwarf',
         'data.class.disapproval': 1,
         'data.config.rollAttackBonus': true,
@@ -156,10 +156,10 @@ class DCCActorSheetElf extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-elf.html'
-    data.data.class.className = game.i18n.localize('DCC.Elf')
 
     if (data.data.details.sheetClass !== 'Elf') {
       this.actor.update({
+        'data.class.className': game.i18n.localize('DCC.Elf'),
         'data.details.sheetClass': 'Elf',
         'data.class.spellCheckAbility': 'int',
         'data.details.critRange': 20,
@@ -180,7 +180,11 @@ class DCCActorSheetGeneric extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-upper-level.html'
-    data.data.class.className = game.i18n.localize('DCC.Generic')
+    
+    this.actor.update({
+      'data.class.className': game.i18n.localize('DCC.Generic')
+    })
+
     return data
   }
 }
