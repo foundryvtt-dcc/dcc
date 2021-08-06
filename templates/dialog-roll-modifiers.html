@@ -1,16 +1,33 @@
-<form id="modify-roll-form">
-  <div class="roll-modifier-formula">
-    <label for="formula">{{localize 'DCC.RollModifierFormula'}}</label>
-    <input type="text" name="formula" placeholder="{{roll.formula}}" value="{{roll.formula}}"/>
-  </div>
-  <div class="roll-modifier-button-row">
-    <div class="roll-modifier-button-stack">
-      <button class="roll-modifier-down-dice-chain">{{localize 'DCC.RollModifierDownDiceChain'}}</button>
-      <button class="roll-modifier-up-dice-chain">{{localize 'DCC.RollModifierUpDiceChain'}}</button>
+<form autocomplete="off">
+  <div class="formula-row">
+    {{#each terms}}
+    <div class="formula-term">
+      <label for="formula">{{label}}</label>
+      <input type="text" class="term-field" name="term-{{index}}" id="term-{{index}}" placeholder="{{formula}}" value="{{formula}}"/>
     </div>
-    <div class="roll-modifier-button-stack">
-      <button class="roll-modifier-sub-bonus">{{localize 'DCC.RollModifierSubBonus'}}</button>
-      <button class="roll-modifier-add-bonus">{{localize 'DCC.RollModifierAddBonus'}}</button>
-    </div>
+    {{/each}}
   </div>
+  <div class="button-row">
+    {{#each terms}}
+    {{#if isDie}}
+    <div class="button-stack">
+      <button class="dice-chain" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierUpDiceChain'}}</button>
+      <button class="dice-chain" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierDownDiceChain'}}</button>
+    </div>
+    {{else}}
+    <div class="button-stack">
+      <button class="bonus" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierAddBonus'}}</button>
+      <button class="bonus" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierSubBonus'}}</button>
+    </div>
+    {{/if}}
+    {{/each}}
+  </div>
+  <footer class="button-row">
+    <button type="submit" class="roll">
+      <i class="fas fa-dice-d20"></i>{{localize "DCC.RollModifierRoll"}}
+    </button>
+    <button type="submit" class="cancel">
+      <i class="fas fa-times"></i>{{localize "DCC.RollModifierCancel"}}
+    </button>
+  </footer>
 </form>

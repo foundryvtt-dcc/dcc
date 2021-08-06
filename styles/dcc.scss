@@ -1486,3 +1486,42 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   }
 }
 
+/* ----------------------------------------- */
+/*  Roll Modifier Dialog                     */
+/* ----------------------------------------- */
+
+#dcc-roll-modifier {
+  form {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    .formula-row {
+      display: flex;
+      flex-direction: row;
+      flex: 0 0 50px;
+  
+      .formula-term {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+    }
+  
+    .button-row {
+      display: flex;
+      flex-direction: row;
+      flex: 0 0 50px;
+  
+      button {
+        flex: 1;
+      }
+  
+      .button-stack {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+    }
+  }
+}
