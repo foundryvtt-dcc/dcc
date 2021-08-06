@@ -249,6 +249,17 @@ class DCCActor extends Actor {
    * @param {Object}  options       Roll options
    */
   async rollSkillCheck (skillId, options = {}) {
+    // Add the option of a check penalty to the roll modifier dialog
+    options.extraTerms = Object.assign({}, options.extraModifiers, {
+      checkPenalty: {
+        type: 'Check Penalty',
+        label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
+        isDie: false,
+        formula: '+0',
+        checkPenalty: this.data.data.attributes.ac.checkPenalty || 0
+      }
+    })
+
     let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
     let skillItem = null
     if (!skill) {
@@ -341,6 +352,26 @@ class DCCActor extends Actor {
     if (!options.abilityId) {
       options.abilityId = this.data.data.class.spellCheckAbility || ''
     }
+    // Add the option of spellburn and the armor check penalty to the roll modifiers
+    options.extraTerms = Object.assign({}, options.extraModifiers, {
+      spellburn: {
+        type: 'Spellburn',
+        label: game.i18n.localize('DCC.RollModifierSpellburnTerm'),
+        isDie: false,
+        formula: '+0',
+        str: this.data.data.abilities.str,
+        agl: this.data.data.abilities.agl,
+        sta: this.data.data.abilities.sta
+        //callback: 
+      },
+      checkPenalty: {
+        type: 'Check Penalty',
+        label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
+        isDie: false,
+        formula: '+0',
+        checkPenalty: this.data.data.attributes.ac.checkPenalty || 0
+      }
+    })
 
     // If a spell name is provided attempt to look up an item with that name for the roll
     if (options.spell) {

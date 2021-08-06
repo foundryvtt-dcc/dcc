@@ -1423,4 +1423,36 @@
   border: 0;
 }
 
+/* ----------------------------------------- */
+/*  Roll Modifier Dialog                     */
+/* ----------------------------------------- */
+#dcc-roll-modifier form {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+#dcc-roll-modifier form .formula-row {
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 50px;
+}
+#dcc-roll-modifier form .formula-row .formula-term {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+#dcc-roll-modifier form .button-row {
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 50px;
+}
+#dcc-roll-modifier form .button-row button {
+  flex: 1;
+}
+#dcc-roll-modifier form .button-row .button-stack {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 /*# sourceMappingURL=dcc.css.map */

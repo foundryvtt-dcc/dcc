@@ -674,7 +674,7 @@ class DCCActorSheet extends ActorSheet {
   _onRollDisapproval (event) {
     event.preventDefault()
     const options = this._fillRollOptions(event)
-    this.actor.rollDisapproval(options)
+    this.actor.rollDisapproval(undefined, options)
   }
 
   /**
