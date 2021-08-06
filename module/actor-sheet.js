@@ -545,23 +545,39 @@ class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /**
+   * Fill options for a roll based on event
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _fillRollOptions(event) {
+    return {
+      showModifierDialog: event.ctrlKey === true
+    }
+  }
+
+  /**
    * Handle rolling an Ability check
    * @param {Event} event   The originating click event
    * @private
    */
   _onRollAbilityCheck (event) {
     event.preventDefault()
-    const options = {}
-    if (event.currentTarget.className === 'ability-modifiers') {
-      options.modClick = true
-    }
+    const options = this._fillRollOptions(event)
 
     const ability = event.currentTarget.parentElement.dataset.ability
 
     // Luck checks are roll under unless the user explicitly clicks the modifier
     const rollUnder = (ability === 'lck') && (event.currentTarget.className !== 'ability-modifiers')
 
-    this.actor.rollAbilityCheck(ability, { rollUnder: rollUnder })
+    // Allow alternate behaviour if the modifier is clicked instead of the attribute
+    const modClick = (event.currentTarget.className === 'ability-modifiers')
+
+    Object.assign(options, {
+      modClick,
+      rollUnder,
+    })
+
+    this.actor.rollAbilityCheck(ability, options)
   }
 
   /**
@@ -571,7 +587,8 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollInitiative (event) {
     event.preventDefault()
-    this.actor.rollInitiative(this.token)
+    const options = this._fillRollOptions(event)
+    this.actor.rollInitiative(this.token, options)
   }
 
   /**
@@ -581,7 +598,8 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollHitDice (event) {
     event.preventDefault()
-    this.actor.rollHitDice()
+    const options = this._fillRollOptions(event)
+    this.actor.rollHitDice(options)
   }
 
   /**
@@ -591,8 +609,9 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollSavingThrow (event) {
     event.preventDefault()
+    const options = this._fillRollOptions(event)
     const save = event.currentTarget.parentElement.dataset.save
-    this.actor.rollSavingThrow(save)
+    this.actor.rollSavingThrow(save, options)
   }
 
   /**
@@ -602,8 +621,9 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollSkillCheck (event) {
     event.preventDefault()
+    const options = this._fillRollOptions(event)
     const skill = event.currentTarget.parentElement.dataset.skill
-    this.actor.rollSkillCheck(skill)
+    this.actor.rollSkillCheck(skill, options)
     this.render(false)
   }
 
@@ -614,7 +634,8 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollLuckDie (event) {
     event.preventDefault()
-    this.actor.rollLuckDie()
+    const options = this._fillRollOptions(event)
+    this.actor.rollLuckDie(options)
   }
 
   /**
@@ -624,15 +645,16 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollSpellCheck (event) {
     event.preventDefault()
+    const options = this._fillRollOptions(event)
     const dataset = event.currentTarget.parentElement.dataset
     if (dataset.itemId) {
       // Roll through a spell item
       const item = this.actor.items.find(i => i.id === dataset.itemId)
       const ability = dataset.ability || ''
-      item.rollSpellCheck(ability)
+      item.rollSpellCheck(ability, options)
     } else {
       // Roll a raw spell check for the actor
-      this.actor.rollSpellCheck()
+      this.actor.rollSpellCheck(options)
     }
   }
 
@@ -651,7 +673,8 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollDisapproval (event) {
     event.preventDefault()
-    this.actor.rollDisapproval()
+    const options = this._fillRollOptions(event)
+    this.actor.rollDisapproval(options)
   }
 
   /**
@@ -662,7 +685,8 @@ class DCCActorSheet extends ActorSheet {
   _onRollAttackBonus (event) {
     if (this.actor._getConfig().rollAttackBonus) {
       event.preventDefault()
-      this.actor.rollAttackBonus()
+      const options = this._fillRollOptions(event)
+      this.actor.rollAttackBonus(options)
       this.render(false)
     }
   }
@@ -675,9 +699,10 @@ class DCCActorSheet extends ActorSheet {
   _onRollWeaponAttack (event) {
     event.preventDefault()
     const slot = event.currentTarget.parentElement.dataset.itemSlot
-    const options = {
+    const options = this._fillRollOptions(event)
+    Object.assign(options, {
       backstab: event.currentTarget.classList.contains('backstab-button')
-    }
+    })
     this.actor.rollWeaponAttack(slot, options)
   }
 

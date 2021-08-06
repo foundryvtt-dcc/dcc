@@ -457,6 +457,7 @@ DCC.macroImages = {
 
 // Templates
 DCC.templates = {
+  rollModifiers: 'systems/dcc/templates/dialog-roll-modifiers.html',
   spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
 }
 
