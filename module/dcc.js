@@ -1,4 +1,5 @@
 /* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars, EntitySheetConfig, TextEditor */
+
 /**
  * DCC
  */
@@ -235,6 +236,11 @@ function registerTables () {
     CONFIG.DCC.turnUnholyTable = turnUnholyTable
   }
 }
+
+Hooks.on('diceSoNiceReady', (dice3d) => {
+  // Show the d3, d5, d7, d14, d16, d24, and d30 in Dice So Nice's customization dialog
+  dice3d.showExtraDiceByDefault(true)
+})
 
 /**
  * Look up a table for a given skill, if present
