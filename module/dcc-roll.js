@@ -39,7 +39,7 @@ class DCCRoll {
 
     let roll = new Roll(rollExpression, modifiers)
     if (showModifierDialog) {
-      roll = await showRollModifier(roll)
+      roll = await showRollModifier(roll, options)
     }
     return roll
   }
