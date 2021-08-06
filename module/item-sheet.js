@@ -178,11 +178,24 @@ export class DCCItemSheet extends ItemSheet {
   }
 
   /**
+   * Fill options for a roll based on event
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _fillRollOptions (event) {
+    return {
+      showModifierDialog: event.ctrlKey === true
+    }
+  }
+
+  /**
    * Roll a new Mercurial Magic effect, prompting to replace if necessary
    */
   _onRollMercurialMagic (event) {
     event.preventDefault()
-    if (this.item.hasExistingMercurialMagic()) {
+    const options = this._fillRollOptions(event)
+    // Prompt if there's an existing effect or we're using the roll modifier dialog
+    if (!options.showModifierDialog && this.item.hasExistingMercurialMagic()) {
       new Dialog({
         title: game.i18n.localize('DCC.MercurialMagicRerollPrompt'),
         content: `<p>${game.i18n.localize('DCC.MercurialMagicRerollExplain')}</p>`,
@@ -190,12 +203,12 @@ export class DCCItemSheet extends ItemSheet {
           reroll: {
             icon: '<i class="fas fa-check"></i>',
             label: game.i18n.localize('DCC.MercurialMagicButtonReroll'),
-            callback: () => this._rollMercurialMagic(event)
+            callback: () => this._rollMercurialMagic(event, options)
           },
           lookup: {
             icon: '<i class="fas fa-check"></i>',
             label: game.i18n.localize('DCC.MercurialMagicButtonLookup'),
-            callback: () => this._lookupMercurialMagic(event)
+            callback: () => this._lookupMercurialMagic(event, options)
           },
           cancel: {
             icon: '<i class="fas fa-times"></i>',
@@ -204,7 +217,7 @@ export class DCCItemSheet extends ItemSheet {
         }
       }).render(true)
     } else {
-      this._rollMercurialMagic(event)
+      this._rollMercurialMagic(event, options)
     }
   }
 
@@ -213,8 +226,8 @@ export class DCCItemSheet extends ItemSheet {
    * @param {Event}  event   The originating click event
    * @private
    */
-  _rollMercurialMagic (event) {
-    this.item.rollMercurialMagic()
+  _rollMercurialMagic (event, options) {
+    this.item.rollMercurialMagic(undefined, options)
     this.render(false)
   }
 
@@ -223,7 +236,7 @@ export class DCCItemSheet extends ItemSheet {
    * @param {Event}  event   The originating click event
    * @private
    */
-  _lookupMercurialMagic (event) {
+  _lookupMercurialMagic (event, options) {
     this.item.rollMercurialMagic(this.item.data.data.mercurialEffect.value)
     this.render(false)
   }

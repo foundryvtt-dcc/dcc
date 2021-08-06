@@ -549,7 +549,7 @@ class DCCActorSheet extends ActorSheet {
    * @param {Event} event   The originating click event
    * @private
    */
-  _fillRollOptions(event) {
+  _fillRollOptions (event) {
     return {
       showModifierDialog: event.ctrlKey === true
     }
