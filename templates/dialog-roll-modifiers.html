@@ -9,17 +9,7 @@
   </div>
   <div class="button-row">
     {{#each terms}}
-    {{#if isDie}}
-    <div class="button-stack">
-      <button class="dice-chain" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierUpDiceChain'}}</button>
-      <button class="dice-chain" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierDownDiceChain'}}</button>
-    </div>
-    {{else}}
-    <div class="button-stack">
-      <button class="bonus" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierAddBonus'}}</button>
-      <button class="bonus" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierSubBonus'}}</button>
-    </div>
-    {{/if}}
+      {{> (lookup . 'partial') }}
     {{/each}}
   </div>
   <footer class="button-row">

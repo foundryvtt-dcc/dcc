@@ -143,7 +143,7 @@ class DCCActor extends Actor {
 
     // Allow requesting roll under (for Luck Checks)
     if (options.rollUnder) {
-      roll = new Roll('1d20')
+      roll = await game.dcc.DCCRoll.createRoll('1d20', {}, options)
 
       // Apply custom roll options
       await roll.evaluate({ async: true })
@@ -152,7 +152,7 @@ class DCCActor extends Actor {
       }
     } else {
       const die = this.data.data.attributes.actionDice.value
-      roll = new Roll('@die+@abilMod', { die, abilMod: ability.mod, critical: 20 })
+      roll = await game.dcc.DCCRoll.createRoll('@die+@abilMod', { die, abilMod: ability.mod, critical: 20 }, options)
     }
 
     // Convert the roll to a chat message
@@ -166,7 +166,7 @@ class DCCActor extends Actor {
    * Roll Initiative
    * @param {Object} token    The token to roll initiative for
    */
-  async rollInitiative (token) {
+  async rollInitiative (token, options = {}) {
     // No selected token - bail out
     if (!token) {
       return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoTokenWarning'))
@@ -175,7 +175,7 @@ class DCCActor extends Actor {
     // Setup the roll
     const die = this.data.data.attributes.init.die || '1d20'
     const init = this.data.data.attributes.init.value
-    const roll = new Roll('@die+@init', { die, init })
+    const roll = await game.dcc.DCCRoll.createRoll('@die+@init', { die, init }, options)
 
     // evaluate roll, otherwise roll.total is undefined
     await roll.evaluate({ async: true })
@@ -206,17 +206,17 @@ class DCCActor extends Actor {
   /**
    * Roll Hit Dice
    */
-  async rollHitDice () {
+  async rollHitDice (options = {}) {
     let roll
 
     if (this.data.type === 'Player') {
       const die = this.data.data.attributes.hitDice.value || '1d4'
       const sta = this.data.data.abilities.sta || {}
       sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : 0
-      roll = new Roll('@die+@mod', { die, mod: sta.mod })
+      roll = await game.dcc.DCCRoll.createRoll('@die+@mod', { die, mod: sta.mod }, options)
     } else {
       const die = this.data.data.attributes.hitDice.value || '1d4'
-      roll = new Roll('@die', { die })
+      roll = await game.dcc.DCCRoll.createRoll('@die', { die }, options)
     }
 
     // Convert the roll to a chat message
@@ -230,11 +230,11 @@ class DCCActor extends Actor {
    * Roll a Saving Throw
    * @param {String} saveId       The save ID (e.g. "ref")
    */
-  async rollSavingThrow (saveId) {
+  async rollSavingThrow (saveId, options = {}) {
     const save = this.data.data.saves[saveId]
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
-    const roll = new Roll('@die+@saveMod', { die, saveMod: save.value })
+    const roll = await game.dcc.DCCRoll.createRoll('@die+@saveMod', { die, saveMod: save.value }, options)
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -252,11 +252,12 @@ class DCCActor extends Actor {
     // Add the option of a check penalty to the roll modifier dialog
     options.extraTerms = Object.assign({}, options.extraModifiers, {
       checkPenalty: {
-        type: 'Check Penalty',
+        type: 'CheckPenalty',
         label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
-        isDie: false,
+        partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
         formula: '+0',
-        checkPenalty: this.data.data.attributes.ac.checkPenalty || 0
+        checkPenalty: this.data.data.attributes.ac.checkPenalty || 0,
+        default: false
       }
     })
 
@@ -334,8 +335,8 @@ class DCCActor extends Actor {
   /**
    * Roll the Luck Die
    */
-  rollLuckDie () {
-    const roll = new Roll(this.data.data.class.luckDie)
+  async rollLuckDie (options) {
+    const roll = await game.dcc.DCCRoll.createRoll(this.data.data.class.luckDie, {}, options)
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -357,7 +358,7 @@ class DCCActor extends Actor {
       spellburn: {
         type: 'Spellburn',
         label: game.i18n.localize('DCC.RollModifierSpellburnTerm'),
-        isDie: false,
+        partial: 'systems/dcc/templates/roll-modifier-partial-spellburn.html',
         formula: '+0',
         str: this.data.data.abilities.str,
         agl: this.data.data.abilities.agl,
@@ -365,11 +366,12 @@ class DCCActor extends Actor {
         //callback: 
       },
       checkPenalty: {
-        type: 'Check Penalty',
+        type: 'CheckPenalty',
         label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
-        isDie: false,
+        partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
         formula: '+0',
-        checkPenalty: this.data.data.attributes.ac.checkPenalty || 0
+        checkPenalty: this.data.data.attributes.ac.checkPenalty || 0,
+        default: false
       }
     })
 
@@ -427,16 +429,16 @@ class DCCActor extends Actor {
   /**
    * Roll Attack Bonus
    */
-  async rollAttackBonus (options) {
+  async rollAttackBonus (options = {}) {
     /* Determine attack bonus */
     const attackBonusExpression = this.data.data.details.attackBonus || '0'
 
     if (attackBonusExpression) {
-      const abRoll = new Roll(attackBonusExpression, { critical: 3 })
+      const abRoll = await game.dcc.DCCRoll.createRoll(attackBonusExpression, { critical: 3 }, options)
 
       // Store the result for use in attack and damage rolls
       const lastRoll = this.data.data.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
-      this.update({
+      await this.update({
         'data.details.lastRolledAttackBonus': lastRoll
       })
 
@@ -631,7 +633,7 @@ class DCCActor extends Actor {
     }
 
     /* Roll the Attack */
-    const attackRoll = new Roll(formula, { ab: attackBonus, critical: critRange })
+    const attackRoll = await game.dcc.DCCRoll.createRoll(formula, { ab: attackBonus, critical: critRange }, options)
     await attackRoll.evaluate({ async: true })
 
     const d20RollResult = attackRoll.dice[0].total
@@ -685,7 +687,7 @@ class DCCActor extends Actor {
       }
     }
     /* Roll the damage */
-    const damageRoll = new Roll(formula, { ab: attackBonus })
+    const damageRoll = await game.dcc.DCCRoll.createRoll(formula, { ab: attackBonus }, options)
     await damageRoll.evaluate({ async: true })
 
     return {
@@ -700,9 +702,9 @@ class DCCActor extends Actor {
    * Roll a Critical Hit
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
-  async rollCritical (options) {
+  async rollCritical (options = {}) {
     // Roll object for the crit die
-    let roll = new Roll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`)
+    let roll = await game.dcc.DCCRoll.createRoll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`, {}, options)
 
     // Lookup the crit table if available
     let critResult = null
@@ -753,7 +755,7 @@ class DCCActor extends Actor {
    * Roll a Fumble
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
-  async rollFumble (options) {
+  async rollFumble (options = {}) {
     let fumbleDie
     try {
       fumbleDie = this.data.data.attributes.fumble.die
@@ -762,7 +764,7 @@ class DCCActor extends Actor {
     }
 
     // Roll object for the fumble die
-    let roll = new Roll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`)
+    let roll = await game.dcc.DCCRoll.createRoll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`, {}, options)
 
     // Lookup the fumble table if available
     let fumbleResult = null
@@ -955,35 +957,15 @@ class DCCActor extends Actor {
   async rollDisapproval (naturalRoll) {
     // Generate a formula, placeholder if the natural roll is not known
     const formula = `${naturalRoll || 1}d4 - ${this.data.data.abilities.lck.mod}`
+    const options = {}
 
+    // Force the Roll Modifier dialog on if we don't know the formula
     if (naturalRoll === undefined) {
-      // If we don't know the actual roll pop up a prompt with the placeholder formula
-      const html = `<form id="disapproval-formula-form">
-                      <label for="formula">${game.i18n.localize('DCC.DisapprovalRollFormula')}</label>
-                      <input type="text" name="formula" placeholder="1d4 - luck modifier" value="${formula}"/>
-                    </form>`
-      new Dialog({
-        title: game.i18n.localize('DCC.DisapprovalRollFormula'),
-        content: html,
-        buttons: {
-          yes: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.RollDisapproval'),
-            callback: html => {
-              const formula = html[0].querySelector('#disapproval-formula-form')[0].value
-              this._onRollDisapproval(formula)
-            }
-          },
-          no: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.Cancel')
-          }
-        }
-      }).render(true)
-    } else {
-      // If we know the formula just roll it
-      this._onRollDisapproval(formula)
+      options.showModifierDialog = true
     }
+
+    // If we know the formula just roll it
+    this._onRollDisapproval(formula, options)
   }
 
   /**
@@ -991,9 +973,9 @@ class DCCActor extends Actor {
    * @param {String} formula  Disapproval roll formula
    * @private
    */
-  async _onRollDisapproval (formula) {
+  async _onRollDisapproval (formula, options = {}) {
     try {
-      const roll = new Roll(formula)
+      const roll = await game.dcc.DCCRoll.createRoll(formula, {}, options)
 
       // Lookup the disapproval table if available
       let disapprovalTable = null

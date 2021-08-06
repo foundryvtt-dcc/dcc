@@ -1,6 +1,4 @@
-/* global Roll */
-
-import showRollModifier from './roll-modifier.js'
+/* global Roll, dcc */
 
 /**
  * DCC Roll
@@ -39,9 +37,26 @@ class DCCRoll {
 
     let roll = new Roll(rollExpression, modifiers)
     if (showModifierDialog) {
-      roll = await showRollModifier(roll, options)
+      roll = await game.dcc.showRollModifier(roll, options)
     }
     return roll
+  }
+
+  /**
+   * Create a roll with the same API as Roll's constructor
+   * @param {String} formula  The string formula to parse
+   * @param {Object} data     The data object against which to parse attributes within the formula
+   * @param {Object} options  DCC roll specific options
+   * @return {Promise}        The constructed roll object
+   */
+  static async createRoll (formula, data = {}, options = {}) {
+    const showModifierDialog = options.showModifierDialog || false
+
+    if (showModifierDialog) {
+      return await game.dcc.showRollModifier(new Roll(formula, data), options)
+    } else {
+      return new Roll(formula, data)
+    }
   }
 
   /**
