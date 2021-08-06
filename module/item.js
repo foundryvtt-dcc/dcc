@@ -72,7 +72,7 @@ class DCCItem extends Item {
     }
 
     // Roll the spell check
-    const roll = game.dcc.DCCRoll.createSimpleRoll(this.data.data.spellCheck.die, modifiers)
+    const roll = await game.dcc.DCCRoll.createSimpleRoll(this.data.data.spellCheck.die, modifiers)
     await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
