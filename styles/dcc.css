@@ -1446,7 +1446,7 @@
   flex-direction: row;
   flex: 0 0 50px;
 }
-#dcc-roll-modifier form .button-row button {
+#dcc-roll-modifier form .button-row .button {
   flex: 1;
 }
 #dcc-roll-modifier form .button-row .button-stack {

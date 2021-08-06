@@ -12,7 +12,7 @@ class RollModifierDialog extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.id = 'dcc-roll-modifier'
-    options.width = 400
+    options.width = 600
     options.height = 250
     options.template = CONFIG.DCC.templates.rollModifierDialog
     return options
@@ -70,9 +70,9 @@ class RollModifierDialog extends FormApplication {
     event.preventDefault()
 
     // Build a new roll from the collected terms
-    const formula = ''
+    let formula = ''
     this.element.find('input.term-field').each((index, element) => {
-      formula += element.val()
+      formula += element.value
     })
     this._roll = new Roll(formula)
 
@@ -100,7 +100,12 @@ class RollModifierDialog extends FormApplication {
     const index = event.currentTarget.dataset.term
     const mod = event.currentTarget.dataset.mod
     const formField = this.element.find('#term-' + index)
-    const termFormula = formField.val()
+    let termFormula = game.dcc.DiceChain.bumpDie(formField.val(), parseInt(mod))
+    if (index > 0) {
+      // Add a sign if this isn't the first term in the expression
+      termFormula = '+' + termFormula
+    }
+    formField.val(termFormula)
   }
 
   /**
@@ -113,9 +118,9 @@ class RollModifierDialog extends FormApplication {
     const index = event.currentTarget.dataset.term
     const mod = event.currentTarget.dataset.mod
     const formField = this.element.find('#term-' + index)
-    let termFormula = formField.val()
-    termFormula = (parseInt(termFormula) + parseInt(mod)).toString()
+    let termFormula = (parseInt(formField.val()) + parseInt(mod)).toString()
     if (termFormula[0] !== '-') {
+      // Always add a sign
       termFormula = '+' + termFormula
     }
     formField.val(termFormula)
@@ -134,34 +139,44 @@ class RollModifierDialog extends FormApplication {
   _extractTerms () {
     // State
     const terms = []
+    const validNumber = /[+-]*\d+/
     let termAccumulator = ''
-    let lastTerm = null
     let index = 0
+    let anyModifierTerms = false
 
     // Helper functions
     var addDieTerm = function (term) {
       terms.push({
         type: 'Die',
-        label: term.options.flavor || game.i18n.localize('DCC.RollModifierDieTerm'),
+        label: game.i18n.localize('DCC.RollModifierDieTerm'),
+        partial: 'systems/dcc/templates/roll-modifier-partial-die.html',
         index: index++,
-        isDie: true,
         formula: term.formula.replace(' ', '')
       })
       termAccumulator = ''
     }
-    var addModifierTerm = function (term) {
-      terms.push({
-        type: 'Modifiers',
-        label: term.options.flavor || game.i18n.localize('DCC.RollModifierModifierTerm'),
-        index: index++,
-        isDie: false,
-        formula: termAccumulator.replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-')
-      })
+    var addModifierTerm = function () {
+      // Remove duplicate operator terms and other unexpected things
+      if (termAccumulator.match(validNumber)) {
+        terms.push({
+          type: 'Modifiers',
+          label: game.i18n.localize('DCC.RollModifierModifierTerm'),
+          partial: 'systems/dcc/templates/roll-modifier-partial-modifiers.html',
+          index: index++,
+          formula: termAccumulator.replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-')
+        })
+        anyModifierTerms = true
+      }
+      termAccumulator = ''
+    }
+    var addCustomTerm = function (data) {
+      terms.push(Object.assign(data, {
+        index: index++
+      }))
       termAccumulator = ''
     }
     var accumulateTerm = function (term) {
       termAccumulator += term.formula.replace(/\s+/g, '')
-      lastTerm = term
     }
   
     // Extract terms from the Roll
@@ -169,9 +184,15 @@ class RollModifierDialog extends FormApplication {
       if (term instanceof Die) {
         // Isolate Die terms
         if (termAccumulator) {
-          addModifierTerm(term)
+          addModifierTerm()
         }
         addDieTerm(term)
+      } else if (term instanceof OperatorTerm) {
+        // If we hit an operator term output the current term and continue accumulating
+        if (termAccumulator) {
+          addModifierTerm()
+        }
+        accumulateTerm(term)
       } else {
         // Accumulate and concatenate non-die terms
         accumulateTerm(term)
@@ -179,16 +200,19 @@ class RollModifierDialog extends FormApplication {
     }
     if (termAccumulator) {
       // Mop up any remaining modifiers
-      addModifierTerm(lastTerm)
+      addModifierTerm()
+    }
+
+    // Add a modifier term if none were present
+    if (!anyModifierTerms) {
+      termAccumulator = '+0'
+      addModifierTerm()
     }
 
     // Add any extra terms from the options
     if (this.options.extraTerms) {
       for (const key in this.options.extraTerms) {
-        const term = this.options.extraTerms[key]
-        terms.push(Object.assign(term, {
-          index: index++
-        }))
+        addCustomTerm(this.options.extraTerms[key])
       }
     }
 

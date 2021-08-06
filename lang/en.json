@@ -454,6 +454,7 @@
   "DCC.RollMode": "Roll Mode",
   "DCC.RollModifierAddBonus": "+",
   "DCC.RollModifierCancel": "Cancel",
+  "DCC.RollModifierCheckPenaltyApply": "Apply",
   "DCC.RollModifierCheckPenaltyTerm": "Check Penalty",
   "DCC.RollModifierDieTerm": "Die",
   "DCC.RollModifierDownDiceChain": "-1D",

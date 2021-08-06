@@ -15,6 +15,7 @@ import DCC from './config.js'
 import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
+import showRollModifier from './roll-modifier.js'
 import parser from './parser.js'
 import TablePackManager from './table-pack-manager.js'
 import EntityImages from './entity-images.js'
@@ -53,6 +54,7 @@ Hooks.once('init', async function () {
     getSkillTable,
     processSpellCheck,
     rollDCCWeaponMacro, // This is called from macros, don't remove
+    showRollModifier,
     getMacroActor // This is called from macros, don't remove
   }
 
@@ -83,7 +85,11 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/actor-partial-skills.html',
     'systems/dcc/templates/actor-partial-wizard-spells.html',
     'systems/dcc/templates/actor-partial-cleric-spells.html',
-    'systems/dcc/templates/item-partial-header.html'
+    'systems/dcc/templates/item-partial-header.html',
+    'systems/dcc/templates/roll-modifier-partial-die.html',
+    'systems/dcc/templates/roll-modifier-partial-modifiers.html',
+    'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
+    'systems/dcc/templates/roll-modifier-partial-spellburn.html',
   ]
   loadTemplates(templatePaths)
 

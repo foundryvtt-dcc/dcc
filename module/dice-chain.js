@@ -6,8 +6,8 @@
 class DiceChain {
   /*
    * Return the name of the primary dice in an expression
-   * @param {String}    Roll expression
-   * @returns {Number}  Primary dice (e.g. d3, d8, d14)
+   * @param expression {String}    Roll expression
+   * @returns {Number}             Primary dice (e.g. d3, d8, d14)
    */
   static getPrimaryDie (expression) {
     const faces = this.getPrimaryDieFaces(expression)
@@ -19,8 +19,8 @@ class DiceChain {
 
   /*
    * Return the number of faces on the primary dice in an expression
-   * @param {String}    Roll expression
-   * @returns {Number}  Number of faces of the largest die
+   * @param expression {String}    Roll expression
+   * @returns {Number}             Number of faces of the largest die
    */
   static getPrimaryDieFaces (expression) {
     const roll = new Roll(expression)
@@ -38,8 +38,8 @@ class DiceChain {
    * Return the rank in the dice chain of the largest die in an expression
    * Dice of sizes not in the dice chain are ignored
    *
-   * @param {String}    Roll expression
-   * @returns {Number}   Rank of the largest die
+   * @param expression {String}    Roll expression
+   * @returns {Number}             Rank of the largest die
    */
   static rankDiceExpression (expression) {
     const roll = new Roll(expression)
@@ -52,6 +52,27 @@ class DiceChain {
       }
     }
     return rank
+  }
+
+  /* Bump a since dice expression up or down the dice chain
+   * @param expression {String}   Die term formula
+   * @param modifier {Number}     The amount of steps up or down the chain to adjust
+   * @return {String}             New die term formula
+   */
+  static bumpDie (expression, modifier) {
+    const diceChain = CONFIG.DCC.DICE_CHAIN
+    const regex = /(\d+)d(\d+)/;
+    const match = expression.match(regex)
+    if (match) {
+      const dieRank = diceChain.indexOf(parseInt(match[2]))
+      if (dieRank >= 0) {
+        const newIndex = dieRank + parseInt(modifier)
+        if (newIndex >= 0 && newIndex < diceChain.length) {
+          return `${match[1]}d${diceChain[newIndex]}`
+        }
+      }
+    }
+    return expression
   }
 }
 
