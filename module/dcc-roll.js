@@ -1,5 +1,7 @@
 /* global Roll */
 
+import showRollModifier from './roll-modifier.js'
+
 /**
  * DCC Roll
  * Dungeon Crawl Classics specific Roll helpers applying modifiers and custom behaviours cleanly
@@ -11,8 +13,9 @@ class DCCRoll {
    * @param {Array} modifiers   An array of static modifiers
    * @return {string}
    */
-  static createSimpleRoll (die, modifiers, options = {}) {
+  static async createSimpleRoll (die, modifiers, options = {}) {
     const isNumeric = /^([+-]?)(\d)+$/
+    const showModifierDialog = options.showModifierDialog || false
 
     let rollExpression = die
     for (const modifier in modifiers) {
@@ -34,7 +37,11 @@ class DCCRoll {
       }
     }
 
-    return new Roll(rollExpression, modifiers)
+    let roll = new Roll(rollExpression, modifiers)
+    if (showModifierDialog) {
+      roll = await showRollModifier(roll)
+    }
+    return roll
   }
 
   /**

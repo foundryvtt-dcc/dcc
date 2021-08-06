@@ -246,8 +246,9 @@ class DCCActor extends Actor {
   /**
    * Roll a Skill Check
    * @param {String}  skillId       The skill ID (e.g. "sneakSilently")
+   * @param {Object}  options       Roll options
    */
-  async rollSkillCheck (skillId) {
+  async rollSkillCheck (skillId, options = {}) {
     let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
     let skillItem = null
     if (!skill) {
@@ -284,7 +285,7 @@ class DCCActor extends Actor {
       modifiers.ab = parseInt(this.data.data.details.lastRolledAttackBonus)
     }
 
-    const roll = game.dcc.DCCRoll.createSimpleRoll(die, modifiers)
+    const roll = await game.dcc.DCCRoll.createSimpleRoll(die, modifiers, options)
 
     // Handle special cleric spellchecks that are treated as skills
     if (skill.useDisapprovalRange) {
@@ -370,7 +371,7 @@ class DCCActor extends Actor {
       bonus,
       checkPenalty
     }
-    const roll = game.dcc.DCCRoll.createSimpleRoll(die, modifiers)
+    const roll = await game.dcc.DCCRoll.createSimpleRoll(die, modifiers, options)
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -936,7 +937,7 @@ class DCCActor extends Actor {
         buttons: {
           yes: {
             icon: '<i class="fas fa-check"></i>',
-            label: 'Roll Disapproval',
+            label: game.i18n.localize('DCC.RollDisapproval'),
             callback: html => {
               const formula = html[0].querySelector('#disapproval-formula-form')[0].value
               this._onRollDisapproval(formula)
@@ -944,7 +945,7 @@ class DCCActor extends Actor {
           },
           no: {
             icon: '<i class="fas fa-times"></i>',
-            label: 'Cancel'
+            label: game.i18n.localize('DCC.Cancel')
           }
         }
       }).render(true)
