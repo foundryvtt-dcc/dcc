@@ -385,7 +385,7 @@ class DCCActor extends Actor {
       if (item) {
         if (item.data.type === 'spell') {
           // Roll through the item and return so we don't also roll a basic spell check
-          item.rollSpellCheck(options.abilityId)
+          item.rollSpellCheck(options.abilityId, options)
           return
         } else {
           return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNonSpellWarning'))
