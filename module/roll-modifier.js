@@ -1,6 +1,10 @@
 /* global CONFIG, FormApplication, game */
 
+let index = 0
+
 class RollModifierDialog extends FormApplication {
+  static instanceId = 0
+
   constructor (resolve, reject, roll, options = {}) {
     super()
     this._roll = roll
@@ -11,7 +15,7 @@ class RollModifierDialog extends FormApplication {
 
   static get defaultOptions () {
     const options = super.defaultOptions
-    options.id = 'dcc-roll-modifier'
+    options.id = `dcc-roll-modifier-${RollModifierDialog.instanceId++}`
     options.width = 600
     options.height = 250
     options.template = CONFIG.DCC.templates.rollModifierDialog
@@ -75,6 +79,9 @@ class RollModifierDialog extends FormApplication {
       formula += element.value
     })
     this._roll = new Roll(formula)
+
+    // Need to wait for this to close to prevent overlapping instances
+    await super.close()
 
     this._resolve(this.roll)
   }

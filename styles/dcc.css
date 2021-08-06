@@ -1426,30 +1426,30 @@
 /* ----------------------------------------- */
 /*  Roll Modifier Dialog                     */
 /* ----------------------------------------- */
-#dcc-roll-modifier form {
+form.dcc-roll-modifier {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
-#dcc-roll-modifier form .formula-row {
+form.dcc-roll-modifier .formula-row {
   display: flex;
   flex-direction: row;
   flex: 0 0 50px;
 }
-#dcc-roll-modifier form .formula-row .formula-term {
+form.dcc-roll-modifier .formula-row .formula-term {
   display: flex;
   flex-direction: column;
   flex: 1;
 }
-#dcc-roll-modifier form .button-row {
+form.dcc-roll-modifier .button-row {
   display: flex;
   flex-direction: row;
   flex: 0 0 50px;
 }
-#dcc-roll-modifier form .button-row .button {
+form.dcc-roll-modifier .button-row .button {
   flex: 1;
 }
-#dcc-roll-modifier form .button-row .button-stack {
+form.dcc-roll-modifier .button-row .button-stack {
   display: flex;
   flex-direction: column;
   flex: 1;

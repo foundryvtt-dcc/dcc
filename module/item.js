@@ -126,7 +126,7 @@ class DCCItem extends Item {
    * @param {Number} lookup   Optional entry number to lookup instead of rolling
    * @return
    */
-  async rollMercurialMagic (lookup = undefined) {
+  async rollMercurialMagic (lookup = undefined, options = {}) {
     if (this.data.type !== 'spell') { return }
 
     const actor = this.actor
@@ -136,17 +136,19 @@ class DCCItem extends Item {
     const ability = actor.data.data.abilities[abilityId]
     ability.label = CONFIG.DCC.abilities[abilityId]
 
-    // Roll for a mercurial effect
-    let roll = new Roll('@die+@bonus', {
-      die: '1d100',
-      bonus: ability.mod * 10
-    })
+    let roll
 
-    // If looking up then replace the roll
     if (lookup) {
+      // Look up a mercurial effect by value
       roll = new Roll('@value', {
         value: lookup
       })
+    } else {
+      // Otherwise roll for a mercurial effect
+      roll = await game.dcc.DCCRoll.createRoll('@die+@bonus', {
+        die: '1d100',
+        bonus: ability.mod * 10
+      }, options)
     }
 
     // Lookup the mercurial magic table if available
