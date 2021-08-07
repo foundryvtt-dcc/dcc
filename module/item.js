@@ -61,6 +61,9 @@ class DCCItem extends Item {
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
 
+    // Pass the actor through for access to rollData
+    options.actor = actor
+
     // Generate the spell check expression
     const modifiers = {
       bonus: parseInt(this.data.data.spellCheck.value || 0)
