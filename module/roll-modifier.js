@@ -70,6 +70,7 @@ class RollModifierDialog extends FormApplication {
     html.find('button.dice-chain').click(this._modifyDie.bind(this))
     html.find('button.bonus').click(this._modifyBonus.bind(this))
     html.find('button.reset').click(this._resetTerm.bind(this))
+    html.find('input.checkbox').change(this._checkboxChange.bind(this))
   }
 
   /**
@@ -139,6 +140,20 @@ class RollModifierDialog extends FormApplication {
       termFormula = '+' + termFormula
     }
     formField.val(termFormula)
+  }
+
+  /**
+   * Handle a checkbox change event
+   * @param event {Event}  The originating click event
+   * @private
+   */
+  async _checkboxChange (event) {
+    event.preventDefault()
+    const index = event.currentTarget.dataset.term
+    const term = this.terms[index]
+    const formField = this.element.find('#term-' + index)
+    const checked = event.currentTarget.checked
+    formField.val(checked ? term.checkedFormula : '+0')
   }
 
   /**

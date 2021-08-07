@@ -251,16 +251,14 @@ class DCCActor extends Actor {
   async rollSkillCheck (skillId, options = {}) {
     // Add the option of a check penalty to the roll modifier dialog
     options.extraTerms = Object.assign({}, options.extraModifiers, {
-      /*
       checkPenalty: {
         type: 'CheckPenalty',
         label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
         partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
         formula: '+0',
-        checkPenalty: this.data.data.attributes.ac.checkPenalty || 0,
+        checkedFormula: this.data.data.attributes.ac.checkPenalty || 0,
         default: false
       }
-      */
     })
 
     let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
@@ -368,15 +366,15 @@ class DCCActor extends Actor {
         sta: this.data.data.abilities.sta
         //callback: 
       },
+      */
       checkPenalty: {
         type: 'CheckPenalty',
         label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
         partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
         formula: '+0',
-        checkPenalty: this.data.data.attributes.ac.checkPenalty || 0,
+        checkedFormula: this.data.data.attributes.ac.checkPenalty || 0,
         default: false
       }
-      */
     })
 
     // If a spell name is provided attempt to look up an item with that name for the roll
