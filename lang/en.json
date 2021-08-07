@@ -461,6 +461,7 @@
   "DCC.RollModifierFormula": "Formula",
   "DCC.RollModifierModifierTerm": "Modifier",
   "DCC.RollModifierSpellburnTerm": "Spellburn",
+  "DCC.RollModifierReset": "Reset",
   "DCC.RollModifierRoll": "Roll",
   "DCC.RollModifierSubBonus": "-",
   "DCC.RollModifierTitle": "Roll Modifier",

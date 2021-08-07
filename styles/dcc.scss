@@ -1495,31 +1495,56 @@ form.dcc-roll-modifier {
   flex-direction: column;
   justify-content: space-between;
 
-  .formula-row {
-    display: flex;
-    flex-direction: row;
-    flex: 0 0 50px;
+  min-width: 400px;
 
-    .formula-term {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
+  .formula-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-column-gap: 5px;
+    grid-row-gap: 0px;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-rows: auto auto minmax(60px, auto);
+
+    .term-label {
+      font-family: $duvall;
+    }
+
+    .term-field {
+
+    }
+
+    .term-controls {
+      margin-top: 8px;
     }
   }
 
   .button-row {
     display: flex;
     flex-direction: row;
-    flex: 0 0 50px;
+    flex: 1;
 
-    .button {
+    button {
       flex: 1;
     }
+  }
 
-    .button-stack {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
+  .button-stack {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .dialog-buttons {
+    margin-top: 8px;
+  }
+
+  button.flat-button {
+    background: rgba(0, 0, 0, 0.05);
+    border: 2px groove #c9c7b8;
+    margin: 0 5px 0 0;
+
+    :last-child {
+      margin-right: 0;
     }
   }
 }
