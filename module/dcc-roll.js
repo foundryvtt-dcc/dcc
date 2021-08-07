@@ -14,6 +14,7 @@ class DCCRoll {
   static async createSimpleRoll (die, modifiers, options = {}) {
     const isNumeric = /^([+-]?)(\d)+$/
     const showModifierDialog = options.showModifierDialog || false
+    const rollData = options.actor ? options.actor.getRollData : {}
 
     let rollExpression = die
     for (const modifier in modifiers) {
@@ -35,7 +36,7 @@ class DCCRoll {
       }
     }
 
-    let roll = new Roll(rollExpression, modifiers)
+    let roll = new Roll(rollExpression, mergeObject(modifiers, rollData))
     if (showModifierDialog) {
       roll = await game.dcc.showRollModifier(roll, options)
     }
