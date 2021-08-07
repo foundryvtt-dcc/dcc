@@ -1,4 +1,19 @@
-<div class="button-stack">
-  <button class="bonus" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierAddBonus'}}</button>
-  <button class="bonus" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierSubBonus'}}</button>
+<label class="term-label" for="formula">{{label}}</label>
+<input type="text" class="term-field" name="term-{{index}}" id="term-{{index}}" placeholder="{{formula}}" value="{{formula}}"/>
+<div class="term-controls button-row">
+  <div class="button-stack">
+    <button class="spellburn flat-button" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierAddBonus'}}</button>
+    <label>{{localize 'DCC.AbilityStrShort'}}</label>
+    <button class="spellburn flat-button" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierSubBonus'}}</button>
+  </div>
+  <div class="button-stack">
+    <button class="spellburn flat-button" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierAddBonus'}}</button>
+    <label>{{localize 'DCC.AbilityAglShort'}}</label>
+    <button class="spellburn flat-button" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierSubBonus'}}</button>
+  </div>
+  <div class="button-stack">
+    <button class="spellburn flat-button" data-term="{{index}}" data-mod="+1">{{localize 'DCC.RollModifierAddBonus'}}</button>
+    <label>{{localize 'DCC.AbilityStaShort'}}</label>
+    <button class="spellburn flat-button" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierSubBonus'}}</button>
+  </div>
 </div>
