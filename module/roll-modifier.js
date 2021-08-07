@@ -67,9 +67,13 @@ class RollModifierDialog extends FormApplication {
     super.activateListeners(html)
 
     html.find('button.cancel').click(this._onCancel.bind(this))
+
     html.find('button.dice-chain').click(this._modifyDie.bind(this))
     html.find('button.bonus').click(this._modifyBonus.bind(this))
+    html.find('button.spellburn').click(this._modifySpellburn.bind(this))
+
     html.find('button.reset').click(this._resetTerm.bind(this))
+
     html.find('input.checkbox').change(this._checkboxChange.bind(this))
   }
 
@@ -130,6 +134,24 @@ class RollModifierDialog extends FormApplication {
    * @private
    */
   async _modifyBonus (event) {
+    event.preventDefault()
+    const index = event.currentTarget.dataset.term
+    const mod = event.currentTarget.dataset.mod
+    const formField = this.element.find('#term-' + index)
+    let termFormula = (parseInt(formField.val()) + parseInt(mod)).toString()
+    if (termFormula[0] !== '-') {
+      // Always add a sign
+      termFormula = '+' + termFormula
+    }
+    formField.val(termFormula)
+  }
+
+  /**
+   * Modify a spellburn term
+   * @param event {Event}  The originating click event
+   * @private
+   */
+  async _modifySpellburn (event) {
     event.preventDefault()
     const index = event.currentTarget.dataset.term
     const mod = event.currentTarget.dataset.mod
