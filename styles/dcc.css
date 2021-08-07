@@ -1443,6 +1443,9 @@ form.dcc-roll-modifier .formula-row {
 form.dcc-roll-modifier .formula-row .term-label {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
 }
+form.dcc-roll-modifier .formula-row .term-field {
+  text-align: right;
+}
 form.dcc-roll-modifier .formula-row .term-controls {
   margin-top: 8px;
 }
@@ -1450,6 +1453,7 @@ form.dcc-roll-modifier .button-row {
   display: flex;
   flex-direction: row;
   flex: 1;
+  justify-content: space-between;
 }
 form.dcc-roll-modifier .button-row button {
   flex: 1;
@@ -1467,8 +1471,15 @@ form.dcc-roll-modifier button.flat-button {
   border: 2px groove #c9c7b8;
   margin: 0 5px 0 0;
 }
-form.dcc-roll-modifier button.flat-button :last-child {
+form.dcc-roll-modifier button.flat-button:last-child {
   margin-right: 0;
+}
+form.dcc-roll-modifier label.checkbox-label {
+  line-height: 26px;
+  padding-left: 8px;
+}
+form.dcc-roll-modifier input.checkbox {
+  text-align: right;
 }
 
 /*# sourceMappingURL=dcc.css.map */
