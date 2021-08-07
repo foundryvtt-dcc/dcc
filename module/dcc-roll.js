@@ -36,11 +36,7 @@ class DCCRoll {
       }
     }
 
-    let roll = new Roll(rollExpression, mergeObject(modifiers, rollData))
-    if (showModifierDialog) {
-      roll = await game.dcc.showRollModifier(roll, options)
-    }
-    return roll
+    return await DCCRoll.createRoll(rollExpression, mergeObject(modifiers, rollData), options)
   }
 
   /**
