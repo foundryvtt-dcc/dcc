@@ -355,7 +355,6 @@ class DCCActor extends Actor {
     }
     // Add the option of spellburn and the armor check penalty to the roll modifiers
     options.extraTerms = Object.assign({}, options.extraModifiers, {
-      /*
       spellburn: {
         type: 'Spellburn',
         label: game.i18n.localize('DCC.RollModifierSpellburnTerm'),
@@ -366,7 +365,6 @@ class DCCActor extends Actor {
         sta: this.data.data.abilities.sta
         //callback: 
       },
-      */
       checkPenalty: {
         type: 'CheckPenalty',
         label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
