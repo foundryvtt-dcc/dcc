@@ -11,13 +11,12 @@ class RollModifierDialog extends FormApplication {
     this._resolve = resolve
     this._reject = reject
     Object.assign(this.options, options)
+    this._terms = this._extractTerms(this.roll)
   }
 
   static get defaultOptions () {
     const options = super.defaultOptions
     options.id = `dcc-roll-modifier-${RollModifierDialog.instanceId++}`
-    options.width = 600
-    options.height = 250
     options.template = CONFIG.DCC.templates.rollModifierDialog
     return options
   }
@@ -38,6 +37,14 @@ class RollModifierDialog extends FormApplication {
     return this._roll
   }
 
+  /*
+   * The original terms of the expression being edited
+   * @type {Array}
+   */
+  get terms () {
+    return this._terms
+  }
+
   /* -------------------------------------------- */
 
   /**
@@ -49,7 +56,7 @@ class RollModifierDialog extends FormApplication {
     data.user = game.user
     data.roll = this.roll
     data.options = this.options
-    data.terms = this._extractTerms(this.roll)
+    data.terms = this._terms
     return data
   }
 
@@ -62,6 +69,7 @@ class RollModifierDialog extends FormApplication {
     html.find('button.cancel').click(this._onCancel.bind(this))
     html.find('button.dice-chain').click(this._modifyDie.bind(this))
     html.find('button.bonus').click(this._modifyBonus.bind(this))
+    html.find('button.reset').click(this._resetTerm.bind(this))
   }
 
   /**
@@ -131,6 +139,18 @@ class RollModifierDialog extends FormApplication {
       termFormula = '+' + termFormula
     }
     formField.val(termFormula)
+  }
+
+  /**
+   * Reset a term
+   * @param event {Event}  The originating click event
+   * @private
+   */
+  async _resetTerm (event) {
+    event.preventDefault()
+    const index = event.currentTarget.dataset.term
+    const formField = this.element.find('#term-' + index)
+    formField.val(this.terms[index].formula)
   }
 
   /** @override */

@@ -1430,29 +1430,45 @@ form.dcc-roll-modifier {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-width: 400px;
 }
 form.dcc-roll-modifier .formula-row {
-  display: flex;
-  flex-direction: row;
-  flex: 0 0 50px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-column-gap: 5px;
+  grid-row-gap: 0px;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-rows: auto auto minmax(60px, auto);
 }
-form.dcc-roll-modifier .formula-row .formula-term {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+form.dcc-roll-modifier .formula-row .term-label {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+}
+form.dcc-roll-modifier .formula-row .term-controls {
+  margin-top: 8px;
 }
 form.dcc-roll-modifier .button-row {
   display: flex;
   flex-direction: row;
-  flex: 0 0 50px;
-}
-form.dcc-roll-modifier .button-row .button {
   flex: 1;
 }
-form.dcc-roll-modifier .button-row .button-stack {
+form.dcc-roll-modifier .button-row button {
+  flex: 1;
+}
+form.dcc-roll-modifier .button-stack {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+form.dcc-roll-modifier .dialog-buttons {
+  margin-top: 8px;
+}
+form.dcc-roll-modifier button.flat-button {
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px groove #c9c7b8;
+  margin: 0 5px 0 0;
+}
+form.dcc-roll-modifier button.flat-button :last-child {
+  margin-right: 0;
 }
 
 /*# sourceMappingURL=dcc.css.map */
