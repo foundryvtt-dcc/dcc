@@ -129,6 +129,42 @@ class DCCActor extends Actor {
     return defaultConfig
   }
 
+  /** @override */
+  getRollData () {
+    const data = super.getRollData()
+
+    const customData = mergeObject(
+      data,
+      {
+        str: data.abilities.str.mod,
+        agi: data.abilities.agl.mod,
+        agl: data.abilities.agl.mod,
+        sta: data.abilities.sta.mod,
+        per: data.abilities.per.mod,
+        int: data.abilities.int.mod,
+        lck: data.abilities.lck.mod,
+        ref: data.saves.ref.value,
+        frt: data.saves.frt.value,
+        wil: data.saves.wil.value,
+        ac: data.attributes.ac.value,
+        check: data.attributes.ac.checkPenalty,
+        speed: data.attributes.speed.value,
+        hp: data.attributes.hp.value,
+        hp: data.attributes.hp.max,
+        level: data.details.level.value,
+      }
+    )
+
+    // Player only data
+    if (this.data.type == 'Player') {
+      // Get the relevant attack bonus (direct or rolled)
+      customData.ab = data.config.rollAttackBonus ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
+      customData.xp = data.details.xp.value || 0
+    }
+
+    return customData
+  }
+
   /**
    * Roll an Ability Check
    * @param {String} abilityId    The ability ID (e.g. "str")
@@ -175,7 +211,11 @@ class DCCActor extends Actor {
     // Setup the roll
     const die = this.data.data.attributes.init.die || '1d20'
     const init = this.data.data.attributes.init.value
-    const roll = await game.dcc.DCCRoll.createRoll('@die+@init', { die, init }, options)
+    const roll = await game.dcc.DCCRoll.createRoll(
+      '@die+@init',
+      Object.assign({ die, init }, this.getRollData()),
+      options
+    )
 
     // evaluate roll, otherwise roll.total is undefined
     await roll.evaluate({ async: true })
@@ -213,10 +253,18 @@ class DCCActor extends Actor {
       const die = this.data.data.attributes.hitDice.value || '1d4'
       const sta = this.data.data.abilities.sta || {}
       sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : 0
-      roll = await game.dcc.DCCRoll.createRoll('@die+@mod', { die, mod: sta.mod }, options)
+      roll = await game.dcc.DCCRoll.createRoll(
+        '@die+@mod',
+        Object.assign({ die, mod: sta.mod }, this,getRollData()),
+        options
+      )
     } else {
       const die = this.data.data.attributes.hitDice.value || '1d4'
-      roll = await game.dcc.DCCRoll.createRoll('@die', { die }, options)
+      roll = await game.dcc.DCCRoll.createRoll(
+        '@die',
+        Object.assign({ die }, this,getRollData()),
+        options
+      )
     }
 
     // Convert the roll to a chat message
@@ -260,6 +308,8 @@ class DCCActor extends Actor {
         default: false
       }
     })
+    // Pass the actor through for access to rollData
+    options.actor = this
 
     let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
     let skillItem = null
@@ -336,7 +386,11 @@ class DCCActor extends Actor {
    * Roll the Luck Die
    */
   async rollLuckDie (options) {
-    const roll = await game.dcc.DCCRoll.createRoll(this.data.data.class.luckDie, {}, options)
+    const roll = await game.dcc.DCCRoll.createRoll(
+      this.data.data.class.luckDie,
+      this.getRollData(),
+      options
+    )
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -374,6 +428,8 @@ class DCCActor extends Actor {
         default: false
       }
     })
+    // Pass the actor through for access to rollData
+    options.actor = this
 
     // If a spell name is provided attempt to look up an item with that name for the roll
     if (options.spell) {
@@ -434,7 +490,11 @@ class DCCActor extends Actor {
     const attackBonusExpression = this.data.data.details.attackBonus || '0'
 
     if (attackBonusExpression) {
-      const abRoll = await game.dcc.DCCRoll.createRoll(attackBonusExpression, { critical: 3 }, options)
+      const abRoll = await game.dcc.DCCRoll.createRoll(
+        attackBonusExpression,
+        Object.assign({ critical: 3 }, this.getRollData()),
+        options
+      )
 
       // Store the result for use in attack and damage rolls
       const lastRoll = this.data.data.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
@@ -615,12 +675,6 @@ class DCCActor extends Actor {
     // Determine the formula
     const formula = `${weapon.data.data.actionDie} + ${toHit}`
 
-    /* Determine attack bonus */
-    let attackBonus = 0
-    if (config.rollAttackBonus) {
-      attackBonus = this.data.data.details.lastRolledAttackBonus || 0
-    }
-
     /* Determine crit range */
     const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
 
@@ -633,7 +687,11 @@ class DCCActor extends Actor {
     }
 
     /* Roll the Attack */
-    const attackRoll = await game.dcc.DCCRoll.createRoll(formula, { ab: attackBonus, critical: critRange }, options)
+    const attackRoll = await game.dcc.DCCRoll.createRoll(
+      formula,
+      Object.assign({ critical: critRange }, this.getRollData()),
+      options
+    )
     await attackRoll.evaluate({ async: true })
 
     const d20RollResult = attackRoll.dice[0].total
@@ -673,12 +731,6 @@ class DCCActor extends Actor {
       formula = weapon.data.data.backstabDamage || weapon.data.data.damage
     }
 
-    /* Determine attack bonus */
-    let attackBonus = 0
-    if (config.rollAttackBonus) {
-      attackBonus = this.data.data.details.lastRolledAttackBonus || 0
-    }
-
     /* If we don't have a valid formula, bail out here */
     if (Roll.validate !== undefined && !Roll.validate(formula)) {
       return {
@@ -687,7 +739,11 @@ class DCCActor extends Actor {
       }
     }
     /* Roll the damage */
-    const damageRoll = await game.dcc.DCCRoll.createRoll(formula, { ab: attackBonus }, options)
+    const damageRoll = await game.dcc.DCCRoll.createRoll(
+      formula,
+      this.getRollData(),
+      options
+    )
     await damageRoll.evaluate({ async: true })
 
     return {
@@ -704,7 +760,11 @@ class DCCActor extends Actor {
    */
   async rollCritical (options = {}) {
     // Roll object for the crit die
-    let roll = await game.dcc.DCCRoll.createRoll(`${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`, {}, options)
+    let roll = await game.dcc.DCCRoll.createRoll(
+      `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`,
+      this.getRollData(),
+      options
+    )
 
     // Lookup the crit table if available
     let critResult = null
