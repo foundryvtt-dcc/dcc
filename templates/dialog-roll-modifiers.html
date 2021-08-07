@@ -1,23 +1,15 @@
 <form autocomplete="off" class="dcc-roll-modifier">
   <div class="formula-row">
     {{#each terms}}
-    <div class="formula-term">
-      <label for="formula">{{label}}</label>
-      <input type="text" class="term-field" name="term-{{index}}" id="term-{{index}}" placeholder="{{formula}}" value="{{formula}}"/>
-    </div>
-    {{/each}}
-  </div>
-  <div class="button-row">
-    {{#each terms}}
       {{> (lookup . 'partial') }}
     {{/each}}
   </div>
-  <footer class="button-row">
-    <button type="submit" class="roll">
-      <i class="fas fa-dice-d20"></i>{{localize "DCC.RollModifierRoll"}}
+  <footer class="button-row dialog-buttons">
+    <button type="submit" class="roll flat-button">
+      <i class="fas fa-dice-d20"></i>&nbsp;{{localize "DCC.RollModifierRoll"}}
     </button>
-    <button type="submit" class="cancel">
-      <i class="fas fa-times"></i>{{localize "DCC.RollModifierCancel"}}
+    <button type="submit" class="cancel flat-button">
+      <i class="fas fa-times"></i>&nbsp;{{localize "DCC.RollModifierCancel"}}
     </button>
   </footer>
 </form>
