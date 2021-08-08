@@ -208,6 +208,25 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   flex: 0 0 100px;
 }
 
+.dcc .attack-bonus-container.skills-container {
+  font-size: 1.2rem;
+  justify-content: left;
+  margin-top: 12px;
+
+  label.attack-bonus {
+    margin-left: 10px;
+    text-align: left;
+
+    .attack-bonus-button {
+      background-image: url('../../../icons/svg/d20-black.svg');
+      background-repeat: no-repeat;
+      background-size: 22px 22px;
+      width: 30px;
+      display: inline-block;
+    }
+  }
+}
+
 /* ----------------------------------------- */
 /*  Ability Scores                           */
 /* ----------------------------------------- */
@@ -1105,6 +1124,10 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
   > div.split-60-40 {
     grid-template-columns: 60% 40%;
+  }
+
+  > div.split-40-60 {
+    grid-template-columns: 40% 60%;
   }
 
   > div.nosplit {

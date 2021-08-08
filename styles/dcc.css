@@ -274,6 +274,23 @@
   flex: 0 0 100px;
 }
 
+.dcc .attack-bonus-container.skills-container {
+  font-size: 1.2rem;
+  justify-content: left;
+  margin-top: 12px;
+}
+.dcc .attack-bonus-container.skills-container label.attack-bonus {
+  margin-left: 10px;
+  text-align: left;
+}
+.dcc .attack-bonus-container.skills-container label.attack-bonus .attack-bonus-button {
+  background-image: url("../../../icons/svg/d20-black.svg");
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  width: 30px;
+  display: inline-block;
+}
+
 /* ----------------------------------------- */
 /*  Ability Scores                           */
 /* ----------------------------------------- */
@@ -1117,6 +1134,9 @@
 }
 .dcc .skills-container > div.split-60-40 {
   grid-template-columns: 60% 40%;
+}
+.dcc .skills-container > div.split-40-60 {
+  grid-template-columns: 40% 60%;
 }
 .dcc .skills-container > div.nosplit {
   grid-template-columns: 100%;

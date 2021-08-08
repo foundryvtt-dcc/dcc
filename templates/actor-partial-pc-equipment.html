@@ -3,11 +3,12 @@
   <div class="equipment-container">
     {{!-- Deed Roll --}}
     {{#if data.config.rollAttackBonus}}
-    <div class="skills-container">
-      <div class="flexrow wide">
-        <label class="rollable attack-bonus" for="dummyAttackBonus">{{localize "DCC.DeedRoll"}}</label>
-        <input type="text" id="dummyAttackBonus"
-               value="{{data.details.lastRolledAttackBonus}}" disabled/>
+    <div class="attack-bonus-container skills-container">
+      <div class="split-50-50">
+        <label class="attack-bonus rollable" for="dummyAttackBonus"><div class="attack-bonus-button">&nbsp;</div>{{localize "DCC.DeedRoll"}}</label>
+        <input type="text" id="data.details.lastRolledAttackBonus"
+               name="data.details.lastRolledAttackBonus"
+               value="{{data.details.lastRolledAttackBonus}}"/>
       </div>
     </div>
     {{/if}}
