@@ -763,33 +763,45 @@ class DCCActor extends Actor {
     const config = this._getConfig()
 
     /* Grab the To Hit modifier */
-    let toHit = weapon.data.data.toHit
-
-    /* Determine backstab bonus if used */
-    if (options.backstab) {
-      toHit = toHit + ' + ' + parseInt(this.data.data.class.backstab)
-    }
-
-    // Determine the formula
-    const formula = `${weapon.data.data.actionDie} + ${toHit}`
+    const toHit = weapon.data.data.toHit
 
     /* Determine crit range */
+    const die = weapon.data.data.actionDie
     const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
 
     /* If we don't have a valid formula, bail out here */
-    if (!await Roll.validate(formula)) {
+    if (!await Roll.validate(toHit)) {
       return {
         rolled: false,
         formula: weapon.data.data.toHit
       }
     }
 
+    // Collate terms for the roll
+    const terms = [
+      {
+        type: 'Die',
+        label: game.i18n.localize('DCC.ActionDie'),
+        formula: die
+      },
+      {
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.ToHit'),
+        formula: toHit
+      }
+    ]
+
+    // Add backstab bonus if required
+    if (options.backstab) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.Backstab'),
+        formula: parseInt(this.data.data.class.backstab)
+      })
+    }
+
     /* Roll the Attack */
-    const attackRoll = await game.dcc.DCCRoll.createRoll(
-      formula,
-      Object.assign({ critical: critRange }, this.getRollData()),
-      options
-    )
+    const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), options)
     await attackRoll.evaluate({ async: true })
 
     const d20RollResult = attackRoll.dice[0].total
@@ -861,7 +873,7 @@ class DCCActor extends Actor {
     let roll = await game.dcc.DCCRoll.createRoll(
       `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`,
       this.getRollData(),
-      options
+      {}  // Ignore options for crits
     )
 
     // Lookup the crit table if available
@@ -922,7 +934,11 @@ class DCCActor extends Actor {
     }
 
     // Roll object for the fumble die
-    let roll = await game.dcc.DCCRoll.createRoll(`${fumbleDie} - ${this.data.data.abilities.lck.mod}`, {}, options)
+    let roll = await game.dcc.DCCRoll.createRoll(
+      `${fumbleDie} - ${this.data.data.abilities.lck.mod}`,
+      this.getRollData(),
+      {}  // Ignore options for crits
+    )
 
     // Lookup the fumble table if available
     let fumbleResult = null
