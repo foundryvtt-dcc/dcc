@@ -174,27 +174,59 @@ class DCCActor extends Actor {
     const ability = this.data.data.abilities[abilityId]
     ability.mod = CONFIG.DCC.abilities.modifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
+    const abilityLabel = game.i18n.localize(ability.label)
+    const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
+    options.title = flavor
 
     let roll
 
     // Allow requesting roll under (for Luck Checks)
     if (options.rollUnder) {
-      roll = await game.dcc.DCCRoll.createRoll('1d20', {}, options)
+      const terms = [
+        {
+          type: 'Die',
+          formula: '1d20'
+        }
+      ]
+
+      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
       // Apply custom roll options
       await roll.evaluate({ async: true })
       roll.dice[0].options.dcc = {
-        rollUnder: true
+        rollUnder: true,
+        lowerThreshold: this.data.data.abilities.lck.value,
+        upperThreshold: this.data.data.abilities.lck.value + 1
       }
     } else {
       const die = this.data.data.attributes.actionDice.value
-      roll = await game.dcc.DCCRoll.createRoll('@die+@abilMod', { die, abilMod: ability.mod, critical: 20 }, options)
+
+      // Collate terms for the roll
+      const terms = [
+        {
+          type: 'Die',
+          label: game.i18n.localize('DCC.ActionDie'),
+          formula: die
+        },
+        {
+          type: 'Modifier',
+          label: abilityLabel,
+          formula: ability.mod
+        },
+        {
+          type: 'CheckPenalty',
+          formula: parseInt(this.data.data.attributes.ac.checkPenalty || 0),
+          apply: false
+        }
+      ]
+
+      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
     }
 
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: `${game.i18n.localize(ability.label)} ${game.i18n.localize('DCC.Check')}`
+      flavor
     })
   }
 
