@@ -243,6 +243,7 @@ class DCCActor extends Actor {
     // Setup the roll
     const die = this.data.data.attributes.init.die || '1d20'
     const init = this.data.data.attributes.init.value
+    options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
 
     // Collate terms for the roll
     const terms = [
@@ -290,6 +291,7 @@ class DCCActor extends Actor {
    */
   async rollHitDice (options = {}) {
     const die = this.data.data.attributes.hitDice.value || '1d4'
+    options.title = game.i18n.localize('DCC.RollModifierTitleHitDice')
 
     let modifier = '+0'
     let modifierLabel = null
@@ -330,12 +332,29 @@ class DCCActor extends Actor {
     const save = this.data.data.saves[saveId]
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
-    const roll = await game.dcc.DCCRoll.createRoll('@die+@saveMod', { die, saveMod: save.value }, options)
+    const modifierLabel = game.i18n.localize(save.label)
+    const flavor = `${modifierLabel} ${game.i18n.localize('DCC.Save')}`
+    options.title = flavor
+
+    // Collate terms for the roll
+    const terms = [
+      {
+        type: 'Die',
+        formula: die
+      },
+      {
+        type: 'Modifier',
+        label: modifierLabel,
+        formula: save.value
+      }
+    ]
+
+    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: `${game.i18n.localize(save.label)} ${game.i18n.localize('DCC.Save')}`
+      flavor
     })
   }
 
