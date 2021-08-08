@@ -243,11 +243,21 @@ class DCCActor extends Actor {
     // Setup the roll
     const die = this.data.data.attributes.init.die || '1d20'
     const init = this.data.data.attributes.init.value
-    const roll = await game.dcc.DCCRoll.createRoll(
-      '@die+@init',
-      Object.assign({ die, init }, this.getRollData()),
-      options
-    )
+
+    // Collate terms for the roll
+    const terms = [
+      {
+        type: 'Die',
+        formula: die
+      },
+      {
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.Initiative'),
+        formula: init
+      }
+    ]
+
+    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     // evaluate roll, otherwise roll.total is undefined
     await roll.evaluate({ async: true })
