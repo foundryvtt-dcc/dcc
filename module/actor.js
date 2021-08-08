@@ -452,7 +452,7 @@ class DCCActor extends Actor {
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
     const die = this.data.data.attributes.actionDice.value
-    const bonus = parseInt(this.data.data.class.spellCheck || 0)
+    const bonus = this.data.data.class.spellCheck || '+0'
     const checkPenalty = parseInt(this.data.data.attributes.ac.checkPenalty || 0)
 
     // Collate modifiers for the roll

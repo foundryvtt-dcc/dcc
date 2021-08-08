@@ -26,9 +26,9 @@
               <div class="flex2">
                 <label class="resource-label" for="data.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
                   <input type="text" name="data.spellCheck.value" class="flex1"
-                         value="{{numberFormat data.spellCheck.value decimals=0 sign=true}}"
+                         value="{{data.spellCheck.value}}"
                          {{#if data.config.inheritSpellCheck}}disabled{{/if}}
-                         placeholder="+0" data-dtype="Number"/>
+                         placeholder="+0" data-dtype="String"/>
               </div>
               <div class="flex2">
                 <label class="resource-label" for="data.spellCheck.penalty">{{localize "DCC.CheckPenalty"}}</label>
