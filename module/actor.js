@@ -440,7 +440,8 @@ class DCCActor extends Actor {
     const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const checkPenalty = parseInt(this.data.data.attributes.ac.checkPenalty || 0)
-    const applyCheckPenalty = true
+    const isIdolMagic = this.data.data.details.sheetClass === 'Cleric'
+    const applyCheckPenalty = !isIdolMagic
     options.title = game.i18n.localize('DCC.SpellCheck')
 
     // Collate terms for the roll
@@ -459,15 +460,20 @@ class DCCActor extends Actor {
         type: 'CheckPenalty',
         formula: checkPenalty,
         apply: applyCheckPenalty
-      },
-      {
+      }
+    ]
+
+    // If we're a non-cleric show the spellburn UI
+    if (!isIdolMagic) {
+      terms.push({
         type: 'Spellburn',
         formula: '+0',
         str: this.data.data.abilities.str,
         agl: this.data.data.abilities.agl,
         sta: this.data.data.abilities.sta
-      }
-    ]
+      })
+    }
+
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     if (roll.dice.length > 0) {
