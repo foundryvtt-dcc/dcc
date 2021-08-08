@@ -1115,6 +1115,9 @@
 .dcc .skills-container > div.split-50-12-12 {
   grid-template-columns: 50% 12% 12%;
 }
+.dcc .skills-container > div.split-60-40 {
+  grid-template-columns: 60% 40%;
+}
 .dcc .skills-container > div.nosplit {
   grid-template-columns: 100%;
 }
@@ -1463,6 +1466,9 @@ form.dcc-roll-modifier .button-stack {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+form.dcc-roll-modifier .button-stack button.flat-button {
+  margin: 0;
 }
 form.dcc-roll-modifier .dialog-buttons {
   margin-top: 8px;
