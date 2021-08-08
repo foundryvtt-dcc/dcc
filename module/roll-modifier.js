@@ -230,7 +230,7 @@ class RollModifierDialog extends FormApplication {
     } else {
       // Otherwise extract data straight from the terms array
       for (const term of this.terms) {
-        if (index > 0) {
+        if (term.index > 0) {
           formula += '+'
         }
         formula += term.formula

@@ -289,25 +289,31 @@ class DCCActor extends Actor {
    * Roll Hit Dice
    */
   async rollHitDice (options = {}) {
-    let roll
+    const die = this.data.data.attributes.hitDice.value || '1d4'
 
+    let modifier = '+0'
+    let modifierLabel = null
+    // Players have a stamina modifier they can add
     if (this.data.type === 'Player') {
-      const die = this.data.data.attributes.hitDice.value || '1d4'
       const sta = this.data.data.abilities.sta || {}
-      sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : 0
-      roll = await game.dcc.DCCRoll.createRoll(
-        '@die+@mod',
-        Object.assign({ die, mod: sta.mod }, this,getRollData()),
-        options
-      )
-    } else {
-      const die = this.data.data.attributes.hitDice.value || '1d4'
-      roll = await game.dcc.DCCRoll.createRoll(
-        '@die',
-        Object.assign({ die }, this,getRollData()),
-        options
-      )
+      modifier = sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : '+0'
+      modifierLabel = game.i18n.localize('DCC.AbilitySta')
     }
+
+    // Collate terms for the roll
+    const terms = [
+      {
+        type: 'Die',
+        formula: die
+      },
+      {
+        type: 'Modifier',
+        label: modifierLabel,
+        formula: modifier
+      }
+    ]
+
+    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     // Convert the roll to a chat message
     roll.toMessage({
