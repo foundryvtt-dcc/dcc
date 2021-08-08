@@ -100,7 +100,7 @@ function ConstructDCCTerm (type, data = {}, options = {}) {
   if (type in DCCTerms) {
     // Use foundry's Roll class to apply any substitutions
     if (options.formula) {
-      const roll = new Roll(options.formula, data)
+      const roll = new Roll(options.formula.toString(), data)
       options.formula = roll.formula
     }
 
