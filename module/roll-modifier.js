@@ -2,7 +2,7 @@
 
 let index = 0
 
-function _cleanFormula (formula) {
+function _cleanFormula (formula, data) {
   return formula.toString().replace(/\s+/g, '').replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-')
 }
 
@@ -96,8 +96,15 @@ const DCCTerms = {
  * @params options {Object}  Parameters for the constructor
  * @return {Object}
  */
-function ConstructDCCTerm (type, options = {}) {
+function ConstructDCCTerm (type, data = {}, options = {}) {
   if (type in DCCTerms) {
+    // Use foundry's Roll class to apply any substitutions
+    if (options.formula) {
+      const roll = new Roll(options.formula, data)
+      options.formula = roll.formula
+    }
+
+    // Construct the term
     const term = DCCTerms[type].call(this, options)
 
     // Override label if provided
@@ -366,7 +373,7 @@ class RollModifierDialog extends FormApplication {
     // Constuct and number the terms
     let index = 0
     for (const constructor of termConstructors) {
-      const term = ConstructDCCTerm(constructor.type, constructor)
+      const term = ConstructDCCTerm(constructor.type, this.options.rollData, constructor)
       if (term) {
         term.index = index++
         terms.push(term)
