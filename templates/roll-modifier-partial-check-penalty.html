@@ -2,5 +2,5 @@
 <input type="text" class="term-field" name="term-{{index}}" id="term-{{index}}" placeholder="{{formula}}" value="{{formula}}"/>
 <div class="term-controls button-row">
   <label class="checkbox-label" for="formula">{{localize 'DCC.RollModifierCheckPenaltyApply'}}</label>
-  <input type="checkbox" class="checkbox check-penalty" data-term="{{index}}" data-penalty="{{checkPenalty}}" {{#if default}}checked{{/if}}/>
+  <input type="checkbox" class="checkbox check-penalty" data-term="{{index}}" data-penalty="{{checkPenalty}}" {{#if startsChecked}}checked{{/if}}/>
 </div>
