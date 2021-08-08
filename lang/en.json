@@ -470,7 +470,6 @@
   "DCC.RollModifierSubDie": "- <i class='fas fa-dice-d20'>&nbsp;</i>",
   "DCC.RollModifierFormula": "Formula",
   "DCC.RollModifierModifierTerm": "Modifier",
-  "DCC.RollModifierSpellCheckTerm": "Spell Check",
   "DCC.RollModifierSpellburnTerm": "Spellburn",
   "DCC.RollModifierTitleCasting": "Casting {spell}",
   "DCC.RollModifierReset": "Reset",
