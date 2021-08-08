@@ -178,11 +178,20 @@ class DCCItem extends Item {
         value: lookup
       })
     } else {
+      const terms = [
+        {
+          type: 'Die',
+          formula: '1d100'
+        },
+        {
+          type: 'Modifier',
+          label: game.i18n.localize('DCC.AbilityLck'),
+          formula: ability.mod * 10
+        }
+      ]
+
       // Otherwise roll for a mercurial effect
-      roll = await game.dcc.DCCRoll.createRoll('@die+@bonus', {
-        die: '1d100',
-        bonus: ability.mod * 10
-      }, options)
+      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
     }
 
     // Lookup the mercurial magic table if available
