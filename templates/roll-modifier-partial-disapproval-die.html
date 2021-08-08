@@ -1,0 +1,9 @@
+<label class="term-label" for="formula">{{label}}</label>
+<input type="text" class="term-field" name="term-{{index}}" id="term-{{index}}" placeholder="{{formula}}" value="{{formula}}"/>
+<div class="term-controls button-row">
+  <div class="button-stack">
+    <button class="dice-count flat-button" data-term="{{index}}" data-mod="+1">{{{localize 'DCC.RollModifierAddDie'}}}</button>
+    <button class="dice-count flat-button" data-term="{{index}}" data-mod="-1">{{{localize 'DCC.RollModifierSubDie'}}}</button>
+  </div>
+  <button class="reset flat-button" data-term="{{index}}">{{localize 'DCC.RollModifierReset'}}</button>
+</div>

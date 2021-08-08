@@ -297,20 +297,6 @@ class DCCActor extends Actor {
    * @param {Object}  options       Roll options
    */
   async rollSkillCheck (skillId, options = {}) {
-    // Add the option of a check penalty to the roll modifier dialog
-    options.extraTerms = Object.assign({}, options.extraModifiers, {
-      checkPenalty: {
-        type: 'CheckPenalty',
-        label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
-        partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
-        formula: '+0',
-        checkedFormula: this.data.data.attributes.ac.checkPenalty || 0,
-        default: false
-      }
-    })
-    // Pass the actor through for access to rollData
-    options.actor = this
-
     let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
     let skillItem = null
     if (!skill) {
@@ -337,17 +323,40 @@ class DCCActor extends Actor {
       abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
     }
 
-    // Collate modifiers for the roll
-    const modifiers = {}
+    // Title for the roll modifier dialog
+    options.title = game.i18n.localize(skill.label) || (game.i18n.localize('DCC.AbilityCheck') + abilityLabel)
+    // Collate terms for the roll
+    const terms = []
+
+    terms.push({
+      type: 'Die',
+      label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
+      formula: die
+    })
+
     if (skill.value) {
-      modifiers.bonus = skill.value
-    }
-    if (skill.useDeed && this.data.data.details.lastRolledAttackBonus) {
-      // Last deed roll
-      modifiers.ab = parseInt(this.data.data.details.lastRolledAttackBonus)
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize(skill.label) + abilityLabel,
+        formula: skill.value
+      })
     }
 
-    const roll = await game.dcc.DCCRoll.createSimpleRoll(die, modifiers, options)
+    if (skill.useDeed && this.data.data.details.lastRolledAttackBonus) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.DeedRoll'),
+        formula: parseInt(this.data.data.details.lastRolledAttackBonus)
+      })
+    }
+
+    terms.push({
+      type: 'CheckPenalty',
+      formula: parseInt(this.data.data.attributes.ac.checkPenalty || 0),
+      apply: false // Always optional for skill checks
+    })
+
+    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     // Handle special cleric spellchecks that are treated as skills
     if (skill.useDisapprovalRange) {
@@ -407,29 +416,6 @@ class DCCActor extends Actor {
     if (!options.abilityId) {
       options.abilityId = this.data.data.class.spellCheckAbility || ''
     }
-    // Add the option of spellburn and the armor check penalty to the roll modifiers
-    options.extraTerms = Object.assign({}, options.extraModifiers, {
-      spellburn: {
-        type: 'Spellburn',
-        label: game.i18n.localize('DCC.RollModifierSpellburnTerm'),
-        partial: 'systems/dcc/templates/roll-modifier-partial-spellburn.html',
-        formula: '+0',
-        str: this.data.data.abilities.str,
-        agl: this.data.data.abilities.agl,
-        sta: this.data.data.abilities.sta
-        //callback: 
-      },
-      checkPenalty: {
-        type: 'CheckPenalty',
-        label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
-        partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
-        formula: '+0',
-        checkedFormula: this.data.data.attributes.ac.checkPenalty || 0,
-        default: false
-      }
-    })
-    // Pass the actor through for access to rollData
-    options.actor = this
 
     // If a spell name is provided attempt to look up an item with that name for the roll
     if (options.spell) {
@@ -454,13 +440,34 @@ class DCCActor extends Actor {
     const die = this.data.data.attributes.actionDice.value
     const bonus = this.data.data.class.spellCheck || '+0'
     const checkPenalty = parseInt(this.data.data.attributes.ac.checkPenalty || 0)
+    const applyCheckPenalty = true
+    options.title = game.i18n.localize('DCC.SpellCheck')
 
-    // Collate modifiers for the roll
-    const modifiers = {
-      bonus,
-      checkPenalty
-    }
-    const roll = await game.dcc.DCCRoll.createSimpleRoll(die, modifiers, options)
+    // Collate terms for the roll
+    const terms = [
+      {
+        type: 'Die',
+        label: game.i18n.localize('DCC.ActionDie'),
+        formula: die
+      },
+      {
+        type: 'SpellCheck',
+        formula: bonus
+      },
+      {
+        type: 'CheckPenalty',
+        formula: checkPenalty,
+        apply: applyCheckPenalty
+      },
+      {
+        type: 'Spellburn',
+        formula: '+0',
+        str: this.data.data.abilities.str,
+        agl: this.data.data.abilities.agl,
+        sta: this.data.data.abilities.sta
+      }
+    ]
+    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -1016,7 +1023,17 @@ class DCCActor extends Actor {
    */
   async rollDisapproval (naturalRoll) {
     // Generate a formula, placeholder if the natural roll is not known
-    const formula = `${naturalRoll || 1}d4 - ${this.data.data.abilities.lck.mod}`
+    const terms = [
+      {
+        type: 'DisapprovalDie',
+        formula: `${naturalRoll || 1}d4`
+      },
+      {
+        type: 'Modifier',
+        label: 'Luck Modifier',
+        formula: -this.data.data.abilities.lck.mod
+      }
+    ]
     const options = {}
 
     // Force the Roll Modifier dialog on if we don't know the formula
@@ -1025,17 +1042,19 @@ class DCCActor extends Actor {
     }
 
     // If we know the formula just roll it
-    this._onRollDisapproval(formula, options)
+    this._onRollDisapproval(terms, options)
   }
 
   /**
    * Roll disapproval
-   * @param {String} formula  Disapproval roll formula
+   * @param {Array} terms  Disapproval roll terms
    * @private
    */
   async _onRollDisapproval (formula, options = {}) {
     try {
-      const roll = await game.dcc.DCCRoll.createRoll(formula, {}, options)
+      const roll = await game.dcc.DCCRoll.createRoll(formula, this.getRollData(), options)
+
+      if (!roll) { return }
 
       // Lookup the disapproval table if available
       let disapprovalTable = null
@@ -1064,7 +1083,9 @@ class DCCActor extends Actor {
         })
       }
     } catch (err) {
-      ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning', { formula }))
+      if (err) {
+        ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning', { formula }))
+      }
     }
   }
 }
