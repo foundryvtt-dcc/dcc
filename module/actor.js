@@ -580,11 +580,19 @@ class DCCActor extends Actor {
     const attackBonusExpression = this.data.data.details.attackBonus || '0'
 
     if (attackBonusExpression) {
-      const abRoll = await game.dcc.DCCRoll.createRoll(
-        attackBonusExpression,
-        Object.assign({ critical: 3 }, this.getRollData()),
-        options
-      )
+      const flavor = game.i18n.localize('DCC.DeedRoll')
+      options.title = flavor
+
+      // Collate terms for the roll
+      const terms = [
+        {
+          type: 'Die',
+          label: flavor,
+          formula: attackBonusExpression
+        }
+      ]
+
+      const abRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: 3 }, this.getRollData()), options)
 
       // Store the result for use in attack and damage rolls
       const lastRoll = this.data.data.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
@@ -603,7 +611,7 @@ class DCCActor extends Actor {
       // Convert the roll to a chat message
       abRoll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: game.i18n.localize('DCC.DeedRoll')
+        flavor
       })
     }
   }
