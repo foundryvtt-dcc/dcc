@@ -8,40 +8,6 @@ import * as RollModifier from './roll-modifier.js'
  */
 class DCCRoll {
   /**
-   * Build a simplified roll expression from a die and set of modifiers
-   * @param {String} die        Base die for the roll
-   * @param {Array} modifiers   An array of static modifiers
-   * @return {string}
-   */
-  static async createSimpleRoll (die, modifiers, options = {}) {
-    const isNumeric = /^([+-]?)(\d)+$/
-    const showModifierDialog = options.showModifierDialog || false
-    const rollData = options.actor ? options.actor.getRollData : {}
-
-    let rollExpression = die
-    for (const modifier in modifiers) {
-      const value = modifiers[modifier]
-      if (value) {
-        const match = String(value).match(isNumeric)
-        if (match === null) {
-          // Non-numeric - add it to the roll
-          rollExpression += `+@${modifier}`
-        } else if (match[1] === '-') {
-          // Explicitly a negative number, no need for an addition operator
-          rollExpression += String(value)
-        } else {
-          // Positive number - strip sign and add if non-zero
-          if (parseInt(value)) {
-            rollExpression += `+${parseInt(value)}`
-          }
-        }
-      }
-    }
-
-    return await DCCRoll.createRoll(rollExpression, mergeObject(modifiers, rollData), options)
-  }
-
-  /**
    * Create a roll with the same API as Roll's constructor
    * @param {String} formula  The string formula to parse
    * @param {Object} data     The data object against which to parse attributes within the formula

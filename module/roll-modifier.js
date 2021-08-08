@@ -49,17 +49,6 @@ function DCCModifierTerm (options) {
 }
 
 /**
- * Construct a DCC Spell Check term object
- * @params options {Object}
- * @return {Object}
- */
-function DCCSpellCheckTerm (options) {
-  return Object.assign(DCCModifierTerm(options), {
-    label: game.i18n.localize('DCC.RollModifierSpellCheckTerm'),
-  })
-}
-
-/**
  * Construct a DCC Check Penalty term object
  * @params options {Object}
  * @return {Object}
@@ -97,7 +86,6 @@ const DCCTerms = {
   Die:             DCCDieTerm,
   DisapprovalDie:  DCCDisapprovalDieTerm,
   Modifier:        DCCModifierTerm,
-  SpellCheck:      DCCSpellCheckTerm,
   CheckPenalty:    DCCCheckPenaltyTerm,
   Spellburn:       DCCSpellburnTerm,
 }
@@ -234,11 +222,17 @@ class RollModifierDialog extends FormApplication {
     if (this._state !== Application.RENDER_STATES.NONE) {
       // Once the form is constructed extract data from the form fields
       this.element.find('input.term-field').each((index, element) => {
+        if (index > 0) {
+          formula += '+'
+        }
         formula += element.value
       })
     } else {
       // Otherwise extract data straight from the terms array
       for (const term of this.terms) {
+        if (index > 0) {
+          formula += '+'
+        }
         formula += term.formula
       }
     }
@@ -413,14 +407,6 @@ class RollModifierDialog extends FormApplication {
       }
       termAccumulator = ''
     }
-    /*
-    var addCustomTerm = function (data) {
-      terms.push(Object.assign(data, {
-        index: index++
-      }))
-      termAccumulator = ''
-    }
-    */
     var accumulateTerm = function (term) {
       termAccumulator += term.formula.replace(/\s+/g, '')
     }
@@ -454,15 +440,6 @@ class RollModifierDialog extends FormApplication {
       termAccumulator = '+0'
       addModifierTerm()
     }
-
-    // Add any extra terms from the options
-    /*
-    if (this.options.extraTerms) {
-      for (const key in this.options.extraTerms) {
-        addCustomTerm(this.options.extraTerms[key])
-      }
-    }
-    */
 
     // Number the terms
     let index = 0

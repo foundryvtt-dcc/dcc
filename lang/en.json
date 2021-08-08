@@ -472,6 +472,7 @@
   "DCC.RollModifierModifierTerm": "Modifier",
   "DCC.RollModifierSpellCheckTerm": "Spell Check",
   "DCC.RollModifierSpellburnTerm": "Spellburn",
+  "DCC.RollModifierTitleCasting": "Casting {spell}",
   "DCC.RollModifierReset": "Reset",
   "DCC.RollModifierRoll": "Roll",
   "DCC.RollModifierSubBonus": "-",

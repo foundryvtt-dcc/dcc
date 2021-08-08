@@ -60,22 +60,53 @@ class DCCItem extends Item {
     const ability = actor.data.data.abilities[abilityId] || {}
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
+    options.title = game.i18n.format('DCC.RollModifierTitleCasting', { spell })
+    const die = this.data.data.spellCheck.die
+    const bonus = parseInt(this.data.data.spellCheck.value || 0)
 
-    // Pass the actor through for access to rollData
-    options.actor = actor
-
-    // Generate the spell check expression
-    const modifiers = {
-      bonus: parseInt(this.data.data.spellCheck.value || 0)
-    }
+    // Calculate check penalty if relevant
+    let checkPenalty
     if (this.data.data.config.inheritCheckPenalty) {
-      modifiers.checkPenalty = parseInt(actor.data.data.attributes.ac.checkPenalty || 0)
+      checkPenalty = parseInt(actor.data.data.attributes.ac.checkPenalty || 0)
     } else {
-      modifiers.checkPenalty = parseInt(this.data.data.spellCheck.penalty || 0)
+      checkPenalty = parseInt(this.data.data.spellCheck.penalty || 0)
+    }
+
+    // Determine the casting mode
+    const castingMode = this.data.data.config.castingMode || 'wizard'
+
+    // Collate terms for the roll
+    const terms = [
+      {
+        type: 'Die',
+        label: game.i18n.localize('DCC.ActionDie'),
+        formula: die
+      },
+      {
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.SpellCheck'),
+        formula: bonus
+      },
+      {
+        type: 'CheckPenalty',
+        formula: checkPenalty,
+        apply: castingMode === 'wizard' // Idol magic does not incur a checkPenalty
+      }
+    ]
+
+    // Clerics cannot spellburn
+    if (castingMode !== 'cleric') {
+      terms.push({
+        type: 'Spellburn',
+        formula: '+0',
+        str: actor.data.data.abilities.str,
+        agl: actor.data.data.abilities.agl,
+        sta: actor.data.data.abilities.sta
+      })
     }
 
     // Roll the spell check
-    const roll = await game.dcc.DCCRoll.createSimpleRoll(this.data.data.spellCheck.die, modifiers, options)
+    const roll = await game.dcc.DCCRoll.createRoll(terms, actor.getRollData(), options)
     await roll.evaluate({ async: true })
 
     if (roll.dice.length > 0) {
