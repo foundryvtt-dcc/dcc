@@ -1,5 +1,7 @@
 /* global Roll, dcc */
 
+import * as RollModifier from './roll-modifier.js'
+
 /**
  * DCC Roll
  * Dungeon Crawl Classics specific Roll helpers applying modifiers and custom behaviours cleanly
@@ -48,11 +50,14 @@ class DCCRoll {
    */
   static async createRoll (formula, data = {}, options = {}) {
     const showModifierDialog = options.showModifierDialog || false
+    if (!options.rollData) {
+      options.rollData = data
+    }
 
     if (showModifierDialog) {
-      return await game.dcc.showRollModifier(new Roll(formula, data), options)
+      return RollModifier.showRollModifier(formula, options)
     } else {
-      return new Roll(formula, data)
+      return RollModifier.createRollFromTerms(formula, options)
     }
   }
 
