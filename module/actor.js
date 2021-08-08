@@ -451,7 +451,8 @@ class DCCActor extends Actor {
         formula: die
       },
       {
-        type: 'SpellCheck',
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.SpellCheck'),
         formula: bonus
       },
       {
