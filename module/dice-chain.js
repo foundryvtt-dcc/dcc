@@ -61,7 +61,7 @@ class DiceChain {
    */
   static bumpDie (expression, modifier) {
     const diceChain = CONFIG.DCC.DICE_CHAIN
-    const regex = /(\d+)d(\d+)/;
+    const regex = /(\d+)d(\d+)/
     const match = expression.match(regex)
     if (match) {
       const dieRank = diceChain.indexOf(parseInt(match[2]))
@@ -81,7 +81,7 @@ class DiceChain {
    * @return {String}             New die term formula
    */
   static bumpDieCount (expression, modifier) {
-    const regex = /(\d+)d(\d+)/;
+    const regex = /(\d+)d(\d+)/
     const match = expression.match(regex)
     if (match) {
       const dieCount = parseInt(match[1]) + parseInt(modifier)

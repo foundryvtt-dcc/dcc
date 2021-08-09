@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, Dialog, mergeObject */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -150,13 +150,13 @@ class DCCActor extends Actor {
         check: data.attributes.ac.checkPenalty,
         speed: data.attributes.speed.value,
         hp: data.attributes.hp.value,
-        hp: data.attributes.hp.max,
-        level: data.details.level.value,
+        maxhp: data.attributes.hp.max,
+        level: data.details.level.value
       }
     )
 
     // Player only data
-    if (this.data.type == 'Player') {
+    if (this.data.type === 'Player') {
       // Get the relevant attack bonus (direct or rolled)
       customData.ab = data.config.rollAttackBonus ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
       customData.xp = data.details.xp.value || 0
@@ -757,8 +757,6 @@ class DCCActor extends Actor {
    * @return {Object}            Object representing the results of the attack roll
    */
   async rollToHit (weapon, options = {}) {
-    const config = this._getConfig()
-
     /* Grab the To Hit modifier */
     const toHit = weapon.data.data.toHit
 
@@ -835,8 +833,6 @@ class DCCActor extends Actor {
    * @return {Object}            Object representing the results of the attack roll
    */
   async rollDamage (weapon, options = {}) {
-    const config = this._getConfig()
-
     /* Grab the the formula */
     let formula = weapon.data.data.damage
 
@@ -894,7 +890,7 @@ class DCCActor extends Actor {
     let roll = await game.dcc.DCCRoll.createRoll(
       `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`,
       this.getRollData(),
-      {}  // Ignore options for crits
+      {} // Ignore options for crits
     )
 
     // Lookup the crit table if available
@@ -958,7 +954,7 @@ class DCCActor extends Actor {
     let roll = await game.dcc.DCCRoll.createRoll(
       `${fumbleDie} - ${this.data.data.abilities.lck.mod}`,
       this.getRollData(),
-      {}  // Ignore options for crits
+      {} // Ignore options for crits
     )
 
     // Lookup the fumble table if available

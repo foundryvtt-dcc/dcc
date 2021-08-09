@@ -574,7 +574,7 @@ class DCCActorSheet extends ActorSheet {
 
     Object.assign(options, {
       modClick,
-      rollUnder,
+      rollUnder
     })
 
     this.actor.rollAbilityCheck(ability, options)
