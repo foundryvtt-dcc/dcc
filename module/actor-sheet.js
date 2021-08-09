@@ -134,7 +134,7 @@ class DCCActorSheet extends ActorSheet {
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.data.quantity !== undefined && i.data.quantity <= 0) {
-        this.actor.deleteOwnedItem(i.id, {})
+        this.actor.deleteOwnedItem(i._id, {})
         continue
       }
 
