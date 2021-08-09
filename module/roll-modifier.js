@@ -12,12 +12,12 @@ function _cleanFormula (formula, data) {
  * @return {Object}
  */
 function DCCDieTerm (options) {
-  return {
+  return [{
     type: 'Die',
     label: game.i18n.localize('DCC.RollModifierDieTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-die.html',
     formula: _cleanFormula(options.formula)
-  }
+  }]
 }
 
 /**
@@ -26,12 +26,12 @@ function DCCDieTerm (options) {
  * @return {Object}
  */
 function DCCDisapprovalDieTerm (options) {
-  return {
+  return [{
     type: 'DisapprovalDie',
     label: game.i18n.localize('DCC.RollModifierDisapprovalDieTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-disapproval-die.html',
     formula: _cleanFormula(options.formula)
-  }
+  }]
 }
 
 /**
@@ -40,12 +40,12 @@ function DCCDisapprovalDieTerm (options) {
  * @return {Object}
  */
 function DCCModifierTerm (options) {
-  return {
+  return [{
     type: 'Modifier',
     label: game.i18n.localize('DCC.RollModifierModifierTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-modifiers.html',
     formula: _cleanFormula(options.formula)
-  }
+  }]
 }
 
 /**
@@ -54,14 +54,14 @@ function DCCModifierTerm (options) {
  * @return {Object}
  */
 function DCCCheckPenaltyTerm (options) {
-  return {
+  return [{
     type: 'CheckPenalty',
     label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
     formula: options.apply ? options.formula : '-0',
     checkedFormula: options.formula,
     startsChecked: options.apply
-  }
+  }]
 }
 
 /**
@@ -70,7 +70,7 @@ function DCCCheckPenaltyTerm (options) {
  * @return {Object}
  */
 function DCCSpellburnTerm (options) {
-  return {
+  return [{
     type: 'Spellburn',
     label: game.i18n.localize('DCC.RollModifierSpellburnTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-spellburn.html',
@@ -78,7 +78,54 @@ function DCCSpellburnTerm (options) {
     str: options.str,
     agl: options.agl,
     sta: options.sta
+  }]
+}
+
+/**
+ * Construct DCC term objects from a compound term
+ * @params options {Object}
+ * @return {Object}
+ */
+function DCCCompoundTerm (options) {
+  const dieExpression = /^-?\d+d\d+$/
+  const dieLabel = options.dieLabel || null
+  const modifierExpression = /^-?\d+$/
+  const modifierLabel = options.modifierLabel || null
+  const variableExpression = /@(\w+)/
+  const terms = []
+  // Clean formula, then stick some duplicate pluses back in so they can be used to split the formula neatly
+  const inputTerms = _cleanFormula(options.formula).replace(/-/g, '+-').replace(/^\+/, '').split('+')
+  const rawTerms = _cleanFormula(options.rawFormula).replace(/-/, '+-').replace(/^\+/, '').split('+')
+
+  // If the raw and input terms arrays don't match fall back to just using inputTerms
+  if (inputTerms.length !== rawTerms.length) {
+    rawTerms = inputTerms
   }
+
+  for (let index = 0; index < inputTerms.length; ++index) {
+    const inputTerm = inputTerms[index]
+    const rawTerm = rawTerms[index]
+    if (inputTerm.match(dieExpression)) {
+      for (const term of DCCDieTerm({ formula: inputTerm })) {
+        if (rawTerm.match(variableExpression)) {
+          term.label = rawTerm
+        } else if (dieLabel) {
+          term.label = dieLabel
+        }
+        terms.push(term)
+      }
+    } else if (inputTerm.match(modifierExpression)) {
+      for (const term of DCCModifierTerm({ formula: inputTerm })) {
+        if (rawTerm.match(variableExpression)) {
+          term.label = rawTerm
+        } else if (modifierLabel) {
+          term.label = modifierLabel
+        }
+        terms.push(term)
+      }
+    }
+  }
+  return terms
 }
 
 // Array of constructors for DCC term objects by type
@@ -88,6 +135,7 @@ const DCCTerms = {
   Modifier:        DCCModifierTerm,
   CheckPenalty:    DCCCheckPenaltyTerm,
   Spellburn:       DCCSpellburnTerm,
+  Compound:        DCCCompoundTerm
 }
 
 /**
@@ -100,20 +148,25 @@ function ConstructDCCTerm (type, data = {}, options = {}) {
   if (type in DCCTerms) {
     // Use foundry's Roll class to apply any substitutions
     if (options.formula) {
-      const roll = new Roll(options.formula.toString(), data)
+      options.rawFormula = options.formula.toString()
+      // Replace '-' with '+-' to avoid Roll performing arithmetic directly on substitutions
+      const roll = new Roll(options.rawFormula.replace(/-/g, '+-'), data)
       options.formula = roll.formula
     }
 
-    // Construct the term
-    const term = DCCTerms[type].call(this, options)
+    // Construct the term (or terms)
+    const terms = DCCTerms[type].call(this, options) || []
 
-    // Override label if provided
     if (options.label) {
-      term.label = options.label
+      for (const term of terms) {
+        // Override label if provided
+        term.label = options.label
+      }
     }
 
-    return term
+    return terms
   }
+  return []
 }
 
 class RollModifierDialog extends FormApplication {
@@ -373,12 +426,12 @@ class RollModifierDialog extends FormApplication {
     // Constuct and number the terms
     let index = 0
     for (const constructor of termConstructors) {
-      const term = ConstructDCCTerm(constructor.type, this.options.rollData, constructor)
-      if (term) {
-        term.index = index++
-        terms.push(term)
-      } else {
-        console.error('Failed to construct DCC Term from ', JSON.stringify(constructor))
+      const constructedTerms = ConstructDCCTerm(constructor.type, this.options.rollData, constructor)
+      for (const term of constructedTerms) {
+        if (term) {
+          term.index = index++
+          terms.push(term)
+        }
       }
     }
 
@@ -403,13 +456,13 @@ class RollModifierDialog extends FormApplication {
 
     // Helper functions
     var addDieTerm = function (term) {
-      terms.push(DCCDieTerm({formula: term.formula}))
+      Array.prototype.push.apply(terms, DCCDieTerm({formula: term.formula}))
       termAccumulator = ''
     }
     var addModifierTerm = function () {
       // Remove duplicate operator terms and other unexpected things
       if (termAccumulator.match(validNumber)) {
-        terms.push(DCCModifierTerm({formula: termAccumulator}))
+        Array.prototype.push.apply(terms, DCCModifierTerm({formula: termAccumulator}))
         anyModifierTerms = true
       }
       termAccumulator = ''

@@ -293,27 +293,24 @@ class DCCActor extends Actor {
     const die = this.data.data.attributes.hitDice.value || '1d4'
     options.title = game.i18n.localize('DCC.RollModifierTitleHitDice')
 
-    let modifier = '+0'
-    let modifierLabel = null
-    // Players have a stamina modifier they can add
-    if (this.data.type === 'Player') {
-      const sta = this.data.data.abilities.sta || {}
-      modifier = sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : '+0'
-      modifierLabel = game.i18n.localize('DCC.AbilitySta')
-    }
-
     // Collate terms for the roll
     const terms = [
       {
-        type: 'Die',
+        type: 'Compound',
         formula: die
-      },
-      {
-        type: 'Modifier',
-        label: modifierLabel,
-        formula: modifier
       }
     ]
+
+    // Players have a stamina modifier they can add
+    if (this.data.type === 'Player') {
+      const sta = this.data.data.abilities.sta || {}
+      const modifier = sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : '+0'
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.AbilitySta'),
+        formula: modifier
+      })
+    }
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
@@ -785,8 +782,9 @@ class DCCActor extends Actor {
         formula: die
       },
       {
-        type: 'Modifier',
-        label: game.i18n.localize('DCC.ToHit'),
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.DeedDie'),
+        modifierLabel: game.i18n.localize('DCC.ToHit'),
         formula: toHit
       }
     ]
@@ -801,7 +799,13 @@ class DCCActor extends Actor {
     }
 
     /* Roll the Attack */
-    const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), options)
+    const rollOptions = Object.assign(
+      {
+        title: game.i18n.localize('DCC.ToHit')
+      },
+      options
+    )
+    const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
     await attackRoll.evaluate({ async: true })
 
     const d20RollResult = attackRoll.dice[0].total
@@ -845,14 +849,31 @@ class DCCActor extends Actor {
     if (Roll.validate !== undefined && !Roll.validate(formula)) {
       return {
         rolled: false,
-        formula: weapon.data.data.damage
+        formula
       }
     }
+
+    /* Collate the terms */
+    const terms = [
+      {
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.DamageDie'),
+        modifierLabel: game.i18n.localize('DCC.DamageModifier'),
+        formula
+      }
+    ]
+
     /* Roll the damage */
-    const damageRoll = await game.dcc.DCCRoll.createRoll(
-      formula,
-      this.getRollData(),
+    const rollOptions = Object.assign(
+      {
+        title: game.i18n.localize('DCC.Damage')
+      },
       options
+    )
+    const damageRoll = await game.dcc.DCCRoll.createRoll(
+      terms,
+      this.getRollData(),
+      rollOptions
     )
     await damageRoll.evaluate({ async: true })
 
