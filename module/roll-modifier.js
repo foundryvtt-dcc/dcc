@@ -2,8 +2,26 @@
 
 let index = 0
 
-function _cleanFormula (formula, data) {
+/**
+ * Clean a formula by stripping any spaces and duplicate signs
+ * @param options {Object}
+ * @return {Object}
+ */
+function _cleanFormula (formula) {
   return formula.toString().replace(/\s+/g, '').replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-')
+}
+
+/**
+ * Prepend a formula with a sign if one is not already present
+ * @param options {Object}
+ * @return {Object}
+ */
+function _prependSign (formula) {
+  const hasSignExpression = /^[+-]\d+$/
+  if (!formula.match(hasSignExpression)) {
+    return '+' + formula
+  }
+  return formula
 }
 
 /**
@@ -44,7 +62,7 @@ function DCCModifierTerm (options) {
     type: 'Modifier',
     label: game.i18n.localize('DCC.RollModifierModifierTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-modifiers.html',
-    formula: _cleanFormula(options.formula)
+    formula: _prependSign(_cleanFormula(options.formula))
   }]
 }
 
@@ -58,8 +76,8 @@ function DCCCheckPenaltyTerm (options) {
     type: 'CheckPenalty',
     label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
-    formula: options.apply ? options.formula : '-0',
-    checkedFormula: options.formula,
+    formula: options.apply ? _prependSign(options.formula) : '-0',
+    checkedFormula: _prependSign(options.formula),
     startsChecked: options.apply
   }]
 }
@@ -74,7 +92,7 @@ function DCCSpellburnTerm (options) {
     type: 'Spellburn',
     label: game.i18n.localize('DCC.RollModifierSpellburnTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-spellburn.html',
-    formula: options.formula || '+0',
+    formula: _prependSign(options.formula) || '+0',
     str: options.str,
     agl: options.agl,
     sta: options.sta
@@ -157,9 +175,9 @@ function ConstructDCCTerm (type, data = {}, options = {}) {
     // Construct the term (or terms)
     const terms = DCCTerms[type].call(this, options) || []
 
+    // Override labels if provided
     if (options.label) {
       for (const term of terms) {
-        // Override label if provided
         term.label = options.label
       }
     }
