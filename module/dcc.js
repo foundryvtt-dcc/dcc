@@ -88,7 +88,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/roll-modifier-partial-disapproval-die.html',
     'systems/dcc/templates/roll-modifier-partial-modifiers.html',
     'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
-    'systems/dcc/templates/roll-modifier-partial-spellburn.html',
+    'systems/dcc/templates/roll-modifier-partial-spellburn.html'
   ]
   loadTemplates(templatePaths)
 

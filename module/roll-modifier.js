@@ -1,6 +1,4 @@
-/* global CONFIG, FormApplication, game */
-
-let index = 0
+/* global Application, CONFIG, Die, FormApplication, OperatorTerm, Roll, game */
 
 /**
  * Clean a formula by stripping any spaces and duplicate signs
@@ -113,7 +111,7 @@ function DCCCompoundTerm (options) {
   const terms = []
   // Clean formula, then stick some duplicate pluses back in so they can be used to split the formula neatly
   const inputTerms = _cleanFormula(options.formula).replace(/-/g, '+-').replace(/^\+/, '').split('+')
-  const rawTerms = _cleanFormula(options.rawFormula).replace(/-/, '+-').replace(/^\+/, '').split('+')
+  let rawTerms = _cleanFormula(options.rawFormula).replace(/-/, '+-').replace(/^\+/, '').split('+')
 
   // If the raw and input terms arrays don't match fall back to just using inputTerms
   if (inputTerms.length !== rawTerms.length) {
@@ -148,12 +146,12 @@ function DCCCompoundTerm (options) {
 
 // Array of constructors for DCC term objects by type
 const DCCTerms = {
-  Die:             DCCDieTerm,
-  DisapprovalDie:  DCCDisapprovalDieTerm,
-  Modifier:        DCCModifierTerm,
-  CheckPenalty:    DCCCheckPenaltyTerm,
-  Spellburn:       DCCSpellburnTerm,
-  Compound:        DCCCompoundTerm
+  Die: DCCDieTerm,
+  DisapprovalDie: DCCDisapprovalDieTerm,
+  Modifier: DCCModifierTerm,
+  CheckPenalty: DCCCheckPenaltyTerm,
+  Spellburn: DCCSpellburnTerm,
+  Compound: DCCCompoundTerm
 }
 
 /**
@@ -188,8 +186,6 @@ function ConstructDCCTerm (type, data = {}, options = {}) {
 }
 
 class RollModifierDialog extends FormApplication {
-  static instanceId = 0
-
   /**
    * Construct a Roll Modifier Dialog
    * @params resolve {Function}     Function to resolve the promise
@@ -214,7 +210,6 @@ class RollModifierDialog extends FormApplication {
   /** @override */
   static get defaultOptions () {
     const options = super.defaultOptions
-    options.id = `dcc-roll-modifier-${RollModifierDialog.instanceId++}`
     options.template = CONFIG.DCC.templates.rollModifierDialog
     return options
   }
@@ -435,12 +430,12 @@ class RollModifierDialog extends FormApplication {
 
   /**
    * Construct the terms from an array
-   * @param terms {Object}  
+   * @param terms {Object}
    * @private
    */
   _constructTermsFromArray (termConstructors) {
     const terms = []
-    
+
     // Constuct and number the terms
     let index = 0
     for (const constructor of termConstructors) {
@@ -465,7 +460,7 @@ class RollModifierDialog extends FormApplication {
   _constructTermsFromRoll (formula, data) {
     // Let Foundry turn a roll into terms for us
     const roll = new Roll(formula, data)
- 
+
     // State
     const terms = []
     const validNumber = /[+-]*\d+/
@@ -474,13 +469,13 @@ class RollModifierDialog extends FormApplication {
 
     // Helper functions
     var addDieTerm = function (term) {
-      Array.prototype.push.apply(terms, DCCDieTerm({formula: term.formula}))
+      Array.prototype.push.apply(terms, DCCDieTerm({ formula: term.formula }))
       termAccumulator = ''
     }
     var addModifierTerm = function () {
       // Remove duplicate operator terms and other unexpected things
       if (termAccumulator.match(validNumber)) {
-        Array.prototype.push.apply(terms, DCCModifierTerm({formula: termAccumulator}))
+        Array.prototype.push.apply(terms, DCCModifierTerm({ formula: termAccumulator }))
         anyModifierTerms = true
       }
       termAccumulator = ''
@@ -488,7 +483,7 @@ class RollModifierDialog extends FormApplication {
     var accumulateTerm = function (term) {
       termAccumulator += term.formula.replace(/\s+/g, '')
     }
-  
+
     // Extract terms from the Roll
     for (const term of roll.terms) {
       if (term instanceof Die) {

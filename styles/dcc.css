@@ -287,8 +287,8 @@
   background-image: url("./images/game-icons-net/d4-black.svg");
   background-repeat: no-repeat;
   background-size: 22px 22px;
-  width: 30px;
   display: inline-block;
+  width: 30px;
 }
 
 /* ----------------------------------------- */
@@ -1459,7 +1459,7 @@ form.dcc-roll-modifier .formula-row {
   display: grid;
   grid-auto-flow: column;
   grid-column-gap: 5px;
-  grid-row-gap: 0px;
+  grid-row-gap: 0;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   grid-template-rows: auto auto minmax(60px, auto);
 }
@@ -1474,8 +1474,8 @@ form.dcc-roll-modifier .formula-row .term-controls {
 }
 form.dcc-roll-modifier .button-row {
   display: flex;
-  flex-direction: row;
   flex: 1;
+  flex-direction: row;
   justify-content: space-between;
 }
 form.dcc-roll-modifier .button-row button {
@@ -1484,8 +1484,8 @@ form.dcc-roll-modifier .button-row button {
 form.dcc-roll-modifier .button-stack {
   align-items: center;
   display: flex;
-  flex-direction: column;
   flex: 1;
+  flex-direction: column;
 }
 form.dcc-roll-modifier .button-stack button.flat-button {
   margin: 0;
