@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import DCC from '../config.js'
-import DCCRoll from '../dcc-roll.js'
+import DCCRoll from './dcc-roll.js'
 
 // console.log('Loading Foundry Mocks')
 
@@ -50,7 +50,14 @@ class Actor {
             },
             init: { value: -1 },
             actionDice: { value: '1d20' },
-            fumble: { die: '1d4' }
+            fumble: { die: '1d4' },
+            speed: {
+              value: 30
+            },
+            hp: {
+              value: 3,
+              max: 3
+            }
           },
           items: {
             weapons: {
@@ -60,10 +67,13 @@ class Actor {
           saves: {
             frt: { value: -1 },
             ref: { value: 0 },
-            wil: { value: +12 }
+            wil: { value: +2 }
           },
           details: {
-            attackBonus: 0
+            attackBonus: 0,
+            level: {
+              value: 1
+            }
           },
           class: {
             luckDie: '1d3',
@@ -122,6 +132,10 @@ class Actor {
 
   prepareData () {
     // console.log('Mock Actor: super prepareData was called')
+  }
+
+  getRollData () {
+    return this.data.data
   }
 }
 
@@ -210,30 +224,6 @@ class ClientSettings {
 }
 
 global.game.settings = new ClientSettings()
-
-/**
- * Roll
- */
-global.rollToMessageMock = jest.fn((messageData = {}, { rollMode = null, create = true } = {}) => {
-  // console.log('Mock Roll: toMessage was called with:')
-  // console.log(data)
-})
-global.rollEvaluateMock = jest.fn(() => {
-  // console.log('Mock Roll: roll was called')
-  return { total: 2 }
-})
-global.rollValidateMock = jest.fn((formula) => {
-  return true
-})
-global.Roll = jest.fn((formula, data = {}) => {
-  return {
-    dice: [{ results: [10], options: {} }],
-    toMessage: global.rollToMessageMock,
-    evaluate: global.rollEvaluateMock,
-    roll: global.rollEvaluateMock
-  }
-}).mockName('Roll')
-global.Roll.validate = global.rollValidateMock
 
 /**
  * ChatMessage
