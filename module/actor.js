@@ -541,9 +541,9 @@ class DCCActor extends Actor {
       terms.push({
         type: 'Spellburn',
         formula: '+0',
-        str: this.data.data.abilities.str,
-        agl: this.data.data.abilities.agl,
-        sta: this.data.data.abilities.sta
+        str: this.data.data.abilities.str.value,
+        agl: this.data.data.abilities.agl.value,
+        sta: this.data.data.abilities.sta.value
       })
     }
 

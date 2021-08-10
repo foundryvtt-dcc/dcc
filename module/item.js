@@ -99,9 +99,9 @@ class DCCItem extends Item {
       terms.push({
         type: 'Spellburn',
         formula: '+0',
-        str: actor.data.data.abilities.str,
-        agl: actor.data.data.abilities.agl,
-        sta: actor.data.data.abilities.sta
+        str: actor.data.data.abilities.str.value,
+        agl: actor.data.data.abilities.agl.value,
+        sta: actor.data.data.abilities.sta.value
       })
     }
 
