@@ -149,6 +149,7 @@ function DCCCompoundTerm (options) {
 const DCCTerms = {
   Die: DCCDieTerm,
   DisapprovalDie: DCCDisapprovalDieTerm,
+  LuckDie: DCCDisapprovalDieTerm,
   Modifier: DCCModifierTerm,
   CheckPenalty: DCCCheckPenaltyTerm,
   Spellburn: DCCSpellburnTerm,
