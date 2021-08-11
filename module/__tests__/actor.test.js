@@ -360,9 +360,10 @@ test('roll skill check', async () => {
         formula: '1d14'
       },
       {
-        type: 'Modifier',
-        label: 'Custom Die And Value Skill',
-        formula: 3
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'Custom Die And Value Skill',
+        formula: '3'
       },
       {
         type: 'CheckPenalty',
@@ -387,9 +388,10 @@ test('roll skill check', async () => {
         formula: '1d20'
       },
       {
-        type: 'Modifier',
-        label: 'Action Die Skill',
-        formula: -4
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'Action Die Skill',
+        formula: '-4'
       },
       {
         type: 'CheckPenalty',
@@ -436,9 +438,10 @@ test('roll skill check', async () => {
         formula: '1d24'
       },
       {
-        type: 'Modifier',
-        label: 'Custom Die And Value Skill With Per (AbilityPer)',
-        formula: 3
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'Custom Die And Value Skill With Per (AbilityPer)',
+        formula: '3'
       },
       {
         type: 'CheckPenalty',
@@ -463,9 +466,10 @@ test('roll skill check', async () => {
         formula: '1d20'
       },
       {
-        type: 'Modifier',
-        label: 'Action Die Skill With Lck (AbilityLck)',
-        formula: +4
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'Action Die Skill With Lck (AbilityLck)',
+        formula: '4'
       },
       {
         type: 'CheckPenalty',
@@ -518,9 +522,10 @@ test('roll spell check', async () => {
         formula: '1d20'
       },
       {
-        type: 'Modifier',
-        label: 'SpellCheck',
-        formula: 3
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'SpellCheck',
+        formula: '3'
       },
       {
         type: 'CheckPenalty',
@@ -572,9 +577,10 @@ test('roll spell check', async () => {
         formula: '1d20'
       },
       {
-        type: 'Modifier',
-        label: 'SpellCheck',
-        formula: 3
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'SpellCheck',
+        formula: '3'
       },
       {
         type: 'CheckPenalty',
@@ -626,9 +632,10 @@ test('roll spell check', async () => {
         formula: '1d20'
       },
       {
-        type: 'Modifier',
-        label: 'SpellCheck',
-        formula: 3
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'SpellCheck',
+        formula: '3'
       },
       {
         type: 'CheckPenalty',

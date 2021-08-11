@@ -400,9 +400,10 @@ class DCCActor extends Actor {
 
     if (skill.value) {
       terms.push({
-        type: 'Modifier',
-        label: game.i18n.localize(skill.label) + abilityLabel,
-        formula: skill.value
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
+        formula: skill.value.toString()
       })
     }
 
@@ -511,7 +512,7 @@ class DCCActor extends Actor {
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
     const die = this.data.data.attributes.actionDice.value
-    const bonus = this.data.data.class.spellCheck || '+0'
+    const bonus = this.data.data.class.spellCheck ? this.data.data.class.spellCheck.toString() : '+0'
     const checkPenalty = parseInt(this.data.data.attributes.ac.checkPenalty || 0)
     const isIdolMagic = this.data.data.details.sheetClass === 'Cleric'
     const applyCheckPenalty = !isIdolMagic
@@ -525,8 +526,9 @@ class DCCActor extends Actor {
         formula: die
       },
       {
-        type: 'Modifier',
-        label: game.i18n.localize('DCC.SpellCheck'),
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize('DCC.SpellCheck'),
         formula: bonus
       },
       {
