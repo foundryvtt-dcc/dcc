@@ -467,7 +467,7 @@ class DCCActor extends Actor {
     // Collate terms for the roll
     const terms = [
       {
-        type: 'Die',
+        type: 'LuckDie',
         label: flavor,
         formula: die
       }
