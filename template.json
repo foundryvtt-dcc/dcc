@@ -264,6 +264,7 @@
             "label" : "DCC.ShieldBash",
             "ability": "str",
             "die": "1d14",
+            "value": "+0",
             "useDeed": true
           }
         }
