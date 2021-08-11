@@ -188,7 +188,7 @@ class DCCActorSheetGeneric extends DCCActorSheet {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-upper-level.html'
     data.data.class.className = game.i18n.localize('DCC.Generic')
-    
+
     this.actor.update({
       'data.class.className': game.i18n.localize('DCC.Generic')
     })
