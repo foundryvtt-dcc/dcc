@@ -62,7 +62,7 @@ class DCCItem extends Item {
     const spell = this.name
     options.title = game.i18n.format('DCC.RollModifierTitleCasting', { spell })
     const die = this.data.data.spellCheck.die
-    const bonus = parseInt(this.data.data.spellCheck.value || 0)
+    const bonus = this.data.data.spellCheck.value.toString()
 
     // Calculate check penalty if relevant
     let checkPenalty
@@ -83,8 +83,9 @@ class DCCItem extends Item {
         formula: die
       },
       {
-        type: 'Modifier',
-        label: game.i18n.localize('DCC.SpellCheck'),
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize('DCC.SpellCheck'),
         formula: bonus
       },
       {
