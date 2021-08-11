@@ -70,12 +70,13 @@ function DCCModifierTerm (options) {
  * @return {Object}
  */
 function DCCCheckPenaltyTerm (options) {
+  const formula = _prependSign(_cleanFormula(options.formula))
   return [{
     type: 'CheckPenalty',
     label: game.i18n.localize('DCC.RollModifierCheckPenaltyTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
-    formula: options.apply ? _prependSign(options.formula) : '-0',
-    checkedFormula: _prependSign(options.formula),
+    formula: options.apply ? formula : '-0',
+    checkedFormula: formula,
     startsChecked: options.apply
   }]
 }
@@ -90,7 +91,7 @@ function DCCSpellburnTerm (options) {
     type: 'Spellburn',
     label: game.i18n.localize('DCC.RollModifierSpellburnTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-spellburn.html',
-    formula: _prependSign(options.formula) || '+0',
+    formula: _prependSign(_cleanFormula(options.formula)),
     str: options.str,
     agl: options.agl,
     sta: options.sta
