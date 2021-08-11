@@ -493,7 +493,7 @@ test('roll luck die', async () => {
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
-        type: 'Die',
+        type: 'LuckDie',
         label: 'LuckDie',
         formula: '1d3'
       }
