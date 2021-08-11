@@ -16,7 +16,7 @@ function _cleanFormula (formula) {
  */
 function _prependSign (formula) {
   const hasSignExpression = /^[+-]\d+$/
-  if (!formula.match(hasSignExpression)) {
+  if (!formula.toString().match(hasSignExpression)) {
     return '+' + formula
   }
   return formula
