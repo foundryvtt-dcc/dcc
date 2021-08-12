@@ -283,11 +283,11 @@
       },
       "config": {
         "config": {
+          "attackBonusMode": "raw",
           "actionDice" : "1d20",
           "capLevel": false,
           "maxLevel" : 10,
           "rollAttackBonus": false,
-          "rollABWithAttack": false,
           "computeAC": false,
           "baseACAbility": "agl",
           "computeCheckPenalty": false,
