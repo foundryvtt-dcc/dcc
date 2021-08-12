@@ -107,6 +107,16 @@ DCC.castingModes = {
   cleric: 'DCC.SpellCastingModeCleric'
 }
 
+/**
+ * Attack Bonus modes
+ * @type {String}
+ */
+DCC.attackBonusModes = {
+  flat: 'DCC.AttackBonusConfigModeFlat',
+  manual: 'DCC.AttackBonusConfigModeManual',
+  autoPerAttack: 'DCC.AttackBonusConfigModeAutoPerAttack'
+}
+
 /* -------------------------------------------- */
 
 /**
