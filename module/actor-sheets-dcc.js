@@ -95,7 +95,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
         'data.class.className': game.i18n.localize('DCC.Warrior'),
         'data.details.sheetClass': 'Warrior',
         'data.class.disapproval': 1,
-        'data.config.rollAttackBonus': true
+        'data.config.attackBonusMode': 'manual'
       })
     }
 
@@ -144,7 +144,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
         'data.class.className': game.i18n.localize('DCC.Dwarf'),
         'data.details.sheetClass': 'Dwarf',
         'data.class.disapproval': 1,
-        'data.config.rollAttackBonus': true,
+        'data.config.attackBonusMode': 'manual',
         'data.skills.shieldBash.useDeed': true
       })
     }
