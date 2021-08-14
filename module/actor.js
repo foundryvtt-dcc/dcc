@@ -120,7 +120,6 @@ class DCCActor extends Actor {
       actionDice: '1d20',
       capLevel: false,
       maxLevel: 0,
-      rollABWithAttack: false,
       computeAC: false,
       baseACAbility: 'agl',
       sortInventory: true,
