@@ -7,6 +7,7 @@
 // Import Modules
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
+import DCCPartySheet from './party-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
 import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
@@ -62,7 +63,7 @@ Hooks.once('init', async function () {
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
-  Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true })
+  Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true, types: ['Player', 'NPC'] })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, { types: ['Player'] })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, { types: ['Player'] })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, { types: ['Player'] })
@@ -71,6 +72,7 @@ Hooks.once('init', async function () {
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, { types: ['Player'] })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, { types: ['Player'] })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCPartySheet, { makeDefault: true, types: ['Party'] })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet)
 
