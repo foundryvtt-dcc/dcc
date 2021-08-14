@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG */
+/* global $, ActorSheet, CONFIG, CONST, Dialog, duplicate, game, mergeObject */
 
 import EntityImages from './entity-images.js'
 
@@ -95,7 +95,7 @@ class DCCPartySheet extends ActorSheet {
    */
   get members () {
     const partyFlag = this.actor.getFlag('dcc', 'partyMembers')
-    if (!partyFlag || !partyFlag instanceof Array) {
+    if (!partyFlag || !(partyFlag instanceof Array)) {
       return []
     }
     return partyFlag
@@ -136,7 +136,7 @@ class DCCPartySheet extends ActorSheet {
 
     const index = members.indexOf(actorId)
     if (index >= 0) {
-      members.splice(index, 1);
+      members.splice(index, 1)
     }
 
     this.members = members
@@ -207,9 +207,6 @@ class DCCPartySheet extends ActorSheet {
     // Everything below here is only needed if the sheet is editable
     if (!this.options.editable) return
 
-    // Drag event handler
-    const dragHandler = ev => this._onDragStart(ev)
-
     // Owner Only Listeners
     if (this.actor.isOwner) {
       // Update party member
@@ -228,8 +225,10 @@ class DCCPartySheet extends ActorSheet {
   }
 
   /** @override */
-  async _onDropActor(event, data) {
-    if ( !this.actor.isOwner ) return false;
+  async _onDropActor (event, data) {
+    super._onDropActor(event, data)
+
+    if (!this.actor.isOwner) return false
 
     this._addMember(data.id)
   }
