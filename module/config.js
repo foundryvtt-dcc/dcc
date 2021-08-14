@@ -552,7 +552,8 @@ DCC.skillTables = {
 
 // Default actor images
 DCC.defaultActorImages = {
-  default: 'systems/dcc/styles/images/actor.webp'
+  default: 'systems/dcc/styles/images/actor.webp',
+  Party: 'systems/dcc/styles/images/party.webp'
 }
 
 // Default item tokens
