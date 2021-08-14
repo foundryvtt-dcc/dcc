@@ -701,8 +701,8 @@ a.inline-roll {
   grid-row: 1/span 3;
 }
 .dcc .party .character-row .name {
-  grid-column: span 4;
   font-size: 2rem;
+  grid-column: span 4;
 }
 .dcc .party .character-row .occupation {
   grid-column: span 3;
