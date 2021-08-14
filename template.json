@@ -405,10 +405,9 @@
       }
     },
     "Party": {
-      "templates": [],
-      "details": {
-        "notes": ""
-      }
+      "templates": [
+        "common"
+      ]
     }
   },
   "Item": {
