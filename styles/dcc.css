@@ -1161,6 +1161,43 @@
 }
 
 /* ----------------------------------------- */
+/*  Party Sheet                              */
+/* ----------------------------------------- */
+.dcc .party {
+  border: 2px groove #eeede0;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(auto-fill, minmax(100px, auto));
+}
+.dcc .party .character-row {
+  border: 2px groove #eeede0;
+  display: grid;
+  grid-gap: 2px 3px;
+  grid-template-columns: 106px repeat(12, 1fr);
+  grid-template-rows: 2fr 1fr 1fr;
+}
+.dcc .party .character-row .portrait {
+  grid-column: 1;
+  grid-row: 1/span 3;
+}
+.dcc .party .character-row .name {
+  grid-column: span 4;
+  font-size: 2rem;
+}
+.dcc .party .character-row .occupation {
+  grid-column: span 3;
+}
+.dcc .party .character-row .hp-summary {
+  grid-column: span 2;
+}
+.dcc .party .character-row .weapon {
+  grid-column: span 2;
+}
+.dcc .party .character-row .filler {
+  grid-column: span 2;
+}
+
+/* ----------------------------------------- */
 /*  Items                                    */
 /* ----------------------------------------- */
 .dcc .equipment-container {

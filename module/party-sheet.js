@@ -1,6 +1,6 @@
 /* global ActorSheet, CONFIG */
 
-import EntityImage from './entity-images.js'
+import EntityImages from './entity-images.js'
 
 /**
  * Extend the basic ActorSheet to represent a party
@@ -14,7 +14,7 @@ class DCCPartySheet extends ActorSheet {
       template: 'systems/dcc/templates/actor-sheet-party.html',
       width: 600,
       height: 600,
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'party' }],
+      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
       scrollY: [
         '.tab.party'
@@ -66,28 +66,172 @@ class DCCPartySheet extends ActorSheet {
       data.actor.data.img = EntityImages.imageForActor(data.type)
     }
 
-    if (data.isNPC) {
-      this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
-    } else {
-      this.options.template = 'systems/dcc/templates/actor-sheet-zero-level.html'
-
-      if (!data.isZero) {
-        // Reorder saves on upper level sheet to define tabbing order
-        data.data.saves = {
-          ref: data.data.saves.ref,
-          frt: data.data.saves.frt,
-          wil: data.data.saves.wil
-        }
-      }
-
-      // Should the Deed Roll button be available on the sheet?
-      data.data.config.rollAttackBonus = (data.data.config.attackBonusMode === 'manual')
-    }
-
     // Prepare item lists by type
-    this._prepareItems(data)
+    this._prepareParty(data)
 
     return data
+  }
+
+  /**
+   * Organize and classify the actors in the party
+   *
+   * @param {Object} actorData   The party Actor data
+   * @return {undefined}
+   */
+  _prepareParty (actorData) {
+    actorData.partyMembers = []
+    for (const member of this.members) {
+      const actor = game.actors.get(member)
+      if (actor) {
+        actorData.partyMembers.push(actor.data)
+      }
+    }
+  }
+
+  /**
+   * Getter for the members of the party
+   *
+   * @return {Array}
+   */
+  get members () {
+    const partyFlag = this.actor.getFlag('dcc', 'partyMembers')
+    if (!partyFlag || !partyFlag instanceof Array) {
+      return []
+    }
+    return partyFlag
+  }
+
+  /**
+   * Setter for the members of the party
+   *
+   * @param members {Array} List of party members
+   * @return {Array}
+   */
+  set members (members) {
+    if (members instanceof Array) {
+      this.actor.setFlag('dcc', 'partyMembers', members)
+    }
+  }
+
+  /**
+   * Add a member to the party
+   *
+   * @param {string} actorId   Id of the actor to add
+   * @return {undefined}
+   */
+  _addMember (actorId) {
+    const members = this.members
+    members.push(actorId)
+    this.members = members
+  }
+
+  /**
+   * Remove a member from the party
+   *
+   * @param {string} actorId   Id of the actor to remove
+   * @return {undefined}
+   */
+  _removeMember (actorId) {
+    const members = this.members
+
+    const index = members.indexOf(actorId)
+    if (index >= 0) {
+      members.splice(index, 1);
+    }
+
+    this.members = members
+  }
+
+  /**
+   * Open the sheet for a member from the party
+   *
+   * @param {string} actorId   Id of the actor to edit
+   * @return {undefined}
+   */
+  _editMember (actorId) {
+    const actor = game.actors.get(actorId)
+    if (actor) {
+      actor.sheet.render(true)
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /** Prompt to remove a member
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _onRemoveMember (event) {
+    event.preventDefault()
+    const actorId = event.currentTarget.dataset.actorId
+    const removeMember = function (context) {
+      context._removeMember(actorId)
+      $(event.currentTarget).parents('.item').slideUp(200, () => context.render(false))
+    }
+    if (game.settings.get('dcc', 'promptForItemDeletion')) {
+      new Dialog({
+        title: game.i18n.localize('DCC.PartyDeletePrompt'),
+        content: `<p>${game.i18n.localize('DCC.PartyDeleteExplain')}</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.Yes'),
+            callback: () => removeMember(this)
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('DCC.No')
+          }
+        }
+      }).render(true)
+    } else {
+      removeMember(this)
+    }
+  }
+
+  /**
+   * Delete an item
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _deleteItem (event) {
+    const li = $(event.currentTarget).parents('.item')
+    this.actor.deleteOwnedItem(li.data('itemId'))
+    li.slideUp(200, () => this.render(false))
+  }
+
+  /** @override */
+  activateListeners (html) {
+    super.activateListeners(html)
+
+    // Everything below here is only needed if the sheet is editable
+    if (!this.options.editable) return
+
+    // Drag event handler
+    const dragHandler = ev => this._onDragStart(ev)
+
+    // Owner Only Listeners
+    if (this.actor.isOwner) {
+      // Update party member
+      html.find('.party-edit').click(ev => {
+        this._editMember(ev.currentTarget.dataset.actorId)
+      })
+
+      // Remove party member
+      html.find('.party-delete').click(ev => {
+        this._onRemoveMember(ev)
+      })
+    } else {
+      // Otherwise remove rollable classes
+      html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
+    }
+  }
+
+  /** @override */
+  async _onDropActor(event, data) {
+    if ( !this.actor.isOwner ) return false;
+
+    this._addMember(data.id)
   }
 }
 

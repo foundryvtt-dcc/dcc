@@ -299,23 +299,20 @@ class DCCActorSheet extends ActorSheet {
       // Draggable items, including armor
       html.find('.item-draggable').each(makeDraggable)
 
-      // Only for editable sheets
-      if (this.options.editable) {
-        // Add Inventory Item
-        html.find('.item-create').click(this._onItemCreate.bind(this))
+      // Add Inventory Item
+      html.find('.item-create').click(this._onItemCreate.bind(this))
 
-        // Update Inventory Item
-        html.find('.item-edit').click(ev => {
-          const li = $(ev.currentTarget).parents('.item')
-          const item = this.actor.items.get(li.data('itemId'))
-          item.sheet.render(true)
-        })
+      // Update Inventory Item
+      html.find('.item-edit').click(ev => {
+        const li = $(ev.currentTarget).parents('.item')
+        const item = this.actor.items.get(li.data('itemId'))
+        item.sheet.render(true)
+      })
 
-        // Delete Inventory Item
-        html.find('.item-delete').click(ev => {
-          this._onDeleteItem(ev)
-        })
-      }
+      // Delete Inventory Item
+      html.find('.item-delete').click(ev => {
+        this._onDeleteItem(ev)
+      })
     } else {
       // Otherwise remove rollable classes
       html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
