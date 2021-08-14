@@ -558,6 +558,7 @@
   "DCC.ParseSingleNPCWarning": "Failed to read one or more NPC/monster (expecting one or more DCC statblocks)",
   "DCC.ParseSinglePlayerWarning": "Failed to read one or more player characters from Purple Sorcerer Plain Text ",
   "DCC.PasteBlock": "Paste In A Stat Block to Import",
+  "DCC.Party": "Party",
   "DCC.Patron": "Patron",
   "DCC.Penalty": "Penalty",
   "DCC.PickLock": "Pick lock",

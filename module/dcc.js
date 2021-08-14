@@ -27,6 +27,7 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCActorSheet from './actor-sheet.js'
+import DCCPartySheet from './party-sheet.js'
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -96,6 +97,10 @@ Hooks.once('init', async function () {
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
     types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetGeneric'
+  })
+  Actors.registerSheet('dcc', DCCPartySheet, {
+    makeDefault: true, types: ['Party']
+    label: 'DCC.DCCPartySheet'
   })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet, {
