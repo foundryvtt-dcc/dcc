@@ -26,6 +26,7 @@ global.Collection = Collection
  * Actor
  */
 global.itemTypesMock = jest.fn().mockName('Actor.itemTypes getter')
+global.actorUpdateMock = jest.fn(data => {}).mockName('Actor.update')
 class Actor {
   constructor (data, options) {
     // If test-specific data is passed in use it, otherwise use default data
@@ -137,6 +138,10 @@ class Actor {
 
   getRollData () {
     return this.data.data
+  }
+
+  update (data) {
+    return global.actorUpdateMock(data)
   }
 }
 

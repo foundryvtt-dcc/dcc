@@ -51,6 +51,22 @@ function DCCDisapprovalDieTerm (options) {
 }
 
 /**
+ * Construct a DCC Luck Die term object
+ * @param options {Object}
+ * @return {Object}
+ */
+function DCCLuckDieTerm (options) {
+  return [{
+    type: 'DisapprovalDie',
+    label: game.i18n.localize('DCC.RollModifierLuckDieTerm'),
+    partial: 'systems/dcc/templates/roll-modifier-partial-disapproval-die.html',
+    formula: _cleanFormula(options.formula),
+    maxCount: options.lck - 1,
+    callback: options.callback
+  }]
+}
+
+/**
  * Construct a DCC Modifier term object
  * @params options {Object}
  * @return {Object}
@@ -149,7 +165,7 @@ function DCCCompoundTerm (options) {
 const DCCTerms = {
   Die: DCCDieTerm,
   DisapprovalDie: DCCDisapprovalDieTerm,
-  LuckDie: DCCDisapprovalDieTerm,
+  LuckDie: DCCLuckDieTerm,
   Modifier: DCCModifierTerm,
   CheckPenalty: DCCCheckPenaltyTerm,
   Spellburn: DCCSpellburnTerm,
@@ -292,6 +308,12 @@ class RollModifierDialog extends FormApplication {
    * @private
    */
   _constructRoll () {
+    // Helper to safely call the resolve method for a term
+    const resolveTerm = function (formula, term) {
+      if (term.callback) {
+        term.callback(formula, term)
+      }
+    }
     // Build a new Roll object from the collected terms
     let formula = ''
     if (this._state !== Application.RENDER_STATES.NONE) {
@@ -301,6 +323,7 @@ class RollModifierDialog extends FormApplication {
           formula += '+'
         }
         formula += element.value
+        resolveTerm(element.value, this.terms[index])
       })
     } else {
       // Otherwise extract data straight from the terms array
@@ -309,6 +332,7 @@ class RollModifierDialog extends FormApplication {
           formula += '+'
         }
         formula += term.formula
+        resolveTerm(term.formula, term)
       }
     }
     formula = _cleanFormula(formula)
@@ -353,12 +377,14 @@ class RollModifierDialog extends FormApplication {
     event.preventDefault()
     const index = event.currentTarget.dataset.term
     const mod = event.currentTarget.dataset.mod
+    const term = this.terms[index]
     const formField = this.element.find('#term-' + index)
-    let termFormula = game.dcc.DiceChain.bumpDieCount(formField.val(), parseInt(mod))
+    let termFormula = game.dcc.DiceChain.bumpDieCount(formField.val(), parseInt(mod), term.maxCount)
     if (index > 0) {
       // Add a sign if this isn't the first term in the expression
       termFormula = '+' + termFormula
     }
+
     formField.val(termFormula)
   }
 

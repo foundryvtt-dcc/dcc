@@ -2,7 +2,7 @@
 /* Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js */
 /* Mocks for DCCItem Class are found in __mocks__/item.js */
 /* eslint-env jest */
-/* global CONFIG, DCCItem, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock, game */
+/* global CONFIG, DCCItem, actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock, game */
 
 import DCCActor from '../actor'
 
@@ -487,6 +487,7 @@ test('roll skill check', async () => {
 
 test('roll luck die', async () => {
   dccRollCreateRollMock.mockClear()
+  actorUpdateMock.mockClear()
 
   await actor.rollLuckDie()
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
@@ -494,13 +495,20 @@ test('roll luck die', async () => {
     [
       {
         type: 'LuckDie',
-        label: 'LuckDie',
-        formula: '1d3'
+        formula: '1d3',
+        lck: 18,
+        callback: expect.any(Function)
       }
     ],
     actor.getRollData(),
     {
       title: 'LuckDie'
+    }
+  )
+  expect(actorUpdateMock).toHaveBeenCalledTimes(1)
+  expect(actorUpdateMock).toHaveBeenCalledWith(
+    {
+      'data.abilities.lck.value': 17
     }
   )
 })

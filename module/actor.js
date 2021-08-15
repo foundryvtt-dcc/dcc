@@ -469,19 +469,29 @@ class DCCActor extends Actor {
    */
   async rollLuckDie (options = {}) {
     const die = this.data.data.class.luckDie
-    const flavor = game.i18n.localize('DCC.LuckDie')
-    options.title = flavor
+    options.title = game.i18n.localize('DCC.LuckDie')
+    let luckSpend = 1
 
     // Collate terms for the roll
     const terms = [
       {
         type: 'LuckDie',
-        label: flavor,
-        formula: die
+        formula: die,
+        lck: this.data.data.abilities.lck.value,
+        callback: (formula, term) => {
+          // Record the amount of luck spent when the term is resolved
+          luckSpend = game.dcc.DiceChain.countDice(formula)
+        }
       }
     ]
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    const flavor = game.i18n.format('DCC.LuckSpend', { luckSpend })
+
+    // Spend the luck
+    await this.update({
+      'data.abilities.lck.value': (parseInt(this.data.data.abilities.lck.value) - luckSpend)
+    })
 
     // Convert the roll to a chat message
     roll.toMessage({
