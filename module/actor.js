@@ -119,14 +119,14 @@ class DCCActor extends Actor {
       attackBonusMode: 'flat',
       actionDice: '1d20',
       capLevel: false,
-      maxLevel: 0,
+      maxLevel: 10,
       computeAC: false,
       baseACAbility: 'agl',
       sortInventory: true,
       removeEmptyItems: true,
       showSpells: false,
       showSkills: false,
-      showMaxAttributes: false,
+      showMaxAttributes: true,
       showBackstab: false
     }
 
