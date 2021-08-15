@@ -54,6 +54,19 @@ class DiceChain {
     return rank
   }
 
+  /* Count the number of dice in an expression
+   * @param expression {String}   Die term formula
+   * @return {String}             New die term formula
+   */
+  static countDice (expression) {
+    const regex = /(\d+)d(\d+)/
+    const match = expression.match(regex)
+    if (match) {
+      return parseInt(match[1])
+    }
+    return 0
+  }
+
   /* Bump a dice expression up or down the dice chain
    * @param expression {String}   Die term formula
    * @param modifier {Number}     The amount of steps up or down the chain to adjust
@@ -78,13 +91,17 @@ class DiceChain {
   /* Bump a dice expression adjusting the number of dice
    * @param expression {String}   Die term formula
    * @param modifier {Number}     The number of dice to add or remove
+   * @param maxCount {Number}     Optional maximum number of dice
    * @return {String}             New die term formula
    */
-  static bumpDieCount (expression, modifier) {
+  static bumpDieCount (expression, modifier, maxCount) {
     const regex = /(\d+)d(\d+)/
     const match = expression.match(regex)
     if (match) {
       const dieCount = parseInt(match[1]) + parseInt(modifier)
+      if (maxCount && dieCount > maxCount) {
+        return `${maxCount}d${match[2]}`
+      }
       if (dieCount > 0) {
         return `${dieCount}d${match[2]}`
       }
