@@ -1402,7 +1402,7 @@
   padding-bottom: 5px;
 }
 .config-dialog .form-group label {
-  flex: 0 0 58%;
+  flex: 0 0 48%;
 }
 .config-dialog .form-group label.span {
   flex: 0 0 96%;
@@ -1413,7 +1413,7 @@
   text-align: center;
 }
 .config-dialog .form-group div.form-fields {
-  flex: 0 1 38%;
+  flex: 0 1 48%;
 }
 .config-dialog .form-group input {
   text-align: right;
