@@ -20,21 +20,30 @@
                 <label class="resource-label" for="data.spellCheck.die">{{localize "DCC.ActionDie"}}</label>
                 <input type="text" name="data.spellCheck.die" class="flex1"
                        value="{{data.spellCheck.die}}"
-                       {{#if data.config.inheritActionDie}}disabled{{/if}}
+                       {{#if data.config.inheritActionDie}}
+                       title="{{localize 'DCC.InheritTooltip'}}"
+                       disabled
+                       {{/if}}
                        placeholder="1d20" data-dtype="String"/>
               </div>
               <div class="flex2">
                 <label class="resource-label" for="data.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
                   <input type="text" name="data.spellCheck.value" class="flex1"
                          value="{{data.spellCheck.value}}"
-                         {{#if data.config.inheritSpellCheck}}disabled{{/if}}
+                         {{#if data.config.inheritSpellCheck}}
+                         title="{{localize 'DCC.InheritTooltip'}}"
+                         disabled
+                         {{/if}}
                          placeholder="+0" data-dtype="String"/>
               </div>
               <div class="flex2">
                 <label class="resource-label" for="data.spellCheck.penalty">{{localize "DCC.CheckPenalty"}}</label>
                   <input type="text" name="data.spellCheck.penalty" class="flex1"
                          value="{{numberFormat data.spellCheck.penalty decimals=0 sign=true}}"
-                         {{#if data.config.inheritCheckPenalty}}disabled{{/if}}
+                         {{#if data.config.inheritCheckPenalty}}
+                         title="{{localize 'DCC.InheritTooltip'}}"
+                         disabled
+                         {{/if}}
                          placeholder="-0" data-dtype="Number"/>
                 </div>
               </div>
