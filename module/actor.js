@@ -174,6 +174,44 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Get Action Dice
+   * @return {Array}  Array of formulae for the action dice
+   */
+  getActionDice (options = {}) {
+    const actionDice = []
+    // Gather available action dice
+    try {
+      // Implicit migration for legacy actors
+      if (!this.data.data.config.actionDice) {
+        this.data.data.config.actionDice = this.data.data.attributes.actionDice.value
+      }
+      // Parse the action dice expression from the config and produce a list of available dice
+      const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
+      const terms = actionDieExpression.terms || actionDieExpression.parts
+      for (const term of terms) {
+        if (typeof (term) === 'object' && term.faces) {
+          const termDie = `1d${term.faces}`
+          const termCount = term.number || 1
+          for (let i = 0; i < termCount; ++i) {
+            actionDice.push({
+              label: termDie,
+              formula: termDie
+            })
+          }
+        }
+      }
+    } catch (err) { }
+
+    if (options.includeUntrained) {
+      actionDice.push({
+        label: game.i18n.localize('DCC.Untrained'),
+        formula: '1d10'
+      })
+    }
+    return actionDice
+  }
+
+  /**
    * Roll an Ability Check
    * @param {String} abilityId    The ability ID (e.g. "str")
    * @param {Object} options      Options which configure how ability checks are rolled
@@ -214,7 +252,8 @@ class DCCActor extends Actor {
         {
           type: 'Die',
           label: game.i18n.localize('DCC.ActionDie'),
-          formula: die
+          formula: die,
+          presets: this.getActionDice({ includeUntrained: true })
         },
         {
           type: 'Modifier',
@@ -403,7 +442,8 @@ class DCCActor extends Actor {
     terms.push({
       type: 'Die',
       label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
-      formula: die
+      formula: die,
+      presets: this.getActionDice({ includeUntrained: true })
     })
 
     if (skill.value) {
@@ -541,7 +581,8 @@ class DCCActor extends Actor {
       {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
-        formula: die
+        formula: die,
+        presets: this.getActionDice({ includeUntrained: true })
       },
       {
         type: 'Compound',
@@ -825,7 +866,8 @@ class DCCActor extends Actor {
       {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
-        formula: die
+        formula: die,
+        presets: this.getActionDice({ includeUntrained: true })
       },
       {
         type: 'Compound',
