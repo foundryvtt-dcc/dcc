@@ -15,7 +15,10 @@
                 <div class="flexrow">
                   <input type="text" name="data.actionDie" class="flex1"
                          value="{{data.actionDie}}"
-                         {{#if data.config.inheritActionDie}}disabled{{/if}}
+                         {{#if data.config.inheritActionDie}}
+                         title="{{localize 'DCC.InheritTooltip'}}"
+                         disabled
+                         {{/if}}
                          placeholder="1d20" data-dtype="String"/>
                   <input type="text" name="data.toHit" class="flex1"
                          value="{{data.toHit}}"
@@ -26,7 +29,10 @@
                 <label class="resource-label" for="data.critRange">{{localize "DCC.WeaponPropertiesCritOn"}}</label>
                 <input type="text" name="data.critRange"
                        value="{{data.critRange}}"
-                       {{#if data.config.inheritCritRange}}disabled{{/if}}
+                       {{#if data.config.inheritCritRange}}
+                       title="{{localize 'DCC.InheritTooltip'}}"
+                       disabled
+                       {{/if}}
                        placeholder="20" data-dtype="Number"/>
               </div>
               <div class="resource flex2">
@@ -52,7 +58,10 @@
           <div class="resource">
             <label class="resource-label" for="data.range">{{localize "DCC.WeaponPropertiesRange"}}</label>
             <input type="text" name="data.range" value="{{data.range}}"
-                   {{#if data.melee}}disabled{{/if}}
+                   {{#if data.melee}}
+                   title="{{localize "DCC.WeaponPropertiesRangeTooltip"}}"
+                   disabled
+                   {{/if}}
                    placeholder="" data-dtype="String"/>
           </div>
           <div class="resource">
@@ -68,7 +77,10 @@
           <div class="resource">
             <label class="resource-label" for="data.backstabDamage">{{localize "DCC.WeaponPropertiesBackstabDamage"}}</label>
             <input type="text" name="data.backstabDamage" value="{{data.backstabDamage}}"
-                   {{#if data.backstab}}{{else}}disabled{{/if}}
+                   {{#if data.backstab}}{{else}}
+                   title="{{localize "DCC.WeaponPropertiesBackstabDamageTooltip"}}"
+                   disabled
+                   {{/if}}
                    placeholder="{{data.damage}}" data-dtype="String"/>
           </div>
         </div>
