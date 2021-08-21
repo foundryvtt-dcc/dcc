@@ -41,7 +41,13 @@ test('roll ability check', async () => {
       {
         type: 'Die',
         label: 'ActionDie',
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Modifier',
@@ -86,7 +92,13 @@ test('roll ability check', async () => {
       {
         type: 'Die',
         label: 'ActionDie',
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Modifier',
@@ -233,7 +245,13 @@ test('roll weapon attack', async () => {
       {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -273,7 +291,13 @@ test('roll weapon attack', async () => {
       {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -309,7 +333,13 @@ test('roll weapon attack', async () => {
       {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
-        formula: '1d16'
+        formula: '1d16',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -335,7 +365,13 @@ test('roll skill check', async () => {
       {
         type: 'Die',
         label: null,
-        formula: '1d14'
+        formula: '1d14',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'CheckPenalty',
@@ -357,7 +393,13 @@ test('roll skill check', async () => {
       {
         type: 'Die',
         label: null,
-        formula: '1d14'
+        formula: '1d14',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -385,7 +427,13 @@ test('roll skill check', async () => {
       {
         type: 'Die',
         label: 'ActionDie',
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -413,7 +461,13 @@ test('roll skill check', async () => {
       {
         type: 'Die',
         label: null,
-        formula: '1d24'
+        formula: '1d24',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'CheckPenalty',
@@ -435,7 +489,13 @@ test('roll skill check', async () => {
       {
         type: 'Die',
         label: null,
-        formula: '1d24'
+        formula: '1d24',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -463,7 +523,13 @@ test('roll skill check', async () => {
       {
         type: 'Die',
         label: 'ActionDie',
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -527,7 +593,13 @@ test('roll spell check', async () => {
       {
         type: 'Die',
         label: 'ActionDie',
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -582,7 +654,13 @@ test('roll spell check', async () => {
       {
         type: 'Die',
         label: 'ActionDie',
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',
@@ -637,7 +715,13 @@ test('roll spell check', async () => {
       {
         type: 'Die',
         label: 'ActionDie',
-        formula: '1d20'
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
       },
       {
         type: 'Compound',

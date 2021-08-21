@@ -7,7 +7,7 @@ class KeyState {
   constructor () {
     this._ctrlKeyState = false
     this._shiftKeyState = false
-    $(document).bind("keydown keyup click", (event) => this.handleEvent(event))
+    $(document).bind('keydown keyup click', (event) => this.handleEvent(event))
   }
 
   /**
