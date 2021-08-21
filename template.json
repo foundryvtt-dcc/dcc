@@ -71,6 +71,7 @@
           },
           "speed": {
             "value": 30,
+            "base": 30,
             "special": ""
           }
         },
@@ -290,6 +291,7 @@
           "rollAttackBonus": false,
           "computeAC": false,
           "baseACAbility": "agl",
+          "computeSpeed": false,
           "computeCheckPenalty": false,
           "sortInventory" : true,
           "removeEmptyItems" : true,
