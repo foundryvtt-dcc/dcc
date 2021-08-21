@@ -28,13 +28,11 @@ class DCCActor extends Actor {
     let fumbleDieRank = 0
     let fumbleDie = '1d4'
     let checkPenalty = 0
-    let speedPenalty = 0
     if (this.itemTypes) {
       for (const armorItem of this.itemTypes.armor) {
         if (armorItem.data.data.equipped) {
           try {
             checkPenalty += parseInt(armorItem.data.data.checkPenalty || 0)
-            speedPenalty += parseInt(armorItem.data.data.speed || 0)
             const expression = armorItem.data.data.fumbleDie
             const rank = game.dcc.DiceChain.rankDiceExpression(expression)
             if (rank > fumbleDieRank) {
@@ -54,7 +52,6 @@ class DCCActor extends Actor {
     if (data.config.computeCheckPenalty) {
       data.attributes.ac.checkPenalty = checkPenalty
     }
-    data.attributes.ac.speedPenalty = speedPenalty
   }
 
   /** @override */
@@ -65,17 +62,38 @@ class DCCActor extends Actor {
     const config = this._getConfig()
     const data = this.data.data
 
+    // Migrate base speed if not present based on current speed
+    if (!this.data.data.attributes.speed.base) {
+      this.update({
+        'data.speed.base': this.data.data.attributes.speed.value
+      })
+      this.data.data.speed.base = this.data.data.attributes.speed.value
+    }
+
     // Compute AC if required
-    if (config.computeAC) {
+    if (config.computeAC || config.computeSpeed) {
       const baseACAbility = data.abilities[config.baseACAbility] || { mod: 0 }
+      const baseSpeed = parseInt(data.attributes.speed.base)
       const abilityMod = baseACAbility.mod
+      const abilityLabel = baseACAbility.label
       let armorBonus = 0
+      let speedPenalty = 0
       for (const armorItem of this.itemTypes.armor) {
         if (armorItem.data.data.equipped) {
-          armorBonus += parseInt(armorItem.data.data.acBonus) || 0
+          armorBonus += parseInt(armorItem.data.data.acBonus || '0')
+          speedPenalty += parseInt(armorItem.data.data.speed || '0')
         }
       }
-      data.attributes.ac.value = 10 + abilityMod + armorBonus
+      if (config.computeAC) {
+        data.attributes.ac.baseAbility = abilityMod
+        data.attributes.ac.baseAbilityLabel = abilityLabel
+        data.attributes.ac.armorBonus = armorBonus
+        data.attributes.ac.value = 10 + abilityMod + armorBonus
+      }
+      if (config.computeSpeed) {
+        this.data.data.attributes.ac.speedPenalty = speedPenalty
+        this.data.data.attributes.speed.value = baseSpeed + speedPenalty
+      }
     }
 
     // Gather available action dice
@@ -121,6 +139,7 @@ class DCCActor extends Actor {
       capLevel: false,
       maxLevel: 10,
       computeAC: false,
+      computeSpeed: false,
       baseACAbility: 'agl',
       sortInventory: true,
       removeEmptyItems: true,

@@ -114,7 +114,12 @@
                     <div class="ac flexcol">
                         <input class="ac-value" type="text" id="data.attributes.ac.value"
                                name="data.attributes.ac.value"
-                               value="{{data.attributes.ac.value}}" data-dtype="Number"/>
+                               value="{{data.attributes.ac.value}}"
+                               {{#if data.config.computeAC }}
+                               title="{{localize data.attributes.ac.baseAbilityLabel}} {{numberFormat data.attributes.ac.baseAbility decimals=0 sign=true}} {{localize "DCC.ArmorPropertiesACBonus"}} {{numberFormat data.attributes.ac.armorBonus decimals=0 sign=true}}"
+                               disabled
+                               {{/if}}
+                               data-dtype="Number"/>
                         <label for="data.attributes.ac.value">{{localize "DCC.AC"}}</label>
                     </div>
                     <div class="flex-padding"></div>
@@ -141,9 +146,14 @@
                         </div>
                         <div class="speed">
                             <label for="data.attributes.speed.value">{{localize "DCC.Speed"}}</label>
-                            <input class="speed-value" type="text" id="data.attributes.speed.value"
+                            <input class="speed-value" type="text" id="data.attributes.speed.base"
                                    name="data.attributes.speed.value"
-                                   value="{{distanceFormat data.attributes.speed.value}}" data-dtype="String"/>
+                                   value="{{distanceFormat data.attributes.speed.value}}"
+                                   {{#if data.config.computeSpeed }}
+                                   title="{{localize "DCC.SpeedBase"}} {{distanceFormat data.attributes.speed.base}} {{localize "DCC.SpeedPenalty"}} {{distanceFormat data.attributes.ac.speedPenalty}}"
+                                   disabled
+                                   {{/if}}
+                                   data-dtype="String"/>
                         </div>
                         <div class="hd">
                             <label class="hd-label rollable" for="data.attributes.hitDice.value">{{localize "DCC.HD"}}</label>
