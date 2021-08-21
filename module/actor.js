@@ -442,7 +442,7 @@ class DCCActor extends Actor {
           skill.die = skillItem.data.data.die
         }
         if (skillItem.data.data.config.useValue) {
-          skill.value = skillItem.data.data.value
+          skill.value = skillItem.data.data.value ?? undefined
         }
       }
     }
@@ -465,7 +465,7 @@ class DCCActor extends Actor {
       presets: this.getActionDice({ includeUntrained: true })
     })
 
-    if (skill.value) {
+    if (skill.value !== undefined) {
       terms.push({
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
