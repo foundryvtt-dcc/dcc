@@ -500,6 +500,23 @@ Hooks.on('createItem', (entity, options, userId) => {
   }
 })
 
+Hooks.on('applyActiveEffect', (actor, change) => {
+  const { key, value } = change
+  let update = null
+  // We're only interested in strings (dice expressions)
+  const current = foundry.utils.getProperty(actor.data, key) ?? null
+  if (typeof (current) === 'string') {
+    // If this is a dice chain pattern (e.g. +1d) then we're interested
+    const diceChainPattern = /([+-]?\d+)[dD]/
+    const match = value.match(diceChainPattern)
+    if (match) {
+      update = game.dcc.DiceChain.bumpDie(current, parseInt(match[1]))
+      foundry.utils.setProperty(actor.data, key, update)
+    }
+  }
+  return update
+})
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
 /* -------------------------------------------- */
@@ -618,7 +635,7 @@ function _createDCCHitDiceMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.HitDiceRoll'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }',
-    img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
+    img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
   }
 
   return macroData
@@ -679,7 +696,7 @@ function _createDCCLuckDieMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.LuckDie'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollLuckDie(game.dcc.getMacroOptions()) }',
-    img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(die), 'luckDie')
+    img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'luckDie')
   }
 
   return macroData
@@ -724,7 +741,7 @@ function _createDCCAttackBonusMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.AttackBonus'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus(game.dcc.getMacroOptions()) }',
-    img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(die), 'attackBonus')
+    img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'attackBonus')
   }
 
   return macroData
@@ -744,7 +761,7 @@ function _createDCCActionDiceMacro (data, slot) {
   const macroData = {
     name: game.i18n.format('DCC.ActionDiceMacroName', { die }),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.setActionDice('${die}') }`,
-    img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(die), 'defaultDice')
+    img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'defaultDice')
   }
 
   return macroData

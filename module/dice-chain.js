@@ -59,7 +59,7 @@ class DiceChain {
    * @return {String}             New die term formula
    */
   static countDice (expression) {
-    const regex = /(\d+)d(\d+)/
+    const regex = /(\d+)d(\d+).*/
     const match = expression.match(regex)
     if (match) {
       return parseInt(match[1])
@@ -74,14 +74,14 @@ class DiceChain {
    */
   static bumpDie (expression, modifier) {
     const diceChain = CONFIG.DCC.DICE_CHAIN
-    const regex = /(\d+)d(\d+)/
+    const regex = /(\d+)d(\d+)(.*)/
     const match = expression.match(regex)
     if (match) {
       const dieRank = diceChain.indexOf(parseInt(match[2]))
       if (dieRank >= 0) {
         const newIndex = dieRank + parseInt(modifier)
         if (newIndex >= 0 && newIndex < diceChain.length) {
-          return `${match[1]}d${diceChain[newIndex]}`
+          return `${match[1]}d${diceChain[newIndex]}${match[3]}`
         }
       }
     }
@@ -95,15 +95,15 @@ class DiceChain {
    * @return {String}             New die term formula
    */
   static bumpDieCount (expression, modifier, maxCount) {
-    const regex = /(\d+)d(\d+)/
+    const regex = /(\d+)d(\d+)(.*)/
     const match = expression.match(regex)
     if (match) {
       const dieCount = parseInt(match[1]) + parseInt(modifier)
       if (maxCount && dieCount > maxCount) {
-        return `${maxCount}d${match[2]}`
+        return `${maxCount}d${match[2]}${match[3]}`
       }
       if (dieCount > 0) {
-        return `${dieCount}d${match[2]}`
+        return `${dieCount}d${match[2]}${match[3]}`
       }
     }
     return expression
