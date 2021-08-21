@@ -166,6 +166,7 @@ function checkReleaseNotes () {
   // Register listeners for the buttons
   $(document).on('click', '.dcc-release-notes', () => _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog'))
   $(document).on('click', '.dcc-credits', () => _onShowJournal('dcc.dcc-userguide', 'Credits'))
+  $(document).on('click', '.dcc-user-guide', () => _onShowJournal('dcc.dcc-userguide', 'Table of Contents'))
 }
 
 async function _onShowJournal (packName, journalName) {
