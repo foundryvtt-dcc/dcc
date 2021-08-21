@@ -553,8 +553,9 @@ class DCCActorSheet extends ActorSheet {
    * @private
    */
   _fillRollOptions (event) {
+    const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
     return {
-      showModifierDialog: event.ctrlKey === true
+      showModifierDialog: rollModifierDefault ^ (event.ctrlKey === true)
     }
   }
 

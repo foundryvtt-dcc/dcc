@@ -522,6 +522,8 @@
   "DCC.SettingLayOnHandsTableHint": "Roll Table to use for Lay On Hands - must be in a compendium pack",
   "DCC.SettingMercurialMagicTable": "Mercurial Magic Table",
   "DCC.SettingMercurialMagicTableHint": "Roll Table to use for Mercurial Magic effects - must be in a compendium pack",
+  "DCC.SettingShowRollModifierByDefault": "Show Roll Modifier by default",
+  "DCC.SettingShowRollModifierByDefaultHint": "Invert the Roll Modifier behaviour to apply by default unless the rollable is Ctrl+Clicked.",
   "DCC.SettingStandardDiceRoller": "Use standard chat cards for dice rolls",
   "DCC.SettingStandardDiceRollerHint": "Use Foundry's standard cards to display attack, damage, crit, and fumble rolls instead of the custom card.",
   "DCC.SettingTurnUnholyTable": "Turn Unholy Table",
