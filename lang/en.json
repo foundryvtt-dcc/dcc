@@ -416,7 +416,7 @@
   "DCC.MercurialMagicRerollPrompt": "Re-roll or Lookup Mercurial Magic Roll?",
   "DCC.MercurialMagicRerollExplain": "Discard previous Mercurial Magic result and re-roll or look up based on entered number?",
   "DCC.MightyDeedsOfArms": "Mighty Deeds of Arms",
-  "DCC.MightyDeedsHowtoLink": "@Compendium[dcc.dcc-userguide.205jRIebYbxECP6q]{Mighty Deeds How-to}",
+  "DCC.MightyDeedsHowtoLink": "@Compendium[dcc.dcc-userguide.fh2DdzsMXvDw91OB]{Mighty Deeds How-To}",
   "DCC.MightyDeedsLink": "@Compendium[dcc-core-book.dcc-core-journals.1gcH2FKbeGbxWtIQ]{Mighty Deeds of Arms}",
   "DCC.MigrationComplete": "Finished migration to DCC System version {systemVersion}!",
   "DCC.MigrationInfo": "Beginning DCC System Migration to version {systemVersion}. Please be patient and do not close your game or shut down your server.",
