@@ -20,6 +20,7 @@ import TablePackManager from './table-pack-manager.js'
 import EntityImages from './entity-images.js'
 import SpellResult from './spell-result.js'
 import ReleaseNotes from './release-notes.js'
+import KeyState from './key-state.js'
 
 import { registerSystemSettings } from './settings.js'
 
@@ -53,7 +54,8 @@ Hooks.once('init', async function () {
     getSkillTable,
     processSpellCheck,
     rollDCCWeaponMacro, // This is called from macros, don't remove
-    getMacroActor // This is called from macros, don't remove
+    getMacroActor, // This is called from macros, don't remove
+    getMacroOptions // This is called from macros, don't remove
   }
 
   // Define custom Entity classes
@@ -139,6 +141,9 @@ Hooks.once('init', async function () {
 Hooks.once('ready', async function () {
   // Register system settings - needs to happen after packs are initialised
   await registerSystemSettings()
+
+  // Register the KeyState tracker
+  game.dcc.KeyState = new KeyState()
 
   checkReleaseNotes()
   checkMigrations()
@@ -568,7 +573,7 @@ function _createDCCAbilityMacro (data, slot) {
   const rollUnder = data.data.rollUnder
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
-    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAbilityCheck("${abilityId}", { rollUnder: ${rollUnder} } ) }`,
+    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAbilityCheck("${abilityId}", Object.assign({ rollUnder: ${rollUnder} }, game.dcc.getMacroOptions())) }`,
     img: EntityImages.imageForMacro(abilityId, rollUnder ? 'abilityRollUnder' : 'ability')
   }
 
@@ -592,7 +597,7 @@ function _createDCCInitiativeMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.Initiative'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token) }',
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token, game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro('initiative')
   }
 
@@ -611,7 +616,7 @@ function _createDCCHitDiceMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.HitDiceRoll'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice() }',
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
   }
 
@@ -631,7 +636,7 @@ function _createDCCSaveMacro (data, slot) {
   const saveId = data.data
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
-    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSavingThrow("${saveId}") }`,
+    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(saveId, 'savingThrow')
   }
 
@@ -652,7 +657,7 @@ function _createDCCSkillMacro (data, slot) {
   const skillName = game.i18n.localize(data.data.skillName)
   const macroData = {
     name: skillName,
-    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSkillCheck("${skillId}") }`,
+    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(skillId, 'skillCheck')
   }
 
@@ -672,7 +677,7 @@ function _createDCCLuckDieMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.LuckDie'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollLuckDie() }',
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollLuckDie(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(die), 'luckDie')
   }
 
@@ -698,7 +703,7 @@ function _createDCCSpellCheckMacro (data, slot) {
   }
 
   if (spell) {
-    macroData.command = `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSpellCheck({ spell: "${spell}" }) }`
+    macroData.command = `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSpellCheck(Object.assign({ spell: "${spell}" }, game.dcc.getMacroOptions())) }`
   }
 
   return macroData
@@ -717,7 +722,7 @@ function _createDCCAttackBonusMacro (data, slot) {
   // Create the macro command
   const macroData = {
     name: game.i18n.localize('DCC.AttackBonus'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus() }',
+    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(DiceChain.getPrimaryDie(die), 'attackBonus')
   }
 
@@ -762,7 +767,7 @@ function _createDCCWeaponMacro (data, slot) {
 
   const macroData = {
     name: item.name,
-    command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}", ${JSON.stringify(options)});`,
+    command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
     img: data.data.weapon.img
   }
 
@@ -835,7 +840,7 @@ function rollDCCWeaponMacro (itemId, options = {}) {
 
 /**
  * Get the current actor - for use in macros
- * @return {Promise}
+ * @return {Object}
  */
 function getMacroActor () {
   const speaker = ChatMessage.getSpeaker()
@@ -846,4 +851,15 @@ function getMacroActor () {
 
   // Return the actor if found
   return actor
+}
+
+/**
+ * Get global options for use in macros
+ * @return {Object}
+ */
+function getMacroOptions () {
+  const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
+  return {
+    showModifierDialog: rollModifierDefault ^ game.dcc.KeyState.ctrlKey
+  }
 }
