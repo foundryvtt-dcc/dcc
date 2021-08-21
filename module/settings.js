@@ -198,4 +198,16 @@ export const registerSystemSettings = async function () {
     default: false,
     config: true
   })
+
+  /**
+   * Allow showing the Roll Modifier dialog by default
+   */
+  game.settings.register('dcc', 'showRollModifierByDefault', {
+    name: 'DCC.SettingShowRollModifierByDefault',
+    hint: 'DCC.SettingShowRollModifierByDefaultHint',
+    scope: 'client',
+    type: Boolean,
+    default: false,
+    config: true
+  })
 }

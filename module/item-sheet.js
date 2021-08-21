@@ -183,8 +183,9 @@ export class DCCItemSheet extends ItemSheet {
    * @private
    */
   _fillRollOptions (event) {
+    const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
     return {
-      showModifierDialog: event.ctrlKey === true
+      showModifierDialog: rollModifierDefault ^ (event.ctrlKey === true)
     }
   }
 
