@@ -32,7 +32,8 @@ function DCCDieTerm (options) {
     type: 'Die',
     label: game.i18n.localize('DCC.RollModifierDieTerm'),
     partial: 'systems/dcc/templates/roll-modifier-partial-die.html',
-    formula: _cleanFormula(options.formula)
+    formula: _cleanFormula(options.formula),
+    presets: options.presets || []
   }]
 }
 
@@ -281,6 +282,7 @@ class RollModifierDialog extends FormApplication {
     html.find('button.dice-chain').click(this._modifyDie.bind(this))
     html.find('button.dice-count').click(this._modifyDieCount.bind(this))
     html.find('button.bonus').click(this._modifyBonus.bind(this))
+    html.find('button.term-preset').click(this._applyPreset.bind(this))
     html.find('button.spellburn').click(this._modifySpellburn.bind(this))
 
     html.find('button.reset').click(this._resetTerm.bind(this))
@@ -404,6 +406,19 @@ class RollModifierDialog extends FormApplication {
       termFormula = '+' + termFormula
     }
     formField.val(termFormula)
+  }
+
+  /**
+   * Apply a preset
+   * @param event {Event}  The originating click event
+   * @private
+   */
+  async _applyPreset (event) {
+    event.preventDefault()
+    const index = event.currentTarget.dataset.term
+    const formula = event.currentTarget.dataset.formula
+    const formField = this.element.find('#term-' + index)
+    formField.val(formula)
   }
 
   /**
