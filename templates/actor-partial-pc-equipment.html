@@ -4,11 +4,16 @@
     {{!-- Deed Roll --}}
     {{#if data.config.rollAttackBonus}}
     <div class="attack-bonus-container skills-container">
-      <div class="split-50-50">
+      <div class="nosplit">
         <label class="attack-bonus rollable" for="dummyAttackBonus"><div class="attack-bonus-button">&nbsp;</div>{{localize "DCC.DeedRoll"}}</label>
+      </div>
+      <div class="split-50-50">
+        <label for="data.details.lastRolledAttackBonus">{{localize "DCC.DeedRollValue"}}</label>
         <input type="text" id="data.details.lastRolledAttackBonus"
                name="data.details.lastRolledAttackBonus"
-               value="{{data.details.lastRolledAttackBonus}}"/>
+               value="{{data.details.lastRolledAttackBonus}}"
+               title="{{localize "DCC.DeedRollTitle"}}"
+               disabled/>
       </div>
     </div>
     {{/if}}
