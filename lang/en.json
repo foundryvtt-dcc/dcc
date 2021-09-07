@@ -224,7 +224,7 @@
   "DCC.Day": "Day",
   "DCC.DeedDie": "Deed Die",
   "DCC.DeedRoll": "Roll Deed Die",
-  "DCC.DeedRollValue": "Attack Bonus",
+  "DCC.DeedRollValue": "Deed Roll",
   "DCC.DeedRollTitle": "Last Rolled Attack Bonus (@ab)",
   "DCC.Default": "Default",
   "DCC.DefaultAbilityCheck": "Default Ability Check",
