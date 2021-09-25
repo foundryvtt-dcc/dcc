@@ -995,9 +995,22 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollCritical (options = {}) {
+    // Construct the terms
+    const terms = [
+      {
+        type: 'Die',
+        formula: this.data.data.attributes.critical.die
+      },
+      {
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.AbilityLck'),
+        formula: parseInt(this.data.data.abilities.lck.mod || '0')
+      }
+    ]
+
     // Roll object for the crit die
     let roll = await game.dcc.DCCRoll.createRoll(
-      `${this.data.data.attributes.critical.die} + ${this.data.data.abilities.lck.mod}`,
+      terms,
       this.getRollData(),
       {} // Ignore options for crits
     )
@@ -1059,9 +1072,22 @@ class DCCActor extends Actor {
       fumbleDie = '1d4'
     }
 
+    // Construct the terms
+    const terms = [
+      {
+        type: 'Die',
+        formula: fumbleDie
+      },
+      {
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.AbilityLck'),
+        formula: -parseInt(this.data.data.abilities.lck.mod || '0')
+      }
+    ]
+
     // Roll object for the fumble die
     let roll = await game.dcc.DCCRoll.createRoll(
-      `${fumbleDie} - ${this.data.data.abilities.lck.mod}`,
+      terms,
       this.getRollData(),
       {} // Ignore options for crits
     )
