@@ -263,7 +263,7 @@ function _parseJSONPCs (pcObject) {
  *  @return {Array}          Array of player character objects
  **/
 function _splitAndParsePlainPCsToJSON (pcString) {
-  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
+  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/[ \t]{2,}/g, ' ').replace(/^[ \t]+|[ \t]+$/g, '')
 
   const pcObjects = []
 
@@ -315,7 +315,7 @@ function _splitAndParsePlainPCsToJSON (pcString) {
  **/
 function _parsePlainPCToJSON (pcString) {
   const pcObject = {}
-  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
+  pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/[ \t]{2,}/g, ' ').replace(/^[ \t]+|[ \t]+$/g, '')
 
   // Name is non-standard, but it's handy to be able to add it to the text before pasting
   pcObject.name = _firstMatch(pcString.match(/Name:\s+(.+)[;\n$]/))
@@ -408,7 +408,7 @@ function _parsePlainPCToJSON (pcString) {
     }
 
     pcObject.weapons = []
-    const weapon1String = pcString.match(/Occupation Weapon:[^\n]\s*(.*)[;\n$]/)
+    const weapon1String = pcString.match(/Occupation Weapon:[ \t]*([^\n].*)[;\n$]/)
     const weapon1 = (weapon1String && weapon1String.length > 0) ? _parseWeapon(weapon1String[1]) : null
     if (weapon1) {
       pcObject.weapons.push({
@@ -419,7 +419,7 @@ function _parsePlainPCToJSON (pcString) {
         melee: weapon1.melee
       })
     }
-    const weapon2String = pcString.match(/Main Weapon:[^\n]\s*(.*)[;\n$]/)
+    const weapon2String = pcString.match(/Main Weapon:[ \t]*([^\n].*)[;\n$]/)
     const weapon2 = (weapon2String && weapon2String.length > 0) ? _parseWeapon(weapon2String[1]) : null
     if (weapon2) {
       pcObject.weapons.push({
@@ -430,7 +430,7 @@ function _parsePlainPCToJSON (pcString) {
         melee: weapon2.melee
       })
     }
-    const weapon3String = pcString.match(/Secondary Weapon:[^\n]\s*(.*)[;\n$]/)
+    const weapon3String = pcString.match(/Secondary Weapon:[ \t]*([^\n].*)[;\n$]/)
     const weapon3 = (weapon3String && weapon3String.length > 0) ? _parseWeapon(weapon3String[1]) : null
     if (weapon3) {
       pcObject.weapons.push({
@@ -456,6 +456,7 @@ function _firstMatch (result) {
 }
 
 function _parseWeapon (weaponString) {
+  if (weaponString.length == 0) { return }
   const weaponData = weaponString.match(/^(.*)\s+(.+)\s+\((?:dmg\s+)?(.+)\)$/)
   if (weaponData && weaponData.length === 4) {
     let melee = true

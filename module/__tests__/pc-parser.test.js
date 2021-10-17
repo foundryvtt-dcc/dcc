@@ -1858,6 +1858,121 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
   expect(parsedNPC).toMatchObject([expected])
 })
 
+/* Missing weapons test - with spaces before the newline*/
+test('underarmed_warrior_again', () => {
+  const parsedNPC = parsePCs(
+`Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Lawful Warrior (1st level)
+Occupation: Confidence artist
+Strength: 13 (+1)
+Agility: 11 (0)
+Stamina: 15 (+1)
+Personality: 14 (+1)
+Intelligence: 9 (0)
+Luck: 9 (0)
+
+HP: 13; Speed: 30; Init: 1
+Ref: 1; Fort: 2; Will: 1
+
+Base Attack Mod: d3
+Attack Dice: 1d20; Crit Die/Table: 1d12/III
+Occupation Weapon: Dagger melee d3+1 (dmg 1d4+1+deed)
+Main Weapon: 
+Secondary Weapon: 
+
+AC: (10) (Unarmored (+0) Check penalty (0) Fumble die (d4))
+Equipment: Sack (large) (12 cp)
+Trade good: Quality cloak
+Starting Funds: 33 cp + 30 gp
+Lucky sign: Righteous heart (Turn unholy checks) (+0)
+Languages: Common
+Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
+  )
+  const expected = {
+    'data.attributes.init.value': '1',
+    'data.attributes.speed.value': '30',
+    'data.details.occupation.value': 'Confidence artist',
+    'data.attributes.ac.value': '10',
+    'data.attributes.hp.value': '13',
+    'data.attributes.hp.max': '13',
+    'data.attributes.hitDice.value': '1d12',
+    'data.attributes.critical.die': '1d12',
+    'data.attributes.critical.table': 'III',
+    'data.abilities.str.value': '13',
+    'data.abilities.agl.value': '11',
+    'data.abilities.sta.value': '15',
+    'data.abilities.per.value': '14',
+    'data.abilities.int.value': '9',
+    'data.abilities.lck.value': '9',
+    'data.abilities.str.max': '13',
+    'data.abilities.agl.max': '11',
+    'data.abilities.sta.max': '15',
+    'data.abilities.per.max': '14',
+    'data.abilities.int.max': '9',
+    'data.abilities.lck.max': '9',
+    'data.class.className': 'Warrior',
+    'data.config.actionDice': '1d20',
+    'data.details.alignment': 'l',
+    'data.details.attackBonus': 'd3',
+    'data.details.birthAugur': 'Righteous heart (Turn unholy checks) (+0)',
+    'data.details.languages': 'Common',
+    'data.details.level.value': '1',
+    'data.saves.frt.value': '2',
+    'data.saves.ref.value': '1',
+    'data.saves.wil.value': '1',
+    'data.skills.findSecretDoors.value': 0,
+    items: [
+      {
+        name: 'Dagger',
+        type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
+        data: {
+          toHit: 'd3+1',
+          damage: '1d4+1+@ab',
+          melee: true
+        }
+      },
+      {
+        name: 'Unarmored',
+        type: 'armor',
+        img: 'systems/dcc/styles/images/armor.webp',
+        data: {
+          acBonus: '+0',
+          checkPenalty: '0',
+          fumbleDie: '1d4'
+        }
+      },
+      {
+        name: 'Sack (large) (12 cp)',
+        type: 'equipment',
+        img: 'systems/dcc/styles/images/item.webp'
+      },
+      {
+        name: 'Quality cloak',
+        type: 'equipment',
+        img: 'systems/dcc/styles/images/item.webp'
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        img: 'systems/dcc/styles/images/coins.webp',
+        data: {
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '30',
+            sp: '0',
+            cp: '33'
+          },
+          isCoins: true
+        }
+      }]
+  }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
 /* Test multiple uppers */
 test('uppers', () => {
   const parsedNPC = parsePCs(
