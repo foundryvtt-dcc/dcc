@@ -28,10 +28,11 @@ class KeyState {
 
   /**
    * Handle events to update our record of key states
+   * Foundry convention is to treat the meta key like ctrl
    * @param event {Object}  The incoming event
    */
   handleEvent (event) {
-    this._ctrlKeyState = event.ctrlKey
+    this._ctrlKeyState = (event.ctrlKey || event.metaKey)
     this._shiftKeyState = event.shiftKey
   }
 }
