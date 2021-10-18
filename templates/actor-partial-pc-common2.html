@@ -2,6 +2,7 @@
 <div class="tab character2" data-group="primary" data-tab="character">
   <div class="outer">
     <div style="grid-area: 1 / 1;" class="ac-and-hp-box">
+      {{!-- AC --}}
       <svg style="grid-area: 1 / 1; justify-self: center" width="68" height="65" viewBox="0 0 68 64"
            fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M65 3H3C2.99995 22.5946 7.3056 61 35.2917 61C63.2778 61 65 11.6216 65 3Z" stroke="black"
@@ -19,16 +20,18 @@
            fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"/>
       </svg>
+      {{!-- HP --}}
       <input style="grid-area: 1 / 2" id="data.attributes.hp.value"
              value="{{data.attributes.hp.value}}"
              data-dtype="Number"/>
       <label for="data.attributes.hp.value" style="grid-row: 2">{{localize "DCC.HitPoints"}}</label>
       <div style="grid-area: 3 / 2; font-size: 13px">
-        <label style="font-size: 15px" for="data.attributes.hp.max">{{localize "DCC.MaxColon"}}</label>
+        <label style="font-size: 15px" for="data.attributes.hp.max">{{localize "DCC.Max"}}:</label>
         <input style="font-size: 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.5)"
                id="data.attributes.hp.max" value="{{data.attributes.hp.max}}" size="3">
       </div>
     </div>
+    {{!-- Combat Basics --}}
     <div style="grid-row: 1; grid-column-start: 2; grid-column-end: 5;" class="combat-basics">
       <div class="combat-basics-title dark-title" style="grid-row: 1; grid-column-start: 1; grid-column-end: 5">Combat Basics</div>
       <label for="initiative-die-value" style="grid-area: 2 / 1">Initiative Die:</label>
@@ -68,16 +71,26 @@
       <label for="speed-value" style="grid-area: 5 / 3">Speed:</label>
       <input id="speed-value" style="grid-area: 5 / 4" value="30'" size="3">
     </div>
-    <div style="grid-area: 2 / 1" class="ability-box">
-      <label for="strength-value" class="ability-name dark-title">Strength</label>
+    {{!-- Ability Scores --}}
+    {{#* inline "abilityScore"}}
+    <div style="grid-area: {{area}}" class="ability-box">
+      <label for="data.abilities.{{id}}.value" class="ability-name dark-title">{{localize ability.label}}</label>
       <div class="ability-score-box">
-        <input id="strength-value" value="18" size="2">
+        <input id="data.abilities.{{id}}.value" value="{{ability.value}}" size="2"
+               name="data.abilities.{{id}}.value" data-dtype="Number" placeholder="10"/>
       </div>
-      <label for="strength-max-value" style="grid-area: 2 / 1">Modifier:</label>
-      <input id="strength-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-      <label for="strength-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
-      <input id="strength-modifier" style="grid-area: 3 / 2" value="18" size="2">
+      <label for="data.abilities.{{id}}.mod" style="grid-area: 2 / 1">{{localize "DCC.Modifier"}}:</label>
+      <input id="data.abilities.{{id}}.mod" style="grid-area: 2 / 2"
+             name="data.abilities.{{id}}.mod" value="{{numberFormat ability.mod decimals=0 sign=true}}"
+             size="3" disabled/>
+      <label for="data.abilities.{{id}}.max" style="grid-area: 3 / 1">{{localize "DCC.MaxValue"}}:</label>
+      <input id="data.abilities.{{id}}.max" style="grid-area: 3 / 2"
+             name="data.abilities.{{id}}.max" value="{{ability.max}}" size="2"
+             data-dtype="Number" placeholder="10"/>
     </div>
+    {{/inline}}
+    {{!-- Strength --}}
+    {{> abilityScore id='str' ability=data.abilities.str area='2 / 1'}}
     <div style="grid-area: 2 / 2">
       <img src="styles/images/dccrpg-logo.png" height="60px" width="110px" style="opacity: 0.35; margin-top: 0px">
     </div>
@@ -92,16 +105,8 @@
 
     <div style="grid-row: 3; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
 
-    <div style="grid-area: 4 / 1" class="ability-box">
-      <label for="agility-value" class="ability-name dark-title">Agility</label>
-      <div class="ability-score-box">
-        <input id="agility-value" value="16" size="2">
-      </div>
-      <label for="agility-max-value" style="grid-area: 2 / 1">Modifier:</label>
-      <input id="agility-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-      <label for="agility-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
-      <input id="agility-modifier" style="grid-area: 3 / 2" value="18" size="2">
-    </div>
+    {{!-- Agility --}}
+    {{> abilityScore id='agl' ability=data.abilities.agl area='4 / 1'}}
     <div style="grid-area: 4 / 2" class="saving-throw-box">
       <input id="reflex-save-value" value="+2">
       <label for="reflex-save-value">Reflex<br/>Save</label>
@@ -117,16 +122,8 @@
 
     <div style="grid-row: 5; grid-column-start: 1; grid-column-end: 5" class="row-separator"></div>
 
-    <div style="grid-row: 6; grid-column: 1" class="ability-box">
-      <label for="stamina-value" class="ability-name dark-title">Stamina</label>
-      <div class="ability-score-box">
-        <input id="stamina-value" value="16" size="2">
-      </div>
-      <label for="stamina-max-value" style="grid-area: 2 / 1">Modifier:</label>
-      <input id="stamina-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-      <label for="stamina-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
-      <input id="stamina-modifier" style="grid-area: 3 / 2" value="18" size="2">
-    </div>
+    {{!-- Stamina --}}
+    {{> abilityScore id='sta' ability=data.abilities.sta area='6 / 1'}}
     <div style="grid-row: 6; grid-column: 2" class="saving-throw-box">
       <input id="fortitude-save-value" value="+2">
       <label for="fortitude-save-value" style="letter-spacing: 0">Fortitude<br/>Save</label>
@@ -139,16 +136,8 @@
 
     <div style="grid-row: 7; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
-    <div style="grid-row: 8; grid-column: 1" class="ability-box">
-      <label for="personality-value" class="ability-name dark-title">Personality</label>
-      <div class="ability-score-box">
-        <input id="personality-value" value="16" size="2">
-      </div>
-      <label for="personality-max-value" style="grid-area: 2 / 1">Modifier:</label>
-      <input id="personality-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-      <label for="personality-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
-      <input id="personality-modifier" style="grid-area: 3 / 2" value="18" size="2">
-    </div>
+    {{!-- Stamina --}}
+    {{> abilityScore id='per' ability=data.abilities.per area='8 / 1'}}
     <div style="grid-row: 8; grid-column: 2" class="saving-throw-box">
       <input id="will-save-value" value="+2">
       <label for="will-save-value">Will<br/>Save</label>
@@ -156,16 +145,8 @@
 
     <div style="grid-row: 9; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
-    <div style="grid-row: 10; grid-column: 1" class="ability-box">
-      <label for="luck-value" class="ability-name dark-title">Luck</label>
-      <div class="ability-score-box">
-        <input id="luck-value" value="16" size="2">
-      </div>
-      <label for="luck-max-value" style="grid-area: 2 / 1">Modifier:</label>
-      <input id="luck-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-      <label for="luck-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
-      <input id="luck-modifier" style="grid-area: 3 / 2" value="18" size="2">
-    </div>
+    {{!-- Luck --}}
+    {{> abilityScore id='lck' ability=data.abilities.lck area='10 / 1'}}
     <div style="grid-row: 10; grid-column: 2" class="lucky-roll-box">
       <label for="lucky-roll-value" class="dark-title">Lucky Roll</label>
       <textarea id="lucky-roll-value" rows="4">The Bull - +1 to Hit Rolls</textarea>
@@ -173,16 +154,8 @@
 
     <div style="grid-row: 11; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
 
-    <div style="grid-row: 12; grid-column: 1" class="ability-box">
-      <label for="intelligence-value" class="ability-name dark-title">Intelligence</label>
-      <div class="ability-score-box">
-        <input id="intelligence-value" value="16" size="2">
-      </div>
-      <label for="intelligence-max-value" style="grid-area: 2 / 1">Modifier:</label>
-      <input id="intelligence-max-value" style="grid-area: 2 / 2" value="+3" size="3">
-      <label for="intelligence-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
-      <input id="intelligence-modifier" style="grid-area: 3 / 2" value="18" size="2">
-    </div>
+    {{!-- Intelligence --}}
+    {{> abilityScore id='int' ability=data.abilities.int area='12 / 1'}}
 
     <div style="grid-row: 12; grid-column-start: 2; grid-column-end: 5" class="languages-box">
       <label for="languages-value" class="dark-title">Languages</label>
