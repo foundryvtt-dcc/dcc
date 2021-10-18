@@ -89,6 +89,13 @@
              data-dtype="Number" placeholder="10"/>
     </div>
     {{/inline}}
+    {{#* inline "save"}}
+    <div style="grid-area: {{area}}" class="saving-throw-box">
+      <input id="data.saves.{{id}}.value" value="{{numberFormat save.value decimals=0 sign=true}}"
+             name="data.saves.{{id}}.value" data-dtype="Number" placeholder="0"/>
+      <label for="data.saves.{{id}}.value">{{localize save.label}}</label>
+    </div>
+    {{/inline}}
     {{!-- Strength --}}
     {{> abilityScore id='str' ability=data.abilities.str area='2 / 1'}}
     <div style="grid-area: 2 / 2">
@@ -107,10 +114,8 @@
 
     {{!-- Agility --}}
     {{> abilityScore id='agl' ability=data.abilities.agl area='4 / 1'}}
-    <div style="grid-area: 4 / 2" class="saving-throw-box">
-      <input id="reflex-save-value" value="+2">
-      <label for="reflex-save-value">Reflex<br/>Save</label>
-    </div>
+    {{!-- Reflex Save --}}
+    {{> save id='ref' save=data.saves.ref area='4 / 2'}}
     <div style="grid-area: 4 / 3" class="hit-bonus-box">
       <label for="ranged-attack-value" class="dark-title">Ranged<br/>Attack</label>
       <input id="ranged-attack-value" value="+2">
@@ -124,10 +129,8 @@
 
     {{!-- Stamina --}}
     {{> abilityScore id='sta' ability=data.abilities.sta area='6 / 1'}}
-    <div style="grid-row: 6; grid-column: 2" class="saving-throw-box">
-      <input id="fortitude-save-value" value="+2">
-      <label for="fortitude-save-value" style="letter-spacing: 0">Fortitude<br/>Save</label>
-    </div>
+    {{!-- Fortitude Save --}}
+    {{> save id='frt' save=data.saves.frt area='6 / 2'}}
     <div style="grid-row-start: 6; grid-row-end: 11; grid-column-start: 3; grid-column-end: 5" class="portrait">
       <label for="portrait" class="dark-title">Portrait</label>
       <img id="portrait" style="grid-row: 2; margin: 6px 0 0 15px" src="styles/images/hugh.png" height="193px"
@@ -138,10 +141,8 @@
 
     {{!-- Stamina --}}
     {{> abilityScore id='per' ability=data.abilities.per area='8 / 1'}}
-    <div style="grid-row: 8; grid-column: 2" class="saving-throw-box">
-      <input id="will-save-value" value="+2">
-      <label for="will-save-value">Will<br/>Save</label>
-    </div>
+    {{!-- Will Save --}}
+    {{> save id='wil' save=data.saves.wil area='8 / 2'}}
 
     <div style="grid-row: 9; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
