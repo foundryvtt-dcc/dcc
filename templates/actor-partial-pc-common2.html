@@ -147,12 +147,12 @@
     <div style="grid-row-start: 6; grid-row-end: 11; grid-column-start: 3; grid-column-end: 5" class="portrait">
       <label for="portrait" class="dark-title">{{localize "DCC.CharacterPortrait"}}</label>
       <img id="portrait" style="grid-row: 2; margin: 6px 0 0 15px" src="{{actor.img}}"
-           height="193px" width="193px" alt="{{localize 'DCC.Character Portrait'}}/>
+           height="193px" width="193px" alt="{{localize 'DCC.Character Portrait'}}"/>
     </div>
 
     <div style="grid-row: 7; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
-    {{!-- Stamina --}}
+    {{!-- Personality --}}
     {{> abilityScore id='per' ability=data.abilities.per area='8 / 1'}}
 
     {{!-- Will Save --}}
