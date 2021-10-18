@@ -80,6 +80,7 @@ Hooks.once('init', async function () {
   const templatePaths = [
     'systems/dcc/templates/actor-partial-pc-header.html',
     'systems/dcc/templates/actor-partial-pc-common.html',
+    'systems/dcc/templates/actor-partial-pc-common2.html',
     'systems/dcc/templates/actor-partial-pc-equipment.html',
     'systems/dcc/templates/actor-partial-pc-notes.html',
     'systems/dcc/templates/actor-partial-skills.html',

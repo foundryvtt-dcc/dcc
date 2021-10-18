@@ -1,0 +1,185 @@
+{{!-- Character Tab --}}
+<div class="tab character2" data-group="primary" data-tab="character">
+  <div class="outer">
+    <div style="grid-area: 1 / 1;" class="ac-and-hp-box">
+      <svg style="grid-area: 1 / 1; justify-self: center" width="68" height="65" viewBox="0 0 68 64"
+           fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M65 3H3C2.99995 22.5946 7.3056 61 35.2917 61C63.2778 61 65 11.6216 65 3Z" stroke="black"
+              stroke-opacity="0.75" stroke-width="5"/>
+      </svg>
+      <input style="grid-area: 1 / 1" id="ac-value" value="14">
+      <label for="ac-value" style="grid-row-start: 2; grid-row-end: 4; grid-column: 1">Armor<br/>Class</label>
+      <svg style="grid-area: 1 / 2; justify-self: center" width="70" height="65" viewBox="0 0 70 64"
+           fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"/>
+      </svg>
+      <input style="grid-area: 1 / 2" id="hp-value" value="31">
+      <label for="hp-value" style="grid-row: 2">Hit Points</label>
+      <div style="grid-area: 3 / 2; font-size: 13px">
+        <label style="font-size: 15px" for="hp-max-value">Max:</label>
+        <input style="font-size: 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.5)" id="hp-max-value" value="22"
+                                                                                                      size="3">
+      </div>
+    </div>
+    <div style="grid-row: 1; grid-column-start: 2; grid-column-end: 5;" class="combat-basics">
+      <div class="combat-basics-title dark-title" style="grid-row: 1; grid-column-start: 1; grid-column-end: 5">Combat Basics</div>
+      <label for="initiative-die-value" style="grid-area: 2 / 1">Initiative Die:</label>
+      <select name="initiative-die-value" id="initiative-die-value" style="grid-area: 2 / 2">
+        <option value="d20">d20</option>
+        <option value="d14">d14</option>
+      </select>
+      <label for="initiative-value" style="grid-area: 2 / 3">Initiative:</label>
+      <input id="initiative-value" style="grid-area: 2 / 4" value="+3" size="3">
+      <label for="action-dice-value" style="grid-area: 3 / 1;">Action Dice:</label>
+      <select name="action-dice-value" id="action-dice-value" style="grid-area: 3 / 2">
+        <option value="d20">d20</option>
+        <option value="d20-d14">d20/d14</option>
+        <option value="d20-d16">d20/d16</option>
+        <option value="d20-d20">d20/d20</option>
+        <option value="d20-d20-d14">d20/d20/d14</option>
+      </select>
+      <label for="attack-value" style="grid-area: 4 / 1">Attack:</label>
+      <input id="attack-value" style="grid-area: 4 / 2" value="+3" size="3">
+      <label for="hit-die-value" style="grid-area: 5 / 1">Hit Die:</label>
+      <input id="hit-die-value" style="grid-area: 5 / 2" value="1d8" size="3">
+      <label for="crit-die-value" style="grid-area: 3 / 3">Crit Die:</label>
+      <input id="crit-die-value" style="grid-area: 3 / 4" value="1d4" size="3">
+      <label for="crit-table-value" style="grid-area: 4 / 3">Crit Table:</label>
+      <select name="crit-table-value" id="crit-table-value" style="grid-area: 4 / 4">
+        <option value="I">I</option>
+        <option value="II">II</option>
+        <option value="III">III</option>
+        <option value="IV">IV</option>
+        <option value="V">V</option>
+        <option value="DN">DN</option>
+        <option value="DR">DR</option>
+        <option value="G">G</option>
+        <option value="M">M</option>
+        <option value="U">U</option>
+      </select>
+      <label for="speed-value" style="grid-area: 5 / 3">Speed:</label>
+      <input id="speed-value" style="grid-area: 5 / 4" value="30'" size="3">
+    </div>
+    <div style="grid-area: 2 / 1" class="ability-box">
+      <label for="strength-value" class="ability-name dark-title">Strength</label>
+      <div class="ability-score-box">
+        <input id="strength-value" value="18" size="2">
+      </div>
+      <label for="strength-max-value" style="grid-area: 2 / 1">Modifier:</label>
+      <input id="strength-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+      <label for="strength-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+      <input id="strength-modifier" style="grid-area: 3 / 2" value="18" size="2">
+    </div>
+    <div style="grid-area: 2 / 2">
+      <img src="styles/images/dccrpg-logo.png" height="60px" width="110px" style="opacity: 0.35; margin-top: 0px">
+    </div>
+    <div style="grid-area: 2 / 3" class="hit-bonus-box">
+      <label for="melee-attack-value" class="dark-title">Melee<br/>Attack</label>
+      <input id="melee-attack-value" value="+2">
+    </div>
+    <div style="grid-area: 2 / 4" class="hit-bonus-box">
+      <label for="melee-damage-value" class="dark-title">Melee<br/>Damage</label>
+      <input id="melee-damage-value" value="1d6+2">
+    </div>
+
+    <div style="grid-row: 3; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
+
+    <div style="grid-area: 4 / 1" class="ability-box">
+      <label for="agility-value" class="ability-name dark-title">Agility</label>
+      <div class="ability-score-box">
+        <input id="agility-value" value="16" size="2">
+      </div>
+      <label for="agility-max-value" style="grid-area: 2 / 1">Modifier:</label>
+      <input id="agility-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+      <label for="agility-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+      <input id="agility-modifier" style="grid-area: 3 / 2" value="18" size="2">
+    </div>
+    <div style="grid-area: 4 / 2" class="saving-throw-box">
+      <input id="reflex-save-value" value="+2">
+      <label for="reflex-save-value">Reflex<br/>Save</label>
+    </div>
+    <div style="grid-area: 4 / 3" class="hit-bonus-box">
+      <label for="ranged-attack-value" class="dark-title">Ranged<br/>Attack</label>
+      <input id="ranged-attack-value" value="+2">
+    </div>
+    <div style="grid-area: 4 / 4" class="hit-bonus-box">
+      <label for="ranged-damage-value" class="dark-title">Ranged<br/>Damage</label>
+      <input id="ranged-damage-value" value="1d6+2">
+    </div>
+
+    <div style="grid-row: 5; grid-column-start: 1; grid-column-end: 5" class="row-separator"></div>
+
+    <div style="grid-row: 6; grid-column: 1" class="ability-box">
+      <label for="stamina-value" class="ability-name dark-title">Stamina</label>
+      <div class="ability-score-box">
+        <input id="stamina-value" value="16" size="2">
+      </div>
+      <label for="stamina-max-value" style="grid-area: 2 / 1">Modifier:</label>
+      <input id="stamina-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+      <label for="stamina-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+      <input id="stamina-modifier" style="grid-area: 3 / 2" value="18" size="2">
+    </div>
+    <div style="grid-row: 6; grid-column: 2" class="saving-throw-box">
+      <input id="fortitude-save-value" value="+2">
+      <label for="fortitude-save-value" style="letter-spacing: 0">Fortitude<br/>Save</label>
+    </div>
+    <div style="grid-row-start: 6; grid-row-end: 11; grid-column-start: 3; grid-column-end: 5" class="portrait">
+      <label for="portrait" class="dark-title">Portrait</label>
+      <img id="portrait" style="grid-row: 2; margin: 6px 0 0 15px" src="styles/images/hugh.png" height="193px"
+                                                                                                width="193px">
+    </div>
+
+    <div style="grid-row: 7; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
+
+    <div style="grid-row: 8; grid-column: 1" class="ability-box">
+      <label for="personality-value" class="ability-name dark-title">Personality</label>
+      <div class="ability-score-box">
+        <input id="personality-value" value="16" size="2">
+      </div>
+      <label for="personality-max-value" style="grid-area: 2 / 1">Modifier:</label>
+      <input id="personality-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+      <label for="personality-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+      <input id="personality-modifier" style="grid-area: 3 / 2" value="18" size="2">
+    </div>
+    <div style="grid-row: 8; grid-column: 2" class="saving-throw-box">
+      <input id="will-save-value" value="+2">
+      <label for="will-save-value">Will<br/>Save</label>
+    </div>
+
+    <div style="grid-row: 9; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
+
+    <div style="grid-row: 10; grid-column: 1" class="ability-box">
+      <label for="luck-value" class="ability-name dark-title">Luck</label>
+      <div class="ability-score-box">
+        <input id="luck-value" value="16" size="2">
+      </div>
+      <label for="luck-max-value" style="grid-area: 2 / 1">Modifier:</label>
+      <input id="luck-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+      <label for="luck-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+      <input id="luck-modifier" style="grid-area: 3 / 2" value="18" size="2">
+    </div>
+    <div style="grid-row: 10; grid-column: 2" class="lucky-roll-box">
+      <label for="lucky-roll-value" class="dark-title">Lucky Roll</label>
+      <textarea id="lucky-roll-value" rows="4">The Bull - +1 to Hit Rolls</textarea>
+    </div>
+
+    <div style="grid-row: 11; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
+
+    <div style="grid-row: 12; grid-column: 1" class="ability-box">
+      <label for="intelligence-value" class="ability-name dark-title">Intelligence</label>
+      <div class="ability-score-box">
+        <input id="intelligence-value" value="16" size="2">
+      </div>
+      <label for="intelligence-max-value" style="grid-area: 2 / 1">Modifier:</label>
+      <input id="intelligence-max-value" style="grid-area: 2 / 2" value="+3" size="3">
+      <label for="intelligence-modifier" style="grid-area: 3 / 1">Maximum Value:</label>
+      <input id="intelligence-modifier" style="grid-area: 3 / 2" value="18" size="2">
+    </div>
+
+    <div style="grid-row: 12; grid-column-start: 2; grid-column-end: 5" class="languages-box">
+      <label for="languages-value" class="dark-title">Languages</label>
+      <textarea id="languages-value" rows="2">Common, Elven, Neutral</textarea>
+    </div>
+  </div>
+</div>
+{{!-- End Character Tab --}}
