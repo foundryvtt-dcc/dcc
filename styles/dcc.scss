@@ -1772,6 +1772,10 @@ form.dcc-roll-modifier {
     display: grid;
     grid-template-rows: 18px auto;
     font-size: 14px;
+
+    img {
+      border: none;
+    }
   }
 
   .row-separator {

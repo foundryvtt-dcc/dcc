@@ -1668,6 +1668,9 @@ form.dcc-roll-modifier input.checkbox {
   grid-template-rows: 18px auto;
   font-size: 14px;
 }
+.dcc.sheet.actor .character2 .portrait img {
+  border: none;
+}
 .dcc.sheet.actor .character2 .row-separator {
   border-bottom: 2px dotted var(--medium-color);
   margin-bottom: 3px;
