@@ -35,29 +35,60 @@
     {{!-- Combat Basics --}}
     <div style="grid-row: 1; grid-column-start: 2; grid-column-end: 5;" class="combat-basics">
       <div class="combat-basics-title dark-title" style="grid-row: 1; grid-column-start: 1; grid-column-end: 5">Combat Basics</div>
-      <label for="initiative-die-value" style="grid-area: 2 / 1">Initiative Die:</label>
-      <select name="initiative-die-value" id="initiative-die-value" style="grid-area: 2 / 2">
-        <option value="d20">d20</option>
-        <option value="d14">d14</option>
+
+      {{!-- Initiative --}}
+      <label for="data.attributes.init.die" style="grid-area: 2 / 1">{{localize "DCC.InitiativeDie"}}:</label>
+      <select name="data.attributes.init.die" id="data.attributes.init.die" style="grid-area: 2 / 2">
+        {{#select data.attributes.init.die}}
+        <option value="1d20">1d20</option>
+        <option value="1d16">1d16</option>
+        {{/select}}
       </select>
-      <label for="initiative-value" style="grid-area: 2 / 3">Initiative:</label>
-      <input id="initiative-value" style="grid-area: 2 / 4" value="+3" size="3">
-      <label for="action-dice-value" style="grid-area: 3 / 1;">Action Dice:</label>
-      <select name="action-dice-value" id="action-dice-value" style="grid-area: 3 / 2">
-        <option value="d20">d20</option>
-        <option value="d20-d14">d20/d14</option>
-        <option value="d20-d16">d20/d16</option>
-        <option value="d20-d20">d20/d20</option>
-        <option value="d20-d20-d14">d20/d20/d14</option>
+      <label for="data.attributes.init.value" style="grid-area: 2 / 3">{{localize "DCC.Initiative"}}:</label>
+      <input id="data.attributes.init.value" name="data.attributes.init.value" style="grid-area: 2 / 4"
+             value="{{numberFormat data.attributes.init.value decimals=0 sign=true}}" size="3"
+             placeholder="+0" data-dtype="Number"/>
+
+      {{!-- Action Dice --}}
+      <label for="data.attributes.actionDice.value" style="grid-area: 3 / 1;">{{localize "DCC.ActionDie"}}:</label>
+      <select name="data.attributes.actionDice.value" id="data.attributes.actionDice.value" style="grid-area: 3 / 2">
+        {{#select data.attributes.actionDice.value}}
+        {{#each data.attributes.actionDice.options as |actionDie index|}}
+        <option value="{{actionDie}}">{{actionDie}}</option>
+        {{/each}}
+        {{/select}}
       </select>
-      <label for="attack-value" style="grid-area: 4 / 1">Attack:</label>
-      <input id="attack-value" style="grid-area: 4 / 2" value="+3" size="3">
-      <label for="hit-die-value" style="grid-area: 5 / 1">Hit Die:</label>
-      <input id="hit-die-value" style="grid-area: 5 / 2" value="1d8" size="3">
-      <label for="crit-die-value" style="grid-area: 3 / 3">Crit Die:</label>
-      <input id="crit-die-value" style="grid-area: 3 / 4" value="1d4" size="3">
-      <label for="crit-table-value" style="grid-area: 4 / 3">Crit Table:</label>
-      <select name="crit-table-value" id="crit-table-value" style="grid-area: 4 / 4">
+
+      {{!-- Attack Bonus --}}
+      <label for="data.details.attackBonus" style="grid-area: 4 / 1">{{localize "DCC.Attack"}}:</label>
+      <input id="data.details.attackBonus" name="data.details.attackBonus"
+             style="grid-area: 4 / 2" size="3"
+             value="{{formatAttackBonus data.details.attackBonus}}"
+             data-dtype="String"/>
+
+      {{!-- Hit Die --}}
+      <label for="data.attributes.hitDice.value" style="grid-area: 5 / 1">{{localize "DCC.HitDice"}}:</label>
+      <input id="data.attributes.hitDice.value" name="data.attributes.hitDice.value"
+             style="grid-area: 5 / 2" size="3"
+             value="{{data.attributes.hitDice.value}}"
+             data-dtype="String"/>
+
+      {{!-- Crit Die --}}
+      <label for="data.attributes.critical.die" style="grid-area: 3 / 3">{{localize "DCC.CritDie"}}:</label>
+      <input id="data.attributes.critical.die" name="data.attributes.critical.die"
+             style="grid-area: 3 / 4" size="3"
+             value="{{data.attributes.critical.die}}"
+             data-dtype="String"/>
+
+      {{!-- Crit Table --}}
+      <label for="data.attributes.critical.table" style="grid-area: 4 / 3">{{localize "DCC.CritTable"}}:</label> 
+      <input id="data.attributes.critical.table" name="data.attributes.critical.table"
+             style="grid-area: 4 / 4" value="{{data.attributes.critical.table}}"
+             placeholder="I"/>
+      {{!-- Crit Table Dropdown - needs access to the list of tables
+      <select name="data.attributes.critical.table" id="data.attributes.critical.table"
+              style="grid-area: 4 / 4">
+        {{#select data.attributes.critical.table}}
         <option value="I">I</option>
         <option value="II">II</option>
         <option value="III">III</option>
@@ -68,9 +99,20 @@
         <option value="G">G</option>
         <option value="M">M</option>
         <option value="U">U</option>
+        {{/select}}
       </select>
-      <label for="speed-value" style="grid-area: 5 / 3">Speed:</label>
-      <input id="speed-value" style="grid-area: 5 / 4" value="30'" size="3">
+      --}}
+
+      {{!-- Speed --}}
+      <label for="data.attributes.speed.value" style="grid-area: 5 / 3">{{localize "DCC.Speed"}}:</label>
+      <input id="data.attributes.speed.value" name="data.attributes.speed.value"
+             style="grid-area: 5 / 4" value="{{distanceFormat data.attributes.speed.value}}"
+             size="3"
+             {{#if data.config.computeSpeed }}
+             title="{{localize "DCC.SpeedBase"}} {{distanceFormat data.attributes.speed.base}} {{localize "DCC.SpeedPenalty"}} {{distanceFormat data.attributes.ac.speedPenalty}}"
+             disabled
+             {{/if}}
+             data-dtype="String"/>
     </div>
 
     {{!-- Ability Scores and Saves --}}
