@@ -7,18 +7,26 @@
         <path d="M65 3H3C2.99995 22.5946 7.3056 61 35.2917 61C63.2778 61 65 11.6216 65 3Z" stroke="black"
               stroke-opacity="0.75" stroke-width="5"/>
       </svg>
-      <input style="grid-area: 1 / 1" id="ac-value" value="14">
-      <label for="ac-value" style="grid-row-start: 2; grid-row-end: 4; grid-column: 1">Armor<br/>Class</label>
+      <input style="grid-area: 1 / 1" id="data.attributes.ac.value"
+             value="{{data.attributes.ac.value}}"
+             {{#if data.config.computeAC }}
+             title="{{localize data.attributes.ac.baseAbilityLabel}} {{numberFormat data.attributes.ac.baseAbility decimals=0 sign=true}} {{localize "DCC.ArmorPropertiesACBonus"}} {{numberFormat data.attributes.ac.armorBonus decimals=0 sign=true}}"
+             disabled
+             {{/if}}
+             data-dtype="Number"/>
+      <label for="data.attributes.ac.value" style="grid-row-start: 2; grid-row-end: 4; grid-column: 1">{{localize "DCC.ArmorClass"}}</label>
       <svg style="grid-area: 1 / 2; justify-self: center" width="70" height="65" viewBox="0 0 70 64"
            fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"/>
       </svg>
-      <input style="grid-area: 1 / 2" id="hp-value" value="31">
-      <label for="hp-value" style="grid-row: 2">Hit Points</label>
+      <input style="grid-area: 1 / 2" id="data.attributes.hp.value"
+             value="{{data.attributes.hp.value}}"
+             data-dtype="Number"/>
+      <label for="data.attributes.hp.value" style="grid-row: 2">{{localize "DCC.HitPoints"}}</label>
       <div style="grid-area: 3 / 2; font-size: 13px">
-        <label style="font-size: 15px" for="hp-max-value">Max:</label>
-        <input style="font-size: 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.5)" id="hp-max-value" value="22"
-                                                                                                      size="3">
+        <label style="font-size: 15px" for="data.attributes.hp.max">{{localize "DCC.MaxColon"}}</label>
+        <input style="font-size: 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.5)"
+               id="data.attributes.hp.max" value="{{data.attributes.hp.max}}" size="3">
       </div>
     </div>
     <div style="grid-row: 1; grid-column-start: 2; grid-column-end: 5;" class="combat-basics">
