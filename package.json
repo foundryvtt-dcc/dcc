@@ -18,10 +18,10 @@
   "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
   "devDependencies": {
     "@babel/preset-env": "^7.12.11",
-    "babel-jest": "^26.6.3",
-    "jest": "^26.6.3",
+    "babel-jest": "^27.3.1",
+    "jest": "^27.3.1",
     "sass": "^1.32.8",
-    "standard": "^14.3.4",
+    "standard": "^16.0.4",
     "stylelint": "^13.13.1",
     "stylelint-config-sass-guidelines": "^8.0.0"
   },
