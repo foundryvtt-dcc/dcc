@@ -179,7 +179,7 @@ class DCCActor extends Actor {
         hp: data.attributes.hp.value,
         maxhp: data.attributes.hp.max,
         level: data.details.level.value,
-        cl: data.details.level.value,
+        cl: data.details.level.value
       }
     )
 

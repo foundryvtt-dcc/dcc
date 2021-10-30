@@ -49,6 +49,8 @@
   "DCC.ActionUtil": "Utility",
   "DCC.ActorImport": "Import Actor(s)",
   "DCC.ActorImportStatblock": "Statblock(s) or Statline(s)",
+  "DCC.ActorImportConfirmationPrompt": "Really import {number} actors?",
+  "DCC.ActorImportConfirmationMessage": "This will import {number} actors. Are you sure you want to continue?",
   "DCC.ActorType": "Actor Type",
   "DCC.ActorTypeNPC": "NPC Statline(s)",
   "DCC.ActorTypePlayer": "Player Statblock(s)",

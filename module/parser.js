@@ -1,4 +1,4 @@
-/* global CONFIG, expandObject, FormApplication, game, Hooks, ui, $ */
+/* global CONFIG, Dialog, expandObject, FormApplication, game, Hooks, ui, $ */
 
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
@@ -79,6 +79,44 @@ async function createActors (type, folderId, actorData) {
   }
 
   const actors = []
+
+  // Prompt if we're importing a lot of actors
+  if (parsedCharacters.length > CONFIG.DCC.actorImporterPromptThreshold) {
+    let importConfirmed = false
+
+    const context = {
+      number: parsedCharacters.length
+    }
+    await new Promise((resolve, reject) => {
+      new Dialog({
+        title: game.i18n.format('DCC.ActorImportConfirmationPrompt', context),
+        content: `<p>${game.i18n.format('DCC.ActorImportConfirmationMessage', context)}</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.Yes'),
+            callback: () => {
+              importConfirmed = true
+              resolve()
+            }
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('DCC.No'),
+            callback: () => {
+              importConfirmed = false
+              resolve()
+            }
+          }
+        }
+      }).render(true)
+    })
+
+    // Abort the import
+    if (!importConfirmed) {
+      return []
+    }
+  }
 
   for (const parsedCharacter of parsedCharacters) {
     // Separate out owned items

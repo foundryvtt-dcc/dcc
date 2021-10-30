@@ -1858,7 +1858,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
   expect(parsedNPC).toMatchObject([expected])
 })
 
-/* Missing weapons test - with spaces before the newline*/
+/* Missing weapons test - with spaces before the newline */
 test('underarmed_warrior_again', () => {
   const parsedNPC = parsePCs(
 `Generator Settings
