@@ -511,11 +511,11 @@ class RollModifierDialog extends FormApplication {
     let anyModifierTerms = false
 
     // Helper functions
-    var addDieTerm = function (term) {
+    const addDieTerm = function (term) {
       Array.prototype.push.apply(terms, DCCDieTerm({ formula: term.formula }))
       termAccumulator = ''
     }
-    var addModifierTerm = function () {
+    const addModifierTerm = function () {
       // Remove duplicate operator terms and other unexpected things
       if (termAccumulator.match(validNumber)) {
         Array.prototype.push.apply(terms, DCCModifierTerm({ formula: termAccumulator }))
@@ -523,7 +523,7 @@ class RollModifierDialog extends FormApplication {
       }
       termAccumulator = ''
     }
-    var accumulateTerm = function (term) {
+    const accumulateTerm = function (term) {
       termAccumulator += term.formula.replace(/\s+/g, '')
     }
 

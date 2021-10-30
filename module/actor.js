@@ -449,7 +449,7 @@ class DCCActor extends Actor {
     }
     const die = skill.die || this.data.data.attributes.actionDice.value
     const ability = skill.ability || null
-    var abilityLabel = ''
+    let abilityLabel = ''
     if (ability) {
       abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
     }
