@@ -879,7 +879,7 @@ class DCCActor extends Actor {
 
     /* Determine crit range */
     const die = weapon.data.data.actionDie
-    const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
+    let critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
 
     /* If we don't have a valid formula, bail out here */
     if (!await Roll.validate(toHit)) {
@@ -923,6 +923,9 @@ class DCCActor extends Actor {
     )
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
     await attackRoll.evaluate({ async: true })
+
+    // Adjust crit range if the die size was adjusted
+    critRange += game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula)
 
     const d20RollResult = attackRoll.dice[0].total
     attackRoll.dice[0].options.dcc = {
