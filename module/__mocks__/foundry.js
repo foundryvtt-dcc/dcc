@@ -212,10 +212,14 @@ global.game = new Game()
 global.game.user = { _id: 1 }
 global.getDCCSkillTableMock = jest.fn((skillName) => { return null }).mockName('game.dcc.getSkillTable')
 global.processSpellCheckMock = jest.fn((actor, spellData) => { }).mockName('game.dcc.processSpellCheck')
+global.calculateCritAdjustment = jest.fn((original, adjusted) => { return 0 }).mockName('game.dcc.DiceChain.calculateCritAdjustment')
 global.game.dcc = {
   DCCRoll,
   getSkillTable: global.getDCCSkillTableMock,
-  processSpellCheck: global.processSpellCheckMock
+  processSpellCheck: global.processSpellCheckMock,
+  DiceChain: {
+    calculateCritAdjustment: global.calculateCritAdjustment
+  }
 }
 
 /**
