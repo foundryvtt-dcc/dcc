@@ -624,7 +624,15 @@ class DCCActor extends Actor {
         formula: '+0',
         str: this.data.data.abilities.str.value,
         agl: this.data.data.abilities.agl.value,
-        sta: this.data.data.abilities.sta.value
+        sta: this.data.data.abilities.sta.value,
+        callback: (formula, term) => {
+          // Apply the spellburn
+          this.update({
+            'data.abilities.str.value': term.str,
+            'data.abilities.agl.value': term.agl,
+            'data.abilities.sta.value': term.sta
+          })
+        }
       })
     }
 

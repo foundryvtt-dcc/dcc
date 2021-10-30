@@ -1508,5 +1508,8 @@ form.dcc-roll-modifier label.checkbox-label {
 form.dcc-roll-modifier input.checkbox {
   text-align: right;
 }
+form.dcc-roll-modifier input.stat {
+  text-align: right;
+}
 
 /*# sourceMappingURL=dcc.css.map */

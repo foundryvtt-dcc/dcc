@@ -617,7 +617,8 @@ test('roll spell check', async () => {
         formula: '+0',
         str: 6,
         sta: 12,
-        agl: 8
+        agl: 8,
+        callback: expect.any(Function)
       }
     ],
     actor.getRollData(),
@@ -678,7 +679,8 @@ test('roll spell check', async () => {
         formula: '+0',
         str: 6,
         sta: 12,
-        agl: 8
+        agl: 8,
+        callback: expect.any(Function)
       }
     ],
     actor.getRollData(),
@@ -739,7 +741,8 @@ test('roll spell check', async () => {
         formula: '+0',
         str: 6,
         sta: 12,
-        agl: 8
+        agl: 8,
+        callback: expect.any(Function)
       }
     ],
     actor.getRollData(),
