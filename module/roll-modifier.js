@@ -111,7 +111,8 @@ function DCCSpellburnTerm (options) {
     formula: _prependSign(_cleanFormula(options.formula)),
     str: options.str,
     agl: options.agl,
-    sta: options.sta
+    sta: options.sta,
+    callback: options.callback
   }]
 }
 
@@ -429,14 +430,24 @@ class RollModifierDialog extends FormApplication {
   async _modifySpellburn (event) {
     event.preventDefault()
     const index = event.currentTarget.dataset.term
-    const mod = event.currentTarget.dataset.mod
+    const mod = parseInt(event.currentTarget.dataset.mod)
+    const stat = event.currentTarget.dataset.stat
     const formField = this.element.find('#term-' + index)
-    let termFormula = (parseInt(formField.val()) + parseInt(mod)).toString()
-    if (termFormula[0] !== '-') {
-      // Always add a sign
-      termFormula = '+' + termFormula
+    const statField = this.element.find('#' + stat)
+    const statMax = parseInt(statField.data('max'))
+    const statValue = parseInt(statField.val())
+    const newValue = parseInt(formField.val()) + mod
+    const newStat = statValue - mod
+    if (newStat >= 0 && newStat <= statMax) {
+      let termFormula = newValue.toString()
+      if (termFormula[0] !== '-') {
+        // Always add a sign
+        termFormula = '+' + termFormula
+      }
+      formField.val(termFormula)
+      statField.val(newStat)
+      this.terms[index][stat] = newStat
     }
-    formField.val(termFormula)
   }
 
   /**

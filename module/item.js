@@ -102,7 +102,15 @@ class DCCItem extends Item {
         formula: '+0',
         str: actor.data.data.abilities.str.value,
         agl: actor.data.data.abilities.agl.value,
-        sta: actor.data.data.abilities.sta.value
+        sta: actor.data.data.abilities.sta.value,
+        callback: (formula, term) => {
+          // Apply the spellburn
+          actor.update({
+            'data.abilities.str.value': term.str,
+            'data.abilities.agl.value': term.agl,
+            'data.abilities.sta.value': term.sta
+          })
+        }
       })
     }
 
