@@ -108,6 +108,22 @@ class DiceChain {
     }
     return expression
   }
+
+  /* Calculate the adjustment to make to critRange based on the die sizes in a pair for formulae
+   * @param original {String}   Original die term formula
+   * @param adjusted {String}   Adjusted die term formula
+   */
+  static calculateCritAdjustment (original, adjusted) {
+    const regex = /(\d+)d(\d+)(.*)/
+    const originalMatch = original.match(regex)
+    const adjustedMatch = adjusted.match(regex)
+    if (originalMatch && adjustedMatch) {
+      return parseInt(adjustedMatch[2]) - parseInt(originalMatch[2])
+    }
+
+    // Default - no adjustment
+    return 0
+  }
 }
 
 export default DiceChain
