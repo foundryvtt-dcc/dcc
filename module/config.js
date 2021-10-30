@@ -471,4 +471,7 @@ DCC.templates = {
   spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
 }
 
+// Actor importer warning threshold
+DCC.actorImporterPromptThreshold = 25
+
 export default DCC
