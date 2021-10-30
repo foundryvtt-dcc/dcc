@@ -166,7 +166,7 @@ function checkReleaseNotes () {
   // Register listeners for the buttons
   $(document).on('click', '.dcc-release-notes', () => _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog'))
   $(document).on('click', '.dcc-credits', () => _onShowJournal('dcc.dcc-userguide', 'Credits'))
-  $(document).on('click', '.dcc-user-guide', () => _onShowJournal('dcc.dcc-userguide', 'Table of Contents'))
+  $(document).on('click', '.dcc-user-guide', () => _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/DCC-System-User-Guide'))
 }
 
 async function _onShowJournal (packName, journalName) {
@@ -175,6 +175,10 @@ async function _onShowJournal (packName, journalName) {
   const metadata = await index.getName(journalName)
   const doc = await pack.getDocument(metadata._id)
   doc.sheet.render(true)
+}
+
+async function _onShowURI (uri) {
+  window.open(uri)
 }
 
 function checkMigrations () {
