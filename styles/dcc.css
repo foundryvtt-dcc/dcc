@@ -1453,6 +1453,20 @@
 }
 
 /* ----------------------------------------- */
+/*  Entity Link style links for user guide   */
+/* ----------------------------------------- */
+.dcc.sheet a.external-link {
+  background: #ddd;
+  border: 1px solid #4b4a44;
+  border-radius: 2px;
+  color: #191813;
+  padding: 1px 4px;
+  text-decoration: none;
+  white-space: nowrap;
+  word-break: break-all;
+}
+
+/* ----------------------------------------- */
 /*  Roll Modifier Dialog                     */
 /* ----------------------------------------- */
 form.dcc-roll-modifier {
