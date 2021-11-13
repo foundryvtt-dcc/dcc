@@ -1246,6 +1246,12 @@
   flex: 0 1 100px;
   text-align: left;
 }
+.dcc .item-list .currency-field {
+  text-align: right;
+}
+.dcc .item-list h4.currency-field {
+  padding-right: 4px;
+}
 .dcc .item-list .item-pp {
   flex: 0 0 50px;
 }

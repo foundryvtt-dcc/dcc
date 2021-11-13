@@ -192,21 +192,28 @@ class DCCActorSheet extends ActorSheet {
 
     // Combine any extra coins into a single item
     if (coins.length) {
-      const wallet = coins.shift()
+      const funds = {
+        pp: this.actor.data.data.currency.pp,
+        ep: this.actor.data.data.currency.ep,
+        gp: this.actor.data.data.currency.gp,
+        sp: this.actor.data.data.currency.sp,
+        cp: this.actor.data.data.currency.cp
+      }
       let needsUpdate = false
       for (const c of coins) {
-        wallet.data.value.pp = parseInt(wallet.data.value.pp) + parseInt(c.data.value.pp)
-        wallet.data.value.ep = parseInt(wallet.data.value.ep) + parseInt(c.data.value.ep)
-        wallet.data.value.gp = parseInt(wallet.data.value.gp) + parseInt(c.data.value.gp)
-        wallet.data.value.sp = parseInt(wallet.data.value.sp) + parseInt(c.data.value.sp)
-        wallet.data.value.cp = parseInt(wallet.data.value.cp) + parseInt(c.data.value.cp)
+        funds.pp += parseInt(c.data.value.pp)
+        funds.ep += parseInt(c.data.value.ep)
+        funds.gp += parseInt(c.data.value.gp)
+        funds.sp += parseInt(c.data.value.sp)
+        funds.cp += parseInt(c.data.value.cp)
         await this.actor.deleteOwnedItem(c._id, {})
         needsUpdate = true
       }
       if (needsUpdate) {
-        await this.actor.updateOwnedItem(wallet, { diff: true })
+        await this.actor.update({
+          'data.currency': funds
+        }, { diff: true })
       }
-      treasure.push(wallet)
     }
 
     // Assign and return
