@@ -1,146 +1,149 @@
 {{!-- Equipment Tab --}}
 <div class="tab equipment flexcol" data-group="primary" data-tab="equipment">
   <div class="equipment-container">
-    {{!-- Deed Roll --}}
-    {{#if data.config.rollAttackBonus}}
-    <div class="attack-bonus-container skills-container">
-      <div class="nosplit">
-        <label class="attack-bonus rollable" for="dummyAttackBonus"><div class="attack-bonus-button">&nbsp;</div>{{localize "DCC.DeedRoll"}}</label>
+    {{#if isZeroSheet}}
+    {{else}}
+      {{!-- Deed Roll --}}
+      {{#if data.config.rollAttackBonus}}
+      <div class="attack-bonus-container skills-container">
+        <div class="nosplit">
+          <label class="attack-bonus rollable" for="dummyAttackBonus"><div class="attack-bonus-button">&nbsp;</div>{{localize "DCC.DeedRoll"}}</label>
+        </div>
+        <div class="split-50-50">
+          <label for="data.details.lastRolledAttackBonus">{{localize "DCC.DeedRollValue"}}</label>
+          <input type="text" id="data.details.lastRolledAttackBonus"
+                 name="data.details.lastRolledAttackBonus"
+                 value="{{data.details.lastRolledAttackBonus}}"
+                 title="{{localize "DCC.DeedRollTitle"}}"
+                 disabled/>
+        </div>
       </div>
-      <div class="split-50-50">
-        <label for="data.details.lastRolledAttackBonus">{{localize "DCC.DeedRollValue"}}</label>
-        <input type="text" id="data.details.lastRolledAttackBonus"
-               name="data.details.lastRolledAttackBonus"
-               value="{{data.details.lastRolledAttackBonus}}"
-               title="{{localize "DCC.DeedRollTitle"}}"
-               disabled/>
+      {{/if}}
+  
+      {{!-- Melee Weapons --}}
+      {{#* inline "weaponRow"}}
+      <li class="weapon item flexrow" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
+          <div class="item-image weapon-draggable flexrow"><img class="weapon-draggable flex1" src="{{weapon.img}}" title="{{weapon.name}}" width="24" height="24"/></div>
+          <div class="rollable weapon-button weapon-draggable">&nbsp;</div>
+          {{#if canBackstab}}
+          <div class="rollable backstab-button weapon-draggable">&nbsp;</div>
+          {{/if}}
+          <input class="weapon-name" type="text"
+                 name="itemUpdates.{{id}}.name"
+                 value="{{weapon.name}}"/>
+          <input class="weapon-tohit" type="text"
+                 name="itemUpdates.{{id}}.data.toHit"
+                 value="{{weapon.data.toHit}}"/>
+          <input class="weapon-damage" type="text"
+                 name="itemUpdates.{{id}}.data.damage"
+                 value="{{weapon.data.damage}}"/>
+          {{#if weapon.data.melee}}
+          <input class="weapon-notes" type="text"
+                 name="itemUpdates.{{id}}.data.description.summary"
+                 value="{{{weapon.data.description.summary}}}"/>
+          {{else}}
+          <input class="weapon-notes" type="text"
+                 name="itemUpdates.{{id}}.data.range"
+                 value="{{weapon.data.range}}"/>
+          {{/if}}
+          <div class="weapon-controls">
+              <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
+              <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
+          </div>
+      </li>
+      {{/inline}}
+      <div class="weapons-heading">{{localize "DCC.MeleeWeapons"}}</div>
+      <div class="flexrow weapons">
+          <ol class="flexcol weapon-list">
+              <li class="flexrow weapon-list-header">
+                  <span class="item-image"></span>
+                  {{#if data.config.showBackstab}}
+                    <div class="backstab-padding"></div>
+                  {{/if}}
+                  <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
+                  <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
+                  <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
+                  <span class="weapon-notes">{{localize "DCC.Notes"}}</span>
+                  <span class="weapon-controls">
+                    <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon" data-melee=1><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+                  </span>
+              </li>
+              {{#each actor.weapons.melee as |weapon index|}}
+                {{> weaponRow weapon=weapon id=weapon._id type='m' index=index canBackstab=../data.config.showBackstab}}
+              {{/each}}
+          </ol>
       </div>
-    </div>
+  
+      {{!-- Ranged Weapons --}}
+      <div class="ranged weapons-heading">{{localize "DCC.RangedWeapons"}}</div>
+      <div class="flexrow weapons">
+          <ol class="flexcol weapon-list">
+              <li class="flexrow weapon-list-header">
+                  <span class="item-image"></span>
+                  {{#if data.config.showBackstab}}
+                    <div class="backstab-padding"></div>
+                  {{/if}}
+                  <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
+                  <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
+                  <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
+                  <span class="weapon-notes">{{localize "DCC.Range"}}</span>
+                  <span class="weapon-controls">
+                    <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon"><i class="fas fa-plus" data-melee=0></i> {{localize "DCC.Add"}}</a>
+                  </span>
+              </li>
+              {{#each actor.weapons.ranged as |weapon index|}}
+                {{> weaponRow weapon=weapon id=weapon._id type='r' index=index canBackstab=../data.config.showBackstab}}
+              {{/each}}
+          </ol>
+      </div>
+  
+      {{!-- Armor --}}
+      {{#* inline "armorRow"}}
+      <li class="armor item flexrow" data-item-id="{{id}}" data-item-index="{{index}}">
+          <div class="item-image item-draggable flexrow"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
+          <input class="armor-equipped" type="checkbox"
+                 name="itemUpdates.{{id}}.data.equipped"
+                 data-dtype="Boolean" {{checked armor.data.equipped}}/>
+          <input class="armor-name" type="text"
+                 name="itemUpdates.{{id}}.name"
+                 value="{{armor.name}}"/>
+          <input class="armor-bonus" type="text"
+                 name="itemUpdates.{{id}}.data.acBonus"
+                 value="{{numberFormat armor.data.acBonus decimals=0 sign=true}}"/>
+          <input class="armor-checkpenalty" type="text"
+                 name="itemUpdates.{{id}}.data.checkPenalty"
+                 value="{{armor.data.checkPenalty}}"/>
+          <input class="armor-fumbledie" type="text"
+                 name="itemUpdates.{{id}}.data.fumbleDie"
+                 value="{{armor.data.fumbleDie}}"/>
+          <input class="armor-notes" type="text"
+                 name="itemUpdates.{{id}}.data.description.summary"
+                 value="{{{armor.data.description.summary}}}"/>
+          <div class="armor-controls">
+              <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
+              <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
+          </div>
+      </li>
+      {{/inline}}
+      <div class="armor-heading">{{localize "DCC.Armor"}}</div>
+      <ol class="flexcol armor-list">
+          <li class="flexrow armor-list-header">
+              <span class="item-image"></span>
+              <span class="armor-equipped"></span>
+              <span class="armor-name armor-name-label">{{localize "DCC.Name"}}</span>
+              <span class="armor-bonus">{{localize "DCC.Bonus"}}</span>
+              <span class="armor-checkpenalty">{{localize "DCC.Penalty"}}</span>
+              <span class="armor-fumbledie">{{localize "DCC.FumbleDie"}}</span>
+              <span class="armor-notes">{{localize "DCC.Notes"}}</span>
+              <span class="armor-controls">
+                <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="armor"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+              </span>
+          </li>
+          {{#each actor.armor as |armor index|}}
+          {{> armorRow armor=armor id=armor._id index=index}}
+          {{/each}}
+      </ol>
     {{/if}}
-
-    {{!-- Melee Weapons --}}
-    {{#* inline "weaponRow"}}
-    <li class="weapon item flexrow" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
-        <div class="item-image weapon-draggable flexrow"><img class="weapon-draggable flex1" src="{{weapon.img}}" title="{{weapon.name}}" width="24" height="24"/></div>
-        <div class="rollable weapon-button weapon-draggable">&nbsp;</div>
-        {{#if canBackstab}}
-        <div class="rollable backstab-button weapon-draggable">&nbsp;</div>
-        {{/if}}
-        <input class="weapon-name" type="text"
-               name="itemUpdates.{{id}}.name"
-               value="{{weapon.name}}"/>
-        <input class="weapon-tohit" type="text"
-               name="itemUpdates.{{id}}.data.toHit"
-               value="{{weapon.data.toHit}}"/>
-        <input class="weapon-damage" type="text"
-               name="itemUpdates.{{id}}.data.damage"
-               value="{{weapon.data.damage}}"/>
-        {{#if weapon.data.melee}}
-        <input class="weapon-notes" type="text"
-               name="itemUpdates.{{id}}.data.description.summary"
-               value="{{{weapon.data.description.summary}}}"/>
-        {{else}}
-        <input class="weapon-notes" type="text"
-               name="itemUpdates.{{id}}.data.range"
-               value="{{weapon.data.range}}"/>
-        {{/if}}
-        <div class="weapon-controls">
-            <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
-            <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
-        </div>
-    </li>
-    {{/inline}}
-    <div class="weapons-heading">{{localize "DCC.MeleeWeapons"}}</div>
-    <div class="flexrow weapons">
-        <ol class="flexcol weapon-list">
-            <li class="flexrow weapon-list-header">
-                <span class="item-image"></span>
-                {{#if data.config.showBackstab}}
-                  <div class="backstab-padding"></div>
-                {{/if}}
-                <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
-                <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
-                <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
-                <span class="weapon-notes">{{localize "DCC.Notes"}}</span>
-                <span class="weapon-controls">
-                  <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon" data-melee=1><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
-                </span>
-            </li>
-            {{#each actor.weapons.melee as |weapon index|}}
-              {{> weaponRow weapon=weapon id=weapon._id type='m' index=index canBackstab=../data.config.showBackstab}}
-            {{/each}}
-        </ol>
-    </div>
-
-    {{!-- Ranged Weapons --}}
-    <div class="ranged weapons-heading">{{localize "DCC.RangedWeapons"}}</div>
-    <div class="flexrow weapons">
-        <ol class="flexcol weapon-list">
-            <li class="flexrow weapon-list-header">
-                <span class="item-image"></span>
-                {{#if data.config.showBackstab}}
-                  <div class="backstab-padding"></div>
-                {{/if}}
-                <span class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</span>
-                <span class="weapon-tohit">{{localize "DCC.ToHit"}}</span>
-                <span class="weapon-damage">{{localize "DCC.Damage"}}</span>
-                <span class="weapon-notes">{{localize "DCC.Range"}}</span>
-                <span class="weapon-controls">
-                  <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon"><i class="fas fa-plus" data-melee=0></i> {{localize "DCC.Add"}}</a>
-                </span>
-            </li>
-            {{#each actor.weapons.ranged as |weapon index|}}
-              {{> weaponRow weapon=weapon id=weapon._id type='r' index=index canBackstab=../data.config.showBackstab}}
-            {{/each}}
-        </ol>
-    </div>
-
-    {{!-- Armor --}}
-    {{#* inline "armorRow"}}
-    <li class="armor item flexrow" data-item-id="{{id}}" data-item-index="{{index}}">
-        <div class="item-image item-draggable flexrow"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
-        <input class="armor-equipped" type="checkbox"
-               name="itemUpdates.{{id}}.data.equipped"
-               data-dtype="Boolean" {{checked armor.data.equipped}}/>
-        <input class="armor-name" type="text"
-               name="itemUpdates.{{id}}.name"
-               value="{{armor.name}}"/>
-        <input class="armor-bonus" type="text"
-               name="itemUpdates.{{id}}.data.acBonus"
-               value="{{numberFormat armor.data.acBonus decimals=0 sign=true}}"/>
-        <input class="armor-checkpenalty" type="text"
-               name="itemUpdates.{{id}}.data.checkPenalty"
-               value="{{armor.data.checkPenalty}}"/>
-        <input class="armor-fumbledie" type="text"
-               name="itemUpdates.{{id}}.data.fumbleDie"
-               value="{{armor.data.fumbleDie}}"/>
-        <input class="armor-notes" type="text"
-               name="itemUpdates.{{id}}.data.description.summary"
-               value="{{{armor.data.description.summary}}}"/>
-        <div class="armor-controls">
-            <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
-            <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
-        </div>
-    </li>
-    {{/inline}}
-    <div class="armor-heading">{{localize "DCC.Armor"}}</div>
-    <ol class="flexcol armor-list">
-        <li class="flexrow armor-list-header">
-            <span class="item-image"></span>
-            <span class="armor-equipped"></span>
-            <span class="armor-name armor-name-label">{{localize "DCC.Name"}}</span>
-            <span class="armor-bonus">{{localize "DCC.Bonus"}}</span>
-            <span class="armor-checkpenalty">{{localize "DCC.Penalty"}}</span>
-            <span class="armor-fumbledie">{{localize "DCC.FumbleDie"}}</span>
-            <span class="armor-notes">{{localize "DCC.Notes"}}</span>
-            <span class="armor-controls">
-              <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="armor"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
-            </span>
-        </li>
-        {{#each actor.armor as |armor index|}}
-        {{> armorRow armor=armor id=armor._id index=index}}
-        {{/each}}
-    </ol>
 
     {{!-- Other items --}}
     {{#* inline "ItemHeader"}}
