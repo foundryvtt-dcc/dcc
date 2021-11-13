@@ -229,11 +229,11 @@
           <div class="item-image flexrow"><img class="flex1" src="systems/dcc/styles/images/game-icons-net/coins.svg" title="{{localize 'DCC.Funds'}}" width="24" height="24"/></div>
             <h4 class="item-name">{{localize 'DCC.Funds'}}</h4>
             <h4 class="item-is-coins"></h4>
-            <input class="item-pp currency-field" type="text" name="data.currency.pp" placeholder="0" value="{{numberFormat data.currency.pp decimals=0 sign=false}}" data-dtype="Number"/>
-            <input class="item-ep currency-field" type="text" name="data.currency.ep" placeholder="0" value="{{numberFormat data.currency.ep decimals=0 sign=false}}" data-dtype="Number"/>
-            <input class="item-gp currency-field" type="text" name="data.currency.gp" placeholder="0" value="{{numberFormat data.currency.gp decimals=0 sign=false}}" data-dtype="Number"/>
-            <input class="item-sp currency-field" type="text" name="data.currency.sp" placeholder="0" value="{{numberFormat data.currency.sp decimals=0 sign=false}}" data-dtype="Number"/>
-            <input class="item-cp currency-field" type="text" name="data.currency.cp" placeholder="0" value="{{numberFormat data.currency.cp decimals=0 sign=false}}" data-dtype="Number"/>
+            <input class="item-pp currency-field" type="text" name="data.currency.pp" placeholder="0" value="{{numberFormat data.currency.pp decimals=0 sign=false}}" data-dtype="number"/>
+            <input class="item-ep currency-field" type="text" name="data.currency.ep" placeholder="0" value="{{numberFormat data.currency.ep decimals=0 sign=false}}" data-dtype="number"/>
+            <input class="item-gp currency-field" type="text" name="data.currency.gp" placeholder="0" value="{{numberFormat data.currency.gp decimals=0 sign=false}}" data-dtype="number"/>
+            <input class="item-sp currency-field" type="text" name="data.currency.sp" placeholder="0" value="{{numberFormat data.currency.sp decimals=0 sign=false}}" data-dtype="number"/>
+            <input class="item-cp currency-field" type="text" name="data.currency.cp" placeholder="0" value="{{numberFormat data.currency.cp decimals=0 sign=false}}" data-dtype="number"/>
             <div class="item-controls" />
         </li>
         {{#each actor.treasure as |treasure id|}}
