@@ -3,7 +3,6 @@
 export class DCCItemConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
-    options.id = 'sheet-config'
     options.width = 380
     return options
   }
