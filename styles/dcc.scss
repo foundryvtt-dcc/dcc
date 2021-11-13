@@ -1260,6 +1260,14 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     text-align: left;
   }
 
+  .currency-field {
+    text-align:right;
+  }
+
+  h4.currency-field {
+    padding-right: 4px;
+  }
+
   .item-pp {
     flex: 0 0 50px;
   }
