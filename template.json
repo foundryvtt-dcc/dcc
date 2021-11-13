@@ -80,6 +80,7 @@
             "value": 0
           },
           "alignment": "",
+          "attackBonus": "+0",
           "languages": "",
           "occupation": "",
           "title": "",
@@ -109,7 +110,6 @@
       },
       "player": {
         "details": {
-          "attackBonus": "+0",
           "birthAugur": "",
           "critRange": "20",
           "xp": {
@@ -284,7 +284,7 @@
       },
       "config": {
         "config": {
-          "attackBonusMode": "raw",
+          "attackBonusMode": "flat",
           "actionDice" : "1d20",
           "capLevel": false,
           "maxLevel" : 10,
@@ -321,7 +321,8 @@
     },
     "NPC": {
       "templates": [
-        "common"
+        "common",
+        "config"
       ],
       "attributes": {
         "critical": {

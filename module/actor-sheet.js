@@ -86,10 +86,10 @@ class DCCActorSheet extends ActorSheet {
           wil: data.data.saves.wil
         }
       }
-
-      // Should the Deed Roll button be available on the sheet?
-      data.data.config.rollAttackBonus = (data.data.config.attackBonusMode === 'manual')
     }
+
+    // Should the Deed Roll button be available on the sheet?
+    data.data.config.rollAttackBonus = (this.actor.getAttackBonusMode() === 'manual')
 
     // Prepare item lists by type
     this._prepareItems(data)
@@ -694,7 +694,7 @@ class DCCActorSheet extends ActorSheet {
    * @private
    */
   _onRollAttackBonus (event) {
-    if (this.actor._getConfig().attackBonusMode === 'manual') {
+    if (this.actor.getAttackBonusMode() === 'manual') {
       event.preventDefault()
       const options = this._fillRollOptions(event)
       this.actor.rollAttackBonus(options)

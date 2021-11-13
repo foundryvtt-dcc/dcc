@@ -77,7 +77,7 @@
   "DCC.AttackBonusConfigModeFlat": "Flat Bonus",
   "DCC.AttackBonusConfigModeManual": "Manual Roll",
   "DCC.AttackBonusConfigModeAutoPerAttack": "Roll Per Attack",
-  "DCC.AttackBonusConfigModeInfo": "Choose how and when the Attack Bonus is rolled. Use @ab in To Hit or Damage for the vlaue or last roll.",
+  "DCC.AttackBonusConfigModeInfo": "Choose how and when the Attack Bonus is rolled. Use @ab in To Hit or Damage for the value or last deed roll.",
   "DCC.AttackBonusRollInvalidFormulaInline": "<b>Invalid Attack Bonus formula '{formula}'</b>",
   "DCC.AttackPl": "Attacks",
   "DCC.AttackRoll": "Attack Roll with {weapon}",

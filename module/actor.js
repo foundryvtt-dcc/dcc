@@ -183,14 +183,34 @@ class DCCActor extends Actor {
       }
     )
 
+    // Get the relevant attack bonus (direct or rolled)
+    customData.ab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
+
     // Player only data
     if (this.data.type === 'Player') {
-      // Get the relevant attack bonus (direct or rolled)
-      customData.ab = (data.config.attackBonusMode !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
       customData.xp = data.details.xp.value || 0
     }
 
     return customData
+  }
+
+  /**
+   * Get Attack Bonus Mode
+   * Translate the Attack Bonus Mode into a valid value
+   * Invalid values default to 'flat''
+   * @return {String}  A valid Attack Bonus Mode name
+   */
+  getAttackBonusMode (options = {}) {
+    switch (this.data.data.config.attackBonusMode) {
+      case 'flat':
+        return 'flat'
+      case 'manual':
+        return 'manual'
+      case 'autoPerAttack':
+        return 'autoPerAttack'
+      default:
+        return 'flat'
+    }
   }
 
   /**
@@ -662,7 +682,7 @@ class DCCActor extends Actor {
    * Getter to determine whether to roll an attack bonus with each attack
    */
   get rollAttackBonusWithAttack () {
-    return this.data.data.config.attackBonusMode === 'autoPerAttack'
+    return this.getAttackBonusMode() === 'autoPerAttack'
   }
 
   /**
