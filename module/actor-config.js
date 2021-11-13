@@ -3,7 +3,6 @@
 export class DCCActorConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
-    options.id = 'sheet-config'
     options.template =
       'systems/dcc/templates/dialog-actor-config.html'
     options.width = 380
