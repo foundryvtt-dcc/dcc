@@ -76,18 +76,16 @@
           </div>
 
           <ul class="class-note flexcol">
-                 {{#dccPackExists "dcc-core-book.dcc-core-journals"}}</li>
-                <li>{{{dccLocalizeAndEnrich "DCC.WarriorClassLink"}}}</li>
-                {{/dccPackExists}}
+            {{#dccPackExists "dcc-core-book.dcc-core-journals"}}</li>
+            <li>{{{dccLocalizeAndEnrich "DCC.WarriorClassLink"}}}</li>
+            {{/dccPackExists}}
             <li>{{localize "DCC.AddClassLevelToInitiative"}}</li>
-	    <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
-	    <ul class="class-note flexcol">
-		 {{#dccPackExists "dcc-core-book.dcc-core-journals"}}</li>
-            	<li>{{{dccLocalizeAndEnrich "DCC.MightyDeedsLink"}}}</li>
-            	{{/dccPackExists}}
-		{{#dccPackExists "dcc.dcc-userguide"}}
-		<li>{{{dccLocalizeAndEnrich "DCC.MightyDeedsHowtoLink"}}}</li>
-	  	  {{/dccPackExists}}
+            <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
+            <ul class="class-note flexcol">
+              {{#dccPackExists "dcc-core-book.dcc-core-journals"}}</li>
+              <li>{{{dccLocalizeAndEnrich "DCC.MightyDeedsLink"}}}</li>
+              {{/dccPackExists}}
+              <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Mighty-Deeds"><i class="fas fa-link"></i> {{localize "DCC.MightyDeedsHowToLink"}}</a></li>
           </div>
         </div>
       </div>
