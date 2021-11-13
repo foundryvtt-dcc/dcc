@@ -41,12 +41,19 @@
     }
   ],
   "packs": [
-     {
+    {
       "name": "dcc-userguide",
       "label": "User Guide",
       "path": "packs/dcc-userguide.db",
       "system": "dcc",
       "entity": "JournalEntry"
+    },
+    {
+      "name": "dcc-macros",
+      "label": "DCC Macros",
+      "path": "packs/dcc-macros.db",
+      "system": "dcc",
+      "entity": "Macro"
     }
   ],
   "gridDistance": 5,

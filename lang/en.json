@@ -407,6 +407,7 @@
   "DCC.LuckSpend": "Spent {luckSpend} Luck",
   "DCC.Lucky": "Lucky",
   "DCC.LuckyWeapon": "Lucky Weapon",
+  "DCC.MacroNoTokenSelected": "No token selected for macro!",
   "DCC.Max": "Max",
   "DCC.MaxLevelConfig": "Maximum Level",
   "DCC.MeleeWeapons": "Melee Weapons",
