@@ -1,18 +1,13 @@
 <form class="actor config-dialog" autocomplete="off">
+  PC: {{isPC}}
+  NPC: {{isNPC}}
   <div class="form-group">
     <label for="data.config.actionDice">{{localize "DCC.ActionDice"}}</label>
     <div class="form-fields">
       <input type="text" name="data.config.actionDice" id="data.config.actionDice" value="{{data.config.actionDice}}" data-dtype="string"/>
     </div>
   </div>
-  {{#if isNPC}}
-  <div class="form-group">
-    <label for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-    <div class="form-fields">
-      <input type="text" name="data.class.spellCheck" id="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="number"/>
-    </div>
-  </div>
-  {{else}}
+  {{#if isPC}}
   <div class="form-group">
     <label for="data.config.capLevel">{{localize "DCC.CapLevelConfig"}}</label>
     <div class="form-fields">
@@ -23,7 +18,14 @@
       <input type="text" name="data.config.maxLevel" id="data.config.maxLevel" value="{{numberFormat data.config.maxLevel decimals=0 sign=false}}" data-dtype="number"/>
     </div>
   </div>
+  {{/if}}
   <div class="form-group">
+    {{#if isNPC}}
+    <label for="data.details.attackBonus">{{localize "DCC.AttackBonus"}}</label>
+    <div class="form-fields">
+      <input type="text" name="data.details.attackBonus" id="data.details.attackBonus" value="{{formatAttackBonus data.details.attackBonus}}" data-dtype="number"/>
+    </div>
+    {{/if}}
     <label for="data.config.rollAttackBonus">{{localize "DCC.AttackBonusConfigMode"}}</label>
     <div class="form-fields">
       <select name="data.config.attackBonusMode" id="data.config.attackBonusMode">
@@ -35,7 +37,16 @@
       </select>
     </div>
     <label class="info span">{{localize "DCC.AttackBonusConfigModeInfo"}}</label>
-  </div>  
+  </div>
+  {{#if isNPC}}
+  <div class="form-group">
+    <label for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+    <div class="form-fields">
+      <input type="text" name="data.class.spellCheck" id="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="number"/>
+    </div>
+  </div>
+  {{/if}}
+  {{#if isPC}}
   <div class="form-group">
     <label for="data.config.computeAC">{{localize "DCC.ComputeACConfig"}}</label>
     <div class="form-fields">

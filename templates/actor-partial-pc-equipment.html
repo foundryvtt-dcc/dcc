@@ -1,25 +1,25 @@
 {{!-- Equipment Tab --}}
 <div class="tab equipment flexcol" data-group="primary" data-tab="equipment">
   <div class="equipment-container">
+    {{!-- Deed Roll --}}
+    {{#if data.config.rollAttackBonus}}
+    <div class="attack-bonus-container skills-container">
+      <div class="nosplit">
+        <label class="attack-bonus rollable" for="dummyAttackBonus"><div class="attack-bonus-button">&nbsp;</div>{{localize "DCC.DeedRoll"}}</label>
+      </div>
+      <div class="split-50-50">
+        <label for="data.details.lastRolledAttackBonus">{{localize "DCC.DeedRollValue"}}</label>
+        <input type="text" id="data.details.lastRolledAttackBonus"
+               name="data.details.lastRolledAttackBonus"
+               value="{{data.details.lastRolledAttackBonus}}"
+               title="{{localize "DCC.DeedRollTitle"}}"
+               disabled/>
+      </div>
+    </div>
+    {{/if}}
+  
     {{#if isZeroSheet}}
     {{else}}
-      {{!-- Deed Roll --}}
-      {{#if data.config.rollAttackBonus}}
-      <div class="attack-bonus-container skills-container">
-        <div class="nosplit">
-          <label class="attack-bonus rollable" for="dummyAttackBonus"><div class="attack-bonus-button">&nbsp;</div>{{localize "DCC.DeedRoll"}}</label>
-        </div>
-        <div class="split-50-50">
-          <label for="data.details.lastRolledAttackBonus">{{localize "DCC.DeedRollValue"}}</label>
-          <input type="text" id="data.details.lastRolledAttackBonus"
-                 name="data.details.lastRolledAttackBonus"
-                 value="{{data.details.lastRolledAttackBonus}}"
-                 title="{{localize "DCC.DeedRollTitle"}}"
-                 disabled/>
-        </div>
-      </div>
-      {{/if}}
-  
       {{!-- Melee Weapons --}}
       {{#* inline "weaponRow"}}
       <li class="weapon item flexrow" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
