@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars, EntitySheetConfig, TextEditor */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars, DocumentSheetConfig, EntitySheetConfig, TextEditor */
 
 /**
  * DCC
@@ -42,7 +42,11 @@ Hooks.once('init', async function () {
   console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
 
   // Override sheet selection dialog
-  DocumentSheetConfig = DCCSheetConfig // eslint-disable-line no-global-assign
+  try {
+    DocumentSheetConfig = DCCSheetConfig // eslint-disable-line no-global-assign
+  } catch (ex) {
+    EntitySheetConfig = DCCSheetConfig // eslint-disable-line no-global-assign
+  }
 
   CONFIG.DCC = DCC
 
