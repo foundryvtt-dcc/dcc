@@ -711,7 +711,9 @@
 .dcc .tabs .item {
   border: 2px groove #eeede0;
   border-radius: 5px 5px 0 0;
+  flex: 1;
   font-weight: bold;
+  height: 38px;
   line-height: 35px;
   margin-bottom: 10px;
 }
@@ -1434,7 +1436,9 @@
 .sheet-config .tabs .item {
   border: 2px groove #eeede0;
   border-radius: 5px 5px 0 0;
+  flex: 1;
   font-weight: bold;
+  height: 38px;
   line-height: 35px;
   margin-bottom: 10px;
 }
