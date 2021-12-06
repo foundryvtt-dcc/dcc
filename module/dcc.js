@@ -42,7 +42,7 @@ Hooks.once('init', async function () {
   console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
 
   // Override sheet selection dialog
-  EntitySheetConfig = DCCSheetConfig // eslint-disable-line no-global-assign
+  DocumentSheetConfig = DCCSheetConfig // eslint-disable-line no-global-assign
 
   CONFIG.DCC = DCC
 
