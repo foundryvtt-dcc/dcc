@@ -673,7 +673,9 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 .dcc .tabs .item {
   border: $border-style;
   border-radius: 5px 5px 0 0;
+  flex: 1;
   font-weight: bold;
+  height: 38px;
   line-height: 35px;
   margin-bottom: 10px;
 }
@@ -1498,7 +1500,9 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   .tabs .item {
     border: $border-style;
     border-radius: 5px 5px 0 0;
+    flex: 1;
     font-weight: bold;
+    height: 38px;
     line-height: 35px;
     margin-bottom: 10px;
   }
