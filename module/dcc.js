@@ -68,15 +68,42 @@ Hooks.once('init', async function () {
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
-  Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCActorSheet, {
+    makeDefault: true,
+    label: 'DCC.DCCActorSheet'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetCleric'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetThief'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetHalfling'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetWarrior'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetWizard'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetDwarf'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetElf'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetGeneric'
+  })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet)
 
