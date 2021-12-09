@@ -14,7 +14,7 @@
           {{#select sheetClass}}
           <option value="">{{localize "Default"}}</option>
           {{#each sheetClasses as |cls|}}
-          <option value="{{cls}}">{{localize cls}}</option>
+          <option value="{{cls}}">{{cls}}</option>
           {{/each}}
           {{/select}}
         </select>
@@ -28,7 +28,7 @@
         <select name="defaultClass" {{#unless isGM}}disabled{{/unless}}>
           {{#select defaultClass}}
           {{#each sheetClasses as |cls|}}
-          <option value="{{cls}}">{{localize cls}}</option>
+          <option value="{{cls}}">{{cls}}</option>
           {{/each}}
           {{/select}}
         </select>
