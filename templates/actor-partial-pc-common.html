@@ -22,13 +22,14 @@
       </svg>
       {{!-- HP --}}
       <input style="grid-area: 1 / 2" id="data.attributes.hp.value"
+             name="data.attributes.hp.value"
              value="{{data.attributes.hp.value}}"
              data-dtype="Number"/>
       <label for="data.attributes.hp.value" style="grid-row: 2">{{localize "DCC.HitPoints"}}</label>
       <div style="grid-area: 3 / 2; font-size: 13px">
         <label style="font-size: 15px" for="data.attributes.hp.max">{{localize "DCC.Max"}}:</label>
         <input style="font-size: 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.5)"
-               id="data.attributes.hp.max" value="{{data.attributes.hp.max}}" size="3">
+               id="data.attributes.hp.max" name="data.attributes.hp.max" value="{{data.attributes.hp.max}}" size="3">
       </div>
     </div>
 
