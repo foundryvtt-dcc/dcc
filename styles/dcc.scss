@@ -1838,11 +1838,12 @@ form.dcc-roll-modifier {
     align-self: stretch;
     background: var(--dark-bg);
     color: var(--light-color);
+    font-family: $duvall;
     grid-column-start: 1;
     grid-row: 1;
     letter-spacing: 1px;
     margin-left: -1px;
-    padding-top: 1px;
+    padding-top: 3px;
     text-align: center;
   }
 
