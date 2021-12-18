@@ -4,7 +4,7 @@
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": "0.31.1",
   "minimumCoreVersion": "0.8.9",
-  "compatibleCoreVersion": "0.8.9",
+  "compatibleCoreVersion": "9",
   "templateVersion": 8,
   "author": "DCC Foundry Volunteer Team (https://discord.gg/2PR9YH9)",
   "contributors": [
