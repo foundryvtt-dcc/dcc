@@ -137,7 +137,7 @@ class DCCActorSheet extends ActorSheet {
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.data.quantity !== undefined && i.data.quantity <= 0) {
-        this.actor.deleteOwnedItem(i._id, {})
+        this.actor.deleteEmbeddedDocuments('Item', [i._id])
         continue
       }
 
@@ -193,11 +193,11 @@ class DCCActorSheet extends ActorSheet {
     // Combine any extra coins into a single item
     if (coins.length) {
       const funds = {
-        pp: this.actor.data.data.currency.pp,
-        ep: this.actor.data.data.currency.ep,
-        gp: this.actor.data.data.currency.gp,
-        sp: this.actor.data.data.currency.sp,
-        cp: this.actor.data.data.currency.cp
+        pp: parseInt(this.actor.data.data.currency.pp),
+        ep: parseInt(this.actor.data.data.currency.ep),
+        gp: parseInt(this.actor.data.data.currency.gp),
+        sp: parseInt(this.actor.data.data.currency.sp),
+        cp: parseInt(this.actor.data.data.currency.cp)
       }
       let needsUpdate = false
       for (const c of coins) {
@@ -206,7 +206,7 @@ class DCCActorSheet extends ActorSheet {
         funds.gp += parseInt(c.data.value.gp)
         funds.sp += parseInt(c.data.value.sp)
         funds.cp += parseInt(c.data.value.cp)
-        await this.actor.deleteOwnedItem(c._id, {})
+        await this.actor.deleteEmbeddedDocuments('Item', [c._id])
         needsUpdate = true
       }
       if (needsUpdate) {
@@ -376,7 +376,7 @@ class DCCActorSheet extends ActorSheet {
    */
   _deleteItem (event) {
     const li = $(event.currentTarget).parents('.item')
-    this.actor.deleteOwnedItem(li.data('itemId'))
+    this.actor.deleteEmbeddedDocuments('Item', [li.data('itemId')])
     li.slideUp(200, () => this.render(false))
   }
 
@@ -742,7 +742,7 @@ class DCCActorSheet extends ActorSheet {
     delete itemData.data.type
 
     // Finally, create the item!
-    return this.actor.createOwnedItem(itemData)
+    return this.actor.createEmbeddedDocuments('Item', [itemData])
   }
 
   /* -------------------------------------------- */
