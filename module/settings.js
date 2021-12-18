@@ -19,7 +19,7 @@ export const registerSystemSettings = async function () {
   const tableCompendiums = []
   try {
     game.packs.forEach(function (pack) {
-      if (pack.metadata.entity === 'RollTable') {
+      if (pack.metadata.documentName === 'RollTable') {
         tableCompendiums.push(pack)
         tableCompendiumNames[pack.metadata.package + '.' + pack.metadata.name] = pack.metadata.label
       }
