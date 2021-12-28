@@ -21,12 +21,6 @@
       "email": "ceovsenik@gmail.com"
     }
   ],
-  "dependencies": [
-    {
-      "name": "bug-reporter",
-      "type": "module"
-    }
-  ],
   "esmodules": [
     "module/dcc.js"
   ],
