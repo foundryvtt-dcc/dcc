@@ -25,8 +25,9 @@ class FleetingLuckDialog extends Application {
       const value = user.getFlag('dcc', FleetingLuck.fleetingLuckFlag)
       const userData = {
         avatar: user.avatar,
-        name: user.name,
-        fleetingLuck: value ? value.toString() : '0'
+        userId: user.id,
+        fleetingLuck: value ? value.toString() : '0',
+        name: user.name
       }
       data.users.push(userData)
     }
@@ -36,13 +37,52 @@ class FleetingLuckDialog extends Application {
   /** @override */
   activateListeners (html) {
     super.activateListeners(html)
+
+    html.find('.minus').click(this._onTakeLuck.bind(this))
+    html.find('.plus').click(this._onGiveLuck.bind(this))
+    html.find('.clear').click(this._onClearLuck.bind(this))
+  }
+
+  /**
+   * Handle removing fleeting luck from a player
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onTakeLuck (event) {
+    event.preventDefault()
+    const userId = event.currentTarget.dataset.userId
+    await FleetingLuck.take(userId, 1)
+    this.render()
+  }
+
+  /**
+   * Handle giving fleeting luck to a player
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onGiveLuck (event) {
+    event.preventDefault()
+    const userId = event.currentTarget.dataset.userId
+    await FleetingLuck.give(userId, 1)
+    this.render()
+  }
+
+  /**
+   * Handle removing all fleeting luck from a player
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onClearLuck (event) {
+    event.preventDefault()
+    const userId = event.currentTarget.dataset.userId
+    await FleetingLuck.clear(userId)
+    this.render()
   }
 
   /** @override */
   async _updateObject (event, formData) {
     event.preventDefault()
-    // Re-draw the updated sheet
-    this.object.sheet.render(true)
+    this.render()
   }
 
   /** @override */
@@ -76,6 +116,40 @@ class FleetingLuck {
       FleetingLuck.instance = new FleetingLuckDialog()
       FleetingLuck.instance.render(true)
     }
+  }
+
+  /**
+   * Give fleeting luck to a user
+   * @param {String} id      Id of the user
+   * @param {Number} amount  Amount of luck to give
+   * @returns {Promise.<Document>}
+   */
+  static async give (id, amount) {
+    const user = game.users.get(id)
+    const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
+    return user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, currentValue + amount)
+  }
+
+  /**
+   * Take fleeting luck from a user
+   * @param {String} id    Id of the user
+   * @param {Number} amount  Amount of luck to give
+   * @returns {Promise.<Document>}
+   */
+  static async take (id, amount) {
+    const user = game.users.get(id)
+    const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
+    return user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, Math.max(currentValue - amount, 0))
+  }
+
+  /**
+   * Clear all fleeting luck for a user
+   * @param {String} id    Id of the user
+   * @returns {Promise.<Document>}
+   */
+  static async clear (id) {
+    const user = game.users.get(id)
+    return user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, 0)
   }
 
   /**
