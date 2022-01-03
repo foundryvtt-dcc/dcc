@@ -1636,7 +1636,7 @@ form.dcc-roll-modifier {
     align-items:center;
     display: grid;
     grid-gap: 2px 3px;
-    grid-template-columns: 60px 5fr 1fr 30px 1fr;
+    grid-template-columns: 60px 5fr 1fr 1fr 1fr 1fr;
 
     .avatar {
       grid-column: 1;
@@ -1647,18 +1647,23 @@ form.dcc-roll-modifier {
       grid-column: 2;
     }
 
-    .minus {
+    .clear {
       grid-column: 3;
       justify-self: right;
     }
 
-    .value {
+    .minus {
       grid-column: 4;
+      justify-self: right;
+    }
+
+    .value {
+      grid-column: 5;
       justify-self: center;
     }
 
     .plus {
-      grid-column: 5;
+      grid-column: 6;
       justify-self: left;
     }
   }
