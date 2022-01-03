@@ -7,6 +7,7 @@
 // Import Modules
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
+import DCCControls from './controls.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
 import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
@@ -15,6 +16,7 @@ import DCC from './config.js'
 import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
+import FleetingLuck from './fleeting-luck.js'
 import parser from './parser.js'
 import TablePackManager from './table-pack-manager.js'
 import EntityImages from './entity-images.js'
@@ -36,6 +38,7 @@ Hooks.once('init', async function () {
     DCCActor,
     DCCRoll,
     DiceChain,
+    FleetingLuck,
     SpellResult,
     getSkillTable,
     processSpellCheck,
@@ -146,6 +149,12 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('dccLocalizeAndEnrich', function (object) {
     return TextEditor.enrichHTML(game.i18n.localize(object))
   })
+
+  // Initialise Fleeting Luck
+  game.dcc.FleetingLuck.init()
+
+  // Register scene controls
+  DCCControls.register()
 })
 
 /* -------------------------------------------- */
