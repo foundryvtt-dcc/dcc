@@ -1622,3 +1622,44 @@ form.dcc-roll-modifier {
     text-align: right;
   }
 }
+
+/* ----------------------------------------- */
+/*  Fleeting Luck Dialog                     */
+/* ----------------------------------------- */
+
+.dcc .fleeting-luck {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(auto-fill, minmax(60px, auto));
+
+  .fleeting-luck-row {
+    align-items:center;
+    display: grid;
+    grid-gap: 2px 3px;
+    grid-template-columns: 60px 5fr 1fr 30px 1fr;
+
+    .avatar {
+      grid-column: 1;
+    }
+
+    .name {
+      font-size: 2rem;
+      grid-column: 2;
+    }
+
+    .minus {
+      grid-column: 3;
+      justify-self: right;
+    }
+
+    .value {
+      grid-column: 4;
+      justify-self: center;
+    }
+
+    .plus {
+      grid-column: 5;
+      justify-self: left;
+    }
+  }
+}
