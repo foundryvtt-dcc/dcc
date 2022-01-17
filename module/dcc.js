@@ -427,6 +427,12 @@ Hooks.on('renderChatMessage', (message, html, data) => {
   }
   chat.highlightCriticalSuccessFailure(message, html, data)
   SpellResult.processChatMessage(message, html, data)
+
+  // Add data-item-id for modules that want to use it
+  const itemId = message.getFlag('dcc', 'ItemId')
+  if (itemId !== undefined) {
+    html.find('.message-content').attr('data-item-id', itemId)
+  }
 })
 
 // Support context menu on chat cards
