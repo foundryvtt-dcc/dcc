@@ -230,7 +230,10 @@ class DCCItem extends Item {
       await roll.evaluate({ async: true })
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
-        flavor: game.i18n.localize('DCC.MercurialMagicRoll')
+        flavor: game.i18n.localize('DCC.MercurialMagicRoll'),
+        flags: {
+          'dcc.RollType': 'MercurialMagic'
+        }
       })
     }
 
@@ -310,7 +313,10 @@ class DCCItem extends Item {
         sp: valueRolls.sp,
         cp: valueRolls.cp
       }),
-      sound: CONFIG.sounds.dice
+      sound: CONFIG.sounds.dice,
+      flags: {
+        'dcc.RollType': 'LootValue'
+      }
     }
     await CONFIG.ChatMessage.documentClass.create(messageData)
 

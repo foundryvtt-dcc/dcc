@@ -28,6 +28,7 @@ class SpellResult {
       sound: roll ? CONFIG.sounds.dice : null,
       flags: {
         'core.RollTable': result.id,
+        'dcc.RollType': 'SpellCheck',
         'dcc.SpellCheck': true
       }
     }, messageData)
