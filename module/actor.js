@@ -842,7 +842,7 @@ class DCCActor extends Actor {
           flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
           flags: {
             'dcc.RollType': 'ToHit',
-            'dcc.WeaponId': options.weaponId
+            'dcc.ItemId': options.weaponId
           }
         })
       } else {
@@ -856,7 +856,7 @@ class DCCActor extends Actor {
           }),
           flags: {
             'dcc.RollType': 'ToHit',
-            'dcc.WeaponId': options.weaponId
+            'dcc.ItemId': options.weaponId
           }
         }
         ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
@@ -871,7 +871,7 @@ class DCCActor extends Actor {
           flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name }),
           flags: {
             'dcc.RollType': 'Damage',
-            'dcc.WeaponId': options.weaponId
+            'dcc.ItemId': options.weaponId
           }
         })
       } else {
@@ -885,7 +885,7 @@ class DCCActor extends Actor {
           }),
           flags: {
             'dcc.RollType': 'Damage',
-            'dcc.WeaponId': options.weaponId
+            'dcc.ItemId': options.weaponId
           }
         }
         ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
@@ -930,7 +930,7 @@ class DCCActor extends Actor {
         sound: CONFIG.sounds.dice,
         flags: {
           'dcc.RollType': 'CombinedAttack',
-          'dcc.WeaponId': options.weaponId
+          'dcc.ItemId': options.weaponId
         }
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
@@ -1141,7 +1141,7 @@ class DCCActor extends Actor {
         flavor: `${game.i18n.localize('DCC.CriticalHit')}!`,
         flags: {
           'dcc.RollType': 'CriticalHit',
-          'dcc.WeaponId': options.weaponId
+          'dcc.ItemId': options.weaponId
         }
       })
     }
@@ -1224,7 +1224,7 @@ class DCCActor extends Actor {
         flavor: `${game.i18n.localize('DCC.Fumble')}!`,
         flags: {
           'dcc.RollType': 'CriticalHit',
-          'dcc.WeaponId': options.weaponId
+          'dcc.ItemId': options.weaponId
         }
       })
     }
