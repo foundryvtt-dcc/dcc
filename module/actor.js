@@ -313,7 +313,11 @@ class DCCActor extends Actor {
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor
+      flavor,
+      flags: {
+        'dcc.RollType': 'AbilityCheck',
+        'dcc.Ability': abilityId
+      }
     })
   }
 
@@ -353,7 +357,10 @@ class DCCActor extends Actor {
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: game.i18n.localize('DCC.Initiative')
+      flavor: game.i18n.localize('DCC.Initiative'),
+      flags: {
+        'dcc.RollType': 'Initiative'
+      }
     })
 
     // No combat active
@@ -404,7 +411,10 @@ class DCCActor extends Actor {
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: game.i18n.localize('DCC.HitDice')
+      flavor: game.i18n.localize('DCC.HitDice'),
+      flags: {
+        'dcc.RollType': 'HitDice'
+      }
     })
   }
 
@@ -438,7 +448,11 @@ class DCCActor extends Actor {
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor
+      flavor,
+      flags: {
+        'dcc.RollType': 'SavingThrow',
+        'dcc.Save': saveId
+      }
     })
   }
 
@@ -534,7 +548,11 @@ class DCCActor extends Actor {
       // Convert the roll to a chat message
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
+        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
+        flags: {
+          'dcc.RollType': 'SkillCheck',
+          'dcc.SkillId': skillId
+        }
       })
     }
 
@@ -576,7 +594,10 @@ class DCCActor extends Actor {
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor
+      flavor,
+      flags: {
+        'dcc.RollType': 'LuckDie'
+      }
     })
   }
 
@@ -724,7 +745,10 @@ class DCCActor extends Actor {
       if (options.displayStandardCards || !options.rollWeaponAttack) {
         abRoll.toMessage({
           speaker: ChatMessage.getSpeaker({ actor: this }),
-          flavor
+          flavor,
+          flags: {
+            'dcc.RollType': 'AttackBonus'
+          }
         })
       }
       return {
@@ -784,6 +808,10 @@ class DCCActor extends Actor {
       return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
     }
 
+    if (options.weaponId === undefined) {
+      options.weaponId = weapon.id
+    }
+
     let attackBonusRollResult = 0
     if (this.rollAttackBonusWithAttack) {
       options.rollWeaponAttack = true
@@ -809,8 +837,13 @@ class DCCActor extends Actor {
       // Attack roll card
       if (attackRollResult.rolled) {
         attackRollResult.roll.toMessage({
+          user: game.user.id,
           speaker: speaker,
-          flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name })
+          flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
+          flags: {
+            'dcc.RollType': 'ToHit',
+            'dcc.WeaponId': options.weaponId
+          }
         })
       } else {
         const messageData = {
@@ -820,7 +853,11 @@ class DCCActor extends Actor {
           content: game.i18n.format('DCC.AttackRollInvalidFormula', {
             formula: attackRollResult.formula,
             weapon: weapon.name
-          })
+          }),
+          flags: {
+            'dcc.RollType': 'ToHit',
+            'dcc.WeaponId': options.weaponId
+          }
         }
         ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
         await CONFIG.ChatMessage.documentClass.create(messageData)
@@ -829,8 +866,13 @@ class DCCActor extends Actor {
       // Damage roll card
       if (damageRollResult.rolled) {
         damageRollResult.roll.toMessage({
+          user: game.user.id,
           speaker: speaker,
-          flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name })
+          flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name }),
+          flags: {
+            'dcc.RollType': 'Damage',
+            'dcc.WeaponId': options.weaponId
+          }
         })
       } else {
         const messageData = {
@@ -840,7 +882,11 @@ class DCCActor extends Actor {
           content: game.i18n.format('DCC.DamageRollInvalidFormula', {
             formula: damageRollResult.formula,
             weapon: weapon.name
-          })
+          }),
+          flags: {
+            'dcc.RollType': 'Damage',
+            'dcc.WeaponId': options.weaponId
+          }
         }
         ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
         await CONFIG.ChatMessage.documentClass.create(messageData)
@@ -870,6 +916,7 @@ class DCCActor extends Actor {
       const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
       const messageData = {
         user: game.user.id,
+        itemId: weapon.id,
         speaker: speaker,
         type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
         content: game.i18n.format(emote, {
@@ -880,7 +927,11 @@ class DCCActor extends Actor {
           crit: critResult,
           fumble: fumbleResult
         }),
-        sound: CONFIG.sounds.dice
+        sound: CONFIG.sounds.dice,
+        flags: {
+          'dcc.RollType': 'CombinedAttack',
+          'dcc.WeaponId': options.weaponId
+        }
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
       await CONFIG.ChatMessage.documentClass.create(messageData)
@@ -889,7 +940,7 @@ class DCCActor extends Actor {
 
   /**
    * Roll a weapon's attack roll
-   * @param {Object} weaponId    The weapon object being used for the roll
+   * @param {Object} weapon      The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
@@ -969,7 +1020,7 @@ class DCCActor extends Actor {
 
   /**
    * Roll a weapon's damage
-   * @param {Object} weaponId    The weapon object being used for the roll
+   * @param {Object} weapon      The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
@@ -1087,7 +1138,11 @@ class DCCActor extends Actor {
       // Display the raw crit roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize('DCC.CriticalHit')}!`
+        flavor: `${game.i18n.localize('DCC.CriticalHit')}!`,
+        flags: {
+          'dcc.RollType': 'CriticalHit',
+          'dcc.WeaponId': options.weaponId
+        }
       })
     }
   }
@@ -1166,7 +1221,11 @@ class DCCActor extends Actor {
       // Display the raw fumble roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize('DCC.Fumble')}!`
+        flavor: `${game.i18n.localize('DCC.Fumble')}!`,
+        flags: {
+          'dcc.RollType': 'CriticalHit',
+          'dcc.WeaponId': options.weaponId
+        }
       })
     }
   }
@@ -1391,7 +1450,10 @@ class DCCActor extends Actor {
         // Fall back to displaying just the roll
         roll.toMessage({
           speaker: ChatMessage.getSpeaker({ actor: this }),
-          flavor: game.i18n.localize('DCC.DisapprovalRoll')
+          flavor: game.i18n.localize('DCC.DisapprovalRoll'),
+          flags: {
+            'dcc.RollType': 'Disapproval'
+          }
         })
       }
     } catch (err) {

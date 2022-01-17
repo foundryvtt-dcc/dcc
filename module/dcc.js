@@ -357,7 +357,10 @@ async function processSpellCheck (actor, spellData) {
       // Display the roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
-        flavor
+        flavor,
+        flags: {
+          'dcc.RollType': 'SpellCheck'
+        }
       })
     }
 

@@ -128,7 +128,7 @@ export const migrateActorData = function (actor) {
 
   // If migrating from 0.17 or earlier add useDisapprovalRange to cleric skills
   if ((currentVersion <= 0.17) || (currentVersion == null)) {
-    migrateData.update({
+    updateData.update({
       'data.skills.divineAid.useDisapprovalRange': true,
       'data.skills.turnUnholy.useDisapprovalRange': true,
       'data.skills.layOnHands.useDisapprovalRange': true
