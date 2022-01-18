@@ -356,20 +356,25 @@ async function processSpellCheck (actor, spellData) {
           }
         }
       }
-      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble })
+      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble, itemId: item?.id })
     // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
         await roll.evaluate({ async: true })
       }
 
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'SpellCheck',
+        'dcc.ItemId': item?.id
+      }
+      game.dcc.FleetingLuck.updateFlags(flags, roll)
+
       // Display the roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor,
-        flags: {
-          'dcc.RollType': 'SpellCheck'
-        }
+        flags
       })
     }
 

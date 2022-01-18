@@ -310,14 +310,18 @@ class DCCActor extends Actor {
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
     }
 
+    // Generate flags for the roll
+    const flags = {
+      'dcc.RollType': 'AbilityCheck',
+      'dcc.Ability': abilityId
+    }
+    game.dcc.FleetingLuck.updateFlags(flags, roll)
+
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor,
-      flags: {
-        'dcc.RollType': 'AbilityCheck',
-        'dcc.Ability': abilityId
-      }
+      flags
     })
   }
 
@@ -445,14 +449,18 @@ class DCCActor extends Actor {
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
+    // Generate flags for the roll
+    const flags = {
+      'dcc.RollType': 'SavingThrow',
+      'dcc.Save': saveId
+    }
+    game.dcc.FleetingLuck.updateFlags(flags, roll)
+
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor,
-      flags: {
-        'dcc.RollType': 'SavingThrow',
-        'dcc.Save': saveId
-      }
+      flags
     })
   }
 
@@ -545,14 +553,19 @@ class DCCActor extends Actor {
       })
     } else {
       await roll.evaluate({ async: true })
+
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'SkillCheck',
+        'dcc.SkillId': skillId
+      }
+      game.dcc.FleetingLuck.updateFlags(flags, roll)
+
       // Convert the roll to a chat message
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
-        flags: {
-          'dcc.RollType': 'SkillCheck',
-          'dcc.SkillId': skillId
-        }
+        flags
       })
     }
 
@@ -907,10 +920,18 @@ class DCCActor extends Actor {
       let critResult = ''
       let fumbleResult = ''
 
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'CombinedAttack',
+        'dcc.ItemId': options.weaponId
+      }
+
       if (attackRollResult.crit) {
         critResult = await this.rollCritical(options)
+        game.dcc.FleetingLuck.updateFlagsForCrit(flags)
       } else if (attackRollResult.fumble) {
         fumbleResult = await this.rollFumble(options)
+        game.dcc.FleetingLuck.updateFlagsForFumble(flags)
       }
 
       const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
@@ -928,10 +949,7 @@ class DCCActor extends Actor {
           fumble: fumbleResult
         }),
         sound: CONFIG.sounds.dice,
-        flags: {
-          'dcc.RollType': 'CombinedAttack',
-          'dcc.ItemId': options.weaponId
-        }
+        flags
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
       await CONFIG.ChatMessage.documentClass.create(messageData)
@@ -1135,14 +1153,18 @@ class DCCActor extends Actor {
         return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
       }
     } else if (!critResult) {
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'CriticalHit',
+        'dcc.ItemId': options.weaponId
+      }
+      game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+
       // Display the raw crit roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: `${game.i18n.localize('DCC.CriticalHit')}!`,
-        flags: {
-          'dcc.RollType': 'CriticalHit',
-          'dcc.ItemId': options.weaponId
-        }
+        flags
       })
     }
   }
@@ -1218,14 +1240,18 @@ class DCCActor extends Actor {
         return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}`
       }
     } else if (!fumbleResult) {
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'Fumble',
+        'dcc.ItemId': options.weaponId
+      }
+      game.dcc.FleetingLuck.updateFlagsForFumble(flags)
+
       // Display the raw fumble roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: `${game.i18n.localize('DCC.Fumble')}!`,
-        flags: {
-          'dcc.RollType': 'CriticalHit',
-          'dcc.ItemId': options.weaponId
-        }
+        flags
       })
     }
   }
