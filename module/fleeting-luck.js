@@ -1,4 +1,4 @@
-/* global CONFIG, game */
+/* global CONFIG, game, Hooks */
 
 class FleetingLuckDialog extends Application {
   static get defaultOptions () {
@@ -101,7 +101,20 @@ class FleetingLuck {
    * Initialise the Fleeting Luck subsystem
    */
   static init () {
-    // TODO: Register listener for chat events
+    Hooks.on('createChatMessage', (message, options, id) => {
+      // Check for Roll Type data to determine if we can handle this roll
+      const effect = message.getFlag('dcc', 'FleetingLuckEffect')
+      if (effect !== undefined) {
+        switch (effect) {
+          case 'Gain':
+            FleetingLuck.give(message.user.id, 1)
+            break
+          case 'Lose':
+            FleetingLuck.clearAll()
+            break
+        }
+      }
+    })
   }
 
   /**
@@ -153,11 +166,62 @@ class FleetingLuck {
   }
 
   /**
+   * Clear all fleeting luck
+   * @returns {Promise.<Document>}
+   */
+  static async clearAll () {
+    game.users.forEach(user => {
+      FleetingLuck.clear(user.id)
+    })
+  }
+
+  /**
    * Poll the status of the Fleeting Luck dialog
    * @returns {Boolean}     Visibility status of the dialog
    */
   static get visible() {
     return FleetingLuck.instance !== null
+  }
+
+  /**
+   * Set flags for a chat message based on a roll object
+   * @param {Object} flags    Flags object to update
+   * @param {Object} roll     Roll object to inspect
+   */
+  static updateFlags (flags, roll) {
+    // Extract the first dice from the roll
+    if (!roll?.dice?.length) return
+    const d = roll.dice[0]
+
+    // Natural 20 or natural 1
+    if (d.total === 20) {
+      FleetingLuck.updateFlagsForCrit(flags)
+    } else if (d.total === 1) {
+      FleetingLuck.updateFlagsForFumble(flags)
+    }
+  }
+
+  /*
+   * Set flags for a chat message assuming critical success
+   * @param {Object} flags    Flags object to update
+   */
+  static updateFlagsForCrit (flags) {
+    if (flags) {
+      Object.assign(flags, {
+        'dcc.FleetingLuckEffect': 'Gain'
+      })
+    }
+  }
+  /**
+   * Set flags for a chat message assuming critical failure
+   * @param {Object} flags    Flags object to update
+   */
+  static updateFlagsForFumble (flags) {
+    if (flags) {
+      Object.assign(flags, {
+        'dcc.FleetingLuckEffect': 'Lose'
+      })
+    }
   }
 }
 

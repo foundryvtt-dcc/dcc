@@ -9,14 +9,29 @@ class SpellResult {
    * @param {Object} messageOptions  Additional options for the ChatMessage object
    * @param {boolean} crit        The Spell Check was a nat 20
    * @param {boolean} fumble      The Spell Check was a nat 1
+   * @param {String} itemId       ID of the spell item
    */
-  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false } = {}) {
+  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined} = {}) {
     const roll = result.roll
     messageOptions = mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
     }, messageOptions)
 
     const speaker = ChatMessage.getSpeaker({ user: game.user })
+
+    // construct flags for the message
+    flags = {
+      'core.RollTable': result.id,
+      'dcc.SpellCheck': true,
+      'dcc.RollType': 'SpellCheck',
+      'dcc.ItemId': itemId
+    }
+
+    if (crit) {
+      game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+    } else if (fumble) {
+      game.dcc.FleetingLuck.updateFlagsForFumble(flags)
+    }
 
     // Construct chat data
     messageData = mergeObject({
@@ -26,11 +41,7 @@ class SpellResult {
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
       roll: roll,
       sound: roll ? CONFIG.sounds.dice : null,
-      flags: {
-        'core.RollTable': result.id,
-        'dcc.RollType': 'SpellCheck',
-        'dcc.SpellCheck': true
-      }
+      flags
     }, messageData)
 
     // Render the chat card which combines the dice roll with the drawn results

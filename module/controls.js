@@ -16,7 +16,7 @@ class DCCControls {
       tokenTools.tools.push({
         name: 'fleetingluck',
         title: game.i18n.localize('DCC.FleetingLuck'),
-        icon: 'fas fa-crow',
+        icon: 'fas fa-balance-scale-left',
         onClick: () => {
           game.dcc.FleetingLuck.show()
         },
