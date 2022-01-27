@@ -20,7 +20,7 @@ class SpellResult {
     const speaker = ChatMessage.getSpeaker({ user: game.user })
 
     // construct flags for the message
-    flags = {
+    const flags = {
       'core.RollTable': result.id,
       'dcc.SpellCheck': true,
       'dcc.RollType': 'SpellCheck',
