@@ -294,6 +294,8 @@
   "DCC.FlagsSave": "Update Special Traits",
   "DCC.FlagsTitle": "Configure Special Traits",
   "DCC.FleetingLuck": "Fleeting Luck",
+  "DCC.FleetingLuckGive": "Award Fleeting Luck",
+  "DCC.FleetingLuckTake": "Take Fleeting Luck",
   "DCC.Folder": "Folder",
   "DCC.ForgeDocument": "Forge Document",
   "DCC.Formula": "Formula",

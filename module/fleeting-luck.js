@@ -115,6 +115,17 @@ class FleetingLuck {
         }
       }
     })
+
+    Hooks.on('getUserContextOptions', (html, options) => {
+      options.push( {
+        name: game.i18n.localize('DCC.FleetingLuckGive'),
+        icon: '<i class="fas fa-balance-scale-left"></i>',
+        condition: li => game.user.isGM,
+        callback: li => {
+          FleetingLuck.give(li[0].dataset.userId, 1)
+        }
+      })
+    })
   }
 
   /**
