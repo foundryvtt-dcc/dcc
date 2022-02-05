@@ -1647,24 +1647,34 @@ form.dcc-roll-modifier {
       grid-column: 2;
     }
 
-    .clear {
+    .minus {
       grid-column: 3;
       justify-self: right;
     }
 
-    .minus {
+    .value {
       grid-column: 4;
-      justify-self: right;
+      justify-self: center;
     }
 
-    .value {
-      grid-column: 5;
+    .reset-all {
+      grid-column: 4;
       justify-self: center;
     }
 
     .plus {
-      grid-column: 6;
+      grid-column: 5;
       justify-self: left;
+    }
+
+    .clear {
+      grid-column: 6;
+      justify-self: center;
+    }
+
+    .clear-all {
+      grid-column: 6;
+      justify-self: center;
     }
   }
 }
