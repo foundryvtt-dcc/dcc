@@ -310,6 +310,8 @@ class DCCActor extends Actor {
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
     }
 
+    await roll.evaluate({ async: true })
+
     // Generate flags for the roll
     const flags = {
       'dcc.RollType': 'AbilityCheck',
@@ -448,6 +450,8 @@ class DCCActor extends Actor {
     ]
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+
+    await roll.evaluate({ async: true })
 
     // Generate flags for the roll
     const flags = {

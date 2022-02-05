@@ -52,7 +52,6 @@ class FleetingLuckDialog extends Application {
     event.preventDefault()
     const userId = event.currentTarget.dataset.userId
     await FleetingLuck.take(userId, 1)
-    this.render()
   }
 
   /**
@@ -64,7 +63,6 @@ class FleetingLuckDialog extends Application {
     event.preventDefault()
     const userId = event.currentTarget.dataset.userId
     await FleetingLuck.give(userId, 1)
-    this.render()
   }
 
   /**
@@ -76,7 +74,6 @@ class FleetingLuckDialog extends Application {
     event.preventDefault()
     const userId = event.currentTarget.dataset.userId
     await FleetingLuck.clear(userId)
-    this.render()
   }
 
   /** @override */
@@ -87,13 +84,13 @@ class FleetingLuckDialog extends Application {
 
   /** @override */
   async close () {
-    FleetingLuck.instance = null
+    FleetingLuck.dialog = null
     return super.close()
   }
 }
 
 class FleetingLuck {
-  static instance = null
+  static dialog = null
 
   static fleetingLuckFlag = 'fleetingLuckValue'
 
@@ -132,13 +129,23 @@ class FleetingLuck {
    * Toggle the Fleeting Luck dialog
    */
   static async show () {
-    if (FleetingLuck.instance) {
-      await FleetingLuck.instance.close()
-      delete FleetingLuck.instance
-      FleetingLuck.instance = null
+    if (FleetingLuck.dialog) {
+      await FleetingLuck.dialog.close()
+      delete FleetingLuck.dialog
+      FleetingLuck.dialog = null
     } else {
-      FleetingLuck.instance = new FleetingLuckDialog()
-      FleetingLuck.instance.render(true)
+      FleetingLuck.dialog = new FleetingLuckDialog()
+      FleetingLuck.dialog.render(true)
+    }
+  }
+
+  /**
+   * Refresh the dialog if open
+   * @returns {Promise}
+   */
+  static async refresh () {
+    if (FleetingLuck.dialog) {
+      return await FleetingLuck.dialog.render(false)
     }
   }
 
@@ -146,42 +153,44 @@ class FleetingLuck {
    * Give fleeting luck to a user
    * @param {String} id      Id of the user
    * @param {Number} amount  Amount of luck to give
-   * @returns {Promise.<Document>}
+   * @returns {Promise}
    */
   static async give (id, amount) {
     const user = game.users.get(id)
     const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
-    return user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, currentValue + amount)
+    await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, currentValue + amount)
+    return await FleetingLuck.refresh()
   }
 
   /**
    * Take fleeting luck from a user
    * @param {String} id    Id of the user
    * @param {Number} amount  Amount of luck to give
-   * @returns {Promise.<Document>}
+   * @returns {Promise}
    */
   static async take (id, amount) {
     const user = game.users.get(id)
     const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
-    return user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, Math.max(currentValue - amount, 0))
+    await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, Math.max(currentValue - amount, 0))
+    return await FleetingLuck.refresh()
   }
 
   /**
    * Clear all fleeting luck for a user
    * @param {String} id    Id of the user
-   * @returns {Promise.<Document>}
+   * @returns {Promise}
    */
   static async clear (id) {
     const user = game.users.get(id)
-    return user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, 0)
+    await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, 0)
+    return await FleetingLuck.refresh()
   }
 
   /**
    * Clear all fleeting luck
-   * @returns {Promise.<Document>}
    */
   static async clearAll () {
-    game.users.forEach(user => {
+    await game.users.forEach(user => {
       FleetingLuck.clear(user.id)
     })
   }
@@ -191,7 +200,7 @@ class FleetingLuck {
    * @returns {Boolean}     Visibility status of the dialog
    */
   static get visible() {
-    return FleetingLuck.instance !== null
+    return FleetingLuck.dialog !== null
   }
 
   /**
@@ -205,10 +214,12 @@ class FleetingLuck {
     const d = roll.dice[0]
 
     // Natural 20 or natural 1
-    if (d.total === 20) {
-      FleetingLuck.updateFlagsForCrit(flags)
-    } else if (d.total === 1) {
-      FleetingLuck.updateFlagsForFumble(flags)
+    if (d.results.length === 1) {
+      if (d.results[0].result === 20) {
+        FleetingLuck.updateFlagsForCrit(flags)
+      } else if (d.results[0].result === 1) {
+        FleetingLuck.updateFlagsForFumble(flags)
+      }
     }
   }
 
