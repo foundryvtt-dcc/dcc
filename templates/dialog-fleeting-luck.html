@@ -1,16 +1,20 @@
 <form class="{{cssClass}}" autocomplete="off">
-{{!-- Party Tab --}}
   <div class="fleeting-luck">
+    <div class="fleeting-luck-row">
+      <label class="name">{{localize 'DCC.FleetingLuckAllPlayers'}}</label>
+      <i class="reset-all fas fa-dice-one"></i>
+      <i class="clear-all fas fa-trash-alt"></i>
+    </div>
     {{#each users}}
     <div class="fleeting-luck-row">
       <div class="avatar">
         <img src="{{avatar}}" data-edit="img" title="{{name}}" alt="{{localize 'DCC.Avatar'}}'"/>
       </div>
       <label class="name">{{name}}</label>
-      <i class="clear fas fa-trash-alt" data-user-id="{{userId}}"></i>
       <i class="minus fas fa-minus" data-user-id="{{userId}}"></i>
       <label class="value">{{fleetingLuck}}</label>
       <i class="plus fas fa-plus" data-user-id="{{userId}}"></i>
+      <i class="clear fas fa-trash-alt" data-user-id="{{userId}}"></i>
     </div>
     {{/each}}
   </div>

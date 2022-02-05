@@ -1557,21 +1557,29 @@ form.dcc-roll-modifier input.stat {
   font-size: 2rem;
   grid-column: 2;
 }
-.dcc .fleeting-luck .fleeting-luck-row .clear {
+.dcc .fleeting-luck .fleeting-luck-row .minus {
   grid-column: 3;
   justify-self: right;
 }
-.dcc .fleeting-luck .fleeting-luck-row .minus {
-  grid-column: 4;
-  justify-self: right;
-}
 .dcc .fleeting-luck .fleeting-luck-row .value {
-  grid-column: 5;
+  grid-column: 4;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-row .reset-all {
+  grid-column: 4;
   justify-self: center;
 }
 .dcc .fleeting-luck .fleeting-luck-row .plus {
-  grid-column: 6;
+  grid-column: 5;
   justify-self: left;
+}
+.dcc .fleeting-luck .fleeting-luck-row .clear {
+  grid-column: 6;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-row .clear-all {
+  grid-column: 6;
+  justify-self: center;
 }
 
 /*# sourceMappingURL=dcc.css.map */

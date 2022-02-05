@@ -45,6 +45,8 @@ class FleetingLuckDialog extends FormApplication {
     html.find('.minus').click(this._onTakeLuck.bind(this))
     html.find('.plus').click(this._onGiveLuck.bind(this))
     html.find('.clear').click(this._onClearLuck.bind(this))
+    html.find('.clear-all').click(this._onClearAllLuck.bind(this))
+    html.find('.reset-all').click(this._onResetAllLuck.bind(this))
   }
 
   /**
@@ -80,6 +82,26 @@ class FleetingLuckDialog extends FormApplication {
     await FleetingLuck.clear(userId)
   }
 
+  /**
+   * Handle removing all fleeting luck from all players
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onClearAllLuck (event) {
+    event.preventDefault()
+    await FleetingLuck.clearAll()
+  }
+
+  /**
+   * Handle resetting fleeting luck for all players
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onResetAllLuck (event) {
+    event.preventDefault()
+    await FleetingLuck.resetAll()
+  }
+
   /** @override */
   async _updateObject (event, formData) {
     event.preventDefault()
@@ -96,6 +118,7 @@ class FleetingLuckDialog extends FormApplication {
 class FleetingLuck {
   static dialog = null
 
+  static fleetingLuckEnabledFlag = 'fleetingLuckEnabled'
   static fleetingLuckFlag = 'fleetingLuckValue'
 
   /**
@@ -154,6 +177,18 @@ class FleetingLuck {
   }
 
   /**
+   * Set fleeting luck for a user
+   * @param {String} id      Id of the user
+   * @param {Number} value   New value
+   * @returns {Promise}
+   */
+  static async _set (id, value) {
+    const user = game.users.get(id)
+    await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, value)
+    return await FleetingLuck.refresh()
+  }
+
+  /**
    * Give fleeting luck to a user
    * @param {String} id      Id of the user
    * @param {Number} amount  Amount of luck to give
@@ -163,6 +198,9 @@ class FleetingLuck {
     const user = game.users.get(id)
     const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
     await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, currentValue + amount)
+    if (amount !== 0) {
+      await FleetingLuck.addChatMessage(game.i18n.format('DCC.FleetingLuckGiveMessage', { user: user.name, amount: amount }))
+    }
     return await FleetingLuck.refresh()
   }
 
@@ -175,7 +213,11 @@ class FleetingLuck {
   static async take (id, amount) {
     const user = game.users.get(id)
     const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
-    await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, Math.max(currentValue - amount, 0))
+    const newValue = Math.max(currentValue - amount, 0)
+    await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, newValue)
+    if (currentValue !== newValue) {
+      await FleetingLuck.addChatMessage(game.i18n.format('DCC.FleetingLuckTakeMessage', { user: user.name, amount: currentValue - newValue }))
+    }
     return await FleetingLuck.refresh()
   }
 
@@ -185,6 +227,10 @@ class FleetingLuck {
    * @returns {Promise}
    */
   static async clear (id) {
+    return await FleetingLuck._clear(id)
+  }
+
+  static async _clear (id) {
     const user = game.users.get(id)
     await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, 0)
     return await FleetingLuck.refresh()
@@ -195,8 +241,19 @@ class FleetingLuck {
    */
   static async clearAll () {
     await game.users.forEach(user => {
-      FleetingLuck.clear(user.id)
+      FleetingLuck._clear(user.id)
     })
+    FleetingLuck.addChatMessage(game.i18n.localize('DCC.FleetingLuckClearMessage'))
+  }
+
+  /**
+   * Reset all fleeting luck
+   */
+  static async resetAll () {
+    await game.users.forEach(user => {
+      FleetingLuck._set(user.id, 1)
+    })
+    FleetingLuck.addChatMessage(game.i18n.localize('DCC.FleetingLuckResetMessage'))
   }
 
   /**
@@ -205,6 +262,28 @@ class FleetingLuck {
    */
   static get visible() {
     return FleetingLuck.dialog !== null
+  }
+
+  /**
+   * Check if a user should be considered for Fleeting Luck
+   * @param {String} id    Id of the user
+   * @returns {Boolean}    Status of user for Fleeting Luck
+   */
+  static isEnabledForUser (id) {
+    const user = game.users.get(id)
+    const currentValue = user.getFlag('dcc', FleetingLuck.fleetingLuckEnabledFlag)
+    return currentValue === true || currentValue === undefined && !user.isGM
+  }
+
+  /**
+   * Set whether a user should be considered for Fleeting Luck
+   * @param {String} id      Id of the user
+   * @param {Boolean} value  Value to apply
+   * @returns {Promise}
+   */
+  static async setEnabledForUser (id, value) {
+    const user = game.users.get(id)
+    return await user.setFlag('dcc', FleetingLuck.fleetingLuckEnabledFlag, value)
   }
 
   /**
@@ -238,6 +317,7 @@ class FleetingLuck {
       })
     }
   }
+
   /**
    * Set flags for a chat message assuming critical failure
    * @param {Object} flags    Flags object to update
@@ -248,6 +328,21 @@ class FleetingLuck {
         'dcc.FleetingLuckEffect': 'Lose'
       })
     }
+  }
+
+  /*
+   * Send a chat message notifying of Fleeting Luck changes
+   * @param {String} content    Message Content
+   * @return {Promise}
+   */
+  static async addChatMessage (content) {
+    const messageData = {
+      user: game.user.id,
+      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      content,
+      sound: CONFIG.sounds.notification
+    }
+    return await CONFIG.ChatMessage.documentClass.create(messageData)
   }
 }
 
