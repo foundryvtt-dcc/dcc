@@ -1,12 +1,16 @@
-/* global CONFIG, game, Hooks */
+/* global CONFIG, FormApplication, game, Hooks, mergeObject */
 
-class FleetingLuckDialog extends Application {
+class FleetingLuckDialog extends FormApplication {
+  /** @override */
   static get defaultOptions () {
-    const options = super.defaultOptions
-    options.template = 'systems/dcc/templates/dialog-fleeting-luck.html'
-    return options
+    return mergeObject(super.defaultOptions, {
+      id: 'fleeting-luck',
+      template: 'systems/dcc/templates/dialog-fleeting-luck.html',
+      height: 'fit-content'
+    })
   }
 
+  /** @override */
   get title () {
     return game.i18n.localize('DCC.FleetingLuck')
   }
