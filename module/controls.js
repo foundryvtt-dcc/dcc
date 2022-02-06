@@ -9,8 +9,6 @@ class DCCControls {
   }
 
   static _getSceneControlButtons (controls) {
-    if (!game.user.isGM) return;
-
     const tokenTools = controls.find(t => t.name == 'token')
     if (tokenTools) {
       tokenTools.tools.push({
