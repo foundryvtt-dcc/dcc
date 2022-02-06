@@ -25,15 +25,20 @@ class FleetingLuckDialog extends FormApplication {
     data.user = game.user
     data.config = CONFIG.DCC
     data.users = []
+    const filterEnabled = FleetingLuck.isFilterEnabled()
     for (const user of game.users.values()) {
-      const value = user.getFlag('dcc', FleetingLuck.fleetingLuckFlag)
-      const userData = {
-        avatar: user.avatar,
-        userId: user.id,
-        fleetingLuck: value ? value.toString() : '0',
-        name: user.name
+      if (FleetingLuck.isTrackedForUser(user)) {
+        if (game.user.isGM || !filterEnabled || user === game.user) {
+          const value = user.getFlag('dcc', FleetingLuck.fleetingLuckFlag)
+          const userData = {
+            avatar: user.avatar,
+            userId: user.id,
+            fleetingLuck: value ? value.toString() : '0',
+            name: user.name
+          }
+          data.users.push(userData)
+        }
       }
-      data.users.push(userData)
     }
     return data
   }
@@ -47,6 +52,7 @@ class FleetingLuckDialog extends FormApplication {
     html.find('.clear').click(this._onClearLuck.bind(this))
     html.find('.clear-all').click(this._onClearAllLuck.bind(this))
     html.find('.reset-all').click(this._onResetAllLuck.bind(this))
+    html.find('.filter').click(this._onToggleFilter.bind(this))
   }
 
   /**
@@ -102,6 +108,16 @@ class FleetingLuckDialog extends FormApplication {
     await FleetingLuck.resetAll()
   }
 
+  /**
+   * Handle filter toggle
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onToggleFilter (event) {
+    event.preventDefault()
+    await FleetingLuck.toggleFilter()
+  }
+
   /** @override */
   async _updateObject (event, formData) {
     event.preventDefault()
@@ -119,6 +135,7 @@ class FleetingLuck {
   static dialog = null
 
   static fleetingLuckEnabledFlag = 'fleetingLuckEnabled'
+  static fleetingLuckFilterFlag = 'fleetingLuckFilter'
   static fleetingLuckFlag = 'fleetingLuckValue'
 
   /**
@@ -129,27 +146,35 @@ class FleetingLuck {
       // Check for Roll Type data to determine if we can handle this roll
       const effect = message.getFlag('dcc', 'FleetingLuckEffect')
       if (effect !== undefined) {
-        switch (effect) {
-          case 'Gain':
-            FleetingLuck.give(message.user.id, 1)
-            break
-          case 'Lose':
-            FleetingLuck.clearAll()
-            break
+        if (FleetingLuck.isTrackedForUser(message.user)) {
+          if (game.user.isGM) {
+            switch (effect) {
+              case 'Gain':
+                FleetingLuck.give(message.user.id, 1)
+                break
+              case 'Lose':
+                FleetingLuck.clearAll()
+                break
+            }
+          } else {
+            FleetingLuck.refresh()
+          }
         }
       }
     })
 
-    Hooks.on('getUserContextOptions', (html, options) => {
-      options.push( {
-        name: game.i18n.localize('DCC.FleetingLuckGive'),
-        icon: '<i class="fas fa-balance-scale-left"></i>',
-        condition: li => game.user.isGM,
-        callback: li => {
-          FleetingLuck.give(li[0].dataset.userId, 1)
-        }
+    if (game.user.isGM) {
+      Hooks.on('getUserContextOptions', (html, options) => {
+        options.push( {
+          name: game.i18n.localize('DCC.FleetingLuckGive'),
+          icon: '<i class="fas fa-balance-scale-left"></i>',
+          condition: li => game.user.isGM,
+          callback: li => {
+            FleetingLuck.give(li[0].dataset.userId, 1)
+          }
+        })
       })
-    })
+    }
   }
 
   /**
@@ -241,7 +266,9 @@ class FleetingLuck {
    */
   static async clearAll () {
     await game.users.forEach(user => {
-      FleetingLuck._clear(user.id)
+      if (FleetingLuck.isTrackedForUser(user)) {
+        FleetingLuck._clear(user.id)
+      }
     })
     FleetingLuck.addChatMessage(game.i18n.localize('DCC.FleetingLuckClearMessage'))
   }
@@ -251,7 +278,9 @@ class FleetingLuck {
    */
   static async resetAll () {
     await game.users.forEach(user => {
-      FleetingLuck._set(user.id, 1)
+      if (FleetingLuck.isTrackedForUser(user)) {
+        FleetingLuck._set(user.id, 1)
+      }
     })
     FleetingLuck.addChatMessage(game.i18n.localize('DCC.FleetingLuckResetMessage'))
   }
@@ -266,24 +295,34 @@ class FleetingLuck {
 
   /**
    * Check if a user should be considered for Fleeting Luck
-   * @param {String} id    Id of the user
-   * @returns {Boolean}    Status of user for Fleeting Luck
+   * @param {Object} user    User object
+   * @returns {Boolean}
    */
-  static isEnabledForUser (id) {
-    const user = game.users.get(id)
-    const currentValue = user.getFlag('dcc', FleetingLuck.fleetingLuckEnabledFlag)
-    return currentValue === true || currentValue === undefined && !user.isGM
+  static isTrackedForUser (user) {
+    return !user.isGM
   }
 
   /**
-   * Set whether a user should be considered for Fleeting Luck
-   * @param {String} id      Id of the user
-   * @param {Boolean} value  Value to apply
+   * Toggle fleeting luck filter for the current user
    * @returns {Promise}
    */
-  static async setEnabledForUser (id, value) {
-    const user = game.users.get(id)
-    return await user.setFlag('dcc', FleetingLuck.fleetingLuckEnabledFlag, value)
+  static async toggleFilter () {
+    const currentValue = FleetingLuck.isFilterEnabled()
+    await game.user.setFlag('dcc', FleetingLuck.fleetingLuckFilterFlag, !currentValue)
+    return await FleetingLuck.refresh()
+  }
+
+  /**
+   * Get fleeting luck filter status for the current user
+   * Defaults to true if undefined
+   * @returns {Boolean}
+   */
+  static isFilterEnabled () {
+    const value = game.user.getFlag('dcc', FleetingLuck.fleetingLuckFilterFlag)
+    if (value !== undefined) {
+      return value
+    }
+    return true
   }
 
   /**

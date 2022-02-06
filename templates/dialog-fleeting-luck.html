@@ -1,9 +1,17 @@
 <form class="{{cssClass}}" autocomplete="off">
   <div class="fleeting-luck">
-    <div class="fleeting-luck-row">
-      <label class="name">{{localize 'DCC.FleetingLuckAllPlayers'}}</label>
-      <i class="reset-all fas fa-dice-one"></i>
-      <i class="clear-all fas fa-trash-alt"></i>
+    <div class="fleeting-luck-header">
+      <button class="filter" type="button">
+        <i class="fas fa-filter"></i>
+      </button>
+      {{#if user.isGM}}
+      <button class="reset-all">
+        <i class="fas fa-dice-one"></i> {{localize 'DCC.FleetingLuckResetButton'}}
+      </button>
+      <button class="clear-all">
+        <i class="fas fa-trash-alt"></i> {{localize 'DCC.FleetingLuckClearButton'}}
+      </button>
+      {{/if}}
     </div>
     {{#each users}}
     <div class="fleeting-luck-row">

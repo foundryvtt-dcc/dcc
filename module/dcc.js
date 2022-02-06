@@ -150,9 +150,6 @@ Hooks.once('init', async function () {
     return TextEditor.enrichHTML(game.i18n.localize(object))
   })
 
-  // Initialise Fleeting Luck
-  game.dcc.FleetingLuck.init()
-
   // Register scene controls
   DCCControls.register()
 })
@@ -170,6 +167,9 @@ Hooks.once('ready', async function () {
   checkReleaseNotes()
   checkMigrations()
   registerTables()
+
+  // Initialise Fleeting Luck
+  game.dcc.FleetingLuck.init()
 
   // Let modules know the DCC system is ready
   Hooks.callAll('dcc.ready')
