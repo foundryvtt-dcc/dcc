@@ -7,7 +7,6 @@
 // Import Modules
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
-import DCCControls from './controls.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
 import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
@@ -149,9 +148,6 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('dccLocalizeAndEnrich', function (object) {
     return TextEditor.enrichHTML(game.i18n.localize(object))
   })
-
-  // Register scene controls
-  DCCControls.register()
 })
 
 /* -------------------------------------------- */
