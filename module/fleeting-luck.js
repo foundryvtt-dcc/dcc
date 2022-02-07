@@ -142,12 +142,13 @@ class FleetingLuck {
    * Initialise the Fleeting Luck subsystem
    */
   static init () {
-    Hooks.on('createChatMessage', (message, options, id) => {
-      // Check for Roll Type data to determine if we can handle this roll
-      const effect = message.getFlag('dcc', 'FleetingLuckEffect')
-      if (effect !== undefined) {
-        if (FleetingLuck.isTrackedForUser(message.user)) {
-          if (game.user.isGM) {
+    if (game.user.isGM) {
+      // For GM, register hooks to manage fleeting luck
+      Hooks.on('createChatMessage', (message, options, id) => {
+        // Check for Roll Type data to determine if we can handle this roll
+        const effect = message.getFlag('dcc', 'FleetingLuckEffect')
+        if (effect !== undefined) {
+          if (FleetingLuck.isTrackedForUser(message.user)) {
             switch (effect) {
               case 'Gain':
                 FleetingLuck.give(message.user.id, 1)
@@ -156,14 +157,10 @@ class FleetingLuck {
                 FleetingLuck.clearAll()
                 break
             }
-          } else {
-            FleetingLuck.refresh()
           }
         }
-      }
-    })
+      })
 
-    if (game.user.isGM) {
       Hooks.on('getUserContextOptions', (html, options) => {
         options.push( {
           name: game.i18n.localize('DCC.FleetingLuckGive'),
@@ -173,6 +170,13 @@ class FleetingLuck {
             FleetingLuck.give(li[0].dataset.userId, 1)
           }
         })
+      })
+    } else {
+      // Non GM users refresh fleeting luck after user updates
+      Hooks.on('updateUser', (doc, change, options, userId) => {
+        if (change?.flags?.dcc) {
+          FleetingLuck.refresh()
+        }
       })
     }
   }
