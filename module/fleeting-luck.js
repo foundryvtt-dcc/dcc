@@ -6,7 +6,8 @@ class FleetingLuckDialog extends FormApplication {
     return mergeObject(super.defaultOptions, {
       id: 'fleeting-luck',
       template: 'systems/dcc/templates/dialog-fleeting-luck.html',
-      height: 'fit-content'
+      height: 'fit-content',
+      width: 400
     })
   }
 
@@ -50,9 +51,10 @@ class FleetingLuckDialog extends FormApplication {
     html.find('.minus').click(this._onTakeLuck.bind(this))
     html.find('.plus').click(this._onGiveLuck.bind(this))
     html.find('.clear').click(this._onClearLuck.bind(this))
+    html.find('.filter').click(this._onToggleFilter.bind(this))
+    html.find('.spend').click(this._onSpendLuck.bind(this))
     html.find('.clear-all').click(this._onClearAllLuck.bind(this))
     html.find('.reset-all').click(this._onResetAllLuck.bind(this))
-    html.find('.filter').click(this._onToggleFilter.bind(this))
   }
 
   /**
@@ -75,6 +77,35 @@ class FleetingLuckDialog extends FormApplication {
     event.preventDefault()
     const userId = event.currentTarget.dataset.userId
     await FleetingLuck.give(userId, 1)
+  }
+
+  /**
+   * Handle a player spending fleeting luck
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onSpendLuck (event) {
+    event.preventDefault()
+    const userId = event.currentTarget.dataset.userId
+
+    const fleetingLuckValue = FleetingLuck.getValue(userId)
+    const terms = [
+      {
+        type: 'FleetingLuck',
+        formula: Math.min(1, fleetingLuckValue),
+        fleetingLuck: fleetingLuckValue
+      }
+    ]
+    const options = {
+      showModifierDialog: true,
+      title: game.i18n.localize('DCC.FleetingLuckSpendTitle'),
+      rollLabel: game.i18n.localize('DCC.FleetingLuckSpendButton')
+    }
+
+    const roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+    await roll.evaluate({ async: true })
+
+    await FleetingLuck.spend(userId, roll.total)
   }
 
   /**
@@ -171,14 +202,14 @@ class FleetingLuck {
           }
         })
       })
-    } else {
-      // Non GM users refresh fleeting luck after user updates
-      Hooks.on('updateUser', (doc, change, options, userId) => {
-        if (change?.flags?.dcc) {
-          FleetingLuck.refresh()
-        }
-      })
     }
+
+    // All users refresh fleeting luck after user updates
+    Hooks.on('updateUser', (doc, change, options, userId) => {
+      if (change?.flags?.dcc) {
+        FleetingLuck.refresh()
+      }
+    })
   }
 
   /**
@@ -203,6 +234,16 @@ class FleetingLuck {
     if (FleetingLuck.dialog) {
       return await FleetingLuck.dialog.render(false)
     }
+  }
+
+  /**
+   * Get fleeting luck for a user
+   * @param {String} id      Id of the user
+   * @returns {Number}
+   */
+  static getValue (id) {
+    const user = game.users.get(id)
+    return user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0
   }
 
   /**
@@ -236,7 +277,7 @@ class FleetingLuck {
   /**
    * Take fleeting luck from a user
    * @param {String} id    Id of the user
-   * @param {Number} amount  Amount of luck to give
+   * @param {Number} amount  Amount of luck to take
    * @returns {Promise}
    */
   static async take (id, amount) {
@@ -246,6 +287,23 @@ class FleetingLuck {
     await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, newValue)
     if (currentValue !== newValue) {
       await FleetingLuck.addChatMessage(game.i18n.format('DCC.FleetingLuckTakeMessage', { user: user.name, amount: currentValue - newValue }))
+    }
+    return await FleetingLuck.refresh()
+  }
+
+  /**
+   * Spend fleeting luck for a user
+   * @param {String} id    Id of the user
+   * @param {Number} amount  Amount of luck to spend
+   * @returns {Promise}
+   */
+  static async spend (id, amount) {
+    const user = game.users.get(id)
+    const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
+    const newValue = Math.max(currentValue - amount, 0)
+    await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, newValue)
+    if (currentValue !== newValue) {
+      await FleetingLuck.addChatMessage(game.i18n.format('DCC.FleetingLuckSpendMessage', { user: user.name, amount: currentValue - newValue }))
     }
     return await FleetingLuck.refresh()
   }
