@@ -220,6 +220,23 @@ class FleetingLuck {
         FleetingLuck.refresh()
       }
     })
+
+    // Add the toolbar button for all users
+    Hooks.on('getSceneControlButtons', (controls) => {
+      const tokenTools = controls.find(t => t.name === 'token')
+      if (FleetingLuck.enabled && tokenTools) {
+        tokenTools.tools.push({
+          name: 'fleetingluck',
+          title: game.i18n.localize('DCC.FleetingLuck'),
+          icon: 'fas fa-balance-scale-left',
+          onClick: () => {
+            FleetingLuck.show()
+          },
+          active: FleetingLuck?.visible,
+          toggle: true
+        })
+      }
+    })
   }
 
   /**
