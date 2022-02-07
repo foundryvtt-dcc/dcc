@@ -1,4 +1,4 @@
-/* global game */
+/* global game, Hooks */
 
 /**
  * DCC Control Sets
@@ -9,7 +9,7 @@ class DCCControls {
   }
 
   static _getSceneControlButtons (controls) {
-    const tokenTools = controls.find(t => t.name == 'token')
+    const tokenTools = controls.find(t => t.name === 'token')
     if (tokenTools) {
       tokenTools.tools.push({
         name: 'fleetingluck',

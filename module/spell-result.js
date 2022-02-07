@@ -11,7 +11,7 @@ class SpellResult {
    * @param {boolean} fumble      The Spell Check was a nat 1
    * @param {String} itemId       ID of the spell item
    */
-  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined} = {}) {
+  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined } = {}) {
     const roll = result.roll
     messageOptions = mergeObject({
       rollMode: game.settings.get('core', 'rollMode')

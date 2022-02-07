@@ -117,6 +117,22 @@ function DCCSpellburnTerm (options) {
 }
 
 /**
+ * Construct a DCC Fleeting Luck term object
+ * @params options {Object}
+ * @return {Object}
+ */
+function DCCFleetingLuckTerm (options) {
+  return [{
+    type: 'Modifier',
+    label: game.i18n.localize('DCC.FleetingLuckTerm'),
+    partial: 'systems/dcc/templates/roll-modifier-partial-modifiers.html',
+    formula: _prependSign(_cleanFormula(options.formula)),
+    minAmount: Math.min(1, options.fleetingLuck),
+    maxAmount: options.fleetingLuck
+  }]
+}
+
+/**
  * Construct DCC term objects from a compound term
  * @params options {Object}
  * @return {Object}
@@ -171,7 +187,8 @@ const DCCTerms = {
   Modifier: DCCModifierTerm,
   CheckPenalty: DCCCheckPenaltyTerm,
   Spellburn: DCCSpellburnTerm,
-  Compound: DCCCompoundTerm
+  Compound: DCCCompoundTerm,
+  FleetingLuck: DCCFleetingLuckTerm
 }
 
 /**
@@ -269,6 +286,8 @@ class RollModifierDialog extends FormApplication {
     data.user = game.user
     data.options = this.options
     data.terms = this._terms
+    data.rollLabel = this.options.rollLabel || game.i18n.localize('DCC.RollModifierRoll')
+    data.cancelLabel = this.options.cancelLabel || game.i18n.localize('DCC.RollModifierCancel')
     return data
   }
 
@@ -400,8 +419,16 @@ class RollModifierDialog extends FormApplication {
     event.preventDefault()
     const index = event.currentTarget.dataset.term
     const mod = event.currentTarget.dataset.mod
+    const term = this.terms[index]
     const formField = this.element.find('#term-' + index)
-    let termFormula = (parseInt(formField.val()) + parseInt(mod)).toString()
+    let termFormula = parseInt(formField.val()) + parseInt(mod)
+    if (term.minAmount) {
+      termFormula = Math.max(termFormula, parseInt(term.minAmount))
+    }
+    if (term.maxAmount) {
+      termFormula = Math.min(termFormula, parseInt(term.maxAmount))
+    }
+    termFormula = termFormula.toString()
     if (termFormula[0] !== '-') {
       // Always add a sign
       termFormula = '+' + termFormula

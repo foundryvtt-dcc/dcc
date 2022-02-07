@@ -1,28 +1,38 @@
 <form class="{{cssClass}}" autocomplete="off">
   <div class="fleeting-luck">
-    <div class="fleeting-luck-header">
-      <button class="filter" type="button">
-        <i class="fas fa-filter"></i>
-      </button>
-      {{#if user.isGM}}
+    {{#if user.isGM}}
+    <div class="fleeting-luck-header-judge">
       <button class="reset-all">
         <i class="fas fa-dice-one"></i> {{localize 'DCC.FleetingLuckResetButton'}}
       </button>
       <button class="clear-all">
         <i class="fas fa-trash-alt"></i> {{localize 'DCC.FleetingLuckClearButton'}}
       </button>
-      {{/if}}
     </div>
+    {{else}}
+    <div class="fleeting-luck-header">
+      <button class="filter" type="button">
+        <i class="fas fa-filter"></i>
+      </button>
+      <button class="spend" data-user-id={{user.id}}>
+        <i class="fas fa-coins"></i> {{localize 'DCC.FleetingLuckSpendButton'}}
+      </button>
+    </div>
+    {{/if}}
     {{#each users}}
     <div class="fleeting-luck-row">
       <div class="avatar">
         <img src="{{avatar}}" data-edit="img" title="{{name}}" alt="{{localize 'DCC.Avatar'}}'"/>
       </div>
       <label class="name">{{name}}</label>
+      {{#if ../user.isGM}}
       <i class="minus fas fa-minus" data-user-id="{{userId}}"></i>
       <label class="value">{{fleetingLuck}}</label>
       <i class="plus fas fa-plus" data-user-id="{{userId}}"></i>
       <i class="clear fas fa-trash-alt" data-user-id="{{userId}}"></i>
+      {{else}}
+      <label class="value-wide">{{fleetingLuck}}</label>
+      {{/if}}
     </div>
     {{/each}}
   </div>
