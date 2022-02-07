@@ -57,6 +57,13 @@ class FleetingLuckDialog extends FormApplication {
     html.find('.reset-all').click(this._onResetAllLuck.bind(this))
   }
 
+  /** @override */
+  setPosition (options = {}) {
+    const position = super.setPosition(options)
+    position.height = 'fit-content'
+    return position
+  }
+
   /**
    * Handle removing fleeting luck from a player
    * @param {Event} event   The originating click event
@@ -176,6 +183,9 @@ class FleetingLuck {
     if (game.user.isGM) {
       // For GM, register hooks to manage fleeting luck
       Hooks.on('createChatMessage', (message, options, id) => {
+        // Early out if automation is not enabled
+        if (!FleetingLuck.automationEnabled) { return }
+
         // Check for Roll Type data to determine if we can handle this roll
         const effect = message.getFlag('dcc', 'FleetingLuckEffect')
         if (effect !== undefined) {
@@ -444,6 +454,22 @@ class FleetingLuck {
       sound: CONFIG.sounds.notification
     }
     return await CONFIG.ChatMessage.documentClass.create(messageData)
+  }
+
+  /*
+   * Is Fleeting Luck enabled?
+   * @return {Boolean}
+   */
+  static get enabled () {
+    return game.settings.get('dcc', 'enableFleetingLuck')
+  }
+
+  /*
+   * Is Fleeting Luck automation enabled?
+   * @return {Boolean}
+   */
+  static get automationEnabled () {
+    return FleetingLuck.enabled && game.settings.get('dcc', 'automateFleetingLuck')
   }
 }
 
