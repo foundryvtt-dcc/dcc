@@ -210,4 +210,28 @@ export const registerSystemSettings = async function () {
     default: false,
     config: true
   })
+
+  /**
+   * Enable Fleeting Luck
+   */
+  game.settings.register('dcc', 'enableFleetingLuck', {
+    name: 'DCC.SettingEnableFleetingLuck',
+    hint: 'DCC.SettingEnableFleetingLuckHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically track Fleeting Luck
+   */
+  game.settings.register('dcc', 'automateFleetingLuck', {
+    name: 'DCC.SettingAutomateFleetingLuck',
+    hint: 'DCC.SettingAutomateFleetingLuckHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
 }
