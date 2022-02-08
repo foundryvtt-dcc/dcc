@@ -1,4 +1,4 @@
-/* global CONFIG, FormApplication, game, Hooks, mergeObject, UserConfig */
+/* global CONFIG, FormApplication, game, Hooks, mergeObject, ui, UserConfig */
 
 class FleetingLuckDialog extends FormApplication {
   /** @override */
@@ -252,6 +252,9 @@ class FleetingLuck {
         })
       }
     })
+
+    // Refresh the scene controls
+    ui.controls.initialize()
   }
 
   /**
