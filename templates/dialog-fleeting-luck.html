@@ -21,8 +21,8 @@
     {{/if}}
     {{#each users}}
     <div class="fleeting-luck-row">
-      <div class="avatar">
-        <img src="{{avatar}}" data-edit="img" title="{{name}}" alt="{{localize 'DCC.Avatar'}}'"/>
+      <div class="avatar" data-user-id="{{userId}}">
+        <img src="{{avatar}}" title="{{name}}" alt="{{localize 'DCC.Avatar'}}'"/>
       </div>
       <label class="name">{{name}}</label>
       {{#if ../user.isGM}}

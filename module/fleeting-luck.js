@@ -1,4 +1,4 @@
-/* global CONFIG, FormApplication, game, Hooks, mergeObject */
+/* global CONFIG, FormApplication, game, Hooks, mergeObject, UserConfig */
 
 class FleetingLuckDialog extends FormApplication {
   /** @override */
@@ -45,9 +45,17 @@ class FleetingLuckDialog extends FormApplication {
   }
 
   /** @override */
+  setPosition (options = {}) {
+    const position = super.setPosition(options)
+    position.height = 'fit-content'
+    return position
+  }
+
+  /** @override */
   activateListeners (html) {
     super.activateListeners(html)
 
+    html.find('.avatar').click(this._onOpenUserConfiguration.bind(this))
     html.find('.minus').click(this._onTakeLuck.bind(this))
     html.find('.plus').click(this._onGiveLuck.bind(this))
     html.find('.clear').click(this._onClearLuck.bind(this))
@@ -57,11 +65,18 @@ class FleetingLuckDialog extends FormApplication {
     html.find('.reset-all').click(this._onResetAllLuck.bind(this))
   }
 
-  /** @override */
-  setPosition (options = {}) {
-    const position = super.setPosition(options)
-    position.height = 'fit-content'
-    return position
+  /**
+   * Open the User Configuration if permissions allow
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onOpenUserConfiguration (event) {
+    event.preventDefault()
+    const userId = event.currentTarget.dataset.userId
+    const user = game.users.get(userId)
+    if (game.user.isGM || userId === game.user.id) {
+      await new UserConfig(user).render(true)
+    }
   }
 
   /**
@@ -216,7 +231,7 @@ class FleetingLuck {
 
     // All users refresh fleeting luck after user updates
     Hooks.on('updateUser', (doc, change, options, userId) => {
-      if (change?.flags?.dcc) {
+      if (change.avatar || change.flags?.dcc) {
         FleetingLuck.refresh()
       }
     })
