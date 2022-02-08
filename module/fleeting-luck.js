@@ -102,15 +102,22 @@ class FleetingLuckDialog extends FormApplication {
   }
 
   /**
-   * Handle a player spending fleeting luck
+   * Handle spending fleeting luck
    * @param {Event} event   The originating click event
    * @private
    */
   async _onSpendLuck (event) {
     event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
 
+    const userId = event.currentTarget.dataset.userId
     const fleetingLuckValue = FleetingLuck.getValue(userId)
+
+    if (fleetingLuckValue <= 0) {
+      const user = game.users.get(userId)
+      ui.notifications.warn(game.i18n.format('DCC.FleetingLuckSpendNoLuckWarning', {user: user.name}))
+      return
+    }
+
     const terms = [
       {
         type: 'FleetingLuck',
