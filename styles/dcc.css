@@ -1576,7 +1576,7 @@ form.dcc-roll-modifier input.stat {
   align-items: center;
   display: grid;
   grid-gap: 2px 3px;
-  grid-template-columns: 60px 5fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 60px 10fr 1fr 2fr 2fr 2fr 1fr;
 }
 .dcc .fleeting-luck .fleeting-luck-row .avatar {
   grid-column: 1;
@@ -1585,26 +1585,30 @@ form.dcc-roll-modifier input.stat {
   font-size: 2rem;
   grid-column: 2;
 }
-.dcc .fleeting-luck .fleeting-luck-row .minus {
+.dcc .fleeting-luck .fleeting-luck-row .spend {
   grid-column: 3;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-row .minus {
+  grid-column: 4;
   justify-self: right;
 }
 .dcc .fleeting-luck .fleeting-luck-row .value {
   font-size: 1.5rem;
-  grid-column: 4;
+  grid-column: 5;
   justify-self: center;
 }
 .dcc .fleeting-luck .fleeting-luck-row .value-wide {
   font-size: 1.5rem;
-  grid-column: 3/span 4;
+  grid-column: 4/span 4;
   justify-self: center;
 }
 .dcc .fleeting-luck .fleeting-luck-row .plus {
-  grid-column: 5;
+  grid-column: 6;
   justify-self: left;
 }
 .dcc .fleeting-luck .fleeting-luck-row .clear {
-  grid-column: 6;
+  grid-column: 7;
   justify-self: center;
 }
 

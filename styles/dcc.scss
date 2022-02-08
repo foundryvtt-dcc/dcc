@@ -1670,7 +1670,7 @@ form.dcc-roll-modifier {
     align-items: center;
     display: grid;
     grid-gap: 2px 3px;
-    grid-template-columns: 60px 5fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 60px 10fr 1fr 2fr 2fr 2fr 1fr;
 
     .avatar {
       grid-column: 1;
@@ -1681,30 +1681,35 @@ form.dcc-roll-modifier {
       grid-column: 2;
     }
 
-    .minus {
+    .spend {
       grid-column: 3;
+      justify-self: center;
+    }
+
+    .minus {
+      grid-column: 4;
       justify-self: right;
     }
 
     .value {
       font-size: 1.5rem;
-      grid-column: 4;
+      grid-column: 5;
       justify-self: center;
     }
 
     .value-wide {
       font-size: 1.5rem;
-      grid-column: 3 / span 4;
+      grid-column: 4 / span 4;
       justify-self: center;
     }
 
     .plus {
-      grid-column: 5;
+      grid-column: 6;
       justify-self: left;
     }
 
     .clear {
-      grid-column: 6;
+      grid-column: 7;
       justify-self: center;
     }
   }
