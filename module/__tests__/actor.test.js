@@ -64,7 +64,7 @@ test('roll ability check', async () => {
     {
       title: 'AbilityStr Check'
     })
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'AbilityStr Check', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'AbilityStr Check', speaker: actor, flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck' } })
 
   // Check that rollUnder option is interpreted correctly
   await actor.rollAbilityCheck('lck', { rollUnder: true })
@@ -82,7 +82,7 @@ test('roll ability check', async () => {
       title: 'AbilityLck Check'
     }
   )
-  expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor, flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck' } })
 
   // ...both ways
   await actor.rollAbilityCheck('lck', { rollUnder: false })
@@ -116,7 +116,7 @@ test('roll ability check', async () => {
       rollUnder: false,
       title: 'AbilityLck Check'
     })
-  expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor, flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck' } })
 })
 
 test('roll saving throw', async () => {
@@ -141,7 +141,7 @@ test('roll saving throw', async () => {
       title: 'SavesFortitude Save'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesFortitude Save', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesFortitude Save', speaker: actor, flags: { 'dcc.Save': 'frt', 'dcc.RollType': 'SavingThrow' } })
 
   await actor.rollSavingThrow('ref')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
@@ -162,7 +162,7 @@ test('roll saving throw', async () => {
       title: 'SavesReflex Save'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesReflex Save', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesReflex Save', speaker: actor, flags: { 'dcc.Save': 'ref', 'dcc.RollType': 'SavingThrow' } })
 
   await actor.rollSavingThrow('wil')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
@@ -183,7 +183,7 @@ test('roll saving throw', async () => {
       title: 'SavesWill Save'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesWill Save', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesWill Save', speaker: actor, flags: { 'dcc.Save': 'wil', 'dcc.RollType': 'SavingThrow' } })
 })
 
 test('roll initiative', async () => {
@@ -211,7 +211,7 @@ test('roll initiative', async () => {
       title: 'RollModifierTitleInitiative'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Initiative', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Initiative', speaker: actor, flags: { 'dcc.RollType': 'Initiative' } })
 })
 
 test('roll weapon attack', async () => {
@@ -269,7 +269,12 @@ test('roll weapon attack', async () => {
     speaker: actor,
     type: 'emote',
     content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="1" title="undefined"><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
-    sound: 'diceSound'
+    sound: 'diceSound',
+    flags: {
+      'dcc.ItemId': undefined,
+      'dcc.RollType': 'CombinedAttack'
+    },
+    user: undefined
   })
 
   // Roll a weapon we do have - by slot
@@ -315,7 +320,12 @@ test('roll weapon attack', async () => {
     speaker: actor,
     type: 'emote',
     content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="1" title="undefined"><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
-    sound: 'diceSound'
+    sound: 'diceSound',
+    flags: {
+      'dcc.itemId': undefined,
+      'dcc.RollType': 'CombinedAttack'
+    },
+    user: undefined
   })
 
   collectionFindMock.mockReturnValue(new DCCItem('lefthand dagger', {
@@ -384,7 +394,7 @@ test('roll skill check', async () => {
       title: 'Custom Die Skill'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkill' } })
 
   await actor.rollSkillCheck('customDieAndValueSkill')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
@@ -418,7 +428,7 @@ test('roll skill check', async () => {
       title: 'Custom Die And Value Skill'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkill' } })
 
   await actor.rollSkillCheck('actionDieSkill')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
@@ -452,7 +462,7 @@ test('roll skill check', async () => {
       title: 'Action Die Skill'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkill' } })
 
   await actor.rollSkillCheck('customDieSkillWithInt')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(4)
@@ -480,7 +490,7 @@ test('roll skill check', async () => {
       title: 'Custom Die Skill With Int'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill With Int (AbilityInt)', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill With Int (AbilityInt)', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkillWithInt' } })
 
   await actor.rollSkillCheck('customDieAndValueSkillWithPer')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(5)
@@ -514,7 +524,7 @@ test('roll skill check', async () => {
       title: 'Custom Die And Value Skill With Per'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill With Per (AbilityPer)', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill With Per (AbilityPer)', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkillWithPer' } })
 
   await actor.rollSkillCheck('actionDieSkillWithLck')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(6)
@@ -548,7 +558,7 @@ test('roll skill check', async () => {
       title: 'Action Die Skill With Lck'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill With Lck (AbilityLck)', speaker: actor })
+  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill With Lck (AbilityLck)', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkillWithLck' } })
 })
 
 test('roll luck die', async () => {

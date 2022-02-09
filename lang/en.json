@@ -503,6 +503,7 @@
   "DCC.ReadLanguages": "Read Languages",
   "DCC.ReleaseNotesButton": "Release Notes",
   "DCC.ReleaseNotesHeader": "<p>Welcome to Dungeon Crawl Classics for Foundry VTT version {version}.</p>",
+  "DCC.ReleaseNotesMessage": "<p>New features in this release: <ul><li>Fleeting Luck</li><li>Chat Card metadata for automation modules</li></ul></p>",
   "DCC.RemoveEmptyItems": "Remove empty items",
   "DCC.RemoveEmptyItemsInfo": "Remove items with zero quantity",
   "DCC.RequiredMaterials": "Required Materials",
