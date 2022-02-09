@@ -1,4 +1,4 @@
-/* global CONFIG, FormApplication, game, Hooks, mergeObject, ui, UserConfig */
+/* global CONFIG, CONST, FormApplication, game, Hooks, mergeObject, ui, UserConfig */
 
 class FleetingLuckDialog extends FormApplication {
   /** @override */
@@ -114,7 +114,7 @@ class FleetingLuckDialog extends FormApplication {
 
     if (fleetingLuckValue <= 0) {
       const user = game.users.get(userId)
-      ui.notifications.warn(game.i18n.format('DCC.FleetingLuckSpendNoLuckWarning', {user: user.name}))
+      ui.notifications.warn(game.i18n.format('DCC.FleetingLuckSpendNoLuckWarning', { user: user.name }))
       return
     }
 
@@ -192,12 +192,6 @@ class FleetingLuckDialog extends FormApplication {
 }
 
 class FleetingLuck {
-  static dialog = null
-
-  static fleetingLuckEnabledFlag = 'fleetingLuckEnabled'
-  static fleetingLuckFilterFlag = 'fleetingLuckFilter'
-  static fleetingLuckFlag = 'fleetingLuckValue'
-
   /**
    * Initialise the Fleeting Luck subsystem
    */
@@ -225,10 +219,14 @@ class FleetingLuck {
       })
 
       Hooks.on('getUserContextOptions', (html, options) => {
-        options.push( {
+        options.push({
           name: game.i18n.localize('DCC.FleetingLuckGive'),
           icon: '<i class="fas fa-balance-scale-left"></i>',
-          condition: li => game.user.isGM,
+          condition: li => {
+            const userId = li[0].dataset.userId
+            const user = game.users.get(userId)
+            return game.user.isGM && FleetingLuck.isTrackedForUser(user)
+          },
           callback: li => {
             FleetingLuck.give(li[0].dataset.userId, 1)
           }
@@ -403,7 +401,7 @@ class FleetingLuck {
    * Poll the status of the Fleeting Luck dialog
    * @returns {Boolean}     Visibility status of the dialog
    */
-  static get visible() {
+  static get visible () {
     return FleetingLuck.dialog !== null
   }
 
@@ -514,5 +512,9 @@ class FleetingLuck {
     return FleetingLuck.enabled && game.settings.get('dcc', 'automateFleetingLuck')
   }
 }
+
+FleetingLuck.dialog = null
+FleetingLuck.fleetingLuckFilterFlag = 'fleetingLuckFilter'
+FleetingLuck.fleetingLuckFlag = 'fleetingLuckValue'
 
 export default FleetingLuck
