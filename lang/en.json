@@ -264,6 +264,7 @@
   "DCC.DwarfClassLink": "@Compendium[dcc-core-book.dcc-core-journals.HI3c5IBGeIyvvUQC]{Dwarf}",
   "DCC.Elf": "Elf",
   "DCC.ElfClassLink": "@Compendium[dcc-core-book.dcc-core-journals.vycwtEPfYdeQARUR]{Elf}",
+  "DCC.ElfImmunities": "Immune to magical sleep and paralysis",
   "DCC.ElfLuckMod": "Luck modifier to one level 1 spell",
   "DCC.ElfSpells": "Elf Spells",
   "DCC.Equipment": "Equipment",
