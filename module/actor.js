@@ -265,6 +265,7 @@ class DCCActor extends Actor {
     options.title = flavor
 
     let roll
+    const flags = {}
 
     // Allow requesting roll under (for Luck Checks)
     if (options.rollUnder) {
@@ -281,9 +282,15 @@ class DCCActor extends Actor {
       await roll.evaluate({ async: true })
       roll.dice[0].options.dcc = {
         rollUnder: true,
-        lowerThreshold: this.data.data.abilities.lck.value,
-        upperThreshold: this.data.data.abilities.lck.value + 1
+        lowerThreshold: ability.value,
+        upperThreshold: ability.value + 1
       }
+
+      // Generate flags for the roll
+      Object.assign(flags, {
+        'dcc.RollType': 'AbilityCheckRollUnder',
+        'dcc.Ability': abilityId
+      })
     } else {
       const die = this.data.data.attributes.actionDice.value
 
@@ -308,16 +315,16 @@ class DCCActor extends Actor {
       ]
 
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
-    }
 
-    await roll.evaluate({ async: true })
+      await roll.evaluate({ async: true })
 
-    // Generate flags for the roll
-    const flags = {
-      'dcc.RollType': 'AbilityCheck',
-      'dcc.Ability': abilityId
+      // Generate flags for the roll
+      Object.assign(flags, {
+        'dcc.RollType': 'AbilityCheck',
+        'dcc.Ability': abilityId
+      })
+      game.dcc.FleetingLuck.updateFlags(flags, roll)
     }
-    game.dcc.FleetingLuck.updateFlags(flags, roll)
 
     // Convert the roll to a chat message
     roll.toMessage({

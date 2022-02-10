@@ -82,7 +82,7 @@ test('roll ability check', async () => {
       title: 'AbilityLck Check'
     }
   )
-  expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor, flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck' } })
+  expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor, flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder' } })
 
   // ...both ways
   await actor.rollAbilityCheck('lck', { rollUnder: false })
