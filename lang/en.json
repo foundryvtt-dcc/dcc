@@ -312,7 +312,6 @@
   "DCC.FleetingLuckSpendButtonTitle": "Spend Fleeing Luck.",
   "DCC.FleetingLuckSpendMessage": "{user} spent {amount} Fleeting Luck",
   "DCC.FleetingLuckSpendNoLuckWarning": "{user} has no Fleeting Luck to spend.",
-  "DCC.FleetingLuckSpendTitle": "Spend Fleeting Luck",
   "DCC.FleetingLuckTake": "Take Fleeting Luck",
   "DCC.FleetingLuckTakeTitle": "Take a point of Fleeting Luck from this user.",
   "DCC.FleetingLuckTakeMessage": "{user} lost {amount} Fleeting Luck.",
