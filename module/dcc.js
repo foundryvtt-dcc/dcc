@@ -174,7 +174,7 @@ Hooks.once('ready', async function () {
 function checkReleaseNotes () {
   // Determine if we should show the Release Notes/Credits chat card per user
   const lastSeenVersion = game.user.getFlag('dcc', 'lastSeenSystemVersion')
-  const currentVersion = game.system.data.version
+  const currentVersion = game.system.version
 
   if (lastSeenVersion !== currentVersion) {
     ReleaseNotes.addChatCard()

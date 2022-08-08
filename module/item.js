@@ -9,41 +9,41 @@ class DCCItem extends Item {
     super.prepareBaseData()
 
     // If this item is owned by an actor, check for config settings to apply
-    if (this.actor && this.actor.data && this.data.data.config) {
-      if (this.data.type === 'weapon') {
+    if (this.actor && this.actor.system && this.system.config) {
+      if (this.system.type === 'weapon') {
         // Weapons can inherit the owner's action die
-        if (this.data.data.config.inheritActionDie) {
-          this.data.data.actionDie = this.actor.data.data.attributes.actionDice.value
+        if (this.system.config.inheritActionDie) {
+          this.system.actionDie = this.actor.system.attributes.actionDice.value
         }
 
         // Set default inherit crit range for legacy items
-        if (this.data.data.config.inheritCritRange === undefined) {
-          this.data.data.config.inheritCritRange = true
+        if (this.system.config.inheritCritRange === undefined) {
+          this.system.config.inheritCritRange = true
         }
 
         // And inherit crit range if set
-        if (this.data.data.config.inheritCritRange) {
-          this.data.data.critRange = this.actor.data.data.details.critRange
+        if (this.system.config.inheritCritRange) {
+          this.system.critRange = this.actor.system.details.critRange
         } else {
           // If not inheriting crit range make sure there is a value (for legacy items)
-          if (this.data.data.critRange === null || this.data.data.critRange === undefined) {
-            this.data.data.critRange = 20
+          if (this.system.critRange === null || this.system.critRange === undefined) {
+            this.system.critRange = 20
           }
         }
-      } else if (this.data.type === 'spell') {
+      } else if (this.system.type === 'spell') {
         // Spells can use the owner's action die for the spell check
-        if (this.data.data.config.inheritActionDie) {
-          this.data.data.spellCheck.die = this.actor.data.data.attributes.actionDice.value
+        if (this.system.config.inheritActionDie) {
+          this.system.spellCheck.die = this.actor.system.attributes.actionDice.value
         }
 
         // Spells can inherit the owner's spell check
-        if (this.data.data.config.inheritSpellCheck) {
-          this.data.data.spellCheck.value = this.actor.data.data.class.spellCheck
+        if (this.system.config.inheritSpellCheck) {
+          this.system.spellCheck.value = this.actor.system.class.spellCheck
         }
 
         // Spells can inherit the owner's check penalty
-        if (this.data.data.config.inheritCheckPenalty) {
-          this.data.data.spellCheck.penalty = this.actor.data.data.attributes.ac.checkPenalty
+        if (this.system.config.inheritCheckPenalty) {
+          this.system.spellCheck.penalty = this.actor.system.attributes.ac.checkPenalty
         }
       }
     }
@@ -54,26 +54,26 @@ class DCCItem extends Item {
    * @param {String} abilityId    The ability used for this spell
    */
   async rollSpellCheck (abilityId = 'int', options = {}) {
-    if (this.data.type !== 'spell') { return }
+    if (this.system.type !== 'spell') { return }
 
     const actor = this.actor
-    const ability = actor.data.data.abilities[abilityId] || {}
+    const ability = actor.system.abilities[abilityId] || {}
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
     options.title = game.i18n.format('DCC.RollModifierTitleCasting', { spell })
-    const die = this.data.data.spellCheck.die
-    const bonus = this.data.data.spellCheck.value.toString()
+    const die = this.system.spellCheck.die
+    const bonus = this.system.spellCheck.value.toString()
 
     // Calculate check penalty if relevant
     let checkPenalty
-    if (this.data.data.config.inheritCheckPenalty) {
-      checkPenalty = parseInt(actor.data.data.attributes.ac.checkPenalty || 0)
+    if (this.system.config.inheritCheckPenalty) {
+      checkPenalty = parseInt(actor.system.attributes.ac.checkPenalty || 0)
     } else {
-      checkPenalty = parseInt(this.data.data.spellCheck.penalty || 0)
+      checkPenalty = parseInt(this.system.spellCheck.penalty || 0)
     }
 
     // Determine the casting mode
-    const castingMode = this.data.data.config.castingMode || 'wizard'
+    const castingMode = this.system.config.castingMode || 'wizard'
 
     // Collate terms for the roll
     const terms = [
@@ -100,9 +100,9 @@ class DCCItem extends Item {
       terms.push({
         type: 'Spellburn',
         formula: '+0',
-        str: actor.data.data.abilities.str.value,
-        agl: actor.data.data.abilities.agl.value,
-        sta: actor.data.data.abilities.sta.value,
+        str: actor.system.abilities.str.value,
+        agl: actor.system.abilities.agl.value,
+        sta: actor.system.abilities.sta.value,
         callback: (formula, term) => {
           // Apply the spellburn
           actor.update({
@@ -120,12 +120,12 @@ class DCCItem extends Item {
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
-        lowerThreshold: actor.data.data.class.disapproval
+        lowerThreshold: actor.system.class.disapproval
       }
     }
 
     // Lookup the appropriate table
-    const resultsRef = this.data.data.results
+    const resultsRef = this.system.results
     const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table
     let resultsTable
     // If a collection is specified then check the appropriate pack for the spell
@@ -161,7 +161,7 @@ class DCCItem extends Item {
    * @return
    */
   hasExistingMercurialMagic () {
-    return this.data.data.mercurialEffect.value || this.data.data.mercurialEffect.summary || this.data.data.mercurialEffect.description
+    return this.system.mercurialEffect.value || this.system.mercurialEffect.summary || this.system.mercurialEffect.description
   }
 
   /**
@@ -170,13 +170,13 @@ class DCCItem extends Item {
    * @return
    */
   async rollMercurialMagic (lookup = undefined, options = {}) {
-    if (this.data.type !== 'spell') { return }
+    if (this.system.type !== 'spell') { return }
 
     const actor = this.actor
     if (!actor) { return }
 
     const abilityId = 'lck'
-    const ability = actor.data.data.abilities[abilityId]
+    const ability = actor.system.abilities[abilityId]
     ability.label = CONFIG.DCC.abilities[abilityId]
 
     let roll
@@ -265,7 +265,7 @@ class DCCItem extends Item {
     let needsRoll = false
 
     for (const currency in CONFIG.DCC.currencies) {
-      const formula = this.data.data.value[currency]
+      const formula = this.system.value[currency]
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
@@ -289,7 +289,7 @@ class DCCItem extends Item {
     const valueRolls = {}
 
     for (const currency in CONFIG.DCC.currencies) {
-      const formula = this.data.data.value[currency] || '0'
+      const formula = this.system.value[currency] || '0'
       try {
         const roll = new Roll(formula.toString())
         await roll.evaluate({ async: true })
@@ -342,11 +342,11 @@ class DCCItem extends Item {
       // Calculate the conversion factor
       const conversionFactor = currencyValue[toCurrency] / currencyValue[currency]
       // Check we have enough currency
-      if (this.data.data.value[currency] >= conversionFactor) {
+      if (this.system.value[currency] >= conversionFactor) {
         // Apply the conversion
         const updates = {}
-        updates[`data.value.${currency}`] = parseInt(this.data.data.value[currency]) - conversionFactor
-        updates[`data.value.${toCurrency}`] = parseInt(this.data.data.value[toCurrency]) + 1
+        updates[`data.value.${currency}`] = parseInt(this.system.value[currency]) - conversionFactor
+        updates[`data.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + 1
         this.update(updates)
       }
     }
@@ -369,13 +369,13 @@ class DCCItem extends Item {
       // What are we converting to?
       const toCurrency = currencyRank[rank - 1]
       // Check we have enough currency
-      if (this.data.data.value[currency] >= 1) {
+      if (this.system.value[currency] >= 1) {
         // Calculate the conversion factor
         const conversionFactor = currencyValue[currency] / currencyValue[toCurrency]
         // Apply the conversion
         const updates = {}
-        updates[`data.value.${currency}`] = parseInt(this.data.data.value[currency]) - 1
-        updates[`data.value.${toCurrency}`] = parseInt(this.data.data.value[toCurrency]) + conversionFactor
+        updates[`data.value.${currency}`] = parseInt(this.system.value[currency]) - 1
+        updates[`data.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + conversionFactor
         this.update(updates)
       }
     }
