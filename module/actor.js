@@ -10,14 +10,14 @@ class DCCActor extends Actor {
     super.prepareBaseData()
 
     // Ability modifiers
-    const abilities = this.data.data.abilities
+    const abilities = this.system.abilities
     for (const abilityId in abilities) {
       abilities[abilityId].mod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].value] || 0
     }
 
     // Get configuration data
     const config = this._getConfig()
-    const data = this.data.data
+    const data = this.system
 
     // Cap level if required
     if (config.capLevel) {
@@ -30,10 +30,10 @@ class DCCActor extends Actor {
     let checkPenalty = 0
     if (this.itemTypes) {
       for (const armorItem of this.itemTypes.armor) {
-        if (armorItem.data.data.equipped) {
+        if (armorItem.system.equipped) {
           try {
-            checkPenalty += parseInt(armorItem.data.data.checkPenalty || 0)
-            const expression = armorItem.data.data.fumbleDie
+            checkPenalty += parseInt(armorItem.system.checkPenalty || 0)
+            const expression = armorItem.system.fumbleDie
             const rank = game.dcc.DiceChain.rankDiceExpression(expression)
             if (rank > fumbleDieRank) {
               fumbleDieRank = rank
@@ -60,14 +60,14 @@ class DCCActor extends Actor {
 
     // Get configuration data
     const config = this._getConfig()
-    const data = this.data.data
+    const data = this.system
 
     // Migrate base speed if not present based on current speed
-    if (!this.data.data.attributes.speed.base) {
+    if (!this.system.attributes.speed.base) {
       this.update({
-        'data.speed.base': this.data.data.attributes.speed.value
+        'data.speed.base': this.system.attributes.speed.value
       })
-      this.data.data.speed.base = this.data.data.attributes.speed.value
+      this.system.speed.base = this.system.attributes.speed.value
     }
 
     // Compute AC if required
@@ -79,9 +79,9 @@ class DCCActor extends Actor {
       let armorBonus = 0
       let speedPenalty = 0
       for (const armorItem of this.itemTypes.armor) {
-        if (armorItem.data.data.equipped) {
-          armorBonus += parseInt(armorItem.data.data.acBonus || '0')
-          speedPenalty += parseInt(armorItem.data.data.speed || '0')
+        if (armorItem.system.equipped) {
+          armorBonus += parseInt(armorItem.system.acBonus || '0')
+          speedPenalty += parseInt(armorItem.system.speed || '0')
         }
       }
       if (config.computeAC) {
@@ -91,19 +91,19 @@ class DCCActor extends Actor {
         data.attributes.ac.value = 10 + abilityMod + armorBonus
       }
       if (config.computeSpeed) {
-        this.data.data.attributes.ac.speedPenalty = speedPenalty
-        this.data.data.attributes.speed.value = baseSpeed + speedPenalty
+        this.system.attributes.ac.speedPenalty = speedPenalty
+        this.system.attributes.speed.value = baseSpeed + speedPenalty
       }
     }
 
     // Gather available action dice
     try {
       // Implicit migration for legacy actors
-      if (!this.data.data.config.actionDice) {
-        this.data.data.config.actionDice = this.data.data.attributes.actionDice.value
+      if (!this.system.config.actionDice) {
+        this.system.config.actionDice = this.system.attributes.actionDice.value
       }
       // Parse the action dice expression from the config and produce a list of available dice
-      const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
+      const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
       const terms = actionDieExpression.terms || actionDieExpression.parts
       const actionDice = []
       for (const term of terms) {
@@ -115,11 +115,11 @@ class DCCActor extends Actor {
           }
         }
       }
-      this.data.data.attributes.actionDice.options = actionDice
+      this.system.attributes.actionDice.options = actionDice
     } catch (err) { }
 
     // Migrate the old rollAttackBonus option if present
-    if (this.data.data.config.rollAttackBonus) {
+    if (this.system.config.rollAttackBonus) {
       this.update({
         'data.config.attackBonusMode': 'manual',
         'data.config.rollAttackBonus': null
@@ -150,8 +150,8 @@ class DCCActor extends Actor {
     }
 
     // Merge any existing data with defaults to implicitly migrate missing config fields
-    defaultConfig = Object.assign(defaultConfig, this.data.data.config)
-    this.data.data.config = defaultConfig
+    defaultConfig = Object.assign(defaultConfig, this.system.config)
+    this.system.config = defaultConfig
 
     return defaultConfig
   }
@@ -201,7 +201,7 @@ class DCCActor extends Actor {
    * @return {String}  A valid Attack Bonus Mode name
    */
   getAttackBonusMode (options = {}) {
-    switch (this.data.data.config.attackBonusMode) {
+    switch (this.system.config.attackBonusMode) {
       case 'flat':
         return 'flat'
       case 'manual':
@@ -222,11 +222,11 @@ class DCCActor extends Actor {
     // Gather available action dice
     try {
       // Implicit migration for legacy actors
-      if (!this.data.data.config.actionDice) {
-        this.data.data.config.actionDice = this.data.data.attributes.actionDice.value
+      if (!this.system.config.actionDice) {
+        this.system.config.actionDice = this.system.attributes.actionDice.value
       }
       // Parse the action dice expression from the config and produce a list of available dice
-      const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
+      const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
       const terms = actionDieExpression.terms || actionDieExpression.parts
       for (const term of terms) {
         if (typeof (term) === 'object' && term.faces) {
@@ -257,7 +257,7 @@ class DCCActor extends Actor {
    * @param {Object} options      Options which configure how ability checks are rolled
    */
   async rollAbilityCheck (abilityId, options = {}) {
-    const ability = this.data.data.abilities[abilityId]
+    const ability = this.system.abilities[abilityId]
     ability.mod = CONFIG.DCC.abilities.modifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
     const abilityLabel = game.i18n.localize(ability.label)
@@ -292,7 +292,7 @@ class DCCActor extends Actor {
         'dcc.Ability': abilityId
       })
     } else {
-      const die = this.data.data.attributes.actionDice.value
+      const die = this.system.attributes.actionDice.value
 
       // Collate terms for the roll
       const terms = [
@@ -309,7 +309,7 @@ class DCCActor extends Actor {
         },
         {
           type: 'CheckPenalty',
-          formula: parseInt(this.data.data.attributes.ac.checkPenalty || 0),
+          formula: parseInt(this.system.attributes.ac.checkPenalty || 0),
           apply: false
         }
       ]
@@ -345,8 +345,8 @@ class DCCActor extends Actor {
     }
 
     // Setup the roll
-    const die = this.data.data.attributes.init.die || '1d20'
-    const init = this.data.data.attributes.init.value
+    const die = this.system.attributes.init.die || '1d20'
+    const init = this.system.attributes.init.value
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
 
     // Collate terms for the roll
@@ -397,7 +397,7 @@ class DCCActor extends Actor {
    * Roll Hit Dice
    */
   async rollHitDice (options = {}) {
-    const die = this.data.data.attributes.hitDice.value || '1d4'
+    const die = this.system.attributes.hitDice.value || '1d4'
     options.title = game.i18n.localize('DCC.RollModifierTitleHitDice')
 
     // Collate terms for the roll
@@ -410,7 +410,7 @@ class DCCActor extends Actor {
 
     // Players have a stamina modifier they can add
     if (this.data.type === 'Player') {
-      const sta = this.data.data.abilities.sta || {}
+      const sta = this.system.abilities.sta || {}
       const modifier = sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : '+0'
       terms.push({
         type: 'Modifier',
@@ -436,7 +436,7 @@ class DCCActor extends Actor {
    * @param {String} saveId       The save ID (e.g. "ref")
    */
   async rollSavingThrow (saveId, options = {}) {
-    const save = this.data.data.saves[saveId]
+    const save = this.system.saves[saveId]
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
     const modifierLabel = game.i18n.localize(save.label)
@@ -481,7 +481,7 @@ class DCCActor extends Actor {
    * @param {Object}  options       Roll options
    */
   async rollSkillCheck (skillId, options = {}) {
-    let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
+    let skill = this.system.skills ? this.system.skills[skillId] : null
     let skillItem = null
     if (!skill) {
       skillItem = this.itemTypes.skill.find(i => i.name === skillId)
@@ -489,18 +489,18 @@ class DCCActor extends Actor {
         skill = {
           label: skillItem.name
         }
-        if (skillItem.data.data.config.useAbility) {
-          skill.ability = skillItem.data.data.ability
+        if (skillItem.system.config.useAbility) {
+          skill.ability = skillItem.system.ability
         }
-        if (skillItem.data.data.config.useDie) {
-          skill.die = skillItem.data.data.die
+        if (skillItem.system.config.useDie) {
+          skill.die = skillItem.system.die
         }
-        if (skillItem.data.data.config.useValue) {
-          skill.value = skillItem.data.data.value ?? undefined
+        if (skillItem.system.config.useValue) {
+          skill.value = skillItem.system.value ?? undefined
         }
       }
     }
-    const die = skill.die || this.data.data.attributes.actionDice.value
+    const die = skill.die || this.system.attributes.actionDice.value
     const ability = skill.ability || null
     let abilityLabel = ''
     if (ability) {
@@ -528,17 +528,17 @@ class DCCActor extends Actor {
       })
     }
 
-    if (skill.useDeed && this.data.data.details.lastRolledAttackBonus) {
+    if (skill.useDeed && this.system.details.lastRolledAttackBonus) {
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.DeedRoll'),
-        formula: parseInt(this.data.data.details.lastRolledAttackBonus)
+        formula: parseInt(this.system.details.lastRolledAttackBonus)
       })
     }
 
     terms.push({
       type: 'CheckPenalty',
-      formula: parseInt(this.data.data.attributes.ac.checkPenalty || 0),
+      formula: parseInt(this.system.attributes.ac.checkPenalty || 0),
       apply: false // Always optional for skill checks
     })
 
@@ -548,7 +548,7 @@ class DCCActor extends Actor {
     if (skill.useDisapprovalRange) {
       if (roll.dice.length > 0) {
         roll.dice[0].options.dcc = {
-          lowerThreshold: this.data.data.class.disapproval
+          lowerThreshold: this.system.class.disapproval
         }
       }
     }
@@ -581,7 +581,7 @@ class DCCActor extends Actor {
     }
 
     // Store last result if required
-    if (skillItem && skillItem.data.data.config.showLastResult) {
+    if (skillItem && skillItem.system.config.showLastResult) {
       skillItem.update({ 'data.lastResult': roll.total })
     }
   }
@@ -590,7 +590,7 @@ class DCCActor extends Actor {
    * Roll the Luck Die
    */
   async rollLuckDie (options = {}) {
-    const die = this.data.data.class.luckDie
+    const die = this.system.class.luckDie
     options.title = game.i18n.localize('DCC.LuckDie')
     let luckSpend = 1
 
@@ -599,7 +599,7 @@ class DCCActor extends Actor {
       {
         type: 'LuckDie',
         formula: die,
-        lck: this.data.data.abilities.lck.value,
+        lck: this.system.abilities.lck.value,
         callback: (formula, term) => {
           // Record the amount of luck spent when the term is resolved
           luckSpend = game.dcc.DiceChain.countDice(formula)
@@ -612,7 +612,7 @@ class DCCActor extends Actor {
 
     // Spend the luck
     await this.update({
-      'data.abilities.lck.value': (parseInt(this.data.data.abilities.lck.value) - luckSpend)
+      'data.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
     })
 
     // Convert the roll to a chat message
@@ -631,7 +631,7 @@ class DCCActor extends Actor {
    */
   async rollSpellCheck (options = {}) {
     if (!options.abilityId) {
-      options.abilityId = this.data.data.class.spellCheckAbility || ''
+      options.abilityId = this.system.class.spellCheckAbility || ''
     }
 
     // If a spell name is provided attempt to look up an item with that name for the roll
@@ -651,13 +651,13 @@ class DCCActor extends Actor {
     }
 
     // Otherwise fall back to a raw dice roll with appropriate flavor
-    const ability = this.data.data.abilities[options.abilityId] || {}
+    const ability = this.system.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
-    const die = this.data.data.attributes.actionDice.value
-    const bonus = this.data.data.class.spellCheck ? this.data.data.class.spellCheck.toString() : '+0'
-    const checkPenalty = parseInt(this.data.data.attributes.ac.checkPenalty || 0)
-    const isIdolMagic = this.data.data.details.sheetClass === 'Cleric'
+    const die = this.system.attributes.actionDice.value
+    const bonus = this.system.class.spellCheck ? this.system.class.spellCheck.toString() : '+0'
+    const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || 0)
+    const isIdolMagic = this.system.details.sheetClass === 'Cleric'
     const applyCheckPenalty = !isIdolMagic
     options.title = game.i18n.localize('DCC.SpellCheck')
 
@@ -687,9 +687,9 @@ class DCCActor extends Actor {
       terms.push({
         type: 'Spellburn',
         formula: '+0',
-        str: this.data.data.abilities.str.value,
-        agl: this.data.data.abilities.agl.value,
-        sta: this.data.data.abilities.sta.value,
+        str: this.system.abilities.str.value,
+        agl: this.system.abilities.agl.value,
+        sta: this.system.abilities.sta.value,
         callback: (formula, term) => {
           // Apply the spellburn
           this.update({
@@ -705,7 +705,7 @@ class DCCActor extends Actor {
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
-        lowerThreshold: this.data.data.class.disapproval
+        lowerThreshold: this.system.class.disapproval
       }
     }
 
@@ -735,7 +735,7 @@ class DCCActor extends Actor {
    */
   async rollAttackBonus (options = {}) {
     /* Determine attack bonus */
-    const attackBonusExpression = this.data.data.details.attackBonus || '0'
+    const attackBonusExpression = this.system.details.attackBonus || '0'
     if (attackBonusExpression) {
       const flavor = game.i18n.localize('DCC.DeedRoll')
       options.title = flavor
@@ -752,7 +752,7 @@ class DCCActor extends Actor {
       const abRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: 3 }, this.getRollData()), options)
 
       // Store the result for use in attack and damage rolls
-      const lastRoll = this.data.data.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
+      const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
       await this.update({
         'data.details.lastRolledAttackBonus': lastRoll
       })
@@ -819,11 +819,11 @@ class DCCActor extends Actor {
         const isMelee = weaponId[0] === 'm' // 'm' or 'r'
         const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
         let weapons = this.itemTypes.weapon
-        if (this.data.data.config.sortInventory) {
+        if (this.system.config.sortInventory) {
           // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
           weapons = [...weapons].sort((a, b) => a.data.name.localeCompare(b.data.name))
         }
-        weapon = weapons.filter(i => !!i.data.data.melee === isMelee)[weaponIndex]
+        weapon = weapons.filter(i => !!i.system.melee === isMelee)[weaponIndex]
       } catch (err) { }
     }
 
@@ -975,17 +975,17 @@ class DCCActor extends Actor {
    */
   async rollToHit (weapon, options = {}) {
     /* Grab the To Hit modifier */
-    const toHit = weapon.data.data.toHit
+    const toHit = weapon.system.toHit
 
     /* Determine crit range */
-    const die = weapon.data.data.actionDie
-    let critRange = parseInt(weapon.data.data.critRange || this.data.data.details.critRange || 20)
+    const die = weapon.system.actionDie
+    let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
 
     /* If we don't have a valid formula, bail out here */
     if (!await Roll.validate(toHit)) {
       return {
         rolled: false,
-        formula: weapon.data.data.toHit
+        formula: weapon.system.toHit
       }
     }
 
@@ -1010,7 +1010,7 @@ class DCCActor extends Actor {
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.Backstab'),
-        formula: parseInt(this.data.data.class.backstab)
+        formula: parseInt(this.system.class.backstab)
       })
     }
 
@@ -1055,11 +1055,11 @@ class DCCActor extends Actor {
    */
   async rollDamage (weapon, options = {}) {
     /* Grab the the formula */
-    let formula = weapon.data.data.damage
+    let formula = weapon.system.damage
 
     /* Are we backstabbing and the weapon has special backstab damage? */
-    if (options.backstab && weapon.data.data.backstab) {
-      formula = weapon.data.data.backstabDamage || weapon.data.data.damage
+    if (options.backstab && weapon.system.backstab) {
+      formula = weapon.system.backstabDamage || weapon.system.damage
     }
 
     /* If we don't have a valid formula, bail out here */
@@ -1111,12 +1111,12 @@ class DCCActor extends Actor {
     const terms = [
       {
         type: 'Die',
-        formula: this.data.data.attributes.critical.die
+        formula: this.system.attributes.critical.die
       },
       {
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilityLck'),
-        formula: parseInt(this.data.data.abilities.lck.mod || '0')
+        formula: parseInt(this.system.abilities.lck.mod || '0')
       }
     ]
 
@@ -1134,7 +1134,7 @@ class DCCActor extends Actor {
         const pack = game.packs.get(criticalHitPackName)
         if (pack) {
           await pack.getIndex() // Load the compendium index
-          const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
+          const critTableFilter = `Crit Table ${this.system.attributes.critical.table}`
           const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
           if (entry) {
             const table = await pack.getDocument(entry._id)
@@ -1187,7 +1187,7 @@ class DCCActor extends Actor {
   async rollFumble (options = {}) {
     let fumbleDie
     try {
-      fumbleDie = this.data.data.attributes.fumble.die
+      fumbleDie = this.system.attributes.fumble.die
     } catch (err) {
       fumbleDie = '1d4'
     }
@@ -1201,7 +1201,7 @@ class DCCActor extends Actor {
       {
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilityLck'),
-        formula: -parseInt(this.data.data.abilities.lck.mod || '0')
+        formula: -parseInt(this.system.abilities.lck.mod || '0')
       }
     ]
 
@@ -1335,7 +1335,7 @@ class DCCActor extends Actor {
 
     // Calculate damage amount and current hit points
     const amount = damageAmount * multiplier
-    const hp = this.data.data.attributes.hp.value
+    const hp = this.system.attributes.hp.value
 
     let newHp = hp
     if (amount > 0) {
@@ -1343,7 +1343,7 @@ class DCCActor extends Actor {
       newHp = newHp - amount
     } else {
       // Healing - don't allow HP to be brought above MaxHP, but if it's already there assume it's intentional
-      const maxHp = this.data.data.attributes.hp.max
+      const maxHp = this.system.attributes.hp.max
       if (hp >= maxHp) {
         newHp = hp
       } else {
@@ -1406,7 +1406,7 @@ class DCCActor extends Actor {
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
     // Calculate new disapproval
-    const newRange = Math.min(parseInt(this.data.data.class.disapproval) + 1, 20)
+    const newRange = Math.min(parseInt(this.system.class.disapproval) + 1, 20)
 
     // Apply the new disapproval range
     this.update({
@@ -1439,7 +1439,7 @@ class DCCActor extends Actor {
       {
         type: 'Modifier',
         label: 'Luck Modifier',
-        formula: -this.data.data.abilities.lck.mod
+        formula: -this.system.abilities.lck.mod
       }
     ]
     const options = {}
@@ -1467,7 +1467,7 @@ class DCCActor extends Actor {
       // Lookup the disapproval table if available
       let disapprovalTable = null
       for (const disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
-        const disapprovalTableName = this.data.data.class.disapprovalTable
+        const disapprovalTableName = this.system.class.disapprovalTable
         if (disapprovalPackName && disapprovalTableName) {
           const pack = game.packs.get(disapprovalPackName)
           if (pack) {

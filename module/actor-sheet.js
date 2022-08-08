@@ -31,7 +31,7 @@ class DCCActorSheet extends ActorSheet {
     const buttons = super._getHeaderButtons()
 
     // Header buttons shown only with Owner permission
-    if (this.actor.permission === CONST.ENTITY_PERMISSIONS.OWNER) {
+    if (this.actor.permission === CONST.DOCUMENT_PERMISSION_LEVELS.OWNER) {
       buttons.unshift(
         {
           label: game.i18n.localize('DCC.ConfigureSheet'),
@@ -57,20 +57,20 @@ class DCCActorSheet extends ActorSheet {
       options: this.options,
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
-      isNPC: this.document.data.type === 'NPC',
-      isPC: this.document.data.type === 'Player',
-      isZero: this.document.data.data.details.level === 0,
-      type: this.document.data.type,
+      isNPC: this.document.system.type === 'NPC',
+      isPC: this.document.system.type === 'Player',
+      isZero: this.document.system.details.level === 0,
+      type: this.document.system.type,
       config: CONFIG.DCC
     }
 
-    data.actor = duplicate(this.document.data)
-    data.data = duplicate(this.document.data.data)
+    data.actor = duplicate(this.document.system)
+    data.data = duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters
 
     if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-      data.actor.data.img = EntityImages.imageForActor(data.type)
+      data.actor.img = EntityImages.imageForActor(data.type)
     }
 
     if (data.isNPC) {
@@ -126,7 +126,7 @@ class DCCActorSheet extends ActorSheet {
     const treasure = []
     const coins = []
 
-    let inventory = actorData.items
+    let inventory = this.actor.items
     if (sheetData.data.config.sortInventory) {
       // Shallow copy and lexical sort
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
@@ -136,7 +136,7 @@ class DCCActorSheet extends ActorSheet {
     const removeEmptyItems = sheetData.data.config.removeEmptyItems
     for (const i of inventory) {
       // Remove physical items with zero quantity
-      if (removeEmptyItems && i.data.quantity !== undefined && i.data.quantity <= 0) {
+      if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
         this.actor.deleteEmbeddedDocuments('Item', [i._id])
         continue
       }
@@ -147,7 +147,7 @@ class DCCActorSheet extends ActorSheet {
       }
 
       if (i.type === 'weapon') {
-        if (i.data.melee) {
+        if (i.system.melee) {
           weapons.melee.push(i)
         } else {
           weapons.ranged.push(i)
@@ -161,20 +161,20 @@ class DCCActorSheet extends ActorSheet {
       } else if (i.type === 'mount') {
         mounts.push(i)
       } else if (i.type === 'spell') {
-        if (!i.data.level) {
-          i.data.level = 0
+        if (!i.system.level) {
+          i.system.level = 0
         }
-        if (spells[i.data.level]) {
-          spells[i.data.level].push(i)
+        if (spells[i.system.level]) {
+          spells[i.system.level].push(i)
         } else {
-          spells[i.data.level] = [i]
+          spells[i.system.level] = [i]
         }
       } else if (i.type === 'skill') {
         skills.push(i)
       } else if (i.type === 'treasure') {
         let treatAsCoins = false
 
-        if (i.data.isCoins) {
+        if (i.system.isCoins) {
           // Safe to treat as coins if the item's value is resolved
           const item = this.actor.items.get(i._id)
           if (!item.needsValueRoll()) {
