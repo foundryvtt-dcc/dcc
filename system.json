@@ -1,12 +1,19 @@
 {
+  "id": "dcc",
   "name": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": "0.33.4",
-  "minimumCoreVersion": "0.8.9",
-  "compatibleCoreVersion": "9",
+  "compatibility": {
+    "minimum": "10",
+    "verified": "10"
+  },
   "templateVersion": 8,
-  "author": "DCC Foundry Volunteer Team (https://discord.gg/2PR9YH9)",
+  "authors": [
+    {
+      "name": "DCC Foundry Volunteer Team (https://discord.gg/2PR9YH9)"
+    }
+  ],
   "contributors": [
     {
       "name": "Tim L. White",
@@ -40,16 +47,22 @@
       "label": "User Guide",
       "path": "packs/dcc-userguide.db",
       "system": "dcc",
-      "entity": "JournalEntry"
+      "type": "JournalEntry"
     },
     {
       "name": "dcc-macros",
       "label": "DCC Macros",
       "path": "packs/dcc-macros.db",
       "system": "dcc",
-      "entity": "Macro"
+      "type": "Macro"
     }
   ],
+  "relationships": {
+    "systems": [],
+    "requires": [],
+    "conflicts": [],
+    "flags": {}
+  },
   "gridDistance": 5,
   "gridUnits": "ft",
   "primaryTokenAttribute": "attributes.hp",
@@ -59,6 +72,7 @@
   "url": "https://github.com/foundryvtt-dcc/dcc",
   "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.33.4/system.json",
   "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.33.4/dcc.zip",
+  "protected": false,
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "allowBugReporter": true,
   "license": "LICENSE.txt"
