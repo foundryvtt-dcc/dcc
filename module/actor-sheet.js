@@ -65,6 +65,7 @@ class DCCActorSheet extends ActorSheet {
     }
 
     data.actor = duplicate(this.document.system)
+    data.actor.name = this.document.name
     data.data = duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters
@@ -193,19 +194,19 @@ class DCCActorSheet extends ActorSheet {
     // Combine any extra coins into a single item
     if (coins.length) {
       const funds = {
-        pp: parseInt(this.actor.data.data.currency.pp),
-        ep: parseInt(this.actor.data.data.currency.ep),
-        gp: parseInt(this.actor.data.data.currency.gp),
-        sp: parseInt(this.actor.data.data.currency.sp),
-        cp: parseInt(this.actor.data.data.currency.cp)
+        pp: parseInt(this.actor.system.currency.pp),
+        ep: parseInt(this.actor.system.currency.ep),
+        gp: parseInt(this.actor.system.currency.gp),
+        sp: parseInt(this.actor.system.currency.sp),
+        cp: parseInt(this.actor.system.currency.cp)
       }
       let needsUpdate = false
       for (const c of coins) {
-        funds.pp += parseInt(c.data.value.pp)
-        funds.ep += parseInt(c.data.value.ep)
-        funds.gp += parseInt(c.data.value.gp)
-        funds.sp += parseInt(c.data.value.sp)
-        funds.cp += parseInt(c.data.value.cp)
+        funds.pp += parseInt(c.system.value.pp)
+        funds.ep += parseInt(c.system.value.ep)
+        funds.gp += parseInt(c.system.value.gp)
+        funds.sp += parseInt(c.system.value.sp)
+        funds.cp += parseInt(c.system.value.cp)
         await this.actor.deleteEmbeddedDocuments('Item', [c._id])
         needsUpdate = true
       }
