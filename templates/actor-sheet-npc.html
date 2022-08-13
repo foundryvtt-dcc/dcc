@@ -43,7 +43,7 @@
                 <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
                 <select id="system.details.alignment" name="system.details.alignment">
                     {{#select system.details.alignment}}
-                        {{#each system.config.alignments as |label alignment|}}
+                        {{#each config.alignments as |label alignment|}}
                             <option value="{{alignment}}">{{localize label}}</option>
                         {{/each}}
                     {{/select}}
