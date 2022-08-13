@@ -139,7 +139,7 @@ class Actor {
   }
 
   getRollData () {
-    return this
+    return this.system
   }
 
   update (data) {
