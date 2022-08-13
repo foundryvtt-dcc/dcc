@@ -40,28 +40,28 @@ export class DCCItemSheet extends ItemSheet {
 
   /** @override */
   getData () {
-    const data = this.object
+    const data = super.getData()
 
     // Lookup the localizable string for the item's type
     data.typeString = CONFIG.DCC.items[data.type] || 'DCC.Unknown'
 
-    if (data.type === 'spell') {
+    if (data.item.type === 'spell') {
       // Allow mercurial magic roll only on wizard spells owned by an actor
-      const castingMode = data.system.config.castingMode || 'wizard'
-      const forceShowMercurialEffect = data.system.config.showMercurialEffect
+      const castingMode = data.item.system.config.castingMode || 'wizard'
+      const forceShowMercurialEffect = data.item.system.config.showMercurialEffect
       data.showMercurialRoll = !!this.actor && (castingMode === 'wizard' || forceShowMercurialEffect)
-    } else if (data.type === 'treasure') {
+    } else if (data.item.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
-      data.unresolved = this.item.needsValueRoll()
+      data.unresolved = data.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
       // Only allow currency conversion on items representing coins that have a resolved value
-      data.allowConversions = data.system.isCoins && !data.unresolved && !this.limited
+      data.allowConversions = data.item.system.isCoins && !data.unresolved && !this.limited
     }
 
     // Pass through the item data in the format we expect
-    //data.data = data.item.data.data
+    data.system = data.item.system
 
-    if (!data.img || data.img === 'icons/svg/mystery-man.svg') {
+    if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
       data.data.img = EntityImages.imageForItem(data.type)
     }
 
