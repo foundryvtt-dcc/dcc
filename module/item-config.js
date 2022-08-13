@@ -9,7 +9,7 @@ export class DCCItemConfig extends FormApplication {
 
   /** @override */
   get template () {
-    switch (this.object.data.type) {
+    switch (this.object.type) {
       case 'weapon':
         return 'systems/dcc/templates/dialog-item-config-weapon.html'
       case 'spell':
@@ -37,7 +37,7 @@ export class DCCItemConfig extends FormApplication {
    * @return {Object}
    */
   getData () {
-    const data = this.object.data
+    const data = this.object
     data.user = game.user
     data.config = CONFIG.DCC
     return data

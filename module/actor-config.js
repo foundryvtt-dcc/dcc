@@ -26,10 +26,10 @@ export class DCCActorConfig extends FormApplication {
    * @return {Object}
    */
   getData () {
-    const data = this.object.data
-    data.isNPC = (this.object.data.type === 'NPC')
-    data.isPC = (this.object.data.type === 'Player')
-    data.isZero = (this.object.data.data.details.level === 0)
+    const data = this.object
+    data.isNPC = (this.object.type === 'NPC')
+    data.isPC = (this.object.type === 'Player')
+    data.isZero = (this.object.system.details.level === 0)
     data.user = game.user
     data.config = CONFIG.DCC
     return data

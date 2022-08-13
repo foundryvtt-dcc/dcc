@@ -6,17 +6,17 @@
                 <div class="item-name">
                     <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
                 </div>
-                <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+                <label class="item-type" for="name">{{localize item.typeString}}</label>
             </div>
 
             <div class="flexrow">
               <div class="resource flex1">
-                <label class="resource-label" for="data.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
-                <input type="checkbox" name="data.equipped" data-dtype="Boolean" {{checked data.equipped}}/>
+                <label class="resource-label" for="system.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
+                <input type="checkbox" name="system.equipped" data-dtype="Boolean" {{checked system.equipped}}/>
               </div>
               <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.Weight"}}</label>
-                <input type="text" name="data.weight" value="{{data.weight}}" data-dtype="Number"/>
+                <input type="text" name="system.weight" value="{{system.weight}}" data-dtype="Number"/>
               </div>
             </div>
         </div>
@@ -25,25 +25,25 @@
     <section class="sheet-body armor">
         <div class="armor-header-extras">
           <div class="resource">
-            <label class="resource-label" for="data.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
-            <input type="text" name="data.acBonus"
-                   value="{{numberFormat data.acBonus decimals=0 sign=true}}"
+            <label class="resource-label" for="system.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
+            <input type="text" name="system.acBonus"
+                   value="{{numberFormat system.acBonus decimals=0 sign=true}}"
                    placeholder="+0" data-dtype="Number"/>
           </div>
           <div class="resource">
-            <label class="resource-label" for="data.checkPenalty">{{localize "DCC.ArmorPropertiesCheckPenalty"}}</label>
-            <input type="text" name="data.checkPenalty"
-                   value="{{numberFormat data.checkPenalty decimals=0 sign=true}}"
+            <label class="resource-label" for="system.checkPenalty">{{localize "DCC.ArmorPropertiesCheckPenalty"}}</label>
+            <input type="text" name="system.checkPenalty"
+                   value="{{numberFormat system.checkPenalty decimals=0 sign=true}}"
                    placeholder="-0" data-dtype="Number"/>
           </div>
           <div class="resource">
-            <label class="resource-label" for="data.fumbleDie">{{localize "DCC.ArmorPropertiesFumbleDie"}}</label>
-            <input type="text" name="data.fumbleDie" value="{{data.fumbleDie}}"
+            <label class="resource-label" for="system.fumbleDie">{{localize "DCC.ArmorPropertiesFumbleDie"}}</label>
+            <input type="text" name="system.fumbleDie" value="{{system.fumbleDie}}"
                    placeholder="1d4" data-dtype="String"/>
           </div>
           <div class="resource">
-            <label class="resource-label" for="data.speed">{{localize "DCC.ArmorPropertiesSpeed"}}</label>
-            <input type="text" name="data.speed" value="{{distanceFormat data.speed}}"
+            <label class="resource-label" for="system.speed">{{localize "DCC.ArmorPropertiesSpeed"}}</label>
+            <input type="text" name="system.speed" value="{{distanceFormat system.speed}}"
                    placeholder="-0'" data-dtype="String"/>
           </div>
         </div>
@@ -53,7 +53,7 @@
           {{/if}}
           <div class="resource">
             <label class="resource-label">{{localize "DCC.CurrencyPP"}}</label>
-            <input type="text" name="data.value.pp" value="{{data.value.pp}}" data-dtype="String"/>
+            <input type="text" name="system.value.pp" value="{{system.value.pp}}" data-dtype="String"/>
             {{#if allowConversions}}
             <div class="conversions">
               <div class="rollable right-arrow-button" data-currency="pp">&nbsp;</div>
@@ -62,7 +62,7 @@
           </div>
           <div class="resource">
             <label class="resource-label">{{localize "DCC.CurrencyEP"}}</label>
-            <input type="text" name="data.value.ep" value="{{data.value.ep}}" data-dtype="String"/>
+            <input type="text" name="system.value.ep" value="{{system.value.ep}}" data-dtype="String"/>
             {{#if allowConversions}}
             <div class="conversions">
               <div class="rollable left-arrow-button" data-currency="ep">&nbsp;</div>
@@ -72,7 +72,7 @@
           </div>
           <div class="resource">
             <label class="resource-label">{{localize "DCC.CurrencyGP"}}</label>
-            <input type="text" name="data.value.gp" value="{{data.value.gp}}" data-dtype="String"/>
+            <input type="text" name="system.value.gp" value="{{system.value.gp}}" data-dtype="String"/>
             {{#if allowConversions}}
             <div class="conversions">
               <div class="rollable left-arrow-button" data-currency="gp">&nbsp;</div>
@@ -82,7 +82,7 @@
           </div>
           <div class="resource">
             <label class="resource-label">{{localize "DCC.CurrencySP"}}</label>
-            <input type="text" name="data.value.sp" value="{{data.value.sp}}" data-dtype="String"/>
+            <input type="text" name="system.value.sp" value="{{system.value.sp}}" data-dtype="String"/>
             {{#if allowConversions}}
             <div class="conversions">
               <div class="rollable left-arrow-button" data-currency="sp">&nbsp;</div>
@@ -92,7 +92,7 @@
           </div>
           <div class="resource">
             <label class="resource-label">{{localize "DCC.CurrencyCP"}}</label>
-            <input type="text" name="data.value.cp" value="{{data.value.cp}}" data-dtype="String"/>
+            <input type="text" name="system.value.cp" value="{{system.value.cp}}" data-dtype="String"/>
             {{#if allowConversions}}
             <div class="conversions">
               <div class="rollable left-arrow-button" data-currency="cp">&nbsp;</div>
@@ -101,11 +101,11 @@
           </div>
         </div>
         <div class="armor-summary">
-          <label class="resource-label" for="data.description.summary">{{localize "DCC.ItemSummary"}}</label>
-          <input type="text" name="data.description.summary" value="{{data.description.summary}}" data-dtype="String"/>
+          <label class="resource-label" for="system.description.summary">{{localize "DCC.ItemSummary"}}</label>
+          <input type="text" name="system.description.summary" value="{{system.description.summary}}" data-dtype="String"/>
         </div>
         <div class="description">
-          {{editor content=data.description.value target="data.description.value" button=true isOwner=isOwner editable=editable}}
+          {{editor system.description.value target="system.description.value" button=true isOwner=isOwner editable=editable}}
         </div>
     </section>
 </form>

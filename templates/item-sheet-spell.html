@@ -6,41 +6,41 @@
                 <div class="item-name">
                     <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
                 </div>
-                <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+                <label class="item-type" for="name">{{localize item.typeString}}</label>
             </div>
 
             <div class="flexrow">
               <div class="flex1">
-                <label class="resource-label" for="data.level">{{localize "DCC.Level"}}</label>
-                <input type="text" name="data.level"
-                       value="{{numberFormat data.level decimals=0 sign=false}}"
+                <label class="resource-label" for="system.level">{{localize "DCC.Level"}}</label>
+                <input type="text" name="system.level"
+                       value="{{numberFormat system.level decimals=0 sign=false}}"
                        placeholder="1" data-dtype="Number"/>
               </div>
               <div class="flex2">
-                <label class="resource-label" for="data.spellCheck.die">{{localize "DCC.ActionDie"}}</label>
-                <input type="text" name="data.spellCheck.die" class="flex1"
-                       value="{{data.spellCheck.die}}"
-                       {{#if data.config.inheritActionDie}}
+                <label class="resource-label" for="system.spellCheck.die">{{localize "DCC.ActionDie"}}</label>
+                <input type="text" name="system.spellCheck.die" class="flex1"
+                       value="{{system.spellCheck.die}}"
+                       {{#if system.config.inheritActionDie}}
                        title="{{localize 'DCC.InheritTooltip'}}"
                        disabled
                        {{/if}}
                        placeholder="1d20" data-dtype="String"/>
               </div>
               <div class="flex2">
-                <label class="resource-label" for="data.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
-                  <input type="text" name="data.spellCheck.value" class="flex1"
-                         value="{{data.spellCheck.value}}"
-                         {{#if data.config.inheritSpellCheck}}
+                <label class="resource-label" for="system.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
+                  <input type="text" name="system.spellCheck.value" class="flex1"
+                         value="{{system.spellCheck.value}}"
+                         {{#if system.config.inheritSpellCheck}}
                          title="{{localize 'DCC.InheritTooltip'}}"
                          disabled
                          {{/if}}
                          placeholder="+0" data-dtype="String"/>
               </div>
               <div class="flex2">
-                <label class="resource-label" for="data.spellCheck.penalty">{{localize "DCC.CheckPenalty"}}</label>
-                  <input type="text" name="data.spellCheck.penalty" class="flex1"
-                         value="{{numberFormat data.spellCheck.penalty decimals=0 sign=true}}"
-                         {{#if data.config.inheritCheckPenalty}}
+                <label class="resource-label" for="system.spellCheck.penalty">{{localize "DCC.CheckPenalty"}}</label>
+                  <input type="text" name="system.spellCheck.penalty" class="flex1"
+                         value="{{numberFormat system.spellCheck.penalty decimals=0 sign=true}}"
+                         {{#if system.config.inheritCheckPenalty}}
                          title="{{localize 'DCC.InheritTooltip'}}"
                          disabled
                          {{/if}}
@@ -54,34 +54,34 @@
     <section class="sheet-body spell">
         <div class="spell-header-extras">
           <div class="resource">
-            <label class="resource-label" for="data.range">{{localize "DCC.SpellRange"}}</label>
-            <input type="text" name="data.range" value="{{data.range}}"
+            <label class="resource-label" for="system.range">{{localize "DCC.SpellRange"}}</label>
+            <input type="text" name="system.range" id="system.range" value="{{system.range}}"
                    placeholder="N/A" data-dtype="String"/>
           </div>
           <div class="resource">
-            <label class="resource-label" for="data.duration">{{localize "DCC.SpellDuration"}}</label>
-            <input type="text" name="data.duration" value="{{data.duration}}"
+            <label class="resource-label" for="system.duration">{{localize "DCC.SpellDuration"}}</label>
+            <input type="text" name="system.duration" id="system.duration" value="{{system.duration}}"
                    placeholder="N/A" data-dtype="String"/>
           </div>
           <div class="resource">
-            <label class="resource-label" for="data.castingTime">{{localize "DCC.SpellCastingTime"}}</label>
-            <input type="text" name="data.castingTime" value="{{data.castingTime}}"
+            <label class="resource-label" for="system.castingTime">{{localize "DCC.SpellCastingTime"}}</label>
+            <input type="text" name="system.castingTime" id="system.castingTime" value="{{system.castingTime}}"
                    placeholder="N/A" data-dtype="String"/>
           </div>
           <div class="resource">
-            <label class="resource-label" for="data.save">{{localize "DCC.SpellSave"}}</label>
-            <input type="text" name="data.save" value="{{data.save}}"
+            <label class="resource-label" for="system.save">{{localize "DCC.SpellSave"}}</label>
+            <input type="text" name="system.save" id="system.save" value="{{system.save}}"
                    placeholder="N/A" data-dtype="String"/>
           </div>
           <div class="resource">
-            <label class="resource-label" for="data.page">{{localize "DCC.SpellPage"}}</label>
-            <input type="text" name="data.page"
-                   value="{{data.page}}"
+            <label class="resource-label" for="system.page">{{localize "DCC.SpellPage"}}</label>
+            <input type="text" name="system.page" id="system.page"
+                   value="{{system.page}}"
                    placeholder="N/A" data-dtype="String"/>
           </div>
         </div>
         <div class="description">
-          {{editor content=data.description.value target="data.description.value" button=true isOwner=isOwner editable=editable}}
+          {{editor system.description.value target="system.description.value" button=true isOwner=isOwner editable=editable}}
         </div>
         {{#if showMercurialRoll}}
         <div class="mercurial-effect-description">
@@ -90,15 +90,15 @@
               <h1>{{localize "DCC.MercurialEffect"}}</h1>
             </div>
             <div class="mercurial-effect-value">
-              <label class="mercurial-roll resource-label rollable" for="data.mercurialEffect.value"><i class="fas fa-dice-d20"></i> {{localize "DCC.MercurialEffectValue"}}</label>
-              <input type="text" name="data.mercurialEffect.value" value="{{data.mercurialEffect.value}}" data-dtype="Number"/>
+              <label class="mercurial-roll resource-label rollable" for="system.mercurialEffect.value"><i class="fas fa-dice-d20"></i> {{localize "DCC.MercurialEffectValue"}}</label>
+              <input type="text" name="system.mercurialEffect.value" id="system.mercurialEffect.value" value="{{system.mercurialEffect.value}}" data-dtype="Number"/>
             </div>
             <div class="mercurial-effect-summary">
-              <label class="resource-label" for="data.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
-              <input type="text" name="data.mercurialEffect.summary" value="{{data.mercurialEffect.summary}}" data-dtype="String"/>
+              <label class="resource-label" for="system.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
+              <input type="text" name="system.mercurialEffect.summary" id="system.mercurialEffect.summary" value="{{system.mercurialEffect.summary}}" data-dtype="String"/>
             </div>
           </div>
-          {{editor content=data.mercurialEffect.description target="data.mercurialEffect.description" button=true isOwner=isOwner editable=editable}}
+          {{editor system.mercurialEffect.description target="system.mercurialEffect.description" button=true isOwner=isOwner editable=editable}}
         </div>
         {{/if}}
     </section>

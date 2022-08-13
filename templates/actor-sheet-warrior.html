@@ -1,7 +1,7 @@
 <form class="{{cssClass}}" autocomplete="off">
 
     {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
-    <input type="hidden" id="data.details.sheetClass" name="data.details.sheetClass" value="Warrior" data-dtype="String"/>
+    <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Warrior" data-dtype="String"/>
 
     {{!-- Sheet Header --}}
     {{> systems/dcc/templates/actor-partial-pc-header.html }}
@@ -11,10 +11,10 @@
       <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
       <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
       <a class="item" data-tab="class">{{localize "DCC.Warrior"}}</a>
-      {{#if data.config.showSpells}}
+      {{#if system.config.showSpells}}
       <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
       {{/if}}
-      {{#if data.config.showSkills}}
+      {{#if system.config.showSkills}}
       <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
       {{/if}}
       <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
@@ -42,9 +42,9 @@
         <div class="class">
           <div class="skills-container">
             <div class="wide split-50-25-25">
-              <label for="data.details.critRange">{{localize "DCC.CritRange"}}</label>
-              <select class="number" name="data.details.critRange" id="data.details.critRange">
-                {{#select data.details.critRange}}
+              <label for="system.details.critRange">{{localize "DCC.CritRange"}}</label>
+              <select class="number" name="system.details.critRange" id="system.details.critRange">
+                {{#select system.details.critRange}}
                   <option value="20">20 - 20</option>
                   <option value="19" default>19 - 20</option>
                   <option value="18">18 - 20</option>
@@ -70,8 +70,8 @@
             </div>
  
             <div class="wide split-50-50">
-              <label for="data.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
-              <input class="string" type="text" id="data.class.luckyWeapon" name="data.class.luckyWeapon" value="{{data.class.luckyWeapon}}" data-dtype="String"/>
+              <label for="system.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
+              <input class="string" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon" value="{{system.class.luckyWeapon}}" data-dtype="String"/>
             </div">
           </div>
 

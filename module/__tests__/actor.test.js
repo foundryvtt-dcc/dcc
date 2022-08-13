@@ -10,7 +10,7 @@ import DCCActor from '../actor'
 const actor = new DCCActor()
 
 test('prepareData sets ability modifiers', () => {
-  const abilities = actor.data.data.abilities
+  const abilities = actor.abilities
 
   expect(abilities.str.value).toEqual(6)
   expect(abilities.str.mod).toEqual(-1)

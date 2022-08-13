@@ -15,9 +15,9 @@ class DCCActorSheetCleric extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-cleric.html'
-    data.data.class.className = game.i18n.localize('DCC.Cleric')
+    data.system.class.className = game.i18n.localize('DCC.Cleric')
 
-    if (data.data.details.sheetClass !== 'Cleric') {
+    if (data.system.details.sheetClass !== 'Cleric') {
       this.actor.update({
         'data.class.className': game.i18n.localize('DCC.Cleric'),
         'data.details.sheetClass': 'Cleric',
@@ -39,9 +39,9 @@ class DCCActorSheetThief extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
-    data.data.class.className = game.i18n.localize('DCC.Thief')
+    data.system.class.className = game.i18n.localize('DCC.Thief')
 
-    if (data.data.details.sheetClass !== 'Thief') {
+    if (data.system.details.sheetClass !== 'Thief') {
       this.actor.update({
         'data.class.className': game.i18n.localize('DCC.Thief'),
         'data.details.sheetClass': 'Thief',
@@ -64,9 +64,9 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
-    data.data.class.className = game.i18n.localize('DCC.Halfling')
+    data.system.class.className = game.i18n.localize('DCC.Halfling')
 
-    if (data.data.details.sheetClass !== 'Halfling') {
+    if (data.system.details.sheetClass !== 'Halfling') {
       this.actor.update({
         'data.class.className': game.i18n.localize('DCC.Halfling'),
         'data.details.sheetClass': 'Halfling',
@@ -88,9 +88,9 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
-    data.data.class.className = game.i18n.localize('DCC.Warrior')
+    data.system.class.className = game.i18n.localize('DCC.Warrior')
 
-    if (data.data.details.sheetClass !== 'Warrior') {
+    if (data.system.details.sheetClass !== 'Warrior') {
       this.actor.update({
         'data.class.className': game.i18n.localize('DCC.Warrior'),
         'data.details.sheetClass': 'Warrior',
@@ -112,9 +112,9 @@ class DCCActorSheetWizard extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-wizard.html'
-    data.data.class.className = game.i18n.localize('DCC.Wizard')
+    data.system.class.className = game.i18n.localize('DCC.Wizard')
 
-    if (data.data.details.sheetClass !== 'Wizard') {
+    if (data.system.details.sheetClass !== 'Wizard') {
       this.actor.update({
         'data.class.className': game.i18n.localize('DCC.Wizard'),
         'data.details.sheetClass': 'Wizard',
@@ -137,9 +137,9 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-dwarf.html'
-    data.data.class.className = game.i18n.localize('DCC.Dwarf')
+    data.system.class.className = game.i18n.localize('DCC.Dwarf')
 
-    if (data.data.details.sheetClass !== 'Dwarf') {
+    if (data.system.details.sheetClass !== 'Dwarf') {
       this.actor.update({
         'data.class.className': game.i18n.localize('DCC.Dwarf'),
         'data.details.sheetClass': 'Dwarf',
@@ -162,9 +162,9 @@ class DCCActorSheetElf extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-elf.html'
-    data.data.class.className = game.i18n.localize('DCC.Elf')
+    data.system.class.className = game.i18n.localize('DCC.Elf')
 
-    if (data.data.details.sheetClass !== 'Elf') {
+    if (data.system.details.sheetClass !== 'Elf') {
       this.actor.update({
         'data.class.className': game.i18n.localize('DCC.Elf'),
         'data.details.sheetClass': 'Elf',
@@ -187,7 +187,7 @@ class DCCActorSheetGeneric extends DCCActorSheet {
   getData () {
     const data = super.getData()
     this.options.template = 'systems/dcc/templates/actor-sheet-upper-level.html'
-    data.data.class.className = game.i18n.localize('DCC.Generic')
+    data.system.class.className = game.i18n.localize('DCC.Generic')
 
     this.actor.update({
       'data.class.className': game.i18n.localize('DCC.Generic')

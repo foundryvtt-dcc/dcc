@@ -64,9 +64,9 @@ class DCCActorSheet extends ActorSheet {
       config: CONFIG.DCC
     }
 
-    data.actor = duplicate(this.document.system)
+    data.actor = duplicate(this.document)
     data.actor.name = this.document.name
-    data.data = duplicate(this.document.system)
+    data.system = duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters
 
@@ -81,16 +81,16 @@ class DCCActorSheet extends ActorSheet {
 
       if (!data.isZero) {
         // Reorder saves on upper level sheet to define tabbing order
-        data.data.saves = {
-          ref: data.data.saves.ref,
-          frt: data.data.saves.frt,
-          wil: data.data.saves.wil
+        data.system.saves = {
+          ref: data.system.saves.ref,
+          frt: data.system.saves.frt,
+          wil: data.system.saves.wil
         }
       }
     }
 
     // Should the Deed Roll button be available on the sheet?
-    data.data.config.rollAttackBonus = (this.actor.getAttackBonusMode() === 'manual')
+    data.system.config.rollAttackBonus = (this.actor.getAttackBonusMode() === 'manual')
 
     // Prepare item lists by type
     this._prepareItems(data)
@@ -128,13 +128,13 @@ class DCCActorSheet extends ActorSheet {
     const coins = []
 
     let inventory = this.actor.items
-    if (sheetData.data.config.sortInventory) {
+    if (sheetData.system.config.sortInventory) {
       // Shallow copy and lexical sort
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
     }
 
     // Iterate through items, allocating to containers
-    const removeEmptyItems = sheetData.data.config.removeEmptyItems
+    const removeEmptyItems = sheetData.system.config.removeEmptyItems
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
@@ -441,7 +441,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Hit Dice',
         actorId: this.actor.id,
         data: {
-          dice: this.actor.data.data.attributes.hitDice.value
+          dice: this.actor.system.attributes.hitDice.value
         }
       }
     } else if (classes.contains('save')) {
@@ -452,7 +452,7 @@ class DCCActorSheet extends ActorSheet {
       }
     } else if (classes.contains('skill-check')) {
       const skillId = this._findDataset(event.currentTarget, 'skill')
-      const actorSkill = this.actor.data.data.skills[skillId]
+      const actorSkill = this.actor.system.skills[skillId]
       const skillName = actorSkill ? actorSkill.label : skillId
       dragData = {
         type: 'Skill',
@@ -467,7 +467,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Luck Die',
         actorId: this.actor.id,
         data: {
-          die: this.actor.data.data.class.luckDie
+          die: this.actor.system.class.luckDie
         }
       }
     } else if (classes.contains('spell-check')) {
@@ -483,7 +483,7 @@ class DCCActorSheet extends ActorSheet {
       const spellItem = this.actor.items.find(i => i.name === spell)
       let img
       if (spellItem) {
-        img = spellItem.data.img
+        img = spellItem.img
       }
       dragData = {
         type: 'Item',
@@ -501,7 +501,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Attack Bonus',
         actorId: this.actor.id,
         data: {
-          die: this.actor.data.data.details.attackBonus
+          die: this.actor.details.attackBonus
         }
       }
     } else if (classes.contains('action-dice')) {
@@ -509,7 +509,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Action Dice',
         actorId: this.actor.id,
         data: {
-          die: this.actor.data.data.attributes.actionDice.value
+          die: this.actor.attributes.actionDice.value
         }
       }
     } else if (classes.contains('weapon-draggable')) {

@@ -2,34 +2,34 @@
   PC: {{isPC}}
   NPC: {{isNPC}}
   <div class="form-group">
-    <label for="data.config.actionDice">{{localize "DCC.ActionDice"}}</label>
+    <label for="system.config.actionDice">{{localize "DCC.ActionDice"}}</label>
     <div class="form-fields">
-      <input type="text" name="data.config.actionDice" id="data.config.actionDice" value="{{data.config.actionDice}}" data-dtype="string"/>
+      <input type="text" name="system.config.actionDice" id="system.config.actionDice" value="{{system.config.actionDice}}" data-dtype="string"/>
     </div>
   </div>
   {{#if isPC}}
   <div class="form-group">
-    <label for="data.config.capLevel">{{localize "DCC.CapLevelConfig"}}</label>
+    <label for="system.config.capLevel">{{localize "DCC.CapLevelConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.capLevel" id="data.config.capLevel" {{checked data.config.capLevel}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.capLevel" id="system.config.capLevel" {{checked system.config.capLevel}} data-dtype="boolean"/>
     </div>
-    <label for="data.config.maxLevel">{{localize "DCC.MaxLevelConfig"}}</label>
+    <label for="system.config.maxLevel">{{localize "DCC.MaxLevelConfig"}}</label>
     <div class="form-fields">
-      <input type="text" name="data.config.maxLevel" id="data.config.maxLevel" value="{{numberFormat data.config.maxLevel decimals=0 sign=false}}" data-dtype="number"/>
+      <input type="text" name="system.config.maxLevel" id="system.config.maxLevel" value="{{numberFormat system.config.maxLevel decimals=0 sign=false}}" data-dtype="number"/>
     </div>
   </div>
   {{/if}}
   <div class="form-group">
     {{#if isNPC}}
-    <label for="data.details.attackBonus">{{localize "DCC.AttackBonus"}}</label>
+    <label for="system.details.attackBonus">{{localize "DCC.AttackBonus"}}</label>
     <div class="form-fields">
-      <input type="text" name="data.details.attackBonus" id="data.details.attackBonus" value="{{formatAttackBonus data.details.attackBonus}}" data-dtype="number"/>
+      <input type="text" name="system.details.attackBonus" id="system.details.attackBonus" value="{{formatAttackBonus system.details.attackBonus}}" data-dtype="number"/>
     </div>
     {{/if}}
-    <label for="data.config.rollAttackBonus">{{localize "DCC.AttackBonusConfigMode"}}</label>
+    <label for="system.config.rollAttackBonus">{{localize "DCC.AttackBonusConfigMode"}}</label>
     <div class="form-fields">
-      <select name="data.config.attackBonusMode" id="data.config.attackBonusMode">
-        {{#select data.config.attackBonusMode}}
+      <select name="system.config.attackBonusMode" id="system.config.attackBonusMode">
+        {{#select system.config.attackBonusMode}}
         <option value="flat">{{localize "DCC.AttackBonusConfigModeFlat"}}</option>
         <option value="manual">{{localize "DCC.AttackBonusConfigModeManual"}}</option>
         <option value="autoPerAttack">{{localize "DCC.AttackBonusConfigModeAutoPerAttack"}}</option>
@@ -40,22 +40,22 @@
   </div>
   {{#if isNPC}}
   <div class="form-group">
-    <label for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+    <label for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
     <div class="form-fields">
-      <input type="text" name="data.class.spellCheck" id="data.class.spellCheck" value="{{numberFormat data.class.spellCheck decimals=0 sign=true}}" data-dtype="number"/>
+      <input type="text" name="system.class.spellCheck" id="system.class.spellCheck" value="{{numberFormat system.class.spellCheck decimals=0 sign=true}}" data-dtype="number"/>
     </div>
   </div>
   {{/if}}
   {{#if isPC}}
   <div class="form-group">
-    <label for="data.config.computeAC">{{localize "DCC.ComputeACConfig"}}</label>
+    <label for="system.config.computeAC">{{localize "DCC.ComputeACConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.computeAC" id="data.config.computeAC" {{checked data.config.computeAC}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.computeAC" id="system.config.computeAC" {{checked system.config.computeAC}} data-dtype="boolean"/>
     </div>
-    <label for="data.config.baseACAbility">{{localize "DCC.BaseACAbilityConfig"}}</label>
+    <label for="system.config.baseACAbility">{{localize "DCC.BaseACAbilityConfig"}}</label>
     <div class="form-fields">
-      <select name="data.config.baseACAbility" id="data.config.baseACAbility">
-        {{#select data.config.baseACAbility}}
+      <select name="system.config.baseACAbility" id="system.config.baseACAbility">
+        {{#select system.config.baseACAbility}}
         <option value="str">{{localize "DCC.AbilityStr"}}</option>
         <option value="agl">{{localize "DCC.AbilityAgl"}}</option>
         <option value="sta">{{localize "DCC.AbilitySta"}}</option>
@@ -65,52 +65,52 @@
         {{/select}}
       </select>
     </div>
-    <label for="data.config.computeSpeed">{{localize "DCC.ComputeSpeedConfig"}}</label>
+    <label for="system.config.computeSpeed">{{localize "DCC.ComputeSpeedConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.computeSpeed" id="data.config.computeSpeed" {{checked data.config.computeSpeed}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.computeSpeed" id="system.config.computeSpeed" {{checked system.config.computeSpeed}} data-dtype="boolean"/>
     </div>
-    <label for="data.attributes.speed.base">{{localize "DCC.SpeedBase"}}</label>
+    <label for="system.attributes.speed.base">{{localize "DCC.SpeedBase"}}</label>
     <div class="form-fields">
-      <input type="text" name="data.attributes.speed.base" id="data.attributes.speed.base" value="{{distanceFormat data.attributes.speed.base}}" data-dtype="number"/>
+      <input type="text" name="system.attributes.speed.base" id="system.attributes.speed.base" value="{{distanceFormat system.attributes.speed.base}}" data-dtype="number"/>
     </div>
-    <label for="data.config.computeCheckPenalty">{{localize "DCC.ComputeCheckPenaltyConfig"}}</label>
+    <label for="system.config.computeCheckPenalty">{{localize "DCC.ComputeCheckPenaltyConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.computeCheckPenalty" id="data.config.computeCheckPenalty" {{checked data.config.computeCheckPenalty}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.computeCheckPenalty" id="system.config.computeCheckPenalty" {{checked system.config.computeCheckPenalty}} data-dtype="boolean"/>
     </div>
-    <label for="data.attributes.ac.checkPenalty">{{localize "DCC.CheckPenalty"}}</label>
+    <label for="system.attributes.ac.checkPenalty">{{localize "DCC.CheckPenalty"}}</label>
     <div class="form-fields">
-      <input type="text" name="data.attributes.ac.checkPenalty" id="data.attributes.ac.checkPenalty" value="{{numberFormat data.attributes.ac.checkPenalty decimals=0 sign=false}}" data-dtype="number"/>
+      <input type="text" name="system.attributes.ac.checkPenalty" id="system.attributes.ac.checkPenalty" value="{{numberFormat system.attributes.ac.checkPenalty decimals=0 sign=false}}" data-dtype="number"/>
     </div>
   </div>
   <div class="form-group">
-    <label for="data.config.showMaxAbilities">{{localize "DCC.ShowMaxAbilitiesConfig"}}</label>
+    <label for="system.config.showMaxAbilities">{{localize "DCC.ShowMaxAbilitiesConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.showMaxAbilities" id="data.config.showMaxAbilities" {{checked data.config.showMaxAbilities}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.showMaxAbilities" id="system.config.showMaxAbilities" {{checked system.config.showMaxAbilities}} data-dtype="boolean"/>
     </div>
-    <label for="data.config.showMaxAbilities">{{localize "DCC.ShowBackstabConfig"}}</label>
+    <label for="system.config.showMaxAbilities">{{localize "DCC.ShowBackstabConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.showBackstab" id="data.config.showBackstab" {{checked data.config.showBackstab}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.showBackstab" id="system.config.showBackstab" {{checked system.config.showBackstab}} data-dtype="boolean"/>
     </div>
   </div>
   {{/if}}
   <div class="form-group">
-    <label for="data.config.showSpells">{{localize "DCC.ShowSpellsConfig"}}</label>
+    <label for="system.config.showSpells">{{localize "DCC.ShowSpellsConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.showSpells" id="data.config.showSpells" {{checked data.config.showSpells}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.showSpells" id="system.config.showSpells" {{checked system.config.showSpells}} data-dtype="boolean"/>
     </div>
-    <label for="data.config.showSkills">{{localize "DCC.ShowSkillsConfig"}}</label>
+    <label for="system.config.showSkills">{{localize "DCC.ShowSkillsConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.showSkills" id="data.config.showSkills" {{checked data.config.showSkills}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.showSkills" id="system.config.showSkills" {{checked system.config.showSkills}} data-dtype="boolean"/>
     </div>
   </div>
   <div class="form-group">
-    <label for="data.config.sortInventory">{{localize "DCC.SortInventory"}}</label>
+    <label for="system.config.sortInventory">{{localize "DCC.SortInventory"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.sortInventory" id="data.config.sortInventory" {{checked data.config.sortInventory}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.sortInventory" id="system.config.sortInventory" {{checked system.config.sortInventory}} data-dtype="boolean"/>
     </div>
-    <label for="data.config.removeEmptyItems">{{localize "DCC.RemoveEmptyItems"}}</label>
+    <label for="system.config.removeEmptyItems">{{localize "DCC.RemoveEmptyItems"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.removeEmptyItems" id="data.config.removeEmptyItems" {{checked data.config.removeEmptyItems}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.removeEmptyItems" id="system.config.removeEmptyItems" {{checked system.config.removeEmptyItems}} data-dtype="boolean"/>
     </div>
     <label class="info span">{{localize "DCC.RemoveEmptyItemsInfo"}}</label>
   </div>
