@@ -6,12 +6,12 @@
  * @return {Promise}    A promise which resolves once the migration is completed
  */
 export const migrateWorld = async function () {
-  ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.data.version }, { permenant: true }))
+  ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permenant: true }))
 
   // Migrate World Actors
   for (const a of game.actors) {
     try {
-      const updateData = migrateActorData(a.data)
+      const updateData = migrateActorData(a)
       if (!isObjectEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Actor', name: a.name }))
         await a.update(updateData, { enforceTypes: false })
@@ -24,7 +24,7 @@ export const migrateWorld = async function () {
   // Migrate World Items
   for (const i of game.items) {
     try {
-      const updateData = migrateItemData(i.data)
+      const updateData = migrateItemData(i)
       if (!isObjectEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Item', name: i.name }))
         await i.update(updateData, { enforceTypes: false })
@@ -37,7 +37,7 @@ export const migrateWorld = async function () {
   // Migrate Actor Override Tokens
   for (const s of game.scenes) {
     try {
-      const updateData = migrateSceneData(s.data)
+      const updateData = migrateSceneData(s)
       if (!isObjectEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Scene', name: s.name }))
         await s.update(updateData, { enforceTypes: false })
@@ -57,8 +57,8 @@ export const migrateWorld = async function () {
 
   // Set the migration as complete
   // parseFloat will pull out the major and minor version ignoring the patch version
-  game.settings.set('dcc', 'systemMigrationVersion', parseFloat(game.system.data.version))
-  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.data.version }, { permenant: true }))
+  game.settings.set('dcc', 'systemMigrationVersion', parseFloat(game.system.version))
+  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permenant: true }))
 }
 
 /* -------------------------------------------- */
@@ -86,13 +86,13 @@ export const migrateCompendium = async function (pack) {
       let updateData = null
       switch (documentName) {
         case 'Item':
-          updateData = migrateItemData(doc.data)
+          updateData = migrateItemData(doc)
           break
         case 'Actor':
-          updateData = migrateActorData(doc.data)
+          updateData = migrateActorData(doc)
           break
         case 'Scene':
-          updateData = migrateSceneData(doc.data)
+          updateData = migrateSceneData(doc)
           break
       }
 
@@ -167,21 +167,21 @@ export const migrateActorData = function (actor) {
  * @param item
  */
 export const migrateItemData = function (item) {
-  const updateData = {}
+  let updateData = {}
 
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
 
   // If migrating from 0.11 mark all physicalItems as equipped
   if ((currentVersion <= 0.11) || (currentVersion == null)) {
-    if (item.data.equipped !== undefined) {
-      updateData.data = { equipped: true }
+    if (item.equipped !== undefined) {
+      updateData = { equipped: true }
     }
   }
 
   // If migrating from 0.21 mark all spells as inheritActionDie
   if ((currentVersion <= 0.21) || (currentVersion == null)) {
-    if (item.type === 'spell' && !item.data.config.inheritActionDie) {
-      updateData.data = {
+    if (item.type === 'spell' && !item.config.inheritActionDie) {
+      updateData = {
         config: {
           inheritActionDie: true
         }
@@ -191,8 +191,8 @@ export const migrateItemData = function (item) {
 
   // If migrating from 0.22 mark all spells as castingMode: wizard
   if ((currentVersion <= 0.22) || (currentVersion == null)) {
-    if (item.type === 'spell' && !item.data.config.castingMode) {
-      updateData.data = {
+    if (item.type === 'spell' && !item.config.castingMode) {
+      updateData = {
         config: {
           castingMode: 'wizard'
         }

@@ -19,7 +19,7 @@ export class DCCItemSheet extends ItemSheet {
 
   /** @override */
   get template () {
-    switch (this.object.data.type) {
+    switch (this.object.type) {
       case 'weapon':
         return 'systems/dcc/templates/item-sheet-weapon.html'
       case 'armor':
@@ -40,29 +40,29 @@ export class DCCItemSheet extends ItemSheet {
 
   /** @override */
   getData () {
-    const data = super.getData()
+    const data = this.object
 
     // Lookup the localizable string for the item's type
-    data.item.data.typeString = CONFIG.DCC.items[data.item.type] || 'DCC.Unknown'
+    data.typeString = CONFIG.DCC.items[data.type] || 'DCC.Unknown'
 
-    if (data.item.type === 'spell') {
+    if (data.type === 'spell') {
       // Allow mercurial magic roll only on wizard spells owned by an actor
-      const castingMode = data.item.data.data.config.castingMode || 'wizard'
-      const forceShowMercurialEffect = data.item.data.data.config.showMercurialEffect
+      const castingMode = data.system.config.castingMode || 'wizard'
+      const forceShowMercurialEffect = data.system.config.showMercurialEffect
       data.showMercurialRoll = !!this.actor && (castingMode === 'wizard' || forceShowMercurialEffect)
-    } else if (data.item.type === 'treasure') {
+    } else if (data.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = this.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
       // Only allow currency conversion on items representing coins that have a resolved value
-      data.allowConversions = data.item.data.isCoins && !data.unresolved && !this.limited
+      data.allowConversions = data.system.isCoins && !data.unresolved && !this.limited
     }
 
     // Pass through the item data in the format we expect
-    data.data = data.item.data.data
+    //data.data = data.item.data.data
 
-    if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
-      data.item.data.img = EntityImages.imageForItem(data.item.type)
+    if (!data.img || data.img === 'icons/svg/mystery-man.svg') {
+      data.data.img = EntityImages.imageForItem(data.type)
     }
 
     return data
@@ -149,7 +149,7 @@ export class DCCItemSheet extends ItemSheet {
 
     // Header buttons shown only with Owner permissions
     if (this.options.editable) {
-      if (this.object.data.type === 'spell' || this.object.data.type === 'weapon' || this.object.data.type === 'skill') {
+      if (this.object.system.type === 'spell' || this.object.system.type === 'weapon' || this.object.system.type === 'skill') {
         buttons.unshift(
           {
             label: game.i18n.localize('DCC.ConfigureItem'),
@@ -238,7 +238,7 @@ export class DCCItemSheet extends ItemSheet {
    * @private
    */
   _lookupMercurialMagic (event, options) {
-    this.item.rollMercurialMagic(this.item.data.data.mercurialEffect.value)
+    this.item.rollMercurialMagic(this.item.system.mercurialEffect.value)
     this.render(false)
   }
 

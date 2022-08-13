@@ -187,7 +187,7 @@ class DCCActor extends Actor {
     customData.ab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
 
     // Player only data
-    if (this.data.type === 'Player') {
+    if (this.type === 'Player') {
       customData.xp = data.details.xp.value || 0
     }
 
@@ -409,7 +409,7 @@ class DCCActor extends Actor {
     ]
 
     // Players have a stamina modifier they can add
-    if (this.data.type === 'Player') {
+    if (this.type === 'Player') {
       const sta = this.system.abilities.sta || {}
       const modifier = sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : '+0'
       terms.push({
@@ -638,7 +638,7 @@ class DCCActor extends Actor {
     if (options.spell) {
       const item = this.items.find(i => i.name === options.spell)
       if (item) {
-        if (item.data.type === 'spell') {
+        if (item.type === 'spell') {
           // Roll through the item and return so we don't also roll a basic spell check
           item.rollSpellCheck(options.abilityId, options)
           return
@@ -821,7 +821,7 @@ class DCCActor extends Actor {
         let weapons = this.itemTypes.weapon
         if (this.system.config.sortInventory) {
           // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
-          weapons = [...weapons].sort((a, b) => a.data.name.localeCompare(b.data.name))
+          weapons = [...weapons].sort((a, b) => a.name.localeCompare(b.name))
         }
         weapon = weapons.filter(i => !!i.system.melee === isMelee)[weaponIndex]
       } catch (err) { }
@@ -979,7 +979,7 @@ class DCCActor extends Actor {
 
     /* Determine crit range */
     const die = weapon.system.actionDie
-    let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
+    let critRange = parseInt(weapon.system.critRange || this.details.critRange || 20)
 
     /* If we don't have a valid formula, bail out here */
     if (!await Roll.validate(toHit)) {

@@ -342,8 +342,8 @@ async function processSpellCheck (actor, spellData) {
           results.results = fumbleResult.results
           fumble = true
         } else if (naturalRoll === 20) {
-          if (actor.data.type === 'Player') {
-            const critRoll = results.roll._total + actor.data.data.details.level.value
+          if (actor.system.type === 'Player') {
+            const critRoll = results.roll._total + actor.system.details.level.value
             const critRollObject = new Roll(String(critRoll))
             const critResult = await rollTable.draw({ roll: critRollObject, displayChat: false })
             roll = critResult.roll
@@ -380,14 +380,14 @@ async function processSpellCheck (actor, spellData) {
     }
 
     // Determine casting mode from the item or actor - default to wizard
-    let castingMode = item ? item.data.data.config.castingMode : 'wizard'
-    if (!item && actor.data.data.details.sheetClass === 'Cleric') {
+    let castingMode = item ? item.system.config.castingMode : 'wizard'
+    if (!item && actor.system.details.sheetClass === 'Cleric') {
       // Cleric sheets will use the cleric casting mode if not set by the item
       castingMode = 'cleric'
     }
 
     // Spell check threshold is 10 + spell level * 2, anything below this is a failure
-    const level = item ? item.data.data.level : 1
+    const level = item ? item.system.level : 1
     let success = roll.total >= (10 + level * 2)
 
     // Handle spell failure based on casting mode
@@ -405,7 +405,7 @@ async function processSpellCheck (actor, spellData) {
       const automate = game.settings.get('dcc', 'automateClericDisapproval')
 
       // Check if our natural roll was inside the disapproval range
-      if (automate && naturalRoll <= actor.data.data.class.disapproval) {
+      if (automate && naturalRoll <= actor.system.class.disapproval) {
         // Trigger disapproval
         actor.rollDisapproval(naturalRoll)
 
@@ -513,7 +513,7 @@ Hooks.on('dcc.setTurnUnholyTable', (value, fromSystemSetting = false) => {
 
 // Entity creation hook
 Hooks.on('createActor', (entity, options, userId) => {
-  if (!game.user.isGM || entity.data.img) { return }
+  if (!game.user.isGM || entity.img) { return }
 
   // Assign an appropriate DCC actor image
   const img = EntityImages.imageForActor(entity.type)
@@ -525,7 +525,7 @@ Hooks.on('createActor', (entity, options, userId) => {
 })
 
 Hooks.on('createItem', (entity, options, userId) => {
-  if (!game.user.isGM || entity.data.img) { return }
+  if (!game.user.isGM || entity.img) { return }
 
   // Assign an appropriate DCC item image
   const img = EntityImages.imageForItem(entity.type)
@@ -540,14 +540,14 @@ Hooks.on('applyActiveEffect', (actor, change) => {
   const { key, value } = change
   let update = null
   // We're only interested in strings (dice expressions)
-  const current = foundry.utils.getProperty(actor.data, key) ?? null
+  const current = foundry.utils.getProperty(actor, key) ?? null
   if (typeof (current) === 'string') {
     // If this is a dice chain pattern (e.g. +1d) then we're interested
     const diceChainPattern = /([+-]?\d+)[dD]/
     const match = value.match(diceChainPattern)
     if (match) {
       update = game.dcc.DiceChain.bumpDie(current, parseInt(match[1]))
-      foundry.utils.setProperty(actor.data, key, update)
+      foundry.utils.setProperty(actor, key, update)
     }
   }
   return update
@@ -585,7 +585,7 @@ async function createDCCMacro (data, slot) {
     delete data.dccType
   }
   if (data.dccData) {
-    data.data = data.dccData
+    data.system = data.dccData
     delete data.dccData
   }
   if (!data.type || data.type === 'Macro') return
@@ -623,8 +623,8 @@ function _createDCCAbilityMacro (data, slot) {
   if (data.type !== 'Ability') return
 
   // Create the macro command
-  const abilityId = data.data.abilityId
-  const rollUnder = data.data.rollUnder
+  const abilityId = data.system.abilityId
+  const rollUnder = data.system.rollUnder
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAbilityCheck("${abilityId}", Object.assign({ rollUnder: ${rollUnder} }, game.dcc.getMacroOptions())) }`,
@@ -671,7 +671,7 @@ function _createDCCHitDiceMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.HitDiceRoll'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }',
-    img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
+    img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.v.dice), 'hitDice')
   }
 
   return macroData
@@ -687,7 +687,7 @@ function _createDCCSaveMacro (data, slot) {
   if (data.type !== 'Save') return
 
   // Create the macro command
-  const saveId = data.data
+  const saveId = data.system
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
@@ -707,8 +707,8 @@ function _createDCCSkillMacro (data, slot) {
   if (data.type !== 'Skill') return
 
   // Create the macro command
-  const skillId = data.data.skillId
-  const skillName = game.i18n.localize(data.data.skillName)
+  const skillId = data.system.skillId
+  const skillName = game.i18n.localize(data.system.skillName)
   const macroData = {
     name: skillName,
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
@@ -726,7 +726,7 @@ function _createDCCSkillMacro (data, slot) {
  */
 function _createDCCLuckDieMacro (data, slot) {
   if (data.type !== 'Luck Die') return
-  const die = data.data.die
+  const die = data.system.die
 
   // Create the macro command
   const macroData = {
@@ -748,8 +748,8 @@ function _createDCCSpellCheckMacro (data, slot) {
   if (data.type !== 'Spell Check') return
 
   // Create the macro command
-  const spell = data.data.spell || null
-  const img = data.data.img || null
+  const spell = data.system.spell || null
+  const img = data.system.img || null
   const macroData = {
     name: spell || game.i18n.localize('DCC.SpellCheck'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSpellCheck() }',
@@ -771,7 +771,7 @@ function _createDCCSpellCheckMacro (data, slot) {
  */
 function _createDCCAttackBonusMacro (data, slot) {
   if (data.type !== 'Attack Bonus') return
-  const die = data.data.die
+  const die = data.system.die
 
   // Create the macro command
   const macroData = {
@@ -791,7 +791,7 @@ function _createDCCAttackBonusMacro (data, slot) {
  */
 function _createDCCActionDiceMacro (data, slot) {
   if (data.type !== 'Action Dice') return
-  const die = data.data.die
+  const die = data.system.die
 
   // Create the macro command
   const macroData = {
@@ -812,9 +812,9 @@ function _createDCCActionDiceMacro (data, slot) {
  */
 function _createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Weapon') return
-  const item = data.data.weapon
-  const weaponSlot = data.data.slot
-  const backstab = data.data.backstab
+  const item = data.system.weapon
+  const weaponSlot = data.system.slot
+  const backstab = data.system.backstab
   const options = {
     backstab: backstab
   }
@@ -822,12 +822,12 @@ function _createDCCWeaponMacro (data, slot) {
   const macroData = {
     name: item.name,
     command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
-    img: data.data.weapon.img
+    img: data.system.weapon.img
   }
 
   // Replace missing or default weapon icon with our default
   if (!macroData.img || macroData.img === 'icons/svg/mystery-man.svg') {
-    macroData.img = EntityImages.imageForItem(data.data.weapon.type)
+    macroData.img = EntityImages.imageForItem(data.system.weapon.type)
   }
 
   // If dragging a backstab use the backstab icon
