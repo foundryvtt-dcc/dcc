@@ -57,10 +57,10 @@ class DCCActorSheet extends ActorSheet {
       options: this.options,
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
-      isNPC: this.document.system.type === 'NPC',
-      isPC: this.document.system.type === 'Player',
+      isNPC: this.document.type === 'NPC',
+      isPC: this.document.type === 'Player',
       isZero: this.document.system.details.level === 0,
-      type: this.document.system.type,
+      type: this.document.type,
       config: CONFIG.DCC
     }
 

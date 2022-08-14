@@ -10,7 +10,7 @@ class DCCItem extends Item {
 
     // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.actor.system && this.system.config) {
-      if (this.system.type === 'weapon') {
+      if (this.type === 'weapon') {
         // Weapons can inherit the owner's action die
         if (this.system.config.inheritActionDie) {
           this.system.actionDie = this.actor.system.attributes.actionDice.value
@@ -30,7 +30,7 @@ class DCCItem extends Item {
             this.system.critRange = 20
           }
         }
-      } else if (this.system.type === 'spell') {
+      } else if (this.type === 'spell') {
         // Spells can use the owner's action die for the spell check
         if (this.system.config.inheritActionDie) {
           this.system.spellCheck.die = this.actor.system.attributes.actionDice.value
@@ -54,7 +54,7 @@ class DCCItem extends Item {
    * @param {String} abilityId    The ability used for this spell
    */
   async rollSpellCheck (abilityId = 'int', options = {}) {
-    if (this.system.type !== 'spell') { return }
+    if (this.type !== 'spell') { return }
 
     const actor = this.actor
     const ability = actor.system.abilities[abilityId] || {}
@@ -170,7 +170,7 @@ class DCCItem extends Item {
    * @return
    */
   async rollMercurialMagic (lookup = undefined, options = {}) {
-    if (this.system.type !== 'spell') { return }
+    if (this.type !== 'spell') { return }
 
     const actor = this.actor
     if (!actor) { return }

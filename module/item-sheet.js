@@ -149,7 +149,7 @@ export class DCCItemSheet extends ItemSheet {
 
     // Header buttons shown only with Owner permissions
     if (this.options.editable) {
-      if (this.object.system.type === 'spell' || this.object.system.type === 'weapon' || this.object.system.type === 'skill') {
+      if (this.object.type === 'spell' || this.object.type === 'weapon' || this.object.type === 'skill') {
         buttons.unshift(
           {
             label: game.i18n.localize('DCC.ConfigureItem'),
