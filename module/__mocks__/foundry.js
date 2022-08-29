@@ -37,94 +37,94 @@ class Actor {
       this._id = 1
       this.name = 'test character'
       Object.assign(this, {
-          data: {
-            abilities: {
-              str: { value: 6, mod: -1, label: 'DCC.AbilityStr' },
-              agl: { value: 8, mod: -1, label: 'DCC.AbilityAgl' },
-              sta: { value: 12, mod: 0, label: 'DCC.AbilitySta' },
-              int: { value: 14, mod: 1, label: 'DCC.AbilityInt' },
-              per: { value: 16, mod: 2, label: 'DCC.AbilityPer' },
-              lck: { value: 18, mod: 3, label: 'DCC.AbilityLck' }
+        data: {
+          abilities: {
+            str: { value: 6, mod: -1, label: 'DCC.AbilityStr' },
+            agl: { value: 8, mod: -1, label: 'DCC.AbilityAgl' },
+            sta: { value: 12, mod: 0, label: 'DCC.AbilitySta' },
+            int: { value: 14, mod: 1, label: 'DCC.AbilityInt' },
+            per: { value: 16, mod: 2, label: 'DCC.AbilityPer' },
+            lck: { value: 18, mod: 3, label: 'DCC.AbilityLck' }
+          },
+          attributes: {
+            ac: {
+              checkPenalty: 0
             },
-            attributes: {
-              ac: {
-                checkPenalty: 0
-              },
-              init: { value: -1 },
-              actionDice: { value: '1d20' },
-              fumble: { die: '1d4' },
-              speed: {
-                value: 30
-              },
-              hp: {
-                value: 3,
-                max: 3
-              }
+            init: { value: -1 },
+            actionDice: { value: '1d20' },
+            fumble: { die: '1d4' },
+            speed: {
+              value: 30
             },
-            items: {
-              weapons: {
-                m1: { toHit: 1, name: 'longsword' }
-              }
-            },
-            saves: {
-              frt: { value: -1 },
-              ref: { value: 0 },
-              wil: { value: +2 }
-            },
-            details: {
-              attackBonus: 0,
-              level: {
-                value: 1
-              }
-            },
-            class: {
-              luckDie: '1d3',
-              spellCheck: 3,
-              spellCheckAbility: 'int'
-            },
-            skills: {
-              customDieSkill: {
-                label: 'Custom Die Skill',
-                die: '1d14'
-              },
-              customDieAndValueSkill: {
-                label: 'Custom Die And Value Skill',
-                die: '1d14',
-                value: +3
-              },
-              actionDieSkill: {
-                label: 'Action Die Skill',
-                value: -4
-              },
-              customDieSkillWithInt: {
-                label: 'Custom Die Skill With Int',
-                ability: 'int',
-                die: '1d24'
-              },
-              customDieAndValueSkillWithPer: {
-                label: 'Custom Die And Value Skill With Per',
-                ability: 'per',
-                die: '1d24',
-                value: +3
-              },
-              actionDieSkillWithLck: {
-                label: 'Action Die Skill With Lck',
-                ability: 'lck',
-                value: +4
-              }
-            },
-            config: {
-              attackBonusMode: 'flat',
-              capLevel: false,
-              maxLevel: 0,
-              rollAttackBonus: false,
-              computeAC: false,
-              baseACAbility: 'agl',
-              sortInventory: true,
-              removeEmptyItems: true
+            hp: {
+              value: 3,
+              max: 3
             }
+          },
+          items: {
+            weapons: {
+              m1: { toHit: 1, name: 'longsword' }
+            }
+          },
+          saves: {
+            frt: { value: -1 },
+            ref: { value: 0 },
+            wil: { value: +2 }
+          },
+          details: {
+            attackBonus: 0,
+            level: {
+              value: 1
+            }
+          },
+          class: {
+            luckDie: '1d3',
+            spellCheck: 3,
+            spellCheckAbility: 'int'
+          },
+          skills: {
+            customDieSkill: {
+              label: 'Custom Die Skill',
+              die: '1d14'
+            },
+            customDieAndValueSkill: {
+              label: 'Custom Die And Value Skill',
+              die: '1d14',
+              value: +3
+            },
+            actionDieSkill: {
+              label: 'Action Die Skill',
+              value: -4
+            },
+            customDieSkillWithInt: {
+              label: 'Custom Die Skill With Int',
+              ability: 'int',
+              die: '1d24'
+            },
+            customDieAndValueSkillWithPer: {
+              label: 'Custom Die And Value Skill With Per',
+              ability: 'per',
+              die: '1d24',
+              value: +3
+            },
+            actionDieSkillWithLck: {
+              label: 'Action Die Skill With Lck',
+              ability: 'lck',
+              value: +4
+            }
+          },
+          config: {
+            attackBonusMode: 'flat',
+            capLevel: false,
+            maxLevel: 0,
+            rollAttackBonus: false,
+            computeAC: false,
+            baseACAbility: 'agl',
+            sortInventory: true,
+            removeEmptyItems: true
           }
         }
+      }
       )
     }
     this.items = new Collection()
