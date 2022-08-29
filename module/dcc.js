@@ -146,7 +146,7 @@ Hooks.once('init', async function () {
 
   // Handlebars helper to enrich HTML
   Handlebars.registerHelper('dccLocalizeAndEnrich', function (object) {
-    return TextEditor.enrichHTML(game.i18n.localize(object))
+    return TextEditor.enrichHTML(game.i18n.localize(object), { async: false })
   })
 })
 
