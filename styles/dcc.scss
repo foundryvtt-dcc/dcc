@@ -1113,6 +1113,10 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     grid-template-columns: 50% 50%;
   }
 
+  > div.split-75-25 {
+    grid-template-columns: 75% 25%;
+  }
+
   > div.split-25-75 {
     grid-template-columns: 25% 75%;
   }
@@ -1131,6 +1135,10 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
   > div.split-40-60 {
     grid-template-columns: 40% 60%;
+  }
+
+  > div.split-67-33 {
+    grid-template-columns: 67% 33%;
   }
 
   > div.nosplit {
