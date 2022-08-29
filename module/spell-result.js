@@ -46,7 +46,7 @@ class SpellResult {
 
     // Render the chat card which combines the dice roll with the drawn results
     messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
-      description: TextEditor.enrichHTML(rollTable.description, { entities: true }),
+      description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
       results: result.results.map(r => {
         return duplicate(r)
       }),
@@ -128,7 +128,7 @@ class SpellResult {
       const newResultRoll = (direction > 0) ? (entry.range[1]) + 1 : (entry.range[0] - 1)
       const newResult = rollTable.getResultsForRoll(newResultRoll)[0]
       const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
-        description: TextEditor.enrichHTML(rollTable.description, { entities: true }),
+        description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
         results: [newResult].map(r => {
           return duplicate(r)
         }),
