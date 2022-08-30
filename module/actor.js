@@ -979,7 +979,7 @@ class DCCActor extends Actor {
 
     /* Determine crit range */
     const die = weapon.system.actionDie
-    let critRange = parseInt(weapon.system.critRange || this.details.critRange || 20)
+    let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
 
     /* If we don't have a valid formula, bail out here */
     if (!await Roll.validate(toHit)) {
