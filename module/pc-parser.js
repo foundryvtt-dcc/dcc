@@ -87,7 +87,7 @@ function _parseJSONPCs (pcObject) {
           name: weapon.name,
           type: 'weapon',
           img: weapon.img,
-          data: {
+          system: {
             toHit: weapon.attackMod || '0',
             damage: weapon.attackDamage || '1d3',
             melee: weapon.melee
@@ -99,7 +99,7 @@ function _parseJSONPCs (pcObject) {
         name: pcObject.weapon,
         type: 'weapon',
         img: EntityImages.imageForItem('weapon'),
-        data: {
+        system: {
           toHit: pcObject.attackMod || '0',
           damage: pcObject.attackDamage || '1d3',
           melee: true // No way to know, but melee is most likely
@@ -224,7 +224,7 @@ function _parseJSONPCs (pcObject) {
           name: spell.name,
           img: EntityImages.imageForItem('spell'),
           type: 'spell',
-          data: {
+          system: {
             level: spell.level,
             spellCheck: {
               die: '1d20',
@@ -485,7 +485,7 @@ function _parseArmor (armorString) {
       name: armorFields[1],
       type: 'armor',
       img: EntityImages.imageForItem('armor'),
-      data: {
+      system: {
         acBonus: armorFields[2],
         checkPenalty: armorFields[3],
         fumbleDie: '1' + armorFields[4]
@@ -506,7 +506,7 @@ function _parseStartingFunds (startingFundsString) {
     name: 'Coins',
     type: 'treasure',
     img: EntityImages.imageForItem('treasure'),
-    data: {
+    system: {
       value: {
         pp,
         ep,
