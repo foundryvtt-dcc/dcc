@@ -52,7 +52,7 @@ Languages: Common`)
         name: 'Hammer (as club)',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '-1',
           damage: '1d4-1',
           melee: true
@@ -72,7 +72,7 @@ Languages: Common`)
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             cp: '42',
             ep: '0',
@@ -158,7 +158,7 @@ test('beekeeper', () => {
         name: 'Staff',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '1',
           damage: '1d4+1',
           melee: true
@@ -183,7 +183,7 @@ test('beekeeper', () => {
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             cp: '31',
             ep: '0',
@@ -271,7 +271,7 @@ Languages: Common `)
           name: 'Hammer (as club)',
           type: 'weapon',
           img: 'systems/dcc/styles/images/weapon.webp',
-          data: {
+          system: {
             toHit: '-1',
             damage: '1d4-1',
             melee: true
@@ -291,7 +291,7 @@ Languages: Common `)
           name: 'Coins',
           type: 'treasure',
           img: 'systems/dcc/styles/images/coins.webp',
-          data: {
+          system: {
             value: {
               cp: '42',
               ep: '0',
@@ -333,7 +333,7 @@ Languages: Common `)
           name: 'Handaxe',
           type: 'weapon',
           img: 'systems/dcc/styles/images/weapon.webp',
-          data: {
+          system: {
             toHit: '-1',
             damage: '1d6-1',
             melee: true
@@ -353,7 +353,7 @@ Languages: Common `)
           name: 'Coins',
           type: 'treasure',
           img: 'systems/dcc/styles/images/coins.webp',
-          data: {
+          system: {
             value: {
               cp: '29',
               ep: '0',
@@ -446,7 +446,7 @@ Spells: (Spell Check: d20+2)
         name: 'Dagger',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+0',
           damage: '1d4',
           melee: true
@@ -456,7 +456,7 @@ Spells: (Spell Check: d20+2)
         name: 'Dart',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+1',
           damage: '1d4',
           melee: false
@@ -466,7 +466,7 @@ Spells: (Spell Check: d20+2)
         name: 'Spear',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+0',
           damage: '1d8',
           melee: true
@@ -476,7 +476,7 @@ Spells: (Spell Check: d20+2)
         name: 'Hide + Shield',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+4',
           checkPenalty: '-4',
           fumbleDie: '1d12'
@@ -496,7 +496,7 @@ Spells: (Spell Check: d20+2)
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -511,7 +511,7 @@ Spells: (Spell Check: d20+2)
         name: 'Darkness',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -523,7 +523,7 @@ Spells: (Spell Check: d20+2)
         name: 'Detect Evil',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -535,7 +535,7 @@ Spells: (Spell Check: d20+2)
         name: 'Detect Magic',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -547,7 +547,7 @@ Spells: (Spell Check: d20+2)
         name: 'Word of Command',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -658,7 +658,7 @@ Cast Spell From Scroll (d16)`
         name: 'Staff',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+4',
           damage: '1d4',
           melee: true
@@ -668,7 +668,7 @@ Cast Spell From Scroll (d16)`
         name: '+1 Shortbow',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+6',
           damage: '1d6',
           melee: false
@@ -678,7 +678,7 @@ Cast Spell From Scroll (d16)`
         name: '+1 Blowgun',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+6',
           damage: '1d3',
           melee: false
@@ -688,7 +688,7 @@ Cast Spell From Scroll (d16)`
         name: 'Padded',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+1',
           checkPenalty: '0',
           fumbleDie: '1d8'
@@ -708,7 +708,7 @@ Cast Spell From Scroll (d16)`
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -802,7 +802,7 @@ Hide In Shadows: 11 (-4)`
         name: 'Sling',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+8',
           damage: '1d4',
           melee: false
@@ -812,7 +812,7 @@ Hide In Shadows: 11 (-4)`
         name: '+3 Crossbow',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+11',
           damage: '1d6',
           melee: false
@@ -822,7 +822,7 @@ Hide In Shadows: 11 (-4)`
         name: '+2 Dagger',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+10',
           damage: '1d4+2',
           melee: true
@@ -832,7 +832,7 @@ Hide In Shadows: 11 (-4)`
         name: 'Scale Mail',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+4',
           checkPenalty: '-4',
           fumbleDie: '1d12'
@@ -852,7 +852,7 @@ Hide In Shadows: 11 (-4)`
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -938,7 +938,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Club',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd10+2',
           damage: '1d4+@ab',
           melee: true
@@ -948,7 +948,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: '+2 Flail',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd10+2+2',
           damage: '1d6+2+@ab',
           melee: true
@@ -958,7 +958,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: '+1 Club',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd10+2+1',
           damage: '1d4+1+@ab',
           melee: true
@@ -968,7 +968,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Scale Mail',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+4',
           checkPenalty: '-4',
           fumbleDie: '1d12'
@@ -988,7 +988,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -1094,7 +1094,7 @@ Spells: (Spell Check: d20+12)
         name: 'Handaxe',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+5',
           damage: '1d6+1',
           melee: true
@@ -1104,7 +1104,7 @@ Spells: (Spell Check: d20+12)
         name: '+3 Staff',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+8',
           damage: '1d4+4',
           melee: true
@@ -1114,7 +1114,7 @@ Spells: (Spell Check: d20+12)
         name: '+2 Shortbow',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+5',
           damage: '1d6',
           melee: false
@@ -1124,7 +1124,7 @@ Spells: (Spell Check: d20+12)
         name: 'Unarmored',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+0',
           checkPenalty: '0',
           fumbleDie: '1d4'
@@ -1144,7 +1144,7 @@ Spells: (Spell Check: d20+12)
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -1159,7 +1159,7 @@ Spells: (Spell Check: d20+12)
         name: 'Chill Touch',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1171,7 +1171,7 @@ Spells: (Spell Check: d20+12)
         name: 'Ekim\'s Mystical Mask',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1183,7 +1183,7 @@ Spells: (Spell Check: d20+12)
         name: 'Flaming Hands',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1195,7 +1195,7 @@ Spells: (Spell Check: d20+12)
         name: 'Magic Missile',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1207,7 +1207,7 @@ Spells: (Spell Check: d20+12)
         name: 'Read Magic',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1219,7 +1219,7 @@ Spells: (Spell Check: d20+12)
         name: 'Ropework',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1231,7 +1231,7 @@ Spells: (Spell Check: d20+12)
         name: 'Runic Alphabet',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1243,7 +1243,7 @@ Spells: (Spell Check: d20+12)
         name: 'Mirror Image',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '2',
           spellCheck: {
             die: '1d20',
@@ -1255,7 +1255,7 @@ Spells: (Spell Check: d20+12)
         name: 'Phantasm',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '2',
           spellCheck: {
             die: '1d20',
@@ -1267,7 +1267,7 @@ Spells: (Spell Check: d20+12)
         name: 'Fly',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '3',
           spellCheck: {
             die: '1d20',
@@ -1279,7 +1279,7 @@ Spells: (Spell Check: d20+12)
         name: 'Turn to Stone',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '3',
           spellCheck: {
             die: '1d20',
@@ -1291,7 +1291,7 @@ Spells: (Spell Check: d20+12)
         name: 'Control Fire',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '4',
           spellCheck: {
             die: '1d20',
@@ -1303,7 +1303,7 @@ Spells: (Spell Check: d20+12)
         name: 'Lokerimon\'s Orderly Assistance',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '4',
           spellCheck: {
             die: '1d20',
@@ -1315,7 +1315,7 @@ Spells: (Spell Check: d20+12)
         name: 'Polymorph',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '4',
           spellCheck: {
             die: '1d20',
@@ -1327,7 +1327,7 @@ Spells: (Spell Check: d20+12)
         name: 'Wizard Sense',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '4',
           spellCheck: {
             die: '1d20',
@@ -1339,7 +1339,7 @@ Spells: (Spell Check: d20+12)
         name: 'Hepsoj\'s Fecund Fungi',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '5',
           spellCheck: {
             die: '1d20',
@@ -1351,7 +1351,7 @@ Spells: (Spell Check: d20+12)
         name: 'Magic Bulwark',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '5',
           spellCheck: {
             die: '1d20',
@@ -1363,7 +1363,7 @@ Spells: (Spell Check: d20+12)
         name: 'Mind Purge',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '5',
           spellCheck: {
             die: '1d20',
@@ -1447,7 +1447,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
         name: 'Staff',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd5+1',
           damage: '1d4+1+@ab',
           melee: true
@@ -1457,7 +1457,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
         name: 'Longbow',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd5-2',
           damage: '1d6+@ab',
           melee: false
@@ -1467,7 +1467,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
         name: 'Lance',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd5+1',
           damage: '1d12+1+@ab',
           melee: true
@@ -1477,7 +1477,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
         name: 'Scale Mail + Shield',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+5',
           checkPenalty: '-5',
           fumbleDie: '1d12'
@@ -1497,7 +1497,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -1594,7 +1594,7 @@ Spells: (Spell Check: d20+5)
         name: 'Shortbow',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+3',
           damage: '1d6',
           melee: false
@@ -1604,7 +1604,7 @@ Spells: (Spell Check: d20+5)
         name: 'Spear',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+3',
           damage: '1d8+1',
           melee: true
@@ -1614,7 +1614,7 @@ Spells: (Spell Check: d20+5)
         name: 'Club',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: '+3',
           damage: '1d4+1',
           melee: true
@@ -1624,7 +1624,7 @@ Spells: (Spell Check: d20+5)
         name: 'Studded Leather',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+3',
           checkPenalty: '-2',
           fumbleDie: '1d8'
@@ -1644,7 +1644,7 @@ Spells: (Spell Check: d20+5)
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -1659,7 +1659,7 @@ Spells: (Spell Check: d20+5)
         name: 'Patron Bond',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1671,7 +1671,7 @@ Spells: (Spell Check: d20+5)
         name: 'Invoke Patron',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1683,7 +1683,7 @@ Spells: (Spell Check: d20+5)
         name: 'Color Spray',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1695,7 +1695,7 @@ Spells: (Spell Check: d20+5)
         name: 'Ekim\'s Mystical Mask',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1707,7 +1707,7 @@ Spells: (Spell Check: d20+5)
         name: 'Ventriloquism',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1719,7 +1719,7 @@ Spells: (Spell Check: d20+5)
         name: 'Ward Portal',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '1',
           spellCheck: {
             die: '1d20',
@@ -1731,7 +1731,7 @@ Spells: (Spell Check: d20+5)
         name: 'Monster Summoning',
         type: 'spell',
         img: 'systems/dcc/styles/images/spell.webp',
-        data: {
+        system: {
           level: '2',
           spellCheck: {
             die: '1d20',
@@ -1813,7 +1813,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Dagger',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd3+1',
           damage: '1d4+1+@ab',
           melee: true
@@ -1823,7 +1823,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Unarmored',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+0',
           checkPenalty: '0',
           fumbleDie: '1d4'
@@ -1843,7 +1843,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -1928,7 +1928,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Dagger',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd3+1',
           damage: '1d4+1+@ab',
           melee: true
@@ -1938,7 +1938,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Unarmored',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+0',
           checkPenalty: '0',
           fumbleDie: '1d4'
@@ -1958,7 +1958,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -2082,7 +2082,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Shortbow',
           type: 'weapon',
           img: 'systems/dcc/styles/images/weapon.webp',
-          data: {
+          system: {
             toHit: '+3',
             damage: '1d6',
             melee: false
@@ -2092,7 +2092,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Spear',
           type: 'weapon',
           img: 'systems/dcc/styles/images/weapon.webp',
-          data: {
+          system: {
             toHit: '+3',
             damage: '1d8+1',
             melee: true
@@ -2102,7 +2102,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Club',
           type: 'weapon',
           img: 'systems/dcc/styles/images/weapon.webp',
-          data: {
+          system: {
             toHit: '+3',
             damage: '1d4+1',
             melee: true
@@ -2112,7 +2112,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Studded Leather',
           type: 'armor',
           img: 'systems/dcc/styles/images/armor.webp',
-          data: {
+          system: {
             acBonus: '+3',
             checkPenalty: '-2',
             fumbleDie: '1d8'
@@ -2132,7 +2132,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Coins',
           type: 'treasure',
           img: 'systems/dcc/styles/images/coins.webp',
-          data: {
+          system: {
             value: {
               pp: '0',
               ep: '0',
@@ -2147,7 +2147,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Patron Bond',
           type: 'spell',
           img: 'systems/dcc/styles/images/spell.webp',
-          data: {
+          system: {
             level: '1',
             spellCheck: {
               die: '1d20',
@@ -2159,7 +2159,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Invoke Patron',
           type: 'spell',
           img: 'systems/dcc/styles/images/spell.webp',
-          data: {
+          system: {
             level: '1',
             spellCheck: {
               die: '1d20',
@@ -2171,7 +2171,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Color Spray',
           type: 'spell',
           img: 'systems/dcc/styles/images/spell.webp',
-          data: {
+          system: {
             level: '1',
             spellCheck: {
               die: '1d20',
@@ -2183,7 +2183,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Ekim\'s Mystical Mask',
           type: 'spell',
           img: 'systems/dcc/styles/images/spell.webp',
-          data: {
+          system: {
             level: '1',
             spellCheck: {
               die: '1d20',
@@ -2195,7 +2195,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Ventriloquism',
           type: 'spell',
           img: 'systems/dcc/styles/images/spell.webp',
-          data: {
+          system: {
             level: '1',
             spellCheck: {
               die: '1d20',
@@ -2207,7 +2207,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Ward Portal',
           type: 'spell',
           img: 'systems/dcc/styles/images/spell.webp',
-          data: {
+          system: {
             level: '1',
             spellCheck: {
               die: '1d20',
@@ -2219,7 +2219,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Monster Summoning',
           type: 'spell',
           img: 'systems/dcc/styles/images/spell.webp',
-          data: {
+          system: {
             level: '2',
             spellCheck: {
               die: '1d20',
@@ -2266,7 +2266,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Staff',
           type: 'weapon',
           img: 'systems/dcc/styles/images/weapon.webp',
-          data: {
+          system: {
             toHit: 'd5+1',
             damage: '1d4+1+@ab',
             melee: true
@@ -2276,7 +2276,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Longbow',
           type: 'weapon',
           img: 'systems/dcc/styles/images/weapon.webp',
-          data: {
+          system: {
             toHit: 'd5-2',
             damage: '1d6+@ab',
             melee: false
@@ -2286,7 +2286,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Lance',
           type: 'weapon',
           img: 'systems/dcc/styles/images/weapon.webp',
-          data: {
+          system: {
             toHit: 'd5+1',
             damage: '1d12+1+@ab',
             melee: true
@@ -2296,7 +2296,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Scale Mail + Shield',
           type: 'armor',
           img: 'systems/dcc/styles/images/armor.webp',
-          data: {
+          system: {
             acBonus: '+5',
             checkPenalty: '-5',
             fumbleDie: '1d12'
@@ -2316,7 +2316,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           name: 'Coins',
           type: 'treasure',
           img: 'systems/dcc/styles/images/coins.webp',
-          data: {
+          system: {
             value: {
               pp: '0',
               ep: '0',

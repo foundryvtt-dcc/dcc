@@ -136,7 +136,7 @@ function _parseAttack (attackString, damageString) {
     name: name,
     type: 'weapon',
     img: EntityImages.imageForItem('weapon'),
-    data: attack
+    system: attack
   }
 }
 

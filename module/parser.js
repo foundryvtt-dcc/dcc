@@ -150,7 +150,7 @@ async function createActors (type, folderId, actorData) {
       name,
       type,
       folder: folderId,
-      data: expandObject(parsedCharacter),
+      system: expandObject(parsedCharacter),
       items
     })
 
