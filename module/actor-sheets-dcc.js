@@ -12,8 +12,8 @@ import DCCActorSheet from './actor-sheet.js'
  */
 class DCCActorSheetCleric extends DCCActorSheet {
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-cleric.html'
     data.system.class.className = game.i18n.localize('DCC.Cleric')
 
@@ -36,8 +36,8 @@ class DCCActorSheetCleric extends DCCActorSheet {
  */
 class DCCActorSheetThief extends DCCActorSheet {
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
     data.system.class.className = game.i18n.localize('DCC.Thief')
 
@@ -61,8 +61,8 @@ class DCCActorSheetThief extends DCCActorSheet {
  */
 class DCCActorSheetHalfling extends DCCActorSheet {
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
     data.system.class.className = game.i18n.localize('DCC.Halfling')
 
@@ -85,8 +85,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
  */
 class DCCActorSheetWarrior extends DCCActorSheet {
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
     data.system.class.className = game.i18n.localize('DCC.Warrior')
 
@@ -109,8 +109,8 @@ class DCCActorSheetWarrior extends DCCActorSheet {
  */
 class DCCActorSheetWizard extends DCCActorSheet {
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-wizard.html'
     data.system.class.className = game.i18n.localize('DCC.Wizard')
 
@@ -134,8 +134,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
  */
 class DCCActorSheetDwarf extends DCCActorSheet {
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-dwarf.html'
     data.system.class.className = game.i18n.localize('DCC.Dwarf')
 
@@ -159,8 +159,8 @@ class DCCActorSheetDwarf extends DCCActorSheet {
  */
 class DCCActorSheetElf extends DCCActorSheet {
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-elf.html'
     data.system.class.className = game.i18n.localize('DCC.Elf')
 
@@ -184,8 +184,8 @@ class DCCActorSheetElf extends DCCActorSheet {
  */
 class DCCActorSheetGeneric extends DCCActorSheet {
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-upper-level.html'
     data.system.class.className = game.i18n.localize('DCC.Generic')
 
