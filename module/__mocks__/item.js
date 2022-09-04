@@ -5,9 +5,10 @@
  */
 global.dccItemRollSpellCheckMock = jest.fn((options) => {})
 class DCCItem {
-  constructor (name = null, data = {}) {
+  constructor (name = null, type = undefined, systemData = {}) {
     this.name = name
-    this.data = data
+    this.type = type
+    this.system = systemData
   }
 
   rollSpellCheck (...args) {

@@ -37,7 +37,7 @@ class Actor {
       this._id = 1
       this.name = 'test character'
       Object.assign(this, {
-        data: {
+        system: {
           abilities: {
             str: { value: 6, mod: -1, label: 'DCC.AbilityStr' },
             agl: { value: 8, mod: -1, label: 'DCC.AbilityAgl' },
@@ -59,11 +59,6 @@ class Actor {
             hp: {
               value: 3,
               max: 3
-            }
-          },
-          items: {
-            weapons: {
-              m1: { toHit: 1, name: 'longsword' }
             }
           },
           saves: {
