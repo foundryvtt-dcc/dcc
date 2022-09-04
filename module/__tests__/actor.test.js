@@ -10,7 +10,7 @@ import DCCActor from '../actor'
 const actor = new DCCActor()
 
 test('prepareData sets ability modifiers', () => {
-  const abilities = actor.abilities
+  const abilities = actor.system.abilities
 
   expect(abilities.str.value).toEqual(6)
   expect(abilities.str.mod).toEqual(-1)
@@ -227,13 +227,10 @@ test('roll weapon attack', async () => {
   expect(uiNotificationsWarnMock).toHaveBeenCalledWith('WeaponNotFound,id:r123[object Object]')
 
   // Roll a weapon we do have - by name
-  collectionFindMock.mockReturnValue(new DCCItem('longsword', {
-    type: 'weapon',
-    data: {
-      actionDie: '1d20',
-      toHit: 1,
-      melee: true
-    }
+  collectionFindMock.mockReturnValue(new DCCItem('longsword', 'weapon', {
+    actionDie: '1d20',
+    toHit: 1,
+    melee: true
   }))
   await actor.rollWeaponAttack('longsword')
   expect(collectionFindMock).toHaveBeenCalledTimes(2)
@@ -281,9 +278,9 @@ test('roll weapon attack', async () => {
   collectionFindMock.mockReturnValue(null)
   itemTypesMock.mockReturnValue({
     weapon: [
-      new DCCItem('axe', { name: 'axe', data: { melee: true } }),
-      new DCCItem('javelin', { name: 'javelin', data: { melee: false } }),
-      new DCCItem('longsword', { name: 'longsword', data: { actionDie: '1d20', toHit: 2, melee: true } })
+      new DCCItem('axe', 'weapon', { melee: true }),
+      new DCCItem('javelin', 'weapon', { melee: false }),
+      new DCCItem('longsword', 'weapon', { actionDie: '1d20', toHit: 2, melee: true })
     ]
   })
   await actor.rollWeaponAttack('m2')
@@ -328,14 +325,11 @@ test('roll weapon attack', async () => {
     user: undefined
   })
 
-  collectionFindMock.mockReturnValue(new DCCItem('lefthand dagger', {
-    type: 'weapon',
-    data: {
-      actionDie: '1d16',
-      toHit: 2,
-      critRange: 16,
-      melee: true
-    }
+  collectionFindMock.mockReturnValue(new DCCItem('lefthand dagger', 'weapon', {
+    actionDie: '1d16',
+    toHit: 2,
+    critRange: 16,
+    melee: true
   }))
   await actor.rollWeaponAttack('lefthand dagger')
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
@@ -782,7 +776,7 @@ test('roll spell check', async () => {
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 
   // Roll a spell check with an item
-  const dummyItem = new DCCItem('The Gloaming', { type: 'spell' })
+  const dummyItem = new DCCItem('The Gloaming', 'spell')
   collectionFindMock.mockReturnValue(dummyItem)
   await actor.rollSpellCheck({ spell: 'The Gloaming' })
   expect(collectionFindMock).toHaveBeenCalledTimes(1)
@@ -791,7 +785,7 @@ test('roll spell check', async () => {
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(0)
 
   // Roll a spell check with an item of the wrong type
-  collectionFindMock.mockReturnValue(new DCCItem('Swordfish', { type: 'weapon' }))
+  collectionFindMock.mockReturnValue(new DCCItem('Swordfish', 'weapon'))
   await actor.rollSpellCheck({ spell: 'Swordfish' })
   expect(collectionFindMock).toHaveBeenCalledTimes(2)
   expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
