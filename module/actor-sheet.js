@@ -48,7 +48,7 @@ class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  getData () {
+  async getData (options) {
     // Basic data
     const isOwner = this.document.isOwner
     const data = {
@@ -94,6 +94,22 @@ class DCCActorSheet extends ActorSheet {
 
     // Prepare item lists by type
     this._prepareItems(data)
+
+    // Format Notes HTML
+    data.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
+      async: true,
+      relativeTo: this.actor,
+      secrets: this.actor.isOwner
+    })
+
+    // Format Corruption HTML if present
+    if (this.actor.system.class?.corruption) {
+      data.corruptionHTML = await TextEditor.enrichHTML(this.actor.system.class.corruption, {
+        async: true,
+        relativeTo: this.actor,
+        secrets: this.actor.isOwner
+      })
+    }
 
     return data
   }

@@ -81,7 +81,7 @@
           </div>
         </div>
         <div class="description">
-          {{editor system.description.value target="system.description.value" button=true isOwner=isOwner editable=editable}}
+          {{editor descriptionHTML target="system.description.value" button=true editable=editable}}
         </div>
         {{#if showMercurialRoll}}
         <div class="mercurial-effect-description">
@@ -98,7 +98,7 @@
               <input type="text" name="system.mercurialEffect.summary" id="system.mercurialEffect.summary" value="{{system.mercurialEffect.summary}}" data-dtype="String"/>
             </div>
           </div>
-          {{editor system.mercurialEffect.description target="system.mercurialEffect.description" button=true isOwner=isOwner editable=editable}}
+          {{editor mercurialEffectHTML target="system.mercurialEffect.description" button=true editable=editable}}
         </div>
         {{/if}}
     </section>

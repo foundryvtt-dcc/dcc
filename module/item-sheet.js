@@ -1,4 +1,4 @@
-/* global Dialog, ItemSheet, game, mergeObject, CONFIG */
+/* global Dialog, ItemSheet, TextEditor, game, mergeObject, CONFIG */
 
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
@@ -39,8 +39,8 @@ export class DCCItemSheet extends ItemSheet {
   }
 
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
 
     // Lookup the localizable string for the item's type
     data.typeString = CONFIG.DCC.items[data.type] || 'DCC.Unknown'
@@ -50,6 +50,13 @@ export class DCCItemSheet extends ItemSheet {
       const castingMode = data.item.system.config.castingMode || 'wizard'
       const forceShowMercurialEffect = data.item.system.config.showMercurialEffect
       data.showMercurialRoll = !!this.actor && (castingMode === 'wizard' || forceShowMercurialEffect)
+
+      // Format Mercurial Effect HTML
+      data.mercurialEffectHTML = await TextEditor.enrichHTML(this.item.system.mercurialEffect.description, {
+        async: true,
+        relativeTo: this.item,
+        secrets: this.item.isOwner
+      })
     } else if (data.item.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = data.item.needsValueRoll()
@@ -64,6 +71,13 @@ export class DCCItemSheet extends ItemSheet {
     if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
       data.data.img = EntityImages.imageForItem(data.type)
     }
+
+    // Format Description HTML
+    data.descriptionHTML = await TextEditor.enrichHTML(this.item.system.description.value, {
+      async: true,
+      relativeTo: this.item,
+      secrets: this.item.isOwner
+    })
 
     return data
   }
