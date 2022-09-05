@@ -33,22 +33,22 @@ function _parseJSONPCs (pcObject) {
     if (pcObject.name) {
       pc.name = pcObject.name
     }
-    pc['data.details.occupation.value'] = pcObject.occTitle || ''
-    pc['data.abilities.str.value'] = pcObject.strengthScore || 10
-    pc['data.abilities.agl.value'] = pcObject.agilityScore || 10
-    pc['data.abilities.sta.value'] = pcObject.staminaScore || 10
-    pc['data.abilities.per.value'] = pcObject.personalityScore || 10
-    pc['data.abilities.int.value'] = pcObject.intelligenceScore || 10
-    pc['data.abilities.lck.value'] = pcObject.luckScore || 10
-    pc['data.abilities.str.max'] = pc['data.abilities.str.value']
-    pc['data.abilities.agl.max'] = pc['data.abilities.agl.value']
-    pc['data.abilities.sta.max'] = pc['data.abilities.sta.value']
-    pc['data.abilities.per.max'] = pc['data.abilities.per.value']
-    pc['data.abilities.int.max'] = pc['data.abilities.int.value']
-    pc['data.abilities.lck.max'] = pc['data.abilities.lck.value']
-    pc['data.attributes.ac.value'] = pcObject.armorClass || 10
+    pc['details.occupation.value'] = pcObject.occTitle || ''
+    pc['abilities.str.value'] = pcObject.strengthScore || 10
+    pc['abilities.agl.value'] = pcObject.agilityScore || 10
+    pc['abilities.sta.value'] = pcObject.staminaScore || 10
+    pc['abilities.per.value'] = pcObject.personalityScore || 10
+    pc['abilities.int.value'] = pcObject.intelligenceScore || 10
+    pc['abilities.lck.value'] = pcObject.luckScore || 10
+    pc['abilities.str.max'] = pc['abilities.str.value']
+    pc['abilities.agl.max'] = pc['abilities.agl.value']
+    pc['abilities.sta.max'] = pc['abilities.sta.value']
+    pc['abilities.per.max'] = pc['abilities.per.value']
+    pc['abilities.int.max'] = pc['abilities.int.value']
+    pc['abilities.lck.max'] = pc['abilities.lck.value']
+    pc['attributes.ac.value'] = pcObject.armorClass || 10
     if (pcObject.hitPoints) {
-      pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
+      pc['attributes.hp.value'] = pc['attributes.hp.max'] = pcObject.hitPoints
     }
     let hitDice = '1d4'
     let findSecretDoors = CONFIG.DCC.abilities.modifiers[pcObject.intelligenceScore] || 0
@@ -78,8 +78,8 @@ function _parseJSONPCs (pcObject) {
           break
       }
     }
-    pc['data.attributes.hitDice.value'] = hitDice
-    pc['data.skills.findSecretDoors.value'] = findSecretDoors
+    pc['attributes.hitDice.value'] = hitDice
+    pc['skills.findSecretDoors.value'] = findSecretDoors
     pc.items = []
     if (pcObject.weapons) {
       for (const weapon of pcObject.weapons) {
@@ -106,52 +106,52 @@ function _parseJSONPCs (pcObject) {
         }
       })
     }
-    pc['data.attributes.speed.value'] = pcObject.speed || 30
+    pc['attributes.speed.value'] = pcObject.speed || 30
     if (pcObject.initiative) {
-      pc['data.attributes.init.value'] = pcObject.initiative
+      pc['attributes.init.value'] = pcObject.initiative
     }
     if (pcObject.saveReflex) {
-      pc['data.saves.ref.value'] = pcObject.saveReflex
+      pc['saves.ref.value'] = pcObject.saveReflex
     }
     if (pcObject.saveFort) {
-      pc['data.saves.frt.value'] = pcObject.saveFort
+      pc['saves.frt.value'] = pcObject.saveFort
     }
     if (pcObject.saveWill) {
-      pc['data.saves.wil.value'] = pcObject.saveWill
+      pc['saves.wil.value'] = pcObject.saveWill
     }
 
     // Attributes only in upper level exports
     // Alignment
     if (pcObject.alignment) {
-      pc['data.details.alignment'] = pcObject.alignment
+      pc['details.alignment'] = pcObject.alignment
     }
     // Class
     if (pcObject.className) {
-      pc['data.class.className'] = pcObject.className
+      pc['class.className'] = pcObject.className
     }
     // Level
     if (pcObject.level) {
-      pc['data.details.level.value'] = pcObject.level
+      pc['details.level.value'] = pcObject.level
     }
 
     // Crit die and table
     if (pcObject.critDie) {
-      pc['data.attributes.critical.die'] = pcObject.critDie
+      pc['attributes.critical.die'] = pcObject.critDie
     }
     if (pcObject.critTable) {
-      pc['data.attributes.critical.table'] = pcObject.critTable
+      pc['attributes.critical.table'] = pcObject.critTable
     }
     // Spell Check
     if (pcObject.spellCheck) {
-      pc['data.class.spellCheck'] = pcObject.spellCheck
+      pc['class.spellCheck'] = pcObject.spellCheck
     }
     // Action Die
     if (pcObject.actionDice) {
-      pc['data.config.actionDice'] = pcObject.actionDice
+      pc['config.actionDice'] = pcObject.actionDice
     }
     // Attack Bonus
     if (pcObject.attackBonus) {
-      pc['data.details.attackBonus'] = pcObject.attackBonus
+      pc['details.attackBonus'] = pcObject.attackBonus
     }
     // Armor
     if (pcObject.armorData) {
@@ -207,11 +207,11 @@ function _parseJSONPCs (pcObject) {
     }
     if (pcObject.luckySign) {
       notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '<br/>'
-      pc['data.details.birthAugur'] = pcObject.luckySign
+      pc['details.birthAugur'] = pcObject.luckySign
     }
     if (pcObject.languages) {
       notes = notes + game.i18n.localize('DCC.Languages') + ': ' + pcObject.languages + '<br/>'
-      pc['data.details.languages'] = pcObject.languages
+      pc['details.languages'] = pcObject.languages
     }
     if (pcObject.racialTraits) {
       notes = notes + pcObject.racialTraits + '<br/>'
@@ -239,18 +239,18 @@ function _parseJSONPCs (pcObject) {
       notes = notes + '<br/>Skills:<br/>' + pcObject.thiefSkills.raw.replace(/\n/g, '<br/>')
       delete pcObject.thiefSkills.raw
       // Handle special case thief skills
-      pc['data.class.backstab'] = pcObject.thiefSkills.backstab || '0'
+      pc['class.backstab'] = pcObject.thiefSkills.backstab || '0'
       delete pcObject.thiefSkills.backstab
-      pc['data.skills.castSpellFromScroll.die'] = `1${pcObject.thiefSkills.castSpellFromScroll || 'd10'}`
+      pc['skills.castSpellFromScroll.die'] = `1${pcObject.thiefSkills.castSpellFromScroll || 'd10'}`
       delete pcObject.thiefSkills.castSpellFromScroll
       // Halflings use the sneakSilently and hideInShadowsSkills according to the generator
-      pc['data.skills.sneakAndHide.value'] = pcObject.thiefSkills.sneakSilently || '0'
+      pc['skills.sneakAndHide.value'] = pcObject.thiefSkills.sneakSilently || '0'
       // Handle standard thief skills
       for (const skill in pcObject.thiefSkills) {
-        pc[`data.skills.${skill}.value`] = pcObject.thiefSkills[skill] || '0'
+        pc[`skills.${skill}.value`] = pcObject.thiefSkills[skill] || '0'
       }
     }
-    pc['data.details.notes.value'] = notes
+    pc['details.notes.value'] = notes
 
     return [pc]
   }

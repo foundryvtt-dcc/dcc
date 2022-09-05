@@ -47,22 +47,22 @@ function parseNPC (npcString) {
 
   npc.name = _firstMatch(/(.*?):.*/, npcString) || 'Unnamed'
   npc.name = npc.name.replace(/ ?\(\d+\)/, '')
-  const hd = npc['data.attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[;.].*/, npcString) || '1'
-  npc['data.attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
-  npc['data.attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,.].*/, npcString) || '10'
-  npc['data.attributes.hp.max'] = npc['data.attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || new Roll(hd).evaluate({ async: false }).total
-  npc['data.attributes.speed.value'] = _firstMatch(/.*MV ?(.+?)[;.].*/, npcString) || '30'
-  npc['data.config.actionDice'] = _firstMatch(/.*Act ?(.+?)[;.].*/, npcString) || '1d20'
-  npc['data.attributes.special.value'] = _firstMatch(/.*SP ?(.+?);.*/, npcString) || ''
-  npc['data.saves.frt.value'] = _firstMatch(/.*Fort ?(.+?)[;,.].*/, npcString) || '+0'
-  npc['data.saves.ref.value'] = _firstMatch(/.*Ref ?(.+?)[;,.].*/, npcString) || '+0'
-  npc['data.saves.wil.value'] = _firstMatch(/.*Will ?(.+?)[;,.].*/, npcString) || '+0'
-  npc['data.details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
+  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[;.].*/, npcString) || '1'
+  npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
+  npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,.].*/, npcString) || '10'
+  npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || new Roll(hd).evaluate({ async: false }).total
+  npc['attributes.speed.value'] = _firstMatch(/.*MV ?(.+?)[;.].*/, npcString) || '30'
+  npc['config.actionDice'] = _firstMatch(/.*Act ?(.+?)[;.].*/, npcString) || '1d20'
+  npc['attributes.special.value'] = _firstMatch(/.*SP ?(.+?);.*/, npcString) || ''
+  npc['saves.frt.value'] = _firstMatch(/.*Fort ?(.+?)[;,.].*/, npcString) || '+0'
+  npc['saves.ref.value'] = _firstMatch(/.*Ref ?(.+?)[;,.].*/, npcString) || '+0'
+  npc['saves.wil.value'] = _firstMatch(/.*Will ?(.+?)[;,.].*/, npcString) || '+0'
+  npc['details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
 
   /* Speed */
-  if (npc['data.attributes.speed.value'].includes('or')) {
-    npc['data.attributes.speed.other'] = _firstMatch(/.* or (.*)/, npc['data.attributes.speed.value'])
-    npc['data.attributes.speed.value'] = _firstMatch(/(.*) or .*/, npc['data.attributes.speed.value'])
+  if (npc['attributes.speed.value'].includes('or')) {
+    npc['attributes.speed.other'] = _firstMatch(/.* or (.*)/, npc['attributes.speed.value'])
+    npc['attributes.speed.value'] = _firstMatch(/(.*) or .*/, npc['attributes.speed.value'])
   }
 
   npc.attacks = _firstMatch(/.*Atk ?(.+?)[;.].*/, npcString) || ''
@@ -92,7 +92,7 @@ function parseNPC (npcString) {
   }
 
   /* Put the full statline into the notes field for reference and to handle data that doesn't get parsed */
-  npc['data.details.notes.value'] = npcString
+  npc['details.notes.value'] = npcString
 
   return npc
 }
