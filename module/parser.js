@@ -31,17 +31,17 @@ class DCCActorParser extends FormApplication {
    * @return {Object}
    */
   getData () {
-    const data = {}
-    data.user = game.user
-    data.config = CONFIG.DCC
-    data.folders = []
+    const context = {}
+    context.user = game.user
+    context.config = CONFIG.DCC
+    context.folders = []
 
     // Gather the list of actor folders
     for (const folder of game.actors.directory.folders) {
-      data.folders.push({ id: folder._id, name: folder.name })
+      context.folders.push({ id: folder._id, name: folder.name })
     }
 
-    return data
+    return context
   }
 
   /**
@@ -131,18 +131,18 @@ async function createActors (type, folderId, actorData) {
       name = parsedCharacter.name
     } else {
       // Otherwise combine the occupation and class if available to come up with something descriptive
-      if (parsedCharacter['data.details.occupation.value']) {
-        nameParts.push(parsedCharacter['data.details.occupation.value'])
+      if (parsedCharacter['details.occupation.value']) {
+        nameParts.push(parsedCharacter['details.occupation.value'])
       }
-      if (parsedCharacter['data.class.className']) {
-        nameParts.push(parsedCharacter['data.class.className'])
+      if (parsedCharacter['class.className']) {
+        nameParts.push(parsedCharacter['class.className'])
       }
       name = nameParts.join(' ')
     }
 
     // Enable Compute AC for imported player actors since they have armor items
     if (type === 'Player') {
-      parsedCharacter['data.config.computeAC'] = true
+      parsedCharacter['config.computeAC'] = true
     }
 
     // Create the actor
@@ -155,10 +155,10 @@ async function createActors (type, folderId, actorData) {
     })
 
     // Try and pick a sheet of player characters by matching sheet names to the actor's class name
-    if (type === 'Player' && parsedCharacter['data.class.className']) {
+    if (type === 'Player' && parsedCharacter['class.className']) {
       const classes = Object.keys(CONFIG.Actor.sheetClasses[type])
       for (const sheetClass of classes) {
-        if (sheetClass.includes(parsedCharacter['data.class.className'])) {
+        if (sheetClass.includes(parsedCharacter['class.className'])) {
           actor.setFlag('core', 'sheetClass', sheetClass)
         }
       }
