@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, CONST */
+/* global ActorSheet, CONFIG, duplicate, Dialog, TextEditor, game, mergeObject, expandObject, $, CONST */
 
 import DCCActorConfig from './actor-config.js'
 import EntityImages from './entity-images.js'
