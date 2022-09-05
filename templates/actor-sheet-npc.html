@@ -150,19 +150,19 @@
                            name="itemUpdates.{{id}}.name"
                            value="{{weapon.name}}"/>
                     <input class="weapon-tohit" type="text"
-                           name="itemUpdates.{{id}}.toHit"
-                           value="{{weapon.toHit}}"/>
+                           name="itemUpdates.{{id}}.system.toHit"
+                           value="{{weapon.system.toHit}}"/>
                     <input class="weapon-damage" type="text"
-                           name="itemUpdates.{{id}}.damage"
-                           value="{{weapon.damage}}"/>
-                    {{#if weapon.melee}}
+                           name="itemUpdates.{{id}}.system.damage"
+                           value="{{weapon.system.damage}}"/>
+                    {{#if weapon.system.melee}}
                     <input class="weapon-notes" type="text"
-                           name="itemUpdates.{{id}}.description.summary"
-                           value="{{{weapon.description.summary}}}"/>
+                           name="itemUpdates.{{id}}.system.description.summary"
+                           value="{{{weapon.system.description.summary}}}"/>
                     {{else}}
                     <input class="weapon-notes" type="text"
-                           name="itemUpdates.{{id}}.range"
-                           value="{{weapon.range}}"/>
+                           name="itemUpdates.{{id}}.system.range"
+                           value="{{weapon.system.range}}"/>
                     {{/if}}
                     <div class="weapon-controls">
                         <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
