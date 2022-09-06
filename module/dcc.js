@@ -623,8 +623,8 @@ function _createDCCAbilityMacro (data, slot) {
   if (data.type !== 'Ability') return
 
   // Create the macro command
-  const abilityId = data.system.abilityId
-  const rollUnder = data.system.rollUnder
+  const abilityId = data.data.abilityId
+  const rollUnder = data.data.rollUnder
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAbilityCheck("${abilityId}", Object.assign({ rollUnder: ${rollUnder} }, game.dcc.getMacroOptions())) }`,
@@ -671,7 +671,7 @@ function _createDCCHitDiceMacro (data, slot) {
   const macroData = {
     name: game.i18n.localize('DCC.HitDiceRoll'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }',
-    img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.v.dice), 'hitDice')
+    img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
   }
 
   return macroData
@@ -687,7 +687,7 @@ function _createDCCSaveMacro (data, slot) {
   if (data.type !== 'Save') return
 
   // Create the macro command
-  const saveId = data.system
+  const saveId = data.data
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
@@ -707,8 +707,8 @@ function _createDCCSkillMacro (data, slot) {
   if (data.type !== 'Skill') return
 
   // Create the macro command
-  const skillId = data.system.skillId
-  const skillName = game.i18n.localize(data.system.skillName)
+  const skillId = data.data.skillId
+  const skillName = game.i18n.localize(data.data.skillName)
   const macroData = {
     name: skillName,
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
@@ -726,7 +726,7 @@ function _createDCCSkillMacro (data, slot) {
  */
 function _createDCCLuckDieMacro (data, slot) {
   if (data.type !== 'Luck Die') return
-  const die = data.system.die
+  const die = data.data.die
 
   // Create the macro command
   const macroData = {
@@ -748,8 +748,8 @@ function _createDCCSpellCheckMacro (data, slot) {
   if (data.type !== 'Spell Check') return
 
   // Create the macro command
-  const spell = data.system.spell || null
-  const img = data.system.img || null
+  const spell = data.data.spell || null
+  const img = data.data.img || null
   const macroData = {
     name: spell || game.i18n.localize('DCC.SpellCheck'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSpellCheck() }',
@@ -771,7 +771,7 @@ function _createDCCSpellCheckMacro (data, slot) {
  */
 function _createDCCAttackBonusMacro (data, slot) {
   if (data.type !== 'Attack Bonus') return
-  const die = data.system.die
+  const die = data.data.die
 
   // Create the macro command
   const macroData = {
@@ -791,7 +791,7 @@ function _createDCCAttackBonusMacro (data, slot) {
  */
 function _createDCCActionDiceMacro (data, slot) {
   if (data.type !== 'Action Dice') return
-  const die = data.system.die
+  const die = data.data.die
 
   // Create the macro command
   const macroData = {
@@ -814,7 +814,7 @@ function _createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Weapon') return
   const item = data.system.weapon
   const weaponSlot = data.system.slot
-  const backstab = data.system.backstab
+  const backstab = data.data.backstab
   const options = {
     backstab: backstab
   }
@@ -822,12 +822,12 @@ function _createDCCWeaponMacro (data, slot) {
   const macroData = {
     name: item.name,
     command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
-    img: data.system.weapon.img
+    img: item.img
   }
 
   // Replace missing or default weapon icon with our default
   if (!macroData.img || macroData.img === 'icons/svg/mystery-man.svg') {
-    macroData.img = EntityImages.imageForItem(data.system.weapon.type)
+    macroData.img = EntityImages.imageForItem(data.data.weapon.type)
   }
 
   // If dragging a backstab use the backstab icon
