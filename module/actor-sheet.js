@@ -517,7 +517,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Attack Bonus',
         actorId: this.actor.id,
         data: {
-          die: this.actor.details.attackBonus
+          die: this.actor.system.details.attackBonus
         }
       }
     } else if (classes.contains('action-dice')) {
@@ -525,7 +525,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Action Dice',
         actorId: this.actor.id,
         data: {
-          die: this.actor.attributes.actionDice.value
+          die: this.actor.system.attributes.actionDice.value || '1d20'
         }
       }
     } else if (classes.contains('weapon-draggable')) {
