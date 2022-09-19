@@ -21,7 +21,7 @@ export const registerSystemSettings = async function () {
     game.packs.forEach(function (pack) {
       if (pack.documentName === 'RollTable') {
         tableCompendiums.push(pack)
-        tableCompendiumNames[pack.metadata.package + '.' + pack.metadata.name] = pack.metadata.label
+        tableCompendiumNames[pack.metadata.id] = pack.metadata.label
       }
     })
   } catch (e) { }
@@ -34,7 +34,7 @@ export const registerSystemSettings = async function () {
     for (const pack of tableCompendiums) {
       await pack.getIndex()
       pack.index.forEach(function (value, key, map) {
-        rollTables[pack.metadata.package + '.' + pack.metadata.name + '.' + value.name] = pack.metadata.label + ': ' + value.name
+        rollTables[`${pack.metadata.id}.${value.name}`] = pack.metadata.label + ': ' + value.name
       })
     }
   } catch (e) { }
