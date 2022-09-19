@@ -10,6 +10,10 @@ class TablePackManager {
   }
 
   addPack (newPack, fromSystemConfig = false) {
+    if (!newPack) {
+      return
+    }
+
     // There can only ever be one pack from the system config
     if (fromSystemConfig) {
       for (const key in this._packs) {

@@ -454,7 +454,7 @@ Hooks.on('renderActorDirectory', (app, html) => {
 })
 
 // Disapproval table packs
-Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting) => {
+Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting = false) => {
   const disapprovalPacks = CONFIG.DCC.disapprovalPacks
 
   if (disapprovalPacks) {
@@ -463,7 +463,7 @@ Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting) => {
 })
 
 // Critical hit table packs
-Hooks.on('dcc.registerCriticalHitsPack', (value, fromSystemSetting) => {
+Hooks.on('dcc.registerCriticalHitsPack', (value, fromSystemSetting = false) => {
   const criticalHitPacks = CONFIG.DCC.criticalHitPacks
 
   if (criticalHitPacks) {
