@@ -886,7 +886,7 @@ function rollDCCWeaponMacro (itemId, options = {}) {
   let actor
   if (speaker.token) actor = game.actors.tokens[speaker.token]
   if (!actor) actor = game.actors.get(speaker.actor)
-  if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
+  if (!actor) return ui.notifications.warn(game.i18n.localize('DCC.MacroNoTokenSelected'))
 
   // Trigger the weapon roll
   return actor.rollWeaponAttack(itemId, options)
@@ -901,7 +901,7 @@ function getMacroActor () {
   let actor
   if (speaker.token) actor = game.actors.tokens[speaker.token]
   if (!actor) actor = game.actors.get(speaker.actor)
-  if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
+  if (!actor) return ui.notifications.warn(game.i18n.localize('DCC.MacroNoTokenSelected'))
 
   // Return the actor if found
   return actor
