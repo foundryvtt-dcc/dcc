@@ -4,8 +4,7 @@
  * Highlight critical success or failure on d20 rolls
  */
 export const highlightCriticalSuccessFailure = function (message, html, data) {
-  // TODO: Return to checking message.roll once Foundry's getter is fixed
-  if (!message._roll || !message.isContentVisible) return
+  if (!message.roll || !message.isContentVisible) return
 
   // Highlight rolls where the first part is a d20 roll
   const roll = message.roll
