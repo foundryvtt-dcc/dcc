@@ -214,23 +214,23 @@
                 <li class="armor item flexrow" data-item-id="{{id}}" data-item-index="{{index}}">
                     <div class="item-image item-draggable flexrow"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
                     <input class="armor-equipped" type="checkbox"
-                           name="itemUpdates.{{id}}.equipped"
-                           data-dtype="Boolean" {{checked armor.equipped}}/>
+                           name="itemUpdates.{{id}}.system.equipped"
+                           data-dtype="Boolean" {{checked armor.system.equipped}}/>
                     <input class="armor-name" type="text"
                            name="itemUpdates.{{id}}.name"
                            value="{{armor.name}}"/>
                     <input class="armor-bonus" type="text"
-                           name="itemUpdates.{{id}}.acBonus"
-                           value="{{numberFormat armor.acBonus decimals=0 sign=true}}"/>
+                           name="itemUpdates.{{id}}.system.acBonus"
+                           value="{{numberFormat armor.system.acBonus decimals=0 sign=true}}"/>
                     <input class="armor-checkpenalty" type="text"
-                           name="itemUpdates.{{id}}.checkPenalty"
-                           value="{{armor.checkPenalty}}"/>
+                           name="itemUpdates.{{id}}.system.checkPenalty"
+                           value="{{armor.system.checkPenalty}}"/>
                     <input class="armor-fumbledie" type="text"
-                           name="itemUpdates.{{id}}.fumbleDie"
-                           value="{{armor.fumbleDie}}"/>
+                           name="itemUpdates.{{id}}.system.fumbleDie"
+                           value="{{armor.system.fumbleDie}}"/>
                     <input class="armor-notes" type="text"
-                           name="itemUpdates.{{id}}.description.summary"
-                           value="{{{armor.description.summary}}}"/>
+                           name="itemUpdates.{{id}}.system.description.summary"
+                           value="{{{armor.system.description.summary}}}"/>
                     <div class="armor-controls">
                         <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
                         <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>

@@ -226,8 +226,8 @@
                 <li class="armor item flexrow" data-item-id="{{id}}" data-item-index="{{index}}">
                     <div class="item-image item-draggable flexrow"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
                     <input class="armor-equipped" type="checkbox"
-                           name="itemUpdates.{{id}}.equipped"
-                           data-dtype="Boolean" {{checked armor.equipped}}/>
+                           name="itemUpdates.{{id}}.system.equipped"
+                           data-dtype="Boolean" {{checked armor.system.equipped}}/>
                     <input class="armor-name" type="text"
                            name="itemUpdates.{{id}}.name"
                            value="{{armor.name}}"/>
