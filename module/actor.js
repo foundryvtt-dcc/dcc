@@ -362,6 +362,11 @@ class DCCActor extends Actor {
       }
     ]
 
+    // Initiative: A warrior add his class level to his initiative rolls.
+    if ((token._actor.system.class.className == "Warrior") && (game.settings.get('dcc', 'automateWarriorInititative'))) {
+      terms[1].formula = terms[1].formula + " + " + token._actor.system.details.level.value;
+    }
+
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     // evaluate roll, otherwise roll.total is undefined
@@ -1014,6 +1019,24 @@ class DCCActor extends Actor {
       })
     }
 
+    // Add Strength or Agility modifier to attack rolls
+    let modifier;
+    let modifierLabel;
+    if ((this.system.class.className) && (game.settings.get('dcc', 'automateCombatModifier'))) {
+      if (weapon.system.melee) {
+          modifier = " + " + this.system.abilities.str.mod;
+          modifierLabel = "DCC.AbilityStr";
+      } else {
+          modifier = " + " + this.system.abilities.agl.mod;
+          modifierLabel = "DCC.AbilityAgl";
+      }
+      terms.push({
+              type: 'Modifier',
+              label: game.i18n.localize(modifierLabel),
+              formula: modifier
+      })
+    }
+
     /* Roll the Attack */
     const rollOptions = Object.assign(
       {
@@ -1079,6 +1102,24 @@ class DCCActor extends Actor {
         formula
       }
     ]
+
+    // Add Strength or Agility modifier to damage rolls
+    let modifier;
+    let modifierLabel;
+    if ((this.system.class.className) && (game.settings.get('dcc', 'automateCombatModifier'))) {
+      if (weapon.system.melee) {
+          modifier = " + " + this.system.abilities.str.mod;
+          modifierLabel = "DCC.AbilityStr";
+      } else {
+          modifier = " + " + this.system.abilities.agl.mod;
+          modifierLabel = "DCC.AbilityAgl";
+      }
+      terms.push({
+              type: 'Modifier',
+              label: game.i18n.localize(modifierLabel),
+              formula: modifier
+      })
+    }
 
     /* Roll the damage */
     const rollOptions = Object.assign(
