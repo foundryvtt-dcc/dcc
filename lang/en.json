@@ -551,6 +551,8 @@
   "DCC.SettingAutomateClericDisapprovalHint": "Automatically apply disapproval range increases and roll disapproval results for Clerics. Applies to the Cleric's spell-like abilities and to spells with Casting Mode set to 'Cleric'.",
   "DCC.SettingAutomateFleetingLuck": "Automate Fleeting Luck",
   "DCC.SettingAutomateFleetingLuckHint": "Automatically track Fleeting Luck based on roll results",
+  "DCC.SettingAutomateWarriorInitiative": "Automate Warrior's Initiative",
+  "DCC.SettingAutomateWarriorInitiativeHint": "Automatically add warrior's level to the initiative value",
   "DCC.SettingAutomateWizardSpellLoss": "Automate Wizard/Elf Spell Loss",
   "DCC.SettingAutomateWizardSpellLossHint": "Automatically mark spells as lost when a casting fails. Applies to the Wizard/Elf Spell Check button and spells with Casting Mode set to 'Wizard'.",
   "DCC.SettingCriticalHitsCompendium": "Critical Hits Compendium",

@@ -234,4 +234,16 @@ export const registerSystemSettings = async function () {
     default: true,
     config: true
   })
+
+    /**
+   * Automatically adds warrior's level to the initiative value
+   */
+    game.settings.register('dcc', 'automateWarriorInititative', {
+      name: 'DCC.SettingAutomateWarriorInitiative',
+      hint: 'DCC.SettingAutomateWarriorInitiativeHint',
+      scope: 'world',
+      type: Boolean,
+      default: false,
+      config: true
+    })
 }

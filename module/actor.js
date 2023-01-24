@@ -362,6 +362,11 @@ class DCCActor extends Actor {
       }
     ]
 
+    // Initiative: A warrior adds his class level to his initiative rolls.
+    if ((token._actor.system.class.className == "Warrior") && (game.settings.get('dcc', 'automateWarriorInititative'))) {
+      terms[1].formula = terms[1].formula + " + " + token._actor.system.details.level.value;
+    }
+
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     // evaluate roll, otherwise roll.total is undefined
