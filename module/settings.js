@@ -246,4 +246,16 @@ export const registerSystemSettings = async function () {
       default: false,
       config: true
     })
+
+  /**
+   * Automatically add Strength/Agility modifier to attack and hit rolls
+   */
+  game.settings.register('dcc', 'automateCombatModifier', {
+    name: 'DCC.SettingAutomateCombatModifier',
+    hint: 'DCC.SettingAutomateCombatModifierHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
 }

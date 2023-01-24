@@ -547,6 +547,8 @@
   "DCC.SenseIV": "Infravision",
   "DCC.SenseUS": "Underground Skills",
   "DCC.Senses": "Senses",
+  "DCC.SettingAutomateCombatModifier": "Automate Combat Modifiers",
+  "DCC.SettingAutomateCombatModifierHint": "Automatically add Strength/Agility modifier to attack and hit rolls",
   "DCC.SettingAutomateClericDisapproval": "Automate Cleric Disapproval",
   "DCC.SettingAutomateClericDisapprovalHint": "Automatically apply disapproval range increases and roll disapproval results for Clerics. Applies to the Cleric's spell-like abilities and to spells with Casting Mode set to 'Cleric'.",
   "DCC.SettingAutomateFleetingLuck": "Automate Fleeting Luck",
