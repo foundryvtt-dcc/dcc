@@ -1116,22 +1116,19 @@ class DCCActor extends Actor {
       }
     ]
 
-    // Add Strength or Agility modifier to damage rolls
+    // Add Strength modifier to damage rolls
     let modifier;
     let modifierLabel;
     if ((this.system.class.className) && (game.settings.get('dcc', 'automateCombatModifier'))) {
       if (weapon.system.melee) {
           modifier = " + " + this.system.abilities.str.mod;
           modifierLabel = "DCC.AbilityStr";
-      } else {
-          modifier = " + " + this.system.abilities.agl.mod;
-          modifierLabel = "DCC.AbilityAgl";
-      }
-      terms.push({
+          terms.push({
               type: 'Modifier',
               label: game.i18n.localize(modifierLabel),
               formula: modifier
-      })
+          })
+      }
     }
 
     /* Roll the damage */
