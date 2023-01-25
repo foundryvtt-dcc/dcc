@@ -871,6 +871,12 @@ class DCCActor extends Actor {
     // Damage roll
     const damageRollResult = await this.rollDamage(weapon, options)
 
+    // A successful attack always inflicts a minimum of 1 point of damage
+    if (damageRollResult.roll._total <1) {
+       damageRollResult.roll._total = 1;
+       damageRollResult.damage = 1;
+    }
+
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
