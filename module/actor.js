@@ -363,8 +363,12 @@ class DCCActor extends Actor {
     ]
 
     // Initiative: A warrior add his class level to his initiative rolls.
-    if ((token._actor.system.class.className == "Warrior") && (game.settings.get('dcc', 'automateWarriorInititative'))) {
-      terms[1].formula = terms[1].formula + " + " + token._actor.system.details.level.value;
+    if (this.system.class.className === 'Warrior' && game.settings.get('dcc', 'automateWarriorInitiative')) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.ClassLevel'),
+        formula: this.system.details.level.value
+      })
     }
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
@@ -858,12 +862,6 @@ class DCCActor extends Actor {
     // Damage roll
     const damageRollResult = await this.rollDamage(weapon, options)
 
-    // A successful attack always inflicts a minimum of 1 point of damage
-    if (damageRollResult.roll._total <1) {
-       damageRollResult.roll._total = 1;
-       damageRollResult.damage = 1;
-    }
-
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
@@ -1026,20 +1024,20 @@ class DCCActor extends Actor {
     }
 
     // Add Strength or Agility modifier to attack rolls
-    let modifier;
-    let modifierLabel;
-    if ((this.system.class.className) && (game.settings.get('dcc', 'automateCombatModifier'))) {
+    let modifier
+    let modifierLabel
+    if (game.settings.get('dcc', 'automateCombatModifier')) {
       if (weapon.system.melee) {
-          modifier = " + " + this.system.abilities.str.mod;
-          modifierLabel = "DCC.AbilityStr";
+        modifier = this.system.abilities.str.mod
+        modifierLabel = 'DCC.AbilityStr'
       } else {
-          modifier = " + " + this.system.abilities.agl.mod;
-          modifierLabel = "DCC.AbilityAgl";
+        modifier = this.system.abilities.agl.mod
+        modifierLabel = 'DCC.AbilityAgl'
       }
       terms.push({
-              type: 'Modifier',
-              label: game.i18n.localize(modifierLabel),
-              formula: modifier
+        type: 'Modifier',
+        label: game.i18n.localize(modifierLabel) + ' ' + game.i18n.localize('DCC.Modifier'),
+        formula: modifier
       })
     }
 
@@ -1110,17 +1108,17 @@ class DCCActor extends Actor {
     ]
 
     // Add Strength modifier to damage rolls
-    let modifier;
-    let modifierLabel;
+    let modifier
+    let modifierLabel
     if ((this.system.class.className) && (game.settings.get('dcc', 'automateCombatModifier'))) {
       if (weapon.system.melee) {
-          modifier = " + " + this.system.abilities.str.mod;
-          modifierLabel = "DCC.AbilityStr";
-          terms.push({
-              type: 'Modifier',
-              label: game.i18n.localize(modifierLabel),
-              formula: modifier
-          })
+        modifier = ' + ' + this.system.abilities.str.mod
+        modifierLabel = 'DCC.AbilityStr'
+        terms.push({
+          type: 'Modifier',
+          label: game.i18n.localize(modifierLabel) + ' ' + game.i18n.localize('DCC.Modifier'),
+          formula: modifier
+        })
       }
     }
 
