@@ -664,6 +664,7 @@
   "DCC.SpellLost": "Lost",
   "DCC.SpellLostMessage": "Loses the spell!",
   "DCC.SpellLostMessageFormat": "Loses {spell}!",
+  "DCC.SpellLostWarning": "{actor} cannot cast '{spell}' again in this day!",
   "DCC.SpellMaterials": "Spellcasting Materials",
   "DCC.SpellName": "Spell Name",
   "DCC.SpellNone": "None",

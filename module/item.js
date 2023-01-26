@@ -55,6 +55,7 @@ class DCCItem extends Item {
    */
   async rollSpellCheck (abilityId = 'int', options = {}) {
     if (this.type !== 'spell') { return }
+    if (this.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss') && this.actor.system.details.sheetClass !== 'Cleric') { return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', { actor: this.actor.name, spell: this.name })) }
 
     const actor = this.actor
     const ability = actor.system.abilities[abilityId] || {}

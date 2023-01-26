@@ -238,14 +238,14 @@ export const registerSystemSettings = async function () {
   /**
    * Automatically add warrior's level to the initiative value
    */
-    game.settings.register('dcc', 'automateWarriorInititative', {
-      name: 'DCC.SettingAutomateWarriorInitiative',
-      hint: 'DCC.SettingAutomateWarriorInitiativeHint',
-      scope: 'world',
-      type: Boolean,
-      default: false,
-      config: true
-    })
+  game.settings.register('dcc', 'automateWarriorInitiative', {
+    name: 'DCC.SettingAutomateWarriorInitiative',
+    hint: 'DCC.SettingAutomateWarriorInitiativeHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
 
   /**
    * Automatically add Strength/Agility modifier to attack and hit rolls"
@@ -257,5 +257,5 @@ export const registerSystemSettings = async function () {
     type: Boolean,
     default: false,
     config: true
-  })    
+  })
 }
