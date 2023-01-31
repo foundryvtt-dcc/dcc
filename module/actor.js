@@ -1000,7 +1000,12 @@ class DCCActor extends Actor {
     const toHit = weapon.system.toHit
 
     /* Determine crit range */
-    const die = weapon.system.actionDie || this.getActionDice()[0].formula
+    let die = weapon.system.actionDie || this.getActionDice()[0].formula
+
+    /* Determine using untrained weapon */
+    const automateUntrainedAttack = game.settings.get('dcc', 'automateUntrainedAttack')
+    if (!weapon.system.trained && automateUntrainedAttack) { die = game.dcc.DiceChain.bumpDie(die, '-1') }
+
     let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
 
     /* If we don't have a valid formula, bail out here */
@@ -1017,7 +1022,7 @@ class DCCActor extends Actor {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
+        presets: this.getActionDice({ includeUntrained: !automateUntrainedAttack })
       },
       {
         type: 'Compound',

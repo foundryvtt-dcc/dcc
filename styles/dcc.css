@@ -858,6 +858,15 @@
   text-align: center;
 }
 
+.dcc .weapon-checkbox {
+  flex: 0 0 18px;
+  padding-left: 0px;
+}
+
+.dcc .weapon-headericon {
+  flex: 0 0 21px;
+}
+
 .dcc .weapon-controls {
   flex: 0 0 60px;
   padding-left: 10px;
