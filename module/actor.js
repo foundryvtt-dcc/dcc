@@ -995,7 +995,7 @@ class DCCActor extends Actor {
 
     /* Determine using untrained weapon */
     const automateUntrainedAttack = game.settings.get('dcc', 'automateUntrainedAttack')
-    if (!weapon.system.trained && automateUntrainedAttack) { die = game.dcc.DiceChain.bumpDie(die, '-1') }
+    if (!weapon.system.trained && automateUntrainedAttack) { die = game.dcc.DiceChain.bumpDie(die, '-1') + '[Untrained]' }
 
     let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
 
@@ -1048,6 +1048,16 @@ class DCCActor extends Actor {
         label: game.i18n.localize(modifierLabel) + ' ' + game.i18n.localize('DCC.Modifier'),
         formula: modifier
       })
+    }
+
+    if (this.system.class.className === 'Warrior' || this.system.class.className === 'Dwarf') {
+      if (weapon.name.toLowerCase().includes(this.system.class.luckyWeapon.toLowerCase()) && game.settings.get('dcc', 'automateLuckyWeaponAttack')) {
+        terms.push({
+          type: 'Modifier',
+          label: game.i18n.localize('DCC.AbilityLck') + ' ' + game.i18n.localize('DCC.Modifier'),
+          formula: this.system.abilities.lck.mod
+        })
+      }
     }
 
     /* Roll the Attack */
