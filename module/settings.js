@@ -248,11 +248,23 @@ export const registerSystemSettings = async function () {
   })
 
   /**
-   * Automatically add Strength/Agility modifier to attack and hit rolls"
+   * Automatically add Strength/Agility modifier to attack and hit rolls
    */
   game.settings.register('dcc', 'automateCombatModifier', {
     name: 'DCC.SettingAutomateCombatModifier',
     hint: 'DCC.SettingAutomateCombatModifierHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically applies -1d penalty on attack using untrained weapon
+   */
+  game.settings.register('dcc', 'automateUntrainedAttack', {
+    name: 'DCC.SettingAutomateUntrainedAttack',
+    hint: 'DCC.SettingAutomateUntrainedAttackHint',
     scope: 'world',
     type: Boolean,
     default: false,

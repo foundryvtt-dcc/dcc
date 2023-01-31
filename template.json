@@ -398,7 +398,8 @@
       "backstab": false,
       "backstabDamage": null,
       "doubleIfMounted": 0,
-      "critRange": 20
+      "critRange": 20,
+      "trained": false
     },
     "ammunition": {
       "templates": [
