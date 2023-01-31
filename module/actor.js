@@ -357,7 +357,11 @@ class DCCActor extends Actor {
     const init = this.system.attributes.init.value
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
 
-    if (this.items.filter(weapon => weapon.system.twoHanded && weapon.system.equipped) && game.settings.get('dcc', 'automateTwoHandedWeaponInit')) {die = '1d16['+game.i18n.localize('DCC.WeaponPropertiesTwoHanded')+']'}
+    const actorweapons = Object.values(this.items)
+
+    const weaponsTwoHandedEquipped = actorweapons.filter(system => system.twoHanded && system.equipped)
+
+    if (weaponsTwoHandedEquipped && game.settings.get('dcc', 'automateTwoHandedWeaponInit')) { die = '1d16[' + game.i18n.localize('DCC.WeaponPropertiesTwoHanded') + ']' }
 
     // Collate terms for the roll
     const terms = [
