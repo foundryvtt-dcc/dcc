@@ -270,4 +270,28 @@ export const registerSystemSettings = async function () {
     default: false,
     config: true
   })
+
+  /**
+   * Automatically set d16 as initiative roll die using two-handed weapon
+   */
+  game.settings.register('dcc', 'automateTwoHandedWeaponInit', {
+    name: 'DCC.SettingAutomateTwoHandedWeaponInit',
+    hint: 'DCC.SettingAutomateTwoHandedWeaponInitHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })  
+
+  /**
+   * Check weapon is equipped if not UI warning diplay appears and prevent rolls
+   */
+  game.settings.register('dcc', 'checkWeaponEquipment', {
+    name: 'DCC.SettingWeaponEquipmentCheck',
+    hint: 'DCC.SettingWeaponEquipmentCheckHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })  
 }
