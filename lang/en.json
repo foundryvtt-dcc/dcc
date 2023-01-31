@@ -565,6 +565,8 @@
   "DCC.SettingAutomateCombatModifierHint": "Automatically add Strength/Agility modifier to attack and Strength modifier to damage rolls",  
   "DCC.SettingAutomateFleetingLuck": "Automate Fleeting Luck",
   "DCC.SettingAutomateFleetingLuckHint": "Automatically track Fleeting Luck based on roll results",
+  "DCC.SettingAutomateLuckyWeapon": "Automate Warrior/Dwarf Lucky Weapon",
+  "DCC.SettingAutomateLuckyWeaponHint": "Automatically add warrior/dwarf luck modifier to attack rolls lucky weapon",  
   "DCC.SettingAutomateTwoHandedWeaponInit": "Automate initiative roll die penalty using two-handed weapon",
   "DCC.SettingAutomateTwoHandedWeaponInitHint": "Automatically set d16 as initiative roll die using two-handed weapon",
   "DCC.SettingAutomateUntrainedAttack": "Automate attack using untrained weapon",

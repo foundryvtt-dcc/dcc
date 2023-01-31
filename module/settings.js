@@ -284,6 +284,18 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Automatically add warrior/dwarf luck modifier to attack rolls lucky weapon
+   */
+  game.settings.register('dcc', 'automateLuckyWeaponAttack', {
+    name: 'DCC.SettingAutomateLuckyWeapon',
+    hint: 'DCC.SettingAutomateLuckyWeaponHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Check weapon is equipped if not UI warning diplay appears and prevent rolls
    */
   game.settings.register('dcc', 'checkWeaponEquipment', {
