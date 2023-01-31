@@ -281,7 +281,7 @@ export const registerSystemSettings = async function () {
     type: Boolean,
     default: false,
     config: true
-  })  
+  })
 
   /**
    * Check weapon is equipped if not UI warning diplay appears and prevent rolls
@@ -293,5 +293,5 @@ export const registerSystemSettings = async function () {
     type: Boolean,
     default: false,
     config: true
-  })  
+  })
 }
