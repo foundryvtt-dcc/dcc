@@ -353,9 +353,11 @@ class DCCActor extends Actor {
     }
 
     // Setup the roll
-    const die = this.system.attributes.init.die || '1d20'
+    let die = this.system.attributes.init.die || '1d20'
     const init = this.system.attributes.init.value
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
+
+    if (this.items.filter(weapon => weapon.system.twoHanded && weapon.system.equipped) && game.settings.get('dcc', 'automateTwoHandedWeaponInit')) {die = '1d16['+game.i18n.localize('DCC.WeaponPropertiesTwoHanded')+']'}
 
     // Collate terms for the roll
     const terms = [
@@ -868,6 +870,8 @@ class DCCActor extends Actor {
         options
       ))
     }
+
+    if (!weapon.system.equipped && game.settings.get('dcc', 'checkWeaponEquipment')) return ui.notifications.warn(game.i18n.localize('DCC.WeaponWarningUnequipped'))
 
     // Attack roll
     const attackRollResult = await this.rollToHit(weapon, options)
