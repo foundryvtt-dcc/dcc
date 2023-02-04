@@ -1,4 +1,16 @@
 {
+  "ACTOR.TypeNPC": "NPC",
+  "ACTOR.TypePlayer": "Player",
+
+  "ITEM.TypeAmmunition": "Ammunition",
+  "ITEM.TypeArmor": "Armor",
+  "ITEM.TypeEquipment": "Equipment",
+  "ITEM.TypeMount": "Mount",
+  "ITEM.TypeSkill": "Skill",
+  "ITEM.TypeSpell": "Spell",
+  "ITEM.TypeTreasure": "Treasure",
+  "ITEM.TypeWeapon": "Weapon",
+
   "Dungeon Crawl Classics": "Dungeon Crawl Classics",
   "DCC.AC": "AC",
   "DCC.AbbreviationCR": "CR",
