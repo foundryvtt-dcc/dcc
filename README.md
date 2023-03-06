@@ -20,6 +20,7 @@ You can purchase a module containing copyrighted Goodman Games content ready for
 * Alexander Dotor-Mohring (@adotor)
 * Radoslaw Grzanka (@radoslawg)
 * Tyler Kostuch (@TylerKostuch)
+* @sasquach45932 
 
 Contains some icon art from game-icons.net.
 
