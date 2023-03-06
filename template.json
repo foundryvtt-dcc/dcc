@@ -145,7 +145,8 @@
             "label": "DCC.DivineAid",
             "ability": "per",
             "value": 0,
-            "useDisapprovalRange": true
+            "useDisapprovalRange": true,
+            "drainDisapproval": 10
           },
           "turnUnholy": {
             "label": "DCC.TurnUnholy",

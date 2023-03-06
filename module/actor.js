@@ -584,6 +584,11 @@ class DCCActor extends Actor {
     if (skillItem && skillItem.system.config.showLastResult) {
       skillItem.update({ 'data.lastResult': roll.total })
     }
+
+    // Need to drain disapproval
+    if (skill && skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
+      this.applyDisapproval(skill.drainDisapproval)
+    }
   }
 
   /**
@@ -1402,11 +1407,11 @@ class DCCActor extends Actor {
   /**
    * Apply a point of disapproval
    */
-  async applyDisapproval () {
+  async applyDisapproval (amount = 1) {
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
     // Calculate new disapproval
-    const newRange = Math.min(parseInt(this.system.class.disapproval) + 1, 20)
+    const newRange = Math.min(parseInt(this.system.class.disapproval) + amount, 20)
 
     // Apply the new disapproval range
     this.update({
