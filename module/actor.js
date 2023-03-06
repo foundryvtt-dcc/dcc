@@ -13,6 +13,7 @@ class DCCActor extends Actor {
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
       abilities[abilityId].mod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].value] || 0
+      abilities[abilityId].maxMod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].max] || abilities[abilityId].mod
     }
 
     // Get configuration data
@@ -170,6 +171,13 @@ class DCCActor extends Actor {
         per: data.abilities.per.mod,
         int: data.abilities.int.mod,
         lck: data.abilities.lck.mod,
+        maxStr: data.abilities.str.maxMod,
+        maxAgi: data.abilities.agl.maxMod,
+        maxAgl: data.abilities.agl.maxMod,
+        maxSta: data.abilities.sta.maxMod,
+        maxPer: data.abilities.per.maxMod,
+        maxInt: data.abilities.int.maxMod,
+        maxLck: data.abilities.lck.maxMod,
         ref: data.saves.ref.value,
         frt: data.saves.frt.value,
         wil: data.saves.wil.value,
