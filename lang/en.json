@@ -753,6 +753,7 @@
   "DCC.VsDC": "vs DC.",
   "DCC.Warrior": "Warrior",
   "DCC.WarriorClassLink": "@Compendium[dcc-core-book.dcc-core-journals.D58z5BuoH4g0cqPJ]{Warrior}",
+  "DCC.WarriorLevel": "Warrior Level",
   "DCC.Weapon": "Weapon",
   "DCC.WeaponEquipped": "Equipped",
   "DCC.WeaponTrained": "Trained",

@@ -373,10 +373,10 @@ class DCCActor extends Actor {
     ]
 
     // Initiative: A warrior add his class level to his initiative rolls.
-    if (this.system.class.className === 'Warrior' && game.settings.get('dcc', 'automateWarriorInitiative')) {
+    if (this.system.details.sheetClass === 'Warrior' && game.settings.get('dcc', 'automateWarriorInitiative')) {
       terms.push({
         type: 'Modifier',
-        label: game.i18n.localize('DCC.ClassLevel'),
+        label: game.i18n.localize('DCC.WarriorLevel'),
         formula: this.system.details.level.value
       })
     }
@@ -1063,7 +1063,7 @@ class DCCActor extends Actor {
       })
     }
 
-    if (this.system.class.className === 'Warrior' || this.system.class.className === 'Dwarf') {
+    if (this.system.details.sheetClass === 'Warrior' || this.system.details.sheetClass === 'Dwarf') {
       if (weapon.name.toLowerCase().includes(this.system.class.luckyWeapon.toLowerCase()) && game.settings.get('dcc', 'automateLuckyWeaponAttack')) {
         terms.push({
           type: 'Modifier',
@@ -1142,7 +1142,7 @@ class DCCActor extends Actor {
     // Add Strength modifier to damage rolls
     let modifier
     let modifierLabel
-    if ((this.system.class.className) && (game.settings.get('dcc', 'automateCombatModifier'))) {
+    if (game.settings.get('dcc', 'automateCombatModifier')) {
       if (weapon.system.melee) {
         modifier = ' + ' + this.system.abilities.str.mod
         modifierLabel = 'DCC.AbilityStr'
