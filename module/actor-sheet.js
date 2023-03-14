@@ -531,24 +531,28 @@ class DCCActorSheet extends ActorSheet {
     } else if (classes.contains('weapon-draggable')) {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const weapon = this.actor.items.get(itemId)
-      dragData = {
-        type: 'Item',
-        dccType: 'Weapon',
-        actorId: this.actor.id,
-        data: weapon,
-        dccData: {
-          weapon: weapon,
-          slot: this._findDataset(event.currentTarget, 'itemSlot'),
-          backstab: classes.contains('backstab-button')
+      dragData = Object.assign(
+        weapon.toDragData(),
+        {
+          dccType: 'Weapon',
+          actorId: this.actor.id,
+          data: weapon,
+          dccData: {
+            weapon: weapon,
+            slot: this._findDataset(event.currentTarget, 'itemSlot'),
+            backstab: classes.contains('backstab-button')
+          }
         }
-      }
+      )
     } else if (classes.contains('item-draggable')) {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const item = this.actor.items.get(itemId)
-      dragData = {
-        type: 'Item',
-        data: item
-      }
+      dragData = Object.assign(
+        item.toDragData(),
+        {
+          data: item
+        }
+      )
     } else if (classes.contains('disapproval-range')) {
       dragData = {
         type: 'Apply Disapproval',
