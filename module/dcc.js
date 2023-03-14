@@ -589,8 +589,8 @@ async function createDCCMacro (data, slot) {
     delete data.dccData
   }
   if (!data.type || data.type === 'Macro') return
-  if (!('data' in data)) return ui.notifications.warn(game.i18n.localize('DCC.CreateMacroNotOwnedWarning'))
-  if (!handlers[data.type]) return ui.notifications.warn(game.i18n.localize('DCC.CreateMacroNoHandlerWarning'))
+  if (!('data' in data)) return
+  if (!handlers[data.type]) return
 
   // Call the appropriate function to generate a macro
   const macroData = handlers[data.type](data, slot)
