@@ -52,6 +52,10 @@
     <section class="sheet-body weapon">
         <div class="weapon-header-extras">
           <div class="resource">
+            <label class="resource-label" for="system.trained">{{localize "DCC.WeaponPropertiesTrained"}}</label>
+            <input type="checkbox" name="system.trained" data-dtype="Boolean" {{checked system.trained}}/>
+          </div>
+          <div class="resource">
             <label class="resource-label" for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
             <input type="checkbox" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
           </div>
