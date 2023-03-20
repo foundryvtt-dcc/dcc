@@ -10,55 +10,62 @@
             </div>
 
             <div class="flexrow">
-              <div class="resource flex2">
-                <label class="resource-label" for="system.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
-                <div class="flexrow">
-                  <input type="text" name="system.actionDie" class="flex1"
-                         value="{{system.actionDie}}"
-                         {{#if system.config.inheritActionDie}}
-                         title="{{localize 'DCC.InheritTooltip'}}"
-                         disabled
-                         {{/if}}
-                         placeholder="1d20" data-dtype="String"/>
-                  <input type="text" name="system.toHit" class="flex1"
-                         value="{{system.toHit}}"
-                         placeholder="+0" data-dtype="String"/>
-                </div>
-              </div>    
               <div class="resource flex1">
-                <label class="resource-label" for="system.critRange">{{localize "DCC.WeaponPropertiesCritOn"}}</label>
-                <input type="text" name="system.critRange"
-                       value="{{system.critRange}}"
-                       {{#if system.config.inheritCritRange}}
-                       title="{{localize 'DCC.InheritTooltip'}}"
-                       disabled
-                       {{/if}}
-                       placeholder="20" data-dtype="Number"/>
+                <input type="checkbox" name="system.equipped" data-dtype="Boolean" {{checked system.equipped}}/>
+                <label class="resource-label" for="system.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
               </div>
-              <div class="resource flex2">
-                <label class="resource-label" for="system.damage">{{localize "DCC.WeaponPropertiesDamage"}}</label>
-                <input type="text" name="system.damage"
-                       value="{{system.damage}}"
-                       placeholder="1d3" data-dtype="String"/>
+              <div class="resource flex1">
+                <input type="checkbox" name="system.trained" data-dtype="Boolean" {{checked system.trained}}/>
+                <label class="resource-label" for="system.trained">{{localize "DCC.WeaponPropertiesTrained"}}</label>
+              </div>
+              <div class="resource flex1">
+                <input type="checkbox" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
+                <label class="resource-label" for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
               </div>
               <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.Weight"}}</label>
-                  <input type="text" name="system.weight" value="{{system.weight}}" data-dtype="Number"/>
+                <input type="text" name="system.weight" value="{{system.weight}}" data-dtype="Number"/>
               </div>
             </div>
         </div>
     </header>
 
     <section class="sheet-body weapon">
+      <div class="weapon-header-basics">
+        <div class="resource">
+          <label class="resource-label" for="system.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
+          <input type="text" name="system.actionDie" class="flex2"
+                 value="{{system.actionDie}}"
+                 {{#if system.config.inheritActionDie}}
+                 title="{{localize 'DCC.InheritTooltip'}}"
+                 disabled
+                 {{/if}}
+                 placeholder="1d20" data-dtype="String"/>
+        </div>
+        <div class="resource">
+          <label class="resource-label" for="system.toHit">&nbsp;</label>
+          <input type="text" name="system.toHit" class="flex3"
+                 value="{{system.toHit}}"
+                 placeholder="+0" data-dtype="String"/>
+        </div>
+        <div class="resource">
+          <label class="resource-label" for="system.critRange">{{localize "DCC.WeaponPropertiesCritOn"}}</label>
+          <input type="text" name="system.critRange"
+                 value="{{system.critRange}}"
+                 {{#if system.config.inheritCritRange}}
+                 title="{{localize 'DCC.InheritTooltip'}}"
+                 disabled
+                 {{/if}}
+                 placeholder="20" data-dtype="Number"/>
+        </div>
+        <div class="resource">
+          <label class="resource-label" for="system.damage">{{localize "DCC.WeaponPropertiesDamage"}}</label>
+          <input type="text" name="system.damage"
+                 value="{{system.damage}}"
+                 placeholder="1d3" data-dtype="String"/>
+        </div>
+      </div>
         <div class="weapon-header-extras">
-          <div class="resource">
-            <label class="resource-label" for="system.trained">{{localize "DCC.WeaponPropertiesTrained"}}</label>
-            <input type="checkbox" name="system.trained" data-dtype="Boolean" {{checked system.trained}}/>
-          </div>
-          <div class="resource">
-            <label class="resource-label" for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
-            <input type="checkbox" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
-          </div>
           <div class="resource">
             <label class="resource-label" for="system.range">{{localize "DCC.WeaponPropertiesRange"}}</label>
             <input type="text" name="system.range" value="{{system.range}}"
