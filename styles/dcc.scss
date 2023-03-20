@@ -315,7 +315,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
 .dcc .armor-equipped {
   flex: 0 0 20px;
-  margin: 0 8px;
+  margin: 0 8px 0 0;
 }
 
 .dcc .armor-bonus {
@@ -764,7 +764,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
 .dcc .weapon-checkbox {
   flex: 0 0 18px;
-  padding-left: 0px;
+  padding-left: 0;
 }
 
 .dcc .weapon-headericon {
@@ -1336,7 +1336,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   .sheet-body.weapon {
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px 50px 50px minmax(80px, auto);
+    grid-template-rows: 50px 50px 50px 50px minmax(80px, auto);
   }
 
   .sheet-body.weapon .value-row {
@@ -1424,10 +1424,16 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
       grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
     }
 
+    .weapon-header-basics {
+      display: grid;
+      grid-column: 1 / span 3;
+      grid-template-columns: minmax(115px, auto) minmax(125px, auto) minmax(100px, auto) minmax(150px, auto);
+    }
+
     .weapon-header-extras {
       display: grid;
       grid-column: 1 / span 3;
-      grid-template-columns: minmax(60px, auto) minmax(45px, auto) minmax(50px, auto) minmax(100px, auto) minmax(80px, auto) minmax(145px, auto);
+      grid-template-columns: minmax(125px, auto) minmax(115px, auto) minmax(100px, auto) minmax(150px, auto);
     }
 
     .weapon-summary {
