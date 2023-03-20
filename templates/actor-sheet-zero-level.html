@@ -224,10 +224,10 @@
                 {{!-- Armor --}}
                 {{#* inline "armorRow"}}
                 <li class="armor item flexrow" data-item-id="{{id}}" data-item-index="{{index}}">
-                    <div class="item-image item-draggable flexrow"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
                     <input class="armor-equipped" type="checkbox"
                            name="itemUpdates.{{id}}.system.equipped"
                            data-dtype="Boolean" {{checked armor.system.equipped}}/>
+                    <div class="item-image item-draggable flexrow"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
                     <input class="armor-name" type="text"
                            name="itemUpdates.{{id}}.name"
                            value="{{armor.name}}"/>
@@ -249,8 +249,8 @@
                 <div class="armor-heading">{{localize "DCC.Armor"}}</div>
                 <ol class="flexcol armor-list">
                     <li class="flexrow armor-list-header">
-                        <span class="item-image"></span>
                         <span class="armor-equipped"></span>
+                        <span class="item-image"></span>
                         <span class="armor-name armor-name-label">{{localize "DCC.Name"}}</span>
                         <span class="armor-bonus">{{localize "DCC.Bonus"}}</span>
                         <span class="armor-checkpenalty">{{localize "DCC.Penalty"}}</span>
