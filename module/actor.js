@@ -1170,6 +1170,11 @@ class DCCActor extends Actor {
     )
     await damageRoll.evaluate({ async: true })
 
+    // A successful attack always inflicts a minimum of 1 point of damage (already handled with the custom card)
+    if (options.displayStandardCards && damageRoll._total < 1) {
+      damageRoll._total = 1
+    }
+
     return {
       rolled: true,
       roll: damageRoll,
