@@ -796,6 +796,15 @@
   margin: 5px 0 0;
 }
 
+.dcc .weapon-checkbox {
+  flex: 0 0 18px;
+  padding-left: 0px;
+}
+
+.dcc .weapon-headericon {
+  flex: 0 0 24px;
+}
+
 .dcc .backstab-button {
   background-image: url("./images/backstab.png");
   background-repeat: no-repeat;
@@ -856,15 +865,6 @@
 .dcc .weapon-special {
   flex: 0 0 1;
   text-align: center;
-}
-
-.dcc .weapon-checkbox {
-  flex: 0 0 18px;
-  padding-left: 0px;
-}
-
-.dcc .weapon-headericon {
-  flex: 0 0 24px;
 }
 
 .dcc .weapon-controls {
