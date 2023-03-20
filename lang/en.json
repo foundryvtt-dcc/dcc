@@ -767,6 +767,7 @@
   "DCC.WeaponPropertiesRange": "Range",
   "DCC.WeaponPropertiesRangeTooltip": "Not applicable for a melee weapon.",
   "DCC.WeaponPropertiesToHit": "To Hit",
+  "DCC.WeaponPropertiesTrained": "Trained",
   "DCC.WeaponPropertiesTwoHanded": "Two-Handed",
   "DCC.WeaponWarningUnequipped": "Cannot attack with unequipped weapon",
   "DCC.Weight": "Weight",
