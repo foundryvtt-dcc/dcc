@@ -14,7 +14,7 @@ class DCCRoll {
    * @param {Object} options  DCC roll specific options
    * @return {Promise}        The constructed roll object
    */
-  static async createRoll (formula, data = {}, options = {}) {
+  static createRoll (formula, data = {}, options = {}) {
     const showModifierDialog = options.showModifierDialog || false
     if (!options.rollData) {
       options.rollData = data

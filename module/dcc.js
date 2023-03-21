@@ -8,6 +8,7 @@
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
+import DCCCombatant from './combatant.js'
 import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
 import DCCRoll from './dcc-roll.js'
@@ -49,6 +50,7 @@ Hooks.once('init', async function () {
   // Define custom Entity classes
   CONFIG.Actor.documentClass = DCCActor
   CONFIG.Item.documentClass = DCCItem
+  CONFIG.Combatant.documentClass = DCCCombatant
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
