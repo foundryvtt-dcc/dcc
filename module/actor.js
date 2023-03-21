@@ -343,15 +343,9 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll Initiative
-   * @param {Object} token    The token to roll initiative for
+   * Generate Initiative Roll formula
    */
-  async rollInitiative (token, options = {}) {
-    // No selected token - bail out
-    if (!token) {
-      return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoTokenWarning'))
-    }
-
+  getInitiativeRoll (options = {}) {
     // Setup the roll
     let die = this.system.attributes.init.die || '1d20'
     const init = this.system.attributes.init.value
@@ -374,7 +368,7 @@ class DCCActor extends Actor {
       }
     ]
 
-    // Initiative: A warrior add his class level to his initiative rolls.
+    // Initiative: A warrior adds their class level to initiative rolls.
     if (this.system.details.sheetClass === 'Warrior' && game.settings.get('dcc', 'automateWarriorInitiative')) {
       terms.push({
         type: 'Modifier',
@@ -383,9 +377,23 @@ class DCCActor extends Actor {
       })
     }
 
-    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    return game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+  }
 
-    // evaluate roll, otherwise roll.total is undefined
+  /**
+   * Roll Initiative
+   * @param {Object} token    The token to roll initiative for
+   */
+  async rollInitiative (token, options = {}) {
+    // No selected token - bail out
+    if (!token) {
+      return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoTokenWarning'))
+    }
+
+    // Generate the roll formula based on actor and settings
+    const roll = await this.getInitiativeRoll(options)
+
+    // Evaluate roll, otherwise roll.total is undefined
     await roll.evaluate({ async: true })
 
     // Convert the roll to a chat message
