@@ -317,7 +317,7 @@ class DCCActor extends Actor {
         },
         {
           type: 'CheckPenalty',
-          formula: parseInt(this.system.attributes.ac.checkPenalty || 0),
+          formula: parseInt(this.system.attributes.ac.checkPenalty || '0'),
           apply: false
         }
       ]
@@ -346,7 +346,7 @@ class DCCActor extends Actor {
    * Generate Initiative Roll formula
    */
   getInitiativeRoll (options = {}) {
-    // Setup the roll
+    // Set up the roll
     let die = this.system.attributes.init.die || '1d20'
     const init = this.system.attributes.init.value
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
@@ -383,6 +383,7 @@ class DCCActor extends Actor {
   /**
    * Roll Initiative
    * @param {Object} token    The token to roll initiative for
+   * @param options
    */
   async rollInitiative (token, options = {}) {
     // No selected token - bail out
@@ -463,6 +464,7 @@ class DCCActor extends Actor {
   /**
    * Roll a Saving Throw
    * @param {String} saveId       The save ID (e.g. "ref")
+   * @param options
    */
   async rollSavingThrow (saveId, options = {}) {
     const save = this.system.saves[saveId]
@@ -567,7 +569,7 @@ class DCCActor extends Actor {
 
     terms.push({
       type: 'CheckPenalty',
-      formula: parseInt(this.system.attributes.ac.checkPenalty || 0),
+      formula: parseInt(this.system.attributes.ac.checkPenalty || '0'),
       apply: false // Always optional for skill checks
     })
 
@@ -585,7 +587,7 @@ class DCCActor extends Actor {
     // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
     if (skillTable) {
-      game.dcc.processSpellCheck(this, {
+      await game.dcc.processSpellCheck(this, {
         rollTable: skillTable,
         roll,
         item: skillItem,
@@ -661,7 +663,7 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Spell Check
-   * @param {String} abilityId       The ability used for the check (e.g. "per")
+   * @param options
    */
   async rollSpellCheck (options = {}) {
     if (!options.abilityId) {
@@ -673,7 +675,7 @@ class DCCActor extends Actor {
       const item = this.items.find(i => i.name === options.spell)
       if (item) {
         if (item.type === 'spell') {
-          // Roll through the item and return so we don't also roll a basic spell check
+          // Roll through the item and return, so we don't also roll a basic spell check
           item.rollSpellCheck(options.abilityId, options)
           return
         } else {
@@ -690,7 +692,7 @@ class DCCActor extends Actor {
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
     const die = this.system.attributes.actionDice.value
     const bonus = this.system.class.spellCheck ? this.system.class.spellCheck.toString() : '+0'
-    const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || 0)
+    const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || '0')
     const isIdolMagic = this.system.details.sheetClass === 'Cleric'
     const applyCheckPenalty = !isIdolMagic
     options.title = game.i18n.localize('DCC.SpellCheck')
@@ -749,7 +751,7 @@ class DCCActor extends Actor {
     }
 
     // Tell the system to handle the spell check result
-    game.dcc.processSpellCheck(this, {
+    await game.dcc.processSpellCheck(this, {
       rollTable: null,
       roll,
       item: null,
@@ -844,12 +846,11 @@ class DCCActor extends Actor {
 
     // If not found try finding it by slot
     if (!weapon) {
-      try {
-        // Verify this is a valid slot name
-        const result = weaponId.match(/^([mr])(\d+)$/)
-        if (!result) {
-          throw new Error('Invalid slot name')
-        }
+      // Verify this is a valid slot name
+      const result = weaponId.match(/^([mr])(\d+)$/)
+      if (!result) {
+        console.log('Invalid slot name')
+      } else {
         const isMelee = weaponId[0] === 'm' // 'm' or 'r'
         const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
         let weapons = this.itemTypes.weapon
@@ -858,7 +859,7 @@ class DCCActor extends Actor {
           weapons = [...weapons].sort((a, b) => a.name.localeCompare(b.name))
         }
         weapon = weapons.filter(i => !!i.system.melee === isMelee)[weaponIndex]
-      } catch (err) { }
+      }
     }
 
     // If all lookups fail, give up and show a warning
@@ -954,9 +955,9 @@ class DCCActor extends Actor {
 
       // Roll crits or fumbles
       if (attackRollResult.crit) {
-        this.rollCritical(options)
+        await this.rollCritical(options)
       } else if (attackRollResult.fumble) {
-        this.rollFumble(options)
+        await this.rollFumble(options)
       }
     } else {
       const attackRollHTML = this._formatAttackRoll(attackRollResult)
@@ -1123,7 +1124,7 @@ class DCCActor extends Actor {
    * @return {Object}            Object representing the results of the attack roll
    */
   async rollDamage (weapon, options = {}) {
-    /* Grab the the formula */
+    /* Grab the formula */
     let formula = weapon.system.damage
 
     /* Are we backstabbing and the weapon has special backstab damage? */
@@ -1242,7 +1243,7 @@ class DCCActor extends Actor {
 
     if (!options.displayStandardCards) {
       // Create the roll emote
-      const rollData = escape(JSON.stringify(roll))
+      const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
       const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
@@ -1329,7 +1330,7 @@ class DCCActor extends Actor {
 
     if (!options.displayStandardCards) {
       // Create the roll emote
-      const rollData = escape(JSON.stringify(roll))
+      const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
       const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
@@ -1363,7 +1364,7 @@ class DCCActor extends Actor {
    */
   _formatAttackRoll (rollResult) {
     if (rollResult.rolled) {
-      const rollData = escape(JSON.stringify(rollResult.roll))
+      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
 
       // Check for Crit/Fumble
       let critFailClass = ''
@@ -1382,7 +1383,7 @@ class DCCActor extends Actor {
    */
   _formatDamageRoll (rollResult) {
     if (rollResult.rolled) {
-      const rollData = escape(JSON.stringify(rollResult.roll))
+      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
       if (rollResult.damage > 0) {
         return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>`
       } else {
@@ -1394,13 +1395,13 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Format a Attack Bonus Roll roll for display in-line
+   * Format am Attack Bonus Roll for display in-line
    * @param {Object} rollResult   The roll result object for the roll
    * @return {string}             Formatted HTML containing roll
    */
   _formatAttackBonusRoll (rollResult) {
     if (rollResult.rolled) {
-      const rollData = escape(JSON.stringify(rollResult.roll))
+      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
       // Check for Crit/Fumble
       let critFailClass = ''
       if (Number(rollResult.attackBonus) >= 3) {
@@ -1444,12 +1445,12 @@ class DCCActor extends Actor {
 
     // Announce damage or healing results
     if (Math.abs(deltaHp) > 0) {
-      const locstring = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
+      const locString = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
       const messageData = {
         user: game.user.id,
         speaker,
         type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-        content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
+        content: game.i18n.format(locString, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
@@ -1539,13 +1540,14 @@ class DCCActor extends Actor {
     }
 
     // If we know the formula just roll it
-    this._onRollDisapproval(terms, options)
+    await this._onRollDisapproval(terms, options)
   }
 
   /**
    * Roll disapproval
-   * @param {Array} terms  Disapproval roll terms
    * @private
+   * @param formula
+   * @param options
    */
   async _onRollDisapproval (formula, options = {}) {
     try {

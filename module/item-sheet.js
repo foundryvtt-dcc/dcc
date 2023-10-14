@@ -209,7 +209,7 @@ export class DCCItemSheet extends ItemSheet {
   _onRollMercurialMagic (event) {
     event.preventDefault()
     const options = this._fillRollOptions(event)
-    // Prompt if there's an existing effect or we're using the roll modifier dialog
+    // Prompt if there's an existing effect, or we're using the roll modifier dialog
     if (!options.showModifierDialog && this.item.hasExistingMercurialMagic()) {
       new Dialog({
         title: game.i18n.localize('DCC.MercurialMagicRerollPrompt'),
@@ -239,6 +239,7 @@ export class DCCItemSheet extends ItemSheet {
   /**
    * Roll a new Mercurial Magic effect
    * @param {Event}  event   The originating click event
+   * @param options
    * @private
    */
   _rollMercurialMagic (event, options) {
@@ -249,6 +250,7 @@ export class DCCItemSheet extends ItemSheet {
   /**
    * Look up a Mercurial Magic effect
    * @param {Event}  event   The originating click event
+   * @param options
    * @private
    */
   _lookupMercurialMagic (event, options) {

@@ -1,5 +1,7 @@
-/* Tests for NPC Parser */
+/* global test, expect */
 /* eslint-env jest */
+
+/* Tests for NPC Parser */
 
 import parseNPCs from '../npc-parser.js'
 

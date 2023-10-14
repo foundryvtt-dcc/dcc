@@ -1,4 +1,4 @@
-/* global game, Roll, ui */
+/* global game, Roll, Regex, ui */
 
 import EntityImages from './entity-images.js'
 
@@ -97,7 +97,7 @@ function parseNPC (npcString) {
   return npc
 }
 
-/** Parse out a attack string into fields
+/** Parse out an attack string into fields
  * @param {string} attackString  Full weapon string for a single attack
  * @param {string} damageString  Damage string for blocks with damage separate
  */
@@ -125,7 +125,7 @@ function _parseAttack (attackString, damageString) {
 
     /*
      * If damage doesn't start with a number assume it's special
-     * Checking for a dice expression would exclude constant damage values
+     * Checking for a die expression would exclude constant damage values
      */
     if (_firstMatch(/\d+.*/, attack.damage) === null) {
       attack.description.summary = _firstMatch(/.*\((.*)\).*/, attackString) || attack.damage
@@ -140,11 +140,12 @@ function _parseAttack (attackString, damageString) {
   }
 }
 
-/** Match a regex against the string provided and return the first match group or null
- * @param {Regex}       Regular expression to match against, containing at least one group
- * @param {string}      The string to match against
+/**
+ * Match a regex against the string provided and return the first match group or null
+ * @param {RegExp} regex       Regular expression to match against, containing at least one group
+ * @param {string} string     The string to match against
  *
- * @ return {string} First matched group or null if no match
+ * @return {string} First matched group or null if no match
  */
 function _firstMatch (regex, string) {
   const result = string.match(regex)

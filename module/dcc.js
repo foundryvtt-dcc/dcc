@@ -311,8 +311,8 @@ async function getSkillTable (skillName) {
 /**
  * Handle the results of a spell check cast through any mechanism
  * Apply a roll to a table and apply spell check logic for crits and fumbles
- * @param {Object} rollTable     The table being rolled against
- * @param {Object} spellData     Information about the spell being cast
+ * @param {Object} actor        The actor rolling the check
+ * @param {Object} spellData    Information about the spell being cast
  * @returns {Object}            Table result object
  */
 async function processSpellCheck (actor, spellData) {
@@ -619,7 +619,7 @@ async function createDCCMacro (data, slot) {
  * Create a macro from an ability check drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCAbilityMacro (data, slot) {
   if (data.type !== 'Ability') return
@@ -645,65 +645,59 @@ function _createDCCAbilityMacro (data, slot) {
  * Create a macro from an initiative drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCInitiativeMacro (data, slot) {
   if (data.type !== 'Initiative') return
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.localize('DCC.Initiative'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token, game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro('initiative')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a hit dice drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCHitDiceMacro (data, slot) {
   if (data.type !== 'Hit Dice') return
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.localize('DCC.HitDiceRoll'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a saving throw drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCSaveMacro (data, slot) {
   if (data.type !== 'Save') return
 
   // Create the macro command
   const saveId = data.data
-  const macroData = {
+  return {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(saveId, 'savingThrow')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a skill roll drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCSkillMacro (data, slot) {
   if (data.type !== 'Skill') return
@@ -711,40 +705,36 @@ function _createDCCSkillMacro (data, slot) {
   // Create the macro command
   const skillId = data.data.skillId
   const skillName = game.i18n.localize(data.data.skillName)
-  const macroData = {
+  return {
     name: skillName,
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(skillId, 'skillCheck')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a luck die drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCLuckDieMacro (data, slot) {
   if (data.type !== 'Luck Die') return
   const die = data.data.die
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.localize('DCC.LuckDie'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollLuckDie(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'luckDie')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a spell check drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCSpellCheckMacro (data, slot) {
   if (data.type !== 'Spell Check') return
@@ -769,40 +759,36 @@ function _createDCCSpellCheckMacro (data, slot) {
  * Create a macro from an attack bonus drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCAttackBonusMacro (data, slot) {
   if (data.type !== 'Attack Bonus') return
   const die = data.data.die
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.localize('DCC.AttackBonus'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'attackBonus')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from an action die drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCActionDiceMacro (data, slot) {
   if (data.type !== 'Action Dice') return
   const die = data.data.die
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.format('DCC.ActionDiceMacroName', { die }),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.setActionDice('${die}') }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'defaultDice')
   }
-
-  return macroData
 }
 
 /**
@@ -810,7 +796,7 @@ function _createDCCActionDiceMacro (data, slot) {
  * Get an existing macro if one exists, otherwise create a new one.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Weapon') return
@@ -850,13 +836,11 @@ function _createDCCApplyDisapprovalMacro (data, slot) {
   if (data.type !== 'Apply Disapproval') return
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.format('DCC.ApplyDisapprovalMacroName'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.applyDisapproval() }',
     img: EntityImages.imageForMacro('applyDisapproval')
   }
-
-  return macroData
 }
 
 /**
@@ -869,18 +853,17 @@ function _createDCCRollDisapprovalMacro (data, slot) {
   if (data.type !== 'Roll Disapproval') return
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.format('DCC.RollDisapprovalMacroName'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollDisapproval() }',
     img: EntityImages.imageForMacro('rollDisapproval')
   }
-
-  return macroData
 }
 
 /**
  * Roll a weapon attack from a macro.
  * @param {string} itemId
+ * @param options
  * @return {Promise}
  */
 function rollDCCWeaponMacro (itemId, options = {}) {

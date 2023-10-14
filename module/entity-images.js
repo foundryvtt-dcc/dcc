@@ -4,12 +4,13 @@ class EntityImages {
   /**
    * Select an appropriate image from a map
    * @param {Object}  map       The map of entity types (or default) to image paths
-   * @param {String}  key       The ideal key
+   * @param type                The actor type
    * @param {String}  fallback  Fallback key
    * @returns {String}          The image to use
    */
   static _selectImage (map, type, fallback) {
     // Grab the default image if available, or the fallback if given
+    // @TODO Do we need to pass type here?
     let img = fallback ? this._selectImage(map, fallback) : map.default
 
     // Check for a more specialised image based on actor type

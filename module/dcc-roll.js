@@ -1,4 +1,4 @@
-/* global Roll */
+/* global DiceTerm, Roll */
 
 import * as RollModifier from './roll-modifier.js'
 
@@ -9,21 +9,21 @@ import * as RollModifier from './roll-modifier.js'
 class DCCRoll {
   /**
    * Create a roll with the same API as Roll's constructor
-   * @param {String} formula  The string formula to parse
+   * @param {Object} terms  The string formula to parse
    * @param {Object} data     The data object against which to parse attributes within the formula
    * @param {Object} options  DCC roll specific options
    * @return {Promise}        The constructed roll object
    */
-  static createRoll (formula, data = {}, options = {}) {
+  static createRoll (terms, data = {}, options = {}) {
     const showModifierDialog = options.showModifierDialog || false
     if (!options.rollData) {
       options.rollData = data
     }
 
     if (showModifierDialog) {
-      return RollModifier.showRollModifier(formula, options)
+      return RollModifier.showRollModifier(terms, options)
     } else {
-      return RollModifier.createRollFromTerms(formula, options)
+      return RollModifier.createRollFromTerms(terms, options)
     }
   }
 

@@ -296,7 +296,7 @@ export const registerSystemSettings = async function () {
   })
 
   /**
-   * Check weapon is equipped if not UI warning diplay appears and prevent rolls
+   * Check weapon is equipped if not UI warning display appears and prevent rolls
    */
   game.settings.register('dcc', 'checkWeaponEquipment', {
     name: 'DCC.SettingWeaponEquipmentCheck',

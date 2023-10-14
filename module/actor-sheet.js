@@ -117,8 +117,8 @@ class DCCActorSheet extends ActorSheet {
   /**
    * Organize and classify Items for Character sheets.
    *
-   * @param {Object} actorData The actor to prepare.
    * @return {undefined}
+   * @param sheetData
    */
   async _prepareItems (sheetData) {
     const actorData = sheetData.actor

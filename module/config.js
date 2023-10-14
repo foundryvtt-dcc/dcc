@@ -99,7 +99,6 @@ DCC.items = {
 
 /**
  * Spell casting modes
- * @type {String}
  */
 DCC.castingModes = {
   generic: 'DCC.SpellCastingModeGeneric',
@@ -109,7 +108,6 @@ DCC.castingModes = {
 
 /**
  * Attack Bonus modes
- * @type {String}
  */
 DCC.attackBonusModes = {
   flat: 'DCC.AttackBonusConfigModeFlat',

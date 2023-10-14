@@ -2,7 +2,7 @@
 
 /**
  * Clean a formula by stripping any spaces and duplicate signs
- * @param options {Object}
+ * @param formula {Object}
  * @return {Object}
  */
 function _cleanFormula (formula) {
@@ -11,7 +11,7 @@ function _cleanFormula (formula) {
 
 /**
  * Prepend a formula with a sign if one is not already present
- * @param options {Object}
+ * @param formula {Object}
  * @return {Object}
  */
 function _prependSign (formula) {
@@ -144,7 +144,7 @@ function DCCCompoundTerm (options) {
   const modifierLabel = options.modifierLabel || null
   const variableExpression = /@(\w+)/
   const terms = []
-  // Clean formula, then stick some duplicate pluses back in so they can be used to split the formula neatly
+  // Clean formula, then stick some duplicate pluses back in, so they can be used to split the formula neatly
   const inputTerms = _cleanFormula(options.formula).replace(/-/g, '+-').replace(/^\+/, '').split('+')
   let rawTerms = _cleanFormula(options.rawFormula).replace(/-/, '+-').replace(/^\+/, '').split('+')
 
@@ -193,11 +193,11 @@ const DCCTerms = {
 
 /**
  * Construct a DCC term of a specific type
- * @params type {String}     The type of term to constuct
+ * @params type {String}     The type of term to construct
  * @params options {Object}  Parameters for the constructor
  * @return {Object}
  */
-function ConstructDCCTerm (type, data = {}, options = {}) {
+function constructDCCTerm (type, data = {}, options = {}) {
   if (type in DCCTerms) {
     // Use foundry's Roll class to apply any substitutions
     if (options.formula) {
@@ -511,16 +511,16 @@ class RollModifierDialog extends FormApplication {
 
   /**
    * Construct the terms from an array
-   * @param terms {Object}
+   * @param termConstructors {Object}
    * @private
    */
   _constructTermsFromArray (termConstructors) {
     const terms = []
 
-    // Constuct and number the terms
+    // Construct and number the terms
     let index = 0
     for (const constructor of termConstructors) {
-      const constructedTerms = ConstructDCCTerm(constructor.type, this.options.rollData, constructor)
+      const constructedTerms = constructDCCTerm(constructor.type, this.options.rollData, constructor)
       for (const term of constructedTerms) {
         if (term) {
           term.index = index++

@@ -1,8 +1,10 @@
-/* Tests for Actor.js using Foundry Mocks */
-/* Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js */
-/* Mocks for DCCItem Class are found in __mocks__/item.js */
-/* eslint-env jest */
 /* global CONFIG, DCCItem, actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock, game */
+/**
+ * Tests for Actor.js using Foundry Mocks.
+ * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js
+ * Mocks for DCCItem Class are found in __mocks__/item.js
+ * eslint-env jest
+ **/
 
 import DCCActor from '../actor'
 
@@ -60,11 +62,15 @@ test('roll ability check', async () => {
         apply: false
       }
     ],
-    { },
+    {},
     {
       title: 'AbilityStr Check'
     })
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'AbilityStr Check', speaker: actor, flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'AbilityStr Check',
+    speaker: actor,
+    flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck' }
+  })
 
   // Check that rollUnder option is interpreted correctly
   await actor.rollAbilityCheck('lck', { rollUnder: true })
@@ -76,13 +82,17 @@ test('roll ability check', async () => {
         formula: '1d20'
       }
     ],
-    { },
+    {},
     {
       rollUnder: true,
       title: 'AbilityLck Check'
     }
   )
-  expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor, flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder' } })
+  expect(rollToMessageMock).toHaveBeenLastCalledWith({
+    flavor: 'AbilityLck Check',
+    speaker: actor,
+    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder' }
+  })
 
   // ...both ways
   await actor.rollAbilityCheck('lck', { rollUnder: false })
@@ -111,12 +121,16 @@ test('roll ability check', async () => {
         apply: false
       }
     ],
-    { },
+    {},
     {
       rollUnder: false,
       title: 'AbilityLck Check'
     })
-  expect(rollToMessageMock).toHaveBeenLastCalledWith({ flavor: 'AbilityLck Check', speaker: actor, flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck' } })
+  expect(rollToMessageMock).toHaveBeenLastCalledWith({
+    flavor: 'AbilityLck Check',
+    speaker: actor,
+    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck' }
+  })
 })
 
 test('roll saving throw', async () => {
@@ -141,7 +155,11 @@ test('roll saving throw', async () => {
       title: 'SavesFortitude Save'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesFortitude Save', speaker: actor, flags: { 'dcc.Save': 'frt', 'dcc.RollType': 'SavingThrow' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'SavesFortitude Save',
+    speaker: actor,
+    flags: { 'dcc.Save': 'frt', 'dcc.RollType': 'SavingThrow' }
+  })
 
   await actor.rollSavingThrow('ref')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
@@ -162,7 +180,11 @@ test('roll saving throw', async () => {
       title: 'SavesReflex Save'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesReflex Save', speaker: actor, flags: { 'dcc.Save': 'ref', 'dcc.RollType': 'SavingThrow' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'SavesReflex Save',
+    speaker: actor,
+    flags: { 'dcc.Save': 'ref', 'dcc.RollType': 'SavingThrow' }
+  })
 
   await actor.rollSavingThrow('wil')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
@@ -183,7 +205,11 @@ test('roll saving throw', async () => {
       title: 'SavesWill Save'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'SavesWill Save', speaker: actor, flags: { 'dcc.Save': 'wil', 'dcc.RollType': 'SavingThrow' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'SavesWill Save',
+    speaker: actor,
+    flags: { 'dcc.Save': 'wil', 'dcc.RollType': 'SavingThrow' }
+  })
 })
 
 test('roll initiative', async () => {
@@ -211,7 +237,11 @@ test('roll initiative', async () => {
       title: 'RollModifierTitleInitiative'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Initiative', speaker: actor, flags: { 'dcc.RollType': 'Initiative' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'Initiative',
+    speaker: actor,
+    flags: { 'dcc.RollType': 'Initiative' }
+  })
 })
 
 test('roll weapon attack', async () => {
@@ -388,7 +418,11 @@ test('roll skill check', async () => {
       title: 'Custom Die Skill'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkill' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'Custom Die Skill',
+    speaker: actor,
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkill' }
+  })
 
   await actor.rollSkillCheck('customDieAndValueSkill')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
@@ -422,7 +456,11 @@ test('roll skill check', async () => {
       title: 'Custom Die And Value Skill'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkill' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'Custom Die And Value Skill',
+    speaker: actor,
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkill' }
+  })
 
   await actor.rollSkillCheck('actionDieSkill')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
@@ -456,7 +494,11 @@ test('roll skill check', async () => {
       title: 'Action Die Skill'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkill' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'Action Die Skill',
+    speaker: actor,
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkill' }
+  })
 
   await actor.rollSkillCheck('customDieSkillWithInt')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(4)
@@ -484,7 +526,11 @@ test('roll skill check', async () => {
       title: 'Custom Die Skill With Int'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die Skill With Int (AbilityInt)', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkillWithInt' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'Custom Die Skill With Int (AbilityInt)',
+    speaker: actor,
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkillWithInt' }
+  })
 
   await actor.rollSkillCheck('customDieAndValueSkillWithPer')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(5)
@@ -518,7 +564,11 @@ test('roll skill check', async () => {
       title: 'Custom Die And Value Skill With Per'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Custom Die And Value Skill With Per (AbilityPer)', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkillWithPer' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'Custom Die And Value Skill With Per (AbilityPer)',
+    speaker: actor,
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkillWithPer' }
+  })
 
   await actor.rollSkillCheck('actionDieSkillWithLck')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(6)
@@ -552,7 +602,11 @@ test('roll skill check', async () => {
       title: 'Action Die Skill With Lck'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({ flavor: 'Action Die Skill With Lck (AbilityLck)', speaker: actor, flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkillWithLck' } })
+  expect(rollToMessageMock).toHaveBeenCalledWith({
+    flavor: 'Action Die Skill With Lck (AbilityLck)',
+    speaker: actor,
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkillWithLck' }
+  })
 })
 
 test('roll luck die', async () => {

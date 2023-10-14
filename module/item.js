@@ -52,6 +52,7 @@ class DCCItem extends Item {
   /**
    * Roll a Spell Check using this item
    * @param {String} abilityId    The ability used for this spell
+   * @param options
    */
   async rollSpellCheck (abilityId = 'int', options = {}) {
     if (this.type !== 'spell') { return }
@@ -149,7 +150,7 @@ class DCCItem extends Item {
     }
 
     // Tell the system to handle the spell check result
-    game.dcc.processSpellCheck(actor, {
+    await game.dcc.processSpellCheck(actor, {
       rollTable: resultsTable,
       roll,
       item: this,
@@ -168,6 +169,7 @@ class DCCItem extends Item {
   /**
    * Roll a or lookup new mercurial effect for a spell item
    * @param {Number} lookup   Optional entry number to lookup instead of rolling
+   * @param options
    * @return
    */
   async rollMercurialMagic (lookup = undefined, options = {}) {
@@ -295,7 +297,7 @@ class DCCItem extends Item {
         const roll = new Roll(formula.toString())
         await roll.evaluate({ async: true })
         updates['data.value.' + currency] = roll.total
-        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${escape(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
+        valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${encodeURIComponent(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
       }
@@ -331,7 +333,7 @@ class DCCItem extends Item {
     const currencyRank = CONFIG.DCC.currencyRank
     const currencyValue = CONFIG.DCC.currencyValue
     // Don't do currency conversions if the value isn't resolved
-    if (await this.needsValueRoll()) {
+    if (this.needsValueRoll()) {
       return
     }
     // Find the rank of this currency

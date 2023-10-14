@@ -53,7 +53,7 @@ class DCCActorParser extends FormApplication {
   async _updateObject (event, formData) {
     event.preventDefault()
 
-    createActors(formData.type, formData.folderId, formData.statblocks)
+    await createActors(formData.type, formData.folderId, formData.statblocks)
   }
 }
 
@@ -65,7 +65,7 @@ class DCCActorParser extends FormApplication {
  * @return {Promise}
  */
 async function createActors (type, folderId, actorData) {
-  // Process the statblock
+  // Process the stat block
   let parsedCharacters
   try {
     parsedCharacters = (type === 'Player') ? parsePCs(actorData) : parseNPCs(actorData)

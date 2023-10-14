@@ -457,7 +457,7 @@ class FleetingLuck {
     }
   }
 
-  /*
+  /**
    * Set flags for a chat message assuming critical success
    * @param {Object} flags    Flags object to update
    */
@@ -493,7 +493,7 @@ class FleetingLuck {
       content,
       sound: CONFIG.sounds.notification
     }
-    return await CONFIG.ChatMessage.documentClass.create(messageData)
+    return CONFIG.ChatMessage.documentClass.create(messageData)
   }
 
   /*

@@ -1,5 +1,7 @@
-/* Tests for PC Parser */
+/* global test, expect */
 /* eslint-env jest */
+
+/* Tests for PC Parser */
 
 import parsePCs from '../pc-parser.js'
 

@@ -3,7 +3,7 @@
 import EntityImages from './entity-images.js'
 
 /**
- *  Parses Player Stat Blocks (e.g. from Purple Sorceror) into an NPC sheet
+ *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an NPC sheet
  *
  *  @param {string} pcString The player stat block to import
  *  @return {Array}          Array of player character objects to create
@@ -257,17 +257,17 @@ function _parseJSONPCs (pcObject) {
 }
 
 /**
- * Splits a set of Purple Sorceror plain text characters and parses each character
+ * Splits a set of Purple Sorcerer plain text characters and parses each character
  *
- *  @param {String} pcString The plain text characters to import
- *  @return {Array}          Array of player character objects
+ *  @param {String} pcString  The plain text characters to import
+ *  @return {Object}          Object with character property that is an array of player character objects
  **/
 function _splitAndParsePlainPCsToJSON (pcString) {
   pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/[ \t]{2,}/g, ' ').replace(/^[ \t]+|[ \t]+$/g, '')
 
   const pcObjects = []
 
-  // Match the start of either a zero level or an upper level statblock
+  // Match the start of either a zero level or an upper level stat block
   const matches = pcString.matchAll(/(0-level Occupation:\s+(.+)[;\n$]|(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$])/gm)
 
   let first = true
@@ -446,10 +446,10 @@ function _parsePlainPCToJSON (pcString) {
   return pcObject
 }
 
-/** Return first match or null from a regex match result
- * @param {Array} Match result
- *
- * @ return {string} First matched group or null if no match
+/**
+ * Return first match or null from a regex match result
+ * @param {RegExpMatchArray} result result
+ * @return {string} First matched group or null if no match
  */
 function _firstMatch (result) {
   return (result && result.length > 0) ? result[1] : null
