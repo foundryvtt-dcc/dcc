@@ -1395,7 +1395,7 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Format am Attack Bonus Roll for display in-line
+   * Format an Attack Bonus Roll for display in-line
    * @param {Object} rollResult   The roll result object for the roll
    * @return {string}             Formatted HTML containing roll
    */
