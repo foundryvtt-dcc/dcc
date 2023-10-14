@@ -170,7 +170,7 @@ global.ChatMessage = ChatMessage
 /**
  * CONFIG
  */
-global.CONFIG = { DCC: DCC }
+global.CONFIG = { DCC }
 global.CONFIG.sounds = { dice: 'diceSound' }
 global.CONST = { CHAT_MESSAGE_TYPES: { EMOTE: 'emote' } }
 
@@ -370,11 +370,11 @@ global.mergeObject = function (original, other = {}, {
       // 1.1 - Recursively merge an inner object
       if ((tv === 'Object') && (tx === 'Object') && recursive) {
         global.mergeObject(x, v, {
-          insertKeys: insertKeys,
-          insertValues: insertValues,
-          overwrite: overwrite,
+          insertKeys,
+          insertValues,
+          overwrite,
           inplace: true,
-          enforceTypes: enforceTypes
+          enforceTypes
         }, depth)
 
         // 1.2 - Remove an existing key

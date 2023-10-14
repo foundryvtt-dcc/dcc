@@ -753,7 +753,7 @@ class DCCActor extends Actor {
       rollTable: null,
       roll,
       item: null,
-      flavor: flavor
+      flavor
     })
   }
 
@@ -898,7 +898,7 @@ class DCCActor extends Actor {
       if (attackRollResult.rolled) {
         attackRollResult.roll.toMessage({
           user: game.user.id,
-          speaker: speaker,
+          speaker,
           flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
           flags: {
             'dcc.RollType': 'ToHit',
@@ -908,7 +908,7 @@ class DCCActor extends Actor {
       } else {
         const messageData = {
           user: game.user.id,
-          speaker: speaker,
+          speaker,
           type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
           content: game.i18n.format('DCC.AttackRollInvalidFormula', {
             formula: attackRollResult.formula,
@@ -927,7 +927,7 @@ class DCCActor extends Actor {
       if (damageRollResult.rolled) {
         damageRollResult.roll.toMessage({
           user: game.user.id,
-          speaker: speaker,
+          speaker,
           flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name }),
           flags: {
             'dcc.RollType': 'Damage',
@@ -937,7 +937,7 @@ class DCCActor extends Actor {
       } else {
         const messageData = {
           user: game.user.id,
-          speaker: speaker,
+          speaker,
           type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
           content: game.i18n.format('DCC.DamageRollInvalidFormula', {
             formula: damageRollResult.formula,
@@ -985,13 +985,13 @@ class DCCActor extends Actor {
       const messageData = {
         user: game.user.id,
         itemId: weapon.id,
-        speaker: speaker,
+        speaker,
         type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
         content: game.i18n.format(emote, {
           weaponName: weapon.name,
           rollHTML: attackRollHTML,
-          damageRollHTML: damageRollHTML,
-          deedRollHTML: deedRollHTML,
+          damageRollHTML,
+          deedRollHTML,
           crit: critResult,
           fumble: fumbleResult
         }),

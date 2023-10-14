@@ -37,9 +37,9 @@ class SpellResult {
     messageData = mergeObject({
       flavor: game.i18n.localize('DCC.SpellCheckCardMessage'),
       user: game.user.id,
-      speaker: speaker,
+      speaker,
       type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-      roll: roll,
+      roll,
       sound: roll ? CONFIG.sounds.dice : null,
       flags
     }, messageData)

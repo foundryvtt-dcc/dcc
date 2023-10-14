@@ -466,11 +466,11 @@ function _parseWeapon (weaponString) {
     const damage = weaponData[3].replace('deed', '@ab')
     const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
     return {
-      name: name,
+      name,
       img: EntityImages.imageForItem('weapon'),
       attackMod: weaponData[2],
       attackDamage: damage,
-      melee: melee
+      melee
     }
   }
 
