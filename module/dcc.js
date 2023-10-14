@@ -818,7 +818,7 @@ function _createDCCWeaponMacro (data, slot) {
   const weaponSlot = data.system.slot
   const backstab = data.data.backstab
   const options = {
-    backstab: backstab
+    backstab
   }
 
   const macroData = {

@@ -319,7 +319,7 @@ class FleetingLuck {
     const currentValue = parseInt(user.getFlag('dcc', FleetingLuck.fleetingLuckFlag) || 0)
     await user.setFlag('dcc', FleetingLuck.fleetingLuckFlag, currentValue + amount)
     if (amount !== 0) {
-      await FleetingLuck.addChatMessage(game.i18n.format('DCC.FleetingLuckGiveMessage', { user: user.name, amount: amount }))
+      await FleetingLuck.addChatMessage(game.i18n.format('DCC.FleetingLuckGiveMessage', { user: user.name, amount }))
     }
     return await FleetingLuck.refresh()
   }

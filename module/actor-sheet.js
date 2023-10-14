@@ -52,7 +52,7 @@ class DCCActorSheet extends ActorSheet {
     // Basic data
     const isOwner = this.document.isOwner
     const data = {
-      isOwner: isOwner,
+      isOwner,
       limited: this.document.limited,
       options: this.options,
       editable: this.isEditable,
@@ -429,8 +429,8 @@ class DCCActorSheet extends ActorSheet {
         type: 'Ability',
         actorId: this.actor.id,
         data: {
-          abilityId: abilityId,
-          rollUnder: rollUnder
+          abilityId,
+          rollUnder
         }
       }
     } else if (classes.contains('ability-modifiers')) {
@@ -441,7 +441,7 @@ class DCCActorSheet extends ActorSheet {
           type: 'Ability',
           actorId: this.actor.id,
           data: {
-            abilityId: abilityId,
+            abilityId,
             rollUnder: false
           }
         }
@@ -474,8 +474,8 @@ class DCCActorSheet extends ActorSheet {
         type: 'Skill',
         actorId: this.actor.id,
         data: {
-          skillId: skillId,
-          skillName: skillName
+          skillId,
+          skillName
         }
       }
     } else if (classes.contains('luck-die')) {
@@ -508,8 +508,8 @@ class DCCActorSheet extends ActorSheet {
         data: spellItem,
         dccData: {
           ability: this._findDataset(event.currentTarget, 'ability'),
-          spell: spell,
-          img: img
+          spell,
+          img
         }
       }
     } else if (classes.contains('attack-bonus')) {
@@ -538,7 +538,7 @@ class DCCActorSheet extends ActorSheet {
           actorId: this.actor.id,
           data: weapon,
           dccData: {
-            weapon: weapon,
+            weapon,
             slot: this._findDataset(event.currentTarget, 'itemSlot'),
             backstab: classes.contains('backstab-button')
           }
@@ -754,10 +754,10 @@ class DCCActorSheet extends ActorSheet {
     const name = `New ${type.capitalize()}`
     // Prepare the item object.
     const itemData = {
-      name: name,
+      name,
       img: EntityImages.imageForItem(type),
-      type: type,
-      data: data
+      type,
+      data
     }
     // Remove the type from the dataset since it's in the itemData.type prop.
     delete itemData.data.type
