@@ -199,6 +199,80 @@ test('beekeeper', () => {
   expect(parsedNPC).toMatchObject([expected])
 })
 
+/* Test blacksmith text */
+test('blacksmith-no-weapons', () => {
+  const parsedNPC = parsePCs(
+    `0-level Occupation: Blacksmith
+Strength: 7 (-1)
+Agility: 7 (-1)
+Stamina: 12 (0)
+Personality: 17 (+2)
+Intelligence: 5 (-2)
+Luck: 12 (0)
+
+AC: 9; HP: 3
+Speed: 30; Init: -1; Ref: -1; Fort: 0; Will: 2
+
+Equipment: Crowbar (2 gp)
+Trade good: Steel tongs
+Starting Funds: 42 cp
+Lucky sign: Fox's cunning (Find/disable traps)
+Languages: Common`)
+  const expected = {
+    'attributes.init.value': '-1',
+    'attributes.speed.value': '30',
+    'details.occupation.value': 'Blacksmith',
+    'attributes.ac.value': '9',
+    'attributes.hp.value': '3',
+    'attributes.hp.max': '3',
+    'attributes.hitDice.value': '1d4',
+    'abilities.str.value': '7',
+    'abilities.agl.value': '7',
+    'abilities.sta.value': '12',
+    'abilities.per.value': '17',
+    'abilities.int.value': '5',
+    'abilities.lck.value': '12',
+    'abilities.str.max': '7',
+    'abilities.agl.max': '7',
+    'abilities.sta.max': '12',
+    'abilities.per.max': '17',
+    'abilities.int.max': '5',
+    'abilities.lck.max': '12',
+    'saves.frt.value': '0',
+    'saves.ref.value': '-1',
+    'saves.wil.value': '2',
+    'skills.findSecretDoors.value': -2,
+    items: [
+      {
+        name: 'Crowbar (2 gp)',
+        type: 'equipment',
+        img: 'systems/dcc/styles/images/item.webp'
+      },
+      {
+        name: 'Steel tongs',
+        type: 'equipment',
+        img: 'systems/dcc/styles/images/item.webp'
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        img: 'systems/dcc/styles/images/coins.webp',
+        system: {
+          value: {
+            cp: '42',
+            ep: '0',
+            gp: '0',
+            pp: '0',
+            sp: '0'
+          },
+          isCoins: true
+        }
+      }
+    ]
+  }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
 /* Test multiple zeroes */
 test('zeroes', () => {
   const parsedNPC = parsePCs(
@@ -373,7 +447,7 @@ Languages: Common `)
 /* Test Cleric's text */
 test('cleric', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Neutral Cleric (1st level)
@@ -563,7 +637,7 @@ Spells: (Spell Check: d20+2)
 /* Test Thief's text */
 test('thief', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Neutral Thief (6th level)
@@ -727,7 +801,7 @@ Cast Spell From Scroll (d16)`
 /* Test Halfling's text */
 test('halfling', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Chaotic Halfling (10th level)
@@ -871,7 +945,7 @@ Hide In Shadows: 11 (-4)`
 /* Test Warrior's text */
 test('warrior', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Lawful Warrior (8th level)
@@ -1007,7 +1081,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
 /* Test Wizard's text */
 test('wizard', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Chaotic Wizard (10th level)
@@ -1379,7 +1453,7 @@ Spells: (Spell Check: d20+12)
 /* Test Dwarf's text */
 test('dwarf', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Neutral Dwarf (3rd level)
@@ -1516,7 +1590,7 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
 /* Test Elf's text */
 test('elf', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Neutral Elf (3rd level)
@@ -1746,7 +1820,7 @@ Spells: (Spell Check: d20+5)
 /* Missing weapons test */
 test('underarmed_warrior', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Lawful Warrior (1st level)
@@ -1861,7 +1935,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
 /* Missing weapons test - with spaces before the newline */
 test('underarmed_warrior_again', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Lawful Warrior (1st level)
@@ -1976,7 +2050,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
 /* Test multiple uppers */
 test('uppers', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Neutral Elf (3rd level)

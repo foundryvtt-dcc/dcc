@@ -27,7 +27,7 @@ function _parseJSONPCs (pcObject) {
   // A full 500 character JSON object has a 'characters' array at the root
   if (pcObject.characters) {
     return pcObject.characters.map(x => _parseJSONPCs(x)[0])
-  // Otherwise we're looking at a JSON object representing a single character
+    // Otherwise we're looking at a JSON object representing a single character
   } else {
     const pc = {}
     if (pcObject.name) {
@@ -334,7 +334,7 @@ function _parsePlainPCToJSON (pcString) {
   pcObject.hitPoints = _firstMatch(pcString.match(/HP:\s+(\d+)[;\n$]/))
 
   const weaponString = pcString.match(/Weapon:\s+(.*)[;\n$]/)
-  const weapon = weaponString.length > 0 ? _parseWeapon(weaponString[1]) : null
+  const weapon = (weaponString && weaponString.length > 0) ? _parseWeapon(weaponString[1]) : null
   if (weapon) {
     pcObject.weapon = weapon.name
     pcObject.attackMod = weapon.attackMod
