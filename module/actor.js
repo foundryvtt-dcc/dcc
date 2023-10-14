@@ -847,19 +847,21 @@ class DCCActor extends Actor {
     // If not found try finding it by slot
     if (!weapon) {
       // Verify this is a valid slot name
-      const result = weaponId.match(/^([mr])(\d+)$/)
-      if (!result) {
-        console.log('Invalid slot name')
-      } else {
-        const isMelee = weaponId[0] === 'm' // 'm' or 'r'
-        const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
-        let weapons = this.itemTypes.weapon
-        if (this.system.config.sortInventory) {
-          // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
-          weapons = [...weapons].sort((a, b) => a.name.localeCompare(b.name))
+      try {
+        const result = weaponId.match(/^([mr])(\d+)$/)
+        if (!result) {
+          console.log('Invalid slot name')
+        } else {
+          const isMelee = weaponId[0] === 'm' // 'm' or 'r'
+          const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
+          let weapons = this.itemTypes.weapon
+          if (this.system.config.sortInventory) {
+            // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
+            weapons = [...weapons].sort((a, b) => a.name.localeCompare(b.name))
+          }
+          weapon = weapons.filter(i => !!i.system.melee === isMelee)[weaponIndex]
         }
-        weapon = weapons.filter(i => !!i.system.melee === isMelee)[weaponIndex]
-      }
+      } catch (err) { }
     }
 
     // If all lookups fail, give up and show a warning

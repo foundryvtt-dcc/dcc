@@ -1,3 +1,4 @@
+/* global jest, test, expect */
 /* eslint-env jest */
 import DCC from '../config.js'
 import DCCRoll from './dcc-roll.js'
