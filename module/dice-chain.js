@@ -67,7 +67,7 @@ class DiceChain {
     return 0
   }
 
-  /* Bump a die expression up or down the dice chain
+  /* Bump a dice expression up or down the dice chain
    * @param expression {String}   Die term formula
    * @param modifier {Number}     The amount of steps up or down the chain to adjust
    * @return {String}             New die term formula
@@ -88,7 +88,7 @@ class DiceChain {
     return expression
   }
 
-  /* Bump a die expression adjusting the number of dice
+  /* Bump a dice expression adjusting the number of dice
    * @param expression {String}   Die term formula
    * @param modifier {Number}     The number of dice to add or remove
    * @param maxCount {Number}     Optional maximum number of dice
