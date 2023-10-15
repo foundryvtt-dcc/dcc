@@ -1,4 +1,4 @@
-/* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
+/* global Item, game, ui, ChatMessage, Hooks, Roll, CONFIG, CONST */
 
 /**
  * Extend the base Item entity for DCC RPG
@@ -87,6 +87,8 @@ class DCCItem extends Item {
       sound: CONFIG.sounds.notification,
       flags
     }
+
+    Hooks.callAll('dcc.activateItem', messageData, options)
 
     return ChatMessage.create(messageData, options.messageOptions || {})
   }
