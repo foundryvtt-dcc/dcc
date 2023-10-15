@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="commons.js" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file:///Applications/Foundry Virtual Tabletop.app/Contents/Resources/app/public/scripts/commons.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file:///Applications/Foundry Virtual Tabletop.app/Contents/Resources/app/public/scripts/commons.js" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
