@@ -1,4 +1,4 @@
-/* global CONFIG, Dialog, expandObject, FormApplication, game, Hooks, ui, $ */
+/* global CONFIG, Dialog, expandObject, fromUuid, FormApplication, game, Hooks, ui, $ */
 
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
@@ -118,6 +118,21 @@ async function createActors (type, folderId, actorData) {
     }
   }
 
+  // Cache available items if importing players
+  // @TODO Implement a configuration mechanism for providing additional packs
+  const itemMap = {}
+  if (type === 'Player') {
+    for (const packPath of CONFIG.DCC.actorImporterItemPacks) {
+      const pack = game.packs.get(packPath)
+      if (!pack) continue
+
+      const index = await pack.getIndex()
+      for (const entry of index) {
+        itemMap[entry.name] = entry
+      }
+    }
+  }
+
   for (const parsedCharacter of parsedCharacters) {
     // Separate out owned items
     const items = parsedCharacter.items
@@ -160,6 +175,18 @@ async function createActors (type, folderId, actorData) {
       for (const sheetClass of classes) {
         if (sheetClass.includes(parsedCharacter['class.className'])) {
           actor.setFlag('core', 'sheetClass', sheetClass)
+        }
+      }
+    }
+
+    // Try and remap items to compendium items
+    // @TODO Implement a lookup of PSG names to system names for 100% success
+    if (type === 'Player') {
+      for (const originalItem of actor.items) {
+        if (originalItem.name in itemMap) {
+          const compendiumItem = await fromUuid(itemMap[originalItem.name].uuid)
+          actor.deleteEmbeddedDocuments('Item', [originalItem.id])
+          actor.createEmbeddedDocuments('Item', [compendiumItem.toObject()])
         }
       }
     }

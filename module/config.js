@@ -472,4 +472,24 @@ DCC.templates = {
 // Actor importer warning threshold
 DCC.actorImporterPromptThreshold = 25
 
+// Packs for finding items when importing actors
+DCC.actorImporterItemPacks = [
+  'dcc-core-book.dcc-core-ammunition',
+  'dcc-core-book.dcc-core-armor',
+  'dcc-core-book.dcc-core-equipment',
+  'dcc-core-book.dcc-core-weapons',
+  'dcc-core-book.dcc-core-mounts',
+  'dcc-core-book.dcc-core-spells-wizard-1',
+  'dcc-core-book.dcc-core-spells-wizard-2',
+  'dcc-core-book.dcc-core-spells-wizard-3',
+  'dcc-core-book.dcc-core-spells-wizard-4',
+  'dcc-core-book.dcc-core-spells-wizard-5',
+  'dcc-core-book.dcc-core-spells-cleric-1',
+  'dcc-core-book.dcc-core-spells-cleric-2',
+  'dcc-core-book.dcc-core-spells-cleric-3',
+  'dcc-core-book.dcc-core-spells-cleric-4',
+  'dcc-core-book.dcc-core-spells-cleric-5',
+  'dcc-core-book.dcc-core-spells-patron'
+]
+
 export default DCC
