@@ -50,6 +50,48 @@ class DCCItem extends Item {
   }
 
   /**
+   * Get the template to use for this item's chat card
+   */
+  get chatCardTemplate () {
+    return CONFIG.DCC.templates.defaultItemCard
+  }
+
+  /**
+   * Get data for the chat card template
+   */
+  get chatCardData () {
+    return {
+      name: this.name,
+      description: this.system.description.value
+    }
+  }
+
+  /**
+   * Activate an item, usually by sending its information to the chat
+   * @param {Object} options      Options to configure any special behaviours
+   */
+  async activate (options = {}) {
+    const speaker = ChatMessage.getSpeaker({ user: game.user })
+
+    const flags = {
+      'dcc.RollType': 'ActivateItem',
+      'dcc.ItemId': this.id
+    }
+
+    const messageData = {
+      content: await renderTemplate(this.chatCardTemplate, this.chatCardData),
+      flavor: game.i18n.localize('DCC.ActivateItemCardMessage'),
+      user: game.user.id,
+      speaker,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      sound: CONFIG.sounds.notification,
+      flags
+    }
+
+    return ChatMessage.create(messageData, options.messageOptions || {})
+  }
+
+  /**
    * Roll a Spell Check using this item
    * @param {String} abilityId    The ability used for this spell
    * @param options

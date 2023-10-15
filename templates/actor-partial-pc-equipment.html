@@ -113,7 +113,7 @@
           <input class="armor-equipped" type="checkbox"
                  name="itemUpdates.{{id}}.system.equipped"
                  data-dtype="Boolean" {{checked armor.system.equipped}}/>
-          <div class="item-image item-draggable flexrow"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
+          <div class="item-image item-draggable item-button flexrow" data-item-id="{{id}}"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
           <input class="armor-name" type="text"
                  name="itemUpdates.{{id}}.name"
                  value="{{armor.name}}"/>
@@ -167,7 +167,7 @@
     </li>
     {{/inline}}
     {{#* inline "ItemRow"}}
-    <li class="item item-draggable flexrow" data-item-id="{{item._id}}">
+    <li class="item item-draggable item-button flexrow" data-item-id="{{item._id}}">
         <div class="item-image flexrow"><img class="item-draggable flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
         <h4 class="item-name flex3">{{item.name}}</h4>
         <h4 class="item-quantity flex1">{{item.system.quantity}}</h4>

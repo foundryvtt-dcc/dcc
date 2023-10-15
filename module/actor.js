@@ -830,6 +830,17 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Activate an item
+   * @param {string} itemId      The identifier for the item being activated
+   * @param {Object} options     Options which configure any special behaviours
+   */
+  async activateItem(itemId, options = {}) {
+    let item = this.items.find(i => i.name === itemId || i.id === itemId)
+
+    await item.activate(options)
+  }
+
+  /**
    * Roll a weapon's attack, damage, and handle any crits
    * @param {string} weaponId    The weapon name or slot id (e.g. "m1", "r1")
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab

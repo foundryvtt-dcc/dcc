@@ -320,8 +320,9 @@ class DCCActorSheet extends ActorSheet {
       html.find('.backstab-button').click(this._onRollWeaponAttack.bind(this))
       html.find('.weapon-draggable').each(makeDraggable)
 
-      // Draggable items, including armor
+      // Draggable and clickable items, including armor
       html.find('.item-draggable').each(makeDraggable)
+      html.find('.item-button').click(this._onActivateItem.bind(this))
 
       // Only for editable sheets
       if (this.options.editable) {
@@ -741,6 +742,17 @@ class DCCActorSheet extends ActorSheet {
       backstab: event.currentTarget.classList.contains('backstab-button')
     })
     this.actor.rollWeaponAttack(slot, options)
+  }
+
+  /**
+   * Handle activating an item
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onActivateItem (event) {
+    event.preventDefault()
+    const options = this._fillRollOptions(event)
+    this.actor.activateItem(event.currentTarget.dataset.itemId, options)
   }
 
   /**

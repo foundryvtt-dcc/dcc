@@ -465,8 +465,9 @@ DCC.macroImages = {
 
 // Templates
 DCC.templates = {
+  defaultItemCard: 'systems/dcc/templates/chat-card-activate-item.html',
   rollModifierDialog: 'systems/dcc/templates/dialog-roll-modifiers.html',
-  spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
+  spellResult: 'systems/dcc/templates/chat-card-spell-result.html',
 }
 
 // Actor importer warning threshold

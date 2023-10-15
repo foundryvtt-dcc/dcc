@@ -59,6 +59,7 @@
   "DCC.ActionRWAK": "Ranged Weapon Attack",
   "DCC.ActionSave": "Saving Throw",
   "DCC.ActionUtil": "Utility",
+  "DCC.ActivateItemCardMessage": "Activates an item.",
   "DCC.ActorImport": "Import Actor(s)",
   "DCC.ActorImportConfirmationMessage": "This will import {number} actors. Are you sure you want to continue?",
   "DCC.ActorImportConfirmationPrompt": "Really import {number} actors?",
