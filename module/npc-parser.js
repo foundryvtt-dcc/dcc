@@ -1,4 +1,4 @@
-/* global game, Roll, Regex, ui */
+/* global game, Roll, ui */
 
 import EntityImages from './entity-images.js'
 
