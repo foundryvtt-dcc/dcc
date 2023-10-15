@@ -15,7 +15,7 @@ export const registerSystemSettings = async function () {
   /**
    * Gather a list of available compendium packs with RollTables
    */
-  const tableCompendiumNames = { '': '-' }
+  const tableCompendiumNames = { '': 'Automatic' }
   const tableCompendiums = []
   try {
     game.packs.forEach(function (pack) {
@@ -29,7 +29,7 @@ export const registerSystemSettings = async function () {
   /**
    * Gather a list of available RollTables from compendium packs
    */
-  const rollTables = { '': '-' }
+  const rollTables = { '': 'Automatic' }
   try {
     for (const pack of tableCompendiums) {
       await pack.getIndex()
