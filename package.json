@@ -50,7 +50,7 @@
     "url": "git+https://github.com/foundryvtt-dcc/dcc.git"
   },
   "scripts": {
-    "format": "standard --fix; npx stylelint '**/*.scss'",
+    "format": "standard --fix && stylelint \"**/*.scss\"",
     "test": "jest",
     "scss": "sass styles/dcc.scss styles/dcc.css"
   },
