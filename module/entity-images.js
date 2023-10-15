@@ -8,16 +8,11 @@ class EntityImages {
    * @param {String}  fallback  Fallback key
    * @returns {String}          The image to use
    */
-  static _selectImage (map, type, fallback) {
-    // Grab the default image if available, or the fallback if given
-    // @TODO Do we need to pass type here?
-    let img = fallback ? this._selectImage(map, fallback) : map.default
-
-    // Check for a more specialised image based on actor type
+  static _selectImage (map, type = 'default', fallback = '') {
+    let img = fallback
     if (map[type]) {
       img = map[type]
     }
-
     return img
   }
 
@@ -45,7 +40,7 @@ class EntityImages {
    * @param {String} fallback   Fallback category
    * @returns {String}          The image to use
    */
-  static imageForMacro (macro, fallback) {
+  static imageForMacro (macro, fallback = '') {
     return this._selectImage(CONFIG.DCC.macroImages, macro, fallback)
   }
 }
