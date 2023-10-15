@@ -888,6 +888,9 @@ class DCCActor extends Actor {
 
     // Attack roll
     const attackRollResult = await this.rollToHit(weapon, options)
+    if (attackRollResult.naturalCrit) {
+      options.naturalCrit = true
+    }
 
     // Damage roll
     const damageRollResult = await this.rollDamage(weapon, options)
@@ -978,7 +981,9 @@ class DCCActor extends Actor {
 
       if (attackRollResult.crit) {
         critResult = await this.rollCritical(options)
-        game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+        if (options.naturalCrit) {
+          game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+        }
       } else if (attackRollResult.fumble) {
         fumbleResult = await this.rollFumble(options)
         game.dcc.FleetingLuck.updateFlagsForFumble(flags)
@@ -1105,8 +1110,9 @@ class DCCActor extends Actor {
     }
 
     /* Check for crit or fumble */
-    const crit = (d20RollResult > 1 && (d20RollResult >= critRange || options.backstab))
     const fumble = (d20RollResult === 1)
+    const naturalCrit = d20RollResult >= critRange
+    const crit = !fumble && (naturalCrit || options.backstab)
 
     return {
       rolled: true,
@@ -1115,6 +1121,7 @@ class DCCActor extends Actor {
       hitsAc: attackRoll.total,
       d20Roll: d20RollResult,
       crit,
+      naturalCrit,
       fumble
     }
   }
@@ -1261,7 +1268,11 @@ class DCCActor extends Actor {
         'dcc.RollType': 'CriticalHit',
         'dcc.ItemId': options.weaponId
       }
-      game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+
+      // Fleeting luck if's a real crit (e.g. not forced by a backstab)
+      if (options.naturalCrit) {
+        game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+      }
 
       // Display the raw crit roll
       await roll.toMessage({
