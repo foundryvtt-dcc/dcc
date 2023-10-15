@@ -34,6 +34,7 @@ Hooks.once('init', async function () {
 
   CONFIG.DCC = DCC
 
+  // noinspection JSUndefinedPropertyAssignment,JSUnusedGlobalSymbols
   game.dcc = {
     DCCActor,
     DCCRoll,
@@ -109,7 +110,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
     'systems/dcc/templates/roll-modifier-partial-spellburn.html'
   ]
-  loadTemplates(templatePaths)
+  await loadTemplates(templatePaths)
 
   // Handlebars helper to format attack bonus correctly
   Handlebars.registerHelper('formatAttackBonus', function (attackBonus) {
@@ -300,7 +301,7 @@ async function getSkillTable (skillName) {
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name === tablePath[2])
       if (entry) {
-        return await pack.getDocument(entry._id)
+        return pack.getDocument(entry._id)
       }
     }
   }
@@ -409,7 +410,7 @@ async function processSpellCheck (actor, spellData) {
       // Check if our natural roll was inside the disapproval range
       if (automate && naturalRoll <= actor.system.class.disapproval) {
         // Trigger disapproval
-        actor.rollDisapproval(naturalRoll)
+        await actor.rollDisapproval(naturalRoll)
 
         // This is an automatic failure!
         success = false
@@ -418,7 +419,7 @@ async function processSpellCheck (actor, spellData) {
       // Check for a failure to cast
       if (automate && !success) {
         // Add a point of disapproval
-        actor.applyDisapproval()
+        await actor.applyDisapproval()
       }
     }
   } catch (ex) {
