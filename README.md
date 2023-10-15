@@ -18,6 +18,7 @@ You can purchase a module containing copyrighted Goodman Games content ready for
 ###### Contributors
 * Connor Stone (@ckwk)
 * Alexander Dotor-Mohring (@adotor)
+* Jonathan Dorety (@jdorety)
 * Radoslaw Grzanka (@radoslawg)
 * Tyler Kostuch (@TylerKostuch)
 * @sasquach45932 
