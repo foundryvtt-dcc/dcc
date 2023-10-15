@@ -44,6 +44,7 @@ Hooks.once('init', async function () {
     getSkillTable,
     processSpellCheck,
     rollDCCWeaponMacro, // This is called from macros, don't remove
+    activateDCCItemMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove
     getMacroOptions // This is called from macros, don't remove
   }
@@ -579,6 +580,7 @@ function createDCCMacro (data, slot) {
     'Attack Bonus': _createDCCAttackBonusMacro,
     'Action Dice': _createDCCActionDiceMacro,
     Weapon: _createDCCWeaponMacro,
+    Item: _createDCCItemMacro,
     'Apply Disapproval': _createDCCApplyDisapprovalMacro,
     'Roll Disapproval': _createDCCRollDisapprovalMacro
   }
@@ -835,6 +837,30 @@ function _createDCCWeaponMacro (data, slot) {
 }
 
 /**
+ * Create a Macro from an item drop.
+ * Get an existing macro if one exists, otherwise create a new one.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Object}
+ */
+function _createDCCItemMacro (data, slot) {
+  const item = data.system.item
+
+  const macroData = {
+    name: item.name,
+    command: `game.dcc.activateDCCItemMacro("${item._id}", game.dcc.getMacroOptions());`,
+    img: item.img
+  }
+
+  // Replace missing or default weapon icon with our default
+  if (!macroData.img || macroData.img === 'icons/svg/mystery-man.svg') {
+    macroData.img = EntityImages.imageForItem(data.data.item.type)
+  }
+
+  return macroData
+}
+
+/**
  * Apply disapproval to an actor
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
@@ -883,6 +909,22 @@ function rollDCCWeaponMacro (itemId, options = {}) {
 
   // Trigger the weapon roll
   return actor.rollWeaponAttack(itemId, options)
+}
+
+/**
+ * Send data on an item to chat
+ * @param {string} itemId
+ * @param {Object} options
+ */
+function activateDCCItemMacro (itemId, options = {}) {
+  const speaker = ChatMessage.getSpeaker()
+  let actor
+  if (speaker.token) actor = game.actors.tokens[speaker.token]
+  if (!actor) actor = game.actors.get(speaker.actor)
+  if (!actor) return ui.notifications.warn(game.i18n.localize('DCC.MacroNoTokenSelected'))
+
+  // Activate the item
+  return actor.activateItem(itemId, options)
 }
 
 /**
