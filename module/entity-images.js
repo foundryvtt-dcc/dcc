@@ -8,12 +8,12 @@ class EntityImages {
    * @param {String}  fallback  Fallback key
    * @returns {String}          The image to use
    */
-  static _selectImage (map, type = 'default', fallback = '') {
-    let img = fallback
+  static _selectImage (map, type = 'default', fallback = 'default') {
     if (map[type]) {
-      img = map[type]
+      return map[type]
+    } else {
+      return map[fallback]
     }
-    return img
   }
 
   /**
