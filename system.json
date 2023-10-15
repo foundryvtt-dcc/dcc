@@ -6,7 +6,7 @@
   "version": "0.38.0",
   "minimumCoreVersion": "10",
   "compatibility": {
-    "minimum": "10",
+    "minimum": "11",
     "verified": "11"
   },
   "templateVersion": 9,
