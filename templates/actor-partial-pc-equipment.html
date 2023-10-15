@@ -113,7 +113,7 @@
           <input class="armor-equipped" type="checkbox"
                  name="itemUpdates.{{id}}.system.equipped"
                  data-dtype="Boolean" {{checked armor.system.equipped}}/>
-          <div class="item-image item-draggable item-button flexrow" data-item-id="{{id}}"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
+          <div class="item-image item-draggable item-button flexrow"><img class="item-draggable flex1" src="{{armor.img}}" title="{{armor.name}}" width="24" height="24"/></div>
           <input class="armor-name" type="text"
                  name="itemUpdates.{{id}}.name"
                  value="{{armor.name}}"/>
@@ -167,8 +167,8 @@
     </li>
     {{/inline}}
     {{#* inline "ItemRow"}}
-    <li class="item item-draggable item-button flexrow" data-item-id="{{item._id}}">
-        <div class="item-image flexrow"><img class="item-draggable flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+    <li class="item item-draggable flexrow" data-item-id="{{item._id}}">
+      <div class="item-image item-button flexrow"><img class="item-draggable flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
         <h4 class="item-name flex3">{{item.name}}</h4>
         <h4 class="item-quantity flex1">{{item.system.quantity}}</h4>
         <div class="item-controls">
@@ -206,7 +206,7 @@
     {{!-- Treasure --}}
     {{#* inline "TreasureRow"}}
     <li class="item item-draggable flexrow" data-item-id="{{item._id}}">
-        <div class="item-image flexrow"><img class="item-draggable flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+      <div class="item-image item-button flexrow"><img class="item-draggable flex1" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
         <h4 class="item-name">{{item.name}}</h4>
         <h4 class="item-is-coins">{{#if item.isCoins}}({{localize "DCC.AsCoins"}}){{/if}}</h4>
         <h4 class="item-pp currency-field">{{item.value.pp}}</h4>
@@ -236,15 +236,15 @@
           </div>
         </li>
         <li class="item flexrow">
-          <div class="item-image flexrow"><img class="flex1" src="systems/dcc/styles/images/game-icons-net/coins.svg" title="{{localize 'DCC.Funds'}}" width="24" height="24"/></div>
-            <h4 class="item-name">{{localize 'DCC.Funds'}}</h4>
-            <h4 class="item-is-coins"></h4>
-            <input class="item-pp currency-field" type="text" name="system.currency.pp" placeholder="0" value="{{numberFormat system.currency.pp decimals=0 sign=false}}" data-dtype="number"/>
-            <input class="item-ep currency-field" type="text" name="system.currency.ep" placeholder="0" value="{{numberFormat system.currency.ep decimals=0 sign=false}}" data-dtype="number"/>
-            <input class="item-gp currency-field" type="text" name="system.currency.gp" placeholder="0" value="{{numberFormat system.currency.gp decimals=0 sign=false}}" data-dtype="number"/>
-            <input class="item-sp currency-field" type="text" name="system.currency.sp" placeholder="0" value="{{numberFormat system.currency.sp decimals=0 sign=false}}" data-dtype="number"/>
-            <input class="item-cp currency-field" type="text" name="system.currency.cp" placeholder="0" value="{{numberFormat system.currency.cp decimals=0 sign=false}}" data-dtype="number"/>
-            <div class="item-controls" />
+          <div class="item-image funds-button flexrow"><img class="flex1" src="systems/dcc/styles/images/game-icons-net/coins.svg" title="{{localize 'DCC.Funds'}}" width="24" height="24"/></div>
+          <h4 class="item-name">{{localize 'DCC.Funds'}}</h4>
+          <h4 class="item-is-coins"></h4>
+          <input class="item-pp currency-field" type="text" name="system.currency.pp" placeholder="0" value="{{numberFormat system.currency.pp decimals=0 sign=false}}" data-dtype="number"/>
+          <input class="item-ep currency-field" type="text" name="system.currency.ep" placeholder="0" value="{{numberFormat system.currency.ep decimals=0 sign=false}}" data-dtype="number"/>
+          <input class="item-gp currency-field" type="text" name="system.currency.gp" placeholder="0" value="{{numberFormat system.currency.gp decimals=0 sign=false}}" data-dtype="number"/>
+          <input class="item-sp currency-field" type="text" name="system.currency.sp" placeholder="0" value="{{numberFormat system.currency.sp decimals=0 sign=false}}" data-dtype="number"/>
+          <input class="item-cp currency-field" type="text" name="system.currency.cp" placeholder="0" value="{{numberFormat system.currency.cp decimals=0 sign=false}}" data-dtype="number"/>
+          <div class="item-controls" />
         </li>
         {{#each actor.treasure as |treasure id|}}
         {{> TreasureRow item=treasure id=id}}

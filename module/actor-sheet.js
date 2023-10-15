@@ -324,6 +324,9 @@ class DCCActorSheet extends ActorSheet {
       html.find('.item-draggable').each(makeDraggable)
       html.find('.item-button').click(this._onActivateItem.bind(this))
 
+      // Click funds to spend them
+      html.find('.funds-button').click(this._onSpendFunds.bind(this))
+
       // Only for editable sheets
       if (this.options.editable) {
         // Add Inventory Item
@@ -752,7 +755,18 @@ class DCCActorSheet extends ActorSheet {
   _onActivateItem (event) {
     event.preventDefault()
     const options = this._fillRollOptions(event)
-    this.actor.activateItem(event.currentTarget.dataset.itemId, options)
+    this.actor.activateItem(event.currentTarget.parentElement.dataset.itemId, options)
+  }
+
+  /**
+   * Handle spending funds
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onSpendFunds (event) {
+    event.preventDefault()
+    const options = this._fillRollOptions(event)
+    this.actor.spendFunds(options)
   }
 
   /**

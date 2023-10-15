@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
+/* global Actor, ChatMessage, CONFIG, CONST, game, Hooks, ui, Roll, mergeObject */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -834,10 +834,19 @@ class DCCActor extends Actor {
    * @param {string} itemId      The identifier for the item being activated
    * @param {Object} options     Options which configure any special behaviours
    */
-  async activateItem(itemId, options = {}) {
-    let item = this.items.find(i => i.name === itemId || i.id === itemId)
+  async activateItem (itemId, options = {}) {
+    const item = this.items.find(i => i.name === itemId || i.id === itemId)
 
     await item.activate(options)
+  }
+
+  /**
+   * Spend funds
+   * @param {Object} options     Options which configure any special behaviours
+   */
+  async spendFunds (options = {}) {
+    // @TODO: Implement a dialog for spending (or adding?) funds
+    Hooks.callAll('dcc.spendFunds', this, options)
   }
 
   /**
