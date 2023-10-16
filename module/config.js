@@ -494,23 +494,23 @@ DCC.actorImporterItemPacks = [
 
 // Name remappings for the actor importer
 DCC.actorImporterNameMap = {
-  'Hammer (as club)': [ 'Club' ],
-  'Razor (as dagger)': [ 'Dagger' ],
-  'Cleaver (as axe)': [ 'Axe' ],
-  'Cudgel (as staff)': [ 'Staff' ],
-  'Awl (as dagger)': [ 'Dagger' ],
-  'Crowbar (as club)': [ 'Club' ],
-  'Shovel (as staff)': [ 'Staff' ],
-  'Pick (as club)': [ 'Club' ],
-  'Quill (as dart)': [ 'Dart' ],
-  'Scissors (as dagger)': [ 'Dagger' ],
-  'Pitchfork (as spear)': [ 'Spear' ],
-  'Trowel (as dagger)': [ 'Dagger' ],
-  'Knife (as dagger)': [ 'Dagger' ],
-  'Stick (as club)': [ 'Club' ],
-  'Patron Bond/Invoke Patron': [ 'Patron Bond', 'Patron Bond (Self)', 'Patron Bond (Other)', 'Invoke Patron' ],
-  'Demon Summoning': [ 'Demon Summoning', 'Demon Summoning - No Patron', 'Demon Summoning - Patron', 'Demon Summoning - True Name' ],
-  'Blessing': [ 'Blessing', 'Blessing Self', 'Blessing Ally', 'Blessing Object' ]
+  'Hammer (as club)': ['Club'],
+  'Razor (as dagger)': ['Dagger'],
+  'Cleaver (as axe)': ['Axe'],
+  'Cudgel (as staff)': ['Staff'],
+  'Awl (as dagger)': ['Dagger'],
+  'Crowbar (as club)': ['Club'],
+  'Shovel (as staff)': ['Staff'],
+  'Pick (as club)': ['Club'],
+  'Quill (as dart)': ['Dart'],
+  'Scissors (as dagger)': ['Dagger'],
+  'Pitchfork (as spear)': ['Spear'],
+  'Trowel (as dagger)': ['Dagger'],
+  'Knife (as dagger)': ['Dagger'],
+  'Stick (as club)': ['Club'],
+  'Patron Bond/Invoke Patron': ['Patron Bond', 'Patron Bond (Self)', 'Patron Bond (Other)', 'Invoke Patron'],
+  'Demon Summoning': ['Demon Summoning', 'Demon Summoning - No Patron', 'Demon Summoning - Patron', 'Demon Summoning - True Name'],
+  Blessing: ['Blessing', 'Blessing Self', 'Blessing Ally', 'Blessing Object']
 }
 
 export default DCC
