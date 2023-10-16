@@ -181,35 +181,45 @@ async function createActors (type, folderId, actorData) {
 
     // Try and remap items to compendium items
     if (type === 'Player') {
-      for (const originalItem of actor.items) {
+      const items = [...actor.items]  // Copy the actor's items array
+      for (const originalItem of items) {
         // Apply name remapping
-        const name = CONFIG.DCC.actorImporterNameMap[originalItem.name] ?? originalItem.name
+        const names = CONFIG.DCC.actorImporterNameMap[originalItem.name] ?? [ originalItem.name ]
+        const newItems = []
 
-        // Check for an item of this type in the cache
-        const mapEntry = itemMap[name]
-        if (mapEntry && mapEntry.type === originalItem.type) {
-          // Lookup the item document
-          const compendiumItem = await fromUuid(mapEntry.uuid)
-          const newObject = compendiumItem.toObject()
+        for (const name of names) {
+          // Check for an item of this type in the cache
+          const mapEntry = itemMap[name]
+          if (mapEntry && mapEntry.type === originalItem.type) {
+            // Lookup the item document
+            const compendiumItem = await fromUuid(mapEntry.uuid)
+            const newItem = compendiumItem.toObject()
 
-          // Keep the original item name
-          newObject.name = originalItem.name
+            // Keep the original item name if we're remapping to a single item
+            if (names.length === 1) {
+              newItem.name = originalItem.name
+            }
 
-          // Copy relevant fields from the original object to maintain modifiers and stats
-          if (originalItem.type === 'weapon') {
-            newObject.system.toHit = originalItem.system.toHit
-            newObject.system.damage = originalItem.system.damage
-            newObject.system.melee = originalItem.system.melee
-            newObject.system.equipped = true
-          } else if (originalItem.type === 'armor') {
-            newObject.system.acBonus = originalItem.system.acBonus
-            newObject.system.checkPenalty = originalItem.system.checkPenalty
-            newObject.system.fumbleDie = originalItem.system.fumbleDie
+            // Copy relevant fields from the original object to maintain modifiers and stats
+            if (originalItem.type === 'weapon') {
+              newItem.system.toHit = originalItem.system.toHit
+              newItem.system.damage = originalItem.system.damage
+              newItem.system.melee = originalItem.system.melee
+              newItem.system.equipped = true
+            } else if (originalItem.type === 'armor') {
+              newItem.system.acBonus = originalItem.system.acBonus
+              newItem.system.checkPenalty = originalItem.system.checkPenalty
+              newItem.system.fumbleDie = originalItem.system.fumbleDie
+            }
+
+            newItems.push(newItem)
           }
+        }
 
-          // Remove the old object and add the new one
+        // Remove the old object and add the new one
+        if (newItems.length > 0) {
           actor.deleteEmbeddedDocuments('Item', [originalItem.id])
-          actor.createEmbeddedDocuments('Item', [newObject])
+          actor.createEmbeddedDocuments('Item', newItems)
         }
       }
     }
