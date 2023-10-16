@@ -492,4 +492,22 @@ DCC.actorImporterItemPacks = [
   'dcc-core-book.dcc-core-spells-patron'
 ]
 
+// Name remappings for the actor importer
+DCC.actorImporterNameMap = {
+  'Hammer (as club)': 'Club',
+  'Razor (as dagger)': 'Dagger',
+  'Cleaver (as axe)': 'Axe',
+  'Cudgel (as staff)': 'Staff',
+  'Awl (as dagger)': 'Dagger',
+  'Crowbar (as club)': 'Club',
+  'Shovel (as staff)': 'Staff',
+  'Pick (as club)': 'Club',
+  'Quill (as dart)': 'Dart',
+  'Scissors (as dagger)': 'Dagger',
+  'Pitchfork (as spear)': 'Spear',
+  'Trowel (as dagger)': 'Dagger',
+  'Knife (as dagger)': 'Dagger',
+  'Stick (as club)': 'Club'
+}
+
 export default DCC

@@ -180,13 +180,36 @@ async function createActors (type, folderId, actorData) {
     }
 
     // Try and remap items to compendium items
-    // @TODO Implement a lookup of PSG names to system names for 100% success
     if (type === 'Player') {
       for (const originalItem of actor.items) {
-        if (originalItem.name in itemMap) {
-          const compendiumItem = await fromUuid(itemMap[originalItem.name].uuid)
+        // Apply name remapping
+        const name = CONFIG.DCC.actorImporterNameMap[originalItem.name] ?? originalItem.name
+
+        // Check for an item of this type in the cache
+        const mapEntry = itemMap[name]
+        if (mapEntry && mapEntry.type === originalItem.type) {
+          // Lookup the item document
+          const compendiumItem = await fromUuid(mapEntry.uuid)
+          const newObject = compendiumItem.toObject()
+
+          // Keep the original item name
+          newObject.name = originalItem.name
+
+          // Copy relevant fields from the original object to maintain modifiers and stats
+          if (originalItem.type === 'weapon') {
+            newObject.system.toHit = originalItem.system.toHit
+            newObject.system.damage = originalItem.system.damage
+            newObject.system.melee = originalItem.system.melee
+            newObject.system.equipped = true
+          } else if (originalItem.type === 'armor') {
+            newObject.system.acBonus = originalItem.system.acBonus
+            newObject.system.checkPenalty = originalItem.system.checkPenalty
+            newObject.system.fumbleDie = originalItem.system.fumbleDie
+          }
+
+          // Remove the old object and add the new one
           actor.deleteEmbeddedDocuments('Item', [originalItem.id])
-          actor.createEmbeddedDocuments('Item', [compendiumItem.toObject()])
+          actor.createEmbeddedDocuments('Item', [newObject])
         }
       }
     }
