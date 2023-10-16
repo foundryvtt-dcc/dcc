@@ -183,8 +183,11 @@ async function createActors (type, folderId, actorData) {
     if (type === 'Player') {
       const items = [...actor.items]  // Copy the actor's items array
       for (const originalItem of items) {
+        // Strip '+X ' if present on the front of high level items
+        const cleanName = originalItem.name.replace(/^\+\d+\ /, '')
+
         // Apply name remapping
-        const names = CONFIG.DCC.actorImporterNameMap[originalItem.name] ?? [ originalItem.name ]
+        const names = CONFIG.DCC.actorImporterNameMap[cleanName] ?? [ cleanName ]
         const newItems = []
 
         for (const name of names) {
