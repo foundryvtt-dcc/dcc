@@ -111,6 +111,7 @@
 /* ----------------------------------------- */
 .journal-sheet h1 {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  line-height: 1.3em;
 }
 
 .journal-sheet h2 {
