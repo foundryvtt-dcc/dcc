@@ -550,7 +550,12 @@ class DCCActorSheet extends ActorSheet {
       dragData = Object.assign(
         item.toDragData(),
         {
-          data: item
+          dccType: 'Item',
+          actorId: this.actor.id,
+          data: item,
+          dccData: {
+            item
+          }
         }
       )
     } else if (classes.contains('disapproval-range')) {
