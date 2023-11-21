@@ -431,7 +431,7 @@ async function processSpellCheck (actor, spellData) {
 /*  Other Hooks                                 */
 /* -------------------------------------------- */
 // Create a macro when a rollable is dropped on the hotbar
-Hooks.on('hotbarDrop', (bar, data, slot) => createDCCMacro(data, slot))
+Hooks.on('hotbarDrop', (bar, data, slot) => { return createDCCMacro(data, slot) })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
 Hooks.on('renderChatMessage', (message, html, data) => {
@@ -567,7 +567,7 @@ Hooks.on('applyActiveEffect', (actor, change) => {
  * @param {number} slot     The hotbar slot to use
  * @returns {Promise}
  */
-async function createDCCMacro (data, slot) {
+function createDCCMacro (data, slot) {
   const handlers = {
     Ability: _createDCCAbilityMacro,
     Initiative: _createDCCInitiativeMacro,
@@ -591,29 +591,36 @@ async function createDCCMacro (data, slot) {
     data.system = data.dccData
     delete data.dccData
   }
-  if (!data.type || data.type === 'Macro') return
-  if (!('data' in data)) return
-  if (!handlers[data.type]) return
+  if (!data.type || data.type === 'Macro') return true
+  if (!('data' in data)) return true
+  if (!handlers[data.type]) return true
 
   // Call the appropriate function to generate a macro
   const macroData = handlers[data.type](data, slot)
   if (macroData) {
-    // Create or reuse existing macro
-    let macro = game.macros.contents.find(
-      m => (m.name === macroData.name) && (m.command === macroData.command)
-    )
-    if (!macro) {
-      macro = await Macro.create({
-        name: macroData.name,
-        type: 'script',
-        img: macroData.img,
-        command: macroData.command,
-        flags: { 'dcc.itemMacro': true }
-      })
-    }
-    await game.user.assignHotbarMacro(macro, slot)
+    // Create and assign the macro in an async context, but hooks aren't async so we need to return immediately
+    (async () => {
+      // Create or reuse existing macro
+      let macro = game.macros.contents.find(
+        m => (m.name === macroData.name) && (m.command === macroData.command)
+      )
+      if (!macro) {
+        macro = await Macro.create({
+          name: macroData.name,
+          type: 'script',
+          img: macroData.img,
+          command: macroData.command,
+          flags: { 'dcc.itemMacro': true }
+        })
+      }
+      game.user.assignHotbarMacro(macro, slot)
+    })()
+
+    // Prevent the default handler
+    return false
   }
-  return false
+  // Let the default handler run
+  return true
 }
 
 /**
@@ -864,7 +871,7 @@ function _createDCCRollDisapprovalMacro (data, slot) {
 /**
  * Roll a weapon attack from a macro.
  * @param {string} itemId
- * @param options
+ * @param {Object} options
  * @return {Promise}
  */
 function rollDCCWeaponMacro (itemId, options = {}) {
