@@ -173,6 +173,9 @@ Hooks.once('ready', async function () {
 
   // Let modules know the DCC system is ready
   Hooks.callAll('dcc.ready')
+
+  // Refresh the scene controls to make sure the Fleeting Luck button shows up
+  setTimeout(() => { ui.controls.render() }, 100)
 })
 
 function checkReleaseNotes () {
