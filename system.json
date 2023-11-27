@@ -58,6 +58,24 @@
       "type": "Macro"
     }
   ],
+  "packFolders": [
+    {
+      "name": "DCC Macros",
+      "sorting": "m",
+      "color": "#1a494f",
+      "packs": [
+        "dcc-macros"
+      ]
+    },
+    {
+      "name": "DCC System Data",
+      "sorting": "m",
+      "color": "#1a494f",
+      "packs": [
+        "dcc-userguide"
+      ]
+    }
+  ],
   "relationships": {
     "systems": [],
     "requires": [],
