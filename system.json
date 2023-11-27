@@ -46,14 +46,14 @@
     {
       "name": "dcc-userguide",
       "label": "User Guide",
-      "path": "packs/dcc-userguide.db",
+      "path": "packs/dcc-userguide",
       "system": "dcc",
       "type": "JournalEntry"
     },
     {
       "name": "dcc-macros",
       "label": "DCC Macros",
-      "path": "packs/dcc-macros.db",
+      "path": "packs/dcc-macros",
       "system": "dcc",
       "type": "Macro"
     }
