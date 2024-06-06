@@ -7,15 +7,12 @@
   "minimumCoreVersion": "10",
   "compatibility": {
     "minimum": "11",
-    "verified": "11"
+    "verified": "12"
   },
-  "templateVersion": 9,
   "authors": [
     {
       "name": "DCC Foundry Volunteer Team (https://discord.com/channels/170995199584108546/826931749221040138)"
-    }
-  ],
-  "contributors": [
+    },
     {
       "name": "Tim L. White",
       "email": "tim@cyface.com"
@@ -64,8 +61,10 @@
     "conflicts": [],
     "flags": {}
   },
-  "gridDistance": 5,
-  "gridUnits": "ft",
+  "grid": {
+    "distance": 5,
+    "units": "ft"
+  },
   "primaryTokenAttribute": "attributes.hp",
   "secondaryTokenAttribute": "abilities.lck.value",
   "socket": true,
@@ -75,6 +74,5 @@
   "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.40.0/dcc.zip",
   "protected": false,
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
-  "allowBugReporter": true,
   "license": "LICENSE.txt"
 }
