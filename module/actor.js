@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -46,7 +46,7 @@ class DCCActor extends Actor {
         }
       }
     }
-    data.attributes.fumble = mergeObject(
+    data.attributes.fumble = foundry.utils.mergeObject(
       data.attributes.fumble || {},
       { die: fumbleDie }
     )
@@ -161,7 +161,7 @@ class DCCActor extends Actor {
   getRollData () {
     const data = super.getRollData()
 
-    const customData = mergeObject(
+    const customData = foundry.utils.mergeObject(
       data,
       {
         str: data.abilities.str.mod,
@@ -287,7 +287,7 @@ class DCCActor extends Actor {
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
       // Apply custom roll options
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
       roll.dice[0].options.dcc = {
         rollUnder: true,
         lowerThreshold: ability.value,
@@ -324,7 +324,7 @@ class DCCActor extends Actor {
 
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
 
       // Generate flags for the roll
       Object.assign(flags, {
@@ -395,7 +395,7 @@ class DCCActor extends Actor {
     const roll = await this.getInitiativeRoll(options)
 
     // Evaluate roll, otherwise roll.total is undefined
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -489,7 +489,7 @@ class DCCActor extends Actor {
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     // Generate flags for the roll
     const flags = {
@@ -594,7 +594,7 @@ class DCCActor extends Actor {
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
     } else {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
 
       // Generate flags for the roll
       const flags = {
@@ -788,7 +788,7 @@ class DCCActor extends Actor {
       const abRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: 3 }, this.getRollData()), options)
 
       // Store the result for use in attack and damage rolls
-      const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
+      const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate()).total
       await this.update({
         'data.details.lastRolledAttackBonus': lastRoll
       })
@@ -1099,7 +1099,7 @@ class DCCActor extends Actor {
       options
     )
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
-    await attackRoll.evaluate({ async: true })
+    await attackRoll.evaluate()
 
     // Adjust crit range if the die size was adjusted
     critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
@@ -1186,7 +1186,7 @@ class DCCActor extends Actor {
       this.getRollData(),
       rollOptions
     )
-    await damageRoll.evaluate({ async: true })
+    await damageRoll.evaluate()
 
     // A successful attack always inflicts a minimum of 1 point of damage (already handled with the custom card)
     if (options.displayStandardCards && damageRoll._total < 1) {
@@ -1245,7 +1245,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!critResult) {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
     } else {
       roll = critResult.roll
     }
@@ -1336,7 +1336,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!fumbleResult) {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
     } else {
       roll = fumbleResult.roll
     }

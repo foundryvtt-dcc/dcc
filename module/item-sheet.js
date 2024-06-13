@@ -1,4 +1,4 @@
-/* global Dialog, ItemSheet, TextEditor, game, mergeObject, CONFIG */
+/* global Dialog, ItemSheet, TextEditor, game, foundry, CONFIG */
 
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
@@ -10,7 +10,7 @@ import EntityImages from './entity-images.js'
 export class DCCItemSheet extends ItemSheet {
   /** @override */
   static get defaultOptions () {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }]

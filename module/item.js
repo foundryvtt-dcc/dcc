@@ -118,7 +118,7 @@ class DCCItem extends Item {
 
     // Roll the spell check
     const roll = await game.dcc.DCCRoll.createRoll(terms, actor.getRollData(), options)
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -230,7 +230,7 @@ class DCCItem extends Item {
       roll = mercurialMagicResult.roll
     } else {
       // Fall back to displaying just the roll
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor: game.i18n.localize('DCC.MercurialMagicRoll'),
@@ -295,7 +295,7 @@ class DCCItem extends Item {
       const formula = this.system.value[currency] || '0'
       try {
         const roll = new Roll(formula.toString())
-        await roll.evaluate({ async: true })
+        await roll.evaluate()
         updates['data.value.' + currency] = roll.total
         valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${encodeURIComponent(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {

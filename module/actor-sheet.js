@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, TextEditor, game, mergeObject, expandObject, $, CONST */
+/* global ActorSheet, CONFIG, duplicate, Dialog, TextEditor, game, foundry, expandObject, $, CONST */
 
 import DCCActorConfig from './actor-config.js'
 import EntityImages from './entity-images.js'
@@ -10,7 +10,7 @@ import EntityImages from './entity-images.js'
 class DCCActorSheet extends ActorSheet {
   /** @override */
   static get defaultOptions () {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'actor'],
       template: 'systems/dcc/templates/actor-sheet-zero-level.html',
       width: 600,

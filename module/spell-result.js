@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, CONST, duplicate, game, mergeObject, renderTemplate, TextEditor */
+/* global ChatMessage, CONFIG, CONST, duplicate, game, foundry, renderTemplate, TextEditor */
 
 class SpellResult {
   /**
@@ -13,7 +13,7 @@ class SpellResult {
    */
   static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined } = {}) {
     const roll = result.roll
-    messageOptions = mergeObject({
+    messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
     }, messageOptions)
 
@@ -34,7 +34,7 @@ class SpellResult {
     }
 
     // Construct chat data
-    messageData = mergeObject({
+    messageData = foundry.utils.mergeObject({
       flavor: game.i18n.localize('DCC.SpellCheckCardMessage'),
       user: game.user.id,
       speaker,
