@@ -31,7 +31,7 @@ class DCCActorSheet extends ActorSheet {
     const buttons = super._getHeaderButtons()
 
     // Header buttons shown only with Owner permission
-    if (this.actor.permission === CONST.DOCUMENT_PERMISSION_LEVELS.OWNER) {
+    if (this.actor.permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
       buttons.unshift(
         {
           label: game.i18n.localize('DCC.ConfigureSheet'),
