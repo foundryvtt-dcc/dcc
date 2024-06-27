@@ -1,4 +1,4 @@
-/* global game */
+/* global TextEditor, game */
 
 /**
  * DCC specific character sheet overrides
@@ -16,6 +16,7 @@ class DCCActorSheetCleric extends DCCActorSheet {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-cleric.html'
     data.system.class.className = game.i18n.localize('DCC.Cleric')
+    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
 
     if (data.system.details.sheetClass !== 'Cleric') {
       this.actor.update({
@@ -40,6 +41,7 @@ class DCCActorSheetThief extends DCCActorSheet {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
     data.system.class.className = game.i18n.localize('DCC.Thief')
+    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
 
     if (data.system.details.sheetClass !== 'Thief') {
       this.actor.update({
@@ -65,6 +67,7 @@ class DCCActorSheetHalfling extends DCCActorSheet {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
     data.system.class.className = game.i18n.localize('DCC.Halfling')
+    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
 
     if (data.system.details.sheetClass !== 'Halfling') {
       this.actor.update({
@@ -89,6 +92,8 @@ class DCCActorSheetWarrior extends DCCActorSheet {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
     data.system.class.className = game.i18n.localize('DCC.Warrior')
+    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink'))
+    data.system.class.mightyDeedsLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
 
     if (data.system.details.sheetClass !== 'Warrior') {
       this.actor.update({
@@ -113,6 +118,7 @@ class DCCActorSheetWizard extends DCCActorSheet {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-wizard.html'
     data.system.class.className = game.i18n.localize('DCC.Wizard')
+    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink'))
 
     if (data.system.details.sheetClass !== 'Wizard') {
       this.actor.update({
@@ -138,6 +144,8 @@ class DCCActorSheetDwarf extends DCCActorSheet {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-dwarf.html'
     data.system.class.className = game.i18n.localize('DCC.Dwarf')
+    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink'))
+    data.system.class.mightyDeedsLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
 
     if (data.system.details.sheetClass !== 'Dwarf') {
       this.actor.update({
@@ -163,6 +171,7 @@ class DCCActorSheetElf extends DCCActorSheet {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-elf.html'
     data.system.class.className = game.i18n.localize('DCC.Elf')
+    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
 
     if (data.system.details.sheetClass !== 'Elf') {
       this.actor.update({
