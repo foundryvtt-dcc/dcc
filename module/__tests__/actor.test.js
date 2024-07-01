@@ -632,7 +632,7 @@ test('roll luck die', async () => {
   expect(actorUpdateMock).toHaveBeenCalledTimes(1)
   expect(actorUpdateMock).toHaveBeenCalledWith(
     {
-      'data.abilities.lck.value': 17
+      'system.abilities.lck.value': 17
     }
   )
 })
