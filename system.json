@@ -4,9 +4,9 @@
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": "0.40.0",
-  "minimumCoreVersion": "10",
+  "minimumCoreVersion": "12",
   "compatibility": {
-    "minimum": "11",
+    "minimum": "12",
     "verified": "12"
   },
   "authors": [
