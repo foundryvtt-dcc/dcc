@@ -66,7 +66,7 @@ class DCCActor extends Actor {
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
       this.update({
-        'data.speed.base': this.system.attributes.speed.value
+        'system.speed.base': this.system.attributes.speed.value
       })
       this.system.speed.base = this.system.attributes.speed.value
     }
@@ -122,8 +122,8 @@ class DCCActor extends Actor {
     // Migrate the old rollAttackBonus option if present
     if (this.system.config.rollAttackBonus) {
       this.update({
-        'data.config.attackBonusMode': 'manual',
-        'data.config.rollAttackBonus': null
+        'system.config.attackBonusMode': 'manual',
+        'system.config.rollAttackBonus': null
       })
     }
   }
@@ -613,7 +613,7 @@ class DCCActor extends Actor {
 
     // Store last result if required
     if (skillItem && skillItem.system.config.showLastResult) {
-      skillItem.update({ 'data.lastResult': roll.total })
+      skillItem.update({ 'system.lastResult': roll.total })
     }
 
     // Need to drain disapproval
@@ -648,7 +648,7 @@ class DCCActor extends Actor {
 
     // Spend the luck
     await this.update({
-      'data.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
+      'system.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
     })
 
     // Convert the roll to a chat message
@@ -729,9 +729,9 @@ class DCCActor extends Actor {
         callback: (formula, term) => {
           // Apply the spellburn
           this.update({
-            'data.abilities.str.value': term.str,
-            'data.abilities.agl.value': term.agl,
-            'data.abilities.sta.value': term.sta
+            'system.abilities.str.value': term.str,
+            'system.abilities.agl.value': term.agl,
+            'system.abilities.sta.value': term.sta
           })
         }
       })
@@ -790,7 +790,7 @@ class DCCActor extends Actor {
       // Store the result for use in attack and damage rolls
       const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate()).total
       await this.update({
-        'data.details.lastRolledAttackBonus': lastRoll
+        'system.details.lastRolledAttackBonus': lastRoll
       })
 
       // Apply custom roll options
@@ -825,7 +825,7 @@ class DCCActor extends Actor {
    */
   async setActionDice (die) {
     this.update({
-      'data.attributes.actionDice.value': die
+      'system.attributes.actionDice.value': die
     })
   }
 
@@ -1472,7 +1472,7 @@ class DCCActor extends Actor {
 
     // Apply new HP
     return this.update({
-      'data.attributes.hp.value': newHp
+      'system.attributes.hp.value': newHp
     })
   }
 
@@ -1485,7 +1485,7 @@ class DCCActor extends Actor {
     // Mark the spell as lost - if the item is known
     if (item) {
       item.update({
-        'data.lost': true
+        'system.lost': true
       })
     }
 
@@ -1513,7 +1513,7 @@ class DCCActor extends Actor {
 
     // Apply the new disapproval range
     this.update({
-      'data.class.disapproval': newRange
+      'system.class.disapproval': newRange
     })
 
     // Announce that disapproval was increased

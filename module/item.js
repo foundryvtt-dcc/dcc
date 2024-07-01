@@ -108,9 +108,9 @@ class DCCItem extends Item {
         callback: (formula, term) => {
           // Apply the spellburn
           actor.update({
-            'data.abilities.str.value': term.str,
-            'data.abilities.agl.value': term.agl,
-            'data.abilities.sta.value': term.sta
+            'system.abilities.str.value': term.str,
+            'system.abilities.agl.value': term.agl,
+            'system.abilities.sta.value': term.sta
           })
         }
       })
@@ -242,16 +242,16 @@ class DCCItem extends Item {
 
     // Stow away the data in the appropriate fields
     const updates = {}
-    updates['data.mercurialEffect.value'] = roll.total
-    updates['data.mercurialEffect.summary'] = ''
-    updates['data.mercurialEffect.description'] = ''
+    updates['system.mercurialEffect.value'] = roll.total
+    updates['system.mercurialEffect.summary'] = ''
+    updates['system.mercurialEffect.description'] = ''
 
     if (mercurialMagicResult) {
       try {
         const result = mercurialMagicResult.results[0].text
         const split = result.split('.')
-        updates['data.mercurialEffect.summary'] = split[0]
-        updates['data.mercurialEffect.description'] = `<p>${result}</p>`
+        updates['system.mercurialEffect.summary'] = split[0]
+        updates['system.mercurialEffect.description'] = `<p>${result}</p>`
       } catch (err) {
         console.error(`Couldn't extract Mercurial Magic result from table:\n${err}`)
       }
@@ -296,7 +296,7 @@ class DCCItem extends Item {
       try {
         const roll = new Roll(formula.toString())
         await roll.evaluate()
-        updates['data.value.' + currency] = roll.total
+        updates['system.value.' + currency] = roll.total
         valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${encodeURIComponent(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
@@ -348,8 +348,8 @@ class DCCItem extends Item {
       if (this.system.value[currency] >= conversionFactor) {
         // Apply the conversion
         const updates = {}
-        updates[`data.value.${currency}`] = parseInt(this.system.value[currency]) - conversionFactor
-        updates[`data.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + 1
+        updates[`system.value.${currency}`] = parseInt(this.system.value[currency]) - conversionFactor
+        updates[`system.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + 1
         this.update(updates)
       }
     }
@@ -377,8 +377,8 @@ class DCCItem extends Item {
         const conversionFactor = currencyValue[currency] / currencyValue[toCurrency]
         // Apply the conversion
         const updates = {}
-        updates[`data.value.${currency}`] = parseInt(this.system.value[currency]) - 1
-        updates[`data.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + conversionFactor
+        updates[`system.value.${currency}`] = parseInt(this.system.value[currency]) - 1
+        updates[`system.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + conversionFactor
         this.update(updates)
       }
     }

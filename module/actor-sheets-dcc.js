@@ -20,10 +20,10 @@ class DCCActorSheetCleric extends DCCActorSheet {
 
     if (data.system.details.sheetClass !== 'Cleric') {
       this.actor.update({
-        'data.class.className': game.i18n.localize('DCC.Cleric'),
-        'data.details.sheetClass': 'Cleric',
-        'data.class.spellCheckAbility': 'per',
-        'data.details.critRange': 20
+        'system.class.className': game.i18n.localize('DCC.Cleric'),
+        'system.details.sheetClass': 'Cleric',
+        'system.class.spellCheckAbility': 'per',
+        'system.details.critRange': 20
       })
     }
 
@@ -45,11 +45,11 @@ class DCCActorSheetThief extends DCCActorSheet {
 
     if (data.system.details.sheetClass !== 'Thief') {
       this.actor.update({
-        'data.class.className': game.i18n.localize('DCC.Thief'),
-        'data.details.sheetClass': 'Thief',
-        'data.details.critRange': 20,
-        'data.class.disapproval': 1,
-        'data.details.showBackstab': true
+        'system.class.className': game.i18n.localize('DCC.Thief'),
+        'system.details.sheetClass': 'Thief',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
+        'system.details.showBackstab': true
       })
     }
 
@@ -71,10 +71,10 @@ class DCCActorSheetHalfling extends DCCActorSheet {
 
     if (data.system.details.sheetClass !== 'Halfling') {
       this.actor.update({
-        'data.class.className': game.i18n.localize('DCC.Halfling'),
-        'data.details.sheetClass': 'Halfling',
-        'data.details.critRange': 20,
-        'data.class.disapproval': 1
+        'system.class.className': game.i18n.localize('DCC.Halfling'),
+        'system.details.sheetClass': 'Halfling',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1
       })
     }
 
@@ -97,10 +97,10 @@ class DCCActorSheetWarrior extends DCCActorSheet {
 
     if (data.system.details.sheetClass !== 'Warrior') {
       this.actor.update({
-        'data.class.className': game.i18n.localize('DCC.Warrior'),
-        'data.details.sheetClass': 'Warrior',
-        'data.class.disapproval': 1,
-        'data.config.attackBonusMode': 'manual'
+        'system.class.className': game.i18n.localize('DCC.Warrior'),
+        'system.details.sheetClass': 'Warrior',
+        'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'manual'
       })
     }
 
@@ -122,11 +122,11 @@ class DCCActorSheetWizard extends DCCActorSheet {
 
     if (data.system.details.sheetClass !== 'Wizard') {
       this.actor.update({
-        'data.class.className': game.i18n.localize('DCC.Wizard'),
-        'data.details.sheetClass': 'Wizard',
-        'data.class.spellCheckAbility': 'int',
-        'data.details.critRange': 20,
-        'data.class.disapproval': 1
+        'system.class.className': game.i18n.localize('DCC.Wizard'),
+        'system.details.sheetClass': 'Wizard',
+        'system.class.spellCheckAbility': 'int',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1
       })
     }
 
@@ -149,11 +149,11 @@ class DCCActorSheetDwarf extends DCCActorSheet {
 
     if (data.system.details.sheetClass !== 'Dwarf') {
       this.actor.update({
-        'data.class.className': game.i18n.localize('DCC.Dwarf'),
-        'data.details.sheetClass': 'Dwarf',
-        'data.class.disapproval': 1,
-        'data.config.attackBonusMode': 'manual',
-        'data.skills.shieldBash.useDeed': true
+        'system.class.className': game.i18n.localize('DCC.Dwarf'),
+        'system.details.sheetClass': 'Dwarf',
+        'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'manual',
+        'system.skills.shieldBash.useDeed': true
       })
     }
 
@@ -175,11 +175,11 @@ class DCCActorSheetElf extends DCCActorSheet {
 
     if (data.system.details.sheetClass !== 'Elf') {
       this.actor.update({
-        'data.class.className': game.i18n.localize('DCC.Elf'),
-        'data.details.sheetClass': 'Elf',
-        'data.class.spellCheckAbility': 'int',
-        'data.details.critRange': 20,
-        'data.class.disapproval': 1
+        'system.class.className': game.i18n.localize('DCC.Elf'),
+        'system.details.sheetClass': 'Elf',
+        'system.class.spellCheckAbility': 'int',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1
       })
     }
 
@@ -199,7 +199,7 @@ class DCCActorSheetGeneric extends DCCActorSheet {
     data.system.class.className = game.i18n.localize('DCC.Generic')
 
     this.actor.update({
-      'data.class.className': game.i18n.localize('DCC.Generic')
+      'system.class.className': game.i18n.localize('DCC.Generic')
     })
 
     return data
