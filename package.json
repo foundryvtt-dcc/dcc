@@ -30,8 +30,8 @@
   },
   "engines": {
     "node": ">=20 <21",
-    "npm": "~10.0.0"
-  }
+    "npm": ">10 <11"
+  },
   "homepage": "https://github.com/foundryvtt-dcc/dcc#readme",
   "jest": {
     "setupFiles": [
