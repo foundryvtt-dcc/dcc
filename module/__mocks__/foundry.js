@@ -267,6 +267,11 @@ global.ui = {
  * Global helper functions function
  */
 
+// Namespace for Foundry helper functions
+global.foundry = {
+  utils: {}
+}
+
 // Foundry's implementation of getType
 global.getType = function (token) {
   const tof = typeof token
@@ -322,7 +327,7 @@ global.duplicate = function (original) {
 }
 
 // Foundry's implementation of mergeObject
-global.mergeObject = function (original, other = {}, {
+global.foundry.utils.mergeObject = function (original, other = {}, {
   insertKeys = true,
   insertValues = true,
   overwrite = true,

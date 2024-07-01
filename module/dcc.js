@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars, TextEditor */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars */
 
 /**
  * DCC
@@ -145,11 +145,6 @@ Hooks.once('init', async function () {
   // Handlebars helper to check if a pack exists
   Handlebars.registerHelper('dccPackExists', function (pack, options) {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
-  })
-
-  // Handlebars helper to enrich HTML
-  Handlebars.registerHelper('dccLocalizeAndEnrich', function (object) {
-    return TextEditor.enrichHTML(game.i18n.localize(object), { async: false })
   })
 })
 

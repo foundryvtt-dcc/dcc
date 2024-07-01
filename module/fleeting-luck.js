@@ -1,9 +1,9 @@
-/* global CONFIG, CONST, FormApplication, game, Hooks, mergeObject, ui, UserConfig */
+/* global CONFIG, CONST, FormApplication, game, Hooks, foundry, ui, UserConfig */
 
 class FleetingLuckDialog extends FormApplication {
   /** @override */
   static get defaultOptions () {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'fleeting-luck',
       template: 'systems/dcc/templates/dialog-fleeting-luck.html',
       height: 'fit-content',
@@ -132,7 +132,7 @@ class FleetingLuckDialog extends FormApplication {
     }
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     await FleetingLuck.spend(userId, roll.total)
   }

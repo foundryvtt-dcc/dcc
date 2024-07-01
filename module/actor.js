@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -46,7 +46,7 @@ class DCCActor extends Actor {
         }
       }
     }
-    data.attributes.fumble = mergeObject(
+    data.attributes.fumble = foundry.utils.mergeObject(
       data.attributes.fumble || {},
       { die: fumbleDie }
     )
@@ -66,7 +66,7 @@ class DCCActor extends Actor {
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
       this.update({
-        'data.speed.base': this.system.attributes.speed.value
+        'system.speed.base': this.system.attributes.speed.value
       })
       this.system.speed.base = this.system.attributes.speed.value
     }
@@ -122,8 +122,8 @@ class DCCActor extends Actor {
     // Migrate the old rollAttackBonus option if present
     if (this.system.config.rollAttackBonus) {
       this.update({
-        'data.config.attackBonusMode': 'manual',
-        'data.config.rollAttackBonus': null
+        'system.config.attackBonusMode': 'manual',
+        'system.config.rollAttackBonus': null
       })
     }
   }
@@ -161,7 +161,7 @@ class DCCActor extends Actor {
   getRollData () {
     const data = super.getRollData()
 
-    const customData = mergeObject(
+    const customData = foundry.utils.mergeObject(
       data,
       {
         str: data.abilities.str.mod,
@@ -287,7 +287,7 @@ class DCCActor extends Actor {
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
       // Apply custom roll options
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
       roll.dice[0].options.dcc = {
         rollUnder: true,
         lowerThreshold: ability.value,
@@ -324,7 +324,7 @@ class DCCActor extends Actor {
 
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
 
       // Generate flags for the roll
       Object.assign(flags, {
@@ -395,7 +395,7 @@ class DCCActor extends Actor {
     const roll = await this.getInitiativeRoll(options)
 
     // Evaluate roll, otherwise roll.total is undefined
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -489,7 +489,7 @@ class DCCActor extends Actor {
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     // Generate flags for the roll
     const flags = {
@@ -594,7 +594,7 @@ class DCCActor extends Actor {
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
     } else {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
 
       // Generate flags for the roll
       const flags = {
@@ -613,7 +613,7 @@ class DCCActor extends Actor {
 
     // Store last result if required
     if (skillItem && skillItem.system.config.showLastResult) {
-      skillItem.update({ 'data.lastResult': roll.total })
+      skillItem.update({ 'system.lastResult': roll.total })
     }
 
     // Need to drain disapproval
@@ -648,7 +648,7 @@ class DCCActor extends Actor {
 
     // Spend the luck
     await this.update({
-      'data.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
+      'system.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
     })
 
     // Convert the roll to a chat message
@@ -729,9 +729,9 @@ class DCCActor extends Actor {
         callback: (formula, term) => {
           // Apply the spellburn
           this.update({
-            'data.abilities.str.value': term.str,
-            'data.abilities.agl.value': term.agl,
-            'data.abilities.sta.value': term.sta
+            'system.abilities.str.value': term.str,
+            'system.abilities.agl.value': term.agl,
+            'system.abilities.sta.value': term.sta
           })
         }
       })
@@ -788,9 +788,9 @@ class DCCActor extends Actor {
       const abRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: 3 }, this.getRollData()), options)
 
       // Store the result for use in attack and damage rolls
-      const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
+      const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate()).total
       await this.update({
-        'data.details.lastRolledAttackBonus': lastRoll
+        'system.details.lastRolledAttackBonus': lastRoll
       })
 
       // Apply custom roll options
@@ -825,7 +825,7 @@ class DCCActor extends Actor {
    */
   async setActionDice (die) {
     this.update({
-      'data.attributes.actionDice.value': die
+      'system.attributes.actionDice.value': die
     })
   }
 
@@ -1099,7 +1099,7 @@ class DCCActor extends Actor {
       options
     )
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
-    await attackRoll.evaluate({ async: true })
+    await attackRoll.evaluate()
 
     // Adjust crit range if the die size was adjusted
     critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
@@ -1186,7 +1186,7 @@ class DCCActor extends Actor {
       this.getRollData(),
       rollOptions
     )
-    await damageRoll.evaluate({ async: true })
+    await damageRoll.evaluate()
 
     // A successful attack always inflicts a minimum of 1 point of damage (already handled with the custom card)
     if (options.displayStandardCards && damageRoll._total < 1) {
@@ -1245,7 +1245,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!critResult) {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
     } else {
       roll = critResult.roll
     }
@@ -1336,7 +1336,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!fumbleResult) {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
     } else {
       roll = fumbleResult.roll
     }
@@ -1472,7 +1472,7 @@ class DCCActor extends Actor {
 
     // Apply new HP
     return this.update({
-      'data.attributes.hp.value': newHp
+      'system.attributes.hp.value': newHp
     })
   }
 
@@ -1485,7 +1485,7 @@ class DCCActor extends Actor {
     // Mark the spell as lost - if the item is known
     if (item) {
       item.update({
-        'data.lost': true
+        'system.lost': true
       })
     }
 
@@ -1513,7 +1513,7 @@ class DCCActor extends Actor {
 
     // Apply the new disapproval range
     this.update({
-      'data.class.disapproval': newRange
+      'system.class.disapproval': newRange
     })
 
     // Announce that disapproval was increased

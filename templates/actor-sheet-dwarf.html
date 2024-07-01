@@ -57,8 +57,8 @@
                 </div>
     
                 <ul class="class-note flexcol">
-                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}</li>
-                  <li>{{{dccLocalizeAndEnrich "DCC.DwarfClassLink"}}}</li>
+                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                  <li>{{{system.class.classLink}}}</li>
                   {{/dccPackExists}}
                   <li>{{localize "DCC.Infravision"}}</li>
                   <ul class="class-note flexcol">
@@ -68,7 +68,7 @@
                   <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
       <ul class="class-note flexcol">
                   {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                  <li>{{{dccLocalizeAndEnrich "DCC.MightyDeedsLink"}}}</li>
+                  <li>{{{system.class.mightyDeedsLink}}}</li>
                   {{/dccPackExists}} 
                   <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Mighty-Deeds"><i class="fas fa-link"></i> {{localize "DCC.MightyDeedsHowToLink"}}</a></li>
                   </ul>
