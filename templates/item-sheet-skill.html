@@ -22,14 +22,7 @@
                 <div>
                   <select name="system.ability" id="system.ability"
                           {{#if system.config.useAbility}}{{else}}disabled{{/if}}>
-                    {{#select system.ability}}
-                    <option value="str">Strength</option>
-                    <option value="agl">Agility</option>
-                    <option value="sta">Stamina</option>
-                    <option value="per">Personality</option>
-                    <option value="int">Intelligence</option>
-                    <option value="lck">Luck</option>
-                    {{/select}}
+                    {{selectOptions config.abilities selected=system.ability localize=true}}
                   </select>
                 </div>
               </div>

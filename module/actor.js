@@ -12,8 +12,8 @@ class DCCActor extends Actor {
     // Ability modifiers
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
-      abilities[abilityId].mod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].value] || 0
-      abilities[abilityId].maxMod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].max] || abilities[abilityId].mod
+      abilities[abilityId].mod = CONFIG.DCC.abilityModifiers[abilities[abilityId].value] || 0
+      abilities[abilityId].maxMod = CONFIG.DCC.abilityModifiers[abilities[abilityId].max] || abilities[abilityId].mod
     }
 
     // Get configuration data
@@ -266,7 +266,7 @@ class DCCActor extends Actor {
    */
   async rollAbilityCheck (abilityId, options = {}) {
     const ability = this.system.abilities[abilityId]
-    ability.mod = CONFIG.DCC.abilities.modifiers[ability.value] || 0
+    ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
     const abilityLabel = game.i18n.localize(ability.label)
     const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
@@ -441,7 +441,7 @@ class DCCActor extends Actor {
     // Players have a stamina modifier they can add
     if (this.type === 'Player') {
       const sta = this.system.abilities.sta || {}
-      const modifier = sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : '+0'
+      const modifier = sta.mod = sta.value ? CONFIG.DCC.abilityModifiers[sta.value] : '+0'
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilitySta'),
