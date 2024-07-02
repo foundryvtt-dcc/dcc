@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, TextEditor, game, foundry, expandObject, $, CONST */
+/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, $, CONST */
 
 import DCCActorConfig from './actor-config.js'
 import EntityImages from './entity-images.js'
@@ -64,9 +64,9 @@ class DCCActorSheet extends ActorSheet {
       config: CONFIG.DCC
     }
 
-    data.actor = duplicate(this.document)
+    data.actor = foundry.utils.duplicate(this.document)
     data.actor.name = this.document.name
-    data.system = duplicate(this.document.system)
+    data.system = foundry.utils.duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters
 
@@ -754,7 +754,7 @@ class DCCActorSheet extends ActorSheet {
     // Get the type of item to create.
     const type = header.dataset.type
     // Grab any data associated with this control.
-    const data = duplicate(header.dataset)
+    const data = foundry.utils.duplicate(header.dataset)
     // Initialize a default name.
     const name = `New ${type.capitalize()}`
     // Prepare the item object.
@@ -789,7 +789,7 @@ class DCCActorSheet extends ActorSheet {
     // Handle owned item updates separately
     if (event.currentTarget) {
       let parentElement = event.currentTarget.parentElement
-      const expanded = expandObject(formData)
+      const expanded = foundry.utils.expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
             parentElement.classList.contains('armor') ||
