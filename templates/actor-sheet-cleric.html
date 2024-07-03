@@ -73,7 +73,7 @@
                         <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
                         <select id="system.class.disapprovalTable" name="system.class.disapprovalTable"
                                 value="{{system.class.disapprovalTable}}">
-                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true}}
+                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true labelAttr="name"}}
                         </select>
                     </div>
                 </div>
