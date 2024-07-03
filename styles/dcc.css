@@ -275,6 +275,10 @@
   flex: 0 0 100px;
 }
 
+.dcc .combat-basics .attack-bonus input {
+  margin-right: 3px;
+}
+
 .dcc .attack-bonus-container.skills-container {
   font-size: 1.2rem;
   justify-content: left;
@@ -501,9 +505,17 @@
   flex: 0 0 100px;
 }
 
+.dcc .combat-basics .crit-die input {
+  margin: 0 3px 0 2px;
+}
+
 .dcc .combat-basics .crit-table {
   align-items: center;
   flex: 0 0 100px;
+}
+
+.dcc .combat-basics .crit-table input {
+  margin-left: 4px;
 }
 
 /* ----------------------------------------- */
@@ -520,7 +532,7 @@
 /* ----------------------------------------- */
 .dcc .hd {
   flex: 0 0 50px;
-  margin: 0;
+  margin: 0 0 0 2px;
   text-align: center;
 }
 
@@ -610,6 +622,14 @@
 .dcc .combat-basics .init {
   align-items: center;
   flex: 0 0 120px;
+}
+
+.dcc .combat-basics .init input:first-of-type {
+  margin-right: 4px;
+}
+
+.dcc .combat-basics .init input:last-of-type {
+  margin-right: 3px;
 }
 
 /* ----------------------------------------- */
