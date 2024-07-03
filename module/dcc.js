@@ -331,9 +331,9 @@ async function processSpellCheck (actor, spellData) {
     if (rollTable) {
       const results = await rollTable.draw({ roll, displayChat: false })
 
-      if (results.roll.terms.length > 0) {
+      if (results.roll.dice.length > 0) {
         roll = results.roll
-        naturalRoll = roll.terms[0].total
+        naturalRoll = roll.dice[0].total
         if (naturalRoll === 1) {
           const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
           roll = fumbleResult.roll
