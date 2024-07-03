@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, CONST, duplicate, game, foundry, renderTemplate, TextEditor */
+/* global ChatMessage, CONFIG, CONST, game, foundry, renderTemplate, TextEditor */
 
 class SpellResult {
   /**
@@ -48,7 +48,7 @@ class SpellResult {
     messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
       description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
       results: result.results.map(r => {
-        return duplicate(r)
+        return foundry.utils.duplicate(r)
       }),
       rollHTML: rollTable.displayRoll ? await roll.render() : null,
       table: rollTable,
@@ -130,7 +130,7 @@ class SpellResult {
       const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
         description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
         results: [newResult].map(r => {
-          return duplicate(r)
+          return foundry.utils.duplicate(r)
         }),
         rollHTML: rollTable.displayRoll ? await this.roll.render() : null,
         table: rollTable,

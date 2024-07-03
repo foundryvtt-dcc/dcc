@@ -322,7 +322,7 @@ global.expandObject = function (obj, _d = 0) {
 }
 
 // Foundry's implementation of duplicate
-global.duplicate = function (original) {
+global.foundry.utils.duplicate = function (original) {
   return JSON.parse(JSON.stringify(original))
 }
 
@@ -342,7 +342,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   const depth = _d + 1
 
   // Maybe copy the original data at depth 0
-  if (!inplace && (_d === 0)) original = global.duplicate(original)
+  if (!inplace && (_d === 0)) original = foundry.utils.duplicate(original)
 
   // Enforce object expansion at depth 0
   if ((_d === 0) && Object.keys(original).some(k => /\./.test(k))) original = global.expandObject(original)
