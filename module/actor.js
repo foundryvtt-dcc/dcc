@@ -1381,7 +1381,7 @@ class DCCActor extends Actor {
 
       // Check for Crit/Fumble
       let critFailClass = ''
-      if (Number(rollResult.roll.dice[0].values[0]) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].values[0]) === 1) { critFailClass = 'fumble ' }
+      if (Number(rollResult.roll.dice[0].total) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].total) === 1) { critFailClass = 'fumble ' }
 
       return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.hitsAc}</a>`
     } else {
