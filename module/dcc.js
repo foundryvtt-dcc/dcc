@@ -333,7 +333,7 @@ async function processSpellCheck (actor, spellData) {
 
       if (results.roll.terms.length > 0) {
         roll = results.roll
-        naturalRoll = roll.terms[0].results[0].result
+        naturalRoll = roll.terms[0].total
         if (naturalRoll === 1) {
           const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
           roll = fumbleResult.roll
@@ -341,7 +341,7 @@ async function processSpellCheck (actor, spellData) {
           fumble = true
         } else if (naturalRoll === 20) {
           if (actor.type === 'Player') {
-            const critRoll = results.roll._total + actor.system.details.level.value
+            const critRoll = results.roll.total + actor.system.details.level.value
             const critRollObject = new Roll(String(critRoll))
             const critResult = await rollTable.draw({ roll: critRollObject, displayChat: false })
             roll = critResult.roll

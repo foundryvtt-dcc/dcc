@@ -140,10 +140,9 @@
                 </div>
                 <div class="action-dice">
                     <label for="system.attributes.actionDice.value">{{localize "DCC.ActionDice"}}</label>
-                    <select id="system.attributes.actionDice.value" name="system.attributes.actionDice.value"
-                            value="{{system.attributes.actionDice.value}}">
+                    <select id="system.attributes.actionDice.value" name="system.attributes.actionDice.value">
                         {{selectOptions system.attributes.actionDice.options selected=system.attributes.actionDice.value
-                        localize=true}}
+                        valueAttr="value" labelAttr="label" localize=true}}
                     </select>
                 </div>
                 <div class="attack-bonus">

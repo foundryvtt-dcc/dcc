@@ -23,15 +23,12 @@ class DiceChain {
    * @returns {Number}             Number of faces of the largest die
    */
   static getPrimaryDieFaces (expression) {
-    const roll = new Roll(expression)
-    roll.evaluateSync()
-    let maxFaces = 0
-    for (const die of roll.dice) {
-      if (die.faces > maxFaces) {
-        maxFaces = die.faces
-      }
+    if (!expression.includes('d')) {
+      return 20
     }
-    return maxFaces
+
+    const roll = new Roll(expression)
+    return roll.terms[0].faces
   }
 
   /*
@@ -45,11 +42,10 @@ class DiceChain {
     const roll = new Roll(expression)
     roll.evaluateSync()
     let rank = 0
-    for (const die of roll.dice) {
-      const dieRank = CONFIG.DCC.DICE_CHAIN.indexOf(die.faces)
-      if (dieRank > rank) {
-        rank = dieRank
-      }
+    const die = roll.terms[0]
+    const dieRank = CONFIG.DCC.DICE_CHAIN.indexOf(die.faces)
+    if (dieRank > rank) {
+      rank = dieRank
     }
     return rank
   }

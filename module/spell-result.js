@@ -38,8 +38,7 @@ class SpellResult {
       flavor: game.i18n.localize('DCC.SpellCheckCardMessage'),
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-      roll,
+      rolls: [roll],
       sound: roll ? CONFIG.sounds.dice : null,
       flags
     }, messageData)
@@ -132,7 +131,7 @@ class SpellResult {
         results: [newResult].map(r => {
           return foundry.utils.duplicate(r)
         }),
-        rollHTML: rollTable.displayRoll ? await this.roll.render() : null,
+        rollHTML: rollTable.displayRoll ? await this.rolls[0].render() : null,
         table: rollTable,
         crit,
         fumble

@@ -173,7 +173,7 @@ global.ChatMessage = ChatMessage
  */
 global.CONFIG = { DCC }
 global.CONFIG.sounds = { dice: 'diceSound' }
-global.CONST = { CHAT_MESSAGE_TYPES: { EMOTE: 'emote' } }
+global.CONST = { CHAT_MESSAGE_STYLES: { EMOTE: 'emote' } }
 
 /**
  * Localization

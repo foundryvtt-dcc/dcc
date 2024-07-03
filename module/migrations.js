@@ -207,7 +207,7 @@ export const migrateItemData = function (item) {
 /* -------------------------------------------- */
 
 /**
- * Migrate a single Scene document to incorporate changes to the data model of it's actor data overrides
+ * Migrate a single Scene document to incorporate changes to the data model of its actor data overrides
  * Return an Object of updateData to be applied
  * @param {Object} scene  The Scene data to Update
  * @return {Object}       The updateData to apply

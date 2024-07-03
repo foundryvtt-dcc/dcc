@@ -101,18 +101,18 @@ class DCCActor extends Actor {
     try {
       // Implicit migration for legacy actors
       if (!this.system.config.actionDice) {
-        this.system.config.actionDice = this.system.attributes.actionDice.value
+        this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
-      const terms = actionDieExpression.terms || actionDieExpression.parts
+      const terms = actionDieExpression.terms
       const actionDice = []
       for (const term of terms) {
-        if (typeof (term) === 'object' && term.faces) {
+        if (term instanceof foundry.dice.terms.Die) {
           const termDie = `1d${term.faces}`
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
-            actionDice.push(termDie)
+            actionDice.push({value: termDie, label: termDie})
           }
         }
       }
@@ -231,7 +231,7 @@ class DCCActor extends Actor {
     try {
       // Implicit migration for legacy actors
       if (!this.system.config.actionDice) {
-        this.system.config.actionDice = this.system.attributes.actionDice.value
+        this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
@@ -300,7 +300,7 @@ class DCCActor extends Actor {
         'dcc.Ability': abilityId
       })
     } else {
-      const die = this.system.attributes.actionDice.value
+      const die = this.system.attributes.actionDice.value || '1d20'
 
       // Collate terms for the roll
       const terms = [
@@ -531,7 +531,7 @@ class DCCActor extends Actor {
         }
       }
     }
-    const die = skill.die || this.system.attributes.actionDice.value
+    const die = skill.die || this.system.attributes.actionDice.value || '1d20'
     const ability = skill.ability || null
     let abilityLabel = ''
     if (ability) {
@@ -690,7 +690,7 @@ class DCCActor extends Actor {
     const ability = this.system.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
-    const die = this.system.attributes.actionDice.value
+    const die = this.system.attributes.actionDice.value || '1d20'
     const bonus = this.system.class.spellCheck ? this.system.class.spellCheck.toString() : '+0'
     const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || '0')
     const isIdolMagic = this.system.details.sheetClass === 'Cleric'
@@ -773,7 +773,7 @@ class DCCActor extends Actor {
     /* Determine attack bonus */
     const attackBonusExpression = this.system.details.attackBonus || '0'
     if (attackBonusExpression) {
-      const flavor = game.i18n.localize('DCC.DeedRoll')
+      const flavor = game.i18n.localize('DCC.AttackBonus')
       options.title = flavor
 
       // Collate terms for the roll
@@ -915,7 +915,7 @@ class DCCActor extends Actor {
         const messageData = {
           user: game.user.id,
           speaker,
-          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
           content: game.i18n.format('DCC.AttackRollInvalidFormula', {
             formula: attackRollResult.formula,
             weapon: weapon.name
@@ -944,7 +944,7 @@ class DCCActor extends Actor {
         const messageData = {
           user: game.user.id,
           speaker,
-          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
           content: game.i18n.format('DCC.DamageRollInvalidFormula', {
             formula: damageRollResult.formula,
             weapon: weapon.name
@@ -994,7 +994,7 @@ class DCCActor extends Actor {
         user: game.user.id,
         itemId: weapon.id,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         content: game.i18n.format(emote, {
           weaponName: weapon.name,
           rollHTML: attackRollHTML,
@@ -1381,7 +1381,7 @@ class DCCActor extends Actor {
 
       // Check for Crit/Fumble
       let critFailClass = ''
-      if (Number(rollResult.roll.dice[0].results[0]) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].results[0]) === 1) { critFailClass = 'fumble ' }
+      if (Number(rollResult.roll.dice[0].values[0]) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].values[0]) === 1) { critFailClass = 'fumble ' }
 
       return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.hitsAc}</a>`
     } else {
@@ -1462,7 +1462,7 @@ class DCCActor extends Actor {
       const messageData = {
         user: game.user.id,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         content: game.i18n.format(locString, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
       }
@@ -1494,7 +1494,7 @@ class DCCActor extends Actor {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: locString,
       sound: CONFIG.sounds.notification
     }
@@ -1520,7 +1520,7 @@ class DCCActor extends Actor {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
       sound: CONFIG.sounds.notification
     }

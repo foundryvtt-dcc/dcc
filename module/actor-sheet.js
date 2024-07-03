@@ -754,7 +754,7 @@ class DCCActorSheet extends ActorSheet {
     // Get the type of item to create.
     const type = header.dataset.type
     // Grab any data associated with this control.
-    const data = foundry.utils.duplicate(header.dataset)
+    const system = foundry.utils.duplicate(header.dataset)
     // Initialize a default name.
     const name = `New ${type.capitalize()}`
     // Prepare the item object.
@@ -762,10 +762,10 @@ class DCCActorSheet extends ActorSheet {
       name,
       img: EntityImages.imageForItem(type),
       type,
-      data
+      system
     }
     // Remove the type from the dataset since it's in the itemData.type prop.
-    delete itemData.data.type
+    delete itemData.system.type
 
     // Finally, create the item!
     return this.actor.createEmbeddedDocuments('Item', [itemData])

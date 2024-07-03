@@ -265,23 +265,20 @@ class DCCItem extends Item {
    * @return {Boolean}  True if any value field contains a rollable formula
    */
   needsValueRoll () {
-    let needsRoll = false
-
     for (const currency in CONFIG.DCC.currencies) {
       const formula = this.system.value[currency]
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        if (roll.dice.length > 0) {
-          needsRoll = true
-          break
+        if (!roll.isDeterministic) {
+          return true
         }
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
       }
     }
 
-    return needsRoll
+    return false
   }
 
   /**
@@ -307,7 +304,7 @@ class DCCItem extends Item {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.ResolveValueEmote', {
         itemName: this.name,
         pp: valueRolls.pp,
