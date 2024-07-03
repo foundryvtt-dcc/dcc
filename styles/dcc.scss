@@ -1379,7 +1379,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   .sheet-body.treasure {
     display: grid;
     grid-template-columns: 100%;
-    grid-template-rows: 50px minmax(80px, auto);
+    grid-template-rows: 75px minmax(80px, auto);
     width: 100%;
   }
 
@@ -1394,7 +1394,6 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    height: 150px;
     justify-content: space-between;
 
     .resource {
@@ -1417,6 +1416,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     .description {
       border: $border-style;
       grid-column: 1 / span 3;
+      grid-row: 2;
     }
 
     .armor-header-extras {

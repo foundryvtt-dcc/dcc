@@ -1344,7 +1344,7 @@
 .dcc.item .sheet-body.treasure {
   display: grid;
   grid-template-columns: 100%;
-  grid-template-rows: 50px minmax(80px, auto);
+  grid-template-rows: 75px minmax(80px, auto);
   width: 100%;
 }
 .dcc.item .sheet-body.skill {
@@ -1357,7 +1357,6 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  height: 150px;
   justify-content: space-between;
 }
 .dcc.item .value-row .resource {
@@ -1375,6 +1374,7 @@
 .dcc.item .sheet-body .description {
   border: 2px groove #eeede0;
   grid-column: 1/span 3;
+  grid-row: 2;
 }
 .dcc.item .sheet-body .armor-header-extras {
   display: grid;
