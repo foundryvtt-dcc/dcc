@@ -44,28 +44,7 @@
             <div class="wide split-50-25-25">
               <label for="system.details.critRange">{{localize "DCC.CritRange"}}</label>
               <select class="number" name="system.details.critRange" id="system.details.critRange">
-                {{#select system.details.critRange}}
-                  <option value="20">20 - 20</option>
-                  <option value="19" default>19 - 20</option>
-                  <option value="18">18 - 20</option>
-                  <option value="17">17 - 20</option>
-                  <option value="16">16 - 20</option>
-                  <option value="15">15 - 20</option>
-                  <option value="14">14 - 20</option>
-                  <option value="13">13 - 20</option>
-                  <option value="12">12 - 20</option>
-                  <option value="11">11 - 20</option>
-                  <option value="10">10 - 20</option>
-                  <option value="9">9 - 20</option>
-                  <option value="8">8 - 20</option>
-                  <option value="7">7 - 20</option>
-                  <option value="6">6 - 20</option>
-                  <option value="5">5 - 20</option>
-                  <option value="4">4 - 20</option>
-                  <option value="3">3 - 20</option>
-                  <option value="2">2 - 20</option>
-                  <option value="1">1 - 20</option>
-                {{/select}}
+                {{selectOptions config.critRanges selected=system.details.critRange localize=true}}
               </select>
             </div>
  

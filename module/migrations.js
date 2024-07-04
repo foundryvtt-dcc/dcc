@@ -1,4 +1,4 @@
-/* global foundry, game, ui, isObjectEmpty, foundry, duplicate */
+/* global foundry, game, ui, isObjectEmpty */
 
 /**
  * Migrate the current world to the current version of the system
@@ -207,7 +207,7 @@ export const migrateItemData = function (item) {
 /* -------------------------------------------- */
 
 /**
- * Migrate a single Scene document to incorporate changes to the data model of it's actor data overrides
+ * Migrate a single Scene document to incorporate changes to the data model of its actor data overrides
  * Return an Object of updateData to be applied
  * @param {Object} scene  The Scene data to Update
  * @return {Object}       The updateData to apply
@@ -223,7 +223,7 @@ export const migrateSceneData = function (scene) {
       t.actorId = null
       t.actorData = {}
     } else if (!t.actorLink) {
-      const actorData = duplicate(t.actorData)
+      const actorData = foundry.utils.duplicate(t.actorData)
       actorData.type = token.actor?.type
       const update = migrateActorData(actorData);
       ['items', 'effects'].forEach(embeddedName => {

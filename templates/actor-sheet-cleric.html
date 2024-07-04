@@ -65,40 +65,15 @@
                     <div class="split-67-33">
                         <label class="disapproval-range rollable" for="system.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
                         <select class="number" name="system.class.disapproval" id="system.class.disapproval">
-                          {{#select system.class.disapproval}}
-                          <option value="1" default>1 - 1</option>
-                          <option value="2">1 - 2</option>
-                          <option value="3">1 - 3</option>
-                          <option value="4">1 - 4</option>
-                          <option value="5">1 - 5</option>
-                          <option value="6">1 - 6</option>
-                          <option value="7">1 - 7</option>
-                          <option value="8">1 - 8</option>
-                          <option value="9">1 - 9</option>
-                          <option value="10">1 - 10</option>
-                          <option value="11">1 - 11</option>
-                          <option value="12">1 - 12</option>
-                          <option value="13">1 - 13</option>
-                          <option value="14">1 - 14</option>
-                          <option value="15">1 - 15</option>
-                          <option value="16">1 - 16</option>
-                          <option value="17">1 - 17</option>
-                          <option value="18">1 - 18</option>
-                          <option value="19">1 - 19</option>
-                          <option value="20">1 - 20</option>
-                          {{/select}}
+                            {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
                         </select>
                     </div>
 
                     <div class="wide split-50-50">
                         <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
-                        <select name="system.class.disapprovalTable" name="system.class.disapprovalTable"
+                        <select id="system.class.disapprovalTable" name="system.class.disapprovalTable"
                                 value="{{system.class.disapprovalTable}}">
-                          {{#select system.class.disapprovalTable}}
-                          {{#each config.disapprovalTables}}
-                          <option value="{{path}}">{{name}}</option>
-                          {{/each}}
-                          {{/select}}
+                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true labelAttr="name"}}
                         </select>
                     </div>
                 </div>

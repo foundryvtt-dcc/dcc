@@ -443,17 +443,17 @@ class FleetingLuck {
    * @param {Object} roll     Roll object to inspect
    */
   static updateFlags (flags, roll) {
-    // Extract the first dice from the roll
     if (!roll?.dice?.length) return
-    const d = roll.dice[0]
+
+    const d = roll.dice[0].values[0]
 
     // Natural 20 or natural 1
-    if (d.results.length === 1) {
-      if (d.results[0].result === 20) {
-        FleetingLuck.updateFlagsForCrit(flags)
-      } else if (d.results[0].result === 1) {
-        FleetingLuck.updateFlagsForFumble(flags)
-      }
+    if (d === 20) {
+      FleetingLuck.updateFlagsForCrit(flags)
+    }
+
+    if (d === 1) {
+      FleetingLuck.updateFlagsForFumble(flags)
     }
   }
 
@@ -489,7 +489,7 @@ class FleetingLuck {
   static async addChatMessage (content) {
     const messageData = {
       user: game.user.id,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content,
       sound: CONFIG.sounds.notification
     }

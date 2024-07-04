@@ -209,6 +209,10 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   flex: 0 0 100px;
 }
 
+.dcc .combat-basics .attack-bonus input {
+  margin-right: 3px;
+}
+
 .dcc .attack-bonus-container.skills-container {
   font-size: 1.2rem;
   justify-content: left;
@@ -269,8 +273,8 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   font-size: 16px;
   height: 23px;
   line-height: 22px;
-  margin: -16px 0 0 116px;
-  width: 30px;
+  margin: -15px 0 0 122px;
+  width: 25px;
 }
 
 /* ----------------------------------------- */
@@ -454,9 +458,17 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   flex: 0 0 100px;
 }
 
+.dcc .combat-basics .crit-die input {
+  margin: 0 3px 0 2px;
+}
+
 .dcc .combat-basics .crit-table {
   align-items: center;
   flex: 0 0 100px;
+}
+
+.dcc .combat-basics .crit-table input {
+  margin-left: 4px;
 }
 
 /* ----------------------------------------- */
@@ -475,7 +487,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
 .dcc .hd {
   flex: 0 0 50px;
-  margin: 0;
+  margin: 0 0 0 2px;
   text-align: center;
 }
 
@@ -568,6 +580,15 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   align-items: center;
   flex: 0 0 120px;
 }
+
+.dcc .combat-basics .init input:first-of-type {
+  margin-right: 4px;
+}
+
+.dcc .combat-basics .init input:last-of-type {
+  margin-right: 3px;
+}
+
 
 /* ----------------------------------------- */
 /*  Notes                              */
@@ -785,7 +806,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   background-repeat: no-repeat;
   background-size: 22px 22px;
   flex: 0 0 30px;
-  margin: 5px 0 0;
+  margin: 21px 0 0;
 }
 
 .dcc .left-arrow-button {
@@ -883,8 +904,8 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   font-size: 16px;
   height: 23px;
   line-height: 22px;
-  margin: -16px 0 0 116px;
-  width: 30px;
+  margin: -15px 0 0 122px;
+  width: 25px;
 }
 
 .dcc.sheet.actor .character-grid .save {
@@ -1379,7 +1400,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   .sheet-body.treasure {
     display: grid;
     grid-template-columns: 100%;
-    grid-template-rows: 50px minmax(80px, auto);
+    grid-template-rows: 75px minmax(80px, auto);
     width: 100%;
   }
 
@@ -1394,7 +1415,6 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    height: 150px;
     justify-content: space-between;
 
     .resource {
@@ -1417,6 +1437,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     .description {
       border: $border-style;
       grid-column: 1 / span 3;
+      grid-row: 2;
     }
 
     .armor-header-extras {

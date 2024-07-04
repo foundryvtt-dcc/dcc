@@ -50,23 +50,23 @@
 
         {{!-- Languages --}}
         <li class="languages" id="languages">
-          <label for="system.details.languages" name="system.detail.languages">
-              {{localize "DCC.Languages"}}
-          </label>
-          {{!-- TODO: Add list of select elements for languages --}}
-          <input class="languages" type="text" id="system.details.languages"
-                 name="system.details.languages"
-                 value="{{system.details.languages}}" data-dtype="String"/>
+            <label for="system.details.languages" name="system.detail.languages">
+                {{localize "DCC.Languages"}}
+            </label>
+            {{!-- TODO: Add list of select elements for languages --}}
+            <input class="languages" type="text" id="system.details.languages"
+                   name="system.details.languages"
+                   value="{{system.details.languages}}" data-dtype="String"/>
         </li>
 
         {{!-- Birth Augur --}}
         <li class="birth-augur" id="birth-augur">
-          <label for="system.details.birthAugur" name="system.details.birthAugur">
-              {{localize "DCC.BirthAugur"}}
-          </label>
-          <input class="birth-augur" type="text" id="system.details.birthAugur"
-                 name="system.details.birthAugur"
-                 value="{{system.details.birthAugur}}" data-dtype="String"/>
+            <label for="system.details.birthAugur" name="system.details.birthAugur">
+                {{localize "DCC.BirthAugur"}}
+            </label>
+            <input class="birth-augur" type="text" id="system.details.birthAugur"
+                   name="system.details.birthAugur"
+                   value="{{system.details.birthAugur}}" data-dtype="String"/>
         </li>
 
         {{!-- Rest of the sheet --}}
@@ -76,14 +76,17 @@
                 {{!-- AC and HP --}}
                 <div class="flex-padding"></div>
                 <div class="ac flexcol">
-                    <input class="ac-value" type="text" id="system.attributes.ac.value"
+                    <input class="ac-value"
+                           type="text"
+                           id="system.attributes.ac.value"
                            name="system.attributes.ac.value"
                            value="{{system.attributes.ac.value}}"
                            {{#if system.config.computeAC }}
-                           title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0 sign=true}} {{localize "DCC.ArmorPropertiesACBonus"}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}}"
-                           disabled
+                               title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0 sign=true}} {{localize 'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}}"
+                               disabled
                            {{/if}}
-                           data-dtype="Number"/>
+                           data-dtype="Number"
+                    />
                     <label for="system.attributes.ac.value">{{localize "DCC.AC"}}</label>
                 </div>
                 <div class="flex-padding"></div>
@@ -99,7 +102,7 @@
                 </div>
                 <div class="flex-padding"></div>
             </div>
-    
+
             {{!-- Combat Basics --}}
             <div class="character-main-body-row combat-basics flexrow">
                 <div class="init">
@@ -124,10 +127,11 @@
                            name="system.attributes.speed.value"
                            value="{{distanceFormat system.attributes.speed.value}}"
                            {{#if system.config.computeSpeed }}
-                           title="{{localize "DCC.SpeedBase"}} {{distanceFormat system.attributes.speed.base}} {{localize "DCC.SpeedPenalty"}} {{distanceFormat system.attributes.ac.speedPenalty}}"
-                           disabled
+                               title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}} {{distanceFormat system.attributes.ac.speedPenalty}}"
+                               disabled
                            {{/if}}
-                           data-dtype="String"/>
+                           data-dtype="String"
+                    />
                 </div>
                 <div class="hd">
                     <label class="hd-label rollable" for="system.attributes.hitDice.value">{{localize "DCC.HD"}}</label>
@@ -136,13 +140,9 @@
                 </div>
                 <div class="action-dice">
                     <label for="system.attributes.actionDice.value">{{localize "DCC.ActionDice"}}</label>
-                    <select name="system.attributes.actionDice.value" name="system.attributes.actionDice.value"
-                            value="{{system.attributes.actionDice.value}}">
-                      {{#select system.attributes.actionDice.value}}
-                      {{#each system.attributes.actionDice.options as |actionDie index|}}
-                      <option value="{{actionDie}}">{{actionDie}}</option>
-                      {{/each}}
-                      {{/select}}
+                    <select id="system.attributes.actionDice.value" name="system.attributes.actionDice.value">
+                        {{selectOptions system.attributes.actionDice.options selected=system.attributes.actionDice.value
+                        valueAttr="value" labelAttr="label" localize=true}}
                     </select>
                 </div>
                 <div class="attack-bonus">
@@ -164,8 +164,8 @@
                            value="{{system.attributes.critical.table}}" maxlength="40"
                            placeholder="I"/>
                 </div>
-            </li>
-        </ul>
-    </div>
+            </div>
+        </li>
+    </ul>
 </div>
 {{!-- End Character Tab --}}

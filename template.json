@@ -46,7 +46,7 @@
           },
           "actionDice": {
             "value": "1d20",
-            "options": ["1d20"]
+            "options": [{"value": "1d20", "label": "1d20"}]
           },
           "critical": {
             "die": "1d4",
