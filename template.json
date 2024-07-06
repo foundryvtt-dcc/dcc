@@ -87,8 +87,9 @@
           "attackBonus": "+0",
           "languages": "",
           "occupation": "",
-          "title": "",
-          "notes": ""
+          "notes": "",
+          "portrait": "icons/svg/mystery-man.svg",
+          "title": ""
         },
         "saves": {
           "frt": {

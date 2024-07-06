@@ -130,7 +130,6 @@ class DCCActor extends Actor {
       const initDieExpression = new Roll(this.system.config.initDice || '1d20')
       const terms = initDieExpression.terms
       const initDice = []
-      console.log("ARE YOU RUNNING")
 
       for (const term of terms) {
         if (term instanceof foundry.dice.terms.Die) {
@@ -141,8 +140,6 @@ class DCCActor extends Actor {
           }
         }
       }
-      console.log("INIT DICE")
-      console.log(initDice)
       this.system.attributes.initDice.options = initDice
     } catch (err) { }
 

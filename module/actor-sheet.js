@@ -13,7 +13,7 @@ class DCCActorSheet extends ActorSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'actor'],
       template: 'systems/dcc/templates/actor-sheet-zero-level.html',
-      width: 650,
+      width: 640,
       height: 790,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
@@ -169,7 +169,8 @@ class DCCActorSheet extends ActorSheet {
         } else {
           weapons.ranged.push(i)
         }
-      } if (i.type === 'ammunition') {
+      }
+      if (i.type === 'ammunition') {
         ammunition.push(i)
       } else if (i.type === 'armor') {
         armor.push(i)
@@ -280,6 +281,8 @@ class DCCActorSheet extends ActorSheet {
       // Initiative
       html.find('.init-label').click(this._onRollInitiative.bind(this))
       html.find('div.init').each(makeDraggable)
+      html.find('[for="system.attributes.init.value"]').click(this._onRollInitiative.bind(this))
+      html.find('[for="system.attributes.init.value"]').each(makeDraggable)
 
       // Hit Dice
       html.find('.hd-label').click(this._onRollHitDice.bind(this))
@@ -288,6 +291,8 @@ class DCCActorSheet extends ActorSheet {
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
       html.find('li.save').each(makeDraggable)
+      html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
+      html.find('label[for*="system.saves"]').each(makeDraggable)
 
       // Skills
       html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
@@ -315,6 +320,9 @@ class DCCActorSheet extends ActorSheet {
 
       // Action Dice
       html.find('.action-dice').each(makeDraggable)
+
+      // Portrait
+      html.find('.portrait img').click(this._onEditImage.bind(this))
 
       // Weapons
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
@@ -434,7 +442,9 @@ class DCCActorSheet extends ActorSheet {
           rollUnder
         }
       }
-    } else if (classes.contains('ability-modifiers')) {
+    }
+
+    if (classes.contains('ability-modifiers')) {
       // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
       const abilityId = this._findDataset(event.currentTarget, 'ability')
       if (abilityId) {
@@ -447,13 +457,17 @@ class DCCActorSheet extends ActorSheet {
           }
         }
       }
-    } else if (classes.contains('init')) {
+    }
+
+    if (classes.contains('init') || event.currentTarget.getAttribute('for') === 'system.attributes.init.value') {
       dragData = {
         type: 'Initiative',
         actorId: this.actor.id,
         data: {}
       }
-    } else if (classes.contains('hd')) {
+    }
+
+    if (classes.contains('hd')) {
       dragData = {
         type: 'Hit Dice',
         actorId: this.actor.id,
@@ -461,13 +475,17 @@ class DCCActorSheet extends ActorSheet {
           dice: this.actor.system.attributes.hitDice.value
         }
       }
-    } else if (classes.contains('save')) {
+    }
+
+    if (classes.contains('save') || event.currentTarget.getAttribute('for').includes('system.saves')) {
       dragData = {
         type: 'Save',
         actorId: this.actor.id,
         data: this._findDataset(event.currentTarget, 'save')
       }
-    } else if (classes.contains('skill-check')) {
+    }
+
+    if (classes.contains('skill-check')) {
       const skillId = this._findDataset(event.currentTarget, 'skill')
       const actorSkill = this.actor.system.skills[skillId]
       const skillName = actorSkill ? actorSkill.label : skillId
@@ -479,7 +497,9 @@ class DCCActorSheet extends ActorSheet {
           skillName
         }
       }
-    } else if (classes.contains('luck-die')) {
+    }
+
+    if (classes.contains('luck-die')) {
       dragData = {
         type: 'Luck Die',
         actorId: this.actor.id,
@@ -487,7 +507,9 @@ class DCCActorSheet extends ActorSheet {
           die: this.actor.system.class.luckDie
         }
       }
-    } else if (classes.contains('spell-check')) {
+    }
+
+    if (classes.contains('spell-check')) {
       dragData = {
         type: 'Spell Check',
         actorId: this.actor.id,
@@ -495,7 +517,9 @@ class DCCActorSheet extends ActorSheet {
           ability: this._findDataset(event.currentTarget, 'ability')
         }
       }
-    } else if (classes.contains('spell-draggable')) {
+    }
+
+    if (classes.contains('spell-draggable')) {
       const spell = this._findDataset(event.currentTarget, 'spell')
       const spellItem = this.actor.items.find(i => i.name === spell)
       let img
@@ -513,7 +537,9 @@ class DCCActorSheet extends ActorSheet {
           img
         }
       }
-    } else if (classes.contains('attack-bonus')) {
+    }
+
+    if (classes.contains('attack-bonus')) {
       dragData = {
         type: 'Attack Bonus',
         actorId: this.actor.id,
@@ -521,7 +547,9 @@ class DCCActorSheet extends ActorSheet {
           die: this.actor.system.details.attackBonus
         }
       }
-    } else if (classes.contains('action-dice')) {
+    }
+
+    if (classes.contains('action-dice')) {
       dragData = {
         type: 'Action Dice',
         actorId: this.actor.id,
@@ -529,7 +557,9 @@ class DCCActorSheet extends ActorSheet {
           die: this.actor.system.attributes.actionDice.value || '1d20'
         }
       }
-    } else if (classes.contains('weapon-draggable')) {
+    }
+
+    if (classes.contains('weapon-draggable')) {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const weapon = this.actor.items.get(itemId)
       dragData = Object.assign(
@@ -545,7 +575,9 @@ class DCCActorSheet extends ActorSheet {
           }
         }
       )
-    } else if (classes.contains('item-draggable')) {
+    }
+
+    if (classes.contains('item-draggable')) {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const item = this.actor.items.get(itemId)
       dragData = Object.assign(
@@ -559,13 +591,17 @@ class DCCActorSheet extends ActorSheet {
           }
         }
       )
-    } else if (classes.contains('disapproval-range')) {
+    }
+
+    if (classes.contains('disapproval-range')) {
       dragData = {
         type: 'Apply Disapproval',
         actorId: this.actor.id,
         data: {}
       }
-    } else if (classes.contains('disapproval-table')) {
+    }
+
+    if (classes.contains('disapproval-table')) {
       dragData = {
         type: 'Roll Disapproval',
         actorId: this.actor.id,
@@ -731,6 +767,20 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /**
+   * Handle rolling generic melee attack
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollMeleeAttack (event) {
+    if (this.actor.getAttackBonusMode() === 'manual') {
+      event.preventDefault()
+      const options = this._fillRollOptions(event)
+      this.actor.rollAttackBonus(options)
+      this.render(false)
+    }
+  }
+
+  /**
    * Handle rolling a weapon attack
    * @param {Event} event   The originating click event
    * @private
@@ -794,9 +844,9 @@ class DCCActorSheet extends ActorSheet {
       const expanded = foundry.utils.expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
-            parentElement.classList.contains('armor') ||
-            parentElement.classList.contains('spell-item') ||
-            parentElement.classList.contains('skill-field')) {
+          parentElement.classList.contains('armor') ||
+          parentElement.classList.contains('spell-item') ||
+          parentElement.classList.contains('skill-field')) {
           // Handle extra nesting in skill lists
           if (parentElement.classList.contains('skill-field')) {
             parentElement = parentElement.parentElement

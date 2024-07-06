@@ -4,8 +4,8 @@
 /*  Globals                                  */
 /* ----------------------------------------- */
 @font-face {
-    font-family: "Cooper Black";
-    src: url("fonts/Cooper.otf") format("otf");
+  font-family: "Cooper Black";
+  src: url("fonts/Cooper.otf") format("otf");
 }
 
 @font-face {
@@ -42,13 +42,13 @@ $cooper-black: 'Cooper Black', 'Palatino Linotype', serif;
 }
 
 :root {
-    --dark-bg: url("images/denim.png");
-    --dark-border: 4px solid var(--dark-color);
-    --dark-color: rgba(0, 0, 0, 0.75);
-    --light-color: rgba(255, 255, 255, 0.87);
-    --medium-color: rgba(0, 0, 0, 0.3);
-    --data-font: "Book Antiqua", serif;
-    --label-font: "Cooper Black", serif;
+  --dark-bg: url("images/denim.png");
+  --dark-border: 4px solid var(--dark-color);
+  --dark-color: rgba(0, 0, 0, 0.75);
+  --light-color: rgba(255, 255, 255, 0.87);
+  --medium-color: rgba(0, 0, 0, 0.3);
+  --data-font: "Book Antiqua", serif;
+  --label-font: "Cooper Black", serif;
 }
 
 /* ----------------------------------------- */
@@ -1828,6 +1828,10 @@ form.dcc-roll-modifier {
     font-size: 14px;
   }
 
+  .ability-box input[id$='max'] {
+    margin-right: 3px;
+  }
+
   .ability-name {
     grid-column: 1 / 3;
   }
@@ -1865,9 +1869,9 @@ form.dcc-roll-modifier {
     column-gap: 8px;
     display: grid;
     font-size: 14px;
-    grid-template-columns: 102px 80px 100px 60px 1px;
+    grid-template-columns: 110px 90px 80px 63px;
     grid-template-rows: 22px 21px 21px 21px 21px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .combat-basics label {
