@@ -287,6 +287,8 @@ class DCCActorSheet extends ActorSheet {
       // Hit Dice
       html.find('.hd-label').click(this._onRollHitDice.bind(this))
       html.find('div.hd').each(makeDraggable)
+      html.find('[for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
+      html.find('[for="system.attributes.hitDice.value"]').each(makeDraggable)
 
       // Saving Throws
       html.find('.save-name').click(this._onRollSavingThrow.bind(this))
@@ -467,7 +469,7 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    if (classes.contains('hd')) {
+    if (classes.contains('hd') || event.currentTarget.getAttribute('for') === 'system.attributes.hd.value') {
       dragData = {
         type: 'Hit Dice',
         actorId: this.actor.id,
@@ -775,7 +777,21 @@ class DCCActorSheet extends ActorSheet {
     if (this.actor.getAttackBonusMode() === 'manual') {
       event.preventDefault()
       const options = this._fillRollOptions(event)
-      this.actor.rollAttackBonus(options)
+      this.actor.rollMeleeAttack(options)
+      this.render(false)
+    }
+  }
+
+  /**
+   * Handle rolling generic melee attack
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollRangedAttack (event) {
+    if (this.actor.getAttackBonusMode() === 'manual') {
+      event.preventDefault()
+      const options = this._fillRollOptions(event)
+      this.actor.rollRangedAttack(options)
       this.render(false)
     }
   }
