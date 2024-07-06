@@ -3,7 +3,7 @@
 import EntityImages from './entity-images.js'
 
 /**
- *  Parses Player Stat Blocks (e.g. from Purple Sorceror) into an NPC sheet
+ *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an NPC sheet
  *
  *  @param {string} pcString The player stat block to import
  *  @return {Array}          Array of player character objects to create
@@ -27,31 +27,31 @@ function _parseJSONPCs (pcObject) {
   // A full 500 character JSON object has a 'characters' array at the root
   if (pcObject.characters) {
     return pcObject.characters.map(x => _parseJSONPCs(x)[0])
-  // Otherwise we're looking at a JSON object representing a single character
+    // Otherwise we're looking at a JSON object representing a single character
   } else {
     const pc = {}
     if (pcObject.name) {
       pc.name = pcObject.name
     }
-    pc['data.details.occupation.value'] = pcObject.occTitle || ''
-    pc['data.abilities.str.value'] = pcObject.strengthScore || 10
-    pc['data.abilities.agl.value'] = pcObject.agilityScore || 10
-    pc['data.abilities.sta.value'] = pcObject.staminaScore || 10
-    pc['data.abilities.per.value'] = pcObject.personalityScore || 10
-    pc['data.abilities.int.value'] = pcObject.intelligenceScore || 10
-    pc['data.abilities.lck.value'] = pcObject.luckScore || 10
-    pc['data.abilities.str.max'] = pc['data.abilities.str.value']
-    pc['data.abilities.agl.max'] = pc['data.abilities.agl.value']
-    pc['data.abilities.sta.max'] = pc['data.abilities.sta.value']
-    pc['data.abilities.per.max'] = pc['data.abilities.per.value']
-    pc['data.abilities.int.max'] = pc['data.abilities.int.value']
-    pc['data.abilities.lck.max'] = pc['data.abilities.lck.value']
-    pc['data.attributes.ac.value'] = pcObject.armorClass || 10
+    pc['details.occupation.value'] = pcObject.occTitle || ''
+    pc['abilities.str.value'] = pcObject.strengthScore || 10
+    pc['abilities.agl.value'] = pcObject.agilityScore || 10
+    pc['abilities.sta.value'] = pcObject.staminaScore || 10
+    pc['abilities.per.value'] = pcObject.personalityScore || 10
+    pc['abilities.int.value'] = pcObject.intelligenceScore || 10
+    pc['abilities.lck.value'] = pcObject.luckScore || 10
+    pc['abilities.str.max'] = pc['abilities.str.value']
+    pc['abilities.agl.max'] = pc['abilities.agl.value']
+    pc['abilities.sta.max'] = pc['abilities.sta.value']
+    pc['abilities.per.max'] = pc['abilities.per.value']
+    pc['abilities.int.max'] = pc['abilities.int.value']
+    pc['abilities.lck.max'] = pc['abilities.lck.value']
+    pc['attributes.ac.value'] = pcObject.armorClass || 10
     if (pcObject.hitPoints) {
-      pc['data.attributes.hp.value'] = pc['data.attributes.hp.max'] = pcObject.hitPoints
+      pc['attributes.hp.value'] = pc['attributes.hp.max'] = pcObject.hitPoints
     }
     let hitDice = '1d4'
-    let findSecretDoors = CONFIG.DCC.abilities.modifiers[pcObject.intelligenceScore] || 0
+    let findSecretDoors = CONFIG.DCC.abilityModifiers[pcObject.intelligenceScore] || 0
     if (pcObject.className) {
       switch (pcObject.className.toLowerCase()) {
         case 'cleric':
@@ -78,8 +78,8 @@ function _parseJSONPCs (pcObject) {
           break
       }
     }
-    pc['data.attributes.hitDice.value'] = hitDice
-    pc['data.skills.findSecretDoors.value'] = findSecretDoors
+    pc['attributes.hitDice.value'] = hitDice
+    pc['skills.findSecretDoors.value'] = findSecretDoors
     pc.items = []
     if (pcObject.weapons) {
       for (const weapon of pcObject.weapons) {
@@ -87,7 +87,7 @@ function _parseJSONPCs (pcObject) {
           name: weapon.name,
           type: 'weapon',
           img: weapon.img,
-          data: {
+          system: {
             toHit: weapon.attackMod || '0',
             damage: weapon.attackDamage || '1d3',
             melee: weapon.melee
@@ -99,59 +99,59 @@ function _parseJSONPCs (pcObject) {
         name: pcObject.weapon,
         type: 'weapon',
         img: EntityImages.imageForItem('weapon'),
-        data: {
+        system: {
           toHit: pcObject.attackMod || '0',
           damage: pcObject.attackDamage || '1d3',
           melee: true // No way to know, but melee is most likely
         }
       })
     }
-    pc['data.attributes.speed.value'] = pcObject.speed || 30
+    pc['attributes.speed.value'] = pcObject.speed || 30
     if (pcObject.initiative) {
-      pc['data.attributes.init.value'] = pcObject.initiative
+      pc['attributes.init.value'] = pcObject.initiative
     }
     if (pcObject.saveReflex) {
-      pc['data.saves.ref.value'] = pcObject.saveReflex
+      pc['saves.ref.value'] = pcObject.saveReflex
     }
     if (pcObject.saveFort) {
-      pc['data.saves.frt.value'] = pcObject.saveFort
+      pc['saves.frt.value'] = pcObject.saveFort
     }
     if (pcObject.saveWill) {
-      pc['data.saves.wil.value'] = pcObject.saveWill
+      pc['saves.wil.value'] = pcObject.saveWill
     }
 
     // Attributes only in upper level exports
     // Alignment
     if (pcObject.alignment) {
-      pc['data.details.alignment'] = pcObject.alignment
+      pc['details.alignment'] = pcObject.alignment
     }
     // Class
     if (pcObject.className) {
-      pc['data.class.className'] = pcObject.className
+      pc['class.className'] = pcObject.className
     }
     // Level
     if (pcObject.level) {
-      pc['data.details.level.value'] = pcObject.level
+      pc['details.level.value'] = pcObject.level
     }
 
     // Crit die and table
     if (pcObject.critDie) {
-      pc['data.attributes.critical.die'] = pcObject.critDie
+      pc['attributes.critical.die'] = pcObject.critDie
     }
     if (pcObject.critTable) {
-      pc['data.attributes.critical.table'] = pcObject.critTable
+      pc['attributes.critical.table'] = pcObject.critTable
     }
     // Spell Check
     if (pcObject.spellCheck) {
-      pc['data.class.spellCheck'] = pcObject.spellCheck
+      pc['class.spellCheck'] = pcObject.spellCheck
     }
     // Action Die
     if (pcObject.actionDice) {
-      pc['data.config.actionDice'] = pcObject.actionDice
+      pc['config.actionDice'] = pcObject.actionDice
     }
     // Attack Bonus
     if (pcObject.attackBonus) {
-      pc['data.details.attackBonus'] = pcObject.attackBonus
+      pc['details.attackBonus'] = pcObject.attackBonus
     }
     // Armor
     if (pcObject.armorData) {
@@ -207,11 +207,11 @@ function _parseJSONPCs (pcObject) {
     }
     if (pcObject.luckySign) {
       notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '<br/>'
-      pc['data.details.birthAugur'] = pcObject.luckySign
+      pc['details.birthAugur'] = pcObject.luckySign
     }
     if (pcObject.languages) {
       notes = notes + game.i18n.localize('DCC.Languages') + ': ' + pcObject.languages + '<br/>'
-      pc['data.details.languages'] = pcObject.languages
+      pc['details.languages'] = pcObject.languages
     }
     if (pcObject.racialTraits) {
       notes = notes + pcObject.racialTraits + '<br/>'
@@ -224,7 +224,7 @@ function _parseJSONPCs (pcObject) {
           name: spell.name,
           img: EntityImages.imageForItem('spell'),
           type: 'spell',
-          data: {
+          system: {
             level: spell.level,
             spellCheck: {
               die: '1d20',
@@ -239,35 +239,35 @@ function _parseJSONPCs (pcObject) {
       notes = notes + '<br/>Skills:<br/>' + pcObject.thiefSkills.raw.replace(/\n/g, '<br/>')
       delete pcObject.thiefSkills.raw
       // Handle special case thief skills
-      pc['data.class.backstab'] = pcObject.thiefSkills.backstab || '0'
+      pc['class.backstab'] = pcObject.thiefSkills.backstab || '0'
       delete pcObject.thiefSkills.backstab
-      pc['data.skills.castSpellFromScroll.die'] = `1${pcObject.thiefSkills.castSpellFromScroll || 'd10'}`
+      pc['skills.castSpellFromScroll.die'] = `1${pcObject.thiefSkills.castSpellFromScroll || 'd10'}`
       delete pcObject.thiefSkills.castSpellFromScroll
       // Halflings use the sneakSilently and hideInShadowsSkills according to the generator
-      pc['data.skills.sneakAndHide.value'] = pcObject.thiefSkills.sneakSilently || '0'
+      pc['skills.sneakAndHide.value'] = pcObject.thiefSkills.sneakSilently || '0'
       // Handle standard thief skills
       for (const skill in pcObject.thiefSkills) {
-        pc[`data.skills.${skill}.value`] = pcObject.thiefSkills[skill] || '0'
+        pc[`skills.${skill}.value`] = pcObject.thiefSkills[skill] || '0'
       }
     }
-    pc['data.details.notes.value'] = notes
+    pc['details.notes.value'] = notes
 
     return [pc]
   }
 }
 
 /**
- * Splits a set of Purple Sorceror plain text characters and parses each character
+ * Splits a set of Purple Sorcerer plain text characters and parses each character
  *
- *  @param {String} pcString The plain text characters to import
- *  @return {Array}          Array of player character objects
+ *  @param {String} pcString  The plain text characters to import
+ *  @return {Object}          Object with character property that is an array of player character objects
  **/
 function _splitAndParsePlainPCsToJSON (pcString) {
   pcString = pcString.replace(/[\n\r]+/g, '\n').replace(/[ \t]{2,}/g, ' ').replace(/^[ \t]+|[ \t]+$/g, '')
 
   const pcObjects = []
 
-  // Match the start of either a zero level or an upper level statblock
+  // Match the start of either a zero level or an upper level stat block
   const matches = pcString.matchAll(/(0-level Occupation:\s+(.+)[;\n$]|(\w+)\s+(\w+)\s+\((\d+)\w+\s+level\)[\n$])/gm)
 
   let first = true
@@ -334,7 +334,7 @@ function _parsePlainPCToJSON (pcString) {
   pcObject.hitPoints = _firstMatch(pcString.match(/HP:\s+(\d+)[;\n$]/))
 
   const weaponString = pcString.match(/Weapon:\s+(.*)[;\n$]/)
-  const weapon = weaponString.length > 0 ? _parseWeapon(weaponString[1]) : null
+  const weapon = (weaponString && weaponString.length > 0) ? _parseWeapon(weaponString[1]) : null
   if (weapon) {
     pcObject.weapon = weapon.name
     pcObject.attackMod = weapon.attackMod
@@ -446,17 +446,17 @@ function _parsePlainPCToJSON (pcString) {
   return pcObject
 }
 
-/** Return first match or null from a regex match result
- * @param {Array} Match result
- *
- * @ return {string} First matched group or null if no match
+/**
+ * Return first match or null from a regex match result
+ * @param {RegExpMatchArray} result result
+ * @return {string} First matched group or null if no match
  */
 function _firstMatch (result) {
   return (result && result.length > 0) ? result[1] : null
 }
 
 function _parseWeapon (weaponString) {
-  if (weaponString.length == 0) { return }
+  if (weaponString.length === 0) { return }
   const weaponData = weaponString.match(/^(.*)\s+(.+)\s+\((?:dmg\s+)?(.+)\)$/)
   if (weaponData && weaponData.length === 4) {
     let melee = true
@@ -466,11 +466,11 @@ function _parseWeapon (weaponString) {
     const damage = weaponData[3].replace('deed', '@ab')
     const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
     return {
-      name: name,
+      name,
       img: EntityImages.imageForItem('weapon'),
       attackMod: weaponData[2],
       attackDamage: damage,
-      melee: melee
+      melee
     }
   }
 
@@ -485,7 +485,7 @@ function _parseArmor (armorString) {
       name: armorFields[1],
       type: 'armor',
       img: EntityImages.imageForItem('armor'),
-      data: {
+      system: {
         acBonus: armorFields[2],
         checkPenalty: armorFields[3],
         fumbleDie: '1' + armorFields[4]
@@ -506,7 +506,7 @@ function _parseStartingFunds (startingFundsString) {
     name: 'Coins',
     type: 'treasure',
     img: EntityImages.imageForItem('treasure'),
-    data: {
+    system: {
       value: {
         pp,
         ep,

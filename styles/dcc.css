@@ -125,6 +125,7 @@
 /* ----------------------------------------- */
 .journal-sheet h1 {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  line-height: 1.3em;
 }
 
 .journal-sheet h2 {
@@ -288,6 +289,10 @@
   flex: 0 0 100px;
 }
 
+.dcc .combat-basics .attack-bonus input {
+  margin-right: 3px;
+}
+
 .dcc .attack-bonus-container.skills-container {
   font-size: 1.2rem;
   justify-content: left;
@@ -345,8 +350,8 @@
   font-size: 16px;
   height: 23px;
   line-height: 22px;
-  margin: -16px 0 0 116px;
-  width: 30px;
+  margin: -15px 0 0 122px;
+  width: 25px;
 }
 
 /* ----------------------------------------- */
@@ -389,7 +394,7 @@
 
 .dcc .armor-equipped {
   flex: 0 0 20px;
-  margin: 0 8px;
+  margin: 0 8px 0 0;
 }
 
 .dcc .armor-bonus {
@@ -514,9 +519,17 @@
   flex: 0 0 100px;
 }
 
+.dcc .combat-basics .crit-die input {
+  margin: 0 3px 0 2px;
+}
+
 .dcc .combat-basics .crit-table {
   align-items: center;
   flex: 0 0 100px;
+}
+
+.dcc .combat-basics .crit-table input {
+  margin-left: 4px;
 }
 
 /* ----------------------------------------- */
@@ -533,7 +546,7 @@
 /* ----------------------------------------- */
 .dcc .hd {
   flex: 0 0 50px;
-  margin: 0;
+  margin: 0 0 0 2px;
   text-align: center;
 }
 
@@ -623,6 +636,14 @@
 .dcc .combat-basics .init {
   align-items: center;
   flex: 0 0 120px;
+}
+
+.dcc .combat-basics .init input:first-of-type {
+  margin-right: 4px;
+}
+
+.dcc .combat-basics .init input:last-of-type {
+  margin-right: 3px;
 }
 
 /* ----------------------------------------- */
@@ -725,9 +746,12 @@
 .dcc .tabs .item {
   border: 2px groove #eeede0;
   border-radius: 5px 5px 0 0;
+  flex: 1;
   font-weight: bold;
+  height: 38px;
   line-height: 35px;
   margin-bottom: 10px;
+  padding: initial !important;
 }
 
 .dcc .tabs .item.active {
@@ -807,6 +831,15 @@
   margin: 5px 0 0;
 }
 
+.dcc .weapon-checkbox {
+  flex: 0 0 18px;
+  padding-left: 0;
+}
+
+.dcc .weapon-headericon {
+  flex: 0 0 24px;
+}
+
 .dcc .backstab-button {
   background-image: url("./images/backstab.png");
   background-repeat: no-repeat;
@@ -820,7 +853,7 @@
   background-repeat: no-repeat;
   background-size: 22px 22px;
   flex: 0 0 30px;
-  margin: 5px 0 0;
+  margin: 21px 0 0;
 }
 
 .dcc .left-arrow-button {
@@ -917,8 +950,8 @@
   font-size: 16px;
   height: 23px;
   line-height: 22px;
-  margin: -16px 0 0 116px;
-  width: 30px;
+  margin: -15px 0 0 122px;
+  width: 25px;
 }
 
 .dcc.sheet.actor .character-grid .save {
@@ -934,7 +967,7 @@
   height: 30px;
   line-height: 32px;
   margin: 0 auto;
-  width: 36px;
+  width: 56px;
 }
 
 .dcc.sheet.actor .character-grid .languages {
@@ -1137,6 +1170,9 @@
 .dcc .skills-container > div.split-50-50 {
   grid-template-columns: 50% 50%;
 }
+.dcc .skills-container > div.split-75-25 {
+  grid-template-columns: 75% 25%;
+}
 .dcc .skills-container > div.split-25-75 {
   grid-template-columns: 25% 75%;
 }
@@ -1151,6 +1187,9 @@
 }
 .dcc .skills-container > div.split-40-60 {
   grid-template-columns: 40% 60%;
+}
+.dcc .skills-container > div.split-67-33 {
+  grid-template-columns: 67% 33%;
 }
 .dcc .skills-container > div.nosplit {
   grid-template-columns: 100%;
@@ -1260,6 +1299,12 @@
   flex: 0 1 100px;
   text-align: left;
 }
+.dcc .item-list .currency-field {
+  text-align: right;
+}
+.dcc .item-list h4.currency-field {
+  padding-right: 4px;
+}
 .dcc .item-list .item-pp {
   flex: 0 0 50px;
 }
@@ -1298,7 +1343,7 @@
 .dcc.item .sheet-body.weapon {
   display: grid;
   grid-template-columns: 3fr 1fr 2fr;
-  grid-template-rows: 50px 50px 50px minmax(80px, auto);
+  grid-template-rows: 50px 50px 50px 50px minmax(80px, auto);
 }
 .dcc.item .sheet-body.weapon .value-row {
   grid-column: span 3/span 3;
@@ -1333,7 +1378,7 @@
 .dcc.item .sheet-body.treasure {
   display: grid;
   grid-template-columns: 100%;
-  grid-template-rows: 50px minmax(80px, auto);
+  grid-template-rows: 75px minmax(80px, auto);
   width: 100%;
 }
 .dcc.item .sheet-body.skill {
@@ -1346,7 +1391,6 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  height: 150px;
   justify-content: space-between;
 }
 .dcc.item .value-row .resource {
@@ -1364,16 +1408,22 @@
 .dcc.item .sheet-body .description {
   border: 2px groove #eeede0;
   grid-column: 1/span 3;
+  grid-row: 2;
 }
 .dcc.item .sheet-body .armor-header-extras {
   display: grid;
   grid-column: 1/span 3;
   grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
 }
+.dcc.item .sheet-body .weapon-header-basics {
+  display: grid;
+  grid-column: 1/span 3;
+  grid-template-columns: minmax(115px, auto) minmax(125px, auto) minmax(100px, auto) minmax(150px, auto);
+}
 .dcc.item .sheet-body .weapon-header-extras {
   display: grid;
   grid-column: 1/span 3;
-  grid-template-columns: minmax(55px, auto) minmax(90px, auto) minmax(100px, auto) minmax(85px, auto) minmax(145px, auto);
+  grid-template-columns: minmax(125px, auto) minmax(115px, auto) minmax(100px, auto) minmax(150px, auto);
 }
 .dcc.item .sheet-body .weapon-summary {
   grid-column: 1/span 3;
@@ -1442,7 +1492,9 @@
 .sheet-config .tabs .item {
   border: 2px groove #eeede0;
   border-radius: 5px 5px 0 0;
+  flex: 1;
   font-weight: bold;
+  height: 38px;
   line-height: 35px;
   margin-bottom: 10px;
 }
@@ -1458,6 +1510,20 @@
 /* ----------------------------------------- */
 .dcc.sheet .sheet-tabs.tabs {
   border: 0;
+}
+
+/* ----------------------------------------- */
+/*  Entity Link style links for user guide   */
+/* ----------------------------------------- */
+.dcc.sheet a.external-link {
+  background: #ddd;
+  border: 1px solid #4b4a44;
+  border-radius: 2px;
+  color: #191813;
+  padding: 1px 4px;
+  text-decoration: none;
+  white-space: nowrap;
+  word-break: break-all;
 }
 
 /* ----------------------------------------- */
@@ -1521,6 +1587,85 @@ form.dcc-roll-modifier label.checkbox-label {
 }
 form.dcc-roll-modifier input.checkbox {
   text-align: right;
+}
+form.dcc-roll-modifier input.stat {
+  text-align: right;
+}
+
+/* ----------------------------------------- */
+/*  Fleeting Luck Dialog                     */
+/* ----------------------------------------- */
+.dcc .fleeting-luck {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(40px, auto) repeat(auto-fill, minmax(60px, auto));
+}
+.dcc .fleeting-luck .fleeting-luck-header-judge {
+  align-items: center;
+  display: grid;
+  grid-gap: 2px 3px;
+  grid-template-columns: 3fr 3fr;
+}
+.dcc .fleeting-luck .fleeting-luck-header-judge .reset-all {
+  grid-column: 1;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-header-judge .clear-all {
+  grid-column: 2;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-header {
+  align-items: center;
+  display: grid;
+  grid-gap: 2px 3px;
+  grid-template-columns: 40px auto;
+}
+.dcc .fleeting-luck .fleeting-luck-header .filter {
+  grid-column: 1;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-header .spend {
+  grid-column: 2;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-row {
+  align-items: center;
+  display: grid;
+  grid-gap: 2px 3px;
+  grid-template-columns: 60px 10fr 1fr 2fr 2fr 2fr 1fr;
+}
+.dcc .fleeting-luck .fleeting-luck-row .avatar {
+  grid-column: 1;
+}
+.dcc .fleeting-luck .fleeting-luck-row .name {
+  font-size: 2rem;
+  grid-column: 2;
+}
+.dcc .fleeting-luck .fleeting-luck-row .spend {
+  grid-column: 3;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-row .minus {
+  grid-column: 4;
+  justify-self: right;
+}
+.dcc .fleeting-luck .fleeting-luck-row .value {
+  font-size: 1.5rem;
+  grid-column: 5;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-row .value-wide {
+  font-size: 1.5rem;
+  grid-column: 4/span 4;
+  justify-self: center;
+}
+.dcc .fleeting-luck .fleeting-luck-row .plus {
+  grid-column: 6;
+  justify-self: left;
+}
+.dcc .fleeting-luck .fleeting-luck-row .clear {
+  grid-column: 7;
+  justify-self: center;
 }
 
 /* ----------------------------------------- */

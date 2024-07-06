@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, mergeObject */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry */
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -10,14 +10,15 @@ class DCCActor extends Actor {
     super.prepareBaseData()
 
     // Ability modifiers
-    const abilities = this.data.data.abilities
+    const abilities = this.system.abilities
     for (const abilityId in abilities) {
-      abilities[abilityId].mod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].value] || 0
+      abilities[abilityId].mod = CONFIG.DCC.abilityModifiers[abilities[abilityId].value] || 0
+      abilities[abilityId].maxMod = CONFIG.DCC.abilityModifiers[abilities[abilityId].max] || abilities[abilityId].mod
     }
 
     // Get configuration data
     const config = this._getConfig()
-    const data = this.data.data
+    const data = this.system
 
     // Cap level if required
     if (config.capLevel) {
@@ -30,10 +31,10 @@ class DCCActor extends Actor {
     let checkPenalty = 0
     if (this.itemTypes) {
       for (const armorItem of this.itemTypes.armor) {
-        if (armorItem.data.data.equipped) {
+        if (armorItem.system.equipped) {
           try {
-            checkPenalty += parseInt(armorItem.data.data.checkPenalty || 0)
-            const expression = armorItem.data.data.fumbleDie
+            checkPenalty += parseInt(armorItem.system.checkPenalty || 0)
+            const expression = armorItem.system.fumbleDie
             const rank = game.dcc.DiceChain.rankDiceExpression(expression)
             if (rank > fumbleDieRank) {
               fumbleDieRank = rank
@@ -45,7 +46,7 @@ class DCCActor extends Actor {
         }
       }
     }
-    data.attributes.fumble = mergeObject(
+    data.attributes.fumble = foundry.utils.mergeObject(
       data.attributes.fumble || {},
       { die: fumbleDie }
     )
@@ -60,14 +61,14 @@ class DCCActor extends Actor {
 
     // Get configuration data
     const config = this._getConfig()
-    const data = this.data.data
+    const data = this.system
 
     // Migrate base speed if not present based on current speed
-    if (!this.data.data.attributes.speed.base) {
+    if (!this.system.attributes.speed.base) {
       this.update({
-        'data.speed.base': this.data.data.attributes.speed.value
+        'system.speed.base': this.system.attributes.speed.value
       })
-      this.data.data.speed.base = this.data.data.attributes.speed.value
+      this.system.speed.base = this.system.attributes.speed.value
     }
 
     // Compute AC if required
@@ -79,9 +80,9 @@ class DCCActor extends Actor {
       let armorBonus = 0
       let speedPenalty = 0
       for (const armorItem of this.itemTypes.armor) {
-        if (armorItem.data.data.equipped) {
-          armorBonus += parseInt(armorItem.data.data.acBonus || '0')
-          speedPenalty += parseInt(armorItem.data.data.speed || '0')
+        if (armorItem.system.equipped) {
+          armorBonus += parseInt(armorItem.system.acBonus || '0')
+          speedPenalty += parseInt(armorItem.system.speed || '0')
         }
       }
       if (config.computeAC) {
@@ -91,38 +92,38 @@ class DCCActor extends Actor {
         data.attributes.ac.value = 10 + abilityMod + armorBonus
       }
       if (config.computeSpeed) {
-        this.data.data.attributes.ac.speedPenalty = speedPenalty
-        this.data.data.attributes.speed.value = baseSpeed + speedPenalty
+        this.system.attributes.ac.speedPenalty = speedPenalty
+        this.system.attributes.speed.value = baseSpeed + speedPenalty
       }
     }
 
     // Gather available action dice
     try {
       // Implicit migration for legacy actors
-      if (!this.data.data.config.actionDice) {
-        this.data.data.config.actionDice = this.data.data.attributes.actionDice.value
+      if (!this.system.config.actionDice) {
+        this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
       // Parse the action dice expression from the config and produce a list of available dice
-      const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
-      const terms = actionDieExpression.terms || actionDieExpression.parts
+      const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
+      const terms = actionDieExpression.terms
       const actionDice = []
       for (const term of terms) {
-        if (typeof (term) === 'object' && term.faces) {
+        if (term instanceof foundry.dice.terms.Die) {
           const termDie = `1d${term.faces}`
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
-            actionDice.push(termDie)
+            actionDice.push({value: termDie, label: termDie})
           }
         }
       }
-      this.data.data.attributes.actionDice.options = actionDice
+      this.system.attributes.actionDice.options = actionDice
     } catch (err) { }
 
     // Migrate the old rollAttackBonus option if present
-    if (this.data.data.config.rollAttackBonus) {
+    if (this.system.config.rollAttackBonus) {
       this.update({
-        'data.config.attackBonusMode': 'manual',
-        'data.config.rollAttackBonus': null
+        'system.config.attackBonusMode': 'manual',
+        'system.config.rollAttackBonus': null
       })
     }
   }
@@ -150,8 +151,8 @@ class DCCActor extends Actor {
     }
 
     // Merge any existing data with defaults to implicitly migrate missing config fields
-    defaultConfig = Object.assign(defaultConfig, this.data.data.config)
-    this.data.data.config = defaultConfig
+    defaultConfig = Object.assign(defaultConfig, this.system.config)
+    this.system.config = defaultConfig
 
     return defaultConfig
   }
@@ -160,7 +161,7 @@ class DCCActor extends Actor {
   getRollData () {
     const data = super.getRollData()
 
-    const customData = mergeObject(
+    const customData = foundry.utils.mergeObject(
       data,
       {
         str: data.abilities.str.mod,
@@ -170,6 +171,13 @@ class DCCActor extends Actor {
         per: data.abilities.per.mod,
         int: data.abilities.int.mod,
         lck: data.abilities.lck.mod,
+        maxStr: data.abilities.str.maxMod,
+        maxAgi: data.abilities.agl.maxMod,
+        maxAgl: data.abilities.agl.maxMod,
+        maxSta: data.abilities.sta.maxMod,
+        maxPer: data.abilities.per.maxMod,
+        maxInt: data.abilities.int.maxMod,
+        maxLck: data.abilities.lck.maxMod,
         ref: data.saves.ref.value,
         frt: data.saves.frt.value,
         wil: data.saves.wil.value,
@@ -178,18 +186,39 @@ class DCCActor extends Actor {
         speed: data.attributes.speed.value,
         hp: data.attributes.hp.value,
         maxhp: data.attributes.hp.max,
-        level: data.details.level.value
+        level: data.details.level.value,
+        cl: data.details.level.value
       }
     )
 
+    // Get the relevant attack bonus (direct or rolled)
+    customData.ab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
+
     // Player only data
-    if (this.data.type === 'Player') {
-      // Get the relevant attack bonus (direct or rolled)
-      customData.ab = (data.config.attackBonusMode !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
+    if (this.type === 'Player') {
       customData.xp = data.details.xp.value || 0
     }
 
     return customData
+  }
+
+  /**
+   * Get Attack Bonus Mode
+   * Translate the Attack Bonus Mode into a valid value
+   * Invalid values default to 'flat''
+   * @return {String}  A valid Attack Bonus Mode name
+   */
+  getAttackBonusMode (options = {}) {
+    switch (this.system.config.attackBonusMode) {
+      case 'flat':
+        return 'flat'
+      case 'manual':
+        return 'manual'
+      case 'autoPerAttack':
+        return 'autoPerAttack'
+      default:
+        return 'flat'
+    }
   }
 
   /**
@@ -201,11 +230,11 @@ class DCCActor extends Actor {
     // Gather available action dice
     try {
       // Implicit migration for legacy actors
-      if (!this.data.data.config.actionDice) {
-        this.data.data.config.actionDice = this.data.data.attributes.actionDice.value
+      if (!this.system.config.actionDice) {
+        this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
       // Parse the action dice expression from the config and produce a list of available dice
-      const actionDieExpression = new Roll(this.data.data.config.actionDice || '1d20')
+      const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
       const terms = actionDieExpression.terms || actionDieExpression.parts
       for (const term of terms) {
         if (typeof (term) === 'object' && term.faces) {
@@ -236,14 +265,15 @@ class DCCActor extends Actor {
    * @param {Object} options      Options which configure how ability checks are rolled
    */
   async rollAbilityCheck (abilityId, options = {}) {
-    const ability = this.data.data.abilities[abilityId]
-    ability.mod = CONFIG.DCC.abilities.modifiers[ability.value] || 0
+    const ability = this.system.abilities[abilityId]
+    ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
     const abilityLabel = game.i18n.localize(ability.label)
     const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
     options.title = flavor
 
     let roll
+    const flags = {}
 
     // Allow requesting roll under (for Luck Checks)
     if (options.rollUnder) {
@@ -257,14 +287,20 @@ class DCCActor extends Actor {
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
       // Apply custom roll options
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
       roll.dice[0].options.dcc = {
         rollUnder: true,
-        lowerThreshold: this.data.data.abilities.lck.value,
-        upperThreshold: this.data.data.abilities.lck.value + 1
+        lowerThreshold: ability.value,
+        upperThreshold: ability.value + 1
       }
+
+      // Generate flags for the roll
+      Object.assign(flags, {
+        'dcc.RollType': 'AbilityCheckRollUnder',
+        'dcc.Ability': abilityId
+      })
     } else {
-      const die = this.data.data.attributes.actionDice.value
+      const die = this.system.attributes.actionDice.value || '1d20'
 
       // Collate terms for the roll
       const terms = [
@@ -281,35 +317,43 @@ class DCCActor extends Actor {
         },
         {
           type: 'CheckPenalty',
-          formula: parseInt(this.data.data.attributes.ac.checkPenalty || 0),
+          formula: parseInt(this.system.attributes.ac.checkPenalty || '0'),
           apply: false
         }
       ]
 
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+
+      await roll.evaluate()
+
+      // Generate flags for the roll
+      Object.assign(flags, {
+        'dcc.RollType': 'AbilityCheck',
+        'dcc.Ability': abilityId
+      })
+      game.dcc.FleetingLuck.updateFlags(flags, roll)
     }
 
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor
+      flavor,
+      flags
     })
   }
 
   /**
-   * Roll Initiative
-   * @param {Object} token    The token to roll initiative for
+   * Generate Initiative Roll formula
    */
-  async rollInitiative (token, options = {}) {
-    // No selected token - bail out
-    if (!token) {
-      return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoTokenWarning'))
-    }
-
-    // Setup the roll
-    const die = this.data.data.attributes.init.die || '1d20'
-    const init = this.data.data.attributes.init.value
+  getInitiativeRoll (options = {}) {
+    // Set up the roll
+    let die = this.system.attributes.init.die || '1d20'
+    const init = this.system.attributes.init.value
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
+
+    if (this.items.find(t => t.system.twoHanded && t.system.equipped) && game.settings.get('dcc', 'automateTwoHandedWeaponInit')) {
+      die = '1d16[' + game.i18n.localize('DCC.WeaponPropertiesTwoHanded') + ']'
+    }
 
     // Collate terms for the roll
     const terms = [
@@ -324,15 +368,42 @@ class DCCActor extends Actor {
       }
     ]
 
-    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    // Initiative: A warrior adds their class level to initiative rolls.
+    if (this.system.details.sheetClass === 'Warrior' && game.settings.get('dcc', 'automateWarriorInitiative')) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.WarriorLevel'),
+        formula: this.system.details.level.value
+      })
+    }
 
-    // evaluate roll, otherwise roll.total is undefined
-    await roll.evaluate({ async: true })
+    return game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+  }
+
+  /**
+   * Roll Initiative
+   * @param {Object} token    The token to roll initiative for
+   * @param options
+   */
+  async rollInitiative (token, options = {}) {
+    // No selected token - bail out
+    if (!token) {
+      return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoTokenWarning'))
+    }
+
+    // Generate the roll formula based on actor and settings
+    const roll = await this.getInitiativeRoll(options)
+
+    // Evaluate roll, otherwise roll.total is undefined
+    await roll.evaluate()
 
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: game.i18n.localize('DCC.Initiative')
+      flavor: game.i18n.localize('DCC.Initiative'),
+      flags: {
+        'dcc.RollType': 'Initiative'
+      }
     })
 
     // No combat active
@@ -356,7 +427,7 @@ class DCCActor extends Actor {
    * Roll Hit Dice
    */
   async rollHitDice (options = {}) {
-    const die = this.data.data.attributes.hitDice.value || '1d4'
+    const die = this.system.attributes.hitDice.value || '1d4'
     options.title = game.i18n.localize('DCC.RollModifierTitleHitDice')
 
     // Collate terms for the roll
@@ -368,9 +439,9 @@ class DCCActor extends Actor {
     ]
 
     // Players have a stamina modifier they can add
-    if (this.data.type === 'Player') {
-      const sta = this.data.data.abilities.sta || {}
-      const modifier = sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : '+0'
+    if (this.type === 'Player') {
+      const sta = this.system.abilities.sta || {}
+      const modifier = sta.mod = sta.value ? CONFIG.DCC.abilityModifiers[sta.value] : '+0'
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilitySta'),
@@ -383,16 +454,20 @@ class DCCActor extends Actor {
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: game.i18n.localize('DCC.HitDice')
+      flavor: game.i18n.localize('DCC.HitDice'),
+      flags: {
+        'dcc.RollType': 'HitDice'
+      }
     })
   }
 
   /**
    * Roll a Saving Throw
    * @param {String} saveId       The save ID (e.g. "ref")
+   * @param options
    */
   async rollSavingThrow (saveId, options = {}) {
-    const save = this.data.data.saves[saveId]
+    const save = this.system.saves[saveId]
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
     const modifierLabel = game.i18n.localize(save.label)
@@ -414,10 +489,20 @@ class DCCActor extends Actor {
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
+    await roll.evaluate()
+
+    // Generate flags for the roll
+    const flags = {
+      'dcc.RollType': 'SavingThrow',
+      'dcc.Save': saveId
+    }
+    game.dcc.FleetingLuck.updateFlags(flags, roll)
+
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor
+      flavor,
+      flags
     })
   }
 
@@ -427,7 +512,7 @@ class DCCActor extends Actor {
    * @param {Object}  options       Roll options
    */
   async rollSkillCheck (skillId, options = {}) {
-    let skill = this.data.data.skills ? this.data.data.skills[skillId] : null
+    let skill = this.system.skills ? this.system.skills[skillId] : null
     let skillItem = null
     if (!skill) {
       skillItem = this.itemTypes.skill.find(i => i.name === skillId)
@@ -435,20 +520,20 @@ class DCCActor extends Actor {
         skill = {
           label: skillItem.name
         }
-        if (skillItem.data.data.config.useAbility) {
-          skill.ability = skillItem.data.data.ability
+        if (skillItem.system.config.useAbility) {
+          skill.ability = skillItem.system.ability
         }
-        if (skillItem.data.data.config.useDie) {
-          skill.die = skillItem.data.data.die
+        if (skillItem.system.config.useDie) {
+          skill.die = skillItem.system.die
         }
-        if (skillItem.data.data.config.useValue) {
-          skill.value = skillItem.data.data.value ?? undefined
+        if (skillItem.system.config.useValue) {
+          skill.value = skillItem.system.value ?? undefined
         }
       }
     }
-    const die = skill.die || this.data.data.attributes.actionDice.value
+    const die = skill.die || this.system.attributes.actionDice.value || '1d20'
     const ability = skill.ability || null
-    var abilityLabel = ''
+    let abilityLabel = ''
     if (ability) {
       abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
     }
@@ -474,17 +559,17 @@ class DCCActor extends Actor {
       })
     }
 
-    if (skill.useDeed && this.data.data.details.lastRolledAttackBonus) {
+    if (skill.useDeed && this.system.details.lastRolledAttackBonus) {
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.DeedRoll'),
-        formula: parseInt(this.data.data.details.lastRolledAttackBonus)
+        formula: parseInt(this.system.details.lastRolledAttackBonus)
       })
     }
 
     terms.push({
       type: 'CheckPenalty',
-      formula: parseInt(this.data.data.attributes.ac.checkPenalty || 0),
+      formula: parseInt(this.system.attributes.ac.checkPenalty || '0'),
       apply: false // Always optional for skill checks
     })
 
@@ -494,7 +579,7 @@ class DCCActor extends Actor {
     if (skill.useDisapprovalRange) {
       if (roll.dice.length > 0) {
         roll.dice[0].options.dcc = {
-          lowerThreshold: this.data.data.class.disapproval
+          lowerThreshold: this.system.class.disapproval
         }
       }
     }
@@ -502,24 +587,38 @@ class DCCActor extends Actor {
     // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
     if (skillTable) {
-      game.dcc.processSpellCheck(this, {
+      await game.dcc.processSpellCheck(this, {
         rollTable: skillTable,
         roll,
         item: skillItem,
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
     } else {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
+
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'SkillCheck',
+        'dcc.SkillId': skillId
+      }
+      game.dcc.FleetingLuck.updateFlags(flags, roll)
+
       // Convert the roll to a chat message
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
+        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
+        flags
       })
     }
 
     // Store last result if required
-    if (skillItem && skillItem.data.data.config.showLastResult) {
-      skillItem.update({ 'data.lastResult': roll.total })
+    if (skillItem && skillItem.system.config.showLastResult) {
+      skillItem.update({ 'system.lastResult': roll.total })
+    }
+
+    // Need to drain disapproval
+    if (skill && skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
+      this.applyDisapproval(skill.drainDisapproval)
     }
   }
 
@@ -527,7 +626,7 @@ class DCCActor extends Actor {
    * Roll the Luck Die
    */
   async rollLuckDie (options = {}) {
-    const die = this.data.data.class.luckDie
+    const die = this.system.class.luckDie
     options.title = game.i18n.localize('DCC.LuckDie')
     let luckSpend = 1
 
@@ -536,7 +635,7 @@ class DCCActor extends Actor {
       {
         type: 'LuckDie',
         formula: die,
-        lck: this.data.data.abilities.lck.value,
+        lck: this.system.abilities.lck.value,
         callback: (formula, term) => {
           // Record the amount of luck spent when the term is resolved
           luckSpend = game.dcc.DiceChain.countDice(formula)
@@ -549,31 +648,34 @@ class DCCActor extends Actor {
 
     // Spend the luck
     await this.update({
-      'data.abilities.lck.value': (parseInt(this.data.data.abilities.lck.value) - luckSpend)
+      'system.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
     })
 
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor
+      flavor,
+      flags: {
+        'dcc.RollType': 'LuckDie'
+      }
     })
   }
 
   /**
    * Roll a Spell Check
-   * @param {String} abilityId       The ability used for the check (e.g. "per")
+   * @param options
    */
   async rollSpellCheck (options = {}) {
     if (!options.abilityId) {
-      options.abilityId = this.data.data.class.spellCheckAbility || ''
+      options.abilityId = this.system.class.spellCheckAbility || ''
     }
 
     // If a spell name is provided attempt to look up an item with that name for the roll
     if (options.spell) {
       const item = this.items.find(i => i.name === options.spell)
       if (item) {
-        if (item.data.type === 'spell') {
-          // Roll through the item and return so we don't also roll a basic spell check
+        if (item.type === 'spell') {
+          // Roll through the item and return, so we don't also roll a basic spell check
           item.rollSpellCheck(options.abilityId, options)
           return
         } else {
@@ -585,13 +687,13 @@ class DCCActor extends Actor {
     }
 
     // Otherwise fall back to a raw dice roll with appropriate flavor
-    const ability = this.data.data.abilities[options.abilityId] || {}
+    const ability = this.system.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
-    const die = this.data.data.attributes.actionDice.value
-    const bonus = this.data.data.class.spellCheck ? this.data.data.class.spellCheck.toString() : '+0'
-    const checkPenalty = parseInt(this.data.data.attributes.ac.checkPenalty || 0)
-    const isIdolMagic = this.data.data.details.sheetClass === 'Cleric'
+    const die = this.system.attributes.actionDice.value || '1d20'
+    const bonus = this.system.class.spellCheck ? this.system.class.spellCheck.toString() : '+0'
+    const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || '0')
+    const isIdolMagic = this.system.details.sheetClass === 'Cleric'
     const applyCheckPenalty = !isIdolMagic
     options.title = game.i18n.localize('DCC.SpellCheck')
 
@@ -621,9 +723,17 @@ class DCCActor extends Actor {
       terms.push({
         type: 'Spellburn',
         formula: '+0',
-        str: this.data.data.abilities.str.value,
-        agl: this.data.data.abilities.agl.value,
-        sta: this.data.data.abilities.sta.value
+        str: this.system.abilities.str.value,
+        agl: this.system.abilities.agl.value,
+        sta: this.system.abilities.sta.value,
+        callback: (formula, term) => {
+          // Apply the spellburn
+          this.update({
+            'system.abilities.str.value': term.str,
+            'system.abilities.agl.value': term.agl,
+            'system.abilities.sta.value': term.sta
+          })
+        }
       })
     }
 
@@ -631,7 +741,7 @@ class DCCActor extends Actor {
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
-        lowerThreshold: this.data.data.class.disapproval
+        lowerThreshold: this.system.class.disapproval
       }
     }
 
@@ -641,11 +751,11 @@ class DCCActor extends Actor {
     }
 
     // Tell the system to handle the spell check result
-    game.dcc.processSpellCheck(this, {
+    await game.dcc.processSpellCheck(this, {
       rollTable: null,
       roll,
       item: null,
-      flavor: flavor
+      flavor
     })
   }
 
@@ -653,7 +763,7 @@ class DCCActor extends Actor {
    * Getter to determine whether to roll an attack bonus with each attack
    */
   get rollAttackBonusWithAttack () {
-    return this.data.data.config.attackBonusMode === 'autoPerAttack'
+    return this.getAttackBonusMode() === 'autoPerAttack'
   }
 
   /**
@@ -661,9 +771,9 @@ class DCCActor extends Actor {
    */
   async rollAttackBonus (options = {}) {
     /* Determine attack bonus */
-    const attackBonusExpression = this.data.data.details.attackBonus || '0'
+    const attackBonusExpression = this.system.details.attackBonus || '0'
     if (attackBonusExpression) {
-      const flavor = game.i18n.localize('DCC.DeedRoll')
+      const flavor = game.i18n.localize('DCC.AttackBonus')
       options.title = flavor
 
       // Collate terms for the roll
@@ -678,9 +788,9 @@ class DCCActor extends Actor {
       const abRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: 3 }, this.getRollData()), options)
 
       // Store the result for use in attack and damage rolls
-      const lastRoll = this.data.data.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
+      const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate()).total
       await this.update({
-        'data.details.lastRolledAttackBonus': lastRoll
+        'system.details.lastRolledAttackBonus': lastRoll
       })
 
       // Apply custom roll options
@@ -695,7 +805,10 @@ class DCCActor extends Actor {
       if (options.displayStandardCards || !options.rollWeaponAttack) {
         abRoll.toMessage({
           speaker: ChatMessage.getSpeaker({ actor: this }),
-          flavor
+          flavor,
+          flags: {
+            'dcc.RollType': 'AttackBonus'
+          }
         })
       }
       return {
@@ -712,7 +825,7 @@ class DCCActor extends Actor {
    */
   async setActionDice (die) {
     this.update({
-      'data.attributes.actionDice.value': die
+      'system.attributes.actionDice.value': die
     })
   }
 
@@ -733,26 +846,31 @@ class DCCActor extends Actor {
 
     // If not found try finding it by slot
     if (!weapon) {
+      // Verify this is a valid slot name
       try {
-        // Verify this is a valid slot name
         const result = weaponId.match(/^([mr])(\d+)$/)
         if (!result) {
-          throw new Error('Invalid slot name')
+          console.log('Invalid slot name')
+        } else {
+          const isMelee = weaponId[0] === 'm' // 'm' or 'r'
+          const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
+          let weapons = this.itemTypes.weapon
+          if (this.system.config.sortInventory) {
+            // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
+            weapons = [...weapons].sort((a, b) => a.name.localeCompare(b.name))
+          }
+          weapon = weapons.filter(i => !!i.system.melee === isMelee)[weaponIndex]
         }
-        const isMelee = weaponId[0] === 'm' // 'm' or 'r'
-        const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
-        let weapons = this.itemTypes.weapon
-        if (this.data.data.config.sortInventory) {
-          // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
-          weapons = [...weapons].sort((a, b) => a.data.name.localeCompare(b.data.name))
-        }
-        weapon = weapons.filter(i => !!i.data.data.melee === isMelee)[weaponIndex]
       } catch (err) { }
     }
 
     // If all lookups fail, give up and show a warning
     if (!weapon) {
       return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
+    }
+
+    if (options.weaponId === undefined) {
+      options.weaponId = weapon.id
     }
 
     let attackBonusRollResult = 0
@@ -766,8 +884,13 @@ class DCCActor extends Actor {
       ))
     }
 
+    if (!weapon.system.equipped && game.settings.get('dcc', 'checkWeaponEquipment')) return ui.notifications.warn(game.i18n.localize('DCC.WeaponWarningUnequipped'))
+
     // Attack roll
     const attackRollResult = await this.rollToHit(weapon, options)
+    if (attackRollResult.naturalCrit) {
+      options.naturalCrit = true
+    }
 
     // Damage roll
     const damageRollResult = await this.rollDamage(weapon, options)
@@ -780,18 +903,27 @@ class DCCActor extends Actor {
       // Attack roll card
       if (attackRollResult.rolled) {
         attackRollResult.roll.toMessage({
-          speaker: speaker,
-          flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name })
+          user: game.user.id,
+          speaker,
+          flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
+          flags: {
+            'dcc.RollType': 'ToHit',
+            'dcc.ItemId': options.weaponId
+          }
         })
       } else {
         const messageData = {
           user: game.user.id,
-          speaker: speaker,
-          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          speaker,
+          type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
           content: game.i18n.format('DCC.AttackRollInvalidFormula', {
             formula: attackRollResult.formula,
             weapon: weapon.name
-          })
+          }),
+          flags: {
+            'dcc.RollType': 'ToHit',
+            'dcc.ItemId': options.weaponId
+          }
         }
         ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
         await CONFIG.ChatMessage.documentClass.create(messageData)
@@ -800,18 +932,27 @@ class DCCActor extends Actor {
       // Damage roll card
       if (damageRollResult.rolled) {
         damageRollResult.roll.toMessage({
-          speaker: speaker,
-          flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name })
+          user: game.user.id,
+          speaker,
+          flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name }),
+          flags: {
+            'dcc.RollType': 'Damage',
+            'dcc.ItemId': options.weaponId
+          }
         })
       } else {
         const messageData = {
           user: game.user.id,
-          speaker: speaker,
-          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          speaker,
+          type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
           content: game.i18n.format('DCC.DamageRollInvalidFormula', {
             formula: damageRollResult.formula,
             weapon: weapon.name
-          })
+          }),
+          flags: {
+            'dcc.RollType': 'Damage',
+            'dcc.ItemId': options.weaponId
+          }
         }
         ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
         await CONFIG.ChatMessage.documentClass.create(messageData)
@@ -819,9 +960,9 @@ class DCCActor extends Actor {
 
       // Roll crits or fumbles
       if (attackRollResult.crit) {
-        this.rollCritical(options)
+        await this.rollCritical(options)
       } else if (attackRollResult.fumble) {
-        this.rollFumble(options)
+        await this.rollFumble(options)
       }
     } else {
       const attackRollHTML = this._formatAttackRoll(attackRollResult)
@@ -832,26 +973,38 @@ class DCCActor extends Actor {
       let critResult = ''
       let fumbleResult = ''
 
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'CombinedAttack',
+        'dcc.ItemId': options.weaponId
+      }
+
       if (attackRollResult.crit) {
         critResult = await this.rollCritical(options)
+        if (options.naturalCrit) {
+          game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+        }
       } else if (attackRollResult.fumble) {
         fumbleResult = await this.rollFumble(options)
+        game.dcc.FleetingLuck.updateFlagsForFumble(flags)
       }
 
       const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
       const messageData = {
         user: game.user.id,
-        speaker: speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        itemId: weapon.id,
+        speaker,
+        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         content: game.i18n.format(emote, {
           weaponName: weapon.name,
           rollHTML: attackRollHTML,
-          damageRollHTML: damageRollHTML,
-          deedRollHTML: deedRollHTML,
+          damageRollHTML,
+          deedRollHTML,
           crit: critResult,
           fumble: fumbleResult
         }),
-        sound: CONFIG.sounds.dice
+        sound: CONFIG.sounds.dice,
+        flags
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
       await CONFIG.ChatMessage.documentClass.create(messageData)
@@ -860,23 +1013,28 @@ class DCCActor extends Actor {
 
   /**
    * Roll a weapon's attack roll
-   * @param {Object} weaponId    The weapon object being used for the roll
+   * @param {Object} weapon      The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
   async rollToHit (weapon, options = {}) {
     /* Grab the To Hit modifier */
-    const toHit = weapon.data.data.toHit
+    const toHit = weapon.system.toHit
 
     /* Determine crit range */
-    const die = weapon.data.data.actionDie
-    const critRange = weapon.data.data.critRange || this.data.data.details.critRange || 20
+    let die = weapon.system.actionDie || this.getActionDice()[0].formula
+
+    /* Determine using untrained weapon */
+    const automateUntrainedAttack = game.settings.get('dcc', 'automateUntrainedAttack')
+    if (!weapon.system.trained && automateUntrainedAttack) { die = game.dcc.DiceChain.bumpDie(die, '-1') + '[Untrained]' }
+
+    let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
 
     /* If we don't have a valid formula, bail out here */
     if (!await Roll.validate(toHit)) {
       return {
         rolled: false,
-        formula: weapon.data.data.toHit
+        formula: weapon.system.toHit
       }
     }
 
@@ -886,7 +1044,7 @@ class DCCActor extends Actor {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
+        presets: this.getActionDice({ includeUntrained: !automateUntrainedAttack })
       },
       {
         type: 'Compound',
@@ -901,8 +1059,36 @@ class DCCActor extends Actor {
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.Backstab'),
-        formula: parseInt(this.data.data.class.backstab)
+        formula: parseInt(this.system.class.backstab)
       })
+    }
+
+    // Add Strength or Agility modifier to attack rolls
+    let modifier
+    let modifierLabel
+    if (game.settings.get('dcc', 'automateCombatModifier')) {
+      if (weapon.system.melee) {
+        modifier = this.system.abilities.str.mod
+        modifierLabel = 'DCC.AbilityStr'
+      } else {
+        modifier = this.system.abilities.agl.mod
+        modifierLabel = 'DCC.AbilityAgl'
+      }
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize(modifierLabel) + ' ' + game.i18n.localize('DCC.Modifier'),
+        formula: modifier
+      })
+    }
+
+    if (this.system.details.sheetClass === 'Warrior' || this.system.details.sheetClass === 'Dwarf') {
+      if (weapon.name.toLowerCase().includes(this.system.class.luckyWeapon.toLowerCase()) && game.settings.get('dcc', 'automateLuckyWeaponAttack')) {
+        terms.push({
+          type: 'Modifier',
+          label: game.i18n.localize('DCC.AbilityLck') + ' ' + game.i18n.localize('DCC.Modifier'),
+          formula: this.system.abilities.lck.mod
+        })
+      }
     }
 
     /* Roll the Attack */
@@ -913,7 +1099,10 @@ class DCCActor extends Actor {
       options
     )
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
-    await attackRoll.evaluate({ async: true })
+    await attackRoll.evaluate()
+
+    // Adjust crit range if the die size was adjusted
+    critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
 
     const d20RollResult = attackRoll.dice[0].total
     attackRoll.dice[0].options.dcc = {
@@ -921,8 +1110,9 @@ class DCCActor extends Actor {
     }
 
     /* Check for crit or fumble */
-    const crit = (d20RollResult > 1 && (d20RollResult >= critRange || options.backstab))
     const fumble = (d20RollResult === 1)
+    const naturalCrit = d20RollResult >= critRange
+    const crit = !fumble && (naturalCrit || options.backstab)
 
     return {
       rolled: true,
@@ -931,23 +1121,24 @@ class DCCActor extends Actor {
       hitsAc: attackRoll.total,
       d20Roll: d20RollResult,
       crit,
+      naturalCrit,
       fumble
     }
   }
 
   /**
    * Roll a weapon's damage
-   * @param {Object} weaponId    The weapon object being used for the roll
+   * @param {Object} weapon      The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
   async rollDamage (weapon, options = {}) {
-    /* Grab the the formula */
-    let formula = weapon.data.data.damage
+    /* Grab the formula */
+    let formula = weapon.system.damage
 
     /* Are we backstabbing and the weapon has special backstab damage? */
-    if (options.backstab && weapon.data.data.backstab) {
-      formula = weapon.data.data.backstabDamage || weapon.data.data.damage
+    if (options.backstab && weapon.system.backstab) {
+      formula = weapon.system.backstabDamage || weapon.system.damage
     }
 
     /* If we don't have a valid formula, bail out here */
@@ -968,6 +1159,21 @@ class DCCActor extends Actor {
       }
     ]
 
+    // Add Strength modifier to damage rolls
+    let modifier
+    let modifierLabel
+    if (game.settings.get('dcc', 'automateCombatModifier')) {
+      if (weapon.system.melee) {
+        modifier = ' + ' + this.system.abilities.str.mod
+        modifierLabel = 'DCC.AbilityStr'
+        terms.push({
+          type: 'Modifier',
+          label: game.i18n.localize(modifierLabel) + ' ' + game.i18n.localize('DCC.Modifier'),
+          formula: modifier
+        })
+      }
+    }
+
     /* Roll the damage */
     const rollOptions = Object.assign(
       {
@@ -980,7 +1186,12 @@ class DCCActor extends Actor {
       this.getRollData(),
       rollOptions
     )
-    await damageRoll.evaluate({ async: true })
+    await damageRoll.evaluate()
+
+    // A successful attack always inflicts a minimum of 1 point of damage (already handled with the custom card)
+    if (options.displayStandardCards && damageRoll._total < 1) {
+      damageRoll._total = 1
+    }
 
     return {
       rolled: true,
@@ -999,12 +1210,12 @@ class DCCActor extends Actor {
     const terms = [
       {
         type: 'Die',
-        formula: this.data.data.attributes.critical.die
+        formula: this.system.attributes.critical.die
       },
       {
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilityLck'),
-        formula: parseInt(this.data.data.abilities.lck.mod || '0')
+        formula: parseInt(this.system.abilities.lck.mod || '0')
       }
     ]
 
@@ -1022,7 +1233,7 @@ class DCCActor extends Actor {
         const pack = game.packs.get(criticalHitPackName)
         if (pack) {
           await pack.getIndex() // Load the compendium index
-          const critTableFilter = `Crit Table ${this.data.data.attributes.critical.table}`
+          const critTableFilter = `Crit Table ${this.system.attributes.critical.table}`
           const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
           if (entry) {
             const table = await pack.getDocument(entry._id)
@@ -1034,14 +1245,14 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!critResult) {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
     } else {
       roll = critResult.roll
     }
 
     if (!options.displayStandardCards) {
       // Create the roll emote
-      const rollData = escape(JSON.stringify(roll))
+      const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
       const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
@@ -1052,10 +1263,22 @@ class DCCActor extends Actor {
         return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
       }
     } else if (!critResult) {
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'CriticalHit',
+        'dcc.ItemId': options.weaponId
+      }
+
+      // Fleeting luck if's a real crit (e.g. not forced by a backstab)
+      if (options.naturalCrit) {
+        game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+      }
+
       // Display the raw crit roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize('DCC.CriticalHit')}!`
+        flavor: `${game.i18n.localize('DCC.CriticalHit')}!`,
+        flags
       })
     }
   }
@@ -1067,7 +1290,7 @@ class DCCActor extends Actor {
   async rollFumble (options = {}) {
     let fumbleDie
     try {
-      fumbleDie = this.data.data.attributes.fumble.die
+      fumbleDie = this.system.attributes.fumble.die
     } catch (err) {
       fumbleDie = '1d4'
     }
@@ -1081,7 +1304,7 @@ class DCCActor extends Actor {
       {
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilityLck'),
-        formula: -parseInt(this.data.data.abilities.lck.mod || '0')
+        formula: -parseInt(this.system.abilities.lck.mod || '0')
       }
     ]
 
@@ -1113,14 +1336,14 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!fumbleResult) {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
     } else {
       roll = fumbleResult.roll
     }
 
     if (!options.displayStandardCards) {
       // Create the roll emote
-      const rollData = escape(JSON.stringify(roll))
+      const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
       const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
@@ -1131,10 +1354,18 @@ class DCCActor extends Actor {
         return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}`
       }
     } else if (!fumbleResult) {
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'Fumble',
+        'dcc.ItemId': options.weaponId
+      }
+      game.dcc.FleetingLuck.updateFlagsForFumble(flags)
+
       // Display the raw fumble roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize('DCC.Fumble')}!`
+        flavor: `${game.i18n.localize('DCC.Fumble')}!`,
+        flags
       })
     }
   }
@@ -1146,11 +1377,11 @@ class DCCActor extends Actor {
    */
   _formatAttackRoll (rollResult) {
     if (rollResult.rolled) {
-      const rollData = escape(JSON.stringify(rollResult.roll))
+      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
 
       // Check for Crit/Fumble
       let critFailClass = ''
-      if (Number(rollResult.roll.dice[0].results[0]) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].results[0]) === 1) { critFailClass = 'fumble ' }
+      if (Number(rollResult.roll.dice[0].total) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].total) === 1) { critFailClass = 'fumble ' }
 
       return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.hitsAc}</a>`
     } else {
@@ -1165,7 +1396,7 @@ class DCCActor extends Actor {
    */
   _formatDamageRoll (rollResult) {
     if (rollResult.rolled) {
-      const rollData = escape(JSON.stringify(rollResult.roll))
+      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
       if (rollResult.damage > 0) {
         return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>`
       } else {
@@ -1177,13 +1408,13 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Format a Attack Bonus Roll roll for display in-line
+   * Format an Attack Bonus Roll for display in-line
    * @param {Object} rollResult   The roll result object for the roll
    * @return {string}             Formatted HTML containing roll
    */
   _formatAttackBonusRoll (rollResult) {
     if (rollResult.rolled) {
-      const rollData = escape(JSON.stringify(rollResult.roll))
+      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
       // Check for Crit/Fumble
       let critFailClass = ''
       if (Number(rollResult.attackBonus) >= 3) {
@@ -1207,7 +1438,7 @@ class DCCActor extends Actor {
 
     // Calculate damage amount and current hit points
     const amount = damageAmount * multiplier
-    const hp = this.data.data.attributes.hp.value
+    const hp = this.system.attributes.hp.value
 
     let newHp = hp
     if (amount > 0) {
@@ -1215,7 +1446,7 @@ class DCCActor extends Actor {
       newHp = newHp - amount
     } else {
       // Healing - don't allow HP to be brought above MaxHP, but if it's already there assume it's intentional
-      const maxHp = this.data.data.attributes.hp.max
+      const maxHp = this.system.attributes.hp.max
       if (hp >= maxHp) {
         newHp = hp
       } else {
@@ -1227,12 +1458,12 @@ class DCCActor extends Actor {
 
     // Announce damage or healing results
     if (Math.abs(deltaHp) > 0) {
-      const locstring = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
+      const locString = (deltaHp > 0) ? 'DCC.HealDamage' : 'DCC.TakeDamage'
       const messageData = {
         user: game.user.id,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
-        content: game.i18n.format(locstring, { target: this.name, damage: Math.abs(deltaHp) }),
+        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+        content: game.i18n.format(locString, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
@@ -1241,7 +1472,7 @@ class DCCActor extends Actor {
 
     // Apply new HP
     return this.update({
-      'data.attributes.hp.value': newHp
+      'system.attributes.hp.value': newHp
     })
   }
 
@@ -1254,7 +1485,7 @@ class DCCActor extends Actor {
     // Mark the spell as lost - if the item is known
     if (item) {
       item.update({
-        'data.lost': true
+        'system.lost': true
       })
     }
 
@@ -1263,7 +1494,7 @@ class DCCActor extends Actor {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: locString,
       sound: CONFIG.sounds.notification
     }
@@ -1274,22 +1505,22 @@ class DCCActor extends Actor {
   /**
    * Apply a point of disapproval
    */
-  async applyDisapproval () {
+  async applyDisapproval (amount = 1) {
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
     // Calculate new disapproval
-    const newRange = Math.min(parseInt(this.data.data.class.disapproval) + 1, 20)
+    const newRange = Math.min(parseInt(this.system.class.disapproval) + amount, 20)
 
     // Apply the new disapproval range
     this.update({
-      'data.class.disapproval': newRange
+      'system.class.disapproval': newRange
     })
 
     // Announce that disapproval was increased
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
       sound: CONFIG.sounds.notification
     }
@@ -1311,7 +1542,7 @@ class DCCActor extends Actor {
       {
         type: 'Modifier',
         label: 'Luck Modifier',
-        formula: -this.data.data.abilities.lck.mod
+        formula: -this.system.abilities.lck.mod
       }
     ]
     const options = {}
@@ -1322,13 +1553,14 @@ class DCCActor extends Actor {
     }
 
     // If we know the formula just roll it
-    this._onRollDisapproval(terms, options)
+    await this._onRollDisapproval(terms, options)
   }
 
   /**
    * Roll disapproval
-   * @param {Array} terms  Disapproval roll terms
    * @private
+   * @param formula
+   * @param options
    */
   async _onRollDisapproval (formula, options = {}) {
     try {
@@ -1339,7 +1571,7 @@ class DCCActor extends Actor {
       // Lookup the disapproval table if available
       let disapprovalTable = null
       for (const disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
-        const disapprovalTableName = this.data.data.class.disapprovalTable
+        const disapprovalTableName = this.system.class.disapprovalTable
         if (disapprovalPackName && disapprovalTableName) {
           const pack = game.packs.get(disapprovalPackName)
           if (pack) {
@@ -1359,7 +1591,10 @@ class DCCActor extends Actor {
         // Fall back to displaying just the roll
         roll.toMessage({
           speaker: ChatMessage.getSpeaker({ actor: this }),
-          flavor: game.i18n.localize('DCC.DisapprovalRoll')
+          flavor: game.i18n.localize('DCC.DisapprovalRoll'),
+          flags: {
+            'dcc.RollType': 'Disapproval'
+          }
         })
       }
     } catch (err) {

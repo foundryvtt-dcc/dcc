@@ -4,15 +4,15 @@
         <div class="header-fields">
             <div class="flexrow">
                 <div class="item-name">
-                    <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+                    <h1 class="charname"><input name="name" id="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
                 </div>
-                <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+                <label class="item-type" for="name">{{localize item.typeString}}</label>
             </div>
 
-            {{#if data.config.freeform}}
+            {{#if system.config.freeform}}
             <div class="resource">
-              <label class="resource-label" for="data.description.summary">{{localize "DCC.SkillSummary"}}</label>
-              <input type="text" name="data.description.summary" value="{{data.description.summary}}"
+              <label class="resource-label" for="system.description.summary">{{localize "DCC.SkillSummary"}}</label>
+              <input type="text" name="system.description.summary" id="system.description.summary" value="{{system.description.summary}}"
                      data-dtype="String"/>
             </div>
             {{else}}
@@ -20,30 +20,23 @@
               <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.SkillAbility"}}</label>
                 <div>
-                  <select name="data.ability" id="data.ability"
-                          {{#if data.config.useAbility}}{{else}}disabled{{/if}}>
-                    {{#select data.ability}}
-                    <option value="str">Strength</option>
-                    <option value="agl">Agility</option>
-                    <option value="sta">Stamina</option>
-                    <option value="per">Personality</option>
-                    <option value="int">Intelligence</option>
-                    <option value="lck">Luck</option>
-                    {{/select}}
+                  <select name="system.ability" id="system.ability"
+                          {{#if system.config.useAbility}}{{else}}disabled{{/if}}>
+                    {{selectOptions config.abilities selected=system.ability localize=true}}
                   </select>
                 </div>
               </div>
               <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.SkillDie"}}</label>
-                <input type="text" name="data.die" value="{{data.die}}"
-                       {{#if data.config.useDie}}{{else}}disabled{{/if}}
+                <input type="text" name="system.die" value="{{system.die}}"
+                       {{#if system.config.useDie}}{{else}}disabled{{/if}}
                        data-dtype="String"/>
               </div>
               <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.SkillValue"}}</label>
-                <input type="text" name="data.value"
-                       value="{{numberFormat data.value decimals=0 sign=true}}"
-                       {{#if data.config.useValue}}{{else}}disabled{{/if}}
+                <input type="text" name="system.value"
+                       value="{{numberFormat system.value decimals=0 sign=true}}"
+                       {{#if system.config.useValue}}{{else}}disabled{{/if}}
                        data-dtype="Number"/>
               </div>
             </div>
@@ -53,7 +46,7 @@
 
     <section class="sheet-body skill">
       <div class="description">
-        {{editor content=data.description.value target="data.description.value" button=true isOwner=isOwner editable=editable}}
+        {{editor descriptionHTML target="system.description.value" button=true editable=editable}}
       </div>
     </section>
 </form>

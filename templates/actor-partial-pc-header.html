@@ -10,41 +10,37 @@
                        placeholder="{{localize 'DCC.CharacterName'}}"/>
             </h1>
             <div class="level">
-              <label for="data.details.level.value">{{data.class.className}} {{localize "DCC.Level"}}</label>
-                <input type="text" id="data.details.level.value" name="data.details.level.value"
-                       value="{{data.details.level.value}}" maxlength="6"
+              <label for="system.details.level.value">{{class.className}} {{localize "DCC.Level"}}</label>
+                <input type="text" id="system.details.level.value" name="system.details.level.value"
+                       value="{{system.details.level.value}}" maxlength="6"
                        data-dtype="Number"/>
             </div>
         </div>
 
         <div class="title flex1">
-            <label for="data.details.title.value">{{localize "DCC.Title"}}</label>
-            <input type="text" id="data.details.title.value" name="data.details.title.value"
-                   value="{{data.details.title.value}}" maxlength="40"/>
+            <label for="system.details.title.value">{{localize "DCC.Title"}}</label>
+            <input type="text" id="system.details.title.value" name="system.details.title.value"
+                   value="{{system.details.title.value}}" maxlength="40"/>
         </div>
 
 
         <div class="occupation flex1">
-            <label for="data.details.occupation.value">{{localize "DCC.Occupation"}}</label>
-            <input type="text" id="data.details.occupation.value" name="data.details.occupation.value"
-                   value="{{data.details.occupation.value}}" maxlength="40"/>
+            <label for="system.details.occupation.value">{{localize "DCC.Occupation"}}</label>
+            <input type="text" id="system.details.occupation.value" name="system.details.occupation.value"
+                   value="{{system.details.occupation.value}}" maxlength="40"/>
         </div>
 
         <div class="alignment">
-            <label for="data.details.alignment">{{localize "DCC.Alignment"}}</label>
-            <select id="data.details.alignment" name="data.details.alignment">
-                {{#select data.details.alignment}}
-                {{#each config.alignments as |label alignment|}}
-                <option value="{{alignment}}">{{localize label}}</option>
-                {{/each}}
-                {{/select}}
+            <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
+            <select id="system.details.alignment" name="system.details.alignment">
+                {{selectOptions config.alignments selected=system.details.alignment localize=true}}
             </select>
         </div>
 
         <div class="experience">
-            <label for="data.details.xp.value">{{localize "DCC.Experience"}}</label>
-            <input type="text" id="data.details.xp.value" name="data.details.xp.value"
-                   value="{{numberFormat data.details.xp.value decimals=0 sign=false}}"
+            <label for="system.details.xp.value">{{localize "DCC.Experience"}}</label>
+            <input type="text" id="system.details.xp.value" name="system.details.xp.value"
+                   value="{{numberFormat system.details.xp.value decimals=0 sign=false}}"
                    placeholder="0" maxlength="40" data-dtype="Number"/>
         </div>
     </div>

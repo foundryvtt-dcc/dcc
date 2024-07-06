@@ -1,4 +1,4 @@
-/* global CONFIG, expandObject, FormApplication, game, Hooks, ui, $ */
+/* global CONFIG, Dialog, expandObject, fromUuid, FormApplication, game, Hooks, ui, $ */
 
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
@@ -31,17 +31,17 @@ class DCCActorParser extends FormApplication {
    * @return {Object}
    */
   getData () {
-    const data = {}
-    data.user = game.user
-    data.config = CONFIG.DCC
-    data.folders = []
+    const context = {}
+    context.user = game.user
+    context.config = CONFIG.DCC
+    context.folders = []
 
     // Gather the list of actor folders
     for (const folder of game.actors.directory.folders) {
-      data.folders.push({ id: folder.data._id, name: folder.data.name })
+      context.folders.push({ id: folder._id, name: folder.name })
     }
 
-    return data
+    return context
   }
 
   /**
@@ -53,7 +53,7 @@ class DCCActorParser extends FormApplication {
   async _updateObject (event, formData) {
     event.preventDefault()
 
-    createActors(formData.type, formData.folderId, formData.statblocks)
+    await createActors(formData.type, formData.folderId, formData.statblocks)
   }
 }
 
@@ -65,7 +65,7 @@ class DCCActorParser extends FormApplication {
  * @return {Promise}
  */
 async function createActors (type, folderId, actorData) {
-  // Process the statblock
+  // Process the stat block
   let parsedCharacters
   try {
     parsedCharacters = (type === 'Player') ? parsePCs(actorData) : parseNPCs(actorData)
@@ -80,6 +80,59 @@ async function createActors (type, folderId, actorData) {
 
   const actors = []
 
+  // Prompt if we're importing a lot of actors
+  if (parsedCharacters.length > CONFIG.DCC.actorImporterPromptThreshold) {
+    let importConfirmed = false
+
+    const context = {
+      number: parsedCharacters.length
+    }
+    await new Promise((resolve, reject) => {
+      new Dialog({
+        title: game.i18n.format('DCC.ActorImportConfirmationPrompt', context),
+        content: `<p>${game.i18n.format('DCC.ActorImportConfirmationMessage', context)}</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.Yes'),
+            callback: () => {
+              importConfirmed = true
+              resolve()
+            }
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('DCC.No'),
+            callback: () => {
+              importConfirmed = false
+              resolve()
+            }
+          }
+        }
+      }).render(true)
+    })
+
+    // Abort the import
+    if (!importConfirmed) {
+      return []
+    }
+  }
+
+  // Cache available items if importing players
+  // @TODO Implement a configuration mechanism for providing additional packs
+  const itemMap = {}
+  if (type === 'Player') {
+    for (const packPath of CONFIG.DCC.actorImporterItemPacks) {
+      const pack = game.packs.get(packPath)
+      if (!pack) continue
+
+      const index = await pack.getIndex()
+      for (const entry of index) {
+        itemMap[entry.name] = entry
+      }
+    }
+  }
+
   for (const parsedCharacter of parsedCharacters) {
     // Separate out owned items
     const items = parsedCharacter.items
@@ -93,18 +146,18 @@ async function createActors (type, folderId, actorData) {
       name = parsedCharacter.name
     } else {
       // Otherwise combine the occupation and class if available to come up with something descriptive
-      if (parsedCharacter['data.details.occupation.value']) {
-        nameParts.push(parsedCharacter['data.details.occupation.value'])
+      if (parsedCharacter['details.occupation.value']) {
+        nameParts.push(parsedCharacter['details.occupation.value'])
       }
-      if (parsedCharacter['data.class.className']) {
-        nameParts.push(parsedCharacter['data.class.className'])
+      if (parsedCharacter['class.className']) {
+        nameParts.push(parsedCharacter['class.className'])
       }
       name = nameParts.join(' ')
     }
 
     // Enable Compute AC for imported player actors since they have armor items
     if (type === 'Player') {
-      parsedCharacter['data.config.computeAC'] = true
+      parsedCharacter['config.computeAC'] = true
     }
 
     // Create the actor
@@ -112,16 +165,64 @@ async function createActors (type, folderId, actorData) {
       name,
       type,
       folder: folderId,
-      data: expandObject(parsedCharacter).data,
+      system: expandObject(parsedCharacter),
       items
     })
 
     // Try and pick a sheet of player characters by matching sheet names to the actor's class name
-    if (type === 'Player' && parsedCharacter['data.class.className']) {
+    if (type === 'Player' && parsedCharacter['class.className']) {
       const classes = Object.keys(CONFIG.Actor.sheetClasses[type])
       for (const sheetClass of classes) {
-        if (sheetClass.includes(parsedCharacter['data.class.className'])) {
+        if (sheetClass.includes(parsedCharacter['class.className'])) {
           actor.setFlag('core', 'sheetClass', sheetClass)
+        }
+      }
+    }
+
+    // Try and remap items to compendium items
+    if (type === 'Player') {
+      const items = [...actor.items] // Copy the actor's items array
+      for (const originalItem of items) {
+        // Strip '+X ' if present on the front of high level items
+        const cleanName = originalItem.name.replace(/^\+\d+ /, '')
+
+        // Apply name remapping
+        const names = CONFIG.DCC.actorImporterNameMap[cleanName] ?? [cleanName]
+        const newItems = []
+
+        for (const name of names) {
+          // Check for an item of this type in the cache
+          const mapEntry = itemMap[name]
+          if (mapEntry && mapEntry.type === originalItem.type) {
+            // Lookup the item document
+            const compendiumItem = await fromUuid(mapEntry.uuid)
+            const newItem = compendiumItem.toObject()
+
+            // Keep the original item name if we're remapping to a single item
+            if (names.length === 1) {
+              newItem.name = originalItem.name
+            }
+
+            // Copy relevant fields from the original object to maintain modifiers and stats
+            if (originalItem.type === 'weapon') {
+              newItem.system.toHit = originalItem.system.toHit
+              newItem.system.damage = originalItem.system.damage
+              newItem.system.melee = originalItem.system.melee
+              newItem.system.equipped = true
+            } else if (originalItem.type === 'armor') {
+              newItem.system.acBonus = originalItem.system.acBonus
+              newItem.system.checkPenalty = originalItem.system.checkPenalty
+              newItem.system.fumbleDie = originalItem.system.fumbleDie
+            }
+
+            newItems.push(newItem)
+          }
+        }
+
+        // Remove the old object and add the new one
+        if (newItems.length > 0) {
+          actor.deleteEmbeddedDocuments('Item', [originalItem.id])
+          actor.createEmbeddedDocuments('Item', newItems)
         }
       }
     }

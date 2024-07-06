@@ -1,44 +1,40 @@
 <form class="item config-dialog" autocomplete="off">
   <div class="form-group">
-    <label for="data.config.inheritActionDie">{{localize "DCC.InheritActionDie"}}</label>
+    <label for="system.config.inheritActionDie">{{localize "DCC.InheritActionDie"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.inheritActionDie" id="data.config.inheritActionDie" {{checked data.config.inheritActionDie}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.inheritActionDie" id="system.config.inheritActionDie" {{checked system.config.inheritActionDie}} data-dtype="boolean"/>
     </div>
-    <label for="data.config.inheritSpellCheck">{{localize "DCC.InheritSpellCheck"}}</label>
+    <label for="system.config.inheritSpellCheck">{{localize "DCC.InheritSpellCheck"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.inheritSpellCheck" id="data.config.inheritSpellCheck" {{checked data.config.inheritSpellCheck}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.inheritSpellCheck" id="system.config.inheritSpellCheck" {{checked system.config.inheritSpellCheck}} data-dtype="boolean"/>
     </div>
-    <label for="data.config.inheritCheckPenalty">{{localize "DCC.InheritCheckPenalty"}}</label>
+    <label for="system.config.inheritCheckPenalty">{{localize "DCC.InheritCheckPenalty"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.inheritCheckPenalty" id="data.config.inheritCheckPenalty" {{checked data.config.inheritCheckPenalty}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.inheritCheckPenalty" id="system.config.inheritCheckPenalty" {{checked system.config.inheritCheckPenalty}} data-dtype="boolean"/>
     </div>
   </div>
   <div class="form-group">
-    <label for="data.config.castingMode">{{localize "DCC.SpellCastingMode"}}</label>
+    <label for="system.config.castingMode">{{localize "DCC.SpellCastingMode"}}</label>
     <div class="form-fields">
-      <select name="data.config.castingMode" id="data.config.castingMode">
-        {{#select data.config.castingMode}}
-        {{#each config.castingModes}}
-        <option value="{{ @key }}">{{localize this}}</option>
-        {{/each}}
-        {{/select}}
+      <select name="system.config.castingMode" id="system.config.castingMode">
+        {{selectOptions config.castingModes selected=system.config.castingMode localize=true}}
       </select>
     </div>
     <label class="info span">{{localize "DCC.SpellCastingModeInfo"}}</label>
-    <label for="data.config.showMercurialEffect">{{localize "DCC.ShowMercurialEffectConfig"}}</label>
+    <label for="system.config.showMercurialEffect">{{localize "DCC.ShowMercurialEffectConfig"}}</label>
     <div class="form-fields">
-      <input type="checkbox" name="data.config.showMercurialEffect" id="data.config.showMercurialEffect" {{checked data.config.showMercurialEffect}} data-dtype="boolean"/>
+      <input type="checkbox" name="system.config.showMercurialEffect" id="system.config.showMercurialEffect" {{checked system.config.showMercurialEffect}} data-dtype="boolean"/>
     </div>
     <label class="info span">{{localize "DCC.ShowMercurialEffectInfo"}}</label>
   </div>
   <div class="form-group">
-    <label for="data.results.table">{{localize "DCC.SpellResultTable"}}</label>
+    <label for="system.results.table">{{localize "DCC.SpellResultTable"}}</label>
     <div class="form-fields">
-      <input type="text" class="string" name="data.results.table" id="data.results.table" value="{{data.results.table}}" data-dtype="String"/>
+      <input type="text" class="string" name="system.results.table" id="system.results.table" value="{{system.results.table}}" data-dtype="String"/>
     </div>
-    <label for="data.results.collection">{{localize "DCC.SpellResultCompendium"}}</label>
+    <label for="system.results.collection">{{localize "DCC.SpellResultCompendium"}}</label>
     <div class="form-fields">
-      <input type="text" class="string" name="data.results.collection" id="data.results.collection" value="{{data.results.collection}}" data-dtype="String"/>
+      <input type="text" class="string" name="system.results.collection" id="system.results.collection" value="{{system.results.collection}}" data-dtype="String"/>
     </div>
   </div>
   <footer class="sheet-footer">

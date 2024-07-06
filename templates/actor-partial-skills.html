@@ -15,36 +15,36 @@
       {{#each actor.skills as |skill id|}}
       <li class="item skill-item flexrow" data-item-id="{{skill._id}}"
           data-skill="{{skill.name}}">
-        {{#if skill.data.config.freeform}}
-        <label class="skill-name" for="itemUpdates.{{skill._id}}.data.description.summary">{{skill.name}}</label>
+        {{#if skill.config.freeform}}
+        <label class="skill-name" for="itemUpdates.{{skill._id}}.system.description.summary">{{skill.name}}</label>
         {{else}}
         <label class="skill-check skill-name rollable">{{skill.name}}</label>
         {{/if}}
-        {{#if skill.data.config.freeform}}
+        {{#if skill.system.config.freeform}}
         <div class="skill-freeform skill-field">
-          <input type="text" id="itemUpdates.{{skill._id}}.data.description.summary"
-                  name="itemUpdates.{{skill._id}}.data.description.summary"
-                  value="{{skill.data.description.summary}}" data-dtype="String"/>
+          <input type="text" id="itemUpdates.{{skill._id}}.system.description.summary"
+                  name="itemUpdates.{{skill._id}}.system.description.summary"
+                  value="{{skill.system.description.summary}}" data-dtype="String"/>
         </div>
         {{else}}
         <div class="skill-die skill-field">
-           {{#if skill.data.config.useDie}}
-           <input type="text" id="skill.data.die"
-                  name="itemUpdates.{{skill._id}}.data.die"
-                  value="{{skill.data.die}}" data-dtype="String"/>
+           {{#if skill.system.config.useDie}}
+           <input type="text" id="itemUpdates.{{skill._id}}.system.die"
+                  name="itemUpdates.{{skill._id}}.system.die"
+                  value="{{skill.system.die}}" data-dtype="String"/>
            {{/if}}
         </div>
         <div class="skill-modifier skill-field">
-           {{#if skill.data.config.useValue}}
-           <input type="text" id="skill.data.value"
-                  name="itemUpdates.{{skill._id}}.data.value"
-                  value="{{numberFormat skill.data.value decimals=0 sign=true}}"
+           {{#if skill.system.config.useValue}}
+           <input type="text" id="itemUpdates.{{skill._id}}.system.value"
+                  name="itemUpdates.{{skill._id}}.system.value"
+                  value="{{numberFormat skill.system.value decimals=0 sign=true}}"
                   data-dtype="Number"/>
            {{/if}}
         </div>
         <div class="skill-last-roll">
-           {{#if skill.data.config.showLastResult}}
-           <label>{{skill.data.lastResult}}</label>
+           {{#if skill.system.config.showLastResult}}
+           <label>{{skill.system.lastResult}}</label>
            {{/if}}
         </div>
         {{/if}}

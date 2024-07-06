@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="handlebars.js" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file:///Applications/Foundry Virtual Tabletop.app/Contents/Resources/app/node_modules/handlebars/dist/handlebars.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file:///Applications/Foundry Virtual Tabletop.app/Contents/Resources/app/node_modules/handlebars/dist/handlebars.js" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

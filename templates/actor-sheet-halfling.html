@@ -1,8 +1,8 @@
 <form class="{{cssClass}}" autocomplete="off">
 
     {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
-    <input type="hidden" id="data.details.sheetClass" name="data.details.sheetClass" value="Halfling" data-dtype="String"/>
-    <input type="hidden" id="data.details.critRange" name="data.details.critRange" value="20" data-dtype="Number"/>
+    <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Halfling" data-dtype="String"/>
+    <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
     {{!-- Sheet Header --}}
     {{> systems/dcc/templates/actor-partial-pc-header.html }}
@@ -12,7 +12,10 @@
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
         <a class="item" data-tab="class">{{localize "DCC.Halfling"}}</a>
-        {{#if data.config.showSkills}}
+        {{#if system.config.showSpells}}
+        <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
+        {{/if}}
+        {{#if system.config.showSkills}}
         <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
         {{/if}}
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
@@ -41,22 +44,20 @@
             <div class="class">
                 <div class="skills-container">
                     <div class="split-50-25-25" data-skill="sneakAndHide">
-                        <label class="skill-check rollable" for="data.skills.sneakAndHide.value">{{localize "DCC.SneakAndHide"}}</label>
-                        <input type="text" id="data.skills.sneakAndHide.value" name="data.skills.sneakAndHide.value" value="{{data.skills.sneakAndHide.value}}" data-dtype="String"/>
+                        <label class="skill-check rollable" for="system.skills.sneakAndHide.value">{{localize "DCC.SneakAndHide"}}</label>
+                        <input type="text" id="system.skills.sneakAndHide.value" name="system.skills.sneakAndHide.value" value="{{system.skills.sneakAndHide.value}}" data-dtype="String"/>
                     </div>
                     <div></div>
                 </div>
 
                 <ul class="class-note flexcol">
-		    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-		  	  <li>{{{dccLocalizeAndEnrich "DCC.HalflingClassLink"}}}</li>
-		    {{/dccPackExists}}
+                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                  <li>{{{system.class.classLink}}}</li>
+                  {{/dccPackExists}}
                   <li>{{localize "DCC.InfravisionHalfling"}}</li>
-		  <ul class="class-note flexcol">
-			{{#dccPackExists "dcc.dcc-userguide"}}
-                    		<li>{{{dccLocalizeAndEnrich "DCC.InfravisionLink"}}}</li>
-                    	{{/dccPackExists}}
-		  </ul>
+                    <ul class="class-note flexcol">
+                      <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Infravision-and-Torches"><i class="fas fa-link"></i> {{localize "DCC.InfravisionLink"}}</a></li>
+                    </ul>
                   <li>{{localize "DCC.Lucky"}}</li>
                   <li>{{localize "DCC.TwoWeaponFighting"}}
                     <ul class="class-note flexcol">

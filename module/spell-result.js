@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, CONST, duplicate, game, mergeObject, renderTemplate, TextEditor */
+/* global ChatMessage, CONFIG, CONST, game, foundry, renderTemplate, TextEditor */
 
 class SpellResult {
   /**
@@ -9,36 +9,47 @@ class SpellResult {
    * @param {Object} messageOptions  Additional options for the ChatMessage object
    * @param {boolean} crit        The Spell Check was a nat 20
    * @param {boolean} fumble      The Spell Check was a nat 1
+   * @param {String} itemId       ID of the spell item
    */
-  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false } = {}) {
+  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined } = {}) {
     const roll = result.roll
-    messageOptions = mergeObject({
+    messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
     }, messageOptions)
 
     const speaker = ChatMessage.getSpeaker({ user: game.user })
 
+    // construct flags for the message
+    const flags = {
+      'core.RollTable': result.id,
+      'dcc.SpellCheck': true,
+      'dcc.RollType': 'SpellCheck',
+      'dcc.ItemId': itemId
+    }
+
+    if (crit) {
+      game.dcc.FleetingLuck.updateFlagsForCrit(flags)
+    } else if (fumble) {
+      game.dcc.FleetingLuck.updateFlagsForFumble(flags)
+    }
+
     // Construct chat data
-    messageData = mergeObject({
+    messageData = foundry.utils.mergeObject({
       flavor: game.i18n.localize('DCC.SpellCheckCardMessage'),
       user: game.user.id,
-      speaker: speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-      roll: roll,
+      speaker,
+      rolls: [roll],
       sound: roll ? CONFIG.sounds.dice : null,
-      flags: {
-        'core.RollTable': result.id,
-        'dcc.SpellCheck': true
-      }
+      flags
     }, messageData)
 
     // Render the chat card which combines the dice roll with the drawn results
     messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
-      description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),
+      description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
       results: result.results.map(r => {
-        return duplicate(r)
+        return foundry.utils.duplicate(r)
       }),
-      rollHTML: rollTable.data.displayRoll ? await roll.render() : null,
+      rollHTML: rollTable.displayRoll ? await roll.render() : null,
       table: rollTable,
       crit,
       fumble
@@ -113,14 +124,14 @@ class SpellResult {
     if (rollTable) {
       // Find the next result up or down, if available
       const entry = rollTable.results.get(resultId)
-      const newResultRoll = (direction > 0) ? (entry.data.range[1]) + 1 : (entry.data.range[0] - 1)
+      const newResultRoll = (direction > 0) ? (entry.range[1]) + 1 : (entry.range[0] - 1)
       const newResult = rollTable.getResultsForRoll(newResultRoll)[0]
       const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
-        description: TextEditor.enrichHTML(rollTable.data.description, { entities: true }),
+        description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
         results: [newResult].map(r => {
-          return duplicate(r)
+          return foundry.utils.duplicate(r)
         }),
-        rollHTML: rollTable.data.displayRoll ? await this.roll.render() : null,
+        rollHTML: rollTable.displayRoll ? await this.rolls[0].render() : null,
         table: rollTable,
         crit,
         fumble

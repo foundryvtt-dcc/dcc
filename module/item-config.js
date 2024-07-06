@@ -3,14 +3,13 @@
 export class DCCItemConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
-    options.id = 'sheet-config'
     options.width = 380
     return options
   }
 
   /** @override */
   get template () {
-    switch (this.object.data.type) {
+    switch (this.object.type) {
       case 'weapon':
         return 'systems/dcc/templates/dialog-item-config-weapon.html'
       case 'spell':
@@ -38,7 +37,7 @@ export class DCCItemConfig extends FormApplication {
    * @return {Object}
    */
   getData () {
-    const data = this.object.data
+    const data = this.object
     data.user = game.user
     data.config = CONFIG.DCC
     return data

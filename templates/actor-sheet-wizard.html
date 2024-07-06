@@ -1,8 +1,8 @@
 <form class="{{cssClass}}" autocomplete="off">
 
     {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
-    <input type="hidden" id="data.details.sheetClass" name="data.details.sheetClass" value="Wizard" data-dtype="String"/>
-    <input type="hidden" id="data.details.critRange" name="data.details.critRange" value="20" data-dtype="Number"/>
+    <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Wizard" data-dtype="String"/>
+    <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
     {{!-- Sheet Header --}}
     {{> systems/dcc/templates/actor-partial-pc-header.html }}
@@ -13,7 +13,7 @@
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
         <a class="item" data-tab="class">{{localize "DCC.Wizard"}}</a>
         <a class="item" data-tab="spells">{{localize "DCC.WizardSpells"}}</a>
-        {{#if data.config.showSkills}}
+        {{#if system.config.showSkills}}
         <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
         {{/if}}
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
@@ -37,34 +37,34 @@
         {{!-- Class Tab --}}
         <div class="tab" data-group="primary" data-tab="class">
             {{!-- Update spell check ability to use Intelligence --}}
-            <input type="hidden" id="data.class.spellCheckAbility" name="data.class.spellCheckAbility" value="int">
+            <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
             <div class="class">
                 <div class="skills-container">
                     <div class="split-50-50" data-ability="int">
-                        <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{data.class.spellCheck}}" data-dtype="String"/>
+                        <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}" data-dtype="String"/>
                     </div>
                     <div></div>
 
                     <div class="wide split-25-75">
-                        <label for="data.class.patron">{{localize "DCC.Patron"}}</label>
-                        <input class="string" type="text" id="data.class.patron" name="data.class.patron" value="{{data.class.patron}}" data-dtype="String"/>
+                        <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
+                        <input class="string" type="text" id="system.class.patron" name="system.class.patron" value="{{system.class.patron}}" data-dtype="String"/>
                     </div>
     
                     <div class="wide split-25-75">
-                        <label for="data.class.familiar">{{localize "DCC.Familiar"}}</label>
-                        <input class="string" type="text" id="data.class.familiar" name="data.class.familiar" value="{{data.class.familiar}}" data-dtype="String"/>
+                        <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
+                        <input class="string" type="text" id="system.class.familiar" name="system.class.familiar" value="{{system.class.familiar}}" data-dtype="String"/>
                     </div>
 
                     <div class="wide textarea">
-                        <label for="data.class.corruption">{{localize "DCC.Corruptions"}}:</label>
+                        <label for="system.class.corruption">{{localize "DCC.Corruptions"}}:</label>
                         <label></label>
-                        {{editor content=data.class.corruption target="data.class.corruption" button=true isOwner=isOwner editable=editable}}
+                        {{editor corruptionHTML target="system.class.corruption" button=true editable=editable}}
                     </div>
 		</div>
 			<br>
-		     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-		        {{{dccLocalizeAndEnrich "DCC.WizardClassLink"}}}
+		    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+		      {{{system.class.classLink}}}
 		    {{/dccPackExists}}
             </div>
         </div>

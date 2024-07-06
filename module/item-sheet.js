@@ -1,4 +1,4 @@
-/* global Dialog, ItemSheet, game, mergeObject, CONFIG */
+/* global Dialog, ItemSheet, TextEditor, game, foundry, CONFIG */
 
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
@@ -10,7 +10,7 @@ import EntityImages from './entity-images.js'
 export class DCCItemSheet extends ItemSheet {
   /** @override */
   static get defaultOptions () {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }]
@@ -19,7 +19,7 @@ export class DCCItemSheet extends ItemSheet {
 
   /** @override */
   get template () {
-    switch (this.object.data.type) {
+    switch (this.object.type) {
       case 'weapon':
         return 'systems/dcc/templates/item-sheet-weapon.html'
       case 'armor':
@@ -39,31 +39,45 @@ export class DCCItemSheet extends ItemSheet {
   }
 
   /** @override */
-  getData () {
-    const data = super.getData()
+  async getData (options) {
+    const data = await super.getData(options)
 
     // Lookup the localizable string for the item's type
-    data.item.data.typeString = CONFIG.DCC.items[data.item.type] || 'DCC.Unknown'
+    data.typeString = CONFIG.DCC.items[data.type] || 'DCC.Unknown'
 
     if (data.item.type === 'spell') {
       // Allow mercurial magic roll only on wizard spells owned by an actor
-      const castingMode = data.item.data.data.config.castingMode || 'wizard'
-      const forceShowMercurialEffect = data.item.data.data.config.showMercurialEffect
+      const castingMode = data.item.system.config.castingMode || 'wizard'
+      const forceShowMercurialEffect = data.item.system.config.showMercurialEffect
       data.showMercurialRoll = !!this.actor && (castingMode === 'wizard' || forceShowMercurialEffect)
+
+      // Format Mercurial Effect HTML
+      data.mercurialEffectHTML = await TextEditor.enrichHTML(this.item.system.mercurialEffect.description, {
+        async: true,
+        relativeTo: this.item,
+        secrets: this.item.isOwner
+      })
     } else if (data.item.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
-      data.unresolved = this.item.needsValueRoll()
+      data.unresolved = data.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
       // Only allow currency conversion on items representing coins that have a resolved value
-      data.allowConversions = data.item.data.isCoins && !data.unresolved && !this.limited
+      data.allowConversions = data.item.system.isCoins && !data.unresolved && !this.limited
     }
 
     // Pass through the item data in the format we expect
-    data.data = data.item.data.data
+    data.system = data.item.system
 
     if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
-      data.item.data.img = EntityImages.imageForItem(data.item.type)
+      data.data.img = EntityImages.imageForItem(data.type)
     }
+
+    // Format Description HTML
+    data.descriptionHTML = await TextEditor.enrichHTML(this.item.system.description.value, {
+      async: true,
+      relativeTo: this.item,
+      secrets: this.item.isOwner
+    })
 
     return data
   }
@@ -149,7 +163,7 @@ export class DCCItemSheet extends ItemSheet {
 
     // Header buttons shown only with Owner permissions
     if (this.options.editable) {
-      if (this.object.data.type === 'spell' || this.object.data.type === 'weapon' || this.object.data.type === 'skill') {
+      if (this.object.type === 'spell' || this.object.type === 'weapon' || this.object.type === 'skill') {
         buttons.unshift(
           {
             label: game.i18n.localize('DCC.ConfigureItem'),
@@ -195,7 +209,7 @@ export class DCCItemSheet extends ItemSheet {
   _onRollMercurialMagic (event) {
     event.preventDefault()
     const options = this._fillRollOptions(event)
-    // Prompt if there's an existing effect or we're using the roll modifier dialog
+    // Prompt if there's an existing effect, or we're using the roll modifier dialog
     if (!options.showModifierDialog && this.item.hasExistingMercurialMagic()) {
       new Dialog({
         title: game.i18n.localize('DCC.MercurialMagicRerollPrompt'),
@@ -225,6 +239,7 @@ export class DCCItemSheet extends ItemSheet {
   /**
    * Roll a new Mercurial Magic effect
    * @param {Event}  event   The originating click event
+   * @param options
    * @private
    */
   _rollMercurialMagic (event, options) {
@@ -235,10 +250,11 @@ export class DCCItemSheet extends ItemSheet {
   /**
    * Look up a Mercurial Magic effect
    * @param {Event}  event   The originating click event
+   * @param options
    * @private
    */
   _lookupMercurialMagic (event, options) {
-    this.item.rollMercurialMagic(this.item.data.data.mercurialEffect.value)
+    this.item.rollMercurialMagic(this.item.system.mercurialEffect.value)
     this.render(false)
   }
 

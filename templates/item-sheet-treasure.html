@@ -6,18 +6,18 @@
                 <div class="item-name">
                     <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
                 </div>
-                <label class="item-type" for="name">{{localize item.data.typeString}}</label>
+                <label class="item-type" for="name">{{localize item.typeString}}</label>
             </div>
 
             <div class="flexrow">
               <div class="resource flex1">
-                <label class="resource-label" for="data.isCoins">{{localize "DCC.AsCoins"}}</label>
-                <input type="checkbox" name="data.isCoins" id="data.isCoins"
-                    {{checked data.isCoins}} data-dtype="Boolean"/>
+                <label class="resource-label" for="system.isCoins">{{localize "DCC.AsCoins"}}</label>
+                <input type="checkbox" name="system.isCoins" id="system.isCoins"
+                    {{checked system.isCoins}} data-dtype="Boolean"/>
               </div>
               <div class="resource flex1">
                 <label class="resource-label">{{localize "DCC.Weight"}}</label>
-                <input type="text" name="data.weight" value="{{data.weight}}" data-dtype="Number"/>
+                <input type="text" name="system.weight" value="{{system.weight}}" data-dtype="Number"/>
               </div>
             </div>
         </div>
@@ -30,7 +30,7 @@
         {{/if}}
         <div class="resource">
           <label class="resource-label">{{localize "DCC.CurrencyPP"}}</label>
-          <input type="text" name="data.value.pp" value="{{data.value.pp}}" data-dtype="String"/>
+          <input type="text" name="system.value.pp" value="{{system.value.pp}}" data-dtype="String"/>
           {{#if allowConversions}}
           <div class="conversions">
             <div class="rollable right-arrow-button" data-currency="pp">&nbsp;</div>
@@ -39,7 +39,7 @@
         </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.CurrencyEP"}}</label>
-          <input type="text" name="data.value.ep" value="{{data.value.ep}}" data-dtype="String"/>
+          <input type="text" name="system.value.ep" value="{{system.value.ep}}" data-dtype="String"/>
           {{#if allowConversions}}
           <div class="conversions">
             <div class="rollable left-arrow-button" data-currency="ep">&nbsp;</div>
@@ -49,7 +49,7 @@
         </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.CurrencyGP"}}</label>
-          <input type="text" name="data.value.gp" value="{{data.value.gp}}" data-dtype="String"/>
+          <input type="text" name="system.value.gp" value="{{system.value.gp}}" data-dtype="String"/>
           {{#if allowConversions}}
           <div class="conversions">
             <div class="rollable left-arrow-button" data-currency="gp">&nbsp;</div>
@@ -59,7 +59,7 @@
         </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.CurrencySP"}}</label>
-          <input type="text" name="data.value.sp" value="{{data.value.sp}}" data-dtype="String"/>
+          <input type="text" name="system.value.sp" value="{{system.value.sp}}" data-dtype="String"/>
           {{#if allowConversions}}
           <div class="conversions">
             <div class="rollable left-arrow-button" data-currency="sp">&nbsp;</div>
@@ -69,7 +69,7 @@
         </div>
         <div class="resource">
           <label class="resource-label">{{localize "DCC.CurrencyCP"}}</label>
-          <input type="text" name="data.value.cp" value="{{data.value.cp}}" data-dtype="String"/>
+          <input type="text" name="system.value.cp" value="{{system.value.cp}}" data-dtype="String"/>
           {{#if allowConversions}}
           <div class="conversions">
             <div class="rollable left-arrow-button" data-currency="cp">&nbsp;</div>
@@ -78,7 +78,7 @@
         </div>
       </div>
       <div class="description">
-        {{editor content=data.description.value target="data.description.value" button=true isOwner=isOwner editable=editable}}
+        {{editor descriptionHTML target="system.description.value" button=true editable=editable}}
       </div>
     </section>
 </form>

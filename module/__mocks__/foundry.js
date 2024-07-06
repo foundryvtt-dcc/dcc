@@ -1,3 +1,4 @@
+/* global jest */
 /* eslint-env jest */
 import DCC from '../config.js'
 import DCCRoll from './dcc-roll.js'
@@ -27,16 +28,17 @@ global.Collection = Collection
  */
 global.itemTypesMock = jest.fn().mockName('Actor.itemTypes getter')
 global.actorUpdateMock = jest.fn(data => {}).mockName('Actor.update')
+
 class Actor {
   constructor (data, options) {
     // If test-specific data is passed in use it, otherwise use default data
     if (data) {
-      this.data = data
+      Object.assign(this, data)
     } else {
       this._id = 1
       this.name = 'test character'
-      this.data = {
-        data: {
+      Object.assign(this, {
+        system: {
           abilities: {
             str: { value: 6, mod: -1, label: 'DCC.AbilityStr' },
             agl: { value: 8, mod: -1, label: 'DCC.AbilityAgl' },
@@ -58,11 +60,6 @@ class Actor {
             hp: {
               value: 3,
               max: 3
-            }
-          },
-          items: {
-            weapons: {
-              m1: { toHit: 1, name: 'longsword' }
             }
           },
           saves: {
@@ -124,6 +121,7 @@ class Actor {
           }
         }
       }
+      )
     }
     this.items = new Collection()
     this.prepareData()
@@ -137,7 +135,7 @@ class Actor {
   }
 
   getRollData () {
-    return this.data.data
+    return this.system
   }
 
   update (data) {
@@ -173,9 +171,9 @@ global.ChatMessage = ChatMessage
 /**
  * CONFIG
  */
-global.CONFIG = { DCC: DCC }
+global.CONFIG = { DCC }
 global.CONFIG.sounds = { dice: 'diceSound' }
-global.CONST = { CHAT_MESSAGE_TYPES: { EMOTE: 'emote' } }
+global.CONST = { CHAT_MESSAGE_STYLES: { EMOTE: 'emote' } }
 
 /**
  * Localization
@@ -212,10 +210,18 @@ global.game = new Game()
 global.game.user = { _id: 1 }
 global.getDCCSkillTableMock = jest.fn((skillName) => { return null }).mockName('game.dcc.getSkillTable')
 global.processSpellCheckMock = jest.fn((actor, spellData) => { }).mockName('game.dcc.processSpellCheck')
+global.calculateCritAdjustment = jest.fn((original, adjusted) => { return 0 }).mockName('game.dcc.DiceChain.calculateCritAdjustment')
+global.updateFlagsMock = jest.fn((flags, roll) => { }).mockName('game.dcc.FleetingLuck.updateFlags')
 global.game.dcc = {
   DCCRoll,
   getSkillTable: global.getDCCSkillTableMock,
-  processSpellCheck: global.processSpellCheckMock
+  processSpellCheck: global.processSpellCheckMock,
+  DiceChain: {
+    calculateCritAdjustment: global.calculateCritAdjustment
+  },
+  FleetingLuck: {
+    updateFlags: global.updateFlagsMock
+  }
 }
 
 /**
@@ -260,6 +266,11 @@ global.ui = {
 /**
  * Global helper functions function
  */
+
+// Namespace for Foundry helper functions
+global.foundry = {
+  utils: {}
+}
 
 // Foundry's implementation of getType
 global.getType = function (token) {
@@ -311,12 +322,19 @@ global.expandObject = function (obj, _d = 0) {
 }
 
 // Foundry's implementation of duplicate
-global.duplicate = function (original) {
+global.foundry.utils.duplicate = function (original) {
   return JSON.parse(JSON.stringify(original))
 }
 
 // Foundry's implementation of mergeObject
-global.mergeObject = function (original, other = {}, { insertKeys = true, insertValues = true, overwrite = true, recursive = true, inplace = true, enforceTypes = false } = {}, _d = 0) {
+global.foundry.utils.mergeObject = function (original, other = {}, {
+  insertKeys = true,
+  insertValues = true,
+  overwrite = true,
+  recursive = true,
+  inplace = true,
+  enforceTypes = false
+} = {}, _d = 0) {
   other = other || {}
   if (!(original instanceof Object) || !(other instanceof Object)) {
     throw new Error('One of original or other are not Objects!')
@@ -324,7 +342,7 @@ global.mergeObject = function (original, other = {}, { insertKeys = true, insert
   const depth = _d + 1
 
   // Maybe copy the original data at depth 0
-  if (!inplace && (_d === 0)) original = global.duplicate(original)
+  if (!inplace && (_d === 0)) original = foundry.utils.duplicate(original)
 
   // Enforce object expansion at depth 0
   if ((_d === 0) && Object.keys(original).some(k => /\./.test(k))) original = global.expandObject(original)
@@ -358,30 +376,30 @@ global.mergeObject = function (original, other = {}, { insertKeys = true, insert
       // 1.1 - Recursively merge an inner object
       if ((tv === 'Object') && (tx === 'Object') && recursive) {
         global.mergeObject(x, v, {
-          insertKeys: insertKeys,
-          insertValues: insertValues,
-          overwrite: overwrite,
+          insertKeys,
+          insertValues,
+          overwrite,
           inplace: true,
-          enforceTypes: enforceTypes
+          enforceTypes
         }, depth)
 
-      // 1.2 - Remove an existing key
+        // 1.2 - Remove an existing key
       } else if (toDelete) {
         delete original[k]
 
-      // 1.3 - Overwrite existing value
+        // 1.3 - Overwrite existing value
       } else if (overwrite) {
         if (tx && (tv !== tx) && enforceTypes) {
           throw new Error('Mismatched data types encountered during object merge.')
         }
         original[k] = v
 
-      // 1.4 - Insert new value
+        // 1.4 - Insert new value
       } else if ((x === undefined) && insertValues) {
         original[k] = v
       }
 
-    // Case 2 - Key does not exist
+      // Case 2 - Key does not exist
     } else if (!toDelete) {
       const canInsert = (depth === 1 && insertKeys) || (depth > 1 && insertValues)
       if (canInsert) original[k] = v

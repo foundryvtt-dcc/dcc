@@ -1,8 +1,8 @@
 <form class="{{cssClass}}" autocomplete="off">
 
     {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
-    <input type="hidden" id="data.details.sheetClass" name="data.details.sheetClass" value="Cleric" data-dtype="String"/>
-    <input type="hidden" id="data.details.critRange" name="data.details.critRange" value="20" data-dtype="Number"/>
+    <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Cleric" data-dtype="String"/>
+    <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
     {{!-- Sheet Header --}}
     {{> systems/dcc/templates/actor-partial-pc-header.html }}
@@ -13,7 +13,7 @@
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
         <a class="item" data-tab="class">{{localize "DCC.Cleric"}}</a>
         <a class="item" data-tab="spells">{{localize "DCC.ClericSpells"}}</a>
-        {{#if data.config.showSkills}}
+        {{#if system.config.showSkills}}
         <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
         {{/if}}
         <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
@@ -37,68 +37,43 @@
         {{!-- Class Tab --}}
         <div class="tab" data-group="primary" data-tab="class">
             {{!-- Update spell check ability to use Personality --}}
-            <input type="hidden" id="data.class.spellCheckAbility" name="data.class.spellCheckAbility" value="per">
+            <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="per">
             <div class="class">
                 <div class="skills-container">
                     <div data-ability="per" class="split-50-50">
-                        <label class="spell-check rollable" for="data.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="data.class.spellCheck" name="data.class.spellCheck" value="{{data.class.spellCheck}}" data-dtype="String"/>
+                        <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}" data-dtype="String"/>
                     </div>
                     <div data-skill="divineAid" class="split-50-50">
-                        <label class="skill-check rollable" for="data.details.divineAid.value">{{localize "DCC.DivineAid"}}</label>
-                        <input type="text" id="data.skills.divineAid.value" name="data.skills.divineAid.value" value="{{data.skills.divineAid.value}}" data-dtype="String"/>
+                        <label class="skill-check rollable" for="system.details.divineAid.value">{{localize "DCC.DivineAid"}}</label>
+                        <input type="text" id="system.skills.divineAid.value" name="system.skills.divineAid.value" value="{{system.skills.divineAid.value}}" data-dtype="String"/>
                     </div>
                     <div data-skill="turnUnholy" class="split-50-50">
-                        <label class="skill-check rollable" for="data.details.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
-                        <input type="text" id="data.skills.turnUnholy.value" name="data.skills.turnUnholy.value" value="{{data.skills.turnUnholy.value}}" data-dtype="String"/>
+                        <label class="skill-check rollable" for="system.details.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
+                        <input type="text" id="system.skills.turnUnholy.value" name="system.skills.turnUnholy.value" value="{{system.skills.turnUnholy.value}}" data-dtype="String"/>
                     </div>
                     <div data-skill="layOnHands" class="split-50-50">
-                        <label class="skill-check rollable" for="data.details.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
-                        <input type="text" id="data.skills.layOnHands.value" name="data.skills.layOnHands.value" value="{{data.skills.layOnHands.value}}" data-dtype="String"/>
+                        <label class="skill-check rollable" for="system.details.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
+                        <input type="text" id="system.skills.layOnHands.value" name="system.skills.layOnHands.value" value="{{system.skills.layOnHands.value}}" data-dtype="String"/>
                     </div>
 
                     <div class="split-25-75" class="split-50-50">
-                        <label for="data.class.deity">{{localize "DCC.Deity"}}</label>
-                        <input class="string" type="text" id="data.class.deity" name="data.class.deity" value="{{data.class.deity}}" data-dtype="String"/>
+                        <label for="system.class.deity">{{localize "DCC.Deity"}}</label>
+                        <input class="string" type="text" id="system.class.deity" name="system.class.deity" value="{{system.class.deity}}" data-dtype="String"/>
                     </div>
     
-                    <div class="split-75-25">
-                        <label class="disapproval-range rollable" for="data.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
-                        <select class="number" name="data.class.disapproval" id="data.class.disapproval">
-                          {{#select data.class.disapproval}}
-                          <option value="1" default>1 - 1</option>
-                          <option value="2">1 - 2</option>
-                          <option value="3">1 - 3</option>
-                          <option value="4">1 - 4</option>
-                          <option value="5">1 - 5</option>
-                          <option value="6">1 - 6</option>
-                          <option value="7">1 - 7</option>
-                          <option value="8">1 - 8</option>
-                          <option value="9">1 - 9</option>
-                          <option value="10">1 - 10</option>
-                          <option value="11">1 - 11</option>
-                          <option value="12">1 - 12</option>
-                          <option value="13">1 - 13</option>
-                          <option value="14">1 - 14</option>
-                          <option value="15">1 - 15</option>
-                          <option value="16">1 - 16</option>
-                          <option value="17">1 - 17</option>
-                          <option value="18">1 - 18</option>
-                          <option value="19">1 - 19</option>
-                          <option value="20">1 - 20</option>
-                          {{/select}}
+                    <div class="split-67-33">
+                        <label class="disapproval-range rollable" for="system.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
+                        <select class="number" name="system.class.disapproval" id="system.class.disapproval">
+                            {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
                         </select>
                     </div>
 
                     <div class="wide split-50-50">
-                        <label class="disapproval-table rollable" for="data.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
-                        <select name="data.class.disapprovalTable" name="data.class.disapprovalTable"
-                                value="{{data.class.disapprovalTable}}">
-                          {{#select data.class.disapprovalTable}}
-                          {{#each config.disapprovalTables}}
-                          <option value="{{path}}">{{name}}</option>
-                          {{/each}}
-                          {{/select}}
+                        <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
+                        <select id="system.class.disapprovalTable" name="system.class.disapprovalTable"
+                                value="{{system.class.disapprovalTable}}">
+                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true labelAttr="name"}}
                         </select>
                     </div>
                 </div>
@@ -228,10 +203,10 @@
                       </div>
                     </div>
                 </div>
-		<br>
-		{{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-		{{{dccLocalizeAndEnrich "DCC.ClericClassLink"}}}
-		{{/dccPackExists}} 
+                <br>
+                {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                  {{{system.class.classLink}}}
+                {{/dccPackExists}} 
             </div>
         </div>
 

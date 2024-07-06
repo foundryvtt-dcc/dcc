@@ -28,7 +28,7 @@ DCC.abilities = {
  * The set of Ability Score Modifiers used within the system
  * @type {Object}
  */
-DCC.abilities.modifiers = {
+DCC.abilityModifiers = {
   0: -3,
   1: -3,
   2: -3,
@@ -68,6 +68,61 @@ DCC.alignments = {
   c: 'DCC.AlignmentC'
 }
 
+/**
+ * Character critical hit ranges
+ * @type {Object}
+ */
+DCC.critRanges = {
+  20: '20 - 20',
+  19: '19 - 20',
+  18: '18 - 20',
+  17: '17 - 20',
+  16: '16 - 20',
+  15: '15 - 20',
+  14: '14 - 20',
+  13: '13 - 20',
+  12: '12 - 20',
+  11: '11 - 20',
+  10: '10 - 20',
+  9: '9 - 20',
+  8: '8 - 20',
+  7: '7 - 20',
+  6: '6 - 20',
+  5: '5 - 20',
+  4: '4 - 20',
+  3: '3 - 20',
+  2: '2 - 20',
+  1: '1 - 20'
+}
+
+/**
+ * Character disapproval ranges
+ * @type {Object}
+ */
+DCC.disapprovalRanges = {
+  1: '1 - 1',
+  2: '1 - 2',
+  3: '1 - 3',
+  4: '1 - 4',
+  5: '1 - 5',
+  6: '1 - 6',
+  7: '1 - 7',
+  8: '1 - 8',
+  9: '1 - 9',
+  10: '1 - 10',
+  11: '1 - 11',
+  12: '1 - 12',
+  13: '1 - 13',
+  14: '1 - 14',
+  15: '1 - 15',
+  16: '1 - 16',
+  17: '1 - 17',
+  18: '1 - 18',
+  19: '1 - 19',
+  20: '1 - 20'
+}
+
+
 /* -------------------------------------------- */
 
 /**
@@ -99,7 +154,6 @@ DCC.items = {
 
 /**
  * Spell casting modes
- * @type {String}
  */
 DCC.castingModes = {
   generic: 'DCC.SpellCastingModeGeneric',
@@ -109,7 +163,6 @@ DCC.castingModes = {
 
 /**
  * Attack Bonus modes
- * @type {String}
  */
 DCC.attackBonusModes = {
   flat: 'DCC.AttackBonusConfigModeFlat',
@@ -469,6 +522,50 @@ DCC.macroImages = {
 DCC.templates = {
   rollModifierDialog: 'systems/dcc/templates/dialog-roll-modifiers.html',
   spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
+}
+
+// Actor importer warning threshold
+DCC.actorImporterPromptThreshold = 25
+
+// Packs for finding items when importing actors
+DCC.actorImporterItemPacks = [
+  'dcc-core-book.dcc-core-ammunition',
+  'dcc-core-book.dcc-core-armor',
+  'dcc-core-book.dcc-core-equipment',
+  'dcc-core-book.dcc-core-weapons',
+  'dcc-core-book.dcc-core-mounts',
+  'dcc-core-book.dcc-core-spells-wizard-1',
+  'dcc-core-book.dcc-core-spells-wizard-2',
+  'dcc-core-book.dcc-core-spells-wizard-3',
+  'dcc-core-book.dcc-core-spells-wizard-4',
+  'dcc-core-book.dcc-core-spells-wizard-5',
+  'dcc-core-book.dcc-core-spells-cleric-1',
+  'dcc-core-book.dcc-core-spells-cleric-2',
+  'dcc-core-book.dcc-core-spells-cleric-3',
+  'dcc-core-book.dcc-core-spells-cleric-4',
+  'dcc-core-book.dcc-core-spells-cleric-5',
+  'dcc-core-book.dcc-core-spells-patron'
+]
+
+// Name remappings for the actor importer
+DCC.actorImporterNameMap = {
+  'Hammer (as club)': ['Club'],
+  'Razor (as dagger)': ['Dagger'],
+  'Cleaver (as axe)': ['Axe'],
+  'Cudgel (as staff)': ['Staff'],
+  'Awl (as dagger)': ['Dagger'],
+  'Crowbar (as club)': ['Club'],
+  'Shovel (as staff)': ['Staff'],
+  'Pick (as club)': ['Club'],
+  'Quill (as dart)': ['Dart'],
+  'Scissors (as dagger)': ['Dagger'],
+  'Pitchfork (as spear)': ['Spear'],
+  'Trowel (as dagger)': ['Dagger'],
+  'Knife (as dagger)': ['Dagger'],
+  'Stick (as club)': ['Club'],
+  'Patron Bond/Invoke Patron': ['Patron Bond', 'Patron Bond (Self)', 'Patron Bond (Other)', 'Invoke Patron'],
+  'Demon Summoning': ['Demon Summoning', 'Demon Summoning - No Patron', 'Demon Summoning - Patron', 'Demon Summoning - True Name'],
+  Blessing: ['Blessing', 'Blessing Self', 'Blessing Ally', 'Blessing Object']
 }
 
 export default DCC

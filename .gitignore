@@ -44,3 +44,6 @@ atlassian-ide-plugin.xml
 
 # Node Modules
 node_modules/
+
+# Foundry Lockfile
+dcc.lock

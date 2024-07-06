@@ -1,4 +1,4 @@
-/* global game, ui, Token, isObjectEmpty, expandObject, mergeObject, duplicate */
+/* global foundry, game, ui, isObjectEmpty */
 
 /**
  * Migrate the current world to the current version of the system
@@ -6,12 +6,12 @@
  * @return {Promise}    A promise which resolves once the migration is completed
  */
 export const migrateWorld = async function () {
-  ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.data.version }, { permenant: true }))
+  ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permenant: true }))
 
   // Migrate World Actors
-  for (const a of game.actors.entities) {
+  for (const a of game.actors) {
     try {
-      const updateData = migrateActorData(a.data)
+      const updateData = migrateActorData(a)
       if (!isObjectEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Actor', name: a.name }))
         await a.update(updateData, { enforceTypes: false })
@@ -22,9 +22,9 @@ export const migrateWorld = async function () {
   }
 
   // Migrate World Items
-  for (const i of game.items.entities) {
+  for (const i of game.items) {
     try {
-      const updateData = migrateItemData(i.data)
+      const updateData = migrateItemData(i)
       if (!isObjectEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Item', name: i.name }))
         await i.update(updateData, { enforceTypes: false })
@@ -35,9 +35,9 @@ export const migrateWorld = async function () {
   }
 
   // Migrate Actor Override Tokens
-  for (const s of game.scenes.entities) {
+  for (const s of game.scenes) {
     try {
-      const updateData = migrateSceneData(s.data)
+      const updateData = migrateSceneData(s)
       if (!isObjectEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Scene', name: s.name }))
         await s.update(updateData, { enforceTypes: false })
@@ -49,7 +49,7 @@ export const migrateWorld = async function () {
 
   // Migrate World Compendium Packs
   const packs = game.packs.filter(p => {
-    return (p.metadata.package === 'world') && ['Actor', 'Item', 'Scene'].includes(p.metadata.entity)
+    return (p.metadata.package === 'world') && ['Actor', 'Item', 'Scene'].includes(p.documentName)
   })
   for (const p of packs) {
     await migrateCompendium(p)
@@ -57,8 +57,8 @@ export const migrateWorld = async function () {
 
   // Set the migration as complete
   // parseFloat will pull out the major and minor version ignoring the patch version
-  game.settings.set('dcc', 'systemMigrationVersion', parseFloat(game.system.data.version))
-  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.data.version }, { permenant: true }))
+  game.settings.set('dcc', 'systemMigrationVersion', parseFloat(game.system.version))
+  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permenant: true }))
 }
 
 /* -------------------------------------------- */
@@ -69,31 +69,46 @@ export const migrateWorld = async function () {
  * @return {Promise}
  */
 export const migrateCompendium = async function (pack) {
-  const entity = pack.metadata.entity
-  if (!['Actor', 'Item', 'Scene'].includes(entity)) return
+  const documentName = pack.documentName
+  if (!['Actor', 'Item', 'Scene'].includes(documentName)) return
 
-  // Begin by requesting server-side data model migration and get the migrated content
+  // Unlock the pack for editing
+  const wasLocked = pack.locked
+  await pack.configure({ locked: false })
+
+  // Begin by requesting server-side data model migration and get the migrated documents
   await pack.migrate()
-  const content = await pack.getContent()
+  const documents = await pack.getDocuments()
 
   // Iterate over compendium entries - applying fine-tuned migration functions
-  for (const ent of content) {
+  for (const doc of documents) {
     try {
       let updateData = null
-      if (entity === 'Item') updateData = migrateItemData(ent.data)
-      else if (entity === 'Actor') updateData = migrateActorData(ent.data)
-      else if (entity === 'Scene') updateData = migrateSceneData(ent.data)
+      switch (documentName) {
+        case 'Item':
+          updateData = migrateItemData(doc)
+          break
+        case 'Actor':
+          updateData = migrateActorData(doc)
+          break
+        case 'Scene':
+          updateData = migrateSceneData(doc)
+          break
+      }
+
       if (!isObjectEmpty(updateData)) {
-        expandObject(updateData)
-        updateData.id = ent.id
-        await pack.updateEntity(updateData)
-        console.log(`Migrated ${entity} entity ${ent.name} in Compendium ${pack.collection}`)
+        await doc.update(updateData)
+        console.log(`Migrated ${documentName} document ${doc.name} in Compendium ${pack.collection}`)
       }
     } catch (err) {
       console.error(err)
     }
   }
-  console.log(`Migrated all ${entity} entities from Compendium ${pack.collection}`)
+
+  // Apply the original locked status for the pack
+  await pack.configure({ locked: wasLocked })
+
+  console.log(`Migrated all ${documentName} documents from Compendium ${pack.collection}`)
 }
 
 /* -------------------------------------------- */
@@ -101,17 +116,23 @@ export const migrateCompendium = async function (pack) {
 /* -------------------------------------------- */
 
 /**
- * Migrate a single Actor entity to incorporate latest data model changes
+ * Migrate a single Actor document to incorporate latest data model changes
  * Return an Object of updateData to be applied
  * @param {Actor} actor   The actor to Update
  * @return {Object}       The updateData to apply
  */
 export const migrateActorData = function (actor) {
-  const updateData = {
-    // Add useDisapprovalRange to cleric skills
-    'data.skills.divineAid.useDisapprovalRange': true,
-    'data.skills.turnUnholy.useDisapprovalRange': true,
-    'data.skills.layOnHands.useDisapprovalRange': true
+  const updateData = { }
+
+  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
+
+  // If migrating from 0.17 or earlier add useDisapprovalRange to cleric skills
+  if ((currentVersion <= 0.17) || (currentVersion == null)) {
+    updateData.update({
+      'system.skills.divineAid.useDisapprovalRange': true,
+      'system.skills.turnUnholy.useDisapprovalRange': true,
+      'system.skills.layOnHands.useDisapprovalRange': true
+    })
   }
 
   // Migrate Owned Items
@@ -125,69 +146,42 @@ export const migrateActorData = function (actor) {
       // Update the Owned Item
       if (!isObjectEmpty(itemUpdate)) {
         hasItemUpdates = true
-        return mergeObject(i, itemUpdate, { enforceTypes: false, inplace: false })
+        return foundry.utils.mergeObject(i, itemUpdate, { enforceTypes: false, inplace: false })
       } else {
         return i
       }
     })
   }
 
-  // Create new items from legacy weapons and armor
-  if (actor.data.items) {
-    // Clear out the legacy items to avoid duplication on future migrations
-    updateData['data.items'] = null
-
-    // Migrate any legacy weapons...
-    if (actor.data.items.weapons) {
-      const m1 = _migrateWeapon(actor.data.items.weapons.m1, false)
-      const m2 = _migrateWeapon(actor.data.items.weapons.m2, false)
-      const r1 = _migrateWeapon(actor.data.items.weapons.r1, true)
-      const r2 = _migrateWeapon(actor.data.items.weapons.r2, true)
-      if (m1) { items.push(m1) }
-      if (m2) { items.push(m2) }
-      if (r1) { items.push(r1) }
-      if (r2) { items.push(r2) }
-    }
-
-    // ... and armor
-    if (actor.data.items.armor) {
-      const a0 = _migrateArmor(actor.data.items.armor.a0)
-      if (a0) {
-        items.push(a0)
-      }
-    }
-
-    hasItemUpdates = true
-  }
-
   if (hasItemUpdates) {
     updateData.items = items
   }
+
   return updateData
 }
 
 /* -------------------------------------------- */
 
 /**
- * Migrate a single Item entity to incorporate latest data model changes
+ * Migrate a single Item document to incorporate latest data model changes
  * @param item
  */
 export const migrateItemData = function (item) {
-  const updateData = {}
+  let updateData = {}
 
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
 
   // If migrating from 0.11 mark all physicalItems as equipped
   if ((currentVersion <= 0.11) || (currentVersion == null)) {
-    if (item.data.equipped !== undefined) {
-      updateData.data = { equipped: true }
+    if (item.equipped !== undefined) {
+      updateData = { equipped: true }
     }
   }
 
   // If migrating from 0.21 mark all spells as inheritActionDie
   if ((currentVersion <= 0.21) || (currentVersion == null)) {
-    if (item.type === 'spell' && !item.data.config.inheritActionDie) {
-      updateData.data = {
+    if (item.type === 'spell' && !item.config.inheritActionDie) {
+      updateData = {
         config: {
           inheritActionDie: true
         }
@@ -197,8 +191,8 @@ export const migrateItemData = function (item) {
 
   // If migrating from 0.22 mark all spells as castingMode: wizard
   if ((currentVersion <= 0.22) || (currentVersion == null)) {
-    if (item.type === 'spell' && !item.data.config.castingMode) {
-      updateData.data = {
+    if (item.type === 'spell' && !item.config.castingMode) {
+      updateData = {
         config: {
           castingMode: 'wizard'
         }
@@ -213,108 +207,38 @@ export const migrateItemData = function (item) {
 /* -------------------------------------------- */
 
 /**
- * Migrate a single Scene entity to incorporate changes to the data model of it's actor data overrides
+ * Migrate a single Scene document to incorporate changes to the data model of its actor data overrides
  * Return an Object of updateData to be applied
  * @param {Object} scene  The Scene data to Update
  * @return {Object}       The updateData to apply
  */
 export const migrateSceneData = function (scene) {
-  const tokens = duplicate(scene.tokens)
-  return {
-    tokens: tokens.map(t => {
-      if (!t.actorId || t.actorLink || !t.actorData.data) {
-        t.actorData = {}
-        return t
-      }
-      const token = new Token(t)
-      if (!token.actor) {
-        t.actorId = null
-        t.actorData = {}
-      } else if (!t.actorLink) {
-        const updateData = migrateActorData(token.data.actorData)
-        t.actorData = mergeObject(token.data.actorData, updateData)
-      }
-      return t
-    })
-  }
-}
+  const tokens = scene.tokens.map(token => {
+    const t = token.toObject()
+    const update = {}
+    if (Object.keys(update).length) foundry.utils.mergeObject(t, update)
+    if (!t.actorId || t.actorLink) {
+      t.actorData = {}
+    } else if (!game.actors.has(t.actorId)) {
+      t.actorId = null
+      t.actorData = {}
+    } else if (!t.actorLink) {
+      const actorData = foundry.utils.duplicate(t.actorData)
+      actorData.type = token.actor?.type
+      const update = migrateActorData(actorData);
+      ['items', 'effects'].forEach(embeddedName => {
+        if (!update[embeddedName]?.length) return
+        const updates = new Map(update[embeddedName].map(u => [u._id, u]))
+        t.actorData[embeddedName].forEach(original => {
+          const update = updates.get(original._id)
+          if (update) foundry.utils.mergeObject(original, update)
+        })
+        delete update[embeddedName]
+      })
 
-/* -------------------------------------------- */
-/*  Migration utilities
-/* -------------------------------------------- */
-
-/**
- * Create an embedded object from a legacy weapon object
- *
- * @param {Object} weapon   The legacy weapon object.
- * @param {Object} ranged   Indicate that a ranged weapon should be created.
- * @return {Object}         The newly created item
- */
-const _migrateWeapon = function (weapon, ranged = false) {
-  if (!weapon.name) { return }
-  const weaponData = {
-    name: weapon.name,
-    type: 'weapon',
-    data: {
-      config: {
-        inheritActionDie: true
-      },
-      actionDie: '1d20',
-      toHit: weapon.toHit,
-      damage: weapon.damage,
-      range: weapon.range,
-      twoHanded: false,
-      melee: !ranged,
-      backstab: false,
-      backstabDamage: null,
-      description: {
-        value: weapon.notes
-      },
-      quantity: 1,
-      weight: 0,
-      equipped: true,
-      identified: true,
-      value: {
-        gp: 0,
-        sp: 0,
-        cp: 0
-      }
+      foundry.utils.mergeObject(t.actorData, update)
     }
-  }
-
-  return weaponData
-}
-
-/**
- * Create an embedded object from a legacy armor object
- *
- * @param {Object} armor    The legacy armor object.
- * @return {Object}         The newly created item
- */
-const _migrateArmor = function (armor) {
-  if (!armor.name) { return }
-  const armorData = {
-    name: armor.name,
-    type: 'armor',
-    data: {
-      acBonus: armor.bonus,
-      checkPenalty: armor.checkPenalty,
-      speed: '+0',
-      fumbleDie: armor.fumbleDie,
-      description: {
-        value: armor.notes
-      },
-      quantity: 1,
-      weight: 0,
-      equipped: true,
-      identified: true,
-      value: {
-        gp: 0,
-        sp: 0,
-        cp: 0
-      }
-    }
-  }
-
-  return armorData
+    return t
+  })
+  return { tokens }
 }

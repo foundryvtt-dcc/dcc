@@ -23,6 +23,7 @@ const Roll = jest.fn((formula, data = {}) => {
     dice: [{ results: [10], options: {} }],
     toMessage: global.rollToMessageMock,
     evaluate: global.rollEvaluateMock,
+    evaluateSync: global.rollEvaluateMock,
     roll: global.rollEvaluateMock
   }
 }).mockName('Roll')

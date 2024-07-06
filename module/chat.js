@@ -4,54 +4,55 @@
  * Highlight critical success or failure on d20 rolls
  */
 export const highlightCriticalSuccessFailure = function (message, html, data) {
-  // TODO: Return to checking message.roll once Foundry's getter is fixed
-  if (!message._roll || !message.isContentVisible) return
+  if (!message.rolls || !message.isContentVisible) return
 
   // Highlight rolls where the first part is a d20 roll
-  const roll = message.roll
-  if (!roll.dice.length) return
-  const d = roll.dice[0]
+  const rolls = message.rolls
+  rolls.forEach((roll) => {
+    if (!roll.dice.length) return
+    const d = roll.dice[0]
 
-  // Ensure it is a d20 roll or a custom roll
-  const rollData = d.options.dcc
-  const needsHighlight = ((d.faces === 20) && (d.results.length === 1)) || rollData
-  if (!needsHighlight) return
+    // Ensure it is a d20 roll or a custom roll
+    const rollData = d.options.dcc
+    const needsHighlight = ((d.faces === 20) && (d.results.length === 1)) || rollData
+    if (!needsHighlight) return
 
-  // Default highlight settings for a d20
-  let upperThreshold = 20
-  let lowerThreshold = 1
+    // Default highlight settings for a d20
+    let upperThreshold = 20
+    let lowerThreshold = 1
 
-  let upperClass = 'critical'
-  let lowerClass = 'fumble'
+    let upperClass = 'critical'
+    let lowerClass = 'fumble'
 
-  // Apply DCC specific highlighting settings
-  if (rollData) {
-    // Highlight max result on any die if requested
-    if (rollData.highlightMax) {
-      upperThreshold = d.faces
-    // Otherwise apply upper threshold if provided
-    } else if (rollData.upperThreshold) {
-      upperThreshold = rollData.upperThreshold
+    // Apply DCC specific highlighting settings
+    if (rollData) {
+      // Highlight max result on any die if requested
+      if (rollData.highlightMax) {
+        upperThreshold = d.faces
+        // Otherwise apply upper threshold if provided
+      } else if (rollData.upperThreshold) {
+        upperThreshold = rollData.upperThreshold
+      }
+
+      // Apply a lower threshold if provided
+      if (rollData.lowerThreshold) {
+        lowerThreshold = rollData.lowerThreshold
+      }
+
+      // Swap class for rolls above or below the threshold if rolling under
+      if (rollData.rollUnder) {
+        upperClass = 'fumble'
+        lowerClass = 'critical'
+      }
     }
 
-    // Apply a lower threshold if provided
-    if (rollData.lowerThreshold) {
-      lowerThreshold = rollData.lowerThreshold
+    // Apply highlights
+    if (d.total >= upperThreshold) {
+      html.find('.dice-total').addClass(upperClass)
+    } else if (d.total <= lowerThreshold) {
+      html.find('.dice-total').addClass(lowerClass)
     }
-
-    // Swap class for rolls above or below the threshold if rolling under
-    if (rollData.rollUnder) {
-      upperClass = 'fumble'
-      lowerClass = 'critical'
-    }
-  }
-
-  // Apply highlights
-  if (d.total >= upperThreshold) {
-    html.find('.dice-total').addClass(upperClass)
-  } else if (d.total <= lowerThreshold) {
-    html.find('.dice-total').addClass(lowerClass)
-  }
+  })
 }
 
 /* -------------------------------------------- */
@@ -103,7 +104,7 @@ export const addChatMessageContextOptions = function (html, options) {
  */
 function applyChatCardDamage (roll, multiplier) {
   const amount = roll.find('.damage-applyable').attr('data-damage') ||
-                   roll.find('.dice-total').text()
+    roll.find('.dice-total').text()
   return Promise.all(canvas.tokens.controlled.map(t => {
     const a = t.actor
     return a.applyDamage(amount, multiplier)

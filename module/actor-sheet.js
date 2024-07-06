@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, duplicate, Dialog, game, mergeObject, expandObject, $, CONST */
+/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, $, CONST */
 
 import DCCActorConfig from './actor-config.js'
 import EntityImages from './entity-images.js'
@@ -10,7 +10,7 @@ import EntityImages from './entity-images.js'
 class DCCActorSheet extends ActorSheet {
   /** @override */
   static get defaultOptions () {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'actor'],
       template: 'systems/dcc/templates/actor-sheet-zero-level.html',
       width: 600,
@@ -31,7 +31,7 @@ class DCCActorSheet extends ActorSheet {
     const buttons = super._getHeaderButtons()
 
     // Header buttons shown only with Owner permission
-    if (this.actor.permission === CONST.ENTITY_PERMISSIONS.OWNER) {
+    if (this.actor.permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
       buttons.unshift(
         {
           label: game.i18n.localize('DCC.ConfigureSheet'),
@@ -48,29 +48,30 @@ class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  getData () {
+  async getData (options) {
     // Basic data
     const isOwner = this.document.isOwner
     const data = {
-      isOwner: isOwner,
+      isOwner,
       limited: this.document.limited,
       options: this.options,
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
-      isNPC: this.document.data.type === 'NPC',
-      isPC: this.document.data.type === 'Player',
-      isZero: this.document.data.data.details.level === 0,
-      type: this.document.data.type,
+      isNPC: this.document.type === 'NPC',
+      isPC: this.document.type === 'Player',
+      isZero: this.document.system.details.level === 0,
+      type: this.document.type,
       config: CONFIG.DCC
     }
 
-    data.actor = duplicate(this.document.data)
-    data.data = duplicate(this.document.data.data)
+    data.actor = foundry.utils.duplicate(this.document)
+    data.actor.name = this.document.name
+    data.system = foundry.utils.duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters
 
     if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-      data.actor.data.img = EntityImages.imageForActor(data.type)
+      data.actor.img = EntityImages.imageForActor(data.type)
     }
 
     if (data.isNPC) {
@@ -80,19 +81,35 @@ class DCCActorSheet extends ActorSheet {
 
       if (!data.isZero) {
         // Reorder saves on upper level sheet to define tabbing order
-        data.data.saves = {
-          ref: data.data.saves.ref,
-          frt: data.data.saves.frt,
-          wil: data.data.saves.wil
+        data.system.saves = {
+          ref: data.system.saves.ref,
+          frt: data.system.saves.frt,
+          wil: data.system.saves.wil
         }
       }
-
-      // Should the Deed Roll button be available on the sheet?
-      data.data.config.rollAttackBonus = (data.data.config.attackBonusMode === 'manual')
     }
+
+    // Should the Deed Roll button be available on the sheet?
+    data.system.config.rollAttackBonus = (this.actor.getAttackBonusMode() === 'manual')
 
     // Prepare item lists by type
     this._prepareItems(data)
+
+    // Format Notes HTML
+    data.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
+      async: true,
+      relativeTo: this.actor,
+      secrets: this.actor.isOwner
+    })
+
+    // Format Corruption HTML if present
+    if (this.actor.system.class?.corruption) {
+      data.corruptionHTML = await TextEditor.enrichHTML(this.actor.system.class.corruption, {
+        async: true,
+        relativeTo: this.actor,
+        secrets: this.actor.isOwner
+      })
+    }
 
     return data
   }
@@ -100,8 +117,8 @@ class DCCActorSheet extends ActorSheet {
   /**
    * Organize and classify Items for Character sheets.
    *
-   * @param {Object} actorData The actor to prepare.
    * @return {undefined}
+   * @param sheetData
    */
   async _prepareItems (sheetData) {
     const actorData = sheetData.actor
@@ -126,18 +143,18 @@ class DCCActorSheet extends ActorSheet {
     const treasure = []
     const coins = []
 
-    let inventory = actorData.items
-    if (sheetData.data.config.sortInventory) {
+    let inventory = this.actor.items
+    if (sheetData.system.config.sortInventory) {
       // Shallow copy and lexical sort
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
     }
 
     // Iterate through items, allocating to containers
-    const removeEmptyItems = sheetData.data.config.removeEmptyItems
+    const removeEmptyItems = sheetData.system.config.removeEmptyItems
     for (const i of inventory) {
       // Remove physical items with zero quantity
-      if (removeEmptyItems && i.data.quantity !== undefined && i.data.quantity <= 0) {
-        this.actor.deleteOwnedItem(i._id, {})
+      if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
+        this.actor.deleteEmbeddedDocuments('Item', [i._id])
         continue
       }
 
@@ -147,7 +164,7 @@ class DCCActorSheet extends ActorSheet {
       }
 
       if (i.type === 'weapon') {
-        if (i.data.melee) {
+        if (i.system.melee) {
           weapons.melee.push(i)
         } else {
           weapons.ranged.push(i)
@@ -161,20 +178,20 @@ class DCCActorSheet extends ActorSheet {
       } else if (i.type === 'mount') {
         mounts.push(i)
       } else if (i.type === 'spell') {
-        if (!i.data.level) {
-          i.data.level = 0
+        if (!i.system.level) {
+          i.system.level = 0
         }
-        if (spells[i.data.level]) {
-          spells[i.data.level].push(i)
+        if (spells[i.system.level]) {
+          spells[i.system.level].push(i)
         } else {
-          spells[i.data.level] = [i]
+          spells[i.system.level] = [i]
         }
       } else if (i.type === 'skill') {
         skills.push(i)
       } else if (i.type === 'treasure') {
         let treatAsCoins = false
 
-        if (i.data.isCoins) {
+        if (i.system.isCoins) {
           // Safe to treat as coins if the item's value is resolved
           const item = this.actor.items.get(i._id)
           if (!item.needsValueRoll()) {
@@ -192,21 +209,28 @@ class DCCActorSheet extends ActorSheet {
 
     // Combine any extra coins into a single item
     if (coins.length) {
-      const wallet = coins.shift()
+      const funds = {
+        pp: parseInt(this.actor.system.currency.pp),
+        ep: parseInt(this.actor.system.currency.ep),
+        gp: parseInt(this.actor.system.currency.gp),
+        sp: parseInt(this.actor.system.currency.sp),
+        cp: parseInt(this.actor.system.currency.cp)
+      }
       let needsUpdate = false
       for (const c of coins) {
-        wallet.data.value.pp = parseInt(wallet.data.value.pp) + parseInt(c.data.value.pp)
-        wallet.data.value.ep = parseInt(wallet.data.value.ep) + parseInt(c.data.value.ep)
-        wallet.data.value.gp = parseInt(wallet.data.value.gp) + parseInt(c.data.value.gp)
-        wallet.data.value.sp = parseInt(wallet.data.value.sp) + parseInt(c.data.value.sp)
-        wallet.data.value.cp = parseInt(wallet.data.value.cp) + parseInt(c.data.value.cp)
-        await this.actor.deleteOwnedItem(c._id, {})
+        funds.pp += parseInt(c.system.value.pp)
+        funds.ep += parseInt(c.system.value.ep)
+        funds.gp += parseInt(c.system.value.gp)
+        funds.sp += parseInt(c.system.value.sp)
+        funds.cp += parseInt(c.system.value.cp)
+        await this.actor.deleteEmbeddedDocuments('Item', [c._id])
         needsUpdate = true
       }
       if (needsUpdate) {
-        await this.actor.updateOwnedItem(wallet, { diff: true })
+        await this.actor.update({
+          'data.currency': funds
+        }, { diff: true })
       }
-      treasure.push(wallet)
     }
 
     // Assign and return
@@ -369,7 +393,7 @@ class DCCActorSheet extends ActorSheet {
    */
   _deleteItem (event) {
     const li = $(event.currentTarget).parents('.item')
-    this.actor.deleteOwnedItem(li.data('itemId'))
+    this.actor.deleteEmbeddedDocuments('Item', [li.data('itemId')])
     li.slideUp(200, () => this.render(false))
   }
 
@@ -405,8 +429,8 @@ class DCCActorSheet extends ActorSheet {
         type: 'Ability',
         actorId: this.actor.id,
         data: {
-          abilityId: abilityId,
-          rollUnder: rollUnder
+          abilityId,
+          rollUnder
         }
       }
     } else if (classes.contains('ability-modifiers')) {
@@ -417,7 +441,7 @@ class DCCActorSheet extends ActorSheet {
           type: 'Ability',
           actorId: this.actor.id,
           data: {
-            abilityId: abilityId,
+            abilityId,
             rollUnder: false
           }
         }
@@ -433,7 +457,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Hit Dice',
         actorId: this.actor.id,
         data: {
-          dice: this.actor.data.data.attributes.hitDice.value
+          dice: this.actor.system.attributes.hitDice.value
         }
       }
     } else if (classes.contains('save')) {
@@ -444,14 +468,14 @@ class DCCActorSheet extends ActorSheet {
       }
     } else if (classes.contains('skill-check')) {
       const skillId = this._findDataset(event.currentTarget, 'skill')
-      const actorSkill = this.actor.data.data.skills[skillId]
+      const actorSkill = this.actor.system.skills[skillId]
       const skillName = actorSkill ? actorSkill.label : skillId
       dragData = {
         type: 'Skill',
         actorId: this.actor.id,
         data: {
-          skillId: skillId,
-          skillName: skillName
+          skillId,
+          skillName
         }
       }
     } else if (classes.contains('luck-die')) {
@@ -459,7 +483,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Luck Die',
         actorId: this.actor.id,
         data: {
-          die: this.actor.data.data.class.luckDie
+          die: this.actor.system.class.luckDie
         }
       }
     } else if (classes.contains('spell-check')) {
@@ -475,7 +499,7 @@ class DCCActorSheet extends ActorSheet {
       const spellItem = this.actor.items.find(i => i.name === spell)
       let img
       if (spellItem) {
-        img = spellItem.data.img
+        img = spellItem.img
       }
       dragData = {
         type: 'Item',
@@ -484,8 +508,8 @@ class DCCActorSheet extends ActorSheet {
         data: spellItem,
         dccData: {
           ability: this._findDataset(event.currentTarget, 'ability'),
-          spell: spell,
-          img: img
+          spell,
+          img
         }
       }
     } else if (classes.contains('attack-bonus')) {
@@ -493,7 +517,7 @@ class DCCActorSheet extends ActorSheet {
         type: 'Attack Bonus',
         actorId: this.actor.id,
         data: {
-          die: this.actor.data.data.details.attackBonus
+          die: this.actor.system.details.attackBonus
         }
       }
     } else if (classes.contains('action-dice')) {
@@ -501,30 +525,39 @@ class DCCActorSheet extends ActorSheet {
         type: 'Action Dice',
         actorId: this.actor.id,
         data: {
-          die: this.actor.data.data.attributes.actionDice.value
+          die: this.actor.system.attributes.actionDice.value || '1d20'
         }
       }
     } else if (classes.contains('weapon-draggable')) {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const weapon = this.actor.items.get(itemId)
-      dragData = {
-        type: 'Item',
-        dccType: 'Weapon',
-        actorId: this.actor.id,
-        data: weapon,
-        dccData: {
-          weapon: weapon,
-          slot: this._findDataset(event.currentTarget, 'itemSlot'),
-          backstab: classes.contains('backstab-button')
+      dragData = Object.assign(
+        weapon.toDragData(),
+        {
+          dccType: 'Weapon',
+          actorId: this.actor.id,
+          data: weapon,
+          dccData: {
+            weapon,
+            slot: this._findDataset(event.currentTarget, 'itemSlot'),
+            backstab: classes.contains('backstab-button')
+          }
         }
-      }
+      )
     } else if (classes.contains('item-draggable')) {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const item = this.actor.items.get(itemId)
-      dragData = {
-        type: 'Item',
-        data: item
-      }
+      dragData = Object.assign(
+        item.toDragData(),
+        {
+          dccType: 'Item',
+          actorId: this.actor.id,
+          data: item,
+          dccData: {
+            item
+          }
+        }
+      )
     } else if (classes.contains('disapproval-range')) {
       dragData = {
         type: 'Apply Disapproval',
@@ -687,7 +720,7 @@ class DCCActorSheet extends ActorSheet {
    * @private
    */
   _onRollAttackBonus (event) {
-    if (this.actor._getConfig().attackBonusMode === 'manual') {
+    if (this.actor.getAttackBonusMode() === 'manual') {
       event.preventDefault()
       const options = this._fillRollOptions(event)
       this.actor.rollAttackBonus(options)
@@ -721,21 +754,21 @@ class DCCActorSheet extends ActorSheet {
     // Get the type of item to create.
     const type = header.dataset.type
     // Grab any data associated with this control.
-    const data = duplicate(header.dataset)
+    const system = foundry.utils.duplicate(header.dataset)
     // Initialize a default name.
     const name = `New ${type.capitalize()}`
     // Prepare the item object.
     const itemData = {
-      name: name,
+      name,
       img: EntityImages.imageForItem(type),
-      type: type,
-      data: data
+      type,
+      system
     }
     // Remove the type from the dataset since it's in the itemData.type prop.
-    delete itemData.data.type
+    delete itemData.system.type
 
     // Finally, create the item!
-    return this.actor.createOwnedItem(itemData)
+    return this.actor.createEmbeddedDocuments('Item', [itemData])
   }
 
   /* -------------------------------------------- */
@@ -756,7 +789,7 @@ class DCCActorSheet extends ActorSheet {
     // Handle owned item updates separately
     if (event.currentTarget) {
       let parentElement = event.currentTarget.parentElement
-      const expanded = expandObject(formData)
+      const expanded = foundry.utils.expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
             parentElement.classList.contains('armor') ||

@@ -15,13 +15,13 @@ export const registerSystemSettings = async function () {
   /**
    * Gather a list of available compendium packs with RollTables
    */
-  const tableCompendiumNames = { '': '-' }
+  const tableCompendiumNames = { '': 'Automatic' }
   const tableCompendiums = []
   try {
     game.packs.forEach(function (pack) {
-      if (pack.metadata.entity === 'RollTable') {
+      if (pack.documentName === 'RollTable') {
         tableCompendiums.push(pack)
-        tableCompendiumNames[pack.metadata.package + '.' + pack.metadata.name] = pack.metadata.label
+        tableCompendiumNames[pack.metadata.id] = pack.metadata.label
       }
     })
   } catch (e) { }
@@ -29,12 +29,12 @@ export const registerSystemSettings = async function () {
   /**
    * Gather a list of available RollTables from compendium packs
    */
-  const rollTables = { '': '-' }
+  const rollTables = { '': 'Automatic' }
   try {
     for (const pack of tableCompendiums) {
       await pack.getIndex()
       pack.index.forEach(function (value, key, map) {
-        rollTables[pack.metadata.package + '.' + pack.metadata.name + '.' + value.name] = pack.metadata.label + ': ' + value.name
+        rollTables[`${pack.metadata.id}.${value.name}`] = pack.metadata.label + ': ' + value.name
       })
     }
   } catch (e) { }
@@ -206,6 +206,102 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingShowRollModifierByDefault',
     hint: 'DCC.SettingShowRollModifierByDefaultHint',
     scope: 'client',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Enable Fleeting Luck
+   */
+  game.settings.register('dcc', 'enableFleetingLuck', {
+    name: 'DCC.SettingEnableFleetingLuck',
+    hint: 'DCC.SettingEnableFleetingLuckHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically track Fleeting Luck
+   */
+  game.settings.register('dcc', 'automateFleetingLuck', {
+    name: 'DCC.SettingAutomateFleetingLuck',
+    hint: 'DCC.SettingAutomateFleetingLuckHint',
+    scope: 'world',
+    type: Boolean,
+    default: true,
+    config: true
+  })
+
+  /**
+   * Automatically add warrior's level to the initiative value
+   */
+  game.settings.register('dcc', 'automateWarriorInitiative', {
+    name: 'DCC.SettingAutomateWarriorInitiative',
+    hint: 'DCC.SettingAutomateWarriorInitiativeHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically add Strength/Agility modifier to attack and hit rolls
+   */
+  game.settings.register('dcc', 'automateCombatModifier', {
+    name: 'DCC.SettingAutomateCombatModifier',
+    hint: 'DCC.SettingAutomateCombatModifierHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically applies -1d penalty on attack using untrained weapon
+   */
+  game.settings.register('dcc', 'automateUntrainedAttack', {
+    name: 'DCC.SettingAutomateUntrainedAttack',
+    hint: 'DCC.SettingAutomateUntrainedAttackHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically set d16 as initiative roll die using two-handed weapon
+   */
+  game.settings.register('dcc', 'automateTwoHandedWeaponInit', {
+    name: 'DCC.SettingAutomateTwoHandedWeaponInit',
+    hint: 'DCC.SettingAutomateTwoHandedWeaponInitHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically add warrior/dwarf luck modifier to attack rolls lucky weapon
+   */
+  game.settings.register('dcc', 'automateLuckyWeaponAttack', {
+    name: 'DCC.SettingAutomateLuckyWeapon',
+    hint: 'DCC.SettingAutomateLuckyWeaponHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Check weapon is equipped if not UI warning display appears and prevent rolls
+   */
+  game.settings.register('dcc', 'checkWeaponEquipment', {
+    name: 'DCC.SettingWeaponEquipmentCheck',
+    hint: 'DCC.SettingWeaponEquipmentCheckHint',
+    scope: 'world',
     type: Boolean,
     default: false,
     config: true

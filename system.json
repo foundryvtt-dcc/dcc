@@ -1,13 +1,18 @@
 {
+  "id": "dcc",
   "name": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
-  "version": "0.30.0",
-  "minimumCoreVersion": "0.8.6",
-  "compatibleCoreVersion": "0.8.9",
-  "templateVersion": 7,
-  "author": "DCC Foundry Volunteer Team (https://discord.gg/2PR9YH9)",
-  "contributors": [
+  "version": "0.42.0",
+  "minimumCoreVersion": "12",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "12"
+  },
+  "authors": [
+    {
+      "name": "DCC Foundry Volunteer Team (https://discord.com/channels/170995199584108546/826931749221040138)"
+    },
     {
       "name": "Tim L. White",
       "email": "tim@cyface.com"
@@ -19,12 +24,6 @@
     {
       "name": "Christian Ovsenik",
       "email": "ceovsenik@gmail.com"
-    }
-  ],
-  "dependencies": [
-    {
-      "name": "bug-reporter",
-      "type": "module"
     }
   ],
   "esmodules": [
@@ -41,24 +40,39 @@
     }
   ],
   "packs": [
-     {
+    {
       "name": "dcc-userguide",
       "label": "User Guide",
       "path": "packs/dcc-userguide.db",
       "system": "dcc",
-      "entity": "JournalEntry"
+      "type": "JournalEntry"
+    },
+    {
+      "name": "dcc-macros",
+      "label": "DCC Macros",
+      "path": "packs/dcc-macros.db",
+      "system": "dcc",
+      "type": "Macro"
     }
   ],
-  "gridDistance": 5,
-  "gridUnits": "ft",
+  "relationships": {
+    "systems": [],
+    "requires": [],
+    "conflicts": [],
+    "flags": {}
+  },
+  "grid": {
+    "distance": 5,
+    "units": "ft"
+  },
   "primaryTokenAttribute": "attributes.hp",
   "secondaryTokenAttribute": "abilities.lck.value",
   "socket": true,
   "initiative": "@attributes.init.die + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
-  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.30.0/system.json",
-  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.30.0/dcc.zip",
+  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.42.0/system.json",
+  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.42.0/dcc.zip",
+  "protected": false,
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
-  "allowBugReporter": true,
   "license": "LICENSE.txt"
 }

@@ -3,7 +3,6 @@
 export class DCCActorConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
-    options.id = 'sheet-config'
     options.template =
       'systems/dcc/templates/dialog-actor-config.html'
     options.width = 380
@@ -27,10 +26,10 @@ export class DCCActorConfig extends FormApplication {
    * @return {Object}
    */
   getData () {
-    const data = this.object.data
-    data.isNPC = (this.object.data.type === 'NPC')
-    data.izPC = (this.object.data.type === 'Player')
-    data.isZero = (this.object.data.data.details.level === 0)
+    const data = this.object
+    data.isNPC = (this.object.type === 'NPC')
+    data.isPC = (this.object.type === 'Player')
+    data.isZero = (this.object.system.details.level === 0)
     data.user = game.user
     data.config = CONFIG.DCC
     return data

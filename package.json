@@ -17,16 +17,20 @@
   },
   "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
   "devDependencies": {
-    "@babel/preset-env": "^7.12.11",
-    "babel-jest": "^26.6.3",
-    "jest": "^26.6.3",
-    "sass": "^1.32.8",
-    "standard": "^14.3.4",
-    "stylelint": "^13.13.1",
-    "stylelint-config-sass-guidelines": "^8.0.0"
+    "@babel/preset-env": "^7.23.2",
+    "babel-jest": "^27.3.1",
+    "jest": "^29.7.0",
+    "sass": "^1.69.3",
+    "standard": "^17.1.0",
+    "stylelint": "^15.10.3",
+    "stylelint-config-sass-guidelines": "^10.0.0"
   },
   "directories": {
     "test": "module/tests"
+  },
+  "engines": {
+    "node": ">=20 <21",
+    "npm": ">10 <11"
   },
   "homepage": "https://github.com/foundryvtt-dcc/dcc#readme",
   "jest": {
@@ -50,7 +54,7 @@
     "url": "git+https://github.com/foundryvtt-dcc/dcc.git"
   },
   "scripts": {
-    "format": "standard --fix; npx stylelint '**/*.scss'",
+    "format": "standard --fix && stylelint \"**/*.scss\"",
     "test": "jest",
     "scss": "sass styles/dcc.scss styles/dcc.css"
   },

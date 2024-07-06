@@ -55,6 +55,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 /* ----------------------------------------- */
 .journal-sheet h1 {
   font-family: $duvall;
+  line-height: 1.3em;
 }
 
 .journal-sheet h2 {
@@ -223,6 +224,10 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   flex: 0 0 100px;
 }
 
+.dcc .combat-basics .attack-bonus input {
+  margin-right: 3px;
+}
+
 .dcc .attack-bonus-container.skills-container {
   font-size: 1.2rem;
   justify-content: left;
@@ -283,8 +288,8 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   font-size: 16px;
   height: 23px;
   line-height: 22px;
-  margin: -16px 0 0 116px;
-  width: 30px;
+  margin: -15px 0 0 122px;
+  width: 25px;
 }
 
 /* ----------------------------------------- */
@@ -330,7 +335,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
 .dcc .armor-equipped {
   flex: 0 0 20px;
-  margin: 0 8px;
+  margin: 0 8px 0 0;
 }
 
 .dcc .armor-bonus {
@@ -468,9 +473,17 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   flex: 0 0 100px;
 }
 
+.dcc .combat-basics .crit-die input {
+  margin: 0 3px 0 2px;
+}
+
 .dcc .combat-basics .crit-table {
   align-items: center;
   flex: 0 0 100px;
+}
+
+.dcc .combat-basics .crit-table input {
+  margin-left: 4px;
 }
 
 /* ----------------------------------------- */
@@ -489,7 +502,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
 .dcc .hd {
   flex: 0 0 50px;
-  margin: 0;
+  margin: 0 0 0 2px;
   text-align: center;
 }
 
@@ -582,6 +595,15 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   align-items: center;
   flex: 0 0 120px;
 }
+
+.dcc .combat-basics .init input:first-of-type {
+  margin-right: 4px;
+}
+
+.dcc .combat-basics .init input:last-of-type {
+  margin-right: 3px;
+}
+
 
 /* ----------------------------------------- */
 /*  Notes                              */
@@ -688,9 +710,12 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 .dcc .tabs .item {
   border: $border-style;
   border-radius: 5px 5px 0 0;
+  flex: 1;
   font-weight: bold;
+  height: 38px;
   line-height: 35px;
   margin-bottom: 10px;
+  padding: initial !important;
 }
 
 .dcc .tabs .item.active {
@@ -774,6 +799,15 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   margin: 5px 0 0;
 }
 
+.dcc .weapon-checkbox {
+  flex: 0 0 18px;
+  padding-left: 0;
+}
+
+.dcc .weapon-headericon {
+  flex: 0 0 24px;
+}
+
 .dcc .backstab-button {
   background-image: url('./images/backstab.png');
   background-repeat: no-repeat;
@@ -787,7 +821,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   background-repeat: no-repeat;
   background-size: 22px 22px;
   flex: 0 0 30px;
-  margin: 5px 0 0;
+  margin: 21px 0 0;
 }
 
 .dcc .left-arrow-button {
@@ -885,8 +919,8 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   font-size: 16px;
   height: 23px;
   line-height: 22px;
-  margin: -16px 0 0 116px;
-  width: 30px;
+  margin: -15px 0 0 122px;
+  width: 25px;
 }
 
 .dcc.sheet.actor .character-grid .save {
@@ -902,7 +936,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   height: 30px;
   line-height: 32px;
   margin: 0 auto;
-  width: 36px;
+  width: 56px;
 }
 
 .dcc.sheet.actor .character-grid .languages {
@@ -1125,6 +1159,10 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     grid-template-columns: 50% 50%;
   }
 
+  > div.split-75-25 {
+    grid-template-columns: 75% 25%;
+  }
+
   > div.split-25-75 {
     grid-template-columns: 25% 75%;
   }
@@ -1143,6 +1181,10 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 
   > div.split-40-60 {
     grid-template-columns: 40% 60%;
+  }
+
+  > div.split-67-33 {
+    grid-template-columns: 67% 33%;
   }
 
   > div.nosplit {
@@ -1275,6 +1317,14 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     text-align: left;
   }
 
+  .currency-field {
+    text-align: right;
+  }
+
+  h4.currency-field {
+    padding-right: 4px;
+  }
+
   .item-pp {
     flex: 0 0 50px;
   }
@@ -1323,7 +1373,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   .sheet-body.weapon {
     display: grid;
     grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px 50px 50px minmax(80px, auto);
+    grid-template-rows: 50px 50px 50px 50px minmax(80px, auto);
   }
 
   .sheet-body.weapon .value-row {
@@ -1365,7 +1415,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   .sheet-body.treasure {
     display: grid;
     grid-template-columns: 100%;
-    grid-template-rows: 50px minmax(80px, auto);
+    grid-template-rows: 75px minmax(80px, auto);
     width: 100%;
   }
 
@@ -1380,7 +1430,6 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    height: 150px;
     justify-content: space-between;
 
     .resource {
@@ -1403,6 +1452,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
     .description {
       border: $border-style;
       grid-column: 1 / span 3;
+      grid-row: 2;
     }
 
     .armor-header-extras {
@@ -1411,10 +1461,16 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
       grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
     }
 
+    .weapon-header-basics {
+      display: grid;
+      grid-column: 1 / span 3;
+      grid-template-columns: minmax(115px, auto) minmax(125px, auto) minmax(100px, auto) minmax(150px, auto);
+    }
+
     .weapon-header-extras {
       display: grid;
       grid-column: 1 / span 3;
-      grid-template-columns: minmax(55px, auto) minmax(90px, auto) minmax(100px, auto) minmax(85px, auto) minmax(145px, auto);
+      grid-template-columns: minmax(125px, auto) minmax(115px, auto) minmax(100px, auto) minmax(150px, auto);
     }
 
     .weapon-summary {
@@ -1505,7 +1561,9 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
   .tabs .item {
     border: $border-style;
     border-radius: 5px 5px 0 0;
+    flex: 1;
     font-weight: bold;
+    height: 38px;
     line-height: 35px;
     margin-bottom: 10px;
   }
@@ -1525,6 +1583,22 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 .dcc.sheet {
   .sheet-tabs.tabs {
     border: 0;
+  }
+}
+
+/* ----------------------------------------- */
+/*  Entity Link style links for user guide   */
+/* ----------------------------------------- */
+.dcc.sheet {
+  a.external-link {
+    background: #ddd;
+    border: 1px solid #4b4a44;
+    border-radius: 2px;
+    color: #191813;
+    padding: 1px 4px;
+    text-decoration: none;
+    white-space: nowrap;
+    word-break: break-all;
   }
 }
 
@@ -1603,6 +1677,102 @@ form.dcc-roll-modifier {
 
   input.checkbox {
     text-align: right;
+  }
+
+  input.stat {
+    text-align: right;
+  }
+}
+
+/* ----------------------------------------- */
+/*  Fleeting Luck Dialog                     */
+/* ----------------------------------------- */
+
+.dcc .fleeting-luck {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(40px, auto) repeat(auto-fill, minmax(60px, auto));
+
+  .fleeting-luck-header-judge {
+    align-items: center;
+    display: grid;
+    grid-gap: 2px 3px;
+    grid-template-columns: 3fr 3fr;
+
+    .reset-all {
+      grid-column: 1;
+      justify-self: center;
+    }
+
+    .clear-all {
+      grid-column: 2;
+      justify-self: center;
+    }
+  }
+
+  .fleeting-luck-header {
+    align-items: center;
+    display: grid;
+    grid-gap: 2px 3px;
+    grid-template-columns: 40px auto;
+
+    .filter {
+      grid-column: 1;
+      justify-self: center;
+    }
+
+    .spend {
+      grid-column: 2;
+      justify-self: center;
+    }
+  }
+
+  .fleeting-luck-row {
+    align-items: center;
+    display: grid;
+    grid-gap: 2px 3px;
+    grid-template-columns: 60px 10fr 1fr 2fr 2fr 2fr 1fr;
+
+    .avatar {
+      grid-column: 1;
+    }
+
+    .name {
+      font-size: 2rem;
+      grid-column: 2;
+    }
+
+    .spend {
+      grid-column: 3;
+      justify-self: center;
+    }
+
+    .minus {
+      grid-column: 4;
+      justify-self: right;
+    }
+
+    .value {
+      font-size: 1.5rem;
+      grid-column: 5;
+      justify-self: center;
+    }
+
+    .value-wide {
+      font-size: 1.5rem;
+      grid-column: 4 / span 4;
+      justify-self: center;
+    }
+
+    .plus {
+      grid-column: 6;
+      justify-self: left;
+    }
+
+    .clear {
+      grid-column: 7;
+      justify-self: center;
+    }
   }
 }
 

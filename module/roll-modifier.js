@@ -2,7 +2,7 @@
 
 /**
  * Clean a formula by stripping any spaces and duplicate signs
- * @param options {Object}
+ * @param formula {Object}
  * @return {Object}
  */
 function _cleanFormula (formula) {
@@ -11,7 +11,7 @@ function _cleanFormula (formula) {
 
 /**
  * Prepend a formula with a sign if one is not already present
- * @param options {Object}
+ * @param formula {Object}
  * @return {Object}
  */
 function _prependSign (formula) {
@@ -111,7 +111,24 @@ function DCCSpellburnTerm (options) {
     formula: _prependSign(_cleanFormula(options.formula)),
     str: options.str,
     agl: options.agl,
-    sta: options.sta
+    sta: options.sta,
+    callback: options.callback
+  }]
+}
+
+/**
+ * Construct a DCC Fleeting Luck term object
+ * @params options {Object}
+ * @return {Object}
+ */
+function DCCFleetingLuckTerm (options) {
+  return [{
+    type: 'Modifier',
+    label: game.i18n.localize('DCC.FleetingLuckTerm'),
+    partial: 'systems/dcc/templates/roll-modifier-partial-modifiers.html',
+    formula: _prependSign(_cleanFormula(options.formula)),
+    minAmount: Math.min(1, options.fleetingLuck),
+    maxAmount: options.fleetingLuck
   }]
 }
 
@@ -127,7 +144,7 @@ function DCCCompoundTerm (options) {
   const modifierLabel = options.modifierLabel || null
   const variableExpression = /@(\w+)/
   const terms = []
-  // Clean formula, then stick some duplicate pluses back in so they can be used to split the formula neatly
+  // Clean formula, then stick some duplicate pluses back in, so they can be used to split the formula neatly
   const inputTerms = _cleanFormula(options.formula).replace(/-/g, '+-').replace(/^\+/, '').split('+')
   let rawTerms = _cleanFormula(options.rawFormula).replace(/-/, '+-').replace(/^\+/, '').split('+')
 
@@ -170,16 +187,17 @@ const DCCTerms = {
   Modifier: DCCModifierTerm,
   CheckPenalty: DCCCheckPenaltyTerm,
   Spellburn: DCCSpellburnTerm,
-  Compound: DCCCompoundTerm
+  Compound: DCCCompoundTerm,
+  FleetingLuck: DCCFleetingLuckTerm
 }
 
 /**
  * Construct a DCC term of a specific type
- * @params type {String}     The type of term to constuct
+ * @params type {String}     The type of term to construct
  * @params options {Object}  Parameters for the constructor
  * @return {Object}
  */
-function ConstructDCCTerm (type, data = {}, options = {}) {
+function constructDCCTerm (type, data = {}, options = {}) {
   if (type in DCCTerms) {
     // Use foundry's Roll class to apply any substitutions
     if (options.formula) {
@@ -268,6 +286,8 @@ class RollModifierDialog extends FormApplication {
     data.user = game.user
     data.options = this.options
     data.terms = this._terms
+    data.rollLabel = this.options.rollLabel || game.i18n.localize('DCC.RollModifierRoll')
+    data.cancelLabel = this.options.cancelLabel || game.i18n.localize('DCC.RollModifierCancel')
     return data
   }
 
@@ -399,8 +419,16 @@ class RollModifierDialog extends FormApplication {
     event.preventDefault()
     const index = event.currentTarget.dataset.term
     const mod = event.currentTarget.dataset.mod
+    const term = this.terms[index]
     const formField = this.element.find('#term-' + index)
-    let termFormula = (parseInt(formField.val()) + parseInt(mod)).toString()
+    let termFormula = parseInt(formField.val()) + parseInt(mod)
+    if (term.minAmount) {
+      termFormula = Math.max(termFormula, parseInt(term.minAmount))
+    }
+    if (term.maxAmount) {
+      termFormula = Math.min(termFormula, parseInt(term.maxAmount))
+    }
+    termFormula = termFormula.toString()
     if (termFormula[0] !== '-') {
       // Always add a sign
       termFormula = '+' + termFormula
@@ -429,14 +457,24 @@ class RollModifierDialog extends FormApplication {
   async _modifySpellburn (event) {
     event.preventDefault()
     const index = event.currentTarget.dataset.term
-    const mod = event.currentTarget.dataset.mod
+    const mod = parseInt(event.currentTarget.dataset.mod)
+    const stat = event.currentTarget.dataset.stat
     const formField = this.element.find('#term-' + index)
-    let termFormula = (parseInt(formField.val()) + parseInt(mod)).toString()
-    if (termFormula[0] !== '-') {
-      // Always add a sign
-      termFormula = '+' + termFormula
+    const statField = this.element.find('#' + stat)
+    const statMax = parseInt(statField.data('max'))
+    const statValue = parseInt(statField.val())
+    const newValue = parseInt(formField.val()) + mod
+    const newStat = statValue - mod
+    if (newStat >= 0 && newStat <= statMax) {
+      let termFormula = newValue.toString()
+      if (termFormula[0] !== '-') {
+        // Always add a sign
+        termFormula = '+' + termFormula
+      }
+      formField.val(termFormula)
+      statField.val(newStat)
+      this.terms[index][stat] = newStat
     }
-    formField.val(termFormula)
   }
 
   /**
@@ -473,16 +511,16 @@ class RollModifierDialog extends FormApplication {
 
   /**
    * Construct the terms from an array
-   * @param terms {Object}
+   * @param termConstructors {Object}
    * @private
    */
   _constructTermsFromArray (termConstructors) {
     const terms = []
 
-    // Constuct and number the terms
+    // Construct and number the terms
     let index = 0
     for (const constructor of termConstructors) {
-      const constructedTerms = ConstructDCCTerm(constructor.type, this.options.rollData, constructor)
+      const constructedTerms = constructDCCTerm(constructor.type, this.options.rollData, constructor)
       for (const term of constructedTerms) {
         if (term) {
           term.index = index++
@@ -511,11 +549,11 @@ class RollModifierDialog extends FormApplication {
     let anyModifierTerms = false
 
     // Helper functions
-    var addDieTerm = function (term) {
+    const addDieTerm = function (term) {
       Array.prototype.push.apply(terms, DCCDieTerm({ formula: term.formula }))
       termAccumulator = ''
     }
-    var addModifierTerm = function () {
+    const addModifierTerm = function () {
       // Remove duplicate operator terms and other unexpected things
       if (termAccumulator.match(validNumber)) {
         Array.prototype.push.apply(terms, DCCModifierTerm({ formula: termAccumulator }))
@@ -523,7 +561,7 @@ class RollModifierDialog extends FormApplication {
       }
       termAccumulator = ''
     }
-    var accumulateTerm = function (term) {
+    const accumulateTerm = function (term) {
       termAccumulator += term.formula.replace(/\s+/g, '')
     }
 

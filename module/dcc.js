@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars, EntitySheetConfig, TextEditor */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars */
 
 /**
  * DCC
@@ -8,6 +8,7 @@
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
+import DCCCombatant from './combatant.js'
 import DCCItem from './item.js'
 import DCCItemSheet from './item-sheet.js'
 import DCCRoll from './dcc-roll.js'
@@ -15,6 +16,7 @@ import DCC from './config.js'
 import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
+import FleetingLuck from './fleeting-luck.js'
 import parser from './parser.js'
 import TablePackManager from './table-pack-manager.js'
 import EntityImages from './entity-images.js'
@@ -24,32 +26,20 @@ import KeyState from './key-state.js'
 
 import { registerSystemSettings } from './settings.js'
 
-// Override the template for sheet configuration
-class DCCSheetConfig extends EntitySheetConfig {
-  /** @override */
-  static get defaultOptions () {
-    const options = super.defaultOptions
-    options.template = 'systems/dcc/templates/sheet-config.html'
-    options.tabs.unshift({ navSelector: '.config-tabs', contentSelector: '.config-body', initial: 'this-sheet' })
-    return options
-  }
-}
-
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
 /* -------------------------------------------- */
 Hooks.once('init', async function () {
   console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
 
-  // Override sheet selection dialog
-  EntitySheetConfig = DCCSheetConfig // eslint-disable-line no-global-assign
-
   CONFIG.DCC = DCC
 
+  // noinspection JSUndefinedPropertyAssignment,JSUnusedGlobalSymbols
   game.dcc = {
     DCCActor,
     DCCRoll,
     DiceChain,
+    FleetingLuck,
     SpellResult,
     getSkillTable,
     processSpellCheck,
@@ -61,18 +51,46 @@ Hooks.once('init', async function () {
   // Define custom Entity classes
   CONFIG.Actor.documentClass = DCCActor
   CONFIG.Item.documentClass = DCCItem
+  CONFIG.Combatant.documentClass = DCCCombatant
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
-  Actors.registerSheet('dcc', DCCActorSheet, { makeDefault: true })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, { types: ['Player'] })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, { types: ['Player'] })
+  Actors.registerSheet('dcc', DCCActorSheet, {
+    makeDefault: true,
+    label: 'DCC.DCCActorSheet'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetCleric'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetThief'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetHalfling'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetWarrior'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetWizard'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetDwarf'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetElf'
+  })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
+    types: ['Player'],
+    label: 'DCC.DCCActorSheetGeneric'
+  })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet)
 
@@ -93,7 +111,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
     'systems/dcc/templates/roll-modifier-partial-spellburn.html'
   ]
-  loadTemplates(templatePaths)
+  await loadTemplates(templatePaths)
 
   // Handlebars helper to format attack bonus correctly
   Handlebars.registerHelper('formatAttackBonus', function (attackBonus) {
@@ -129,11 +147,6 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('dccPackExists', function (pack, options) {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
   })
-
-  // Handlebars helper to enrich HTML
-  Handlebars.registerHelper('dccLocalizeAndEnrich', function (object) {
-    return TextEditor.enrichHTML(game.i18n.localize(object))
-  })
 })
 
 /* -------------------------------------------- */
@@ -150,6 +163,9 @@ Hooks.once('ready', async function () {
   checkMigrations()
   registerTables()
 
+  // Initialise Fleeting Luck
+  game.dcc.FleetingLuck.init()
+
   // Let modules know the DCC system is ready
   Hooks.callAll('dcc.ready')
 })
@@ -157,7 +173,7 @@ Hooks.once('ready', async function () {
 function checkReleaseNotes () {
   // Determine if we should show the Release Notes/Credits chat card per user
   const lastSeenVersion = game.user.getFlag('dcc', 'lastSeenSystemVersion')
-  const currentVersion = game.system.data.version
+  const currentVersion = game.system.version
 
   if (lastSeenVersion !== currentVersion) {
     ReleaseNotes.addChatCard()
@@ -167,7 +183,7 @@ function checkReleaseNotes () {
   // Register listeners for the buttons
   $(document).on('click', '.dcc-release-notes', () => _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog'))
   $(document).on('click', '.dcc-credits', () => _onShowJournal('dcc.dcc-userguide', 'Credits'))
-  $(document).on('click', '.dcc-user-guide', () => _onShowJournal('dcc.dcc-userguide', 'Table of Contents'))
+  $(document).on('click', '.dcc-user-guide', () => _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/DCC-System-User-Guide'))
 }
 
 async function _onShowJournal (packName, journalName) {
@@ -176,6 +192,10 @@ async function _onShowJournal (packName, journalName) {
   const metadata = await index.getName(journalName)
   const doc = await pack.getDocument(metadata._id)
   doc.sheet.render(true)
+}
+
+async function _onShowURI (uri) {
+  window.open(uri)
 }
 
 function checkMigrations () {
@@ -277,7 +297,7 @@ async function getSkillTable (skillName) {
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name === tablePath[2])
       if (entry) {
-        return await pack.getDocument(entry._id)
+        return pack.getDocument(entry._id)
       }
     }
   }
@@ -288,8 +308,8 @@ async function getSkillTable (skillName) {
 /**
  * Handle the results of a spell check cast through any mechanism
  * Apply a roll to a table and apply spell check logic for crits and fumbles
- * @param {Object} rollTable     The table being rolled against
- * @param {Object} spellData     Information about the spell being cast
+ * @param {Object} actor        The actor rolling the check
+ * @param {Object} spellData    Information about the spell being cast
  * @returns {Object}            Table result object
  */
 async function processSpellCheck (actor, spellData) {
@@ -312,17 +332,17 @@ async function processSpellCheck (actor, spellData) {
     if (rollTable) {
       const results = await rollTable.draw({ roll, displayChat: false })
 
-      if (results.roll.terms.length > 0) {
+      if (results.roll.dice.length > 0) {
         roll = results.roll
-        naturalRoll = roll.terms[0].results[0].result
+        naturalRoll = roll.dice[0].total
         if (naturalRoll === 1) {
           const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
           roll = fumbleResult.roll
           results.results = fumbleResult.results
           fumble = true
         } else if (naturalRoll === 20) {
-          if (actor.data.type === 'Player') {
-            const critRoll = results.roll._total + actor.data.data.details.level.value
+          if (actor.type === 'Player') {
+            const critRoll = results.roll.total + actor.system.details.level.value
             const critRollObject = new Roll(String(critRoll))
             const critResult = await rollTable.draw({ roll: critRollObject, displayChat: false })
             roll = critResult.roll
@@ -331,34 +351,42 @@ async function processSpellCheck (actor, spellData) {
           }
         }
       }
-      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble })
+      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble, itemId: item?.id })
     // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
         await roll.evaluate({ async: true })
       }
 
+      // Generate flags for the roll
+      const flags = {
+        'dcc.RollType': 'SpellCheck',
+        'dcc.ItemId': item?.id
+      }
+      game.dcc.FleetingLuck.updateFlags(flags, roll)
+
       // Display the roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
-        flavor
+        flavor,
+        flags
       })
     }
 
     // Determine the natural value of the roll if not yet known
-    if (!naturalRoll && roll.terms.length > 0) {
+    if (!naturalRoll && roll.terms.length > 0 && roll.terms[0].results) {
       naturalRoll = roll.terms[0].results[0].result
     }
 
     // Determine casting mode from the item or actor - default to wizard
-    let castingMode = item ? item.data.data.config.castingMode : 'wizard'
-    if (!item && actor.data.data.details.sheetClass === 'Cleric') {
+    let castingMode = item ? item.system.config.castingMode : 'wizard'
+    if (!item && actor.system.details.sheetClass === 'Cleric') {
       // Cleric sheets will use the cleric casting mode if not set by the item
       castingMode = 'cleric'
     }
 
     // Spell check threshold is 10 + spell level * 2, anything below this is a failure
-    const level = item ? item.data.data.level : 1
+    const level = item ? item.system.level : 1
     let success = roll.total >= (10 + level * 2)
 
     // Handle spell failure based on casting mode
@@ -376,9 +404,9 @@ async function processSpellCheck (actor, spellData) {
       const automate = game.settings.get('dcc', 'automateClericDisapproval')
 
       // Check if our natural roll was inside the disapproval range
-      if (automate && naturalRoll <= actor.data.data.class.disapproval) {
+      if (automate && naturalRoll <= actor.system.class.disapproval) {
         // Trigger disapproval
-        actor.rollDisapproval(naturalRoll)
+        await actor.rollDisapproval(naturalRoll)
 
         // This is an automatic failure!
         success = false
@@ -387,7 +415,7 @@ async function processSpellCheck (actor, spellData) {
       // Check for a failure to cast
       if (automate && !success) {
         // Add a point of disapproval
-        actor.applyDisapproval()
+        await actor.applyDisapproval()
       }
     }
   } catch (ex) {
@@ -399,7 +427,7 @@ async function processSpellCheck (actor, spellData) {
 /*  Other Hooks                                 */
 /* -------------------------------------------- */
 // Create a macro when a rollable is dropped on the hotbar
-Hooks.on('hotbarDrop', (bar, data, slot) => createDCCMacro(data, slot))
+Hooks.on('hotbarDrop', (bar, data, slot) => { return createDCCMacro(data, slot) })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
 Hooks.on('renderChatMessage', (message, html, data) => {
@@ -408,6 +436,12 @@ Hooks.on('renderChatMessage', (message, html, data) => {
   }
   chat.highlightCriticalSuccessFailure(message, html, data)
   SpellResult.processChatMessage(message, html, data)
+
+  // Add data-item-id for modules that want to use it
+  const itemId = message.getFlag('dcc', 'ItemId')
+  if (itemId !== undefined) {
+    html.find('.message-content').attr('data-item-id', itemId)
+  }
 })
 
 // Support context menu on chat cards
@@ -419,7 +453,7 @@ Hooks.on('renderActorDirectory', (app, html) => {
 })
 
 // Disapproval table packs
-Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting) => {
+Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting = false) => {
   const disapprovalPacks = CONFIG.DCC.disapprovalPacks
 
   if (disapprovalPacks) {
@@ -428,7 +462,7 @@ Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting) => {
 })
 
 // Critical hit table packs
-Hooks.on('dcc.registerCriticalHitsPack', (value, fromSystemSetting) => {
+Hooks.on('dcc.registerCriticalHitsPack', (value, fromSystemSetting = false) => {
   const criticalHitPacks = CONFIG.DCC.criticalHitPacks
 
   if (criticalHitPacks) {
@@ -478,7 +512,7 @@ Hooks.on('dcc.setTurnUnholyTable', (value, fromSystemSetting = false) => {
 
 // Entity creation hook
 Hooks.on('createActor', (entity, options, userId) => {
-  if (!game.user.isGM || entity.data.img) { return }
+  if (!game.user.isGM || entity.img) { return }
 
   // Assign an appropriate DCC actor image
   const img = EntityImages.imageForActor(entity.type)
@@ -490,7 +524,7 @@ Hooks.on('createActor', (entity, options, userId) => {
 })
 
 Hooks.on('createItem', (entity, options, userId) => {
-  if (!game.user.isGM || entity.data.img) { return }
+  if (!game.user.isGM || entity.img) { return }
 
   // Assign an appropriate DCC item image
   const img = EntityImages.imageForItem(entity.type)
@@ -505,14 +539,14 @@ Hooks.on('applyActiveEffect', (actor, change) => {
   const { key, value } = change
   let update = null
   // We're only interested in strings (dice expressions)
-  const current = foundry.utils.getProperty(actor.data, key) ?? null
+  const current = foundry.utils.getProperty(actor, key) ?? null
   if (typeof (current) === 'string') {
     // If this is a dice chain pattern (e.g. +1d) then we're interested
     const diceChainPattern = /([+-]?\d+)[dD]/
     const match = value.match(diceChainPattern)
     if (match) {
       update = game.dcc.DiceChain.bumpDie(current, parseInt(match[1]))
-      foundry.utils.setProperty(actor.data, key, update)
+      foundry.utils.setProperty(actor, key, update)
     }
   }
   return update
@@ -529,7 +563,7 @@ Hooks.on('applyActiveEffect', (actor, change) => {
  * @param {number} slot     The hotbar slot to use
  * @returns {Promise}
  */
-async function createDCCMacro (data, slot) {
+function createDCCMacro (data, slot) {
   const handlers = {
     Ability: _createDCCAbilityMacro,
     Initiative: _createDCCInitiativeMacro,
@@ -550,39 +584,46 @@ async function createDCCMacro (data, slot) {
     delete data.dccType
   }
   if (data.dccData) {
-    data.data = data.dccData
+    data.system = data.dccData
     delete data.dccData
   }
-  if (!data.type || data.type === 'Macro') return
-  if (!('data' in data)) return ui.notifications.warn(game.i18n.localize('DCC.CreateMacroNotOwnedWarning'))
-  if (!handlers[data.type]) return ui.notifications.warn(game.i18n.localize('DCC.CreateMacroNoHandlerWarning'))
+  if (!data.type || data.type === 'Macro') return true
+  if (!('data' in data)) return true
+  if (!handlers[data.type]) return true
 
   // Call the appropriate function to generate a macro
   const macroData = handlers[data.type](data, slot)
   if (macroData) {
-    // Create or reuse existing macro
-    let macro = game.macros.contents.find(
-      m => (m.name === macroData.name) && (m.command === macroData.command)
-    )
-    if (!macro) {
-      macro = await Macro.create({
-        name: macroData.name,
-        type: 'script',
-        img: macroData.img,
-        command: macroData.command,
-        flags: { 'dcc.itemMacro': true }
-      })
-    }
-    await game.user.assignHotbarMacro(macro, slot)
+    // Create and assign the macro in an async context, but hooks aren't async so we need to return immediately
+    (async () => {
+      // Create or reuse existing macro
+      let macro = game.macros.contents.find(
+        m => (m.name === macroData.name) && (m.command === macroData.command)
+      )
+      if (!macro) {
+        macro = await Macro.create({
+          name: macroData.name,
+          type: 'script',
+          img: macroData.img,
+          command: macroData.command,
+          flags: { 'dcc.itemMacro': true }
+        })
+      }
+      game.user.assignHotbarMacro(macro, slot)
+    })()
+
+    // Prevent the default handler
+    return false
   }
-  return false
+  // Let the default handler run
+  return true
 }
 
 /**
  * Create a macro from an ability check drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCAbilityMacro (data, slot) {
   if (data.type !== 'Ability') return
@@ -608,65 +649,59 @@ function _createDCCAbilityMacro (data, slot) {
  * Create a macro from an initiative drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCInitiativeMacro (data, slot) {
   if (data.type !== 'Initiative') return
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.localize('DCC.Initiative'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token, game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro('initiative')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a hit dice drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCHitDiceMacro (data, slot) {
   if (data.type !== 'Hit Dice') return
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.localize('DCC.HitDiceRoll'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a saving throw drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCSaveMacro (data, slot) {
   if (data.type !== 'Save') return
 
   // Create the macro command
   const saveId = data.data
-  const macroData = {
+  return {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(saveId, 'savingThrow')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a skill roll drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCSkillMacro (data, slot) {
   if (data.type !== 'Skill') return
@@ -674,40 +709,36 @@ function _createDCCSkillMacro (data, slot) {
   // Create the macro command
   const skillId = data.data.skillId
   const skillName = game.i18n.localize(data.data.skillName)
-  const macroData = {
+  return {
     name: skillName,
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(skillId, 'skillCheck')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a luck die drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCLuckDieMacro (data, slot) {
   if (data.type !== 'Luck Die') return
   const die = data.data.die
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.localize('DCC.LuckDie'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollLuckDie(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'luckDie')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from a spell check drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCSpellCheckMacro (data, slot) {
   if (data.type !== 'Spell Check') return
@@ -732,40 +763,36 @@ function _createDCCSpellCheckMacro (data, slot) {
  * Create a macro from an attack bonus drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCAttackBonusMacro (data, slot) {
   if (data.type !== 'Attack Bonus') return
   const die = data.data.die
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.localize('DCC.AttackBonus'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus(game.dcc.getMacroOptions()) }',
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'attackBonus')
   }
-
-  return macroData
 }
 
 /**
  * Create a macro from an action die drop.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCActionDiceMacro (data, slot) {
   if (data.type !== 'Action Dice') return
   const die = data.data.die
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.format('DCC.ActionDiceMacroName', { die }),
     command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.setActionDice('${die}') }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'defaultDice')
   }
-
-  return macroData
 }
 
 /**
@@ -773,21 +800,21 @@ function _createDCCActionDiceMacro (data, slot) {
  * Get an existing macro if one exists, otherwise create a new one.
  * @param {Object} data     The dropped data
  * @param {number} slot     The hotbar slot to use
- * @returns {Promise}
+ * @returns {Object}
  */
 function _createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Weapon') return
-  const item = data.data.weapon
-  const weaponSlot = data.data.slot
+  const item = data.system.weapon
+  const weaponSlot = data.system.slot
   const backstab = data.data.backstab
   const options = {
-    backstab: backstab
+    backstab
   }
 
   const macroData = {
     name: item.name,
     command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
-    img: data.data.weapon.img
+    img: item.img
   }
 
   // Replace missing or default weapon icon with our default
@@ -813,13 +840,11 @@ function _createDCCApplyDisapprovalMacro (data, slot) {
   if (data.type !== 'Apply Disapproval') return
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.format('DCC.ApplyDisapprovalMacroName'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.applyDisapproval() }',
     img: EntityImages.imageForMacro('applyDisapproval')
   }
-
-  return macroData
 }
 
 /**
@@ -832,18 +857,17 @@ function _createDCCRollDisapprovalMacro (data, slot) {
   if (data.type !== 'Roll Disapproval') return
 
   // Create the macro command
-  const macroData = {
+  return {
     name: game.i18n.format('DCC.RollDisapprovalMacroName'),
     command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollDisapproval() }',
     img: EntityImages.imageForMacro('rollDisapproval')
   }
-
-  return macroData
 }
 
 /**
  * Roll a weapon attack from a macro.
  * @param {string} itemId
+ * @param {Object} options
  * @return {Promise}
  */
 function rollDCCWeaponMacro (itemId, options = {}) {
@@ -851,7 +875,7 @@ function rollDCCWeaponMacro (itemId, options = {}) {
   let actor
   if (speaker.token) actor = game.actors.tokens[speaker.token]
   if (!actor) actor = game.actors.get(speaker.actor)
-  if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
+  if (!actor) return ui.notifications.warn(game.i18n.localize('DCC.MacroNoTokenSelected'))
 
   // Trigger the weapon roll
   return actor.rollWeaponAttack(itemId, options)
@@ -866,7 +890,7 @@ function getMacroActor () {
   let actor
   if (speaker.token) actor = game.actors.tokens[speaker.token]
   if (!actor) actor = game.actors.get(speaker.actor)
-  if (!actor) return ui.notifications.warn('You must select a token to run this macro.')
+  if (!actor) return ui.notifications.warn(game.i18n.localize('DCC.MacroNoTokenSelected'))
 
   // Return the actor if found
   return actor
