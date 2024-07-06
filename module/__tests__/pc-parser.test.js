@@ -2052,7 +2052,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
 /* Missing weapons test - with spaces before the newline*/
 test('underarmed_warrior_again', () => {
   const parsedNPC = parsePCs(
-`Generator Settings
+    `Generator Settings
 Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
 
 Lawful Warrior (1st level)
@@ -2081,45 +2081,49 @@ Lucky sign: Righteous heart (Turn unholy checks) (+0)
 Languages: Common
 Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
   )
+
+  console.log('POST PARSE')
+  console.log(parsedNPC)
+
   const expected = {
-    'data.attributes.init.value': '1',
-    'data.attributes.speed.value': '30',
-    'data.details.occupation.value': 'Confidence artist',
-    'data.attributes.ac.value': '10',
-    'data.attributes.hp.value': '13',
-    'data.attributes.hp.max': '13',
-    'data.attributes.hitDice.value': '1d12',
-    'data.attributes.critical.die': '1d12',
-    'data.attributes.critical.table': 'III',
-    'data.abilities.str.value': '13',
-    'data.abilities.agl.value': '11',
-    'data.abilities.sta.value': '15',
-    'data.abilities.per.value': '14',
-    'data.abilities.int.value': '9',
-    'data.abilities.lck.value': '9',
-    'data.abilities.str.max': '13',
-    'data.abilities.agl.max': '11',
-    'data.abilities.sta.max': '15',
-    'data.abilities.per.max': '14',
-    'data.abilities.int.max': '9',
-    'data.abilities.lck.max': '9',
-    'data.class.className': 'Warrior',
-    'data.config.actionDice': '1d20',
-    'data.details.alignment': 'l',
-    'data.details.attackBonus': 'd3',
-    'data.details.birthAugur': 'Righteous heart (Turn unholy checks) (+0)',
-    'data.details.languages': 'Common',
-    'data.details.level.value': '1',
-    'data.saves.frt.value': '2',
-    'data.saves.ref.value': '1',
-    'data.saves.wil.value': '1',
-    'data.skills.findSecretDoors.value': 0,
+    'attributes.init.value': '1',
+    'attributes.speed.value': '30',
+    'details.occupation.value': 'Confidence artist',
+    'attributes.ac.value': '10',
+    'attributes.hp.value': '13',
+    'attributes.hp.max': '13',
+    'attributes.hitDice.value': '1d12',
+    'attributes.critical.die': '1d12',
+    'attributes.critical.table': 'III',
+    'abilities.str.value': '13',
+    'abilities.agl.value': '11',
+    'abilities.sta.value': '15',
+    'abilities.per.value': '14',
+    'abilities.int.value': '9',
+    'abilities.lck.value': '9',
+    'abilities.agl.max': '11',
+    'abilities.str.max': '13',
+    'abilities.sta.max': '15',
+    'abilities.per.max': '14',
+    'abilities.int.max': '9',
+    'abilities.lck.max': '9',
+    'class.className': 'Warrior',
+    'config.actionDice': '1d20',
+    'details.alignment': 'l',
+    'details.attackBonus': 'd3',
+    'details.birthAugur': 'Righteous heart (Turn unholy checks) (+0)',
+    'details.languages': 'Common',
+    'details.level.value': '1',
+    'saves.frt.value': '2',
+    'saves.ref.value': '1',
+    'saves.wil.value': '1',
+    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Dagger',
         type: 'weapon',
         img: 'systems/dcc/styles/images/weapon.webp',
-        data: {
+        system: {
           toHit: 'd3+1',
           damage: '1d4+1+@ab',
           melee: true
@@ -2129,7 +2133,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Unarmored',
         type: 'armor',
         img: 'systems/dcc/styles/images/armor.webp',
-        data: {
+        system: {
           acBonus: '+0',
           checkPenalty: '0',
           fumbleDie: '1d4'
@@ -2149,7 +2153,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         name: 'Coins',
         type: 'treasure',
         img: 'systems/dcc/styles/images/coins.webp',
-        data: {
+        system: {
           value: {
             pp: '0',
             ep: '0',
@@ -2161,6 +2165,8 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         }
       }]
   }
+
+  console.log(expected)
   expect(parsedNPC).toMatchObject([expected])
 })
 
