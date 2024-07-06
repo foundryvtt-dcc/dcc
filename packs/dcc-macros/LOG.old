@@ -1,13 +1,16 @@
-2023/10/14-18:24:08.706763 30b686000 Recovering log #6
-2023/10/14-18:24:08.707475 30b686000 Delete type=0 #6
-2023/10/14-18:24:08.707508 30b686000 Delete type=3 #4
-2023/10/14-20:15:56.108249 304e0b000 Level-0 table #10: started
-2023/10/14-20:15:56.108262 304e0b000 Level-0 table #10: 0 bytes OK
-2023/10/14-20:15:56.108355 304e0b000 Delete type=0 #8
-2023/10/14-20:15:56.108455 304e0b000 Manual compaction at level-0 from '!macros!1jt3zIka7EIsVAdv' @ 72057594037927935 : 1 .. '!macros!uKW2QX3xi6bExvFc' @ 0 : 0; will stop at '!macros!uKW2QX3xi6bExvFc' @ 7 : 1
-2023/10/14-20:15:56.108462 304e0b000 Compacting 1@0 + 0@1 files
-2023/10/14-20:15:56.108618 304e0b000 Generated table #11@0: 7 keys, 2551 bytes
-2023/10/14-20:15:56.108624 304e0b000 Compacted 1@0 + 0@1 files => 2551 bytes
-2023/10/14-20:15:56.108676 304e0b000 compacted to: files[ 0 1 0 0 0 0 0 ]
-2023/10/14-20:15:56.108709 304e0b000 Delete type=2 #5
-2023/10/14-20:15:56.109600 304e0b000 Manual compaction at level-0 from '!macros!uKW2QX3xi6bExvFc' @ 7 : 1 .. '!macros!uKW2QX3xi6bExvFc' @ 0 : 0; will stop at (end)
+2024/07/05-20:07:14.205168 30a5f7000 Recovering log #15
+2024/07/05-20:07:14.205230 30a5f7000 Level-0 table #17: started
+2024/07/05-20:07:14.205432 30a5f7000 Level-0 table #17: 2756 bytes OK
+2024/07/05-20:07:14.205855 30a5f7000 Delete type=0 #15
+2024/07/05-20:07:14.206048 30a5f7000 Delete type=3 #14
+2024/07/05-20:18:47.993824 310676000 Level-0 table #20: started
+2024/07/05-20:18:47.994019 310676000 Level-0 table #20: 0 bytes OK
+2024/07/05-20:18:47.994161 310676000 Delete type=0 #18
+2024/07/05-20:18:47.995901 310676000 Manual compaction at level-0 from '!macros!1jt3zIka7EIsVAdv' @ 72057594037927935 : 1 .. '!macros!uKW2QX3xi6bExvFc' @ 0 : 0; will stop at '!macros!uKW2QX3xi6bExvFc' @ 14 : 1
+2024/07/05-20:18:47.995910 310676000 Compacting 1@0 + 1@1 files
+2024/07/05-20:18:47.996175 310676000 Generated table #21@0: 7 keys, 2756 bytes
+2024/07/05-20:18:47.996183 310676000 Compacted 1@0 + 1@1 files => 2756 bytes
+2024/07/05-20:18:47.996325 310676000 compacted to: files[ 0 1 0 0 0 0 0 ]
+2024/07/05-20:18:47.996366 310676000 Delete type=2 #17
+2024/07/05-20:18:47.996446 310676000 Delete type=2 #11
+2024/07/05-20:18:47.999102 310676000 Manual compaction at level-0 from '!macros!uKW2QX3xi6bExvFc' @ 14 : 1 .. '!macros!uKW2QX3xi6bExvFc' @ 0 : 0; will stop at (end)

@@ -119,6 +119,33 @@ class DCCActor extends Actor {
       this.system.attributes.actionDice.options = actionDice
     } catch (err) { }
 
+
+    // Gather available initiative dice
+    try {
+      // Implicit migration for legacy actors
+      if (!this.system.config.initDice) {
+        this.system.config.initDice = this.system.attributes.initDice.value || '1d20'
+      }
+      // Parse the init dice expression from the config and produce a list of available dice
+      const initDieExpression = new Roll(this.system.config.initDice || '1d20')
+      const terms = initDieExpression.terms
+      const initDice = []
+      console.log("ARE YOU RUNNING")
+
+      for (const term of terms) {
+        if (term instanceof foundry.dice.terms.Die) {
+          const termDie = `1d${term.faces}`
+          const termCount = term.number || 1
+          for (let i = 0; i < termCount; ++i) {
+            initDice.push({value: termDie, label: termDie})
+          }
+        }
+      }
+      console.log("INIT DICE")
+      console.log(initDice)
+      this.system.attributes.initDice.options = initDice
+    } catch (err) { }
+
     // Migrate the old rollAttackBonus option if present
     if (this.system.config.rollAttackBonus) {
       this.update({
@@ -276,7 +303,7 @@ class DCCActor extends Actor {
     const flags = {}
 
     // Allow requesting roll under (for Luck Checks)
-    if (options.rollUnder) {
+    if (options.rollUnder && !options.modClick) {
       const terms = [
         {
           type: 'Die',

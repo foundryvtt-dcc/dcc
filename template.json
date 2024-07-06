@@ -69,6 +69,10 @@
             "die": "1d20",
             "value": 0
           },
+          "initDice": {
+            "value": "1d20",
+            "options": [{"value": "1d20", "label": "1d20"}, {"value": "1d16", "label": "1d16"}]
+          },
           "speed": {
             "value": 30,
             "base": 30,

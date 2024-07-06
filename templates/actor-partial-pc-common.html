@@ -82,10 +82,10 @@
                            name="system.attributes.ac.value"
                            value="{{system.attributes.ac.value}}"
                            {{#if system.config.computeAC }}
-                               title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0 sign=true}} {{localize 'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}}"
-                               disabled
+                           title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0 sign=true}} {{localize 'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}}"
+                           disabled
                            {{/if}}
-                           data-dtype="Number"
+                    data-dtype="Number"
                     />
                     <label for="system.attributes.ac.value">{{localize "DCC.AC"}}</label>
                 </div>
@@ -106,8 +106,7 @@
             {{!-- Combat Basics --}}
             <div class="character-main-body-row combat-basics flexrow">
                 <div class="init">
-                    <label class="init-label box-title rollable" for="system.attributes.init.value">{{localize
-                        "DCC.Init"}}</label>
+                    <label class="init-label box-title rollable" for="system.attributes.init.value">{{localize "DCC.Init"}}</label>
                     <div class="flexrow">
                         <input class="init-die" type="text" id="system.attributes.init.die"
                                name="system.attributes.init.die"
@@ -127,10 +126,10 @@
                            name="system.attributes.speed.value"
                            value="{{distanceFormat system.attributes.speed.value}}"
                            {{#if system.config.computeSpeed }}
-                               title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}} {{distanceFormat system.attributes.ac.speedPenalty}}"
-                               disabled
+                           title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}} {{distanceFormat system.attributes.ac.speedPenalty}}"
+                           disabled
                            {{/if}}
-                           data-dtype="String"
+                    data-dtype="String"
                     />
                 </div>
                 <div class="hd">

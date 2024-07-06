@@ -1744,9 +1744,9 @@ form.dcc-roll-modifier input.stat {
   column-gap: 8px;
   display: grid;
   font-size: 14px;
-  grid-template-columns: 102px 80px 100px 68px;
-  grid-template-rows: 24px 20px 20px 20px 20px;
-  margin-bottom: 12px;
+  grid-template-columns: 102px 80px 100px 60px 1px;
+  grid-template-rows: 22px 21px 21px 21px 21px;
+  margin-bottom: 8px;
 }
 .dcc.sheet.actor .character2 .combat-basics label {
   padding-left: 3px;
@@ -1755,9 +1755,10 @@ form.dcc-roll-modifier input.stat {
 .dcc.sheet.actor .character2 .combat-basics input,
 .dcc.sheet.actor .character2 .combat-basics select {
   font-size: 14px;
+  vertical-align: middle;
 }
 .dcc.sheet.actor .character2 .combat-basics-title {
-  font-size: 16px;
+  font-size: 15px;
   grid-column-end: 6;
   padding-top: 2px;
 }
@@ -1843,6 +1844,9 @@ form.dcc-roll-modifier input.stat {
   font-size: 15px;
   grid-column: 2;
   letter-spacing: 1px;
+}
+.dcc.sheet.actor .character2 label {
+  font-family: "Cooper Black", "Palatino Linotype", serif;
 }
 
 /*# sourceMappingURL=dcc.css.map */

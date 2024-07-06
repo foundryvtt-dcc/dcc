@@ -13,8 +13,8 @@ class DCCActorSheet extends ActorSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'actor'],
       template: 'systems/dcc/templates/actor-sheet-zero-level.html',
-      width: 600,
-      height: 600,
+      width: 650,
+      height: 790,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
       scrollY: [
@@ -268,6 +268,7 @@ class DCCActorSheet extends ActorSheet {
       // Ability Checks
       html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
       html.find('.ability-modifiers').click(this._onRollAbilityCheck.bind(this))
+      html.find('[data-modifier="true"]').click(this._onRollAbilityCheck.bind(this))
       html.find('li.ability').each(makeDraggable)
       html.find('div.ability-modifiers').each((index, element) => {
         // Also make the luck modifier draggable for non-standard luck checks
@@ -607,7 +608,8 @@ class DCCActorSheet extends ActorSheet {
     const rollUnder = (ability === 'lck') && (event.currentTarget.className !== 'ability-modifiers')
 
     // Allow alternate behaviour if the modifier is clicked instead of the attribute
-    const modClick = (event.currentTarget.className === 'ability-modifiers')
+    const modClick = (event.currentTarget.className === 'ability-modifiers' || event.currentTarget.dataset.modifier === 'true')
+    console.log(modClick)
 
     Object.assign(options, {
       modClick,
