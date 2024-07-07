@@ -4,9 +4,6 @@
     <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Wizard" data-dtype="String"/>
     <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
-    {{!-- Sheet Header --}}
-    {{> systems/dcc/templates/actor-partial-pc-header.html }}
-
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
@@ -42,18 +39,21 @@
                 <div class="skills-container">
                     <div class="split-50-50" data-ability="int">
                         <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}" data-dtype="String"/>
+                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}"
+                               data-dtype="String"/>
                     </div>
                     <div></div>
 
                     <div class="wide split-25-75">
                         <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
-                        <input class="string" type="text" id="system.class.patron" name="system.class.patron" value="{{system.class.patron}}" data-dtype="String"/>
+                        <input class="string" type="text" id="system.class.patron" name="system.class.patron"
+                               value="{{system.class.patron}}" data-dtype="String"/>
                     </div>
-    
+
                     <div class="wide split-25-75">
                         <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
-                        <input class="string" type="text" id="system.class.familiar" name="system.class.familiar" value="{{system.class.familiar}}" data-dtype="String"/>
+                        <input class="string" type="text" id="system.class.familiar" name="system.class.familiar"
+                               value="{{system.class.familiar}}" data-dtype="String"/>
                     </div>
 
                     <div class="wide textarea">
@@ -61,11 +61,11 @@
                         <label></label>
                         {{editor corruptionHTML target="system.class.corruption" button=true editable=editable}}
                     </div>
-		</div>
-			<br>
-		    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-		      {{{system.class.classLink}}}
-		    {{/dccPackExists}}
+                </div>
+                <br>
+                {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                {{{system.class.classLink}}}
+                {{/dccPackExists}}
             </div>
         </div>
 

@@ -4,9 +4,6 @@
     <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Elf" data-dtype="String"/>
     <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
-    {{!-- Sheet Header --}}
-    {{> systems/dcc/templates/actor-partial-pc-header.html }}
-
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
@@ -42,23 +39,28 @@
                 <div class="skills-container">
                     <div class="split-50-50" data-ability="int">
                         <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}" data-dtype="String"/>
+                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}"
+                               data-dtype="String"/>
                     </div>
                     <div data-skill="findSecretDoors" class="split-60-40">
-                        <label class="skill-check rollable" for="system.details.findSecretDoors.value">{{localize "DCC.HeightenedSenses"}}</label>
-                        <input type="text" id="system.skills.findSecretDoors.value" name="system.skills.findSecretDoors.value" value="{{system.skills.findSecretDoors.value}}" data-dtype="String"/>
+                        <label class="skill-check rollable" for="system.details.findSecretDoors.value">{{localize
+                            "DCC.HeightenedSenses"}}</label>
+                        <input type="text" id="system.skills.findSecretDoors.value" name="system.skills.findSecretDoors.value"
+                               value="{{system.skills.findSecretDoors.value}}" data-dtype="String"/>
                     </div>
 
                     <div class="wide split-25-75">
                         <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
-                        <input class="string" type="text" id="system.class.patron" name="system.class.patron" value="{{system.class.patron}}" data-dtype="String"/>
+                        <input class="string" type="text" id="system.class.patron" name="system.class.patron"
+                               value="{{system.class.patron}}" data-dtype="String"/>
                     </div>
-    
+
                     <div class="wide split-25-75">
                         <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
-                        <input class="string" type="text" id="system.class.familiar" name="system.class.familiar" value="{{system.class.familiar}}" data-dtype="String"/>
+                        <input class="string" type="text" id="system.class.familiar" name="system.class.familiar"
+                               value="{{system.class.familiar}}" data-dtype="String"/>
                     </div>
-    
+
                     <div class="wide textarea">
                         <label for="system.class.corruption">{{localize "DCC.Corruptions"}}:</label>
                         <label></label>
@@ -67,17 +69,18 @@
                 </div>
 
                 <ul class="class-note flexcol">
-                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                  <li>{{{system.class.classLink}}}</li>
-                  {{/dccPackExists}}
-                  <li>{{localize "DCC.Infravision"}}</li>
-                  <ul class="class-note flexcol">
-                    <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Infravision-and-Torches"><i class="fas fa-link"></i> {{localize "DCC.InfravisionLink"}}</a></li>
-                  </ul>
-                  <li>{{localize "DCC.HeightenedSensesDescription"}}</li>
-                  <li>{{localize "DCC.IronVulnerability"}}</li>
-                  <li>{{localize "DCC.ElfLuckMod"}}</li>
-                  <li>{{localize "DCC.ElfImmunities"}}</li>
+                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                    <li>{{{system.class.classLink}}}</li>
+                    {{/dccPackExists}}
+                    <li>{{localize "DCC.Infravision"}}</li>
+                    <ul class="class-note flexcol">
+                        <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Infravision-and-Torches"><i
+                            class="fas fa-link"></i> {{localize "DCC.InfravisionLink"}}</a></li>
+                    </ul>
+                    <li>{{localize "DCC.HeightenedSensesDescription"}}</li>
+                    <li>{{localize "DCC.IronVulnerability"}}</li>
+                    <li>{{localize "DCC.ElfLuckMod"}}</li>
+                    <li>{{localize "DCC.ElfImmunities"}}</li>
                 </ul>
             </div>
         </div>

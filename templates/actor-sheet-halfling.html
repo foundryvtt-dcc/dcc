@@ -4,9 +4,6 @@
     <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Halfling" data-dtype="String"/>
     <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
-    {{!-- Sheet Header --}}
-    {{> systems/dcc/templates/actor-partial-pc-header.html }}
-
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
@@ -45,28 +42,30 @@
                 <div class="skills-container">
                     <div class="split-50-25-25" data-skill="sneakAndHide">
                         <label class="skill-check rollable" for="system.skills.sneakAndHide.value">{{localize "DCC.SneakAndHide"}}</label>
-                        <input type="text" id="system.skills.sneakAndHide.value" name="system.skills.sneakAndHide.value" value="{{system.skills.sneakAndHide.value}}" data-dtype="String"/>
+                        <input type="text" id="system.skills.sneakAndHide.value" name="system.skills.sneakAndHide.value"
+                               value="{{system.skills.sneakAndHide.value}}" data-dtype="String"/>
                     </div>
                     <div></div>
                 </div>
 
                 <ul class="class-note flexcol">
-                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                  <li>{{{system.class.classLink}}}</li>
-                  {{/dccPackExists}}
-                  <li>{{localize "DCC.InfravisionHalfling"}}</li>
+                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                    <li>{{{system.class.classLink}}}</li>
+                    {{/dccPackExists}}
+                    <li>{{localize "DCC.InfravisionHalfling"}}</li>
                     <ul class="class-note flexcol">
-                      <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Infravision-and-Torches"><i class="fas fa-link"></i> {{localize "DCC.InfravisionLink"}}</a></li>
+                        <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Infravision-and-Torches"><i
+                            class="fas fa-link"></i> {{localize "DCC.InfravisionLink"}}</a></li>
                     </ul>
-                  <li>{{localize "DCC.Lucky"}}</li>
-                  <li>{{localize "DCC.TwoWeaponFighting"}}
-                    <ul class="class-note flexcol">
-                      <li>{{localize "DCC.HalflingTwoWeaponActionDie"}}</li>
-                      <li>{{localize "DCC.HalflingTwoWeaponCrit"}}</li>
-                      <li>{{localize "DCC.HalflingTwoWeaponFumble"}}</li>
-                      <li>{{localize "DCC.HalflingTwoWeaponHighAg"}}</li>
-                    </ul>
-                  </li>
+                    <li>{{localize "DCC.Lucky"}}</li>
+                    <li>{{localize "DCC.TwoWeaponFighting"}}
+                        <ul class="class-note flexcol">
+                            <li>{{localize "DCC.HalflingTwoWeaponActionDie"}}</li>
+                            <li>{{localize "DCC.HalflingTwoWeaponCrit"}}</li>
+                            <li>{{localize "DCC.HalflingTwoWeaponFumble"}}</li>
+                            <li>{{localize "DCC.HalflingTwoWeaponHighAg"}}</li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </div>
