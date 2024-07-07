@@ -794,7 +794,8 @@ class DCCActor extends Actor {
    */
   async rollAttackBonus (options = {}) {
     /* Determine attack bonus */
-    const attackBonusExpression = this.system.details.attackBonus || '0'
+    const attackBonusExpression = this.system.attributes.attackHitBonus.melee || this.system.details.attackBonus || '0'
+
     if (attackBonusExpression) {
       const flavor = game.i18n.localize('DCC.AttackBonus')
       options.title = flavor
