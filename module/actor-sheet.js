@@ -10,11 +10,10 @@ import EntityImages from './entity-images.js'
 class DCCActorSheet extends ActorSheet {
   /** @override */
   static get defaultOptions () {
-    console.log("MERGE OBJ")
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'actor'],
       template: 'systems/dcc/templates/actor-sheet-zero-level.html',
-      width: 639,
+      width: 637,
       height: 733,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
