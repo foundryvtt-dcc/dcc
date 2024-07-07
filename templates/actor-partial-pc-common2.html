@@ -147,12 +147,13 @@
         {{!-- Ability Scores and Saves --}}
         {{#* inline "abilityScore"}}
         <div style="grid-area: {{area}}" class="ability-box" id="{{id}}" data-ability="{{id}}">
-            <label for="system.abilities.{{id}}.value" class="ability-name dark-title rollable">{{localize ability.label}}</label>
+            <label for="system.abilities.{{id}}.value" class="ability-name dark-title rollable"
+                   title="{{localize (concat 'DCC.Roll' (localize ability.label) 'CheckHint')}}">{{localize ability.label}}</label>
             <div class="ability-score-box">
                 <input id="system.abilities.{{id}}.value" value="{{ability.value}}" size="2"
                        name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10"/>
             </div>
-            <label for="system.abilities.{{id}}.mod" style="grid-area: 2 / 1" data-modifier="true" class="rollable">{{localize
+            <label for="system.abilities.{{id}}.mod" style="grid-area: 2 / 1" data-modifier="true" {{#if isLuck}}class="rollable"{{/if}} title="Click to roll Luck Check, adding Luck modifier">{{localize
                 "DCC.Modifier"}}:</label>
             <input id="system.abilities.{{id}}.mod" style="grid-area: 2 / 2"
                    name="system.abilities.{{id}}.mod" value="{{numberFormat ability.mod decimals=0 sign=true}}"
@@ -182,12 +183,15 @@
 
         {{!-- Melee Attack Values --}}
         <div style="grid-area: 3 / 3" class="hit-bonus-box">
-            <label for="system.details.attackHitBonus.melee" class="dark-title">Melee<br/>Attack</label>
-            <input id="system.details.attackHitBonus.melee" name="system.details.attackHitBonus.melee" value="{{system.details.attackHitBonus.melee}}">
+            <label for="system.details.attackHitBonus.melee" class="dark-title"
+                   title="Calculated from Attack Bonus + Strength Bonus">Melee<br/>Attack</label>
+            <input id="system.details.attackHitBonus.melee" name="system.details.attackHitBonus.melee"
+                   value="{{system.details.attackHitBonus.melee}}" title="Calculated from Attack Bonus + Strength Bonus" disabled>
         </div>
         <div style="grid-area: 3 / 4" class="hit-bonus-box">
             <label for="system.details.attackDamageBonus.melee" class="dark-title">Melee<br/>Damage</label>
-            <input id="system.details.attackDamageBonus.melee" name="system.details.attackDamageBonus.melee" value="{{system.details.attackDamageBonus.melee}}">
+            <input id="system.details.attackDamageBonus.melee" name="system.details.attackDamageBonus.melee"
+                   value="{{system.details.attackDamageBonus.melee}}">
         </div>
 
         <div style="grid-row: 4; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
@@ -201,11 +205,13 @@
         {{!-- Ranged Attack Values --}}
         <div style="grid-area: 5 / 3" class="hit-bonus-box">
             <label for="system.details.attackHitBonus.ranged" class="dark-title rollable">Ranged<br/>Attack</label>
-            <input id="system.details.attackHitBonus.ranged" name="system.details.attackHitBonus.ranged" value="{{system.details.attackHitBonus.ranged}}">
+            <input id="system.details.attackHitBonus.ranged" name="system.details.attackHitBonus.ranged"
+                   value="{{system.details.attackHitBonus.ranged}}">
         </div>
         <div style="grid-area: 5 / 4" class="hit-bonus-box">
             <label for="system.details.attackDamageBonus.ranged" class="dark-title rollable">Ranged<br/>Damage</label>
-            <input id="system.details.attackDamageBonus.ranged" name="system.details.attackDamageBonus.ranged" value="{{system.details.attackDamageBonus.ranged}}">
+            <input id="system.details.attackDamageBonus.ranged" name="system.details.attackDamageBonus.ranged"
+                   value="{{system.details.attackDamageBonus.ranged}}">
         </div>
 
         <div style="grid-row: 6; grid-column-start: 1; grid-column-end: 5" class="row-separator"></div>
@@ -235,7 +241,7 @@
         <div style="grid-row: 10; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
         {{!-- Luck --}}
-        {{> abilityScore id='lck' ability=system.abilities.lck area='11 / 1'}}
+        {{> abilityScore id='lck' ability=system.abilities.lck area='11 / 1' isLuck=true}}
 
         {{!-- Lucky Roll --}}
         <div style="grid-row: 11; grid-column: 2" class="lucky-roll-box">

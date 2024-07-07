@@ -53,6 +53,8 @@ class DCCActor extends Actor {
     if (data.config.computeCheckPenalty) {
       data.attributes.ac.checkPenalty = checkPenalty
     }
+
+    // Calculate
   }
 
   /** @override */
