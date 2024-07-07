@@ -112,13 +112,12 @@ class DCCActor extends Actor {
           const termDie = `1d${term.faces}`
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
-            actionDice.push({value: termDie, label: termDie})
+            actionDice.push({ value: termDie, label: termDie })
           }
         }
       }
       this.system.attributes.actionDice.options = actionDice
     } catch (err) { }
-
 
     // Gather available initiative dice
     try {
@@ -136,7 +135,7 @@ class DCCActor extends Actor {
           const termDie = `1d${term.faces}`
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
-            initDice.push({value: termDie, label: termDie})
+            initDice.push({ value: termDie, label: termDie })
           }
         }
       }
@@ -1274,6 +1273,7 @@ class DCCActor extends Actor {
       roll = critResult.roll
     }
 
+    // If fancy cards aren't disabled, return HTML for chat message
     if (!options.displayStandardCards) {
       // Create the roll emote
       const rollData = encodeURIComponent(JSON.stringify(roll))
@@ -1286,7 +1286,10 @@ class DCCActor extends Actor {
       } else {
         return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
       }
-    } else if (!critResult) {
+    }
+
+    // Display basic chat card - only reachable if displayStandardCards is enabled
+    if (!critResult) {
       // Generate flags for the roll
       const flags = {
         'dcc.RollType': 'CriticalHit',

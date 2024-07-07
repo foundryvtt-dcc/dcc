@@ -46,7 +46,20 @@
           },
           "actionDice": {
             "value": "1d20",
-            "options": [{"value": "1d20", "label": "1d20"}]
+            "options": [
+              {
+                "value": "1d20",
+                "label": "1d20"
+              }
+            ]
+          },
+          "attackHitBonus": {
+            "melee": "+0",
+            "ranged": "+0"
+          },
+          "attackDamageBonus": {
+            "melee": "+0",
+            "ranged": "+0"
           },
           "critical": {
             "die": "1d4",
@@ -71,7 +84,16 @@
           },
           "initDice": {
             "value": "1d20",
-            "options": [{"value": "1d20", "label": "1d20"}, {"value": "1d16", "label": "1d16"}]
+            "options": [
+              {
+                "value": "1d20",
+                "label": "1d20"
+              },
+              {
+                "value": "1d16",
+                "label": "1d16"
+              }
+            ]
           },
           "speed": {
             "value": 30,
@@ -168,7 +190,7 @@
         }
       },
       "thief": {
-        "class" : {
+        "class": {
           "luckDie": "1d3",
           "backstab": "0"
         },
@@ -268,7 +290,7 @@
         },
         "skills": {
           "shieldBash": {
-            "label" : "DCC.ShieldBash",
+            "label": "DCC.ShieldBash",
             "ability": "str",
             "die": "1d14",
             "value": "+0",
@@ -283,7 +305,7 @@
         "skills": {
           "findSecretDoors": {
             "label": "DCC.HeightenedSenses",
-            "ability" : "int",
+            "ability": "int",
             "value": "+4"
           }
         }
@@ -291,18 +313,18 @@
       "config": {
         "config": {
           "attackBonusMode": "flat",
-          "actionDice" : "1d20",
+          "actionDice": "1d20",
           "capLevel": false,
-          "maxLevel" : 10,
+          "maxLevel": 10,
           "rollAttackBonus": false,
           "computeAC": false,
           "baseACAbility": "agl",
           "computeSpeed": false,
           "computeCheckPenalty": false,
-          "sortInventory" : true,
-          "removeEmptyItems" : true,
-          "showSpells" : false,
-          "showSkills" : false,
+          "sortInventory": true,
+          "removeEmptyItems": true,
+          "showSpells": false,
+          "showSkills": false,
           "showMaxAbilities": true,
           "showBackstab": false
         }
@@ -419,7 +441,7 @@
         "physicalItem",
         "currency"
       ],
-      "acBonus" : "+1",
+      "acBonus": "+1",
       "checkPenalty": "-0",
       "speed": "-0",
       "fumbleDie": "1d4"
@@ -465,7 +487,7 @@
       "results": {},
       "save": "",
       "spellCheck": {
-        "die" : "1d20",
+        "die": "1d20",
         "value": "+0",
         "penalty": "-0"
       },
@@ -479,7 +501,7 @@
       "templates": [
         "itemDescription"
       ],
-      "config" : {
+      "config": {
         "freeform": false,
         "useAbility": false,
         "useDie": false,

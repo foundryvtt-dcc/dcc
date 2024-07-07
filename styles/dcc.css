@@ -1510,6 +1510,7 @@
 /* ----------------------------------------- */
 .dcc.sheet .sheet-tabs.tabs {
   border: 0;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
 }
 
 /* ----------------------------------------- */
@@ -1677,8 +1678,8 @@ form.dcc-roll-modifier input.stat {
   display: grid;
   font-family: var(--label-font);
   font-size: 16px;
-  grid-template-columns: 231px 146px 108px 108px;
-  grid-template-rows: 125px 70px 9px 70px 9px 70px 9px 70px 9px 70px 9px 70px;
+  grid-template-columns: 227px 146px 108px 108px;
+  grid-template-rows: 51px 125px 70px 9px 70px 9px 70px 9px 70px 9px 70px 9px 70px;
   text-align: center;
 }
 .dcc.sheet.actor .character2 .outer input,
@@ -1749,7 +1750,7 @@ form.dcc-roll-modifier input.stat {
   font-size: 14px;
   grid-template-columns: 110px 90px 80px 63px;
   grid-template-rows: 22px 21px 21px 21px 21px;
-  margin-bottom: 6px;
+  margin: 7px 0 6px 0;
 }
 .dcc.sheet.actor .character2 .combat-basics label {
   padding-left: 3px;
@@ -1810,6 +1811,16 @@ form.dcc-roll-modifier input.stat {
   display: grid;
   grid-template-rows: 17px 50px;
   font-size: 12px;
+}
+.dcc.sheet.actor .character2 .name-section-box {
+  column-gap: 12px;
+  display: grid;
+  grid-template-rows: 25px 27px;
+  grid-template-columns: subgrid;
+  text-align: left;
+}
+.dcc.sheet.actor .character2 .name-section-box label {
+  font-size: 13px;
 }
 .dcc.sheet.actor .character2 .portrait {
   border: 2px solid black;

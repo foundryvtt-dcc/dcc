@@ -13,10 +13,11 @@ class DCCActorSheet extends ActorSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'actor'],
       template: 'systems/dcc/templates/actor-sheet-zero-level.html',
-      width: 640,
-      height: 790,
+      width: 639,
+      height: 733,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
+      resizable: false,
       scrollY: [
         '.tab.character',
         '.tab.equipment .equipment-container',
@@ -323,8 +324,9 @@ class DCCActorSheet extends ActorSheet {
       // Action Dice
       html.find('.action-dice').each(makeDraggable)
 
-      // Portrait
-      html.find('.portrait img').click(this._onEditImage.bind(this))
+      // Crit Die
+      html.find('label[for*="system.attributes.critical.die"]').click(this._onRollCritDie.bind(this))
+      html.find('label[for*="system.attributes.critical.die"]').each(makeDraggable)
 
       // Weapons
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
@@ -647,7 +649,6 @@ class DCCActorSheet extends ActorSheet {
 
     // Allow alternate behaviour if the modifier is clicked instead of the attribute
     const modClick = (event.currentTarget.className === 'ability-modifiers' || event.currentTarget.dataset.modifier === 'true')
-    console.log(modClick)
 
     Object.assign(options, {
       modClick,
@@ -655,6 +656,18 @@ class DCCActorSheet extends ActorSheet {
     })
 
     this.actor.rollAbilityCheck(ability, options)
+  }
+
+  /**
+   * Handle rolling Crit Die on its own
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollCritDie (event) {
+    event.preventDefault()
+    const options = this._fillRollOptions(event)
+    options.displayStandardCards = true
+    this.actor.rollCritical(options)
   }
 
   /**
@@ -842,13 +855,13 @@ class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  setPosition (options = {}) {
-    const position = super.setPosition(options)
-    const sheetBody = this.element.find('.sheet-body')
-    const bodyHeight = position.height - 192
-    sheetBody.css('height', bodyHeight)
-    return position
-  }
+  // setPosition (options = {}) {
+  //   const position = super.setPosition(options)
+  //   const sheetBody = this.element.find('.sheet-body')
+  //   // const bodyHeight = position.height - 192
+  //   sheetBody.css('height', bodyHeight)
+  //   return position
+  // }
 
   /* -------------------------------------------- */
 
