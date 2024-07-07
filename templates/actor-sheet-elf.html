@@ -8,7 +8,7 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a class="item" data-tab="class">{{localize "DCC.Elf"}}</a>
+        <a class="item" data-tab="elf">{{localize "DCC.Elf"}}</a>
         <a class="item" data-tab="spells">{{localize "DCC.ElfSpells"}}</a>
         {{#if system.config.showSkills}}
         <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
@@ -32,7 +32,7 @@
         {{> systems/dcc/templates/actor-partial-pc-notes.html }}
 
         {{!-- Class Tab --}}
-        <div class="tab" data-group="primary" data-tab="class">
+        <div class="tab" data-group="primary" data-tab="elf">
             {{!-- Update spell check ability to use Intelligence --}}
             <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
             <div class="class">

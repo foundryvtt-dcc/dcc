@@ -8,7 +8,7 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
         <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a class="item" data-tab="class">{{localize "DCC.Halfling"}}</a>
+        <a class="item" data-tab="halfling">{{localize "DCC.Halfling"}}</a>
         {{#if system.config.showSpells}}
         <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
         {{/if}}
@@ -37,7 +37,7 @@
         {{> systems/dcc/templates/actor-partial-pc-notes.html }}
 
         {{!-- Class Tab --}}
-        <div class="tab" data-group="primary" data-tab="class">
+        <div class="tab" data-group="primary" data-tab="halfling">
             <div class="class">
                 <div class="skills-container">
                     <div class="split-50-25-25" data-skill="sneakAndHide">

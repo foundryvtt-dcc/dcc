@@ -737,40 +737,6 @@
 }
 
 /* ----------------------------------------- */
-/*  Tabs                                     */
-/* ----------------------------------------- */
-.dcc .tabs {
-  height: 40px;
-}
-
-.dcc .tabs .item {
-  border: 2px groove #eeede0;
-  border-radius: 5px 5px 0 0;
-  flex: 1;
-  font-weight: bold;
-  height: 38px;
-  line-height: 35px;
-  margin-bottom: 10px;
-  padding: initial !important;
-}
-
-.dcc .tabs .item.active {
-  border-bottom: 0;
-  margin-bottom: 11px;
-  text-decoration: underline;
-  text-shadow: none;
-}
-
-.dcc .sheet-body {
-  overflow: hidden;
-}
-
-.dcc .sheet-body .tab {
-  height: 100%;
-  overflow-y: auto;
-}
-
-/* ----------------------------------------- */
 /*  Weapons                                  */
 /* ----------------------------------------- */
 .dcc .weapons {
@@ -1486,31 +1452,73 @@
   text-align: left;
 }
 
-.sheet-config .tabs {
-  height: 40px;
-}
-.sheet-config .tabs .item {
-  border: 2px groove #eeede0;
-  border-radius: 5px 5px 0 0;
-  flex: 1;
-  font-weight: bold;
-  height: 38px;
-  line-height: 35px;
-  margin-bottom: 10px;
-}
-.sheet-config .tabs .item.active {
-  border-bottom: 0;
-  margin-bottom: 11px;
-  text-decoration: underline;
-  text-shadow: none;
-}
-
 /* ----------------------------------------- */
-/*  Fix sheet tabs in 0.7.4                  */
+/*  Tabs                                     */
 /* ----------------------------------------- */
 .dcc.sheet .sheet-tabs.tabs {
-  border: 0;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  margin-bottom: 10px;
+  padding-top: 5px;
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+}
+.dcc.sheet .item[data-tab=character]:before {
+  content: "\f007";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=equipment]:before {
+  content: "\f71d";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=skills]:before {
+  content: "\f5dc";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=spells]:before {
+  content: "\f6b8";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=notes]:before {
+  content: "\f249";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=cleric]:before {
+  content: "\f3ed";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=dwarf]:before {
+  content: "\f6eb";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=elf]:before {
+  content: "\f6e8";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=halfling]:before {
+  content: "\e139";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=warrior]:before {
+  content: "\f6eb";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=wizard]:before {
+  content: "\f6e8";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet .item[data-tab=thief]:before {
+  content: "\f504";
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
 }
 
 /* ----------------------------------------- */
