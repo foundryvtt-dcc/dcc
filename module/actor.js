@@ -216,6 +216,10 @@ class DCCActor extends Actor {
 
     // Get the relevant attack bonus (direct or rolled)
     customData.ab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackBonus
+    customData.mab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackHitBonus.melee
+    customData.mad = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackDamageBonus.melee
+    customData.rab = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackHitBonus.ranged
+    customData.rad = (this.getAttackBonusMode() !== 'flat') ? (data.details.lastRolledAttackBonus || 0) : data.details.attackDamageBonus.ranged
 
     // Player only data
     if (this.type === 'Player') {
@@ -436,7 +440,7 @@ class DCCActor extends Actor {
 
     // Set initiative value in the combat tracker if appropriate
     const tokenId = token.id
-    const combatant = game.combat.getCombatantByToken(tokenId)
+    const combatant = game.combat.getCombatantsByToken(tokenId)[0]
     if (!combatant) {
       return ui.notifications.warn(game.i18n.format('DCC.InitiativeNoCombatantWarning', {
         name: token.name
@@ -1043,7 +1047,7 @@ class DCCActor extends Actor {
    */
   async rollToHit (weapon, options = {}) {
     /* Grab the To Hit modifier */
-    const toHit = weapon.system.toHit
+    let toHit = weapon.system.toHit
 
     /* Determine crit range */
     let die = weapon.system.actionDie || this.getActionDice()[0].formula

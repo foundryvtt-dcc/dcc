@@ -53,14 +53,6 @@
               }
             ]
           },
-          "attackHitBonus": {
-            "melee": "+0",
-            "ranged": "+0"
-          },
-          "attackDamageBonus": {
-            "melee": "+0",
-            "ranged": "+0"
-          },
           "critical": {
             "die": "1d4",
             "table": "I"
@@ -107,6 +99,14 @@
           },
           "alignment": "",
           "attackBonus": "+0",
+          "attackHitBonus": {
+            "melee": "+0",
+            "ranged": "+0"
+          },
+          "attackDamageBonus": {
+            "melee": "+0",
+            "ranged": "+0"
+          },
           "languages": "",
           "occupation": "",
           "notes": "",

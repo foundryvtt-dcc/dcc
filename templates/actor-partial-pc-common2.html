@@ -6,7 +6,7 @@
             <div style="grid-area: 1 / 1 / 1 / 2;">
                 <label for="name">{{localize "DCC.Name"}}</label>
                 <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.CharacterName'}}"
-                       placeholder="{{localize 'DCC.CharacterName'}}" style="width: 185px;"/>
+                       placeholder="{{localize 'DCC.CharacterName'}}" style="width: 185px;" autocomplete="off"/>
             </div>
 
             <div style="grid-area: 1 / 2;">
@@ -182,12 +182,12 @@
 
         {{!-- Melee Attack Values --}}
         <div style="grid-area: 3 / 3" class="hit-bonus-box">
-            <label for="system.attributes.attackHitBonus.melee" class="dark-title">Melee<br/>Attack</label>
-            <input id="system.attributes.attackHitBonus.melee" name="system.attributes.attackHitBonus.melee" value="{{system.attributes.attackHitBonus.melee}}">
+            <label for="system.details.attackHitBonus.melee" class="dark-title">Melee<br/>Attack</label>
+            <input id="system.details.attackHitBonus.melee" name="system.details.attackHitBonus.melee" value="{{system.details.attackHitBonus.melee}}">
         </div>
         <div style="grid-area: 3 / 4" class="hit-bonus-box">
-            <label for="system.attributes.attackDamageBonus.melee" class="dark-title">Melee<br/>Damage</label>
-            <input id="system.attributes.attackDamageBonus.melee" name="system.attributes.attackDamageBonus.melee" value="{{system.attributes.attackDamageBonus.melee}}">
+            <label for="system.details.attackDamageBonus.melee" class="dark-title">Melee<br/>Damage</label>
+            <input id="system.details.attackDamageBonus.melee" name="system.details.attackDamageBonus.melee" value="{{system.details.attackDamageBonus.melee}}">
         </div>
 
         <div style="grid-row: 4; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
@@ -200,12 +200,12 @@
 
         {{!-- Ranged Attack Values --}}
         <div style="grid-area: 5 / 3" class="hit-bonus-box">
-            <label for="system.attributes.attackHitBonus.ranged" class="dark-title rollable">Ranged<br/>Attack</label>
-            <input id="system.attributes.attackHitBonus.ranged" name="system.attributes.attackHitBonus.ranged" value="{{system.attributes.attackHitBonus.ranged}}">
+            <label for="system.details.attackHitBonus.ranged" class="dark-title rollable">Ranged<br/>Attack</label>
+            <input id="system.details.attackHitBonus.ranged" name="system.details.attackHitBonus.ranged" value="{{system.details.attackHitBonus.ranged}}">
         </div>
         <div style="grid-area: 5 / 4" class="hit-bonus-box">
-            <label for="system.attributes.attackDamageBonus.ranged" class="dark-title rollable">Ranged<br/>Damage</label>
-            <input id="system.attributes.attackDamageBonus.ranged" name="system.attributes.attackDamageBonus.ranged" value="{{system.attributes.attackDamageBonus.ranged}}">
+            <label for="system.details.attackDamageBonus.ranged" class="dark-title rollable">Ranged<br/>Damage</label>
+            <input id="system.details.attackDamageBonus.ranged" name="system.details.attackDamageBonus.ranged" value="{{system.details.attackDamageBonus.ranged}}">
         </div>
 
         <div style="grid-row: 6; grid-column-start: 1; grid-column-end: 5" class="row-separator"></div>

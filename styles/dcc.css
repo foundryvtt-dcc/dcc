@@ -97,7 +97,7 @@
 .dcc .window-content {
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   height: 100%;
-  overflow-y: hidden;
+  overflow-y: scroll;
   padding: 5px;
 }
 
@@ -1687,7 +1687,7 @@ form.dcc-roll-modifier input.stat {
   font-family: var(--label-font);
   font-size: 16px;
   grid-template-columns: 227px 146px 108px 108px;
-  grid-template-rows: 51px 125px 70px 9px 70px 9px 70px 9px 70px 9px 70px 9px 70px;
+  grid-template-rows: 51px 131px 70px 9px 70px 9px 70px 9px 70px 9px 70px 9px 70px;
   text-align: center;
 }
 .dcc.sheet.actor .character2 .outer input,
@@ -1756,9 +1756,9 @@ form.dcc-roll-modifier input.stat {
   column-gap: 8px;
   display: grid;
   font-size: 14px;
-  grid-template-columns: 110px 90px 80px 63px;
+  grid-template-columns: 110px 90px 80px 65px;
   grid-template-rows: 22px 21px 21px 21px 21px;
-  margin: 7px 0 6px 0;
+  margin: 8px 0 9px 0;
 }
 .dcc.sheet.actor .character2 .combat-basics label {
   padding-left: 3px;

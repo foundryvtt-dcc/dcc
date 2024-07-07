@@ -13,8 +13,8 @@ class DCCActorSheet extends ActorSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'actor'],
       template: 'systems/dcc/templates/actor-sheet-zero-level.html',
-      width: 637,
-      height: 733,
+      width: 634,
+      height: 740,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
       resizable: false,

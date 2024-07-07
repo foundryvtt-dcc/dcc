@@ -23,7 +23,8 @@ class DCCActorSheetCleric extends DCCActorSheet {
         'system.class.className': game.i18n.localize('DCC.Cleric'),
         'system.details.sheetClass': 'Cleric',
         'system.class.spellCheckAbility': 'per',
-        'system.details.critRange': 20
+        'system.details.critRange': 20,
+        'system.config.attackBonusMode': 'autoPerAttack'
       })
     }
 
@@ -49,6 +50,7 @@ class DCCActorSheetThief extends DCCActorSheet {
         'system.details.sheetClass': 'Thief',
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'autoPerAttack',
         'system.details.showBackstab': true
       })
     }
@@ -74,7 +76,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
         'system.class.className': game.i18n.localize('DCC.Halfling'),
         'system.details.sheetClass': 'Halfling',
         'system.details.critRange': 20,
-        'system.class.disapproval': 1
+        'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'autoPerAttack'
       })
     }
 
@@ -126,7 +129,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
         'system.details.sheetClass': 'Wizard',
         'system.class.spellCheckAbility': 'int',
         'system.details.critRange': 20,
-        'system.class.disapproval': 1
+        'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'autoPerAttack'
       })
     }
 
@@ -179,7 +183,8 @@ class DCCActorSheetElf extends DCCActorSheet {
         'system.details.sheetClass': 'Elf',
         'system.class.spellCheckAbility': 'int',
         'system.details.critRange': 20,
-        'system.class.disapproval': 1
+        'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'autoPerAttack'
       })
     }
 
@@ -199,7 +204,8 @@ class DCCActorSheetGeneric extends DCCActorSheet {
     data.system.class.className = game.i18n.localize('DCC.Generic')
 
     this.actor.update({
-      'system.class.className': game.i18n.localize('DCC.Generic')
+      'system.class.className': game.i18n.localize('DCC.Generic'),
+      'system.config.attackBonusMode': 'autoPerAttack'
     })
 
     return data

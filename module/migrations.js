@@ -135,6 +135,14 @@ export const migrateActorData = function (actor) {
     })
   }
 
+  // If migrating from earlier than 0.50.0 copy attackBonus to attackHitBonus
+  if ((currentVersion <= 0.50) || (currentVersion == null)) {
+    updateData.update({
+      'system.details.attackHitBonus.melee': actor.system.details.attackBonus,
+      'system.details.attackHitBonus.ranged': actor.system.details.attackBonus
+    })
+  }
+
   // Migrate Owned Items
   let hasItemUpdates = false
   let items = []
