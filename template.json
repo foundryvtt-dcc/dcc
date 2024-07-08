@@ -321,6 +321,7 @@
           "baseACAbility": "agl",
           "computeSpeed": false,
           "computeCheckPenalty": false,
+          "computeMeleeAndMissileAttackAndDamage": true,
           "sortInventory": true,
           "removeEmptyItems": true,
           "showSpells": false,

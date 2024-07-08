@@ -68,6 +68,11 @@
             <input type="text" name="system.attributes.speed.base" id="system.attributes.speed.base"
                    value="{{distanceFormat system.attributes.speed.base}}" data-dtype="number"/>
         </div>
+        <label for="system.config.computeMeleeAndMissileAttackAndDamage" title="{{localize "DCC.ComputeMeleeAndMissileAttackAndDamageHint"}}">{{localize "DCC.ComputeMeleeAndMissileAttackAndDamage"}}</label>
+        <div class="form-fields">
+            <input type="checkbox" name="system.config.computeMeleeAndMissileAttackAndDamage" id="system.config.computeMeleeAndMissileAttackAndDamage" {{checked system.config.computeMeleeAndMissileAttackAndDamage}}
+                   data-dtype="boolean"/>
+        </div>
         <label for="system.config.computeCheckPenalty">{{localize "DCC.ComputeCheckPenaltyConfig"}}</label>
         <div class="form-fields">
             <input type="checkbox" name="system.config.computeCheckPenalty" id="system.config.computeCheckPenalty" {{checked

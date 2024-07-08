@@ -63,7 +63,6 @@ class DCCActor extends Actor {
 
     // Get configuration data
     const config = this._getConfig()
-    const data = this.system
 
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
@@ -73,10 +72,27 @@ class DCCActor extends Actor {
       this.system.speed.base = this.system.attributes.speed.value
     }
 
+    // Compute Melee/Ranged Attack/Damage
+    if (config.computeMeleeAndMissileAttackAndDamage) {
+      let meleeAttackBonus = this.system.details.attackBonus
+      let strengthBonus = this.system.abilities.str.mod
+      if (meleeAttackBonus.includes('d')) {
+        meleeAttackBonus = `${meleeAttackBonus} + ${strengthBonus}`
+      } else {
+        const meleeAttackBonusSum = parseInt(meleeAttackBonus) + parseInt(strengthBonus)
+        meleeAttackBonus = `${meleeAttackBonusSum > 0 ? '+' : ''}${meleeAttackBonusSum}`
+      }
+      // @TODO: Handle Lucky Rolls 1-3:
+      //   1 Harsh winter: All attack rolls
+      //   2 The bull: Melee attack rolls
+      //   3 Fortunate date: Missile fire attack rolls
+      this.system.details.attackHitBonus.melee = meleeAttackBonus
+    }
+
     // Compute AC if required
     if (config.computeAC || config.computeSpeed) {
-      const baseACAbility = data.abilities[config.baseACAbility] || { mod: 0 }
-      const baseSpeed = parseInt(data.attributes.speed.base)
+      const baseACAbility = this.system.abilities[config.baseACAbility] || { mod: 0 }
+      const baseSpeed = parseInt(this.system.attributes.speed.base)
       const abilityMod = baseACAbility.mod
       const abilityLabel = baseACAbility.label
       let armorBonus = 0
@@ -88,10 +104,10 @@ class DCCActor extends Actor {
         }
       }
       if (config.computeAC) {
-        data.attributes.ac.baseAbility = abilityMod
-        data.attributes.ac.baseAbilityLabel = abilityLabel
-        data.attributes.ac.armorBonus = armorBonus
-        data.attributes.ac.value = 10 + abilityMod + armorBonus
+        this.system.attributes.ac.baseAbility = abilityMod
+        this.system.attributes.ac.baseAbilityLabel = abilityLabel
+        this.system.attributes.ac.armorBonus = armorBonus
+        this.system.attributes.ac.value = 10 + abilityMod + armorBonus
       }
       if (config.computeSpeed) {
         this.system.attributes.ac.speedPenalty = speedPenalty
@@ -165,6 +181,7 @@ class DCCActor extends Actor {
       capLevel: false,
       maxLevel: 10,
       computeAC: false,
+      computeMeleeAndMissileAttackAndDamage: true,
       computeSpeed: false,
       baseACAbility: 'agl',
       sortInventory: true,
