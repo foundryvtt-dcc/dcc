@@ -460,7 +460,7 @@
   "DCC.MeleeAttack": "Melee<br/>Attack",
   "DCC.MeleeAttackHint": "Calculated from Attack Bonus + Strength Bonus",
   "DCC.MeleeDamage": "Melee<br/>Damage",
-  "DCC.MeleeDamageHint": "Calculated from Attack Bonus for Warriors and Dwarves + Strength Bonus",
+  "DCC.MeleeDamageHint": "Calculated from Attack Bonus for Warriors and Dwarves + Strength Bonus, or just Strength Bonus for others",
   "DCC.MeleeWeapons": "Melee Weapons",
   "DCC.MercurialEffect": "Mercurial Effect",
   "DCC.MercurialEffectSummary": "Summary",
