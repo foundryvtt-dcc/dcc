@@ -101,11 +101,11 @@
           "attackBonus": "+0",
           "attackHitBonus": {
             "melee": "+0",
-            "ranged": "+0"
+            "missile": "+0"
           },
           "attackDamageBonus": {
             "melee": "+0",
-            "ranged": "+0"
+            "missile": "+0"
           },
           "languages": "",
           "occupation": "",

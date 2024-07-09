@@ -153,8 +153,9 @@
                 <input id="system.abilities.{{id}}.value" value="{{ability.value}}" size="2"
                        name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10"/>
             </div>
-            <label for="system.abilities.{{id}}.mod" style="grid-area: 2 / 1" data-modifier="true" {{#if isLuck}}class="rollable"{{/if}} title="Click to roll Luck Check, adding Luck modifier">{{localize
-                "DCC.Modifier"}}:</label>
+            <label for="system.abilities.{{id}}.mod" style="grid-area: 2 / 1" data-modifier="true" {{#if isLuck}}class="rollable" {{/if}}
+            title="Click to roll Luck Check, adding Luck modifier">{{localize
+            "DCC.Modifier"}}:</label>
             <input id="system.abilities.{{id}}.mod" style="grid-area: 2 / 2"
                    name="system.abilities.{{id}}.mod" value="{{numberFormat ability.mod decimals=0 sign=true}}"
                    size="3" disabled/>
@@ -184,12 +185,12 @@
         {{!-- Melee Attack Values --}}
         <div style="grid-area: 3 / 3" class="hit-bonus-box">
             <label for="system.details.attackHitBonus.melee" class="dark-title"
-                   title="{{localize 'DCC.MeleeAttackHint'}}">Melee<br/>Attack</label>
+                   title="{{localize 'DCC.MeleeAttackHint'}}">{{{localize 'DCC.MeleeAttack'}}}</label>
             <input id="system.details.attackHitBonus.melee" name="system.details.attackHitBonus.melee"
                    value="{{system.details.attackHitBonus.melee}}" title="{{localize 'DCC.MeleeAttackHint'}}" disabled>
         </div>
         <div style="grid-area: 3 / 4" class="hit-bonus-box">
-            <label for="system.details.attackDamageBonus.melee" class="dark-title">Melee<br/>Damage</label>
+            <label for="system.details.attackDamageBonus.melee" class="dark-title">{{{localize 'DCC.MeleeDamage'}}}</label>
             <input id="system.details.attackDamageBonus.melee" name="system.details.attackDamageBonus.melee"
                    value="{{system.details.attackDamageBonus.melee}}">
         </div>
@@ -202,16 +203,17 @@
         {{!-- Reflex Save --}}
         {{> save id='ref' save=system.saves.ref area='5 / 2'}}
 
-        {{!-- Ranged Attack Values --}}
+        {{!-- Missile Attack Values --}}
         <div style="grid-area: 5 / 3" class="hit-bonus-box">
-            <label for="system.details.attackHitBonus.ranged" class="dark-title rollable">Ranged<br/>Attack</label>
-            <input id="system.details.attackHitBonus.ranged" name="system.details.attackHitBonus.ranged"
-                   value="{{system.details.attackHitBonus.ranged}}">
+            <label for="system.details.attackHitBonus.missile" class="dark-title rollable" title="{{localize 'DCC.MissileAttackHint'}}">
+                {{{localize 'DCC.MissileAttack'}}}</label>
+            <input id="system.details.attackHitBonus.missile" name="system.details.attackHitBonus.missile"
+                   value="{{system.details.attackHitBonus.missile}}">
         </div>
         <div style="grid-area: 5 / 4" class="hit-bonus-box">
-            <label for="system.details.attackDamageBonus.ranged" class="dark-title rollable">Ranged<br/>Damage</label>
-            <input id="system.details.attackDamageBonus.ranged" name="system.details.attackDamageBonus.ranged"
-                   value="{{system.details.attackDamageBonus.ranged}}">
+            <label for="system.details.attackDamageBonus.missile" class="dark-title rollable">{{{localize 'DCC.MissileDamage'}}}</label>
+            <input id="system.details.attackDamageBonus.missile" name="system.details.attackDamageBonus.missile"
+                   value="{{system.details.attackDamageBonus.missile}}">
         </div>
 
         <div style="grid-row: 6; grid-column-start: 1; grid-column-end: 5" class="row-separator"></div>

@@ -74,19 +74,26 @@ class DCCActor extends Actor {
 
     // Compute Melee/Ranged Attack/Damage
     if (config.computeMeleeAndMissileAttackAndDamage) {
-      let meleeAttackBonus = this.system.details.attackBonus
-      let strengthBonus = this.system.abilities.str.mod
-      if (meleeAttackBonus.includes('d')) {
-        meleeAttackBonus = `${meleeAttackBonus} + ${strengthBonus}`
+      const attackBonus = this.system.details.attackBonus
+      const strengthBonus = this.system.abilities.str.mod
+      const agilityBonus = this.system.abilities.agl.mod
+      let meleeAttackBonus = ''
+      let missileAttackBonus = ''
+      if (attackBonus.includes('d')) {
+        meleeAttackBonus = `${attackBonus} + ${strengthBonus}`
+        missileAttackBonus = `${attackBonus} + ${agilityBonus}`
       } else {
-        const meleeAttackBonusSum = parseInt(meleeAttackBonus) + parseInt(strengthBonus)
+        const meleeAttackBonusSum = parseInt(attackBonus) + parseInt(strengthBonus)
+        const missileAttackBonusSum = parseInt(attackBonus) + parseInt(agilityBonus)
         meleeAttackBonus = `${meleeAttackBonusSum > 0 ? '+' : ''}${meleeAttackBonusSum}`
+        missileAttackBonus = `${missileAttackBonusSum > 0 ? '+' : ''}${missileAttackBonusSum}`
       }
       // @TODO: Handle Lucky Rolls 1-3:
       //   1 Harsh winter: All attack rolls
       //   2 The bull: Melee attack rolls
       //   3 Fortunate date: Missile fire attack rolls
       this.system.details.attackHitBonus.melee = meleeAttackBonus
+      this.system.details.attackHitBonus.missile = missileAttackBonus
     }
 
     // Compute AC if required
