@@ -80,10 +80,12 @@ class DCCActor extends Actor {
       let meleeAttackBonus = ''
       let missileAttackBonus = ''
       let meleeAttackDamage = ''
+      let missileAttackDamage = ''
       if (attackBonus.includes('d')) {
         meleeAttackBonus = `${attackBonus} + ${strengthBonus}`
         missileAttackBonus = `${attackBonus} + ${agilityBonus}`
         meleeAttackDamage = `${attackBonus} + ${strengthBonus}`
+        missileAttackDamage = `${attackBonus}`
       } else {
         const meleeAttackBonusSum = parseInt(attackBonus) + parseInt(strengthBonus)
         const missileAttackBonusSum = parseInt(attackBonus) + parseInt(agilityBonus)
@@ -98,6 +100,7 @@ class DCCActor extends Actor {
       this.system.details.attackHitBonus.melee = meleeAttackBonus
       this.system.details.attackHitBonus.missile = missileAttackBonus
       this.system.details.attackDamageBonus.melee = `${meleeAttackDamage > 0 ? '+' : ''}${meleeAttackDamage}`
+      this.system.details.attackDamageBonus.missile = `${missileAttackDamage > 0 ? '+' : ''}${missileAttackDamage}`
     }
 
     // Compute AC if required
