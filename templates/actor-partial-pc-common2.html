@@ -104,7 +104,7 @@
             >
 
             {{!-- Attack Bonus --}}
-            <label for="system.details.attackBonus" style="grid-area: 4 / 1">{{localize "DCC.AttackBonus"}}:</label>
+            <label for="system.details.attackBonus" style="grid-area: 4 / 1" class="rollable">{{localize "DCC.AttackBonus"}}:</label>
             <input id="system.details.attackBonus" name="system.details.attackBonus"
                    style="grid-area: 4 / 2" size="3"
                    value="{{formatAttackBonus system.details.attackBonus}}"
@@ -153,9 +153,10 @@
                 <input id="system.abilities.{{id}}.value" value="{{ability.value}}" size="2"
                        name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10">
             </div>
-            <label for="system.abilities.{{id}}.mod" style="grid-area: 2 / 1" data-modifier="true" {{#if isLuck}}class="rollable" {{/if}}
-            title="Click to roll Luck Check, adding Luck modifier">{{localize
-            "DCC.Modifier"}}:</label>
+            <label for="system.abilities.{{id}}.mod"
+                   style="grid-area: 2 / 1" data-modifier="true"
+                   {{#if isLuck}}class="rollable" title="{{localize " DCC.RollLuckCheckModHint"}}"{{/if}}
+            >{{localize "DCC.Modifier"}}:</label>
             <input id="system.abilities.{{id}}.mod" style="grid-area: 2 / 2"
                    name="system.abilities.{{id}}.mod" value="{{numberFormat ability.mod decimals=0 sign=true}}"
                    size="3" disabled>

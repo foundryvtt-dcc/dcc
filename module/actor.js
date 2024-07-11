@@ -76,7 +76,7 @@ class DCCActor extends Actor {
 
     // Compute Melee/Ranged Attack/Damage
     if (config.computeMeleeAndMissileAttackAndDamage) {
-      const attackBonus = this.system.details.attackBonus
+      const attackBonus = this.system.details.attackBonus || 0
       const strengthBonus = parseInt(this.system.abilities.str.mod) || 0
       const agilityBonus = parseInt(this.system.abilities.agl.mod) || 0
       const meleeAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus.melee.adjustment) || 0
@@ -90,10 +90,10 @@ class DCCActor extends Actor {
       if (attackBonus.includes('d')) {
         const deedDie = attackBonus.match(/([+]?\d+d\d+)/) ? attackBonus.match(/([+]?\d+d\d+)/)[0] : attackBonus
         const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
-        meleeAttackBonus = `${deedDie}${signOrBlank(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
-        missileAttackBonus = `${deedDie}${signOrBlank(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
-        meleeAttackDamage = `${deedDie}${signOrBlank(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
-        missileAttackDamage = `${deedDie}${signOrBlank(missileDamageBonusAdjustment + attackBonusBonus)}`
+        meleeAttackBonus = `+${deedDie}${signOrBlank(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
+        missileAttackBonus = `+${deedDie}${signOrBlank(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
+        meleeAttackDamage = `+${deedDie}${signOrBlank(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
+        missileAttackDamage = `+${deedDie}${signOrBlank(missileDamageBonusAdjustment + attackBonusBonus)}`
       } else {
         const meleeAttackBonusSum = parseInt(attackBonus) + strengthBonus + meleeAttackBonusAdjustment
         const missileAttackBonusSum = parseInt(attackBonus) + agilityBonus + missileAttackBonusAdjustment
@@ -343,8 +343,7 @@ class DCCActor extends Actor {
     ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
     const abilityLabel = game.i18n.localize(ability.label)
-    const flavor =
-      `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
+    let flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
 
     options.title = flavor
 
@@ -375,6 +374,8 @@ class DCCActor extends Actor {
         'dcc.RollType': 'AbilityCheckRollUnder',
         'dcc.Ability': abilityId
       })
+
+      flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')}`
     } else {
       const die = this.system.attributes.actionDice.value || '1d20'
 
@@ -857,7 +858,7 @@ class DCCActor extends Actor {
    */
   async rollAttackBonus (options = {}) {
     /* Determine attack bonus */
-    const attackBonusExpression = this.system.attributes.attackHitBonus.melee || this.system.details.attackBonus || '0'
+    const attackBonusExpression = this.system.details.attackHitBonus.melee.value || this.system.details.attackBonus || '0'
 
     if (attackBonusExpression) {
       const flavor = game.i18n.localize('DCC.AttackBonus')

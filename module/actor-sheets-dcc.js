@@ -11,6 +11,8 @@ import DCCActorSheet from './actor-sheet.js'
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetCleric extends DCCActorSheet {
+  static height = 740
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -37,6 +39,8 @@ class DCCActorSheetCleric extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetThief extends DCCActorSheet {
+  static height = 740
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -64,6 +68,8 @@ class DCCActorSheetThief extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetHalfling extends DCCActorSheet {
+  static height = 740
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -90,6 +96,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetWarrior extends DCCActorSheet {
+  static height = 740
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -116,6 +124,8 @@ class DCCActorSheetWarrior extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetWizard extends DCCActorSheet {
+  static height = 740
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -143,6 +153,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetDwarf extends DCCActorSheet {
+  static height = 740
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -170,6 +182,8 @@ class DCCActorSheetDwarf extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetElf extends DCCActorSheet {
+  static height = 740
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -197,6 +211,8 @@ class DCCActorSheetElf extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetGeneric extends DCCActorSheet {
+  static height = 740
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)

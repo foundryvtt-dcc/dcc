@@ -9,13 +9,14 @@ import EntityImages from './entity-images.js'
  * @extends {ActorSheet}
  */
 class DCCActorSheet extends ActorSheet {
+  static height = 640
+
   /** @override */
   static get defaultOptions () {
-    return foundry.utils.mergeObject(super.defaultOptions, {
+    const options = {
       classes: ['dcc', 'sheet', 'actor'],
-      template: 'systems/dcc/templates/actor-sheet-zero-level.html',
       width: 634,
-      height: 740,
+      height: this.height,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
       resizable: false,
@@ -25,7 +26,9 @@ class DCCActorSheet extends ActorSheet {
         '.tab.skills',
         '.tab.spells'
       ]
-    })
+    }
+    const finalOptions = foundry.utils.mergeObject(super.defaultOptions, options)
+    return finalOptions
   }
 
   /** @inheritdoc */
@@ -270,15 +273,9 @@ class DCCActorSheet extends ActorSheet {
     if (this.actor.isOwner) {
       // Ability Checks
       html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-modifiers').click(this._onRollAbilityCheck.bind(this))
-      html.find('[data-modifier="true"]').click(this._onRollAbilityCheck.bind(this))
-      html.find('li.ability').each(makeDraggable)
-      html.find('div.ability-modifiers').each((index, element) => {
-        // Also make the luck modifier draggable for non-standard luck checks
-        if (element.parentElement.dataset.ability === 'lck') {
-          makeDraggable(index, element)
-        }
-      })
+      html.find('.ability-modifiers, [data-ability="lck"][data-modifier="true"]').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-name').each(makeDraggable)
+      html.find('.ability-modifiers, [data-ability="lck"] div.ability-modifiers, [data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
 
       // Initiative
       html.find('.init-label').click(this._onRollInitiative.bind(this))
@@ -287,16 +284,12 @@ class DCCActorSheet extends ActorSheet {
       html.find('[for="system.attributes.init.value"]').each(makeDraggable)
 
       // Hit Dice
-      html.find('.hd-label').click(this._onRollHitDice.bind(this))
-      html.find('div.hd').each(makeDraggable)
-      html.find('[for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
-      html.find('[for="system.attributes.hitDice.value"]').each(makeDraggable)
+      html.find('.hd-label, [for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
+      html.find('div.hd, [for="system.attributes.hitDice.value"]').each(makeDraggable)
 
       // Saving Throws
-      html.find('.save-name').click(this._onRollSavingThrow.bind(this))
-      html.find('li.save').each(makeDraggable)
-      html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
-      html.find('label[for*="system.saves"]').each(makeDraggable)
+      html.find('.save-name, label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
+      html.find('li.save, label[for*="system.saves"]').each(makeDraggable)
 
       // Skills
       html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
@@ -319,7 +312,7 @@ class DCCActorSheet extends ActorSheet {
       html.find('label.disapproval-table').each(makeDraggable)
 
       // Attack Bonus
-      html.find('.attack-bonus.rollable').click(this._onRollAttackBonus.bind(this))
+      html.find('.attack-bonus.rollable, label[for="system.details.attackBonus"]').click(this._onRollAttackBonus.bind(this))
       html.find('.attack-bonus').each(makeDraggable)
 
       // Action Dice
@@ -454,7 +447,7 @@ class DCCActorSheet extends ActorSheet {
 
     // Handle the various draggable elements on the sheet
     const classes = event.target.classList
-    if (classes.contains('ability')) {
+    if (classes.contains('ability-name')) {
       // Normal ability rolls and DCC d20 roll under luck rolls
       const abilityId = this._findDataset(event.currentTarget, 'ability')
       const rollUnder = (abilityId === 'lck')
@@ -468,7 +461,7 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    if (classes.contains('ability-modifiers')) {
+    if (event.currentTarget.getAttribute('data-modifier') === 'true' || classes.contains('ability-modifiers')) {
       // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
       const abilityId = this._findDataset(event.currentTarget, 'ability')
       if (abilityId) {
@@ -501,7 +494,7 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    if (classes.contains('save') || event.currentTarget.getAttribute('for').includes('system.saves')) {
+    if (classes.contains('save') || event.currentTarget.getAttribute('for') && event.currentTarget.getAttribute('for').includes('system.saves')) {
       dragData = {
         type: 'Save',
         actorId: this.actor.id,

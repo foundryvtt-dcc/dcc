@@ -226,13 +226,13 @@
 
 .dcc .alignment {
   flex: 0 0 10%;
-  margin-left: 15px;
+  margin-left: 10px;
   text-align: center;
 }
 
 .dcc .alignment select {
   font-family: inherit;
-  height: 24px;
+  height: 26px;
   width: 90px;
 }
 
