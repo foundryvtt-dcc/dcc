@@ -1075,27 +1075,41 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc .skills-container {
   align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  border: var(--dark-border);
+  display: grid;
+  font-size: 1.2rem;
+  grid-template-columns: 1fr 1fr;
   margin-top: 6px;
+
+  .dark-title {
+    align-self: stretch;
+    background: var(--dark-bg);
+    color: var(--light-color);
+    font-family: $cooper-black;
+    grid-template-columns: 100%;
+    margin: 0 0 9px 0;
+    padding-bottom: 3px;
+    text-align: center;
+  }
 
   // Standard skill cards
   > div {
     display: grid;
-    flex: 0 48%;
+    font-family: $cooper-black;
     grid-template-columns: auto 25%;
     grid-template-rows: auto;
-    margin-bottom: 6px;
+    margin: 0 6px 6px 0;
+    align-items: center;
 
     label {
-      font-family: $book-antiqua;
-      font-weight: bold;
+      display: grid;
+      font-family: $cooper-black;
       padding-right: 6px;
       text-align: right;
     }
 
     input {
+      font-family: $book-antiqua;
       height: 30px;
       text-align: center;
     }
