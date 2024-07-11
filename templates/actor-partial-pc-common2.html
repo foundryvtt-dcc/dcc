@@ -184,18 +184,19 @@
 
         {{!-- Melee Attack Values --}}
         <div style="grid-area: 3 / 3" class="hit-bonus-box">
-            <label for="system.details.attackHitBonus.melee" class="dark-title"
+            <label for="system.details.attackHitBonus.melee.value" class="dark-title"
                    title="{{localize 'DCC.MeleeAttackHint'}}">{{{localize 'DCC.MeleeAttack'}}}</label>
-            <input id="system.details.attackHitBonus.melee" name="system.details.attackHitBonus.melee"
-                   value="{{system.details.attackHitBonus.melee}}" title="{{localize 'DCC.MeleeAttackHint'}}"
-                   {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}>
+            <input id="system.details.attackHitBonus.melee.value" name="system.details.attackHitBonus.melee.value"
+                   value="{{system.details.attackHitBonus.melee.value}}" title="{{localize 'DCC.MeleeAttackHint'}}"
+                   {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
+            >
         </div>
         <div style="grid-area: 3 / 4" class="hit-bonus-box">
-            <label for="system.details.attackDamageBonus.melee" class="dark-title" title="{{localize 'DCC.MeleeDamageHint'}}">
+            <label for="system.details.attackDamageBonus.melee.value" class="dark-title" title="{{localize 'DCC.MeleeDamageHint'}}">
                 {{{localize 'DCC.MeleeDamage'}}}
             </label>
-            <input id="system.details.attackDamageBonus.melee" name="system.details.attackDamageBonus.melee"
-                   value="{{system.details.attackDamageBonus.melee}}"
+            <input id="system.details.attackDamageBonus.melee.value" name="system.details.attackDamageBonus.melee.value"
+                   value="{{system.details.attackDamageBonus.melee.value}}"
                    {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
             >
         </div>
@@ -210,18 +211,21 @@
 
         {{!-- Missile Attack Values --}}
         <div style="grid-area: 5 / 3" class="hit-bonus-box">
-            <label for="system.details.attackHitBonus.missile" class="dark-title" title="{{localize 'DCC.MissileAttackHint'}}">
+            <label for="system.details.attackHitBonus.missile.value" class="dark-title" title="{{localize 'DCC.MissileAttackHint'}}">
                 {{{localize 'DCC.MissileAttack'}}}</label>
-            <input id="system.details.attackHitBonus.missile" name="system.details.attackHitBonus.missile"
-                   value="{{system.details.attackHitBonus.missile}}" {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
+            <input id="system.details.attackHitBonus.missile.value" name="system.details.attackHitBonus.missile.value"
+                   value="{{system.details.attackHitBonus.missile.value}}"
+                   {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
             >
         </div>
         <div style="grid-area: 5 / 4" class="hit-bonus-box">
-            <label for="system.details.attackDamageBonus.missile" class="dark-title" title="{{localize 'DCC.MissileDamageHint'}}">
+            <label for="system.details.attackDamageBonus.missile.value" class="dark-title" title="{{localize 'DCC.MissileDamageHint'}}">
                 {{{localize 'DCC.MissileDamage'}}}
             </label>
-            <input id="system.details.attackDamageBonus.missile" name="system.details.attackDamageBonus.missile"
-                   value="{{system.details.attackDamageBonus.missile}}" {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}>
+            <input id="system.details.attackDamageBonus.missile.value" name="system.details.attackDamageBonus.missile.value"
+                   value="{{system.details.attackDamageBonus.missile.value}}"
+                   {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
+            >
         </div>
 
         <div style="grid-row: 6; grid-column-start: 1; grid-column-end: 5" class="row-separator"></div>

@@ -1,6 +1,7 @@
 /* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, $, CONST */
 
 import DCCActorConfig from './actor-config.js'
+import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import EntityImages from './entity-images.js'
 
 /**
@@ -336,6 +337,12 @@ class DCCActorSheet extends ActorSheet {
       // Draggable items, including armor
       html.find('.item-draggable').each(makeDraggable)
 
+      // Melee/Missile Attack/Damage Bonus Config
+      html.find('label[for="system.details.attackHitBonus.melee.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+      html.find('label[for="system.details.attackDamageBonus.melee.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+      html.find('label[for="system.details.attackHitBonus.missile.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+      html.find('label[for="system.details.attackDamageBonus.missile.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+
       // Only for editable sheets
       if (this.options.editable) {
         // Add Inventory Item
@@ -367,6 +374,19 @@ class DCCActorSheet extends ActorSheet {
   _onConfigureActor (event) {
     event.preventDefault()
     new DCCActorConfig(this.actor, {
+      top: this.position.top + 40,
+      left: this.position.left + (this.position.width - 400) / 2
+    }).render(true)
+  }
+
+  /**
+   * Display melee/missile bonus configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onConfigureMeleeMissileBonus (event) {
+    event.preventDefault()
+    new MeleeMissileBonusConfig(this.actor, {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 400) / 2
     }).render(true)

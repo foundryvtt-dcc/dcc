@@ -100,12 +100,24 @@
           "alignment": "",
           "attackBonus": "+0",
           "attackHitBonus": {
-            "melee": "+0",
-            "missile": "+0"
+            "melee": {
+              "value": "+0",
+              "adjustment": "+0"
+            },
+            "missile": {
+              "value": "+0",
+              "adjustment": "+0"
+            }
           },
           "attackDamageBonus": {
-            "melee": "+0",
-            "missile": "+0"
+            "melee": {
+              "value": "+0",
+              "adjustment": "+0"
+            },
+            "missile": {
+              "value": "+0",
+              "adjustment": "+0"
+            }
           },
           "languages": "",
           "occupation": "",

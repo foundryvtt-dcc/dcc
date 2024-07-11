@@ -97,10 +97,10 @@ class DCCActor extends Actor {
       //   1 Harsh winter: All attack rolls
       //   2 The bull: Melee attack rolls
       //   3 Fortunate date: Missile fire attack rolls
-      this.system.details.attackHitBonus.melee = meleeAttackBonus
-      this.system.details.attackHitBonus.missile = missileAttackBonus
-      this.system.details.attackDamageBonus.melee = `${meleeAttackDamage > 0 ? '+' : ''}${meleeAttackDamage}`
-      this.system.details.attackDamageBonus.missile = `${missileAttackDamage > 0 ? '+' : ''}${missileAttackDamage}`
+      this.system.details.attackHitBonus.melee.value = meleeAttackBonus
+      this.system.details.attackHitBonus.missile.value = missileAttackBonus
+      this.system.details.attackDamageBonus.melee.value = `${meleeAttackDamage > 0 ? '+' : ''}${meleeAttackDamage}`
+      this.system.details.attackDamageBonus.missile.value = `${missileAttackDamage > 0 ? '+' : ''}${missileAttackDamage}`
     }
 
     // Compute AC if required
