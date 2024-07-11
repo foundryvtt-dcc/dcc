@@ -906,3 +906,11 @@ function getMacroOptions () {
     showModifierDialog: rollModifierDefault ^ game.dcc.KeyState.ctrlKey
   }
 }
+
+export function signOrBlank(value) {
+  let sign = ''
+  sign = value > 0 ? '+' : sign
+  sign = value < 0 ? '-' : sign
+  value = value === 0 ? '' : value
+  return `${sign}${value}`
+}

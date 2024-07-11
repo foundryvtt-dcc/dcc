@@ -1,4 +1,6 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry */
+/* global Actor, ChatMessage, CONFIG, CONST, dcc, game, ui, Roll, foundry */
+
+import { signOrBlank } from './dcc.js'
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -75,23 +77,30 @@ class DCCActor extends Actor {
     // Compute Melee/Ranged Attack/Damage
     if (config.computeMeleeAndMissileAttackAndDamage) {
       const attackBonus = this.system.details.attackBonus
-      const strengthBonus = this.system.abilities.str.mod
-      const agilityBonus = this.system.abilities.agl.mod
+      const strengthBonus = parseInt(this.system.abilities.str.mod) || 0
+      const agilityBonus = parseInt(this.system.abilities.agl.mod) || 0
+      const meleeAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus.melee.adjustment) || 0
+      const meleeDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus.melee.adjustment) || 0
+      const missileAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus.missile.adjustment) || 0
+      const missileDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus.missile.adjustment) || 0
       let meleeAttackBonus = ''
       let missileAttackBonus = ''
       let meleeAttackDamage = ''
       let missileAttackDamage = ''
       if (attackBonus.includes('d')) {
-        meleeAttackBonus = `${attackBonus} + ${strengthBonus}`
-        missileAttackBonus = `${attackBonus} + ${agilityBonus}`
-        meleeAttackDamage = `${attackBonus} + ${strengthBonus}`
-        missileAttackDamage = `${attackBonus}`
+        const deedDie = attackBonus.match(/([+]?\d+d\d+)/) ? attackBonus.match(/([+]?\d+d\d+)/)[0] : attackBonus
+        const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
+        meleeAttackBonus = `${deedDie}${signOrBlank(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
+        missileAttackBonus = `${deedDie}${signOrBlank(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
+        meleeAttackDamage = `${deedDie}${signOrBlank(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
+        missileAttackDamage = `${deedDie}${signOrBlank(missileDamageBonusAdjustment + attackBonusBonus)}`
       } else {
-        const meleeAttackBonusSum = parseInt(attackBonus) + parseInt(strengthBonus)
-        const missileAttackBonusSum = parseInt(attackBonus) + parseInt(agilityBonus)
-        meleeAttackBonus = `${meleeAttackBonusSum > 0 ? '+' : ''}${meleeAttackBonusSum}`
-        missileAttackBonus = `${missileAttackBonusSum > 0 ? '+' : ''}${missileAttackBonusSum}`
-        meleeAttackDamage = strengthBonus
+        const meleeAttackBonusSum = parseInt(attackBonus) + strengthBonus + meleeAttackBonusAdjustment
+        const missileAttackBonusSum = parseInt(attackBonus) + agilityBonus + missileAttackBonusAdjustment
+        meleeAttackBonus = `${signOrBlank(meleeAttackBonusSum)}`
+        missileAttackBonus = `${signOrBlank(missileAttackBonusSum)}`
+        meleeAttackDamage = strengthBonus + meleeDamageBonusAdjustment
+        missileAttackDamage = missileDamageBonusAdjustment || ''
       }
       // @TODO: Handle Lucky Rolls 1-3:
       //   1 Harsh winter: All attack rolls
@@ -142,6 +151,7 @@ class DCCActor extends Actor {
       for (const term of terms) {
         if (term instanceof foundry.dice.terms.Die) {
           const termDie = `1d${term.faces}`
+
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
             actionDice.push({ value: termDie, label: termDie })
@@ -164,7 +174,9 @@ class DCCActor extends Actor {
 
       for (const term of terms) {
         if (term instanceof foundry.dice.terms.Die) {
-          const termDie = `1d${term.faces}`
+          const termDie =
+            `1d${term.faces}`
+
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
             initDice.push({ value: termDie, label: termDie })
@@ -298,7 +310,9 @@ class DCCActor extends Actor {
       const terms = actionDieExpression.terms || actionDieExpression.parts
       for (const term of terms) {
         if (typeof (term) === 'object' && term.faces) {
-          const termDie = `1d${term.faces}`
+          const termDie =
+            `1d${term.faces}`
+
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
             actionDice.push({
@@ -329,7 +343,9 @@ class DCCActor extends Actor {
     ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
     const abilityLabel = game.i18n.localize(ability.label)
-    const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
+    const flavor =
+      `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
+
     options.title = flavor
 
     let roll
@@ -531,7 +547,9 @@ class DCCActor extends Actor {
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
     const modifierLabel = game.i18n.localize(save.label)
-    const flavor = `${modifierLabel} ${game.i18n.localize('DCC.Save')}`
+    const flavor =
+      `${modifierLabel} ${game.i18n.localize('DCC.Save')}`
+
     options.title = flavor
 
     // Collate terms for the roll
@@ -595,7 +613,9 @@ class DCCActor extends Actor {
     const ability = skill.ability || null
     let abilityLabel = ''
     if (ability) {
-      abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
+      abilityLabel =
+        ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
+
     }
 
     // Title for the roll modifier dialog
@@ -651,7 +671,9 @@ class DCCActor extends Actor {
         rollTable: skillTable,
         roll,
         item: skillItem,
-        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
+        flavor:
+          `${game.i18n.localize(skill.label)}${abilityLabel}`
+
       })
     } else {
       await roll.evaluate()
@@ -666,7 +688,9 @@ class DCCActor extends Actor {
       // Convert the roll to a chat message
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
+        flavor:
+          `${game.i18n.localize(skill.label)}${abilityLabel}`
+        ,
         flags
       })
     }
@@ -807,7 +831,9 @@ class DCCActor extends Actor {
 
     let flavor = spell
     if (ability.label) {
-      flavor += ` (${game.i18n.localize(ability.label)})`
+      flavor +=
+        ` (${game.i18n.localize(ability.label)})`
+
     }
 
     // Tell the system to handle the spell check result
@@ -1294,7 +1320,9 @@ class DCCActor extends Actor {
         const pack = game.packs.get(criticalHitPackName)
         if (pack) {
           await pack.getIndex() // Load the compendium index
-          const critTableFilter = `Crit Table ${this.system.attributes.critical.table}`
+          const critTableFilter =
+            `Crit Table ${this.system.attributes.critical.table}`
+
           const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
           if (entry) {
             const table = await pack.getDocument(entry._id)
@@ -1316,13 +1344,17 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+      const rollHTML =
+        `<a class='inline-roll inline-result' data-roll='${rollData}' data-damage='${rollTotal}' title='${game.dcc.DCCRoll.cleanFormula(roll.terms)}'><i class='fas fa-dice-d20'></i> ${rollTotal}</a>`
 
       // Display crit result or just a notification of the crit
       if (critResult) {
-        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].getChatText()}`
+        return
+        ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].getChatText()}`
+
       } else {
-        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
+        return
+        ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
       }
     }
 
@@ -1342,7 +1374,8 @@ class DCCActor extends Actor {
       // Display the raw crit roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize('DCC.CriticalHit')}!`,
+        flavor: `${game.i18n.localize('DCC.CriticalHit')}
+        !`,
         flags
       })
     }
@@ -1410,13 +1443,27 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
+      const rollHTML = ` < a
+
+        class
+
+        = 'inline-roll inline-result'
+        data - roll = '${rollData}'
+        data - damage = '${rollTotal}'
+        title = '${game.dcc.DCCRoll.cleanFormula(roll.terms)}' > < i
+
+        class
+
+        = 'fas fa-dice-d20' > < /i> ${rollTotal}</
+        a > `
 
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {
-        return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}<br/>${fumbleResult.results[0].getChatText()}`
+        return ` < br / > < br / > < span
+        style = 'color:red; font-weight: bolder' >${game.i18n.localize('DCC.Fumble')} ! < /span> ${rollHTML}<br/ >${fumbleResult.results[0].getChatText()}`
       } else {
-        return ` <br/><br/><span style='color:red; font-weight: bolder'>${game.i18n.localize('DCC.Fumble')}!</span> ${rollHTML}`
+        return ` < br / > < br / > < span
+        style = 'color:red; font-weight: bolder' >${game.i18n.localize('DCC.Fumble')} ! < /span> ${rollHTML}`
       }
     } else if (!fumbleResult) {
       // Generate flags for the roll
