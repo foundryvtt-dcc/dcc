@@ -613,10 +613,10 @@ class DCCActor extends Actor {
     const die = skill.die || this.system.attributes.actionDice.value || '1d20'
     const ability = skill.ability || null
     let abilityLabel = ''
+    let abilityMod = 0
     if (ability) {
-      abilityLabel =
-        ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
-
+      abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
+      abilityMod = this.system.abilities[ability]?.mod
     }
 
     // Title for the roll modifier dialog
@@ -636,7 +636,7 @@ class DCCActor extends Actor {
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
         modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
-        formula: skill.value.toString()
+        formula: `${skill.value} + ${abilityMod}`
       })
     }
 
