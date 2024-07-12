@@ -79,6 +79,8 @@ export class DCCItemSheet extends ItemSheet {
       secrets: this.item.isOwner
     })
 
+    data.config = CONFIG.DCC
+
     return data
   }
 
