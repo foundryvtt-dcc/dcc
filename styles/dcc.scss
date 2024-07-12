@@ -1101,6 +1101,16 @@ $font-awesome: 'Font Awesome 6 Pro';
     margin: 0 6px 6px 0;
     align-items: center;
 
+    .editor {
+      background: rgba(0, 0, 0, 0.05);
+      border: var(--dark-border);
+      font-family: $book-antiqua;
+      height: 353px;
+      margin: 5px 0 0 8px;
+      padding: 0 6px 0 6px;
+      width: 600px;
+    }
+
     label {
       display: grid;
       font-family: $cooper-black;
@@ -1180,9 +1190,9 @@ $font-awesome: 'Font Awesome 6 Pro';
       text-align: left;
     }
 
-    > div.editor {
-      grid-column: 1 / span 2;
-    }
+    //> div.editor {
+    //  grid-column: 1 / span 2;
+    //}
   }
 }
 

@@ -1121,6 +1121,15 @@
   margin: 0 6px 6px 0;
   align-items: center;
 }
+.dcc .skills-container > div .editor {
+  background: rgba(0, 0, 0, 0.05);
+  border: var(--dark-border);
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  height: 353px;
+  margin: 5px 0 0 8px;
+  padding: 0 6px 0 6px;
+  width: 600px;
+}
 .dcc .skills-container > div label {
   display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;
@@ -1180,9 +1189,6 @@
 }
 .dcc .skills-container > div.textarea label {
   text-align: left;
-}
-.dcc .skills-container > div.textarea > div.editor {
-  grid-column: 1/span 2;
 }
 
 /* ----------------------------------------- */
