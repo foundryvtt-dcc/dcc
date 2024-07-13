@@ -1108,78 +1108,69 @@
   color: var(--light-color);
   font-family: "Cooper Black", "Palatino Linotype", serif;
   grid-template-columns: 100%;
-  margin: 0 0 9px 0;
+  grid-column-end: span 2;
   padding-bottom: 3px;
   text-align: center;
 }
 .dcc .skills-container > div {
   display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-template-columns: auto 25%;
+  grid-template-columns: max-content 25%;
   grid-template-rows: auto;
-  margin: 0 6px 6px 0;
+  margin: 0 0 6px 0;
+  padding: 0 8px;
   align-items: center;
+}
+.dcc .skills-container > div a {
+  background: none;
+  border: none;
 }
 .dcc .skills-container > div .editor {
   background: rgba(0, 0, 0, 0.05);
   border: var(--dark-border);
+  border-width: 0 2px 2px 2px;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  height: 353px;
-  margin: 5px 0 0 8px;
-  padding: 0 6px 0 6px;
-  width: 600px;
+  min-height: 322px;
+  padding: 0 8px;
 }
 .dcc .skills-container > div label {
   display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;
-  padding-right: 6px;
-  text-align: right;
+  margin-right: 6px;
 }
 .dcc .skills-container > div input {
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   height: 30px;
   text-align: center;
+  background: none;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  width: 70px;
 }
-.dcc .skills-container > div input.string {
-  text-align: left;
+.dcc .skills-container > div input:focus {
+  box-shadow: none;
+}
+.dcc .skills-container > div input.full-width {
+  width: 100%;
 }
 .dcc .skills-container > div select {
-  margin-left: 2px;
-  margin-right: 2px;
+  background: none;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  font-family: var(--data-font);
+  text-align: center;
+  text-align-last: center;
 }
 .dcc .skills-container > div select.number {
   text-align-last: right;
 }
-.dcc .skills-container > div.wide {
-  flex: 0 96%;
-  grid-template-columns: 50% 50%;
-}
-.dcc .skills-container > div.split-50-50 {
-  grid-template-columns: 50% 50%;
-}
-.dcc .skills-container > div.split-75-25 {
-  grid-template-columns: 75% 25%;
-}
-.dcc .skills-container > div.split-25-75 {
-  grid-template-columns: 25% 75%;
-}
-.dcc .skills-container > div.split-50-25-25 {
-  grid-template-columns: 50% 25% 25%;
-}
-.dcc .skills-container > div.split-50-12-12 {
-  grid-template-columns: 50% 12% 12%;
-}
-.dcc .skills-container > div.split-60-40 {
-  grid-template-columns: 60% 40%;
-}
-.dcc .skills-container > div.split-40-60 {
-  grid-template-columns: 40% 60%;
-}
-.dcc .skills-container > div.split-67-33 {
-  grid-template-columns: 67% 33%;
-}
-.dcc .skills-container > div.nosplit {
+.dcc .skills-container > div.grid-template-full {
+  grid-column-end: span 2;
   grid-template-columns: 100%;
+}
+.dcc .skills-container > div.grid-template-max-auto {
+  grid-column-end: span 2;
+  grid-template-columns: max-content auto;
 }
 .dcc .skills-container > div.textarea {
   border: 2px groove #eeede0;
@@ -1543,11 +1534,10 @@
 /*  Entity Link style links for user guide   */
 /* ----------------------------------------- */
 .dcc.sheet a.external-link {
-  background: #ddd;
-  border: 1px solid #4b4a44;
-  border-radius: 2px;
-  color: #191813;
-  padding: 1px 4px;
+  background: none;
+  border: none;
+  border-radius: none;
+  color: var(--dark-color);
   text-decoration: none;
   white-space: nowrap;
   word-break: break-all;
@@ -1712,6 +1702,7 @@ form.dcc-roll-modifier input.stat {
 .dcc.sheet.actor .character2 .outer select {
   background: none;
   border-width: 0 0 1px 0;
+  border-radius: 0;
   font-family: var(--data-font);
   text-align: center;
   text-align-last: center;
@@ -1776,7 +1767,7 @@ form.dcc-roll-modifier input.stat {
   font-size: 14px;
   grid-template-columns: 110px 90px 80px 65px;
   grid-template-rows: 22px 21px 21px 21px 21px;
-  margin: 8px 0 9px 0;
+  margin: 3px 0 9px 0;
 }
 .dcc.sheet.actor .character2 .combat-basics label {
   padding-left: 3px;

@@ -39,34 +39,31 @@
         <div class="tab" data-group="primary" data-tab="warrior">
             <div class="class">
                 <div class="skills-container">
-                    <div class="wide split-50-25-25">
+                    <div class="dark-title">{{localize "DCC.WarriorAbilities"}}</div>
+                    <div>
                         <label for="system.details.critRange">{{localize "DCC.CritRange"}}</label>
-                        <select class="number" name="system.details.critRange" id="system.details.critRange">
+                        <select style="font-size: 16px;" name="system.details.critRange"
+                                id="system.details.critRange">
                             {{selectOptions config.critRanges selected=system.details.critRange localize=true}}
                         </select>
                     </div>
-
-                    <div class="wide split-50-50">
+                    <div class="grid-template-max-auto">
                         <label for="system.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
                         <input class="string" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon"
                                value="{{system.class.luckyWeapon}}" data-dtype="String"/>
-                    </div">
-                </div>
-
-                <ul class="class-note flexcol">
-                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}</li>
-                    <li>{{{system.class.classLink}}}</li>
+                    </div>
+                    <div style="grid-template-columns: auto;">{{localize "DCC.AddClassLevelToInitiative"}}s</div>
+                    <div>
+                        <a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Mighty-Deeds">
+                            <i class="fas fa-link"></i> {{localize "DCC.MightyDeedsHowToLink"}}
+                        </a>
+                    </div>
+                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                    <div>{{{system.class.classLink}}}</div>
+                    <div>{{{system.class.mightyDeedsLink}}}</div>
                     {{/dccPackExists}}
-                    <li>{{localize "DCC.AddClassLevelToInitiative"}}</li>
-                    <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
-                    <ul class="class-note flexcol">
-                        {{#dccPackExists "dcc-core-book.dcc-core-journals"}}</li>
-                        <li>{{{system.class.mightyDeedsLink}}}</li>
-                        {{/dccPackExists}}
-                        <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Mighty-Deeds"><i
-                            class="fas fa-link"></i> {{localize "DCC.MightyDeedsHowToLink"}}</a></li>
+                </div>
             </div>
-        </div>
         </div>
     </section>
 </form>

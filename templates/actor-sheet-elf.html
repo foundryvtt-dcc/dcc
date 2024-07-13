@@ -37,51 +37,49 @@
             <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
             <div class="class">
                 <div class="skills-container">
-                    <div class="dark-title" style="grid-area: 1/1/1/3;">{{localize "DCC.ElfAbilities"}}</div>
-                    <div style="grid-area:2/1; grid-template-columns: 190px 70px; margin-bottom:10px;" data-skill="findSecretDoors">
+                    <div class="dark-title" style="">{{localize "DCC.ElfAbilities"}}</div>
+                    <div style="margin-bottom:10px;" data-skill="findSecretDoors">
                         <label class="skill-check rollable" for="system.skills.findSecretDoors.value">
                             {{localize "DCC.HeightenedSenses"}}
                         </label>
                         <input type="text" id="system.skills.findSecretDoors.value" name="system.skills.findSecretDoors.value"
                                value="{{system.skills.findSecretDoors.value}}" data-dtype="String"/>
                     </div>
-                    <div style="grid-area:2/2; grid-template-columns: 130px 70px; margin-bottom:10px;" data-ability="int">
+                    <div style="margin-bottom:10px;" data-ability="int">
                         <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
                         <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}"
                                data-dtype="String"/>
                     </div>
-                    <div style="grid-area:3/1/3/3; grid-template-columns: 99px 511px;">
+                    <div class="grid-template-max-auto">
                         <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
-                        <input class="string" type="text" id="system.class.familiar" name="system.class.familiar"
+                        <input class="full-width" type="text" id="system.class.familiar" name="system.class.familiar"
                                value="{{system.class.familiar}}" data-dtype="String"/>
                     </div>
-                    <div style="grid-area:4/1/4/3; grid-template-columns: 110px 500px;">
+                    <div class="grid-template-max-auto">
                         <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
-                        <input class="string" type="text" id="system.class.patron" name="system.class.patron"
+                        <input class="full-width" type="text" id="system.class.patron" name="system.class.patron"
                                value="{{system.class.patron}}" data-dtype="String"/>
                     </div>
-                    <div style="grid-column-end: span 4; grid-row-end: span 10; grid-template-columns: 600px;">
-                        <label style="text-align:left; margin-left:8px;" for="system.class.corruption">{{localize
-                            "DCC.Corruptions"}}:</label>
-                        <label></label>
+                    <div class="grid-template-full">
+                        <div class="dark-title" style="">{{localize "DCC.Corruptions"}}</div>
                         {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
                     </div>
-                    <div style="grid-column-end: span 4; grid-template-columns: 600px; margin-left:8px;">
+                    <div class="grid-template-full" >
                         {{localize "DCC.Infravision"}}
                     </div>
-                    <div style="grid-column-end: span 4; grid-template-columns: 600px; margin-left:8px;">
+                    <div class="grid-template-full" >
                         {{localize "DCC.IronVulnerability"}}
                     </div>
-                    <div style="grid-column-end: span 4; grid-template-columns: 600px; margin-left:8px;">
+                    <div class="grid-template-full" >
                         {{localize "DCC.ElfLuckMod"}}
                     </div>
-                    <div style="grid-column-end: span 4; grid-template-columns: 600px; margin-left:8px;">
+                    <div class="grid-template-full" >
                         {{localize "DCC.ElfImmunities"}}
                     </div>
+                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                    <div>{{{system.class.classLink}}}</div>
+                    {{/dccPackExists}}
                 </div>
-                {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                <h3>{{{system.class.classLink}}}</h3>
-                {{/dccPackExists}}
             </div>
         </div>
 

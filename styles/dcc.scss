@@ -1086,7 +1086,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     color: var(--light-color);
     font-family: $cooper-black;
     grid-template-columns: 100%;
-    margin: 0 0 9px 0;
+    grid-column-end: span 2;
     padding-bottom: 3px;
     text-align: center;
   }
@@ -1095,89 +1095,72 @@ $font-awesome: 'Font Awesome 6 Pro';
   > div {
     display: grid;
     font-family: $cooper-black;
-    grid-template-columns: auto 25%;
+    grid-template-columns: max-content 25%;
     grid-template-rows: auto;
-    margin: 0 6px 6px 0;
+    margin: 0 0 6px 0;
+    padding: 0 8px;
     align-items: center;
+
+    a {
+      background: none;
+      border: none;
+    }
 
     .editor {
       background: rgba(0, 0, 0, 0.05);
       border: var(--dark-border);
+      border-width: 0 2px 2px 2px;
       font-family: $book-antiqua;
-      height: 353px;
-      margin: 5px 0 0 8px;
-      padding: 0 6px 0 6px;
-      width: 600px;
+      min-height: 322px;
+      padding: 0 8px;
     }
 
     label {
       display: grid;
       font-family: $cooper-black;
-      padding-right: 6px;
-      text-align: right;
+      margin-right: 6px;
     }
 
     input {
       font-family: $book-antiqua;
       height: 30px;
       text-align: center;
-    }
+      background: none;
+      border-width: 0 0 1px 0;
+      border-radius: 0;
+      width: 70px;
 
-    input.string {
-      text-align: left;
+      &:focus {
+        box-shadow: none;
+      }
+
+      &.full-width {
+        width: 100%;
+      }
     }
 
     select {
-      margin-left: 2px;
-      margin-right: 2px;
+      background: none;
+      border-width: 0 0 1px 0;
+      border-radius: 0;
+      font-family: var(--data-font);
+      text-align: center;
+      text-align-last: center;
+
+      &.number {
+        text-align-last: right;
+      }
     }
-
-    select.number {
-      text-align-last: right;
-    }
   }
 
-  // Wide skill cards
-  > div.wide {
-    flex: 0 96%;
-    grid-template-columns: 50% 50%;
-  }
-
-  // Special case grids
-  > div.split-50-50 {
-    grid-template-columns: 50% 50%;
-  }
-
-  > div.split-75-25 {
-    grid-template-columns: 75% 25%;
-  }
-
-  > div.split-25-75 {
-    grid-template-columns: 25% 75%;
-  }
-
-  > div.split-50-25-25 {
-    grid-template-columns: 50% 25% 25%;
-  }
-
-  > div.split-50-12-12 {
-    grid-template-columns: 50% 12% 12%;
-  }
-
-  > div.split-60-40 {
-    grid-template-columns: 60% 40%;
-  }
-
-  > div.split-40-60 {
-    grid-template-columns: 40% 60%;
-  }
-
-  > div.split-67-33 {
-    grid-template-columns: 67% 33%;
-  }
-
-  > div.nosplit {
+  > div.grid-template-full {
+    grid-column-end: span 2;
     grid-template-columns: 100%;
+  }
+
+  > div.grid-template-max-auto {
+    grid-column-end: span 2;
+    grid-template-columns: max-content auto;
   }
 
   > div.textarea {
@@ -1188,10 +1171,6 @@ $font-awesome: 'Font Awesome 6 Pro';
     label {
       text-align: left;
     }
-
-    //> div.editor {
-    //  grid-column: 1 / span 2;
-    //}
   }
 }
 
@@ -1631,11 +1610,11 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 .dcc.sheet {
   a.external-link {
-    background: #ddd;
-    border: 1px solid #4b4a44;
-    border-radius: 2px;
-    color: #191813;
-    padding: 1px 4px;
+    background: none;
+    border: none;
+    border-radius: none;
+    color: var(--dark-color);
+    //padding: 1px 4px;
     text-decoration: none;
     white-space: nowrap;
     word-break: break-all;
@@ -1836,6 +1815,7 @@ form.dcc-roll-modifier {
   .outer select {
     background: none;
     border-width: 0 0 1px 0;
+    border-radius: 0;
     font-family: var(--data-font);
     text-align: center;
     text-align-last: center;
@@ -1910,7 +1890,7 @@ form.dcc-roll-modifier {
     font-size: 14px;
     grid-template-columns: 110px 90px 80px 65px;
     grid-template-rows: 22px 21px 21px 21px 21px;
-    margin: 8px 0 9px 0;
+    margin: 3px 0 9px 0;
   }
 
   .combat-basics label {
