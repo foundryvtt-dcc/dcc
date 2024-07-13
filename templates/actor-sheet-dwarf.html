@@ -40,37 +40,30 @@
         <div class="tab" data-group="primary" data-tab="dwarf">
             <div class="class">
                 <div class="skills-container">
-                    <div class="split-50-25-25" data-skill="shieldBash">
+                    <div class="dark-title">{{localize "DCC.DwarfAbilities"}}</div>
+                    <div data-skill="shieldBash">
                         <label class="skill-check rollable" for="system.skills.shieldBash.die">{{localize "DCC.ShieldBash"}}</label>
-                        <input type="text" id="system.skills.shieldBash.die" name="system.skills.shieldBash.die" value="{{system.skills.shieldBash.die}}" data-dtype="String"/>
-                        <input type="text" id="system.skills.shieldBash.value" name="system.skills.shieldBash.value" value="{{system.skills.shieldBash.value}}" data-dtype="String"/>
+                        <input type="text" id="system.skills.shieldBash.die" name="system.skills.shieldBash.die"
+                               value="{{system.skills.shieldBash.die}}" data-dtype="String"/>
                     </div>
-                    <div></div>
-
-                    <div class="wide split-25-75">
-                      <label class="box-title" for="system.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
-                      <input class="string" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon" value="{{system.class.luckyWeapon}}" data-dtype="String"/>
-                    </div">
+                    <div>{{localize "DCC.Infravision"}}</div>
+                    <div class="grid-template-max-auto">
+                        <label for="system.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
+                        <input class="full-width" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon"
+                               value="{{system.class.luckyWeapon}}" data-dtype="String"/>
+                    </div>
+                    <div>{{localize "DCC.MightyDeedsOfArms"}}</div>
+                    <div>
+                        <a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Mighty-Deeds">
+                            <i class="fas fa-link"></i> {{localize "DCC.MightyDeedsHowToLink"}}
+                        </a>
+                    </div>
+                    <div class="grid-template-full">{{localize "DCC.UndergroundSkills"}}</div>
+                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                    <div>{{{system.class.classLink}}}</div>
+                    <div>{{{system.class.mightyDeedsLink}}}</div>
+                    {{/dccPackExists}}
                 </div>
-    
-                <ul class="class-note flexcol">
-                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                  <li>{{{system.class.classLink}}}</li>
-                  {{/dccPackExists}}
-                  <li>{{localize "DCC.Infravision"}}</li>
-                  <ul class="class-note flexcol">
-                    <li>{{localize "DCC.InfravisionLink"}}</li>
-                  </ul>
-                  <li>{{localize "DCC.UndergroundSkills"}}</li>
-                  <li>{{localize "DCC.MightyDeedsOfArms"}}</li>
-      <ul class="class-note flexcol">
-                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                  <li>{{{system.class.mightyDeedsLink}}}</li>
-                  {{/dccPackExists}} 
-                  <li>{{localize "DCC.MightyDeedsHowToLink"}}</li>
-                  </ul>
-                </ul>
-              </div>
             </div>
         </div>
     </section>
