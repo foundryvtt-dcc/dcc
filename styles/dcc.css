@@ -1697,7 +1697,7 @@ form.dcc-roll-modifier input.stat {
   font-family: var(--label-font);
   font-size: 16px;
   grid-template-columns: 227px 146px 108px 108px;
-  grid-template-rows: 51px 131px 70px 9px 70px 9px 70px 9px 70px 9px 70px 9px 70px;
+  grid-template-rows: 51px 131px repeat(5, 70px 9px);
   text-align: center;
 }
 .dcc.sheet.actor .character2 .outer input,
