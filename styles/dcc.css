@@ -1697,7 +1697,7 @@ form.dcc-roll-modifier input.stat {
   font-family: var(--label-font);
   font-size: 16px;
   grid-template-columns: 227px 146px 108px 108px;
-  grid-template-rows: 51px 131px repeat(5, 70px 9px);
+  grid-template-rows: 53px 129px repeat(5, 70px 9px);
   text-align: center;
 }
 .dcc.sheet.actor .character2 .outer input,
@@ -1764,26 +1764,21 @@ form.dcc-roll-modifier input.stat {
   align-items: center;
   border: var(--dark-border);
   border-top: none;
-  column-gap: 8px;
   display: grid;
   font-size: 14px;
-  grid-template-columns: 110px 90px 80px 65px;
-  grid-template-rows: 22px 21px 21px 21px 21px;
-  margin: 3px 0 9px 0;
+  grid-template-columns: 1.4fr 0.75fr 1.25fr 0.75fr;
+  grid-template-rows: 19px repeat(4, 23px);
+  margin: 0 0 8px 0;
+  padding-bottom: 4px;
 }
 .dcc.sheet.actor .character2 .combat-basics label {
   padding-left: 3px;
   text-align: left;
 }
-.dcc.sheet.actor .character2 .combat-basics input,
-.dcc.sheet.actor .character2 .combat-basics select {
+.dcc.sheet.actor .character2 .combat-basics input, .dcc.sheet.actor .character2 .combat-basics select {
   font-size: 14px;
   vertical-align: middle;
-}
-.dcc.sheet.actor .character2 .combat-basics-title {
-  font-size: 15px;
-  grid-column-end: 6;
-  padding-top: 2px;
+  margin-right: 52px;
 }
 .dcc.sheet.actor .character2 .hit-bonus-box {
   align-items: center;
@@ -1831,11 +1826,24 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 17px 50px;
   font-size: 12px;
 }
+.dcc.sheet.actor .character2 .grid-col-span-2 {
+  grid-column-end: span 2;
+}
+.dcc.sheet.actor .character2 .grid-col-span-3 {
+  grid-column-end: span 3;
+}
+.dcc.sheet.actor .character2 .grid-col-span-4 {
+  grid-column-end: span 4;
+}
+.dcc.sheet.actor .character2 .grid-col-span-5 {
+  grid-column-end: span 5;
+}
 .dcc.sheet.actor .character2 .name-section-box {
   column-gap: 12px;
   display: grid;
   grid-template-rows: 25px 27px;
   grid-template-columns: subgrid;
+  margin-bottom: 20px;
   text-align: left;
 }
 .dcc.sheet.actor .character2 .name-section-box label {

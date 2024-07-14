@@ -2,34 +2,34 @@
 <div class="tab character2" data-group="primary" data-tab="character">
     <div class="outer">
         {{!-- Name Section --}}
-        <div style="grid-area: 1 / 1 / 1 / 5;" class="name-section-box">
-            <div style="grid-area: 1 / 1 / 1 / 2;">
+        <div class="grid-col-span-4 name-section-box">
+            <div>
                 <label for="name">{{localize "DCC.Name"}}</label>
                 <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.CharacterName'}}"
                        placeholder="{{localize 'DCC.CharacterName'}}" style="width: 185px;" autocomplete="off">
             </div>
 
-            <div style="grid-area: 1 / 2;">
+            <div>
                 <label for="system.details.level.value">{{class.className}} {{localize "DCC.Level"}}</label>
                 <input id="system.details.level.value" name="system.details.level.value"
                        value="{{system.details.level.value}}" maxlength="6" style="width: 107px;" data-dtype="Number">
             </div>
 
 
-            <div style="grid-area: 1 / 3 / 1 / 5;">
+            <div class="grid-col-span-2">
                 <label for="system.details.occupation.value">{{localize "DCC.Occupation"}}</label>
                 <input id="system.details.occupation.value" name="system.details.occupation.value"
                        value="{{system.details.occupation.value}}" maxlength="40" style="width: 145px;">
             </div>
 
 
-            <div style="grid-area: 2 / 1;">
+            <div>
                 <label for="system.details.title.value">{{localize "DCC.Title"}}</label>
                 <input id="system.details.title.value" name="system.details.title.value"
                        value="{{system.details.title.value}}" maxlength="40" style="width: 191px;">
             </div>
 
-            <div style="grid-area: 2 / 2;">
+            <div>
                 <label for="system.details.xp.value">{{localize "DCC.Experience"}}</label>
                 <input id="system.details.xp.value" name="system.details.xp.value"
                        value="{{numberFormat system.details.xp.value decimals=0 sign=false}}"
@@ -37,7 +37,7 @@
             </div>
 
 
-            <div style="grid-area: 2 / 3 / 2 / 5;">
+            <div class="grid-col-span-2">
                 <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
                 <select id="system.details.alignment" name="system.details.alignment"
                         style="width: 153px; font-size: 13px; height: 21.5px;">
@@ -46,32 +46,33 @@
             </div>
         </div>
 
-        <div style="grid-area: 2 / 1;" class="ac-and-hp-box">
+        <div class="ac-and-hp-box">
             {{!-- AC --}}
-            <svg style="grid-area: 1 / 1; justify-self: center;" width="68" height="65" viewBox="0 0 68 64"
+            <svg style="grid-area: 1/1; justify-self: center;" width="68" height="65" viewBox="0 0 68 64"
                  fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M65 3H3C2.99995 22.5946 7.3056 61 35.2917 61C63.2778 61 65 11.6216 65 3Z" stroke="black"
-                      stroke-opacity="0.75" stroke-width="5">
+                      stroke-opacity="0.75" stroke-width="5"></path>
             </svg>
-            <input style="grid-area: 1 / 1" id="system.attributes.ac.value" name="system.attributes.ac.value"
+            <input style="grid-area: 1/1" id="system.attributes.ac.value" name="system.attributes.ac.value"
                    value="{{system.attributes.ac.value}}"
                    {{#if system.config.computeAC }}
                    title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0 sign=true}} {{localize 'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}}"
                    disabled
                    {{/if}}
             data-dtype="Number">
-            <label for="system.attributes.ac.value" style="grid-row-start: 2; grid-row-end: 4; grid-column: 1">{{localize
-                "DCC.ArmorClass"}}</label>
-            <svg style="grid-area: 1 / 2; justify-self: center" width="70" height="65" viewBox="0 0 70 64"
+            <label for="system.attributes.ac.value" style="grid-area: 2/1/4/1;">
+                {{localize "DCC.ArmorClass"}}
+            </label>
+            <svg style="grid-area: 1/2; justify-self: center" width="70" height="65" viewBox="0 0 70 64"
                  fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5">
+                <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"></path>
             </svg>
             {{!-- HP --}}
-            <input style="grid-area: 1 / 2" id="system.attributes.hp.value" name="system.attributes.hp.value"
+            <input style="grid-area: 1/2" id="system.attributes.hp.value" name="system.attributes.hp.value"
                    value="{{system.attributes.hp.value}}"
                    data-dtype="Number">
             <label for="system.attributes.hp.value" style="grid-row: 2">{{localize "DCC.HitPoints"}}</label>
-            <div style="grid-area: 3 / 2; font-size: 13px">
+            <div style="grid-area: 3/2; font-size: 13px">
                 <label style="font-size: 15px" for="system.attributes.hp.max">{{localize "DCC.Max"}}:</label>
                 <input style="font-size: 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.5)"
                        id="system.attributes.hp.max" name="system.attributes.hp.max" value="{{system.attributes.hp.max}}" size="3">
@@ -79,62 +80,62 @@
         </div>
 
         {{!-- Combat Basics --}}
-        <div style="grid-area: 2/2/2/5;" class="combat-basics">
-            <div class="combat-basics-title dark-title" style="grid-area: 1/1/1/6;">Combat Basics</div>
+        <div style="" class="combat-basics grid-col-span-3">
+            <div class="grid-col-span-4 dark-title">Combat Basics</div>
 
             {{!-- Initiative --}}
-            <label for="system.attributes.init.die" style="grid-area: 2 / 1">{{localize "DCC.InitiativeDie"}}:</label>
-            <input id="system.attributes.init.die" name="system.attributes.init.die" style="grid-area: 2 / 2"
+            <label for="system.attributes.init.die">{{localize "DCC.InitiativeDie"}}:</label>
+            <input id="system.attributes.init.die" name="system.attributes.init.die" style="grid-area: 2/2"
                    value="{{system.attributes.init.die}}" size="3"
                    placeholder="1d20"
             >
-            <label for="system.attributes.init.value" style="grid-area: 2 / 3" class="rollable">{{localize "DCC.Initiative"}}:</label>
-            <input id="system.attributes.init.value" name="system.attributes.init.value" style="grid-area: 2 / 4"
+            <label for="system.attributes.init.value" class="rollable">{{localize "DCC.Initiative"}}:</label>
+            <input id="system.attributes.init.value" name="system.attributes.init.value" style="grid-area: 2/4"
                    value="{{numberFormat system.attributes.init.value decimals=0 sign=true}}" size="3"
                    placeholder="+0" data-dtype="Number"
             >
 
             {{!-- Action Dice --}}
-            <label for="system.attributes.actionDice.value" style="grid-area: 3 / 1;">{{localize "DCC.ActionDice"}}:</label>
+            <label for="system.attributes.actionDice.value">{{localize "DCC.ActionDice"}}:</label>
             <input id="system.attributes.actionDice.value" name="system.attributes.actionDice.value"
-                   style="grid-area: 3 / 2" size="3"
+                   style="grid-area: 3/2" size="3"
                    value="{{system.attributes.actionDice.value}}"
                    data-dtype="String"
                    placeholder="1d20"
             >
 
             {{!-- Attack Bonus --}}
-            <label for="system.details.attackBonus" style="grid-area: 4 / 1" class="rollable">{{localize "DCC.AttackBonus"}}:</label>
+            <label for="system.details.attackBonus" class="rollable">{{localize "DCC.AttackBonus"}}:</label>
             <input id="system.details.attackBonus" name="system.details.attackBonus"
-                   style="grid-area: 4 / 2" size="3"
+                   style="grid-area: 4/2" size="3"
                    value="{{formatAttackBonus system.details.attackBonus}}"
                    data-dtype="String">
 
             {{!-- Hit Die --}}
-            <label for="system.attributes.hitDice.value" style="grid-area: 5 / 1" class="rollable">{{localize "DCC.HitDice"}}:</label>
+            <label for="system.attributes.hitDice.value" style="grid-area: 5/1" class="rollable">{{localize "DCC.HitDice"}}:</label>
             <input id="system.attributes.hitDice.value" name="system.attributes.hitDice.value"
-                   style="grid-area: 5 / 2" size="3"
+                   style="grid-area: 5/2" size="3"
                    value="{{system.attributes.hitDice.value}}"
                    data-dtype="String">
 
             {{!-- Crit Die --}}
-            <label for="system.attributes.critical.die" style="grid-area: 3 / 3" class="rollable">{{localize "DCC.CritDie"}}:</label>
+            <label for="system.attributes.critical.die" style="grid-area: 3/3" class="rollable">{{localize "DCC.CritDie"}}:</label>
             <input id="system.attributes.critical.die" name="system.attributes.critical.die"
-                   style="grid-area: 3 / 4" size="3"
+                   style="grid-area: 3/4" size="3"
                    value="{{system.attributes.critical.die}}"
                    data-dtype="String">
 
             {{!-- Crit Table --}}
-            <label for="system.attributes.critical.table" style="grid-area: 4 / 3">{{localize "DCC.CritTable"}}:</label>
+            <label for="system.attributes.critical.table" style="grid-area: 4/3">{{localize "DCC.CritTable"}}:</label>
             <input id="system.attributes.critical.table" name="system.attributes.critical.table"
-                   style="grid-area: 4 / 4" size="3"
+                   style="grid-area: 4/4" size="3"
                    value="{{system.attributes.critical.table}}" maxlength="5"
                    placeholder="I">
 
             {{!-- Speed --}}
-            <label for="system.attributes.speed.value" style="grid-area: 5 / 3">{{localize "DCC.Speed"}}:</label>
+            <label for="system.attributes.speed.value" style="grid-area: 5/3">{{localize "DCC.Speed"}}:</label>
             <input id="system.attributes.speed.value" name="system.attributes.speed.value"
-                   style="grid-area: 5 / 4" value="{{distanceFormat system.attributes.speed.value}}"
+                   style="grid-area: 5/4" value="{{distanceFormat system.attributes.speed.value}}"
                    size="3"
                    {{#if system.config.computeSpeed }}
                    title="{{localize " DCC.SpeedBase"}} {{distanceFormat system.attributes.speed.base}} {{localize "DCC.SpeedPenalty"}}
@@ -154,14 +155,14 @@
                        name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10">
             </div>
             <label for="system.abilities.{{id}}.mod"
-                   style="grid-area: 2 / 1" data-modifier="true"
+                   style="grid-area: 2/1" data-modifier="true"
                    {{#if isLuck}}class="rollable" title="{{localize " DCC.RollLuckCheckModHint"}}"{{/if}}
             >{{localize "DCC.Modifier"}}:</label>
-            <input id="system.abilities.{{id}}.mod" style="grid-area: 2 / 2"
+            <input id="system.abilities.{{id}}.mod" style="grid-area: 2/2"
                    name="system.abilities.{{id}}.mod" value="{{numberFormat ability.mod decimals=0 sign=true}}"
                    size="3" disabled>
-            <label for="system.abilities.{{id}}.max" style="grid-area: 3 / 1">{{localize "DCC.MaxValue"}}:</label>
-            <input id="system.abilities.{{id}}.max" style="grid-area: 3 / 2"
+            <label for="system.abilities.{{id}}.max" style="grid-area: 3/1">{{localize "DCC.MaxValue"}}:</label>
+            <input id="system.abilities.{{id}}.max" style="grid-area: 3/2"
                    name="system.abilities.{{id}}.max" value="{{ability.max}}" size="2"
                    data-dtype="Number" placeholder="10">
         </div>
@@ -175,16 +176,16 @@
         {{/inline}}
 
         {{!-- Strength --}}
-        {{> abilityScore id='str' ability=system.abilities.str area='3 / 1'}}
+        {{> abilityScore id='str' ability=system.abilities.str area='3/1'}}
 
         {{!-- Logo box --}}
-        <div style="grid-area: 3 / 2">
+        <div style="grid-area: 3/2">
             <img src="systems/dcc/styles/images/dccrpg-logo.png" height="60px" width="110px"
                  style="opacity: 0.35; margin-top: 7px; border: none">
         </div>
 
         {{!-- Melee Attack Values --}}
-        <div style="grid-area: 3 / 3" class="hit-bonus-box">
+        <div style="grid-area: 3/3" class="hit-bonus-box">
             <label for="system.details.attackHitBonus.melee.value" class="dark-title"
                    title="{{localize 'DCC.MeleeAttackHint'}}">{{{localize 'DCC.MeleeAttack'}}}</label>
             <input id="system.details.attackHitBonus.melee.value" name="system.details.attackHitBonus.melee.value"
@@ -192,7 +193,7 @@
                    {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
             >
         </div>
-        <div style="grid-area: 3 / 4" class="hit-bonus-box">
+        <div style="grid-area: 3/4" class="hit-bonus-box">
             <label for="system.details.attackDamageBonus.melee.value" class="dark-title" title="{{localize 'DCC.MeleeDamageHint'}}">
                 {{{localize 'DCC.MeleeDamage'}}}
             </label>
@@ -205,13 +206,13 @@
         <div style="grid-row: 4; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
 
         {{!-- Agility --}}
-        {{> abilityScore id='agl' ability=system.abilities.agl area='5 / 1'}}
+        {{> abilityScore id='agl' ability=system.abilities.agl area='5/1'}}
 
         {{!-- Reflex Save --}}
-        {{> save id='ref' save=system.saves.ref area='5 / 2'}}
+        {{> save id='ref' save=system.saves.ref area='5/2'}}
 
         {{!-- Missile Attack Values --}}
-        <div style="grid-area: 5 / 3" class="hit-bonus-box">
+        <div style="grid-area: 5/3" class="hit-bonus-box">
             <label for="system.details.attackHitBonus.missile.value" class="dark-title" title="{{localize 'DCC.MissileAttackHint'}}">
                 {{{localize 'DCC.MissileAttack'}}}</label>
             <input id="system.details.attackHitBonus.missile.value" name="system.details.attackHitBonus.missile.value"
@@ -219,7 +220,7 @@
                    {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
             >
         </div>
-        <div style="grid-area: 5 / 4" class="hit-bonus-box">
+        <div style="grid-area: 5/4" class="hit-bonus-box">
             <label for="system.details.attackDamageBonus.missile.value" class="dark-title" title="{{localize 'DCC.MissileDamageHint'}}">
                 {{{localize 'DCC.MissileDamage'}}}
             </label>
@@ -232,10 +233,10 @@
         <div style="grid-row: 6; grid-column-start: 1; grid-column-end: 5" class="row-separator"></div>
 
         {{!-- Stamina --}}
-        {{> abilityScore id='sta' ability=system.abilities.sta area='7 / 1'}}
+        {{> abilityScore id='sta' ability=system.abilities.sta area='7/1'}}
 
         {{!-- Fortitude Save --}}
-        {{> save id='frt' save=system.saves.frt area='7 / 2'}}
+        {{> save id='frt' save=system.saves.frt area='7/2'}}
 
         {{!-- Portrait --}}
         <div style="grid-row-start: 7; grid-row-end: 12; grid-column-start: 3; grid-column-end: 5" class="portrait">
@@ -248,15 +249,15 @@
         <div style="grid-row: 8; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
         {{!-- Personality --}}
-        {{> abilityScore id='per' ability=system.abilities.per area='9 / 1'}}
+        {{> abilityScore id='per' ability=system.abilities.per area='9/1'}}
 
         {{!-- Will Save --}}
-        {{> save id='wil' save=system.saves.wil area='9 / 2'}}
+        {{> save id='wil' save=system.saves.wil area='9/2'}}
 
         <div style="grid-row: 10; grid-column-start: 1; grid-column-end: 3" class="row-separator"></div>
 
         {{!-- Luck --}}
-        {{> abilityScore id='lck' ability=system.abilities.lck area='11 / 1' isLuck=true}}
+        {{> abilityScore id='lck' ability=system.abilities.lck area='11/1' isLuck=true}}
 
         {{!-- Lucky Roll --}}
         <div style="grid-row: 11; grid-column: 2" class="lucky-roll-box">
@@ -267,7 +268,7 @@
         <div style="grid-row: 12; grid-column-start: 1; grid-column-end: 5;" class="row-separator"></div>
 
         {{!-- Intelligence --}}
-        {{> abilityScore id='int' ability=system.abilities.int area='13 / 1'}}
+        {{> abilityScore id='int' ability=system.abilities.int area='13/1'}}
 
         {{!-- Languages --}}
         <div style="grid-row: 13; grid-column-start: 2; grid-column-end: 5" class="languages-box">

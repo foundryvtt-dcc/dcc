@@ -1809,7 +1809,7 @@ form.dcc-roll-modifier {
     font-family: var(--label-font);
     font-size: 16px;
     grid-template-columns: 227px 146px 108px 108px;
-    grid-template-rows: 51px 131px repeat(5, 70px 9px);
+    grid-template-rows: 53px 129px repeat(5, 70px 9px);
     text-align: center;
   }
 
@@ -1875,41 +1875,35 @@ form.dcc-roll-modifier {
     grid-template-columns: 100px 100px;
     grid-template-rows: 65px 20px 20px;
     margin: 7px 0 0 15px;
-  }
 
-  .ac-and-hp-box input {
-    border: none;
-    font-size: 24px;
-    grid-column: 3;
+    input {
+      border: none;
+      font-size: 24px;
+      grid-column: 3;
+    }
   }
 
   .combat-basics {
     align-items: center;
     border: var(--dark-border);
     border-top: none;
-    column-gap: 8px;
     display: grid;
     font-size: 14px;
-    grid-template-columns: 110px 90px 80px 65px;
-    grid-template-rows: 22px 21px 21px 21px 21px;
-    margin: 3px 0 9px 0;
-  }
+    grid-template-columns: 1.4fr .75fr 1.25fr .75fr;
+    grid-template-rows: 19px repeat(4, 23px);
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
 
-  .combat-basics label {
-    padding-left: 3px;
-    text-align: left;
-  }
+    label {
+      padding-left: 3px;
+      text-align: left;
+    }
 
-  .combat-basics input,
-  .combat-basics select {
-    font-size: 14px;
-    vertical-align: middle;
-  }
-
-  .combat-basics-title {
-    font-size: 15px;
-    grid-column-end: 6;
-    padding-top: 2px;
+    input, select {
+      font-size: 14px;
+      vertical-align: middle;
+      margin-right: 52px;
+    }
   }
 
   .hit-bonus-box {
@@ -1964,11 +1958,28 @@ form.dcc-roll-modifier {
     font-size: 12px;
   }
 
+  .grid-col-span-2 {
+    grid-column-end: span 2;
+  }
+
+  .grid-col-span-3 {
+    grid-column-end: span 3;
+  }
+
+  .grid-col-span-4 {
+    grid-column-end: span 4;
+  }
+
+  .grid-col-span-5 {
+    grid-column-end: span 5;
+  }
+
   .name-section-box {
     column-gap: 12px;
     display: grid;
     grid-template-rows: 25px 27px;
     grid-template-columns: subgrid;
+    margin-bottom: 20px;
     text-align: left;
 
     label {
