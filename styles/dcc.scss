@@ -29,7 +29,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 .dcc .window-content {
   font-family: $book-antiqua;
   height: 100%;
-  padding: 5px;
+  padding: 0 5px 0 5px;
 }
 
 .dcc .window-content label {
@@ -88,7 +88,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc.sheet.actor {
   min-height: 633px;
-  min-width: 605px;
+  min-width: 533px;
 }
 
 .dcc .editor,
@@ -1078,7 +1078,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   align-items: center;
   border: var(--dark-border);
   display: grid;
-  font-size: 1.2rem;
+  font-size: 1rem;
   grid-template-columns: 1fr 1fr;
   margin-top: 6px;
 
@@ -1130,7 +1130,7 @@ $font-awesome: 'Font Awesome 6 Pro';
       background: none;
       border-width: 0 0 1px 0;
       border-radius: 0;
-      width: 70px;
+      width: 65px;
 
       &:focus {
         box-shadow: none;
@@ -1146,11 +1146,12 @@ $font-awesome: 'Font Awesome 6 Pro';
       border-width: 0 0 1px 0;
       border-radius: 0;
       font-family: var(--data-font);
+      font-size: 15px;
       text-align: center;
-      text-align-last: center;
+      width: 75px;
 
-      &.number {
-        text-align-last: right;
+      &:focus {
+        box-shadow: none;
       }
     }
   }
@@ -1529,8 +1530,6 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc.sheet {
   .sheet-tabs.tabs {
-    margin-bottom: 10px;
-    padding-top: 5px;
     font-family: $duvall;
   }
 
@@ -1802,25 +1801,29 @@ form.dcc-roll-modifier {
 /* ----------------------------------------- */
 
 .dcc.sheet.actor .character2 {
-  .outer {
+  .character-grid2 {
     background: url("images/parchment.jpeg");
-    column-gap: 12px;
+    column-gap: 8px;
     display: grid;
     font-family: var(--label-font);
     font-size: 16px;
-    grid-template-columns: 227px 146px 108px 108px;
-    grid-template-rows: 53px 129px repeat(5, 70px 9px);
+    grid-template-columns: 192px 118px 95px 95px;
+    grid-template-rows: 49px 114px repeat(5, 60px 9px) 60px;
     text-align: center;
-  }
 
-  .outer input,
-  .outer select {
-    background: none;
-    border-width: 0 0 1px 0;
-    border-radius: 0;
-    font-family: var(--data-font);
-    text-align: center;
-    text-align-last: center;
+    input,
+    select {
+      background: none;
+      border-width: 0 0 1px 0;
+      border-radius: 0;
+      font-family: var(--data-font);
+      text-align: center;
+      text-align-last: center;
+    }
+
+    label {
+      font-family: $cooper-black;
+    }
   }
 
   .dark-title {
@@ -1839,47 +1842,54 @@ form.dcc-roll-modifier {
     align-items: center;
     display: grid;
     font-size: 14px;
-    grid-template-columns: 125px 37px 70px;
-    grid-template-rows: 20px 25px 25px;
+    grid-template-columns: 85px 37px 70px;
+    grid-template-rows: 20px 20px 20px;
     text-align: left;
+
+    input {
+      border-width: 0 0 1px 0;
+      font-size: 14px;
+    }
+
+    input[id$='max'] {
+      height: 17px;
+      margin-right: 3px;
+    }
+
+    >label {
+      grid-column-end: span 2;
+    }
   }
 
-  .ability-box input {
-    border-width: 0 0 1px 0;
-    font-size: 14px;
-  }
-
-  .ability-box input[id$='max'] {
-    margin-right: 3px;
-  }
-
-  .ability-name {
-    grid-column: 1 / 3;
+  .ability-scores2 {
+    display: grid;
+    grid-template-rows: repeat(5, 69px);
   }
 
   .ability-score-box {
     align-self: stretch;
     border: 5px solid var(--dark-color);
     display: grid;
-    grid-area: 1 / 3 / 4;
-  }
-
-  .ability-score-box input {
-    align-self: center;
-    border: none;
-    font-size: 30px;
-  }
-
-  .ac-and-hp-box {
-    display: grid;
-    grid-template-columns: 100px 100px;
-    grid-template-rows: 65px 20px 20px;
-    margin: 7px 0 0 15px;
+    grid-row-end: span 3;
 
     input {
+      align-self: center;
+      border: none;
+      font-size: 30px;
+    }
+  }
+
+  .ac-and-hp {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-template-rows: 65px 19px 20px;
+
+    input {
+      align-self: center;
       border: none;
       font-size: 24px;
-      grid-column: 3;
+      height: 17px;
+      margin-bottom: 5px;
     }
   }
 
@@ -1889,8 +1899,9 @@ form.dcc-roll-modifier {
     border-top: none;
     display: grid;
     font-size: 14px;
-    grid-template-columns: 1.4fr .75fr 1.25fr .75fr;
-    grid-template-rows: 19px repeat(4, 23px);
+    grid-column-end: span 3;
+    grid-template-columns: 110px 62px 85px 59px;
+    grid-template-rows: 19px repeat(4, 20px);
     margin: 0 0 8px 0;
     padding-bottom: 4px;
 
@@ -1902,60 +1913,8 @@ form.dcc-roll-modifier {
     input, select {
       font-size: 14px;
       vertical-align: middle;
-      margin-right: 52px;
+      margin-right: 8px;
     }
-  }
-
-  .hit-bonus-box {
-    align-items: center;
-    border: var(--dark-border);
-    border-top: none;
-    display: grid;
-    grid-template-columns: 100px;
-    grid-template-rows: 32px 29px;
-    font-size: 12px;
-  }
-
-  .hit-bonus-box input {
-    border: none;
-    font-size: 18px;
-    grid-row: 2;
-    margin-top: 4px;
-  }
-
-  .languages-box {
-    border: var(--dark-border);
-    border-top: none;
-    display: grid;
-    grid-template-rows: 17px 50px;
-    font-size: 12px;
-    text-align: left;
-  }
-
-  .languages-box label,
-  .lucky-roll-box label {
-    text-align: left;
-    padding-left: 3px;
-  }
-
-  .languages-box textarea,
-  .lucky-roll-box textarea {
-    background: none;
-    border: none;
-    font-family: var(--data-font);
-    font-size: 12px;
-    grid-row: 2;
-    margin: 3px;
-    resize: none;
-    text-align: left;
-  }
-
-  .lucky-roll-box {
-    border: var(--dark-border);
-    border-top: none;
-    display: grid;
-    grid-template-rows: 17px 50px;
-    font-size: 12px;
   }
 
   .grid-col-span-2 {
@@ -1974,12 +1933,88 @@ form.dcc-roll-modifier {
     grid-column-end: span 5;
   }
 
-  .name-section-box {
+  .languages {
+    border: var(--dark-border);
+    border-top: none;
+    display: grid;
+    grid-column: 2;
+    grid-row: 13;
+    grid-column-end: span 3;
+    grid-template-rows: 17px 38px;
+    font-size: 12px;
+    text-align: left;
+
+    label {
+      text-align: left;
+      padding-left: 3px;
+    }
+  }
+
+  .languages textarea,
+  .lucky-roll textarea {
+    background: none;
+    border: none;
+    font-family: var(--data-font);
+    font-size: 12px;
+    grid-row: 2;
+    min-height: 0;
+    resize: none;
+    text-align: left;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .lucky-roll {
+    border: var(--dark-border);
+    border-top: none;
+    display: grid;
+    grid-column: 2;
+    grid-column-end: span 3;
+    grid-row: 11;
+    grid-template-rows: 17px 38px;
+    font-size: 12px;
+
+    label {
+      text-align: left;
+      padding-left: 3px;
+    }
+  }
+
+  .melee-missile-attack-damage {
+    display: grid;
+    grid-column: 3;
+    grid-column-end: span 2;
+    grid-row: 3;
+    grid-template-columns: subgrid;
+    grid-template-rows: 69px 69px;
+
+    .bonus {
+      align-items: center;
+      border: var(--dark-border);
+      border-top: none;
+      display: grid;
+      font-size: 12px;
+      grid-template-columns: 87px;
+      grid-template-rows: 31px 20px;
+      margin-bottom: 8px;
+
+      input {
+        border: none;
+        font-size: 18px;
+        grid-row: 2;
+        margin-top: 4px;
+      }
+    }
+  }
+
+  .name-and-level {
     column-gap: 12px;
     display: grid;
-    grid-template-rows: 25px 27px;
+    grid-column-end: span 4;
+    grid-template-rows: 20px 20px;
     grid-template-columns: subgrid;
-    margin-bottom: 20px;
     text-align: left;
 
     label {
@@ -1990,6 +2025,10 @@ form.dcc-roll-modifier {
   .portrait {
     border: 2px solid black;
     display: grid;
+    grid-row: 7;
+    grid-column: 3;
+    grid-column-end: span 2;
+    grid-row-end: span 3;
     grid-template-rows: 18px auto;
     font-size: 14px;
 
@@ -2003,34 +2042,40 @@ form.dcc-roll-modifier {
     margin-bottom: 3px;
   }
 
+  .saving-throws2 {
+    border: none;
+    display: grid;
+    grid-column: 2;
+    grid-row: 5;
+    grid-row-end: span 3;
+    grid-template-rows: repeat(3, 69px);
+    margin: 0;
+    padding: 0;
+  }
+
   .saving-throw-box {
     align-items: center;
     background: var(--dark-bg);
     color: var(--light-color);
     column-gap: 7px;
     display: grid;
-    grid-template-columns: 54px 84px;
+    grid-template-columns: 54px 55px;
+    margin-bottom: 8px;
     text-align: left;
-  }
 
-  .saving-throw-box input {
-    align-self: center;
-    background: #DBD9CD;
-    border-radius: 100px;
-    font-size: 18px;
-    grid-column: 1;
-    height: 50px;
-    margin-left: 5px;
-    width: 50px;
-  }
+    input {
+      align-self: center;
+      background: #DBD9CD;
+      border-radius: 100px;
+      font-size: 18px;
+      height: 50px;
+      margin-left: 5px;
+      width: 50px;
+    }
 
-  .saving-throw-box label {
-    font-size: 15px;
-    grid-column: 2;
-    letter-spacing: 1px;
-  }
-
-  label {
-    font-family: $cooper-black;
+    label {
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
   }
 }

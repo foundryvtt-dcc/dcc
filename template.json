@@ -127,14 +127,17 @@
         },
         "saves": {
           "frt": {
+            "abbreviation": "DCC.SavesFortitudeAbbr",
             "label": "DCC.SavesFortitude",
             "value": 0
           },
           "ref": {
+            "abbreviation": "DCC.SavesReflexAbbr",
             "label": "DCC.SavesReflex",
             "value": 0
           },
           "wil": {
+            "abbreviation": "DCC.SavesWillAbbr",
             "label": "DCC.SavesWill",
             "value": 0
           }

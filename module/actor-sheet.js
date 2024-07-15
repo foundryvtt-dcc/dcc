@@ -15,7 +15,7 @@ class DCCActorSheet extends ActorSheet {
   static get defaultOptions () {
     const options = {
       classes: ['dcc', 'sheet', 'actor'],
-      width: 634,
+      width: 533,
       height: this.height,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],

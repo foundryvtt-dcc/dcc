@@ -88,12 +88,13 @@ class DCCActor extends Actor {
       let meleeAttackDamage = ''
       let missileAttackDamage = ''
       if (attackBonus.includes('d')) {
-        const deedDie = attackBonus.match(/([+]?\d+d\d+)/) ? attackBonus.match(/([+]?\d+d\d+)/)[0] : attackBonus
+        const deedDie = attackBonus.match(/[+-]?(\d+d\d+)/) ? attackBonus.match(/[+-]?(\d+d\d+)/)[1] : attackBonus
         const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
-        meleeAttackBonus = `+${deedDie}${signOrBlank(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
-        missileAttackBonus = `+${deedDie}${signOrBlank(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
-        meleeAttackDamage = `+${deedDie}${signOrBlank(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
-        missileAttackDamage = `+${deedDie}${signOrBlank(missileDamageBonusAdjustment + attackBonusBonus)}`
+        const deedMod = attackBonus.startsWith('-')? '-': '+'
+        meleeAttackBonus = `${deedMod}${deedDie}${signOrBlank(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
+        missileAttackBonus = `${deedMod}${deedDie}${signOrBlank(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
+        meleeAttackDamage = `${deedMod}${deedDie}${signOrBlank(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
+        missileAttackDamage = `${deedMod}${deedDie}${signOrBlank(missileDamageBonusAdjustment + attackBonusBonus)}`
       } else {
         const meleeAttackBonusSum = parseInt(attackBonus) + strengthBonus + meleeAttackBonusAdjustment
         const missileAttackBonusSum = parseInt(attackBonus) + agilityBonus + missileAttackBonusAdjustment
