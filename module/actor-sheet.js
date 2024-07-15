@@ -332,10 +332,10 @@ class DCCActorSheet extends ActorSheet {
 
       // Melee/Missile Attack/Damage Bonus Config
       if (this.object.system.config.computeMeleeAndMissileAttackAndDamage) {
-        html.find('input[id="system.details.attackHitBonus.melee.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-        html.find('input[id="system.details.attackDamageBonus.melee.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-        html.find('input[id="system.details.attackHitBonus.missile.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-        html.find('input[id="system.details.attackDamageBonus.missile.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+        html.find('input[id*="system.details.attackHitBonus"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+        html.find('input[id*="system.details.attackDamageBonus"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+        html.find('label[for*="system.details.attackHitBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
+        html.find('label[for*="system.details.attackDamageBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
       }
 
       // Only for editable sheets
@@ -385,6 +385,16 @@ class DCCActorSheet extends ActorSheet {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 400) / 2
     }).render(true)
+  }
+
+  /**
+   * Display melee/missile bonus configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollMeleeMissileBonus (event) {
+    event.preventDefault()
+    console.log("on melee missile bonus")
   }
 
   /** Prompt to delete an item
