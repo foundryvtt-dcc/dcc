@@ -6,7 +6,7 @@
             <div>
                 <label for="name">{{localize "DCC.Name"}}</label>
                 <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.CharacterName'}}"
-                       placeholder="{{localize 'DCC.CharacterName'}}" autocomplete="off" size="18">
+                       placeholder="{{localize 'DCC.CharacterName'}}" autocomplete="off" size="19">
             </div>
 
             <div>
@@ -16,7 +16,7 @@
             </div>
 
 
-            <div class="grid-col-span-2">
+            <div>
                 <label for="system.details.occupation.value">{{localize "DCC.Occupation"}}</label>
                 <input id="system.details.occupation.value" name="system.details.occupation.value"
                        value="{{system.details.occupation.value}}" maxlength="40" size="14">
@@ -26,7 +26,7 @@
             <div>
                 <label for="system.details.title.value">{{localize "DCC.Title"}}</label>
                 <input id="system.details.title.value" name="system.details.title.value"
-                       value="{{system.details.title.value}}" maxlength="40" size="19">
+                       value="{{system.details.title.value}}" maxlength="40" size="20">
             </div>
 
             <div>
@@ -37,10 +37,10 @@
             </div>
 
 
-            <div class="grid-col-span-2">
+            <div>
                 <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
                 <select id="system.details.alignment" name="system.details.alignment"
-                        style="width: 118px; font-size: 13px; height: 21.5px;">
+                        style="width: 118px; font-size: 12px; height: 17px; ">
                     {{selectOptions config.alignments selected=system.details.alignment localize=true}}
                 </select>
             </div>
@@ -156,7 +156,7 @@
         <div class="ability-box" id="{{id}}2" data-ability="{{id}}">
             <label for="system.abilities.{{id}}.value" class="dark-title rollable"
                    title="{{localize (concat 'DCC.Roll' (localize ability.label) 'CheckHint')}}">{{localize ability.label}}</label>
-            <div class="ability-score-box">
+            <div class="ability-score">
                 <input id="system.abilities.{{id}}.value" value="{{ability.value}}" size="2"
                        name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10">
             </div>
@@ -232,8 +232,7 @@
         <div class="saving-throw-box" id="{{id}}2" data-save="{{id}}">
             <input id="system.saves.{{id}}.value" value="{{numberFormat save.value decimals=0 sign=true}}"
                    name="system.saves.{{id}}.value" data-dtype="Number" placeholder="0">
-            <label for="system.saves.{{id}}.value" class="rollable">{{#if isFortitude}}{{localize save.abbreviation}}{{else}}{{localize
-                save.label}}{{/if}}</label>
+            <label for="system.saves.{{id}}.value" class="rollable">{{localize save.label}}</label>
         </div>
         {{/inline}}
         <div class="saving-throws2">

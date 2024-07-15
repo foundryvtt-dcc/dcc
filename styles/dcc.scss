@@ -841,187 +841,6 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 /* ----------------------------------------- */
-/*  Upper Level                              */
-/* ----------------------------------------- */
-
-.dcc .combat-basics {
-  flex: 1 0 50%;
-  font-size: 0.8rem;
-  margin: 7px 0 0 7px;
-  text-align: center;
-}
-
-.dcc .character-grid {
-  border-top: $border-style;
-  display: grid;
-  font-size: 20px;
-  grid-template-columns: 150px 105px 1fr;
-  grid-template-rows: repeat(6, 70px);
-  list-style: none;
-  margin: 7px;
-  padding: 0;
-}
-
-.dcc.sheet.actor .character-grid .ability {
-  border-bottom: 2px groove #eeede0;
-  border-left: $border-style;
-  border-right: $border-style;
-  padding-top: 3px;
-  text-align: center;
-}
-
-.dcc.sheet.actor .character-grid .ability input.ability-score {
-  font-size: 24px;
-  height: 30px;
-  line-height: 32px;
-  margin: 0 auto;
-  width: 36px;
-}
-
-.dcc.sheet.actor .character-grid .ability .ability-modifiers {
-  border-left: $border-style;
-  border-top: $border-style;
-  font-size: 16px;
-  height: 23px;
-  line-height: 22px;
-  margin: -15px 0 0 122px;
-  width: 25px;
-}
-
-.dcc.sheet.actor .character-grid .save {
-  border-bottom: $border-style;
-  border-right: $border-style;
-  padding-top: 3px;
-  text-align: center;
-  width: 105px;
-}
-
-.dcc.sheet.actor .character-grid .save input {
-  font-size: 24px;
-  height: 30px;
-  line-height: 32px;
-  margin: 0 auto;
-  width: 56px;
-}
-
-.dcc.sheet.actor .character-grid .languages {
-  border-bottom: $border-style;
-  border-right: $border-style;
-  padding-right: 10px;
-  padding-top: 3px;
-  text-align: left;
-}
-
-.dcc.sheet.actor .character-grid .languages input {
-  font-size: 14px;
-  margin: 0 7px;
-}
-
-.dcc.sheet.actor .character-grid .birth-augur {
-  border-bottom: $border-style;
-  border-right: $border-style;
-  padding-right: 10px;
-  padding-top: 3px;
-  text-align: left;
-}
-
-.dcc.sheet.actor .character-grid .birth-augur input {
-  font-size: 14px;
-  margin: 0 7px;
-}
-
-.dcc.sheet.actor .character-grid .remainder {
-  border-bottom: $border-style;
-  border-right: $border-style;
-}
-
-.dcc #str {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.dcc #agl {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.dcc #sta {
-  grid-column: 1;
-  grid-row: 3;
-}
-
-.dcc #per {
-  grid-column: 1;
-  grid-row: 4;
-}
-
-.dcc #int {
-  grid-column: 1;
-  grid-row: 5;
-}
-
-.dcc #lck {
-  grid-column: 1;
-  grid-row: 6;
-}
-
-.dcc #pad {
-  border-bottom: $border-style;
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.dcc #ref {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.dcc #frt {
-  grid-column: 2;
-  grid-row: 3;
-}
-
-.dcc #wil {
-  grid-column: 2;
-  grid-row: 4;
-}
-
-.dcc #languages {
-  grid-column: 2 / span 2;
-  grid-row: 5;
-}
-
-.dcc #birth-augur {
-  grid-column: 2 / span 2;
-  grid-row: 6;
-}
-
-.dcc #remainder {
-  grid-column: 3;
-  grid-row: 1 / span 4;
-}
-
-.dcc .class {
-  //font-size: 1.2rem;
-}
-
-.dcc .class-label {
-  font-family: $duvall;
-  font-size: 1.5rem;
-  margin-top: 20px;
-}
-
-.dcc .class-note {
-  flex: 0 0 100%;
-  margin: 0 6px 0 0;
-  text-align: left;
-}
-
-.dcc .class-note li {
-  margin: 6px;
-}
-
-/* ----------------------------------------- */
 /*  Cleric Class                             */
 /* ----------------------------------------- */
 
@@ -1077,6 +896,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 .dcc .skills-container {
   align-items: center;
   border: var(--dark-border);
+  border-top: none;
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin-top: 6px;
@@ -1088,6 +908,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     font-family: $cooper-black;
     grid-template-columns: 100%;
     grid-column-end: span 2;
+    letter-spacing: 1px;
     padding-bottom: 3px;
     text-align: center;
   }
@@ -1110,7 +931,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     .editor {
       background: rgba(0, 0, 0, 0.05);
       border: var(--dark-border);
-      border-width: 0 2px 2px 2px;
+      border-top: none;
       font-family: $book-antiqua;
       min-height: 305px;
       padding: 0 8px;
@@ -1810,8 +1631,8 @@ form.dcc-roll-modifier {
     display: grid;
     font-family: var(--label-font);
     font-size: 16px;
-    grid-template-columns: 192px 118px 95px 95px;
-    grid-template-rows: 49px 114px repeat(5, 60px 9px) 60px;
+    grid-template-columns: 192px 143px 82px 82px;
+    grid-template-rows: 46px 114px repeat(5, 60px 9px) 60px;
     text-align: center;
 
     input,
@@ -1820,9 +1641,13 @@ form.dcc-roll-modifier {
       border-width: 0 0 1px 0;
       border-radius: 0;
       font-family: var(--data-font);
-      height: 17px;
+      height: 16px;
       text-align: center;
       text-align-last: center;
+
+      &:focus {
+        box-shadow: none;
+      }
     }
 
     label {
@@ -1831,56 +1656,64 @@ form.dcc-roll-modifier {
   }
 
   .dark-title {
-    align-self: stretch;
+    align-self: center;
     background: var(--dark-bg);
     color: var(--light-color);
     grid-column-start: 1;
     grid-row: 1;
+    height: 19px;
     letter-spacing: 1px;
-    margin-left: -1px;
+    //margin-left: -1px;  // Is this needed on the mac?
     padding-top: 1px;
     text-align: center;
   }
 
-  .ability-box {
-    align-items: center;
-    display: grid;
-    font-size: 14px;
-    grid-template-columns: 85px 37px 70px;
-    grid-template-rows: 20px 20px 20px;
-    text-align: left;
 
-    input {
-      border-width: 0 0 1px 0;
-      font-size: 14px;
-    }
-
-    input[id$='max'] {
-      height: 17px;
-      margin-right: 3px;
-    }
-
-    >label {
-      grid-column-end: span 2;
-    }
-  }
 
   .ability-scores2 {
     display: grid;
     grid-template-rows: repeat(5, 69px);
-  }
 
-  .ability-score-box {
-    align-self: stretch;
-    border: 5px solid var(--dark-color);
-    display: grid;
-    grid-row-end: span 3;
+    .ability-box {
+      align-items: center;
+      display: grid;
+      font-size: 14px;
+      grid-template-columns: 85px 37px 70px;
+      grid-template-rows: 19px 20px 20px;
+      text-align: left;
 
-    input {
-      align-self: center;
-      border: none;
-      font-size: 30px;
-      height: unset;
+      input {
+        border-width: 0 0 1px 0;
+        font-size: 14px;
+      }
+
+      input[id$='max'] {
+        height: 17px;
+        margin-right: 3px;
+      }
+
+      > label {
+        grid-column-end: span 2;
+      }
+
+      > label[for='system.abilities.sta.value'],
+      label[for='system.abilities.lck.value']{
+        padding-top: 1.5px;
+      }
+    }
+
+    .ability-score {
+      align-self: stretch;
+      border: 5px solid var(--dark-color);
+      display: grid;
+      grid-row-end: span 3;
+
+      input {
+        align-self: center;
+        border: none;
+        font-size: 30px;
+        height: unset;
+      }
     }
   }
 
@@ -1913,6 +1746,7 @@ form.dcc-roll-modifier {
     label {
       padding-left: 3px;
       text-align: left;
+      padding-top: 2px;
     }
 
     input, select {
@@ -1924,18 +1758,22 @@ form.dcc-roll-modifier {
   }
 
   .grid-col-span-2 {
+    display: grid;
     grid-column-end: span 2;
   }
 
   .grid-col-span-3 {
+    display: grid;
     grid-column-end: span 3;
   }
 
   .grid-col-span-4 {
+    display: grid;
     grid-column-end: span 4;
   }
 
   .grid-col-span-5 {
+    display: grid;
     grid-column-end: span 5;
   }
 
@@ -1946,7 +1784,7 @@ form.dcc-roll-modifier {
     grid-column: 2;
     grid-row: 13;
     grid-column-end: span 3;
-    grid-template-rows: 17px 38px;
+    grid-template-rows: 19px auto;
     font-size: 12px;
     text-align: left;
 
@@ -1979,7 +1817,7 @@ form.dcc-roll-modifier {
     grid-column: 2;
     grid-column-end: span 3;
     grid-row: 11;
-    grid-template-rows: 17px 38px;
+    grid-template-rows: 19px auto;
     font-size: 12px;
 
     label {
@@ -2002,13 +1840,17 @@ form.dcc-roll-modifier {
       border-top: none;
       display: grid;
       font-size: 12px;
-      grid-template-columns: 87px;
+      grid-template-columns: 100%;
       grid-template-rows: 31px 20px;
       margin-bottom: 8px;
 
+      label {
+        height: 31px;
+      }
+
       input {
         border: none;
-        font-size: 18px;
+        font-size: 16px;
         grid-row: 2;
         margin-top: 4px;
       }
@@ -2020,7 +1862,7 @@ form.dcc-roll-modifier {
     display: grid;
     grid-column-end: span 4;
     grid-template-rows: 20px 20px;
-    grid-template-columns: subgrid;
+    grid-template-columns: 189px 113px 195px;
     text-align: left;
 
     label {
@@ -2029,13 +1871,14 @@ form.dcc-roll-modifier {
   }
 
   .portrait {
-    border: 2px solid black;
+    border: var(--dark-border);
+    border-top: none;
     display: grid;
     grid-row: 7;
     grid-column: 3;
     grid-column-end: span 2;
     grid-row-end: span 3;
-    grid-template-rows: 18px auto;
+    grid-template-rows: 19px auto;
     font-size: 14px;
 
     img {
@@ -2066,7 +1909,7 @@ form.dcc-roll-modifier {
     column-gap: 7px;
     display: grid;
     grid-template-columns: 54px 55px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     text-align: left;
 
     input {
