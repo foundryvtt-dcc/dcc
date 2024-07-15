@@ -195,7 +195,7 @@
                        title="{{localize 'DCC.MeleeAttackHint'}}">{{{localize 'DCC.MeleeAttack'}}}</label>
                 <input id="system.details.attackHitBonus.melee.value" name="system.details.attackHitBonus.melee.value"
                        value="{{system.details.attackHitBonus.melee.value}}" title="{{localize 'DCC.MeleeAttackHint'}}"
-                       {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
+                       {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
                 >
             </div>
             <div class="bonus">
@@ -204,7 +204,7 @@
                 </label>
                 <input id="system.details.attackDamageBonus.melee.value" name="system.details.attackDamageBonus.melee.value"
                        value="{{system.details.attackDamageBonus.melee.value}}"
-                       {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
+                       {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
                 >
             </div>
             {{!-- Missile Attack Values --}}
@@ -213,7 +213,7 @@
                     {{{localize 'DCC.MissileAttack'}}}</label>
                 <input id="system.details.attackHitBonus.missile.value" name="system.details.attackHitBonus.missile.value"
                        value="{{system.details.attackHitBonus.missile.value}}"
-                       {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
+                       {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
                 >
             </div>
             <div class="bonus">
@@ -222,7 +222,7 @@
                 </label>
                 <input id="system.details.attackDamageBonus.missile.value" name="system.details.attackDamageBonus.missile.value"
                        value="{{system.details.attackDamageBonus.missile.value}}"
-                       {{#if system.config.computeMeleeAndMissileAttackAndDamage}}disabled{{/if}}
+                       {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
                 >
             </div>
         </div>

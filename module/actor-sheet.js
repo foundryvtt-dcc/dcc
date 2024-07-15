@@ -331,10 +331,12 @@ class DCCActorSheet extends ActorSheet {
       html.find('.item-draggable').each(makeDraggable)
 
       // Melee/Missile Attack/Damage Bonus Config
-      html.find('label[for="system.details.attackHitBonus.melee.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-      html.find('label[for="system.details.attackDamageBonus.melee.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-      html.find('label[for="system.details.attackHitBonus.missile.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-      html.find('label[for="system.details.attackDamageBonus.missile.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+      if (this.object.system.config.computeMeleeAndMissileAttackAndDamage) {
+        html.find('input[id="system.details.attackHitBonus.melee.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+        html.find('input[id="system.details.attackDamageBonus.melee.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+        html.find('input[id="system.details.attackHitBonus.missile.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+        html.find('input[id="system.details.attackDamageBonus.missile.value"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+      }
 
       // Only for editable sheets
       if (this.options.editable) {

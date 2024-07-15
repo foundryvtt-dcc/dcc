@@ -1032,10 +1032,6 @@
   grid-row: 1/span 4;
 }
 
-.dcc .class {
-  font-size: 1.2rem;
-}
-
 .dcc .class-label {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 1.5rem;
@@ -1100,7 +1096,6 @@
   align-items: center;
   border: var(--dark-border);
   display: grid;
-  font-size: 1rem;
   grid-template-columns: 1fr 1fr;
   margin-top: 6px;
 }
@@ -1142,12 +1137,12 @@
 }
 .dcc .skills-container > div input {
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  height: 30px;
+  height: 17px;
+  line-height: 1;
   text-align: center;
   background: none;
   border-width: 0 0 1px 0;
   border-radius: 0;
-  width: 65px;
 }
 .dcc .skills-container > div input:focus {
   box-shadow: none;
@@ -1470,6 +1465,9 @@
 .dcc.sheet .sheet-tabs.tabs {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
 }
+.dcc.sheet .item[data-tab] {
+  padding: 4px 0 4px 0;
+}
 .dcc.sheet .item[data-tab=character]:before {
   content: "\f007";
   font-family: "Font Awesome 6 Pro";
@@ -1506,7 +1504,7 @@
   padding-right: 5px;
 }
 .dcc.sheet .item[data-tab=elf]:before {
-  content: "\f6e8";
+  content: "\f56b";
   font-family: "Font Awesome 6 Pro";
   padding-right: 5px;
 }
@@ -1705,6 +1703,7 @@ form.dcc-roll-modifier input.stat {
   border-width: 0 0 1px 0;
   border-radius: 0;
   font-family: var(--data-font);
+  height: 17px;
   text-align: center;
   text-align-last: center;
 }
@@ -1755,6 +1754,7 @@ form.dcc-roll-modifier input.stat {
   align-self: center;
   border: none;
   font-size: 30px;
+  height: unset;
 }
 .dcc.sheet.actor .character2 .ac-and-hp {
   display: grid;
@@ -1786,6 +1786,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc.sheet.actor .character2 .combat-basics input, .dcc.sheet.actor .character2 .combat-basics select {
   font-size: 14px;
+  height: 17px;
   vertical-align: middle;
   margin-right: 8px;
 }

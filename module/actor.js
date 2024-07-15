@@ -100,17 +100,13 @@ class DCCActor extends Actor {
         const missileAttackBonusSum = parseInt(attackBonus) + agilityBonus + missileAttackBonusAdjustment
         meleeAttackBonus = `${signOrBlank(meleeAttackBonusSum)}`
         missileAttackBonus = `${signOrBlank(missileAttackBonusSum)}`
-        meleeAttackDamage = strengthBonus + meleeDamageBonusAdjustment
+        meleeAttackDamage = `${signOrBlank(strengthBonus + meleeDamageBonusAdjustment)}`
         missileAttackDamage = missileDamageBonusAdjustment || ''
       }
-      // @TODO: Handle Lucky Rolls 1-3:
-      //   1 Harsh winter: All attack rolls
-      //   2 The bull: Melee attack rolls
-      //   3 Fortunate date: Missile fire attack rolls
       this.system.details.attackHitBonus.melee.value = meleeAttackBonus
       this.system.details.attackHitBonus.missile.value = missileAttackBonus
-      this.system.details.attackDamageBonus.melee.value = `${meleeAttackDamage > 0 ? '+' : ''}${meleeAttackDamage}`
-      this.system.details.attackDamageBonus.missile.value = `${missileAttackDamage > 0 ? '+' : ''}${missileAttackDamage}`
+      this.system.details.attackDamageBonus.melee.value = meleeAttackDamage
+      this.system.details.attackDamageBonus.missile.value = missileAttackDamage
     }
 
     // Compute AC if required

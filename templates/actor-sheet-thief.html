@@ -115,10 +115,10 @@
                         <input type="text" id="system.skills.findTrap.value" name="system.skills.findTrap.value"
                                value="{{system.skills.findTrap.value}}" data-dtype="String"/>
                     </div>
+                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                    <div>{{{system.class.classLink}}}</div>
+                    {{/dccPackExists}}
                 </div>
-                {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                {{{system.class.classLink}}}
-                {{/dccPackExists}}
             </div>
         </div>
     </section>

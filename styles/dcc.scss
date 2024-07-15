@@ -1002,7 +1002,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 .dcc .class {
-  font-size: 1.2rem;
+  //font-size: 1.2rem;
 }
 
 .dcc .class-label {
@@ -1078,7 +1078,6 @@ $font-awesome: 'Font Awesome 6 Pro';
   align-items: center;
   border: var(--dark-border);
   display: grid;
-  font-size: 1rem;
   grid-template-columns: 1fr 1fr;
   margin-top: 6px;
 
@@ -1125,12 +1124,12 @@ $font-awesome: 'Font Awesome 6 Pro';
 
     input {
       font-family: $book-antiqua;
-      height: 30px;
+      height: 17px;
+      line-height: 1;
       text-align: center;
       background: none;
       border-width: 0 0 1px 0;
       border-radius: 0;
-      width: 65px;
 
       &:focus {
         box-shadow: none;
@@ -1533,6 +1532,10 @@ $font-awesome: 'Font Awesome 6 Pro';
     font-family: $duvall;
   }
 
+  .item[data-tab] {
+    padding: 4px 0 4px 0;
+  }
+
   .item[data-tab="character"]:before {
     content: "\f007";
     font-family: $font-awesome;
@@ -1576,7 +1579,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   .item[data-tab="elf"]:before {
-    content: "\f6e8";
+    content: "\f56b";
     font-family: $font-awesome;
     padding-right: 5px;
   }
@@ -1817,6 +1820,7 @@ form.dcc-roll-modifier {
       border-width: 0 0 1px 0;
       border-radius: 0;
       font-family: var(--data-font);
+      height: 17px;
       text-align: center;
       text-align-last: center;
     }
@@ -1876,6 +1880,7 @@ form.dcc-roll-modifier {
       align-self: center;
       border: none;
       font-size: 30px;
+      height: unset;
     }
   }
 
@@ -1912,6 +1917,7 @@ form.dcc-roll-modifier {
 
     input, select {
       font-size: 14px;
+      height: 17px;
       vertical-align: middle;
       margin-right: 8px;
     }
