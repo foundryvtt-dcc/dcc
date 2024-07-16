@@ -886,7 +886,23 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 .dcc .spells-container-cleric {
-  margin: 4px;
+  border: var(--dark-border);
+  border-top: none;
+  height: 565px;
+
+  .dark-title {
+    align-self: center;
+    background: var(--dark-bg);
+    color: var(--light-color);
+    font-family: $cooper-black;
+    grid-column-start: 1;
+    grid-row: 1;
+    height: 19px;
+    letter-spacing: 1px;
+    //margin-left: -1px;  // Is this needed on the mac?
+    padding-top: 1px;
+    text-align: center;
+  }
 }
 
 /* ----------------------------------------- */
@@ -1002,7 +1018,24 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc .spells-container-wizard {
-  margin: 4px;
+
+  border: var(--dark-border);
+  border-top: none;
+  height: 565px;
+
+  .dark-title {
+    align-self: center;
+    background: var(--dark-bg);
+    color: var(--light-color);
+    font-family: $cooper-black;
+    grid-column-start: 1;
+    grid-row: 1;
+    height: 19px;
+    letter-spacing: 1px;
+    //margin-left: -1px;  // Is this needed on the mac?
+    padding-top: 1px;
+    text-align: center;
+  }
 }
 
 /* ----------------------------------------- */
@@ -1017,22 +1050,25 @@ $font-awesome: 'Font Awesome 6 Pro';
 .dcc .item-heading {
   border-bottom: $border-style;
   flex: 0 0 10px;
-  font-family: $duvall;
+  font-family: $cooper-black;
+  letter-spacing: 1px;
   font-size: 1.1rem;
   line-height: 1.2rem;
   margin: 8px 0 0;
 }
 
 .dcc .item-list-header {
+  border-bottom: 2px dotted var(--medium-color);
   flex: 0 0 10px;
-  font-family: $duvall;
+  font-family: $cooper-black;
   font-size: 0.8rem;
-  margin: 0 0 1px;
-  padding: 0;
+  margin: 0 0 5px 0;
+  padding: 0 0 3px 0;
 }
 
 .dcc .item-list {
-  padding-left: 8px;
+  padding: 0 8px 8px 8px;
+  margin-top: 1px;
 
   .item-equipped {
     flex: 0 0 20px;
@@ -1051,6 +1087,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   .spell-item-button-heading {
     flex: 0 0 40px;
+    padding-left: 5px;
   }
 
   .spell-item-button {
@@ -1669,7 +1706,6 @@ form.dcc-roll-modifier {
   }
 
 
-
   .ability-scores2 {
     display: grid;
     grid-template-rows: repeat(5, 69px);
@@ -1697,7 +1733,7 @@ form.dcc-roll-modifier {
       }
 
       > label[for='system.abilities.sta.value'],
-      label[for='system.abilities.lck.value']{
+      label[for='system.abilities.lck.value'] {
         padding-top: 1.5px;
       }
     }
@@ -1883,6 +1919,8 @@ form.dcc-roll-modifier {
 
     img {
       border: none;
+      justify-self: center;
+      align-self: center;
     }
   }
 

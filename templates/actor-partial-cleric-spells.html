@@ -1,10 +1,11 @@
 {{!-- Spells Tab --}}
 <div class="tab spells" data-group="primary" data-tab="spells">
     <div class="spells-container-cleric">
+        <div class="dark-title" style="">{{localize "DCC.Spells"}}</div>
         <ol class="item-list">
             <li class="item flexrow item-list-header">
               <div class="item-image"></div>
-              <div class="spell-item-button-heading"></div>
+              <div class="spell-item-button-heading">{{localize "DCC.Cast"}}</div>
               <div class="item-level">{{localize "DCC.SpellLevelShort"}}</div>
               <div class="item-name">{{localize "DCC.SpellName"}}</div>
               <div class="item-lost">{{localize "DCC.SpellLost"}}</div>
@@ -22,7 +23,7 @@
                   <img class="flex1" src="{{item.img}}" title="{{item.name}}"
                     width="24" height="24"/>
                 </div>
-                <div class="rollable spell-item-button">&nbsp;</div>
+                <div class="rollable spell-item-button" title="Cast spell">&nbsp;</div>
                 <h4 class="item-level">{{item.system.level}}</h4>
                 <h4 class="item-name flex3">{{item.name}}</h4>
                 <input class="item-lost" type="checkbox"

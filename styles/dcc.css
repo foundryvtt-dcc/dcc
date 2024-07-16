@@ -910,7 +910,21 @@
 }
 
 .dcc .spells-container-cleric {
-  margin: 4px;
+  border: var(--dark-border);
+  border-top: none;
+  height: 565px;
+}
+.dcc .spells-container-cleric .dark-title {
+  align-self: center;
+  background: var(--dark-bg);
+  color: var(--light-color);
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  grid-column-start: 1;
+  grid-row: 1;
+  height: 19px;
+  letter-spacing: 1px;
+  padding-top: 1px;
+  text-align: center;
 }
 
 /* ----------------------------------------- */
@@ -1009,7 +1023,21 @@
 /*  Wizard/Elf Class                         */
 /* ----------------------------------------- */
 .dcc .spells-container-wizard {
-  margin: 4px;
+  border: var(--dark-border);
+  border-top: none;
+  height: 565px;
+}
+.dcc .spells-container-wizard .dark-title {
+  align-self: center;
+  background: var(--dark-bg);
+  color: var(--light-color);
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  grid-column-start: 1;
+  grid-row: 1;
+  height: 19px;
+  letter-spacing: 1px;
+  padding-top: 1px;
+  text-align: center;
 }
 
 /* ----------------------------------------- */
@@ -1023,22 +1051,25 @@
 .dcc .item-heading {
   border-bottom: 2px groove #eeede0;
   flex: 0 0 10px;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  letter-spacing: 1px;
   font-size: 1.1rem;
   line-height: 1.2rem;
   margin: 8px 0 0;
 }
 
 .dcc .item-list-header {
+  border-bottom: 2px dotted var(--medium-color);
   flex: 0 0 10px;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
   font-size: 0.8rem;
-  margin: 0 0 1px;
-  padding: 0;
+  margin: 0 0 5px 0;
+  padding: 0 0 3px 0;
 }
 
 .dcc .item-list {
-  padding-left: 8px;
+  padding: 0 8px 8px 8px;
+  margin-top: 1px;
 }
 .dcc .item-list .item-equipped {
   flex: 0 0 20px;
@@ -1054,6 +1085,7 @@
 }
 .dcc .item-list .spell-item-button-heading {
   flex: 0 0 40px;
+  padding-left: 5px;
 }
 .dcc .item-list .spell-item-button {
   background-image: url("../../../icons/svg/d20-black.svg");
@@ -1736,6 +1768,8 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc.sheet.actor .character2 .portrait img {
   border: none;
+  justify-self: center;
+  align-self: center;
 }
 .dcc.sheet.actor .character2 .row-separator {
   border-bottom: 2px dotted var(--medium-color);
