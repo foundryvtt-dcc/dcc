@@ -137,13 +137,7 @@ class DCCActorSheet extends ActorSheet {
     const armor = []
     const ammunition = []
     const mounts = []
-    const spells = {
-      1: [],
-      2: [],
-      3: [],
-      4: [],
-      5: []
-    }
+    const spells = {}
     const skills = []
     const treasure = []
     const coins = []

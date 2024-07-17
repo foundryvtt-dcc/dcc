@@ -356,71 +356,28 @@
 /* ----------------------------------------- */
 /*  Armor                                  */
 /* ----------------------------------------- */
-.dcc .armor-heading {
-  background-image: url("./images/gauntlet.png");
-  background-position-x: 70px;
-  background-repeat: no-repeat;
-  background-size: 55px 17px;
-  border-bottom: 2px groove #eeede0;
-  flex: 0 0 10px;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  font-size: 1.1rem;
-  line-height: 1.2rem;
-  margin: 8px 0 0;
-}
-
 .dcc .armor-list {
+  border: var(--dark-border);
+  border-top: none;
+  column-gap: 5px;
+  display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  margin: 0 8px 0 0;
-  padding-left: 8px;
-}
-.dcc .armor-list .item-image {
-  flex: 0 0 24px;
-  margin-right: 8px;
-  margin-top: 3px;
-}
-.dcc .armor-list input {
-  height: 30px;
-}
-
-.dcc .armor-list-header {
-  flex: 0 0 10px;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  font-size: 0.8rem;
-  margin: 7px 0 2px;
-  padding: 0;
-}
-
-.dcc .armor-equipped {
-  flex: 0 0 20px;
-  margin: 0 8px 0 0;
-}
-
-.dcc .armor-bonus {
-  flex: 0 0 45px;
-  margin: 0 8px;
+  grid-template-columns: 23px 36px 103px 45px 53px 74px 82px 39px;
+  margin: 0 0 8px 0;
+  padding: 5px 0 2px 5px;
   text-align: center;
 }
 
-.dcc .armor-checkpenalty {
-  flex: 0 0 60px;
-  margin: 0 8px 0 0;
+.dcc .armor {
+  align-items: center;
+  display: grid;
+  justify-items: center;
+  margin-bottom: 5px;
+  grid-column-end: span 8;
+  grid-template-columns: subgrid;
+}
+.dcc .armor input {
   text-align: center;
-}
-
-.dcc .armor-fumbledie {
-  flex: 0 0 80px;
-  text-align: center;
-}
-
-.dcc .armor-notes {
-  flex: 0.2 0 55px;
-  margin: 0 0 0 8px;
-}
-
-.dcc .armor-controls {
-  flex: 0 0 60px;
-  padding-left: 10px;
 }
 
 /* ----------------------------------------- */
@@ -738,71 +695,59 @@
 /* ----------------------------------------- */
 /*  Weapons                                  */
 /* ----------------------------------------- */
-.dcc .weapons {
-  margin: 10px 0 0;
-}
-
 .dcc .weapons-heading {
-  background-image: url("./images/axe.png");
-  background-position-x: 155px;
-  background-repeat: no-repeat;
-  background-size: 90px 18px;
-  border-bottom: 2px groove #eeede0;
-  flex: 0 0 10px;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  font-size: 1.1rem;
-  line-height: 1.2rem;
-  margin: 10px 0 0;
-}
-
-.dcc .weapons-heading.ranged {
-  background-image: url("./images/bow.png");
-  background-position-x: 165px;
-  background-size: 90px 17px;
+  background: var(--dark-bg);
+  color: var(--light-color);
+  display: grid;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  line-height: 20px;
+  text-align: center;
 }
 
 .dcc .weapon-list {
+  border: var(--dark-border);
+  border-top: none;
+  column-gap: 5px;
+  display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  margin: 0;
-  padding-left: 8px;
-}
-.dcc .weapon-list .item-image {
-  flex: 0 0 24px;
-  margin-right: 8px;
-  margin-top: 3px;
+  grid-template-columns: 23px 32px 25px 103px 55px 60px 97px 20px 39px;
+  margin: 0 0 8px 0;
+  padding: 5px 0 2px 5px;
+  text-align: center;
 }
 .dcc .weapon-list input {
-  height: 30px;
-  margin: 0 8px 0 0;
+  text-align: center;
 }
 
 .dcc .weapon-list-header {
-  flex: 0 0 10px;
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  font-size: 0.8rem;
-  margin: 0 0 1px;
+  display: grid;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-size: 12px;
+  grid-column-end: span 9;
+  grid-template-columns: subgrid;
+  margin: 0 0 3px 0;
   padding: 0;
+  text-align: center;
 }
 
 .dcc .weapon {
-  flex: 0 0 35px;
+  display: grid;
+  grid-column-end: span 9;
+  grid-template-columns: subgrid;
+  align-items: center;
+  justify-items: center;
+  margin-bottom: 5px;
 }
 
 .dcc .weapon-button {
   background-image: url("../../../icons/svg/d20-black.svg");
   background-repeat: no-repeat;
   background-size: 22px 22px;
-  flex: 0 0 30px;
-  margin: 5px 0 0;
-}
-
-.dcc .weapon-checkbox {
-  flex: 0 0 18px;
-  padding-left: 0;
-}
-
-.dcc .weapon-headericon {
-  flex: 0 0 24px;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
 }
 
 .dcc .backstab-button {
@@ -817,7 +762,6 @@
   background-image: url("../../../icons/svg/d20-black.svg");
   background-repeat: no-repeat;
   background-size: 22px 22px;
-  flex: 0 0 30px;
   margin: 21px 0 0;
 }
 
@@ -825,7 +769,6 @@
   background-image: url("./images/left-arrow.png");
   background-repeat: no-repeat;
   background-size: 22px 22px;
-  flex: 0 0 30px;
   margin: 5px 0 0;
 }
 
@@ -833,43 +776,11 @@
   background-image: url("./images/right-arrow.png");
   background-repeat: no-repeat;
   background-size: 22px 22px;
-  flex: 0 0 30px;
   margin: 5px 0 0;
 }
 
-.dcc .weapon-damage {
-  flex: 0 0 80px;
-  margin: 0 10px 0 0;
-  text-align: center;
-}
-
 .dcc .backstab-padding {
-  flex: 0 0 30px;
-}
-
-.dcc .weapon-name-label {
-  padding: 0 0 0 30px;
-}
-
-.dcc .weapon-notes {
-  flex: 0.2 0 55px;
-  margin: 0 8px 0 0;
-}
-
-.dcc .weapon-tohit {
-  flex: 0 0 100px;
-  margin: 0 6px 0 0;
-  text-align: center;
-}
-
-.dcc .weapon-special {
-  flex: 0 0 1;
-  text-align: center;
-}
-
-.dcc .weapon-controls {
-  flex: 0 0 60px;
-  padding-left: 10px;
+  padding-right: 30px;
 }
 
 /* ----------------------------------------- */
@@ -910,8 +821,6 @@
 }
 
 .dcc .spells-container-cleric {
-  border: var(--dark-border);
-  border-top: none;
   height: 565px;
 }
 .dcc .spells-container-cleric .dark-title {
@@ -1023,8 +932,6 @@
 /*  Wizard/Elf Class                         */
 /* ----------------------------------------- */
 .dcc .spells-container-wizard {
-  border: var(--dark-border);
-  border-top: none;
   height: 565px;
 }
 .dcc .spells-container-wizard .dark-title {
@@ -1036,6 +943,7 @@
   grid-row: 1;
   height: 19px;
   letter-spacing: 1px;
+  margin-left: -1px;
   padding-top: 1px;
   text-align: center;
 }
@@ -1044,8 +952,24 @@
 /*  Items                                    */
 /* ----------------------------------------- */
 .dcc .equipment-container {
-  height: 100%;
-  overflow-y: scroll;
+  display: grid;
+  grid-template-columns: 100%;
+}
+
+.dcc .item {
+  align-items: center;
+  display: grid;
+  font-size: 13px;
+  justify-items: center;
+  grid-template-columns: subgrid;
+  grid-column-end: span 4;
+}
+.dcc .item .item-control {
+  font-size: 14px;
+}
+
+.dcc .item-currency {
+  grid-column-end: span 9;
 }
 
 .dcc .item-heading {
@@ -1060,104 +984,50 @@
 
 .dcc .item-list-header {
   border-bottom: 2px dotted var(--medium-color);
+  display: grid;
   flex: 0 0 10px;
   font-family: "Cooper Black", "Palatino Linotype", serif;
-  font-size: 0.8rem;
+  font-size: 12px;
+  grid-column-end: span 4;
+  grid-template-columns: subgrid;
   margin: 0 0 5px 0;
   padding: 0 0 3px 0;
 }
 
 .dcc .item-list {
-  padding: 0 8px 8px 8px;
-  margin-top: 1px;
+  border: var(--dark-border);
+  border-top: none;
+  column-gap: 5px;
+  display: grid;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-size: 12px;
+  grid-template-columns: 30px 338px 65px 44px;
+  margin: 0 0 8px 0;
+  padding: 5px 0 2px 5px;
+  text-align: center;
 }
-.dcc .item-list .item-equipped {
-  flex: 0 0 20px;
-  margin: 0 8px 0 0;
+
+.dcc .item-list-spells {
+  grid-template-columns: 30px 22px 33px 164px 150px 20px 53px;
 }
-.dcc .item-list .item-lost {
-  flex: 0 0 20px;
-  margin: 0 8px 0 0;
+.dcc .item-list-spells .item-list-header {
+  grid-column-end: span 7;
 }
-.dcc .item-list .item-image {
-  flex: 0 0 24px;
-  margin-right: 8px;
+.dcc .item-list-spells .item {
+  grid-column-end: span 7;
 }
-.dcc .item-list .spell-item-button-heading {
-  flex: 0 0 40px;
-  padding-left: 5px;
-}
-.dcc .item-list .spell-item-button {
+.dcc .item-list-spells .spell-item-button {
   background-image: url("../../../icons/svg/d20-black.svg");
   background-position: center;
   background-repeat: no-repeat;
   background-size: 22px 22px;
-  flex: 0 0 40px;
-}
-.dcc .item-list .skill-name {
-  flex: 1 0 1px;
-}
-.dcc .item-list .skill-die {
-  flex: 0 0 60px;
-}
-.dcc .item-list .skill-modifier {
-  flex: 0 0 60px;
-}
-.dcc .item-list .skill-last-roll {
-  flex: 0 0 60px;
-  text-align: right;
-}
-.dcc .item-list .skill-freeform {
-  flex: 0 0 180px;
-}
-.dcc .item-list .item-level {
-  flex: 0 0 60px;
-  text-align: center;
-}
-.dcc .item-list .item-name {
-  flex: 1 0 1px;
-}
-.dcc .item-list .item-description {
-  flex: 1 0 1px;
-}
-.dcc .item-list .item-weight {
-  flex: 0 0 60px;
-}
-.dcc .item-list .item-quantity {
-  flex: 0 0 70px;
-}
-.dcc .item-list .item-is-coins {
-  flex: 0 1 100px;
-  text-align: left;
-}
-.dcc .item-list .currency-field {
-  text-align: right;
-}
-.dcc .item-list h4.currency-field {
-  padding-right: 4px;
-}
-.dcc .item-list .item-pp {
-  flex: 0 0 50px;
-}
-.dcc .item-list .item-ep {
-  flex: 0 0 50px;
-}
-.dcc .item-list .item-gp {
-  flex: 0 0 50px;
-}
-.dcc .item-list .item-sp {
-  flex: 0 0 50px;
-}
-.dcc .item-list .item-cp {
-  flex: 0 0 50px;
-}
-.dcc .item-list .item-controls {
-  flex: 0 0 60px;
-  padding-left: 10px;
+  height: 22px;
+  width: 22px;
 }
 
-.dcc .skill-controls {
-  text-align: right;
+.dcc .item-list-currency {
+  display: grid;
+  grid-template-columns: 20px 166px 23px repeat(5, 40px) 43px;
 }
 
 /* ----------------------------------------- */
@@ -1240,6 +1110,8 @@
   border: 2px groove #eeede0;
   grid-column: 1/span 3;
   grid-row: 2;
+  height: 72px;
+  width: 487px;
 }
 .dcc.item .sheet-body .armor-header-extras {
   display: grid;
