@@ -98,7 +98,6 @@ Hooks.once('init', async function () {
   const templatePaths = [
     'systems/dcc/templates/actor-partial-pc-header.html',
     'systems/dcc/templates/actor-partial-pc-common.html',
-    'systems/dcc/templates/actor-partial-pc-common2.html',
     'systems/dcc/templates/actor-partial-pc-equipment.html',
     'systems/dcc/templates/actor-partial-pc-notes.html',
     'systems/dcc/templates/actor-partial-skills.html',
@@ -112,16 +111,6 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/roll-modifier-partial-spellburn.html'
   ]
   await loadTemplates(templatePaths)
-
-  // Handlebars helper to format attack bonus correctly
-  Handlebars.registerHelper('formatAttackBonus', function (attackBonus) {
-    if (!attackBonus) {
-      return '+0'
-    } else if (attackBonus[0] !== '+' && attackBonus[0] !== '-') {
-      return '+' + attackBonus
-    }
-    return attackBonus
-  })
 
   // Handlebars helper for simple addition
   Handlebars.registerHelper('add', function (object1, object2) {
@@ -909,8 +898,8 @@ function getMacroOptions () {
 
 export function signOrBlank(value) {
   let sign = ''
-  sign = value > 0 ? '+' : sign
-  sign = value < 0 ? '-' : sign
-  value = value === 0 ? '' : value
+  if (parseInt(value) >= 0 && value[0] !== '+') {
+    sign = '+'
+  }
   return `${sign}${value}`
 }

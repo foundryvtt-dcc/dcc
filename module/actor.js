@@ -76,7 +76,7 @@ class DCCActor extends Actor {
 
     // Compute Melee/Ranged Attack/Damage
     if (config.computeMeleeAndMissileAttackAndDamage) {
-      const attackBonus = this.system.details.attackBonus || 0
+      const attackBonus = this.system.details.attackBonus || '0'
       const strengthBonus = parseInt(this.system.abilities.str.mod) || 0
       const agilityBonus = parseInt(this.system.abilities.agl.mod) || 0
       const meleeAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus.melee.adjustment) || 0
@@ -101,12 +101,13 @@ class DCCActor extends Actor {
         meleeAttackBonus = `${signOrBlank(meleeAttackBonusSum)}`
         missileAttackBonus = `${signOrBlank(missileAttackBonusSum)}`
         meleeAttackDamage = `${signOrBlank(strengthBonus + meleeDamageBonusAdjustment)}`
-        missileAttackDamage = missileDamageBonusAdjustment || ''
+        missileAttackDamage = `${signOrBlank(missileDamageBonusAdjustment)}`
       }
       this.system.details.attackHitBonus.melee.value = meleeAttackBonus
       this.system.details.attackHitBonus.missile.value = missileAttackBonus
       this.system.details.attackDamageBonus.melee.value = meleeAttackDamage
       this.system.details.attackDamageBonus.missile.value = missileAttackDamage
+      this.system.details.attackBonus = signOrBlank(attackBonus) || '+0'
     }
 
     // Compute AC if required

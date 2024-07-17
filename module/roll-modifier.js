@@ -248,6 +248,7 @@ class RollModifierDialog extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.template = CONFIG.DCC.templates.rollModifierDialog
+    options.width = 500
     return options
   }
 

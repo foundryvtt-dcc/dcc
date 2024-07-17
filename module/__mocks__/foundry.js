@@ -68,7 +68,7 @@ class Actor {
             wil: { value: +2 }
           },
           details: {
-            attackBonus: 0,
+            attackBonus: '+0',
             level: {
               value: 1
             }

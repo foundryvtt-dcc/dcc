@@ -272,9 +272,9 @@ class DCCActorSheet extends ActorSheet {
     // Owner Only Listeners
     if (this.actor.isOwner) {
       // Ability Checks
-      html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-name, label[for*=".value"]').click(this._onRollAbilityCheck.bind(this))
       html.find('.ability-modifiers, [data-ability="lck"][data-modifier="true"]').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-name').each(makeDraggable)
+      html.find('.ability-name, label[for*=".value"]').each(makeDraggable)
       html.find('.ability-modifiers, [data-ability="lck"] div.ability-modifiers, [data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
 
       // Initiative
@@ -459,7 +459,10 @@ class DCCActorSheet extends ActorSheet {
 
     // Handle the various draggable elements on the sheet
     const classes = event.target.classList
-    if (classes.contains('ability-name')) {
+    const labelFor = event.currentTarget.getAttribute('for')
+    if (classes.contains('ability-name') ||
+      event.target.tagName === 'LABEL' && labelFor.includes('.value')
+    ) {
       // Normal ability rolls and DCC d20 roll under luck rolls
       const abilityId = this._findDataset(event.currentTarget, 'ability')
       const rollUnder = (abilityId === 'lck')
@@ -488,7 +491,7 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    if (classes.contains('init') || event.currentTarget.getAttribute('for') === 'system.attributes.init.value') {
+    if (classes.contains('init') || labelFor === 'system.attributes.init.value') {
       dragData = {
         type: 'Initiative',
         actorId: this.actor.id,
@@ -496,7 +499,7 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    if (classes.contains('hd') || event.currentTarget.getAttribute('for') === 'system.attributes.hd.value') {
+    if (classes.contains('hd') || labelFor === 'system.attributes.hd.value') {
       dragData = {
         type: 'Hit Dice',
         actorId: this.actor.id,
@@ -506,7 +509,7 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    if (classes.contains('save') || event.currentTarget.getAttribute('for') && event.currentTarget.getAttribute('for').includes('system.saves')) {
+    if (classes.contains('save') || labelFor.includes('system.saves')) {
       dragData = {
         type: 'Save',
         actorId: this.actor.id,

@@ -1412,25 +1412,30 @@ form.dcc-roll-modifier {
 form.dcc-roll-modifier .formula-row {
   display: grid;
   grid-auto-flow: column;
-  grid-column-gap: 5px;
+  grid-column-gap: 20px;
   grid-row-gap: 0;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   grid-template-rows: auto auto minmax(60px, auto);
+  margin-left: 2px;
 }
 form.dcc-roll-modifier .formula-row .term-label {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  text-align: center;
+  margin-bottom: 2px;
 }
 form.dcc-roll-modifier .formula-row .term-field {
-  text-align: right;
+  text-align: center;
 }
 form.dcc-roll-modifier .formula-row .term-controls {
-  margin-top: 8px;
+  margin: 8px 1px 0 0;
+  height: 90px;
 }
 form.dcc-roll-modifier .button-row {
   display: flex;
   flex: 1;
   flex-direction: row;
   justify-content: space-between;
+  margin-left: 2px;
 }
 form.dcc-roll-modifier .button-row button {
   flex: 1;
@@ -1440,9 +1445,20 @@ form.dcc-roll-modifier .button-stack {
   display: flex;
   flex: 1;
   flex-direction: column;
+  margin-right: 4px;
+}
+form.dcc-roll-modifier .button-stack:last-child {
+  margin: 0;
 }
 form.dcc-roll-modifier .button-stack button.flat-button {
-  margin: 0;
+  line-height: 13px;
+  margin: 2px 0 0 0;
+}
+form.dcc-roll-modifier .button-stack button.flat-button:last-child {
+  margin-top: 4px;
+}
+form.dcc-roll-modifier .button-stack label {
+  font-family: "Cooper Black", "Palatino Linotype", serif;
 }
 form.dcc-roll-modifier .dialog-buttons {
   margin-top: 8px;
@@ -1463,7 +1479,8 @@ form.dcc-roll-modifier input.checkbox {
   text-align: right;
 }
 form.dcc-roll-modifier input.stat {
-  text-align: right;
+  margin-top: 3px;
+  text-align: center;
 }
 
 /* ----------------------------------------- */
@@ -1545,7 +1562,7 @@ form.dcc-roll-modifier input.stat {
 /* ----------------------------------------- */
 /*  New Sheet Styles                         */
 /* ----------------------------------------- */
-.dcc.sheet.actor .character2 .character-grid2 {
+.dcc.sheet.actor .character2 .character-grid {
   background: url("images/parchment.jpeg");
   column-gap: 8px;
   display: grid;
@@ -1555,8 +1572,8 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 46px 114px repeat(5, 60px 9px) 60px;
   text-align: center;
 }
-.dcc.sheet.actor .character2 .character-grid2 input,
-.dcc.sheet.actor .character2 .character-grid2 select {
+.dcc.sheet.actor .character2 .character-grid input,
+.dcc.sheet.actor .character2 .character-grid select {
   background: none;
   border-width: 0 0 1px 0;
   border-radius: 0;
@@ -1565,11 +1582,11 @@ form.dcc-roll-modifier input.stat {
   text-align: center;
   text-align-last: center;
 }
-.dcc.sheet.actor .character2 .character-grid2 input:focus,
-.dcc.sheet.actor .character2 .character-grid2 select:focus {
+.dcc.sheet.actor .character2 .character-grid input:focus,
+.dcc.sheet.actor .character2 .character-grid select:focus {
   box-shadow: none;
 }
-.dcc.sheet.actor .character2 .character-grid2 label {
+.dcc.sheet.actor .character2 .character-grid label {
   font-family: "Cooper Black", "Palatino Linotype", serif;
 }
 .dcc.sheet.actor .character2 .dark-title {
