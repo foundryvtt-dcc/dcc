@@ -339,8 +339,8 @@ class DCCActorSheet extends ActorSheet {
 
         // Update Inventory Item
         html.find('.item-edit').click(ev => {
-          const li = $(ev.currentTarget).parents('.item')
-          const item = this.actor.items.get(li.data('itemId'))
+          const itemId = this._findDataset(ev.currentTarget, 'itemId')
+          const item = this.actor.items.get(itemId)
           item.sheet.render(true)
         })
 
