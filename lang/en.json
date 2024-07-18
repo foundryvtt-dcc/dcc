@@ -250,7 +250,7 @@
   "DCC.DeedDie": "Deed Die",
   "DCC.DeedRoll": "Roll Deed Die",
   "DCC.DeedRollTitle": "Last Rolled Attack Bonus (@ab)",
-  "DCC.DeedRollValue": "Deed Roll",
+  "DCC.DeedRollValue": "Last Deed Roll:",
   "DCC.DefaultAbilityCheck": "Default Ability Check",
   "DCC.Deity": "Deity",
   "DCC.DeleteItem": "Delete this item from the sheet?",

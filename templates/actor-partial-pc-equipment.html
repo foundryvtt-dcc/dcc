@@ -4,18 +4,17 @@
         {{!-- Deed Roll --}}
         {{#if system.config.rollAttackBonus}}
         <div class="attack-bonus-container skills-container">
-            <div class="nosplit">
-                <label class="attack-bonus rollable" for="dummyAttackBonus">
-                    <div class="attack-bonus-button">&nbsp;</div>
-                    {{localize "DCC.DeedRoll"}}</label>
+            <div style="grid-template-columns: 22px max-content; justify-self: end;">
+                <img class="attack-bonus rollable" src="systems/dcc/styles/images/game-icons-net/d4-black.svg">
+                <label class="attack-bonus rollable" for="dummyAttackBonus">{{localize "DCC.DeedRoll"}}</label>
             </div>
-            <div class="split-50-50">
+            <div style="grid-template-columns: max-content 20px;">
                 <label for="system.details.lastRolledAttackBonus">{{localize "DCC.DeedRollValue"}}</label>
                 <input type="text" id="system.details.lastRolledAttackBonus"
                        name="system.details.lastRolledAttackBonus"
                        value="{{system.details.lastRolledAttackBonus}}"
                        title="{{localize " DCC.DeedRollTitle"}}"
-                disabled/>
+                readonly/>
             </div>
         </div>
         {{/if}}
@@ -28,8 +27,7 @@
             <input type="checkbox"
                    name="itemUpdates.{{id}}.system.equipped"
                    data-dtype="Boolean" {{checked weapon.system.equipped}}/>
-            <div class="item-image weapon-draggable"><img class="weapon-draggable" src="{{weapon.img}}" title="{{weapon.name}}" width="24"
-                                                          height="24"/></div>
+            <img class="weapon-draggable" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}" width="22" height="22">
             <div class="rollable weapon-button weapon-draggable" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
             {{#if canBackstab}}
             <div class="rollable backstab-button weapon-draggable">&nbsp;</div>
@@ -91,7 +89,7 @@
         <ol class="weapon-list">
             <li class="weapon-list-header">
                 <div class="weapon-headericon" title="{{localize 'DCC.WeaponEquipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
-                <div class="item-image"></div>
+                <div></div>
                 {{#if system.config.showBackstab}}
                 <div class="backstab-padding"></div>
                 {{/if}}
@@ -102,9 +100,10 @@
                 <div>{{localize "DCC.Range"}}</div>
                 <div title="{{localize 'DCC.WeaponTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
                 <div class="weapon-controls">
-                    <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon"><i class="fas fa-plus"
-                                                                                                                    data-melee=0></i>
-                        {{localize "DCC.Add"}}</a>
+                    <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon">
+                        <i class="fas fa-plus" data-melee=0></i>
+                        {{localize "DCC.Add"}}
+                    </a>
                 </div>
             </li>
             {{#each actor.weapons.ranged as |weapon index|}}
@@ -118,8 +117,7 @@
             <input type="checkbox"
                    name="itemUpdates.{{id}}.system.equipped"
                    data-dtype="Boolean" {{checked armor.system.equipped}}/>
-            <div class="item-image item-draggable"><img class="item-draggable" src="{{armor.img}}" title="{{armor.name}}" width="24"
-                                                        height="24"/></div>
+            <img class="item-draggable" src="{{armor.img}}" title="{{armor.name}}" alt="{{armor.name}}" width="20" height="20">
             <input type="text"
                    name="itemUpdates.{{id}}.name"
                    value="{{armor.name}}"/>
@@ -145,12 +143,12 @@
         <ol class="armor-list">
             <li class="weapon-list-header">
                 <div class="" title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
-                <div class="item-image"></div>
-                <div class="">{{localize "DCC.Name"}}</div>
-                <div class="">{{localize "DCC.Bonus"}}</div>
-                <div class="">{{localize "DCC.Penalty"}}</div>
-                <div class="">{{localize "DCC.FumbleDie"}}</div>
-                <div class="">{{localize "DCC.Notes"}}</div>
+                <div></div>
+                <div>{{localize "DCC.Name"}}</div>
+                <div>{{localize "DCC.Bonus"}}</div>
+                <div>{{localize "DCC.Penalty"}}</div>
+                <div>{{localize "DCC.FumbleDie"}}</div>
+                <div>{{localize "DCC.Notes"}}</div>
                 <div class="armor-controls">
                     <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="armor"><i class="fas fa-plus"></i>
                         {{localize "DCC.Add"}}</a>
@@ -165,7 +163,7 @@
         {{!-- Other items --}}
         {{#* inline "ItemHeader"}}
         <li class="item-list-header">
-            <div class="item-image"></div>
+            <div></div>
             <div>{{localize "DCC.Name"}}</div>
             <div>{{localize "DCC.Quantity"}}</div>
             <div>
@@ -176,7 +174,7 @@
         {{/inline}}
         {{#* inline "ItemRow"}}
         <li class="item item-draggable" data-item-id="{{item._id}}">
-            <div class="item-image"><img class="item-draggable" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+            <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="20" height="20">
             <div>{{item.name}}</div>
             <div>{{item.system.quantity}}</div>
             <div>
@@ -214,7 +212,7 @@
         {{!-- Treasure --}}
         {{#* inline "TreasureRow"}}
         <li class="item item-draggable item-currency" data-item-id="{{item._id}}">
-            <div class="item-image"><img class="item-draggable" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+            <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
             <div>{{item.name}}</div>
             <div class="item-is-coins">{{#if item.isCoins}}({{localize "DCC.AsCoins"}}){{/if}}</div>
             <div class="item-pp currency-field">{{item.value.pp}}</div>
@@ -231,22 +229,22 @@
         <div class="weapons-heading">{{localize "DCC.Treasure"}}</div>
         <ol class="item-list item-list-currency">
             <li class="item-list-header" style="grid-column-end: span 9;">
-                <div class="item-image"></div>
-                <div class="item-name">{{localize "DCC.Name"}}</div>
-                <div class="item-is-coins"></div>
-                <div class="item-pp">{{localize "DCC.CurrencyShortPP"}}</div>
-                <div class="item-ep">{{localize "DCC.CurrencyShortEP"}}</div>
-                <div class="item-gp">{{localize "DCC.CurrencyShortGP"}}</div>
-                <div class="item-sp">{{localize "DCC.CurrencyShortSP"}}</div>
-                <div class="item-cp">{{localize "DCC.CurrencyShortCP"}}</div>
+                <div></div>
+                <div>{{localize "DCC.Name"}}</div>
+                <div></div>
+                <div>{{localize "DCC.CurrencyShortPP"}}</div>
+                <div>{{localize "DCC.CurrencyShortEP"}}</div>
+                <div>{{localize "DCC.CurrencyShortGP"}}</div>
+                <div>{{localize "DCC.CurrencyShortSP"}}</div>
+                <div>{{localize "DCC.CurrencyShortCP"}}</div>
                 <div class="item-controls">
                     <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="treasure"><i
                         class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
                 </div>
             </li>
             <li class="item item-currency">
-                <div class="item-image"><img src="systems/dcc/styles/images/game-icons-net/coins.svg" title="{{localize 'DCC.Funds'}}"
-                                             width="24" height="24"/></div>
+                <div><img src="systems/dcc/styles/images/game-icons-net/coins.svg" title="{{localize 'DCC.Funds'}}"
+                          width="24" height="24"/></div>
                 <div>{{localize 'DCC.Funds'}}</div>
                 <div></div>
                 <input class="item-pp currency-field" type="text" name="system.currency.pp" placeholder="0"

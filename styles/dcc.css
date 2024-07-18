@@ -99,14 +99,8 @@
   height: 100%;
   padding: 0 5px 0 5px;
 }
-
 .dcc .window-content label {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-}
-
-.dcc .flex-padding {
-  flex: 1 0 0;
-  margin: 0;
 }
 
 :root {
@@ -155,11 +149,6 @@
 .dcc.sheet.actor {
   min-height: 633px;
   min-width: 533px;
-}
-
-.dcc .editor,
-.dcc .editor-content {
-  height: 100%;
 }
 
 .choose-class-select {
@@ -293,20 +282,13 @@
 }
 
 .dcc .attack-bonus-container.skills-container {
-  font-size: 1.2rem;
+  font-size: 13px;
   justify-content: left;
   margin-top: 12px;
 }
 .dcc .attack-bonus-container.skills-container label.attack-bonus {
   margin-left: 10px;
   text-align: left;
-}
-.dcc .attack-bonus-container.skills-container label.attack-bonus .attack-bonus-button {
-  background-image: url("./images/game-icons-net/d4-black.svg");
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
-  display: inline-block;
-  width: 30px;
 }
 
 /* ----------------------------------------- */
@@ -606,11 +588,13 @@
 /*  Notes                              */
 /* ----------------------------------------- */
 .dcc .notes {
-  border: 2px groove #eeede0;
+  border: var(--dark-border);
+  border-top: none;
   font-size: 14px;
-  height: 528px;
+  height: 544px;
   line-height: 24px;
-  padding: 2px;
+  margin: 0;
+  padding: 0 8px 8px 8px;
 }
 
 .dcc .notes-label {
@@ -716,6 +700,10 @@
   margin: 0 0 8px 0;
   padding: 5px 0 2px 5px;
   text-align: center;
+}
+.dcc .weapon-list img {
+  border: none;
+  box-sizing: content-box;
 }
 .dcc .weapon-list input {
   text-align: center;
@@ -841,8 +829,6 @@
 /* ----------------------------------------- */
 .dcc .skills-container {
   align-items: center;
-  border: var(--dark-border);
-  border-top: none;
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin-top: 6px;
@@ -955,17 +941,30 @@
   display: grid;
   grid-template-columns: 100%;
 }
+.dcc .equipment-container input[type=checkbox] {
+  height: 19px;
+  width: 19px;
+  margin: 0;
+}
 
 .dcc .item {
   align-items: center;
+  border-bottom: 0.5px solid burlywood;
   display: grid;
   font-size: 13px;
   justify-items: center;
   grid-template-columns: subgrid;
   grid-column-end: span 4;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
 }
 .dcc .item .item-control {
   font-size: 14px;
+}
+.dcc .item:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
 }
 
 .dcc .item-currency {
@@ -1195,68 +1194,48 @@
 .dcc.sheet .sheet-tabs.tabs {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
 }
-.dcc.sheet .item[data-tab] {
+.dcc.sheet a[data-tab] {
   padding: 4px 0 4px 0;
 }
-.dcc.sheet .item[data-tab=character]:before {
+.dcc.sheet a[data-tab]:before {
+  font-family: "Font Awesome 6 Pro";
+  padding-right: 5px;
+}
+.dcc.sheet a[data-tab=character]:before {
   content: "\f007";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=equipment]:before {
+.dcc.sheet a[data-tab=equipment]:before {
   content: "\f71d";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=skills]:before {
+.dcc.sheet a[data-tab=skills]:before {
   content: "\f5dc";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=spells]:before {
+.dcc.sheet a[data-tab=spells]:before {
   content: "\f6b8";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=notes]:before {
+.dcc.sheet a[data-tab=notes]:before {
   content: "\f249";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=cleric]:before {
+.dcc.sheet a[data-tab=cleric]:before {
   content: "\f3ed";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=dwarf]:before {
+.dcc.sheet a[data-tab=dwarf]:before {
   content: "\f6eb";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=elf]:before {
+.dcc.sheet a[data-tab=elf]:before {
   content: "\f56b";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=halfling]:before {
+.dcc.sheet a[data-tab=halfling]:before {
   content: "\e139";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=warrior]:before {
+.dcc.sheet a[data-tab=warrior]:before {
   content: "\f6eb";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=wizard]:before {
+.dcc.sheet a[data-tab=wizard]:before {
   content: "\f6e8";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
-.dcc.sheet .item[data-tab=thief]:before {
+.dcc.sheet a[data-tab=thief]:before {
   content: "\f504";
-  font-family: "Font Awesome 6 Pro";
-  padding-right: 5px;
 }
 
 /* ----------------------------------------- */

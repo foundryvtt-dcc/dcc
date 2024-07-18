@@ -453,7 +453,7 @@ class DCCActorSheet extends ActorSheet {
 
     // Handle the various draggable elements on the sheet
     const classes = event.target.classList
-    const labelFor = event.currentTarget.getAttribute('for')
+    const labelFor = event.currentTarget.getAttribute('for') || ''
     if (classes.contains('ability-name') ||
       event.target.tagName === 'LABEL' && labelFor.includes('.value')
     ) {

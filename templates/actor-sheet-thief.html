@@ -6,16 +6,16 @@
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
-        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a class="item" data-tab="thief">{{localize "DCC.Thief"}}</a>
+        <a data-tab="character">{{localize "DCC.Character"}}</a>
+        <a data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        <a data-tab="thief">{{localize "DCC.Thief"}}</a>
         {{#if system.config.showSkills}}
-        <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
+        <a data-tab="skills">{{localize "DCC.Skills"}}</a>
         {{/if}}
         {{#if system.config.showSpells}}
-        <a class="item" data-tab="spells">{{localize "DCC.Spells"}}</a>
+        <a data-tab="spells">{{localize "DCC.Spells"}}</a>
         {{/if}}
-        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+        <a data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
     {{!-- Sheet Body --}}
