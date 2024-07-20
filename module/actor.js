@@ -413,7 +413,7 @@ class DCCActor extends Actor {
 
     // Set initiative value in the combat tracker if appropriate
     const tokenId = token.id
-    const combatant = game.combat.getCombatantByToken(tokenId)
+    const combatant = game.combat.getCombatantsByToken(tokenId)[0]
     if (!combatant) {
       return ui.notifications.warn(game.i18n.format('DCC.InitiativeNoCombatantWarning', {
         name: token.name
@@ -534,8 +534,10 @@ class DCCActor extends Actor {
     const die = skill.die || this.system.attributes.actionDice.value || '1d20'
     const ability = skill.ability || null
     let abilityLabel = ''
+    let abilityMod = 0
     if (ability) {
       abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
+      abilityMod = this.system.abilities[ability]?.mod
     }
 
     // Title for the roll modifier dialog
@@ -555,7 +557,7 @@ class DCCActor extends Actor {
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
         modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
-        formula: skill.value.toString()
+        formula: `${skill.value} + ${abilityMod}`
       })
     }
 
