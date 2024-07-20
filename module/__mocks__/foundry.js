@@ -311,11 +311,11 @@ global.setProperty = function (object, key, value) {
 }
 
 // Foundry's implementation of expandObject
-global.expandObject = function (obj, _d = 0) {
+global.foundry.utils.expandObject = function (obj, _d = 0) {
   const expanded = {}
   if (_d > 10) throw new Error('Maximum depth exceeded')
   for (let [k, v] of Object.entries(obj)) {
-    if (v instanceof Object && !Array.isArray(v)) v = global.expandObject(v, _d + 1)
+    if (v instanceof Object && !Array.isArray(v)) v = global.foundry.utils.expandObject(v, _d + 1)
     global.setProperty(expanded, k, v)
   }
   return expanded
@@ -345,8 +345,8 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   if (!inplace && (_d === 0)) original = foundry.utils.duplicate(original)
 
   // Enforce object expansion at depth 0
-  if ((_d === 0) && Object.keys(original).some(k => /\./.test(k))) original = global.expandObject(original)
-  if ((_d === 0) && Object.keys(other).some(k => /\./.test(k))) other = global.expandObject(other)
+  if ((_d === 0) && Object.keys(original).some(k => /\./.test(k))) original = global.foundry.utils.expandObject(original)
+  if ((_d === 0) && Object.keys(other).some(k => /\./.test(k))) other = global.foundry.utils.expandObject(other)
 
   // Iterate over the other object
   for (let [k, v] of Object.entries(other)) {

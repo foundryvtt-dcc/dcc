@@ -1,4 +1,4 @@
-/* global CONFIG, Dialog, expandObject, fromUuid, FormApplication, game, Hooks, ui, $ */
+/* global CONFIG, Dialog, foundry, fromUuid, FormApplication, game, Hooks, ui, $ */
 
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
@@ -165,7 +165,7 @@ async function createActors (type, folderId, actorData) {
       name,
       type,
       folder: folderId,
-      system: expandObject(parsedCharacter),
+      system: foundry.utils.expandObject(parsedCharacter),
       items
     })
 
