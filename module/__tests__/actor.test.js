@@ -551,7 +551,7 @@ test('roll skill check', async () => {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
         modifierLabel: 'Custom Die And Value Skill With Per (AbilityPer)',
-        formula: '3'
+        formula: '3 + 2'
       },
       {
         type: 'CheckPenalty',
@@ -589,7 +589,7 @@ test('roll skill check', async () => {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
         modifierLabel: 'Action Die Skill With Lck (AbilityLck)',
-        formula: '4'
+        formula: '4 + 3'
       },
       {
         type: 'CheckPenalty',
