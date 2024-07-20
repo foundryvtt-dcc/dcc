@@ -308,9 +308,7 @@ class DCCActor extends Actor {
       const terms = actionDieExpression.terms || actionDieExpression.parts
       for (const term of terms) {
         if (typeof (term) === 'object' && term.faces) {
-          const termDie =
-            `1d${term.faces}`
-
+          const termDie = `1d${term.faces}`
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
             actionDice.push({
@@ -546,9 +544,7 @@ class DCCActor extends Actor {
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
     const modifierLabel = game.i18n.localize(save.label)
-    const flavor =
-      `${modifierLabel} ${game.i18n.localize('DCC.Save')}`
-
+    const flavor = `${modifierLabel} ${game.i18n.localize('DCC.Save')}`
     options.title = flavor
 
     // Collate terms for the roll
@@ -614,7 +610,7 @@ class DCCActor extends Actor {
     let abilityMod = 0
     if (ability) {
       abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
-      abilityMod = this.system.abilities[ability]?.mod
+      abilityMod = parseInt(this.system.abilities[ability]?.mod || '0')
     }
 
     // Title for the roll modifier dialog
@@ -630,11 +626,15 @@ class DCCActor extends Actor {
     })
 
     if (skill.value !== undefined) {
+      let formula = skill.value.toString()
+      if (abilityMod !== 0) {
+        formula = `${skill.value} + ${abilityMod}`
+      }
       terms.push({
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
         modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
-        formula: `${skill.value} + ${abilityMod}`
+        formula
       })
     }
 
@@ -670,9 +670,7 @@ class DCCActor extends Actor {
         rollTable: skillTable,
         roll,
         item: skillItem,
-        flavor:
-          `${game.i18n.localize(skill.label)}${abilityLabel}`
-
+        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
     } else {
       await roll.evaluate()
@@ -687,9 +685,7 @@ class DCCActor extends Actor {
       // Convert the roll to a chat message
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor:
-          `${game.i18n.localize(skill.label)}${abilityLabel}`
-        ,
+        flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
         flags
       })
     }
@@ -830,9 +826,7 @@ class DCCActor extends Actor {
 
     let flavor = spell
     if (ability.label) {
-      flavor +=
-        ` (${game.i18n.localize(ability.label)})`
-
+      flavor += ` (${game.i18n.localize(ability.label)})`
     }
 
     // Tell the system to handle the spell check result
@@ -1343,17 +1337,18 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML =
-        `<a class='inline-roll inline-result' data-roll='${rollData}' data-damage='${rollTotal}' title='${game.dcc.DCCRoll.cleanFormula(roll.terms)}'><i class='fas fa-dice-d20'></i> ${rollTotal}</a>`
+      const rollHTML = ```<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" 
+            title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}">
+            <i class="fas fa-dice-d20"></i> ${rollTotal}</a>```
 
       // Display crit result or just a notification of the crit
       if (critResult) {
-        return
-        ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>${critResult.results[0].getChatText()}`
-
+        return ``` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
+                ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>
+                ${critResult.results[0].getChatText()}```
       } else {
-        return
-        ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
+        return ``` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
+                    ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}```
       }
     }
 
@@ -1373,8 +1368,7 @@ class DCCActor extends Actor {
       // Display the raw crit roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize('DCC.CriticalHit')}
-        !`,
+        flavor: `${game.i18n.localize('DCC.CriticalHit')} !`,
         flags
       })
     }
@@ -1442,27 +1436,21 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = ` < a
-
-        class
-
-        = 'inline-roll inline-result'
-        data - roll = '${rollData}'
-        data - damage = '${rollTotal}'
-        title = '${game.dcc.DCCRoll.cleanFormula(roll.terms)}' > < i
-
-        class
-
-        = 'fas fa-dice-d20' > < /i> ${rollTotal}</
-        a > `
+      const rollHTML = ```<a class='inline-roll inline-result'
+            data-roll ='${rollData}' data-damage= '${rollTotal}' 
+            title='${game.dcc.DCCRoll.cleanFormula(roll.terms)}'>
+                <i class='fas fa-dice-d20'></i>${rollTotal}</a>```
 
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {
-        return ` < br / > < br / > < span
-        style = 'color:red; font-weight: bolder' >${game.i18n.localize('DCC.Fumble')} ! < /span> ${rollHTML}<br/ >${fumbleResult.results[0].getChatText()}`
+        return ```<br/><br/><span style='color:red; font-weight: bolder' >
+                ${game.i18n.localize('DCC.Fumble')} !</span>
+                ${rollHTML}<br/>
+                ${fumbleResult.results[0].getChatText()}```
       } else {
-        return ` < br / > < br / > < span
-        style = 'color:red; font-weight: bolder' >${game.i18n.localize('DCC.Fumble')} ! < /span> ${rollHTML}`
+        return ```<br/><br/><span style='color:red; font-weight: bolder' >
+                ${game.i18n.localize('DCC.Fumble')} !</span>
+                ${rollHTML}```
       }
     } else if (!fumbleResult) {
       // Generate flags for the roll
