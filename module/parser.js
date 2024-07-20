@@ -243,8 +243,8 @@ async function createActors (type, folderId, actorData) {
  * @return {Promise}
  */
 function onRenderActorDirectory (app, html) {
-  if (!game.user.isGM) {
-    return
+  if (!game.user.hasPermission("ACTOR_CREATE")) {
+    return Promise.resolve()
   }
   const button = $(`<button class="import-actors"><i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImport')}</button>`)
   button.on('click', () => {
