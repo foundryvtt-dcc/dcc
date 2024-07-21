@@ -6,8 +6,8 @@
 import parseNPCs from '../npc-parser.js'
 
 /* Test snake */
-test('super snake', () => {
-  const parsedNPC = parseNPCs('Very long, the power super-snake: Init +0; Atk bite +6 melee; Dmg 1d8;\r\n AC 13; HP 21; MV 20’; Act 1d20; SV Fort +8, Ref +4, Will +4; AL L.')
+test('super snake', async() => {
+  const parsedNPC = await parseNPCs('Very long, the power super-snake: Init +0; Atk bite +6 melee; Dmg 1d8;\r\n AC 13; HP 21; MV 20’; Act 1d20; SV Fort +8, Ref +4, Will +4; AL L.')
   const expected = {
     name: 'Very long, the power super-snake',
     'attributes.init.value': '+0',
@@ -38,8 +38,8 @@ test('super snake', () => {
 })
 
 /* Test dry pile of bones */
-test('pile of bones', () => {
-  const parsedNPC = parseNPCs('Seven items of dry stuff: Init -2; Atk bite +0 melee; Dmg 1d4-1; AC 8; HP 3; MV 5’;\r\n Act 1d20; SV Fort +0, Ref -4, Will +1; AL C.')
+test('pile of bones', async() => {
+  const parsedNPC = await parseNPCs('Seven items of dry stuff: Init -2; Atk bite +0 melee; Dmg 1d4-1; AC 8; HP 3; MV 5’;\r\n Act 1d20; SV Fort +0, Ref -4, Will +1; AL C.')
   const expected = {
     name: 'Seven items of dry stuff',
     'attributes.init.value': '-2',
@@ -67,8 +67,8 @@ test('pile of bones', () => {
 })
 
 /* Test orcs */
-test('orcs', () => {
-  const parsedNPC = parseNPCs('Cute-Infused Orcs (3): Init +2; Atk claw +1 melee (1d4) or spear +1 melee (1d8); AC 15; HD 2d8+2; hp 13 each; MV 30’; Act 1d20; SP none; SV Fort +3, Ref +0, Will -1; AL C.')
+test('orcs', async() => {
+  const parsedNPC = await parseNPCs('Cute-Infused Orcs (3): Init +2; Atk claw +1 melee (1d4) or spear +1 melee (1d8); AC 15; HD 2d8+2; hp 13 each; MV 30’; Act 1d20; SP none; SV Fort +3, Ref +0, Will -1; AL C.')
   const expected = {
     name: 'Cute-Infused Orcs',
     'attributes.init.value': '+2',
@@ -112,8 +112,8 @@ test('orcs', () => {
 })
 
 /* Test spider */
-test('spider', () => {
-  const parsedNPC = parseNPCs('Xformed, Unicorn-Filled Spider: Init +1; Atk bite +2 melee (1d4 plus poison) or web +4 ranged (restrained, 20’ range); AC 13; HD 2d12 +2; hp 20; MV 30’ or climb 30’; Act 1d20; SP poison (DC 14 Fort save or additional 3d4 damage and lose 1 point of Strength, 1d4 damage if successful), create web, filled with bats; SV Fort +2, Ref +4, Will +0; AL N.\n')
+test('spider', async() => {
+  const parsedNPC = await parseNPCs('Xformed, Unicorn-Filled Spider: Init +1; Atk bite +2 melee (1d4 plus poison) or web +4 ranged (restrained, 20’ range); AC 13; HD 2d12 +2; hp 20; MV 30’ or climb 30’; Act 1d20; SP poison (DC 14 Fort save or additional 3d4 damage and lose 1 point of Strength, 1d4 damage if successful), create web, filled with bats; SV Fort +2, Ref +4, Will +0; AL N.\n')
   const expected = {
     name: 'Xformed, Unicorn-Filled Spider',
     'attributes.init.value': '+1',
@@ -160,8 +160,8 @@ test('spider', () => {
 })
 
 /* Test wetad */
-test('wedad', () => {
-  const parsedNPC = parseNPCs('Gerieah (in her tree): Init +1; Atk tree limb slam +5 melee (1d10); AC 15;\n HD 4d10; hp 30; MV none; Act 1d20; SP takes 2x damage from fire, can attack targets up to 20’ away with tree limbs; SV Fort +6, Ref -2, Will +4; AL N.')
+test('wedad', async() => {
+  const parsedNPC = await parseNPCs('Gerieah (in her tree): Init +1; Atk tree limb slam +5 melee (1d10); AC 15;\n HD 4d10; hp 30; MV none; Act 1d20; SP takes 2x damage from fire, can attack targets up to 20’ away with tree limbs; SV Fort +6, Ref -2, Will +4; AL N.')
   const expected = {
     name: 'Gerieah (in her tree)',
     'attributes.init.value': '+1',
@@ -194,8 +194,8 @@ test('wedad', () => {
 })
 
 /* Test smultist */
-test('smultist', () => {
-  const parsedNPC = parseNPCs('Green-robed smultist (1): Init +4; Atk dagger +5 melee (1d4+3); AC 11; HD 5d4+5; hp 21; MV 20’; SP 3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges; see stats below); Act 1d20; SV Fort +3, Ref +4, Will +0; AL C. Equipment: bird-shaped talisman of gold tied on a leather thong (worth 10 gp; see level 3).')
+test('smultist', async() => {
+  const parsedNPC = await parseNPCs('Green-robed smultist (1): Init +4; Atk dagger +5 melee (1d4+3); AC 11; HD 5d4+5; hp 21; MV 20’; SP 3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges; see stats below); Act 1d20; SV Fort +3, Ref +4, Will +0; AL C. Equipment: bird-shaped talisman of gold tied on a leather thong (worth 10 gp; see level 3).')
   const expected = {
     name: 'Green-robed smultist',
     'attributes.init.value': '+4',
@@ -228,8 +228,8 @@ test('smultist', () => {
 })
 
 /* Test short statline */
-test('shortstats', () => {
-  const parsedNPC = parseNPCs('Stunty, the short and muddled: Init +1; Atk kick +2 melee (1d3); AC 15;\n hp 4; Act 1d20; SV Ref +6, Fort -2, Will +4.')
+test('shortstats', async() => {
+  const parsedNPC = await parseNPCs('Stunty, the short and muddled: Init +1; Atk kick +2 melee (1d3); AC 15;\n hp 4; Act 1d20; SV Ref +6, Fort -2, Will +4.')
   const expected = {
     name: 'Stunty, the short and muddled',
     'attributes.init.value': '+1',
@@ -262,8 +262,8 @@ test('shortstats', () => {
 })
 
 /* Test the bad guy's familiar with a minimal stat line */
-test('familiar', () => {
-  const parsedNPC = parseNPCs('The bad guy\'s familiar: Atk claw +3 melee (1d4), AC 15, HP 2.')
+test('familiar', async() => {
+  const parsedNPC = await parseNPCs('The bad guy\'s familiar: Atk claw +3 melee (1d4), AC 15, HP 2.')
   const expected = {
     name: 'The bad guy\'s familiar',
     'attributes.init.value': '+0',
@@ -296,13 +296,15 @@ test('familiar', () => {
 })
 
 /* Test damage modifiers */
-test('bonusguy', () => {
-  const parsedNPC = parseNPCs('Bonus Guy: Init -1; Atk big club +3 melee (1d4+2) or small club -2 melee (1d4 - 3); AC 13; HD 1d8+2; MV 30’; Act 1d20; SV Fort +2, Ref +1, Will -2; AL C.')
+test('bonusguy', async() => {
+  const parsedNPC = await parseNPCs('Bonus Guy: Init -1; Atk big club +3 melee (1d4+2) or small club -2 melee (1d4 - 3); AC 13; HD 1d8+2; MV 30’; Act 1d20; SV Fort +2, Ref +1, Will -2; AL C.')
   const expected = {
     name: 'Bonus Guy',
     'attributes.init.value': '-1',
     'attributes.ac.value': '13',
     'attributes.hitDice.value': '1d8+2',
+    'attributes.hp.value': 2,
+    'attributes.hp.max': 2,
     'attributes.speed.value': '30’',
     'config.actionDice': '1d20',
     'saves.frt.value': '+2',
@@ -336,8 +338,8 @@ test('bonusguy', () => {
 })
 
 /* Test multiple statlines */
-test('rodentsquad', () => {
-  const parsedNPC = parseNPCs(
+test('rodentsquad', async() => {
+  const parsedNPC = await parseNPCs(
     `Mega Mole: Init +5; Atk claws +6 melee (1d8+3) ; AC 17;
 HD 3d8; hp 16; MV 20’; Act 1d20; SV Fort +4, Ref +4, Will +2;
 AL C.
