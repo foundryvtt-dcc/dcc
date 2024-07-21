@@ -40,14 +40,15 @@ class DiceChain {
    */
   static rankDiceExpression (expression) {
     const roll = new Roll(expression)
-    roll.evaluateSync()
-    let rank = 0
-    const die = roll.terms[0]
-    const dieRank = CONFIG.DCC.DICE_CHAIN.indexOf(die.faces)
-    if (dieRank > rank) {
-      rank = dieRank
-    }
-    return rank
+    return roll.evaluate().then((finalRank) => {
+      let rank = 0
+      const die = roll.terms[0]
+      const dieRank = CONFIG.DCC.DICE_CHAIN.indexOf(die.faces)
+      if (dieRank > rank) {
+        rank = dieRank
+      }
+      return rank
+    })
   }
 
   /* Count the number of dice in an expression

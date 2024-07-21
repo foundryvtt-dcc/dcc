@@ -68,7 +68,7 @@ async function createActors (type, folderId, actorData) {
   // Process the stat block
   let parsedCharacters
   try {
-    parsedCharacters = (type === 'Player') ? parsePCs(actorData) : parseNPCs(actorData)
+    parsedCharacters = (type === 'Player') ? await parsePCs(actorData) : await parseNPCs(actorData)
   } catch (e) {
     console.error(e)
     if (type === 'Player') {
