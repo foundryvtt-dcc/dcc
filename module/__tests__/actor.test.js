@@ -89,7 +89,7 @@ test('roll ability check', async () => {
     }
   )
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
-    flavor: 'AbilityLck Check',
+    flavor: 'AbilityLck CheckRollUnder',
     speaker: actor,
     flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder' }
   })
@@ -551,7 +551,7 @@ test('roll skill check', async () => {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
         modifierLabel: 'Custom Die And Value Skill With Per (AbilityPer)',
-        formula: '3'
+        formula: '3 + 2'
       },
       {
         type: 'CheckPenalty',
@@ -570,7 +570,7 @@ test('roll skill check', async () => {
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkillWithPer' }
   })
 
-  await actor.rollSkillCheck('actionDieSkillWithLck')
+  await actor.rollSkillCheck('actionDieAndValueSkillWithLck')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(6)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
@@ -588,8 +588,8 @@ test('roll skill check', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'Action Die Skill With Lck (AbilityLck)',
-        formula: '4'
+        modifierLabel: 'Action Die And Value Skill With Lck (AbilityLck)',
+        formula: '1 + 3'
       },
       {
         type: 'CheckPenalty',
@@ -599,13 +599,13 @@ test('roll skill check', async () => {
     ],
     actor.getRollData(),
     {
-      title: 'Action Die Skill With Lck'
+      title: 'Action Die And Value Skill With Lck'
     }
   )
   expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Action Die Skill With Lck (AbilityLck)',
+    flavor: 'Action Die And Value Skill With Lck (AbilityLck)',
     speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkillWithLck' }
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieAndValueSkillWithLck' }
   })
 })
 

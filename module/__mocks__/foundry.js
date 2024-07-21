@@ -69,6 +69,26 @@ class Actor {
           },
           details: {
             attackBonus: '+0',
+            attackHitBonus: {
+              melee: {
+                value: "+0",
+                adjustment: "+0"
+              },
+              missile: {
+                value: "+0",
+                adjustment: "+0"
+              }
+            },
+            attackDamageBonus: {
+              melee: {
+                value: "+0",
+                adjustment: "+0"
+              },
+              missile: {
+                value: "+0",
+                adjustment: "+0"
+              }
+            },
             level: {
               value: 1
             }
@@ -103,10 +123,10 @@ class Actor {
               die: '1d24',
               value: +3
             },
-            actionDieSkillWithLck: {
-              label: 'Action Die Skill With Lck',
+            actionDieAndValueSkillWithLck: {
+              label: 'Action Die And Value Skill With Lck',
               ability: 'lck',
-              value: +4
+              value: +1
             }
           },
           config: {
