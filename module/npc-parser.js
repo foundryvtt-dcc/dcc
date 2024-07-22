@@ -7,7 +7,7 @@ import EntityImages from './entity-images.js'
  *  @param {string} npcString The NPC stat block to import
  *  @return {Array}           Array of NPC data for actor creation (currently a single NPC)
  **/
-function parseNPCs (npcString) {
+async function parseNPCs (npcString) {
   npcString = npcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
 
   // Make sure we match the last period if there's no trailing newline
@@ -25,7 +25,7 @@ function parseNPCs (npcString) {
     // Parse each section between the end of the last NPC (or start of the string) and the period
     const npcSection = npcString.substring(previousIndex, matchIndex + 1)
     try {
-      npcObjects.push(parseNPC(npcSection))
+      npcObjects.push(await parseNPC(npcSection))
     } catch (e) {
       ui.notifications.warn(game.i18n.localize('DCC.ParseSingleNPCWarning'))
     }
@@ -37,20 +37,26 @@ function parseNPCs (npcString) {
 }
 
 /**
+ * Roll Hit Points
+ */
+
+/**
  *  Parses NPC Stat Blocks (e.g. from published modules) into an NPC sheet
  *  @param {string} npcString The NPC stat block to import
  *  @return {Object}            NPC data for actor creation (currently a single NPC)
  **/
-function parseNPC (npcString) {
+async function parseNPC (npcString) {
   const npc = {}
   npcString = npcString.replace(/[\n\r]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/, '')
 
   npc.name = _firstMatch(/(.*?):.*/, npcString) || 'Unnamed'
   npc.name = npc.name.replace(/ ?\(\d+\)/, '')
   const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[;.].*/, npcString) || '1'
+  const hpRoll = await new Roll(hd).evaluate()
+  const hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
   npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,.].*/, npcString) || '10'
-  npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || new Roll(hd).evaluateSync().total
+  npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp
   npc['attributes.speed.value'] = _firstMatch(/.*MV ?(.+?)[;.].*/, npcString) || '30'
   npc['config.actionDice'] = _firstMatch(/.*Act ?(.+?)[;.].*/, npcString) || '1d20'
   npc['attributes.special.value'] = _firstMatch(/.*SP ?(.+?);.*/, npcString) || ''

@@ -64,12 +64,11 @@
                             {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
                         </select>
                     </div>
-                    <div>
-                        <label class="disapproval-table rollable" for="system.class.disapprovalTable">
-                            {{localize "DCC.DisapprovalTable"}}
-                        </label>
-                        <select style="width:132px" id="system.class.disapprovalTable" name="system.class.disapprovalTable">
-                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true labelAttr="name"}}
+                    <div class="wide split-50-50">
+                        <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
+                        <select id="system.class.disapprovalTable" name="system.class.disapprovalTable"
+                                value="{{system.class.disapprovalTable}}">
+                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true labelAttr="name" valueAttr="path"}}
                         </select>
                     </div>
                     <div style="grid-template-columns: max-content auto;">

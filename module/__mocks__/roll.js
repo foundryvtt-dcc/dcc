@@ -13,7 +13,9 @@ global.rollToMessageMock = jest.fn((messageData = {}, { rollMode = null, create 
 })
 global.rollEvaluateMock = jest.fn(() => {
   // console.log('Mock Roll: roll was called')
-  return { total: 2 }
+  return new Promise((resolve, reject) => {
+    process.nextTick(() => {resolve({ total: 2 })})
+  })
 })
 global.rollValidateMock = jest.fn((formula) => {
   return true
@@ -23,7 +25,6 @@ const Roll = jest.fn((formula, data = {}) => {
     dice: [{ results: [10], options: {} }],
     toMessage: global.rollToMessageMock,
     evaluate: global.rollEvaluateMock,
-    evaluateSync: global.rollEvaluateMock,
     roll: global.rollEvaluateMock
   }
 }).mockName('Roll')
