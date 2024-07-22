@@ -79,10 +79,10 @@ class DCCActor extends Actor {
       const attackBonus = this.system.details.attackBonus || '0'
       const strengthBonus = parseInt(this.system.abilities.str.mod) || 0
       const agilityBonus = parseInt(this.system.abilities.agl.mod) || 0
-      const meleeAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus.melee.adjustment) || 0
-      const meleeDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus.melee.adjustment) || 0
-      const missileAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus.missile.adjustment) || 0
-      const missileDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus.missile.adjustment) || 0
+      const meleeAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus?.melee?.adjustment) || 0
+      const meleeDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus?.melee?.adjustment) || 0
+      const missileAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus?.missile?.adjustment) || 0
+      const missileDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus?.missile?.adjustment) || 0
       let meleeAttackBonus = ''
       let missileAttackBonus = ''
       let meleeAttackDamage = ''

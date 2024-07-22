@@ -141,6 +141,10 @@ export const migrateActorData = function (actor) {
       'system.details.attackHitBonus.melee.value': actor.system.details.attackBonus,
       'system.details.attackHitBonus.ranged.value': actor.system.details.attackBonus
     })
+    if (this.options.template === 'systems/dcc/templates/actor-sheet-npc.html' ||
+      this.options.template === 'systems/dcc/templates/actor-sheet-zero-level.html') {
+      this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
+    }
   }
 
   // Migrate Owned Items

@@ -55,10 +55,6 @@ Hooks.once('init', async function () {
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
-  Actors.registerSheet('dcc', DCCActorSheet, {
-    makeDefault: true,
-    label: 'DCC.DCCActorSheet'
-  })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
     types: ['Player'],
     label: 'DCC.DCCActorSheetCleric'
@@ -89,14 +85,14 @@ Hooks.once('init', async function () {
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
     types: ['Player'],
-    label: 'DCC.DCCActorSheetGeneric'
+    label: 'DCC.DCCActorSheetGeneric',
+    makeDefault: true,
   })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet)
 
   // Register shared template for upper level characters
   const templatePaths = [
-    'systems/dcc/templates/actor-partial-pc-header.html',
     'systems/dcc/templates/actor-partial-pc-common.html',
     'systems/dcc/templates/actor-partial-pc-equipment.html',
     'systems/dcc/templates/actor-partial-pc-notes.html',

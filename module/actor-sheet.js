@@ -79,21 +79,6 @@ class DCCActorSheet extends ActorSheet {
       data.actor.img = EntityImages.imageForActor(data.type)
     }
 
-    if (data.isNPC) {
-      this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
-    } else {
-      this.options.template = 'systems/dcc/templates/actor-sheet-zero-level.html'
-
-      if (!data.isZero) {
-        // Reorder saves on upper level sheet to define tabbing order
-        data.system.saves = {
-          ref: data.system.saves.ref,
-          frt: data.system.saves.frt,
-          wil: data.system.saves.wil
-        }
-      }
-    }
-
     // Should the Deed Roll button be available on the sheet?
     data.system.config.rollAttackBonus = (this.actor.getAttackBonusMode() === 'manual')
 
@@ -424,9 +409,8 @@ class DCCActorSheet extends ActorSheet {
    * @private
    */
   _deleteItem (event) {
-    const li = $(event.currentTarget).parents('.item')
-    this.actor.deleteEmbeddedDocuments('Item', [li.data('itemId')])
-    li.slideUp(200, () => this.render(false))
+    const itemId = this._findDataset(event.currentTarget, 'itemId')
+    this.actor.deleteEmbeddedDocuments('Item', [itemId])
   }
 
   /**

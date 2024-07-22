@@ -216,7 +216,7 @@ class DCCActorSheetGeneric extends DCCActorSheet {
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-upper-level.html'
+    this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
     data.system.class.className = game.i18n.localize('DCC.Generic')
 
     this.actor.update({
