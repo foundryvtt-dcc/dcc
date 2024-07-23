@@ -558,6 +558,10 @@ $font-awesome: 'Font Awesome 6 Pro';
   line-height: 24px;
   margin: 0;
   padding: 0 8px 8px 8px;
+
+  .editor {
+    min-height: 539px;
+  }
 }
 
 .dcc .notes-label {
@@ -913,7 +917,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc .spells-container-wizard {
-    height: 565px;
+  height: 565px;
 
   .dark-title {
     align-self: center;
@@ -924,7 +928,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     grid-row: 1;
     height: 19px;
     letter-spacing: 1px;
-    margin-left: -1px;  // For the Mac
+    margin-left: -1px; // For the Mac
     padding-top: 1px;
     text-align: center;
   }
@@ -1384,7 +1388,7 @@ form.dcc-roll-modifier {
       }
     }
 
-    label{
+    label {
       font-family: $cooper-black;
     }
   }

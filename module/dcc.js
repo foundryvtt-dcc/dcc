@@ -56,35 +56,35 @@ Hooks.once('init', async function () {
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
-    types: ['Player'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetCleric'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, {
-    types: ['Player'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetThief'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
-    types: ['Player'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetHalfling'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, {
-    types: ['Player'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetWarrior'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, {
-    types: ['Player'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetWizard'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
-    types: ['Player'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetDwarf'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
-    types: ['Player'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetElf'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
-    types: ['Player'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetGeneric',
     makeDefault: true,
   })

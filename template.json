@@ -94,9 +94,6 @@
           }
         },
         "details": {
-          "level": {
-            "value": 0
-          },
           "alignment": "",
           "attackBonus": "+0",
           "attackHitBonus": {
@@ -119,11 +116,22 @@
               "adjustment": "+0"
             }
           },
+          "birthAugur": "",
+          "critRange": "20",
           "languages": "",
+          "level": {
+            "value": 0
+          },
           "occupation": "",
-          "notes": "",
-          "portrait": "icons/svg/mystery-man.svg",
-          "title": ""
+          "notes": {
+            "value": ""
+          },
+          "title": "",
+          "xp": {
+            "value": 0,
+            "min": 0,
+            "max": 10
+          }
         },
         "saves": {
           "frt": {
@@ -151,15 +159,6 @@
         }
       },
       "player": {
-        "details": {
-          "birthAugur": "",
-          "critRange": "20",
-          "xp": {
-            "value": 0,
-            "min": 0,
-            "max": 10
-          }
-        },
         "skills": {
           "findSecretDoors": {
             "label": "DCC.FindSecretDoors",

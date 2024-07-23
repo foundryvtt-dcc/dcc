@@ -596,6 +596,9 @@
   margin: 0;
   padding: 0 8px 8px 8px;
 }
+.dcc .notes .editor {
+  min-height: 539px;
+}
 
 .dcc .notes-label {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;

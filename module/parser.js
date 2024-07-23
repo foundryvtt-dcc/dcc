@@ -3,6 +3,7 @@
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
 import parseNPCs from './npc-parser.js'
+import EntityImages from './entity-images.js'
 
 class DCCActorParser extends FormApplication {
   /**
@@ -162,6 +163,7 @@ async function createActors (type, folderId, actorData) {
 
     // Create the actor
     const actor = await DCCActor.create({
+      img: EntityImages.imageForActor(type),
       name,
       type,
       folder: folderId,
