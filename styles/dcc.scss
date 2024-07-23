@@ -34,7 +34,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   .window-content label {
-    font-family: $duvall;
+    font-family: $cooper-black;
   }
 }
 
@@ -49,7 +49,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 /* ----------------------------------------- */
-/*  Headings
+/*  Journal Headings
 /* ----------------------------------------- */
 .journal-sheet h1 {
   font-family: $duvall;
@@ -127,14 +127,6 @@ $font-awesome: 'Font Awesome 6 Pro';
   padding: 0;
 }
 
-.dcc .sheet-header .upper-level div.charname {
-  flex: 0 0 100%;
-}
-
-.dcc .sheet-header .upper-level h1.charname {
-  flex: 1 0 75%;
-}
-
 .dcc .sheet-header h1.charname input {
   height: 100%;
   margin: 0;
@@ -148,133 +140,6 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc .sheet-header .upper-level div.level input {
   text-align: center;
-}
-
-.dcc .alignment {
-  flex: 0 0 10%;
-  margin-left: 10px;
-  text-align: center;
-}
-
-.dcc .alignment select {
-  font-family: inherit;
-  height: 26px;
-  width: 90px;
-}
-
-.dcc .title input {
-  width: 100%;
-}
-
-.dcc .title label {
-  margin: 0 0 0 4px;
-}
-
-.dcc .occupation input {
-  width: 100%;
-}
-
-.dcc .occupation label {
-  margin: 0 0 0 4px;
-}
-
-.dcc.actor.sheet .character-main-top-row {
-  flex: 0 0 100px;
-}
-
-.dcc.actor.sheet .character-main-body-row {
-  flex: 1 0 100px;
-  margin-top: 15px;
-}
-
-/* ----------------------------------------- */
-/*  Action Dice                              */
-/* ----------------------------------------- */
-
-.dcc .npc-sheet .action-dice {
-  flex: 0 0 100px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .action-dice {
-  align-items: center;
-  flex: 0 0 80px;
-}
-
-/* ----------------------------------------- */
-/*  Attack Bonus                             */
-/* ----------------------------------------- */
-
-.dcc .npc-sheet .attack-bonus {
-  flex: 0 0 125px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .attack-bonus {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .attack-bonus input {
-  margin-right: 3px;
-}
-
-.dcc .attack-bonus-container.skills-container {
-  font-size: 13px;
-  justify-content: left;
-  margin-top: 12px;
-
-  label.attack-bonus {
-    margin-left: 10px;
-    text-align: left;
-  }
-}
-
-/* ----------------------------------------- */
-/*  Ability Scores                           */
-/* ----------------------------------------- */
-
-.dcc.sheet.actor .ability-scores {
-  border: $border-style;
-  border-radius: 5px;
-  flex: 0 0 150px;
-  font-size: 20px;
-  height: 425px;
-  list-style: none;
-  margin: 7px;
-  padding: 0;
-}
-
-.dcc.sheet.actor .ability-scores .ability {
-  border-bottom: $border-style;
-  height: 70px;
-  padding-top: 3px;
-  text-align: center;
-}
-
-.dcc.sheet.actor .ability-scores .ability:last-child {
-  border-bottom: 0;
-}
-
-.dcc.sheet.actor .ability-scores .ability input.ability-score {
-  font-size: 24px;
-  height: 30px;
-  line-height: 32px;
-  margin: 0 auto;
-  width: 36px;
-}
-
-.dcc.sheet.actor .ability-scores .ability .ability-modifiers {
-  border-left: $border-style;
-  border-top: $border-style;
-  flex: 0 0 24px;
-  font-size: 16px;
-  height: 23px;
-  line-height: 22px;
-  margin: -15px 0 0 122px;
-  width: 25px;
 }
 
 /* ----------------------------------------- */
@@ -305,34 +170,6 @@ $font-awesome: 'Font Awesome 6 Pro';
     text-align: center;
   }
 }
-
-/* ----------------------------------------- */
-/*  Armor Class                              */
-/* ----------------------------------------- */
-
-.dcc .ac {
-  background-image: url('./images/shield.png');
-  background-repeat: no-repeat;
-  background-size: 60px 76px;
-  flex: 0 0 60px;
-  height: 99px;
-  margin: 10px 0 0 6px;
-  text-align: center;
-}
-
-.dcc .ac label {
-  font-size: 1.1rem;
-  line-height: 1.6rem;
-  margin: 31px auto 0;
-}
-
-.dcc .ac .ac-value {
-  font-size: 1.6rem;
-  height: 25px;
-  margin: 21px auto 0;
-  width: 35px;
-}
-
 
 /* ----------------------------------------- */
 /*  Chat Rolls                               */
@@ -394,159 +231,6 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 /* ----------------------------------------- */
-/*  Criticals                                */
-/* ----------------------------------------- */
-
-.dcc .npc-sheet .crit-die {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .npc-sheet .crit-table {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .crit-die {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .crit-die input {
-  margin: 0 3px 0 2px;
-}
-
-.dcc .combat-basics .crit-table {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .crit-table input {
-  margin-left: 4px;
-}
-
-/* ----------------------------------------- */
-/*  Experience                               */
-/* ----------------------------------------- */
-
-.dcc .experience {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: left;
-}
-
-/* ----------------------------------------- */
-/*  Hit Dice                                 */
-/* ----------------------------------------- */
-
-.dcc .hd {
-  flex: 0 0 50px;
-  margin: 0 0 0 2px;
-  text-align: center;
-}
-
-.dcc .init-and-speed .hd {
-  align-items: center;
-  flex: 0 0 30px;
-  margin: 0;
-  text-align: right;
-}
-
-.dcc .init-and-speed.hd label {
-  font-size: 1.1rem;
-  margin: 10px auto 0 0;
-}
-
-.dcc .init-and-speed .hd .hd-value {
-  font-size: 1.1rem;
-  height: 25px;
-  text-align: center;
-  width: 40px;
-}
-
-/* ----------------------------------------- */
-/*  Hit Points                               */
-/* ----------------------------------------- */
-
-.dcc .hp {
-  background-image: url('./images/heart.png');
-  background-position-y: 9px;
-  background-repeat: no-repeat;
-  background-size: 80px 75px;
-  flex: 0 0 99px;
-  height: 99px;
-  margin: 0 0 0 5px;
-  text-align: center;
-}
-
-.dcc .hp .current-label {
-  font-size: 1.1rem;
-  line-height: 1.6rem;
-  margin: -8px auto 0 28px;
-}
-
-.dcc .hp .current {
-  font-size: 1.6rem;
-  height: 25px;
-  margin: 31px auto 0 23px;
-  width: 35px;
-}
-
-.dcc .hp .max {
-  font-size: 0.8rem;
-  height: 17px;
-  margin: 7px auto 0 63px;
-  width: 25px;
-}
-
-.dcc .hp .max-label {
-  font-size: 0.6rem;
-  line-height: 0.8rem;
-  margin: 2px auto 0 65px;
-}
-
-/* ----------------------------------------- */
-/*  Initiative                               */
-/* ----------------------------------------- */
-
-.dcc .init-and-speed {
-  flex: 1 0 100px;
-  margin: 7px 0 0;
-  text-align: right;
-}
-
-.dcc .init-and-speed .init {
-  align-items: center;
-  flex: 0 0 30px;
-}
-
-.dcc .init-and-speed .init label {
-  font-size: 1.1rem;
-}
-
-.dcc .init-and-speed .init .init-value {
-  font-size: 1.1rem;
-  text-align: center;
-  width: 40px;
-}
-
-.dcc .combat-basics .init {
-  align-items: center;
-  flex: 0 0 120px;
-}
-
-.dcc .combat-basics .init input:first-of-type {
-  margin-right: 4px;
-}
-
-.dcc .combat-basics .init input:last-of-type {
-  margin-right: 3px;
-}
-
-
-/* ----------------------------------------- */
 /*  Notes                              */
 /* ----------------------------------------- */
 
@@ -562,88 +246,6 @@ $font-awesome: 'Font Awesome 6 Pro';
   .editor {
     min-height: 539px;
   }
-}
-
-.dcc .notes-label {
-  font-family: $duvall;
-  font-size: 1.5rem;
-  margin-top: 20px;
-}
-
-/* ----------------------------------------- */
-/*  Speed                                    */
-/* ----------------------------------------- */
-
-.dcc .init-and-speed .speed {
-  flex: 0 0 30px;
-}
-
-.dcc .init-and-speed .speed label {
-  font-size: 1.1rem;
-  margin: 10px auto 0 0;
-}
-
-.dcc .init-and-speed .speed .speed-other {
-  margin: 5px 0 0;
-  width: 100px;
-}
-
-.dcc .init-and-speed .speed .speed-other-label {
-  font-size: 0.8rem;
-  line-height: 0.8rem;
-  margin: 0 7px 0 0;
-}
-
-.dcc .init-and-speed .speed .speed-value {
-  font-size: 1.1rem;
-  height: 25px;
-  text-align: center;
-  width: 40px;
-}
-
-.dcc .combat-basics .speed {
-  align-items: center;
-  flex: 0 0 60px;
-}
-
-/* ----------------------------------------- */
-/*  Saving Throws                            */
-/* ----------------------------------------- */
-
-.dcc.sheet.actor .saving-throws {
-  border: $border-style;
-  border-radius: 5px;
-  flex: 0 0 152px;
-  font-size: 20px;
-  height: 102px;
-  list-style: none;
-  margin: 7px 0 0;
-  padding: 2px 0 3px 7px;
-  text-align: left;
-}
-
-.dcc.sheet.actor .saving-throws .save {
-  margin-bottom: 0.25rem;
-}
-
-.dcc.sheet.actor .saving-throws span {
-  font-family: $book-antiqua;
-}
-
-.dcc.sheet.actor .saving-throws input {
-  font-family: $book-antiqua;
-  margin-bottom: 0;
-  text-align: center;
-  width: 36px;
-}
-
-/* ----------------------------------------- */
-/*  Special                                  */
-/* ----------------------------------------- */
-
-.dcc .special {
-  flex: 0 0 155px;
-  margin: 0 8px 0 0;
 }
 
 /* ----------------------------------------- */
@@ -748,44 +350,30 @@ $font-awesome: 'Font Awesome 6 Pro';
 /*  Cleric Class                             */
 /* ----------------------------------------- */
 
-.dcc .lay-on-hands {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
+.dcc div.cleric-table {
+  grid-column-end: span 2;
 
-  .container {
-    border: $border-style;
-    display: grid;
-    font-size: 0.8rem;
-  }
-
-  .lay-on-hands {
-    flex: 0 0 60%;
-    grid-template-columns: repeat(4, 1fr);
-    margin-top: 20px;
-  }
-
-  .condition-healing {
-    flex: 0 0 34%;
-    grid-template-columns: 2fr 1fr;
-    margin-top: 20px;
-  }
-
-  div.item {
-    margin: 0;
+  table {
+    width: 497px;
     text-align: center;
+    border: var(--dark-border);
+    border-top: none;
+    font-family: $book-antiqua;
+    margin: 15px 8px 0 1px;
+
+    td {
+      padding: 0 12px 0 0;
+    }
   }
 
-  div.header {
-    font-weight: bold;
-  }
-
-  div.top {
-    border-bottom: $border-style;
-  }
-
-  div.left {
-    border-right: $border-style;
+  thead {
+    background: var(--dark-bg);
+    color: var(--light-color);
+    font-family: $cooper-black;
+    font-size: 15px;
+    height: 19px;
+    letter-spacing: 1px;
+    padding-top: 1px;
   }
 }
 
@@ -812,7 +400,9 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc .skills-container {
   align-items: center;
+  border: var(--dark-border);
   display: grid;
+  font-size: 16px;
   grid-template-columns: 1fr 1fr;
   margin-top: 6px;
 
@@ -1189,12 +779,9 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   .item-name {
-    flex: 1 1;
   }
 
   .item-type {
-    flex: 0 0 60px;
-    margin: 5px 0 0 5px;
   }
 }
 
@@ -1515,10 +1102,10 @@ form.dcc-roll-modifier {
 }
 
 /* ----------------------------------------- */
-/*  New Sheet Styles                         */
+/*  Actor Sheet
 /* ----------------------------------------- */
 
-.dcc.sheet.actor .character2 {
+.dcc.sheet.actor .character {
   .character-grid {
     background: url("images/parchment.jpeg");
     column-gap: 8px;
@@ -1563,7 +1150,7 @@ form.dcc-roll-modifier {
   }
 
 
-  .ability-scores2 {
+  .ability-scores {
     display: grid;
     grid-template-rows: repeat(5, 69px);
 
@@ -1786,7 +1373,7 @@ form.dcc-roll-modifier {
     margin-bottom: 3px;
   }
 
-  .saving-throws2 {
+  .saving-throws {
     border: none;
     display: grid;
     grid-column: 2;

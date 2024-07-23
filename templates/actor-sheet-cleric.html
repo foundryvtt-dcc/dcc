@@ -64,11 +64,13 @@
                             {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
                         </select>
                     </div>
-                    <div class="wide split-50-50">
-                        <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
+                    <div>
+                        <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize
+                            "DCC.DisapprovalTable"}}</label>
                         <select id="system.class.disapprovalTable" name="system.class.disapprovalTable"
                                 value="{{system.class.disapprovalTable}}">
-                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true labelAttr="name" valueAttr="path"}}
+                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true labelAttr="name"
+                            valueAttr="path"}}
                         </select>
                     </div>
                     <div style="grid-template-columns: max-content auto;">
@@ -80,135 +82,82 @@
                     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
                     <div>{{{system.class.classLink}}}</div>
                     {{/dccPackExists}}
-                </div>
 
-                <div class="lay-on-hands">
-                    <div class="lay-on-hands container">
-                        <div class="header top left item">
-                            Result
-                        </div>
-                        <div class="header top item">
-                            Same
-                        </div>
-                        <div class="header top item">
-                            Adjacent
-                        </div>
-                        <div class="header top item">
-                            Opposed
-                        </div>
-
-                        <div class="header left item">
-                            1-11
-                        </div>
-                        <div class="item">
-                            fail
-                        </div>
-                        <div class="item">
-                            fail
-                        </div>
-                        <div class="item">
-                            fail
-                        </div>
-
-                        <div class="header left item">
-                            12-13
-                        </div>
-                        <div class="item">
-                            2 dice
-                        </div>
-                        <div class="item">
-                            1 die
-                        </div>
-                        <div class="item">
-                            1 die
-                        </div>
-
-                        <div class="header left item">
-                            14-19
-                        </div>
-                        <div class="item">
-                            3 dice
-                        </div>
-                        <div class="item">
-                            2 dice
-                        </div>
-                        <div class="item">
-                            1 die
-                        </div>
-
-                        <div class="header left item">
-                            20-21
-                        </div>
-                        <div class="item">
-                            4 dice
-                        </div>
-                        <div class="item">
-                            3 dice
-                        </div>
-                        <div class="item">
-                            2 dice
-                        </div>
-
-                        <div class="header left item">
-                            22+
-                        </div>
-                        <div class="item">
-                            5 dice
-                        </div>
-                        <div class="item">
-                            4 dice
-                        </div>
-                        <div class="item">
-                            3 dice
-                        </div>
+                    <div class="cleric-table" style="grid-template-columns: max-content auto;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Lay On Hands (alignment step)</th>
+                                <th>12</th>
+                                <th>14</th>
+                                <th>20</th>
+                                <th>22+</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>(same)</td>
+                                <td>2 dice</td>
+                                <td>3 dice</td>
+                                <td>4 dice</td>
+                                <td>5 dice</td>
+                            </tr>
+                            <tr>
+                                <td>(adjacent)</td>
+                                <td>1 die</td>
+                                <td>2 dice</td>
+                                <td>3 dice</td>
+                                <td>4 dice</td>
+                            </tr>
+                            <tr>
+                                <td>(opposed)</td>
+                                <td>1 die</td>
+                                <td>1 die</td>
+                                <td>2 dice</td>
+                                <td>3 dice</td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <div class="condition-healing container">
-                        <div class="header top left item">
-                            Condition
-                        </div>
-                        <div class="header top item">
-                            Dice
-                        </div>
-
-                        <div class="header left item">
-                            Broken Limbs
-                        </div>
-                        <div class="item">
-                            1
-                        </div>
-
-                        <div class="header left item">
-                            Organ Damage
-                        </div>
-                        <div class="item">
-                            2
-                        </div>
-
-                        <div class="header left item">
-                            Disease
-                        </div>
-                        <div class="item">
-                            2
-                        </div>
-
-                        <div class="header left item">
-                            Paralysis or Poison
-                        </div>
-                        <div class="item">
-                            3
-                        </div>
-
-                        <div class="header left item">
-                            Blindness or Deafness
-                        </div>
-                        <div class="item">
-                            4
-                        </div>
+                    <div class="cleric-table" style="grid-template-columns: max-content auto;">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Condition</th>
+                                <th>Dice</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>Broken limbs</td>
+                                <td>1 die</td>
+                            </tr>
+                            <tr>
+                                <td>Organ damage</td>
+                                <td>2 dice</td>
+                            </tr>
+                            <tr>
+                                <td>Disease</td>
+                                <td>2 dice</td>
+                            </tr>
+                            <tr>
+                                <td>Paralysis</td>
+                                <td>3 dice</td>
+                            </tr>
+                            <tr>
+                                <td>Poison</td>
+                                <td>4 dice</td>
+                            </tr>
+                            <tr>
+                                <td>Blindness/Deafness</td>
+                                <td>5 dice</td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <br>
             </div>
+            <br>
         </div>
 
         {{!-- Spells Tab --}}

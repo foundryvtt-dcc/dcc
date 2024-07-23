@@ -100,7 +100,7 @@
   padding: 0 5px 0 5px;
 }
 .dcc .window-content label {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
 }
 
 :root {
@@ -114,7 +114,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Headings
+/*  Journal Headings
 /* ----------------------------------------- */
 .journal-sheet h1 {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
@@ -189,14 +189,6 @@
   padding: 0;
 }
 
-.dcc .sheet-header .upper-level div.charname {
-  flex: 0 0 100%;
-}
-
-.dcc .sheet-header .upper-level h1.charname {
-  flex: 1 0 75%;
-}
-
 .dcc .sheet-header h1.charname input {
   height: 100%;
   margin: 0;
@@ -210,129 +202,6 @@
 
 .dcc .sheet-header .upper-level div.level input {
   text-align: center;
-}
-
-.dcc .alignment {
-  flex: 0 0 10%;
-  margin-left: 10px;
-  text-align: center;
-}
-
-.dcc .alignment select {
-  font-family: inherit;
-  height: 26px;
-  width: 90px;
-}
-
-.dcc .title input {
-  width: 100%;
-}
-
-.dcc .title label {
-  margin: 0 0 0 4px;
-}
-
-.dcc .occupation input {
-  width: 100%;
-}
-
-.dcc .occupation label {
-  margin: 0 0 0 4px;
-}
-
-.dcc.actor.sheet .character-main-top-row {
-  flex: 0 0 100px;
-}
-
-.dcc.actor.sheet .character-main-body-row {
-  flex: 1 0 100px;
-  margin-top: 15px;
-}
-
-/* ----------------------------------------- */
-/*  Action Dice                              */
-/* ----------------------------------------- */
-.dcc .npc-sheet .action-dice {
-  flex: 0 0 100px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .action-dice {
-  align-items: center;
-  flex: 0 0 80px;
-}
-
-/* ----------------------------------------- */
-/*  Attack Bonus                             */
-/* ----------------------------------------- */
-.dcc .npc-sheet .attack-bonus {
-  flex: 0 0 125px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .attack-bonus {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .attack-bonus input {
-  margin-right: 3px;
-}
-
-.dcc .attack-bonus-container.skills-container {
-  font-size: 13px;
-  justify-content: left;
-  margin-top: 12px;
-}
-.dcc .attack-bonus-container.skills-container label.attack-bonus {
-  margin-left: 10px;
-  text-align: left;
-}
-
-/* ----------------------------------------- */
-/*  Ability Scores                           */
-/* ----------------------------------------- */
-.dcc.sheet.actor .ability-scores {
-  border: 2px groove #eeede0;
-  border-radius: 5px;
-  flex: 0 0 150px;
-  font-size: 20px;
-  height: 425px;
-  list-style: none;
-  margin: 7px;
-  padding: 0;
-}
-
-.dcc.sheet.actor .ability-scores .ability {
-  border-bottom: 2px groove #eeede0;
-  height: 70px;
-  padding-top: 3px;
-  text-align: center;
-}
-
-.dcc.sheet.actor .ability-scores .ability:last-child {
-  border-bottom: 0;
-}
-
-.dcc.sheet.actor .ability-scores .ability input.ability-score {
-  font-size: 24px;
-  height: 30px;
-  line-height: 32px;
-  margin: 0 auto;
-  width: 36px;
-}
-
-.dcc.sheet.actor .ability-scores .ability .ability-modifiers {
-  border-left: 2px groove #eeede0;
-  border-top: 2px groove #eeede0;
-  flex: 0 0 24px;
-  font-size: 16px;
-  height: 23px;
-  line-height: 22px;
-  margin: -15px 0 0 122px;
-  width: 25px;
 }
 
 /* ----------------------------------------- */
@@ -360,32 +229,6 @@
 }
 .dcc .armor input {
   text-align: center;
-}
-
-/* ----------------------------------------- */
-/*  Armor Class                              */
-/* ----------------------------------------- */
-.dcc .ac {
-  background-image: url("./images/shield.png");
-  background-repeat: no-repeat;
-  background-size: 60px 76px;
-  flex: 0 0 60px;
-  height: 99px;
-  margin: 10px 0 0 6px;
-  text-align: center;
-}
-
-.dcc .ac label {
-  font-size: 1.1rem;
-  line-height: 1.6rem;
-  margin: 31px auto 0;
-}
-
-.dcc .ac .ac-value {
-  font-size: 1.6rem;
-  height: 25px;
-  margin: 21px auto 0;
-  width: 35px;
 }
 
 /* ----------------------------------------- */
@@ -438,153 +281,6 @@
 }
 
 /* ----------------------------------------- */
-/*  Criticals                                */
-/* ----------------------------------------- */
-.dcc .npc-sheet .crit-die {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .npc-sheet .crit-table {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .crit-die {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .crit-die input {
-  margin: 0 3px 0 2px;
-}
-
-.dcc .combat-basics .crit-table {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .crit-table input {
-  margin-left: 4px;
-}
-
-/* ----------------------------------------- */
-/*  Experience                               */
-/* ----------------------------------------- */
-.dcc .experience {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: left;
-}
-
-/* ----------------------------------------- */
-/*  Hit Dice                                 */
-/* ----------------------------------------- */
-.dcc .hd {
-  flex: 0 0 50px;
-  margin: 0 0 0 2px;
-  text-align: center;
-}
-
-.dcc .init-and-speed .hd {
-  align-items: center;
-  flex: 0 0 30px;
-  margin: 0;
-  text-align: right;
-}
-
-.dcc .init-and-speed.hd label {
-  font-size: 1.1rem;
-  margin: 10px auto 0 0;
-}
-
-.dcc .init-and-speed .hd .hd-value {
-  font-size: 1.1rem;
-  height: 25px;
-  text-align: center;
-  width: 40px;
-}
-
-/* ----------------------------------------- */
-/*  Hit Points                               */
-/* ----------------------------------------- */
-.dcc .hp {
-  background-image: url("./images/heart.png");
-  background-position-y: 9px;
-  background-repeat: no-repeat;
-  background-size: 80px 75px;
-  flex: 0 0 99px;
-  height: 99px;
-  margin: 0 0 0 5px;
-  text-align: center;
-}
-
-.dcc .hp .current-label {
-  font-size: 1.1rem;
-  line-height: 1.6rem;
-  margin: -8px auto 0 28px;
-}
-
-.dcc .hp .current {
-  font-size: 1.6rem;
-  height: 25px;
-  margin: 31px auto 0 23px;
-  width: 35px;
-}
-
-.dcc .hp .max {
-  font-size: 0.8rem;
-  height: 17px;
-  margin: 7px auto 0 63px;
-  width: 25px;
-}
-
-.dcc .hp .max-label {
-  font-size: 0.6rem;
-  line-height: 0.8rem;
-  margin: 2px auto 0 65px;
-}
-
-/* ----------------------------------------- */
-/*  Initiative                               */
-/* ----------------------------------------- */
-.dcc .init-and-speed {
-  flex: 1 0 100px;
-  margin: 7px 0 0;
-  text-align: right;
-}
-
-.dcc .init-and-speed .init {
-  align-items: center;
-  flex: 0 0 30px;
-}
-
-.dcc .init-and-speed .init label {
-  font-size: 1.1rem;
-}
-
-.dcc .init-and-speed .init .init-value {
-  font-size: 1.1rem;
-  text-align: center;
-  width: 40px;
-}
-
-.dcc .combat-basics .init {
-  align-items: center;
-  flex: 0 0 120px;
-}
-
-.dcc .combat-basics .init input:first-of-type {
-  margin-right: 4px;
-}
-
-.dcc .combat-basics .init input:last-of-type {
-  margin-right: 3px;
-}
-
-/* ----------------------------------------- */
 /*  Notes                              */
 /* ----------------------------------------- */
 .dcc .notes {
@@ -598,85 +294,6 @@
 }
 .dcc .notes .editor {
   min-height: 539px;
-}
-
-.dcc .notes-label {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  font-size: 1.5rem;
-  margin-top: 20px;
-}
-
-/* ----------------------------------------- */
-/*  Speed                                    */
-/* ----------------------------------------- */
-.dcc .init-and-speed .speed {
-  flex: 0 0 30px;
-}
-
-.dcc .init-and-speed .speed label {
-  font-size: 1.1rem;
-  margin: 10px auto 0 0;
-}
-
-.dcc .init-and-speed .speed .speed-other {
-  margin: 5px 0 0;
-  width: 100px;
-}
-
-.dcc .init-and-speed .speed .speed-other-label {
-  font-size: 0.8rem;
-  line-height: 0.8rem;
-  margin: 0 7px 0 0;
-}
-
-.dcc .init-and-speed .speed .speed-value {
-  font-size: 1.1rem;
-  height: 25px;
-  text-align: center;
-  width: 40px;
-}
-
-.dcc .combat-basics .speed {
-  align-items: center;
-  flex: 0 0 60px;
-}
-
-/* ----------------------------------------- */
-/*  Saving Throws                            */
-/* ----------------------------------------- */
-.dcc.sheet.actor .saving-throws {
-  border: 2px groove #eeede0;
-  border-radius: 5px;
-  flex: 0 0 152px;
-  font-size: 20px;
-  height: 102px;
-  list-style: none;
-  margin: 7px 0 0;
-  padding: 2px 0 3px 7px;
-  text-align: left;
-}
-
-.dcc.sheet.actor .saving-throws .save {
-  margin-bottom: 0.25rem;
-}
-
-.dcc.sheet.actor .saving-throws span {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-}
-
-.dcc.sheet.actor .saving-throws input {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  margin-bottom: 0;
-  text-align: center;
-  width: 36px;
-}
-
-/* ----------------------------------------- */
-/*  Special                                  */
-/* ----------------------------------------- */
-.dcc .special {
-  flex: 0 0 155px;
-  margin: 0 8px 0 0;
 }
 
 /* ----------------------------------------- */
@@ -777,38 +394,28 @@
 /* ----------------------------------------- */
 /*  Cleric Class                             */
 /* ----------------------------------------- */
-.dcc .lay-on-hands {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
+.dcc div.cleric-table {
+  grid-column-end: span 2;
 }
-.dcc .lay-on-hands .container {
-  border: 2px groove #eeede0;
-  display: grid;
-  font-size: 0.8rem;
-}
-.dcc .lay-on-hands .lay-on-hands {
-  flex: 0 0 60%;
-  grid-template-columns: repeat(4, 1fr);
-  margin-top: 20px;
-}
-.dcc .lay-on-hands .condition-healing {
-  flex: 0 0 34%;
-  grid-template-columns: 2fr 1fr;
-  margin-top: 20px;
-}
-.dcc .lay-on-hands div.item {
-  margin: 0;
+.dcc div.cleric-table table {
+  width: 497px;
   text-align: center;
+  border: var(--dark-border);
+  border-top: none;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  margin: 15px 8px 0 1px;
 }
-.dcc .lay-on-hands div.header {
-  font-weight: bold;
+.dcc div.cleric-table table td {
+  padding: 0 12px 0 0;
 }
-.dcc .lay-on-hands div.top {
-  border-bottom: 2px groove #eeede0;
-}
-.dcc .lay-on-hands div.left {
-  border-right: 2px groove #eeede0;
+.dcc div.cleric-table thead {
+  background: var(--dark-bg);
+  color: var(--light-color);
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-size: 15px;
+  height: 19px;
+  letter-spacing: 1px;
+  padding-top: 1px;
 }
 
 .dcc .spells-container-cleric {
@@ -832,7 +439,9 @@
 /* ----------------------------------------- */
 .dcc .skills-container {
   align-items: center;
+  border: var(--dark-border);
   display: grid;
+  font-size: 16px;
   grid-template-columns: 1fr 1fr;
   margin-top: 6px;
 }
@@ -1153,14 +762,6 @@
   border: 2px groove #eeede0;
   grid-column: 1/span 3;
 }
-.dcc.item .item-name {
-  flex: 1 1;
-}
-.dcc.item .item-type {
-  flex: 0 0 60px;
-  margin: 5px 0 0 5px;
-}
-
 /* ----------------------------------------- */
 /*  Config Dialogs                           */
 /* ----------------------------------------- */
@@ -1414,9 +1015,9 @@ form.dcc-roll-modifier input.stat {
 }
 
 /* ----------------------------------------- */
-/*  New Sheet Styles                         */
+/*  Actor Sheet
 /* ----------------------------------------- */
-.dcc.sheet.actor .character2 .character-grid {
+.dcc.sheet.actor .character .character-grid {
   background: url("images/parchment.jpeg");
   column-gap: 8px;
   display: grid;
@@ -1426,8 +1027,8 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 46px 114px repeat(5, 60px 9px) 60px;
   text-align: center;
 }
-.dcc.sheet.actor .character2 .character-grid input,
-.dcc.sheet.actor .character2 .character-grid select {
+.dcc.sheet.actor .character .character-grid input,
+.dcc.sheet.actor .character .character-grid select {
   background: none;
   border-width: 0 0 1px 0;
   border-radius: 0;
@@ -1436,14 +1037,14 @@ form.dcc-roll-modifier input.stat {
   text-align: center;
   text-align-last: center;
 }
-.dcc.sheet.actor .character2 .character-grid input:focus,
-.dcc.sheet.actor .character2 .character-grid select:focus {
+.dcc.sheet.actor .character .character-grid input:focus,
+.dcc.sheet.actor .character .character-grid select:focus {
   box-shadow: none;
 }
-.dcc.sheet.actor .character2 .character-grid label {
+.dcc.sheet.actor .character .character-grid label {
   font-family: "Cooper Black", "Palatino Linotype", serif;
 }
-.dcc.sheet.actor .character2 .dark-title {
+.dcc.sheet.actor .character .dark-title {
   align-self: center;
   background: var(--dark-bg);
   color: var(--light-color);
@@ -1454,11 +1055,11 @@ form.dcc-roll-modifier input.stat {
   padding-top: 1px;
   text-align: center;
 }
-.dcc.sheet.actor .character2 .ability-scores2 {
+.dcc.sheet.actor .character .ability-scores {
   display: grid;
   grid-template-rows: repeat(5, 69px);
 }
-.dcc.sheet.actor .character2 .ability-scores2 .ability-box {
+.dcc.sheet.actor .character .ability-scores .ability-box {
   align-items: center;
   display: grid;
   font-size: 14px;
@@ -1466,46 +1067,46 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 19px 20px 20px;
   text-align: left;
 }
-.dcc.sheet.actor .character2 .ability-scores2 .ability-box input {
+.dcc.sheet.actor .character .ability-scores .ability-box input {
   border-width: 0 0 1px 0;
   font-size: 14px;
 }
-.dcc.sheet.actor .character2 .ability-scores2 .ability-box input[id$=max] {
+.dcc.sheet.actor .character .ability-scores .ability-box input[id$=max] {
   height: 17px;
   margin-right: 3px;
 }
-.dcc.sheet.actor .character2 .ability-scores2 .ability-box > label {
+.dcc.sheet.actor .character .ability-scores .ability-box > label {
   grid-column-end: span 2;
 }
-.dcc.sheet.actor .character2 .ability-scores2 .ability-box > label[for="system.abilities.sta.value"],
-.dcc.sheet.actor .character2 .ability-scores2 .ability-box label[for="system.abilities.lck.value"] {
+.dcc.sheet.actor .character .ability-scores .ability-box > label[for="system.abilities.sta.value"],
+.dcc.sheet.actor .character .ability-scores .ability-box label[for="system.abilities.lck.value"] {
   padding-top: 1.5px;
 }
-.dcc.sheet.actor .character2 .ability-scores2 .ability-score {
+.dcc.sheet.actor .character .ability-scores .ability-score {
   align-self: stretch;
   border: 5px solid var(--dark-color);
   display: grid;
   grid-row-end: span 3;
 }
-.dcc.sheet.actor .character2 .ability-scores2 .ability-score input {
+.dcc.sheet.actor .character .ability-scores .ability-score input {
   align-self: center;
   border: none;
   font-size: 30px;
   height: unset;
 }
-.dcc.sheet.actor .character2 .ac-and-hp {
+.dcc.sheet.actor .character .ac-and-hp {
   display: grid;
   grid-template-columns: 50% 50%;
   grid-template-rows: 65px 19px 20px;
 }
-.dcc.sheet.actor .character2 .ac-and-hp input {
+.dcc.sheet.actor .character .ac-and-hp input {
   align-self: center;
   border: none;
   font-size: 24px;
   height: 17px;
   margin-bottom: 5px;
 }
-.dcc.sheet.actor .character2 .combat-basics {
+.dcc.sheet.actor .character .combat-basics {
   align-items: center;
   border: var(--dark-border);
   border-top: none;
@@ -1517,34 +1118,34 @@ form.dcc-roll-modifier input.stat {
   margin: 0 0 8px 0;
   padding-bottom: 4px;
 }
-.dcc.sheet.actor .character2 .combat-basics label {
+.dcc.sheet.actor .character .combat-basics label {
   padding-left: 3px;
   text-align: left;
   padding-top: 2px;
 }
-.dcc.sheet.actor .character2 .combat-basics input, .dcc.sheet.actor .character2 .combat-basics select {
+.dcc.sheet.actor .character .combat-basics input, .dcc.sheet.actor .character .combat-basics select {
   font-size: 14px;
   height: 17px;
   vertical-align: middle;
   margin-right: 8px;
 }
-.dcc.sheet.actor .character2 .grid-col-span-2 {
+.dcc.sheet.actor .character .grid-col-span-2 {
   display: grid;
   grid-column-end: span 2;
 }
-.dcc.sheet.actor .character2 .grid-col-span-3 {
+.dcc.sheet.actor .character .grid-col-span-3 {
   display: grid;
   grid-column-end: span 3;
 }
-.dcc.sheet.actor .character2 .grid-col-span-4 {
+.dcc.sheet.actor .character .grid-col-span-4 {
   display: grid;
   grid-column-end: span 4;
 }
-.dcc.sheet.actor .character2 .grid-col-span-5 {
+.dcc.sheet.actor .character .grid-col-span-5 {
   display: grid;
   grid-column-end: span 5;
 }
-.dcc.sheet.actor .character2 .languages {
+.dcc.sheet.actor .character .languages {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1555,12 +1156,12 @@ form.dcc-roll-modifier input.stat {
   font-size: 12px;
   text-align: left;
 }
-.dcc.sheet.actor .character2 .languages label {
+.dcc.sheet.actor .character .languages label {
   text-align: left;
   padding-left: 3px;
 }
-.dcc.sheet.actor .character2 .languages textarea,
-.dcc.sheet.actor .character2 .lucky-roll textarea {
+.dcc.sheet.actor .character .languages textarea,
+.dcc.sheet.actor .character .lucky-roll textarea {
   background: none;
   border: none;
   font-family: var(--data-font);
@@ -1570,11 +1171,11 @@ form.dcc-roll-modifier input.stat {
   resize: none;
   text-align: left;
 }
-.dcc.sheet.actor .character2 .languages textarea:focus,
-.dcc.sheet.actor .character2 .lucky-roll textarea:focus {
+.dcc.sheet.actor .character .languages textarea:focus,
+.dcc.sheet.actor .character .lucky-roll textarea:focus {
   box-shadow: none;
 }
-.dcc.sheet.actor .character2 .lucky-roll {
+.dcc.sheet.actor .character .lucky-roll {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1584,11 +1185,11 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 19px auto;
   font-size: 12px;
 }
-.dcc.sheet.actor .character2 .lucky-roll label {
+.dcc.sheet.actor .character .lucky-roll label {
   text-align: left;
   padding-left: 3px;
 }
-.dcc.sheet.actor .character2 .melee-missile-attack-damage {
+.dcc.sheet.actor .character .melee-missile-attack-damage {
   display: grid;
   grid-column: 3;
   grid-column-end: span 2;
@@ -1596,7 +1197,7 @@ form.dcc-roll-modifier input.stat {
   grid-template-columns: subgrid;
   grid-template-rows: 69px 69px;
 }
-.dcc.sheet.actor .character2 .melee-missile-attack-damage .bonus {
+.dcc.sheet.actor .character .melee-missile-attack-damage .bonus {
   align-items: center;
   border: var(--dark-border);
   border-top: none;
@@ -1606,16 +1207,16 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 31px 20px;
   margin-bottom: 8px;
 }
-.dcc.sheet.actor .character2 .melee-missile-attack-damage .bonus label {
+.dcc.sheet.actor .character .melee-missile-attack-damage .bonus label {
   height: 31px;
 }
-.dcc.sheet.actor .character2 .melee-missile-attack-damage .bonus input {
+.dcc.sheet.actor .character .melee-missile-attack-damage .bonus input {
   border: none;
   font-size: 16px;
   grid-row: 2;
   margin-top: 4px;
 }
-.dcc.sheet.actor .character2 .name-and-level {
+.dcc.sheet.actor .character .name-and-level {
   column-gap: 12px;
   display: grid;
   grid-column-end: span 4;
@@ -1623,10 +1224,10 @@ form.dcc-roll-modifier input.stat {
   grid-template-columns: 189px 113px 195px;
   text-align: left;
 }
-.dcc.sheet.actor .character2 .name-and-level label {
+.dcc.sheet.actor .character .name-and-level label {
   font-size: 13px;
 }
-.dcc.sheet.actor .character2 .portrait {
+.dcc.sheet.actor .character .portrait {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1637,16 +1238,16 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 19px auto;
   font-size: 14px;
 }
-.dcc.sheet.actor .character2 .portrait img {
+.dcc.sheet.actor .character .portrait img {
   border: none;
   justify-self: center;
   align-self: center;
 }
-.dcc.sheet.actor .character2 .row-separator {
+.dcc.sheet.actor .character .row-separator {
   border-bottom: 2px dotted var(--medium-color);
   margin-bottom: 3px;
 }
-.dcc.sheet.actor .character2 .saving-throws2 {
+.dcc.sheet.actor .character .saving-throws {
   border: none;
   display: grid;
   grid-column: 2;
@@ -1656,7 +1257,7 @@ form.dcc-roll-modifier input.stat {
   margin: 0;
   padding: 0;
 }
-.dcc.sheet.actor .character2 .saving-throw-box {
+.dcc.sheet.actor .character .saving-throw-box {
   align-items: center;
   background: var(--dark-bg);
   color: var(--light-color);
@@ -1666,7 +1267,7 @@ form.dcc-roll-modifier input.stat {
   margin-bottom: 10px;
   text-align: left;
 }
-.dcc.sheet.actor .character2 .saving-throw-box input {
+.dcc.sheet.actor .character .saving-throw-box input {
   align-self: center;
   background: #DBD9CD;
   border-radius: 100px;
@@ -1675,7 +1276,7 @@ form.dcc-roll-modifier input.stat {
   margin-left: 5px;
   width: 50px;
 }
-.dcc.sheet.actor .character2 .saving-throw-box label {
+.dcc.sheet.actor .character .saving-throw-box label {
   font-size: 14px;
   letter-spacing: 1px;
 }

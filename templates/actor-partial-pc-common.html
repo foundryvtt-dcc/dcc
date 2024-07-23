@@ -1,5 +1,5 @@
 {{!-- Character Tab --}}
-<div class="tab character2" data-group="primary" data-tab="character">
+<div class="tab character" data-group="primary" data-tab="character">
     <div class="character-grid">
         {{!-- Name Section --}}
         <div class="name-and-level">
@@ -153,7 +153,7 @@
 
         {{!-- Ability Scores --}}
         {{#* inline "abilityScore"}}
-        <div class="ability-box" id="{{id}}2" data-ability="{{id}}">
+        <div class="ability-box" id="{{id}}" data-ability="{{id}}">
             <label for="system.abilities.{{id}}.value" class="dark-title rollable"
                    title="{{localize (concat 'DCC.Roll' (localize ability.label) 'CheckHint')}}">{{localize ability.label}}</label>
             <div class="ability-score">
@@ -175,7 +175,7 @@
         </div>
         {{/inline}}
 
-        <div class="ability-scores2">
+        <div class="ability-scores">
             {{> abilityScore id='str' ability=system.abilities.str }}
             {{> abilityScore id='agl' ability=system.abilities.agl }}
             {{> abilityScore id='sta' ability=system.abilities.sta }}
@@ -229,13 +229,13 @@
 
         {{!-- Saving throws --}}
         {{#* inline "save"}}
-        <div class="saving-throw-box" id="{{id}}2" data-save="{{id}}">
+        <div class="saving-throw-box" id="{{id}}" data-save="{{id}}">
             <input id="system.saves.{{id}}.value" value="{{numberFormat save.value decimals=0 sign=true}}"
                    name="system.saves.{{id}}.value" data-dtype="Number" placeholder="0">
             <label for="system.saves.{{id}}.value" class="rollable">{{localize save.label}}</label>
         </div>
         {{/inline}}
-        <div class="saving-throws2">
+        <div class="saving-throws">
             {{> save id='ref' save=system.saves.ref}}
             {{> save id='frt' save=system.saves.frt isFortitude=true}}
             {{> save id='wil' save=system.saves.wil }}
