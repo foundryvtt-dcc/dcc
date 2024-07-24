@@ -29,6 +29,12 @@
   "esmodules": [
     "module/dcc.js"
   ],
+ "flags": {
+   "hotReload": {
+     "extensions": ["js", "css", "html", "json"],
+     "paths": ["lang", "templates", "styles"]
+   }
+ },
   "styles": [
     "styles/dcc.css"
   ],
