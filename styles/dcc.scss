@@ -631,157 +631,54 @@ $font-awesome: 'Font Awesome 6 Pro';
 /*  Items Sheet                              */
 /* ----------------------------------------- */
 
-.dcc.item {
-  .sheet-body.item {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 50px minmax(80px, auto);
+.dcc.item .sheet-body {
+  align-items: stretch;
+  display: grid;
+  column-gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  justify-items: stretch;
+  padding-top: 8px;
+  row-gap: 8px;
+
+  .box-inner {
+    padding: 5px;
   }
 
-  .sheet-body.item .value-row {
-    grid-column: span 3 / span 3;
+  .dark-border {
+    border: var(--dark-border);
+    border-top: none;
   }
 
-  .sheet-body.weapon {
-    display: grid;
-    grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px 50px 50px 50px minmax(80px, auto);
+  .dark-title {
+    align-self: center;
+    background: var(--dark-bg);
+    color: var(--light-color);
+    font-family: $cooper-black;
+    grid-column-start: 1;
+    grid-row: 1;
+    height: 19px;
+    letter-spacing: 1px;
+    padding-top: 1px;
+    text-align: center;
   }
 
-  .sheet-body.weapon .value-row {
-    grid-column: span 3 / span 3;
+  input {
+    background: none;
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+    font-family: var(--data-font);
+    vertical-align: middle;
   }
 
-  .sheet-body.armor {
-    display: grid;
-    grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px 50px 50px minmax(80px, auto);
+  input[type="checkbox"] {
+    background: none;
+    border: none;
+    margin: 0 6px 6px 0;
   }
 
-  .sheet-body.armor .value-row {
-    grid-column: span 3 / span 3;
-  }
-
-  .sheet-body .spell-header-extras {
-    display: grid;
-    gap: 10px;
-    grid-column: span 5 / span 5;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 0.5fr);
-    margin: 10px 0;
-    padding: 0;
-  }
-
-  .sheet-body.spell {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: 60px minmax(80px, auto) repeat(auto-fit, minmax(130px, auto));
-    width: 100%;
-  }
-
-  .sheet-body.spell .mercurial-effect-header {
-    display: grid;
-    grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px;
-  }
-
-  .sheet-body.treasure {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: 75px minmax(80px, auto);
-    width: 100%;
-  }
-
-  .sheet-body.skill {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: minmax(80px, auto);
-    width: 100%;
-  }
-
-  .value-row {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
-
-    .resource {
-      flex: 3 0 75px;
-    }
-
-    .conversions {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: space-around;
-    }
-  }
-
-  .sheet-body {
-    .spell-header-overflow {
-      grid-column: 1 / span 3;
-    }
-
-    .description {
-      border: $border-style;
-      grid-column: 1 / span 3;
-      grid-row: 2;
-      height: 72px;
-      width: 487px;
-    }
-
-    .armor-header-extras {
-      display: grid;
-      grid-column: 1 / span 3;
-      grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
-    }
-
-    .weapon-header-basics {
-      display: grid;
-      grid-column: 1 / span 3;
-      grid-template-columns: minmax(115px, auto) minmax(125px, auto) minmax(100px, auto) minmax(150px, auto);
-    }
-
-    .weapon-header-extras {
-      display: grid;
-      grid-column: 1 / span 3;
-      grid-template-columns: minmax(125px, auto) minmax(115px, auto) minmax(100px, auto) minmax(150px, auto);
-    }
-
-    .weapon-summary {
-      grid-column: 1 / span 3;
-    }
-
-    .armor-summary {
-      grid-column: 1 / span 3;
-    }
-
-    .mercurial-effect-heading {
-      grid-column: 1;
-
-      h1 {
-        border: 0;
-        display: inline-block;
-      }
-    }
-
-    .mercurial-effect-value {
-      grid-column: 2;
-    }
-
-    .mercurial-effect-summary {
-      grid-column: 3;
-    }
-
-    .mercurial-effect-description {
-      border: $border-style;
-      grid-column: 1 / span 3;
-    }
-  }
-
-  .item-name {
-  }
-
-  .item-type {
+  label {
+    margin-right: 4px;
+    line-height: 20px;
   }
 }
 
@@ -1235,26 +1132,6 @@ form.dcc-roll-modifier {
       vertical-align: middle;
       margin-right: 8px;
     }
-  }
-
-  .grid-col-span-2 {
-    display: grid;
-    grid-column-end: span 2;
-  }
-
-  .grid-col-span-3 {
-    display: grid;
-    grid-column-end: span 3;
-  }
-
-  .grid-col-span-4 {
-    display: grid;
-    grid-column-end: span 4;
-  }
-
-  .grid-col-span-5 {
-    display: grid;
-    grid-column-end: span 5;
   }
 
   .languages {

@@ -58,6 +58,28 @@
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+.grid-col-span-2 {
+  grid-column-end: span 2;
+}
+
+.grid-col-span-3 {
+  grid-column-end: span 3;
+}
+
+.grid-col-span-4 {
+  grid-column-end: span 4;
+}
+
+.grid-col-span-5 {
+  grid-column-end: span 5;
+}
+
+.grid-col-min-auto {
+  display: grid;
+  grid-template-columns: max-content auto;
+  padding-right: 5px;
+}
+
 .flex-group-center,
 .flex-group-left,
 .flex-group-right {

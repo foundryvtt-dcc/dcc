@@ -1,160 +1,179 @@
 <form class="{{cssClass}}" autocomplete="off">
-    <header class="sheet-header">
-        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
-        <div class="header-fields">
-            <div class="flexrow">
-                <div class="item-name">
-                    <h1 class="charname"><input id="name" name="name" type="text" value="{{item.name}}" placeholder="Name"
-                                                autocomplete="off"/></h1>
-                </div>
-                <label class="item-type" for="name">{{localize item.typeString}}</label>
-            </div>
+    <section class="sheet-body weapon" style="height:900px">
 
-            <div class="flexrow">
-                <div class="resource flex1">
-                    <input type="checkbox" name="system.equipped" data-dtype="Boolean" {{checked system.equipped}}/>
-                    <label class="resource-label" for="system.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
-                </div>
-                <div class="resource flex1">
-                    <input type="checkbox" name="system.trained" data-dtype="Boolean" {{checked system.trained}}/>
-                    <label class="resource-label" for="system.trained">{{localize "DCC.WeaponPropertiesTrained"}}</label>
-                </div>
-                <div class="resource flex1">
-                    <input type="checkbox" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
-                    <label class="resource-label" for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
-                </div>
-                <div class="resource flex1">
-                    <label class="resource-label">{{localize "DCC.Weight"}}</label>
-                    <input type="text" name="system.weight" value="{{system.weight}}" data-dtype="Number"/>
-                </div>
-            </div>
+        <!-- Name and Notes -->
+        <div class="grid-col-span-2 grid-col-min-auto">
+            <label for="name">{{localize "DCC.Name"}}</label>
+            <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25"
+                   style="width: 194px; height: 23px;">
         </div>
-    </header>
+        <div class="grid-col-span-2 grid-col-min-auto">
+            <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
+            <input id="system.description.summary" name="system.description.summary"
+                   value="{{system.description.summary}}" size="25" style="width: 194px; height: 23px;">
+        </div>
 
-    <section class="sheet-body weapon">
-        <div class="weapon-header-basics">
-            <div class="resource">
-                <label class="resource-label" for="system.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
-                <input type="text" name="system.actionDie" class="flex2"
-                       value="{{system.actionDie}}"
-                       {{#if system.config.inheritActionDie}}
-                       title="{{localize 'DCC.InheritTooltip'}}"
-                       disabled
-                       {{/if}}
-                placeholder="1d20" data-dtype="String"/>
-            </div>
-            <div class="resource">
-                <label class="resource-label" for="system.toHit">&nbsp;</label>
-                <input type="text" name="system.toHit" class="flex3"
-                       value="{{system.toHit}}"
-                       placeholder="+0" data-dtype="String"/>
-            </div>
-            <div class="resource">
-                <label class="resource-label" for="system.critRange">{{localize "DCC.WeaponPropertiesCritOn"}}</label>
-                <input type="text" name="system.critRange"
-                       value="{{system.critRange}}"
-                       {{#if system.config.inheritCritRange}}
-                       title="{{localize 'DCC.InheritTooltip'}}"
-                       disabled
-                       {{/if}}
-                placeholder="20" data-dtype="Number"/>
-            </div>
-            <div class="resource">
-                <label class="resource-label" for="system.damage">{{localize "DCC.WeaponPropertiesDamage"}}</label>
-                <input type="text" name="system.damage"
-                       value="{{system.damage}}"
-                       placeholder="1d3" data-dtype="String"/>
+        <!-- Weapon-specific Properties -->
+
+        <div class="dark-border grid-col-span-2">
+            <div class="dark-title">Weapon Basics</div>
+            <div class="box-inner grid-col-min-auto">
+                <div>
+                    <label for="system.actionDie">{{localize "DCC.ActionDie"}}</label>
+                    <input id="system.actionDie" name="system.actionDie" size="4"
+                           value="{{system.actionDie}}"
+                           {{#if system.config.inheritActionDie}}
+                           title="{{localize 'DCC.InheritTooltip'}}"
+                           disabled
+                           {{/if}}
+                    placeholder="1d20" data-dtype="String"/>
+                </div>
+                <div>
+                    <label for="system.critRange">{{localize "DCC.WeaponPropertiesCritOn"}}</label>
+                    <input id="system.critRange" name="system.critRange" size="3"
+                           value="{{system.critRange}}"
+                           {{#if system.config.inheritCritRange}}
+                           title="{{localize 'DCC.InheritTooltip'}}"
+                           disabled
+                           {{/if}}
+                    placeholder="20" data-dtype="Number"/>
+                </div>
+    
+                <div>
+                    <label for="system.damage">{{localize "DCC.WeaponPropertiesDamage"}}</label>
+                    <input id="system.damage" name="system.damage" value="{{system.damage}}" size="2"
+                           placeholder="1d3" data-dtype="String"/>
+                </div>
+                <div>
+                    <label for="system.toHit">{{localize "DCC.WeaponPropertiesToHit"}}</label>
+                    <input id="system.toHit" name="system.toHit" value="{{system.toHit}}" placeholder="+0" size="4" data-dtype="String"/>
+                </div>
+                
             </div>
         </div>
-        <div class="weapon-header-extras">
-            <div class="resource">
-                <label class="resource-label" for="system.range">{{localize "DCC.WeaponPropertiesRange"}}</label>
-                <input type="text" name="system.range" value="{{system.range}}"
-                       {{#if system.melee}}
-                       title="{{localize " DCC.WeaponPropertiesRangeTooltip"}}"
-                disabled
-                {{/if}}
-                placeholder="" data-dtype="String"/>
-            </div>
-            <div class="resource">
-                <label class="resource-label" for="system.twoHanded">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
-                <input type="checkbox" name="system.twoHanded" data-dtype="Boolean"
-                       {{checked system.twoHanded}}/>
-            </div>
-            <div class="resource">
-                <label class="resource-label" for="system.backstab">{{localize "DCC.WeaponPropertiesBackstab"}}</label>
-                <input type="checkbox" name="system.backstab" data-dtype="Boolean"
-                       {{checked system.backstab}}/>
-            </div>
-            <div class="resource">
-                <label class="resource-label" for="system.backstabDamage">{{localize "DCC.WeaponPropertiesBackstabDamage"}}</label>
-                <input type="text" name="system.backstabDamage" value="{{system.backstabDamage}}"
-                       {{#if system.backstab}}{{else}}
-                       title="{{localize " DCC.WeaponPropertiesBackstabDamageTooltip"}}"
-                disabled
-                {{/if}}
-                placeholder="{{system.damage}}" data-dtype="String"/>
+        <div class="weapon-settings grid-col-span-2 dark-border">
+            <div class="dark-title">Weapon Settings</div>
+            <div class="box-inner grid-col-min-auto">
+                <div>
+                    <input type="checkbox" id="system.equipped" name="system.equipped" data-dtype="Boolean" {{checked system.equipped}}/>
+                    <label for="system.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="system.trained" name="system.trained" data-dtype="Boolean" {{checked system.trained}}/>
+                    <label for="system.trained">{{localize "DCC.WeaponPropertiesTrained"}}</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="system.twoHanded" name="system.twoHanded" data-dtype="Boolean"
+                           {{checked system.twoHanded}}/>
+                    <label for="system.twoHanded">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
+                </div>
             </div>
         </div>
-        <div class="value-row">
-            {{#if allowResolve}}
-            <div class="rollable roll-button">&nbsp;</div>
-            {{/if}}
-            <div class="resource">
-                <label class="resource-label">{{localize "DCC.CurrencyPP"}}</label>
-                <input type="text" name="system.value.pp" value="{{system.value.pp}}" data-dtype="String"/>
-                {{#if allowConversions}}
-                <div class="conversions">
-                    <div class="rollable right-arrow-button" data-currency="pp">&nbsp;</div>
+
+        <div class="ranged-settings grid-col-span-2 dark-border">
+            <div class="dark-title">Ranged Settings</div>
+            <div class="box-inner grid-col-min-auto">
+                <input type="checkbox" id="system.melee" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
+                <label for="system.melee">{{localize "DCC.MeleeWeapon"}}</label>
+                <div></div>
+                <div class="grid-col-min-auto">
+                    <label for="system.range">{{localize "DCC.WeaponPropertiesRange"}}</label>
+                    
+                    <input id="system.range" name="system.range" value="{{system.range}}" size="19"
+                           {{#if system.melee}}
+                           title="{{localize " DCC.WeaponPropertiesRangeTooltip"}}"
+                    disabled
+                    {{/if}}
+                    placeholder="" data-dtype="String"/>
                 </div>
-                {{/if}}
-            </div>
-            <div class="resource">
-                <label class="resource-label">{{localize "DCC.CurrencyEP"}}</label>
-                <input type="text" name="system.value.ep" value="{{system.value.ep}}" data-dtype="String"/>
-                {{#if allowConversions}}
-                <div class="conversions">
-                    <div class="rollable left-arrow-button" data-currency="ep">&nbsp;</div>
-                    <div class="rollable right-arrow-button" data-currency="ep">&nbsp;</div>
-                </div>
-                {{/if}}
-            </div>
-            <div class="resource">
-                <label class="resource-label">{{localize "DCC.CurrencyGP"}}</label>
-                <input type="text" name="system.value.gp" value="{{system.value.gp}}" data-dtype="String"/>
-                {{#if allowConversions}}
-                <div class="conversions">
-                    <div class="rollable left-arrow-button" data-currency="gp">&nbsp;</div>
-                    <div class="rollable right-arrow-button" data-currency="gp">&nbsp;</div>
-                </div>
-                {{/if}}
-            </div>
-            <div class="resource">
-                <label class="resource-label">{{localize "DCC.CurrencySP"}}</label>
-                <input type="text" name="system.value.sp" value="{{system.value.sp}}" data-dtype="String"/>
-                {{#if allowConversions}}
-                <div class="conversions">
-                    <div class="rollable left-arrow-button" data-currency="sp">&nbsp;</div>
-                    <div class="rollable right-arrow-button" data-currency="sp">&nbsp;</div>
-                </div>
-                {{/if}}
-            </div>
-            <div class="resource">
-                <label class="resource-label">{{localize "DCC.CurrencyCP"}}</label>
-                <input type="text" name="system.value.cp" value="{{system.value.cp}}" data-dtype="String"/>
-                {{#if allowConversions}}
-                <div class="conversions">
-                    <div class="rollable left-arrow-button" data-currency="cp">&nbsp;</div>
-                </div>
-                {{/if}}
             </div>
         </div>
-        <div class="weapon-summary">
-            <label class="resource-label" for="system.description.summary">{{localize "DCC.ItemSummary"}}</label>
-            <input type="text" name="system.description.summary" value="{{system.description.summary}}" data-dtype="String"/>
+
+        <div class="backstab-settings grid-col-span-2 dark-border">
+            <div class="dark-title">Backstab Settings</div>
+            <div class="box-inner grid-col-min-auto">
+                    <input type="checkbox" id="system.backstab" name="system.backstab" data-dtype="Boolean" {{checked system.backstab}}/>
+                    <label for="system.backstab">{{localize "DCC.WeaponPropertiesBackstab"}}</label>
+                <div></div>
+                <div class="grid-col-min-auto">
+                    <label for="system.backstabDamage" style="justify-self: start">{{localize "DCC.Damage"}}</label>
+                    <input id="system.backstabDamage" name="system.backstabDamage" value="{{system.backstabDamage}}" size="4"
+                           {{#if system.backstab}}{{else}}
+                           title="{{localize " DCC.WeaponPropertiesBackstabDamageTooltip"}}"
+                    disabled
+                    {{/if}}
+                    placeholder="{{system.damage}}" data-dtype="String"/>
+                </div>
+            </div>
         </div>
-        <div class="description">
-            {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}
-        </div>
+
+
+        <!-- General Item Properties -->
+        <!--        <div class="grid-col-span-2">-->
+        <!--            <div>-->
+        <!--                <label for="system.weight">{{localize "DCC.Weight"}}</label>-->
+        <!--                <input type="text" id="system.weight" name="system.weight" value="{{system.weight}}" data-dtype="Number">-->
+        <!--            </div>-->
+
+
+        <!--        <div class="value-row">-->
+        <!--            {{#if allowResolve}}-->
+        <!--            <div class="rollable roll-button">&nbsp;</div>-->
+        <!--            {{/if}}-->
+        <!--            <div>-->
+        <!--                <label>{{localize "DCC.CurrencyPP"}}</label>-->
+        <!--                <input type="text" name="system.value.pp" value="{{system.value.pp}}" data-dtype="String"/>-->
+        <!--                {{#if allowConversions}}-->
+        <!--                <div class="conversions">-->
+        <!--                    <div class="rollable right-arrow-button" data-currency="pp">&nbsp;</div>-->
+        <!--                </div>-->
+        <!--                {{/if}}-->
+        <!--            </div>-->
+        <!--            <div>-->
+        <!--                <label>{{localize "DCC.CurrencyEP"}}</label>-->
+        <!--                <input type="text" name="system.value.ep" value="{{system.value.ep}}" data-dtype="String"/>-->
+        <!--                {{#if allowConversions}}-->
+        <!--                <div class="conversions">-->
+        <!--                    <div class="rollable left-arrow-button" data-currency="ep">&nbsp;</div>-->
+        <!--                    <div class="rollable right-arrow-button" data-currency="ep">&nbsp;</div>-->
+        <!--                </div>-->
+        <!--                {{/if}}-->
+        <!--            </div>-->
+        <!--            <div>-->
+        <!--                <label>{{localize "DCC.CurrencyGP"}}</label>-->
+        <!--                <input type="text" name="system.value.gp" value="{{system.value.gp}}" data-dtype="String"/>-->
+        <!--                {{#if allowConversions}}-->
+        <!--                <div class="conversions">-->
+        <!--                    <div class="rollable left-arrow-button" data-currency="gp">&nbsp;</div>-->
+        <!--                    <div class="rollable right-arrow-button" data-currency="gp">&nbsp;</div>-->
+        <!--                </div>-->
+        <!--                {{/if}}-->
+        <!--            </div>-->
+        <!--            <div>-->
+        <!--                <label>{{localize "DCC.CurrencySP"}}</label>-->
+        <!--                <input type="text" name="system.value.sp" value="{{system.value.sp}}" data-dtype="String"/>-->
+        <!--                {{#if allowConversions}}-->
+        <!--                <div class="conversions">-->
+        <!--                    <div class="rollable left-arrow-button" data-currency="sp">&nbsp;</div>-->
+        <!--                    <div class="rollable right-arrow-button" data-currency="sp">&nbsp;</div>-->
+        <!--                </div>-->
+        <!--                {{/if}}-->
+        <!--            </div>-->
+        <!--            <div>-->
+        <!--                <label>{{localize "DCC.CurrencyCP"}}</label>-->
+        <!--                <input type="text" name="system.value.cp" value="{{system.value.cp}}" data-dtype="String"/>-->
+        <!--                {{#if allowConversions}}-->
+        <!--                <div class="conversions">-->
+        <!--                    <div class="rollable left-arrow-button" data-currency="cp">&nbsp;</div>-->
+        <!--                </div>-->
+        <!--                {{/if}}-->
+        <!--            </div>-->
+        <!--        </div>-->
+        <!--        <div class="description">-->
+        <!--            {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}-->
+        <!--        </div>-->
+        <!--        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>-->
+
+        <!--        </div>-->
     </section>
 </form>
