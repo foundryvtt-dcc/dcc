@@ -27,6 +27,14 @@ $cooper-black: 'Cooper Black', 'Palatino Linotype', serif;
 $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc {
+  img {
+    border: none;
+  }
+
+  .disabled {
+    opacity: 40%;
+  }
+
   .window-content {
     font-family: $book-antiqua;
     height: 100%;
@@ -152,7 +160,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   column-gap: 5px;
   display: grid;
   font-family: $book-antiqua;
-  grid-template-columns: 23px 36px 103px 45px 53px 74px 82px 39px;
+  grid-template-columns: 23px 36px 118px 45px 53px 74px 82px 39px;
   margin: 0 0 8px 0;
   padding: 5px 0 2px 5px;
   text-align: center;
@@ -269,9 +277,9 @@ $font-awesome: 'Font Awesome 6 Pro';
   column-gap: 5px;
   display: grid;
   font-family: $book-antiqua;
-  grid-template-columns: 23px 32px 25px 103px 55px 60px 97px 20px 39px;
+  grid-template-columns: min-content 32px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
   margin: 0 0 8px 0;
-  padding: 5px 0 2px 5px;
+  padding: 5px 5px 2px 5px;
   text-align: center;
 
   img {
@@ -308,17 +316,25 @@ $font-awesome: 'Font Awesome 6 Pro';
   background-image: url('../../../icons/svg/d20-black.svg');
   background-repeat: no-repeat;
   background-size: 22px 22px;
+  grid-row: 1;
   width: 22px;
   height: 22px;
   margin-top: 1px;
+}
+
+.dcc .attack-buttons {
+  display: grid;
+  column-gap: 10px;
 }
 
 .dcc .backstab-button {
   background-image: url('./images/backstab.png');
   background-repeat: no-repeat;
   background-size: 22px 22px;
-  flex: 0 0 30px;
-  margin: 5px 0 0;
+  grid-row: 1;
+  width: 19px;
+  height: 19px;
+  margin: 1px 0 0 0;
 }
 
 .dcc .roll-button {
@@ -340,10 +356,6 @@ $font-awesome: 'Font Awesome 6 Pro';
   background-repeat: no-repeat;
   background-size: 22px 22px;
   margin: 5px 0 0;
-}
-
-.dcc .backstab-padding {
-  padding-right: 30px;
 }
 
 /* ----------------------------------------- */
@@ -424,7 +436,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     font-family: $cooper-black;
     grid-template-columns: max-content 25%;
     grid-template-rows: auto;
-    margin: 0 0 8px 0;
+    margin: 6px 0 6px 0;
     padding: 0 8px;
     align-items: center;
 
@@ -595,14 +607,14 @@ $font-awesome: 'Font Awesome 6 Pro';
   display: grid;
   font-family: $book-antiqua;
   font-size: 12px;
-  grid-template-columns: 30px 338px 65px 44px;
+  grid-template-columns: 30px 353px 65px 44px;
   margin: 0 0 8px 0;
   padding: 5px 0 2px 5px;
   text-align: center;
 }
 
 .dcc .item-list-spells {
-  grid-template-columns: 30px 22px 33px 164px 150px 20px 53px;
+  grid-template-columns: 30px 22px 33px 164px 153px 20px 53px;
 
   .item-list-header {
     grid-column-end: span 7;
@@ -624,24 +636,25 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc .item-list-currency {
   display: grid;
-  grid-template-columns: 20px 166px 23px repeat(5, 40px) 43px;
+  grid-template-columns: 20px 180px 23px repeat(5, 40px) 43px;
 }
 
 /* ----------------------------------------- */
-/*  Items Sheet                              */
+/*  Item Sheet                               */
 /* ----------------------------------------- */
 
 .dcc.item .sheet-body {
   align-items: stretch;
   display: grid;
-  column-gap: 8px;
-  grid-template-columns: repeat(4, 1fr);
+  column-gap: 5px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   justify-items: stretch;
+  overflow-x: clip;
   padding-top: 8px;
-  row-gap: 8px;
+  row-gap: 5px;
 
   .box-inner {
-    padding: 5px;
+    padding: 0 5px 4px 5px;
   }
 
   .dark-border {
@@ -654,12 +667,20 @@ $font-awesome: 'Font Awesome 6 Pro';
     background: var(--dark-bg);
     color: var(--light-color);
     font-family: $cooper-black;
+    font-size: 12px;
     grid-column-start: 1;
     grid-row: 1;
-    height: 19px;
+    height: 17px;
     letter-spacing: 1px;
     padding-top: 1px;
     text-align: center;
+  }
+
+  .description {
+    .editor {
+      min-height: 150px;
+    }
+    overflow-y: scroll;
   }
 
   input {
@@ -667,18 +688,38 @@ $font-awesome: 'Font Awesome 6 Pro';
     border-width: 0 0 1px 0;
     border-radius: 0;
     font-family: var(--data-font);
+    font-size: 12px;
+    text-align: center;
     vertical-align: middle;
   }
 
   input[type="checkbox"] {
     background: none;
     border: none;
-    margin: 0 6px 6px 0;
+    height: 12px;
+    margin: 0 0 01px 0;
+    width: 12px;
+  }
+
+  .item-values {
+    column-gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    text-align: center;
+
+    input {
+      background:rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 3px;
+      line-height: 13px;
+      height: 15px;
+    }
   }
 
   label {
-    margin-right: 4px;
-    line-height: 20px;
+    font-size: 12px;
+    margin: 0 4px 0 0;
+    line-height: 15px;
   }
 }
 

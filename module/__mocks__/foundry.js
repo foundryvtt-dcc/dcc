@@ -395,7 +395,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
     if (has) {
       // 1.1 - Recursively merge an inner object
       if ((tv === 'Object') && (tx === 'Object') && recursive) {
-        global.mergeObject(x, v, {
+        global.foundry.utils.mergeObject(x, v, {
           insertKeys,
           insertValues,
           overwrite,

@@ -1337,18 +1337,18 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = ```<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}" 
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}"
             title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}">
-            <i class="fas fa-dice-d20"></i> ${rollTotal}</a>```
+            <i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
       // Display crit result or just a notification of the crit
       if (critResult) {
-        return ``` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
+        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
                 ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>
-                ${critResult.results[0].getChatText()}```
+                ${critResult.results[0].getChatText()}`
       } else {
-        return ``` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
-                    ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}```
+        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
+                    ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
       }
     }
 
@@ -1436,21 +1436,21 @@ class DCCActor extends Actor {
       // Create the roll emote
       const rollData = encodeURIComponent(JSON.stringify(roll))
       const rollTotal = roll.total
-      const rollHTML = ```<a class='inline-roll inline-result'
+      const rollHTML = `<a class='inline-roll inline-result'
             data-roll ='${rollData}' data-damage= '${rollTotal}' 
             title='${game.dcc.DCCRoll.cleanFormula(roll.terms)}'>
-                <i class='fas fa-dice-d20'></i>${rollTotal}</a>```
+                <i class='fas fa-dice-d20'></i>${rollTotal}</a>`
 
       // Display fumble result or just a notification of the fumble
       if (fumbleResult) {
-        return ```<br/><br/><span style='color:red; font-weight: bolder' >
+        return `<br/><br/><span style='color:red; font-weight: bolder' >
                 ${game.i18n.localize('DCC.Fumble')} !</span>
                 ${rollHTML}<br/>
-                ${fumbleResult.results[0].getChatText()}```
+                ${fumbleResult.results[0].getChatText()}`
       } else {
-        return ```<br/><br/><span style='color:red; font-weight: bolder' >
+        return `<br/><br/><span style='color:red; font-weight: bolder' >
                 ${game.i18n.localize('DCC.Fumble')} !</span>
-                ${rollHTML}```
+                ${rollHTML}`
       }
     } else if (!fumbleResult) {
       // Generate flags for the roll

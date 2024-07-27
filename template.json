@@ -427,7 +427,9 @@
       ],
       "config": {
         "inheritActionDie": true,
-        "inheritCritRange": true
+        "inheritCritRange": true,
+        "inheritToHit": true,
+        "inheritDamage": true
       },
       "actionDie": "1d20",
       "toHit": "+0",

@@ -26,10 +26,12 @@
                    name="itemUpdates.{{id}}.system.equipped"
                    data-dtype="Boolean" {{checked weapon.system.equipped}}/>
             <img class="weapon-draggable" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}" width="22" height="22">
-            <div class="rollable weapon-button weapon-draggable" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
-            {{#if canBackstab}}
-            <div class="rollable backstab-button weapon-draggable">&nbsp;</div>
-            {{/if}}
+            <div class="attack-buttons">
+                <div class="rollable weapon-button weapon-draggable" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
+                {{#if canBackstab}}
+                <div class="rollable backstab-button weapon-draggable">&nbsp;</div>
+                {{/if}}
+            </div>
             <input class="weapon-name" type="text"
                    name="itemUpdates.{{id}}.name"
                    value="{{weapon.name}}"/>
@@ -39,7 +41,7 @@
             <input class="weapon-damage" type="text"
                    name="itemUpdates.{{id}}.system.damage"
                    value="{{weapon.system.damage}}"/>
-            {{#if weapon.melee}}
+            {{#if melee}}
             <input class="weapon-notes" type="text"
                    name="itemUpdates.{{id}}.system.description.summary"
                    value="{{{weapon.system.description.summary}}}"/>
@@ -62,9 +64,6 @@
             <li class="weapon-list-header">
                 <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
                 <div></div>
-                {{#if system.config.showBackstab}}
-                <div class="backstab-padding"></div>
-                {{/if}}
                 <div title="{{localize 'DCC.Roll'}}"></div>
                 <div>{{localize "DCC.Name"}}</div>
                 <div>{{localize "DCC.ToHit"}}</div>
@@ -79,7 +78,7 @@
                 </div>
             </li>
             {{#each actor.weapons.melee as |weapon index|}}
-            {{> weaponRow weapon=weapon id=weapon._id type='m' index=index canBackstab=../system.config.showBackstab}}
+            {{> weaponRow weapon=weapon id=weapon._id melee=true index=index canBackstab=../system.config.showBackstab}}
             {{/each}}
         </ol>
 
@@ -87,18 +86,15 @@
         <div class="weapons-heading">{{localize "DCC.RangedWeapons"}}</div>
         <ol class="weapon-list">
             <li class="weapon-list-header">
-                <div class="weapon-headericon" title="{{localize 'DCC.WeaponEquipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
+                <div title="{{localize 'DCC.WeaponEquipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
                 <div></div>
-                {{#if system.config.showBackstab}}
-                <div class="backstab-padding"></div>
-                {{/if}}
                 <div title="{{localize 'DCC.Roll'}}"></div>
-                <div class="weapon-name weapon-name-label">{{localize "DCC.Name"}}</div>
+                <div>{{localize "DCC.Name"}}</div>
                 <div>{{localize "DCC.ToHit"}}</div>
                 <div>{{localize "DCC.Damage"}}</div>
                 <div>{{localize "DCC.Range"}}</div>
-                <div title="{{localize 'DCC.WeaponTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
-                <div class="weapon-controls">
+                <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
+                <div>
                     <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon">
                         <i class="fas fa-plus" data-melee=0></i>
                         {{localize "DCC.Add"}}
@@ -106,7 +102,7 @@
                 </div>
             </li>
             {{#each actor.weapons.ranged as |weapon index|}}
-            {{> weaponRow weapon=weapon id=weapon._id type='r' index=index canBackstab=../system.config.showBackstab}}
+            {{> weaponRow weapon=weapon id=weapon._id melee=false index=index canBackstab=../system.config.showBackstab}}
             {{/each}}
         </ol>
 

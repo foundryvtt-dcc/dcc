@@ -822,7 +822,7 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollWeaponAttack (event) {
     event.preventDefault()
-    const slot = event.currentTarget.parentElement.dataset.itemSlot
+    const slot = this._findDataset(event.currentTarget, 'itemId')
     const options = this._fillRollOptions(event)
     Object.assign(options, {
       backstab: event.currentTarget.classList.contains('backstab-button')
