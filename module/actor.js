@@ -882,7 +882,7 @@ class DCCActor extends Actor {
       }
 
       // Convert the roll to a chat message
-      if (options.displayStandardCards || !options.rollWeaponAttack) {
+      if (options.displayStandardCards || !options.a) {
         abRoll.toMessage({
           speaker: ChatMessage.getSpeaker({ actor: this }),
           flavor,
@@ -1101,7 +1101,6 @@ class DCCActor extends Actor {
     /* Grab the To Hit modifier */
     let toHit = weapon.system.toHit
 
-    /* Determine crit range */
     let die = weapon.system.actionDie || this.getActionDice()[0].formula
 
     /* Determine using untrained weapon */

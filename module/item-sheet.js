@@ -12,9 +12,9 @@ export class DCCItemSheet extends ItemSheet {
   static get defaultOptions () {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
-      height: 492,
+      height: 426,
       resizable: false,
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
+      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'weapon' }],
       width: 475,
       dragDrop: [{ dragSelector: null, dropSelector: null }]
     })
@@ -168,7 +168,7 @@ export class DCCItemSheet extends ItemSheet {
 
     // Header buttons shown only with Owner permissions
     if (this.options.editable) {
-      if (this.object.type === 'spell' || this.object.type === 'weapon' || this.object.type === 'skill') {
+      if (this.object.type === 'spell' || this.object.type === 'skill') {
         buttons.unshift(
           {
             label: game.i18n.localize('DCC.ConfigureItem'),

@@ -108,6 +108,7 @@
 
 .grid-col-min-auto {
   display: grid;
+  grid-row-gap: 3px;
   grid-template-columns: max-content minmax(0, auto);
 }
 
@@ -166,7 +167,7 @@
   --dark-bg: url("images/denim.png");
   --dark-border: 4px solid var(--dark-color);
   --dark-color: rgba(0, 0, 0, 0.75);
-  --light-color: rgba(255, 255, 255, 0.87);
+  --light-color: rgba(255, 255, 255, 0.77);
   --medium-color: rgba(0, 0, 0, 0.3);
   --data-font: "Book Antiqua", serif;
   --label-font: "Cooper Black", serif;
@@ -272,7 +273,7 @@
   column-gap: 5px;
   display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  grid-template-columns: 23px 36px 118px 45px 53px 74px 82px 39px;
+  grid-template-columns: 23px 36px 107px 45px 53px 74px 82px 39px;
   margin: 0 0 8px 0;
   padding: 5px 0 2px 5px;
   text-align: center;
@@ -675,7 +676,7 @@
   display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   font-size: 12px;
-  grid-template-columns: 30px 353px 65px 44px;
+  grid-template-columns: 30px 342px 65px 44px;
   margin: 0 0 8px 0;
   padding: 5px 0 2px 5px;
   text-align: center;
@@ -701,30 +702,29 @@
 
 .dcc .item-list-currency {
   display: grid;
-  grid-template-columns: 20px 180px 23px repeat(5, 40px) 43px;
+  grid-template-columns: 20px 170px 23px repeat(5, 40px) 43px;
 }
 
 /* ----------------------------------------- */
 /*  Item Sheet                               */
 /* ----------------------------------------- */
-.dcc.item .sheet-body {
+.dcc.item .tab-body {
   align-items: stretch;
   display: grid;
   column-gap: 5px;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   justify-items: stretch;
   overflow-x: clip;
-  padding-top: 8px;
   row-gap: 5px;
 }
-.dcc.item .sheet-body .box-inner {
+.dcc.item .tab-body .box-inner {
   padding: 0 5px 4px 5px;
 }
-.dcc.item .sheet-body .dark-border {
+.dcc.item .tab-body .dark-border {
   border: var(--dark-border);
   border-top: none;
 }
-.dcc.item .sheet-body .dark-title {
+.dcc.item .tab-body .dark-title {
   align-self: center;
   background: var(--dark-bg);
   color: var(--light-color);
@@ -737,45 +737,46 @@
   padding-top: 1px;
   text-align: center;
 }
-.dcc.item .sheet-body .description {
-  overflow-y: scroll;
+.dcc.item .tab-body .description .editor {
+  min-height: 331px;
 }
-.dcc.item .sheet-body .description .editor {
-  min-height: 150px;
-}
-.dcc.item .sheet-body input {
+.dcc.item .tab-body input {
   background: none;
   border-width: 0 0 1px 0;
   border-radius: 0;
   font-family: var(--data-font);
   font-size: 12px;
+  line-height: 15px;
   text-align: center;
   vertical-align: middle;
 }
-.dcc.item .sheet-body input[type=checkbox] {
+.dcc.item .tab-body input[type=checkbox] {
   background: none;
   border: none;
   height: 12px;
   margin: 0 0 1px 0;
   width: 12px;
 }
-.dcc.item .sheet-body .item-values {
+.dcc.item .tab-body .item-img {
+  max-height: 64px;
+}
+.dcc.item .tab-body .item-values {
   column-gap: 4px;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   text-align: center;
 }
-.dcc.item .sheet-body .item-values input {
+.dcc.item .tab-body .item-values input {
   background: rgba(0, 0, 0, 0.05);
   border: 1px solid var(--color-border-light-tertiary);
   border-radius: 3px;
   line-height: 13px;
   height: 15px;
 }
-.dcc.item .sheet-body label {
+.dcc.item .tab-body label {
   font-size: 12px;
-  margin: 0 4px 0 0;
   line-height: 15px;
+  margin: 1px 0 0 0;
 }
 
 /* ----------------------------------------- */
@@ -824,20 +825,11 @@
 .dcc.sheet a[data-tab=character]:before {
   content: "\f007";
 }
-.dcc.sheet a[data-tab=equipment]:before {
-  content: "\f71d";
-}
-.dcc.sheet a[data-tab=skills]:before {
-  content: "\f5dc";
-}
-.dcc.sheet a[data-tab=spells]:before {
-  content: "\f6b8";
-}
-.dcc.sheet a[data-tab=notes]:before {
-  content: "\f249";
-}
 .dcc.sheet a[data-tab=cleric]:before {
   content: "\f3ed";
+}
+.dcc.sheet a[data-tab=description]:before {
+  content: "\f249";
 }
 .dcc.sheet a[data-tab=dwarf]:before {
   content: "\f6eb";
@@ -845,11 +837,23 @@
 .dcc.sheet a[data-tab=elf]:before {
   content: "\f56b";
 }
+.dcc.sheet a[data-tab=equipment]:before {
+  content: "\f71d";
+}
 .dcc.sheet a[data-tab=halfling]:before {
   content: "\e139";
 }
+.dcc.sheet a[data-tab=skills]:before {
+  content: "\f5dc";
+}
+.dcc.sheet a[data-tab=spells]:before {
+  content: "\f6b8";
+}
 .dcc.sheet a[data-tab=warrior]:before {
   content: "\f6eb";
+}
+.dcc.sheet a[data-tab=weapon]:before {
+  content: "\f71d";
 }
 .dcc.sheet a[data-tab=wizard]:before {
   content: "\f6e8";

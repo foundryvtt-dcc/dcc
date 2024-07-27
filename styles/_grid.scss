@@ -108,6 +108,7 @@
 
 .grid-col-min-auto {
   display: grid;
+  grid-row-gap: 3px;
   grid-template-columns: max-content minmax(0, auto);
 }
 

@@ -50,7 +50,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   --dark-bg: url("images/denim.png");
   --dark-border: 4px solid var(--dark-color);
   --dark-color: rgba(0, 0, 0, 0.75);
-  --light-color: rgba(255, 255, 255, 0.87);
+  --light-color: rgba(255, 255, 255, 0.77);
   --medium-color: rgba(0, 0, 0, 0.3);
   --data-font: "Book Antiqua", serif;
   --label-font: "Cooper Black", serif;
@@ -160,7 +160,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   column-gap: 5px;
   display: grid;
   font-family: $book-antiqua;
-  grid-template-columns: 23px 36px 118px 45px 53px 74px 82px 39px;
+  grid-template-columns: 23px 36px 107px 45px 53px 74px 82px 39px;
   margin: 0 0 8px 0;
   padding: 5px 0 2px 5px;
   text-align: center;
@@ -607,7 +607,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   display: grid;
   font-family: $book-antiqua;
   font-size: 12px;
-  grid-template-columns: 30px 353px 65px 44px;
+  grid-template-columns: 30px 342px 65px 44px;
   margin: 0 0 8px 0;
   padding: 5px 0 2px 5px;
   text-align: center;
@@ -636,21 +636,20 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc .item-list-currency {
   display: grid;
-  grid-template-columns: 20px 180px 23px repeat(5, 40px) 43px;
+  grid-template-columns: 20px 170px 23px repeat(5, 40px) 43px;
 }
 
 /* ----------------------------------------- */
 /*  Item Sheet                               */
 /* ----------------------------------------- */
 
-.dcc.item .sheet-body {
+.dcc.item .tab-body {
   align-items: stretch;
   display: grid;
   column-gap: 5px;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   justify-items: stretch;
   overflow-x: clip;
-  padding-top: 8px;
   row-gap: 5px;
 
   .box-inner {
@@ -678,9 +677,8 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   .description {
     .editor {
-      min-height: 150px;
+      min-height: 331px;
     }
-    overflow-y: scroll;
   }
 
   input {
@@ -689,6 +687,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     border-radius: 0;
     font-family: var(--data-font);
     font-size: 12px;
+    line-height: 15px;
     text-align: center;
     vertical-align: middle;
   }
@@ -699,6 +698,10 @@ $font-awesome: 'Font Awesome 6 Pro';
     height: 12px;
     margin: 0 0 01px 0;
     width: 12px;
+  }
+
+  .item-img {
+    max-height: 64px;
   }
 
   .item-values {
@@ -718,8 +721,8 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   label {
     font-size: 12px;
-    margin: 0 4px 0 0;
     line-height: 15px;
+    margin: 1px 0 0 0;
   }
 }
 
@@ -784,24 +787,13 @@ $font-awesome: 'Font Awesome 6 Pro';
     content: "\f007";
   }
 
-  a[data-tab="equipment"]:before {
-    content: "\f71d";
-  }
-
-  a[data-tab="skills"]:before {
-    content: "\f5dc";
-  }
-
-  a[data-tab="spells"]:before {
-    content: "\f6b8";
-  }
-
-  a[data-tab="notes"]:before {
-    content: "\f249";
-  }
 
   a[data-tab="cleric"]:before {
     content: "\f3ed";
+  }
+
+  a[data-tab="description"]:before {
+    content: "\f249";
   }
 
   a[data-tab="dwarf"]:before {
@@ -812,12 +804,28 @@ $font-awesome: 'Font Awesome 6 Pro';
     content: "\f56b";
   }
 
+  a[data-tab="equipment"]:before {
+    content: "\f71d";
+  }
+
   a[data-tab="halfling"]:before {
     content: "\e139";
   }
 
+  a[data-tab="skills"]:before {
+    content: "\f5dc";
+  }
+
+  a[data-tab="spells"]:before {
+    content: "\f6b8";
+  }
+
   a[data-tab="warrior"]:before {
     content: "\f6eb";
+  }
+
+  a[data-tab="weapon"]:before {
+    content: "\f71d";
   }
 
   a[data-tab="wizard"]:before {

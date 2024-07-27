@@ -89,7 +89,10 @@ Hooks.once('init', async function () {
     makeDefault: true,
   })
   Items.unregisterSheet('core', ItemSheet)
-  Items.registerSheet('dcc', DCCItemSheet)
+  Items.registerSheet('dcc', DCCItemSheet, {
+    label: 'DCC.DCCItemSheet',
+    makeDefault: true,
+  })
 
   // Register shared template for upper level characters
   const templatePaths = [
