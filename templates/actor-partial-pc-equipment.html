@@ -2,7 +2,7 @@
 <div class="tab equipment" data-group="primary" data-tab="equipment">
     <div class="equipment-container">
         {{!-- Deed Roll --}}
-        {{#if system.config.rollAttackBonus}}
+        {{#if system.config.showAttackBonusButton}}
         <div class="attack-bonus-container skills-container">
             <div style="grid-template-columns: 22px max-content; justify-self: end;">
                 <img class="attack-bonus rollable" src="systems/dcc/styles/images/game-icons-net/d4-black.svg">
@@ -205,7 +205,7 @@
 
         {{!-- Treasure --}}
         {{#* inline "TreasureRow"}}
-        <li class="item item-draggable item-currency" data-item-id="{{item._id}}">
+        <li class="item item-draggable grid-col-span-9" data-item-id="{{item._id}}">
             <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
             <div>{{item.name}}</div>
             <div class="item-is-coins">{{#if item.isCoins}}({{localize "DCC.AsCoins"}}){{/if}}</div>

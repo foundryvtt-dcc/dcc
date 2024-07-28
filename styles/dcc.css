@@ -594,6 +594,9 @@
 /*  Wizard/Elf Class                         */
 /* ----------------------------------------- */
 .dcc .spells-container-wizard {
+  background-image: url("./images/FCI-spots-8-32-Spell-Book-Stack.png");
+  background-repeat: no-repeat;
+  background-position-x: center;
   height: 565px;
 }
 .dcc .spells-container-wizard .dark-title {
@@ -746,9 +749,13 @@
   border-radius: 0;
   font-family: var(--data-font);
   font-size: 12px;
+  height: 18px;
   line-height: 15px;
   text-align: center;
   vertical-align: middle;
+}
+.dcc.item .tab-body input:focus {
+  box-shadow: none;
 }
 .dcc.item .tab-body input[type=checkbox] {
   background: none;
@@ -777,6 +784,9 @@
   font-size: 12px;
   line-height: 15px;
   margin: 1px 0 0 0;
+}
+.dcc.item .tab-body .mercurial .editor {
+  min-height: 288px;
 }
 
 /* ----------------------------------------- */
@@ -843,8 +853,14 @@
 .dcc.sheet a[data-tab=halfling]:before {
   content: "\e139";
 }
+.dcc.sheet a[data-tab=mercurial]:before {
+  content: "\f72b";
+}
 .dcc.sheet a[data-tab=skills]:before {
   content: "\f5dc";
+}
+.dcc.sheet a[data-tab=spell]:before {
+  content: "\f6b8";
 }
 .dcc.sheet a[data-tab=spells]:before {
   content: "\f6b8";

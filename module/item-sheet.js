@@ -14,7 +14,7 @@ export class DCCItemSheet extends ItemSheet {
       classes: ['dcc', 'sheet', 'item'],
       height: 426,
       resizable: false,
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'weapon' }],
+      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
       width: 475,
       dragDrop: [{ dragSelector: null, dropSelector: null }]
     })

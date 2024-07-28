@@ -1,105 +1,131 @@
 <form class="{{cssClass}}" autocomplete="off">
-    <header class="sheet-header">
-        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
-        <div class="header-fields">
-            <div class="flexrow">
-                <div class="item-name">
-                    <h1 class="charname"><input id="name" name="name" type="text" value="{{item.name}}" placeholder="Name" autocomplete="off"/></h1>
+    <!-- Nav -->
+    <nav class="sheet-tabs tabs" data-group="item">
+        <a data-tab="main">{{localize "DCC.Spell"}}</a>
+        <a data-tab="mercurial">{{localize "DCC.MercurialEffect"}}</a>
+        <a data-tab="description">{{localize "DCC.Description"}}</a>
+    </nav>
+
+    <section class="sheet-body">
+        <div class="tab" data-group="item" data-tab="main">
+            <div class="tab-body">
+                <div class="grid-col-span-12 grid-col-min-auto" style="margin-bottom: 5px;">
+                    <label for="name">{{localize "DCC.Name"}}</label>
+                    <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
                 </div>
-                <label class="item-type" for="name">{{localize item.typeString}}</label>
+
+                <div class="dark-border grid-col-span-6">
+                    <div class="dark-title">{{localize "DCC.SpellDetails"}}</div>
+                    <div class="box-inner grid-col-min-auto">
+                        <label for="system.level">{{localize "DCC.Level"}}</label>
+                        <input type="text" name="system.level"
+                               value="{{numberFormat system.level decimals=0 sign=false}}"
+                               placeholder="1" data-dtype="Number"/>
+                        <label for="system.range">{{localize "DCC.SpellRange"}}</label>
+                        <input type="text" name="system.range" id="system.range" value="{{system.range}}"
+                               placeholder="N/A" data-dtype="String"/>
+                        <label for="system.duration">{{localize "DCC.SpellDuration"}}</label>
+                        <input type="text" name="system.duration" id="system.duration" value="{{system.duration}}"
+                               placeholder="N/A" data-dtype="String"/>
+                        <label for="system.castingTime" style="font-size: 11px;">{{localize "DCC.SpellCastingTime"}}</label>
+                        <input type="text" name="system.castingTime" id="system.castingTime" value="{{system.castingTime}}"
+                               placeholder="N/A" data-dtype="String"/>
+                        <label for="system.save">{{localize "DCC.SpellSave"}}</label>
+                        <input type="text" name="system.save" id="system.save" value="{{system.save}}"
+                               placeholder="N/A" data-dtype="String"/>
+                        <label for="system.page">{{localize "DCC.SpellPage"}}</label>
+                        <input type="text" name="system.page" id="system.page"
+                               value="{{system.page}}"
+                               placeholder="N/A" data-dtype="String"/>
+                    </div>
+                </div>
+
+                <div class="dark-border grid-col-span-4">
+                    <div class="dark-title">{{localize "DCC.SpellCastingHeader"}}</div>
+                    <div class="box-inner grid-col-min-auto">
+                        <label for="system.spellCheck.die">{{localize "DCC.ActionDie"}}</label>
+                        <input type="text" name="system.spellCheck.die"
+                               value="{{system.spellCheck.die}}"
+                            {{#if system.config.inheritActionDie}}
+                               title="{{localize 'DCC.InheritTooltip'}}"
+                               disabled
+                            {{/if}}
+                               placeholder="1d20" data-dtype="String"/>
+                        <label for="system.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
+                        <input type="text" name="system.spellCheck.value"
+                               value="{{system.spellCheck.value}}"
+                            {{#if system.config.inheritSpellCheck}}
+                               title="{{localize 'DCC.InheritTooltip'}}"
+                               disabled
+                            {{/if}}
+                               placeholder="+0" data-dtype="String"/>
+                        <label for="system.spellCheck.penalty" style="font-size: 11px;">{{localize "DCC.CheckPenalty"}}</label>
+                        <input type="text" name="system.spellCheck.penalty"
+                               value="{{numberFormat system.spellCheck.penalty decimals=0 sign=true}}"
+                            {{#if system.config.inheritCheckPenalty}}
+                               title="{{localize 'DCC.InheritTooltip'}}"
+                               disabled
+                            {{/if}}
+                               placeholder="-0" data-dtype="Number"/>
+                    </div>
+                </div>
+
+                <div class="grid-col-span-1">
+                    <div class="dark-border grid-col-span-1" style="max-height: 85px;">
+                        <div class="dark-title">{{localize "DCC.Image"}}</div>
+                        <div class="box-inner" style="padding-top: 5px;">
+                            <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+                        </div>
+                    </div>
+
+                    <img src="systems/dcc/styles/images/SA-1-24-FCI-spots1-spell-book-and-skull-with-candle.png"
+                         alt="Grimoire Art" height="58px" width="58px" style="opacity: 50%; margin: 4px 0 0 3px;"/>
+                </div>
+
+                <div class="dark-border grid-col-span-12" title="{{localize 'DCC.DescriptionTooltip'}}">
+                    <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+                    <div class="box-inner">
+                        {{{descriptionHTML}}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab" data-group="item" data-tab="mercurial">
+            <div class="tab-body">
+                <div class="grid-col-span-3  grid-col-min-auto">
+                    <label class="mercurial-roll rollable" for="system.mercurialEffect.value">
+                        <i class="fas fa-dice-d20"></i> {{localize "DCC.MercurialEffectValue"}}</label>
+                    <input type="text" name="system.mercurialEffect.value" id="system.mercurialEffect.value"
+                           value="{{system.mercurialEffect.value}}" data-dtype="Number"/>
+                </div>
+                <div class="grid-col-span-9 grid-col-min-auto">
+                    <label for="system.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
+                    <input type="text" name="system.mercurialEffect.summary" id="system.mercurialEffect.summary"
+                           value="{{system.mercurialEffect.summary}}" data-dtype="String"/>
+                </div>
+                <div class="grid-col-span-12">
+                    <div class="dark-border">
+                        <div class="dark-title">{{localize "DCC.MercurialEffect"}}</div>
+                        <div class="box-inner">
+                            <div class="mercurial">
+                                {{editor mercurialEffectHTML target="system.mercurialEffect.description" engine="prosemirror" button=true
+                                         editable=editable}}
+                            </div>
+                            {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                                <a class="content-link" draggable="true" data-link="" data-uuid="Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.3Dy6Ek1G6jkw99FQ" data-id="3Dy6Ek1G6jkw99FQ" data-type="JournalEntryPage" data-pack="dcc-core-book.dcc-core-text" data-tooltip="Text Page" data-hash="mercurial-magic"><i class="fas fa-file-lines"></i>Mercurial Magic</a>
+                            {{/dccPackExists}}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="flexrow">
-              <div class="flex1">
-                <label class="resource-label" for="system.level">{{localize "DCC.Level"}}</label>
-                <input type="text" name="system.level"
-                       value="{{numberFormat system.level decimals=0 sign=false}}"
-                       placeholder="1" data-dtype="Number"/>
-              </div>
-              <div class="flex2">
-                <label class="resource-label" for="system.spellCheck.die">{{localize "DCC.ActionDie"}}</label>
-                <input type="text" name="system.spellCheck.die" class="flex1"
-                       value="{{system.spellCheck.die}}"
-                       {{#if system.config.inheritActionDie}}
-                       title="{{localize 'DCC.InheritTooltip'}}"
-                       disabled
-                       {{/if}}
-                       placeholder="1d20" data-dtype="String"/>
-              </div>
-              <div class="flex2">
-                <label class="resource-label" for="system.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
-                  <input type="text" name="system.spellCheck.value" class="flex1"
-                         value="{{system.spellCheck.value}}"
-                         {{#if system.config.inheritSpellCheck}}
-                         title="{{localize 'DCC.InheritTooltip'}}"
-                         disabled
-                         {{/if}}
-                         placeholder="+0" data-dtype="String"/>
-              </div>
-              <div class="flex2">
-                <label class="resource-label" for="system.spellCheck.penalty">{{localize "DCC.CheckPenalty"}}</label>
-                  <input type="text" name="system.spellCheck.penalty" class="flex1"
-                         value="{{numberFormat system.spellCheck.penalty decimals=0 sign=true}}"
-                         {{#if system.config.inheritCheckPenalty}}
-                         title="{{localize 'DCC.InheritTooltip'}}"
-                         disabled
-                         {{/if}}
-                         placeholder="-0" data-dtype="Number"/>
+            <div class="tab" data-group="item" data-tab="description">
+                <div class="tab-body">
+                    <div class="description grid-col-span-12">
+                        {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}
+                    </div>
                 </div>
-              </div>
             </div>
-        </div>
-    </header>
-
-    <section class="sheet-body spell">
-        <div class="spell-header-extras">
-          <div class="resource">
-            <label class="resource-label" for="system.range">{{localize "DCC.SpellRange"}}</label>
-            <input type="text" name="system.range" id="system.range" value="{{system.range}}"
-                   placeholder="N/A" data-dtype="String"/>
-          </div>
-          <div class="resource">
-            <label class="resource-label" for="system.duration">{{localize "DCC.SpellDuration"}}</label>
-            <input type="text" name="system.duration" id="system.duration" value="{{system.duration}}"
-                   placeholder="N/A" data-dtype="String"/>
-          </div>
-          <div class="resource">
-            <label class="resource-label" for="system.castingTime">{{localize "DCC.SpellCastingTime"}}</label>
-            <input type="text" name="system.castingTime" id="system.castingTime" value="{{system.castingTime}}"
-                   placeholder="N/A" data-dtype="String"/>
-          </div>
-          <div class="resource">
-            <label class="resource-label" for="system.save">{{localize "DCC.SpellSave"}}</label>
-            <input type="text" name="system.save" id="system.save" value="{{system.save}}"
-                   placeholder="N/A" data-dtype="String"/>
-          </div>
-          <div class="resource">
-            <label class="resource-label" for="system.page">{{localize "DCC.SpellPage"}}</label>
-            <input type="text" name="system.page" id="system.page"
-                   value="{{system.page}}"
-                   placeholder="N/A" data-dtype="String"/>
-          </div>
-        </div>
-        <div class="description">
-          {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}
-        </div>
-        {{#if showMercurialRoll}}
-        <div class="mercurial-effect-description">
-          <div class="mercurial-effect-header">
-            <div class="mercurial-effect-heading">
-              <h1>{{localize "DCC.MercurialEffect"}}</h1>
-            </div>
-            <div class="mercurial-effect-value">
-              <label class="mercurial-roll resource-label rollable" for="system.mercurialEffect.value"><i class="fas fa-dice-d20"></i> {{localize "DCC.MercurialEffectValue"}}</label>
-              <input type="text" name="system.mercurialEffect.value" id="system.mercurialEffect.value" value="{{system.mercurialEffect.value}}" data-dtype="Number"/>
-            </div>
-            <div class="mercurial-effect-summary">
-              <label class="resource-label" for="system.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
-              <input type="text" name="system.mercurialEffect.summary" id="system.mercurialEffect.summary" value="{{system.mercurialEffect.summary}}" data-dtype="String"/>
-            </div>
-          </div>
-          {{editor mercurialEffectHTML target="system.mercurialEffect.description" engine="prosemirror" button=true editable=editable}}
-        </div>
-        {{/if}}
     </section>
 </form>

@@ -519,6 +519,9 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc .spells-container-wizard {
+  background-image: url('./images/FCI-spots-8-32-Spell-Book-Stack.png');
+  background-repeat: no-repeat;
+  background-position-x: center;
   height: 565px;
 
   .dark-title {
@@ -687,9 +690,14 @@ $font-awesome: 'Font Awesome 6 Pro';
     border-radius: 0;
     font-family: var(--data-font);
     font-size: 12px;
+    height: 18px;
     line-height: 15px;
     text-align: center;
     vertical-align: middle;
+
+    &:focus {
+      box-shadow: none;
+    }
   }
 
   input[type="checkbox"] {
@@ -723,6 +731,12 @@ $font-awesome: 'Font Awesome 6 Pro';
     font-size: 12px;
     line-height: 15px;
     margin: 1px 0 0 0;
+  }
+
+  .mercurial {
+    .editor {
+      min-height: 288px;
+    }
   }
 }
 
@@ -812,8 +826,16 @@ $font-awesome: 'Font Awesome 6 Pro';
     content: "\e139";
   }
 
+  a[data-tab="mercurial"]:before {
+    content: "\f72b";
+  }
+
   a[data-tab="skills"]:before {
     content: "\f5dc";
+  }
+
+  a[data-tab="spell"]:before {
+    content: "\f6b8";
   }
 
   a[data-tab="spells"]:before {

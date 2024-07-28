@@ -80,7 +80,7 @@ class DCCActorSheet extends ActorSheet {
     }
 
     // Should the Deed Roll button be available on the sheet?
-    data.system.config.rollAttackBonus = (this.actor.getAttackBonusMode() === 'manual')
+    data.system.config.showAttackBonusButton = (this.actor.getAttackBonusMode() === 'manual')
 
     // Prepare item lists by type
     this._prepareItems(data)
