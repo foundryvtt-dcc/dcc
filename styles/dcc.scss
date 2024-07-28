@@ -243,6 +243,9 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc .notes {
+  background-image: url('./images/FCI-spots-2-scroll-with-ink-and-candle.webp');
+  background-repeat: no-repeat;
+  background-size: contain;
   border: var(--dark-border);
   border-top: none;
   font-size: 14px;
@@ -390,6 +393,9 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 .dcc .spells-container-cleric {
+  background-image: url('images/SA-12-20-ornate-glyph-page-ornament-SpotArt-12-Fantasy-Clip-Inks.webp');
+  background-repeat: no-repeat;
+  background-size: contain;
   height: 565px;
 
   .dark-title {
@@ -436,7 +442,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     font-family: $cooper-black;
     grid-template-columns: max-content 25%;
     grid-template-rows: auto;
-    margin: 6px 0 6px 0;
+    margin: 0 0 6px 0;
     padding: 0 8px;
     align-items: center;
 
@@ -512,6 +518,13 @@ $font-awesome: 'Font Awesome 6 Pro';
       text-align: left;
     }
   }
+
+  .wizard-bg {
+    background-image: url('./images/FCI-spots-8-33-Spellcasters-hat.webp');
+    background-repeat: no-repeat;
+    background-position-x: center;
+    background-size: contain;
+  }
 }
 
 /* ----------------------------------------- */
@@ -519,7 +532,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc .spells-container-wizard {
-  background-image: url('./images/FCI-spots-8-32-Spell-Book-Stack-opacity-5.webp');
+  background-image: url('images/FCI-spots-8-32-Spell-Book-Stack.webp');
   background-repeat: no-repeat;
   background-position-x: center;
   background-size: contain;
@@ -545,7 +558,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc .equipment-container {
-  background-image: url('./images/SA-1-11-FCI-spots1-Treasure-Hoarde-1-opacity-3.webp');
+  background-image: url('./images/SA-4-26-FCI-spots-4-Shield-crossed-swords.webp');
   background-repeat: no-repeat;
   background-position-x: center;
   background-size: contain;
