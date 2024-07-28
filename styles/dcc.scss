@@ -519,9 +519,10 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc .spells-container-wizard {
-  background-image: url('./images/FCI-spots-8-32-Spell-Book-Stack.png');
+  background-image: url('./images/FCI-spots-8-32-Spell-Book-Stack-opacity-5.webp');
   background-repeat: no-repeat;
   background-position-x: center;
+  background-size: contain;
   height: 565px;
 
   .dark-title {
@@ -544,6 +545,10 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc .equipment-container {
+  background-image: url('./images/SA-1-11-FCI-spots1-Treasure-Hoarde-1-opacity-3.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-size: contain;
   display: grid;
   grid-template-columns: 100%;
 
