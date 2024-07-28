@@ -519,6 +519,13 @@ $font-awesome: 'Font Awesome 6 Pro';
     }
   }
 
+  .elf-bg {
+    background-image: url('./images/FCI-magic-items-1-9-shamen-crystal.webp');
+    background-repeat: no-repeat;
+    background-position-x: center;
+    background-size: contain;
+  }
+
   .wizard-bg {
     background-image: url('./images/FCI-spots-8-33-Spellcasters-hat.webp');
     background-repeat: no-repeat;
@@ -798,6 +805,69 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 /* ----------------------------------------- */
+/*  Skills
+/* ----------------------------------------- */
+
+.dcc .skills-heading {
+  background: var(--dark-bg);
+  color: var(--light-color);
+  display: grid;
+  font-family: $cooper-black;
+  font-size: 13px;
+  letter-spacing: 1px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.dcc .skill-list {
+  border: var(--dark-border);
+  border-top: none;
+  column-gap: 5px;
+  display: grid;
+  font-family: $book-antiqua;
+  grid-template-columns: 220px 55px 60px 97px 50px;
+  margin: 0 0 8px 0;
+  padding: 5px 5px 2px 5px;
+  text-align: center;
+
+  img {
+    border: none;
+    box-sizing: content-box;
+  }
+
+  input {
+    text-align: center;
+  }
+}
+
+.dcc .skill-list-header {
+  display: grid;
+  font-family: $cooper-black;
+  font-size: 12px;
+  grid-column-end: span 9;
+  grid-template-columns: subgrid;
+  margin: 0 0 3px 0;
+  padding: 0;
+  text-align: center;
+}
+
+.dcc .skill {
+  display: grid;
+  grid-column-end: span 9;
+  grid-template-columns: subgrid;
+  align-items: center;
+  justify-items: center;
+  margin-bottom: 5px;
+}
+
+.dcc .roll-button {
+  background-image: url('../../../icons/svg/d20-black.svg');
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  margin: 21px 0 0;
+}
+
+/* ----------------------------------------- */
 /*  Tabs                                     */
 /* ----------------------------------------- */
 
@@ -846,6 +916,10 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   a[data-tab="mercurial"]:before {
     content: "\f72b";
+  }
+
+  a[data-tab="notes"]:before {
+    content: "\f249";
   }
 
   a[data-tab="skills"]:before {
