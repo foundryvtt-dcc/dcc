@@ -112,7 +112,7 @@
             <input type="checkbox"
                    name="itemUpdates.{{id}}.system.equipped"
                    data-dtype="Boolean" {{checked armor.system.equipped}}/>
-            <img class="item-draggable" src="{{armor.img}}" title="{{armor.name}}" alt="{{armor.name}}" width="20" height="20">
+            <img class="item-draggable" src="{{armor.img}}" title="{{armor.name}}" alt="{{armor.name}}" width="22" height="22">
             <input type="text"
                    name="itemUpdates.{{id}}.name"
                    value="{{armor.name}}"/>
@@ -144,7 +144,7 @@
                 <div>{{localize "DCC.Penalty"}}</div>
                 <div>{{localize "DCC.FumbleDie"}}</div>
                 <div>{{localize "DCC.Notes"}}</div>
-                <div class="armor-controls">
+                <div>
                     <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="armor"><i class="fas fa-plus"></i>
                         {{localize "DCC.Add"}}</a>
                 </div>
@@ -168,7 +168,7 @@
         {{/inline}}
         {{#* inline "ItemRow"}}
         <li class="item item-draggable" data-item-id="{{item._id}}">
-            <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="20" height="20">
+            <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22">
             <div>{{item.name}}</div>
             <div>{{item.system.quantity}}</div>
             <div>
@@ -205,8 +205,8 @@
 
         {{!-- Treasure --}}
         {{#* inline "TreasureRow"}}
-        <li class="item item-draggable grid-col-span-9" data-item-id="{{item._id}}">
-            <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
+        <li class="item item-draggable item-currency" data-item-id="{{item._id}}">
+            <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" width="22" height="22"/>
             <div>{{item.name}}</div>
             <div class="item-is-coins">{{#if item.isCoins}}({{localize "DCC.AsCoins"}}){{/if}}</div>
             <div class="item-pp currency-field">{{item.value.pp}}</div>
@@ -214,7 +214,7 @@
             <div class="item-gp currency-field">{{item.value.gp}}</div>
             <div class="item-sp currency-field">{{item.value.sp}}</div>
             <div class="item-cp currency-field">{{item.value.cp}}</div>
-            <div class="item-controls">
+            <div>
                 <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
                 <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
             </div>
@@ -231,14 +231,14 @@
                 <div>{{localize "DCC.CurrencyShortGP"}}</div>
                 <div>{{localize "DCC.CurrencyShortSP"}}</div>
                 <div>{{localize "DCC.CurrencyShortCP"}}</div>
-                <div class="item-controls">
-                    <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="treasure"><i
-                        class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+                <div>
+                    <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="treasure">
+                        <i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
                 </div>
             </li>
             <li class="item item-currency">
                 <div><img src="systems/dcc/styles/images/game-icons-net/coins.svg" title="{{localize 'DCC.Funds'}}"
-                          width="24" height="24"/></div>
+                          width="22" height="22"/></div>
                 <div>{{localize 'DCC.Funds'}}</div>
                 <div></div>
                 <input class="item-pp currency-field" type="text" name="system.currency.pp" placeholder="0"

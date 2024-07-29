@@ -160,7 +160,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   column-gap: 5px;
   display: grid;
   font-family: $book-antiqua;
-  grid-template-columns: 23px 36px 107px 45px 53px 74px 82px 39px;
+  grid-template-columns: min-content 32px auto 45px 53px 74px 82px 39px;
   margin: 0 0 8px 0;
   padding: 5px 0 2px 5px;
   text-align: center;
@@ -245,6 +245,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 .dcc .notes {
   background-image: url('./images/FCI-spots-2-scroll-with-ink-and-candle.webp');
   background-repeat: no-repeat;
+  background-position: center;
   background-size: contain;
   border: var(--dark-border);
   border-top: none;
@@ -280,7 +281,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   column-gap: 5px;
   display: grid;
   font-family: $book-antiqua;
-  grid-template-columns: min-content 32px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
+  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
   text-align: center;
@@ -322,7 +323,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   grid-row: 1;
   width: 22px;
   height: 22px;
-  margin-top: 1px;
+  margin: 1px 2px 0 0;
 }
 
 .dcc .attack-buttons {
@@ -395,6 +396,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 .dcc .spells-container-cleric {
   background-image: url('images/SA-12-20-ornate-glyph-page-ornament-SpotArt-12-Fantasy-Clip-Inks.webp');
   background-repeat: no-repeat;
+  background-position: center;
   background-size: contain;
   height: 565px;
 
@@ -625,7 +627,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   grid-column-end: span 4;
   grid-template-columns: subgrid;
   margin: 0 0 5px 0;
-  padding: 0 0 3px 0;
+  padding: 0 0 5px 0;
 }
 
 .dcc .item-list {
@@ -635,9 +637,9 @@ $font-awesome: 'Font Awesome 6 Pro';
   display: grid;
   font-family: $book-antiqua;
   font-size: 12px;
-  grid-template-columns: 30px 342px 65px 44px;
+  grid-template-columns: 22px auto 65px 44px;
   margin: 0 0 8px 0;
-  padding: 5px 0 2px 5px;
+  padding: 5px;
   text-align: center;
 }
 
@@ -664,7 +666,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc .item-list-currency {
   display: grid;
-  grid-template-columns: 20px 170px 23px repeat(5, 40px) 43px;
+  grid-template-columns: 22px auto 23px repeat(5, 40px) 43px;
 }
 
 /* ----------------------------------------- */
@@ -808,7 +810,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 /*  Skills
 /* ----------------------------------------- */
 
-.dcc .skills-heading {
+.dcc .skill-heading {
   background: var(--dark-bg);
   color: var(--light-color);
   display: grid;
@@ -860,11 +862,13 @@ $font-awesome: 'Font Awesome 6 Pro';
   margin-bottom: 5px;
 }
 
-.dcc .roll-button {
-  background-image: url('../../../icons/svg/d20-black.svg');
+.dcc .tab.skills {
+  background-image: url('./images/FCI-spots-8-14-Four-Potion-Bottles.webp');
   background-repeat: no-repeat;
-  background-size: 22px 22px;
-  margin: 21px 0 0;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+  min-height: 540px;
 }
 
 /* ----------------------------------------- */
@@ -883,6 +887,10 @@ $font-awesome: 'Font Awesome 6 Pro';
       font-family: $font-awesome;
       padding-right: 5px;
     }
+  }
+
+  a[data-tab="armor"]:before {
+    content: "\f3ed";
   }
 
   a[data-tab="character"]:before {
@@ -912,6 +920,10 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   a[data-tab="halfling"]:before {
     content: "\e139";
+  }
+
+  a[data-tab="item"]:before {
+    content: "\f723";
   }
 
   a[data-tab="mercurial"]:before {
