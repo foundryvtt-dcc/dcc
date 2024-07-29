@@ -60,20 +60,20 @@
                         <input class="full-width" type="text" id="system.class.patron" name="system.class.patron"
                                value="{{system.class.patron}}" data-dtype="String"/>
                     </div>
-                    <div class="grid-template-full elf-bg">
+                    <div class="elf-bg">
                         <div class="dark-title" style="">{{localize "DCC.Corruptions"}}</div>
                         {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
                     </div>
-                    <div class="grid-template-full" >
+                    <div >
                         {{localize "DCC.Infravision"}}
                     </div>
-                    <div class="grid-template-full" >
+                    <div >
                         {{localize "DCC.IronVulnerability"}}
                     </div>
-                    <div class="grid-template-full" >
+                    <div >
                         {{localize "DCC.ElfLuckMod"}}
                     </div>
-                    <div class="grid-template-full" >
+                    <div >
                         {{localize "DCC.ElfImmunities"}}
                     </div>
                     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}

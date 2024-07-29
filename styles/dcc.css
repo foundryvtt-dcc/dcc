@@ -1,60 +1,5 @@
-.grid,
-.grid-2col {
+.grid-container {
   display: grid;
-  gap: 10px;
-  grid-column: span 2/span 2;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 10px 0;
-  padding: 0;
-}
-
-.grid-3col {
-  grid-column: span 3/span 3;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.grid-4col {
-  grid-column: span 4/span 4;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.grid-5col {
-  grid-column: span 5/span 5;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.grid-6col {
-  grid-column: span 5/span 5;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.grid-7col {
-  grid-column: span 7/span 7;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-}
-
-.grid-8col {
-  grid-column: span 8/span 8;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-}
-
-.grid-9col {
-  grid-column: span 9/span 9;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-}
-
-.grid-10col {
-  grid-column: span 10/span 10;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
-}
-
-.grid-11col {
-  grid-column: span 11/span 11;
-  grid-template-columns: repeat(11, minmax(0, 1fr));
-}
-
-.grid-12col {
-  grid-column: span 12/span 12;
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
@@ -106,30 +51,70 @@
   grid-column-end: span 12;
 }
 
-.grid-col-min-auto {
+.grid-row-gap-5 {
+  grid-row-gap: 5px;
+}
+
+.grid-tpl-two {
   display: grid;
-  grid-row-gap: 3px;
-  grid-template-columns: max-content minmax(0, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
-.flex-group-center,
-.flex-group-left,
-.flex-group-right {
-  align-items: center;
-  border: 1px solid #999;
-  justify-content: center;
+.grid-tpl-max {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.grid-tpl-max-25 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 25%;
+}
+
+.grid-tpl-max-auto {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.cg-5 {
+  column-gap: 5px;
+}
+
+.rg-5 {
+  row-gap: 5px;
+}
+
+.mb-3 {
+  margin-bottom: 3px;
+}
+
+.mb-5 {
+  margin-bottom: 5px;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.p-5 {
   padding: 5px;
-  text-align: center;
 }
 
-.flex-group-left {
-  justify-content: flex-start;
-  text-align: left;
+.p-8 {
+  padding: 8px;
 }
 
-.flex-group-right {
-  justify-content: flex-end;
-  text-align: right;
+.pt-5 {
+  padding-top: 5px;
+}
+
+.pt-8 {
+  padding-top: 8px;
+}
+
+.w-10ch {
+  width: 10ch;
 }
 
 /* ----------------------------------------- */
@@ -151,16 +136,74 @@
 .dcc img {
   border: none;
 }
+.dcc .box-inner {
+  padding: 0 5px 4px 5px;
+}
+.dcc .dark-border {
+  border: var(--dark-border);
+  border-top: none;
+}
+.dcc .dark-title {
+  align-self: stretch;
+  background: var(--dark-bg);
+  color: var(--light-color);
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  grid-template-columns: 1fr;
+  min-height: 19px;
+  letter-spacing: 1px;
+  padding-top: 1px;
+  text-align: center;
+}
 .dcc .disabled {
   opacity: 40%;
 }
-.dcc .window-content {
+.dcc .editor {
+  background: rgba(0, 0, 0, 0.05);
+  border: var(--dark-border);
+  border-top: none;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  height: 100%;
-  padding: 0 5px 0 5px;
+  min-height: 305px;
+  padding: 0 8px;
 }
-.dcc .window-content label {
+.dcc label {
+  display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;
+}
+.dcc input {
+  background: none;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  height: 17px;
+  line-height: 1;
+  text-align: center;
+  background: none;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+}
+.dcc input[type=checkbox] {
+  height: 20px;
+  width: 20px;
+  margin: 0;
+}
+.dcc input:focus {
+  box-shadow: none;
+}
+.dcc input.full-width {
+  width: 100%;
+}
+.dcc select {
+  background: none;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  font-family: var(--data-font);
+  font-size: 15px;
+  text-align: center;
+  width: 75px;
+}
+.dcc select:focus {
+  box-shadow: none;
+}
+.dcc .window-content {
+  padding: 0 5px 0 5px;
 }
 
 :root {
@@ -204,79 +247,14 @@
 }
 
 /* ----------------------------------------- */
-/*  Actor Sheet                              */
-/* ----------------------------------------- */
-.dcc.sheet.actor {
-  min-height: 633px;
-  min-width: 533px;
-}
-
-.choose-class-select {
-  font-size: 1.2rem;
-  width: 100%;
-}
-
-/* ----------------------------------------- */
-/*  Sheet Header                             */
-/* ----------------------------------------- */
-.dcc .sheet-header {
-  justify-content: flex-start;
-  margin-bottom: 10px;
-  overflow: hidden;
-}
-
-.dcc .sheet-header .profile-div {
-  align-items: center;
-  display: flex;
-  flex: 0 0 100px;
-  margin: 5px 10px 0 0;
-}
-
-.dcc .sheet-header .profile-div .profile-img {
-  height: auto;
-  margin-left: auto;
-  margin-right: auto;
-  max-height: 100px;
-  max-width: 100px;
-  width: auto;
-}
-
-.dcc .sheet-header h1.charname {
-  border-bottom: 0;
-  flex: 0 0 100%;
-  height: 50px;
-  margin: 5px 0;
-  padding: 0;
-}
-
-.dcc .sheet-header h1.charname input {
-  height: 100%;
-  margin: 0;
-  width: 100%;
-}
-
-.dcc .sheet-header .upper-level div.level {
-  flex: 1 0 25%;
-  padding: 0 0 0 7px;
-}
-
-.dcc .sheet-header .upper-level div.level input {
-  text-align: center;
-}
-
-/* ----------------------------------------- */
 /*  Armor                                  */
 /* ----------------------------------------- */
 .dcc .armor-list {
-  border: var(--dark-border);
-  border-top: none;
   column-gap: 5px;
   display: grid;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
   grid-template-columns: min-content 32px auto 45px 53px 74px 82px 39px;
   margin: 0 0 8px 0;
-  padding: 5px 0 2px 5px;
-  text-align: center;
+  padding: 5px 5px 2px 5px;
 }
 
 .dcc .armor {
@@ -284,11 +262,13 @@
   display: grid;
   justify-items: center;
   margin-bottom: 5px;
-  grid-column-end: span 8;
   grid-template-columns: subgrid;
 }
 .dcc .armor input {
-  text-align: center;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--dark-color);
+  border-radius: 3px;
+  height: 22px;
 }
 
 /* ----------------------------------------- */
@@ -348,16 +328,11 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  border: var(--dark-border);
-  border-top: none;
-  font-size: 14px;
-  height: 544px;
-  line-height: 24px;
+  font-size: 16px;
   margin: 0;
-  padding: 0 8px 8px 8px;
 }
 .dcc .notes .editor {
-  min-height: 539px;
+  min-height: 547px;
 }
 
 /* ----------------------------------------- */
@@ -397,7 +372,6 @@
   display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;
   font-size: 12px;
-  grid-column-end: span 9;
   grid-template-columns: subgrid;
   margin: 0 0 3px 0;
   padding: 0;
@@ -406,11 +380,16 @@
 
 .dcc .weapon {
   display: grid;
-  grid-column-end: span 9;
   grid-template-columns: subgrid;
   align-items: center;
   justify-items: center;
   margin-bottom: 5px;
+}
+.dcc .weapon input {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--dark-color);
+  border-radius: 3px;
+  height: 22px;
 }
 
 .dcc .weapon-button {
@@ -462,9 +441,6 @@
 /* ----------------------------------------- */
 /*  Cleric Class                             */
 /* ----------------------------------------- */
-.dcc div.cleric-table {
-  grid-column-end: span 2;
-}
 .dcc div.cleric-table table {
   width: 497px;
   text-align: center;
@@ -486,169 +462,47 @@
   padding-top: 1px;
 }
 
-.dcc .spells-container-cleric {
+.cleric-spells-bg {
   background-image: url("images/SA-12-20-ornate-glyph-page-ornament-SpotArt-12-Fantasy-Clip-Inks.webp");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   height: 565px;
 }
-.dcc .spells-container-cleric .dark-title {
-  align-self: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-column-start: 1;
-  grid-row: 1;
-  height: 19px;
-  letter-spacing: 1px;
-  padding-top: 1px;
-  text-align: center;
-}
 
 /* ----------------------------------------- */
-/*  Thief/Halfling Class                     */
+/*  Wizard/Elf
 /* ----------------------------------------- */
-.dcc .skills-container {
-  align-items: center;
-  border: var(--dark-border);
-  display: grid;
-  font-size: 16px;
-  grid-template-columns: 1fr 1fr;
-  margin-top: 6px;
-}
-.dcc .skills-container .dark-title {
-  align-self: stretch;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-template-columns: 100%;
-  grid-column-end: span 2;
-  letter-spacing: 1px;
-  padding-bottom: 3px;
-  text-align: center;
-}
-.dcc .skills-container > div {
-  display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-template-columns: max-content 25%;
-  grid-template-rows: auto;
-  margin: 0 0 6px 0;
-  padding: 0 8px;
-  align-items: center;
-}
-.dcc .skills-container > div a {
-  background: none;
-  border: none;
-}
-.dcc .skills-container > div .editor {
-  background: rgba(0, 0, 0, 0.05);
-  border: var(--dark-border);
-  border-top: none;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  min-height: 305px;
-  padding: 0 8px;
-}
-.dcc .skills-container > div label {
-  display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  margin-right: 6px;
-}
-.dcc .skills-container > div input {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  height: 17px;
-  line-height: 1;
-  text-align: center;
-  background: none;
-  border-width: 0 0 1px 0;
-  border-radius: 0;
-}
-.dcc .skills-container > div input:focus {
-  box-shadow: none;
-}
-.dcc .skills-container > div input.full-width {
-  width: 100%;
-}
-.dcc .skills-container > div select {
-  background: none;
-  border-width: 0 0 1px 0;
-  border-radius: 0;
-  font-family: var(--data-font);
-  font-size: 15px;
-  text-align: center;
-  width: 75px;
-}
-.dcc .skills-container > div select:focus {
-  box-shadow: none;
-}
-.dcc .skills-container > div.grid-template-full {
-  grid-column-end: span 2;
-  grid-template-columns: 100%;
-}
-.dcc .skills-container > div.grid-template-max-auto {
-  grid-column-end: span 2;
-  grid-template-columns: max-content auto;
-}
-.dcc .skills-container > div.textarea {
-  border: 2px groove #eeede0;
-  grid-template-columns: 25% 75%;
-  grid-template-rows: auto minmax(100px, auto);
-}
-.dcc .skills-container > div.textarea label {
-  text-align: left;
-}
-.dcc .skills-container .elf-bg {
+.elf-bg {
   background-image: url("./images/FCI-magic-items-1-9-shamen-crystal.webp");
   background-repeat: no-repeat;
   background-position-x: center;
   background-size: contain;
 }
-.dcc .skills-container .wizard-bg {
+
+.wizard-bg {
   background-image: url("./images/FCI-spots-8-33-Spellcasters-hat.webp");
   background-repeat: no-repeat;
   background-position-x: center;
   background-size: contain;
 }
 
-/* ----------------------------------------- */
-/*  Wizard/Elf Class                         */
-/* ----------------------------------------- */
-.dcc .spells-container-wizard {
+.wizard-spells-bg {
   background-image: url("images/FCI-spots-8-32-Spell-Book-Stack.webp");
   background-repeat: no-repeat;
   background-position-x: center;
   background-size: contain;
-  height: 565px;
-}
-.dcc .spells-container-wizard .dark-title {
-  align-self: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-column-start: 1;
-  grid-row: 1;
-  height: 19px;
-  letter-spacing: 1px;
-  margin-left: -1px;
-  padding-top: 1px;
-  text-align: center;
+  min-height: 565px;
 }
 
 /* ----------------------------------------- */
 /*  Items                                    */
 /* ----------------------------------------- */
-.dcc .equipment-container {
+.equipment-bg {
   background-image: url("./images/SA-4-26-FCI-spots-4-Shield-crossed-swords.webp");
   background-repeat: no-repeat;
   background-position-x: center;
   background-size: contain;
-  display: grid;
-  grid-template-columns: 100%;
-}
-.dcc .equipment-container input[type=checkbox] {
-  height: 19px;
-  width: 19px;
-  margin: 0;
 }
 
 .dcc .item {
@@ -658,7 +512,6 @@
   font-size: 13px;
   justify-items: center;
   grid-template-columns: subgrid;
-  grid-column-end: span 4;
   padding-bottom: 2px;
   margin-bottom: 2px;
 }
@@ -669,10 +522,6 @@
   border-bottom: none;
   padding-bottom: 2px;
   margin-bottom: 2px;
-}
-
-.dcc .item-currency {
-  grid-column-end: span 9;
 }
 
 .dcc .item-heading {
@@ -688,10 +537,8 @@
 .dcc .item-list-header {
   border-bottom: 2px dotted var(--medium-color);
   display: grid;
-  flex: 0 0 10px;
   font-family: "Cooper Black", "Palatino Linotype", serif;
   font-size: 12px;
-  grid-column-end: span 4;
   grid-template-columns: subgrid;
   margin: 0 0 5px 0;
   padding: 0 0 5px 0;
@@ -704,20 +551,14 @@
   display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   font-size: 12px;
-  grid-template-columns: 22px auto 65px 44px;
+  grid-template-columns: 22px auto 65px 39px;
   margin: 0 0 8px 0;
   padding: 5px;
   text-align: center;
 }
 
 .dcc .item-list-spells {
-  grid-template-columns: 30px 22px 33px 164px 153px 20px 53px;
-}
-.dcc .item-list-spells .item-list-header {
-  grid-column-end: span 7;
-}
-.dcc .item-list-spells .item {
-  grid-column-end: span 7;
+  grid-template-columns: 30px 22px 33px 1fr 1fr 35px 39px;
 }
 .dcc .item-list-spells .spell-item-button {
   background-image: url("../../../icons/svg/d20-black.svg");
@@ -730,7 +571,7 @@
 
 .dcc .item-list-currency {
   display: grid;
-  grid-template-columns: 22px auto 23px repeat(5, 40px) 43px;
+  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 39px;
 }
 
 /* ----------------------------------------- */
@@ -744,13 +585,6 @@
   justify-items: stretch;
   overflow-x: clip;
   row-gap: 5px;
-}
-.dcc.item .tab-body .box-inner {
-  padding: 0 5px 4px 5px;
-}
-.dcc.item .tab-body .dark-border {
-  border: var(--dark-border);
-  border-top: none;
 }
 .dcc.item .tab-body .dark-title {
   align-self: center;
@@ -1150,42 +984,10 @@ form.dcc-roll-modifier input.stat {
 /*  Actor Sheet
 /* ----------------------------------------- */
 .dcc.sheet.actor .character .character-grid {
-  background: url("images/parchment.jpeg");
   column-gap: 8px;
   display: grid;
-  font-family: var(--label-font);
-  font-size: 16px;
   grid-template-columns: 192px 143px 82px 82px;
   grid-template-rows: 46px 114px repeat(5, 60px 9px) 60px;
-  text-align: center;
-}
-.dcc.sheet.actor .character .character-grid input,
-.dcc.sheet.actor .character .character-grid select {
-  background: none;
-  border-width: 0 0 1px 0;
-  border-radius: 0;
-  font-family: var(--data-font);
-  height: 16px;
-  text-align: center;
-  text-align-last: center;
-}
-.dcc.sheet.actor .character .character-grid input:focus,
-.dcc.sheet.actor .character .character-grid select:focus {
-  box-shadow: none;
-}
-.dcc.sheet.actor .character .character-grid label {
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-}
-.dcc.sheet.actor .character .dark-title {
-  align-self: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  grid-column-start: 1;
-  grid-row: 1;
-  height: 19px;
-  letter-spacing: 1px;
-  padding-top: 1px;
-  text-align: center;
 }
 .dcc.sheet.actor .character .ability-scores {
   display: grid;
@@ -1197,7 +999,6 @@ form.dcc-roll-modifier input.stat {
   font-size: 14px;
   grid-template-columns: 85px 37px 70px;
   grid-template-rows: 19px 20px 20px;
-  text-align: left;
 }
 .dcc.sheet.actor .character .ability-scores .ability-box input {
   border-width: 0 0 1px 0;
@@ -1228,7 +1029,6 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc.sheet.actor .character .ac-and-hp {
   display: grid;
-  grid-template-columns: 50% 50%;
   grid-template-rows: 65px 19px 20px;
 }
 .dcc.sheet.actor .character .ac-and-hp input {
@@ -1306,6 +1106,7 @@ form.dcc-roll-modifier input.stat {
   padding-left: 3px;
 }
 .dcc.sheet.actor .character .melee-missile-attack-damage {
+  align-items: center;
   display: grid;
   grid-column: 3;
   grid-column-end: span 2;
@@ -1313,24 +1114,14 @@ form.dcc-roll-modifier input.stat {
   grid-template-columns: subgrid;
   grid-template-rows: 69px 69px;
 }
-.dcc.sheet.actor .character .melee-missile-attack-damage .bonus {
-  align-items: center;
-  border: var(--dark-border);
-  border-top: none;
-  display: grid;
-  font-size: 12px;
-  grid-template-columns: 100%;
-  grid-template-rows: 31px 20px;
-  margin-bottom: 8px;
-}
-.dcc.sheet.actor .character .melee-missile-attack-damage .bonus label {
-  height: 31px;
-}
-.dcc.sheet.actor .character .melee-missile-attack-damage .bonus input {
+.dcc.sheet.actor .character .melee-missile-attack-damage input {
   border: none;
-  font-size: 16px;
-  grid-row: 2;
-  margin-top: 4px;
+  font-size: 14px;
+  margin: 4px 8px 4px 8px;
+}
+.dcc.sheet.actor .character .melee-missile-attack-damage label {
+  font-size: 12px;
+  padding-bottom: 2px;
 }
 .dcc.sheet.actor .character .name-and-level {
   column-gap: 12px;

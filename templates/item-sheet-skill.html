@@ -8,14 +8,14 @@
     <section class="sheet-body">
         <div class="tab" data-group="item" data-tab="main">
             <div class="tab-body">
-                <div class="grid-col-span-12 grid-col-min-auto" style="margin-bottom: 5px;">
+                <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
                     <label for="name">{{localize "DCC.Name"}}</label>
                     <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
                 </div>
 
                 <div class="dark-border grid-col-span-12">
                     <div class="dark-title">{{localize "DCC.SkillDetails"}}</div>
-                    <div class="box-inner grid-col-min-auto" style="grid-row-gap: 10px;">
+                    <div class="box-inner grid-tpl-max-auto" style="grid-row-gap: 10px;">
                         {{#if system.config.freeform}}
                             <label for="system.description.summary">{{localize "DCC.SkillSummary"}}</label>
                             <input type="text" name="system.description.summary" id="system.description.summary"

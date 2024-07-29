@@ -31,18 +31,87 @@ $font-awesome: 'Font Awesome 6 Pro';
     border: none;
   }
 
+  .box-inner {
+    padding: 0 5px 4px 5px;
+  }
+
+  .dark-border {
+    border: var(--dark-border);
+    border-top: none;
+  }
+
+  .dark-title {
+    align-self: stretch;
+    background: var(--dark-bg);
+    color: var(--light-color);
+    font-family: $cooper-black;
+    grid-template-columns: 1fr;
+    min-height: 19px;
+    letter-spacing: 1px;
+    padding-top: 1px;
+    text-align: center;
+  }
+
   .disabled {
     opacity: 40%;
   }
 
-  .window-content {
+  // Prosemirror richtext editor
+  .editor {
+    background: rgba(0, 0, 0, 0.05);
+    border: var(--dark-border);
+    border-top: none;
     font-family: $book-antiqua;
-    height: 100%;
-    padding: 0 5px 0 5px;
+    min-height: 305px;
+    padding: 0 8px;
   }
 
-  .window-content label {
+  label {
+    display: grid;
     font-family: $cooper-black;
+  }
+
+  input {
+    background: none;
+    font-family: $book-antiqua;
+    height: 17px;
+    line-height: 1;
+    text-align: center;
+    background: none;
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+
+    &[type="checkbox"] {
+      height: 20px;
+      width: 20px;
+      margin: 0;
+    }
+
+    &:focus {
+      box-shadow: none;
+    }
+
+    &.full-width {
+      width: 100%;
+    }
+  }
+
+  select {
+    background: none;
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+    font-family: var(--data-font);
+    font-size: 15px;
+    text-align: center;
+    width: 75px;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .window-content {
+    padding: 0 5px 0 5px;
   }
 }
 
@@ -88,82 +157,15 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 /* ----------------------------------------- */
-/*  Actor Sheet                              */
-/* ----------------------------------------- */
-
-.dcc.sheet.actor {
-  min-height: 633px;
-  min-width: 533px;
-}
-
-.choose-class-select {
-  font-size: 1.2rem;
-  width: 100%;
-}
-
-/* ----------------------------------------- */
-/*  Sheet Header                             */
-/* ----------------------------------------- */
-
-.dcc .sheet-header {
-  justify-content: flex-start;
-  margin-bottom: 10px;
-  overflow: hidden;
-}
-
-.dcc .sheet-header .profile-div {
-  align-items: center;
-  display: flex;
-  flex: 0 0 100px;
-  margin: 5px 10px 0 0;
-}
-
-.dcc .sheet-header .profile-div .profile-img {
-  height: auto;
-  margin-left: auto;
-  margin-right: auto;
-  max-height: 100px;
-  max-width: 100px;
-  width: auto;
-}
-
-.dcc .sheet-header h1.charname {
-  border-bottom: 0;
-  flex: 0 0 100%;
-  height: 50px;
-  margin: 5px 0;
-  padding: 0;
-}
-
-.dcc .sheet-header h1.charname input {
-  height: 100%;
-  margin: 0;
-  width: 100%;
-}
-
-.dcc .sheet-header .upper-level div.level {
-  flex: 1 0 25%;
-  padding: 0 0 0 7px;
-}
-
-.dcc .sheet-header .upper-level div.level input {
-  text-align: center;
-}
-
-/* ----------------------------------------- */
 /*  Armor                                  */
 /* ----------------------------------------- */
 
 .dcc .armor-list {
-  border: var(--dark-border);
-  border-top: none;
   column-gap: 5px;
   display: grid;
-  font-family: $book-antiqua;
   grid-template-columns: min-content 32px auto 45px 53px 74px 82px 39px;
   margin: 0 0 8px 0;
-  padding: 5px 0 2px 5px;
-  text-align: center;
+  padding: 5px 5px 2px 5px;
 }
 
 .dcc .armor {
@@ -171,11 +173,13 @@ $font-awesome: 'Font Awesome 6 Pro';
   display: grid;
   justify-items: center;
   margin-bottom: 5px;
-  grid-column-end: span 8;
   grid-template-columns: subgrid;
 
   input {
-    text-align: center;
+    background: rgba(0, 0, 0, .1);
+    border: 1px solid var(--dark-color);
+    border-radius: 3px;
+    height: 22px;
   }
 }
 
@@ -247,16 +251,11 @@ $font-awesome: 'Font Awesome 6 Pro';
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  border: var(--dark-border);
-  border-top: none;
-  font-size: 14px;
-  height: 544px;
-  line-height: 24px;
+  font-size: 16px;
   margin: 0;
-  padding: 0 8px 8px 8px;
 
   .editor {
-    min-height: 539px;
+    min-height: 547px;
   }
 }
 
@@ -300,7 +299,6 @@ $font-awesome: 'Font Awesome 6 Pro';
   display: grid;
   font-family: $cooper-black;
   font-size: 12px;
-  grid-column-end: span 9;
   grid-template-columns: subgrid;
   margin: 0 0 3px 0;
   padding: 0;
@@ -309,11 +307,17 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc .weapon {
   display: grid;
-  grid-column-end: span 9;
   grid-template-columns: subgrid;
   align-items: center;
   justify-items: center;
   margin-bottom: 5px;
+
+  input {
+    background: rgba(0, 0, 0, .1);
+    border: 1px solid var(--dark-color);
+    border-radius: 3px;
+    height: 22px;
+  }
 }
 
 .dcc .weapon-button {
@@ -367,8 +371,6 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .dcc div.cleric-table {
-  grid-column-end: span 2;
-
   table {
     width: 497px;
     text-align: center;
@@ -393,193 +395,49 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 }
 
-.dcc .spells-container-cleric {
+.cleric-spells-bg {
   background-image: url('images/SA-12-20-ornate-glyph-page-ornament-SpotArt-12-Fantasy-Clip-Inks.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   height: 565px;
-
-  .dark-title {
-    align-self: center;
-    background: var(--dark-bg);
-    color: var(--light-color);
-    font-family: $cooper-black;
-    grid-column-start: 1;
-    grid-row: 1;
-    height: 19px;
-    letter-spacing: 1px;
-    padding-top: 1px;
-    text-align: center;
-  }
 }
 
 /* ----------------------------------------- */
-/*  Thief/Halfling Class                     */
+/*  Wizard/Elf
 /* ----------------------------------------- */
 
-.dcc .skills-container {
-  align-items: center;
-  border: var(--dark-border);
-  display: grid;
-  font-size: 16px;
-  grid-template-columns: 1fr 1fr;
-  margin-top: 6px;
-
-  .dark-title {
-    align-self: stretch;
-    background: var(--dark-bg);
-    color: var(--light-color);
-    font-family: $cooper-black;
-    grid-template-columns: 100%;
-    grid-column-end: span 2;
-    letter-spacing: 1px;
-    padding-bottom: 3px;
-    text-align: center;
-  }
-
-  // Standard skill cards
-  > div {
-    display: grid;
-    font-family: $cooper-black;
-    grid-template-columns: max-content 25%;
-    grid-template-rows: auto;
-    margin: 0 0 6px 0;
-    padding: 0 8px;
-    align-items: center;
-
-    a {
-      background: none;
-      border: none;
-    }
-
-    .editor {
-      background: rgba(0, 0, 0, 0.05);
-      border: var(--dark-border);
-      border-top: none;
-      font-family: $book-antiqua;
-      min-height: 305px;
-      padding: 0 8px;
-    }
-
-    label {
-      display: grid;
-      font-family: $cooper-black;
-      margin-right: 6px;
-    }
-
-    input {
-      font-family: $book-antiqua;
-      height: 17px;
-      line-height: 1;
-      text-align: center;
-      background: none;
-      border-width: 0 0 1px 0;
-      border-radius: 0;
-
-      &:focus {
-        box-shadow: none;
-      }
-
-      &.full-width {
-        width: 100%;
-      }
-    }
-
-    select {
-      background: none;
-      border-width: 0 0 1px 0;
-      border-radius: 0;
-      font-family: var(--data-font);
-      font-size: 15px;
-      text-align: center;
-      width: 75px;
-
-      &:focus {
-        box-shadow: none;
-      }
-    }
-  }
-
-  > div.grid-template-full {
-    grid-column-end: span 2;
-    grid-template-columns: 100%;
-  }
-
-  > div.grid-template-max-auto {
-    grid-column-end: span 2;
-    grid-template-columns: max-content auto;
-  }
-
-  > div.textarea {
-    border: $border-style;
-    grid-template-columns: 25% 75%;
-    grid-template-rows: auto minmax(100px, auto);
-
-    label {
-      text-align: left;
-    }
-  }
-
-  .elf-bg {
-    background-image: url('./images/FCI-magic-items-1-9-shamen-crystal.webp');
-    background-repeat: no-repeat;
-    background-position-x: center;
-    background-size: contain;
-  }
-
-  .wizard-bg {
-    background-image: url('./images/FCI-spots-8-33-Spellcasters-hat.webp');
-    background-repeat: no-repeat;
-    background-position-x: center;
-    background-size: contain;
-  }
+.elf-bg {
+  background-image: url('./images/FCI-magic-items-1-9-shamen-crystal.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-size: contain;
 }
 
-/* ----------------------------------------- */
-/*  Wizard/Elf Class                         */
-/* ----------------------------------------- */
+.wizard-bg {
+  background-image: url('./images/FCI-spots-8-33-Spellcasters-hat.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-size: contain;
+}
 
-.dcc .spells-container-wizard {
+.wizard-spells-bg {
   background-image: url('images/FCI-spots-8-32-Spell-Book-Stack.webp');
   background-repeat: no-repeat;
   background-position-x: center;
   background-size: contain;
-  height: 565px;
-
-  .dark-title {
-    align-self: center;
-    background: var(--dark-bg);
-    color: var(--light-color);
-    font-family: $cooper-black;
-    grid-column-start: 1;
-    grid-row: 1;
-    height: 19px;
-    letter-spacing: 1px;
-    margin-left: -1px; // For the Mac
-    padding-top: 1px;
-    text-align: center;
-  }
+  min-height: 565px;
 }
 
 /* ----------------------------------------- */
 /*  Items                                    */
 /* ----------------------------------------- */
 
-.dcc .equipment-container {
+.equipment-bg {
   background-image: url('./images/SA-4-26-FCI-spots-4-Shield-crossed-swords.webp');
   background-repeat: no-repeat;
   background-position-x: center;
   background-size: contain;
-  display: grid;
-  grid-template-columns: 100%;
-
-
-  input[type="checkbox"] {
-    height: 19px;
-    width: 19px;
-    margin: 0;
-  }
 }
 
 .dcc .item {
@@ -589,7 +447,6 @@ $font-awesome: 'Font Awesome 6 Pro';
   font-size: 13px;
   justify-items: center;
   grid-template-columns: subgrid;
-  grid-column-end: span 4;
   padding-bottom: 2px;
   margin-bottom: 2px;
 
@@ -602,10 +459,6 @@ $font-awesome: 'Font Awesome 6 Pro';
     padding-bottom: 2px;
     margin-bottom: 2px;
   }
-}
-
-.dcc .item-currency {
-  grid-column-end: span 9;
 }
 
 .dcc .item-heading {
@@ -621,10 +474,8 @@ $font-awesome: 'Font Awesome 6 Pro';
 .dcc .item-list-header {
   border-bottom: 2px dotted var(--medium-color);
   display: grid;
-  flex: 0 0 10px;
   font-family: $cooper-black;
   font-size: 12px;
-  grid-column-end: span 4;
   grid-template-columns: subgrid;
   margin: 0 0 5px 0;
   padding: 0 0 5px 0;
@@ -637,22 +488,14 @@ $font-awesome: 'Font Awesome 6 Pro';
   display: grid;
   font-family: $book-antiqua;
   font-size: 12px;
-  grid-template-columns: 22px auto 65px 44px;
+  grid-template-columns: 22px auto 65px 39px;
   margin: 0 0 8px 0;
   padding: 5px;
   text-align: center;
 }
 
 .dcc .item-list-spells {
-  grid-template-columns: 30px 22px 33px 164px 153px 20px 53px;
-
-  .item-list-header {
-    grid-column-end: span 7;
-  }
-
-  .item {
-    grid-column-end: span 7;
-  }
+  grid-template-columns: 30px 22px 33px 1fr 1fr 35px 39px;
 
   .spell-item-button {
     background-image: url('../../../icons/svg/d20-black.svg');
@@ -666,7 +509,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc .item-list-currency {
   display: grid;
-  grid-template-columns: 22px auto 23px repeat(5, 40px) 43px;
+  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 39px;
 }
 
 /* ----------------------------------------- */
@@ -681,15 +524,6 @@ $font-awesome: 'Font Awesome 6 Pro';
   justify-items: stretch;
   overflow-x: clip;
   row-gap: 5px;
-
-  .box-inner {
-    padding: 0 5px 4px 5px;
-  }
-
-  .dark-border {
-    border: var(--dark-border);
-    border-top: none;
-  }
 
   .dark-title {
     align-self: center;
@@ -746,7 +580,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     text-align: center;
 
     input {
-      background:rgba(0, 0, 0, 0.05);
+      background: rgba(0, 0, 0, 0.05);
       border: 1px solid var(--color-border-light-tertiary);
       border-radius: 3px;
       line-height: 13px;
@@ -1179,48 +1013,11 @@ form.dcc-roll-modifier {
 
 .dcc.sheet.actor .character {
   .character-grid {
-    background: url("images/parchment.jpeg");
     column-gap: 8px;
     display: grid;
-    font-family: var(--label-font);
-    font-size: 16px;
     grid-template-columns: 192px 143px 82px 82px;
     grid-template-rows: 46px 114px repeat(5, 60px 9px) 60px;
-    text-align: center;
-
-    input,
-    select {
-      background: none;
-      border-width: 0 0 1px 0;
-      border-radius: 0;
-      font-family: var(--data-font);
-      height: 16px;
-      text-align: center;
-      text-align-last: center;
-
-      &:focus {
-        box-shadow: none;
-      }
-    }
-
-    label {
-      font-family: $cooper-black;
-    }
   }
-
-  .dark-title {
-    align-self: center;
-    background: var(--dark-bg);
-    color: var(--light-color);
-    grid-column-start: 1;
-    grid-row: 1;
-    height: 19px;
-    letter-spacing: 1px;
-    //margin-left: -1px;  // Is this needed on the mac?
-    padding-top: 1px;
-    text-align: center;
-  }
-
 
   .ability-scores {
     display: grid;
@@ -1232,7 +1029,6 @@ form.dcc-roll-modifier {
       font-size: 14px;
       grid-template-columns: 85px 37px 70px;
       grid-template-rows: 19px 20px 20px;
-      text-align: left;
 
       input {
         border-width: 0 0 1px 0;
@@ -1271,7 +1067,6 @@ form.dcc-roll-modifier {
 
   .ac-and-hp {
     display: grid;
-    grid-template-columns: 50% 50%;
     grid-template-rows: 65px 19px 20px;
 
     input {
@@ -1359,6 +1154,7 @@ form.dcc-roll-modifier {
   }
 
   .melee-missile-attack-damage {
+    align-items: center;
     display: grid;
     grid-column: 3;
     grid-column-end: span 2;
@@ -1366,26 +1162,15 @@ form.dcc-roll-modifier {
     grid-template-columns: subgrid;
     grid-template-rows: 69px 69px;
 
-    .bonus {
-      align-items: center;
-      border: var(--dark-border);
-      border-top: none;
-      display: grid;
+    input {
+      border: none;
+      font-size: 14px;
+      margin: 4px 8px 4px 8px;
+    }
+
+    label {
       font-size: 12px;
-      grid-template-columns: 100%;
-      grid-template-rows: 31px 20px;
-      margin-bottom: 8px;
-
-      label {
-        height: 31px;
-      }
-
-      input {
-        border: none;
-        font-size: 16px;
-        grid-row: 2;
-        margin-top: 4px;
-      }
+      padding-bottom: 2px;
     }
   }
 

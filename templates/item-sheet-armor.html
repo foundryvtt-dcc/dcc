@@ -9,19 +9,19 @@
     <section class="sheet-body">
         <div class="tab" data-group="item" data-tab="armor">
             <div class="tab-body">
-                <div class="grid-col-span-6 grid-col-min-auto" style="margin-bottom: 5px;">
+                <div class="grid-col-span-6 grid-tpl-max-auto" style="margin-bottom: 5px;">
                     <label for="name">{{localize "DCC.Name"}}</label>
                     <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
                 </div>
 
-                <div class="grid-col-span-6 grid-col-min-auto">
+                <div class="grid-col-span-6 grid-tpl-max-auto">
                     <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
                     <input type="text" name="system.description.summary" value="{{system.description.summary}}" data-dtype="String"/>
                 </div>
 
                 <div class="dark-border grid-col-span-6">
                     <div class="dark-title">{{localize "DCC.ArmorSettings"}}</div>
-                    <div class="box-inner grid-col-min-auto">
+                    <div class="box-inner grid-tpl-max-auto">
                         <input type="checkbox" name="system.equipped" style="margin: 7px 7px 0 0;" data-dtype="Boolean" {{checked system.equipped}}/>
                         <label for="system.equipped" style="margin: 5px 0 0 0;">{{localize "DCC.ItemPropertiesEquipped"}}</label>
                     </div>
@@ -29,7 +29,7 @@
 
                 <div class="dark-border grid-col-span-6">
                     <div class="dark-title">{{localize "DCC.ArmorDetails"}}</div>
-                    <div class="box-inner grid-col-min-auto">
+                    <div class="box-inner grid-tpl-max-auto">
                         <label for="system.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
                         <input type="text" name="system.acBonus"
                                value="{{numberFormat system.acBonus decimals=0 sign=true}}"

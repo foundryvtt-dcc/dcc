@@ -13,7 +13,7 @@ class DCCActor extends Actor {
 
     // Ability modifiers
     const abilities = this.system.abilities
-    for (const abilityId in abilities) {
+    for (let abilityId in abilities) {
       abilities[abilityId].mod = CONFIG.DCC.abilityModifiers[abilities[abilityId].value] || 0
       abilities[abilityId].maxMod = CONFIG.DCC.abilityModifiers[abilities[abilityId].max] || abilities[abilityId].mod
     }
@@ -32,7 +32,7 @@ class DCCActor extends Actor {
     let fumbleDie = '1d4'
     let checkPenalty = 0
     if (this.itemTypes) {
-      for (const armorItem of this.itemTypes.armor) {
+      for (let armorItem of this.itemTypes.armor) {
         if (armorItem.system.equipped) {
           try {
             checkPenalty += parseInt(armorItem.system.checkPenalty || 0)
@@ -118,7 +118,7 @@ class DCCActor extends Actor {
       const abilityLabel = baseACAbility.label
       let armorBonus = 0
       let speedPenalty = 0
-      for (const armorItem of this.itemTypes.armor) {
+      for (let armorItem of this.itemTypes.armor) {
         if (armorItem.system.equipped) {
           armorBonus += parseInt(armorItem.system.acBonus || '0')
           speedPenalty += parseInt(armorItem.system.speed || '0')
@@ -146,7 +146,7 @@ class DCCActor extends Actor {
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
       const terms = actionDieExpression.terms
       const actionDice = []
-      for (const term of terms) {
+      for (let term of terms) {
         if (term instanceof foundry.dice.terms.Die) {
           const termDie = `1d${term.faces}`
 
@@ -170,7 +170,7 @@ class DCCActor extends Actor {
       const terms = initDieExpression.terms
       const initDice = []
 
-      for (const term of terms) {
+      for (let term of terms) {
         if (term instanceof foundry.dice.terms.Die) {
           const termDie =
             `1d${term.faces}`
@@ -306,7 +306,7 @@ class DCCActor extends Actor {
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
       const terms = actionDieExpression.terms || actionDieExpression.parts
-      for (const term of terms) {
+      for (let term of terms) {
         if (typeof (term) === 'object' && term.faces) {
           const termDie = `1d${term.faces}`
           const termCount = term.number || 1
@@ -1307,7 +1307,7 @@ class DCCActor extends Actor {
 
     // Lookup the crit table if available
     let critResult = null
-    for (const criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
+    for (let criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
       if (criticalHitPackName) {
         const pack = game.packs.get(criticalHitPackName)
         if (pack) {
@@ -1668,7 +1668,7 @@ class DCCActor extends Actor {
 
       // Lookup the disapproval table if available
       let disapprovalTable = null
-      for (const disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
+      for (let disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
         const disapprovalTableName = this.system.class.disapprovalTable
         if (disapprovalPackName && disapprovalTableName) {
           const pack = game.packs.get(disapprovalPackName)

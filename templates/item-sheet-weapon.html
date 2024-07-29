@@ -10,11 +10,11 @@
         <div class="tab" data-group="item" data-tab="weapon">
             <div class="tab-body">
                 <!-- Name and Notes -->
-                <div class="grid-col-span-6 grid-col-min-auto" style="margin-bottom: 5px;">
+                <div class="grid-col-span-6 grid-tpl-max-auto" style="margin-bottom: 5px;">
                     <label for="name">{{localize "DCC.Name"}}</label>
                     <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
                 </div>
-                <div class="grid-col-span-6 grid-col-min-auto" style="margin-bottom: 5px;">
+                <div class="grid-col-span-6 grid-tpl-max-auto" style="margin-bottom: 5px;">
                     <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
                     <input id="system.description.summary" name="system.description.summary"
                            value="{{system.description.summary}}" size="25">
@@ -47,7 +47,7 @@
                         <input type="checkbox" name="system.config.inheritActionDie" id="system.config.inheritActionDie" {{checked
                             system.config.inheritActionDie}} data-dtype="boolean"/>
                         <label for="system.config.inheritActionDie">{{localize "DCC.Inherit"}}</label>
-                        <div class="grid-col-min-auto {{#if system.config.inheritActionDie}}disabled{{/if}}">
+                        <div class="grid-tpl-max-auto {{#if system.config.inheritActionDie}}disabled{{/if}}">
                             <label for="system.actionDie">{{localize "DCC.Die"}}</label>
                             <input id="system.actionDie" name="system.actionDie" style="width: 50px"
                                    value="{{system.actionDie}}"
@@ -63,7 +63,7 @@
                         <input type="checkbox" name="system.config.inheritToHit" id="system.config.inheritToHit"
                             {{checked system.config.inheritToHit}} data-dtype="boolean"/>
                         <label for="system.config.inheritToHit">{{localize "DCC.Inherit"}}</label>
-                        <div class="grid-col-min-auto">
+                        <div class="grid-tpl-max-auto">
                             <label for="system.toHit">{{localize "DCC.Bonus"}}</label>
                             <input id="system.toHit" name="system.toHit" value="{{system.toHit}}" size="2"
                                    placeholder="1d3" data-dtype="String"/>
@@ -77,7 +77,7 @@
                         <input type="checkbox" name="system.config.inheritDamage" id="system.config.inheritDamage"
                             {{checked system.config.inheritDamage}} data-dtype="boolean"/>
                         <label for="system.config.inheritDamage">{{localize "DCC.Inherit"}}</label>
-                        <div class="grid-col-min-auto">
+                        <div class="grid-tpl-max-auto">
                             <label for="system.damage">{{localize "DCC.Base"}}</label>
                             <input id="system.damage" name="system.damage" value="{{system.damage}}" placeholder="+0" size="4"
                                    data-dtype="String"/>
@@ -90,7 +90,7 @@
                     <div class="box-inner">
                         <input type="checkbox" id="system.melee" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
                         <label for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
-                        <div class="grid-col-min-auto {{#if system.melee}}disabled{{/if}}">
+                        <div class="grid-tpl-max-auto {{#if system.melee}}disabled{{/if}}">
                             <label for="system.range" title="{{localize 'DCC.WeaponPropertiesRangeTooltip'}}"
                                    style="font-size: 11px;">{{localize
                                 "DCC.WeaponPropertiesRange"}}</label>
@@ -108,7 +108,7 @@
                         <input type="checkbox" name="system.config.inheritCritRange" id="system.config.inheritCritRange" {{checked
                             system.config.inheritCritRange}} data-dtype="boolean"/>
                         <label for="system.config.inheritCritRange">{{localize "DCC.Inherit"}}</label>
-                        <div class="grid-col-min-auto {{#if system.config.inheritCritRange}}disabled{{/if}}">
+                        <div class="grid-tpl-max-auto {{#if system.config.inheritCritRange}}disabled{{/if}}">
                             <label for="system.critRange">{{localize "DCC.Range"}}</label>
                             <input id="system.critRange" name="system.critRange" size="3"
                                    value="{{system.critRange}}"
@@ -124,7 +124,7 @@
                         <input type="checkbox" id="system.backstab" name="system.backstab" data-dtype="Boolean" {{checked
                             system.backstab}}/>
                         <label for="system.backstab">{{localize "DCC.Enabled"}}</label>
-                        <div class="grid-col-min-auto {{#unless system.backstab}}disabled{{/unless}}">
+                        <div class="grid-tpl-max-auto {{#unless system.backstab}}disabled{{/unless}}">
                             <label for="system.backstabDamage" style="justify-self: start"
                                    title="{{localize 'DCC.WeaponPropertiesBackstabDamageTooltip'}}">{{localize "DCC.Damage"}}</label>
                             <input id="system.backstabDamage" name="system.backstabDamage" value="{{system.backstabDamage}}" size="4"

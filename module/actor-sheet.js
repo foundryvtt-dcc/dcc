@@ -135,7 +135,7 @@ class DCCActorSheet extends ActorSheet {
 
     // Iterate through items, allocating to containers
     const removeEmptyItems = sheetData.system.config.removeEmptyItems
-    for (const i of inventory) {
+    for (let i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
         this.actor.deleteEmbeddedDocuments('Item', [i._id])
@@ -202,7 +202,7 @@ class DCCActorSheet extends ActorSheet {
         cp: parseInt(this.actor.system.currency.cp)
       }
       let needsUpdate = false
-      for (const c of coins) {
+      for (let c of coins) {
         funds.pp += parseInt(c.system.value.pp)
         funds.ep += parseInt(c.system.value.ep)
         funds.gp += parseInt(c.system.value.gp)
@@ -213,7 +213,7 @@ class DCCActorSheet extends ActorSheet {
       }
       if (needsUpdate) {
         await this.actor.update({
-          'data.currency': funds
+          'system.currency': funds
         }, { diff: true })
       }
     }
