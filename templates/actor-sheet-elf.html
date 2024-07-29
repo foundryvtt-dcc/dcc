@@ -11,7 +11,7 @@
         <a data-tab="elf">{{localize "DCC.Elf"}}</a>
         <a data-tab="spells">{{localize "DCC.ElfSpells"}}</a>
         {{#if system.config.showSkills}}
-        <a data-tab="skills">{{localize "DCC.Skills"}}</a>
+            <a data-tab="skills">{{localize "DCC.Skills"}}</a>
         {{/if}}
         <a data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
@@ -32,54 +32,55 @@
         {{> systems/dcc/templates/actor-partial-pc-notes.html }}
 
         {{!-- Class Tab --}}
-        <div class="tab" data-group="primary" data-tab="elf">
+        <div class="grid-container tab elf-bg" data-group="primary" data-tab="elf">
             {{!-- Update spell check ability to use Intelligence --}}
             <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
-            <div class="class">
-                <div class="skills-container">
-                    <div class="dark-title" style="">{{localize "DCC.ElfAbilities"}}</div>
-                    <div style="margin-bottom:10px;" data-skill="findSecretDoors">
+            <div class="dark-border mb-8">
+                <div class="dark-title" style="">{{localize "DCC.ElfAbilities"}}</div>
+                <div class="grid-tpl-two grid-row-gap-8 p-5 label-font">
+                    <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="findSecretDoors">
                         <label class="skill-check rollable" for="system.skills.findSecretDoors.value">
                             {{localize "DCC.HeightenedSenses"}}
                         </label>
                         <input type="text" id="system.skills.findSecretDoors.value" name="system.skills.findSecretDoors.value"
                                value="{{system.skills.findSecretDoors.value}}" data-dtype="String"/>
                     </div>
-                    <div style="margin-bottom:10px;" data-ability="int">
+                    <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-ability="int">
                         <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
                         <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}"
                                data-dtype="String"/>
                     </div>
-                    <div class="grid-template-max-auto">
+                    <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
                         <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
                         <input class="full-width" type="text" id="system.class.familiar" name="system.class.familiar"
                                value="{{system.class.familiar}}" data-dtype="String"/>
                     </div>
-                    <div class="grid-template-max-auto">
+                    <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
                         <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
                         <input class="full-width" type="text" id="system.class.patron" name="system.class.patron"
                                value="{{system.class.patron}}" data-dtype="String"/>
                     </div>
-                    <div class="elf-bg">
-                        <div class="dark-title" style="">{{localize "DCC.Corruptions"}}</div>
-                        {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
-                    </div>
-                    <div >
+                    <div>
                         {{localize "DCC.Infravision"}}
                     </div>
-                    <div >
+                    <div>
                         {{localize "DCC.IronVulnerability"}}
                     </div>
-                    <div >
+                    <div>
                         {{localize "DCC.ElfLuckMod"}}
                     </div>
-                    <div >
+                    <div>
                         {{localize "DCC.ElfImmunities"}}
                     </div>
                     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                    <div>{{{system.class.classLink}}}</div>
+                        <div>{{{system.class.classLink}}}</div>
                     {{/dccPackExists}}
                 </div>
+            </div>
+
+            <div>
+                <div class="dark-title" style="">{{localize "DCC.Corruptions"}}</div>
+                {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
             </div>
         </div>
 

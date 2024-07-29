@@ -1,6 +1,5 @@
 {{!-- Equipment Tab --}}
-<div class="tab equipment" data-group="primary" data-tab="equipment">
-    <div class="equipment-bg">
+<div class="tab equipment-bg" data-group="primary" data-tab="equipment">
         {{!-- Deed Roll --}}
         {{#if system.config.showAttackBonusButton}}
             <div class="attack-bonus-container skills-container">
@@ -21,7 +20,7 @@
 
         {{!-- Melee Weapons --}}
         {{#* inline "weaponRow"}}
-            <li class="grid-col-span-9 weapon" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
+            <li class="grid-col-span-9 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
                 <input type="checkbox"
                        name="itemUpdates.{{id}}.system.equipped"
                        data-dtype="Boolean" {{checked weapon.system.equipped}}/>
@@ -63,7 +62,7 @@
             </li>
         {{/inline}}
         <div class="dark-title">{{localize "DCC.MeleeWeapons"}}</div>
-        <ol class="weapon-list">
+        <ol class="weapon-list dark-border">
             <li class="grid-col-span-9 weapon-list-header">
                 <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
                 <div></div>
@@ -88,7 +87,7 @@
 
         {{!-- Ranged Weapons --}}
         <div class="dark-title">{{localize "DCC.RangedWeapons"}}</div>
-        <ol class="weapon-list">
+        <ol class="weapon-list dark-border">
             <li class="grid-col-span-9 weapon-list-header">
                 <div title="{{localize 'DCC.WeaponEquipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
                 <div></div>
@@ -112,7 +111,7 @@
 
         {{!-- Armor --}}
         {{#* inline "armorRow"}}
-            <li class="grid-col-span-8 armor" data-item-id="{{id}}" data-item-index="{{index}}">
+            <li class="grid-col-span-8 armor grid-col-gap-5" data-item-id="{{id}}" data-item-index="{{index}}">
                 <input type="checkbox"
                        name="itemUpdates.{{id}}.system.equipped"
                        data-dtype="Boolean" {{checked armor.system.equipped}}/>
@@ -143,7 +142,7 @@
         {{/inline}}
         <div class="dark-title">{{localize "DCC.Armor"}}</div>
         <ol class="armor-list dark-border">
-            <li class="grid-col-span-8 weapon-list-header">
+            <li class="grid-col-span-8 armor-list-header">
                 <div class="" title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
                 <div></div>
                 <div>{{localize "DCC.Name"}}</div>
@@ -191,7 +190,7 @@
 
         {{!-- Equipment --}}
         <div class="dark-title">{{localize "DCC.Equipment"}}</div>
-        <ol class="item-list">
+        <ol class="item-list dark-border">
             {{> ItemHeader type="equipment"}}
             {{#each actor.equipment as |equipment id|}}
                 {{> ItemRow item=equipment id=id}}
@@ -199,7 +198,7 @@
         </ol>
         {{!-- Ammunition --}}
         <div class="dark-title">{{localize "DCC.Ammunition"}}</div>
-        <ol class="item-list">
+        <ol class="item-list dark-border">
             {{> ItemHeader type="ammunition"}}
             {{#each actor.ammunition as |ammunition id|}}
                 {{> ItemRow item=ammunition id=id}}
@@ -207,7 +206,7 @@
         </ol>
         {{!-- Mounts --}}
         <div class="dark-title">{{localize "DCC.Mounts"}}</div>
-        <ol class="item-list">
+        <ol class="item-list dark-border">
             {{> ItemHeader type="mount"}}
             {{#each actor.mounts as |mount id|}}
                 {{> ItemRow item=mount id=id}}
@@ -233,7 +232,7 @@
             </li>
         {{/inline}}
         <div class="dark-title">{{localize "DCC.Treasure"}}</div>
-        <ol class="item-list item-list-currency">
+        <ol class="item-list item-list-currency dark-border">
             <li class="grid-col-span-8 item-list-header">
                 <div></div>
                 <div>{{localize "DCC.Name"}}</div>
@@ -269,6 +268,5 @@
                 {{> TreasureRow item=treasure id=id}}
             {{/each}}
         </ol>
-    </div>
 </div>
 {{!-- End Equipment Tab --}}

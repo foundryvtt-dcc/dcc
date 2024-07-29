@@ -3,6 +3,14 @@
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+.grid-col-gap-5 {
+  column-gap: 5px;
+}
+
+.grid-col-gap-8 {
+  column-gap: 8px;
+}
+
 .grid-col-span-1 {
   grid-column-end: span 2;
 }
@@ -52,7 +60,13 @@
 }
 
 .grid-row-gap-5 {
+  display: grid;
   grid-row-gap: 5px;
+}
+
+.grid-row-gap-8 {
+  display: grid;
+  grid-row-gap: 8px;
 }
 
 .grid-tpl-two {
@@ -75,14 +89,6 @@
   display: grid;
   grid-row-gap: 5px;
   grid-template-columns: max-content minmax(0, 1fr);
-}
-
-.cg-5 {
-  column-gap: 5px;
-}
-
-.rg-5 {
-  row-gap: 5px;
 }
 
 .mb-3 {
@@ -111,8 +117,4 @@
 
 .pt-8 {
   padding-top: 8px;
-}
-
-.w-10ch {
-  width: 10ch;
 }

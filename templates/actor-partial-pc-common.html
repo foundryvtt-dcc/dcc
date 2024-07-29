@@ -2,7 +2,7 @@
 <div class="tab character" data-group="primary" data-tab="character">
     <div class="character-grid">
         {{!-- Name Section --}}
-        <div class="name-and-level">
+        <div class="name-and-level grid-col-span-4">
             <div class="grid-tpl-max-auto">
                 <label for="name">{{localize "DCC.Name"}}</label>
                 <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.CharacterName'}}"
@@ -189,7 +189,7 @@
                  style="opacity: 0.35; align-self: center; justify-self: center; border: none">
 
         {{!-- Melee Attack Values --}}
-        <div class="melee-missile-attack-damage">
+        <div class="melee-missile-attack-damage grid-col-span-2">
             <div class="dark-border grid-tpl-max mb-8">
                 <label for="system.details.attackHitBonus.melee.value" class="dark-title"
                        title="{{localize 'DCC.MeleeAttackHint'}}">{{{localize 'DCC.MeleeAttack'}}}</label>

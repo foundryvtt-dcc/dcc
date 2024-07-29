@@ -38,21 +38,22 @@
 
         {{!-- Class Tab --}}
         <div class="tab" data-group="primary" data-tab="halfling">
-            <div class="class">
-                <div class="skills-container">
-                    <div class="grid-col-span-2 dark-title">{{localize "DCC.HalflingAbilities"}}</div>
-                    <div data-skill="sneakAndHide">
+            <div class="grid-container dark-border">
+                <div class="grid-col-span-12 dark-title">{{localize "DCC.HalflingAbilities"}}</div>
+                <div class="grid-col-span-12 grid-tpl-max label-font p-5 grid-row-gap-8">
+                    <div class="grid-tpl-max-25" data-skill="sneakAndHide">
                         <label class="skill-check rollable" for="system.skills.sneakAndHide.value">{{localize "DCC.Stealth"}}</label>
                         <input type="text" id="system.skills.sneakAndHide.value" name="system.skills.sneakAndHide.value"
                                value="{{system.skills.sneakAndHide.value}}" data-dtype="String"/>
                     </div>
+                    <div></div>
                     <div>
                         {{localize "DCC.InfravisionHalfling"}}
                     </div>
                     <div class="full-width">
                         {{localize "DCC.Lucky"}}
                     </div>
-                    <div style="grid-row-end:span 3; grid-template-columns: auto;">
+                    <div class="grid-tpl-max">
                         <div>{{localize "DCC.TwoWeaponFighting"}}</div>
                         <ul style="font-size:14px">
                             <li>{{localize "DCC.HalflingTwoWeaponActionDie"}}</li>
@@ -65,8 +66,8 @@
                     <div>{{{system.class.classLink}}}</div>
                     {{/dccPackExists}}
                 </div>
-                <img src="systems/dcc/styles/images/SA-4-6-FCI-spots-4-crossed-sabers.webp" height="350px" width="480px" style="margin: 25px 0 0 15px;">
             </div>
+            <img class="grid-col-span-12" src="systems/dcc/styles/images/SA-4-6-FCI-spots-4-crossed-sabers.webp" height="310px" width="420px" style="margin: 10px 0 0 15px;">
         </div>
     </section>
 </form>

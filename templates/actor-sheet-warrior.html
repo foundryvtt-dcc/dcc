@@ -37,22 +37,22 @@
 
         {{!-- Class Tab --}}
         <div class="tab" data-group="primary" data-tab="warrior">
-            <div class="class">
-                <div class="skills-container">
-                    <div class="dark-title">{{localize "DCC.WarriorAbilities"}}</div>
-                    <div>
+            <div class="grid-container label-font">
+                <div class="grid-col-span-12 dark-title">{{localize "DCC.WarriorAbilities"}}</div>
+                <div class="grid-col-span-12 dark-border grid-tpl-max grid-row-gap-8 p-5">
+                    <div class="grid-tpl-max-25">
                         <label for="system.details.critRange">{{localize "DCC.CritRange"}}</label>
                         <select name="system.details.critRange"
                                 id="system.details.critRange">
                             {{selectOptions config.critRanges selected=system.details.critRange localize=true}}
                         </select>
                     </div>
-                    <div class="grid-template-max-auto">
+                    <div class="grid-tpl-max-auto">
                         <label for="system.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
                         <input class="full-width" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon"
                                value="{{system.class.luckyWeapon}}" data-dtype="String"/>
                     </div>
-                    <div style="grid-template-columns: auto;">{{localize "DCC.AddClassLevelToInitiative"}}</div>
+                    <div class="grid-tpl-max">{{localize "DCC.AddClassLevelToInitiative"}}</div>
                     <div>
                         <a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Mighty-Deeds">
                             <i class="fas fa-link"></i> {{localize "DCC.MightyDeedsHowToLink"}}
@@ -63,7 +63,7 @@
                     <div>{{{system.class.mightyDeedsLink}}}</div>
                     {{/dccPackExists}}
                 </div>
-                <img src="systems/dcc/styles/images/SA-3-27-FCI-spots1-Axe-Sword-Shield-tiny.webp" height="350px" width="490px" style="margin: 30px 0 0 10px;">
+                <img class="grid-col-span-12" src="systems/dcc/styles/images/SA-3-27-FCI-spots1-Axe-Sword-Shield-tiny.webp" height="350px" width="490px" style="margin: 30px 0 0 10px;">
             </div>
         </div>
     </section>
