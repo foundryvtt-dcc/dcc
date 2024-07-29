@@ -1,0 +1,63 @@
+<!-- Item Values -->
+<div class="grid-col-span-12 dark-border">
+    <div class="dark-title">{{localize "DCC.ItemValues"}}</div>
+    <div class="box-inner">
+        <div class="item-values">
+            <div>
+                <label for="system.weight">{{localize "DCC.Weight"}}</label>
+                <input type="text" id="system.weight" name="system.weight" value="{{system.weight}}" data-dtype="Number">
+            </div>
+            {{#if allowResolve}}
+                <div class="rollable roll-button">&nbsp;</div>
+            {{/if}}
+            <div>
+                <label>{{localize "DCC.CurrencyPP"}}</label>
+                <input type="text" name="system.value.pp" value="{{system.value.pp}}" data-dtype="String"/>
+                {{#if allowConversions}}
+                    <div class="conversions">
+                        <div class="rollable right-arrow-button" data-currency="pp">&nbsp;</div>
+                    </div>
+                {{/if}}
+            </div>
+            <div>
+                <label>{{localize "DCC.CurrencyEP"}}</label>
+                <input type="text" name="system.value.ep" value="{{system.value.ep}}" data-dtype="String"/>
+                {{#if allowConversions}}
+                    <div class="conversions">
+                        <div class="rollable left-arrow-button" data-currency="ep">&nbsp;</div>
+                        <div class="rollable right-arrow-button" data-currency="ep">&nbsp;</div>
+                    </div>
+                {{/if}}
+            </div>
+            <div>
+                <label>{{localize "DCC.CurrencyGP"}}</label>
+                <input type="text" name="system.value.gp" value="{{system.value.gp}}" data-dtype="String"/>
+                {{#if allowConversions}}
+                    <div class="conversions">
+                        <div class="rollable left-arrow-button" data-currency="gp">&nbsp;</div>
+                        <div class="rollable right-arrow-button" data-currency="gp">&nbsp;</div>
+                    </div>
+                {{/if}}
+            </div>
+            <div>
+                <label>{{localize "DCC.CurrencySP"}}</label>
+                <input type="text" name="system.value.sp" value="{{system.value.sp}}" data-dtype="String"/>
+                {{#if allowConversions}}
+                    <div class="conversions">
+                        <div class="rollable left-arrow-button" data-currency="sp">&nbsp;</div>
+                        <div class="rollable right-arrow-button" data-currency="sp">&nbsp;</div>
+                    </div>
+                {{/if}}
+            </div>
+            <div>
+                <label>{{localize "DCC.CurrencyCP"}}</label>
+                <input type="text" name="system.value.cp" value="{{system.value.cp}}" data-dtype="String"/>
+                {{#if allowConversions}}
+                    <div class="conversions">
+                        <div class="rollable left-arrow-button" data-currency="cp">&nbsp;</div>
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</div>

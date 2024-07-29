@@ -6,6 +6,7 @@
         <a data-tab="description">{{localize "DCC.Description"}}</a>
     </nav>
 
+    <!-- Body -->
     <section class="sheet-body">
         <div class="tab" data-group="item" data-tab="main">
             <div class="tab-body">
@@ -17,23 +18,23 @@
                 <div class="dark-border grid-col-span-6">
                     <div class="dark-title">{{localize "DCC.SpellDetails"}}</div>
                     <div class="box-inner grid-col-min-auto">
-                        <label for="system.level">{{localize "DCC.Level"}}</label>
+                        <label for="system.level">{{localize "DCC.Level"}}:</label>
                         <input type="text" name="system.level"
                                value="{{numberFormat system.level decimals=0 sign=false}}"
                                placeholder="1" data-dtype="Number"/>
-                        <label for="system.range">{{localize "DCC.SpellRange"}}</label>
+                        <label for="system.range">{{localize "DCC.SpellRange"}}:</label>
                         <input type="text" name="system.range" id="system.range" value="{{system.range}}"
                                placeholder="N/A" data-dtype="String"/>
-                        <label for="system.duration">{{localize "DCC.SpellDuration"}}</label>
+                        <label for="system.duration">{{localize "DCC.SpellDuration"}}:</label>
                         <input type="text" name="system.duration" id="system.duration" value="{{system.duration}}"
                                placeholder="N/A" data-dtype="String"/>
-                        <label for="system.castingTime" style="font-size: 11px;">{{localize "DCC.SpellCastingTime"}}</label>
+                        <label for="system.castingTime" style="font-size: 11px;">{{localize "DCC.SpellCastingTime"}}:</label>
                         <input type="text" name="system.castingTime" id="system.castingTime" value="{{system.castingTime}}"
                                placeholder="N/A" data-dtype="String"/>
-                        <label for="system.save">{{localize "DCC.SpellSave"}}</label>
+                        <label for="system.save">{{localize "DCC.SpellSave"}}:</label>
                         <input type="text" name="system.save" id="system.save" value="{{system.save}}"
                                placeholder="N/A" data-dtype="String"/>
-                        <label for="system.page">{{localize "DCC.SpellPage"}}</label>
+                        <label for="system.page">{{localize "DCC.SpellPage"}}:</label>
                         <input type="text" name="system.page" id="system.page"
                                value="{{system.page}}"
                                placeholder="N/A" data-dtype="String"/>
@@ -43,7 +44,7 @@
                 <div class="dark-border grid-col-span-4">
                     <div class="dark-title">{{localize "DCC.SpellCastingHeader"}}</div>
                     <div class="box-inner grid-col-min-auto">
-                        <label for="system.spellCheck.die">{{localize "DCC.ActionDie"}}</label>
+                        <label for="system.spellCheck.die">{{localize "DCC.ActionDie"}}:</label>
                         <input type="text" name="system.spellCheck.die"
                                value="{{system.spellCheck.die}}"
                             {{#if system.config.inheritActionDie}}
@@ -51,7 +52,7 @@
                                disabled
                             {{/if}}
                                placeholder="1d20" data-dtype="String"/>
-                        <label for="system.spellCheck.modifier">{{localize "DCC.SpellCheck"}}</label>
+                        <label for="system.spellCheck.modifier">{{localize "DCC.SpellCheck"}}:</label>
                         <input type="text" name="system.spellCheck.value"
                                value="{{system.spellCheck.value}}"
                             {{#if system.config.inheritSpellCheck}}
@@ -59,7 +60,7 @@
                                disabled
                             {{/if}}
                                placeholder="+0" data-dtype="String"/>
-                        <label for="system.spellCheck.penalty" style="font-size: 11px;">{{localize "DCC.CheckPenalty"}}</label>
+                        <label for="system.spellCheck.penalty" style="font-size: 11px;">{{localize "DCC.CheckPenalty"}}:</label>
                         <input type="text" name="system.spellCheck.penalty"
                                value="{{numberFormat system.spellCheck.penalty decimals=0 sign=true}}"
                             {{#if system.config.inheritCheckPenalty}}
@@ -78,7 +79,7 @@
                         </div>
                     </div>
 
-                    <img src="systems/dcc/styles/images/SA-1-24-FCI-spots1-spell-book-and-skull-with-candle.png"
+                    <img src="systems/dcc/styles/images/SA-1-24-FCI-spots1-spell-book-and-skull-with-candle.webp"
                          alt="Grimoire Art" height="58px" width="58px" style="opacity: 50%; margin: 4px 0 0 3px;"/>
                 </div>
 
@@ -113,19 +114,23 @@
                                          editable=editable}}
                             </div>
                             {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                                <a class="content-link" draggable="true" data-link="" data-uuid="Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.3Dy6Ek1G6jkw99FQ" data-id="3Dy6Ek1G6jkw99FQ" data-type="JournalEntryPage" data-pack="dcc-core-book.dcc-core-text" data-tooltip="Text Page" data-hash="mercurial-magic"><i class="fas fa-file-lines"></i>Mercurial Magic</a>
+                                <a class="content-link" draggable="true" data-link=""
+                                   data-uuid="Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.3Dy6Ek1G6jkw99FQ"
+                                   data-id="3Dy6Ek1G6jkw99FQ" data-type="JournalEntryPage" data-pack="dcc-core-book.dcc-core-text"
+                                   data-tooltip="Text Page" data-hash="mercurial-magic"><i class="fas fa-file-lines"></i>Mercurial Magic</a>
                             {{/dccPackExists}}
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="tab" data-group="item" data-tab="description">
-                <div class="tab-body">
-                    <div class="description grid-col-span-12">
-                        {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}
-                    </div>
+        <div class="tab" data-group="item" data-tab="description">
+            <div class="tab-body">
+                <div class="description grid-col-span-12">
+                    {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}
                 </div>
             </div>
+        </div>
     </section>
 </form>
