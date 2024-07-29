@@ -137,15 +137,15 @@
 /* ----------------------------------------- */
 @font-face {
   font-family: "Cooper Black";
-  src: url("fonts/Cooper.otf") format("otf");
+  src: url("fonts/Cooper.otf") format("opentype");
 }
 @font-face {
   font-family: "Book Antiqua";
-  src: url("fonts/Book-Antiqua.otf");
+  src: url("fonts/Book-Antiqua.otf") format("opentype");
 }
 @font-face {
   font-family: "DuvallSmallCaps";
-  src: url("fonts/DuvallSmallCaps.otf");
+  src: url("fonts/DuvallSmallCaps.otf") format("opentype");
 }
 /* Common style elements */
 .dcc img {
