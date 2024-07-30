@@ -1,45 +1,30 @@
-<form class="item config-dialog" autocomplete="off">
-  <div class="form-group">
+<form class="config-dialog" autocomplete="off">
     <label for="system.config.inheritActionDie">{{localize "DCC.InheritActionDie"}}</label>
-    <div class="form-fields">
-      <input type="checkbox" name="system.config.inheritActionDie" id="system.config.inheritActionDie" {{checked system.config.inheritActionDie}} data-dtype="boolean"/>
-    </div>
+    <input type="checkbox" name="system.config.inheritActionDie" id="system.config.inheritActionDie"
+        {{checked system.config.inheritActionDie}} data-dtype="boolean"/>
     <label for="system.config.inheritSpellCheck">{{localize "DCC.InheritSpellCheck"}}</label>
-    <div class="form-fields">
-      <input type="checkbox" name="system.config.inheritSpellCheck" id="system.config.inheritSpellCheck" {{checked system.config.inheritSpellCheck}} data-dtype="boolean"/>
-    </div>
+    <input type="checkbox" name="system.config.inheritSpellCheck" id="system.config.inheritSpellCheck"
+        {{checked system.config.inheritSpellCheck}} data-dtype="boolean"/>
     <label for="system.config.inheritCheckPenalty">{{localize "DCC.InheritCheckPenalty"}}</label>
-    <div class="form-fields">
-      <input type="checkbox" name="system.config.inheritCheckPenalty" id="system.config.inheritCheckPenalty" {{checked system.config.inheritCheckPenalty}} data-dtype="boolean"/>
-    </div>
-  </div>
-  <div class="form-group">
-    <label for="system.config.castingMode">{{localize "DCC.SpellCastingMode"}}</label>
-    <div class="form-fields">
-      <select name="system.config.castingMode" id="system.config.castingMode">
+    <input type="checkbox" name="system.config.inheritCheckPenalty" id="system.config.inheritCheckPenalty"
+        {{checked system.config.inheritCheckPenalty}} data-dtype="boolean"/>
+    <div class="group-separator"></div>
+    <label for="system.config.castingMode" title="{{localize 'DCC.SpellCastingModeInfo'}}">{{localize "DCC.SpellCastingMode"}}</label>
+    <select name="system.config.castingMode" id="system.config.castingMode" title="{{localize 'DCC.SpellCastingModeInfo'}}">
         {{selectOptions config.castingModes selected=system.config.castingMode localize=true}}
-      </select>
-    </div>
-    <label class="info span">{{localize "DCC.SpellCastingModeInfo"}}</label>
-    <label for="system.config.showMercurialEffect">{{localize "DCC.ShowMercurialEffectConfig"}}</label>
-    <div class="form-fields">
-      <input type="checkbox" name="system.config.showMercurialEffect" id="system.config.showMercurialEffect" {{checked system.config.showMercurialEffect}} data-dtype="boolean"/>
-    </div>
-    <label class="info span">{{localize "DCC.ShowMercurialEffectInfo"}}</label>
-  </div>
-  <div class="form-group">
+    </select>
+    <label for="system.config.showMercurialEffect" title="{{localize 'DCC.ShowMercurialEffectInfo'}}">{{localize "DCC.ShowMercurialEffectConfig"}}</label>
+        <input type="checkbox" name="system.config.showMercurialEffect" id="system.config.showMercurialEffect"
+            {{checked system.config.showMercurialEffect}} data-dtype="boolean"/>
+    <div class="group-separator"></div>
     <label for="system.results.table">{{localize "DCC.SpellResultTable"}}</label>
-    <div class="form-fields">
-      <input type="text" name="system.results.table" id="system.results.table" value="{{system.results.table}}" data-dtype="String"/>
-    </div>
+    <input type="text" name="system.results.table" id="system.results.table" value="{{system.results.table}}" data-dtype="String"/>
     <label for="system.results.collection">{{localize "DCC.SpellResultCompendium"}}</label>
-    <div class="form-fields">
-      <input type="text" name="system.results.collection" id="system.results.collection" value="{{system.results.collection}}" data-dtype="String"/>
-    </div>
-  </div>
-  <footer class="sheet-footer">
-    <button type="submit">
-      <i class="fas fa-save"></i>{{localize "DCC.SaveItemConfig"}}
-    </button>
-  </footer>
+    <input type="text" name="system.results.collection" id="system.results.collection" value="{{system.results.collection}}"
+           data-dtype="String"/>
+    <footer class="grid-col-span-2">
+        <button type="submit">
+            <i class="fas fa-save"></i>{{localize "DCC.SaveItemConfig"}}
+        </button>
+    </footer>
 </form>

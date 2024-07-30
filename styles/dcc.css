@@ -1,3 +1,14 @@
+.grid-align-center {
+  display: grid;
+  align-items: center;
+}
+
+.grid-align-just-center {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
 .grid-container {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -12,7 +23,7 @@
 }
 
 .grid-col-span-1 {
-  grid-column-end: span 2;
+  grid-column-end: span 1;
 }
 
 .grid-col-span-2 {
@@ -69,6 +80,10 @@
   grid-row-gap: 8px;
 }
 
+.grid-row-span-2 {
+  grid-row-end: span 2;
+}
+
 .grid-tpl-two {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -77,6 +92,12 @@
 .grid-tpl-max {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+}
+
+.grid-tpl-max-10 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 10%;
 }
 
 .grid-tpl-max-25 {
@@ -101,6 +122,18 @@
 
 .mb-8 {
   margin-bottom: 8px;
+}
+
+.mt-5 {
+  margin-top: 5px;
+}
+
+.mt-3 {
+  margin-top: 3px;
+}
+
+.mt-8 {
+  margin-top: 8px;
 }
 
 .p-5 {
@@ -516,7 +549,7 @@
   display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   font-size: 12px;
-  grid-template-columns: 22px auto 65px 39px;
+  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
   margin: 0 0 8px 0;
   padding: 5px;
   text-align: center;
@@ -617,31 +650,26 @@
 /* ----------------------------------------- */
 /*  Config Dialogs                           */
 /* ----------------------------------------- */
-.config-dialog .form-group {
-  border-bottom: 2px groove #eeede0;
-  display: flex;
-  margin: 5px 0;
-  padding-bottom: 5px;
+.config-dialog {
+  align-items: center;
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
-.config-dialog .form-group label {
-  flex: 0 0 60%;
+.config-dialog label {
+  font-weight: bold;
 }
-.config-dialog .form-group label.span {
-  flex: 0 0 96%;
-}
-.config-dialog .form-group label.info {
-  padding-left: 10px;
-  padding-right: 10px;
+.config-dialog input {
+  margin: 2px 0 2px 0;
   text-align: center;
 }
-.config-dialog .form-group div.form-fields {
-  flex: 0 1 40%;
+.config-dialog select {
+  text-align: center;
 }
-.config-dialog .form-group input {
-  text-align: right;
-}
-.config-dialog .form-group input.string {
-  text-align: left;
+.config-dialog .group-separator {
+  border-bottom: 2px dotted var(--medium-color);
+  margin: 3px 0 3px 0;
+  grid-column-end: span 2;
 }
 
 /* ----------------------------------------- */
@@ -923,62 +951,62 @@ form.dcc-roll-modifier input.stat {
 /* ----------------------------------------- */
 /*  Actor Sheet
 /* ----------------------------------------- */
-.dcc.sheet.actor .character .character-grid {
+.dcc .character .character-grid {
   column-gap: 8px;
   display: grid;
   grid-template-columns: 192px 143px 82px 82px;
   grid-template-rows: 46px 114px repeat(5, 60px 9px) 60px;
 }
-.dcc.sheet.actor .character .ability-scores {
+.dcc .character .ability-scores {
   display: grid;
   grid-template-rows: repeat(5, 69px);
 }
-.dcc.sheet.actor .character .ability-scores .ability-box {
+.dcc .character .ability-scores .ability-box {
   align-items: center;
   display: grid;
   font-size: 14px;
   grid-template-columns: 85px 37px 70px;
   grid-template-rows: 19px 20px 20px;
 }
-.dcc.sheet.actor .character .ability-scores .ability-box input {
+.dcc .character .ability-scores .ability-box input {
   border-width: 0 0 1px 0;
   font-size: 14px;
 }
-.dcc.sheet.actor .character .ability-scores .ability-box input[id$=max] {
+.dcc .character .ability-scores .ability-box input[id$=max] {
   height: 17px;
   margin-right: 3px;
 }
-.dcc.sheet.actor .character .ability-scores .ability-box > label {
+.dcc .character .ability-scores .ability-box > label {
   grid-column-end: span 2;
 }
-.dcc.sheet.actor .character .ability-scores .ability-box > label[for="system.abilities.sta.value"],
-.dcc.sheet.actor .character .ability-scores .ability-box label[for="system.abilities.lck.value"] {
+.dcc .character .ability-scores .ability-box > label[for="system.abilities.sta.value"],
+.dcc .character .ability-scores .ability-box label[for="system.abilities.lck.value"] {
   padding-top: 1.5px;
 }
-.dcc.sheet.actor .character .ability-scores .ability-score {
+.dcc .character .ability-scores .ability-score {
   align-self: stretch;
   border: 5px solid var(--dark-color);
   display: grid;
   grid-row-end: span 3;
 }
-.dcc.sheet.actor .character .ability-scores .ability-score input {
+.dcc .character .ability-scores .ability-score input {
   align-self: center;
   border: none;
   font-size: 30px;
   height: unset;
 }
-.dcc.sheet.actor .character .ac-and-hp {
+.dcc .character .ac-and-hp {
   display: grid;
   grid-template-rows: 65px 19px 20px;
 }
-.dcc.sheet.actor .character .ac-and-hp input {
+.dcc .character .ac-and-hp input {
   align-self: center;
   border: none;
   font-size: 24px;
   height: 17px;
   margin-bottom: 5px;
 }
-.dcc.sheet.actor .character .combat-basics {
+.dcc .character .combat-basics {
   align-items: center;
   border: var(--dark-border);
   border-top: none;
@@ -990,18 +1018,18 @@ form.dcc-roll-modifier input.stat {
   margin: 0 0 8px 0;
   padding-bottom: 4px;
 }
-.dcc.sheet.actor .character .combat-basics label {
+.dcc .character .combat-basics label {
   padding-left: 3px;
   text-align: left;
   padding-top: 2px;
 }
-.dcc.sheet.actor .character .combat-basics input, .dcc.sheet.actor .character .combat-basics select {
+.dcc .character .combat-basics input, .dcc .character .combat-basics select {
   font-size: 14px;
   height: 17px;
   vertical-align: middle;
   margin-right: 8px;
 }
-.dcc.sheet.actor .character .languages {
+.dcc .character .languages {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1012,12 +1040,12 @@ form.dcc-roll-modifier input.stat {
   font-size: 12px;
   text-align: left;
 }
-.dcc.sheet.actor .character .languages label {
+.dcc .character .languages label {
   text-align: left;
   padding-left: 3px;
 }
-.dcc.sheet.actor .character .languages textarea,
-.dcc.sheet.actor .character .lucky-roll textarea {
+.dcc .character .languages textarea,
+.dcc .character .lucky-roll textarea {
   background: none;
   border: none;
   font-family: var(--data-font);
@@ -1027,11 +1055,11 @@ form.dcc-roll-modifier input.stat {
   resize: none;
   text-align: left;
 }
-.dcc.sheet.actor .character .languages textarea:focus,
-.dcc.sheet.actor .character .lucky-roll textarea:focus {
+.dcc .character .languages textarea:focus,
+.dcc .character .lucky-roll textarea:focus {
   box-shadow: none;
 }
-.dcc.sheet.actor .character .lucky-roll {
+.dcc .character .lucky-roll {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1041,11 +1069,11 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 19px auto;
   font-size: 12px;
 }
-.dcc.sheet.actor .character .lucky-roll label {
+.dcc .character .lucky-roll label {
   text-align: left;
   padding-left: 3px;
 }
-.dcc.sheet.actor .character .melee-missile-attack-damage {
+.dcc .character .melee-missile-attack-damage {
   align-items: center;
   display: grid;
   grid-column: 3;
@@ -1054,16 +1082,16 @@ form.dcc-roll-modifier input.stat {
   grid-template-columns: subgrid;
   grid-template-rows: 69px 69px;
 }
-.dcc.sheet.actor .character .melee-missile-attack-damage input {
+.dcc .character .melee-missile-attack-damage input {
   border: none;
   font-size: 14px;
   margin: 4px 8px 4px 8px;
 }
-.dcc.sheet.actor .character .melee-missile-attack-damage label {
+.dcc .character .melee-missile-attack-damage label {
   font-size: 12px;
   padding-bottom: 2px;
 }
-.dcc.sheet.actor .character .name-and-level {
+.dcc .character .name-and-level {
   column-gap: 12px;
   display: grid;
   grid-column-end: span 4;
@@ -1071,10 +1099,10 @@ form.dcc-roll-modifier input.stat {
   grid-template-columns: 189px 113px 195px;
   text-align: left;
 }
-.dcc.sheet.actor .character .name-and-level label {
+.dcc .character .name-and-level label {
   font-size: 13px;
 }
-.dcc.sheet.actor .character .portrait {
+.dcc .character .portrait {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1085,16 +1113,16 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 19px auto;
   font-size: 14px;
 }
-.dcc.sheet.actor .character .portrait img {
+.dcc .character .portrait img {
   border: none;
   justify-self: center;
   align-self: center;
 }
-.dcc.sheet.actor .character .row-separator {
+.dcc .character .row-separator {
   border-bottom: 2px dotted var(--medium-color);
   margin-bottom: 3px;
 }
-.dcc.sheet.actor .character .saving-throws {
+.dcc .character .saving-throws {
   border: none;
   display: grid;
   grid-column: 2;
@@ -1104,7 +1132,7 @@ form.dcc-roll-modifier input.stat {
   margin: 0;
   padding: 0;
 }
-.dcc.sheet.actor .character .saving-throw-box {
+.dcc .character .saving-throw-box {
   align-items: center;
   background: var(--dark-bg);
   color: var(--light-color);
@@ -1114,7 +1142,7 @@ form.dcc-roll-modifier input.stat {
   margin-bottom: 10px;
   text-align: left;
 }
-.dcc.sheet.actor .character .saving-throw-box input {
+.dcc .character .saving-throw-box input {
   align-self: center;
   background: #DBD9CD;
   border-radius: 100px;
@@ -1123,7 +1151,7 @@ form.dcc-roll-modifier input.stat {
   margin-left: 5px;
   width: 50px;
 }
-.dcc.sheet.actor .character .saving-throw-box label {
+.dcc .character .saving-throw-box label {
   font-size: 14px;
   letter-spacing: 1px;
 }

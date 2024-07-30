@@ -10,8 +10,6 @@ export class DCCItemConfig extends FormApplication {
   /** @override */
   get template () {
     switch (this.object.type) {
-      case 'weapon':
-        return 'systems/dcc/templates/dialog-item-config-weapon.html'
       case 'spell':
         return 'systems/dcc/templates/dialog-item-config-spell.html'
       case 'skill':

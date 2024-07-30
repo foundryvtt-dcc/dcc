@@ -163,9 +163,10 @@
 
         {{!-- Other items --}}
         {{#* inline "ItemHeader"}}
-            <li class="grid-col-span-4 item-list-header">
+            <li class="grid-col-span-5 item-list-header">
                 <div></div>
                 <div>{{localize "DCC.Name"}}</div>
+                <div>{{localize "DCC.Notes"}}</div>
                 <div>{{localize "DCC.Quantity"}}</div>
                 <div>
                     <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="{{type}}"><i
@@ -175,9 +176,10 @@
             </li>
         {{/inline}}
         {{#* inline "ItemRow"}}
-            <li class="grid-col-span-4 item item-draggable" data-item-id="{{item._id}}">
+            <li class="grid-col-span-5 item item-draggable" data-item-id="{{item._id}}">
                 <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22">
                 <div>{{item.name}}</div>
+                <div>{{{item.system.description.summary}}}</div>
                 <div>{{item.system.quantity}}</div>
                 <div>
                     <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i

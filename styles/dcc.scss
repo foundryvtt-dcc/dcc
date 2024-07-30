@@ -459,7 +459,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   display: grid;
   font-family: $book-antiqua;
   font-size: 12px;
-  grid-template-columns: 22px auto 65px 39px;
+  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
   margin: 0 0 8px 0;
   padding: 5px;
   text-align: center;
@@ -577,37 +577,28 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 
 .config-dialog {
-  .form-group {
-    border-bottom: $border-style;
-    display: flex;
-    margin: 5px 0;
-    padding-bottom: 5px;
+  align-items: center;
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 
-    label {
-      flex: 0 0 60%;
-    }
+  label {
+    font-weight: bold;
+  }
 
-    label.span {
-      flex: 0 0 96%;
-    }
+  input {
+    margin: 2px 0 2px 0;
+    text-align: center;
+  }
 
-    label.info {
-      padding-left: 10px;
-      padding-right: 10px;
-      text-align: center;
-    }
+  select {
+    text-align: center;
+  }
 
-    div.form-fields {
-      flex: 0 1 40%;
-    }
-
-    input {
-      text-align: right;
-    }
-
-    input.string {
-      text-align: left;
-    }
+  .group-separator {
+    border-bottom: 2px dotted var(--medium-color);
+    margin: 3px 0 3px 0;
+    grid-column-end: span 2;
   }
 }
 
@@ -956,7 +947,7 @@ form.dcc-roll-modifier {
 /*  Actor Sheet
 /* ----------------------------------------- */
 
-.dcc.sheet.actor .character {
+.dcc .character {
   .character-grid {
     column-gap: 8px;
     display: grid;

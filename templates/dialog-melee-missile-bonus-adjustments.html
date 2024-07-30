@@ -1,42 +1,36 @@
 <form class="actor config-dialog" autocomplete="off">
-    <p><i>{{localize "DCC.MeleeMissileBonusConfigHint"}}</i></p>
-    <div class="form-group">
-        <label for="system.details.attackHitBonus.melee.adjustment">{{localize "DCC.MeleeAttackAdjustment"}}</label>
-        <div>
+    <div class="grid-container">
+        <p class="grid-col-span-12"><i>{{localize "DCC.MeleeMissileBonusConfigHint"}}</i></p>
+        <div class="grid-col-span-12 grid-tpl-max-10 grid-row-gap-5 grid-col-gap-8 grid-align-just-center mb-8">
+            <label for="system.details.attackHitBonus.melee.adjustment">{{localize "DCC.MeleeAttackAdjustment"}}</label>
             <input type="text" name="system.details.attackHitBonus.melee.adjustment"
                    id="system.details.attackHitBonus.melee.adjustment"
                    value="{{system.details.attackHitBonus.melee.adjustment}}"
                    placeholder="+0"
             >
-        </div>
-        <label for="system.details.attackDamageBonus.melee.adjustment">{{localize "DCC.MeleeDamageAdjustment"}}</label>
-        <div>
+            <label for="system.details.attackDamageBonus.melee.adjustment">{{localize "DCC.MeleeDamageAdjustment"}}</label>
             <input type="text" name="system.details.attackDamageBonus.melee.adjustment"
                    id="system.details.attackDamageBonus.melee.adjustment"
                    value="{{system.details.attackDamageBonus.melee.adjustment}}"
                    placeholder="+0"
             >
-        </div>
-        <label for="system.details.attackHitBonus.missile.adjustment">{{localize "DCC.MissileAttackAdjustment"}}</label>
-        <div>
+            <label for="system.details.attackHitBonus.missile.adjustment">{{localize "DCC.MissileAttackAdjustment"}}</label>
             <input type="text" name="system.details.attackHitBonus.missile.adjustment"
                    id="system.details.attackHitBonus.missile.adjustment"
                    value="{{system.details.attackHitBonus.missile.adjustment}}"
                    placeholder="+0"
             >
-        </div>
-        <label for="system.details.attackDamageBonus.missile.adjustment">{{localize "DCC.MissileDamageAdjustment"}}</label>
-        <div>
+            <label for="system.details.attackDamageBonus.missile.adjustment">{{localize "DCC.MissileDamageAdjustment"}}</label>
             <input type="text" name="system.details.attackDamageBonus.missile.adjustment"
                    value="{{system.details.attackDamageBonus.missile.adjustment}}"
                    id="system.details.attackDamageBonus.missile.adjustment"
                    placeholder="+0"
             >
         </div>
+        <footer class="grid-col-span-12 sheet-footer">
+            <button type="submit">
+                <i class="fas fa-save"></i>{{localize "DCC.SaveSheetConfig"}}
+            </button>
+        </footer>
     </div>
-    <footer class="sheet-footer">
-        <button type="submit">
-            <i class="fas fa-save"></i>{{localize "DCC.SaveSheetConfig"}}
-        </button>
-    </footer>
 </form>
