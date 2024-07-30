@@ -212,7 +212,6 @@ class DCCActor extends Actor {
       removeEmptyItems: true,
       showSpells: false,
       showSkills: false,
-      showMaxAttributes: true,
       showBackstab: false
     }
 

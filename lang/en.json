@@ -648,7 +648,6 @@
   "DCC.SheetConfig": "Sheet Configuration",
   "DCC.ShieldBash": "Shield Bash",
   "DCC.ShowBackstabConfig": "Show Backstab",
-  "DCC.ShowMaxAbilitiesConfig": "Show Max Abilities",
   "DCC.ShowMercurialEffectConfig": "Show Mercurial Effect",
   "DCC.ShowMercurialEffectInfo": "Show the Mercurial Effect section of the item sheet regardless of casting mode",
   "DCC.ShowSkillsConfig": "Show Custom Skills Tab",
