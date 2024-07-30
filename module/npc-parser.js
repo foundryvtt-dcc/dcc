@@ -5,7 +5,7 @@ import EntityImages from './entity-images.js'
 /**
  *  Parses one or more NPC Stat Blocks (e.g. from published modules) into actor data
  *  @param {string} npcString The NPC stat block to import
- *  @return {Array}           Array of NPC data for actor creation (currently a single NPC)
+ *  @return {Promise<Array>}         Array of NPC data for actor creation (currently a single NPC)
  **/
 async function parseNPCs (npcString) {
   npcString = npcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
@@ -27,6 +27,7 @@ async function parseNPCs (npcString) {
     try {
       npcObjects.push(await parseNPC(npcSection))
     } catch (e) {
+      console.error(e)
       ui.notifications.warn(game.i18n.localize('DCC.ParseSingleNPCWarning'))
     }
 
@@ -74,26 +75,15 @@ async function parseNPC (npcString) {
   npc.attacks = _firstMatch(/.*Atk ?(.+?)[;.].*/, npcString) || ''
   npc.damage = _firstMatch(/.*Dmg ?(.+?)[;.].*/, npcString) || ''
 
-  /* Attacks */
-  let attackStringOne, attackStringTwo
-  if (npc.attacks.includes(' or ')) {
-    attackStringOne = _firstMatch(/(.*) or .*/, npc.attacks)
-    attackStringTwo = _firstMatch(/.* or (.*)/, npc.attacks)
-  } else {
-    attackStringOne = npc.attacks
-  }
-
   npc.items = []
-  if (attackStringOne) {
-    const parsedAttackOne = _parseAttack(attackStringOne, npc.damage)
-    if (parsedAttackOne.name) {
-      npc.items.push(parsedAttackOne)
-    }
-  }
-  if (attackStringTwo) {
-    const parsedAttackTwo = _parseAttack(attackStringTwo, npc.damage)
-    if (parsedAttackTwo.name) {
-      npc.items.push(parsedAttackTwo)
+
+  /* Attacks */
+  const attackRegex = /(?:^|or )([^]+?)(?= or |$)/gm
+  let matches = npc.attacks.matchAll(attackRegex)
+  for (let match of matches) {
+    const parsedAttack = _parseAttack(match[1], npc.damage)
+    if (parsedAttack) {
+      npc.items.push(parsedAttack)
     }
   }
 
@@ -119,8 +109,8 @@ function _parseAttack (attackString, damageString) {
       value: ''
     }
   }
-  const name = _firstMatch(/(.*?) [+-].*/, attackString)
-  attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString)
+  const name = _firstMatch(/(.*?) [+-].*/, attackString) || attackString
+  attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString) || ''
   attack.damage = ''
   attack.melee = !(attackString.includes('ranged') || attackString.includes('missile'))
   if (damageString) {
@@ -131,7 +121,7 @@ function _parseAttack (attackString, damageString) {
 
     /*
      * If damage doesn't start with a number assume it's special
-     * Checking for a dice expression would exclude constant damage values
+     * Checking for a roll expression would exclude constant damage values
      */
     if (_firstMatch(/\d+.*/, attack.damage) === null) {
       attack.description.summary = _firstMatch(/.*\((.*)\).*/, attackString) || attack.damage
