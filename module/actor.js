@@ -418,7 +418,7 @@ class DCCActor extends Actor {
   /**
    * Generate Initiative Roll formula
    */
-  getInitiativeRoll (options = {}) {
+  async getInitiativeRoll (options = {}) {
     // Set up the roll
     let die = this.system.attributes.init.die || '1d20'
     const init = this.system.attributes.init.value
@@ -448,6 +448,11 @@ class DCCActor extends Actor {
         label: game.i18n.localize('DCC.WarriorLevel'),
         formula: this.system.details.level.value
       })
+    }
+
+    if (options.showModifierDialog) {
+      const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+      return await roll._formula
     }
 
     return game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
