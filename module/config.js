@@ -28,7 +28,7 @@ DCC.abilities = {
  * The set of Ability Score Modifiers used within the system
  * @type {Object}
  */
-DCC.abilities.modifiers = {
+DCC.abilityModifiers = {
   0: -3,
   1: -3,
   2: -3,
@@ -67,6 +67,61 @@ DCC.alignments = {
   n: 'DCC.AlignmentN',
   c: 'DCC.AlignmentC'
 }
+
+/**
+ * Character critical hit ranges
+ * @type {Object}
+ */
+DCC.critRanges = {
+  20: '20 - 20',
+  19: '19 - 20',
+  18: '18 - 20',
+  17: '17 - 20',
+  16: '16 - 20',
+  15: '15 - 20',
+  14: '14 - 20',
+  13: '13 - 20',
+  12: '12 - 20',
+  11: '11 - 20',
+  10: '10 - 20',
+  9: '9 - 20',
+  8: '8 - 20',
+  7: '7 - 20',
+  6: '6 - 20',
+  5: '5 - 20',
+  4: '4 - 20',
+  3: '3 - 20',
+  2: '2 - 20',
+  1: '1 - 20'
+}
+
+/**
+ * Character disapproval ranges
+ * @type {Object}
+ */
+DCC.disapprovalRanges = {
+  1: '1 - 1',
+  2: '1 - 2',
+  3: '1 - 3',
+  4: '1 - 4',
+  5: '1 - 5',
+  6: '1 - 6',
+  7: '1 - 7',
+  8: '1 - 8',
+  9: '1 - 9',
+  10: '1 - 10',
+  11: '1 - 11',
+  12: '1 - 12',
+  13: '1 - 13',
+  14: '1 - 14',
+  15: '1 - 15',
+  16: '1 - 16',
+  17: '1 - 17',
+  18: '1 - 18',
+  19: '1 - 19',
+  20: '1 - 20'
+}
+
 
 /* -------------------------------------------- */
 

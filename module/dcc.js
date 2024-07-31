@@ -147,11 +147,6 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('dccPackExists', function (pack, options) {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
   })
-
-  // Handlebars helper to enrich HTML
-  Handlebars.registerHelper('dccLocalizeAndEnrich', function (object) {
-    return TextEditor.enrichHTML(game.i18n.localize(object), { async: false })
-  })
 })
 
 /* -------------------------------------------- */
@@ -340,9 +335,9 @@ async function processSpellCheck (actor, spellData) {
     if (rollTable) {
       const results = await rollTable.draw({ roll, displayChat: false })
 
-      if (results.roll.terms.length > 0) {
+      if (results.roll.dice.length > 0) {
         roll = results.roll
-        naturalRoll = roll.terms[0].results[0].result
+        naturalRoll = roll.dice[0].total
         if (naturalRoll === 1) {
           const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
           roll = fumbleResult.roll
@@ -350,7 +345,7 @@ async function processSpellCheck (actor, spellData) {
           fumble = true
         } else if (naturalRoll === 20) {
           if (actor.type === 'Player') {
-            const critRoll = results.roll._total + actor.system.details.level.value
+            const critRoll = results.roll.total + actor.system.details.level.value
             const critRollObject = new Roll(String(critRoll))
             const critResult = await rollTable.draw({ roll: critRollObject, displayChat: false })
             roll = critResult.roll

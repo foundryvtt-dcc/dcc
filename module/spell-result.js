@@ -13,7 +13,7 @@ class SpellResult {
    */
   static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined } = {}) {
     const roll = result.roll
-    messageOptions = mergeObject({
+    messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
     }, messageOptions)
 
@@ -34,12 +34,11 @@ class SpellResult {
     }
 
     // Construct chat data
-    messageData = mergeObject({
+    messageData = foundry.utils.mergeObject({
       flavor: game.i18n.localize('DCC.SpellCheckCardMessage'),
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-      roll,
+      rolls: [roll],
       sound: roll ? CONFIG.sounds.dice : null,
       flags
     }, messageData)
@@ -48,7 +47,7 @@ class SpellResult {
     messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
       description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
       results: result.results.map(r => {
-        return duplicate(r)
+        return foundry.utils.duplicate(r)
       }),
       rollHTML: rollTable.displayRoll ? await roll.render() : null,
       table: rollTable,
@@ -130,9 +129,9 @@ class SpellResult {
       const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
         description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
         results: [newResult].map(r => {
-          return duplicate(r)
+          return foundry.utils.duplicate(r)
         }),
-        rollHTML: rollTable.displayRoll ? await this.roll.render() : null,
+        rollHTML: rollTable.displayRoll ? await this.rolls[0].render() : null,
         table: rollTable,
         crit,
         fumble

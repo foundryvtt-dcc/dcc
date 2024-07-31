@@ -51,7 +51,7 @@ function _parseJSONPCs (pcObject) {
       pc['attributes.hp.value'] = pc['attributes.hp.max'] = pcObject.hitPoints
     }
     let hitDice = '1d4'
-    let findSecretDoors = CONFIG.DCC.abilities.modifiers[pcObject.intelligenceScore] || 0
+    let findSecretDoors = CONFIG.DCC.abilityModifiers[pcObject.intelligenceScore] || 0
     if (pcObject.className) {
       switch (pcObject.className.toLowerCase()) {
         case 'cleric':

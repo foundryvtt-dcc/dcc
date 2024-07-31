@@ -10,7 +10,7 @@ import EntityImages from './entity-images.js'
 class DCCActorSheet extends ActorSheet {
   /** @override */
   static get defaultOptions () {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'actor'],
       template: 'systems/dcc/templates/actor-sheet-zero-level.html',
       width: 600,
@@ -31,7 +31,7 @@ class DCCActorSheet extends ActorSheet {
     const buttons = super._getHeaderButtons()
 
     // Header buttons shown only with Owner permission
-    if (this.actor.permission === CONST.DOCUMENT_PERMISSION_LEVELS.OWNER) {
+    if (this.actor.permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
       buttons.unshift(
         {
           label: game.i18n.localize('DCC.ConfigureSheet'),
@@ -64,9 +64,9 @@ class DCCActorSheet extends ActorSheet {
       config: CONFIG.DCC
     }
 
-    data.actor = duplicate(this.document)
+    data.actor = foundry.utils.duplicate(this.document)
     data.actor.name = this.document.name
-    data.system = duplicate(this.document.system)
+    data.system = foundry.utils.duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters
 
@@ -320,7 +320,7 @@ class DCCActorSheet extends ActorSheet {
       html.find('.backstab-button').click(this._onRollWeaponAttack.bind(this))
       html.find('.weapon-draggable').each(makeDraggable)
 
-      // Draggable and clickable items, including armor
+      // Draggable items, including armor
       html.find('.item-draggable').each(makeDraggable)
       html.find('.item-button').click(this._onActivateItem.bind(this))
 
@@ -780,7 +780,7 @@ class DCCActorSheet extends ActorSheet {
     // Get the type of item to create.
     const type = header.dataset.type
     // Grab any data associated with this control.
-    const data = duplicate(header.dataset)
+    const system = foundry.utils.duplicate(header.dataset)
     // Initialize a default name.
     const name = `New ${type.capitalize()}`
     // Prepare the item object.
@@ -788,10 +788,10 @@ class DCCActorSheet extends ActorSheet {
       name,
       img: EntityImages.imageForItem(type),
       type,
-      data
+      system
     }
     // Remove the type from the dataset since it's in the itemData.type prop.
-    delete itemData.data.type
+    delete itemData.system.type
 
     // Finally, create the item!
     return this.actor.createEmbeddedDocuments('Item', [itemData])
@@ -815,7 +815,7 @@ class DCCActorSheet extends ActorSheet {
     // Handle owned item updates separately
     if (event.currentTarget) {
       let parentElement = event.currentTarget.parentElement
-      const expanded = expandObject(formData)
+      const expanded = foundry.utils.expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
             parentElement.classList.contains('armor') ||

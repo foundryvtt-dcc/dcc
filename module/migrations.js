@@ -129,9 +129,9 @@ export const migrateActorData = function (actor) {
   // If migrating from 0.17 or earlier add useDisapprovalRange to cleric skills
   if ((currentVersion <= 0.17) || (currentVersion == null)) {
     updateData.update({
-      'data.skills.divineAid.useDisapprovalRange': true,
-      'data.skills.turnUnholy.useDisapprovalRange': true,
-      'data.skills.layOnHands.useDisapprovalRange': true
+      'system.skills.divineAid.useDisapprovalRange': true,
+      'system.skills.turnUnholy.useDisapprovalRange': true,
+      'system.skills.layOnHands.useDisapprovalRange': true
     })
   }
 
@@ -146,7 +146,7 @@ export const migrateActorData = function (actor) {
       // Update the Owned Item
       if (!isObjectEmpty(itemUpdate)) {
         hasItemUpdates = true
-        return mergeObject(i, itemUpdate, { enforceTypes: false, inplace: false })
+        return foundry.utils.mergeObject(i, itemUpdate, { enforceTypes: false, inplace: false })
       } else {
         return i
       }
@@ -207,7 +207,7 @@ export const migrateItemData = function (item) {
 /* -------------------------------------------- */
 
 /**
- * Migrate a single Scene document to incorporate changes to the data model of it's actor data overrides
+ * Migrate a single Scene document to incorporate changes to the data model of its actor data overrides
  * Return an Object of updateData to be applied
  * @param {Object} scene  The Scene data to Update
  * @return {Object}       The updateData to apply
@@ -223,7 +223,7 @@ export const migrateSceneData = function (scene) {
       t.actorId = null
       t.actorData = {}
     } else if (!t.actorLink) {
-      const actorData = duplicate(t.actorData)
+      const actorData = foundry.utils.duplicate(t.actorData)
       actorData.type = token.actor?.type
       const update = migrateActorData(actorData);
       ['items', 'effects'].forEach(embeddedName => {
@@ -231,12 +231,12 @@ export const migrateSceneData = function (scene) {
         const updates = new Map(update[embeddedName].map(u => [u._id, u]))
         t.actorData[embeddedName].forEach(original => {
           const update = updates.get(original._id)
-          if (update) mergeObject(original, update)
+          if (update) foundry.utils.mergeObject(original, update)
         })
         delete update[embeddedName]
       })
 
-      mergeObject(t.actorData, update)
+      foundry.utils.mergeObject(t.actorData, update)
     }
     return t
   })

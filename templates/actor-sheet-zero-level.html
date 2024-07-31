@@ -21,11 +21,7 @@
             <div class="alignment">
                 <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
                 <select id="system.details.alignment" name="system.details.alignment">
-                    {{#select system.details.alignment}}
-                        {{#each config.alignments as |label alignment|}}
-                            <option value="{{alignment}}">{{localize label}}</option>
-                        {{/each}}
-                    {{/select}}
+                    {{selectOptions config.alignments selected=system.details.alignment localize=true}}
                 </select>
             </div>
 
@@ -42,7 +38,7 @@
         <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20"
                data-dtype="Number"/>
         <input type="hidden" id="system.attributes.actionDice.value" name="system.attributes.actionDice.value"
-               value="{{system.attributes.actionDice.options.[0]}}" data-dtype="String"/>
+               value="{{system.attributes.actionDice.options.[0].value}}" data-dtype="String"/>
     </header>
 
     {{!-- Sheet Tab Navigation --}}

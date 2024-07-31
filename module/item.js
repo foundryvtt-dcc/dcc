@@ -152,9 +152,9 @@ class DCCItem extends Item {
         callback: (formula, term) => {
           // Apply the spellburn
           actor.update({
-            'data.abilities.str.value': term.str,
-            'data.abilities.agl.value': term.agl,
-            'data.abilities.sta.value': term.sta
+            'system.abilities.str.value': term.str,
+            'system.abilities.agl.value': term.agl,
+            'system.abilities.sta.value': term.sta
           })
         }
       })
@@ -162,7 +162,7 @@ class DCCItem extends Item {
 
     // Roll the spell check
     const roll = await game.dcc.DCCRoll.createRoll(terms, actor.getRollData(), options)
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     if (roll.dice.length > 0) {
       roll.dice[0].options.dcc = {
@@ -274,7 +274,7 @@ class DCCItem extends Item {
       roll = mercurialMagicResult.roll
     } else {
       // Fall back to displaying just the roll
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor: game.i18n.localize('DCC.MercurialMagicRoll'),
@@ -286,16 +286,16 @@ class DCCItem extends Item {
 
     // Stow away the data in the appropriate fields
     const updates = {}
-    updates['data.mercurialEffect.value'] = roll.total
-    updates['data.mercurialEffect.summary'] = ''
-    updates['data.mercurialEffect.description'] = ''
+    updates['system.mercurialEffect.value'] = roll.total
+    updates['system.mercurialEffect.summary'] = ''
+    updates['system.mercurialEffect.description'] = ''
 
     if (mercurialMagicResult) {
       try {
         const result = mercurialMagicResult.results[0].text
         const split = result.split('.')
-        updates['data.mercurialEffect.summary'] = split[0]
-        updates['data.mercurialEffect.description'] = `<p>${result}</p>`
+        updates['system.mercurialEffect.summary'] = split[0]
+        updates['system.mercurialEffect.description'] = `<p>${result}</p>`
       } catch (err) {
         console.error(`Couldn't extract Mercurial Magic result from table:\n${err}`)
       }
@@ -309,23 +309,20 @@ class DCCItem extends Item {
    * @return {Boolean}  True if any value field contains a rollable formula
    */
   needsValueRoll () {
-    let needsRoll = false
-
     for (const currency in CONFIG.DCC.currencies) {
       const formula = this.system.value[currency]
       if (!formula) continue
       try {
         const roll = new Roll(formula.toString())
-        if (roll.dice.length > 0) {
-          needsRoll = true
-          break
+        if (!roll.isDeterministic) {
+          return true
         }
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
       }
     }
 
-    return needsRoll
+    return false
   }
 
   /**
@@ -339,8 +336,8 @@ class DCCItem extends Item {
       const formula = this.system.value[currency] || '0'
       try {
         const roll = new Roll(formula.toString())
-        await roll.evaluate({ async: true })
-        updates['data.value.' + currency] = roll.total
+        await roll.evaluate()
+        updates['system.value.' + currency] = roll.total
         valueRolls[currency] = `<a class="inline-roll inline-result" data-roll="${encodeURIComponent(JSON.stringify(roll))}" title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}"><i class="fas fa-dice-d20"></i> ${roll.total}</a>`
       } catch (e) {
         ui.notifications.warn(game.i18n.localize('DCC.BadValueFormulaWarning'))
@@ -351,7 +348,7 @@ class DCCItem extends Item {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.ResolveValueEmote', {
         itemName: this.name,
         pp: valueRolls.pp,
@@ -392,8 +389,8 @@ class DCCItem extends Item {
       if (this.system.value[currency] >= conversionFactor) {
         // Apply the conversion
         const updates = {}
-        updates[`data.value.${currency}`] = parseInt(this.system.value[currency]) - conversionFactor
-        updates[`data.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + 1
+        updates[`system.value.${currency}`] = parseInt(this.system.value[currency]) - conversionFactor
+        updates[`system.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + 1
         this.update(updates)
       }
     }
@@ -421,8 +418,8 @@ class DCCItem extends Item {
         const conversionFactor = currencyValue[currency] / currencyValue[toCurrency]
         // Apply the conversion
         const updates = {}
-        updates[`data.value.${currency}`] = parseInt(this.system.value[currency]) - 1
-        updates[`data.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + conversionFactor
+        updates[`system.value.${currency}`] = parseInt(this.system.value[currency]) - 1
+        updates[`system.value.${toCurrency}`] = parseInt(this.system.value[toCurrency]) + conversionFactor
         this.update(updates)
       }
     }

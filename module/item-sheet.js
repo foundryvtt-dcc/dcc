@@ -10,7 +10,7 @@ import EntityImages from './entity-images.js'
 export class DCCItemSheet extends ItemSheet {
   /** @override */
   static get defaultOptions () {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }]
@@ -78,6 +78,8 @@ export class DCCItemSheet extends ItemSheet {
       relativeTo: this.item,
       secrets: this.item.isOwner
     })
+
+    data.config = CONFIG.DCC
 
     return data
   }

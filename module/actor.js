@@ -12,8 +12,8 @@ class DCCActor extends Actor {
     // Ability modifiers
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
-      abilities[abilityId].mod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].value] || 0
-      abilities[abilityId].maxMod = CONFIG.DCC.abilities.modifiers[abilities[abilityId].max] || abilities[abilityId].mod
+      abilities[abilityId].mod = CONFIG.DCC.abilityModifiers[abilities[abilityId].value] || 0
+      abilities[abilityId].maxMod = CONFIG.DCC.abilityModifiers[abilities[abilityId].max] || abilities[abilityId].mod
     }
 
     // Get configuration data
@@ -46,7 +46,7 @@ class DCCActor extends Actor {
         }
       }
     }
-    data.attributes.fumble = mergeObject(
+    data.attributes.fumble = foundry.utils.mergeObject(
       data.attributes.fumble || {},
       { die: fumbleDie }
     )
@@ -66,7 +66,7 @@ class DCCActor extends Actor {
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
       this.update({
-        'data.speed.base': this.system.attributes.speed.value
+        'system.speed.base': this.system.attributes.speed.value
       })
       this.system.speed.base = this.system.attributes.speed.value
     }
@@ -101,18 +101,18 @@ class DCCActor extends Actor {
     try {
       // Implicit migration for legacy actors
       if (!this.system.config.actionDice) {
-        this.system.config.actionDice = this.system.attributes.actionDice.value
+        this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
-      const terms = actionDieExpression.terms || actionDieExpression.parts
+      const terms = actionDieExpression.terms
       const actionDice = []
       for (const term of terms) {
-        if (typeof (term) === 'object' && term.faces) {
+        if (term instanceof foundry.dice.terms.Die) {
           const termDie = `1d${term.faces}`
           const termCount = term.number || 1
           for (let i = 0; i < termCount; ++i) {
-            actionDice.push(termDie)
+            actionDice.push({value: termDie, label: termDie})
           }
         }
       }
@@ -122,8 +122,8 @@ class DCCActor extends Actor {
     // Migrate the old rollAttackBonus option if present
     if (this.system.config.rollAttackBonus) {
       this.update({
-        'data.config.attackBonusMode': 'manual',
-        'data.config.rollAttackBonus': null
+        'system.config.attackBonusMode': 'manual',
+        'system.config.rollAttackBonus': null
       })
     }
   }
@@ -161,7 +161,7 @@ class DCCActor extends Actor {
   getRollData () {
     const data = super.getRollData()
 
-    const customData = mergeObject(
+    const customData = foundry.utils.mergeObject(
       data,
       {
         str: data.abilities.str.mod,
@@ -231,7 +231,7 @@ class DCCActor extends Actor {
     try {
       // Implicit migration for legacy actors
       if (!this.system.config.actionDice) {
-        this.system.config.actionDice = this.system.attributes.actionDice.value
+        this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
@@ -266,7 +266,7 @@ class DCCActor extends Actor {
    */
   async rollAbilityCheck (abilityId, options = {}) {
     const ability = this.system.abilities[abilityId]
-    ability.mod = CONFIG.DCC.abilities.modifiers[ability.value] || 0
+    ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
     const abilityLabel = game.i18n.localize(ability.label)
     const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
@@ -287,7 +287,7 @@ class DCCActor extends Actor {
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
       // Apply custom roll options
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
       roll.dice[0].options.dcc = {
         rollUnder: true,
         lowerThreshold: ability.value,
@@ -300,7 +300,7 @@ class DCCActor extends Actor {
         'dcc.Ability': abilityId
       })
     } else {
-      const die = this.system.attributes.actionDice.value
+      const die = this.system.attributes.actionDice.value || '1d20'
 
       // Collate terms for the roll
       const terms = [
@@ -324,7 +324,7 @@ class DCCActor extends Actor {
 
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
 
       // Generate flags for the roll
       Object.assign(flags, {
@@ -395,7 +395,7 @@ class DCCActor extends Actor {
     const roll = await this.getInitiativeRoll(options)
 
     // Evaluate roll, otherwise roll.total is undefined
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     // Convert the roll to a chat message
     roll.toMessage({
@@ -413,7 +413,7 @@ class DCCActor extends Actor {
 
     // Set initiative value in the combat tracker if appropriate
     const tokenId = token.id
-    const combatant = game.combat.getCombatantByToken(tokenId)
+    const combatant = game.combat.getCombatantsByToken(tokenId)[0]
     if (!combatant) {
       return ui.notifications.warn(game.i18n.format('DCC.InitiativeNoCombatantWarning', {
         name: token.name
@@ -441,7 +441,7 @@ class DCCActor extends Actor {
     // Players have a stamina modifier they can add
     if (this.type === 'Player') {
       const sta = this.system.abilities.sta || {}
-      const modifier = sta.mod = sta.value ? CONFIG.DCC.abilities.modifiers[sta.value] : '+0'
+      const modifier = sta.mod = sta.value ? CONFIG.DCC.abilityModifiers[sta.value] : '+0'
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilitySta'),
@@ -489,7 +489,7 @@ class DCCActor extends Actor {
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
-    await roll.evaluate({ async: true })
+    await roll.evaluate()
 
     // Generate flags for the roll
     const flags = {
@@ -531,11 +531,13 @@ class DCCActor extends Actor {
         }
       }
     }
-    const die = skill.die || this.system.attributes.actionDice.value
+    const die = skill.die || this.system.attributes.actionDice.value || '1d20'
     const ability = skill.ability || null
     let abilityLabel = ''
+    let abilityMod = 0
     if (ability) {
       abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
+      abilityMod = parseInt(this.system.abilities[ability]?.mod || '0')
     }
 
     // Title for the roll modifier dialog
@@ -551,11 +553,15 @@ class DCCActor extends Actor {
     })
 
     if (skill.value !== undefined) {
+      let formula = skill.value.toString()
+      if (abilityMod !== 0) {
+        formula = `${skill.value} + ${abilityMod}`
+      }
       terms.push({
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
         modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
-        formula: skill.value.toString()
+        formula
       })
     }
 
@@ -594,7 +600,7 @@ class DCCActor extends Actor {
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
     } else {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
 
       // Generate flags for the roll
       const flags = {
@@ -613,7 +619,7 @@ class DCCActor extends Actor {
 
     // Store last result if required
     if (skillItem && skillItem.system.config.showLastResult) {
-      skillItem.update({ 'data.lastResult': roll.total })
+      skillItem.update({ 'system.lastResult': roll.total })
     }
 
     // Need to drain disapproval
@@ -648,7 +654,7 @@ class DCCActor extends Actor {
 
     // Spend the luck
     await this.update({
-      'data.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
+      'system.abilities.lck.value': (parseInt(this.system.abilities.lck.value) - luckSpend)
     })
 
     // Convert the roll to a chat message
@@ -690,7 +696,7 @@ class DCCActor extends Actor {
     const ability = this.system.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
-    const die = this.system.attributes.actionDice.value
+    const die = this.system.attributes.actionDice.value || '1d20'
     const bonus = this.system.class.spellCheck ? this.system.class.spellCheck.toString() : '+0'
     const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || '0')
     const isIdolMagic = this.system.details.sheetClass === 'Cleric'
@@ -729,9 +735,9 @@ class DCCActor extends Actor {
         callback: (formula, term) => {
           // Apply the spellburn
           this.update({
-            'data.abilities.str.value': term.str,
-            'data.abilities.agl.value': term.agl,
-            'data.abilities.sta.value': term.sta
+            'system.abilities.str.value': term.str,
+            'system.abilities.agl.value': term.agl,
+            'system.abilities.sta.value': term.sta
           })
         }
       })
@@ -773,7 +779,7 @@ class DCCActor extends Actor {
     /* Determine attack bonus */
     const attackBonusExpression = this.system.details.attackBonus || '0'
     if (attackBonusExpression) {
-      const flavor = game.i18n.localize('DCC.DeedRoll')
+      const flavor = game.i18n.localize('DCC.AttackBonus')
       options.title = flavor
 
       // Collate terms for the roll
@@ -788,9 +794,9 @@ class DCCActor extends Actor {
       const abRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: 3 }, this.getRollData()), options)
 
       // Store the result for use in attack and damage rolls
-      const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate({ async: true })).total
+      const lastRoll = this.system.details.lastRolledAttackBonus = (await abRoll.evaluate()).total
       await this.update({
-        'data.details.lastRolledAttackBonus': lastRoll
+        'system.details.lastRolledAttackBonus': lastRoll
       })
 
       // Apply custom roll options
@@ -825,7 +831,7 @@ class DCCActor extends Actor {
    */
   async setActionDice (die) {
     this.update({
-      'data.attributes.actionDice.value': die
+      'system.attributes.actionDice.value': die
     })
   }
 
@@ -935,7 +941,7 @@ class DCCActor extends Actor {
         const messageData = {
           user: game.user.id,
           speaker,
-          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
           content: game.i18n.format('DCC.AttackRollInvalidFormula', {
             formula: attackRollResult.formula,
             weapon: weapon.name
@@ -964,7 +970,7 @@ class DCCActor extends Actor {
         const messageData = {
           user: game.user.id,
           speaker,
-          type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+          type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
           content: game.i18n.format('DCC.DamageRollInvalidFormula', {
             formula: damageRollResult.formula,
             weapon: weapon.name
@@ -1014,7 +1020,7 @@ class DCCActor extends Actor {
         user: game.user.id,
         itemId: weapon.id,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         content: game.i18n.format(emote, {
           weaponName: weapon.name,
           rollHTML: attackRollHTML,
@@ -1119,7 +1125,7 @@ class DCCActor extends Actor {
       options
     )
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
-    await attackRoll.evaluate({ async: true })
+    await attackRoll.evaluate()
 
     // Adjust crit range if the die size was adjusted
     critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
@@ -1206,7 +1212,7 @@ class DCCActor extends Actor {
       this.getRollData(),
       rollOptions
     )
-    await damageRoll.evaluate({ async: true })
+    await damageRoll.evaluate()
 
     // A successful attack always inflicts a minimum of 1 point of damage (already handled with the custom card)
     if (options.displayStandardCards && damageRoll._total < 1) {
@@ -1265,7 +1271,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!critResult) {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
     } else {
       roll = critResult.roll
     }
@@ -1356,7 +1362,7 @@ class DCCActor extends Actor {
 
     // Either roll the die or grab the roll from the table lookup
     if (!fumbleResult) {
-      await roll.evaluate({ async: true })
+      await roll.evaluate()
     } else {
       roll = fumbleResult.roll
     }
@@ -1401,7 +1407,7 @@ class DCCActor extends Actor {
 
       // Check for Crit/Fumble
       let critFailClass = ''
-      if (Number(rollResult.roll.dice[0].results[0]) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].results[0]) === 1) { critFailClass = 'fumble ' }
+      if (Number(rollResult.roll.dice[0].total) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].total) === 1) { critFailClass = 'fumble ' }
 
       return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.hitsAc}</a>`
     } else {
@@ -1482,7 +1488,7 @@ class DCCActor extends Actor {
       const messageData = {
         user: game.user.id,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         content: game.i18n.format(locString, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
       }
@@ -1492,7 +1498,7 @@ class DCCActor extends Actor {
 
     // Apply new HP
     return this.update({
-      'data.attributes.hp.value': newHp
+      'system.attributes.hp.value': newHp
     })
   }
 
@@ -1505,7 +1511,7 @@ class DCCActor extends Actor {
     // Mark the spell as lost - if the item is known
     if (item) {
       item.update({
-        'data.lost': true
+        'system.lost': true
       })
     }
 
@@ -1514,7 +1520,7 @@ class DCCActor extends Actor {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: locString,
       sound: CONFIG.sounds.notification
     }
@@ -1533,14 +1539,14 @@ class DCCActor extends Actor {
 
     // Apply the new disapproval range
     this.update({
-      'data.class.disapproval': newRange
+      'system.class.disapproval': newRange
     })
 
     // Announce that disapproval was increased
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
       sound: CONFIG.sounds.notification
     }

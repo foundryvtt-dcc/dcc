@@ -17,11 +17,7 @@
     <label for="system.config.castingMode">{{localize "DCC.SpellCastingMode"}}</label>
     <div class="form-fields">
       <select name="system.config.castingMode" id="system.config.castingMode">
-        {{#select system.config.castingMode}}
-        {{#each config.castingModes}}
-        <option value="{{ @key }}">{{localize this}}</option>
-        {{/each}}
-        {{/select}}
+        {{selectOptions config.castingModes selected=system.config.castingMode localize=true}}
       </select>
     </div>
     <label class="info span">{{localize "DCC.SpellCastingModeInfo"}}</label>

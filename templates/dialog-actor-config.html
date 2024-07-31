@@ -27,11 +27,7 @@
     <label for="system.config.attackBonusMode">{{localize "DCC.AttackBonusConfigMode"}}</label>
     <div class="form-fields">
       <select name="system.config.attackBonusMode" id="system.config.attackBonusMode">
-        {{#select system.config.attackBonusMode}}
-        <option value="flat">{{localize "DCC.AttackBonusConfigModeFlat"}}</option>
-        <option value="manual">{{localize "DCC.AttackBonusConfigModeManual"}}</option>
-        <option value="autoPerAttack">{{localize "DCC.AttackBonusConfigModeAutoPerAttack"}}</option>
-        {{/select}}
+        {{selectOptions config.attackBonusModes selected=system.config.attackBonusMode localize=true}}
       </select>
     </div>
     <label class="info span">{{localize "DCC.AttackBonusConfigModeInfo"}}</label>
@@ -53,14 +49,7 @@
     <label for="system.config.baseACAbility">{{localize "DCC.BaseACAbilityConfig"}}</label>
     <div class="form-fields">
       <select name="system.config.baseACAbility" id="system.config.baseACAbility">
-        {{#select system.config.baseACAbility}}
-        <option value="str">{{localize "DCC.AbilityStr"}}</option>
-        <option value="agl">{{localize "DCC.AbilityAgl"}}</option>
-        <option value="sta">{{localize "DCC.AbilitySta"}}</option>
-        <option value="per">{{localize "DCC.AbilityPer"}}</option>
-        <option value="int">{{localize "DCC.AbilityInt"}}</option>
-        <option value="lck">{{localize "DCC.AbilityLck"}}</option>
-        {{/select}}
+        {{selectOptions config.abilities selected=system.config.baseACAbility localize=true}}
       </select>
     </div>
     <label for="system.config.computeSpeed">{{localize "DCC.ComputeSpeedConfig"}}</label>

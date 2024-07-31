@@ -173,7 +173,7 @@ global.ChatMessage = ChatMessage
  */
 global.CONFIG = { DCC }
 global.CONFIG.sounds = { dice: 'diceSound' }
-global.CONST = { CHAT_MESSAGE_TYPES: { EMOTE: 'emote' } }
+global.CONST = { CHAT_MESSAGE_STYLES: { EMOTE: 'emote' } }
 
 /**
  * Localization
@@ -267,6 +267,11 @@ global.ui = {
  * Global helper functions function
  */
 
+// Namespace for Foundry helper functions
+global.foundry = {
+  utils: {}
+}
+
 // Foundry's implementation of getType
 global.getType = function (token) {
   const tof = typeof token
@@ -306,23 +311,23 @@ global.setProperty = function (object, key, value) {
 }
 
 // Foundry's implementation of expandObject
-global.expandObject = function (obj, _d = 0) {
+global.foundry.utils.expandObject = function (obj, _d = 0) {
   const expanded = {}
   if (_d > 10) throw new Error('Maximum depth exceeded')
   for (let [k, v] of Object.entries(obj)) {
-    if (v instanceof Object && !Array.isArray(v)) v = global.expandObject(v, _d + 1)
+    if (v instanceof Object && !Array.isArray(v)) v = global.foundry.utils.expandObject(v, _d + 1)
     global.setProperty(expanded, k, v)
   }
   return expanded
 }
 
 // Foundry's implementation of duplicate
-global.duplicate = function (original) {
+global.foundry.utils.duplicate = function (original) {
   return JSON.parse(JSON.stringify(original))
 }
 
 // Foundry's implementation of mergeObject
-global.mergeObject = function (original, other = {}, {
+global.foundry.utils.mergeObject = function (original, other = {}, {
   insertKeys = true,
   insertValues = true,
   overwrite = true,
@@ -337,11 +342,11 @@ global.mergeObject = function (original, other = {}, {
   const depth = _d + 1
 
   // Maybe copy the original data at depth 0
-  if (!inplace && (_d === 0)) original = global.duplicate(original)
+  if (!inplace && (_d === 0)) original = foundry.utils.duplicate(original)
 
   // Enforce object expansion at depth 0
-  if ((_d === 0) && Object.keys(original).some(k => /\./.test(k))) original = global.expandObject(original)
-  if ((_d === 0) && Object.keys(other).some(k => /\./.test(k))) other = global.expandObject(other)
+  if ((_d === 0) && Object.keys(original).some(k => /\./.test(k))) original = global.foundry.utils.expandObject(original)
+  if ((_d === 0) && Object.keys(other).some(k => /\./.test(k))) other = global.foundry.utils.expandObject(other)
 
   // Iterate over the other object
   for (let [k, v] of Object.entries(other)) {
