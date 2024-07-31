@@ -38,33 +38,33 @@
 
         {{!-- Class Tab --}}
         <div class="tab" data-group="primary" data-tab="dwarf">
-            <div class="class">
-                <div class="skills-container">
-                    <div class="dark-title">{{localize "DCC.DwarfAbilities"}}</div>
-                    <div data-skill="shieldBash">
+            <div class="grid-container label-font">
+                <div class="grid-col-span-12 dark-title">{{localize "DCC.DwarfAbilities"}}</div>
+                <div class="grid-col-span-12 dark-border grid-tpl-max grid-row-gap-8 p-5">
+                    <div class="grid-tpl-max-25" data-skill="shieldBash">
                         <label class="skill-check rollable" for="system.skills.shieldBash.die">{{localize "DCC.ShieldBash"}}</label>
                         <input type="text" id="system.skills.shieldBash.die" name="system.skills.shieldBash.die"
                                value="{{system.skills.shieldBash.die}}" data-dtype="String"/>
                     </div>
-                    <div>{{localize "DCC.Infravision"}}</div>
-                    <div class="grid-template-max-auto">
+                    <div class="grid-tpl-max-auto">
                         <label for="system.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
                         <input class="full-width" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon"
                                value="{{system.class.luckyWeapon}}" data-dtype="String"/>
                     </div>
+                    <div>{{localize "DCC.Infravision"}}</div>
                     <div>{{localize "DCC.MightyDeedsOfArms"}}</div>
                     <div>
                         <a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Mighty-Deeds">
                             <i class="fas fa-link"></i> {{localize "DCC.MightyDeedsHowToLink"}}
                         </a>
                     </div>
-                    <div class="grid-template-full">{{localize "DCC.UndergroundSkills"}}</div>
+                    <div>{{localize "DCC.UndergroundSkills"}}</div>
                     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
                     <div>{{{system.class.classLink}}}</div>
                     <div>{{{system.class.mightyDeedsLink}}}</div>
                     {{/dccPackExists}}
                 </div>
-                <img src="systems/dcc/styles/images/SA-1-25-FCI-spots1-shield-spiked-kite.webp" height="350px" width="490px" style="margin: 30px 0 0 10px;">
+                <img class="grid-col-span-12" src="systems/dcc/styles/images/SA-1-25-FCI-spots1-shield-spiked-kite.webp" height="310px" width="450px" style="margin: 30px 0 0 10px;">
             </div>
         </div>
     </section>

@@ -1,19 +1,19 @@
 {{!-- Spells Tab --}}
-<div class="tab skills" data-group="primary" data-tab="skills">
-    <div class="skill-heading">{{localize "DCC.Skills"}}</div>
-    <ol class="skill-list">
-        <li class="item skill-list-header">
+<div class="tab skills-bg" data-group="primary" data-tab="skills">
+    <div class="dark-title">{{localize "DCC.Skills"}}</div>
+    <ol class="skill-list dark-border">
+        <li class="item-list-header grid-col-span-5">
             <div class="skill-name">{{localize "DCC.SkillName"}}</div>
             <div class="skill-die">{{localize "DCC.SkillDie"}}</div>
             <div class="skill-modifier">{{localize "DCC.SkillValue"}}</div>
             <div class="skill-last-roll">{{localize "DCC.SkillResult"}}</div>
             <div>
-                <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="skill"><i
-                    class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+                <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="skill">
+                    <i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
             </div>
         </li>
         {{#each actor.skills as |skill id|}}
-            <li class="item skill" data-item-id="{{skill._id}}"
+            <li class="item skill grid-col-span-5" data-item-id="{{skill._id}}"
                 data-skill="{{skill.name}}">
                 {{#if skill.config.freeform}}
                     <label class="skill-name" for="itemUpdates.{{skill._id}}.system.description.summary">{{skill.name}}</label>

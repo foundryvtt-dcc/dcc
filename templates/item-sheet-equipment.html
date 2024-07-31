@@ -9,13 +9,19 @@
     <section class="sheet-body">
         <div class="tab" data-group="item" data-tab="item">
             <div class="tab-body">
-                <div class="grid-col-span-8 grid-col-min-auto" style="margin-bottom: 5px;">
+                <div class="grid-col-span-8 grid-tpl-max-auto" style="margin-bottom: 5px;">
                     <label for="name">{{localize "DCC.Name"}}</label>
                     <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
                 </div>
-                <div class="grid-col-span-4 grid-col-min-auto">
-                    <label>{{localize "DCC.Quantity"}}</label>
-                    <input type="text" name="system.quantity" value="{{system.quantity}}" data-dtype="Number"/>
+                <div class="grid-col-span-4 grid-tpl-max-auto">
+                    <label for="system.quantity">{{localize "DCC.Quantity"}}</label>
+                    <input type="text" id="system.quantity" name="system.quantity" value="{{system.quantity}}" data-dtype="Number"/>
+                </div>
+
+                <div class="grid-col-span-12 grid-tpl-max-auto">
+                    <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
+                    <input type="text" id="system.description.summary" name="system.description.summary"
+                           value="{{system.description.summary}}" data-dtype="String"/>
                 </div>
 
                 <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
@@ -27,7 +33,7 @@
                 <div class="dark-border grid-col-span-3" style="max-height: 125px;">
                     <div class="dark-title">{{localize "DCC.Image"}}</div>
                     <div class="box-inner" style="padding-top: 5px;">
-                        <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+                        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" alt="{{item.name}}"/>
                     </div>
                 </div>
 
@@ -40,8 +46,8 @@
         <div class="tab" data-group="item" data-tab="description">
             <div class="tab-body">
                 <div class="description grid-col-span-12">
-                    {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true
-                             editable=editable}}
+                    <div class="dark-title">{{localize "DCC.Description"}}</div>
+                    {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}
                 </div>
             </div>
         </div>

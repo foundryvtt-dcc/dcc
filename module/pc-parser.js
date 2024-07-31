@@ -13,6 +13,7 @@ function parsePCs (pcString) {
     const pcObject = JSON.parse(pcString)
     return _parseJSONPCs(pcObject)
   } catch (e) {
+    console.error(e)
     return _parseJSONPCs(_splitAndParsePlainPCsToJSON(pcString))
   }
 }

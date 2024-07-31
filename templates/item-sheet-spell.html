@@ -10,14 +10,14 @@
     <section class="sheet-body">
         <div class="tab" data-group="item" data-tab="main">
             <div class="tab-body">
-                <div class="grid-col-span-12 grid-col-min-auto" style="margin-bottom: 5px;">
+                <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
                     <label for="name">{{localize "DCC.Name"}}</label>
                     <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
                 </div>
 
                 <div class="dark-border grid-col-span-6">
                     <div class="dark-title">{{localize "DCC.SpellDetails"}}</div>
-                    <div class="box-inner grid-col-min-auto">
+                    <div class="box-inner grid-tpl-max-auto">
                         <label for="system.level">{{localize "DCC.Level"}}:</label>
                         <input type="text" name="system.level"
                                value="{{numberFormat system.level decimals=0 sign=false}}"
@@ -43,7 +43,7 @@
 
                 <div class="dark-border grid-col-span-4">
                     <div class="dark-title">{{localize "DCC.SpellCastingHeader"}}</div>
-                    <div class="box-inner grid-col-min-auto">
+                    <div class="box-inner grid-tpl-max-auto">
                         <label for="system.spellCheck.die">{{localize "DCC.ActionDie"}}:</label>
                         <input type="text" name="system.spellCheck.die"
                                value="{{system.spellCheck.die}}"
@@ -71,8 +71,8 @@
                     </div>
                 </div>
 
-                <div class="grid-col-span-1">
-                    <div class="dark-border grid-col-span-1" style="max-height: 85px;">
+                <div class="grid-col-span-2">
+                    <div class="dark-border" style="max-height: 85px;">
                         <div class="dark-title">{{localize "DCC.Image"}}</div>
                         <div class="box-inner" style="padding-top: 5px;">
                             <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
@@ -94,13 +94,13 @@
 
         <div class="tab" data-group="item" data-tab="mercurial">
             <div class="tab-body">
-                <div class="grid-col-span-3  grid-col-min-auto">
+                <div class="grid-col-span-3 grid-tpl-max-auto">
                     <label class="mercurial-roll rollable" for="system.mercurialEffect.value">
                         <i class="fas fa-dice-d20"></i> {{localize "DCC.MercurialEffectValue"}}</label>
                     <input type="text" name="system.mercurialEffect.value" id="system.mercurialEffect.value"
                            value="{{system.mercurialEffect.value}}" data-dtype="Number"/>
                 </div>
-                <div class="grid-col-span-9 grid-col-min-auto">
+                <div class="grid-col-span-9 grid-tpl-max-auto">
                     <label for="system.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
                     <input type="text" name="system.mercurialEffect.summary" id="system.mercurialEffect.summary"
                            value="{{system.mercurialEffect.summary}}" data-dtype="String"/>
@@ -128,6 +128,7 @@
         <div class="tab" data-group="item" data-tab="description">
             <div class="tab-body">
                 <div class="description grid-col-span-12">
+                    <div class="dark-title">{{localize "DCC.Description"}}</div>
                     {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}
                 </div>
             </div>

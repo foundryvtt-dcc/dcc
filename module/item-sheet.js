@@ -12,7 +12,7 @@ export class DCCItemSheet extends ItemSheet {
   static get defaultOptions () {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
-      height: 426,
+      height: 442,
       resizable: false,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
       width: 475,

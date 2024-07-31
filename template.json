@@ -340,7 +340,6 @@
           "removeEmptyItems": true,
           "showSpells": false,
           "showSkills": false,
-          "showMaxAbilities": true,
           "showBackstab": false
         }
       }

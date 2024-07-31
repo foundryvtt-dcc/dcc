@@ -1,65 +1,29 @@
-.grid,
-.grid-2col {
+.grid-align-center {
   display: grid;
-  gap: 10px;
-  grid-column: span 2/span 2;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 10px 0;
-  padding: 0;
+  align-items: center;
 }
 
-.grid-3col {
-  grid-column: span 3/span 3;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.grid-align-just-center {
+  display: grid;
+  align-items: center;
+  justify-items: center;
 }
 
-.grid-4col {
-  grid-column: span 4/span 4;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.grid-5col {
-  grid-column: span 5/span 5;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.grid-6col {
-  grid-column: span 5/span 5;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.grid-7col {
-  grid-column: span 7/span 7;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-}
-
-.grid-8col {
-  grid-column: span 8/span 8;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-}
-
-.grid-9col {
-  grid-column: span 9/span 9;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-}
-
-.grid-10col {
-  grid-column: span 10/span 10;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
-}
-
-.grid-11col {
-  grid-column: span 11/span 11;
-  grid-template-columns: repeat(11, minmax(0, 1fr));
-}
-
-.grid-12col {
-  grid-column: span 12/span 12;
+.grid-container {
+  display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+.grid-col-gap-5 {
+  column-gap: 5px;
+}
+
+.grid-col-gap-8 {
+  column-gap: 8px;
+}
+
 .grid-col-span-1 {
-  grid-column-end: span 2;
+  grid-column-end: span 1;
 }
 
 .grid-col-span-2 {
@@ -106,30 +70,86 @@
   grid-column-end: span 12;
 }
 
-.grid-col-min-auto {
+.grid-row-gap-5 {
   display: grid;
-  grid-row-gap: 3px;
-  grid-template-columns: max-content minmax(0, auto);
+  grid-row-gap: 5px;
 }
 
-.flex-group-center,
-.flex-group-left,
-.flex-group-right {
-  align-items: center;
-  border: 1px solid #999;
-  justify-content: center;
+.grid-row-gap-8 {
+  display: grid;
+  grid-row-gap: 8px;
+}
+
+.grid-row-span-2 {
+  grid-row-end: span 2;
+}
+
+.grid-tpl-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.grid-tpl-max {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.grid-tpl-max-10 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 10%;
+}
+
+.grid-tpl-max-25 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 25%;
+}
+
+.grid-tpl-max-auto {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.mb-3 {
+  margin-bottom: 3px;
+}
+
+.mb-5 {
+  margin-bottom: 5px;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.mt-5 {
+  margin-top: 5px;
+}
+
+.mt-3 {
+  margin-top: 3px;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.p-5 {
   padding: 5px;
-  text-align: center;
 }
 
-.flex-group-left {
-  justify-content: flex-start;
-  text-align: left;
+.p-8 {
+  padding: 8px;
 }
 
-.flex-group-right {
-  justify-content: flex-end;
-  text-align: right;
+.pt-5 {
+  padding-top: 5px;
+}
+
+.pt-8 {
+  padding-top: 8px;
 }
 
 /* ----------------------------------------- */
@@ -137,30 +157,96 @@
 /* ----------------------------------------- */
 @font-face {
   font-family: "Cooper Black";
-  src: url("fonts/Cooper.otf") format("otf");
+  src: url("fonts/Cooper.otf") format("opentype");
 }
 @font-face {
   font-family: "Book Antiqua";
-  src: url("fonts/Book-Antiqua.otf");
+  src: url("fonts/Book-Antiqua.otf") format("opentype");
 }
 @font-face {
   font-family: "DuvallSmallCaps";
-  src: url("fonts/DuvallSmallCaps.otf");
+  src: url("fonts/DuvallSmallCaps.otf") format("opentype");
 }
 /* Common style elements */
 .dcc img {
   border: none;
 }
+.dcc .box-inner {
+  padding: 0 5px 4px 5px;
+}
+.dcc .dark-border {
+  border: var(--dark-border);
+  border-top: none;
+}
+.dcc .dark-title {
+  align-self: stretch;
+  background: var(--dark-bg);
+  color: var(--light-color);
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  grid-template-columns: 1fr;
+  min-height: 19px;
+  letter-spacing: 1px;
+  padding-top: 1px;
+  text-align: center;
+}
 .dcc .disabled {
   opacity: 40%;
 }
-.dcc .window-content {
+.dcc .editor {
+  background: rgba(0, 0, 0, 0.05);
+  border: var(--dark-border);
+  border-top: none;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  height: 100%;
-  padding: 0 5px 0 5px;
+  min-height: 305px;
+  padding: 0 8px;
 }
-.dcc .window-content label {
+.dcc label {
+  display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;
+}
+.dcc input {
+  background: none;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  height: 17px;
+  line-height: 1;
+  text-align: center;
+  background: none;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+}
+.dcc input[type=checkbox] {
+  height: 20px;
+  width: 20px;
+  margin: 0;
+}
+.dcc input:focus {
+  box-shadow: none;
+}
+.dcc input.full-width {
+  width: 100%;
+}
+.dcc .label-font {
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+}
+.dcc .rollable:hover {
+  color: #000;
+  cursor: pointer;
+  text-shadow: 0 0 10px red;
+}
+.dcc select {
+  background: none;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  font-family: var(--data-font);
+  font-size: 12px;
+  height: 17px;
+  text-align: center;
+}
+.dcc select:focus {
+  box-shadow: none;
+}
+.dcc .window-content {
+  padding: 0 5px 0 5px;
 }
 
 :root {
@@ -195,100 +281,36 @@
 }
 
 /* ----------------------------------------- */
-/*  Rollable                                 */
-/* ----------------------------------------- */
-.dcc .rollable:hover {
-  color: #000;
-  cursor: pointer;
-  text-shadow: 0 0 10px red;
-}
-
-/* ----------------------------------------- */
-/*  Actor Sheet                              */
-/* ----------------------------------------- */
-.dcc.sheet.actor {
-  min-height: 633px;
-  min-width: 533px;
-}
-
-.choose-class-select {
-  font-size: 1.2rem;
-  width: 100%;
-}
-
-/* ----------------------------------------- */
-/*  Sheet Header                             */
-/* ----------------------------------------- */
-.dcc .sheet-header {
-  justify-content: flex-start;
-  margin-bottom: 10px;
-  overflow: hidden;
-}
-
-.dcc .sheet-header .profile-div {
-  align-items: center;
-  display: flex;
-  flex: 0 0 100px;
-  margin: 5px 10px 0 0;
-}
-
-.dcc .sheet-header .profile-div .profile-img {
-  height: auto;
-  margin-left: auto;
-  margin-right: auto;
-  max-height: 100px;
-  max-width: 100px;
-  width: auto;
-}
-
-.dcc .sheet-header h1.charname {
-  border-bottom: 0;
-  flex: 0 0 100%;
-  height: 50px;
-  margin: 5px 0;
-  padding: 0;
-}
-
-.dcc .sheet-header h1.charname input {
-  height: 100%;
-  margin: 0;
-  width: 100%;
-}
-
-.dcc .sheet-header .upper-level div.level {
-  flex: 1 0 25%;
-  padding: 0 0 0 7px;
-}
-
-.dcc .sheet-header .upper-level div.level input {
-  text-align: center;
-}
-
-/* ----------------------------------------- */
 /*  Armor                                  */
 /* ----------------------------------------- */
 .dcc .armor-list {
-  border: var(--dark-border);
-  border-top: none;
   column-gap: 5px;
   display: grid;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  grid-template-columns: min-content 32px auto 45px 53px 74px 82px 39px;
+  grid-template-columns: min-content 30px minmax(30px, 1fr) 45px 53px 74px 82px 39px;
   margin: 0 0 8px 0;
-  padding: 5px 0 2px 5px;
+  padding: 5px 5px 2px 5px;
+}
+.dcc .armor-list .armor-list-header {
+  display: grid;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-size: 12px;
+  grid-template-columns: subgrid;
+  margin: 0 0 3px 0;
+  padding: 0;
   text-align: center;
 }
-
-.dcc .armor {
+.dcc .armor-list .armor {
   align-items: center;
   display: grid;
   justify-items: center;
   margin-bottom: 5px;
-  grid-column-end: span 8;
   grid-template-columns: subgrid;
 }
-.dcc .armor input {
-  text-align: center;
+.dcc .armor-list .armor input {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  height: 22px;
 }
 
 /* ----------------------------------------- */
@@ -348,42 +370,24 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  border: var(--dark-border);
-  border-top: none;
-  font-size: 14px;
-  height: 544px;
+  font-size: 16px;
   line-height: 24px;
   margin: 0;
-  padding: 0 8px 8px 8px;
 }
 .dcc .notes .editor {
-  min-height: 539px;
+  min-height: 547px;
 }
 
 /* ----------------------------------------- */
 /*  Weapons                                  */
 /* ----------------------------------------- */
-.dcc .weapons-heading {
-  background: var(--dark-bg);
-  color: var(--light-color);
-  display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  font-size: 13px;
-  letter-spacing: 1px;
-  line-height: 20px;
-  text-align: center;
-}
-
 .dcc .weapon-list {
-  border: var(--dark-border);
-  border-top: none;
-  column-gap: 5px;
   display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
+  justify-items: center;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
-  text-align: center;
 }
 .dcc .weapon-list img {
   border: none;
@@ -392,28 +396,48 @@
 .dcc .weapon-list input {
   text-align: center;
 }
-
-.dcc .weapon-list-header {
+.dcc .weapon-list .weapon-list-header {
   display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;
   font-size: 12px;
-  grid-column-end: span 9;
   grid-template-columns: subgrid;
   margin: 0 0 3px 0;
   padding: 0;
   text-align: center;
 }
-
-.dcc .weapon {
+.dcc .weapon-list .weapon {
   display: grid;
-  grid-column-end: span 9;
   grid-template-columns: subgrid;
   align-items: center;
   justify-items: center;
   margin-bottom: 5px;
 }
-
-.dcc .weapon-button {
+.dcc .weapon-list .weapon input {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-light-tertiary);
+  border-radius: 3px;
+  height: 22px;
+}
+.dcc .weapon-list .weapon .attack-buttons {
+  display: grid;
+  column-gap: 10px;
+}
+.dcc .weapon-list .weapon .backstab-button {
+  background-image: url("./images/backstab.png");
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  grid-row: 1;
+  width: 19px;
+  height: 19px;
+  margin: 1px 0 0 0;
+}
+.dcc .weapon-list .weapon .roll-button {
+  background-image: url("../../../icons/svg/d20-black.svg");
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  margin: 21px 0 0;
+}
+.dcc .weapon-list .weapon .weapon-button {
   background-image: url("../../../icons/svg/d20-black.svg");
   background-repeat: no-repeat;
   background-size: 22px 22px;
@@ -423,26 +447,129 @@
   margin: 1px 2px 0 0;
 }
 
-.dcc .attack-buttons {
+/* ----------------------------------------- */
+/*  Cleric Class                             */
+/* ----------------------------------------- */
+.dcc div.cleric-table table {
+  text-align: center;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  width: 523px;
+  margin-top: 10px;
+}
+.dcc div.cleric-table table td {
+  padding: 4px 12px 4px 0;
+}
+
+.dcc .cleric-spells-bg {
+  background-image: url("images/SA-12-20-ornate-glyph-page-ornament-SpotArt-12-Fantasy-Clip-Inks.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  height: 565px;
+}
+
+/* ----------------------------------------- */
+/*  Wizard/Elf
+/* ----------------------------------------- */
+.dcc .elf-bg {
+  background-image: url("./images/FCI-magic-items-1-9-shamen-crystal.webp");
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+}
+
+.dcc .wizard-bg {
+  background-image: url("./images/FCI-spots-8-33-Spellcasters-hat.webp");
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+}
+
+.dcc .wizard-spells-bg {
+  background-image: url("images/FCI-spots-8-32-Spell-Book-Stack.webp");
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+  min-height: 565px;
+}
+
+/* ----------------------------------------- */
+/*  Items                                    */
+/* ----------------------------------------- */
+.dcc .equipment-bg {
+  background-image: url("./images/SA-4-26-FCI-spots-4-Shield-crossed-swords.webp");
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-size: contain;
+}
+
+.dcc .item {
+  align-items: center;
+  border-bottom: 0.5px solid burlywood;
   display: grid;
-  column-gap: 10px;
+  font-size: 13px;
+  justify-items: center;
+  grid-template-columns: subgrid;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+}
+.dcc .item .item-control {
+  font-size: 14px;
+}
+.dcc .item:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
 }
 
-.dcc .backstab-button {
-  background-image: url("./images/backstab.png");
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
-  grid-row: 1;
-  width: 19px;
-  height: 19px;
-  margin: 1px 0 0 0;
+.dcc .item-heading {
+  border-bottom: 2px groove #eeede0;
+  flex: 0 0 10px;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  letter-spacing: 1px;
+  font-size: 1.1rem;
+  line-height: 1.2rem;
+  margin: 8px 0 0;
 }
 
-.dcc .roll-button {
+.dcc .item-list-header {
+  border-bottom: 2px dotted var(--medium-color);
+  display: grid;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-size: 12px;
+  grid-template-columns: subgrid;
+  margin: 0 0 5px 0;
+  padding: 0 0 5px 0;
+}
+
+.dcc .item-list {
+  display: grid;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-size: 12px;
+  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
+  margin: 0 0 8px 0;
+  padding: 5px;
+  text-align: center;
+}
+
+.dcc .item-list-spells {
+  grid-template-columns: 30px 22px 33px 1fr 1fr 35px 39px;
+}
+.dcc .item-list-spells .spell-item-button {
   background-image: url("../../../icons/svg/d20-black.svg");
+  background-position: center;
   background-repeat: no-repeat;
   background-size: 22px 22px;
-  margin: 21px 0 0;
+  height: 22px;
+  width: 22px;
+}
+
+.dcc .item-list-currency {
+  display: grid;
+  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 39px;
 }
 
 .dcc .left-arrow-button {
@@ -460,280 +587,6 @@
 }
 
 /* ----------------------------------------- */
-/*  Cleric Class                             */
-/* ----------------------------------------- */
-.dcc div.cleric-table {
-  grid-column-end: span 2;
-}
-.dcc div.cleric-table table {
-  width: 497px;
-  text-align: center;
-  border: var(--dark-border);
-  border-top: none;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  margin: 15px 8px 0 1px;
-}
-.dcc div.cleric-table table td {
-  padding: 0 12px 0 0;
-}
-.dcc div.cleric-table thead {
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  font-size: 15px;
-  height: 19px;
-  letter-spacing: 1px;
-  padding-top: 1px;
-}
-
-.dcc .spells-container-cleric {
-  background-image: url("images/SA-12-20-ornate-glyph-page-ornament-SpotArt-12-Fantasy-Clip-Inks.webp");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  height: 565px;
-}
-.dcc .spells-container-cleric .dark-title {
-  align-self: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-column-start: 1;
-  grid-row: 1;
-  height: 19px;
-  letter-spacing: 1px;
-  padding-top: 1px;
-  text-align: center;
-}
-
-/* ----------------------------------------- */
-/*  Thief/Halfling Class                     */
-/* ----------------------------------------- */
-.dcc .skills-container {
-  align-items: center;
-  border: var(--dark-border);
-  display: grid;
-  font-size: 16px;
-  grid-template-columns: 1fr 1fr;
-  margin-top: 6px;
-}
-.dcc .skills-container .dark-title {
-  align-self: stretch;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-template-columns: 100%;
-  grid-column-end: span 2;
-  letter-spacing: 1px;
-  padding-bottom: 3px;
-  text-align: center;
-}
-.dcc .skills-container > div {
-  display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-template-columns: max-content 25%;
-  grid-template-rows: auto;
-  margin: 0 0 6px 0;
-  padding: 0 8px;
-  align-items: center;
-}
-.dcc .skills-container > div a {
-  background: none;
-  border: none;
-}
-.dcc .skills-container > div .editor {
-  background: rgba(0, 0, 0, 0.05);
-  border: var(--dark-border);
-  border-top: none;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  min-height: 305px;
-  padding: 0 8px;
-}
-.dcc .skills-container > div label {
-  display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  margin-right: 6px;
-}
-.dcc .skills-container > div input {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  height: 17px;
-  line-height: 1;
-  text-align: center;
-  background: none;
-  border-width: 0 0 1px 0;
-  border-radius: 0;
-}
-.dcc .skills-container > div input:focus {
-  box-shadow: none;
-}
-.dcc .skills-container > div input.full-width {
-  width: 100%;
-}
-.dcc .skills-container > div select {
-  background: none;
-  border-width: 0 0 1px 0;
-  border-radius: 0;
-  font-family: var(--data-font);
-  font-size: 15px;
-  text-align: center;
-  width: 75px;
-}
-.dcc .skills-container > div select:focus {
-  box-shadow: none;
-}
-.dcc .skills-container > div.grid-template-full {
-  grid-column-end: span 2;
-  grid-template-columns: 100%;
-}
-.dcc .skills-container > div.grid-template-max-auto {
-  grid-column-end: span 2;
-  grid-template-columns: max-content auto;
-}
-.dcc .skills-container > div.textarea {
-  border: 2px groove #eeede0;
-  grid-template-columns: 25% 75%;
-  grid-template-rows: auto minmax(100px, auto);
-}
-.dcc .skills-container > div.textarea label {
-  text-align: left;
-}
-.dcc .skills-container .elf-bg {
-  background-image: url("./images/FCI-magic-items-1-9-shamen-crystal.webp");
-  background-repeat: no-repeat;
-  background-position-x: center;
-  background-size: contain;
-}
-.dcc .skills-container .wizard-bg {
-  background-image: url("./images/FCI-spots-8-33-Spellcasters-hat.webp");
-  background-repeat: no-repeat;
-  background-position-x: center;
-  background-size: contain;
-}
-
-/* ----------------------------------------- */
-/*  Wizard/Elf Class                         */
-/* ----------------------------------------- */
-.dcc .spells-container-wizard {
-  background-image: url("images/FCI-spots-8-32-Spell-Book-Stack.webp");
-  background-repeat: no-repeat;
-  background-position-x: center;
-  background-size: contain;
-  height: 565px;
-}
-.dcc .spells-container-wizard .dark-title {
-  align-self: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  grid-column-start: 1;
-  grid-row: 1;
-  height: 19px;
-  letter-spacing: 1px;
-  margin-left: -1px;
-  padding-top: 1px;
-  text-align: center;
-}
-
-/* ----------------------------------------- */
-/*  Items                                    */
-/* ----------------------------------------- */
-.dcc .equipment-container {
-  background-image: url("./images/SA-4-26-FCI-spots-4-Shield-crossed-swords.webp");
-  background-repeat: no-repeat;
-  background-position-x: center;
-  background-size: contain;
-  display: grid;
-  grid-template-columns: 100%;
-}
-.dcc .equipment-container input[type=checkbox] {
-  height: 19px;
-  width: 19px;
-  margin: 0;
-}
-
-.dcc .item {
-  align-items: center;
-  border-bottom: 0.5px solid burlywood;
-  display: grid;
-  font-size: 13px;
-  justify-items: center;
-  grid-template-columns: subgrid;
-  grid-column-end: span 4;
-  padding-bottom: 2px;
-  margin-bottom: 2px;
-}
-.dcc .item .item-control {
-  font-size: 14px;
-}
-.dcc .item:last-child {
-  border-bottom: none;
-  padding-bottom: 2px;
-  margin-bottom: 2px;
-}
-
-.dcc .item-currency {
-  grid-column-end: span 9;
-}
-
-.dcc .item-heading {
-  border-bottom: 2px groove #eeede0;
-  flex: 0 0 10px;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  letter-spacing: 1px;
-  font-size: 1.1rem;
-  line-height: 1.2rem;
-  margin: 8px 0 0;
-}
-
-.dcc .item-list-header {
-  border-bottom: 2px dotted var(--medium-color);
-  display: grid;
-  flex: 0 0 10px;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  font-size: 12px;
-  grid-column-end: span 4;
-  grid-template-columns: subgrid;
-  margin: 0 0 5px 0;
-  padding: 0 0 5px 0;
-}
-
-.dcc .item-list {
-  border: var(--dark-border);
-  border-top: none;
-  column-gap: 5px;
-  display: grid;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  font-size: 12px;
-  grid-template-columns: 22px auto 65px 44px;
-  margin: 0 0 8px 0;
-  padding: 5px;
-  text-align: center;
-}
-
-.dcc .item-list-spells {
-  grid-template-columns: 30px 22px 33px 164px 153px 20px 53px;
-}
-.dcc .item-list-spells .item-list-header {
-  grid-column-end: span 7;
-}
-.dcc .item-list-spells .item {
-  grid-column-end: span 7;
-}
-.dcc .item-list-spells .spell-item-button {
-  background-image: url("../../../icons/svg/d20-black.svg");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
-  height: 22px;
-  width: 22px;
-}
-
-.dcc .item-list-currency {
-  display: grid;
-  grid-template-columns: 22px auto 23px repeat(5, 40px) 43px;
-}
-
-/* ----------------------------------------- */
 /*  Item Sheet                               */
 /* ----------------------------------------- */
 .dcc.item .tab-body {
@@ -745,28 +598,8 @@
   overflow-x: clip;
   row-gap: 5px;
 }
-.dcc.item .tab-body .box-inner {
-  padding: 0 5px 4px 5px;
-}
-.dcc.item .tab-body .dark-border {
-  border: var(--dark-border);
-  border-top: none;
-}
-.dcc.item .tab-body .dark-title {
-  align-self: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  font-size: 12px;
-  grid-column-start: 1;
-  grid-row: 1;
-  height: 17px;
-  letter-spacing: 1px;
-  padding-top: 1px;
-  text-align: center;
-}
 .dcc.item .tab-body .description .editor {
-  min-height: 331px;
+  min-height: 337px;
 }
 .dcc.item .tab-body input {
   background: none;
@@ -817,50 +650,32 @@
 /* ----------------------------------------- */
 /*  Config Dialogs                           */
 /* ----------------------------------------- */
-.config-dialog .form-group {
-  border-bottom: 2px groove #eeede0;
-  display: flex;
-  margin: 5px 0;
-  padding-bottom: 5px;
+.config-dialog {
+  align-items: center;
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
-.config-dialog .form-group label {
-  flex: 0 0 60%;
+.config-dialog label {
+  font-weight: bold;
 }
-.config-dialog .form-group label.span {
-  flex: 0 0 96%;
-}
-.config-dialog .form-group label.info {
-  padding-left: 10px;
-  padding-right: 10px;
+.config-dialog input {
+  margin: 2px 0 2px 0;
   text-align: center;
 }
-.config-dialog .form-group div.form-fields {
-  flex: 0 1 40%;
+.config-dialog select {
+  text-align: center;
 }
-.config-dialog .form-group input {
-  text-align: right;
-}
-.config-dialog .form-group input.string {
-  text-align: left;
+.config-dialog .group-separator {
+  border-bottom: 2px dotted var(--medium-color);
+  margin: 3px 0 3px 0;
+  grid-column-end: span 2;
 }
 
 /* ----------------------------------------- */
 /*  Skills
 /* ----------------------------------------- */
-.dcc .skill-heading {
-  background: var(--dark-bg);
-  color: var(--light-color);
-  display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  font-size: 13px;
-  letter-spacing: 1px;
-  line-height: 20px;
-  text-align: center;
-}
-
 .dcc .skill-list {
-  border: var(--dark-border);
-  border-top: none;
   column-gap: 5px;
   display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
@@ -876,28 +691,15 @@
 .dcc .skill-list input {
   text-align: center;
 }
-
-.dcc .skill-list-header {
+.dcc .skill-list .skill {
   display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-  font-size: 12px;
-  grid-column-end: span 9;
-  grid-template-columns: subgrid;
-  margin: 0 0 3px 0;
-  padding: 0;
-  text-align: center;
-}
-
-.dcc .skill {
-  display: grid;
-  grid-column-end: span 9;
   grid-template-columns: subgrid;
   align-items: center;
   justify-items: center;
   margin-bottom: 5px;
 }
 
-.dcc .tab.skills {
+.dcc .skills-bg {
   background-image: url("./images/FCI-spots-8-14-Four-Potion-Bottles.webp");
   background-repeat: no-repeat;
   background-position-x: center;
@@ -1149,96 +951,62 @@ form.dcc-roll-modifier input.stat {
 /* ----------------------------------------- */
 /*  Actor Sheet
 /* ----------------------------------------- */
-.dcc.sheet.actor .character .character-grid {
-  background: url("images/parchment.jpeg");
+.dcc .character .character-grid {
   column-gap: 8px;
   display: grid;
-  font-family: var(--label-font);
-  font-size: 16px;
   grid-template-columns: 192px 143px 82px 82px;
   grid-template-rows: 46px 114px repeat(5, 60px 9px) 60px;
-  text-align: center;
 }
-.dcc.sheet.actor .character .character-grid input,
-.dcc.sheet.actor .character .character-grid select {
-  background: none;
-  border-width: 0 0 1px 0;
-  border-radius: 0;
-  font-family: var(--data-font);
-  height: 16px;
-  text-align: center;
-  text-align-last: center;
-}
-.dcc.sheet.actor .character .character-grid input:focus,
-.dcc.sheet.actor .character .character-grid select:focus {
-  box-shadow: none;
-}
-.dcc.sheet.actor .character .character-grid label {
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-}
-.dcc.sheet.actor .character .dark-title {
-  align-self: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  grid-column-start: 1;
-  grid-row: 1;
-  height: 19px;
-  letter-spacing: 1px;
-  padding-top: 1px;
-  text-align: center;
-}
-.dcc.sheet.actor .character .ability-scores {
+.dcc .character .ability-scores {
   display: grid;
   grid-template-rows: repeat(5, 69px);
 }
-.dcc.sheet.actor .character .ability-scores .ability-box {
+.dcc .character .ability-scores .ability-box {
   align-items: center;
   display: grid;
   font-size: 14px;
   grid-template-columns: 85px 37px 70px;
   grid-template-rows: 19px 20px 20px;
-  text-align: left;
 }
-.dcc.sheet.actor .character .ability-scores .ability-box input {
+.dcc .character .ability-scores .ability-box input {
   border-width: 0 0 1px 0;
   font-size: 14px;
 }
-.dcc.sheet.actor .character .ability-scores .ability-box input[id$=max] {
+.dcc .character .ability-scores .ability-box input[id$=max] {
   height: 17px;
   margin-right: 3px;
 }
-.dcc.sheet.actor .character .ability-scores .ability-box > label {
+.dcc .character .ability-scores .ability-box > label {
   grid-column-end: span 2;
 }
-.dcc.sheet.actor .character .ability-scores .ability-box > label[for="system.abilities.sta.value"],
-.dcc.sheet.actor .character .ability-scores .ability-box label[for="system.abilities.lck.value"] {
+.dcc .character .ability-scores .ability-box > label[for="system.abilities.sta.value"],
+.dcc .character .ability-scores .ability-box label[for="system.abilities.lck.value"] {
   padding-top: 1.5px;
 }
-.dcc.sheet.actor .character .ability-scores .ability-score {
+.dcc .character .ability-scores .ability-score {
   align-self: stretch;
   border: 5px solid var(--dark-color);
   display: grid;
   grid-row-end: span 3;
 }
-.dcc.sheet.actor .character .ability-scores .ability-score input {
+.dcc .character .ability-scores .ability-score input {
   align-self: center;
   border: none;
   font-size: 30px;
   height: unset;
 }
-.dcc.sheet.actor .character .ac-and-hp {
+.dcc .character .ac-and-hp {
   display: grid;
-  grid-template-columns: 50% 50%;
   grid-template-rows: 65px 19px 20px;
 }
-.dcc.sheet.actor .character .ac-and-hp input {
+.dcc .character .ac-and-hp input {
   align-self: center;
   border: none;
   font-size: 24px;
   height: 17px;
   margin-bottom: 5px;
 }
-.dcc.sheet.actor .character .combat-basics {
+.dcc .character .combat-basics {
   align-items: center;
   border: var(--dark-border);
   border-top: none;
@@ -1250,18 +1018,18 @@ form.dcc-roll-modifier input.stat {
   margin: 0 0 8px 0;
   padding-bottom: 4px;
 }
-.dcc.sheet.actor .character .combat-basics label {
+.dcc .character .combat-basics label {
   padding-left: 3px;
   text-align: left;
   padding-top: 2px;
 }
-.dcc.sheet.actor .character .combat-basics input, .dcc.sheet.actor .character .combat-basics select {
+.dcc .character .combat-basics input, .dcc .character .combat-basics select {
   font-size: 14px;
   height: 17px;
   vertical-align: middle;
   margin-right: 8px;
 }
-.dcc.sheet.actor .character .languages {
+.dcc .character .languages {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1272,12 +1040,12 @@ form.dcc-roll-modifier input.stat {
   font-size: 12px;
   text-align: left;
 }
-.dcc.sheet.actor .character .languages label {
+.dcc .character .languages label {
   text-align: left;
   padding-left: 3px;
 }
-.dcc.sheet.actor .character .languages textarea,
-.dcc.sheet.actor .character .lucky-roll textarea {
+.dcc .character .languages textarea,
+.dcc .character .lucky-roll textarea {
   background: none;
   border: none;
   font-family: var(--data-font);
@@ -1287,11 +1055,11 @@ form.dcc-roll-modifier input.stat {
   resize: none;
   text-align: left;
 }
-.dcc.sheet.actor .character .languages textarea:focus,
-.dcc.sheet.actor .character .lucky-roll textarea:focus {
+.dcc .character .languages textarea:focus,
+.dcc .character .lucky-roll textarea:focus {
   box-shadow: none;
 }
-.dcc.sheet.actor .character .lucky-roll {
+.dcc .character .lucky-roll {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1301,11 +1069,12 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 19px auto;
   font-size: 12px;
 }
-.dcc.sheet.actor .character .lucky-roll label {
+.dcc .character .lucky-roll label {
   text-align: left;
   padding-left: 3px;
 }
-.dcc.sheet.actor .character .melee-missile-attack-damage {
+.dcc .character .melee-missile-attack-damage {
+  align-items: center;
   display: grid;
   grid-column: 3;
   grid-column-end: span 2;
@@ -1313,26 +1082,16 @@ form.dcc-roll-modifier input.stat {
   grid-template-columns: subgrid;
   grid-template-rows: 69px 69px;
 }
-.dcc.sheet.actor .character .melee-missile-attack-damage .bonus {
-  align-items: center;
-  border: var(--dark-border);
-  border-top: none;
-  display: grid;
-  font-size: 12px;
-  grid-template-columns: 100%;
-  grid-template-rows: 31px 20px;
-  margin-bottom: 8px;
-}
-.dcc.sheet.actor .character .melee-missile-attack-damage .bonus label {
-  height: 31px;
-}
-.dcc.sheet.actor .character .melee-missile-attack-damage .bonus input {
+.dcc .character .melee-missile-attack-damage input {
   border: none;
-  font-size: 16px;
-  grid-row: 2;
-  margin-top: 4px;
+  font-size: 14px;
+  margin: 4px 8px 4px 8px;
 }
-.dcc.sheet.actor .character .name-and-level {
+.dcc .character .melee-missile-attack-damage label {
+  font-size: 12px;
+  padding-bottom: 2px;
+}
+.dcc .character .name-and-level {
   column-gap: 12px;
   display: grid;
   grid-column-end: span 4;
@@ -1340,10 +1099,10 @@ form.dcc-roll-modifier input.stat {
   grid-template-columns: 189px 113px 195px;
   text-align: left;
 }
-.dcc.sheet.actor .character .name-and-level label {
+.dcc .character .name-and-level label {
   font-size: 13px;
 }
-.dcc.sheet.actor .character .portrait {
+.dcc .character .portrait {
   border: var(--dark-border);
   border-top: none;
   display: grid;
@@ -1354,16 +1113,16 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 19px auto;
   font-size: 14px;
 }
-.dcc.sheet.actor .character .portrait img {
+.dcc .character .portrait img {
   border: none;
   justify-self: center;
   align-self: center;
 }
-.dcc.sheet.actor .character .row-separator {
+.dcc .character .row-separator {
   border-bottom: 2px dotted var(--medium-color);
   margin-bottom: 3px;
 }
-.dcc.sheet.actor .character .saving-throws {
+.dcc .character .saving-throws {
   border: none;
   display: grid;
   grid-column: 2;
@@ -1373,7 +1132,7 @@ form.dcc-roll-modifier input.stat {
   margin: 0;
   padding: 0;
 }
-.dcc.sheet.actor .character .saving-throw-box {
+.dcc .character .saving-throw-box {
   align-items: center;
   background: var(--dark-bg);
   color: var(--light-color);
@@ -1383,7 +1142,7 @@ form.dcc-roll-modifier input.stat {
   margin-bottom: 10px;
   text-align: left;
 }
-.dcc.sheet.actor .character .saving-throw-box input {
+.dcc .character .saving-throw-box input {
   align-self: center;
   background: #DBD9CD;
   border-radius: 100px;
@@ -1392,7 +1151,7 @@ form.dcc-roll-modifier input.stat {
   margin-left: 5px;
   width: 50px;
 }
-.dcc.sheet.actor .character .saving-throw-box label {
+.dcc .character .saving-throw-box label {
   font-size: 14px;
   letter-spacing: 1px;
 }

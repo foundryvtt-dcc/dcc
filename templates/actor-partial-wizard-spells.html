@@ -1,9 +1,9 @@
 {{!-- Spells Tab --}}
 <div class="tab spells" data-group="primary" data-tab="spells">
-    <div class="spells-container-wizard">
+    <div class="wizard-spells-bg">
         <div class="dark-title" style="">{{localize "DCC.Spells"}}</div>
         <ol class="item-list item-list-spells">
-            <li class="item item-list-header">
+            <li class="item item-list-header grid-col-span-7">
                 <div></div>
                 <div></div>
                 <div>{{localize "DCC.SpellLevelShort"}}</div>
@@ -17,7 +17,7 @@
             </li>
             {{#each actor.spells as |spells spelllevel|}}
             {{#each spells as |item id|}}
-            <li class="item spell-item spell-draggable" data-item-id="{{item._id}}"
+            <li class="item spell-item spell-draggable grid-col-span-7" data-item-id="{{item._id}}"
                 data-ability="int" data-die="{{item.spellCheck.die}}"
                 data-bonus="{{item.spellCheck.value}}"
                 data-spell="{{item.name}}">
@@ -40,8 +40,8 @@
             </li>
             {{/each}}
             {{else}}
-            <li class="item">
-                <div style="grid-column-end: span 8; height: 50px; padding-top: 14px;">{{localize "DCC.SpellTabHelp"}}</div>
+            <li class="grid-col-span-7 grid-tpl-max">
+                <div style="height: 50px; padding-top: 14px;">{{localize "DCC.SpellTabHelp"}}</div>
             </li>
             {{/each}}
         </ol>
