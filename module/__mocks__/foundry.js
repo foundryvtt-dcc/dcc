@@ -158,6 +158,10 @@ class Actor {
     return this.system
   }
 
+  rollInitiative(createCombatants, rerollInitiative, initiativeOptions) {
+    return this.getInitiativeRoll()
+  }
+
   update (data) {
     return global.actorUpdateMock(data)
   }
