@@ -251,32 +251,30 @@ class DCCActorSheet extends ActorSheet {
     // Owner Only Listeners
     if (this.actor.isOwner) {
       // Ability Checks
-      html.find('.ability-name, label[for*=".value"]').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-modifiers, [data-ability="lck"][data-modifier="true"]').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-name, label[for*=".value"]').each(makeDraggable)
-      html.find('.ability-modifiers, [data-ability="lck"] div.ability-modifiers, [data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
+      html.find('.ability-box [for*=".value"]').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-box [data-ability="lck"][data-modifier="true"]').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-box [for*=".value"]').each(makeDraggable)
+      html.find('[data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
 
       // Initiative
-      html.find('.init-label').click(this._onRollInitiative.bind(this))
-      html.find('div.init').each(makeDraggable)
       html.find('[for="system.attributes.init.value"]').click(this._onRollInitiative.bind(this))
       html.find('[for="system.attributes.init.value"]').each(makeDraggable)
 
       // Hit Dice
-      html.find('.hd-label, [for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
-      html.find('div.hd, [for="system.attributes.hitDice.value"]').each(makeDraggable)
+      html.find('[for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
+      html.find('[for="system.attributes.hitDice.value"]').each(makeDraggable)
 
       // Saving Throws
-      html.find('.save-name, label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
-      html.find('li.save, label[for*="system.saves"]').each(makeDraggable)
+      html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
+      html.find('label[for*="system.saves"]').each(makeDraggable)
 
       // Skills
       html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
       html.find('label.skill-check').each(makeDraggable)
 
       // Luck Die
-      html.find('.luck-die').click(this._onRollLuckDie.bind(this))
-      html.find('label.luck-die').each(makeDraggable)
+      html.find('label[for*="system.class.luckDie"]').click(this._onRollLuckDie.bind(this))
+      html.find('label[for*="system.class.luckDie"]').each(makeDraggable)
 
       // Spell Checks
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
@@ -285,17 +283,17 @@ class DCCActorSheet extends ActorSheet {
       html.find('.spell-draggable').each(makeDraggable)
 
       // Disapproval
-      html.find('.disapproval-range').click(this._onApplyDisapproval.bind(this))
-      html.find('.disapproval-table').click(this._onRollDisapproval.bind(this))
-      html.find('label.disapproval-range').each(makeDraggable)
-      html.find('label.disapproval-table').each(makeDraggable)
+      html.find('label[for*="system.class.disapproval"]').click(this._onApplyDisapproval.bind(this))
+      html.find('label[for*="system.class.disapprovalTable"]').click(this._onRollDisapproval.bind(this))
+      html.find('label[for*="system.class.disapprovalTable"]').each(makeDraggable)
+      html.find('label[for*="system.class.disapproval"]').each(makeDraggable)
 
       // Attack Bonus
-      html.find('.attack-bonus.rollable, label[for="system.details.attackBonus"]').click(this._onRollAttackBonus.bind(this))
-      html.find('.attack-bonus').each(makeDraggable)
+      html.find('label[for="system.details.attackBonus"]').click(this._onRollAttackBonus.bind(this))
+      html.find('label[for="system.details.attackBonus"]').each(makeDraggable)
 
       // Action Dice
-      html.find('.action-dice').each(makeDraggable)
+      html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
 
       // Crit Die
       html.find('label[for*="system.attributes.critical.die"]').click(this._onRollCritDie.bind(this))
@@ -684,7 +682,8 @@ class DCCActorSheet extends ActorSheet {
   _onRollInitiative (event) {
     event.preventDefault()
     const options = this._fillRollOptions(event)
-    this.actor.rollInitiative(this.token, options)
+    options.createCombatants = true
+    this.actor.rollInitiative(options)
   }
 
   /**

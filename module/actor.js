@@ -236,6 +236,7 @@ class DCCActor extends Actor {
         per: data.abilities.per.mod,
         int: data.abilities.int.mod,
         lck: data.abilities.lck.mod,
+        initiative: data.attributes.init.value,
         maxStr: data.abilities.str.maxMod,
         maxAgi: data.abilities.agl.maxMod,
         maxAgl: data.abilities.agl.maxMod,
@@ -453,54 +454,11 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll Initiative
-   * @param {Object} token    The token to roll initiative for
-   * @param options
-   */
-  async rollInitiative (token, options = {}) {
-    // No selected token - bail out
-    if (!token) {
-      return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoTokenWarning'))
-    }
-
-    // Generate the roll formula based on actor and settings
-    const roll = await this.getInitiativeRoll(options)
-
-    // Evaluate roll, otherwise roll.total is undefined
-    await roll.evaluate()
-
-    // Convert the roll to a chat message
-    roll.toMessage({
-      speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: game.i18n.localize('DCC.Initiative'),
-      flags: {
-        'dcc.RollType': 'Initiative'
-      }
-    })
-
-    // No combat active
-    if (!game.combat) {
-      return ui.notifications.warn(game.i18n.localize('DCC.InitiativeNoCombatWarning'))
-    }
-
-    // Set initiative value in the combat tracker if appropriate
-    const tokenId = token.id
-    const combatant = game.combat.getCombatantsByToken(tokenId)[0]
-    if (!combatant) {
-      return ui.notifications.warn(game.i18n.format('DCC.InitiativeNoCombatantWarning', {
-        name: token.name
-      }))
-    }
-
-    await game.combat.setInitiative(combatant.id, roll.total)
-  }
-
-  /**
    * Roll Hit Dice
    */
   async rollHitDice (options = {}) {
     const die = this.system.attributes.hitDice.value || '1d4'
-    options.title = game.i18n.localize('DCC.RollModifierTitleHitDice')
+    options.title = game.i18n.localize('DCC.RollModifierHitDice')
 
     // Collate terms for the roll
     const terms = [
