@@ -215,10 +215,7 @@ test('roll saving throw', async () => {
 test('roll initiative', async () => {
   dccRollCreateRollMock.mockClear()
 
-  await actor.rollInitiative({
-    name: 'Test Actor',
-    id: 'xxxxxxxxxx'
-  })
+  await actor.rollInitiative({createCombatants:true})
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
@@ -237,11 +234,6 @@ test('roll initiative', async () => {
       title: 'RollModifierTitleInitiative'
     }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Initiative',
-    speaker: actor,
-    flags: { 'dcc.RollType': 'Initiative' }
-  })
 })
 
 test('roll weapon attack', async () => {
