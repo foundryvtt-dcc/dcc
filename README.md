@@ -2,7 +2,7 @@
 
 Goodman Games' Dungeon Crawl Classics RPG system for the [Foundry Virtual Tabletop](https://foundryvtt.com).
 
-[User Guide](https://github.com/foundryvtt-dcc/dcc/wiki/DCC-System-User-Guide), thanks to Christian Ovsenik (@algnc).
+Please check out the [User Guide](https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide). Thanks to Christian Ovsenik (@algnc) for putthing that together.
 
 Join us on the [virtual-tabletop channel](https://discord.gg/2PR9YH9) on the Goodman Games discord for help and discussion.
 
