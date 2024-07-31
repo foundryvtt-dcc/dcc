@@ -23,6 +23,7 @@ import EntityImages from './entity-images.js'
 import SpellResult from './spell-result.js'
 import ReleaseNotes from './release-notes.js'
 import KeyState from './key-state.js'
+import { defineStatusIcons } from './status-icons.js'
 
 import { registerSystemSettings } from './settings.js'
 
@@ -153,6 +154,9 @@ Hooks.once('ready', async function () {
 
   // Initialise Fleeting Luck
   game.dcc.FleetingLuck.init()
+
+  // Add status icons
+  defineStatusIcons()
 
   // Let modules know the DCC system is ready
   Hooks.callAll('dcc.ready')
@@ -340,7 +344,7 @@ async function processSpellCheck (actor, spellData) {
         }
       }
       await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble, itemId: item?.id })
-    // Otherwise just roll the dice
+      // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
         await roll.evaluate({ async: true })
@@ -542,6 +546,7 @@ Hooks.on('applyActiveEffect', (actor, change) => {
 
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
+
 /* -------------------------------------------- */
 
 /**
