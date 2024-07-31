@@ -102,6 +102,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/actor-partial-skills.html',
     'systems/dcc/templates/actor-partial-wizard-spells.html',
     'systems/dcc/templates/actor-partial-cleric-spells.html',
+    'systems/dcc/templates/item-sheet-partial-description.html',
     'systems/dcc/templates/item-sheet-partial-values.html',
     'systems/dcc/templates/roll-modifier-partial-die.html',
     'systems/dcc/templates/roll-modifier-partial-disapproval-die.html',

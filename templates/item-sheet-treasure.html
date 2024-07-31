@@ -43,13 +43,6 @@
             </div>
         </div>
 
-        <div class="tab" data-group="item" data-tab="description">
-            <div class="tab-body">
-                <div class="description grid-col-span-12">
-                    <div class="dark-title">{{localize "DCC.Description"}}</div>
-                    {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true editable=editable}}
-                </div>
-            </div>
-        </div>
+        {{> systems/dcc/templates/item-sheet-partial-description.html }}
     </section>
 </form>
