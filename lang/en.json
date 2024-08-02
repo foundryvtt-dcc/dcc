@@ -73,6 +73,7 @@
   "DCC.AlignmentC": "Chaotic",
   "DCC.AlignmentL": "Lawful",
   "DCC.AlignmentN": "Neutral",
+  "DCC.AlreadyHasInitiative": "Token already has initiative score in the Combat Tracker. Not re-rolling.",
   "DCC.Ammunition": "Ammunition",
   "DCC.ApplyDisapprovalMacroName": "Increase Disapproval Range",
   "DCC.Armor": "Armor",

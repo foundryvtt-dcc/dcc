@@ -371,7 +371,7 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollMeleeMissileBonus (event) {
     event.preventDefault()
-    console.log("on melee missile bonus")
+    console.log('on melee missile bonus')
   }
 
   /** Prompt to delete an item
@@ -690,12 +690,16 @@ class DCCActorSheet extends ActorSheet {
    * @param {Event} event   The originating click event
    * @private
    */
- async _onRollInitiative (event) {
+  async _onRollInitiative (event) {
     event.preventDefault()
+    if (this.actor?.token?.combatant?.initiative) {
+      ui.notifications.warn(game.i18n.localize('DCC.AlreadyHasInitiative'))
+      return
+    }
     const rollOptions = this._fillRollOptions(event)
     let formula = null
     if (rollOptions.showModifierDialog) {
-      formula = await this.actor.getInitiativeRoll({showModifierDialog:true})
+      formula = await this.actor.getInitiativeRoll({ showModifierDialog: true })
     }
     const options = {
       createCombatants: true,
