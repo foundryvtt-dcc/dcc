@@ -48,6 +48,7 @@
   "DCC.ActionAbil": "Ability Check",
   "DCC.ActionDice": "Action Dice",
   "DCC.ActionDiceHint": "Comma-separated list of Action Dice available to this character (1d20, 1d16).",
+  "DCC.ActionDiceInvalid": "Character Action Dice doesn't contain a valid expression, defaulting to 1d20.",
   "DCC.ActionDiceMacroName": "Action Dice ({die})",
   "DCC.ActionDie": "Action Die",
   "DCC.ActionHeal": "Healing",

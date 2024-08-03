@@ -303,6 +303,10 @@ class DCCActor extends Actor {
       if (!this.system.config.actionDice) {
         this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
+      if (!this.system.config.actionDice.includes('1d')) {
+        ui.notifications.warn(game.i18n.localize('DCC.ActionDiceInvalid'))
+        return [{ label: '1d20', formula: '1d20' }]
+      }
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
       const terms = actionDieExpression.terms || actionDieExpression.parts
@@ -318,7 +322,9 @@ class DCCActor extends Actor {
           }
         }
       }
-    } catch (err) { }
+    } catch (err) {
+      console.log(err)
+    }
 
     if (options.includeUntrained) {
       actionDice.push({
@@ -1063,10 +1069,12 @@ class DCCActor extends Actor {
     /* Grab the To Hit modifier */
     let toHit = weapon.system.toHit
 
-    let die = weapon.system.actionDie || this.getActionDice()[0].formula
+    const automateUntrainedAttack = game.settings.get('dcc', 'automateUntrainedAttack')
+    const actorActionDice = this.getActionDice({ includeUntrained: !automateUntrainedAttack })[0].formula
+
+    let die = weapon.system.actionDie || actorActionDice
 
     /* Determine using untrained weapon */
-    const automateUntrainedAttack = game.settings.get('dcc', 'automateUntrainedAttack')
     if (!weapon.system.trained && automateUntrainedAttack) { die = game.dcc.DiceChain.bumpDie(die, '-1') + '[Untrained]' }
 
     let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
@@ -1085,7 +1093,7 @@ class DCCActor extends Actor {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: this.getActionDice({ includeUntrained: !automateUntrainedAttack })
+        presets: actorActionDice
       },
       {
         type: 'Compound',
