@@ -303,9 +303,8 @@ class DCCActor extends Actor {
       if (!this.system.config.actionDice) {
         this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
-      if (!this.system.config.actionDice.includes('1d')) {
+      if (!this.system.config.actionDice.match(/\dd/)) {
         ui.notifications.warn(game.i18n.localize('DCC.ActionDiceInvalid'))
-        return [{ label: '1d20', formula: '1d20' }]
       }
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
@@ -1093,7 +1092,7 @@ class DCCActor extends Actor {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: actorActionDice
+        presets: this.getActionDice({includeUntrained: true})
       },
       {
         type: 'Compound',
