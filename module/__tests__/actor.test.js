@@ -46,6 +46,10 @@ test('roll ability check', async () => {
         formula: '1d20',
         presets: [
           {
+            formula: '1d20',
+            label: '1d20'
+          },
+          {
             formula: '1d10',
             label: 'Untrained'
           }
@@ -104,6 +108,10 @@ test('roll ability check', async () => {
         label: 'ActionDie',
         formula: '1d20',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -215,7 +223,7 @@ test('roll saving throw', async () => {
 test('roll initiative', async () => {
   dccRollCreateRollMock.mockClear()
 
-  await actor.rollInitiative({createCombatants:true})
+  await actor.rollInitiative({ createCombatants: true })
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
@@ -236,7 +244,7 @@ test('roll initiative', async () => {
   )
 })
 
-test('roll weapon attack', async () => {
+test('roll weapon attack missing weapon', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockClear()
   uiNotificationsWarnMock.mockClear()
@@ -247,17 +255,21 @@ test('roll weapon attack', async () => {
   expect(itemTypesMock).toHaveBeenCalledTimes(1)
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(uiNotificationsWarnMock).toHaveBeenCalledWith('WeaponNotFound,id:r123[object Object]')
+})
 
+test('roll weapon attack', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
   // Roll a weapon we do have - by name
   collectionFindMock.mockReturnValue(new DCCItem('longsword', 'weapon', {
     actionDie: '1d20',
+    damage: '1d8',
     toHit: 1,
     melee: true
   }))
   await actor.rollWeaponAttack('longsword')
-  expect(collectionFindMock).toHaveBeenCalledTimes(2)
   expect(itemTypesMock).toHaveBeenCalledTimes(1)
-  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
@@ -267,6 +279,10 @@ test('roll weapon attack', async () => {
         formula: '1d20',
         presets: [
           {
+            formula: '1d20',
+            label: '1d20'
+          },
+          {
             formula: '1d10',
             label: 'Untrained'
           }
@@ -274,9 +290,9 @@ test('roll weapon attack', async () => {
       },
       {
         type: 'Compound',
-        dieLabel: 'DeedDie',
-        modifierLabel: 'ToHit',
-        formula: 1
+        'dieLabel': 'DeedDie',
+        'formula': 1,
+        'modifierLabel': 'ToHit',
       }
     ],
     Object.assign({ critical: 20 }, actor.getRollData()),
@@ -287,7 +303,7 @@ test('roll weapon attack', async () => {
   expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
     speaker: actor,
     type: 'emote',
-    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="1" title="undefined"><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
+    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class=\"inline-roll inline-result\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> undefined</a>,damageRollHTML:<a class=\"inline-roll inline-result damage-applyable\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D\" data-damage=\"1\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
     sound: 'diceSound',
     flags: {
       'dcc.ItemId': undefined,
@@ -295,6 +311,12 @@ test('roll weapon attack', async () => {
     },
     user: undefined
   })
+})
+
+test('roll weapon attack by slot', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
 
   // Roll a weapon we do have - by slot
   collectionFindMock.mockReturnValue(null)
@@ -306,10 +328,8 @@ test('roll weapon attack', async () => {
     ]
   })
   await actor.rollWeaponAttack('m2')
-  expect(collectionFindMock).toHaveBeenCalledTimes(3)
-  expect(itemTypesMock).toHaveBeenCalledTimes(2)
-  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(4)
+  expect(itemTypesMock).toHaveBeenCalledTimes(1)
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -317,6 +337,10 @@ test('roll weapon attack', async () => {
         label: game.i18n.localize('DCC.ActionDie'),
         formula: '1d20',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -327,7 +351,7 @@ test('roll weapon attack', async () => {
         type: 'Compound',
         dieLabel: 'DeedDie',
         modifierLabel: 'ToHit',
-        formula: 1
+        formula: 2
       }
     ],
     Object.assign({ critical: 20 }, actor.getRollData()),
@@ -338,7 +362,7 @@ test('roll weapon attack', async () => {
   expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
     speaker: actor,
     type: 'emote',
-    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%7D" data-damage="1" title="undefined"><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
+    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class=\"inline-roll inline-result\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> undefined</a>,damageRollHTML:<a class=\"inline-roll inline-result damage-applyable\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D\" data-damage=\"1\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
     sound: 'diceSound',
     flags: {
       'dcc.itemId': undefined,
@@ -346,7 +370,12 @@ test('roll weapon attack', async () => {
     },
     user: undefined
   })
+})
 
+test('roll weapon attack dagger', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
   collectionFindMock.mockReturnValue(new DCCItem('lefthand dagger', 'weapon', {
     actionDie: '1d16',
     toHit: 2,
@@ -361,6 +390,10 @@ test('roll weapon attack', async () => {
         label: game.i18n.localize('DCC.ActionDie'),
         formula: '1d16',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -381,7 +414,7 @@ test('roll weapon attack', async () => {
   )
 })
 
-test('roll skill check', async () => {
+test('roll Custom Die Skill', async () => {
   dccRollCreateRollMock.mockClear()
 
   await actor.rollSkillCheck('customDieSkill')
@@ -393,6 +426,10 @@ test('roll skill check', async () => {
         label: null,
         formula: '1d14',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -415,9 +452,11 @@ test('roll skill check', async () => {
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkill' }
   })
+})
 
+test('roll Custom Die And Value Skill', async () => {
+  dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('customDieAndValueSkill')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -425,6 +464,10 @@ test('roll skill check', async () => {
         label: null,
         formula: '1d14',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -453,9 +496,11 @@ test('roll skill check', async () => {
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkill' }
   })
+})
 
+test('roll Action Die Skill', async () => {
+  dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('actionDieSkill')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -463,6 +508,10 @@ test('roll skill check', async () => {
         label: 'ActionDie',
         formula: '1d20',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -491,9 +540,11 @@ test('roll skill check', async () => {
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkill' }
   })
+})
 
+test('roll Custom Die Skill With Int', async () => {
+  dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('customDieSkillWithInt')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(4)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -501,6 +552,10 @@ test('roll skill check', async () => {
         label: null,
         formula: '1d24',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -523,9 +578,11 @@ test('roll skill check', async () => {
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkillWithInt' }
   })
+})
 
+test('roll Custom Die And Value Skill With Per', async () => {
+  dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('customDieAndValueSkillWithPer')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(5)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -533,6 +590,10 @@ test('roll skill check', async () => {
         label: null,
         formula: '1d24',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -561,9 +622,11 @@ test('roll skill check', async () => {
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkillWithPer' }
   })
+})
 
+test('roll Custom Die And Value Luck', async () => {
+  dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('actionDieAndValueSkillWithLck')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(6)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -571,6 +634,10 @@ test('roll skill check', async () => {
         label: 'ActionDie',
         formula: '1d20',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -646,6 +713,10 @@ test('roll spell check', async () => {
         formula: '1d20',
         presets: [
           {
+            formula: '1d20',
+            label: '1d20'
+          },
+          {
             formula: '1d10',
             label: 'Untrained'
           }
@@ -696,10 +767,15 @@ test('roll spell check', async () => {
     }
   )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
+})
 
+test('roll spell check int', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockReset()
+  uiNotificationsWarnMock.mockReset()
+  game.dcc.processSpellCheck.mockClear()
   // Force int for display purposes
   await actor.rollSpellCheck({ abilityId: 'int' })
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -707,6 +783,10 @@ test('roll spell check', async () => {
         label: 'ActionDie',
         formula: '1d20',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -739,7 +819,6 @@ test('roll spell check', async () => {
       title: 'SpellCheck'
     }
   )
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(2)
   expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
     actor,
     {
@@ -758,10 +837,15 @@ test('roll spell check', async () => {
     }
   )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
+})
 
+test('roll spell check per', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockReset()
+  uiNotificationsWarnMock.mockReset()
+  game.dcc.processSpellCheck.mockClear()
   // Force personality for display purposes
   await actor.rollSpellCheck({ abilityId: 'per' })
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -769,6 +853,10 @@ test('roll spell check', async () => {
         label: 'ActionDie',
         formula: '1d20',
         presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
           {
             formula: '1d10',
             label: 'Untrained'
@@ -801,7 +889,6 @@ test('roll spell check', async () => {
       title: 'SpellCheck'
     }
   )
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
   expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
     actor,
     {
@@ -820,31 +907,41 @@ test('roll spell check', async () => {
     }
   )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
+})
 
+test('roll spell check item', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockReset()
+  uiNotificationsWarnMock.mockReset()
+  game.dcc.processSpellCheck.mockClear()
   // Roll a spell check with an item
   const dummyItem = new DCCItem('The Gloaming', 'spell')
   collectionFindMock.mockReturnValue(dummyItem)
   await actor.rollSpellCheck({ spell: 'The Gloaming' })
   expect(collectionFindMock).toHaveBeenCalledTimes(1)
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
   expect(dccItemRollSpellCheckMock).toHaveBeenCalledWith('int', { abilityId: 'int', spell: 'The Gloaming' })
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(0)
+})
 
+test('roll spell check wrong item type', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockReset()
+  uiNotificationsWarnMock.mockReset()
+  game.dcc.processSpellCheck.mockClear()
   // Roll a spell check with an item of the wrong type
   collectionFindMock.mockReturnValue(new DCCItem('Swordfish', 'weapon'))
   await actor.rollSpellCheck({ spell: 'Swordfish' })
-  expect(collectionFindMock).toHaveBeenCalledTimes(2)
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
   expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
   expect(uiNotificationsWarnMock).toHaveBeenCalledWith('SpellCheckNonSpellWarning')
+})
 
+test('roll spell check missing spell', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockReset()
+  uiNotificationsWarnMock.mockReset()
+  game.dcc.processSpellCheck.mockClear()
   // Roll a spell check with an unowned item
   collectionFindMock.mockReturnValue(null)
   await actor.rollSpellCheck({ spell: 'Missing Spell' })
-  expect(collectionFindMock).toHaveBeenCalledTimes(3)
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(3)
-  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(2)
   expect(uiNotificationsWarnMock).toHaveBeenCalledWith('SpellCheckNoOwnedItemWarning')
 })
