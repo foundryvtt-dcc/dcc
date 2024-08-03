@@ -130,6 +130,7 @@ class Actor {
             }
           },
           config: {
+            actionDice: '1d20',
             attackBonusMode: 'flat',
             capLevel: false,
             maxLevel: 0,
