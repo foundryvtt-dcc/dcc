@@ -328,7 +328,7 @@ test('roll weapon attack by slot', async () => {
     ]
   })
   await actor.rollWeaponAttack('m2')
-  expect(itemTypesMock).toHaveBeenCalledTimes(1)
+  expect(itemTypesMock).toHaveBeenCalledTimes(2)
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
