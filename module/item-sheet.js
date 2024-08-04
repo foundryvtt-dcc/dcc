@@ -13,7 +13,7 @@ export class DCCItemSheet extends ItemSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
       height: 442,
-      resizable: false,
+      resizable: true,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
       width: 475,
       dragDrop: [{ dragSelector: null, dropSelector: null }]
@@ -24,7 +24,7 @@ export class DCCItemSheet extends ItemSheet {
   get template () {
     switch (this.object.type) {
       case 'weapon':
-        this.position.height = 650
+        this.position.height = 663
         return 'systems/dcc/templates/item-sheet-weapon.html'
       case 'armor':
         return 'systems/dcc/templates/item-sheet-armor.html'

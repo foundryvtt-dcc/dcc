@@ -9,7 +9,7 @@
     <section class="sheet-body">
         <div class="tab" data-group="item" data-tab="item">
             <div class="tab-body">
-                <div class="grid-col-span-8 grid-tpl-max-auto" style="margin-bottom: 5px;">
+                <div class="grid-col-span-8 grid-tpl-max-auto mb-5">
                     <label for="name">{{localize "DCC.Name"}}</label>
                     <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
                 </div>
@@ -30,9 +30,9 @@
                         {{{descriptionHTML}}}
                     </div>
                 </div>
-                <div class="dark-border grid-col-span-3" style="max-height: 125px;">
+                <div class="dark-border grid-col-span-3" style="max-height: 127px;">
                     <div class="dark-title">{{localize "DCC.Image"}}</div>
-                    <div class="box-inner" style="padding-top: 5px;">
+                    <div class="p-5">
                         <img src="{{item.img}}" data-edit="img" title="{{item.name}}" alt="{{item.name}}"/>
                     </div>
                 </div>

@@ -528,6 +528,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   .group-separator {
     border-bottom: 2px dotted var(--medium-color);
     grid-column-end: span 2;
+    margin: 5px 0 5px 0;
   }
 
   input {

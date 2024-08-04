@@ -431,18 +431,20 @@
         "inheritDamage": true
       },
       "actionDie": "1d20",
-      "toHit": "+0",
-      "damage": "1d3",
-      "range": "",
-      "twoHanded": 0,
-      "melee": 0,
-      "shortRangeStrength": 0,
-      "subdual": 0,
       "backstab": false,
       "backstabDamage": null,
-      "doubleIfMounted": 0,
       "critRange": 20,
-      "trained": true
+      "damage": "1d3",
+      "doubleIfMounted": 0,
+      "initiativeBonus": "",
+      "initiativeDie": "1d20",
+      "melee": 0,
+      "range": "",
+      "shortRangeStrength": 0,
+      "subdual": 0,
+      "toHit": "+0",
+      "trained": true,
+      "twoHanded": 0
     },
     "ammunition": {
       "templates": [

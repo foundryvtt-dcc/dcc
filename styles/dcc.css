@@ -70,6 +70,11 @@
   grid-column-end: span 12;
 }
 
+.grid-row-gap-3 {
+  display: grid;
+  grid-row-gap: 3px;
+}
+
 .grid-row-gap-5 {
   display: grid;
   grid-row-gap: 5px;
@@ -117,7 +122,7 @@
 }
 
 .mb-5 {
-  margin-bottom: 5px;
+  /* margin-bottom: 5px; */
 }
 
 .mb-8 {
@@ -611,6 +616,7 @@
 .dcc.item .tab-body .group-separator {
   border-bottom: 2px dotted var(--medium-color);
   grid-column-end: span 2;
+  margin: 5px 0 5px 0;
 }
 .dcc.item .tab-body input {
   background: none;
