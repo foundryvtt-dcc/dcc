@@ -516,6 +516,20 @@ $font-awesome: 'Font Awesome 6 Pro';
     }
   }
 
+  .group-heading {
+    font-size: 13px;
+    font-family: $cooper-black;
+  }
+
+  .group-indent {
+    margin-left: 16px;
+  }
+
+  .group-separator {
+    border-bottom: 2px dotted var(--medium-color);
+    grid-column-end: span 2;
+  }
+
   input {
     background: none;
     border-width: 0 0 1px 0;
@@ -570,6 +584,14 @@ $font-awesome: 'Font Awesome 6 Pro';
       min-height: 288px;
     }
   }
+
+  .value-display {
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0;
+    text-align: center;
+  }
 }
 
 /* ----------------------------------------- */
@@ -597,7 +619,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   .group-separator {
     border-bottom: 2px dotted var(--medium-color);
-    margin: 3px 0 3px 0;
+    margin: 2px 0 2px 0;
     grid-column-end: span 2;
   }
 }

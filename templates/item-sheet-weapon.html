@@ -20,67 +20,66 @@
                            value="{{system.description.summary}}" size="25">
                 </div>
 
-                <div class="dark-border grid-col-span-3 grid-row-span-2">
-                    <div class="dark-title">{{localize "DCC.Settings"}}</div>
+                <!-- To Hit -->
+                <div class="dark-border grid-col-span-6">
+                    <div class="dark-title">{{localize "DCC.ToHit"}}</div>
                     <div class="grid-tpl-max-auto p-5 grid-col-gap-8 grid-align-center">
-                            <input type="checkbox" id="system.equipped" name="system.equipped" data-dtype="Boolean"
-                                {{checked system.equipped}}/>
-                            <label for="system.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
-                            <input type="checkbox" id="system.trained" name="system.trained" data-dtype="Boolean"
-                                {{checked system.trained}}/>
-                            <label for="system.trained">{{localize "DCC.WeaponPropertiesTrained"}}</label>
-                            <input type="checkbox" id="system.twoHanded" name="system.twoHanded" data-dtype="Boolean"
-                                {{checked system.twoHanded}}/>
-                            <label for="system.twoHanded" style="font-size: 11px;">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
-                    </div>
-                </div>
-
-                <div class="dark-border grid-col-span-3">
-                    <div class="dark-title">Action Die</div>
-                    <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
-                        <input type="checkbox" name="system.config.inheritActionDie" id="system.config.inheritActionDie"
-                            {{checked system.config.inheritActionDie}} data-dtype="boolean"/>
-                        <label for="system.config.inheritActionDie">{{localize "DCC.Inherit"}}</label>
-                        <div class="grid-tpl-max-auto grid-col-span-2 {{#if system.config.inheritActionDie}}disabled{{/if}}">
-                            <label for="system.actionDie">{{localize "DCC.Die"}}</label>
-                            <input id="system.actionDie" name="system.actionDie" style="width: 50px"
-                                   value="{{system.actionDie}}"
-                                   title="{{localize 'DCC.InheritTooltip'}}"
-                                   placeholder="1d20" data-dtype="String" {{#if system.config.inheritActionDie}}readonly{{/if}}/>
+                        <div class="value-display grid-col-span-2">{{system.attributes.actionDice.value}} + {{system.toHit}}</div>
+                        <div class="group-separator"></div>
+                        <div class="group-heading">
+                            {{localize "DCC.ActionDie"}}
                         </div>
+                        <div class="value-display">{{system.attributes.actionDice.value}}</div>
+                        <label class="group-indent" for="system.trained">{{localize "DCC.WeaponPropertiesTrained"}}</label>
+                        <input type="checkbox" id="system.trained" name="system.trained" data-dtype="Boolean"
+                            {{checked system.trained}}/>
+                        <label class="group-indent" for="system.config.actionDieOverride">{{localize "DCC.Override"}}</label>
+                        <input name="system.config.actionDieOverride" id="system.config.actionDieOverride" data-dtype="string"/>
+                        <div class="group-separator"></div>
+                        <div class="group-heading">{{localize "DCC.Bonus"}}</div>
+                        <div class="value-display">{{system.attackBonus}}</div>
+
                     </div>
                 </div>
 
-                <div class="dark-border grid-col-span-3">
-                    <div class="dark-title">To-Hit</div>
+                <!-- Damage -->
+                <div class="dark-border grid-col-span-6">
+                    <div class="dark-title">{{localize "DCC.Damage"}}</div>
                     <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
-                        <input type="checkbox" name="system.config.inheritToHit" id="system.config.inheritToHit"
-                            {{checked system.config.inheritToHit}} data-dtype="boolean"/>
-                        <label for="system.config.inheritToHit">{{localize "DCC.Inherit"}}</label>
-                        <div class="grid-tpl-max-auto grid-col-span-2">
-                            <label for="system.toHit">{{localize "DCC.Bonus"}}</label>
-                            <input id="system.toHit" name="system.toHit" value="{{system.toHit}}" size="2"
-                                   placeholder="1d3" data-dtype="String"/>
-                        </div>
+                        <label for="system.damage">{{localize "DCC.Base"}}</label>
+                        <input id="system.damage" name="system.damage" value="{{system.damage}}" placeholder="+0" size="4"
+                               data-dtype="String"/>
                     </div>
+                    <label for="system.backstabDamage" style="justify-self: start"
+                           title="{{localize 'DCC.WeaponPropertiesBackstabDamageTooltip'}}">{{localize "DCC.Damage"}}</label>
+                    <input id="system.backstabDamage" name="system.backstabDamage" value="{{system.backstabDamage}}" size="4"
+                           title="{{localize 'DCC.WeaponPropertiesBackstabDamageTooltip'}}"
+                           placeholder="{{system.damage}}" data-dtype="String"/>
                 </div>
 
-                <div class="dark-border grid-col-span-3">
-                    <div class="dark-title">Damage</div>
+                <!-- Initiative -->
+                <div class="dark-border grid-col-span-6 grid-row-span-2">
+                    <div class="dark-title">{{localize "DCC.Initiative"}}</div>
                     <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
-                        <input type="checkbox" name="system.config.inheritDamage" id="system.config.inheritDamage"
-                            {{checked system.config.inheritDamage}} data-dtype="boolean"/>
-                        <label for="system.config.inheritDamage">{{localize "DCC.Inherit"}}</label>
-                        <div class="grid-tpl-max-auto grid-col-span-2">
-                            <label for="system.damage">{{localize "DCC.Base"}}</label>
-                            <input id="system.damage" name="system.damage" value="{{system.damage}}" placeholder="+0" size="4"
-                                   data-dtype="String"/>
-                        </div>
+                        <label for="system.twoHanded" style="font-size: 11px;">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
+                        <input type="checkbox" id="system.twoHanded" name="system.twoHanded" data-dtype="Boolean"
+                            {{checked system.twoHanded}}/>
                     </div>
                 </div>
 
-                <div class="dark-border grid-col-span-3">
-                    <div class="dark-title">{{localize "DCC.Range"}}</div>
+                <!-- Critical Hits -->
+                <div class="dark-border grid-col-span-6">
+                    <div class="dark-title">{{localize "DCC.Critical"}}</div>
+                    <label for="system.critRange">{{localize "DCC.Range"}}</label>
+                    <input id="system.critRange" name="system.critRange" size="3"
+                           value="{{system.critRange}}"
+                           title="{{localize 'DCC.InheritTooltip'}}"
+                           placeholder="1d20" data-dtype="String" {{#if system.config.inheritCritRange}}readonly{{/if}}/>
+                </div>
+
+                <!-- Attack Distance -->
+                <div class="dark-border grid-col-span-6">
+                    <div class="dark-title">{{localize "DCC.AttackDistance"}}</div>
                     <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
                         <input type="checkbox" id="system.melee" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
                         <label for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
@@ -96,41 +95,9 @@
                 </div>
 
 
-                <div class="dark-border grid-col-span-3">
-                    <div class="dark-title">{{localize "DCC.Critical"}}</div>
-                    <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
-                        <input type="checkbox" name="system.config.inheritCritRange" id="system.config.inheritCritRange"
-                            {{checked system.config.inheritCritRange}} data-dtype="boolean"/>
-                        <label for="system.config.inheritCritRange">{{localize "DCC.Inherit"}}</label>
-                        <div class="grid-tpl-max-auto grid-col-span-2 {{#if system.config.inheritCritRange}}disabled{{/if}}">
-                            <label for="system.critRange">{{localize "DCC.Range"}}</label>
-                            <input id="system.critRange" name="system.critRange" size="3"
-                                   value="{{system.critRange}}"
-                                   title="{{localize 'DCC.InheritTooltip'}}"
-                                   placeholder="1d20" data-dtype="String" {{#if system.config.inheritCritRange}}readonly{{/if}}/>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dark-border grid-col-span-3">
-                    <div class="dark-title">{{localize "DCC.Backstab"}}</div>
-                    <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
-                        <input type="checkbox" id="system.backstab" name="system.backstab" data-dtype="Boolean"
-                            {{checked system.backstab}}/>
-                        <label for="system.backstab">{{localize "DCC.Enabled"}}</label>
-                        <div class="grid-tpl-max-auto grid-col-span-2 {{#unless system.backstab}}disabled{{/unless}}">
-                            <label for="system.backstabDamage" style="justify-self: start"
-                                   title="{{localize 'DCC.WeaponPropertiesBackstabDamageTooltip'}}">{{localize "DCC.Damage"}}</label>
-                            <input id="system.backstabDamage" name="system.backstabDamage" value="{{system.backstabDamage}}" size="4"
-                                   title="{{localize 'DCC.WeaponPropertiesBackstabDamageTooltip'}}"
-                                   placeholder="{{system.damage}}" data-dtype="String"/>
-                        </div>
-                    </div>
-                </div>
-
                 {{> systems/dcc/templates/item-sheet-partial-values.html }}
 
-                <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+                <div class="dark-border grid-col-span-10" title="{{localize 'DCC.DescriptionTooltip'}}">
                     <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
                     <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
                         <div class="description">
@@ -139,10 +106,10 @@
                     </div>
                 </div>
 
-                <div class="dark-border grid-col-span-3" style="max-height: 126px;">
+                <div class="dark-border grid-col-span-2" style="max-height: 68px;">
                     <div class="dark-title">{{localize "DCC.Image"}}</div>
                     <div class="p-5">
-                        <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+                        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="32px" width="32px"/>
                     </div>
                 </div>
             </div>

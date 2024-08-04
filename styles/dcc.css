@@ -601,6 +601,17 @@
 .dcc.item .tab-body .description .editor {
   min-height: 354px;
 }
+.dcc.item .tab-body .group-heading {
+  font-size: 13px;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+}
+.dcc.item .tab-body .group-indent {
+  margin-left: 16px;
+}
+.dcc.item .tab-body .group-separator {
+  border-bottom: 2px dotted var(--medium-color);
+  grid-column-end: span 2;
+}
 .dcc.item .tab-body input {
   background: none;
   border-width: 0 0 1px 0;
@@ -646,6 +657,13 @@
 .dcc.item .tab-body .mercurial .editor {
   min-height: 288px;
 }
+.dcc.item .tab-body .value-display {
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0;
+  text-align: center;
+}
 
 /* ----------------------------------------- */
 /*  Config Dialogs                           */
@@ -668,7 +686,7 @@
 }
 .config-dialog .group-separator {
   border-bottom: 2px dotted var(--medium-color);
-  margin: 3px 0 3px 0;
+  margin: 2px 0 2px 0;
   grid-column-end: span 2;
 }
 

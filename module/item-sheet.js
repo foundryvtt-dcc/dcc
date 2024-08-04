@@ -24,6 +24,7 @@ export class DCCItemSheet extends ItemSheet {
   get template () {
     switch (this.object.type) {
       case 'weapon':
+        this.position.height = 650
         return 'systems/dcc/templates/item-sheet-weapon.html'
       case 'armor':
         return 'systems/dcc/templates/item-sheet-armor.html'
