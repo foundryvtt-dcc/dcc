@@ -78,7 +78,7 @@
   "DCC.Ammunition": "Ammunition",
   "DCC.ApplyDisapprovalMacroName": "Increase Disapproval Range",
   "DCC.Armor": "Armor",
-  "DCC.ArmorClass": "Armor Class",
+  "DCC.ArmorClass": "Armor<br>Class",
   "DCC.ArmorDetails": "Armor Details",
   "DCC.ArmorPropertiesACBonus": "AC Bonus",
   "DCC.ArmorPropertiesCheckPenalty": "Check Penalty",

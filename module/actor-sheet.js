@@ -9,13 +9,13 @@ import EntityImages from './entity-images.js'
  * @extends {ActorSheet}
  */
 class DCCActorSheet extends ActorSheet {
-  static height = 640
+  static height = 638
 
   /** @override */
   static get defaultOptions () {
     const options = {
       classes: ['dcc', 'sheet', 'actor'],
-      width: 533,
+      width: 520,
       height: this.height,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],

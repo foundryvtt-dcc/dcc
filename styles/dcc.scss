@@ -119,13 +119,18 @@ $font-awesome: 'Font Awesome 6 Pro';
     text-shadow: 0 0 10px red;
   }
 
+  &.sheet.actor {
+     min-height: 638px;
+     min-width: 520px;
+  }
+
   .sheet-body {
     display: grid;
     min-height: 100%;
   }
 
   .window-content {
-    padding: 0 5px 0 5px;
+    padding: 8px;
 
     form {
       height: 100%;
@@ -984,11 +989,10 @@ form.dcc-roll-modifier {
 
 .dcc .character {
   .character-grid {
-    align-self: stretch;
     column-gap: 8px;
     display: grid;
     grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
-    grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, 1fr);
+    grid-template-rows: 46px 114px repeat(5, 59px 9px) 59px;
     height: 100%;
   }
 
@@ -1056,11 +1060,12 @@ form.dcc-roll-modifier {
     align-items: center;
     border: var(--dark-border);
     border-top: none;
+    column-gap: 5px;
     display: grid;
     font-size: 14px;
     grid-column-end: span 3;
-    grid-template-columns: minmax(110px, 1fr) minmax(62px, 1fr) minmax(85px, 1fr) minmax(59px, 1fr);
-    grid-template-rows: 19px repeat(4, minmax(20px, auto));
+    grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
+    grid-template-rows: 19px repeat(4, 20px);
     margin: 0 0 8px 0;
     padding-bottom: 4px;
 
@@ -1087,7 +1092,6 @@ form.dcc-roll-modifier {
     grid-row: 13;
     grid-column-end: span 3;
     grid-template-rows: 19px minmax(20px, auto);
-    margin-bottom: 5px;
     text-align: left;
 
     label {
@@ -1155,7 +1159,7 @@ form.dcc-roll-modifier {
     display: grid;
     grid-column-end: span 4;
     grid-template-rows: minmax(20px, auto) minmax(20px, auto);
-    grid-template-columns: minmax(189px, 1fr) minmax(113px, 1fr) minmax(195px, 1fr);
+    grid-template-columns: minmax(160px, auto) minmax(113px, auto) minmax(170px, auto);
     text-align: left;
 
     label {
