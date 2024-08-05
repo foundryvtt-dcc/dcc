@@ -3,7 +3,7 @@
 import EntityImages from './entity-images.js'
 
 /**
- *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an NPC sheet
+ *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an Actor sheet
  *
  *  @param {string} pcString The player stat block to import
  *  @return {Array}          Array of player character objects to create
@@ -13,7 +13,7 @@ function parsePCs (pcString) {
     const pcObject = JSON.parse(pcString)
     return _parseJSONPCs(pcObject)
   } catch (e) {
-    console.error(e)
+    // console.error(e) // Debug only
     return _parseJSONPCs(_splitAndParsePlainPCsToJSON(pcString))
   }
 }

@@ -370,7 +370,6 @@ $font-awesome: 'Font Awesome 6 Pro';
   table {
     text-align: center;
     font-family: $book-antiqua;
-    width: 523px;
     margin-top: 10px;
 
     td {
@@ -564,7 +563,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     background: none;
     border: none;
     height: 12px;
-    margin: 0 0 01px 0;
+    margin: 0;
     width: 12px;
   }
 
@@ -601,6 +600,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   .value-display {
     background: rgba(0, 0, 0, 0.05);
+    font-family: $book-antiqua;
     font-size: 13px;
     font-weight: bold;
     margin: 0;

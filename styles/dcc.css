@@ -117,6 +117,12 @@
   grid-template-columns: max-content minmax(0, 1fr);
 }
 
+.grid-tpl-max-auto-tight {
+  display: grid;
+  grid-row-gap: 3px;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
 .mb-3 {
   margin-bottom: 3px;
 }
@@ -468,7 +474,6 @@
 .dcc div.cleric-table table {
   text-align: center;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  width: 523px;
   margin-top: 10px;
 }
 .dcc div.cleric-table table td {
@@ -646,7 +651,7 @@
   background: none;
   border: none;
   height: 12px;
-  margin: 0 0 1px 0;
+  margin: 0;
   width: 12px;
 }
 .dcc.item .tab-body .item-img {
@@ -675,6 +680,7 @@
 }
 .dcc.item .tab-body .value-display {
   background: rgba(0, 0, 0, 0.05);
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
   font-size: 13px;
   font-weight: bold;
   margin: 0;

@@ -425,26 +425,37 @@
         "currency"
       ],
       "config": {
-        "inheritActionDie": true,
-        "inheritCritRange": true,
-        "inheritToHit": true,
-        "inheritDamage": true
+        "actionDieOverride": "",
+        "critDieOverride": "",
+        "critRangeOverride": "",
+        "critTableOverride": "",
+        "damageOverride": "",
+        "attackBonusOverride": "",
+        "initiativeBonusOverride": "",
+        "initiativeDieOverride": ""
       },
       "actionDie": "1d20",
-      "backstab": false,
-      "backstabDamage": null,
+      "attackBonusWeapon": "",
+      "attackBonusLucky": "",
+      "backstabDamage": "",
+      "critDie": "",
       "critRange": 20,
+      "critTable": "",
       "damage": "1d3",
-      "doubleIfMounted": 0,
+      "damageWeapon": "1d3",
+      "damageBonus": "",
+      "damageWeaponBonus": "",
+      "doubleIfMounted": false,
       "initiativeBonus": "",
       "initiativeDie": "1d20",
-      "melee": 0,
+      "initiativeWeaponBonus": "",
+      "melee": false,
       "range": "",
-      "shortRangeStrength": 0,
-      "subdual": 0,
+      "shortRangeStrength": false,
+      "subdual": false,
       "toHit": "+0",
       "trained": true,
-      "twoHanded": 0
+      "twoHanded": false
     },
     "ammunition": {
       "templates": [
