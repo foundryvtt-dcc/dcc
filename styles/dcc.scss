@@ -120,13 +120,8 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   &.sheet.actor {
-     min-height: 638px;
+     min-height: 639px;
      min-width: 520px;
-  }
-
-  .sheet-body {
-    display: grid;
-    min-height: 100%;
   }
 
   .window-content {
@@ -136,7 +131,8 @@ $font-awesome: 'Font Awesome 6 Pro';
       height: 100%;
 
       .sheet-body {
-        height: 100%;
+        display: grid;
+        height: calc(100% - 34px);
       }
     }
   }
@@ -992,7 +988,7 @@ form.dcc-roll-modifier {
     column-gap: 8px;
     display: grid;
     grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
-    grid-template-rows: 46px 114px repeat(5, 59px 9px) 59px;
+    grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, auto);
     height: 100%;
   }
 
@@ -1065,7 +1061,7 @@ form.dcc-roll-modifier {
     font-size: 14px;
     grid-column-end: span 3;
     grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
-    grid-template-rows: 19px repeat(4, 20px);
+    grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
     margin: 0 0 8px 0;
     padding-bottom: 4px;
 
