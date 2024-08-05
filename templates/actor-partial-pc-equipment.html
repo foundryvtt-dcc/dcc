@@ -35,12 +35,16 @@
                 <input class="weapon-name" type="text"
                        name="itemUpdates.{{id}}.name"
                        value="{{weapon.name}}"/>
-                <input type="text"
+                <input class="disabled" type="text"
                        name="itemUpdates.{{id}}.system.toHit"
-                       value="{{weapon.system.toHit}}"/>
-                <input class="weapon-damage" type="text"
+                       value="{{weapon.system.toHit}}"
+                       readonly
+                />
+                <input class="weapon-damage disabled" type="text"
                        name="itemUpdates.{{id}}.system.damage"
-                       value="{{weapon.system.damage}}"/>
+                       value="{{weapon.system.damage}}"
+                       readonly
+                />
                 {{#if melee}}
                     <input class="weapon-notes" type="text"
                            name="itemUpdates.{{id}}.system.description.summary"

@@ -24,7 +24,7 @@
                 <div class="dark-border grid-col-span-6">
                     <div class="dark-title">{{localize "DCC.ToHit"}}</div>
                     <div class="grid-align-center p-5">
-                        <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.actionDie}} + {{system.toHit}}</div>
+                        <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.actionDie}}{{system.toHit}}</div>
 
                         <div class="group-separator"></div>
 
@@ -85,9 +85,11 @@
                         <div class="group-separator"></div>
 
                         <div class="grid-tpl-max-auto-tight grid-col-gap-8">
-                            <label class="group-heading" for="system.damageWeapon" title="{{localize 'DCC.WeaponDamageHint'}}"> {{localize "DCC.WeaponDamage"}} </label>
-                            <input id="system.damageWeapon" name="system.damageWeapon" value="{{system.damage}}"
-                                   placeholder="+0" size="4" data-dtype="String"/>
+                            <label class="group-heading" for="system.damageWeapon" title="{{localize 'DCC.WeaponDamageHint'}}">
+                                {{localize "DCC.WeaponDamage"}}
+                            </label>
+                            <input id="system.damageWeapon" name="system.damageWeapon" value="{{system.damageWeapon}}"
+                                   size="4" data-dtype="String"/>
                         </div>
 
                         <div class="group-separator"></div>
@@ -102,7 +104,8 @@
                                    value="{{system.damageWeaponBonus}}"
                                    class="{{#if system.config.damageOverride}}disabled{{/if}}"
                                    {{#if system.config.damageOverride}}readonly{{/if}}
-                                   data-dtype="String"/>
+                                   data-dtype="String"
+                            />
 
                             <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}"
                                    for="system.doubleIfMounted">{{localize "DCC.WeaponPropertiesDoubleIfMounted"}}

@@ -525,6 +525,10 @@ Spells: (Spell Check: d20+2)
         system: {
           toHit: '+0',
           damage: '1d4',
+          config: {
+            attackBonusOverride: '+0',
+            damageOverride: ''
+          },
           melee: true
         }
       },
@@ -535,6 +539,10 @@ Spells: (Spell Check: d20+2)
         system: {
           toHit: '+1',
           damage: '1d4',
+          config: {
+            attackBonusOverride: '+1',
+            damageOverride: ''
+          },
           melee: false
         }
       },
@@ -545,6 +553,10 @@ Spells: (Spell Check: d20+2)
         system: {
           toHit: '+0',
           damage: '1d8',
+          config: {
+            attackBonusOverride: '+0',
+            damageOverride: ''
+          },
           melee: true
         }
       },

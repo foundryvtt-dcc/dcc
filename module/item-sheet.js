@@ -61,7 +61,9 @@ export class DCCItemSheet extends ItemSheet {
         relativeTo: this.item,
         secrets: this.item.isOwner
       })
-    } else if (data.item.type === 'treasure') {
+    }
+
+    if (data.item.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = data.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited

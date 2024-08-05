@@ -99,7 +99,7 @@ async function parseNPC (npcString) {
  */
 function _parseAttack (attackString, damageString) {
   const attack = {
-    config: { inheritActionDie: true },
+    config: {},
     actionDie: '1d20',
     range: '',
     twoHanded: false,
@@ -111,6 +111,7 @@ function _parseAttack (attackString, damageString) {
   }
   const name = _firstMatch(/(.*?) [+-].*/, attackString) || attackString
   attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString) || ''
+  attack.config.attackBonusOverride = attack.toHit
   attack.damage = ''
   attack.melee = !(attackString.includes('ranged') || attackString.includes('missile'))
   if (damageString) {
@@ -127,6 +128,9 @@ function _parseAttack (attackString, damageString) {
       attack.description.summary = _firstMatch(/.*\((.*)\).*/, attackString) || attack.damage
       attack.damage = '0'
     }
+  }
+  if (attack.damage.includes('+') || attack.damage.includes('-')) {
+    attack.config.damageOverride = attack.damage
   }
   return {
     name,

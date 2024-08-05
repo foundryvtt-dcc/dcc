@@ -84,6 +84,10 @@ function _parseJSONPCs (pcObject) {
     pc.items = []
     if (pcObject.weapons) {
       for (const weapon of pcObject.weapons) {
+        let damageOverride = ""
+        if (weapon.attackDamage.includes('+') || weapon.attackDamage.includes('-')) {
+          damageOverride = weapon.attackDamage || '1d3'
+        }
         pc.items.push({
           name: weapon.name,
           type: 'weapon',
@@ -91,11 +95,17 @@ function _parseJSONPCs (pcObject) {
           system: {
             toHit: weapon.attackMod || '0',
             damage: weapon.attackDamage || '1d3',
+            config: {
+              attackBonusOverride: weapon.attackMod || '0',
+              damageOverride: damageOverride
+            },
             melee: weapon.melee
           }
         })
       }
-    } else if (pcObject.weapon) {
+    }
+
+    if (pcObject.weapon && !pcObject.weapons) {
       pc.items.push({
         name: pcObject.weapon,
         type: 'weapon',
