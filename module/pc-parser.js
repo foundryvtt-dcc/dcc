@@ -3,7 +3,7 @@
 import EntityImages from './entity-images.js'
 
 /**
- *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an NPC sheet
+ *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an Actor sheet
  *
  *  @param {string} pcString The player stat block to import
  *  @return {Array}          Array of player character objects to create
@@ -13,7 +13,7 @@ function parsePCs (pcString) {
     const pcObject = JSON.parse(pcString)
     return _parseJSONPCs(pcObject)
   } catch (e) {
-    console.error(e)
+    // console.error(e) // Debug only
     return _parseJSONPCs(_splitAndParsePlainPCsToJSON(pcString))
   }
 }
@@ -84,6 +84,10 @@ function _parseJSONPCs (pcObject) {
     pc.items = []
     if (pcObject.weapons) {
       for (const weapon of pcObject.weapons) {
+        let damageOverride = ""
+        if (weapon.attackDamage.includes('+') || weapon.attackDamage.includes('-')) {
+          damageOverride = weapon.attackDamage || '1d3'
+        }
         pc.items.push({
           name: weapon.name,
           type: 'weapon',
@@ -91,11 +95,17 @@ function _parseJSONPCs (pcObject) {
           system: {
             toHit: weapon.attackMod || '0',
             damage: weapon.attackDamage || '1d3',
+            config: {
+              attackBonusOverride: weapon.attackMod || '0',
+              damageOverride: damageOverride
+            },
             melee: weapon.melee
           }
         })
       }
-    } else if (pcObject.weapon) {
+    }
+
+    if (pcObject.weapon && !pcObject.weapons) {
       pc.items.push({
         name: pcObject.weapon,
         type: 'weapon',

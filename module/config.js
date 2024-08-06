@@ -369,6 +369,13 @@ DCC.healingTypes = {
   temphp: 'DCC.HealingTemp'
 }
 
+// Import Types
+DCC.importTypes = {
+  Player: 'DCC.ActorTypePlayer',
+  NPC: 'DCC.ActorTypeNPC'
+}
+
+
 /* -------------------------------------------- */
 
 /**

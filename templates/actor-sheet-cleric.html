@@ -33,60 +33,64 @@
 
         {{!-- Class Tab --}}
         <div class="tab" data-group="primary" data-tab="cleric">
-            {{!-- Update spell check ability to use Personality --}}
-            <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="per">
-            <div class="grid-container dark-border">
-                <div class="grid-col-span-12 dark-title" style="">{{localize "DCC.ClericAbilities"}}</div>
-                <div class="grid-col-span-12 grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
-                    <div class="grid-tpl-max-25 grid-col-gap-5" data-ability="per">
-                        <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}"
-                               data-dtype="String"/>
-                    </div>
-                    <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
-                        <label class="skill-check rollable" for="system.skills.divineAid.value">{{localize "DCC.DivineAid"}}</label>
-                        <input type="text" id="system.skills.divineAid.value" name="system.skills.divineAid.value"
-                               value="{{system.skills.divineAid.value}}" data-dtype="String"/>
-                    </div>
-                    <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
-                        <label class="skill-check rollable" for="system.skills.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
-                        <input type="text" id="system.skills.turnUnholy.value" name="system.skills.turnUnholy.value"
-                               value="{{system.skills.turnUnholy.value}}" data-dtype="String"/>
-                    </div>
-                    <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
-                        <label class="skill-check rollable" for="system.skills.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
-                        <input type="text" id="system.skills.layOnHands.value" name="system.skills.layOnHands.value"
-                               value="{{system.skills.layOnHands.value}}" data-dtype="String"/>
-                    </div>
-                    <div class="grid-tpl-max-25 grid-col-gap-5">
-                        <label class="disapproval-range rollable" for="system.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
-                        <select class="number" name="system.class.disapproval" id="system.class.disapproval">
-                            {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
-                        </select>
-                    </div>
-                    <div class="grid-tpl-max-auto grid-col-gap-5">
-                        <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize
-                            "DCC.DisapprovalTable"}}</label>
-                        <select id="system.class.disapprovalTable" name="system.class.disapprovalTable"
-                                value="{{system.class.disapprovalTable}}">
-                            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true labelAttr="name"
-                                            valueAttr="path"}}
-                        </select>
-                    </div>
-                    <div class="grid-tpl-max-auto grid-col-gap-5">
-                        <label for="system.class.deity">{{localize "DCC.Deity"}}</label>
-                        <input class="full-width" type="text" id="system.class.deity" name="system.class.deity"
-                               value="{{system.class.deity}}" data-dtype="String"/>
-                    </div>
+            <div class="tab-body grid-container">
+                {{!-- Update spell check ability to use Personality --}}
+                <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="per">
+                <div class="dark-border grid-col-span-12">
+                    <div class="dark-title" style="">{{localize "DCC.ClericAbilities"}}</div>
+                    <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
+                        <div class="grid-tpl-max-25 grid-col-gap-5" data-ability="per">
+                            <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+                            <input type="text" id="system.class.spellCheck" name="system.class.spellCheck"
+                                   value="{{system.class.spellCheck}}"
+                                   data-dtype="String"/>
+                        </div>
+                        <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
+                            <label class="skill-check rollable" for="system.skills.divineAid.value">{{localize "DCC.DivineAid"}}</label>
+                            <input type="text" id="system.skills.divineAid.value" name="system.skills.divineAid.value"
+                                   value="{{system.skills.divineAid.value}}" data-dtype="String"/>
+                        </div>
+                        <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
+                            <label class="skill-check rollable" for="system.skills.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
+                            <input type="text" id="system.skills.turnUnholy.value" name="system.skills.turnUnholy.value"
+                                   value="{{system.skills.turnUnholy.value}}" data-dtype="String"/>
+                        </div>
+                        <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
+                            <label class="skill-check rollable" for="system.skills.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
+                            <input type="text" id="system.skills.layOnHands.value" name="system.skills.layOnHands.value"
+                                   value="{{system.skills.layOnHands.value}}" data-dtype="String"/>
+                        </div>
+                        <div class="grid-tpl-max-25 grid-col-gap-5">
+                            <label class="disapproval-range rollable" for="system.class.disapproval">{{localize
+                                "DCC.DisapprovalRange"}}</label>
+                            <select class="number" name="system.class.disapproval" id="system.class.disapproval">
+                                {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
+                            </select>
+                        </div>
+                        <div class="grid-tpl-max-auto grid-col-gap-5">
+                            <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize
+                                "DCC.DisapprovalTable"}}</label>
+                            <select id="system.class.disapprovalTable" name="system.class.disapprovalTable"
+                                    value="{{system.class.disapprovalTable}}">
+                                {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true
+                                                labelAttr="name"
+                                                valueAttr="path"}}
+                            </select>
+                        </div>
+                        <div class="grid-tpl-max-auto grid-col-gap-5">
+                            <label for="system.class.deity">{{localize "DCC.Deity"}}</label>
+                            <input class="full-width" type="text" id="system.class.deity" name="system.class.deity"
+                                   value="{{system.class.deity}}" data-dtype="String"/>
+                        </div>
 
-                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                        <div>{{{system.class.classLink}}}</div>
-                    {{/dccPackExists}}
+                        {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                            <div>{{{system.class.classLink}}}</div>
+                        {{/dccPackExists}}
 
+                    </div>
                 </div>
-            </div>
 
-                <div class="grid-col-span-2 cleric-table grid-tpl-max-auto">
+                <div class="grid-col-span-12 cleric-table">
                     <table class="dark-border">
                         <thead class="dark-title">
                         <tr>
@@ -122,7 +126,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="grid-col-span-2 cleric-table grid-tpl-max-auto">
+                <div class="grid-col-span-12 cleric-table">
                     <table class="dark-border">
                         <thead class="dark-title">
                         <tr>
@@ -158,9 +162,10 @@
                         </tbody>
                     </table>
                 </div>
+
+                <img class="grid-col-span-12" src="systems/dcc/styles/images/FCI-magic-items-1-15-Fancy-Mace.webp"
+                     height="100px" width="450px" style="margin: 0 0 0 25px;" alt="Mace Art">
             </div>
-            <img src="systems/dcc/styles/images/FCI-magic-items-1-15-Fancy-Mace.webp" height="105px" width="450px"
-                 style="margin: 0 0 0 25px;">
         </div>
 
         {{!-- Spells Tab --}}

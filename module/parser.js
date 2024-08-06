@@ -37,6 +37,8 @@ class DCCActorParser extends FormApplication {
     context.config = CONFIG.DCC
     context.folders = []
 
+    context.importType= game.settings.get('dcc', 'lastImporterType')
+
     // Gather the list of actor folders
     for (const folder of game.actors.directory.folders) {
       context.folders.push({ id: folder._id, name: folder.name })
@@ -53,6 +55,8 @@ class DCCActorParser extends FormApplication {
    */
   async _updateObject (event, formData) {
     event.preventDefault()
+
+    game.settings.set('dcc', 'lastImporterType', formData.type)
 
     await createActors(formData.type, formData.folderId, formData.statblocks)
   }

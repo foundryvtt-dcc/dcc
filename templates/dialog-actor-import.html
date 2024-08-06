@@ -11,10 +11,8 @@
         <textarea style="height: 640px;" id="statblocks" name="statblocks"></textarea>
 
         <label for="type">Actor Type</label>
-
         <select id="type" name="type">
-            <option value="Player" {{#if game.user.isGM}}selected{{/if}}>{{localize 'DCC.ActorTypePlayer'}}</option>
-            <option value="NPC" {{#unless game.user.isGM}}selected{{/unless}}>{{localize 'DCC.ActorTypeNPC'}}</option>
+            {{selectOptions config.importTypes selected=importType localize=true}}
         </select>
 
         <label for="folderId">{{localize 'DCC.Folder'}}</label>
