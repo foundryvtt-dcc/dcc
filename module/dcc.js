@@ -53,6 +53,24 @@ Hooks.once('init', async function () {
   CONFIG.Item.documentClass = DCCItem
   CONFIG.Combatant.documentClass = DCCCombatant
 
+  CONFIG.Dice.fulfillment.dice = {
+    d2: { label: "d3", icon: '<i class="fas fa-dice-two"></i>'},
+    d3: { label: "d3", icon: '<i class="fas fa-dice-three"></i>'},
+    d4: { label: "d4", icon: '<i class="fas fa-dice-d4"></i>' },
+    d5: { label: "d5", icon: '<i class="fas fa-dice-five"></i>'},
+    d6: { label: "d6", icon: '<i class="fas fa-dice-d6"></i>' },
+    d7: { label: "d7", icon: '<i class="fas fa-dice-d6"></i>'},
+    d8: { label: "d8", icon: '<i class="fas fa-dice-d8"></i>' },
+    d10: { label: "d10", icon: '<i class="fas fa-dice-d10"></i>' },
+    d12: { label: "d12", icon: '<i class="fas fa-dice-d12"></i>' },
+    d14: { label: "d14", icon: '<i class="fas fa-dice-d20"></i>'},
+    d16: { label: "d16", icon: '<i class="fas fa-dice-d20"></i>'},
+    d20: { label: "d20", icon: '<i class="fas fa-dice-d20"></i>' },
+    d24: { label: "d24", icon: '<i class="fas fa-dice-d20"></i>'},
+    d30: { label: "d30", icon: '<i class="fas fa-dice-d20"></i>'},
+    d100: { label: "d100", icon: '<i class="fas fa-percent"></i>' }
+  }
+
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
   Actors.registerSheet('dcc', DCCActorSheet, {
