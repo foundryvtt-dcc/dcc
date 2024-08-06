@@ -1,4 +1,4 @@
-name: Foundry Manifest Update
+name: Update Foundry Manifest Post-Release
 
 on:
   release:
@@ -8,15 +8,15 @@ on:
 jobs:
   update_manifest_post_release:
     runs-on: ubuntu-latest
-    name: Foundry Manifest Update
+    name: Update Foundry Manifest Post-Release
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
 
-      - name: Foundry Manifest Update
+      - name: Update Foundry Manifest Post-Release
         id: foundry-manifest-update
         uses: foundryvtt-dcc/foundry-manifest-update-action@main
         with:
