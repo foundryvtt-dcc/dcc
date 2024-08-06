@@ -228,7 +228,7 @@ class DCCActorSheet extends ActorSheet {
       }
       if (needsUpdate) {
         await this.actor.update({
-          'data.currency': funds
+          'system.currency': funds
         }, { diff: true })
       }
     }
