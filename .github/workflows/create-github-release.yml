@@ -2,6 +2,10 @@ name: Create GitHub Release
 
 on:
   push:
+    branches:
+      - 'main'
+    tags-ignore:
+      - '**'
     paths:
       - 'version.txt'
 
