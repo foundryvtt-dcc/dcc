@@ -54,7 +54,7 @@ Hooks.once('init', async function () {
   CONFIG.Combatant.documentClass = DCCCombatant
 
   CONFIG.Dice.fulfillment.dice = {
-    d2: { label: "d3", icon: '<i class="fas fa-dice-two"></i>'},
+    d2: { label: "d2", icon: '<i class="fas fa-dice-two"></i>'},
     d3: { label: "d3", icon: '<i class="fas fa-dice-three"></i>'},
     d4: { label: "d4", icon: '<i class="fas fa-dice-d4"></i>' },
     d5: { label: "d5", icon: '<i class="fas fa-dice-five"></i>'},
