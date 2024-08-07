@@ -6,6 +6,7 @@
   "version": "0.46.0",
   "minimumCoreVersion": "12",
   "compatibility": {
+    "maximum": "12",
     "minimum": "12",
     "verified": "12"
   },
