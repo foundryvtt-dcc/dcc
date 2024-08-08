@@ -1,4 +1,4 @@
-name: Create Foundry Release
+name: Create GitHub Release
 
 on:
   push:
@@ -6,14 +6,14 @@ on:
       - 'version.txt'
 
 jobs:
-  create_foundry_release:
+  create_github_release:
     runs-on: ubuntu-latest
     name: Foundry Release
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Foundry Release
-        id: foundry-release
+        uses: actions/checkout@v4
+      - name: GitHub Release Release
+        id: github-release
         uses: foundryvtt-dcc/foundry-release-action@main
         with:
           actionToken: ${{ secrets.GITHUB_TOKEN }}

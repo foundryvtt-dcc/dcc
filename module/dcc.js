@@ -49,6 +49,9 @@ Hooks.once('init', async function () {
     getMacroOptions // This is called from macros, don't remove
   }
 
+  // Add DCC Dice Types
+  CONFIG.Dice.fulfillment.dice = CONFIG.DCC.diceTypes
+
   // Define custom Entity classes
   CONFIG.Actor.documentClass = DCCActor
   CONFIG.Item.documentClass = DCCItem

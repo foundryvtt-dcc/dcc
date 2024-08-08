@@ -342,6 +342,27 @@ DCC.areaTargetTypes = {
 
 /* -------------------------------------------- */
 
+// Dice Types for Dice Configuration Dialog
+DCC.diceTypes = {
+    d2: { label: "d2", icon: '<i class="fas fa-dice-two"></i>'},
+    d3: { label: "d3", icon: '<img src="systems/dcc/styles/images/dice/d3black.svg" height="14" width="14" style="border: none; vertical-align: middle">'},
+    d4: { label: "d4", icon: '<i class="fas fa-dice-d4"></i>' },
+    d5: { label: "d5", icon: '<img src="systems/dcc/styles/images/dice/d5black.svg" height="14" width="14" style="border: none; vertical-align: middle">'},
+    d6: { label: "d6", icon: '<i class="fas fa-dice-d6"></i>' },
+    d7: { label: "d7", icon: '<img src="systems/dcc/styles/images/dice/d7black.svg" height="14" width="14" style="border: none; vertical-align: middle">'},
+    d8: { label: "d8", icon: '<i class="fas fa-dice-d8"></i>' },
+    d10: { label: "d10", icon: '<i class="fas fa-dice-d10"></i>' },
+    d12: { label: "d12", icon: '<i class="fas fa-dice-d12"></i>' },
+    d14: { label: "d14", icon: '<img src="systems/dcc/styles/images/dice/d14black.svg" height="14" width="14" style="border: none; vertical-align: middle">'},
+    d16: { label: "d16", icon: '<img src="systems/dcc/styles/images/dice/d16black.svg" height="14" width="14" style="border: none; vertical-align: middle">'},
+    d20: { label: "d20", icon: '<i class="fas fa-dice-d20"></i>' },
+    d24: { label: "d24", icon: '<img src="systems/dcc/styles/images/dice/d24black.svg" height="14" width="14" style="border: none; vertical-align: middle">'},
+    d30: { label: "d30", icon: '<img src="systems/dcc/styles/images/dice/d30black.svg" height="14" width="14" style="border: none; vertical-align: middle">'},
+    d100: { label: "d100", icon: '<i class="fas fa-percent"></i>' }
+}
+
+/* -------------------------------------------- */
+
 // Healing Types
 DCC.healingTypes = {
   healing: 'DCC.Healing',
