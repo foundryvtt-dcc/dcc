@@ -68,7 +68,27 @@ class Actor {
             wil: { value: +2 }
           },
           details: {
-            attackBonus: 0,
+            attackBonus: '+0',
+            attackHitBonus: {
+              melee: {
+                value: "+0",
+                adjustment: "+0"
+              },
+              missile: {
+                value: "+0",
+                adjustment: "+0"
+              }
+            },
+            attackDamageBonus: {
+              melee: {
+                value: "+0",
+                adjustment: "+0"
+              },
+              missile: {
+                value: "+0",
+                adjustment: "+0"
+              }
+            },
             level: {
               value: 1
             }
@@ -103,13 +123,14 @@ class Actor {
               die: '1d24',
               value: +3
             },
-            actionDieSkillWithLck: {
-              label: 'Action Die Skill With Lck',
+            actionDieAndValueSkillWithLck: {
+              label: 'Action Die And Value Skill With Lck',
               ability: 'lck',
-              value: +4
+              value: +1
             }
           },
           config: {
+            actionDice: '1d20',
             attackBonusMode: 'flat',
             capLevel: false,
             maxLevel: 0,
@@ -136,6 +157,10 @@ class Actor {
 
   getRollData () {
     return this.system
+  }
+
+  rollInitiative(createCombatants, rerollInitiative, initiativeOptions) {
+    return this.getInitiativeRoll()
   }
 
   update (data) {
@@ -375,7 +400,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
     if (has) {
       // 1.1 - Recursively merge an inner object
       if ((tv === 'Object') && (tx === 'Object') && recursive) {
-        global.mergeObject(x, v, {
+        global.foundry.utils.mergeObject(x, v, {
           insertKeys,
           insertValues,
           overwrite,

@@ -16,19 +16,11 @@ class DCCItem extends Item {
           this.system.actionDie = this.actor.system.attributes.actionDice.value
         }
 
-        // Set default inherit crit range for legacy items
-        if (this.system.config.inheritCritRange === undefined) {
-          this.system.config.inheritCritRange = true
-        }
-
-        // And inherit crit range if set
-        if (this.system.config.inheritCritRange) {
-          this.system.critRange = this.actor.system.details.critRange
+        // Set Up Crit Range
+        if (!this.system.config.critRangeOverride) {
+          this.system.critRange = this.actor.system.details.critRange || 20
         } else {
-          // If not inheriting crit range make sure there is a value (for legacy items)
-          if (this.system.critRange === null || this.system.critRange === undefined) {
-            this.system.critRange = 20
-          }
+          this.system.critRange = this.system.config.critRangeOverride
         }
       } else if (this.type === 'spell') {
         // Spells can use the owner's action die for the spell check

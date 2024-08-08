@@ -11,6 +11,8 @@ import DCCActorSheet from './actor-sheet.js'
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetCleric extends DCCActorSheet {
+  static height = 635
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -23,7 +25,8 @@ class DCCActorSheetCleric extends DCCActorSheet {
         'system.class.className': game.i18n.localize('DCC.Cleric'),
         'system.details.sheetClass': 'Cleric',
         'system.class.spellCheckAbility': 'per',
-        'system.details.critRange': 20
+        'system.details.critRange': 20,
+        'system.config.attackBonusMode': 'flat'
       })
     }
 
@@ -36,6 +39,8 @@ class DCCActorSheetCleric extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetThief extends DCCActorSheet {
+  static height = 635
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -49,6 +54,7 @@ class DCCActorSheetThief extends DCCActorSheet {
         'system.details.sheetClass': 'Thief',
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'flat',
         'system.details.showBackstab': true
       })
     }
@@ -62,6 +68,8 @@ class DCCActorSheetThief extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetHalfling extends DCCActorSheet {
+  static height = 635
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -74,7 +82,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
         'system.class.className': game.i18n.localize('DCC.Halfling'),
         'system.details.sheetClass': 'Halfling',
         'system.details.critRange': 20,
-        'system.class.disapproval': 1
+        'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'flat'
       })
     }
 
@@ -87,6 +96,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetWarrior extends DCCActorSheet {
+  static height = 635
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -100,7 +111,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
         'system.class.className': game.i18n.localize('DCC.Warrior'),
         'system.details.sheetClass': 'Warrior',
         'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'manual'
+        'system.config.attackBonusMode': 'autoPerAttack'
       })
     }
 
@@ -113,6 +124,8 @@ class DCCActorSheetWarrior extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetWizard extends DCCActorSheet {
+  static height = 635
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -126,7 +139,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
         'system.details.sheetClass': 'Wizard',
         'system.class.spellCheckAbility': 'int',
         'system.details.critRange': 20,
-        'system.class.disapproval': 1
+        'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'flat'
       })
     }
 
@@ -139,6 +153,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetDwarf extends DCCActorSheet {
+  static height = 635
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -152,7 +168,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
         'system.class.className': game.i18n.localize('DCC.Dwarf'),
         'system.details.sheetClass': 'Dwarf',
         'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'manual',
+        'system.config.attackBonusMode': 'autoPerAttack',
         'system.skills.shieldBash.useDeed': true
       })
     }
@@ -166,6 +182,8 @@ class DCCActorSheetDwarf extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetElf extends DCCActorSheet {
+  static height = 635
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
@@ -179,7 +197,8 @@ class DCCActorSheetElf extends DCCActorSheet {
         'system.details.sheetClass': 'Elf',
         'system.class.spellCheckAbility': 'int',
         'system.details.critRange': 20,
-        'system.class.disapproval': 1
+        'system.class.disapproval': 1,
+        'system.config.attackBonusMode': 'flat'
       })
     }
 
@@ -192,14 +211,17 @@ class DCCActorSheetElf extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetGeneric extends DCCActorSheet {
+  static height = 635
+
   /** @override */
   async getData (options) {
     const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-upper-level.html'
+    this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
     data.system.class.className = game.i18n.localize('DCC.Generic')
 
     this.actor.update({
-      'system.class.className': game.i18n.localize('DCC.Generic')
+      'system.class.className': game.i18n.localize('DCC.Generic'),
+      'system.config.attackBonusMode': 'flat'
     })
 
     return data

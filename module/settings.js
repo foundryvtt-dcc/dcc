@@ -306,4 +306,14 @@ export const registerSystemSettings = async function () {
     default: false,
     config: true
   })
+
+  /**
+   * Last used Importer Type
+   */
+  game.settings.register('dcc', 'lastImporterType', {
+    scope: 'world',
+    type: String,
+    default: 'NPC',
+    config: false
+  })
 }

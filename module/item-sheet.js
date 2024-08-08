@@ -12,7 +12,10 @@ export class DCCItemSheet extends ItemSheet {
   static get defaultOptions () {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
+      height: 442,
+      resizable: true,
+      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
+      width: 475,
       dragDrop: [{ dragSelector: null, dropSelector: null }]
     })
   }
@@ -21,6 +24,7 @@ export class DCCItemSheet extends ItemSheet {
   get template () {
     switch (this.object.type) {
       case 'weapon':
+        this.position.height = 663
         return 'systems/dcc/templates/item-sheet-weapon.html'
       case 'armor':
         return 'systems/dcc/templates/item-sheet-armor.html'
@@ -57,7 +61,9 @@ export class DCCItemSheet extends ItemSheet {
         relativeTo: this.item,
         secrets: this.item.isOwner
       })
-    } else if (data.item.type === 'treasure') {
+    }
+
+    if (data.item.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = data.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
@@ -165,7 +171,7 @@ export class DCCItemSheet extends ItemSheet {
 
     // Header buttons shown only with Owner permissions
     if (this.options.editable) {
-      if (this.object.type === 'spell' || this.object.type === 'weapon' || this.object.type === 'skill') {
+      if (this.object.type === 'spell' || this.object.type === 'skill') {
         buttons.unshift(
           {
             label: game.i18n.localize('DCC.ConfigureItem'),
