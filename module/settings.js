@@ -1,5 +1,13 @@
 /* global game, Hooks */
 
+export const pubConstants = {
+  name: 'dcc',
+  dccLogoPath: 'systems/dcc/styles/images/dcc-rpg-logo-red.webp',
+  langRoot: 'DCC',
+  templates: 'systems/dcc/templates/',
+  title: 'DCC'
+}
+
 export const registerSystemSettings = async function () {
   /**
    * Track the last system version to which the world was migrated
@@ -315,5 +323,15 @@ export const registerSystemSettings = async function () {
     type: String,
     default: 'NPC',
     config: false
+  })
+
+  // Show Welcome Dialog
+  game.settings.register(pubConstants.name, 'showWelcomeDialog', {
+    name: `${pubConstants.langRoot}.Settings.ShowWelcomeDialog`,
+    hint: `${pubConstants.langRoot}.Settings.ShowWelcomeDialogHint`,
+    scope: 'world',
+    config: true,
+    default: true,
+    type: Boolean
   })
 }

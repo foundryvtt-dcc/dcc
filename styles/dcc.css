@@ -1200,4 +1200,31 @@ form.dcc-roll-modifier input.stat {
   letter-spacing: 1px;
 }
 
+#dcc-welcome-dialog h1 {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+}
+#dcc-welcome-dialog form {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+}
+#dcc-welcome-dialog div.credits {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+}
+#dcc-welcome-dialog div.logo-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+#dcc-welcome-dialog div.logo-container img.dcc-logo {
+  border: 0;
+}
+#dcc-welcome-dialog div.dcc-copyright {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+}
+
 /*# sourceMappingURL=dcc.css.map */

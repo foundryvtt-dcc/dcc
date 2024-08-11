@@ -120,8 +120,8 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   &.sheet.actor {
-     min-height: 639px;
-     min-width: 520px;
+    min-height: 639px;
+    min-width: 520px;
   }
 
   .window-content {
@@ -1221,5 +1221,40 @@ form.dcc-roll-modifier {
       font-size: 14px;
       letter-spacing: 1px;
     }
+  }
+}
+
+// Welcome Dialog
+#dcc-welcome-dialog {
+  h1 {
+    font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  }
+
+  form {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+  }
+
+  div.credits {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+  }
+
+  div.logo-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    img.dcc-logo {
+      border: 0;
+    }
+  }
+
+  div.dcc-copyright {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
   }
 }

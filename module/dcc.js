@@ -6,7 +6,6 @@
 
 // Import Modules
 import DCCActor from './actor.js'
-import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
 import DCCCombatant from './combatant.js'
 import DCCItem from './item.js'
@@ -25,7 +24,8 @@ import ReleaseNotes from './release-notes.js'
 import KeyState from './key-state.js'
 import { defineStatusIcons } from './status-icons.js'
 
-import { registerSystemSettings } from './settings.js'
+import { pubConstants, registerSystemSettings } from './settings.js'
+import WelcomeDialog from './welcomeDialog.js'
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -161,6 +161,11 @@ Hooks.once('ready', async function () {
 
   // Add status icons
   defineStatusIcons()
+
+  // Show welcome dialog if enabled
+  if (game.user.isGM && game.settings.get(pubConstants.name, 'showWelcomeDialog')) {
+    new WelcomeDialog().render(true)
+  }
 
   // Let modules know the DCC system is ready
   Hooks.callAll('dcc.ready')
@@ -552,7 +557,6 @@ Hooks.on('applyActiveEffect', (actor, change) => {
 
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
-
 /* -------------------------------------------- */
 
 /**
