@@ -251,31 +251,7 @@ export const registerSystemSettings = async function () {
     hint: 'DCC.SettingAutomateWarriorInitiativeHint',
     scope: 'world',
     type: Boolean,
-    default: false,
-    config: true
-  })
-
-  /**
-   * Automatically add Strength/Agility modifier to attack and hit rolls
-   */
-  game.settings.register('dcc', 'automateCombatModifier', {
-    name: 'DCC.SettingAutomateCombatModifier',
-    hint: 'DCC.SettingAutomateCombatModifierHint',
-    scope: 'world',
-    type: Boolean,
-    default: false,
-    config: true
-  })
-
-  /**
-   * Automatically applies -1d penalty on attack using untrained weapon
-   */
-  game.settings.register('dcc', 'automateUntrainedAttack', {
-    name: 'DCC.SettingAutomateUntrainedAttack',
-    hint: 'DCC.SettingAutomateUntrainedAttackHint',
-    scope: 'world',
-    type: Boolean,
-    default: false,
+    default: true,
     config: true
   })
 
@@ -285,18 +261,6 @@ export const registerSystemSettings = async function () {
   game.settings.register('dcc', 'automateTwoHandedWeaponInit', {
     name: 'DCC.SettingAutomateTwoHandedWeaponInit',
     hint: 'DCC.SettingAutomateTwoHandedWeaponInitHint',
-    scope: 'world',
-    type: Boolean,
-    default: false,
-    config: true
-  })
-
-  /**
-   * Automatically add warrior/dwarf luck modifier to attack rolls lucky weapon
-   */
-  game.settings.register('dcc', 'automateLuckyWeaponAttack', {
-    name: 'DCC.SettingAutomateLuckyWeapon',
-    hint: 'DCC.SettingAutomateLuckyWeaponHint',
     scope: 'world',
     type: Boolean,
     default: false,

@@ -32,9 +32,13 @@
                             <div class="group-heading"> {{localize "DCC.ActionDie"}} </div>
                             <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.actionDie}}</div>
 
-                            <label class="group-indent" for="system.trained">{{localize "DCC.WeaponPropertiesTrained"}}</label>
-                            <input type="checkbox" id="system.trained" name="system.trained" data-dtype="Boolean"
-                                {{checked system.trained}}/>
+                            <label class="group-indent {{#if system.config.actionDieOverride}}disabled{{/if}}" for="system.trained">
+                                {{localize "DCC.WeaponPropertiesTrained"}}
+                            </label>
+                            <input type="checkbox" id="system.trained" name="system.trained" data-dtype="Boolean" {{checked system.trained}}
+                                   class="{{#if system.config.actionDieOverride}}disabled{{/if}}"
+                                   {{#if system.config.actionDieOverride}}disabled{{/if}}
+                            />
 
                             <label class="group-indent" for="system.config.actionDieOverride" title="{{localize 'DCC.OverrideHint'}}">
                                 {{localize "DCC.Override"}}
@@ -47,9 +51,10 @@
 
                         <div class="grid-tpl-max-auto-tight grid-col-gap-8">
                             <div class="group-heading">{{localize "DCC.AttackBonus"}}</div>
-                            <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.toHit}}</div>
+                            <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.attackBonus}}</div>
 
-                            <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}" for="system.attackBonusWeapon" title="{{localize 'DCC.OverrideHint'}}">
+                            <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}"
+                                   for="system.attackBonusWeapon" title="{{localize 'DCC.OverrideHint'}}">
                                 {{localize "DCC.WeaponBonus"}}
                             </label>
                             <input name="system.attackBonusWeapon" id="system.attackBonusWeapon"
@@ -58,7 +63,8 @@
                                    {{#if system.config.attackBonusOverride}}readonly{{/if}}
                             />
 
-                            <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}" for="system.attackBonusLucky" title="{{localize 'DCC.LuckyBonusHint'}}">
+                            <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}"
+                                   for="system.attackBonusLucky" title="{{localize 'DCC.LuckyBonusHint'}}">
                                 {{localize "DCC.LuckyBonus"}}
                             </label>
                             <input name="system.attackBonusLucky" id="system.attackBonusLucky"
@@ -71,7 +77,8 @@
                                 {{localize "DCC.Override"}}
                             </label>
                             <input name="system.config.attackBonusOverride" id="system.config.attackBonusOverride"
-                                   value="{{system.config.attackBonusOverride}}" title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
+                                   value="{{system.config.attackBonusOverride}}" title="{{localize 'DCC.OverrideHint'}}"
+                                   data-dtype="string"/>
                         </div>
                     </div>
                 </div>
@@ -116,8 +123,11 @@
                                    data-dtype="Boolean" {{checked system.doubleIfMounted}}
                             />
 
-                            <label class="group-indent" for="system.subdual">{{localize "DCC.SubdualDamage"}}</label>
+                            <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}" for="system.subdual">{{localize
+                                "DCC.SubdualDamage"}}</label>
                             <input type="checkbox" id="system.subdual" name="system.subdual"
+                                   class="{{#if system.config.damageOverride}}disabled{{/if}}"
+                                   {{#if system.config.damageOverride}}disabled{{/if}}
                                    data-dtype="Boolean" {{checked system.subdual}}/>
 
                             <label class="group-indent" for="system.backstabDamage"
@@ -150,7 +160,8 @@
                             <div class="group-heading"> {{localize "DCC.InitiativeDie"}} </div>
                             <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.initiativeDie}}</div>
 
-                            <label class="group-indent {{#if system.config.initiativeDieOverride}}disabled{{/if}}" for="system.twoHanded">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
+                            <label class="group-indent {{#if system.config.initiativeDieOverride}}disabled{{/if}}"
+                                   for="system.twoHanded">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
                             <input type="checkbox" id="system.twoHanded" name="system.twoHanded"
                                    class="{{#if system.config.initiativeDieOverride}}disabled{{/if}}"
                                    {{#if system.config.initiativeDieOverride}}disabled{{/if}}

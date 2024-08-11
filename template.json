@@ -435,6 +435,7 @@
         "initiativeDieOverride": ""
       },
       "actionDie": "1d20",
+      "attackBonus": "",
       "attackBonusWeapon": "",
       "attackBonusLucky": "",
       "backstabDamage": "",

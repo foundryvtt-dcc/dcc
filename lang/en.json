@@ -282,7 +282,7 @@
   "DCC.DisapprovalRollFormula": "Disapproval Roll",
   "DCC.DisapprovalTable": "Disapproval Table",
   "DCC.DisguiseSelf": "Disguise self",
-  "DCC.DisplayValue": "Display value - use the fields below to change.",
+  "DCC.DisplayValue": "Display value - use the fields below to change. Includes bonus displayed on Character tab.",
   "DCC.DistAny": "Any",
   "DCC.DistFt": "Feet",
   "DCC.DistMi": "Miles",
@@ -620,16 +620,10 @@
   "DCC.Senses": "Senses",
   "DCC.SettingAutomateClericDisapproval": "Automate Cleric Disapproval",
   "DCC.SettingAutomateClericDisapprovalHint": "Automatically apply disapproval range increases and roll disapproval results for Clerics. Applies to the Cleric's spell-like abilities and to spells with Casting Mode set to 'Cleric'.",
-  "DCC.SettingAutomateCombatModifier": "Automate Combat Modifiers",
-  "DCC.SettingAutomateCombatModifierHint": "Automatically add Strength/Agility modifier to attack and Strength modifier to damage rolls",
   "DCC.SettingAutomateFleetingLuck": "Automate Fleeting Luck",
   "DCC.SettingAutomateFleetingLuckHint": "Automatically track Fleeting Luck based on roll results",
-  "DCC.SettingAutomateLuckyWeapon": "Automate Warrior/Dwarf Lucky Weapon",
-  "DCC.SettingAutomateLuckyWeaponHint": "Automatically add warrior/dwarf luck modifier to attack rolls lucky weapon",
   "DCC.SettingAutomateTwoHandedWeaponInit": "Automate initiative roll die penalty using two-handed weapon",
   "DCC.SettingAutomateTwoHandedWeaponInitHint": "Automatically set d16 as initiative roll die using two-handed weapon",
-  "DCC.SettingAutomateUntrainedAttack": "Automate attack using untrained weapon",
-  "DCC.SettingAutomateUntrainedAttackHint": "Automatically applies -1D penalty on attack using untrained weapon",
   "DCC.SettingAutomateWarriorInitiative": "Automate Warrior's Initiative",
   "DCC.SettingAutomateWarriorInitiativeHint": "Automatically add warrior's level to the initiative value",
   "DCC.SettingAutomateWizardSpellLoss": "Automate Wizard/Elf Spell Loss",
@@ -658,7 +652,11 @@
   "DCC.SettingTurnUnholyTableHint": "Roll Table to use for Turn Unholy - must be in a compendium pack",
   "DCC.SettingWeaponEquipmentCheck": "Check weapon is equipped",
   "DCC.SettingWeaponEquipmentCheckHint": "Check weapon is equipped if not UI warning diplay appears and prevent rolls",
-  "DCC.Settings": "Settings",
+  "DCC.SettingsLabel": "Settings",
+  "DCC.Settings": {
+    "ShowWelcomeDialog": "Show Welcome Dialog on Startup",
+    "ShowWelcomeDialogHint": "Show the welcome dialog on module startup"
+  },
   "DCC.SheetConfig": "Sheet Configuration",
   "DCC.ShieldBash": "Shield Bash",
   "DCC.ShowBackstabConfig": "Show Backstab",
@@ -843,23 +841,17 @@
   "DCC.WeaponPropertiesTrained": "Trained",
   "DCC.WeaponPropertiesTwoHanded": "Two-Handed",
   "DCC.WeaponWarningUnequipped": "Cannot attack with unequipped weapon",
-  "DCC": {
-    "Settings": {
-      "ShowWelcomeDialog": "Show Welcome Dialog on Startup",
-      "ShowWelcomeDialogHint": "Show the welcome dialog on module startup"
-    },
-    "Welcome": {
-      "Title": "Dungeon Crawl Classics",
-      "Heading": "Welcome to the DCC system for Foundry VTT!",
-      "Info": "<br><p style='text-align: center'><strong>Check out the <a href='https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide'>User Guide</a> for information on how to use this system.<strong></p>",
-      "Credits": "<h2>Credits</h2><p>Foundry VTT conversion by Steve Barnett, Christian Ovsenik, and Tim L. White.</p><p>See @UUID[Compendium.dcc.dcc-userguide.JournalEntry.RvxZne9f9frrYsCH]{Credits} for other credits.</p>",
-      "Copyright": "<h2>License and Copyright Information</h2><p>This module contains material from Goodman Games, used with permission.</p><p>DCC RPG is © 2012 Goodman Games.</p><p>Dungeon Crawl Classics is a trademark of Goodman Games.</p><p>DCC RPG is published under the Open Game License, refer to the OGL for additional information.</p><p>Foundry Virtual Tabletop © 2019, Foundry Gaming LLC.</p>",
-      "ImportContentLabel": "",
-      "DoNotShow": "Do not show this message on startup",
-      "DoNotShowHint": "Do not show this welcome dialog again until it is re-enabled in the Module Settings dialog.",
-      "SubmitLabel": "Close",
-      "LogoAlt": "DCC RPG Logo"
-    }
+  "DCC.Welcome": {
+    "Title": "Dungeon Crawl Classics",
+    "Heading": "Welcome to the DCC system for Foundry VTT!",
+    "Info": "<br><p style='text-align: center'><strong>Check out the <a href='https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide'>User Guide</a> for information on how to use this system.<strong></p>",
+    "Credits": "<h2>Credits</h2><p>Foundry VTT conversion by Steve Barnett, Christian Ovsenik, and Tim L. White.</p><p>See @UUID[Compendium.dcc.dcc-userguide.JournalEntry.RvxZne9f9frrYsCH]{Credits} for other credits.</p>",
+    "Copyright": "<h2>License and Copyright Information</h2><p>This module contains material from Goodman Games, used with permission.</p><p>DCC RPG is © 2012 Goodman Games.</p><p>Dungeon Crawl Classics is a trademark of Goodman Games.</p><p>DCC RPG is published under the Open Game License, refer to the OGL for additional information.</p><p>Foundry Virtual Tabletop © 2019, Foundry Gaming LLC.</p>",
+    "ImportContentLabel": "",
+    "DoNotShow": "Do not show this message on startup",
+    "DoNotShowHint": "Do not show this welcome dialog again until it is re-enabled in the Module Settings dialog.",
+    "SubmitLabel": "Close",
+    "LogoAlt": "DCC RPG Logo"
   },
   "DCC.Weight": "Weight",
   "DCC.Wizard": "Wizard",
@@ -874,6 +866,7 @@
   "DCC.of": "of",
   "DCC.on": "on",
   "DCC.spell": "spell",
+  "DCC.subdual": " subdual ",
   "DCC.table": "table",
   "DCC.title": "Dungeon Crawl Classics"
 }

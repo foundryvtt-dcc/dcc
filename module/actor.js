@@ -76,38 +76,7 @@ class DCCActor extends Actor {
 
     // Compute Melee/Ranged Attack/Damage
     if (config.computeMeleeAndMissileAttackAndDamage) {
-      const attackBonus = this.system.details.attackBonus || '0'
-      const strengthBonus = parseInt(this.system.abilities.str.mod) || 0
-      const agilityBonus = parseInt(this.system.abilities.agl.mod) || 0
-      const meleeAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus?.melee?.adjustment) || 0
-      const meleeDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus?.melee?.adjustment) || 0
-      const missileAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus?.missile?.adjustment) || 0
-      const missileDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus?.missile?.adjustment) || 0
-      let meleeAttackBonus = ''
-      let missileAttackBonus = ''
-      let meleeAttackDamage = ''
-      let missileAttackDamage = ''
-      if (attackBonus.includes('d')) {
-        const deedDie = attackBonus.match(/[+-]?(\d+d\d+)/) ? attackBonus.match(/[+-]?(\d+d\d+)/)[1] : attackBonus
-        const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
-        const deedMod = attackBonus.startsWith('-') ? '-' : '+'
-        meleeAttackBonus = `${deedMod}${deedDie}${signOrBlank(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
-        missileAttackBonus = `${deedMod}${deedDie}${signOrBlank(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
-        meleeAttackDamage = `${deedMod}${deedDie}${signOrBlank(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
-        missileAttackDamage = `${deedMod}${deedDie}${signOrBlank(missileDamageBonusAdjustment + attackBonusBonus)}`
-      } else {
-        const meleeAttackBonusSum = parseInt(attackBonus) + strengthBonus + meleeAttackBonusAdjustment
-        const missileAttackBonusSum = parseInt(attackBonus) + agilityBonus + missileAttackBonusAdjustment
-        meleeAttackBonus = `${signOrBlank(meleeAttackBonusSum)}`
-        missileAttackBonus = `${signOrBlank(missileAttackBonusSum)}`
-        meleeAttackDamage = `${signOrBlank(strengthBonus + meleeDamageBonusAdjustment)}`
-        missileAttackDamage = `${signOrBlank(missileDamageBonusAdjustment)}`
-      }
-      this.system.details.attackHitBonus.melee.value = meleeAttackBonus
-      this.system.details.attackHitBonus.missile.value = missileAttackBonus
-      this.system.details.attackDamageBonus.melee.value = meleeAttackDamage
-      this.system.details.attackDamageBonus.missile.value = missileAttackDamage
-      this.system.details.attackBonus = signOrBlank(attackBonus) || '+0'
+      this.calculateMeleeAndMissileAttackAndDamage()
     }
 
     // Compute AC if required
@@ -332,6 +301,44 @@ class DCCActor extends Actor {
       })
     }
     return actionDice
+  }
+
+  /** Calculate Melee/Missile Base Attack and Damage Modifiers
+   * @Param {Object} options     Options which configure how bonuses are generated
+   */
+  calculateMeleeAndMissileAttackAndDamage (options = {}) {
+    const attackBonus = this.system.details.attackBonus || '0'
+    const strengthBonus = parseInt(this.system.abilities.str.mod) || 0
+    const agilityBonus = parseInt(this.system.abilities.agl.mod) || 0
+    const meleeAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus?.melee?.adjustment) || 0
+    const meleeDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus?.melee?.adjustment) || 0
+    const missileAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus?.missile?.adjustment) || 0
+    const missileDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus?.missile?.adjustment) || 0
+    let meleeAttackBonus = ''
+    let missileAttackBonus = ''
+    let meleeAttackDamage = ''
+    let missileAttackDamage = ''
+    if (attackBonus.includes('d')) {
+      const deedDie = attackBonus.match(/[+-]?(\d+d\d+)/) ? attackBonus.match(/[+-]?(\d+d\d+)/)[1] : attackBonus
+      const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
+      const deedMod = attackBonus.startsWith('-') ? '-' : '+'
+      meleeAttackBonus = `${deedMod}${deedDie}${signOrBlank(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
+      missileAttackBonus = `${deedMod}${deedDie}${signOrBlank(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
+      meleeAttackDamage = `${deedMod}${deedDie}${signOrBlank(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
+      missileAttackDamage = `${deedMod}${deedDie}${signOrBlank(missileDamageBonusAdjustment + attackBonusBonus)}`
+    } else {
+      const meleeAttackBonusSum = parseInt(attackBonus) + strengthBonus + meleeAttackBonusAdjustment
+      const missileAttackBonusSum = parseInt(attackBonus) + agilityBonus + missileAttackBonusAdjustment
+      meleeAttackBonus = `${signOrBlank(meleeAttackBonusSum)}`
+      missileAttackBonus = `${signOrBlank(missileAttackBonusSum)}`
+      meleeAttackDamage = `${signOrBlank(strengthBonus + meleeDamageBonusAdjustment)}`
+      missileAttackDamage = `${signOrBlank(missileDamageBonusAdjustment)}`
+    }
+    this.system.details.attackHitBonus.melee.value = meleeAttackBonus
+    this.system.details.attackHitBonus.missile.value = missileAttackBonus
+    this.system.details.attackDamageBonus.melee.value = meleeAttackDamage
+    this.system.details.attackDamageBonus.missile.value = missileAttackDamage
+    this.system.details.attackBonus = signOrBlank(attackBonus) || '+0'
   }
 
   /**
@@ -1007,6 +1014,8 @@ class DCCActor extends Actor {
 
       // Roll crits or fumbles
       if (attackRollResult.crit) {
+        options.critDieOverride = weapon.system?.config?.critDieOverride
+        options.critTableOverride = weapon.system?.config?.critTableOverride
         await this.rollCritical(options)
       } else if (attackRollResult.fumble) {
         await this.rollFumble(options)
@@ -1027,6 +1036,8 @@ class DCCActor extends Actor {
       }
 
       if (attackRollResult.crit) {
+        options.critDieOverride = weapon.system?.config?.critDieOverride
+        options.critTableOverride = weapon.system?.config?.critTableOverride
         critResult = await this.rollCritical(options)
         if (options.naturalCrit) {
           game.dcc.FleetingLuck.updateFlagsForCrit(flags)
@@ -1068,13 +1079,9 @@ class DCCActor extends Actor {
     /* Grab the To Hit modifier */
     let toHit = weapon.system.toHit
 
-    const automateUntrainedAttack = game.settings.get('dcc', 'automateUntrainedAttack')
-    const actorActionDice = this.getActionDice({ includeUntrained: !automateUntrainedAttack })[0].formula
+    const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
 
     let die = weapon.system.actionDie || actorActionDice
-
-    /* Determine using untrained weapon */
-    if (!weapon.system.trained && automateUntrainedAttack) { die = game.dcc.DiceChain.bumpDie(die, '-1') + '[Untrained]' }
 
     let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
 
@@ -1082,7 +1089,7 @@ class DCCActor extends Actor {
     if (!await Roll.validate(toHit)) {
       return {
         rolled: false,
-        formula: weapon.system.toHit
+        formula: toHit
       }
     }
 
@@ -1092,7 +1099,7 @@ class DCCActor extends Actor {
         type: 'Die',
         label: game.i18n.localize('DCC.ActionDie'),
         formula: die,
-        presets: this.getActionDice({includeUntrained: true})
+        presets: this.getActionDice({ includeUntrained: true })
       },
       {
         type: 'Compound',
@@ -1109,34 +1116,6 @@ class DCCActor extends Actor {
         label: game.i18n.localize('DCC.Backstab'),
         formula: parseInt(this.system.class.backstab)
       })
-    }
-
-    // Add Strength or Agility modifier to attack rolls
-    let modifier
-    let modifierLabel
-    if (game.settings.get('dcc', 'automateCombatModifier')) {
-      if (weapon.system.melee) {
-        modifier = this.system.abilities.str.mod
-        modifierLabel = 'DCC.AbilityStr'
-      } else {
-        modifier = this.system.abilities.agl.mod
-        modifierLabel = 'DCC.AbilityAgl'
-      }
-      terms.push({
-        type: 'Modifier',
-        label: game.i18n.localize(modifierLabel) + ' ' + game.i18n.localize('DCC.Modifier'),
-        formula: modifier
-      })
-    }
-
-    if (this.system.details.sheetClass === 'Warrior' || this.system.details.sheetClass === 'Dwarf') {
-      if (weapon.name.toLowerCase().includes(this.system.class.luckyWeapon.toLowerCase()) && game.settings.get('dcc', 'automateLuckyWeaponAttack')) {
-        terms.push({
-          type: 'Modifier',
-          label: game.i18n.localize('DCC.AbilityLck') + ' ' + game.i18n.localize('DCC.Modifier'),
-          formula: this.system.abilities.lck.mod
-        })
-      }
     }
 
     /* Roll the Attack */
@@ -1185,8 +1164,8 @@ class DCCActor extends Actor {
     let formula = weapon.system.damage
 
     /* Are we backstabbing and the weapon has special backstab damage? */
-    if (options.backstab && weapon.system.backstab) {
-      formula = weapon.system.backstabDamage || weapon.system.damage
+    if (options.backstab && weapon.system.backstabDamage) {
+      formula = `${weapon.system.damage}${weapon.system.backstabDamage}`
     }
 
     /* If we don't have a valid formula, bail out here */
@@ -1206,21 +1185,6 @@ class DCCActor extends Actor {
         formula
       }
     ]
-
-    // Add Strength modifier to damage rolls
-    let modifier
-    let modifierLabel
-    if (game.settings.get('dcc', 'automateCombatModifier')) {
-      if (weapon.system.melee) {
-        modifier = ' + ' + this.system.abilities.str.mod
-        modifierLabel = 'DCC.AbilityStr'
-        terms.push({
-          type: 'Modifier',
-          label: game.i18n.localize(modifierLabel) + ' ' + game.i18n.localize('DCC.Modifier'),
-          formula: modifier
-        })
-      }
-    }
 
     /* Roll the damage */
     const rollOptions = Object.assign(
@@ -1245,7 +1209,8 @@ class DCCActor extends Actor {
       rolled: true,
       roll: damageRoll,
       formula: game.dcc.DCCRoll.cleanFormula(damageRoll.terms),
-      damage: damageRoll.total
+      damage: damageRoll.total,
+      subdual: weapon.system.subdual
     }
   }
 
@@ -1258,7 +1223,7 @@ class DCCActor extends Actor {
     const terms = [
       {
         type: 'Die',
-        formula: this.system.attributes.critical.die
+        formula: options.critDieOverride || this.system.attributes.critical.die
       },
       {
         type: 'Modifier',
@@ -1282,7 +1247,7 @@ class DCCActor extends Actor {
         if (pack) {
           await pack.getIndex() // Load the compendium index
           const critTableFilter =
-            `Crit Table ${this.system.attributes.critical.table}`
+            `Crit Table ${options.critTableOverride || this.system.attributes.critical.table}`
 
           const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
           if (entry) {
@@ -1464,8 +1429,9 @@ class DCCActor extends Actor {
   _formatDamageRoll (rollResult) {
     if (rollResult.rolled) {
       const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
+      const subdual = rollResult.subdual ? game.i18n.format('DCC.subdual') : ''
       if (rollResult.damage > 0) {
-        return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>`
+        return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>${subdual}`
       } else {
         return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="1" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> 1 (${rollResult.damage})</a>`
       }
