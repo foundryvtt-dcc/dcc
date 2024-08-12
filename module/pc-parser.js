@@ -1,6 +1,7 @@
 /* global game, ui, CONFIG */
 
 import EntityImages from './entity-images.js'
+import { getFirstDie, getFirstMod } from './utilities.js'
 
 /**
  *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an Actor sheet
@@ -88,6 +89,13 @@ function _parseJSONPCs (pcObject) {
         if (weapon.attackDamage.includes('+') || weapon.attackDamage.includes('-')) {
           damageOverride = weapon.attackDamage || '1d3'
         }
+        const damageWeapon = getFirstDie(weapon.attackDamage)
+        const damageWeaponBonus = getFirstMod(weapon.name)
+        if (weapon.melee === true && damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || 0 === getFirstMod(weapon.attackDamage)) {
+          damageOverride = ""
+        }if (weapon.melee === false && damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || 0 === getFirstMod(weapon.attackDamage)) {
+          damageOverride = ""
+        }
         pc.items.push({
           name: weapon.name,
           type: 'weapon',
@@ -95,6 +103,8 @@ function _parseJSONPCs (pcObject) {
           system: {
             toHit: weapon.attackMod || '0',
             damage: weapon.attackDamage || '1d3',
+            damageWeapon: damageWeapon,
+            damageWeaponBonus: damageWeaponBonus,
             config: {
               attackBonusOverride: weapon.attackMod || '0',
               damageOverride: damageOverride

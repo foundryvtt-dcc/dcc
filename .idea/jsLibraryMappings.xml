@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <file url="PROJECT" libraries="{commons.js, foundry.js, handlebars.js, prosemirror.js}" />
+    <file url="PROJECT" libraries="{foundry-esm.js-win, foundry.js-win}" />
   </component>
 </project>

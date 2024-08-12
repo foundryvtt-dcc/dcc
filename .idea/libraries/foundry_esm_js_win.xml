@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="foundry-esm.js-win" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/../../../../../../Program Files/Foundry Virtual Tabletop/resources/app/public/scripts/foundry-esm.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../../../../../Program Files/Foundry Virtual Tabletop/resources/app/public/scripts/foundry-esm.js" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

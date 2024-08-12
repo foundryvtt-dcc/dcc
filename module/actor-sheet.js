@@ -873,17 +873,6 @@ class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  // setPosition (options = {}) {
-  //   const position = super.setPosition(options)
-  //   const sheetBody = this.element.find('.sheet-body')
-  //   // const bodyHeight = position.height - 192
-  //   sheetBody.css('height', bodyHeight)
-  //   return position
-  // }
-
-  /* -------------------------------------------- */
-
-  /** @override */
   async _updateObject (event, formData) {
     // Handle owned item updates separately
     if (event.currentTarget) {

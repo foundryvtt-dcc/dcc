@@ -42,7 +42,6 @@ class DCCItem extends Item {
           this.system.toHit = this.system.config.attackBonusOverride
         }
 
-
         // Damage Calculation
         if (this.system.melee) {
           this.system.damage = `${this.system.damageWeapon}${this.actor.system.details.attackDamageBonus?.melee?.value || ''}`

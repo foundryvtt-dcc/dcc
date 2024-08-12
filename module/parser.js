@@ -37,7 +37,7 @@ class DCCActorParser extends FormApplication {
     context.config = CONFIG.DCC
     context.folders = []
 
-    context.importType= game.settings.get('dcc', 'lastImporterType')
+    context.importType = game.settings.get('dcc', 'lastImporterType')
 
     // Gather the list of actor folders
     for (const folder of game.actors.directory.folders) {
@@ -72,14 +72,21 @@ class DCCActorParser extends FormApplication {
 async function createActors (type, folderId, actorData) {
   // Process the stat block
   let parsedCharacters
-  try {
-    parsedCharacters = (type === 'Player') ? await parsePCs(actorData) : await parseNPCs(actorData)
-  } catch (e) {
-    console.error(e)
-    if (type === 'Player') {
+  if (type === 'Player') {
+    try {
+      parsedCharacters = parsePCs(actorData)
+    } catch (e) {
+      console.error(e)
       return ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
-    } else {
-      return ui.notifications.warn(game.i18n.localize('DCC.ParseNPCWarning'))
+    }
+  }
+
+  if (type === 'NPC') {
+    try {
+      parsedCharacters = await parseNPCs(actorData)
+    } catch (e) {
+      console.error(e)
+      return ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
     }
   }
 
@@ -123,8 +130,8 @@ async function createActors (type, folderId, actorData) {
     }
   }
 
-  // Cache available items if importing players
-  // @TODO Implement a configuration mechanism for providing additional packs
+// Cache available items if importing players
+// @TODO Implement a configuration mechanism for providing additional packs
   const itemMap = {}
   if (type === 'Player') {
     for (const packPath of CONFIG.DCC.actorImporterItemPacks) {
@@ -212,7 +219,10 @@ async function createActors (type, folderId, actorData) {
             // Copy relevant fields from the original object to maintain modifiers and stats
             if (originalItem.type === 'weapon') {
               newItem.system.toHit = originalItem.system.toHit
+              newItem.system.config = originalItem.system.config
               newItem.system.damage = originalItem.system.damage
+              newItem.system.damageWeapon = originalItem.system.damageWeapon
+              newItem.system.damageWeaponBonus = originalItem.system.damageWeaponBonus
               newItem.system.melee = originalItem.system.melee
               newItem.system.equipped = true
             } else if (originalItem.type === 'armor') {
@@ -249,7 +259,7 @@ async function createActors (type, folderId, actorData) {
  * @return {Promise}
  */
 function onRenderActorDirectory (app, html) {
-  if (!game.user.hasPermission("ACTOR_CREATE")) {
+  if (!game.user.hasPermission('ACTOR_CREATE')) {
     return Promise.resolve()
   }
   const button = $(`<button class="import-actors"><i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImport')}</button>`)

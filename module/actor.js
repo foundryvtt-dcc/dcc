@@ -1,6 +1,6 @@
 /* global Actor, ChatMessage, CONFIG, CONST, dcc, game, ui, Roll, foundry */
 
-import { signOrBlank } from './utilities.js'
+import { addPlus } from './utilities.js'
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -21,6 +21,12 @@ class DCCActor extends Actor {
     // Get configuration data
     const config = this._getConfig()
     const data = this.system
+
+    // Compute Melee/Ranged Attack/Damage
+    // Here as opposed to derived since items depend on these values
+    if (config.computeMeleeAndMissileAttackAndDamage) {
+      this.calculateMeleeAndMissileAttackAndDamage()
+    }
 
     // Cap level if required
     if (config.capLevel) {
@@ -55,8 +61,6 @@ class DCCActor extends Actor {
     if (data.config.computeCheckPenalty) {
       data.attributes.ac.checkPenalty = checkPenalty
     }
-
-    // Calculate
   }
 
   /** @override */
@@ -72,11 +76,6 @@ class DCCActor extends Actor {
         'system.speed.base': this.system.attributes.speed.value
       })
       this.system.speed.base = this.system.attributes.speed.value
-    }
-
-    // Compute Melee/Ranged Attack/Damage
-    if (config.computeMeleeAndMissileAttackAndDamage) {
-      this.calculateMeleeAndMissileAttackAndDamage()
     }
 
     // Compute AC if required
@@ -322,23 +321,23 @@ class DCCActor extends Actor {
       const deedDie = attackBonus.match(/[+-]?(\d+d\d+)/) ? attackBonus.match(/[+-]?(\d+d\d+)/)[1] : attackBonus
       const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
       const deedMod = attackBonus.startsWith('-') ? '-' : '+'
-      meleeAttackBonus = `${deedMod}${deedDie}${signOrBlank(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
-      missileAttackBonus = `${deedMod}${deedDie}${signOrBlank(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
-      meleeAttackDamage = `${deedMod}${deedDie}${signOrBlank(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
-      missileAttackDamage = `${deedMod}${deedDie}${signOrBlank(missileDamageBonusAdjustment + attackBonusBonus)}`
+      meleeAttackBonus = `${deedMod}${deedDie}${addPlus(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
+      missileAttackBonus = `${deedMod}${deedDie}${addPlus(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
+      meleeAttackDamage = `${deedMod}${deedDie}${addPlus(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
+      missileAttackDamage = `${deedMod}${deedDie}${addPlus(missileDamageBonusAdjustment + attackBonusBonus)}`
     } else {
       const meleeAttackBonusSum = parseInt(attackBonus) + strengthBonus + meleeAttackBonusAdjustment
       const missileAttackBonusSum = parseInt(attackBonus) + agilityBonus + missileAttackBonusAdjustment
-      meleeAttackBonus = `${signOrBlank(meleeAttackBonusSum)}`
-      missileAttackBonus = `${signOrBlank(missileAttackBonusSum)}`
-      meleeAttackDamage = `${signOrBlank(strengthBonus + meleeDamageBonusAdjustment)}`
-      missileAttackDamage = `${signOrBlank(missileDamageBonusAdjustment)}`
+      meleeAttackBonus = `${addPlus(meleeAttackBonusSum)}`
+      missileAttackBonus = `${addPlus(missileAttackBonusSum)}`
+      meleeAttackDamage = `${addPlus(strengthBonus + meleeDamageBonusAdjustment)}`
+      missileAttackDamage = `${addPlus(missileDamageBonusAdjustment)}`
     }
     this.system.details.attackHitBonus.melee.value = meleeAttackBonus
     this.system.details.attackHitBonus.missile.value = missileAttackBonus
     this.system.details.attackDamageBonus.melee.value = meleeAttackDamage
     this.system.details.attackDamageBonus.missile.value = missileAttackDamage
-    this.system.details.attackBonus = signOrBlank(attackBonus) || '+0'
+    this.system.details.attackBonus = addPlus(attackBonus) || '+0'
   }
 
   /**
