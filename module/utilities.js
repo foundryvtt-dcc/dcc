@@ -1,11 +1,14 @@
 //Force a + on the front of positive strings
-export function addPlus (value) {
+export function ensurePlus (value, includeZero=true) {
   let sign = ''
   if (parseInt(value) >= 0 && value[0] !== '+') {
     sign = '+'
   }
   if (value[0] === 'd') {
     sign = '+'
+  }
+  if (!includeZero && parseInt(value) === 0) {
+    return ''
   }
   return `${sign}${value}`
 }

@@ -53,60 +53,51 @@ function _parseJSONPCs (pcObject) {
       pc['attributes.hp.value'] = pc['attributes.hp.max'] = pcObject.hitPoints
     }
     let hitDice = '1d4'
-    let findSecretDoors = CONFIG.DCC.abilityModifiers[pcObject.intelligenceScore] || 0
     if (pcObject.className) {
-      switch (pcObject.className.toLowerCase()) {
-        case 'cleric':
-          hitDice = '1d8'
-          break
-        case 'thief':
-          hitDice = '1d6'
-          break
-        case 'halfling':
-          hitDice = '1d6'
-          break
-        case 'warrior':
-          hitDice = '1d12'
-          break
-        case 'wizard':
-          hitDice = '1d4'
-          break
-        case 'dwarf':
-          hitDice = '1d10'
-          break
-        case 'elf':
-          hitDice = '1d6'
-          findSecretDoors += 4
-          break
-      }
+      hitDice = CONFIG.DCC.hitDiePerClass[pcObject.className.toLowerCase()]
     }
     pc['attributes.hitDice.value'] = hitDice
-    pc['skills.findSecretDoors.value'] = findSecretDoors
     pc.items = []
     if (pcObject.weapons) {
       for (const weapon of pcObject.weapons) {
-        let damageOverride = ""
+        // Split damage into weapon damage and bonus
+        const damageWeapon = getFirstDie(weapon.attackDamage)
+        const damageWeaponBonus = getFirstMod(weapon.name)
+
+        // Do we need to override the damage or is it standard stuff?
+        let damageOverride = ''
         if (weapon.attackDamage.includes('+') || weapon.attackDamage.includes('-')) {
           damageOverride = weapon.attackDamage || '1d3'
         }
-        const damageWeapon = getFirstDie(weapon.attackDamage)
-        const damageWeaponBonus = getFirstMod(weapon.name)
         if (weapon.melee === true && damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || 0 === getFirstMod(weapon.attackDamage)) {
-          damageOverride = ""
-        }if (weapon.melee === false && damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || 0 === getFirstMod(weapon.attackDamage)) {
-          damageOverride = ""
+          damageOverride = ''
         }
+        if (weapon.melee === false && damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || 0 === getFirstMod(weapon.attackDamage)) {
+          damageOverride = ''
+        }
+
+        // Do we need to override the toHit or is it standard stuff?
+        const attackBonusWeapon = getFirstMod(weapon.name)
+        let attackBonusOverride = weapon.attackMod || '0'
+        if (weapon.melee === true && pcObject.attackBonus || 0 + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || 0 === attackBonusOverride) {
+          attackBonusOverride = ''
+        }
+        if (weapon.melee === false && pcObject.attackBonus || 0 + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || 0 === attackBonusOverride) {
+          attackBonusOverride = ''
+        }
+
         pc.items.push({
           name: weapon.name,
           type: 'weapon',
           img: weapon.img,
           system: {
+            attackBonusWeapon: attackBonusWeapon,
             toHit: weapon.attackMod || '0',
             damage: weapon.attackDamage || '1d3',
             damageWeapon: damageWeapon,
             damageWeaponBonus: damageWeaponBonus,
             config: {
-              attackBonusOverride: weapon.attackMod || '0',
+              attackBonusOverride: attackBonusOverride,
               damageOverride: damageOverride
             },
             melee: weapon.melee

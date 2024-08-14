@@ -160,8 +160,8 @@
       },
       "player": {
         "skills": {
-          "findSecretDoors": {
-            "label": "DCC.FindSecretDoors",
+          "detectSecretDoors": {
+            "label": "DCC.DetectSecretDoors",
             "value": "+0"
           }
         },
@@ -317,7 +317,7 @@
           "spellCheck": 1
         },
         "skills": {
-          "findSecretDoors": {
+          "detectSecretDoors": {
             "label": "DCC.HeightenedSenses",
             "ability": "int",
             "value": "+4"

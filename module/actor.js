@@ -1,6 +1,6 @@
 /* global Actor, ChatMessage, CONFIG, CONST, dcc, game, ui, Roll, foundry */
 
-import { addPlus } from './utilities.js'
+import { ensurePlus } from './utilities.js'
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -22,7 +22,7 @@ class DCCActor extends Actor {
     const config = this._getConfig()
     const data = this.system
 
-    // Compute Melee/Ranged Attack/Damage
+    // Compute Melee/Missile Attack/Damage
     // Here as opposed to derived since items depend on these values
     if (config.computeMeleeAndMissileAttackAndDamage) {
       this.calculateMeleeAndMissileAttackAndDamage()
@@ -69,6 +69,10 @@ class DCCActor extends Actor {
 
     // Get configuration data
     const config = this._getConfig()
+
+    if (this.system.details.sheetClass === 'Elf') {
+      this.system.skills.detectSecretDoors.value = '+4'
+    }
 
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
@@ -319,25 +323,24 @@ class DCCActor extends Actor {
     let missileAttackDamage = ''
     if (attackBonus.includes('d')) {
       const deedDie = attackBonus.match(/[+-]?(\d+d\d+)/) ? attackBonus.match(/[+-]?(\d+d\d+)/)[1] : attackBonus
-      const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
-      const deedMod = attackBonus.startsWith('-') ? '-' : '+'
-      meleeAttackBonus = `${deedMod}${deedDie}${addPlus(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus)}`
-      missileAttackBonus = `${deedMod}${deedDie}${addPlus(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus)}`
-      meleeAttackDamage = `${deedMod}${deedDie}${addPlus(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus)}`
-      missileAttackDamage = `${deedMod}${deedDie}${addPlus(missileDamageBonusAdjustment + attackBonusBonus)}`
+      let attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
+      meleeAttackBonus = `${ensurePlus(deedDie)}${ensurePlus(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus, false)}`
+      missileAttackBonus = `${ensurePlus(deedDie)}${ensurePlus(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus, false)}`
+      meleeAttackDamage = `${ensurePlus(deedDie)}${ensurePlus(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus, false)}`
+      missileAttackDamage = `${ensurePlus(deedDie)}${ensurePlus(missileDamageBonusAdjustment + attackBonusBonus, false)}`
     } else {
       const meleeAttackBonusSum = parseInt(attackBonus) + strengthBonus + meleeAttackBonusAdjustment
       const missileAttackBonusSum = parseInt(attackBonus) + agilityBonus + missileAttackBonusAdjustment
-      meleeAttackBonus = `${addPlus(meleeAttackBonusSum)}`
-      missileAttackBonus = `${addPlus(missileAttackBonusSum)}`
-      meleeAttackDamage = `${addPlus(strengthBonus + meleeDamageBonusAdjustment)}`
-      missileAttackDamage = `${addPlus(missileDamageBonusAdjustment)}`
+      meleeAttackBonus = `${ensurePlus(meleeAttackBonusSum)}`
+      missileAttackBonus = `${ensurePlus(missileAttackBonusSum)}`
+      meleeAttackDamage = `${ensurePlus(strengthBonus + meleeDamageBonusAdjustment)}`
+      missileAttackDamage = `${ensurePlus(missileDamageBonusAdjustment)}`
     }
     this.system.details.attackHitBonus.melee.value = meleeAttackBonus
     this.system.details.attackHitBonus.missile.value = missileAttackBonus
     this.system.details.attackDamageBonus.melee.value = meleeAttackDamage
     this.system.details.attackDamageBonus.missile.value = missileAttackDamage
-    this.system.details.attackBonus = addPlus(attackBonus) || '+0'
+    this.system.details.attackBonus = ensurePlus(attackBonus, false) || '+0'
   }
 
   /**

@@ -139,7 +139,7 @@ export const migrateActorData = function (actor) {
   if ((currentVersion <= 0.50) || (currentVersion == null)) {
     updateData.update({
       'system.details.attackHitBonus.melee.value': actor.system.details.attackBonus,
-      'system.details.attackHitBonus.ranged.value': actor.system.details.attackBonus
+      'system.details.attackHitBonus.missile.value': actor.system.details.attackBonus
     })
     if (this.options.template === 'systems/dcc/templates/actor-sheet-npc.html' ||
       this.options.template === 'systems/dcc/templates/actor-sheet-zero-level.html') {

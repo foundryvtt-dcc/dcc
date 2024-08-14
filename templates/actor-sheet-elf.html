@@ -38,12 +38,14 @@
             <div class="dark-border mb-8">
                 <div class="dark-title" style="">{{localize "DCC.ElfAbilities"}}</div>
                 <div class="grid-tpl-two grid-row-gap-8 p-5 label-font">
-                    <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="findSecretDoors">
-                        <label class="skill-check rollable" for="system.skills.findSecretDoors.value">
+                    <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
+                        <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
+                               title="{{localize 'DCC.HeightenedSensesDescription'}}">
                             {{localize "DCC.HeightenedSenses"}}
                         </label>
-                        <input type="text" id="system.skills.findSecretDoors.value" name="system.skills.findSecretDoors.value"
-                               value="{{system.skills.findSecretDoors.value}}" data-dtype="String"/>
+                        <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
+                               title="{{localize 'DCC.HeightenedSensesDescription'}}"
+                               value="{{system.skills.detectSecretDoors.value}}" data-dtype="String"/>
                     </div>
                     <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-ability="int">
                         <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>

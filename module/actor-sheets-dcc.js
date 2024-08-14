@@ -178,7 +178,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
 }
 
 /**
- * Extend the zero-level/NPC sheet for a Elf
+ * Extend the zero-level/NPC sheet for an Elf
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetElf extends DCCActorSheet {

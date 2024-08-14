@@ -48,7 +48,6 @@ Languages: Common`)
     'saves.frt.value': '0',
     'saves.ref.value': '-1',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': -2,
     items: [
       {
         name: 'Hammer (as club)',
@@ -154,7 +153,6 @@ test('beekeeper', () => {
     'saves.frt.value': '2',
     'saves.ref.value': '-2',
     'saves.wil.value': '-1',
-    'skills.findSecretDoors.value': -1,
     items: [
       {
         name: 'Staff',
@@ -243,7 +241,6 @@ Languages: Common`)
     'saves.frt.value': '0',
     'saves.ref.value': '-1',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': -2,
     items: [
       {
         name: 'Crowbar (2 gp)',
@@ -341,7 +338,6 @@ Languages: Common `)
       'saves.frt.value': '0',
       'saves.ref.value': '-1',
       'saves.wil.value': '2',
-      'skills.findSecretDoors.value': -2,
       items: [
         {
           name: 'Hammer (as club)',
@@ -403,7 +399,6 @@ Languages: Common `)
       'saves.frt.value': '0',
       'saves.ref.value': '0',
       'saves.wil.value': '0',
-      'skills.findSecretDoors.value': 0,
       items: [
         {
           name: 'Handaxe',
@@ -516,7 +511,6 @@ Spells: (Spell Check: d20+2)
     'saves.frt.value': '0',
     'saves.ref.value': '1',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': 1,
     items: [
       {
         name: 'Dagger',
@@ -727,7 +721,6 @@ Cast Spell From Scroll (d16)`
     'saves.frt.value': '1',
     'saves.ref.value': '5',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': 0,
     'class.backstab': '5',
     'skills.sneakSilently.value': '12',
     'skills.hideInShadows.value': '10',
@@ -881,7 +874,6 @@ Hide In Shadows: 11 (-4)`
     'saves.frt.value': '5',
     'saves.ref.value': '6',
     'saves.wil.value': '7',
-    'skills.findSecretDoors.value': 0,
     'skills.sneakAndHide.value': '11',
     'skills.sneakSilently.value': '11',
     'skills.hideInShadows.value': '11',
@@ -1020,7 +1012,6 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'saves.frt.value': '6',
     'saves.ref.value': '2',
     'saves.wil.value': '1',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Club',
@@ -1176,7 +1167,6 @@ Spells: (Spell Check: d20+12)
     'saves.frt.value': '2',
     'saves.ref.value': '3',
     'saves.wil.value': '7',
-    'skills.findSecretDoors.value': 2,
     items: [
       {
         name: 'Handaxe',
@@ -1529,7 +1519,6 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
     'saves.frt.value': '3',
     'saves.ref.value': '-1',
     'saves.wil.value': '0',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Staff',
@@ -1676,7 +1665,6 @@ Spells: (Spell Check: d20+5)
     'saves.frt.value': '0',
     'saves.ref.value': '2',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': 6,
     items: [
       {
         name: 'Shortbow',
@@ -1895,7 +1883,6 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'saves.frt.value': '2',
     'saves.ref.value': '1',
     'saves.wil.value': '1',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Dagger',
@@ -2010,7 +1997,6 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'saves.frt.value': '2',
     'saves.ref.value': '1',
     'saves.wil.value': '1',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Dagger',
@@ -2129,7 +2115,6 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'saves.frt.value': '2',
     'saves.ref.value': '1',
     'saves.wil.value': '1',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Dagger',
@@ -2285,7 +2270,6 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       'saves.frt.value': '0',
       'saves.ref.value': '2',
       'saves.wil.value': '2',
-      'skills.findSecretDoors.value': 6,
       items: [
         {
           name: 'Shortbow',
@@ -2469,7 +2453,6 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       'saves.frt.value': '3',
       'saves.ref.value': '-1',
       'saves.wil.value': '0',
-      'skills.findSecretDoors.value': 0,
       items: [
         {
           name: 'Staff',

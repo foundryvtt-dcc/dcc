@@ -1,6 +1,7 @@
 /* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
 
 import DiceChain from './dice-chain.js'
+import { ensurePlus } from './utilities.js'
 
 /**
  * Extend the base Item entity for DCC RPG
@@ -29,7 +30,7 @@ class DCCItem extends Item {
         if (this.system.melee) {
           this.system.attackBonus = this.actor.system.details.attackHitBonus?.melee?.value
         } else {
-          this.system.attackBonus = this.actor.system.details.attackHitBonus?.ranged?.value
+          this.system.attackBonus = this.actor.system.details.attackHitBonus?.missile?.value
         }
         if (this.system.attackBonusWeapon) {
           this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusWeapon}`
@@ -39,14 +40,14 @@ class DCCItem extends Item {
         }
         this.system.toHit = this.system.attackBonus
         if (this.system.config.attackBonusOverride) {
-          this.system.toHit = this.system.config.attackBonusOverride
+          this.system.toHit = ensurePlus(this.system.config.attackBonusOverride)
         }
 
         // Damage Calculation
         if (this.system.melee) {
           this.system.damage = `${this.system.damageWeapon}${this.actor.system.details.attackDamageBonus?.melee?.value || ''}`
         } else {
-          this.system.damage = `${this.system.damageWeapon}${this.actor.system.details.attackDamageBonus?.ranged?.value || ''}`
+          this.system.damage = `${this.system.damageWeapon}${this.actor.system.details.attackDamageBonus?.missile?.value || ''}`
         }
         if (this.system.damageWeaponBonus) {
           this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
