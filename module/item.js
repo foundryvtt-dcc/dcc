@@ -38,20 +38,25 @@ class DCCItem extends Item {
         if (this.system.attackBonusLucky) {
           this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusLucky}`
         }
-        this.system.toHit = this.system.attackBonus
+        this.system.toHit = ensurePlus(this.system.attackBonus.includes('d') ? this.system.attackBonus : Roll.safeEval(this.system.attackBonus ))
         if (this.system.config.attackBonusOverride) {
           this.system.toHit = ensurePlus(this.system.config.attackBonusOverride)
         }
 
         // Damage Calculation
         if (this.system.melee) {
-          this.system.damage = `${this.system.damageWeapon}${this.actor.system.details.attackDamageBonus?.melee?.value || ''}`
+          this.system.damage = this.actor.system.details.attackDamageBonus?.melee?.value || ''
         } else {
-          this.system.damage = `${this.system.damageWeapon}${this.actor.system.details.attackDamageBonus?.missile?.value || ''}`
+          this.system.damage = this.actor.system.details.attackDamageBonus?.missile?.value || ''
         }
         if (this.system.damageWeaponBonus) {
-          this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
+          if (this.system.damage.includes('d') || this.system.damageWeaponBonus.includes('d')) {
+            this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
+          } else {
+            this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
+          }
         }
+        this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
         if (this.system.doubleIfMounted) {
           this.system.damage = `(${this.system.damage})*2`
         }
