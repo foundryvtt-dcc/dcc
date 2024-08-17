@@ -17,6 +17,7 @@ class DCCActorSheetCleric extends DCCActorSheet {
   async getData (options) {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-cleric.html'
+    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
     data.system.class.className = game.i18n.localize('DCC.Cleric')
     data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
 
@@ -45,6 +46,7 @@ class DCCActorSheetThief extends DCCActorSheet {
   async getData (options) {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
+    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
     data.system.class.className = game.i18n.localize('DCC.Thief')
     data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
 
@@ -74,6 +76,7 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   async getData (options) {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
+    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
     data.system.class.className = game.i18n.localize('DCC.Halfling')
     data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
 
@@ -102,6 +105,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   async getData (options) {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
+    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
     data.system.class.className = game.i18n.localize('DCC.Warrior')
     data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink'))
     data.system.class.mightyDeedsLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
@@ -130,6 +134,7 @@ class DCCActorSheetWizard extends DCCActorSheet {
   async getData (options) {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-wizard.html'
+    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
     data.system.class.className = game.i18n.localize('DCC.Wizard')
     data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink'))
 
@@ -159,6 +164,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   async getData (options) {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-dwarf.html'
+    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
     data.system.class.className = game.i18n.localize('DCC.Dwarf')
     data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink'))
     data.system.class.mightyDeedsLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
@@ -188,6 +194,7 @@ class DCCActorSheetElf extends DCCActorSheet {
   async getData (options) {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-elf.html'
+    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
     data.system.class.className = game.i18n.localize('DCC.Elf')
     data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
 
@@ -217,6 +224,7 @@ class DCCActorSheetGeneric extends DCCActorSheet {
   async getData (options) {
     const data = await super.getData(options)
     this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
+    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
     data.system.class.className = game.i18n.localize('DCC.Generic')
 
     this.actor.update({

@@ -194,7 +194,7 @@
   background: var(--dark-bg);
   color: var(--light-color);
   font-family: "Cooper Black", "Palatino Linotype", serif;
-  min-height: 19px;
+  height: 19px;
   letter-spacing: 1px;
   padding-top: 1px;
   text-align: center;
@@ -255,12 +255,16 @@
   cursor: pointer;
   text-shadow: 0 0 10px red;
 }
-.dcc.sheet.actor {
+.dcc.sheet.actor.pc {
   min-height: 639px;
   min-width: 520px;
 }
+.dcc.sheet.actor {
+  min-height: 339px;
+  min-width: 525px;
+}
 .dcc .window-content {
-  padding: 8px;
+  padding: 1px 8px 8px 8px;
 }
 .dcc .window-content form {
   height: 100%;
@@ -1197,6 +1201,62 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .character .saving-throw-box label {
   font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.dcc .npc-grid {
+  height: 100%;
+}
+.dcc .npc-grid .ac-and-hp {
+  display: grid;
+  font-size: 12px;
+  grid-template-rows: 50px 15px 16px;
+  text-align: center;
+}
+.dcc .npc-grid .ac-and-hp input {
+  align-self: center;
+  border: none;
+  font-size: 22px;
+}
+.dcc .npc-grid .combat-basics {
+  column-gap: 5px;
+  display: grid;
+  grid-template-columns: minmax(86px, 1fr) minmax(35px, 1fr) minmax(75px, 1fr) minmax(35px, 1fr);
+}
+.dcc .npc-grid .name-and-level {
+  column-gap: 12px;
+  display: grid;
+  grid-template-columns: subgrid;
+  text-align: left;
+}
+.dcc .npc-grid .name-and-level label {
+  font-size: 13px;
+}
+.dcc .npc-grid .saving-throws {
+  display: grid;
+  row-gap: 5px;
+  margin: 0 0 0 0;
+  padding: 0;
+}
+.dcc .npc-grid .saving-throw-box {
+  align-items: center;
+  background: var(--dark-bg);
+  color: var(--light-color);
+  display: grid;
+  grid-template-columns: 24px 40px;
+  text-align: left;
+}
+.dcc .npc-grid .saving-throw-box input {
+  align-self: center;
+  background: #DBD9CD;
+  border-radius: 10px;
+  font-size: 12px;
+  height: 20px;
+  margin-left: 5px;
+  width: 20px;
+}
+.dcc .npc-grid .saving-throw-box label {
+  font-size: 11px;
   letter-spacing: 1px;
 }
 

@@ -26,6 +26,7 @@ import { defineStatusIcons } from './status-icons.js'
 
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
+import DCCActorSheet from './actor-sheet.js'
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -59,6 +60,11 @@ Hooks.once('init', async function () {
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheet)
+  Actors.registerSheet('dcc', DCCActorSheet, {
+    types: ['NPC'],
+    label: 'DCC.DCCActorSheet',
+    makeDefault: true
+  })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
     types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetCleric'
@@ -90,7 +96,6 @@ Hooks.once('init', async function () {
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
     types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetGeneric',
-    makeDefault: true,
   })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet, {
@@ -101,6 +106,7 @@ Hooks.once('init', async function () {
   // Register shared template for upper level characters
   const templatePaths = [
     'systems/dcc/templates/actor-partial-pc-common.html',
+    'systems/dcc/templates/actor-partial-npc-common.html',
     'systems/dcc/templates/actor-partial-pc-equipment.html',
     'systems/dcc/templates/actor-partial-pc-notes.html',
     'systems/dcc/templates/actor-partial-skills.html',

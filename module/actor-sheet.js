@@ -9,12 +9,12 @@ import EntityImages from './entity-images.js'
  * @extends {ActorSheet}
  */
 class DCCActorSheet extends ActorSheet {
-  static height = 638
+  static height = 438
 
   /** @override */
   static get defaultOptions () {
     const options = {
-      classes: ['dcc', 'sheet', 'actor'],
+      classes: ['dcc', 'sheet', 'actor', 'npc'],
       width: 520,
       height: this.height,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
@@ -25,7 +25,8 @@ class DCCActorSheet extends ActorSheet {
         '.tab.equipment .equipment-container',
         '.tab.skills',
         '.tab.spells'
-      ]
+      ],
+      template: 'systems/dcc/templates/actor-sheet-npc.html'
     }
     const finalOptions = foundry.utils.mergeObject(super.defaultOptions, options)
     return finalOptions
