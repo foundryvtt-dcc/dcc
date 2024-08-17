@@ -1,0 +1,38 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+    {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
+    <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Unknown" data-dtype="String"/>
+    <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a data-tab="character">{{localize "DCC.Character"}}</a>
+        <a data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        {{#if system.config.showSpells}}
+        <a data-tab="spells">{{localize "DCC.Spells"}}</a>
+        {{/if}}
+        {{#if system.config.showSkills}}
+        <a data-tab="skills">{{localize "DCC.Skills"}}</a>
+        {{/if}}
+        <a data-tab="notes">{{localize "DCC.Notes"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+        {{!-- Character Tab --}}
+        {{> systems/dcc/templates/actor-partial-npc-common.html }}
+
+        {{!-- Equipment Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+
+        {{!-- Spells Tab --}}
+        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
+
+        {{!-- Skills Tab --}}
+        {{> systems/dcc/templates/actor-partial-skills.html }}
+
+        {{!-- Notes Tab --}}
+        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+    </section>
+</form>
+
