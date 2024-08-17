@@ -1,22 +1,22 @@
 {{!-- Character Tab --}}
 <div class="tab" data-group="primary" data-tab="character">
-    <div class="grid-container grid-col-gap-8 grid-row-gap-5 npc-grid">
+    <div class="grid-container grid-col-gap-5 grid-row-gap-5 npc-grid">
         {{!-- Name Section --}}
-            <div class="grid-tpl-max-auto grid-col-span-7">
-                <label for="name">{{localize "DCC.Name"}}</label>
-                <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.CharacterName'}}"
-                       placeholder="{{localize 'DCC.CharacterName'}}" autocomplete="off">
-            </div>
+        <div class="grid-tpl-max-auto grid-col-span-7">
+            <label for="name">{{localize "DCC.Name"}}</label>
+            <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.CharacterName'}}"
+                   placeholder="{{localize 'DCC.CharacterName'}}" autocomplete="off">
+        </div>
 
-            <div class="grid-tpl-max-auto grid-col-span-5">
-                <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
-                <select id="system.details.alignment" name="system.details.alignment"
-                        style="width: 118px; font-size: 12px; height: 17px; ">
-                    {{selectOptions config.alignments selected=system.details.alignment localize=true}}
-                </select>
-            </div>
+        <div class="grid-tpl-max-auto grid-col-span-5">
+            <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
+            <select id="system.details.alignment" name="system.details.alignment"
+                    style="width: 118px; font-size: 12px; height: 17px; ">
+                {{selectOptions config.alignments selected=system.details.alignment localize=true}}
+            </select>
+        </div>
 
-        <div class="ac-and-hp grid-tpl-two grid-col-span-3">
+        <div class="ac-and-hp grid-align-just-center grid-tpl-two grid-col-span-3">
             {{!-- AC --}}
             <svg style="grid-area: 1/1; justify-self: center;" width="58" height="50" viewBox="0 0 68 64"
                  fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -32,22 +32,23 @@
                    disabled
                 {{/if}}
                    data-dtype="Number">
-            <label for="system.attributes.ac.value" style="grid-area: 2/1/4/1; line-height: 15px;">
+            <label for="system.attributes.ac.value" style="grid-area: 2/1/4/1; line-height: 14px;">
                 {{{localize "DCC.ArmorClass"}}}
             </label>
             <svg style="grid-area: 1/2; justify-self: center" width="70" height="50" viewBox="0 0 70 64"
                  fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="black" stroke-opacity="0.75" stroke-width="5"></path>
             </svg>
-            
+
             {{!-- HP --}}
             <input style="grid-area: 1/2" id="system.attributes.hp.value" name="system.attributes.hp.value"
                    value="{{system.attributes.hp.value}}"
                    data-dtype="Number">
-            <label for="system.attributes.hp.value" style="grid-row: 2; min-width: 72px">{{localize "DCC.HitPoints"}}</label>
-            <div class="grid-tpl-max-auto" style="grid-area: 3/2; font-size: 12px; margin-bottom: 0;">
-                <label style="font-size: 12px; line-height: 16px;" for="system.attributes.hp.max">{{localize "DCC.Max"}}:</label>
-                <input style="font-size: 12px; border-bottom: 1px solid rgba(0, 0, 0, 0.5); width:min-content;"
+            <label for="system.attributes.hp.value" style="grid-row: 2; min-width: 72px; margin-top: 4px;">{{localize
+                "DCC.HitPoints"}}</label>
+            <div class="grid-tpl-max-auto" style="grid-area: 3/2;">
+                <label style="line-height: 16px;" for="system.attributes.hp.max">{{localize "DCC.Max"}}:</label>
+                <input style="font-size: 12px; height: 16px; border-bottom: 1px solid rgba(0, 0, 0, 0.5); width: min-content;"
                        id="system.attributes.hp.max" name="system.attributes.hp.max" value="{{system.attributes.hp.max}}" size="3">
             </div>
         </div>
@@ -55,7 +56,7 @@
         {{!-- Combat Basics --}}
         <div class="dark-border grid-col-span-7">
             <div class="dark-title">Combat Basics</div>
-            <div class="p-5 combat-basics grid-align-center">
+            <div class="combat-basics grid-align-center h-100-19">
                 {{!-- Action Dice --}}
                 <label for="system.attributes.actionDice.value">{{localize "DCC.ActionDice"}}</label>
                 <input id="system.attributes.actionDice.value" name="system.attributes.actionDice.value"
@@ -114,11 +115,12 @@
 
         {{!-- Saving throws --}}
         {{#* inline "save"}}
-            <div class="saving-throw-box grid-col-gap-8" id="{{id}}" data-save="{{id}}">
+            <div class="saving-throw-box grid-col-gap-5" id="{{id}}" data-save="{{id}}">
                 <input id="system.saves.{{id}}.value" value="{{numberFormat save.value decimals=0 sign=true}}"
                        name="system.saves.{{id}}.value" data-dtype="Number" placeholder="0">
-                <label for="system.saves.{{id}}.value" class="rollable">{{#if isFortitude}}{{localize
-                    "DCC.SavesFortitudeAbbr"}}{{else}}{{localize save.label}}{{/if}}</label>
+                <label for="system.saves.{{id}}.value" class="rollable">
+                    {{#if isFortitude}}{{localize "DCC.SavesFortitudeAbbr"}}{{else}}{{localize save.label}}{{/if}}
+                </label>
             </div>
         {{/inline}}
         <div class="saving-throws grid-col-span-2">
@@ -129,23 +131,24 @@
 
         {{!-- Special --}}
         <div class="dark-border grid-col-span-10">
-            <label class="dark-title">{{localize "DCC.Special"}}</label>
-            <div class="p-5" style="height: 100%;">
-                <textarea style="resize: none; height: calc(100% - 19px); margin-bottom: 5px; border: none; background: none; text-align: left; vertical-align: top; border-radius: 0;" id="system.attributes.special.value"
+            <label class="dark-title" for="system.attributes.special.value">{{localize "DCC.Special"}}</label>
+            <div class="h100-19 p-3">
+                <textarea id="system.attributes.special.value"
                           name="system.attributes.special.value"
-                          data-dtype="String">
-                    {{system.attributes.special.value}}
-                </textarea>
+                          rows="3"
+                          style="height: 100%;"
+                          data-dtype="String">{{system.attributes.special.value}}</textarea>
             </div>
         </div>
 
         {{!-- Portrait --}}
-        <div class="dark-border grid-col-span-2" style="overflow: hidden;">
+        <div class="dark-border grid-col-span-2 portrait">
             <div class="dark-title">{{localize "DCC.Portrait"}}</div>
-            <div class="p-3 grid-align-just-center" style="height: calc(100% - 19px); width: 95%; aspect-ratio: 1 / 1; overflow: hidden;">
-                <img id="portrait" src="{{actor.img}}" data-edit="img" height="64px" width="64px"
-                     style="width: 95%; height: 95%;"
-                alt="{{localize 'DCC.CharacterPortrait'}}">
+            <div class="p-3 grid-align-just-center portrait-wrap">
+                <img id="portrait" src="{{actor.img}}"
+                     data-edit="img" height="48px" width="48px"
+                     alt="{{localize 'DCC.CharacterPortrait'}}"
+                >
             </div>
         </div>
 
@@ -196,53 +199,57 @@
                 </div>
             </li>
         {{/inline}}
-        <div class="dark-title grid-col-span-12">{{localize "DCC.MeleeWeapons"}}</div>
-        <ol class="weapon-list dark-border grid-col-span-12">
-            <li class="grid-col-span-9 weapon-list-header">
-                <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
-                <div></div>
-                <div title="{{localize 'DCC.Roll'}}"></div>
-                <div>{{localize "DCC.Name"}}</div>
-                <div>{{localize "DCC.ToHit"}}</div>
-                <div>{{localize "DCC.Damage"}}</div>
-                <div>{{localize "DCC.Notes"}}</div>
-                <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
-                <div>
-                    <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon"
-                       data-melee=1>
-                        <i class="fas fa-plus"></i>
-                        {{localize "DCC.Add"}}
-                    </a>
-                </div>
-            </li>
-            {{#each actor.weapons.melee as |weapon index|}}
-                {{> weaponRow weapon=weapon id=weapon._id melee=true index=index canBackstab=../system.config.showBackstab}}
-            {{/each}}
-        </ol>
+        <div class="dark-border grid-col-span-12">
+            <div class="dark-title">{{localize "DCC.MeleeWeapons"}}</div>
+            <ol class="weapon-list" style="margin-bottom: 0;">
+                <li class="grid-col-span-9 weapon-list-header">
+                    <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
+                    <div></div>
+                    <div title="{{localize 'DCC.Roll'}}"></div>
+                    <div>{{localize "DCC.Name"}}</div>
+                    <div>{{localize "DCC.ToHit"}}</div>
+                    <div>{{localize "DCC.Damage"}}</div>
+                    <div>{{localize "DCC.Notes"}}</div>
+                    <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
+                    <div>
+                        <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon"
+                           data-melee=1>
+                            <i class="fas fa-plus"></i>
+                            {{localize "DCC.Add"}}
+                        </a>
+                    </div>
+                </li>
+                {{#each actor.weapons.melee as |weapon index|}}
+                    {{> weaponRow weapon=weapon id=weapon._id melee=true index=index canBackstab=../system.config.showBackstab}}
+                {{/each}}
+            </ol>
+        </div>
 
         {{!-- Ranged Weapons --}}
-        <div class="dark-title grid-col-span-12">{{localize "DCC.RangedWeapons"}}</div>
-        <ol class="weapon-list dark-border grid-col-span-12">
-            <li class="grid-col-span-9 weapon-list-header">
-                <div title="{{localize 'DCC.WeaponEquipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
-                <div></div>
-                <div title="{{localize 'DCC.Roll'}}"></div>
-                <div>{{localize "DCC.Name"}}</div>
-                <div>{{localize "DCC.ToHit"}}</div>
-                <div>{{localize "DCC.Damage"}}</div>
-                <div>{{localize "DCC.Range"}}</div>
-                <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
-                <div>
-                    <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon">
-                        <i class="fas fa-plus" data-melee=0></i>
-                        {{localize "DCC.Add"}}
-                    </a>
-                </div>
-            </li>
-            {{#each actor.weapons.ranged as |weapon index|}}
-                {{> weaponRow weapon=weapon id=weapon._id melee=false index=index canBackstab=../system.config.showBackstab}}
-            {{/each}}
-        </ol>
+        <div class="dark-border grid-col-span-12">
+            <div class="dark-title">{{localize "DCC.RangedWeapons"}}</div>
+            <ol class="weapon-list">
+                <li class="grid-col-span-9 weapon-list-header">
+                    <div title="{{localize 'DCC.WeaponEquipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
+                    <div></div>
+                    <div title="{{localize 'DCC.Roll'}}"></div>
+                    <div>{{localize "DCC.Name"}}</div>
+                    <div>{{localize "DCC.ToHit"}}</div>
+                    <div>{{localize "DCC.Damage"}}</div>
+                    <div>{{localize "DCC.Range"}}</div>
+                    <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
+                    <div>
+                        <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon">
+                            <i class="fas fa-plus" data-melee=0></i>
+                            {{localize "DCC.Add"}}
+                        </a>
+                    </div>
+                </li>
+                {{#each actor.weapons.ranged as |weapon index|}}
+                    {{> weaponRow weapon=weapon id=weapon._id melee=false index=index canBackstab=../system.config.showBackstab}}
+                {{/each}}
+            </ol>
+        </div>
 
     </div>
 </div>

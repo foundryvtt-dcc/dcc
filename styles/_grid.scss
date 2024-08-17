@@ -123,6 +123,17 @@
   grid-template-columns: max-content minmax(0, 1fr);
 }
 
+.h-100 {
+  height: 100%;
+}
+
+.h-100-19 {
+  height: calc(100% - 19px);
+}
+
+.mb-0 {
+  margin-bottom: 0;
+}
 
 .mb-3 {
   margin-bottom: 3px;
@@ -146,6 +157,10 @@
 
 .mt-8 {
   margin-top: 8px;
+}
+
+.p-3 {
+  padding: 3px;
 }
 
 .p-5 {
