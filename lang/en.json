@@ -525,6 +525,7 @@
   "DCC.Mounts": "Mounts",
   "DCC.Name": "Name",
   "DCC.NewActorName": "New {type}",
+  "DCC.NewAttack": "New Attack",
   "DCC.No": "No",
   "DCC.NoCharges": "No Charges",
   "DCC.NoFolder": "-",

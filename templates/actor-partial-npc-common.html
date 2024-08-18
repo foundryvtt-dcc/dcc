@@ -155,45 +155,30 @@
         {{!-- Melee Weapons --}}
         {{#* inline "weaponRow"}}
             <li class="grid-col-span-9 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
-                <input type="checkbox"
-                       name="itemUpdates.{{id}}.system.equipped"
-                       data-dtype="Boolean" {{checked weapon.system.equipped}}/>
-                <img class="weapon-draggable" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}"
-                     width="22" height="22">
                 <div class="attack-buttons">
                     <div class="rollable weapon-button weapon-draggable" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
-                    {{#if canBackstab}}
-                        <div class="rollable backstab-button weapon-draggable">&nbsp;</div>
-                    {{/if}}
                 </div>
-                <input class="weapon-name" type="text"
+                <input class="weapon-name grid-col-span-3" type="text"
                        name="itemUpdates.{{id}}.name"
                        value="{{weapon.name}}"/>
-                <input class="disabled" type="text"
-                       name="itemUpdates.{{id}}.system.toHit"
-                       value="{{weapon.system.toHit}}"
-                       readonly
+                <input type="text"
+                       name="itemUpdates.{{id}}.system.config.attackBonusOverride"
+                       value="{{weapon.system.config.attackBonusOverride}}"
                 />
-                <input class="weapon-damage disabled" type="text"
-                       name="itemUpdates.{{id}}.system.damage"
-                       value="{{weapon.system.damage}}"
-                       readonly
+                <input class="weapon-damage" type="text"
+                       name="itemUpdates.{{id}}.system.config.damageOverride"
+                       value="{{weapon.system.config.damageOverride}}"
                 />
                 {{#if melee}}
-                    <input class="weapon-notes" type="text"
+                    <input class="weapon-notes grid-col-span-2" type="text"
                            name="itemUpdates.{{id}}.system.description.summary"
                            value="{{{weapon.system.description.summary}}}"/>
                 {{else}}
-                    <input class="weapon-notes" type="text"
+                    <input class="weapon-notes grid-col-span-2" type="text"
                            name="itemUpdates.{{id}}.system.range"
                            value="{{weapon.system.range}}"/>
                 {{/if}}
-                <input type="checkbox"
-                       name="itemUpdates.{{id}}.system.trained"
-                       data-dtype="Boolean" {{checked weapon.system.trained}}/>
                 <div>
-                    <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i
-                        class="fas fa-edit"></i></a>
                     <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i
                         class="fas fa-trash"></i></a>
                 </div>
@@ -203,14 +188,11 @@
             <div class="dark-title">{{localize "DCC.MeleeAttacks"}}</div>
             <ol class="weapon-list" style="margin-bottom: 0">
                 <li class="grid-col-span-9 weapon-list-header">
-                    <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
-                    <div></div>
                     <div title="{{localize 'DCC.Roll'}}"></div>
-                    <div>{{localize "DCC.Name"}}</div>
+                    <div class="grid-col-span-3">{{localize "DCC.Name"}}</div>
                     <div>{{localize "DCC.ToHit"}}</div>
                     <div>{{localize "DCC.Damage"}}</div>
-                    <div>{{localize "DCC.Notes"}}</div>
-                    <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
+                    <div class="grid-col-span-2">{{localize "DCC.Notes"}}</div>
                     <div>
                         <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon"
                            data-melee=1>
@@ -230,14 +212,11 @@
             <div class="dark-title">{{localize "DCC.RangedAttacks"}}</div>
             <ol class="weapon-list" style="margin-bottom: 0">
                 <li class="grid-col-span-9 weapon-list-header">
-                    <div title="{{localize 'DCC.WeaponEquipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
-                    <div></div>
                     <div title="{{localize 'DCC.Roll'}}"></div>
-                    <div>{{localize "DCC.Name"}}</div>
+                    <div class="grid-col-span-3">{{localize "DCC.Name"}}</div>
                     <div>{{localize "DCC.ToHit"}}</div>
                     <div>{{localize "DCC.Damage"}}</div>
-                    <div>{{localize "DCC.Range"}}</div>
-                    <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
+                    <div class="grid-col-span-2">{{localize "DCC.Range"}}</div>
                     <div>
                         <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon">
                             <i class="fas fa-plus" data-melee=0></i>

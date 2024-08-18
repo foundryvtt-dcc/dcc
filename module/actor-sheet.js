@@ -856,7 +856,10 @@ class DCCActorSheet extends ActorSheet {
     // Grab any data associated with this control.
     const system = foundry.utils.duplicate(header.dataset)
     // Initialize a default name.
-    const name = `New ${type.capitalize()}`
+    let name = game.i18n.format('DCC.ItemNew', {type: type.capitalize()})
+    if (this.actor.type === 'NPC' && type === 'weapon') {
+      name = game.i18n.localize('DCC.NewAttack')
+    }
     // Prepare the item object.
     const itemData = {
       name,
