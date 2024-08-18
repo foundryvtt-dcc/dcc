@@ -529,6 +529,7 @@
   "DCC.No": "No",
   "DCC.NoCharges": "No Charges",
   "DCC.NoFolder": "-",
+  "DCC.NoModifiableTerms": "No modifiable terms found in roll formula.",
   "DCC.None": "None",
   "DCC.Normal": "Normal",
   "DCC.Notes": "Notes",
