@@ -612,8 +612,8 @@ async function showRollModifier (roll, options) {
   })
 }
 
-function createRollFromTerms (roll, options) {
-  return new RollModifierDialog(null, null, roll, options).roll
+function createRollFromTerms (terms, options) {
+  return new RollModifierDialog(null, null, terms, options).roll
 }
 
 export {
