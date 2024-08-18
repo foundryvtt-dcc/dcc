@@ -485,6 +485,10 @@ class DCCActor extends Actor {
       die = die.replace('1/2', '1').replace('½', '1')
       fraction = `ceil(${die}/2)`
     }
+    if (die.startsWith('1⁄4') || die.startsWith('¼')) {
+      die = die.replace('1/4', '1').replace('¼', '1')
+      fraction = `ceil(${die}/4)`
+    }
 
     // Collate terms for the roll
     let terms = [
