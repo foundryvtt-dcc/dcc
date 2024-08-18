@@ -174,6 +174,12 @@ function DCCCompoundTerm (options) {
         }
         terms.push(term)
       }
+    } else {
+      terms.push({
+        type: 'Compound',
+        partial: 'systems/dcc/templates/roll-modifier-partial-none.html',
+        formula: options.formula
+      })
     }
   }
   return terms
@@ -282,7 +288,7 @@ class RollModifierDialog extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options) {
     const data = {}
     data.user = game.user
     data.options = this.options

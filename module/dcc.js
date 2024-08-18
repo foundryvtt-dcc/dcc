@@ -118,6 +118,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/roll-modifier-partial-die.html',
     'systems/dcc/templates/roll-modifier-partial-disapproval-die.html',
     'systems/dcc/templates/roll-modifier-partial-modifiers.html',
+    'systems/dcc/templates/roll-modifier-partial-none.html',
     'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
     'systems/dcc/templates/roll-modifier-partial-spellburn.html'
   ]

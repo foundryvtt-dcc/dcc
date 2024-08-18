@@ -476,14 +476,21 @@ class DCCActor extends Actor {
    * Roll Hit Dice
    */
   async rollHitDice (options = {}) {
-    const die = this.system.attributes.hitDice.value || '1d4'
+    let die = this.system.attributes.hitDice.value || '1d4'
     options.title = game.i18n.localize('DCC.RollModifierHitDice')
 
+    // Handle fractional HD
+    let fraction = ''
+    if (die.startsWith('1⁄2') || die.startsWith('½')) {
+      die = die.replace('1/2', '1').replace('½', '1')
+      fraction = `ceil(${die}/2)`
+    }
+
     // Collate terms for the roll
-    const terms = [
+    let terms = [
       {
         type: 'Compound',
-        formula: die
+        formula: fraction || die
       }
     ]
 
