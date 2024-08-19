@@ -848,8 +848,8 @@
   "DCC.WeaponWarningUnequipped": "Cannot attack with unequipped weapon",
   "DCC.Welcome": {
     "Title": "Dungeon Crawl Classics",
-    "Heading": "Welcome to the DCC system for Foundry VTT!",
-    "Info": "<br><p style='text-align: center'><strong>Check out the <a href='https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide'>User Guide</a> for information on how to use this system.<strong></p>",
+    "Heading": "Welcome to the DCC system!",
+    "Info": "<br><h3 style='text-align: center' class='p-5'><strong>Check out the <a href='https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide'>User Guide</a> for information on how to use this system.<strong></h3>",
     "Credits": "<h2>Credits</h2><p>Foundry VTT conversion by Steve Barnett, Christian Ovsenik, and Tim L. White.</p><p>See @UUID[Compendium.dcc.dcc-userguide.JournalEntry.RvxZne9f9frrYsCH]{Credits} for other credits.</p>",
     "Copyright": "<h2>License and Copyright Information</h2><p>This module contains material from Goodman Games, used with permission.</p><p>DCC RPG is © 2012 Goodman Games.</p><p>Dungeon Crawl Classics is a trademark of Goodman Games.</p><p>DCC RPG is published under the Open Game License, refer to the OGL for additional information.</p><p>Foundry Virtual Tabletop © 2019, Foundry Gaming LLC.</p>",
     "ImportContentLabel": "",

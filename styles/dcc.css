@@ -1306,6 +1306,7 @@ form.dcc-roll-modifier input.stat {
 }
 #dcc-welcome-dialog form {
   display: flex;
+  font-family: var(--data-font);
   justify-content: space-between;
   flex-direction: column;
 }
