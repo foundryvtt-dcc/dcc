@@ -432,14 +432,15 @@ class DCCActor extends Actor {
   /**
    * Generate Initiative Roll formula
    */
-  async getInitiativeRoll (options = {}) {
+  getInitiativeRoll (options = {}) {
     // Set up the roll
     let die = this.system.attributes.init.die || '1d20'
     const init = this.system.attributes.init.value
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
 
-    if (this.items.find(t => t.system.twoHanded && t.system.equipped) && game.settings.get('dcc', 'automateTwoHandedWeaponInit')) {
-      die = '1d16[' + game.i18n.localize('DCC.WeaponPropertiesTwoHanded') + ']'
+    const twoHandedWeapon = this.items.find(t => t.system.twoHanded && t.system.equipped)
+    if (twoHandedWeapon) {
+      die = `${twoHandedWeapon.system.initiativeDie}[${game.i18n.localize('DCC.WeaponPropertiesTwoHanded')}]`
     }
 
     // Collate terms for the roll
@@ -455,21 +456,14 @@ class DCCActor extends Actor {
       }
     ]
 
-    // Initiative: A warrior adds their class level to initiative rolls.
-    if (this.system.details.sheetClass === 'Warrior' && game.settings.get('dcc', 'automateWarriorInitiative')) {
-      terms.push({
-        type: 'Modifier',
-        label: game.i18n.localize('DCC.WarriorLevel'),
-        formula: this.system.details.level.value
-      })
-    }
-
     if (options.showModifierDialog) {
-      const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
-      return await roll._formula
+      const roll =  game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+      return roll._formula
     }
 
-    return game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    const roll = game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+
+    return roll
   }
 
   /**

@@ -17,6 +17,12 @@ class DCCItem extends Item {
       // Weapon Items
       if (this.type === 'weapon') {
 
+        // Initiative Calculation
+        this.system.initiativeDie = this.actor.system.attributes.init.die
+        if (this.system.twoHanded) {
+          this.system.initiativeDie = DiceChain.bumpDie(this.system.initiativeDie, -1)
+        }
+
         // Action Die Calculation
         this.system.actionDie = this.actor.system.attributes.actionDice.value
         if (!this.system.trained) {
