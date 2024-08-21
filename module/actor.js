@@ -432,7 +432,12 @@ class DCCActor extends Actor {
   /**
    * Generate Initiative Roll formula
    */
-  getInitiativeRoll (options = {}) {
+  getInitiativeRoll (formula, options = {}) {
+    // Handle coming back from a modifier dialog with a roll
+    if (formula instanceof Roll) {
+      return formula
+    }
+
     // Set up the roll
     let die = this.system.attributes.init.die || '1d20'
     const init = this.system.attributes.init.value
@@ -441,6 +446,10 @@ class DCCActor extends Actor {
     const twoHandedWeapon = this.items.find(t => t.system.twoHanded && t.system.equipped)
     if (twoHandedWeapon) {
       die = `${twoHandedWeapon.system.initiativeDie}[${game.i18n.localize('DCC.WeaponPropertiesTwoHanded')}]`
+    }
+    const customInitDieWeapon = this.items.find(t => t.system.config?.initiativeDieOverride || '' && t.system.equipped)
+    if (customInitDieWeapon) {
+      die = `${customInitDieWeapon.system.initiativeDie}[${game.i18n.localize('DCC.Weapon')}]`
     }
 
     // Collate terms for the roll
@@ -456,14 +465,7 @@ class DCCActor extends Actor {
       }
     ]
 
-    if (options.showModifierDialog) {
-      const roll =  game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
-      return roll._formula
-    }
-
-    const roll = game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
-
-    return roll
+    return game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
   }
 
   /**

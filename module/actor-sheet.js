@@ -700,7 +700,7 @@ class DCCActorSheet extends ActorSheet {
     const rollOptions = this._fillRollOptions(event)
     let formula = null
     if (rollOptions.showModifierDialog) {
-      formula = await this.actor.getInitiativeRoll({ showModifierDialog: true })
+      formula = await this.actor.getInitiativeRoll(formula, { showModifierDialog: true })
     }
     const options = {
       createCombatants: true,

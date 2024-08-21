@@ -22,6 +22,9 @@ class DCCItem extends Item {
         if (this.system.twoHanded) {
           this.system.initiativeDie = DiceChain.bumpDie(this.system.initiativeDie, -1)
         }
+        if (this.system.config.initiativeDieOverride) {
+          this.system.initiativeDie = this.system.config.initiativeDieOverride
+        }
 
         // Action Die Calculation
         this.system.actionDie = this.actor.system.attributes.actionDice.value
