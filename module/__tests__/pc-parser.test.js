@@ -2079,10 +2079,6 @@ Lucky sign: Righteous heart (Turn unholy checks) (+0)
 Languages: Common
 Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
   )
-
-  console.log('POST PARSE')
-  console.log(parsedNPC)
-
   const expected = {
     'attributes.init.value': '1',
     'attributes.speed.value': '30',
