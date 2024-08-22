@@ -365,7 +365,7 @@ class DCCActor extends Actor {
     }
 
     // Allow requesting roll under (for Luck Checks)
-    if (options.rollUnder && !options.modClick) {
+    if (options.rollUnder) {
       const terms = [
         {
           type: 'Die',
@@ -373,7 +373,7 @@ class DCCActor extends Actor {
         }
       ]
 
-      roll = game.dcc.DCCRoll.createRoll(terms, {}, options)
+      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
       // Apply custom roll options
       roll.terms[0].options.dcc = {

@@ -453,7 +453,7 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    if (event.currentTarget.getAttribute('data-modifier') === 'true' || classes.contains('ability-modifiers')) {
+    if (abilityId === 'lck' && event.currentTarget.htmlFor === 'system.abilities.lck.mod') {
       // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
       const abilityId = this._findDataset(event.currentTarget, 'ability')
       if (abilityId) {
@@ -651,12 +651,9 @@ class DCCActorSheet extends ActorSheet {
 
     // Luck checks are roll under unless the user explicitly clicks the modifier
     const rollUnder = (ability === 'lck') && (event.currentTarget.htmlFor !== 'system.abilities.lck.mod')
-
-    // Allow alternate behaviour if the modifier is clicked instead of the attribute
-    const modClick = (event.currentTarget.for === 'system.abilities.lck.mod')
+    console.log(rollUnder)
 
     Object.assign(options, {
-      modClick,
       rollUnder
     })
 

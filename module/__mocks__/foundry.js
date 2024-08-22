@@ -71,22 +71,22 @@ class Actor {
             attackBonus: '+0',
             attackHitBonus: {
               melee: {
-                value: "+0",
-                adjustment: "+0"
+                value: '+0',
+                adjustment: '+0'
               },
               missile: {
-                value: "+0",
-                adjustment: "+0"
+                value: '+0',
+                adjustment: '+0'
               }
             },
             attackDamageBonus: {
               melee: {
-                value: "+0",
-                adjustment: "+0"
+                value: '+0',
+                adjustment: '+0'
               },
               missile: {
-                value: "+0",
-                adjustment: "+0"
+                value: '+0',
+                adjustment: '+0'
               }
             },
             level: {
@@ -141,8 +141,7 @@ class Actor {
             removeEmptyItems: true
           }
         }
-      }
-      )
+      })
     }
     this.items = new Collection()
     this.prepareData()
@@ -159,7 +158,7 @@ class Actor {
     return this.system
   }
 
-  rollInitiative(createCombatants, rerollInitiative, initiativeOptions) {
+  rollInitiative (createCombatants, rerollInitiative, initiativeOptions) {
     return this.getInitiativeRoll()
   }
 
@@ -174,24 +173,14 @@ global.Actor = Actor
 /**
  * ChatMessage
  */
-class ChatMessage {
-  constructor (data, options) {
-    // If test-specific data is passed in use it, otherwise use default data
-    if (data) {
-      this.data = data
-    }
-  }
+class ChatMessageMock {
+  static getSpeaker = jest.fn(({ scene, actor, token, alias } = {}) => {return actor})
+  static applyRollMode = jest.fn()
 
-  static getSpeaker ({ scene, actor, token, alias } = {}) {
-    return actor
-  }
-
-  static applyRollMode (messageData, rollMode) {
-
-  }
+  constructor (data, options = {}) {if (data) { this.data = data}}
 }
 
-global.ChatMessage = ChatMessage
+global.ChatMessage = ChatMessageMock
 
 /**
  * CONFIG

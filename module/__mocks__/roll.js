@@ -20,26 +20,25 @@ global.rollEvaluateMock = jest.fn(() => {
 global.rollValidateMock = jest.fn((formula) => {
   return true
 })
-global.rollTermsMock = [
-  {
-    "class": "Die",
-    "options": {
-      "flavor": null
-    },
-    "evaluated": false,
-    "number": 1,
-    "faces": 20,
-    "modifiers": [],
-    "results": []
-  }
-]
 const Roll = jest.fn((formula, data = {}) => {
   return {
     dice: [{ results: [10], options: {} }],
     toMessage: global.rollToMessageMock,
     evaluate: global.rollEvaluateMock,
     roll: global.rollEvaluateMock,
-    terms: global.rollTermsMock
+    terms: [
+      {
+        "class": "Die",
+        "options": {
+          "flavor": null
+        },
+        "evaluated": false,
+        "number": 1,
+        "faces": 20,
+        "modifiers": [],
+        "results": []
+      }
+    ]
   }
 }).mockName('Roll')
 global.Roll = Roll
