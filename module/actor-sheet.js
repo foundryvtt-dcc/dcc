@@ -1,4 +1,4 @@
-/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, $, CONST */
+/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, CONST, ui */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -136,7 +136,7 @@ class DCCActorSheet extends ActorSheet {
 
     // Iterate through items, allocating to containers
     const removeEmptyItems = sheetData.system.config.removeEmptyItems
-    for (let i of inventory) {
+    for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
         this.actor.deleteEmbeddedDocuments('Item', [i._id])
@@ -203,7 +203,7 @@ class DCCActorSheet extends ActorSheet {
         cp: parseInt(this.actor.system.currency.cp)
       }
       let needsUpdate = false
-      for (let c of coins) {
+      for (const c of coins) {
         funds.pp += parseInt(c.system.value.pp)
         funds.ep += parseInt(c.system.value.ep)
         funds.gp += parseInt(c.system.value.gp)
@@ -435,13 +435,12 @@ class DCCActorSheet extends ActorSheet {
     let dragData = null
 
     // Handle the various draggable elements on the sheet
+    const abilityId = this._findDataset(event.currentTarget, 'ability')
     const classes = event.target.classList
     const labelFor = event.currentTarget.getAttribute('for') || ''
-    if (classes.contains('ability-name') ||
-      event.target.tagName === 'LABEL' && labelFor.includes('.value')
-    ) {
+
+    if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
       // Normal ability rolls and DCC d20 roll under luck rolls
-      const abilityId = this._findDataset(event.currentTarget, 'ability')
       const rollUnder = (abilityId === 'lck')
       dragData = {
         type: 'Ability',
@@ -704,7 +703,7 @@ class DCCActorSheet extends ActorSheet {
     const options = {
       createCombatants: true,
       initiativeOptions: {
-        formula: formula
+        formula
       }
     }
 
@@ -856,7 +855,7 @@ class DCCActorSheet extends ActorSheet {
     // Grab any data associated with this control.
     const system = foundry.utils.duplicate(header.dataset)
     // Initialize a default name.
-    let name = game.i18n.format('DCC.ItemNew', {type: type.capitalize()})
+    let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
     if (this.actor.type === 'NPC' && type === 'weapon') {
       name = game.i18n.localize('DCC.NewAttack')
     }

@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, dcc, game, ui, Roll, foundry */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry */
 
 import { ensurePlus } from './utilities.js'
 
@@ -13,7 +13,7 @@ class DCCActor extends Actor {
 
     // Ability modifiers
     const abilities = this.system.abilities
-    for (let abilityId in abilities) {
+    for (const abilityId in abilities) {
       abilities[abilityId].mod = CONFIG.DCC.abilityModifiers[abilities[abilityId].value] || 0
       abilities[abilityId].maxMod = CONFIG.DCC.abilityModifiers[abilities[abilityId].max] || abilities[abilityId].mod
     }
@@ -38,7 +38,7 @@ class DCCActor extends Actor {
     let fumbleDie = '1d4'
     let checkPenalty = 0
     if (this.itemTypes) {
-      for (let armorItem of this.itemTypes.armor) {
+      for (const armorItem of this.itemTypes.armor) {
         if (armorItem.system.equipped) {
           try {
             checkPenalty += parseInt(armorItem.system.checkPenalty || 0)
@@ -90,7 +90,7 @@ class DCCActor extends Actor {
       const abilityLabel = baseACAbility.label
       let armorBonus = 0
       let speedPenalty = 0
-      for (let armorItem of this.itemTypes.armor) {
+      for (const armorItem of this.itemTypes.armor) {
         if (armorItem.system.equipped) {
           armorBonus += parseInt(armorItem.system.acBonus || '0')
           speedPenalty += parseInt(armorItem.system.speed || '0')
@@ -118,7 +118,7 @@ class DCCActor extends Actor {
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
       const terms = actionDieExpression.terms
       const actionDice = []
-      for (let term of terms) {
+      for (const term of terms) {
         if (term instanceof foundry.dice.terms.Die) {
           const termDie = `1d${term.faces}`
 
@@ -142,7 +142,7 @@ class DCCActor extends Actor {
       const terms = initDieExpression.terms
       const initDice = []
 
-      for (let term of terms) {
+      for (const term of terms) {
         if (term instanceof foundry.dice.terms.Die) {
           const termDie =
             `1d${term.faces}`
@@ -281,7 +281,7 @@ class DCCActor extends Actor {
       // Parse the action dice expression from the config and produce a list of available dice
       const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
       const terms = actionDieExpression.terms || actionDieExpression.parts
-      for (let term of terms) {
+      for (const term of terms) {
         if (typeof (term) === 'object' && term.faces) {
           const termDie = `1d${term.faces}`
           const termCount = term.number || 1
@@ -323,7 +323,7 @@ class DCCActor extends Actor {
     let missileAttackDamage = ''
     if (attackBonus.includes('d')) {
       const deedDie = attackBonus.match(/[+-]?(\d+d\d+)/) ? attackBonus.match(/[+-]?(\d+d\d+)/)[1] : attackBonus
-      let attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
+      const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
       meleeAttackBonus = `${ensurePlus(deedDie)}${ensurePlus(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus, false)}`
       missileAttackBonus = `${ensurePlus(deedDie)}${ensurePlus(agilityBonus + missileAttackBonusAdjustment + attackBonusBonus, false)}`
       meleeAttackDamage = `${ensurePlus(deedDie)}${ensurePlus(strengthBonus + meleeDamageBonusAdjustment + attackBonusBonus, false)}`
@@ -451,7 +451,7 @@ class DCCActor extends Actor {
     if (twoHandedWeapon) {
       die = `${twoHandedWeapon.system.initiativeDie}[${game.i18n.localize('DCC.WeaponPropertiesTwoHanded')}]`
     }
-    const customInitDieWeapon = this.items.find(t => t.system.config?.initiativeDieOverride || '' && t.system.equipped)
+    const customInitDieWeapon = this.items.find(t => (t.system.config?.initiativeDieOverride || '') && t.system.equipped)
     if (customInitDieWeapon) {
       die = `${customInitDieWeapon.system.initiativeDie}[${game.i18n.localize('DCC.Weapon')}]`
     }
@@ -491,7 +491,7 @@ class DCCActor extends Actor {
     }
 
     // Collate terms for the roll
-    let terms = [
+    const terms = [
       {
         type: 'Compound',
         formula: fraction || die
@@ -958,7 +958,7 @@ class DCCActor extends Actor {
       ))
     }
 
-    if (!weapon.system.equipped && game.settings.get('dcc', 'checkWeaponEquipment')) return ui.notifications.warn(game.i18n.localize('DCC.WeaponWarningUnequipped'))
+    if (!weapon.system?.equipped && game.settings.get('dcc', 'checkWeaponEquipment')) return ui.notifications.warn(game.i18n.localize('DCC.WeaponWarningUnequipped'))
 
     // Attack roll
     const attackRollResult = await this.rollToHit(weapon, options)
@@ -1097,13 +1097,13 @@ class DCCActor extends Actor {
    */
   async rollToHit (weapon, options = {}) {
     /* Grab the To Hit modifier */
-    let toHit = weapon.system.toHit
+    const toHit = weapon.system?.toHit
 
     const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
 
-    let die = weapon.system.actionDie || actorActionDice
+    const die = weapon.system?.actionDie || actorActionDice
 
-    let critRange = parseInt(weapon.system.critRange || this.system.details.critRange || 20)
+    let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
 
     /* If we don't have a valid formula, bail out here */
     if (!await Roll.validate(toHit)) {
@@ -1181,7 +1181,7 @@ class DCCActor extends Actor {
    */
   async rollDamage (weapon, options = {}) {
     /* Grab the formula */
-    let formula = weapon.system.damage
+    let formula = weapon.system?.damage
 
     /* Are we backstabbing and the weapon has special backstab damage? */
     if (options.backstab && weapon.system.backstabDamage) {
@@ -1230,7 +1230,7 @@ class DCCActor extends Actor {
       roll: damageRoll,
       formula: game.dcc.DCCRoll.cleanFormula(damageRoll.terms),
       damage: damageRoll.total,
-      subdual: weapon.system.subdual
+      subdual: weapon.system?.subdual
     }
   }
 
@@ -1257,7 +1257,7 @@ class DCCActor extends Actor {
 
     // Lookup the crit table if available
     let critResult = null
-    for (let criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
+    for (const criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
       if (criticalHitPackName) {
         const pack = game.packs.get(criticalHitPackName)
         if (pack) {
@@ -1619,7 +1619,7 @@ class DCCActor extends Actor {
 
       // Lookup the disapproval table if available
       let disapprovalTable = null
-      for (let disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
+      for (const disapprovalPackName of CONFIG.DCC.disapprovalPacks.packs) {
         const disapprovalTableName = this.system.class.disapprovalTable
         if (disapprovalPackName && disapprovalTableName) {
           const pack = game.packs.get(disapprovalPackName)

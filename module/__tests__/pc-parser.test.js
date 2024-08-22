@@ -1,8 +1,8 @@
-/* global test, expect */
-/* eslint-env jest */
-
 /* Tests for PC Parser */
 
+import { expect, test } from 'vitest'
+import '../__mocks__/foundry.js'
+import '../__mocks__/roll.js'
 import parsePCs from '../pc-parser.js'
 
 /* Test blacksmith text */
@@ -520,7 +520,7 @@ Spells: (Spell Check: d20+2)
           toHit: '+0',
           damage: '1d4',
           config: {
-            attackBonusOverride: '',
+            attackBonusOverride: '+0',
             damageOverride: ''
           },
           melee: true
@@ -534,7 +534,7 @@ Spells: (Spell Check: d20+2)
           toHit: '+1',
           damage: '1d4',
           config: {
-            attackBonusOverride: '',
+            attackBonusOverride: '+1',
             damageOverride: ''
           },
           melee: false
@@ -548,7 +548,7 @@ Spells: (Spell Check: d20+2)
           toHit: '+0',
           damage: '1d8',
           config: {
-            attackBonusOverride: '',
+            attackBonusOverride: '+0',
             damageOverride: ''
           },
           melee: true
@@ -2047,7 +2047,7 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
   expect(parsedNPC).toMatchObject([expected])
 })
 
-/* Missing weapons test - with spaces before the newline*/
+/* Missing weapons test - with spaces before the newline */
 test('underarmed_warrior_again', () => {
   const parsedNPC = parsePCs(
     `Generator Settings

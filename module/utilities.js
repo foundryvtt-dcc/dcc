@@ -1,5 +1,5 @@
-//Force a + on the front of positive strings
-export function ensurePlus (value, includeZero=true) {
+// Force a + on the front of positive strings
+export function ensurePlus (value, includeZero = true) {
   let sign = ''
   if (parseInt(value) >= 0 && value[0] !== '+') {
     sign = '+'

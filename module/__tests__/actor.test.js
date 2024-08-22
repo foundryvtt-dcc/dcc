@@ -1,11 +1,13 @@
-/* global CONFIG, DCCItem, actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock, game, test, expect */
+/* global DCCItem, actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock, game */
 /**
  * Tests for Actor.js using Foundry Mocks.
  * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js
  * Mocks for DCCItem Class are found in __mocks__/item.js
- * eslint-env jest
  **/
 
+import { expect, test } from 'vitest'
+import '../__mocks__/foundry.js'
+import '../__mocks__/item.js'
 import DCCActor from '../actor'
 
 // Create Base Test Actor
@@ -34,11 +36,11 @@ test('prepareData sets ability modifiers', () => {
 })
 
 test('roll ability check', async () => {
-  global.dccRollCreateRollMock.mockClear()
+  dccRollCreateRollMock.mockClear()
 
   await actor.rollAbilityCheck('str')
-  expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(1)
-  expect(global.dccRollCreateRollMock).toHaveBeenCalledWith(
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
         type: 'Die',
@@ -59,7 +61,7 @@ test('roll ability check', async () => {
         type: 'Modifier',
         label: 'AbilityStr',
         formula: -1
-      },
+      }
     ],
     {},
     {
@@ -68,13 +70,13 @@ test('roll ability check', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'AbilityStr Check',
     speaker: actor,
-    flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck', 'checkPenaltyCouldApply': true, }
+    flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck', checkPenaltyCouldApply: true }
   })
 
   // Check that rollUnder option is interpreted correctly
   await actor.rollAbilityCheck('lck', { rollUnder: true })
-  expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(2)
-  expect(global.dccRollCreateRollMock).toHaveBeenCalledWith(
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
         type: 'Die',
@@ -95,8 +97,8 @@ test('roll ability check', async () => {
 
   // ...both ways
   await actor.rollAbilityCheck('lck', { rollUnder: false })
-  expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(3)
-  expect(global.dccRollCreateRollMock).toHaveBeenCalledWith(
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
         type: 'Die',
@@ -117,7 +119,7 @@ test('roll ability check', async () => {
         type: 'Modifier',
         label: 'AbilityLck',
         formula: 3
-      },
+      }
     ],
     {},
     {
@@ -237,6 +239,7 @@ test('roll initiative', async () => {
 test('roll weapon attack missing weapon', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockClear()
+  itemTypesMock.mockClear()
   uiNotificationsWarnMock.mockClear()
 
   // Roll a weapon we don't have
@@ -255,7 +258,7 @@ test('roll weapon attack', async () => {
   collectionFindMock.mockReturnValue(new DCCItem('longsword', 'weapon', {
     actionDie: '1d20',
     damage: '1d8',
-    toHit: 1,
+    toHit: '1d4+1',
     melee: true
   }))
   await actor.rollWeaponAttack('longsword')
@@ -279,9 +282,9 @@ test('roll weapon attack', async () => {
       },
       {
         type: 'Compound',
-        'dieLabel': 'DeedDie',
-        'formula': 1,
-        'modifierLabel': 'ToHit',
+        dieLabel: 'DeedDie',
+        formula: '1d4+1',
+        modifierLabel: 'ToHit'
       }
     ],
     Object.assign({ critical: 20 }, actor.getRollData()),
@@ -289,10 +292,10 @@ test('roll weapon attack', async () => {
       title: 'ToHit'
     }
   )
-  expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
+  expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
     speaker: actor,
     type: 'emote',
-    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class=\"inline-roll inline-result\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> undefined</a>,damageRollHTML:<a class=\"inline-roll inline-result damage-applyable\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D\" data-damage=\"1\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
+    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D" data-damage="1" title="undefined"><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
     flags: {
       'dcc.ItemId': undefined,
       'dcc.RollType': 'CombinedAttack'
@@ -306,6 +309,7 @@ test('roll weapon attack', async () => {
 test('roll weapon attack by slot', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockClear()
+  itemTypesMock.mockClear()
   uiNotificationsWarnMock.mockClear()
 
   // Roll a weapon we do have - by slot
@@ -318,7 +322,7 @@ test('roll weapon attack by slot', async () => {
     ]
   })
   await actor.rollWeaponAttack('m2')
-  expect(itemTypesMock).toHaveBeenCalledTimes(2)
+  expect(itemTypesMock).toHaveBeenCalledTimes(1)
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
@@ -349,10 +353,10 @@ test('roll weapon attack by slot', async () => {
       title: 'ToHit'
     }
   )
-  expect(CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
+  expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
     speaker: actor,
     type: 'emote',
-    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class=\"inline-roll inline-result\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> undefined</a>,damageRollHTML:<a class=\"inline-roll inline-result damage-applyable\" data-roll=\"%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D\" data-damage=\"1\" title=\"undefined\"><i class=\"fas fa-dice-d20\"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
+    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D" data-damage="1" title="undefined"><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
     sound: 'diceSound',
     flags: {
       'dcc.ItemId': undefined,
@@ -425,7 +429,7 @@ test('roll Custom Die Skill', async () => {
             label: 'Untrained'
           }
         ]
-      },
+      }
     ],
     actor.getRollData(),
     {
@@ -464,7 +468,7 @@ test('roll Custom Die And Value Skill', async () => {
         dieLabel: 'RollModifierDieTerm',
         modifierLabel: 'Custom Die And Value Skill',
         formula: '3'
-      },
+      }
     ],
     actor.getRollData(),
     {
@@ -503,7 +507,7 @@ test('roll Action Die Skill', async () => {
         dieLabel: 'RollModifierDieTerm',
         modifierLabel: 'Action Die Skill',
         formula: '-4'
-      },
+      }
     ],
     actor.getRollData(),
     {
@@ -536,7 +540,7 @@ test('roll Custom Die Skill With Int', async () => {
             label: 'Untrained'
           }
         ]
-      },
+      }
     ],
     actor.getRollData(),
     {
@@ -575,7 +579,7 @@ test('roll Custom Die And Value Skill With Per', async () => {
         dieLabel: 'RollModifierDieTerm',
         modifierLabel: 'Custom Die And Value Skill With Per (AbilityPer)',
         formula: '3 + 2'
-      },
+      }
     ],
     actor.getRollData(),
     {
@@ -614,7 +618,7 @@ test('roll Custom Die And Value Luck', async () => {
         dieLabel: 'RollModifierDieTerm',
         modifierLabel: 'Action Die And Value Skill With Lck (AbilityLck)',
         formula: '1 + 3'
-      },
+      }
     ],
     actor.getRollData(),
     {
@@ -873,7 +877,8 @@ test('roll spell check item', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockReset()
   uiNotificationsWarnMock.mockReset()
-  game.dcc.processSpellCheck.mockClear()
+  // game.dcc.processSpellCheck.mockClear()
+
   // Roll a spell check with an item
   const dummyItem = new DCCItem('The Gloaming', 'spell')
   collectionFindMock.mockReturnValue(dummyItem)

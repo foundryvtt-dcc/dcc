@@ -79,8 +79,8 @@ async function parseNPC (npcString) {
 
   /* Attacks */
   const attackRegex = /(?:^|or )([^]+?)(?= or |$)/gm
-  let matches = npc.attacks.matchAll(attackRegex)
-  for (let match of matches) {
+  const matches = npc.attacks.matchAll(attackRegex)
+  for (const match of matches) {
     const parsedAttack = _parseAttack(match[1], npc.damage)
     if (parsedAttack) {
       npc.items.push(parsedAttack)

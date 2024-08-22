@@ -13,10 +13,8 @@ class DCCItem extends Item {
 
     // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.actor.system && this.system.config) {
-
       // Weapon Items
       if (this.type === 'weapon') {
-
         // Initiative Calculation
         this.system.initiativeDie = this.actor.system.attributes.init.die
         if (this.system.twoHanded) {
@@ -47,7 +45,7 @@ class DCCItem extends Item {
         if (this.system.attackBonusLucky) {
           this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusLucky}`
         }
-        this.system.toHit = ensurePlus(this.system.attackBonus.includes('d') ? this.system.attackBonus : Roll.safeEval(this.system.attackBonus ))
+        this.system.toHit = ensurePlus(this.system.attackBonus.includes('d') ? this.system.attackBonus : Roll.safeEval(this.system.attackBonus))
         if (this.system.config.attackBonusOverride) {
           this.system.toHit = ensurePlus(this.system.config.attackBonusOverride)
         }

@@ -1,5 +1,6 @@
-/* global jest */
-/* eslint-env jest */
+/* global foundry */
+
+import { vi } from 'vitest'
 import DCC from '../config.js'
 import DCCRoll from './dcc-roll.js'
 
@@ -8,28 +9,28 @@ import DCCRoll from './dcc-roll.js'
 /**
  * Item
  */
-const Item = jest.fn().mockImplementation(() => {
+const Item = vi.fn().mockImplementation(() => {
 }).mockName('Item')
 global.Item = Item
 
 /**
  * Collection
  */
-global.collectionFindMock = jest.fn().mockName('Collection.find')
-const Collection = jest.fn().mockImplementation(() => {
+global.collectionFindMock = vi.fn().mockName('Collection.find')
+const CollectionMock = vi.fn().mockImplementation(() => {
   return {
     find: global.collectionFindMock
   }
 }).mockName('Collection')
-global.Collection = Collection
+global.Collection = CollectionMock
 
 /**
  * Actor
  */
-global.itemTypesMock = jest.fn().mockName('Actor.itemTypes getter')
-global.actorUpdateMock = jest.fn(data => {}).mockName('Actor.update')
+global.itemTypesMock = vi.fn().mockName('Actor.itemTypes getter')
+global.actorUpdateMock = vi.fn(data => {}).mockName('Actor.update')
 
-class Actor {
+class ActorMock {
   constructor (data, options) {
     // If test-specific data is passed in use it, otherwise use default data
     if (data) {
@@ -143,7 +144,7 @@ class Actor {
         }
       })
     }
-    this.items = new Collection()
+    this.items = new global.Collection()
     this.prepareData()
     Object.defineProperty(this, 'itemTypes', {
       get: global.itemTypesMock
@@ -167,17 +168,17 @@ class Actor {
   }
 }
 
-global.actor = new Actor()
-global.Actor = Actor
+global.actor = new ActorMock()
+global.Actor = ActorMock
 
 /**
  * ChatMessage
  */
 class ChatMessageMock {
-  static getSpeaker = jest.fn(({ scene, actor, token, alias } = {}) => {return actor})
-  static applyRollMode = jest.fn()
+  static getSpeaker = vi.fn(({ scene, actor, token, alias } = {}) => { return actor })
+  static applyRollMode = vi.fn()
 
-  constructor (data, options = {}) {if (data) { this.data = data}}
+  constructor (data, options = {}) { if (data) { this.data = data } }
 }
 
 global.ChatMessage = ChatMessageMock
@@ -222,10 +223,10 @@ class Game {
 global.Game = Game
 global.game = new Game()
 global.game.user = { _id: 1 }
-global.getDCCSkillTableMock = jest.fn((skillName) => { return null }).mockName('game.dcc.getSkillTable')
-global.processSpellCheckMock = jest.fn((actor, spellData) => { }).mockName('game.dcc.processSpellCheck')
-global.calculateCritAdjustment = jest.fn((original, adjusted) => { return 0 }).mockName('game.dcc.DiceChain.calculateCritAdjustment')
-global.updateFlagsMock = jest.fn((flags, roll) => { }).mockName('game.dcc.FleetingLuck.updateFlags')
+global.getDCCSkillTableMock = vi.fn((skillName) => { return null }).mockName('game.dcc.getSkillTable')
+global.processSpellCheckMock = vi.fn((actor, spellData) => { }).mockName('game.dcc.processSpellCheck')
+global.calculateCritAdjustment = vi.fn((original, adjusted) => { return 0 }).mockName('game.dcc.DiceChain.calculateCritAdjustment')
+global.updateFlagsMock = vi.fn((flags, roll) => { }).mockName('game.dcc.FleetingLuck.updateFlags')
 global.game.dcc = {
   DCCRoll,
   getSkillTable: global.getDCCSkillTableMock,
@@ -241,7 +242,7 @@ global.game.dcc = {
 /**
  * Settings
  */
-global.gameSettingsGetMock = jest.fn((module, key) => {}).mockName('game.settings.get')
+global.gameSettingsGetMock = vi.fn((module, key) => {}).mockName('game.settings.get')
 
 class ClientSettings {
   constructor (worldSettings) {
@@ -256,7 +257,7 @@ global.game.settings = new ClientSettings()
  */
 global.CONFIG.ChatMessage = {
   documentClass: {
-    create: jest.fn((messageData = {}) => {
+    create: vi.fn((messageData = {}) => {
       // console.log(messageData)
     })
   }
@@ -265,9 +266,9 @@ global.CONFIG.ChatMessage = {
 /**
  * Notifications
  */
-global.uiNotificationsWarnMock = jest.fn((message, options) => {}).mockName('ui.notifications.warn')
-global.uiNotificationsErrorMock = jest.fn((message, type, permenant) => {}).mockName('ui.notifications.error')
-const Notifications = jest.fn().mockImplementation(() => {
+global.uiNotificationsWarnMock = vi.fn((message, options) => {}).mockName('ui.notifications.warn')
+global.uiNotificationsErrorMock = vi.fn((message, type, permanent) => {}).mockName('ui.notifications.error')
+const Notifications = vi.fn().mockImplementation(() => {
   return {
     warn: global.uiNotificationsWarnMock,
     error: global.uiNotificationsErrorMock
@@ -278,7 +279,7 @@ global.ui = {
 }
 
 /**
- * Global helper functions function
+ * Global helper functions
  */
 
 // Namespace for Foundry helper functions
@@ -427,4 +428,4 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
 /**
  * Handlebars
  */
-global.loadTemplates = jest.fn((templateList) => {}).mockName('loadTemplates')
+global.loadTemplates = vi.fn((templateList) => {}).mockName('loadTemplates')

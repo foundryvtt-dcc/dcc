@@ -28,7 +28,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc {
   img {
-    border: none;
+    border: 0;
   }
 
   .box-inner {
@@ -37,7 +37,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   .dark-border {
     border: var(--dark-border);
-    border-top: none;
+    border-top: 0;
   }
 
   .dark-title {
@@ -59,7 +59,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   .editor {
     background: rgba(0, 0, 0, 0.05);
     border: var(--dark-border);
-    border-top: none;
+    border-top: 0;
     font-family: $book-antiqua;
     min-height: 305px;
     padding: 0 8px;
@@ -301,7 +301,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   padding: 5px 5px 0 5px;
 
   img {
-    border: none;
+    border: 0;
     box-sizing: content-box;
   }
 
@@ -446,7 +446,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   &:last-child {
-    border-bottom: none;
+    border-bottom: 0;
     padding-bottom: 2px;
     margin-bottom: 2px;
   }
@@ -566,7 +566,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   input[type="checkbox"] {
     background: none;
-    border: none;
+    border: 0;
     height: 12px;
     margin: 0;
     width: 12px;
@@ -657,7 +657,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   text-align: center;
 
   img {
-    border: none;
+    border: 0;
     box-sizing: content-box;
   }
 
@@ -695,82 +695,82 @@ $font-awesome: 'Font Awesome 6 Pro';
   a[data-tab] {
     padding: 4px 0 4px 0;
 
-    &:before {
+    &::before {
       font-family: $font-awesome;
       padding-right: 5px;
     }
   }
 
-  a[data-tab="armor"]:before {
+  a[data-tab="armor"]::before {
     content: "\f3ed";
   }
 
-  a[data-tab="character"]:before {
+  a[data-tab="character"]::before {
     content: "\f007";
   }
 
 
-  a[data-tab="cleric"]:before {
+  a[data-tab="cleric"]::before {
     content: "\f3ed";
   }
 
-  a[data-tab="description"]:before {
+  a[data-tab="description"]::before {
     content: "\f249";
   }
 
-  a[data-tab="dwarf"]:before {
+  a[data-tab="dwarf"]::before {
     content: "\f6eb";
   }
 
-  a[data-tab="elf"]:before {
+  a[data-tab="elf"]::before {
     content: "\f56b";
   }
 
-  a[data-tab="equipment"]:before {
+  a[data-tab="equipment"]::before {
     content: "\f71d";
   }
 
-  a[data-tab="halfling"]:before {
+  a[data-tab="halfling"]::before {
     content: "\e139";
   }
 
-  a[data-tab="item"]:before {
+  a[data-tab="item"]::before {
     content: "\f723";
   }
 
-  a[data-tab="mercurial"]:before {
+  a[data-tab="mercurial"]::before {
     content: "\f72b";
   }
 
-  a[data-tab="notes"]:before {
+  a[data-tab="notes"]::before {
     content: "\f249";
   }
 
-  a[data-tab="skills"]:before {
+  a[data-tab="skills"]::before {
     content: "\f5dc";
   }
 
-  a[data-tab="spell"]:before {
+  a[data-tab="spell"]::before {
     content: "\f6b8";
   }
 
-  a[data-tab="spells"]:before {
+  a[data-tab="spells"]::before {
     content: "\f6b8";
   }
 
-  a[data-tab="warrior"]:before {
+  a[data-tab="warrior"]::before {
     content: "\f6eb";
   }
 
-  a[data-tab="weapon"]:before {
+  a[data-tab="weapon"]::before {
     content: "\f71d";
   }
 
-  a[data-tab="wizard"]:before {
+  a[data-tab="wizard"]::before {
     content: "\f6e8";
   }
 
-  a[data-tab="thief"]:before {
+  a[data-tab="thief"]::before {
     content: "\f504";
   }
 }
@@ -781,7 +781,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 .dcc.sheet {
   a.external-link {
     background: none;
-    border: none;
+    border: 0;
     border-radius: none;
     color: var(--dark-color);
     text-decoration: none;
@@ -1036,7 +1036,7 @@ form.dcc-roll-modifier {
 
       input {
         align-self: center;
-        border: none;
+        border: 0;
         font-size: 30px;
         height: unset;
       }
@@ -1050,7 +1050,7 @@ form.dcc-roll-modifier {
 
     input {
       align-self: center;
-      border: none;
+      border: 0;
       font-size: 24px;
       height: 17px;
       margin-bottom: 5px;
@@ -1060,7 +1060,7 @@ form.dcc-roll-modifier {
   .combat-basics {
     align-items: center;
     border: var(--dark-border);
-    border-top: none;
+    border-top: 0;
     column-gap: 5px;
     display: grid;
     font-size: 14px;
@@ -1086,7 +1086,7 @@ form.dcc-roll-modifier {
 
   .languages {
     border: var(--dark-border);
-    border-top: none;
+    border-top: 0;
     display: grid;
     font-size: 12px;
     grid-column: 2;
@@ -1103,7 +1103,7 @@ form.dcc-roll-modifier {
   .languages textarea,
   .lucky-roll textarea, {
     background: none;
-    border: none;
+    border: 0;
     font-family: var(--data-font);
     font-size: 12px;
     grid-row: 2;
@@ -1120,7 +1120,7 @@ form.dcc-roll-modifier {
 
   .lucky-roll {
     border: var(--dark-border);
-    border-top: none;
+    border-top: 0;
     display: grid;
     grid-column: 2;
     grid-column-end: span 3;
@@ -1144,7 +1144,7 @@ form.dcc-roll-modifier {
     grid-template-rows: 69px 69px;
 
     input {
-      border: none;
+      border: 0;
       font-size: 14px;
       margin: 4px 8px 4px 8px;
     }
@@ -1171,7 +1171,7 @@ form.dcc-roll-modifier {
 
   .portrait {
     border: var(--dark-border);
-    border-top: none;
+    border-top: 0;
     display: grid;
     grid-row: 7;
     grid-column: 3;
@@ -1181,7 +1181,7 @@ form.dcc-roll-modifier {
     font-size: 14px;
 
     img {
-      border: none;
+      border: 0;
       justify-self: center;
       align-self: center;
     }
@@ -1193,7 +1193,7 @@ form.dcc-roll-modifier {
   }
 
   .saving-throws {
-    border: none;
+    border: 0;
     display: grid;
     grid-column: 2;
     grid-row: 5;
@@ -1236,7 +1236,7 @@ form.dcc-roll-modifier {
 
     textarea {
       background: none;
-      border: none;
+      border: 0;
       font-family: var(--data-font);
       font-size: 12px;
       line-height: 15px;
@@ -1257,7 +1257,7 @@ form.dcc-roll-modifier {
 
       input {
         align-self: center;
-        border: none;
+        border: 0;
         font-size: 22px;
       }
     }

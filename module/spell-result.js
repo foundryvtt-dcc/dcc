@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, CONST, game, foundry, renderTemplate, TextEditor */
+/* global ChatMessage, CONFIG, game, foundry, renderTemplate, TextEditor */
 
 class SpellResult {
   /**

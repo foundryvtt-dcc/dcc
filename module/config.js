@@ -391,13 +391,13 @@ DCC.healingTypes = {
 
 // Hit Die Per Class
 DCC.hitDiePerClass = {
-  'cleric': '1d8',
-  'thief': '1d6',
-  'halfling': '1d6',
-  'warrior': '1d12',
-  'wizard': '1d4',
-  'dwarf': '1d10',
-  'elf': '1d6'
+  cleric: '1d8',
+  thief: '1d6',
+  halfling: '1d6',
+  warrior: '1d12',
+  wizard: '1d4',
+  dwarf: '1d10',
+  elf: '1d6'
 }
 
 // Import Types

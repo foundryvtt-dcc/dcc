@@ -14,7 +14,7 @@ class DCCRoll {
    * @param {Object} options  DCC roll specific options
    * @return {Promise}        The constructed roll object
    */
-  static createRoll (terms, data = {}, options = {showModifierDialog: false}) {
+  static createRoll (terms, data = {}, options = { showModifierDialog: false }) {
     if (!options.rollData) {
       options.rollData = data
     }

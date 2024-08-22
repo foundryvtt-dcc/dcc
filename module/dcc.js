@@ -95,12 +95,12 @@ Hooks.once('init', async function () {
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
     types: ['NPC', 'Player'],
-    label: 'DCC.DCCActorSheetGeneric',
+    label: 'DCC.DCCActorSheetGeneric'
   })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet, {
     label: 'DCC.DCCItemSheet',
-    makeDefault: true,
+    makeDefault: true
   })
 
   // Register shared template for upper level characters

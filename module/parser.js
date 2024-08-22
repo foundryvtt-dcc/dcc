@@ -130,8 +130,8 @@ async function createActors (type, folderId, actorData) {
     }
   }
 
-// Cache available items if importing players
-// @TODO Implement a configuration mechanism for providing additional packs
+  // Cache available items if importing players
+  // @TODO Implement a configuration mechanism for providing additional packs
   const itemMap = {}
   if (type === 'Player') {
     for (const packPath of CONFIG.DCC.actorImporterItemPacks) {
@@ -218,7 +218,7 @@ async function createActors (type, folderId, actorData) {
 
             // Copy relevant fields from the original object to maintain modifiers and stats
             if (originalItem.type === 'weapon') {
-              newItem.system.attackBonusWeapon = originalItem.system.attackBonusWeapon,
+              newItem.system.attackBonusWeapon = originalItem.system.attackBonusWeapon
               newItem.system.toHit = originalItem.system.toHit
               newItem.system.config = originalItem.system.config
               newItem.system.damage = originalItem.system.damage

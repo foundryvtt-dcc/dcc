@@ -196,14 +196,14 @@
 }
 /* Common style elements */
 .dcc img {
-  border: none;
+  border: 0;
 }
 .dcc .box-inner {
   padding: 0 5px 4px 5px;
 }
 .dcc .dark-border {
   border: var(--dark-border);
-  border-top: none;
+  border-top: 0;
 }
 .dcc .dark-title {
   align-self: stretch;
@@ -221,7 +221,7 @@
 .dcc .editor {
   background: rgba(0, 0, 0, 0.05);
   border: var(--dark-border);
-  border-top: none;
+  border-top: 0;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   min-height: 305px;
   padding: 0 8px;
@@ -431,7 +431,7 @@
   padding: 5px 5px 0 5px;
 }
 .dcc .weapon-list img {
-  border: none;
+  border: 0;
   box-sizing: content-box;
 }
 .dcc .weapon-list input {
@@ -560,7 +560,7 @@
   font-size: 14px;
 }
 .dcc .item:last-child {
-  border-bottom: none;
+  border-bottom: 0;
   padding-bottom: 2px;
   margin-bottom: 2px;
 }
@@ -669,7 +669,7 @@
 }
 .dcc.item .tab-body input[type=checkbox] {
   background: none;
-  border: none;
+  border: 0;
   height: 12px;
   margin: 0;
   width: 12px;
@@ -745,7 +745,7 @@
   text-align: center;
 }
 .dcc .skill-list img {
-  border: none;
+  border: 0;
   box-sizing: content-box;
 }
 .dcc .skill-list input {
@@ -777,62 +777,62 @@
 .dcc.sheet a[data-tab] {
   padding: 4px 0 4px 0;
 }
-.dcc.sheet a[data-tab]:before {
+.dcc.sheet a[data-tab]::before {
   font-family: "Font Awesome 6 Pro";
   padding-right: 5px;
 }
-.dcc.sheet a[data-tab=armor]:before {
+.dcc.sheet a[data-tab=armor]::before {
   content: "\f3ed";
 }
-.dcc.sheet a[data-tab=character]:before {
+.dcc.sheet a[data-tab=character]::before {
   content: "\f007";
 }
-.dcc.sheet a[data-tab=cleric]:before {
+.dcc.sheet a[data-tab=cleric]::before {
   content: "\f3ed";
 }
-.dcc.sheet a[data-tab=description]:before {
+.dcc.sheet a[data-tab=description]::before {
   content: "\f249";
 }
-.dcc.sheet a[data-tab=dwarf]:before {
+.dcc.sheet a[data-tab=dwarf]::before {
   content: "\f6eb";
 }
-.dcc.sheet a[data-tab=elf]:before {
+.dcc.sheet a[data-tab=elf]::before {
   content: "\f56b";
 }
-.dcc.sheet a[data-tab=equipment]:before {
+.dcc.sheet a[data-tab=equipment]::before {
   content: "\f71d";
 }
-.dcc.sheet a[data-tab=halfling]:before {
+.dcc.sheet a[data-tab=halfling]::before {
   content: "\e139";
 }
-.dcc.sheet a[data-tab=item]:before {
+.dcc.sheet a[data-tab=item]::before {
   content: "\f723";
 }
-.dcc.sheet a[data-tab=mercurial]:before {
+.dcc.sheet a[data-tab=mercurial]::before {
   content: "\f72b";
 }
-.dcc.sheet a[data-tab=notes]:before {
+.dcc.sheet a[data-tab=notes]::before {
   content: "\f249";
 }
-.dcc.sheet a[data-tab=skills]:before {
+.dcc.sheet a[data-tab=skills]::before {
   content: "\f5dc";
 }
-.dcc.sheet a[data-tab=spell]:before {
+.dcc.sheet a[data-tab=spell]::before {
   content: "\f6b8";
 }
-.dcc.sheet a[data-tab=spells]:before {
+.dcc.sheet a[data-tab=spells]::before {
   content: "\f6b8";
 }
-.dcc.sheet a[data-tab=warrior]:before {
+.dcc.sheet a[data-tab=warrior]::before {
   content: "\f6eb";
 }
-.dcc.sheet a[data-tab=weapon]:before {
+.dcc.sheet a[data-tab=weapon]::before {
   content: "\f71d";
 }
-.dcc.sheet a[data-tab=wizard]:before {
+.dcc.sheet a[data-tab=wizard]::before {
   content: "\f6e8";
 }
-.dcc.sheet a[data-tab=thief]:before {
+.dcc.sheet a[data-tab=thief]::before {
   content: "\f504";
 }
 
@@ -841,7 +841,7 @@
 /* ----------------------------------------- */
 .dcc.sheet a.external-link {
   background: none;
-  border: none;
+  border: 0;
   border-radius: none;
   color: var(--dark-color);
   text-decoration: none;
@@ -1052,7 +1052,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .character .ability-scores .ability-score input {
   align-self: center;
-  border: none;
+  border: 0;
   font-size: 30px;
   height: unset;
 }
@@ -1063,7 +1063,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .character .ac-and-hp input {
   align-self: center;
-  border: none;
+  border: 0;
   font-size: 24px;
   height: 17px;
   margin-bottom: 5px;
@@ -1071,7 +1071,7 @@ form.dcc-roll-modifier input.stat {
 .dcc .character .combat-basics {
   align-items: center;
   border: var(--dark-border);
-  border-top: none;
+  border-top: 0;
   column-gap: 5px;
   display: grid;
   font-size: 14px;
@@ -1094,7 +1094,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .character .languages {
   border: var(--dark-border);
-  border-top: none;
+  border-top: 0;
   display: grid;
   font-size: 12px;
   grid-column: 2;
@@ -1109,7 +1109,7 @@ form.dcc-roll-modifier input.stat {
 .dcc .character .languages textarea,
 .dcc .character .lucky-roll textarea {
   background: none;
-  border: none;
+  border: 0;
   font-family: var(--data-font);
   font-size: 12px;
   grid-row: 2;
@@ -1125,7 +1125,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .character .lucky-roll {
   border: var(--dark-border);
-  border-top: none;
+  border-top: 0;
   display: grid;
   grid-column: 2;
   grid-column-end: span 3;
@@ -1147,7 +1147,7 @@ form.dcc-roll-modifier input.stat {
   grid-template-rows: 69px 69px;
 }
 .dcc .character .melee-missile-attack-damage input {
-  border: none;
+  border: 0;
   font-size: 14px;
   margin: 4px 8px 4px 8px;
 }
@@ -1169,7 +1169,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .character .portrait {
   border: var(--dark-border);
-  border-top: none;
+  border-top: 0;
   display: grid;
   grid-row: 7;
   grid-column: 3;
@@ -1179,7 +1179,7 @@ form.dcc-roll-modifier input.stat {
   font-size: 14px;
 }
 .dcc .character .portrait img {
-  border: none;
+  border: 0;
   justify-self: center;
   align-self: center;
 }
@@ -1188,7 +1188,7 @@ form.dcc-roll-modifier input.stat {
   margin-bottom: 3px;
 }
 .dcc .character .saving-throws {
-  border: none;
+  border: 0;
   display: grid;
   grid-column: 2;
   grid-row: 5;
@@ -1226,7 +1226,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .npc-grid textarea {
   background: none;
-  border: none;
+  border: 0;
   font-family: var(--data-font);
   font-size: 12px;
   line-height: 15px;
@@ -1245,7 +1245,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .npc-grid .ac-and-hp input {
   align-self: center;
-  border: none;
+  border: 0;
   font-size: 22px;
 }
 .dcc .npc-grid .combat-basics {

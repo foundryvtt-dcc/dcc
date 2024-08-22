@@ -1,4 +1,4 @@
-/* global Combatant, game */
+/* global Combatant */
 
 /**
  * Extend the base Combatant entity with a custom initiative mechanism.

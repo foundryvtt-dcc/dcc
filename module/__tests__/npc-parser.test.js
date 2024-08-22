@@ -1,8 +1,8 @@
-/* global test, expect */
-/* eslint-env jest */
-
 /* Tests for NPC Parser */
 
+import { expect, test } from 'vitest'
+import '../__mocks__/foundry.js'
+import '../__mocks__/roll.js'
 import parseNPCs from '../npc-parser.js'
 
 /* Test snake */
@@ -441,7 +441,7 @@ test('witchharps', async () => {
           damage: '1',
           melee: true
         }
-      },
+      }
     ]
   }
   expect(parsedNPC).toMatchObject([expected])
