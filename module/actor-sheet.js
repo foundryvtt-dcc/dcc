@@ -253,7 +253,7 @@ class DCCActorSheet extends ActorSheet {
     if (this.actor.isOwner) {
       // Ability Checks
       html.find('.ability-box label[for*=".value"]').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-box label[data-ability="lck"][data-modifier="true"]').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-box label[for="system.abilities.lck.mod"]').click(this._onRollAbilityCheck.bind(this))
       html.find('.ability-box label[for*=".value"]').each(makeDraggable)
       html.find('[data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
 
@@ -650,10 +650,10 @@ class DCCActorSheet extends ActorSheet {
     const ability = event.currentTarget.parentElement.dataset.ability
 
     // Luck checks are roll under unless the user explicitly clicks the modifier
-    const rollUnder = (ability === 'lck') && (event.currentTarget.className !== 'ability-modifiers')
+    const rollUnder = (ability === 'lck') && (event.currentTarget.htmlFor !== 'system.abilities.lck.mod')
 
     // Allow alternate behaviour if the modifier is clicked instead of the attribute
-    const modClick = (event.currentTarget.className === 'ability-modifiers' || event.currentTarget.dataset.modifier === 'true')
+    const modClick = (event.currentTarget.for === 'system.abilities.lck.mod')
 
     Object.assign(options, {
       modClick,
@@ -697,17 +697,20 @@ class DCCActorSheet extends ActorSheet {
       ui.notifications.warn(game.i18n.localize('DCC.AlreadyHasInitiative'))
       return
     }
+
     const rollOptions = this._fillRollOptions(event)
     let formula = null
     if (rollOptions.showModifierDialog) {
       formula = await this.actor.getInitiativeRoll(formula, { showModifierDialog: true })
     }
+
     const options = {
       createCombatants: true,
       initiativeOptions: {
         formula: formula
       }
     }
+
     this.actor.rollInitiative(options)
   }
 

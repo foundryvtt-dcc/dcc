@@ -360,6 +360,10 @@ class DCCActor extends Actor {
     let roll
     const flags = {}
 
+    if (abilityId === 'str' || abilityId === 'agl') {
+      flags.checkPenaltyCouldApply = true
+    }
+
     // Allow requesting roll under (for Luck Checks)
     if (options.rollUnder && !options.modClick) {
       const terms = [
@@ -369,11 +373,10 @@ class DCCActor extends Actor {
         }
       ]
 
-      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+      roll = game.dcc.DCCRoll.createRoll(terms, {}, options)
 
       // Apply custom roll options
-      await roll.evaluate()
-      roll.dice[0].options.dcc = {
+      roll.terms[0].options.dcc = {
         rollUnder: true,
         lowerThreshold: ability.value,
         upperThreshold: ability.value + 1
@@ -401,17 +404,18 @@ class DCCActor extends Actor {
           type: 'Modifier',
           label: abilityLabel,
           formula: ability.mod
-        },
-        {
-          type: 'CheckPenalty',
-          formula: parseInt(this.system.attributes.ac.checkPenalty || '0'),
-          apply: false
         }
       ]
 
-      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+      if (this.system.config.computeCheckPenalty && flags.checkPenaltyCouldApply) {
+        terms.push({
+          type: 'CheckPenalty',
+          formula: parseInt(this.system.attributes.ac.checkPenalty || '0'),
+          apply: true
+        })
+      }
 
-      await roll.evaluate()
+      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
 
       // Generate flags for the roll
       Object.assign(flags, {
@@ -629,11 +633,18 @@ class DCCActor extends Actor {
       })
     }
 
-    terms.push({
-      type: 'CheckPenalty',
-      formula: parseInt(this.system.attributes.ac.checkPenalty || '0'),
-      apply: false // Always optional for skill checks
-    })
+    const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || '0')
+    if (checkPenalty !== 0) {
+      let checkPenaltyCouldApply = false
+      if (['sneakSilently', 'climbSheerSurfaces'].includes(skillId)) {
+        checkPenaltyCouldApply = true
+      }
+      terms.push({
+        type: 'CheckPenalty',
+        formula: checkPenalty,
+        apply: checkPenaltyCouldApply
+      })
+    }
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
@@ -1242,11 +1253,7 @@ class DCCActor extends Actor {
     ]
 
     // Roll object for the crit die
-    let roll = await game.dcc.DCCRoll.createRoll(
-      terms,
-      this.getRollData(),
-      {} // Ignore options for crits
-    )
+    let roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     // Lookup the crit table if available
     let critResult = null

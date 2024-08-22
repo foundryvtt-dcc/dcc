@@ -651,7 +651,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   column-gap: 5px;
   display: grid;
   font-family: $book-antiqua;
-  grid-template-columns: 220px 55px 60px 97px 50px;
+  grid-template-columns: minmax(100px, auto) 55px 60px 97px 50px;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
   text-align: center;
