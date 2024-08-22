@@ -520,7 +520,7 @@ Spells: (Spell Check: d20+2)
           toHit: '+0',
           damage: '1d4',
           config: {
-            attackBonusOverride: '+0',
+            attackBonusOverride: '',
             damageOverride: ''
           },
           melee: true
@@ -534,7 +534,7 @@ Spells: (Spell Check: d20+2)
           toHit: '+1',
           damage: '1d4',
           config: {
-            attackBonusOverride: '+1',
+            attackBonusOverride: '',
             damageOverride: ''
           },
           melee: false
@@ -548,7 +548,7 @@ Spells: (Spell Check: d20+2)
           toHit: '+0',
           damage: '1d8',
           config: {
-            attackBonusOverride: '+0',
+            attackBonusOverride: '',
             damageOverride: ''
           },
           melee: true
@@ -2079,10 +2079,6 @@ Lucky sign: Righteous heart (Turn unholy checks) (+0)
 Languages: Common
 Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
   )
-
-  console.log('POST PARSE')
-  console.log(parsedNPC)
-
   const expected = {
     'attributes.init.value': '1',
     'attributes.speed.value': '30',
