@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry */
+/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry, TextEditor */
 
 import { ensurePlus } from './utilities.js'
 
@@ -909,6 +909,9 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollWeaponAttack (weaponId, options = {}) {
+    // Display standard cards?
+    options.displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
+
     // First try and find the item by name or id
     const weapon = this.items.find(i => i.name === weaponId || i.id === weaponId)
 
@@ -927,11 +930,51 @@ class DCCActor extends Actor {
     }
 
     // Damage roll
-    const damageRollResult = await this.rollDamage(weapon, options)
-    const damageFormula = damageRollResult.formula
+    // Todo backstab
+    let damageRollFormula = weapon.system.damage
+    if (attackRollResult.deedDieRollResult) {
+      damageRollFormula = damageRollFormula.replace(this.system.details.attackBonus, `+${attackRollResult.deedRollTotalResult}`)
+    }
+    if (damageRollFormula.includes('-')) {
+      damageRollFormula = `max(${damageRollFormula}, 1)`
+    }
+    const damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
+
+    // Deed roll
+    const deedDieRollResult = attackRollResult.deedDieRollResult
+    const deedRollTotalResult = attackRollResult.deedRollTotalResult
+    const deedRollSuccess = attackRollResult.deedDieRollResult > 2
+
+    // Crit roll
+    let critRollFormula = ''
+    let critInlineRoll = ''
+    let critTableName = ''
+    if (attackRollResult.crit) {
+      // critRollResult = await this.rollCritical(options)
+      critRollFormula = weapon.system?.critDie || this.system.attributes.critical.die
+      critTableName = weapon.system?.critTable || this.system.attributes.critical.table
+      const criticalText = game.i18n.localize('DCC.Critical')
+      const critTableText = game.i18n.localize('DCC.CritTable')
+      critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
+    }
+
+    // Fumble roll
+    let fumbleRollFormula = ''
+    let fumbleInlineRoll = ''
+    if (attackRollResult.fumble) {
+      // fumbleRollResult = await this.rollFumble(options)
+      fumbleRollFormula = weapon.system?.fumbleDie || this.system.attributes.fumble.die
+      fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble]]`)
+    }
 
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })
+
+    // Emote Version
+    let attackEmote = ''
+    if (!options.displayStandardCards) {
+      attackEmote = await TextEditor.enrichHTML(`attacks with their ${weapon.name} and hits <strong>AC ${attackRollResult.hitsAc}</strong> for [[${damageRollFormula}]] points of damage!`)
+    }
 
     // Output the results
     attackRollResult.roll.toMessage({
@@ -940,16 +983,28 @@ class DCCActor extends Actor {
       flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
       flags: {
         'dcc.RollType': 'ToHit',
-        'dcc.DamageRollResult': damageRollResult,
-        'dcc.DamageFormula': damageFormula,
         'dcc.ItemId': weaponId,
         'dcc.IsBackstab': options.backstab,
         'dcc.IsFumble': attackRollResult.fumble,
         'dcc.IsCrit': attackRollResult.crit,
         'dcc.IsNaturalCrit': attackRollResult.naturalCrit,
         'dcc.IsMelee': weapon.system?.melee,
-        'dcc.critDieOverride': weapon.system?.config?.critDieOverride,
-        'dcc.critTableOverride': weapon.system?.config?.critTableOverride
+        'dcc.ShowAsEmote': !options.displayStandardCards
+      },
+      system: {
+        attackEmote,
+        damageInlineRoll,
+        damageRollFormula,
+        critInlineRoll,
+        critRollFormula,
+        critTableName,
+        critDieOverride: weapon.system?.config?.critDieOverride,
+        critTableOverride: weapon.system?.config?.critTableOverride,
+        deedDieRollResult,
+        deedRollTotalResult,
+        deedRollSuccess,
+        fumbleInlineRoll,
+        fumbleRollFormula
       }
     })
   }

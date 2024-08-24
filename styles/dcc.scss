@@ -214,6 +214,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 /*  Chat Rolls                               */
 /* ----------------------------------------- */
+.deed-result.critical,
 .dice-roll .dice-total.critical,
 .inline-roll.critical {
   color: green;
@@ -223,6 +224,18 @@ $font-awesome: 'Font Awesome 6 Pro';
 .dice-roll .dice-total.fumble,
 .inline-roll.fumble {
   color: red;
+}
+
+.message-content {
+  font-family: var(--data-font);
+}
+
+.flavor-text {
+  font-family: var(--label-font);
+}
+
+.message-sender {
+  font-family: var(--label-font);
 }
 
 /* ----------------------------------------- */

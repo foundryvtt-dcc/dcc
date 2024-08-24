@@ -148,6 +148,9 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('dccPackExists', function (pack, options) {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
   })
+
+  // Override ChatMessage to use our template
+  CONFIG.ChatMessage.template = 'systems/dcc/templates/chat-message.html'
 })
 
 /* -------------------------------------------- */
