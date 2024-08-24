@@ -13,8 +13,8 @@ class DCCItem extends Item {
 
     // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.actor.system && this.system.config) {
-      // Weapon Items
-      if (this.type === 'weapon') {
+      // PC Weapon Items
+      if (this.type === 'weapon' && this.actor.type === 'Player') {
         // Initiative Calculation
         this.system.initiativeDie = this.actor.system.attributes.init.die
         if (this.system.twoHanded) {
@@ -35,9 +35,9 @@ class DCCItem extends Item {
 
         // To-Hit Calculation
         if (this.system.melee) {
-          this.system.attackBonus = this.actor.system.details.attackHitBonus?.melee?.value
+          this.system.attackBonus = this.actor.system.details.attackHitBonus?.melee?.value || '+0'
         } else {
-          this.system.attackBonus = this.actor.system.details.attackHitBonus?.missile?.value
+          this.system.attackBonus = this.actor.system.details.attackHitBonus?.missile?.value || '+0'
         }
         if (this.system.attackBonusWeapon) {
           this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusWeapon}`

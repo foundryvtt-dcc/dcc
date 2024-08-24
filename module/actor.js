@@ -909,55 +909,15 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollWeaponAttack (weaponId, options = {}) {
-    if (options.displayStandardCards === undefined) {
-      try {
-        options.displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
-      } catch (e) { }
-    }
-
     // First try and find the item by name or id
-    let weapon = this.items.find(i => i.name === weaponId || i.id === weaponId)
+    const weapon = this.items.find(i => i.name === weaponId || i.id === weaponId)
 
-    // If not found try finding it by slot
-    if (!weapon) {
-      // Verify this is a valid slot name
-      try {
-        const result = weaponId.match(/^([mr])(\d+)$/)
-        if (!result) {
-          console.log('Invalid slot name')
-        } else {
-          const isMelee = weaponId[0] === 'm' // 'm' or 'r'
-          const weaponIndex = parseInt(weaponId.slice(1)) - 1 // 1 based indexing
-          let weapons = this.itemTypes.weapon
-          if (this.system.config.sortInventory) {
-            // ToDo: Move inventory classification and sorting into the actor so this isn't duplicating code in the sheet
-            weapons = [...weapons].sort((a, b) => a.name.localeCompare(b.name))
-          }
-          weapon = weapons.filter(i => !!i.system.melee === isMelee)[weaponIndex]
-        }
-      } catch (err) { }
-    }
-
-    // If all lookups fail, give up and show a warning
+    // If weapon is not found, give up and show a warning
     if (!weapon) {
       return ui.notifications.warn(game.i18n.format('DCC.WeaponNotFound', { id: weaponId }))
     }
 
-    if (options.weaponId === undefined) {
-      options.weaponId = weapon.id
-    }
-
-    let attackBonusRollResult = 0
-    if (this.rollAttackBonusWithAttack) {
-      options.rollWeaponAttack = true
-      attackBonusRollResult = await this.rollAttackBonus(Object.assign(
-        {
-          rollWeaponAttack: true
-        },
-        options
-      ))
-    }
-
+    // Warn if weapon is not equipped
     if (!weapon.system?.equipped && game.settings.get('dcc', 'checkWeaponEquipment')) return ui.notifications.warn(game.i18n.localize('DCC.WeaponWarningUnequipped'))
 
     // Attack roll
@@ -968,125 +928,30 @@ class DCCActor extends Actor {
 
     // Damage roll
     const damageRollResult = await this.rollDamage(weapon, options)
+    const damageFormula = damageRollResult.formula
 
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
     // Output the results
-    if (options.displayStandardCards) {
-      // Attack roll card
-      if (attackRollResult.rolled) {
-        attackRollResult.roll.toMessage({
-          user: game.user.id,
-          speaker,
-          flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
-          flags: {
-            'dcc.RollType': 'ToHit',
-            'dcc.ItemId': options.weaponId
-          }
-        })
-      } else {
-        const messageData = {
-          user: game.user.id,
-          speaker,
-          type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
-          content: game.i18n.format('DCC.AttackRollInvalidFormula', {
-            formula: attackRollResult.formula,
-            weapon: weapon.name
-          }),
-          flags: {
-            'dcc.RollType': 'ToHit',
-            'dcc.ItemId': options.weaponId
-          }
-        }
-        ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
-        await CONFIG.ChatMessage.documentClass.create(messageData)
+    attackRollResult.roll.toMessage({
+      user: game.user.id,
+      speaker,
+      flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
+      flags: {
+        'dcc.RollType': 'ToHit',
+        'dcc.DamageRollResult': damageRollResult,
+        'dcc.DamageFormula': damageFormula,
+        'dcc.ItemId': weaponId,
+        'dcc.IsBackstab': options.backstab,
+        'dcc.IsFumble': attackRollResult.fumble,
+        'dcc.IsCrit': attackRollResult.crit,
+        'dcc.IsNaturalCrit': attackRollResult.naturalCrit,
+        'dcc.IsMelee': weapon.system?.melee,
+        'dcc.critDieOverride': weapon.system?.config?.critDieOverride,
+        'dcc.critTableOverride': weapon.system?.config?.critTableOverride
       }
-
-      // Damage roll card
-      if (damageRollResult.rolled) {
-        damageRollResult.roll.toMessage({
-          user: game.user.id,
-          speaker,
-          flavor: game.i18n.format('DCC.DamageRoll', { weapon: weapon.name }),
-          flags: {
-            'dcc.RollType': 'Damage',
-            'dcc.ItemId': options.weaponId
-          }
-        })
-      } else {
-        const messageData = {
-          user: game.user.id,
-          speaker,
-          type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
-          content: game.i18n.format('DCC.DamageRollInvalidFormula', {
-            formula: damageRollResult.formula,
-            weapon: weapon.name
-          }),
-          flags: {
-            'dcc.RollType': 'Damage',
-            'dcc.ItemId': options.weaponId
-          }
-        }
-        ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
-        await CONFIG.ChatMessage.documentClass.create(messageData)
-      }
-
-      // Roll crits or fumbles
-      if (attackRollResult.crit) {
-        options.critDieOverride = weapon.system?.config?.critDieOverride
-        options.critTableOverride = weapon.system?.config?.critTableOverride
-        await this.rollCritical(options)
-      } else if (attackRollResult.fumble) {
-        await this.rollFumble(options)
-      }
-    } else {
-      const attackRollHTML = this._formatAttackRoll(attackRollResult)
-      const damageRollHTML = this._formatDamageRoll(damageRollResult)
-      const deedRollHTML = this.rollAttackBonusWithAttack ? this._formatAttackBonusRoll(attackBonusRollResult) : ''
-
-      // Check for crits or fumbles
-      let critResult = ''
-      let fumbleResult = ''
-
-      // Generate flags for the roll
-      const flags = {
-        'dcc.RollType': 'CombinedAttack',
-        'dcc.ItemId': options.weaponId
-      }
-
-      if (attackRollResult.crit) {
-        options.critDieOverride = weapon.system?.config?.critDieOverride
-        options.critTableOverride = weapon.system?.config?.critTableOverride
-        critResult = await this.rollCritical(options)
-        if (options.naturalCrit) {
-          game.dcc.FleetingLuck.updateFlagsForCrit(flags)
-        }
-      } else if (attackRollResult.fumble) {
-        fumbleResult = await this.rollFumble(options)
-        game.dcc.FleetingLuck.updateFlagsForFumble(flags)
-      }
-
-      const emote = options.backstab ? 'DCC.BackstabEmote' : 'DCC.AttackRollEmote'
-      const messageData = {
-        user: game.user.id,
-        itemId: weapon.id,
-        speaker,
-        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
-        content: game.i18n.format(emote, {
-          weaponName: weapon.name,
-          rollHTML: attackRollHTML,
-          damageRollHTML,
-          deedRollHTML,
-          crit: critResult,
-          fumble: fumbleResult
-        }),
-        sound: CONFIG.sounds.dice,
-        flags
-      }
-      ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
-      await CONFIG.ChatMessage.documentClass.create(messageData)
-    }
+    })
   }
 
   /**
@@ -1134,6 +999,7 @@ class DCCActor extends Actor {
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.Backstab'),
+        presets: [],
         formula: parseInt(this.system.class.backstab)
       })
     }
@@ -1155,6 +1021,18 @@ class DCCActor extends Actor {
     attackRoll.dice[0].options.dcc = {
       upperThreshold: critRange
     }
+    let deedDieRollResult = ''
+    let deedRollTotalResult = ''
+    let deedSucceed = false
+    if (attackRoll.dice.length > 1) {
+      attackRoll.dice[1].options.dcc = {
+        lowerThreshold: 2,
+        upperThreshold: 3
+      }
+      deedDieRollResult = attackRoll.dice[1].total
+      deedRollTotalResult = attackRoll.terms[2].total
+      deedSucceed = deedDieRollResult > 2
+    }
 
     /* Check for crit or fumble */
     const fumble = (d20RollResult === 1)
@@ -1162,14 +1040,18 @@ class DCCActor extends Actor {
     const crit = !fumble && (naturalCrit || options.backstab)
 
     return {
-      rolled: true,
-      roll: attackRoll,
-      formula: game.dcc.DCCRoll.cleanFormula(attackRoll.terms),
-      hitsAc: attackRoll.total,
-      d20Roll: d20RollResult,
+      d20RollResult,
+      deedDieRollResult,
+      deedRollTotalResult,
+      deedSucceed,
       crit,
+      formula: game.dcc.DCCRoll.cleanFormula(attackRoll.terms),
+      fumble,
+      hitsAc: attackRoll.total,
       naturalCrit,
-      fumble
+      roll: attackRoll,
+      rolled: true,
+      weaponDamageFormula: weapon.damage
     }
   }
 

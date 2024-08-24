@@ -38,10 +38,6 @@ async function parseNPCs (npcString) {
 }
 
 /**
- * Roll Hit Points
- */
-
-/**
  *  Parses NPC Stat Blocks (e.g. from published modules) into an NPC sheet
  *  @param {string} npcString The NPC stat block to import
  *  @return {Object}            NPC data for actor creation (currently a single NPC)

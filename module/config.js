@@ -605,7 +605,7 @@ DCC.actorImporterItemPacks = [
   'dcc-core-book.dcc-core-spells-patron'
 ]
 
-// Name remappings for the actor importer
+// Name re-mappings for the actor importer
 DCC.actorImporterNameMap = {
   'Hammer (as club)': ['Club'],
   'Razor (as dagger)': ['Dagger'],

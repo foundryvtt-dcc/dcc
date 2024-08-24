@@ -151,7 +151,7 @@
             </div>
         </div>
 
-        {{!-- Melee Weapons --}}
+        {{!-- Weapons --}}
         {{#* inline "weaponRow"}}
             <li class="grid-col-span-9 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
                 <div class="attack-buttons">
@@ -161,12 +161,12 @@
                        name="itemUpdates.{{id}}.name"
                        value="{{weapon.name}}"/>
                 <input type="text"
-                       name="itemUpdates.{{id}}.system.config.attackBonusOverride"
-                       value="{{weapon.system.config.attackBonusOverride}}"
+                       name="itemUpdates.{{id}}.system.toHit"
+                       value="{{weapon.system.toHit}}"
                 />
                 <input class="weapon-damage" type="text"
-                       name="itemUpdates.{{id}}.system.config.damageOverride"
-                       value="{{weapon.system.config.damageOverride}}"
+                       name="itemUpdates.{{id}}.system.damage"
+                       value="{{weapon.system.damage}}"
                 />
                 {{#if melee}}
                     <input class="weapon-notes grid-col-span-2" type="text"
@@ -183,6 +183,8 @@
                 </div>
             </li>
         {{/inline}}
+
+        {{!-- Melee Weapons --}}
         <div class="dark-border grid-col-span-12">
             <div class="dark-title">{{localize "DCC.MeleeAttacks"}}</div>
             <ol class="weapon-list" style="margin-bottom: 0">

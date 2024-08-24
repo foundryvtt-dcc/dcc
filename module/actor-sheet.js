@@ -9,7 +9,7 @@ import EntityImages from './entity-images.js'
  * @extends {ActorSheet}
  */
 class DCCActorSheet extends ActorSheet {
-  static height = 438
+  static height = 450
 
   /** @override */
   static get defaultOptions () {
