@@ -23,3 +23,13 @@ export function getFirstMod (value) {
   const firstMod = value.match(/[+-]\d\d?/)
   return firstMod || ''
 }
+
+export function createInlineRollHTML (roll) {
+  const rollData = encodeURIComponent(JSON.stringify(roll))
+  let iconClass = 'fa-dice-d20'
+  if (roll.dice[0]?.faces === 6) {
+    iconClass = 'fa-dice-d6'
+  }
+  return `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${roll.total}">
+            <i class="fas ${iconClass}"></i> ${roll.total}</a>`
+}

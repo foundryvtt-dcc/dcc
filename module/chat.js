@@ -1,5 +1,7 @@
 /* global canvas, game */
 
+import { createInlineRollHTML } from './utilities.js'
+
 /**
  * Highlight critical success or failure on d20 rolls
  */
@@ -109,4 +111,50 @@ function applyChatCardDamage (roll, multiplier) {
     const a = t.actor
     return a.applyDamage(amount, multiplier)
   }))
+}
+
+/**
+ * Change attack rolls into emotes
+ */
+export const emoteAttackRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.isToHit) return
+  if (game.settings.get('dcc', 'useStandardDiceRoller') === true) return
+
+  let deedRollHTML = ''
+  if (message.system.deedDieRollResult) {
+    const critical = message.system.deedSucceed ? ' critical' : ''
+    const iconClass = 'fa-dice-d4'
+    const deedDieHTML = `<a class="inline-roll${critical}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</a>`
+    deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
+  }
+
+  const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
+    actorName: message.alias,
+    weaponName: message.system.weaponName,
+    rollHTML: createInlineRollHTML(message.rolls[0]),
+    deedRollHTML,
+    damageRollHTML: message.system.damageInlineRoll,
+    crit: '',
+    fumble: ''
+  })
+  html.find('.message-content').html(attackEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change initiative rolls into emotes
+ */
+export const emoteInitiativeRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flags?.core?.initiativeRoll) return
+  if (game.settings.get('dcc', 'useStandardDiceRoller')) return
+
+  const initiativeRollEmote = game.i18n.format(
+    'DCC.RolledInitiativeEmote',
+    {
+      actorName: data.alias,
+      initiativeInlineRollHTML: createInlineRollHTML(message.rolls[0])
+    }
+  )
+  html.find('.message-content').html(initiativeRollEmote)
+  html.find('header').remove()
 }

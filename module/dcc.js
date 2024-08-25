@@ -456,6 +456,9 @@ Hooks.on('renderChatMessage', (message, html, data) => {
   if (itemId !== undefined) {
     html.find('.message-content').attr('data-item-id', itemId)
   }
+
+  chat.emoteAttackRoll(message, html, data)
+  chat.emoteInitiativeRoll(message, html, data)
 })
 
 // Support context menu on chat cards

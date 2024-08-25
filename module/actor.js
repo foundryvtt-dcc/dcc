@@ -909,9 +909,6 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollWeaponAttack (weaponId, options = {}) {
-    // Display standard cards?
-    options.displayStandardCards = game.settings.get('dcc', 'useStandardDiceRoller')
-
     // First try and find the item by name or id
     const weapon = this.items.find(i => i.name === weaponId || i.id === weaponId)
 
@@ -941,6 +938,7 @@ class DCCActor extends Actor {
     const damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
 
     // Deed roll
+    const deedDieFormula = attackRollResult.deedDieFormula
     const deedDieRollResult = attackRollResult.deedDieRollResult
     const deedRollTotalResult = attackRollResult.deedRollTotalResult
     const deedRollSuccess = attackRollResult.deedDieRollResult > 2
@@ -970,29 +968,20 @@ class DCCActor extends Actor {
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
-    // Emote Version
-    let attackEmote = ''
-    if (!options.displayStandardCards) {
-      attackEmote = await TextEditor.enrichHTML(`attacks with their ${weapon.name} and hits <strong>AC ${attackRollResult.hitsAc}</strong> for [[${damageRollFormula}]] points of damage!`)
-    }
-
-    // Output the results
-    attackRollResult.roll.toMessage({
+    const messageData = {
       user: game.user.id,
       speaker,
       flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
       flags: {
-        'dcc.RollType': 'ToHit',
-        'dcc.ItemId': weaponId,
-        'dcc.IsBackstab': options.backstab,
-        'dcc.IsFumble': attackRollResult.fumble,
-        'dcc.IsCrit': attackRollResult.crit,
-        'dcc.IsNaturalCrit': attackRollResult.naturalCrit,
-        'dcc.IsMelee': weapon.system?.melee,
-        'dcc.ShowAsEmote': !options.displayStandardCards
+        'dcc.isToHit': true,
+        'dcc.isBackstab': options.backstab,
+        'dcc.isFumble': attackRollResult.fumble,
+        'dcc.isCrit': attackRollResult.crit,
+        'dcc.isNaturalCrit': attackRollResult.naturalCrit,
+        'dcc.isMelee': weapon.system?.melee
       },
       system: {
-        attackEmote,
+        actorId: this.id,
         damageInlineRoll,
         damageRollFormula,
         critInlineRoll,
@@ -1000,13 +989,20 @@ class DCCActor extends Actor {
         critTableName,
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
+        deedDieFormula,
         deedDieRollResult,
         deedRollTotalResult,
         deedRollSuccess,
         fumbleInlineRoll,
-        fumbleRollFormula
+        fumbleRollFormula,
+        hitsAc: attackRollResult.hitsAc,
+        weaponId,
+        weaponName: weapon.name
       }
-    })
+    }
+
+    // Output the results
+    attackRollResult.roll.toMessage(messageData)
   }
 
   /**
@@ -1077,6 +1073,7 @@ class DCCActor extends Actor {
       upperThreshold: critRange
     }
     let deedDieRollResult = ''
+    let deedDieFormula = ''
     let deedRollTotalResult = ''
     let deedSucceed = false
     if (attackRoll.dice.length > 1) {
@@ -1084,6 +1081,7 @@ class DCCActor extends Actor {
         lowerThreshold: 2,
         upperThreshold: 3
       }
+      deedDieFormula = attackRoll.dice[1].formula
       deedDieRollResult = attackRoll.dice[1].total
       deedRollTotalResult = attackRoll.terms[2].total
       deedSucceed = deedDieRollResult > 2
@@ -1096,6 +1094,7 @@ class DCCActor extends Actor {
 
     return {
       d20RollResult,
+      deedDieFormula,
       deedDieRollResult,
       deedRollTotalResult,
       deedSucceed,
