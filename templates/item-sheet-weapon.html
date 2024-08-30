@@ -208,7 +208,7 @@
                     <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
                         <div class="value-display grid-col-span-2" title="{{localize 'DCC.DisplayValue'}}">
                             {{localize "DCC.Crit"}} {{localize "DCC.on"}} {{system.critRange}}, {{localize "DCC.Roll"}}
-                            {{system.critDie}} {{localize "DCC.on"}} {{localize "DCC.table"}} {{system.critTable}}
+                            {{system.critDie}}{{system.lck.mod}} {{localize "DCC.on"}} {{localize "DCC.Table"}} {{system.critTable}}
                         </div>
 
                         <label for="system.config.critRangeOverride">{{localize "DCC.OverrideRange"}}</label>

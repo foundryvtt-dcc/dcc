@@ -2,6 +2,7 @@
 
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
+import { ensurePlus } from './utilities.js'
 
 /**
  * Extend the basic ItemSheet for DCC RPG
@@ -73,6 +74,10 @@ export class DCCItemSheet extends ItemSheet {
 
     // Pass through the item data in the format we expect
     data.system = data.item.system
+
+    if (data.item.type === 'weapon') {
+      data.system.lck = { mod: ensurePlus(this.actor.system?.abilities?.lck?.mod) || '' }
+    }
 
     if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
       data.data.img = EntityImages.imageForItem(data.type)

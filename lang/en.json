@@ -767,6 +767,7 @@
   "DCC.SubclassName": "Subclass Name",
   "DCC.SubdualDamage": "Subdual Damage",
   "DCC.Supply": "Supply",
+  "DCC.Table": "Table",
   "DCC.TakeDamage": "Takes {damage} HP of damage.",
   "DCC.Target": "Target",
   "DCC.TargetAlly": "Ally",
@@ -873,6 +874,5 @@
   "DCC.on": "on",
   "DCC.spell": "spell",
   "DCC.subdual": " subdual ",
-  "DCC.table": "table",
   "DCC.title": "Dungeon Crawl Classics"
 }
