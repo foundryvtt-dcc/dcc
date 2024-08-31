@@ -429,3 +429,11 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
  * Handlebars
  */
 global.loadTemplates = vi.fn((templateList) => {}).mockName('loadTemplates')
+
+class TextEditorMock {
+  static async enrichHTML (content, options = {}) {
+    return content
+  }
+}
+
+global.TextEditor = TextEditorMock

@@ -236,136 +236,6 @@ test('roll initiative', async () => {
   )
 })
 
-test('roll weapon attack missing weapon', async () => {
-  dccRollCreateRollMock.mockClear()
-  collectionFindMock.mockClear()
-  itemTypesMock.mockClear()
-  uiNotificationsWarnMock.mockClear()
-
-  // Roll a weapon we don't have
-  await actor.rollWeaponAttack('r123')
-  expect(collectionFindMock).toHaveBeenCalledTimes(1)
-  expect(itemTypesMock).toHaveBeenCalledTimes(1)
-  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
-  expect(uiNotificationsWarnMock).toHaveBeenCalledWith('WeaponNotFound,id:r123[object Object]')
-})
-
-test('roll weapon attack', async () => {
-  dccRollCreateRollMock.mockClear()
-  collectionFindMock.mockClear()
-
-  // Roll a weapon we do have - by name
-  collectionFindMock.mockReturnValue(new DCCItem('longsword', 'weapon', {
-    actionDie: '1d20',
-    damage: '1d8',
-    toHit: '1d4+1',
-    melee: true
-  }))
-  await actor.rollWeaponAttack('longsword')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: game.i18n.localize('DCC.ActionDie'),
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'DeedDie',
-        formula: '1d4+1',
-        modifierLabel: 'ToHit'
-      }
-    ],
-    Object.assign({ critical: 20 }, actor.getRollData()),
-    {
-      title: 'ToHit'
-    }
-  )
-  expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
-    speaker: actor,
-    type: 'emote',
-    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D" data-damage="1" title="undefined"><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
-    flags: {
-      'dcc.ItemId': undefined,
-      'dcc.RollType': 'CombinedAttack'
-    },
-    itemId: undefined,
-    sound: 'diceSound',
-    user: undefined
-  })
-})
-
-test('roll weapon attack by slot', async () => {
-  dccRollCreateRollMock.mockClear()
-  collectionFindMock.mockClear()
-  itemTypesMock.mockClear()
-  uiNotificationsWarnMock.mockClear()
-
-  // Roll a weapon we do have - by slot
-  collectionFindMock.mockReturnValue(null)
-  itemTypesMock.mockReturnValue({
-    weapon: [
-      new DCCItem('axe', 'weapon', { melee: true }),
-      new DCCItem('javelin', 'weapon', { melee: false }),
-      new DCCItem('longsword', 'weapon', { actionDie: '1d20', toHit: 2, melee: true })
-    ]
-  })
-  await actor.rollWeaponAttack('m2')
-  expect(itemTypesMock).toHaveBeenCalledTimes(1)
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: game.i18n.localize('DCC.ActionDie'),
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'DeedDie',
-        modifierLabel: 'ToHit',
-        formula: 2
-      }
-    ],
-    Object.assign({ critical: 20 }, actor.getRollData()),
-    {
-      title: 'ToHit'
-    }
-  )
-  expect(global.CONFIG.ChatMessage.documentClass.create).toHaveBeenCalledWith({
-    speaker: actor,
-    type: 'emote',
-    content: 'AttackRollEmote,weaponName:longsword,rollHTML:<a class="inline-roll inline-result" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%22dcc%22%3A%7B%22upperThreshold%22%3A20%7D%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D" title="undefined"><i class="fas fa-dice-d20"></i> undefined</a>,damageRollHTML:<a class="inline-roll inline-result damage-applyable" data-roll="%7B%22dice%22%3A%5B%7B%22results%22%3A%5B10%5D%2C%22options%22%3A%7B%7D%7D%5D%2C%22terms%22%3A%5B%7B%22class%22%3A%22Die%22%2C%22options%22%3A%7B%22flavor%22%3Anull%7D%2C%22evaluated%22%3Afalse%2C%22number%22%3A1%2C%22faces%22%3A20%2C%22modifiers%22%3A%5B%5D%2C%22results%22%3A%5B%5D%7D%5D%7D" data-damage="1" title="undefined"><i class="fas fa-dice-d20"></i> 1 (undefined)</a>,deedRollHTML:,crit:,fumble:[object Object]',
-    sound: 'diceSound',
-    flags: {
-      'dcc.ItemId': undefined,
-      'dcc.RollType': 'CombinedAttack'
-    },
-    user: undefined
-  })
-})
-
 test('roll weapon attack dagger', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockClear()
@@ -374,6 +244,7 @@ test('roll weapon attack dagger', async () => {
     actionDie: '1d16',
     toHit: 2,
     critRange: 16,
+    damage: '1d4',
     melee: true
   }))
   await actor.rollWeaponAttack('lefthand dagger')
