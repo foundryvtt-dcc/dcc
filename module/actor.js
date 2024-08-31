@@ -1,6 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry, TextEditor */
 
-import { ensurePlus } from './utilities.js'
+import { ensurePlus, getCritTableResult, getFumbleTableResult } from './utilities.js'
+import { lookupCriticalRoll, lookupFumbleRoll } from './chat.js'
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -939,8 +940,18 @@ class DCCActor extends Actor {
     }
     let damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
     let damagePrompt = game.i18n.localize('DCC.RollDamage')
+    let damageRoll = null
     if (automateDamageFumblesCrits) {
-      damageInlineRoll = await TextEditor.enrichHTML(`[[${damageRollFormula}]]`)
+      damageRoll = game.dcc.DCCRoll.createRoll([
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.Damage'),
+          formula: damageRollFormula
+        },
+      ])
+      await damageRoll.evaluate()
+      const damageRollAnchor = await damageRoll.toAnchor()
+      damageInlineRoll = damageRollAnchor.outerHTML
       damagePrompt = game.i18n.localize('DCC.Damage')
     }
 
@@ -965,7 +976,17 @@ class DCCActor extends Actor {
       critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
       if (automateDamageFumblesCrits) {
         critPrompt = game.i18n.localize('DCC.Critical')
-        critInlineRoll = await TextEditor.enrichHTML(`[[${critRollFormula}]] (${critTableText} ${critTableName})`)
+        const critRoll = game.dcc.DCCRoll.createRoll([
+          {
+            type: 'Compound',
+            dieLabel: game.i18n.localize('DCC.Critical'),
+            formula: critRollFormula
+          },
+        ])
+        await critRoll.evaluate()
+        const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
+        const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+        critInlineRoll = await TextEditor.enrichHTML(`[[${critRollFormula}]] (${critTableText} ${critTableName})<br>${critText}`)
       }
     }
 
@@ -980,6 +1001,16 @@ class DCCActor extends Actor {
       fumblePrompt = game.i18n.localize('DCC.RollFumble')
       if (automateDamageFumblesCrits) {
         fumblePrompt = game.i18n.localize('DCC.Fumble')
+        const fumbleRoll = game.dcc.DCCRoll.createRoll([
+          {
+            type: 'Compound',
+            dieLabel: game.i18n.localize('DCC.Fumble'),
+            formula: fumbleRollFormula
+          },
+        ])
+        await fumbleRoll.evaluate()
+        const fumbleResult = await getFumbleTableResult(fumbleRoll.total)
+        const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
         fumbleInlineRoll = await TextEditor.enrichHTML(`[[${fumbleRollFormula} # Fumble]]`)
       }
     }
