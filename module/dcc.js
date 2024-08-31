@@ -459,6 +459,7 @@ Hooks.on('renderChatMessage', (message, html, data) => {
 
   chat.emoteAttackRoll(message, html, data)
   chat.emoteInitiativeRoll(message, html, data)
+  chat.lookupCriticalRoll(message, html, data)
 })
 
 // Support context menu on chat cards

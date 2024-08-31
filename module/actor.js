@@ -947,9 +947,10 @@ class DCCActor extends Actor {
     let critRollFormula = ''
     let critInlineRoll = ''
     let critTableName = ''
+    let luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
       // critRollResult = await this.rollCritical(options)
-      critRollFormula = weapon.system?.critDie || this.system.attributes.critical.die
+      critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical.die}${luckMod}`
       critTableName = weapon.system?.critTable || this.system.attributes.critical.table
       const criticalText = game.i18n.localize('DCC.Critical')
       const critTableText = game.i18n.localize('DCC.CritTable')
@@ -1169,6 +1170,8 @@ class DCCActor extends Actor {
       subdual: weapon.system?.subdual
     }
   }
+
+
 
   /**
    * Roll a Critical Hit

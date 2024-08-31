@@ -1,6 +1,6 @@
 /* global canvas, game */
 
-import { createInlineRollHTML } from './utilities.js'
+import { createInlineRollHTML, getCritTableResult } from './utilities.js'
 
 /**
  * Highlight critical success or failure on d20 rolls
@@ -157,4 +157,13 @@ export const emoteInitiativeRoll = function (message, html, data) {
   )
   html.find('.message-content').html(initiativeRollEmote)
   html.find('header').remove()
+}
+
+export const lookupCriticalRoll = async function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Critical')) return
+  const tableName = message.flavor.replace('Critical (', '').replace(')', '')
+
+  const critResult = await getCritTableResult(message.rolls[0], tableName)
+  const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+  html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${critText}`)
 }
