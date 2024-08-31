@@ -909,6 +909,8 @@ class DCCActor extends Actor {
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollWeaponAttack (weaponId, options = {}) {
+    const automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
+
     // First try and find the item by name or id
     const weapon = this.items.find(i => i.name === weaponId || i.id === weaponId)
 
@@ -935,7 +937,12 @@ class DCCActor extends Actor {
     if (damageRollFormula.includes('-')) {
       damageRollFormula = `max(${damageRollFormula}, 1)`
     }
-    const damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
+    let damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
+    let damagePrompt = game.i18n.localize('DCC.RollDamage')
+    if (automateDamageFumblesCrits) {
+      damageInlineRoll = await TextEditor.enrichHTML(`[[${damageRollFormula}]]`)
+      damagePrompt = game.i18n.localize('DCC.Damage')
+    }
 
     // Deed roll
     const deedDieFormula = attackRollResult.deedDieFormula
@@ -946,6 +953,7 @@ class DCCActor extends Actor {
     // Crit roll
     let critRollFormula = ''
     let critInlineRoll = ''
+    let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critTableName = ''
     let luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
@@ -955,15 +963,25 @@ class DCCActor extends Actor {
       const criticalText = game.i18n.localize('DCC.Critical')
       const critTableText = game.i18n.localize('DCC.CritTable')
       critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
+      if (automateDamageFumblesCrits) {
+        critPrompt = game.i18n.localize('DCC.Critical')
+        critInlineRoll = await TextEditor.enrichHTML(`[[${critRollFormula}]] (${critTableText} ${critTableName})`)
+      }
     }
 
     // Fumble roll
     let fumbleRollFormula = ''
     let fumbleInlineRoll = ''
+    let fumblePrompt = ''
     if (attackRollResult.fumble) {
       // fumbleRollResult = await this.rollFumble(options)
       fumbleRollFormula = weapon.system?.fumbleDie || this.system.attributes.fumble.die
       fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble]]`)
+      fumblePrompt = game.i18n.localize('DCC.RollFumble')
+      if (automateDamageFumblesCrits) {
+        fumblePrompt = game.i18n.localize('DCC.Fumble')
+        fumbleInlineRoll = await TextEditor.enrichHTML(`[[${fumbleRollFormula} # Fumble]]`)
+      }
     }
 
     // Speaker object for the chat cards
@@ -984,8 +1002,10 @@ class DCCActor extends Actor {
       system: {
         actorId: this.id,
         damageInlineRoll,
+        damagePrompt,
         damageRollFormula,
         critInlineRoll,
+        critPrompt,
         critRollFormula,
         critTableName,
         critDieOverride: weapon.system?.config?.critDieOverride,
@@ -995,6 +1015,7 @@ class DCCActor extends Actor {
         deedRollTotalResult,
         deedRollSuccess,
         fumbleInlineRoll,
+        fumblePrompt,
         fumbleRollFormula,
         hitsAc: attackRollResult.hitsAc,
         weaponId,
@@ -1170,8 +1191,6 @@ class DCCActor extends Actor {
       subdual: weapon.system?.subdual
     }
   }
-
-
 
   /**
    * Roll a Critical Hit

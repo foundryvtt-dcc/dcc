@@ -27,17 +27,17 @@
             {{{message.content}}}
             {{#if message.system.deedDieRollResult}}
                 <div class="pt-8 deed-result{{#if message.system.deedRollSuccess}} critical{{/if}}">
-                    <strong>Deed Die:</strong> {{{message.system.deedDieRollResult}}}
+                    <strong>{{localize "DCC.DeedDie"}}:</strong> {{{message.system.deedDieRollResult}}}
                 </div>
             {{/if}}
             {{#if message.system.damageInlineRoll}}
-                <div class="pt-8"><strong>Roll Damage:</strong> {{{message.system.damageInlineRoll}}}</div>
+                <div class="pt-8"><strong>{{message.system.damagePrompt}}:</strong> {{{message.system.damageInlineRoll}}}</div>
             {{/if}}
             {{#if message.flags.dcc.isCrit}}
-                <div class="pt-8"><strong>Roll Crit:</strong> {{{message.system.critInlineRoll}}}</div>
+                <div class="pt-8"><strong>{{message.system.critPrompt}}:</strong> {{{message.system.critInlineRoll}}}</div>
             {{/if}}
             {{#if message.flags.dcc.isFumble}}
-                <div class="pt-8"><strong>Roll Fumble:</strong> {{{message.system.fumbleInlineRoll}}}</div>
+                <div class="pt-8"><strong>{{message.system.fumblePrompt}}:</strong> {{{message.system.fumbleInlineRoll}}}</div>
             {{/if}}
         {{/if}}
     </div>
