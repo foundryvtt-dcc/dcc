@@ -172,12 +172,24 @@ export const registerSystemSettings = async function () {
   })
 
   /**
-   * Roll attacks with standard dice roller
+   * Convert roll cards in the chat to narrative emotes rather than data-style cards
    */
-  game.settings.register('dcc', 'useStandardDiceRoller', {
-    name: 'DCC.SettingStandardDiceRoller',
-    hint: 'DCC.SettingStandardDiceRollerHint',
-    scope: 'world',
+  game.settings.register('dcc', 'emoteRolls', {
+    name: 'DCC.SettingEmoteRolls',
+    hint: 'DCC.SettingEmoteRollsHint',
+    scope: 'client',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
+   * Automatically roll damage, fumbles, and crits for attacks
+   */
+  game.settings.register('dcc', 'automateDamageFumblesCrits', {
+    name: 'DCC.SettingAutomateDamageFumblesCrits',
+    hint: 'DCC.SettingAutomateDamageFumblesCritsHint',
+    scope: 'client',
     type: Boolean,
     default: false,
     config: true

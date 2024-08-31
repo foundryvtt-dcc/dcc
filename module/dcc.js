@@ -457,9 +457,23 @@ Hooks.on('renderChatMessage', (message, html, data) => {
     html.find('.message-content').attr('data-item-id', itemId)
   }
 
-  chat.emoteAttackRoll(message, html, data)
-  chat.emoteInitiativeRoll(message, html, data)
-  chat.lookupCriticalRoll(message, html, data)
+  let emoteRolls = false
+  try {
+    emoteRolls = game.settings.get('dcc', 'emoteRolls')
+  } catch {
+    setTimeout(() => { emoteRolls = game.settings.get('dcc', 'emoteRolls') }, 1000)
+  }
+
+  if (emoteRolls === true) {
+    chat.emoteAttackRoll(message, html, data)
+    chat.emoteCritRoll(message, html, data)
+    chat.emoteFumbleRoll(message, html, data)
+    chat.emoteDamageRoll(message, html, data)
+    chat.emoteInitiativeRoll(message, html, data)
+  } else {
+    chat.lookupCriticalRoll(message, html, data)
+    chat.lookupFumbleRoll(message, html, data)
+  }
 })
 
 // Support context menu on chat cards
