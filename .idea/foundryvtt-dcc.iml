@@ -5,9 +5,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="@types/jest" level="application" />
-    <orderEntry type="library" name="foundry.js" level="project" />
-    <orderEntry type="library" name="commons.js" level="project" />
-    <orderEntry type="library" name="prosemirror.js" level="project" />
-    <orderEntry type="library" name="handlebars.js" level="project" />
+    <orderEntry type="library" name="foundry.js-win" level="project" />
+    <orderEntry type="library" name="foundry-esm.js-win" level="project" />
   </component>
 </module>

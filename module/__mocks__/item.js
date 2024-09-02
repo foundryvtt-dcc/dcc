@@ -1,10 +1,10 @@
-/* eslint-env jest */
+import { vi } from 'vitest'
 
 /**
  * DCCItem
  */
-global.dccItemRollSpellCheckMock = jest.fn((options) => {})
-class DCCItem {
+global.dccItemRollSpellCheckMock = vi.fn((options) => {})
+class DCCItemMock {
   constructor (name = null, type = undefined, systemData = {}) {
     this.name = name
     this.type = type
@@ -15,4 +15,4 @@ class DCCItem {
     return global.dccItemRollSpellCheckMock(...args)
   }
 }
-global.DCCItem = DCCItem
+global.DCCItem = DCCItemMock

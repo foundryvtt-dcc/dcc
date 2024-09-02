@@ -1,5 +1,8 @@
 /* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
 
+import DiceChain from './dice-chain.js'
+import { ensurePlus } from './utilities.js'
+
 /**
  * Extend the base Item entity for DCC RPG
  * @extends {Item}
@@ -10,27 +13,74 @@ class DCCItem extends Item {
 
     // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.actor.system && this.system.config) {
-      if (this.type === 'weapon') {
-        // Weapons can inherit the owner's action die
-        if (this.system.config.inheritActionDie) {
-          this.system.actionDie = this.actor.system.attributes.actionDice.value
+      // PC Weapon Items
+      if (this.type === 'weapon' && this.actor.type === 'Player') {
+        // Initiative Calculation
+        this.system.initiativeDie = this.actor.system.attributes.init.die
+        if (this.system.twoHanded) {
+          this.system.initiativeDie = DiceChain.bumpDie(this.system.initiativeDie, -1)
+        }
+        if (this.system.config.initiativeDieOverride) {
+          this.system.initiativeDie = this.system.config.initiativeDieOverride
         }
 
-        // Set default inherit crit range for legacy items
-        if (this.system.config.inheritCritRange === undefined) {
-          this.system.config.inheritCritRange = true
+        // Action Die Calculation
+        this.system.actionDie = this.actor.system.attributes.actionDice.value
+        if (!this.system.trained) {
+          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[untrained]`
+        }
+        if (this.system.config.actionDieOverride) {
+          this.system.actionDie = this.system.config.actionDieOverride
         }
 
-        // And inherit crit range if set
-        if (this.system.config.inheritCritRange) {
-          this.system.critRange = this.actor.system.details.critRange
+        // To-Hit Calculation
+        if (this.system.melee) {
+          this.system.attackBonus = this.actor.system.details.attackHitBonus?.melee?.value || '+0'
         } else {
-          // If not inheriting crit range make sure there is a value (for legacy items)
-          if (this.system.critRange === null || this.system.critRange === undefined) {
-            this.system.critRange = 20
+          this.system.attackBonus = this.actor.system.details.attackHitBonus?.missile?.value || '+0'
+        }
+        if (this.system.attackBonusWeapon) {
+          this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusWeapon}`
+        }
+        if (this.system.attackBonusLucky) {
+          this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusLucky}`
+        }
+        this.system.toHit = ensurePlus(this.system.attackBonus.includes('d') ? this.system.attackBonus : Roll.safeEval(this.system.attackBonus))
+        if (this.system.config.attackBonusOverride) {
+          this.system.toHit = ensurePlus(this.system.config.attackBonusOverride)
+        }
+
+        // Damage Calculation
+        if (this.system.melee) {
+          this.system.damage = this.actor.system.details.attackDamageBonus?.melee?.value || ''
+        } else {
+          this.system.damage = this.actor.system.details.attackDamageBonus?.missile?.value || ''
+        }
+        if (this.system.damageWeaponBonus) {
+          if (this.system.damage.includes('d') || this.system.damageWeaponBonus.includes('d')) {
+            this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
+          } else {
+            this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
           }
         }
-      } else if (this.type === 'spell') {
+        this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
+        if (this.system.doubleIfMounted) {
+          this.system.damage = `(${this.system.damage})*2`
+        }
+        if (this.system.subdual) {
+          this.system.damage = `${this.system.damage}[subdual]`
+        }
+        if (this.system.config.damageOverride) {
+          this.system.damage = this.system.config.damageOverride
+        }
+
+        // Crit Calculation
+        this.system.critRange = this.system.config.critRangeOverride || this.actor.system.details.critRange || 20
+        this.system.critDie = this.system.config.critDieOverride || this.actor.system.attributes.critical.die || '1d4'
+        this.system.critTable = this.system.config.critTableOverride || this.actor.system.attributes.critical.table || 'I'
+      }
+
+      if (this.type === 'spell') {
         // Spells can use the owner's action die for the spell check
         if (this.system.config.inheritActionDie) {
           this.system.spellCheck.die = this.actor.system.attributes.actionDice.value
@@ -56,7 +106,12 @@ class DCCItem extends Item {
    */
   async rollSpellCheck (abilityId = 'int', options = {}) {
     if (this.type !== 'spell') { return }
-    if (this.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss') && this.system.config.castingMode === 'wizard') { return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', { actor: this.actor.name, spell: this.name })) }
+    if (this.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss') && this.system.config.castingMode === 'wizard') {
+      return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
+        actor: this.actor.name,
+        spell: this.name
+      }))
+    }
 
     const actor = this.actor
     const ability = actor.system.abilities[abilityId] || {}

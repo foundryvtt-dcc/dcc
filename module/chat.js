@@ -1,5 +1,7 @@
 /* global canvas, game */
 
+import { createInlineRollHTML, getCritTableResult, getFumbleTableResult } from './utilities.js'
+
 /**
  * Highlight critical success or failure on d20 rolls
  */
@@ -110,3 +112,174 @@ function applyChatCardDamage (roll, multiplier) {
     return a.applyDamage(amount, multiplier)
   }))
 }
+
+/**
+ * Change attack rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteAttackRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.isToHit) return
+
+  let deedRollHTML = ''
+  if (message.system.deedDieRollResult) {
+    const critical = message.system.deedSucceed ? ' critical' : ''
+    const iconClass = 'fa-dice-d4'
+    const deedDieHTML = `<a class="inline-roll${critical}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</a>`
+    deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
+  }
+
+  const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
+    actorName: message.alias,
+    weaponName: message.system.weaponName,
+    rollHTML: message.rolls[0].toAnchor('Roll Damage'),
+    deedRollHTML,
+    damageRollHTML: message.system.damageInlineRoll,
+    crit: '',
+    fumble: ''
+  })
+  html.find('.message-content').html(attackEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change crit rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteCritRoll = async function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Critical')) return
+  const tableName = message.flavor.replace('Critical (', '').replace(')', '')
+
+  const critResult = await getCritTableResult(message.rolls[0], tableName)
+  const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+
+  const critRollEmote = game.i18n.format(
+    'DCC.RolledCritEmote',
+    {
+      actorName: data.alias,
+      critInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
+      critTableName: tableName,
+      critResult: critText ? `:<br>${critText}` : '.'
+    }
+  )
+
+  html.find('.message-content').html(critRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change damage rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteDamageRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Damage')) return
+
+  const damageRollEmote = game.i18n.format(
+    'DCC.RolledDamageEmote',
+    {
+      actorName: data.alias,
+      damageInlineRollHTML: message.rolls[0].toAnchor('Roll Damage').outerHTML
+    }
+  )
+  html.find('.message-content').html(damageRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change fumble rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteFumbleRoll = async function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Fumble')) return
+  if (game.settings.get('dcc', 'emoteRolls') === false) return
+
+  const fumbleResult = await getFumbleTableResult(message.rolls[0])
+  const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+
+  const fumbleRollEmote = game.i18n.format(
+    'DCC.RolledFumbleEmote',
+    {
+      actorName: data.alias,
+      fumbleInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
+      fumbleResult: fumbleText ? `:<br>${fumbleText}` : '.'
+    }
+  )
+
+  html.find('.message-content').html(fumbleRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change initiative rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteInitiativeRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flags?.core?.initiativeRoll) return
+
+  const initiativeRollEmote = game.i18n.format(
+    'DCC.RolledInitiativeEmote',
+    {
+      actorName: data.alias,
+      initiativeInlineRollHTML: message.rolls[0].toAnchor().outerHTML
+    }
+  )
+  html.find('.message-content').html(initiativeRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Look up a critical hit roll in the crit table specified in the flavor
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const lookupCriticalRoll = async function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Critical')) return
+  const tableName = message.flavor.replace('Critical (', '').replace(')', '')
+
+  const critResult = await getCritTableResult(message.rolls[0], tableName)
+  const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+  html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${critText}`)
+}
+
+/**
+ * Look up a fumble roll
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const lookupFumbleRoll = async function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Fumble')) return
+
+  const fumbleResult = await getFumbleTableResult(message.rolls[0])
+  const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+  html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${fumbleText}`)
+}
+
+/**
+ * Re-render the chat once settings are available
+ */
+// Hooks.on('dcc.ready', (dcc) => {
+//   const messages = game.messages.contents
+//
+//   // Iterate over each message
+//   for (let message of messages) {
+//     Hooks.call('renderChatMessage', (message, message.getHTML(), message.system))
+//   }
+// })

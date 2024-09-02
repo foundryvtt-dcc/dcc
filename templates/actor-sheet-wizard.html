@@ -4,19 +4,16 @@
     <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Wizard" data-dtype="String"/>
     <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
-    {{!-- Sheet Header --}}
-    {{> systems/dcc/templates/actor-partial-pc-header.html }}
-
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
-        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a class="item" data-tab="class">{{localize "DCC.Wizard"}}</a>
-        <a class="item" data-tab="spells">{{localize "DCC.WizardSpells"}}</a>
+        <a data-tab="character">{{localize "DCC.Character"}}</a>
+        <a data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+        <a data-tab="wizard">{{localize "DCC.Wizard"}}</a>
+        <a data-tab="spells">{{localize "DCC.WizardSpells"}}</a>
         {{#if system.config.showSkills}}
-        <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
+            <a data-tab="skills">{{localize "DCC.Skills"}}</a>
         {{/if}}
-        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+        <a data-tab="notes">{{localize "DCC.Notes"}}</a>
     </nav>
 
     {{!-- Sheet Body --}}
@@ -35,37 +32,37 @@
         {{> systems/dcc/templates/actor-partial-pc-notes.html }}
 
         {{!-- Class Tab --}}
-        <div class="tab" data-group="primary" data-tab="class">
+        <div class="grid-container tab wizard-bg" data-group="primary" data-tab="wizard">
             {{!-- Update spell check ability to use Intelligence --}}
             <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
-            <div class="class">
-                <div class="skills-container">
-                    <div class="split-50-50" data-ability="int">
+
+            <div class="grid-col-span-12 dark-border mb-8">
+                <div class="grid-col-span-12 dark-title">{{localize "DCC.WizardAbilities"}}</div>
+                <div class="grid-col-span-12 grid-row-gap-8 p-5">
+                    <div class="grid-col-span-12 grid-tpl-max-25 grid-col-gap-5" data-ability="int">
                         <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}" data-dtype="String"/>
+                        <input id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}"
+                               data-dtype="String"/>
                     </div>
-                    <div></div>
-
-                    <div class="wide split-25-75">
-                        <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
-                        <input class="string" type="text" id="system.class.patron" name="system.class.patron" value="{{system.class.patron}}" data-dtype="String"/>
-                    </div>
-    
-                    <div class="wide split-25-75">
+                    <div class="grid-col-span-12 grid-tpl-max-auto">
                         <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
-                        <input class="string" type="text" id="system.class.familiar" name="system.class.familiar" value="{{system.class.familiar}}" data-dtype="String"/>
+                        <input id="system.class.familiar" name="system.class.familiar"
+                               value="{{system.class.familiar}}" data-dtype="String"/>
                     </div>
+                    <div class="grid-col-span-12 grid-tpl-max-auto mb-8">
+                        <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
+                        <input id="system.class.patron" name="system.class.patron"
+                               value="{{system.class.patron}}" data-dtype="String"/>
+                    </div>
+                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+                        <div class="mb-3">{{{system.class.classLink}}}</div>
+                    {{/dccPackExists}}
+                </div>
+            </div>
 
-                    <div class="wide textarea">
-                        <label for="system.class.corruption">{{localize "DCC.Corruptions"}}:</label>
-                        <label></label>
-                        {{editor corruptionHTML target="system.class.corruption" button=true editable=editable}}
-                    </div>
-		</div>
-			<br>
-		    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-		      {{{system.class.classLink}}}
-		    {{/dccPackExists}}
+            <div class="grid-col-span-12 grid-tpl-max">
+                <div class="grid-col-span-12 dark-title" style="">{{localize "DCC.Corruptions"}}</div>
+                {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
             </div>
         </div>
 

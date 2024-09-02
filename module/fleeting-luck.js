@@ -205,10 +205,10 @@ class FleetingLuck {
         // Check for Roll Type data to determine if we can handle this roll
         const effect = message.getFlag('dcc', 'FleetingLuckEffect')
         if (effect !== undefined) {
-          if (FleetingLuck.isTrackedForUser(message.user)) {
+          if (FleetingLuck.isTrackedForUser(message.author)) {
             switch (effect) {
               case 'Gain':
-                FleetingLuck.give(message.user.id, 1)
+                FleetingLuck.give(message.author.id, 1)
                 break
               case 'Lose':
                 FleetingLuck.clearAll()

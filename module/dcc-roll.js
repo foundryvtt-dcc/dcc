@@ -14,13 +14,12 @@ class DCCRoll {
    * @param {Object} options  DCC roll specific options
    * @return {Promise}        The constructed roll object
    */
-  static createRoll (terms, data = {}, options = {}) {
-    const showModifierDialog = options.showModifierDialog || false
+  static createRoll (terms, data = {}, options = { showModifierDialog: false }) {
     if (!options.rollData) {
       options.rollData = data
     }
 
-    if (showModifierDialog) {
+    if (options.showModifierDialog) {
       return RollModifier.showRollModifier(terms, options)
     } else {
       return RollModifier.createRollFromTerms(terms, options)

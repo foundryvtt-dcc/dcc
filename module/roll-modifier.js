@@ -174,6 +174,12 @@ function DCCCompoundTerm (options) {
         }
         terms.push(term)
       }
+    } else {
+      terms.push({
+        type: 'Compound',
+        partial: 'systems/dcc/templates/roll-modifier-partial-none.html',
+        formula: options.formula
+      })
     }
   }
   return terms
@@ -248,6 +254,7 @@ class RollModifierDialog extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.template = CONFIG.DCC.templates.rollModifierDialog
+    options.width = 500
     return options
   }
 
@@ -281,7 +288,7 @@ class RollModifierDialog extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options) {
     const data = {}
     data.user = game.user
     data.options = this.options
@@ -611,8 +618,8 @@ async function showRollModifier (roll, options) {
   })
 }
 
-function createRollFromTerms (roll, options) {
-  return new RollModifierDialog(null, null, roll, options).roll
+function createRollFromTerms (terms, options) {
+  return new RollModifierDialog(null, null, terms, options).roll
 }
 
 export {

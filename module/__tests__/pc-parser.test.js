@@ -1,8 +1,8 @@
-/* global test, expect */
-/* eslint-env jest */
-
 /* Tests for PC Parser */
 
+import { expect, test } from 'vitest'
+import '../__mocks__/foundry.js'
+import '../__mocks__/roll.js'
 import parsePCs from '../pc-parser.js'
 
 /* Test blacksmith text */
@@ -48,7 +48,6 @@ Languages: Common`)
     'saves.frt.value': '0',
     'saves.ref.value': '-1',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': -2,
     items: [
       {
         name: 'Hammer (as club)',
@@ -154,7 +153,6 @@ test('beekeeper', () => {
     'saves.frt.value': '2',
     'saves.ref.value': '-2',
     'saves.wil.value': '-1',
-    'skills.findSecretDoors.value': -1,
     items: [
       {
         name: 'Staff',
@@ -243,7 +241,6 @@ Languages: Common`)
     'saves.frt.value': '0',
     'saves.ref.value': '-1',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': -2,
     items: [
       {
         name: 'Crowbar (2 gp)',
@@ -341,7 +338,6 @@ Languages: Common `)
       'saves.frt.value': '0',
       'saves.ref.value': '-1',
       'saves.wil.value': '2',
-      'skills.findSecretDoors.value': -2,
       items: [
         {
           name: 'Hammer (as club)',
@@ -403,7 +399,6 @@ Languages: Common `)
       'saves.frt.value': '0',
       'saves.ref.value': '0',
       'saves.wil.value': '0',
-      'skills.findSecretDoors.value': 0,
       items: [
         {
           name: 'Handaxe',
@@ -516,7 +511,6 @@ Spells: (Spell Check: d20+2)
     'saves.frt.value': '0',
     'saves.ref.value': '1',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': 1,
     items: [
       {
         name: 'Dagger',
@@ -525,6 +519,10 @@ Spells: (Spell Check: d20+2)
         system: {
           toHit: '+0',
           damage: '1d4',
+          config: {
+            attackBonusOverride: '+0',
+            damageOverride: ''
+          },
           melee: true
         }
       },
@@ -535,6 +533,10 @@ Spells: (Spell Check: d20+2)
         system: {
           toHit: '+1',
           damage: '1d4',
+          config: {
+            attackBonusOverride: '+1',
+            damageOverride: ''
+          },
           melee: false
         }
       },
@@ -545,6 +547,10 @@ Spells: (Spell Check: d20+2)
         system: {
           toHit: '+0',
           damage: '1d8',
+          config: {
+            attackBonusOverride: '+0',
+            damageOverride: ''
+          },
           melee: true
         }
       },
@@ -715,7 +721,6 @@ Cast Spell From Scroll (d16)`
     'saves.frt.value': '1',
     'saves.ref.value': '5',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': 0,
     'class.backstab': '5',
     'skills.sneakSilently.value': '12',
     'skills.hideInShadows.value': '10',
@@ -869,7 +874,6 @@ Hide In Shadows: 11 (-4)`
     'saves.frt.value': '5',
     'saves.ref.value': '6',
     'saves.wil.value': '7',
-    'skills.findSecretDoors.value': 0,
     'skills.sneakAndHide.value': '11',
     'skills.sneakSilently.value': '11',
     'skills.hideInShadows.value': '11',
@@ -1008,7 +1012,6 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'saves.frt.value': '6',
     'saves.ref.value': '2',
     'saves.wil.value': '1',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Club',
@@ -1164,7 +1167,6 @@ Spells: (Spell Check: d20+12)
     'saves.frt.value': '2',
     'saves.ref.value': '3',
     'saves.wil.value': '7',
-    'skills.findSecretDoors.value': 2,
     items: [
       {
         name: 'Handaxe',
@@ -1517,7 +1519,6 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
     'saves.frt.value': '3',
     'saves.ref.value': '-1',
     'saves.wil.value': '0',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Staff',
@@ -1664,7 +1665,6 @@ Spells: (Spell Check: d20+5)
     'saves.frt.value': '0',
     'saves.ref.value': '2',
     'saves.wil.value': '2',
-    'skills.findSecretDoors.value': 6,
     items: [
       {
         name: 'Shortbow',
@@ -1883,7 +1883,6 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'saves.frt.value': '2',
     'saves.ref.value': '1',
     'saves.wil.value': '1',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Dagger',
@@ -1998,7 +1997,6 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
     'saves.frt.value': '2',
     'saves.ref.value': '1',
     'saves.wil.value': '1',
-    'skills.findSecretDoors.value': 0,
     items: [
       {
         name: 'Dagger',
@@ -2046,6 +2044,122 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
         }
       }]
   }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
+/* Missing weapons test - with spaces before the newline */
+test('underarmed_warrior_again', () => {
+  const parsedNPC = parsePCs(
+    `Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Lawful Warrior (1st level)
+Occupation: Confidence artist
+Strength: 13 (+1)
+Agility: 11 (0)
+Stamina: 15 (+1)
+Personality: 14 (+1)
+Intelligence: 9 (0)
+Luck: 9 (0)
+
+HP: 13; Speed: 30; Init: 1
+Ref: 1; Fort: 2; Will: 1
+
+Base Attack Mod: d3
+Attack Dice: 1d20; Crit Die/Table: 1d12/III
+Occupation Weapon: Dagger melee d3+1 (dmg 1d4+1+deed)
+Main Weapon: 
+Secondary Weapon: 
+
+AC: (10) (Unarmored (+0) Check penalty (0) Fumble die (d4))
+Equipment: Sack (large) (12 cp)
+Trade good: Quality cloak
+Starting Funds: 33 cp + 30 gp
+Lucky sign: Righteous heart (Turn unholy checks) (+0)
+Languages: Common
+Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
+  )
+  const expected = {
+    'attributes.init.value': '1',
+    'attributes.speed.value': '30',
+    'details.occupation.value': 'Confidence artist',
+    'attributes.ac.value': '10',
+    'attributes.hp.value': '13',
+    'attributes.hp.max': '13',
+    'attributes.hitDice.value': '1d12',
+    'attributes.critical.die': '1d12',
+    'attributes.critical.table': 'III',
+    'abilities.str.value': '13',
+    'abilities.agl.value': '11',
+    'abilities.sta.value': '15',
+    'abilities.per.value': '14',
+    'abilities.int.value': '9',
+    'abilities.lck.value': '9',
+    'abilities.agl.max': '11',
+    'abilities.str.max': '13',
+    'abilities.sta.max': '15',
+    'abilities.per.max': '14',
+    'abilities.int.max': '9',
+    'abilities.lck.max': '9',
+    'class.className': 'Warrior',
+    'config.actionDice': '1d20',
+    'details.alignment': 'l',
+    'details.attackBonus': 'd3',
+    'details.birthAugur': 'Righteous heart (Turn unholy checks) (+0)',
+    'details.languages': 'Common',
+    'details.level.value': '1',
+    'saves.frt.value': '2',
+    'saves.ref.value': '1',
+    'saves.wil.value': '1',
+    items: [
+      {
+        name: 'Dagger',
+        type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
+        system: {
+          toHit: 'd3+1',
+          damage: '1d4+1+@ab',
+          melee: true
+        }
+      },
+      {
+        name: 'Unarmored',
+        type: 'armor',
+        img: 'systems/dcc/styles/images/armor.webp',
+        system: {
+          acBonus: '+0',
+          checkPenalty: '0',
+          fumbleDie: '1d4'
+        }
+      },
+      {
+        name: 'Sack (large) (12 cp)',
+        type: 'equipment',
+        img: 'systems/dcc/styles/images/item.webp'
+      },
+      {
+        name: 'Quality cloak',
+        type: 'equipment',
+        img: 'systems/dcc/styles/images/item.webp'
+      },
+      {
+        name: 'Coins',
+        type: 'treasure',
+        img: 'systems/dcc/styles/images/coins.webp',
+        system: {
+          value: {
+            pp: '0',
+            ep: '0',
+            gp: '30',
+            sp: '0',
+            cp: '33'
+          },
+          isCoins: true
+        }
+      }]
+  }
+
+  console.log(expected)
   expect(parsedNPC).toMatchObject([expected])
 })
 
@@ -2152,7 +2266,6 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       'saves.frt.value': '0',
       'saves.ref.value': '2',
       'saves.wil.value': '2',
-      'skills.findSecretDoors.value': 6,
       items: [
         {
           name: 'Shortbow',
@@ -2336,7 +2449,6 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
       'saves.frt.value': '3',
       'saves.ref.value': '-1',
       'saves.wil.value': '0',
-      'skills.findSecretDoors.value': 0,
       items: [
         {
           name: 'Staff',

@@ -1,5 +1,13 @@
 /* global game, Hooks */
 
+export const pubConstants = {
+  name: 'dcc',
+  dccLogoPath: 'systems/dcc/styles/images/dcc-rpg-logo-red.webp',
+  langRoot: 'DCC',
+  templates: 'systems/dcc/templates/',
+  title: 'DCC'
+}
+
 export const registerSystemSettings = async function () {
   /**
    * Track the last system version to which the world was migrated
@@ -164,14 +172,26 @@ export const registerSystemSettings = async function () {
   })
 
   /**
-   * Roll attacks with standard dice roller
+   * Convert roll cards in the chat to narrative emotes rather than data-style cards
    */
-  game.settings.register('dcc', 'useStandardDiceRoller', {
-    name: 'DCC.SettingStandardDiceRoller',
-    hint: 'DCC.SettingStandardDiceRollerHint',
-    scope: 'world',
+  game.settings.register('dcc', 'emoteRolls', {
+    name: 'DCC.SettingEmoteRolls',
+    hint: 'DCC.SettingEmoteRollsHint',
+    scope: 'client',
     type: Boolean,
     default: false,
+    config: true
+  })
+
+  /**
+   * Automatically roll damage, fumbles, and crits for attacks
+   */
+  game.settings.register('dcc', 'automateDamageFumblesCrits', {
+    name: 'DCC.SettingAutomateDamageFumblesCrits',
+    hint: 'DCC.SettingAutomateDamageFumblesCritsHint',
+    scope: 'client',
+    type: Boolean,
+    default: true,
     config: true
   })
 
@@ -243,31 +263,7 @@ export const registerSystemSettings = async function () {
     hint: 'DCC.SettingAutomateWarriorInitiativeHint',
     scope: 'world',
     type: Boolean,
-    default: false,
-    config: true
-  })
-
-  /**
-   * Automatically add Strength/Agility modifier to attack and hit rolls
-   */
-  game.settings.register('dcc', 'automateCombatModifier', {
-    name: 'DCC.SettingAutomateCombatModifier',
-    hint: 'DCC.SettingAutomateCombatModifierHint',
-    scope: 'world',
-    type: Boolean,
-    default: false,
-    config: true
-  })
-
-  /**
-   * Automatically applies -1d penalty on attack using untrained weapon
-   */
-  game.settings.register('dcc', 'automateUntrainedAttack', {
-    name: 'DCC.SettingAutomateUntrainedAttack',
-    hint: 'DCC.SettingAutomateUntrainedAttackHint',
-    scope: 'world',
-    type: Boolean,
-    default: false,
+    default: true,
     config: true
   })
 
@@ -284,18 +280,6 @@ export const registerSystemSettings = async function () {
   })
 
   /**
-   * Automatically add warrior/dwarf luck modifier to attack rolls lucky weapon
-   */
-  game.settings.register('dcc', 'automateLuckyWeaponAttack', {
-    name: 'DCC.SettingAutomateLuckyWeapon',
-    hint: 'DCC.SettingAutomateLuckyWeaponHint',
-    scope: 'world',
-    type: Boolean,
-    default: false,
-    config: true
-  })
-
-  /**
    * Check weapon is equipped if not UI warning display appears and prevent rolls
    */
   game.settings.register('dcc', 'checkWeaponEquipment', {
@@ -305,5 +289,25 @@ export const registerSystemSettings = async function () {
     type: Boolean,
     default: false,
     config: true
+  })
+
+  /**
+   * Last used Importer Type
+   */
+  game.settings.register('dcc', 'lastImporterType', {
+    scope: 'world',
+    type: String,
+    default: 'NPC',
+    config: false
+  })
+
+  // Show Welcome Dialog
+  game.settings.register(pubConstants.name, 'showWelcomeDialog', {
+    name: `${pubConstants.langRoot}.Settings.ShowWelcomeDialog`,
+    hint: `${pubConstants.langRoot}.Settings.ShowWelcomeDialogHint`,
+    scope: 'world',
+    config: true,
+    default: true,
+    type: Boolean
   })
 }
