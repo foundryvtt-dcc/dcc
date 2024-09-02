@@ -585,6 +585,7 @@
   "DCC.RollDisapproval": "Roll Disapproval",
   "DCC.RollDisapprovalMacroName": "Roll for Disapproval",
   "DCC.RollExample": "e.g. +1d4",
+  "DCC.RollFumble": "Roll Fumble",
   "DCC.RollIntelligenceCheckHint": "Click to roll an Intelligence check",
   "DCC.RollLuckCheckHint": "Click to roll a Luck check (roll under Luck score) - Click 'Modifier' to roll adding modifier instead",
   "DCC.RollLuckCheckModHint": "Click to roll a Luck check adding Luck modifier",

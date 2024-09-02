@@ -923,11 +923,15 @@ class DCCActor extends Actor {
     // Warn if weapon is not equipped
     if (!weapon.system?.equipped && game.settings.get('dcc', 'checkWeaponEquipment')) return ui.notifications.warn(game.i18n.localize('DCC.WeaponWarningUnequipped'))
 
+    // Accumulate all rolls for sending to the chat message
+    const rolls = []
+
     // Attack roll
     const attackRollResult = await this.rollToHit(weapon, options)
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
     }
+    rolls.push(attackRollResult.roll)
 
     // Damage roll
     // Todo backstab
@@ -947,9 +951,10 @@ class DCCActor extends Actor {
           type: 'Compound',
           dieLabel: game.i18n.localize('DCC.Damage'),
           formula: damageRollFormula
-        },
+        }
       ])
       await damageRoll.evaluate()
+      rolls.push(damageRoll)
       const damageRollAnchor = await damageRoll.toAnchor()
       damageInlineRoll = damageRollAnchor.outerHTML
       damagePrompt = game.i18n.localize('DCC.Damage')
@@ -981,12 +986,14 @@ class DCCActor extends Actor {
             type: 'Compound',
             dieLabel: game.i18n.localize('DCC.Critical'),
             formula: critRollFormula
-          },
+          }
         ])
         await critRoll.evaluate()
+        rolls.push(critRoll)
         const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
         const critText = await TextEditor.enrichHTML(critResult.results[0].text)
-        critInlineRoll = await TextEditor.enrichHTML(`[[${critRollFormula}]] (${critTableText} ${critTableName})<br>${critText}`)
+        const critRollAnchor = critRoll.toAnchor().outerHTML
+        critInlineRoll = await TextEditor.enrichHTML(`${critRollAnchor} (${critTableText} ${critTableName})<br>${critText}`)
       }
     }
 
@@ -1006,12 +1013,14 @@ class DCCActor extends Actor {
             type: 'Compound',
             dieLabel: game.i18n.localize('DCC.Fumble'),
             formula: fumbleRollFormula
-          },
+          }
         ])
         await fumbleRoll.evaluate()
+        rolls.push(fumbleRoll)
         const fumbleResult = await getFumbleTableResult(fumbleRoll.total)
         const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
-        fumbleInlineRoll = await TextEditor.enrichHTML(`[[${fumbleRollFormula} # Fumble]]`)
+        const fumbleRollAnchor = fumbleRoll.toAnchor().outerHTML
+        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor}<br>${fumbleText}`)
       }
     }
 
@@ -1030,6 +1039,7 @@ class DCCActor extends Actor {
         'dcc.isNaturalCrit': attackRollResult.naturalCrit,
         'dcc.isMelee': weapon.system?.melee
       },
+      rolls,
       system: {
         actorId: this.id,
         damageInlineRoll,
@@ -1055,7 +1065,6 @@ class DCCActor extends Actor {
     }
 
     // Output the results
-    //attackRollResult.roll.toMessage(messageData)
     ChatMessage.create(messageData)
   }
 

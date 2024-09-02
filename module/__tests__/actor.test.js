@@ -247,7 +247,7 @@ test('roll weapon attack dagger', async () => {
     damage: '1d4',
     melee: true
   }))
-  await actor.rollWeaponAttack('lefthand dagger')
+  await actor.rollWeaponAttack(actor.items[0])
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {

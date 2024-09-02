@@ -191,7 +191,7 @@ export const registerSystemSettings = async function () {
     hint: 'DCC.SettingAutomateDamageFumblesCritsHint',
     scope: 'client',
     type: Boolean,
-    default: false,
+    default: true,
     config: true
   })
 
