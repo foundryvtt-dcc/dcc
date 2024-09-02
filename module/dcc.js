@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Item, Macro, Roll, ui, loadTemplates, Handlebars */
 
 /**
  * DCC
@@ -844,7 +844,7 @@ function _createDCCWeaponMacro (data, slot) {
 
   const macroData = {
     name: weapon.name,
-    command: `game.dcc.rollDCCWeaponMacro("${weapon._id}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
+    command: `game.dcc.rollDCCWeaponMacro("${weapon._id}", "${data.actorId}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
     img: weapon.img
   }
 
@@ -898,15 +898,12 @@ function _createDCCRollDisapprovalMacro (data, slot) {
 /**
  * Roll a weapon attack from a macro.
  * @param {string} itemId
+ * @param {string} actorId
  * @param {Object} options
  * @return {Promise}
  */
-function rollDCCWeaponMacro (itemId, options = {}) {
-  const speaker = ChatMessage.getSpeaker()
-  let actor
-  if (speaker.token) actor = game.actors.tokens[speaker.token]
-  if (!actor) actor = game.actors.get(speaker.actor)
-  if (!actor) return ui.notifications.warn(game.i18n.localize('DCC.MacroNoTokenSelected'))
+function rollDCCWeaponMacro (itemId, actorId, options = {}) {
+  const actor = game.actors.get(actorId)
 
   // Trigger the weapon roll
   return actor.rollWeaponAttack(itemId, options)

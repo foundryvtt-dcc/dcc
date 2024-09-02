@@ -912,8 +912,8 @@ class DCCActor extends Actor {
   async rollWeaponAttack (weaponId, options = {}) {
     const automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
 
-    // First try and find the item by name or id
-    const weapon = this.items.find(i => i.name === weaponId || i.id === weaponId)
+    // First try and find the item by id
+    const weapon = this.items.find(i => i.id === weaponId)
 
     // If weapon is not found, give up and show a warning
     if (!weapon) {
@@ -1055,7 +1055,8 @@ class DCCActor extends Actor {
     }
 
     // Output the results
-    attackRollResult.roll.toMessage(messageData)
+    //attackRollResult.roll.toMessage(messageData)
+    ChatMessage.create(messageData)
   }
 
   /**
