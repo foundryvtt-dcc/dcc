@@ -440,7 +440,7 @@ class DCCActorSheet extends ActorSheet {
 
     if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
       // Normal ability rolls and DCC d20 roll under luck rolls
-      const rollUnder = (abilityId === 'lck')
+      const rollUnder = (event.currentTarget.htmlFor === 'system.abilities.lck.value')
       const abilityId = this._findDataset(event.currentTarget, 'ability')
       dragData = {
         type: 'Ability',
