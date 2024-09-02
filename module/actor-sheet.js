@@ -435,13 +435,13 @@ class DCCActorSheet extends ActorSheet {
     let dragData = null
 
     // Handle the various draggable elements on the sheet
-    const abilityId = this._findDataset(event.currentTarget, 'ability')
     const classes = event.target.classList
     const labelFor = event.currentTarget.getAttribute('for') || ''
 
     if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
       // Normal ability rolls and DCC d20 roll under luck rolls
       const rollUnder = (abilityId === 'lck')
+      const abilityId = this._findDataset(event.currentTarget, 'ability')
       dragData = {
         type: 'Ability',
         actorId: this.actor.id,
@@ -452,15 +452,14 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    if (abilityId === 'lck' && event.currentTarget.htmlFor === 'system.abilities.lck.mod') {
+    if (event.currentTarget.htmlFor === 'system.abilities.lck.mod') {
       // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
-      const abilityId = this._findDataset(event.currentTarget, 'ability')
       if (abilityId) {
         dragData = {
           type: 'Ability',
           actorId: this.actor.id,
           data: {
-            abilityId,
+            abilityId: 'lck',
             rollUnder: false
           }
         }
@@ -578,7 +577,6 @@ class DCCActorSheet extends ActorSheet {
           data: weapon,
           dccData: {
             weapon,
-            slot: this._findDataset(event.currentTarget, 'itemSlot'),
             backstab: classes.contains('backstab-button')
           }
         }
@@ -834,12 +832,12 @@ class DCCActorSheet extends ActorSheet {
    */
   _onRollWeaponAttack (event) {
     event.preventDefault()
-    const slot = this._findDataset(event.currentTarget, 'itemId')
+    const itemId = this._findDataset(event.currentTarget, 'itemId')
     const options = this._fillRollOptions(event)
     Object.assign(options, {
       backstab: event.currentTarget.classList.contains('backstab-button')
     })
-    this.actor.rollWeaponAttack(slot, options)
+    this.actor.rollWeaponAttack(itemId, options)
   }
 
   /**

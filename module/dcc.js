@@ -836,17 +836,16 @@ function _createDCCActionDiceMacro (data, slot) {
  */
 function _createDCCWeaponMacro (data, slot) {
   if (data.type !== 'Weapon') return
-  const item = data.system.weapon
-  const weaponSlot = data.system.slot
+  const weapon = data.system.weapon
   const backstab = data.data.backstab
   const options = {
     backstab
   }
 
   const macroData = {
-    name: item.name,
-    command: `game.dcc.rollDCCWeaponMacro("${weaponSlot}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
-    img: item.img
+    name: weapon.name,
+    command: `game.dcc.rollDCCWeaponMacro("${weapon._id}", Object.assign(${JSON.stringify(options)}, game.dcc.getMacroOptions()));`,
+    img: weapon.img
   }
 
   // Replace missing or default weapon icon with our default
