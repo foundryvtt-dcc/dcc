@@ -1,3 +1,4 @@
+/* global game, CONFIG */
 /**
  * Ensure modifiers have a + on the front of them if they aren't negative
  * @param {string} value - value to ensure has a plus
@@ -45,7 +46,7 @@ export function getFirstMod (value) {
  * @param {string} type - value to add as data-<type> to the link
  * @return {string} - An inline roll expression built from teh roll
  */
-export function createInlineRollHTML (roll, type= 'damage') {
+export function createInlineRollHTML (roll, type = 'damage') {
   const rollData = encodeURIComponent(JSON.stringify(roll))
   let iconClass = 'fa-dice-d20'
   if (roll.dice[0]?.faces === 6) {

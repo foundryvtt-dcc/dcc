@@ -1,4 +1,4 @@
-/* global DCCItem, actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, itemTypesMock, game */
+/* global DCCItem, actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, game */
 /**
  * Tests for Actor.js using Foundry Mocks.
  * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js

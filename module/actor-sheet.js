@@ -454,14 +454,12 @@ class DCCActorSheet extends ActorSheet {
 
     if (event.currentTarget.htmlFor === 'system.abilities.lck.mod') {
       // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
-      if (abilityId) {
-        dragData = {
-          type: 'Ability',
-          actorId: this.actor.id,
-          data: {
-            abilityId: 'lck',
-            rollUnder: false
-          }
+      dragData = {
+        type: 'Ability',
+        actorId: this.actor.id,
+        data: {
+          abilityId: 'lck',
+          rollUnder: false
         }
       }
     }

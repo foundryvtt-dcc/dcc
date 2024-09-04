@@ -1,6 +1,6 @@
-/* global canvas, game */
+/* global canvas, game, TextEditor */
 
-import { createInlineRollHTML, getCritTableResult, getFumbleTableResult } from './utilities.js'
+import { getCritTableResult, getFumbleTableResult } from './utilities.js'
 
 /**
  * Highlight critical success or failure on d20 rolls

@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Item, Macro, Roll, ui, loadTemplates, Handlebars */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars */
 
 /**
  * DCC

@@ -1,7 +1,6 @@
 /* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry, TextEditor */
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult } from './utilities.js'
-import { lookupCriticalRoll, lookupFumbleRoll } from './chat.js'
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure.
@@ -971,7 +970,7 @@ class DCCActor extends Actor {
     let critInlineRoll = ''
     let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critTableName = ''
-    let luckMod = ensurePlus(this.system.abilities.lck.mod)
+    const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
       // critRollResult = await this.rollCritical(options)
       critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical.die}${luckMod}`
