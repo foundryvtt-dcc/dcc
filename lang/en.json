@@ -380,6 +380,7 @@
   "DCC.HitDiceUsed": "Hit Dice Used",
   "DCC.HitDiceWarn": "{name} has no available {formula} Hit Dice remaining!",
   "DCC.HitPoints": "Hit Points",
+  "DCC.HitsAC": "Hits AC",
   "DCC.Identified": "Identified",
   "DCC.Image": "Image",
   "DCC.Infravision": "Infravision 60'",

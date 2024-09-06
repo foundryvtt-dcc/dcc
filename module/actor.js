@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry, TextEditor */
+/* global Actor, ChatMessage, CONFIG, CONST, Roll, TextEditor, foundry, game, renderTemplate, ui */
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult } from './utilities.js'
 
@@ -930,6 +930,7 @@ class DCCActor extends Actor {
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
     }
+    attackRollResult.roll.system = { attackRoll: true }
     rolls.push(attackRollResult.roll)
 
     // Damage roll
@@ -953,6 +954,7 @@ class DCCActor extends Actor {
         }
       ])
       await damageRoll.evaluate()
+      damageRoll.system = { damageRoll: true }
       rolls.push(damageRoll)
       const damageRollAnchor = await damageRoll.toAnchor()
       damageInlineRoll = damageRollAnchor.outerHTML
@@ -1031,18 +1033,22 @@ class DCCActor extends Actor {
       speaker,
       flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
       flags: {
-        'dcc.isToHit': true,
-        'dcc.isBackstab': options.backstab,
-        'dcc.isFumble': attackRollResult.fumble,
-        'dcc.isCrit': attackRollResult.crit,
-        'dcc.isNaturalCrit': attackRollResult.naturalCrit,
-        'dcc.isMelee': weapon.system?.melee
+        dcc: {
+          isToHit: true,
+          isBackstab: options.backstab || false,
+          isFumble: attackRollResult.fumble || false,
+          isCrit: attackRollResult.crit || false,
+          isNaturalCrit: attackRollResult.naturalCrit || false,
+          isMelee: weapon.system?.melee || false
+        }
       },
       rolls,
+      sound: attackRollResult.roll ? CONFIG.sounds.dice : null,
       system: {
         actorId: this.id,
         damageInlineRoll,
         damagePrompt,
+        damageRoll,
         damageRollFormula,
         critInlineRoll,
         critPrompt,
@@ -1062,6 +1068,8 @@ class DCCActor extends Actor {
         weaponName: weapon.name
       }
     }
+
+    messageData.content = await renderTemplate(CONFIG.DCC.templates.attackRoll, messageData)
 
     // Output the results
     ChatMessage.create(messageData)

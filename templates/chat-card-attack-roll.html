@@ -1,0 +1,36 @@
+{{#if flags.dcc.ShowAsEmote}}
+  {{{system.attackEmote}}}
+{{else}}
+  <div class="attack-results">
+    <div style="grid-column: 1;">&nbsp;</div>
+    {{#each rolls}}
+      {{#if system.attackRoll}}
+        <div class="attack-hits-ac" style="grid-column: 2;">
+          <div class="hit-ac">{{total}}</div>
+          <div style="text-align: center">{{localize "DCC.HitsAC"}}</div>
+        </div>
+      {{/if}}
+    {{/each}}
+    {{#if system.deedDieRollResult}}
+      <div class="attack-deed-die" style="grid-column: 3;">
+        <div class="pt-8 hit-deed d{{system.deedDieFormula}} deed-result{{#if system.deedRollSuccess}} critical{{/if}}">
+          {{{system.deedDieRollResult}}}
+        </div>
+        <div style="text-align: center">{{localize "DCC.DeedDie"}}</div>
+      </div>
+    {{/if}}
+    {{#if system.damageRoll}}
+      <div class="attack-damage" style="grid-column: 4;">
+        <div class="hit-damage">{{system.damageRoll.total}}</div>
+        <div style="text-align: center">{{localize "DCC.Damage"}}</div>
+      </div>
+    {{/if}}
+    <div style="grid-column: 5;">&nbsp;</div>
+  </div>
+  {{#if flags.dcc.isCrit}}
+    <div class="pt-8"><strong>{{system.critPrompt}}:</strong> {{{system.critInlineRoll}}}</div>
+  {{/if}}
+  {{#if flags.dcc.isFumble}}
+    <div class="pt-8"><strong>{{system.fumblePrompt}}:</strong> {{{system.fumbleInlineRoll}}}</div>
+  {{/if}}
+{{/if}}

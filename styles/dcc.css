@@ -382,6 +382,78 @@
 }
 
 /* ----------------------------------------- */
+/*  Attack Roll Chat Card                    */
+/* ----------------------------------------- */
+.attack-damage {
+  align-content: center;
+  justify-content: center;
+  display: grid;
+  width: 48px;
+  font-size: 10px;
+}
+
+.attack-deed-die {
+  align-content: center;
+  justify-content: center;
+  display: grid;
+  width: 48px;
+  font-size: 10px;
+}
+
+.attack-hits-ac {
+  align-content: center;
+  justify-content: center;
+  display: grid;
+  width: 38px;
+  font-size: 10px;
+}
+
+.attack-results {
+  display: grid;
+  grid-gap: 15px;
+}
+
+.hit-ac {
+  align-content: center;
+  justify-content: center;
+  background-image: url("./images/shield.png");
+  display: grid;
+  font-size: 22px;
+  height: 48px;
+  width: 38px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  padding: 0 0 5px 0;
+}
+
+.hit-damage {
+  align-content: center;
+  justify-content: center;
+  background-image: url("./images/star.svg");
+  display: grid;
+  font-size: 22px;
+  height: 48px;
+  width: 48px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  padding: 0 3px 0 0;
+}
+
+.hit-deed {
+  align-content: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url("./images/dice/d6outline.svg");
+  display: grid;
+  font-size: 22px;
+  height: 38px;
+  justify-content: center;
+  padding: 0 0 0 0;
+  width: 38px;
+  margin: 5px 0 5px 1px;
+}
+
+/* ----------------------------------------- */
 /*  Spell Check Chat Card                    */
 /* ----------------------------------------- */
 .table-draw .table-results .table-result .result-range {
