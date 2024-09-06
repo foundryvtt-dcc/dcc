@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, game, ui, Roll, foundry, TextEditor */
+/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry */
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult } from './utilities.js'
 
@@ -930,6 +930,8 @@ class DCCActor extends Actor {
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
     }
+    foundry.utils.mergeObject(attackRollResult.roll.options, { 'dcc.isAttackRoll': true })
+    const attackRollHTML = await attackRollResult.roll.render()
     rolls.push(attackRollResult.roll)
 
     // Damage roll
@@ -943,7 +945,7 @@ class DCCActor extends Actor {
     }
     let damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
     let damagePrompt = game.i18n.localize('DCC.RollDamage')
-    let damageRoll = null
+    let damageRoll
     if (automateDamageFumblesCrits) {
       damageRoll = game.dcc.DCCRoll.createRoll([
         {
@@ -953,6 +955,8 @@ class DCCActor extends Actor {
         }
       ])
       await damageRoll.evaluate()
+      foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
+      damageRoll.flavor = 'Damage'
       rolls.push(damageRoll)
       const damageRollAnchor = await damageRoll.toAnchor()
       damageInlineRoll = damageRollAnchor.outerHTML
@@ -969,6 +973,7 @@ class DCCActor extends Actor {
     let critRollFormula = ''
     let critInlineRoll = ''
     let critPrompt = game.i18n.localize('DCC.RollCritical')
+    let critRoll
     let critTableName = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
@@ -980,7 +985,7 @@ class DCCActor extends Actor {
       critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
       if (automateDamageFumblesCrits) {
         critPrompt = game.i18n.localize('DCC.Critical')
-        const critRoll = game.dcc.DCCRoll.createRoll([
+        critRoll = game.dcc.DCCRoll.createRoll([
           {
             type: 'Compound',
             dieLabel: game.i18n.localize('DCC.Critical'),
@@ -988,6 +993,7 @@ class DCCActor extends Actor {
           }
         ])
         await critRoll.evaluate()
+        foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
         rolls.push(critRoll)
         const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
         const critText = await TextEditor.enrichHTML(critResult.results[0].text)
@@ -1000,6 +1006,7 @@ class DCCActor extends Actor {
     let fumbleRollFormula = ''
     let fumbleInlineRoll = ''
     let fumblePrompt = ''
+    let fumbleRoll
     if (attackRollResult.fumble) {
       // fumbleRollResult = await this.rollFumble(options)
       fumbleRollFormula = weapon.system?.fumbleDie || this.system.attributes.fumble.die
@@ -1007,7 +1014,7 @@ class DCCActor extends Actor {
       fumblePrompt = game.i18n.localize('DCC.RollFumble')
       if (automateDamageFumblesCrits) {
         fumblePrompt = game.i18n.localize('DCC.Fumble')
-        const fumbleRoll = game.dcc.DCCRoll.createRoll([
+        fumbleRoll = game.dcc.DCCRoll.createRoll([
           {
             type: 'Compound',
             dieLabel: game.i18n.localize('DCC.Fumble'),
@@ -1015,6 +1022,7 @@ class DCCActor extends Actor {
           }
         ])
         await fumbleRoll.evaluate()
+        foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
         const fumbleResult = await getFumbleTableResult(fumbleRoll.total)
         const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
@@ -1041,11 +1049,14 @@ class DCCActor extends Actor {
       rolls,
       system: {
         actorId: this.id,
+        attackRollHTML,
         damageInlineRoll,
         damagePrompt,
+        damageRoll,
         damageRollFormula,
         critInlineRoll,
         critPrompt,
+        critRoll,
         critRollFormula,
         critTableName,
         critDieOverride: weapon.system?.config?.critDieOverride,
@@ -1056,12 +1067,22 @@ class DCCActor extends Actor {
         deedRollSuccess,
         fumbleInlineRoll,
         fumblePrompt,
+        fumbleRoll,
         fumbleRollFormula,
         hitsAc: attackRollResult.hitsAc,
         weaponId,
         weaponName: weapon.name
       }
     }
+
+    /**
+     * A hook event that fires after an attack has been rolled but before chat message is sent
+     * @function dcc.rollWeaponAttack
+     * @memberof hookEvents
+     * @param {object} messageData                     Data to send to the chat card
+     * @param {object} data
+     */
+    Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
 
     // Output the results
     ChatMessage.create(messageData)
