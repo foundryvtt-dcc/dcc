@@ -78,6 +78,9 @@ class DCCActorSheet extends ActorSheet {
 
     if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
       data.actor.img = EntityImages.imageForActor(data.type)
+      if (!data.actor.prototypeToken.texture.src || data.actor.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
+        data.actor.prototypeToken.texture.src = EntityImages.imageForActor(data.type)
+      }
     }
 
     // Should the Deed Roll button be available on the sheet?
@@ -892,6 +895,13 @@ class DCCActorSheet extends ActorSheet {
             const updateData = expanded.itemUpdates[itemId]
             await item.update(updateData)
           }
+        }
+      }
+
+      if (expanded.img) {
+        const tokenImg = this.actor.prototypeToken.texture.src
+        if (!tokenImg || tokenImg === 'icons/svg/mystery-man.svg' || tokenImg === 'systems/dcc/styles/images/actor.webp') {
+          foundry.utils.mergeObject(formData, { prototypeToken: { texture: { src: expanded.img } } })
         }
       }
     }

@@ -244,6 +244,9 @@ async function createActors (type, folderId, actorData) {
       }
     }
 
+    // Link Actor Data by Default
+    actor.updateSource({ prototypeToken: { actorLink: true } })
+
     actors.push(actor)
 
     // Call a hook for postprocessing of actors
