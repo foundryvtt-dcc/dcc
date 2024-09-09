@@ -71,6 +71,7 @@
     "distance": 5,
     "units": "ft"
   },
+  "background": "systems/dcc/styles/images/dcc-background.webp",
   "primaryTokenAttribute": "attributes.hp",
   "secondaryTokenAttribute": "abilities.lck.value",
   "socket": true,
