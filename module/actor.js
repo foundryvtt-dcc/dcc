@@ -935,10 +935,12 @@ class DCCActor extends Actor {
     rolls.push(attackRollResult.roll)
 
     // Damage roll
-    // Todo backstab
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
       damageRollFormula = damageRollFormula.replace(this.system.details.attackBonus, `+${attackRollResult.deedRollTotalResult}`)
+    }
+    if (options.backstab && weapon.system?.backstabDamage) {
+      damageRollFormula = damageRollFormula + weapon.system?.backstabDamage
     }
     if (damageRollFormula.includes('-')) {
       damageRollFormula = `max(${damageRollFormula}, 1)`
