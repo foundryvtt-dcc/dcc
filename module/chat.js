@@ -134,7 +134,7 @@ export const emoteAttackRoll = function (message, html, data) {
   const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
     actorName: message.alias,
     weaponName: message.system.weaponName,
-    rollHTML: message.rolls[0].toAnchor('Roll Damage'),
+    rollHTML: message.rolls[0].toAnchor().outerHTML,
     deedRollHTML,
     damageRollHTML: message.system.damageInlineRoll,
     crit: '',
