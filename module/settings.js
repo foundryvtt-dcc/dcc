@@ -64,6 +64,22 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Compendium to look in for magic side effect tables
+   */
+  game.settings.register('dcc', 'spellSideEffectsCompendium', {
+    name: 'DCC.SettingSpellSideEffectsCompendium',
+    hint: 'DCC.SettingSpellSideEffectsCompendiumHint',
+    scope: 'world',
+    config: true,
+    default: '',
+    type: String,
+    choices: tableCompendiumNames,
+    onChange: value => {
+      Hooks.callAll('dcc.registerSpellSideEffectsPack', value, true)
+    }
+  })
+
+  /**
    * Table to use for fumbles
    */
   game.settings.register('dcc', 'fumbleTable', {

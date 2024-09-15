@@ -776,6 +776,7 @@
   "DCC.SpellResultTable": "Result Table",
   "DCC.SpellSave": "Save",
   "DCC.SpellScroll": "Spell Scroll",
+  "DCC.SpellSideEffectsCompendiumNotFoundWarning": "The 'Spell Side Effects Compendium' was not found, you will either need to make one or activate the Core Book Module.",
   "DCC.SpellTarget": "Spell Target",
   "DCC.SpellUnprepared": "Unprepared",
   "DCC.SpellUsage": "Spell Usage",

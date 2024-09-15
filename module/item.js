@@ -264,7 +264,7 @@ class DCCItem extends Item {
 
     // Lookup the manifestation table if available
     let manifestationResult = null
-    const manifestationPackName = 'dcc-core-book.dcc-core-spell-effect-tables'
+    const manifestationPackName = game.settings.get('dcc', 'spellSideEffectsCompendium') || 'dcc-core-book.dcc-core-spell-effect-tables'
     const manifestationTableName = `${this.name} Manifestation`
     const pack = game.packs.get(manifestationPackName)
     if (pack) {
@@ -273,6 +273,8 @@ class DCCItem extends Item {
       if (entry) {
         const table = await pack.getDocument(entry._id)
         manifestationResult = await table.draw({ roll })
+      } else {
+        ui.notifications.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
       }
     }
 
@@ -298,7 +300,7 @@ class DCCItem extends Item {
 
     if (manifestationResult) {
       try {
-        let result = manifestationResult.results[0].text.replace(';','')
+        let result = manifestationResult.results[0].text.replace(';', '')
         result = result.charAt(0).toUpperCase() + result.slice(1)
         const split = result.split('.')
         updates['system.manifestation.description'] = `<p>${result}</p>`
