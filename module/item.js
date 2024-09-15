@@ -209,8 +209,18 @@ class DCCItem extends Item {
       rollTable: resultsTable,
       roll,
       item: this,
-      flavor
+      flavor,
+      manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
+      mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {},
     })
+  }
+
+  /**
+   * Check for an existing manifestation
+   * @return
+   */
+  hasExistingManifestation () {
+    return this.system.manifestation.value || this.system.manifestation.description
   }
 
   /**
@@ -219,6 +229,85 @@ class DCCItem extends Item {
    */
   hasExistingMercurialMagic () {
     return this.system.mercurialEffect.value || this.system.mercurialEffect.summary || this.system.mercurialEffect.description
+  }
+
+  /**
+   * Roll a or lookup new manifestation for a spell item
+   * @param {Number} lookup   Optional entry number to lookup instead of rolling
+   * @param options
+   * @return
+   */
+  async rollManifestation (lookup = undefined, options = {}) {
+    if (this.type !== 'spell') { return }
+
+    const actor = this.actor
+    if (!actor) { return }
+
+    let roll
+
+    if (lookup) {
+      // Look up a manifestation by value
+      roll = new Roll('@value', {
+        value: lookup
+      })
+    } else {
+      const terms = [
+        {
+          type: 'Die',
+          formula: '1d100'
+        },
+      ]
+
+      // Otherwise roll for a manifestation
+      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+    }
+
+    // Lookup the manifestation table if available
+    let manifestationResult = null
+    const manifestationPackName = 'dcc-core-book.dcc-core-spell-effect-tables'
+    const manifestationTableName = `${this.name} Manifestation`
+    const pack = game.packs.get(manifestationPackName)
+    if (pack) {
+      await pack.getIndex() // Load the compendium index
+      const entry = pack.index.find((entity) => entity.name === manifestationTableName)
+      if (entry) {
+        const table = await pack.getDocument(entry._id)
+        manifestationResult = await table.draw({ roll })
+      }
+    }
+
+    // Grab the result from the table if present
+    if (manifestationResult) {
+      roll = manifestationResult.roll
+    } else {
+      // Fall back to displaying just the roll
+      await roll.evaluate()
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor: game.i18n.localize('DCC.ManifestationRoll'),
+        flags: {
+          'dcc.RollType': 'Manifestation'
+        }
+      })
+    }
+
+    // Stow away the data in the appropriate fields
+    const updates = {}
+    updates['system.manifestation.value'] = roll.total
+    updates['system.manifestation.description'] = ''
+
+    if (manifestationResult) {
+      try {
+        let result = manifestationResult.results[0].text.replace(';','')
+        result = result.charAt(0).toUpperCase() + result.slice(1)
+        const split = result.split('.')
+        updates['system.manifestation.description'] = `<p>${result}</p>`
+      } catch (err) {
+        console.error(`Couldn't extract Manifestation result from table:\n${err}`)
+      }
+    }
+
+    this.update(updates)
   }
 
   /**

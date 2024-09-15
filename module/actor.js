@@ -876,15 +876,14 @@ class DCCActor extends Actor {
       }
 
       // Convert the roll to a chat message
-      if (options.displayStandardCards || !options.a) {
-        abRoll.toMessage({
-          speaker: ChatMessage.getSpeaker({ actor: this }),
-          flavor,
-          flags: {
-            'dcc.RollType': 'AttackBonus'
-          }
-        })
-      }
+      abRoll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor,
+        flags: {
+          'dcc.RollType': 'AttackBonus'
+        }
+      })
+
       return {
         rolled: true,
         roll: abRoll,
@@ -1242,7 +1241,7 @@ class DCCActor extends Actor {
     await damageRoll.evaluate()
 
     // A successful attack always inflicts a minimum of 1 point of damage (already handled with the custom card)
-    if (options.displayStandardCards && damageRoll._total < 1) {
+    if (damageRoll._total < 1) {
       damageRoll._total = 1
     }
 
@@ -1289,7 +1288,7 @@ class DCCActor extends Actor {
           const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
           if (entry) {
             const table = await pack.getDocument(entry._id)
-            critResult = await table.draw({ roll, displayChat: options.displayStandardCards })
+            critResult = await table.draw({ roll })
           }
         }
       }
@@ -1303,26 +1302,24 @@ class DCCActor extends Actor {
     }
 
     // If fancy cards aren't disabled, return HTML for chat message
-    if (!options.displayStandardCards) {
-      // Create the roll emote
-      const rollData = encodeURIComponent(JSON.stringify(roll))
-      const rollTotal = roll.total
-      const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}"
+    // Create the roll emote
+    const rollData = encodeURIComponent(JSON.stringify(roll))
+    const rollTotal = roll.total
+    const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}"
             title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}">
             <i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
 
-      // Display crit result or just a notification of the crit
-      if (critResult) {
-        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
+    // Display crit result or just a notification of the crit
+    if (critResult) {
+      return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
                 ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>
                 ${critResult.results[0].getChatText()}`
-      } else {
-        return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
+    } else {
+      return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
                     ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
-      }
     }
 
-    // Display basic chat card - only reachable if displayStandardCards is enabled
+    // Display basic chat card
     if (!critResult) {
       // Generate flags for the roll
       const flags = {
@@ -1390,7 +1387,7 @@ class DCCActor extends Actor {
         const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
         if (entry) {
           const table = await pack.getDocument(entry._id)
-          fumbleResult = await table.draw({ roll, displayChat: options.displayStandardCards })
+          fumbleResult = await table.draw({ roll })
         }
       }
     }
@@ -1402,40 +1399,24 @@ class DCCActor extends Actor {
       roll = fumbleResult.roll
     }
 
-    if (!options.displayStandardCards) {
-      // Create the roll emote
-      const rollData = encodeURIComponent(JSON.stringify(roll))
-      const rollTotal = roll.total
-      const rollHTML = `<a class='inline-roll inline-result'
+    // Create the roll emote
+    const rollData = encodeURIComponent(JSON.stringify(roll))
+    const rollTotal = roll.total
+    const rollHTML = `<a class='inline-roll inline-result'
             data-roll ='${rollData}' data-damage= '${rollTotal}' 
             title='${game.dcc.DCCRoll.cleanFormula(roll.terms)}'>
                 <i class='fas fa-dice-d20'></i>${rollTotal}</a>`
 
-      // Display fumble result or just a notification of the fumble
-      if (fumbleResult) {
-        return `<br/><br/><span style='color:red; font-weight: bolder' >
+    // Display fumble result or just a notification of the fumble
+    if (fumbleResult) {
+      return `<br/><br/><span style='color:red; font-weight: bolder' >
                 ${game.i18n.localize('DCC.Fumble')} !</span>
                 ${rollHTML}<br/>
                 ${fumbleResult.results[0].getChatText()}`
-      } else {
-        return `<br/><br/><span style='color:red; font-weight: bolder' >
+    } else {
+      return `<br/><br/><span style='color:red; font-weight: bolder' >
                 ${game.i18n.localize('DCC.Fumble')} !</span>
                 ${rollHTML}`
-      }
-    } else if (!fumbleResult) {
-      // Generate flags for the roll
-      const flags = {
-        'dcc.RollType': 'Fumble',
-        'dcc.ItemId': options.weaponId
-      }
-      game.dcc.FleetingLuck.updateFlagsForFumble(flags)
-
-      // Display the raw fumble roll
-      await roll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize('DCC.Fumble')}!`,
-        flags
-      })
     }
   }
 

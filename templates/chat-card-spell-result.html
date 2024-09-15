@@ -1,33 +1,42 @@
 <div class="table-draw" data-table-id="{{ table.id }}" data-table-compendium="{{ table.compendium.metadata.id }}">
-    {{#if description}}
+  {{#if description}}
     <div class="table-description">{{{description}}}</div>
-    {{/if}}
-    {{{ rollHTML }}}
-    {{#if crit}}
-      <div class="spell-check-mod">
-        <h4 class="critical">{{localize "DCC.SpellCheckCrit"}}</h4>
-      </div>
-    {{/if}}
-    {{#if fumble}}
-      <div class="spell-check-mod">
-        <h4 class="fumble">{{localize "DCC.SpellCheckFumble"}}</h4>
-      </div>
-    {{/if}}
-    <ol class="table-results">
-        {{#each results}}
-        <li class="table-result flexrow" data-result-id="{{ this._id }}" data-crit="{{ ../crit }}" data-fumble="{{ ../fumble }}">
-          <div class="result-range">
-            {{#if (gt this.range.[0] 0)}}
-              <i class="fas fa-sort-up spell-shift-down"></i>
-              <p class="spell-shift-down">{{this.range.[0]}}</p>
-            {{/if}}
-            {{#if (lt this.range.[1] 99)}}
-              <p class="spell-shift-up">{{this.range.[1]}}</p>
-              <i class="fas fa-sort-down spell-shift-up"></i>
-            {{/if}}
-          </div>
-          <div class="result-text">{{{this.text}}}</div>
-        </li>
-        {{/each}}
-    </ol>
+  {{/if}}
+
+  {{#if manifestation.description }}
+    <div class="manifestation"><strong>{{localize "DCC.Manifestation"}}:</strong> {{{ manifestation.description }}}</div>
+  {{/if}}
+  {{#if mercurial.description }}
+    <div class="mercurial"><strong>{{localize "DCC.MercurialEffect"}}:</strong> {{{ mercurial.description }}}</div>
+  {{/if}}
+
+  {{{ rollHTML }}}
+
+  {{#if crit}}
+    <div class="spell-check-mod">
+      <h4 class="critical">{{localize "DCC.SpellCheckCrit"}}</h4>
+    </div>
+  {{/if}}
+  {{#if fumble}}
+    <div class="spell-check-mod">
+      <h4 class="fumble">{{localize "DCC.SpellCheckFumble"}}</h4>
+    </div>
+  {{/if}}
+  <ol class="table-results">
+    {{#each results}}
+      <li class="table-result" data-result-id="{{ this._id }}" data-crit="{{ ../crit }}" data-fumble="{{ ../fumble }}">
+        <div class="result-range">
+          {{#if (gt this.range.[0] 0)}}
+            <i class="fas fa-sort-up spell-shift-down"></i>
+            <p class="spell-shift-down">{{this.range.[0]}}</p>
+          {{/if}}
+          {{#if (lt this.range.[1] 99)}}
+            <p class="spell-shift-up">{{this.range.[1]}}</p>
+            <i class="fas fa-sort-down spell-shift-up"></i>
+          {{/if}}
+        </div>
+        <div class="result-text">{{{this.text}}}</div>
+      </li>
+    {{/each}}
+  </ol>
 </div>

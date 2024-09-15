@@ -292,10 +292,6 @@ class DCCActorSheet extends ActorSheet {
       html.find('label[for="system.class.disapprovalTable"]').each(makeDraggable)
       html.find('label[for="system.class.disapproval"]').each(makeDraggable)
 
-      // Attack Bonus
-      html.find('label[for="system.details.attackBonus"]').click(this._onRollAttackBonus.bind(this))
-      html.find('label[for="system.details.attackBonus"]').each(makeDraggable)
-
       // Action Dice
       html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
 
@@ -666,7 +662,6 @@ class DCCActorSheet extends ActorSheet {
   _onRollCritDie (event) {
     event.preventDefault()
     const options = this._fillRollOptions(event)
-    options.displayStandardCards = true
     this.actor.rollCritical(options)
   }
 

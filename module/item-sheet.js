@@ -53,11 +53,20 @@ export class DCCItemSheet extends ItemSheet {
     if (data.item.type === 'spell') {
       // Allow mercurial magic roll only on wizard spells owned by an actor
       const castingMode = data.item.system.config.castingMode || 'wizard'
-      const forceShowMercurialEffect = data.item.system.config.showMercurialEffect
-      data.showMercurialRoll = !!this.actor && (castingMode === 'wizard' || forceShowMercurialEffect)
+      const forceShowManifestationTab = data.item.system.config.showManifestationTab
+      data.showManifestationTab = !!this.actor && (castingMode === 'wizard' || forceShowManifestationTab)
+      const forceShowMercurialTab = data.item.system.config.showMercurialTab
+      data.showMercurialTab = !!this.actor && (castingMode === 'wizard' || forceShowMercurialTab)
 
       // Format Mercurial Effect HTML
-      data.mercurialEffectHTML = await TextEditor.enrichHTML(this.item.system.mercurialEffect.description, {
+      data.mercurialEffectHTML = await TextEditor.enrichHTML(this.item.system?.mercurialEffect?.description || '', {
+        async: true,
+        relativeTo: this.item,
+        secrets: this.item.isOwner
+      })
+
+      // Format Manifestation HTML
+      data.manifestationHTML = await TextEditor.enrichHTML(this.item.system?.manifestation?.description || '', {
         async: true,
         relativeTo: this.item,
         secrets: this.item.isOwner
@@ -121,6 +130,7 @@ export class DCCItemSheet extends ItemSheet {
     if (this.item.isOwner) {
       // Roll mercurial effect for spells
       if (this.item.type === 'spell') {
+        html.find('.manifestation-roll').click(this._onRollManifestation.bind(this))
         html.find('.mercurial-roll').click(this._onRollMercurialMagic.bind(this))
       }
 
@@ -217,6 +227,39 @@ export class DCCItemSheet extends ItemSheet {
   }
 
   /**
+   * Roll a new Manifestation, prompting to replace if necessary
+   */
+  _onRollManifestation (event) {
+    event.preventDefault()
+    const options = this._fillRollOptions(event)
+    // Prompt if there's an existing effect, or we're using the roll modifier dialog
+    if (!options.showModifierDialog && this.item.hasExistingManifestation()) {
+      new Dialog({
+        title: game.i18n.localize('DCC.ManifestationRerollPrompt'),
+        content: `<p>${game.i18n.localize('DCC.ManifestationRerollExplain')}</p>`,
+        buttons: {
+          reroll: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonReroll'),
+            callback: () => this._rollManifestation(event, options)
+          },
+          lookup: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonLookup'),
+            callback: () => this._lookupManifestation(event, options)
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonCancel')
+          }
+        }
+      }).render(true)
+    } else {
+      this._rollManifestation(event, options)
+    }
+  }
+
+  /**
    * Roll a new Mercurial Magic effect, prompting to replace if necessary
    */
   _onRollMercurialMagic (event) {
@@ -247,6 +290,17 @@ export class DCCItemSheet extends ItemSheet {
     } else {
       this._rollMercurialMagic(event, options)
     }
+  }
+
+  /**
+   * Roll a new Manifestation
+   * @param {Event}  event   The originating click event
+   * @param options
+   * @private
+   */
+  _rollManifestation (event, options) {
+    this.item.rollManifestation(undefined, options)
+    this.render(false)
   }
 
   /**

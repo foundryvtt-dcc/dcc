@@ -242,6 +242,15 @@ $font-awesome: 'Font Awesome 6 Pro';
   line-height: 20px;
 }
 
+.chat-message .table-draw .mercurial, .chat-message .table-draw .manifestation,  {
+  border-top: 1px solid var(--color-border-light-primary);
+  color: var(--color-text-dark-secondary);
+  font-size: var(--font-size-12);
+  line-height: 22px;
+  margin-bottom: 8px;
+  padding: 5px 0;
+}
+
 /* ----------------------------------------- */
 /*  Spell Check Chat Card                    */
 /* ----------------------------------------- */
@@ -254,6 +263,7 @@ $font-awesome: 'Font Awesome 6 Pro';
         flex: 0 0 20px;
         flex-direction: column;
         justify-content: space-between;
+        margin-right: 3px;
       }
     }
   }
@@ -755,6 +765,10 @@ $font-awesome: 'Font Awesome 6 Pro';
     content: "\f723";
   }
 
+  a[data-tab="manifestation"]::before {
+    content: "\f890";
+  }
+
   a[data-tab="mercurial"]::before {
     content: "\f72b";
   }
@@ -771,7 +785,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     content: "\f6b8";
   }
 
-  a[data-tab="spells"]::before {
+  a[data-tab="spells"]::before,  a[data-tab="spell"]::before,{
     content: "\f6b8";
   }
 

@@ -506,7 +506,8 @@
         "inheritSpellCheck": true,
         "inheritCheckPenalty": true,
         "castingMode": "wizard",
-        "showMercurialEffect": false
+        "showManifestationTab": false,
+        "showMercurialTab": false
       },
       "level": 1,
       "lost": false,
@@ -521,10 +522,16 @@
         "value": "+0",
         "penalty": "-0"
       },
+      "manifestation": {
+        "value": "",
+        "description": "",
+        "displayInChat": true
+      },
       "mercurialEffect": {
         "value": "",
         "summary": "",
-        "description": ""
+        "description": "",
+        "displayInChat": true
       }
     },
     "skill": {
