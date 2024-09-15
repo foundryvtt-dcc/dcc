@@ -726,7 +726,7 @@
   "DCC.SpellCastingModeWizard": "Wizard Spell",
   "DCC.SpellCastingTime": "Casting Time",
   "DCC.SpellCheck": "Spell Check",
-  "DCC.SpellCheckCardMessage": "Rolls a Spell Check.",
+  "DCC.SpellCheckCardMessage": "Rolls a Spell Check",
   "DCC.SpellCheckCrit": "Crit! Level bonus x2.",
   "DCC.SpellCheckFumble": "Fumble! Using result 1.",
   "DCC.SpellCheckNoOwnedItemWarning": "Cannot roll a spell check with a spell you don't own.",

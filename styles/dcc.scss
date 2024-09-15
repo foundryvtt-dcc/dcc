@@ -226,16 +226,20 @@ $font-awesome: 'Font Awesome 6 Pro';
   color: red;
 }
 
-.message-content {
-  font-family: var(--data-font);
-}
-
 .flavor-text {
   font-family: var(--label-font);
 }
 
+.message-content {
+  font-family: var(--data-font);
+}
+
 .message-sender {
   font-family: var(--label-font);
+}
+
+.chat-message .table-draw .table-results .table-result .result-text {
+  line-height: 20px;
 }
 
 /* ----------------------------------------- */
@@ -1320,7 +1324,7 @@ form.dcc-roll-modifier {
         display: grid;
         grid-template-columns: 24px 40px;
         text-align: left;
-  
+
         input {
           align-self: center;
           background: #DBD9CD;
@@ -1330,7 +1334,7 @@ form.dcc-roll-modifier {
           margin-left: 5px;
           width: 20px;
         }
-  
+
         label {
           font-size: 11px;
           letter-spacing: 1px;

@@ -369,16 +369,20 @@
   color: red;
 }
 
-.message-content {
-  font-family: var(--data-font);
-}
-
 .flavor-text {
   font-family: var(--label-font);
 }
 
+.message-content {
+  font-family: var(--data-font);
+}
+
 .message-sender {
   font-family: var(--label-font);
+}
+
+.chat-message .table-draw .table-results .table-result .result-text {
+  line-height: 20px;
 }
 
 /* ----------------------------------------- */
