@@ -776,6 +776,8 @@
   "DCC.SpellResultTable": "Result Table",
   "DCC.SpellSave": "Save",
   "DCC.SpellScroll": "Spell Scroll",
+  "DCC.SettingSpellSideEffectsCompendium": "Spell Side Effects Compendium",
+  "DCC.SettingSpellSideEffectsCompendiumHint": "The Spell Side Effects Compendium holds the tables for spell manifestations and corruptions.",
   "DCC.SpellSideEffectsCompendiumNotFoundWarning": "The 'Spell Side Effects Compendium' was not found, you will either need to make one or activate the Core Book Module.",
   "DCC.SpellTarget": "Spell Target",
   "DCC.SpellUnprepared": "Unprepared",
