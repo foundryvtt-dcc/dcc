@@ -53,8 +53,6 @@ export class DCCItemSheet extends ItemSheet {
     if (data.item.type === 'spell') {
       // Allow mercurial magic roll only on wizard spells owned by an actor
       const castingMode = data.item.system.config.castingMode || 'wizard'
-      const forceShowManifestationTab = data.item.system.config.showManifestationTab
-      data.showManifestationTab = !!this.actor && (castingMode === 'wizard' || forceShowManifestationTab)
       const forceShowMercurialTab = data.item.system.config.showMercurialTab
       data.showMercurialTab = !!this.actor && (castingMode === 'wizard' || forceShowMercurialTab)
 
@@ -77,8 +75,6 @@ export class DCCItemSheet extends ItemSheet {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = data.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
-      // Only allow currency conversion on items representing coins that have a resolved value
-      data.allowConversions = data.item.system.isCoins && !data.unresolved && !this.limited
     }
 
     // Pass through the item data in the format we expect

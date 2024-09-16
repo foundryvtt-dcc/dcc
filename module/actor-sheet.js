@@ -83,9 +83,6 @@ class DCCActorSheet extends ActorSheet {
       }
     }
 
-    // Should the Deed Roll button be available on the sheet?
-    data.system.config.showAttackBonusButton = (this.actor.getAttackBonusMode() === 'manual')
-
     // Prepare item lists by type
     this._prepareItems(data)
 
@@ -291,6 +288,7 @@ class DCCActorSheet extends ActorSheet {
       html.find('label[for="system.class.disapprovalTable"]').click(this._onRollDisapproval.bind(this))
       html.find('label[for="system.class.disapprovalTable"]').each(makeDraggable)
       html.find('label[for="system.class.disapproval"]').each(makeDraggable)
+
 
       // Action Dice
       html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
@@ -777,48 +775,6 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const options = this._fillRollOptions(event)
     this.actor.rollDisapproval(undefined, options)
-  }
-
-  /**
-   * Handle rolling attack bonus
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onRollAttackBonus (event) {
-    if (this.actor.getAttackBonusMode() === 'manual') {
-      event.preventDefault()
-      const options = this._fillRollOptions(event)
-      this.actor.rollAttackBonus(options)
-      this.render(false)
-    }
-  }
-
-  /**
-   * Handle rolling generic melee attack
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onRollMeleeAttack (event) {
-    if (this.actor.getAttackBonusMode() === 'manual') {
-      event.preventDefault()
-      const options = this._fillRollOptions(event)
-      this.actor.rollMeleeAttack(options)
-      this.render(false)
-    }
-  }
-
-  /**
-   * Handle rolling generic melee attack
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onRollRangedAttack (event) {
-    if (this.actor.getAttackBonusMode() === 'manual') {
-      event.preventDefault()
-      const options = this._fillRollOptions(event)
-      this.actor.rollRangedAttack(options)
-      this.render(false)
-    }
   }
 
   /**

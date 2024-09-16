@@ -220,7 +220,7 @@ class DCCItem extends Item {
    * @return
    */
   hasExistingManifestation () {
-    return this.system.manifestation.value || this.system.manifestation.description
+    return this.system?.manifestation?.value || this.system?.manifestation?.description
   }
 
   /**
@@ -228,7 +228,7 @@ class DCCItem extends Item {
    * @return
    */
   hasExistingMercurialMagic () {
-    return this.system.mercurialEffect.value || this.system.mercurialEffect.summary || this.system.mercurialEffect.description
+    return this.system?.mercurialEffect?.value || this.system?.mercurialEffect?.summary || this.system.mercurialEffect.description
   }
 
   /**

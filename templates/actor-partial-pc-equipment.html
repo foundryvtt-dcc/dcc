@@ -1,23 +1,5 @@
 {{!-- Equipment Tab --}}
 <div class="tab equipment-bg" data-group="primary" data-tab="equipment">
-        {{!-- Deed Roll --}}
-        {{#if system.config.showAttackBonusButton}}
-            <div class="attack-bonus-container skills-container">
-                <div style="grid-template-columns: 22px max-content; justify-self: end;">
-                    <img class="attack-bonus rollable" src="systems/dcc/styles/images/game-icons-net/d4-black.svg">
-                    <label class="attack-bonus rollable" for="dummyAttackBonus">{{localize "DCC.DeedRoll"}}</label>
-                </div>
-                <div style="grid-template-columns: max-content 20px;">
-                    <label for="system.details.lastRolledAttackBonus">{{localize "DCC.DeedRollValue"}}</label>
-                    <input type="text" id="system.details.lastRolledAttackBonus"
-                           name="system.details.lastRolledAttackBonus"
-                           value="{{system.details.lastRolledAttackBonus}}"
-                           title="{{localize " DCC.DeedRollTitle"}}"
-                           readonly/>
-                </div>
-            </div>
-        {{/if}}
-
         {{!-- Melee Weapons --}}
         {{#* inline "weaponRow"}}
             <li class="grid-col-span-9 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">

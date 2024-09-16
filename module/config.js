@@ -165,7 +165,6 @@ DCC.castingModes = {
  */
 DCC.attackBonusModes = {
   flat: 'DCC.AttackBonusConfigModeFlat',
-  manual: 'DCC.AttackBonusConfigModeManual',
   autoPerAttack: 'DCC.AttackBonusConfigModeAutoPerAttack'
 }
 

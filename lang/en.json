@@ -686,8 +686,6 @@
   "DCC.SheetConfig": "Sheet Configuration",
   "DCC.ShieldBash": "Shield Bash",
   "DCC.ShowBackstabConfig": "Show Backstab",
-  "DCC.ShowManifestationTabConfig": "Show Manifestation Tab",
-  "DCC.ShowManifestationTabInfo": "Show the Manifestation tab of the item sheet regardless of casting mode",
   "DCC.ShowMercurialTabConfig": "Show Mercurial Effect Tab",
   "DCC.ShowMercurialTabInfo": "Show the Mercurial Effect tab of the item sheet regardless of casting mode",
   "DCC.ShowSkillsConfig": "Show Custom Skills Tab",

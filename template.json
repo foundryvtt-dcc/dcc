@@ -506,7 +506,6 @@
         "inheritSpellCheck": true,
         "inheritCheckPenalty": true,
         "castingMode": "wizard",
-        "showManifestationTab": false,
         "showMercurialTab": false
       },
       "level": 1,

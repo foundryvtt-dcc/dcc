@@ -155,14 +155,6 @@ class DCCActor extends Actor {
       }
       this.system.attributes.initDice.options = initDice
     } catch (err) { }
-
-    // Migrate the old rollAttackBonus option if present
-    if (this.system.config.rollAttackBonus) {
-      this.update({
-        'system.config.attackBonusMode': 'manual',
-        'system.config.rollAttackBonus': null
-      })
-    }
   }
 
   /**
