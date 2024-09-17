@@ -69,20 +69,20 @@ function _parseJSONPCs (pcObject) {
         if (weapon.attackDamage.includes('+') || weapon.attackDamage.includes('-')) {
           damageOverride = weapon.attackDamage || '1d3'
         }
-        if (weapon.melee === true && (damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || getFirstMod(weapon.attackDamage) === 0)) {
+        if (weapon.melee === true && (damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || getFirstMod(weapon.attackDamage) === '+0')) {
           damageOverride = ''
         }
-        if (weapon.melee === false && (damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || getFirstMod(weapon.attackDamage) === 0)) {
+        if (weapon.melee === false && (damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || getFirstMod(weapon.attackDamage) === '+0')) {
           damageOverride = ''
         }
 
         // Do we need to override the toHit or is it standard stuff?
         const attackBonusWeapon = getFirstMod(weapon.name)
-        let attackBonusOverride = weapon.attackMod || '0'
-        if (weapon.melee === true && (pcObject.attackBonus || 0 + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || attackBonusOverride) === 0) {
+        let attackBonusOverride = weapon.attackMod || '+0'
+        if (weapon.melee === true && (pcObject.attackBonus || 0 + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || attackBonusOverride) === '+0') {
           attackBonusOverride = ''
         }
-        if (weapon.melee === false && (pcObject.attackBonus || 0 + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || attackBonusOverride) === 0) {
+        if (weapon.melee === false && (pcObject.attackBonus || 0 + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || attackBonusOverride) === '+0') {
           attackBonusOverride = ''
         }
 
@@ -92,7 +92,7 @@ function _parseJSONPCs (pcObject) {
           img: weapon.img,
           system: {
             attackBonusWeapon,
-            toHit: weapon.attackMod || '0',
+            toHit: weapon.attackMod || '+0',
             damage: weapon.attackDamage || '1d3',
             damageWeapon,
             damageWeaponBonus,

@@ -151,7 +151,7 @@
                     <div class="dark-title">{{localize "DCC.Initiative"}}</div>
                     <div class="p-5 grid-align-center">
                         <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">
-                            {{system.initiativeDie}}{{#if system.initiativeBonus}} + {{system.initiativeBonus}}{{/if}}
+                            {{system.initiativeDie}}{{#if system.initiativeBonus}}{{system.initiativeBonus}}{{/if}}
                         </div>
 
                         <div class="group-separator"></div>
@@ -189,6 +189,7 @@
                             </label>
                             <input name="system.initiativeWeaponBonus" id="system.initiativeWeaponBonus"
                                    value="{{system.initiativeWeaponBonus}}" data-dtype="string"
+                                   class="{{#if system.config.initiativeBonusOverride}}disabled{{/if}}"
                                    {{#if system.config.initiativeBonusOverride}}readonly{{/if}}
                             />
 
