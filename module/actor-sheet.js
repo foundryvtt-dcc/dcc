@@ -418,7 +418,7 @@ class DCCActorSheet extends ActorSheet {
     while (element && !(attribute in element.dataset)) {
       element = element.parentElement
     }
-    if (attribute in element.dataset) {
+    if (element && attribute in element.dataset) {
       return element.dataset[attribute]
     }
     return null

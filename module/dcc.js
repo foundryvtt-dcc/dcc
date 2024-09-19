@@ -671,7 +671,7 @@ function _createDCCAbilityMacro (data, slot) {
   const rollUnder = data.data.rollUnder
   const macroData = {
     name: game.i18n.localize(CONFIG.DCC.abilities[abilityId]),
-    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAbilityCheck("${abilityId}", Object.assign({ rollUnder: ${rollUnder} }, game.dcc.getMacroOptions())) }`,
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollAbilityCheck("${abilityId}", Object.assign({ rollUnder: ${rollUnder} }, game.dcc.getMacroOptions())) }`,
     img: EntityImages.imageForMacro(abilityId, rollUnder ? 'abilityRollUnder' : 'ability')
   }
 
@@ -695,7 +695,7 @@ function _createDCCInitiativeMacro (data, slot) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.Initiative'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollInitiative(token, game.dcc.getMacroOptions()) }',
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollInitiative({createCombatants: true}) }`,
     img: EntityImages.imageForMacro('initiative')
   }
 }
@@ -712,7 +712,7 @@ function _createDCCHitDiceMacro (data, slot) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.HitDiceRoll'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }',
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollHitDice(game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(data.data.dice), 'hitDice')
   }
 }
@@ -730,7 +730,7 @@ function _createDCCSaveMacro (data, slot) {
   const saveId = data.data
   return {
     name: game.i18n.localize(CONFIG.DCC.saves[saveId]),
-    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSavingThrow("${saveId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(saveId, 'savingThrow')
   }
 }
@@ -749,7 +749,7 @@ function _createDCCSkillMacro (data, slot) {
   const skillName = game.i18n.localize(data.data.skillName)
   return {
     name: skillName,
-    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSkillCheck("${skillId}", game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(skillId, 'skillCheck')
   }
 }
@@ -767,7 +767,7 @@ function _createDCCLuckDieMacro (data, slot) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.LuckDie'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollLuckDie(game.dcc.getMacroOptions()) }',
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollLuckDie(game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'luckDie')
   }
 }
@@ -786,12 +786,12 @@ function _createDCCSpellCheckMacro (data, slot) {
   const img = data.data.img || null
   const macroData = {
     name: spell || game.i18n.localize('DCC.SpellCheck'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSpellCheck() }',
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck() }`,
     img: img || EntityImages.imageForMacro('spellCheck')
   }
 
   if (spell) {
-    macroData.command = `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollSpellCheck(Object.assign({ spell: "${spell}" }, game.dcc.getMacroOptions())) }`
+    macroData.command = `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck(Object.assign({ spell: "${spell}" }, game.dcc.getMacroOptions())) }`
   }
 
   return macroData
@@ -810,7 +810,7 @@ function _createDCCAttackBonusMacro (data, slot) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.AttackBonus'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollAttackBonus(game.dcc.getMacroOptions()) }',
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollAttackBonus(game.dcc.getMacroOptions()) }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'attackBonus')
   }
 }
@@ -828,7 +828,7 @@ function _createDCCActionDiceMacro (data, slot) {
   // Create the macro command
   return {
     name: game.i18n.format('DCC.ActionDiceMacroName', { die }),
-    command: `const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.setActionDice('${die}') }`,
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.setActionDice('${die}') }`,
     img: EntityImages.imageForMacro(game.dcc.DiceChain.getPrimaryDie(die), 'defaultDice')
   }
 }
@@ -879,7 +879,7 @@ function _createDCCApplyDisapprovalMacro (data, slot) {
   // Create the macro command
   return {
     name: game.i18n.format('DCC.ApplyDisapprovalMacroName'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.applyDisapproval() }',
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.applyDisapproval() }`,
     img: EntityImages.imageForMacro('applyDisapproval')
   }
 }
@@ -896,7 +896,7 @@ function _createDCCRollDisapprovalMacro (data, slot) {
   // Create the macro command
   return {
     name: game.i18n.format('DCC.RollDisapprovalMacroName'),
-    command: 'const _actor = game.dcc.getMacroActor(); if (_actor) { _actor.rollDisapproval() }',
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollDisapproval() }`,
     img: EntityImages.imageForMacro('rollDisapproval')
   }
 }
@@ -919,7 +919,11 @@ function rollDCCWeaponMacro (itemId, actorId, options = {}) {
  * Get the current actor - for use in macros
  * @return {Object}
  */
-function getMacroActor () {
+function getMacroActor (actorId = null) {
+  if (actorId) {
+    const actor = game.actors.get(actorId)
+    return actor
+  }
   const speaker = ChatMessage.getSpeaker()
   let actor
   if (speaker.token) actor = game.actors.tokens[speaker.token]
