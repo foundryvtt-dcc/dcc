@@ -683,6 +683,9 @@ a.inline-roll {
   overflow-x: clip;
   row-gap: 5px;
 }
+.dcc.item .tab-body .description {
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+}
 .dcc.item .tab-body .description .editor {
   min-height: 354px;
 }
