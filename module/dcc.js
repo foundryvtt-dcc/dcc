@@ -463,10 +463,13 @@ Hooks.on('renderChatMessage', (message, html, data) => {
   try {
     emoteRolls = game.settings.get('dcc', 'emoteRolls')
   } catch {
-    setTimeout(() => { emoteRolls = game.settings.get('dcc', 'emoteRolls') }, 1000)
+    if (message.getFlag('emoteRoll') === true) {
+      emoteRolls = true
+    }
   }
 
   if (emoteRolls === true) {
+    message.setFlag('emoteRoll', true)
     chat.emoteAttackRoll(message, html, data)
     chat.emoteCritRoll(message, html, data)
     chat.emoteFumbleRoll(message, html, data)

@@ -1,77 +1,78 @@
 <form class="{{cssClass}}" autocomplete="off">
-    <!-- Nav -->
-    <nav class="sheet-tabs tabs" data-group="item">
-        <a data-tab="armor">{{localize "DCC.Armor"}}</a>
-        <a data-tab="description">{{localize "DCC.Description"}}</a>
-    </nav>
+  <!-- Nav -->
+  <nav class="sheet-tabs tabs" data-group="item">
+    <a data-tab="armor">{{localize "DCC.Armor"}}</a>
+    <a data-tab="description">{{localize "DCC.Description"}}</a>
+  </nav>
 
-    <!-- Body -->
-    <section class="sheet-body">
-        <div class="tab" data-group="item" data-tab="armor">
-            <div class="tab-body">
-                <div class="grid-col-span-6 grid-tpl-max-auto" style="margin-bottom: 5px;">
-                    <label for="name">{{localize "DCC.Name"}}</label>
-                    <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
-                </div>
-
-                <div class="grid-col-span-6 grid-tpl-max-auto">
-                    <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
-                    <input type="text" name="system.description.summary" value="{{system.description.summary}}" data-dtype="String"/>
-                </div>
-
-                <div class="dark-border grid-col-span-6">
-                    <div class="dark-title">{{localize "DCC.ArmorSettings"}}</div>
-                    <div class="box-inner grid-tpl-max-auto">
-                        <input type="checkbox" name="system.equipped" style="margin: 7px 7px 0 0;" data-dtype="Boolean" {{checked system.equipped}}/>
-                        <label for="system.equipped" style="margin: 5px 0 0 0;">{{localize "DCC.ItemPropertiesEquipped"}}</label>
-                    </div>
-                </div>
-
-                <div class="dark-border grid-col-span-6">
-                    <div class="dark-title">{{localize "DCC.ArmorDetails"}}</div>
-                    <div class="box-inner grid-tpl-max-auto">
-                        <label for="system.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
-                        <input type="text" name="system.acBonus"
-                               value="{{numberFormat system.acBonus decimals=0 sign=true}}"
-                               placeholder="+0" data-dtype="Number"/>
-                        <label for="system.checkPenalty">{{localize "DCC.ArmorPropertiesCheckPenalty"}}</label>
-                        <input type="text" name="system.checkPenalty"
-                               value="{{numberFormat system.checkPenalty decimals=0 sign=true}}"
-                               placeholder="-0" data-dtype="Number"/>
-                        <label for="system.fumbleDie">{{localize "DCC.ArmorPropertiesFumbleDie"}}</label>
-                        <input type="text" name="system.fumbleDie" value="{{system.fumbleDie}}"
-                               placeholder="1d4" data-dtype="String"/>
-                        <label for="system.speed">{{localize "DCC.ArmorPropertiesSpeed"}}</label>
-                        <input type="text" name="system.speed" value="{{distanceFormat system.speed}}"
-                               placeholder="-0'" data-dtype="String"/>
-                    </div>
-                </div>
-
-                {{> systems/dcc/templates/item-sheet-partial-values.html }}
-
-
-
-                <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
-                    <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
-                    <div class="box-inner">
-                        <div class="description">
-                            {{{descriptionHTML}}}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dark-border grid-col-span-3" style="max-height: 126px;">
-                    <div class="dark-title">{{localize "DCC.Image"}}</div>
-                    <div class="box-inner" style="padding-top: 5px;">
-                        <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
-                    </div>
-                </div>
-
-                <img src="systems/dcc/styles/images/FCI-spots-8-7-Dragon-Tail-Ornament.webp" style="justify-self: center;" class="grid-col-span-12" width="450" height="20">
-
-            </div>
+  <!-- Body -->
+  <section class="sheet-body">
+    <div class="tab" data-group="item" data-tab="armor">
+      <div class="tab-body">
+        <div class="grid-col-span-6 grid-tpl-max-auto" style="margin-bottom: 5px;">
+          <label for="name">{{localize "DCC.Name"}}</label>
+          <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
         </div>
 
-        {{> systems/dcc/templates/item-sheet-partial-description.html }}
-    </section>
+        <div class="grid-col-span-6 grid-tpl-max-auto">
+          <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
+          <input type="text" name="system.description.summary" value="{{system.description.summary}}" data-dtype="String"/>
+        </div>
+
+        <div class="dark-border grid-col-span-6">
+          <div class="dark-title">{{localize "DCC.ArmorSettings"}}</div>
+          <div class="box-inner grid-tpl-max-auto">
+            <input type="checkbox" name="system.equipped" style="margin: 7px 7px 0 0;" data-dtype="Boolean" {{checked system.equipped}}/>
+            <label for="system.equipped" style="margin: 5px 0 0 0;">{{localize "DCC.ItemPropertiesEquipped"}}</label>
+          </div>
+        </div>
+
+        <div class="dark-border grid-col-span-6">
+          <div class="dark-title">{{localize "DCC.ArmorDetails"}}</div>
+          <div class="box-inner grid-tpl-max-auto">
+            <label for="system.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
+            <input type="text" name="system.acBonus"
+                   value="{{numberFormat system.acBonus decimals=0 sign=true}}"
+                   placeholder="+0" data-dtype="Number"/>
+            <label for="system.checkPenalty">{{localize "DCC.ArmorPropertiesCheckPenalty"}}</label>
+            <input type="text" name="system.checkPenalty"
+                   value="{{numberFormat system.checkPenalty decimals=0 sign=true}}"
+                   placeholder="-0" data-dtype="Number"/>
+            <label for="system.fumbleDie">{{localize "DCC.ArmorPropertiesFumbleDie"}}</label>
+            <input type="text" name="system.fumbleDie" value="{{system.fumbleDie}}"
+                   placeholder="1d4" data-dtype="String"/>
+            <label for="system.speed">{{localize "DCC.ArmorPropertiesSpeed"}}</label>
+            <input type="text" name="system.speed" value="{{distanceFormat system.speed}}"
+                   placeholder="-0'" data-dtype="String"/>
+          </div>
+        </div>
+
+        {{> systems/dcc/templates/item-sheet-partial-values.html }}
+
+
+
+        <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+          <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+          <div class="box-inner">
+            <div class="description">
+              {{{descriptionHTML}}}
+            </div>
+          </div>
+        </div>
+
+        <div class="dark-border grid-col-span-3" style="max-height: 126px;">
+          <div class="dark-title">{{localize "DCC.Image"}}</div>
+          <div class="box-inner" style="padding-top: 5px;">
+            <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+          </div>
+        </div>
+
+        <img src="systems/dcc/styles/images/FCI-spots-8-7-Dragon-Tail-Ornament.webp" style="justify-self: center;" class="grid-col-span-12"
+             width="450" height="20">
+
+      </div>
+    </div>
+
+    {{> systems/dcc/templates/item-sheet-partial-description.html }}
+  </section>
 </form>

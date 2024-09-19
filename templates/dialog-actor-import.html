@@ -1,34 +1,34 @@
 <form class="actor config-dialog" autocomplete="off">
-    <div class="grid-tpl-two grid-row-gap-8">
-        <div>
-            <label for="statblocks">{{localize 'DCC.ActorImportStatblock'}}</label>
-            <p><a
-                href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">{{localize
-                'DCC.PurpleSorcererPCLink'}}</a></p>
-            <p><a href="https://purplesorcerer.com/create_upper.php">{{ localize 'DCC.PurpleSorcererUpperLevelLink'}}</a></p>
-        </div>
-
-        <textarea style="height: 640px;" id="statblocks" name="statblocks"></textarea>
-
-        <label for="type">Actor Type</label>
-        <select id="type" name="type">
-            {{selectOptions config.importTypes selected=importType localize=true}}
-        </select>
-
-        <label for="folderId">{{localize 'DCC.Folder'}}</label>
-
-        <select id="folderId" name="folderId">
-            <option value="" selected>{{localize 'DCC.NoFolder'}}</option>
-            {{#each folders}}
-                <option value="{{id}}">{{name}}</option>
-            {{/each}}
-        </select>
-
-
-        <footer class="grid-col-span-2">
-            <button type="submit">
-                <i class="fas fa-user"></i>{{localize 'DCC.ActorImport'}}
-            </button>
-        </footer>
+  <div class="grid-tpl-two grid-row-gap-8">
+    <div>
+      <label for="statblocks">{{localize 'DCC.ActorImportStatblock'}}</label>
+      <p><a
+        href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">{{localize
+        'DCC.PurpleSorcererPCLink'}}</a></p>
+      <p><a href="https://purplesorcerer.com/create_upper.php">{{ localize 'DCC.PurpleSorcererUpperLevelLink'}}</a></p>
     </div>
+
+    <textarea style="height: 640px;" id="statblocks" name="statblocks"></textarea>
+
+    <label for="type">Actor Type</label>
+    <select id="type" name="type">
+      {{selectOptions config.importTypes selected=importType localize=true}}
+    </select>
+
+    <label for="folderId">{{localize 'DCC.Folder'}}</label>
+
+    <select id="folderId" name="folderId">
+      <option value="" selected>{{localize 'DCC.NoFolder'}}</option>
+      {{#each folders}}
+        <option value="{{id}}">{{name}}</option>
+      {{/each}}
+    </select>
+
+
+    <footer class="grid-col-span-2">
+      <button type="submit">
+        <i class="fas fa-user"></i>{{localize 'DCC.ActorImport'}}
+      </button>
+    </footer>
+  </div>
 </form>

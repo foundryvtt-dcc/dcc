@@ -86,6 +86,7 @@
   "DCC.ArmorPropertiesSpeed": "Speed",
   "DCC.ArmorSettings": "Armor Settings",
   "DCC.AsCoins": "As Coins",
+  "DCC.AsCoinsHint": "Delete this item and move its value to your Funds.",
   "DCC.Attack": "Attack",
   "DCC.AttackBonus": "Attack Bonus",
   "DCC.AttackBonusConfigMode": "Attack Bonus Mode",

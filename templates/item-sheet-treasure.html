@@ -1,48 +1,58 @@
 <form class="{{cssClass}}" autocomplete="off">
-    <!-- Nav -->
-    <nav class="sheet-tabs tabs" data-group="item">
-        <a data-tab="item">{{localize "DCC.Item"}}</a>
-        <a data-tab="description">{{localize "DCC.Description"}}</a>
-    </nav>
+  <!-- Nav -->
+  <nav class="sheet-tabs tabs" data-group="item">
+    <a data-tab="item">{{localize "DCC.Item"}}</a>
+    <a data-tab="description">{{localize "DCC.Description"}}</a>
+  </nav>
 
-    <!-- Body -->
-    <section class="sheet-body">
-        <div class="tab" data-group="item" data-tab="item">
-            <div class="tab-body">
-                <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
-                    <label for="name">{{localize "DCC.Name"}}</label>
-                    <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
-                </div>
-
-                <div class="dark-border grid-col-span-3" style="grid-row-end: span 2;">
-                    <div class="dark-title">{{localize "DCC.SettingsLabel"}}</div>
-                    <div class="box-inner">
-                        <label for="system.isCoins">{{localize "DCC.AsCoins"}}</label>
-                        <input type="checkbox" name="system.isCoins" id="system.isCoins"
-                            {{checked system.isCoins}} data-dtype="Boolean"/>
-                    </div>
-                </div>
-
-                {{> systems/dcc/templates/item-sheet-partial-values.html }}
-
-                <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
-                    <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
-                    <div class="box-inner">
-                        {{{descriptionHTML}}}
-                    </div>
-                </div>
-                <div class="dark-border grid-col-span-3" style="max-height: 125px;">
-                    <div class="dark-title">{{localize "DCC.Image"}}</div>
-                    <div class="box-inner" style="padding-top: 5px;">
-                        <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
-                    </div>
-                </div>
-
-                <img src="systems/dcc/styles/images/SA-4-31-FCI-spots-4-Treasure-skull-magic-sword.webp" style="justify-self: center;"
-                     class="grid-col-span-12" width="181" height="80">
-            </div>
+  <!-- Body -->
+  <section class="sheet-body">
+    <div class="tab" data-group="item" data-tab="item">
+      <div class="tab-body">
+        <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
+          <label for="name">{{localize "DCC.Name"}}</label>
+          <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
         </div>
 
-        {{> systems/dcc/templates/item-sheet-partial-description.html }}
-    </section>
+        <div class="dark-border grid-col-span-3">
+          <div class="dark-title">{{localize "DCC.SettingsLabel"}}</div>
+          <div class="box-inner">
+            <div class="grid-col-span-2 grid-tpl-max-auto grid-align-just-center" title="{{localize "DCC.AsCoinsHint"}}">
+              <label for="system.isCoins">{{localize "DCC.AsCoins"}}</label>
+              <input type="checkbox" style="height: 18px;" name="system.isCoins" id="system.isCoins"
+                {{checked system.isCoins}} data-dtype="Boolean"/>
+            </div>
+          </div>
+        </div>
+
+        {{#if allowResolve}}
+          <div class="grid-col-span-2">&nbsp;</div>
+          <div class="grid-col-span-4 grid-tpl-max-auto grid-align-just-center">
+            <div class="roll-value-button">&nbsp;</div>
+            <label class="rollable roll-value-label">Roll Treasure Value</label>
+          </div>
+        {{/if}}
+
+        {{> systems/dcc/templates/item-sheet-partial-values.html }}
+
+        <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+          <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+          <div class="box-inner">
+            {{{descriptionHTML}}}
+          </div>
+        </div>
+        <div class="dark-border grid-col-span-3" style="max-height: 125px;">
+          <div class="dark-title">{{localize "DCC.Image"}}</div>
+          <div class="box-inner" style="padding-top: 5px;">
+            <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+          </div>
+        </div>
+
+        <img src="systems/dcc/styles/images/SA-4-31-FCI-spots-4-Treasure-skull-magic-sword.webp" style="justify-self: center;"
+             class="grid-col-span-12" width="181" height="80">
+      </div>
+    </div>
+
+    {{> systems/dcc/templates/item-sheet-partial-description.html }}
+  </section>
 </form>

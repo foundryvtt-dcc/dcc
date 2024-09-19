@@ -1,93 +1,93 @@
 <form class="{{cssClass}}" autocomplete="off">
 
-    {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
-    <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Elf" data-dtype="String"/>
-    <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
+  {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
+  <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Elf" data-dtype="String"/>
+  <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
-    {{!-- Sheet Tab Navigation --}}
-    <nav class="sheet-tabs tabs" data-group="primary">
-        <a data-tab="character">{{localize "DCC.Character"}}</a>
-        <a data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a data-tab="elf">{{localize "DCC.Elf"}}</a>
-        <a data-tab="spells">{{localize "DCC.ElfSpells"}}</a>
-        {{#if system.config.showSkills}}
-            <a data-tab="skills">{{localize "DCC.Skills"}}</a>
-        {{/if}}
-        <a data-tab="notes">{{localize "DCC.Notes"}}</a>
-    </nav>
+  {{!-- Sheet Tab Navigation --}}
+  <nav class="sheet-tabs tabs" data-group="primary">
+    <a data-tab="character">{{localize "DCC.Character"}}</a>
+    <a data-tab="equipment">{{localize "DCC.Equipment"}}</a>
+    <a data-tab="elf">{{localize "DCC.Elf"}}</a>
+    <a data-tab="spells">{{localize "DCC.ElfSpells"}}</a>
+    {{#if system.config.showSkills}}
+      <a data-tab="skills">{{localize "DCC.Skills"}}</a>
+    {{/if}}
+    <a data-tab="notes">{{localize "DCC.Notes"}}</a>
+  </nav>
 
-    {{!-- Sheet Body --}}
-    <section class="sheet-body">
+  {{!-- Sheet Body --}}
+  <section class="sheet-body">
 
-        {{!-- Character Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+    {{!-- Character Tab --}}
+    {{> systems/dcc/templates/actor-partial-pc-common.html }}
 
-        {{!-- Equipment Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+    {{!-- Equipment Tab --}}
+    {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
 
-        {{!-- Skills Tab --}}
-        {{> systems/dcc/templates/actor-partial-skills.html }}
+    {{!-- Skills Tab --}}
+    {{> systems/dcc/templates/actor-partial-skills.html }}
 
-        {{!-- Notes Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+    {{!-- Notes Tab --}}
+    {{> systems/dcc/templates/actor-partial-pc-notes.html }}
 
-        {{!-- Class Tab --}}
-        <div class="grid-container tab elf-bg" data-group="primary" data-tab="elf">
-            {{!-- Update spell check ability to use Intelligence --}}
-            <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
-            <div class="dark-border mb-8">
-                <div class="dark-title" style="">{{localize "DCC.ElfAbilities"}}</div>
-                <div class="grid-tpl-two grid-row-gap-8 p-5 label-font">
-                    <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
-                        <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
-                               title="{{localize 'DCC.HeightenedSensesDescription'}}">
-                            {{localize "DCC.HeightenedSenses"}}
-                        </label>
-                        <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
-                               title="{{localize 'DCC.HeightenedSensesDescription'}}"
-                               value="{{system.skills.detectSecretDoors.value}}" data-dtype="String"/>
-                    </div>
-                    <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-ability="int">
-                        <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}"
-                               data-dtype="String"/>
-                    </div>
-                    <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-                        <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
-                        <input class="full-width" type="text" id="system.class.familiar" name="system.class.familiar"
-                               value="{{system.class.familiar}}" data-dtype="String"/>
-                    </div>
-                    <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-                        <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
-                        <input class="full-width" type="text" id="system.class.patron" name="system.class.patron"
-                               value="{{system.class.patron}}" data-dtype="String"/>
-                    </div>
-                    <div>
-                        {{localize "DCC.Infravision"}}
-                    </div>
-                    <div>
-                        {{localize "DCC.IronVulnerability"}}
-                    </div>
-                    <div>
-                        {{localize "DCC.ElfLuckMod"}}
-                    </div>
-                    <div>
-                        {{localize "DCC.ElfImmunities"}}
-                    </div>
-                    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                        <div>{{{system.class.classLink}}}</div>
-                    {{/dccPackExists}}
-                </div>
-            </div>
-
-            <div>
-                <div class="dark-title" style="">{{localize "DCC.Corruptions"}}</div>
-                {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
-            </div>
+    {{!-- Class Tab --}}
+    <div class="grid-container tab elf-bg" data-group="primary" data-tab="elf">
+      {{!-- Update spell check ability to use Intelligence --}}
+      <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
+      <div class="dark-border mb-8">
+        <div class="dark-title" style="">{{localize "DCC.ElfAbilities"}}</div>
+        <div class="grid-tpl-two grid-row-gap-8 p-5 label-font">
+          <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
+            <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
+                   title="{{localize 'DCC.HeightenedSensesDescription'}}">
+              {{localize "DCC.HeightenedSenses"}}
+            </label>
+            <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
+                   title="{{localize 'DCC.HeightenedSensesDescription'}}"
+                   value="{{system.skills.detectSecretDoors.value}}" data-dtype="String"/>
+          </div>
+          <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-ability="int">
+            <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
+            <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}"
+                   data-dtype="String"/>
+          </div>
+          <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
+            <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
+            <input class="full-width" type="text" id="system.class.familiar" name="system.class.familiar"
+                   value="{{system.class.familiar}}" data-dtype="String"/>
+          </div>
+          <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
+            <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
+            <input class="full-width" type="text" id="system.class.patron" name="system.class.patron"
+                   value="{{system.class.patron}}" data-dtype="String"/>
+          </div>
+          <div>
+            {{localize "DCC.Infravision"}}
+          </div>
+          <div>
+            {{localize "DCC.IronVulnerability"}}
+          </div>
+          <div>
+            {{localize "DCC.ElfLuckMod"}}
+          </div>
+          <div>
+            {{localize "DCC.ElfImmunities"}}
+          </div>
+          {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+            <div>{{{system.class.classLink}}}</div>
+          {{/dccPackExists}}
         </div>
+      </div>
 
-        {{!-- Spells Tab --}}
-        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
-    </section>
+      <div>
+        <div class="dark-title" style="">{{localize "DCC.Corruptions"}}</div>
+        {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
+      </div>
+    </div>
+
+    {{!-- Spells Tab --}}
+    {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
+  </section>
 </form>
 

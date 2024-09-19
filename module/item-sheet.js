@@ -75,6 +75,8 @@ export class DCCItemSheet extends ItemSheet {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = data.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
+      // Only allow currency conversion on items that have a resolved value
+      data.allowConversions = !data.unresolved && !this.limited
     }
 
     // Pass through the item data in the format we expect
@@ -132,7 +134,8 @@ export class DCCItemSheet extends ItemSheet {
 
       // Roll value and currency conversions for treasure
       if (this.item.type === 'treasure') {
-        html.find('.roll-button').click(this._onRollValue.bind(this))
+        html.find('.roll-value-button').click(this._onRollValue.bind(this))
+        html.find('.roll-value-label').click(this._onRollValue.bind(this))
         html.find('.left-arrow-button').click(this._onConvertUpward.bind(this))
         html.find('.right-arrow-button').click(this._onConvertDownward.bind(this))
       }

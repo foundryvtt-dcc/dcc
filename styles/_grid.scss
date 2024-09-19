@@ -70,6 +70,11 @@
   grid-column-end: span 12;
 }
 
+.grid-just-center {
+  display: grid;
+  justify-items: center;
+}
+
 .grid-row-gap-3 {
   display: grid;
   grid-row-gap: 3px;
