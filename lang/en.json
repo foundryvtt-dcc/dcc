@@ -670,6 +670,8 @@
   "DCC.SettingFumbleTableHint": "Roll Table to use for fumbles - must be in a compendium pack",
   "DCC.SettingLayOnHandsTable": "Lay On Hands Table",
   "DCC.SettingLayOnHandsTableHint": "Roll Table to use for Lay On Hands - must be in a compendium pack",
+  "DCC.SettingManualCompendiumConfiguration": "Manually Configure Compendia",
+  "DCC.SettingManualCompendiumConfigurationHint": "If you want to build your own lookup compendia instead of using the Core Book Module - not recommended.",
   "DCC.SettingMercurialMagicTable": "Mercurial Magic Table",
   "DCC.SettingMercurialMagicTableHint": "Roll Table to use for Mercurial Magic effects - must be in a compendium pack",
   "DCC.SettingShowRollModifierByDefault": "Show Roll Modifier by default",

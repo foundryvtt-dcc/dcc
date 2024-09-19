@@ -21,6 +21,21 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Automatic or Manual Table Configuration
+   */
+  game.settings.register('dcc', 'manualCompendiumConfiguration', {
+    name: 'DCC.SettingManualCompendiumConfiguration',
+    hint: 'DCC.SettingManualCompendiumConfigurationHint',
+    scope: 'world',
+    config: true,
+    requiresReload: true,
+    type: Boolean,
+    default: false
+  })
+
+  const manualConfig = game.settings.get('dcc', 'manualCompendiumConfiguration')
+
+  /**
    * Gather a list of available compendium packs with RollTables
    */
   const tableCompendiumNames = { '': 'Automatic' }
@@ -54,7 +69,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingCriticalHitsCompendium',
     hint: 'DCC.SettingCriticalHitsCompendiumHint',
     scope: 'world',
-    config: true,
+    config: manualConfig,
     default: '',
     type: String,
     choices: tableCompendiumNames,
@@ -70,7 +85,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingSpellSideEffectsCompendium',
     hint: 'DCC.SettingSpellSideEffectsCompendiumHint',
     scope: 'world',
-    config: true,
+    config: manualConfig,
     default: '',
     type: String,
     choices: tableCompendiumNames,
@@ -86,7 +101,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingFumbleTable',
     hint: 'DCC.SettingFumbleTableHint',
     scope: 'world',
-    config: true,
+    config: manualConfig,
     default: '',
     type: String,
     choices: rollTables,
@@ -102,7 +117,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingDisapprovalTablesCompendium',
     hint: 'DCC.SettingDisapprovalTablesCompendiumHint',
     scope: 'world',
-    config: true,
+    config: manualConfig,
     default: '',
     type: String,
     choices: tableCompendiumNames,
@@ -118,7 +133,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingTurnUnholyTable',
     hint: 'DCC.SettingTurnUnholyTableHint',
     scope: 'world',
-    config: true,
+    config: manualConfig,
     default: '',
     type: String,
     choices: rollTables,
@@ -134,7 +149,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingLayOnHandsTable',
     hint: 'DCC.SettingLayOnHandsTableHint',
     scope: 'world',
-    config: true,
+    config: manualConfig,
     default: '',
     type: String,
     choices: rollTables,
@@ -150,7 +165,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingDivineAidTable',
     hint: 'DCC.SettingDivineAidTableHint',
     scope: 'world',
-    config: true,
+    config: manualConfig,
     default: '',
     type: String,
     choices: rollTables,
@@ -166,7 +181,7 @@ export const registerSystemSettings = async function () {
     name: 'DCC.SettingMercurialMagicTable',
     hint: 'DCC.SettingMercurialMagicTableHint',
     scope: 'world',
-    config: true,
+    config: manualConfig,
     default: '',
     type: String,
     choices: rollTables,
@@ -268,30 +283,6 @@ export const registerSystemSettings = async function () {
     scope: 'world',
     type: Boolean,
     default: true,
-    config: true
-  })
-
-  /**
-   * Automatically add warrior's level to the initiative value
-   */
-  game.settings.register('dcc', 'automateWarriorInitiative', {
-    name: 'DCC.SettingAutomateWarriorInitiative',
-    hint: 'DCC.SettingAutomateWarriorInitiativeHint',
-    scope: 'world',
-    type: Boolean,
-    default: true,
-    config: true
-  })
-
-  /**
-   * Automatically set d16 as initiative roll die using two-handed weapon
-   */
-  game.settings.register('dcc', 'automateTwoHandedWeaponInit', {
-    name: 'DCC.SettingAutomateTwoHandedWeaponInit',
-    hint: 'DCC.SettingAutomateTwoHandedWeaponInitHint',
-    scope: 'world',
-    type: Boolean,
-    default: false,
     config: true
   })
 
