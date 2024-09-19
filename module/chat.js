@@ -118,7 +118,27 @@ function applyChatCardDamage (roll, multiplier) {
  * @param message
  * @param html
  * @param data
- * @returns {Promise<void>}
+ */
+export const emoteAbilityRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.IsAbilityCheck) return
+
+  const abilityRollEmote = game.i18n.format(
+    'DCC.RolledAbilityEmote',
+    {
+      actorName: data.alias,
+      abilityInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
+      abilityName: message.flavor
+    }
+  )
+  html.find('.message-content').html(abilityRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change attack rolls into emotes
+ * @param message
+ * @param html
+ * @param data
  */
 export const emoteAttackRoll = function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.isToHit) return
@@ -149,10 +169,9 @@ export const emoteAttackRoll = function (message, html, data) {
  * @param message
  * @param html
  * @param data
- * @returns {Promise<void>}
  */
 export const emoteCritRoll = async function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Critical')) return
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Critical'))) return
   const tableName = message.flavor.replace('Critical (', '').replace(')', '')
 
   const critResult = await getCritTableResult(message.rolls[0], tableName)
@@ -180,7 +199,7 @@ export const emoteCritRoll = async function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const emoteDamageRoll = function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Damage')) return
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Damage'))) return
 
   const damageRollEmote = game.i18n.format(
     'DCC.RolledDamageEmote',
@@ -201,7 +220,7 @@ export const emoteDamageRoll = function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const emoteFumbleRoll = async function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Fumble')) return
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
   if (game.settings.get('dcc', 'emoteRolls') === false) return
 
   const fumbleResult = await getFumbleTableResult(message.rolls[0])
@@ -249,7 +268,7 @@ export const emoteInitiativeRoll = function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const lookupCriticalRoll = async function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Critical')) return
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Critical'))) return
   const tableName = message.flavor.replace('Critical (', '').replace(')', '')
 
   const critResult = await getCritTableResult(message.rolls[0], tableName)
@@ -265,21 +284,9 @@ export const lookupCriticalRoll = async function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const lookupFumbleRoll = async function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flavor.includes('Fumble')) return
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
 
   const fumbleResult = await getFumbleTableResult(message.rolls[0])
   const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
   html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${fumbleText}`)
 }
-
-/**
- * Re-render the chat once settings are available
- */
-// Hooks.on('dcc.ready', (dcc) => {
-//   const messages = game.messages.contents
-//
-//   // Iterate over each message
-//   for (let message of messages) {
-//     Hooks.call('renderChatMessage', (message, message.getHTML(), message.system))
-//   }
-// })

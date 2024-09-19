@@ -377,7 +377,8 @@ class DCCActor extends Actor {
       // Generate flags for the roll
       Object.assign(flags, {
         'dcc.RollType': 'AbilityCheckRollUnder',
-        'dcc.Ability': abilityId
+        'dcc.Ability': abilityId,
+        'dcc.IsAbilityCheck': true
       })
 
       flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')}`
@@ -412,7 +413,8 @@ class DCCActor extends Actor {
       // Generate flags for the roll
       Object.assign(flags, {
         'dcc.RollType': 'AbilityCheck',
-        'dcc.Ability': abilityId
+        'dcc.Ability': abilityId,
+        'dcc.IsAbilityCheck': true
       })
       game.dcc.FleetingLuck.updateFlags(flags, roll)
     }

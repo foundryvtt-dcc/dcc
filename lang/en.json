@@ -587,6 +587,7 @@
   "DCC.ResolveValueEmote": "Rolled value of {itemName}:<br/>{pp} Pp. {ep} Ep. {gp} Gp. {sp} Sp. {cp} Cp.",
   "DCC.Roll": "Roll",
   "DCC.RollCritical": "Roll Critical",
+  "DCC.RolledAbilityEmote": "{actorName} rolled {abilityInlineRollHTML} for their {abilityName}.",
   "DCC.RolledCritEmote": "{actorName} rolled {critInlineRollHTML} on {critTableName}{critResult}",
   "DCC.RolledDamageEmote": "{actorName} rolled {damageInlineRollHTML} for damage.",
   "DCC.RolledFumbleEmote": "{actorName} fumbled and got a {fumbleInlineRollHTML}{fumbleResult}",

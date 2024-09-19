@@ -362,6 +362,10 @@
 /* ----------------------------------------- */
 /*  Chat Rolls                               */
 /* ----------------------------------------- */
+a.inline-roll {
+  line-height: 25px;
+}
+
 .deed-result.critical,
 .dice-roll .dice-total.critical,
 .inline-roll.critical {
