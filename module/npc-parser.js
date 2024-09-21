@@ -48,7 +48,7 @@ async function parseNPC (npcString) {
 
   npc.name = _firstMatch(/(.*?):.*/, npcString) || 'Unnamed'
   npc.name = npc.name.replace(/ ?\(\d+\)/, '')
-  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[;.].*/, npcString) || '1'
+  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[(d8 ;.].*/, npcString) || '1d8'
   const hpRoll = await new Roll(hd).evaluate()
   const hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
