@@ -60,31 +60,11 @@ function _parseJSONPCs (pcObject) {
     pc.items = []
     if (pcObject.weapons) {
       for (const weapon of pcObject.weapons) {
-        // Split damage into weapon damage and bonus
+        // Split damage into component parts
         const damageWeapon = getFirstDie(weapon.attackDamage)
+        const damageWeaponMod = getFirstMod(weapon.attackDamage)
         const damageWeaponBonus = getFirstMod(weapon.name)
-
-        // Do we need to override the damage or is it standard stuff?
-        let damageOverride = ''
-        if (weapon.attackDamage.includes('+') || weapon.attackDamage.includes('-')) {
-          damageOverride = weapon.attackDamage || '1d3'
-        }
-        if (weapon.melee === true && (damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || getFirstMod(weapon.attackDamage) === '+0')) {
-          damageOverride = ''
-        }
-        if (weapon.melee === false && (damageWeaponBonus + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || getFirstMod(weapon.attackDamage) === '+0')) {
-          damageOverride = ''
-        }
-
-        // Do we need to override the toHit or is it standard stuff?
-        const attackBonusWeapon = getFirstMod(weapon.name)
-        let attackBonusOverride = weapon.attackMod || '+0'
-        if (weapon.melee === true && (pcObject.attackBonus || 0 + CONFIG.DCC.abilityModifiers[pc['abilities.str.value']] || attackBonusOverride) === '+0') {
-          attackBonusOverride = ''
-        }
-        if (weapon.melee === false && (pcObject.attackBonus || 0 + CONFIG.DCC.abilityModifiers[pc['abilities.agl.value']] || attackBonusOverride) === '+0') {
-          attackBonusOverride = ''
-        }
+        const attackBonusWeapon = damageWeaponBonus
 
         pc.items.push({
           name: weapon.name,
@@ -96,10 +76,6 @@ function _parseJSONPCs (pcObject) {
             damage: weapon.attackDamage || '1d3',
             damageWeapon,
             damageWeaponBonus,
-            config: {
-              attackBonusOverride,
-              damageOverride
-            },
             melee: weapon.melee
           }
         })
