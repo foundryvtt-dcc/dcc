@@ -234,7 +234,7 @@ test('shortstats', async () => {
     name: 'Stunty, the short and muddled',
     'attributes.init.value': '+1',
     'attributes.ac.value': '15',
-    'attributes.hitDice.value': '1',
+    'attributes.hitDice.value': '1d8',
     'attributes.hp.value': '4',
     'attributes.hp.max': '4',
     'attributes.speed.value': '30',
@@ -268,7 +268,7 @@ test('familiar', async () => {
     name: 'The bad guy\'s familiar',
     'attributes.init.value': '+0',
     'attributes.ac.value': '15',
-    'attributes.hitDice.value': '1',
+    'attributes.hitDice.value': '1d8',
     'attributes.hp.value': '2',
     'attributes.hp.max': '2',
     'attributes.speed.value': '30',
@@ -541,6 +541,60 @@ Ref +4, Will +2; AL C.`
             toHit: '+2',
             damage: '1d3-1',
             melee: true
+          }
+        }
+      ]
+    }
+  ]
+  expect(parsedNPC).toMatchObject(expected)
+})
+
+/* Test giant stat block */
+test('giant', async () => {
+  const parsedNPC = await parseNPCs(
+          `Gabbie (stone giant): Init +1; Atk club +18 melee (3d8+10)
+or hurled stone +10 missile fire (1d8+10, range 200’); Crit
+20-24 G/d4; AC 17; HD 12d10 (hp 72); MV 40’; Act 1d24; SP
+infravision 60’, stone camouflage, transmute earth; SV Fort
++12, Ref +6, Will +8; AL N.`
+  )
+  const expected = [
+    {
+      name: 'Gabbie (stone giant)',
+      'attributes.init.value': '+1',
+      'attributes.ac.value': '17',
+      'attributes.hitDice.value': '12d10',
+      'attributes.speed.value': '40’',
+      'config.actionDice': '1d24',
+      'saves.frt.value': '+12',
+      'saves.ref.value': '+6',
+      'saves.wil.value': '+8',
+      'details.alignment': 'n',
+      items: [
+        {
+          name: 'club',
+          type: 'weapon',
+          img: 'systems/dcc/styles/images/weapon.webp',
+          system: {
+            actionDie: '1d20',
+            backstab: false,
+            backstabDamage: null,
+            toHit: '+18',
+            damage: '3d8+10',
+            melee: true
+          }
+        },
+        {
+          name: 'hurled stone',
+          type: 'weapon',
+          img: 'systems/dcc/styles/images/weapon.webp',
+          system: {
+            actionDie: '1d20',
+            backstab: false,
+            backstabDamage: null,
+            toHit: '+10',
+            damage: '1d8+10',
+            melee: false
           }
         }
       ]

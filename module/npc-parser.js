@@ -5,7 +5,7 @@ import EntityImages from './entity-images.js'
 /**
  *  Parses one or more NPC Stat Blocks (e.g. from published modules) into actor data
  *  @param {string} npcString The NPC stat block to import
- *  @return {Promise<Array>}         Array of NPC data for actor creation (currently a single NPC)
+ *  @return {Promise<Array>}  Array of NPC data for actor creation (currently a single NPC)
  **/
 async function parseNPCs (npcString) {
   npcString = npcString.replace(/[\n\r]+/g, '\n').replace(/\s{2,}/g, ' ').replace(/^\s+|\s+$/g, '')
@@ -48,7 +48,7 @@ async function parseNPC (npcString) {
 
   npc.name = _firstMatch(/(.*?):.*/, npcString) || 'Unnamed'
   npc.name = npc.name.replace(/ ?\(\d+\)/, '')
-  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[(d8 ;.].*/, npcString) || '1d8'
+  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[(;.].*/, npcString) || '1d8'
   const hpRoll = await new Roll(hd).evaluate()
   const hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
@@ -120,7 +120,7 @@ function _parseAttack (attackString, damageString) {
      * If damage doesn't start with a number assume it's special
      * Checking for a roll expression would exclude constant damage values
      */
-    if (_firstMatch(/\d+.*/, attack.damage) === null) {
+    if (_firstMatch(/(\d+.*)/, attack.damage) === '') {
       attack.description.summary = _firstMatch(/.*\((.*)\).*/, attackString) || attack.damage
       attack.damage = '0'
     }
@@ -141,11 +141,16 @@ function _parseAttack (attackString, damageString) {
  * @param {RegExp} regex       Regular expression to match against, containing at least one group
  * @param {string} string     The string to match against
  *
- * @return {string} First matched group or null if no match
+ * @return {string} First matched group or '' if no match
  */
 function _firstMatch (regex, string) {
   const result = string.match(regex)
-  return (result && result.length > 0) ? result[1] : null
+  if (result && result.length > 0) {
+    if (typeof result[1] === 'string') {
+      return result[1].trim()
+    }
+  }
+  return ''
 }
 
 export default parseNPCs
