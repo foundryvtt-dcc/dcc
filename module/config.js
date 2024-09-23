@@ -168,79 +168,6 @@ DCC.attackBonusModes = {
   autoPerAttack: 'DCC.AttackBonusConfigModeAutoPerAttack'
 }
 
-/* -------------------------------------------- */
-
-/**
- * This Object defines the various lengths of time which can occur in D&D5e
- * @type {Object}
- */
-DCC.timePeriods = {
-  inst: 'DCC.TimeInst',
-  turn: 'DCC.TimeTurn',
-  round: 'DCC.TimeRound',
-  minute: 'DCC.TimeMinute',
-  hour: 'DCC.TimeHour',
-  day: 'DCC.TimeDay',
-  month: 'DCC.TimeMonth',
-  year: 'DCC.TimeYear',
-  perm: 'DCC.TimePerm',
-  spec: 'DCC.Special'
-}
-
-/* -------------------------------------------- */
-
-/**
- * This describes the ways that an ability can be activated
- * @type {Object}
- */
-DCC.abilityActivationTypes = {
-  none: 'DCC.None',
-  action: 'DCC.Action',
-  minute: DCC.timePeriods.minute,
-  hour: DCC.timePeriods.hour,
-  day: DCC.timePeriods.day,
-  special: DCC.timePeriods.spec
-}
-
-/* -------------------------------------------- */
-
-// Creature Sizes
-DCC.actorSizes = {
-  tiny: 'DCC.SizeTiny',
-  sm: 'DCC.SizeSmall',
-  med: 'DCC.SizeMedium',
-  lg: 'DCC.SizeLarge',
-  huge: 'DCC.SizeHuge',
-  grg: 'DCC.SizeGargantuan'
-}
-
-DCC.tokenSizes = {
-  tiny: 1,
-  sm: 1,
-  med: 1,
-  lg: 2,
-  huge: 3,
-  grg: 4
-}
-
-/* -------------------------------------------- */
-
-/**
- * The set of equipment types for armor, clothing, and other objects which can ber worn by the character
- * @type {Object}
- */
-DCC.equipmentTypes = {
-  light: 'DCC.EquipmentLight',
-  medium: 'DCC.EquipmentMedium',
-  heavy: 'DCC.EquipmentHeavy',
-  bonus: 'DCC.EquipmentBonus',
-  natural: 'DCC.EquipmentNatural',
-  shield: 'DCC.EquipmentShield',
-  clothing: 'DCC.EquipmentClothing'
-}
-
-/* -------------------------------------------- */
-
 /**
  * The valid currency denominations supported by the DCC system
  * @type {Object}
@@ -272,73 +199,6 @@ DCC.currencyValue = {
   sp: 10,
   cp: 1
 }
-
-/* -------------------------------------------- */
-
-DCC.distanceUnits = {
-  none: 'DCC.None',
-  self: 'DCC.DistSelf',
-  touch: 'DCC.DistTouch',
-  ft: 'DCC.DistFt',
-  mi: 'DCC.DistMi',
-  spec: 'DCC.Special',
-  any: 'DCC.DistAny'
-}
-
-/* -------------------------------------------- */
-
-/**
- * Configure aspects of encumbrance calculation so that it could be configured by modules
- * @type {Object}
- */
-DCC.encumbrance = {
-  currencyPerWeight: 50,
-  strMultiplier: 15
-}
-
-/* -------------------------------------------- */
-
-/**
- * This Object defines the types of single or area targets which can be applied in D&D5e
- * @type {Object}
- */
-DCC.targetTypes = {
-  none: 'DCC.None',
-  self: 'DCC.TargetSelf',
-  creature: 'DCC.TargetCreature',
-  ally: 'DCC.TargetAlly',
-  enemy: 'DCC.TargetEnemy',
-  object: 'DCC.TargetObject',
-  space: 'DCC.TargetSpace',
-  radius: 'DCC.TargetRadius',
-  sphere: 'DCC.TargetSphere',
-  cylinder: 'DCC.TargetCylinder',
-  cone: 'DCC.TargetCone',
-  square: 'DCC.TargetSquare',
-  cube: 'DCC.TargetCube',
-  line: 'DCC.TargetLine',
-  wall: 'DCC.TargetWall'
-}
-
-/* -------------------------------------------- */
-
-/**
- * Map the subset of target types which produce a template area of effect
- * The keys are DCC target types and the values are MeasuredTemplate shape types
- * @type {Object}
- */
-DCC.areaTargetTypes = {
-  cone: 'cone',
-  cube: 'rect',
-  cylinder: 'circle',
-  line: 'ray',
-  radius: 'circle',
-  sphere: 'circle',
-  square: 'rect',
-  wall: 'ray'
-}
-
-/* -------------------------------------------- */
 
 // Dice Types for Dice Configuration Dialog
 DCC.diceTypes = {
@@ -380,14 +240,6 @@ DCC.diceTypes = {
   d100: { label: 'd100', icon: '<i class="fas fa-percent"></i>' }
 }
 
-/* -------------------------------------------- */
-
-// Healing Types
-DCC.healingTypes = {
-  healing: 'DCC.Healing',
-  temphp: 'DCC.HealingTemp'
-}
-
 // Hit Die Per Class
 DCC.hitDiePerClass = {
   cleric: '1d8',
@@ -403,57 +255,6 @@ DCC.hitDiePerClass = {
 DCC.importTypes = {
   Player: 'DCC.ActorTypePlayer',
   NPC: 'DCC.ActorTypeNPC'
-}
-
-/* -------------------------------------------- */
-
-/**
- * Enumerate the denominations of hit dice which can apply to classes
- * @type {Array.<string>}
- */
-DCC.hitDieTypes = ['d4', 'd6', 'd8', 'd10', 'd12']
-
-/* -------------------------------------------- */
-
-/**
- * Character senses options
- * @type {Object}
- */
-DCC.senses = {
-  iv: 'DCC.SenseIV',
-  us: 'DCC.SenseUS'
-}
-
-// Spell Levels
-DCC.spellLevels = {
-  1: 'DCC.SpellLevel1',
-  2: 'DCC.SpellLevel2',
-  3: 'DCC.SpellLevel3',
-  4: 'DCC.SpellLevel4',
-  5: 'DCC.SpellLevel5',
-  6: 'DCC.SpellLevel6'
-}
-
-/* -------------------------------------------- */
-
-// Condition Types
-DCC.conditionTypes = {
-  blinded: 'DCC.ConBlinded',
-  charmed: 'DCC.ConCharmed',
-  deafened: 'DCC.ConDeafened',
-  diseased: 'DCC.ConDiseased',
-  exhaustion: 'DCC.ConExhaustion',
-  frightened: 'DCC.ConFrightened',
-  grappled: 'DCC.ConGrappled',
-  incapacitated: 'DCC.ConIncapacitated',
-  invisible: 'DCC.ConInvisible',
-  paralyzed: 'DCC.ConParalyzed',
-  petrified: 'DCC.ConPetrified',
-  poisoned: 'DCC.ConPoisoned',
-  prone: 'DCC.ConProne',
-  restrained: 'DCC.ConRestrained',
-  stunned: 'DCC.ConStunned',
-  unconscious: 'DCC.ConUnconscious'
 }
 
 // Languages
