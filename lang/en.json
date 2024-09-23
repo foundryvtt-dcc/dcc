@@ -22,6 +22,7 @@
   "DCC.ActionDice": "Action Dice",
   "DCC.ActionDiceInvalid": "Character Action Dice doesn't contain a valid expression, defaulting to 1d20.",
   "DCC.ActionDiceMacroName": "Action Dice ({die})",
+  "DCC.ActionDie": "Action Die",
   "DCC.ActorImport": "Import Actor(s)",
   "DCC.ActorImportConfirmationMessage": "This will import {number} actors. Are you sure you want to continue?",
   "DCC.ActorImportConfirmationPrompt": "Really import {number} actors?",
