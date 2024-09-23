@@ -505,6 +505,15 @@ class DCCActor extends Actor {
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
+    if (this.type !== 'Player') {
+      await roll.evaluate()
+
+      await this.update({
+        'system.attributes.hp.max': roll.total,
+        'system.attributes.hp.value': roll.total
+      })
+    }
+
     // Convert the roll to a chat message
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
