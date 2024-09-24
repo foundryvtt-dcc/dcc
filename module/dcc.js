@@ -99,7 +99,8 @@ Hooks.once('init', async function () {
     label: 'DCC.DCCActorSheetGeneric'
   })
   Actors.registerSheet('dcc', DCCPartySheet, {
-    makeDefault: true, types: ['Party']
+    makeDefault: true,
+    types: ['Party'],
     label: 'DCC.DCCPartySheet'
   })
   Items.unregisterSheet('core', ItemSheet)
