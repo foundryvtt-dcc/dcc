@@ -318,13 +318,14 @@ class DCCPartySheet extends ActorSheet {
 
   /** @override */
   async _updateObject (event, formData) {
+    const expanded = foundry.utils.expandObject(formData)
+
     if (event.currentTarget) {
       const actorId = event.currentTarget.parentElement.dataset.actorId
-      const expanded = foundry.utils.expandObject(formData)
-
-      const memberUpdates = {}
 
       if (expanded.weaponUpdates[actorId]) {
+        const memberUpdates = {}
+
         const weaponUpdates = expanded.weaponUpdates[actorId]
         if (weaponUpdates.melee) {
           memberUpdates.activeMelee = weaponUpdates.melee
@@ -332,12 +333,20 @@ class DCCPartySheet extends ActorSheet {
         if (weaponUpdates.ranged) {
           memberUpdates.activeRanged = weaponUpdates.ranged
         }
-      }
 
-      this._updateMember(actorId, memberUpdates)
+        this._updateMember(actorId, memberUpdates)
+      }
     }
 
-    return true
+    if (expanded.img) {
+      const tokenImg = this.actor.prototypeToken.texture.src
+      if (!tokenImg || tokenImg === 'icons/svg/mystery-man.svg' || tokenImg === 'systems/dcc/styles/images/actor.webp') {
+        foundry.utils.mergeObject(formData, { prototypeToken: { texture: { src: expanded.img } } })
+      }
+    }
+
+    // Update the Actor
+    return this.object.update(formData)
   }
 }
 
