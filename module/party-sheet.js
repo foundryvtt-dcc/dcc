@@ -1,4 +1,4 @@
-/* global $, ActorSheet, CONFIG, CONST, Dialog, duplicate, game, mergeObject */
+/* global $, ActorSheet, CONFIG, Dialog, game, foundry */
 
 import EntityImages from './entity-images.js'
 
@@ -9,61 +9,48 @@ import EntityImages from './entity-images.js'
 class DCCPartySheet extends ActorSheet {
   /** @override */
   static get defaultOptions () {
-    return mergeObject(super.defaultOptions, {
-      classes: ['dcc', 'sheet', 'actor'],
-      template: 'systems/dcc/templates/actor-sheet-party.html',
+    const options = {
+      classes: ['dcc', 'sheet', 'actor', 'party'],
       width: 600,
-      height: 600,
+      // height: 600,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
       scrollY: [
         '.tab.party'
-      ]
-    })
-  }
-
-  /** @inheritdoc */
-  _getHeaderButtons () {
-    const buttons = super._getHeaderButtons()
-
-    // Header buttons shown only with Owner permission
-    if (this.actor.permission === CONST.ENTITY_PERMISSIONS.OWNER) {
-      buttons.unshift(
-        {
-          label: game.i18n.localize('DCC.ConfigureSheet'),
-          class: 'configure-actor',
-          icon: 'fas fa-code',
-          onclick: ev => this._onConfigureActor(ev)
-        }
-      )
+      ],
+      template: 'systems/dcc/templates/actor-sheet-party.html'
     }
-
-    return buttons
+    const finalOptions = foundry.utils.mergeObject(super.defaultOptions, options)
+    return finalOptions
   }
 
   /* -------------------------------------------- */
 
   /** @override */
-  getData () {
+  async getData () {
     // Basic data
     const isOwner = this.document.isOwner
     const data = {
-      isOwner: isOwner,
+      isOwner,
       limited: this.document.limited,
       options: this.options,
       editable: this.isEditable,
       cssClass: isOwner ? 'editable' : 'locked',
-      type: this.document.data.type,
+      type: this.document.type,
       config: CONFIG.DCC
     }
 
-    data.actor = duplicate(this.document.data)
-    data.data = duplicate(this.document.data.data)
+    data.actor = foundry.utils.duplicate(this.document)
+    data.actor.name = this.document.name
+    data.system = foundry.utils.duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters
 
     if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-      data.actor.data.img = EntityImages.imageForActor(data.type)
+      data.actor.img = EntityImages.imageForActor(data.type)
+      if (!data.actor.prototypeToken.texture.src || data.actor.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
+        data.actor.prototypeToken.texture.src = EntityImages.imageForActor(data.type)
+      }
     }
 
     // Prepare item lists by type
@@ -81,9 +68,23 @@ class DCCPartySheet extends ActorSheet {
   _prepareParty (actorData) {
     actorData.partyMembers = []
     for (const member of this.members) {
-      const actor = game.actors.get(member)
+      const actor = game.actors.get(member.id)
+
+      const melee = []
+      const ranged = []
+      for (const i of actor.items) {
+        if (i.type === 'weapon') {
+          if (i.system.melee) {
+            melee.push(i)
+          } else {
+            ranged.push(i)
+          }
+        }
+      }
+
       if (actor) {
-        actorData.partyMembers.push(actor.data)
+        const memberData = foundry.utils.mergeObject(foundry.utils.duplicate(member), { actor, melee, ranged, isNPC: actor.type === 'NPC' })
+        actorData.partyMembers.push(memberData)
       }
     }
   }
@@ -109,7 +110,16 @@ class DCCPartySheet extends ActorSheet {
    */
   set members (members) {
     if (members instanceof Array) {
-      this.actor.setFlag('dcc', 'partyMembers', members)
+      const validMembers = []
+      for (const member of members) {
+        try {
+          const actor = game.actors.get(member.id)
+          if (actor) {
+            validMembers.push(member)
+          }
+        } catch { }
+      }
+      this.actor.setFlag('dcc', 'partyMembers', validMembers)
     }
   }
 
@@ -121,8 +131,34 @@ class DCCPartySheet extends ActorSheet {
    */
   _addMember (actorId) {
     const members = this.members
-    members.push(actorId)
+
+    members.push({
+      id: foundry.utils.parseUuid(actorId).id
+    })
+
     this.members = members
+
+    this.render(false)
+  }
+
+  /**
+   * Update a member of the party
+   *
+   * @param {string} actorId   Id of the actor to edit
+   * @param {Object} updates   Dictionary of updates
+   * @return {undefined}
+   */
+  _updateMember (actorId, updates) {
+    const members = this.members
+
+    const index = members.findIndex(m => m.id === actorId)
+    if (index >= 0) {
+      members[index] = foundry.utils.mergeObject(members[index], updates)
+    }
+
+    this.members = members
+
+    this.render(false)
   }
 
   /**
@@ -134,12 +170,14 @@ class DCCPartySheet extends ActorSheet {
   _removeMember (actorId) {
     const members = this.members
 
-    const index = members.indexOf(actorId)
+    const index = members.findIndex(m => m.id === actorId)
     if (index >= 0) {
       members.splice(index, 1)
     }
 
     this.members = members
+
+    this.render(false)
   }
 
   /**
@@ -163,7 +201,7 @@ class DCCPartySheet extends ActorSheet {
    */
   _onRemoveMember (event) {
     event.preventDefault()
-    const actorId = event.currentTarget.dataset.actorId
+    const actorId = event.currentTarget.parentElement.dataset.actorId
     const removeMember = function (context) {
       context._removeMember(actorId)
       $(event.currentTarget).parents('.item').slideUp(200, () => context.render(false))
@@ -189,6 +227,36 @@ class DCCPartySheet extends ActorSheet {
     }
   }
 
+  _onRollAbility (event) {
+    event.preventDefault()
+    const actorId = event.currentTarget.parentElement.dataset.actorId
+    const abilityId = event.currentTarget.dataset.ability
+    const actor = game.actors.get(actorId)
+    if (actor) {
+      actor.rollAbilityCheck(abilityId)
+    }
+  }
+
+  _onRollSave (event) {
+    event.preventDefault()
+    const actorId = event.currentTarget.parentElement.dataset.actorId
+    const saveId = event.currentTarget.dataset.save
+    const actor = game.actors.get(actorId)
+    if (actor) {
+      actor.rollSavingThrow(saveId)
+    }
+  }
+
+  _onRollAttack (event) {
+    event.preventDefault()
+    const actorId = event.currentTarget.parentElement.dataset.actorId
+    const weaponId = event.currentTarget.nextElementSibling.value
+    const actor = game.actors.get(actorId)
+    if (actor) {
+      actor.rollWeaponAttack(weaponId)
+    }
+  }
+
   /**
    * Delete an item
    * @param {Event}  event   The originating click event
@@ -211,12 +279,27 @@ class DCCPartySheet extends ActorSheet {
     if (this.actor.isOwner) {
       // Update party member
       html.find('.party-edit').click(ev => {
-        this._editMember(ev.currentTarget.dataset.actorId)
+        this._editMember(ev.currentTarget.parentElement.dataset.actorId)
       })
 
       // Remove party member
       html.find('.party-delete').click(ev => {
         this._onRemoveMember(ev)
+      })
+
+      // Ability rolls
+      html.find('.ability-label').click(ev => {
+        this._onRollAbility(ev)
+      })
+
+      // Saving throws
+      html.find('.save-label').click(ev => {
+        this._onRollSave(ev)
+      })
+
+      // Melee and ranged attacks
+      html.find('.weapon').click(ev => {
+        this._onRollAttack(ev)
       })
     } else {
       // Otherwise remove rollable classes
@@ -230,7 +313,31 @@ class DCCPartySheet extends ActorSheet {
 
     if (!this.actor.isOwner) return false
 
-    this._addMember(data.id)
+    this._addMember(data.uuid)
+  }
+
+  /** @override */
+  async _updateObject (event, formData) {
+    if (event.currentTarget) {
+      const actorId = event.currentTarget.parentElement.dataset.actorId
+      const expanded = foundry.utils.expandObject(formData)
+
+      const memberUpdates = {}
+
+      if (expanded.weaponUpdates[actorId]) {
+        const weaponUpdates = expanded.weaponUpdates[actorId]
+        if (weaponUpdates.melee) {
+          memberUpdates.activeMelee = weaponUpdates.melee
+        }
+        if (weaponUpdates.ranged) {
+          memberUpdates.activeRanged = weaponUpdates.ranged
+        }
+      }
+
+      this._updateMember(actorId, memberUpdates)
+    }
+
+    return true
   }
 }
 
