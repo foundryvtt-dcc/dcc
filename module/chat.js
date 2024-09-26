@@ -151,14 +151,25 @@ export const emoteAttackRoll = function (message, html, data) {
     deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
   }
 
+  let crit = ''
+  if (message.getFlag('dcc', 'isCrit')) {
+    crit = `<br>${message.system.critInlineRoll}`
+  }
+
+  let fumble = ''
+  if (message.getFlag('dcc', 'isFumble')) {
+    fumble = `<br>${message.system.fumbleInlineRoll}`
+  }
+
   const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
+    actionName: message.getFlag('dcc', 'isBackstab') ? 'backstabs' : 'attacks',
     actorName: message.alias,
     weaponName: message.system.weaponName,
     rollHTML: message.rolls[0].toAnchor().outerHTML,
     deedRollHTML,
     damageRollHTML: message.system.damageInlineRoll,
-    crit: '',
-    fumble: ''
+    crit,
+    fumble
   })
   html.find('.message-content').html(attackEmote)
   html.find('header').remove()
