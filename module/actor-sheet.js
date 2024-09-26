@@ -289,13 +289,16 @@ class DCCActorSheet extends ActorSheet {
       html.find('label[for="system.class.disapprovalTable"]').each(makeDraggable)
       html.find('label[for="system.class.disapproval"]').each(makeDraggable)
 
-
       // Action Dice
       html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
 
       // Crit Die
       html.find('label[for="system.attributes.critical.die"]').click(this._onRollCritDie.bind(this))
       html.find('label[for="system.attributes.critical.die"]').each(makeDraggable)
+
+      // Quantity increase / decrease
+      html.find('.qty-decrease').click(this._onDecreaseQty.bind(this))
+      html.find('.qty-increase').click(this._onIncreaseQty.bind(this))
 
       // Weapons
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
@@ -397,6 +400,20 @@ class DCCActorSheet extends ActorSheet {
     } else {
       this._deleteItem(event)
     }
+  }
+
+  _onDecreaseQty (event) {
+    const itemId = this._findDataset(event.currentTarget, 'itemId')
+    const item = this.actor.items.get(itemId)
+    let currQty = item.system?.quantity || 0
+    item.update({ 'system.quantity': currQty -= 1 })
+  }
+
+  _onIncreaseQty (event) {
+    const itemId = this._findDataset(event.currentTarget, 'itemId')
+    const item = this.actor.items.get(itemId)
+    let currQty = item.system?.quantity || 0
+    item.update({ 'system.quantity': currQty += 1 })
   }
 
   /**
