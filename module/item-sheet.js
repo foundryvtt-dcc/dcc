@@ -82,7 +82,7 @@ export class DCCItemSheet extends ItemSheet {
     // Pass through the item data in the format we expect
     data.system = data.item.system
 
-    if (data.item.type === 'weapon') {
+    if (data.item.type === 'weapon' && this.actor) {
       data.system.lck = { mod: ensurePlus(this.actor.system?.abilities?.lck?.mod) || '' }
     }
 
