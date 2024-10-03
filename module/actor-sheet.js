@@ -660,7 +660,6 @@ class DCCActorSheet extends ActorSheet {
 
     // Luck checks are roll under unless the user explicitly clicks the modifier
     const rollUnder = (ability === 'lck') && (event.currentTarget.htmlFor !== 'system.abilities.lck.mod')
-    console.log(rollUnder)
 
     Object.assign(options, {
       rollUnder

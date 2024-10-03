@@ -177,6 +177,7 @@ global.Actor = ActorMock
 class ChatMessageMock {
   static getSpeaker = vi.fn(({ scene, actor, token, alias } = {}) => { return actor })
   static applyRollMode = vi.fn()
+
   static create (data, options = {}) { if (data) { this.data = data } }
 
   constructor (data, options = {}) { if (data) { this.data = data } }
@@ -438,3 +439,14 @@ class TextEditorMock {
 }
 
 global.TextEditor = TextEditorMock
+
+/**
+ * Hooks
+ */
+class HooksMock {
+  static async callAll (hook, rolls, messageData) {
+    return true
+  }
+}
+
+global.Hooks = HooksMock

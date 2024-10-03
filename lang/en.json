@@ -54,6 +54,7 @@
   "DCC.AttackBonusRollInvalidFormulaInline": "<b>Invalid Attack Bonus formula '{formula}'</b>",
   "DCC.AttackDistance": "Attack Distance",
   "DCC.AttackRoll": "Attack Roll with {weapon}",
+  "DCC.AttackRollDeedEmoteSegment": " with deed roll of {deed}",
   "DCC.AttackRollEmote": "{actorName} {actionName} with their {weaponName} and hits AC {rollHTML}{deedRollHTML} for {damageRollHTML} points of damage!{crit}{fumble}",
   "DCC.AttackRollInvalidFormulaInline": "<b>Invalid To Hit formula '{formula}'</b>",
   "DCC.Avatar": "User Avatar",

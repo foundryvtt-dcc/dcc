@@ -120,7 +120,7 @@ function applyChatCardDamage (roll, multiplier) {
  * @param data
  */
 export const emoteAbilityRoll = function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.IsAbilityCheck) return
+  if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.isAbilityCheck) return
 
   const abilityRollEmote = game.i18n.format(
     'DCC.RolledAbilityEmote',
@@ -145,9 +145,7 @@ export const emoteAttackRoll = function (message, html, data) {
 
   let deedRollHTML = ''
   if (message.system.deedDieRollResult) {
-    const critical = message.system.deedSucceed ? ' critical' : ''
-    const iconClass = 'fa-dice-d4'
-    const deedDieHTML = `<a class="inline-roll${critical}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</a>`
+    const deedDieHTML = message.system.deedDieFormula.toAnchor().outerHTML
     deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
   }
 

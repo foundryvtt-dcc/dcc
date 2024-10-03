@@ -9,7 +9,7 @@ import { vi } from 'vitest'
  */
 global.rollToMessageMock = vi.fn((messageData = {}, { rollMode = null, create = true } = {}) => {
   // console.log('Mock Roll: toMessage was called with:')
-  // console.log(data)
+  // console.log(messageData)
 })
 global.rollEvaluateMock = vi.fn(() => {
   // console.log('Mock Roll: roll was called')
@@ -17,31 +17,44 @@ global.rollEvaluateMock = vi.fn(() => {
     process.nextTick(() => { resolve({ total: 2 }) })
   })
 })
+global.rollParseMock = vi.fn((formula) => {
+  return [{ die: { faces: 4 } }]
+})
+global.rollRenderMock = vi.fn((formula) => {
+  return ''
+})
 global.rollValidateMock = vi.fn((formula) => {
   return true
-})
-const Roll = vi.fn((formula, data = {}) => {
-  return {
-    dice: [{ results: [10], options: {} }],
-    toMessage: global.rollToMessageMock,
-    evaluate: global.rollEvaluateMock,
-    roll: global.rollEvaluateMock,
-    terms: [
-      {
-        class: 'Die',
-        options: {
-          flavor: null
-        },
-        evaluated: false,
-        number: 1,
-        faces: 20,
-        modifiers: [],
-        results: []
-      }
-    ]
-  }
-}).mockName('Roll')
-global.Roll = Roll
-global.Roll.validate = global.rollValidateMock
+}).mockName('validate')
 
-export default Roll
+class RollMock {
+  dice = [{ results: [10], options: {} }]
+  toMessage = global.rollToMessageMock
+  evaluate = global.rollEvaluateMock
+  parse = global.rollParseMock
+  render = global.rollRenderMock
+  roll = global.rollEvaluateMock
+
+  static validate () {
+    return true
+  }
+
+  options = {}
+  terms = [
+    {
+      class: 'Die',
+      options: {
+        flavor: null
+      },
+      evaluated: false,
+      number: 1,
+      faces: 20,
+      modifiers: [],
+      results: []
+    }
+  ]
+}
+
+global.Roll = RollMock
+
+export default RollMock

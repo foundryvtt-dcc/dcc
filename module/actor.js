@@ -378,7 +378,7 @@ class DCCActor extends Actor {
       Object.assign(flags, {
         'dcc.RollType': 'AbilityCheckRollUnder',
         'dcc.Ability': abilityId,
-        'dcc.IsAbilityCheck': true
+        'dcc.isAbilityCheck': true
       })
 
       flavor = `${abilityLabel} ${game.i18n.localize('DCC.CheckRollUnder')}`
@@ -414,7 +414,7 @@ class DCCActor extends Actor {
       Object.assign(flags, {
         'dcc.RollType': 'AbilityCheck',
         'dcc.Ability': abilityId,
-        'dcc.IsAbilityCheck': true
+        'dcc.isAbilityCheck': true
       })
       game.dcc.FleetingLuck.updateFlags(flags, roll)
     }
@@ -1012,8 +1012,7 @@ class DCCActor extends Actor {
     let fumblePrompt = ''
     let fumbleRoll
     if (attackRollResult.fumble) {
-      // fumbleRollResult = await this.rollFumble(options)
-      fumbleRollFormula = weapon.system?.fumbleDie || this.system.attributes.fumble.die
+      fumbleRollFormula = this.system.attributes.fumble.die
       fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble]]`)
       fumblePrompt = game.i18n.localize('DCC.RollFumble')
       if (automateDamageFumblesCrits) {

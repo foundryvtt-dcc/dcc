@@ -70,7 +70,7 @@ test('roll ability check', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'AbilityStr Check',
     speaker: actor,
-    flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck', checkPenaltyCouldApply: true }
+    flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck', checkPenaltyCouldApply: true, 'dcc.isAbilityCheck': true }
   })
 
   // Check that rollUnder option is interpreted correctly
@@ -92,7 +92,7 @@ test('roll ability check', async () => {
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
     flavor: 'AbilityLck CheckRollUnder',
     speaker: actor,
-    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder' }
+    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder', 'dcc.isAbilityCheck': true }
   })
 
   // ...both ways
@@ -129,7 +129,7 @@ test('roll ability check', async () => {
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
     flavor: 'AbilityLck Check',
     speaker: actor,
-    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck' }
+    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck', 'dcc.isAbilityCheck': true }
   })
 })
 
