@@ -145,7 +145,18 @@ export const emoteAttackRoll = function (message, html, data) {
 
   let deedRollHTML = ''
   if (message.system.deedDieRollResult) {
-    const deedDieHTML = message.system.deedDieFormula.toAnchor().outerHTML
+    const critical = message.system.deedSucceed ? ' critical' : ''
+    let iconClass = 'fa-dice-d4'
+    if (message.system?.deedDieFormula.includes('d6') || message.system?.deedDieFormula.includes('d7')) {
+      iconClass = 'fa-dice-d6'
+    }
+    if (message.system?.deedDieFormula.includes('d8')) {
+      iconClass = 'fa-dice-d8'
+    }
+    if (message.system?.deedDieFormula.includes('d10')) {
+      iconClass = 'fa-dice-d10'
+    }
+    const deedDieHTML = `<a class="inline-roll${critical}" data-tooltip="${message.system?.deedDieFormula}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</a>`
     deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
   }
 
