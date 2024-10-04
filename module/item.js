@@ -23,7 +23,7 @@ class DCCItem extends Item {
         if (this.system.config.initiativeDieOverride) {
           this.system.initiativeDie = this.system.config.initiativeDieOverride
         }
-        this.system.initiativeBonus = this.actor.system.attributes.init.value
+        this.system.initiativeBonus = ensurePlus(this.actor.system.attributes.init.value)
         if (this.system.initiativeWeaponBonus) {
           this.system.initiativeBonus = `${this.system.initiativeBonus}${this.system.initiativeWeaponBonus}`
         }
