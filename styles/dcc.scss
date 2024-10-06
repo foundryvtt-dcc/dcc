@@ -35,6 +35,14 @@ $font-awesome: 'Font Awesome 6 Pro';
     padding: 0 5px 4px 5px;
   }
 
+  .center {
+    text-align: center;
+  }
+
+  .data-font {
+    font-family: $book-antiqua;
+  }
+
   .dark-border {
     border: var(--dark-border);
     border-top: 0;
@@ -63,6 +71,21 @@ $font-awesome: 'Font Awesome 6 Pro';
     font-family: $book-antiqua;
     min-height: 305px;
     padding: 0 8px;
+  }
+
+  .group-heading {
+    font-size: 13px;
+    font-family: $cooper-black;
+  }
+
+  .group-indent {
+    margin-left: 16px;
+  }
+
+  .group-separator {
+    border-bottom: 2px dotted var(--medium-color);
+    grid-column-end: span 2;
+    margin: 5px 0 5px 0;
   }
 
   label {
@@ -127,6 +150,15 @@ $font-awesome: 'Font Awesome 6 Pro';
   &.sheet.actor {
     min-height: 339px;
     min-width: 525px;
+  }
+
+  .value-display {
+    background: rgba(0, 0, 0, 0.05);
+    font-family: $book-antiqua;
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0;
+    text-align: center;
   }
 
   .window-content {
@@ -572,24 +604,10 @@ a.inline-roll {
 
   .description {
     font-family: $book-antiqua;
+
     .editor {
       min-height: 354px;
     }
-  }
-
-  .group-heading {
-    font-size: 13px;
-    font-family: $cooper-black;
-  }
-
-  .group-indent {
-    margin-left: 16px;
-  }
-
-  .group-separator {
-    border-bottom: 2px dotted var(--medium-color);
-    grid-column-end: span 2;
-    margin: 5px 0 5px 0;
   }
 
   input {
@@ -645,15 +663,6 @@ a.inline-roll {
     .editor {
       min-height: 288px;
     }
-  }
-
-  .value-display {
-    background: rgba(0, 0, 0, 0.05);
-    font-family: $book-antiqua;
-    font-size: 13px;
-    font-weight: bold;
-    margin: 0;
-    text-align: center;
   }
 }
 

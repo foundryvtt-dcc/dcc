@@ -136,6 +136,10 @@
   height: calc(100% - 19px);
 }
 
+.m-5 {
+  margin: 5px;
+}
+
 .mb-0 {
   margin-bottom: 0;
 }
@@ -150,6 +154,10 @@
 
 .mb-8 {
   margin-bottom: 8px;
+}
+
+.mr-3 {
+  margin-right: 3px;
 }
 
 .mt-5 {
@@ -206,6 +214,12 @@
 .dcc .box-inner {
   padding: 0 5px 4px 5px;
 }
+.dcc .center {
+  text-align: center;
+}
+.dcc .data-font {
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+}
 .dcc .dark-border {
   border: var(--dark-border);
   border-top: 0;
@@ -230,6 +244,18 @@
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   min-height: 305px;
   padding: 0 8px;
+}
+.dcc .group-heading {
+  font-size: 13px;
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+}
+.dcc .group-indent {
+  margin-left: 16px;
+}
+.dcc .group-separator {
+  border-bottom: 2px dotted var(--medium-color);
+  grid-column-end: span 2;
+  margin: 5px 0 5px 0;
 }
 .dcc label {
   display: grid;
@@ -283,6 +309,14 @@
 .dcc.sheet.actor {
   min-height: 339px;
   min-width: 525px;
+}
+.dcc .value-display {
+  background: rgba(0, 0, 0, 0.05);
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0;
+  text-align: center;
 }
 .dcc .window-content {
   padding: 1px 8px 8px 8px;
@@ -693,18 +727,6 @@ a.inline-roll {
 .dcc.item .tab-body .description .editor {
   min-height: 354px;
 }
-.dcc.item .tab-body .group-heading {
-  font-size: 13px;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
-}
-.dcc.item .tab-body .group-indent {
-  margin-left: 16px;
-}
-.dcc.item .tab-body .group-separator {
-  border-bottom: 2px dotted var(--medium-color);
-  grid-column-end: span 2;
-  margin: 5px 0 5px 0;
-}
 .dcc.item .tab-body input {
   background: none;
   border-width: 0 0 1px 0;
@@ -749,14 +771,6 @@ a.inline-roll {
 }
 .dcc.item .tab-body .mercurial .editor {
   min-height: 288px;
-}
-.dcc.item .tab-body .value-display {
-  background: rgba(0, 0, 0, 0.05);
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  font-size: 13px;
-  font-weight: bold;
-  margin: 0;
-  text-align: center;
 }
 
 /* ----------------------------------------- */

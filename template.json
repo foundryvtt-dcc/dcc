@@ -291,6 +291,8 @@
         "class": {
           "spellCheck": 1,
           "spellCheckAbility": "int",
+          "spellCheckDieOverride": null,
+          "spellCheckOverride": null,
           "patron": null,
           "familiar": null,
           "corruption": []
