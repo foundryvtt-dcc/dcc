@@ -91,6 +91,9 @@ class DCCItem extends Item {
         // Spells can use the owner's action die for the spell check
         if (this.system.config.inheritActionDie) {
           this.system.spellCheck.die = this.actor.system.attributes.actionDice.value
+          if (this.actor.system.class.spellCheckOverrideDie) {
+            this.system.spellCheck.die = this.actor.system.class.spellCheckOverrideDie
+          }
         }
 
         // Spells can inherit the owner's spell check

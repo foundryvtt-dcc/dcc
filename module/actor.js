@@ -28,6 +28,8 @@ class DCCActor extends Actor {
       this.calculateMeleeAndMissileAttackAndDamage()
     }
 
+    this.calculateSpellCheck()
+
     // Cap level if required
     if (config.capLevel) {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
@@ -326,13 +328,30 @@ class DCCActor extends Actor {
       meleeAttackBonus = `${ensurePlus(meleeAttackBonusSum)}`
       missileAttackBonus = `${ensurePlus(missileAttackBonusSum)}`
       meleeAttackDamage = `${ensurePlus(strengthBonus + meleeDamageBonusAdjustment)}`
-      missileAttackDamage = `${ensurePlus(missileDamageBonusAdjustment)}`
+      missileAttackDamage = `${ensurePlus(missileDamageBonusAdjustment.toString())}`
     }
     this.system.details.attackHitBonus.melee.value = meleeAttackBonus
     this.system.details.attackHitBonus.missile.value = missileAttackBonus
     this.system.details.attackDamageBonus.melee.value = meleeAttackDamage
     this.system.details.attackDamageBonus.missile.value = missileAttackDamage
     this.system.details.attackBonus = ensurePlus(attackBonus, false) || '+0'
+  }
+
+  /**
+   * Calculate Spell Check
+   */
+  calculateSpellCheck () {
+    let abilityBonus = ensurePlus(this.system.abilities.int.mod)
+    if (this.system.class.spellCheckAbility === 'per') {
+      abilityBonus = ensurePlus(this.system.abilities.per.mod)
+    }
+    this.system.class.spellCheck = ensurePlus(this.system.details.level.value + abilityBonus)
+    if (this.system.class.spellCheckOverride) {
+      this.system.class.spellCheck = this.system.class.spellCheckOverride
+    }
+    this.system.skills.divineAid.value = this.system.class.spellCheck
+    this.system.skills.turnUnholy.value = this.system.class.spellCheck
+    this.system.skills.layOnHands.value = this.system.class.spellCheck
   }
 
   /**
@@ -594,7 +613,15 @@ class DCCActor extends Actor {
         }
       }
     }
-    const die = skill.die || this.system.attributes.actionDice.value || '1d20'
+    let die = skill.die || this.system.attributes.actionDice.value || '1d20'
+
+    // Handle Override Die for special Cleric Skills
+    if (skill.useDisapprovalRange) {
+      if (this.system.class.spellCheckOverrideDie) {
+        die = this.system.class.spellCheckOverrideDie
+      }
+    }
+
     const ability = skill.ability || null
     let abilityLabel = ''
     let abilityMod = 0
@@ -766,7 +793,10 @@ class DCCActor extends Actor {
     const ability = this.system.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
-    const die = this.system.attributes.actionDice.value || '1d20'
+    let die = this.system.attributes.actionDice.value || '1d20'
+    if (this.system.class.spellCheckOverrideDie) {
+      die = this.system.class.spellCheckOverrideDie
+    }
     const bonus = this.system.class.spellCheck ? this.system.class.spellCheck.toString() : '+0'
     const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || '0')
     const isIdolMagic = this.system.details.sheetClass === 'Cleric'

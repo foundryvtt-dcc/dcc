@@ -33,61 +33,96 @@
 
     {{!-- Class Tab --}}
     <div class="tab" data-group="primary" data-tab="cleric">
-      <div class="tab-body grid-container">
-        {{!-- Update spell check ability to use Personality --}}
-        <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="per">
-        <div class="dark-border grid-col-span-12">
-          <div class="dark-title" style="">{{localize "DCC.ClericAbilities"}}</div>
-          <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
-            <div class="grid-tpl-max-25 grid-col-gap-5" data-ability="per">
-              <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-              <input type="text" id="system.class.spellCheck" name="system.class.spellCheck"
-                     value="{{system.class.spellCheck}}"
+      <div class="grid-col-span-12 grid-container grid-row-gap-5 grid-col-gap-5 mb-8">
+        <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="per">
+          <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
+          <div class="grid-align-center p-5">
+            <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{ifThen system.class.spellCheckOverrideDie
+                                                                                        system.class.spellCheckOverrideDie
+                                                                                        system.attributes.actionDice.value}}{{system.class.spellCheck}}</div>
+
+            <div class="group-separator"></div>
+
+            <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+              <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Die"}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.attributes.actionDice.value}}</div>
+              <label class="group-indent" for="system.class.spellCheckOverrideDie">{{localize "DCC.Override"}}</label>
+              <input id="system.class.spellCheckOverrideDie" name="system.class.spellCheckOverrideDie"
+                     value="{{system.class.spellCheckOverrideDie}}"
                      data-dtype="String"/>
             </div>
-            <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
+
+            <div class="group-separator"></div>
+
+            <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+              <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Bonus"}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.class.spellCheck}}</div>
+              <div class="group-indent label-font" title="{{localize 'DCC.DisplayValue'}}">{{localize "DCC.Level"}}</div>
+              <div class="value-display center" title="{{localize 'DCC.DisplayValue'}}">{{system.details.level.value}}</div>
+              <div class="mr-3 group-indent label-font">{{localize "DCC.AbilityPerShort"}} {{localize "DCC.Modifier"}}</div>
+              <div class="value-display center" title="{{localize 'DCC.DisplayValue'}}">{{system.abilities.per.mod}}</div>
+              <label class="group-indent" for="system.class.spellCheckOverride">{{localize "DCC.Override"}}</label>
+              <input id="system.class.spellCheckOverride" name="system.class.spellCheckOverride" value="{{system.class.spellCheckOverride}}"
+                     data-dtype="String"/>
+
+              <div class="group-separator"></div>
+
+              <div class="label-font spell-check rollable mr-3 grid-col-span-2 center">
+                <div><i class="fas fa-dice-d20"></i> {{localize "DCC.Roll"}} {{localize "DCC.SpellCheck"}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-col-span-7 dark-border">
+          <div class="dark-title" style="">{{localize "DCC.ClericAbilities"}}</div>
+          <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
+            <div class="grid-tpl-max-auto grid-col-gap-5" data-skill="divineAid">
               <label class="skill-check rollable" for="system.skills.divineAid.value">{{localize "DCC.DivineAid"}}</label>
-              <input type="text" id="system.skills.divineAid.value" name="system.skills.divineAid.value"
-                     value="{{system.skills.divineAid.value}}" data-dtype="String"/>
+              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.skills.divineAid.value}}</div>
             </div>
-            <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
+            <div></div>
+            <div class="grid-tpl-max-auto grid-col-gap-5" data-skill="turnUnholy">
               <label class="skill-check rollable" for="system.skills.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
-              <input type="text" id="system.skills.turnUnholy.value" name="system.skills.turnUnholy.value"
-                     value="{{system.skills.turnUnholy.value}}" data-dtype="String"/>
+              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.skills.turnUnholy.value}}</div>
             </div>
-            <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
+            <div></div>
+            <div class="grid-tpl-max-auto grid-col-gap-5" data-skill="layOnHands">
               <label class="skill-check rollable" for="system.skills.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
-              <input type="text" id="system.skills.layOnHands.value" name="system.skills.layOnHands.value"
-                     value="{{system.skills.layOnHands.value}}" data-dtype="String"/>
+              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.skills.layOnHands.value}}</div>
             </div>
-            <div class="grid-tpl-max-25 grid-col-gap-5">
-              <label class="disapproval-range rollable" for="system.class.disapproval">{{localize
-                "DCC.DisapprovalRange"}}</label>
+            <div></div>
+            <div class="group-separator"></div>
+            <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
+              <label class="disapproval-range rollable" for="system.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
               <select class="number" name="system.class.disapproval" id="system.class.disapproval">
                 {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
               </select>
             </div>
-            <div class="grid-tpl-max-auto grid-col-gap-5">
-              <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize
-                "DCC.DisapprovalTable"}}</label>
-              <select id="system.class.disapprovalTable" name="system.class.disapprovalTable"
-                      value="{{system.class.disapprovalTable}}">
-                {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable localize=true
+            <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
+              <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
+              <select id="system.class.disapprovalTable" name="system.class.disapprovalTable" value="{{system.class.disapprovalTable}}">
+                {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable
+                                localize=true
                                 labelAttr="name"
                                 valueAttr="path"}}
               </select>
             </div>
-            <div class="grid-tpl-max-auto grid-col-gap-5">
+            <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
               <label for="system.class.deity">{{localize "DCC.Deity"}}</label>
               <input class="full-width" type="text" id="system.class.deity" name="system.class.deity"
                      value="{{system.class.deity}}" data-dtype="String"/>
             </div>
-
-            {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-              <div>{{{system.class.classLink}}}</div>
-            {{/dccPackExists}}
-
           </div>
+        </div>
+
+        {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+          <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
+        {{/dccPackExists}}
+      </div>
+      <div class="tab-body grid-container">
+        <div class="dark-border grid-col-span-12">
+
         </div>
 
         <div class="grid-col-span-12 cleric-table">
@@ -162,9 +197,6 @@
             </tbody>
           </table>
         </div>
-
-        <img class="grid-col-span-12" src="systems/dcc/styles/images/FCI-magic-items-1-15-Fancy-Mace.webp"
-             height="100px" width="450px" style="margin: 0 0 0 25px;" alt="Mace Art">
       </div>
     </div>
 

@@ -242,7 +242,7 @@
   border: var(--dark-border);
   border-top: 0;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  min-height: 305px;
+  min-height: 285px;
   padding: 0 8px;
 }
 .dcc .group-heading {

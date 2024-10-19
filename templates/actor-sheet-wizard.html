@@ -40,7 +40,9 @@
           <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="int">
             <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
             <div class="grid-align-center p-5">
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">1d20{{system.class.spellCheck}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{ifThen system.class.spellCheckOverrideDie
+                                                                                          system.class.spellCheckOverrideDie
+                                                                                          system.attributes.actionDice.value}}{{system.class.spellCheck}}</div>
 
               <div class="group-separator"></div>
 
@@ -88,7 +90,7 @@
                       data-dtype="String">{{system.class.patron}}</textarea>
           </div>
           {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-            <div class="mb-3">{{{system.class.classLink}}}</div>
+            <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
           {{/dccPackExists}}
         </div>
 
@@ -97,9 +99,10 @@
           {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
         </div>
       </div>
+    </div>
 
-      {{!-- Spells Tab --}}
-      {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
+    {{!-- Spells Tab --}}
+    {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
   </section>
 </form>
 
