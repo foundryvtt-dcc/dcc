@@ -31,7 +31,7 @@ class DCCActor extends Actor {
     this.calculateSpellCheck()
 
     // Cap level if required
-    if (config.capLevel) {
+    if (config.maxLevel) {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
     }
 
@@ -168,8 +168,7 @@ class DCCActor extends Actor {
     let defaultConfig = {
       attackBonusMode: 'flat',
       actionDice: '1d20',
-      capLevel: false,
-      maxLevel: 10,
+      maxLevel: '',
       computeAC: false,
       computeMeleeAndMissileAttackAndDamage: true,
       computeSpeed: false,

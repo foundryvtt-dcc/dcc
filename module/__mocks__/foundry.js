@@ -133,7 +133,6 @@ class ActorMock {
           config: {
             actionDice: '1d20',
             attackBonusMode: 'flat',
-            capLevel: false,
             maxLevel: 0,
             rollAttackBonus: false,
             computeAC: false,

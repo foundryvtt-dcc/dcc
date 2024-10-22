@@ -40,13 +40,17 @@ class DCCActorSheet extends ActorSheet {
     if (this.actor.permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
       buttons.unshift(
         {
-          label: game.i18n.localize('DCC.ConfigureSheet'),
+          label: 'DCC.ConfigureSheet',
           class: 'configure-actor',
           icon: 'fas fa-code',
-          onclick: ev => this._onConfigureActor(ev)
+          onclick: ev => this._onConfigureActor(ev),
+          tooltip: 'DCC.ConfigureSheetHint'
         }
       )
     }
+
+    buttons[1].tooltip = 'DCC.SheetHint'
+    buttons[2].tooltip = 'DCC.TokenHint'
 
     return buttons
   }

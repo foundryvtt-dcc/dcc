@@ -1,12 +1,12 @@
 <form class="{{cssClass}}" autocomplete="off">
   <!-- Nav -->
   <nav class="sheet-tabs tabs" data-group="item">
-    <a data-tab="spell">{{localize "DCC.Spell"}}</a>
-    <a data-tab="manifestation">{{localize "DCC.Manifestation"}}</a>
+    <a data-tab="spell" title="{{localize 'DCC.SpellTabHint'}}">{{localize "DCC.Spell"}}</a>
+    <a data-tab="manifestation" title="{{localize 'DCC.ManifestationTabHint'}}">{{localize "DCC.Manifestation"}}</a>
     {{#if showMercurialTab}}
-      <a data-tab="mercurial">{{localize "DCC.MercurialEffect"}}</a>
+      <a data-tab="mercurial" title="{{localize 'DCC.MercurialTabHint'}}">{{localize "DCC.MercurialEffect"}}</a>
     {{/if}}
-    <a data-tab="description">{{localize "DCC.Description"}}</a>
+    <a data-tab="description" title="{{localize 'DCC.DescriptionTabHint'}}">{{localize "DCC.Description"}}</a>
   </nav>
 
   <!-- Body -->
