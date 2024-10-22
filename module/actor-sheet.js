@@ -300,6 +300,8 @@ class DCCActorSheet extends ActorSheet {
       // Disapproval
       html.find('label[for="system.class.disapproval"]').click(this._onApplyDisapproval.bind(this))
       html.find('label[for="system.class.disapprovalTable"]').click(this._onRollDisapproval.bind(this))
+      html.find('label[for="system.class.disapprovalTable"]').each(makeDraggable)
+      html.find('label[for="system.class.disapproval"]').each(makeDraggable)
 
       // Action Dice
       html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
