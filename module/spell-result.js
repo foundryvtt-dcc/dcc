@@ -11,7 +11,7 @@ class SpellResult {
    * @param {boolean} fumble       The Spell Check was a nat 1
    * @param {Object} item          The spell item
    */
-  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, item = undefined } = {}) {
+  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined, manifestation = '', mercurial = '' } = {}) {
     const roll = result.roll
     messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
