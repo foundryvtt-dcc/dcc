@@ -13,7 +13,7 @@ class SpellResult {
    * @param {String} manifestation manifestation of the spell from item
    * @param {Object} mercurial       mercurial magic effect from item
    */
-  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined, manifestation= '', mercurial = '' } = {}) {
+  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined, manifestation = '', mercurial = '' } = {}) {
     const roll = result.roll
     messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')

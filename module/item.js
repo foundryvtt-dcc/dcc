@@ -218,7 +218,7 @@ class DCCItem extends Item {
       item: this,
       flavor,
       manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
-      mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {},
+      mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {}
     })
   }
 
@@ -262,7 +262,7 @@ class DCCItem extends Item {
         {
           type: 'Die',
           formula: '1d100'
-        },
+        }
       ]
 
       // Otherwise roll for a manifestation

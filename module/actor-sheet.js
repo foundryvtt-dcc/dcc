@@ -289,7 +289,6 @@ class DCCActorSheet extends ActorSheet {
       html.find('label[for="system.class.disapprovalTable"]').each(makeDraggable)
       html.find('label[for="system.class.disapproval"]').each(makeDraggable)
 
-
       // Action Dice
       html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
 
