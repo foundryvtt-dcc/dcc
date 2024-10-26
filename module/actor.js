@@ -821,6 +821,7 @@ class DCCActor extends Actor {
       {
         type: 'CheckPenalty',
         formula: checkPenalty,
+        label: game.i18n.localize('DCC.CheckPenalty'),
         apply: applyCheckPenalty
       }
     ]

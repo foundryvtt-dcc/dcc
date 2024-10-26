@@ -92,7 +92,6 @@ class DCCActorSheet extends ActorSheet {
 
     // Format Notes HTML
     data.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
-      async: true,
       relativeTo: this.actor,
       secrets: this.actor.isOwner
     })
@@ -100,7 +99,6 @@ class DCCActorSheet extends ActorSheet {
     // Format Corruption HTML if present
     if (this.actor.system.class?.corruption) {
       data.corruptionHTML = await TextEditor.enrichHTML(this.actor.system.class.corruption, {
-        async: true,
         relativeTo: this.actor,
         secrets: this.actor.isOwner
       })

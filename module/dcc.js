@@ -367,7 +367,7 @@ async function processSpellCheck (actor, spellData) {
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
-        await roll.evaluate({ async: true })
+        await roll.evaluate()
       }
 
       // Generate flags for the roll
@@ -919,8 +919,7 @@ function rollDCCWeaponMacro (itemId, actorId, options = {}) {
  */
 function getMacroActor (actorId = null) {
   if (actorId) {
-    const actor = game.actors.get(actorId)
-    return actor
+    return game.actors.get(actorId)
   }
   const speaker = ChatMessage.getSpeaker()
   let actor

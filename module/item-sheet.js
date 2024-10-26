@@ -58,14 +58,12 @@ export class DCCItemSheet extends ItemSheet {
 
       // Format Mercurial Effect HTML
       data.mercurialEffectHTML = await TextEditor.enrichHTML(this.item.system?.mercurialEffect?.description || '', {
-        async: true,
         relativeTo: this.item,
         secrets: this.item.isOwner
       })
 
       // Format Manifestation HTML
       data.manifestationHTML = await TextEditor.enrichHTML(this.item.system?.manifestation?.description || '', {
-        async: true,
         relativeTo: this.item,
         secrets: this.item.isOwner
       })
@@ -92,7 +90,6 @@ export class DCCItemSheet extends ItemSheet {
 
     // Format Description HTML
     data.descriptionHTML = await TextEditor.enrichHTML(this.item.system.description.value, {
-      async: true,
       relativeTo: this.item,
       secrets: this.item.isOwner
     })
