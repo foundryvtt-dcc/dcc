@@ -1012,7 +1012,6 @@ class DCCActor extends Actor {
     let critTableName = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
-      // critRollResult = await this.rollCritical(options)
       critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical.die}${luckMod}`
       critTableName = weapon.system?.critTable || this.system.attributes.critical.table
       const criticalText = game.i18n.localize('DCC.Critical')
@@ -1032,8 +1031,9 @@ class DCCActor extends Actor {
         rolls.push(critRoll)
         const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
         const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+        const critResultPrompt = game.i18n.localize('DCC.CritResult')
         const critRollAnchor = critRoll.toAnchor().outerHTML
-        critInlineRoll = await TextEditor.enrichHTML(`${critRollAnchor} (${critTableText} ${critTableName})<br>${critText}`)
+        critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableText} ${critTableName}): <br>${critText}`)
       }
     }
 
@@ -1042,8 +1042,9 @@ class DCCActor extends Actor {
     let fumbleInlineRoll = ''
     let fumblePrompt = ''
     let fumbleRoll
+    const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
-      fumbleRollFormula = this.system.attributes.fumble.die
+      fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
       fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble]]`)
       fumblePrompt = game.i18n.localize('DCC.RollFumble')
       if (automateDamageFumblesCrits) {
@@ -1059,9 +1060,10 @@ class DCCActor extends Actor {
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
         const fumbleResult = await getFumbleTableResult(fumbleRoll.total)
+        const fumbleResultPrompt = game.i18n.localize('DCC.FumbleResult')
         const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
         const fumbleRollAnchor = fumbleRoll.toAnchor().outerHTML
-        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor}<br>${fumbleText}`)
+        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleResultPrompt} ${fumbleRollAnchor}: <br>${fumbleText}`)
       }
     }
 

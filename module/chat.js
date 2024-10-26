@@ -162,12 +162,12 @@ export const emoteAttackRoll = function (message, html, data) {
 
   let crit = ''
   if (message.getFlag('dcc', 'isCrit')) {
-    crit = `<br>${message.system.critInlineRoll}`
+    crit = `<p class="emote-alert critical">${message.system.critPrompt}!</p> ${message.system.critInlineRoll}`
   }
 
   let fumble = ''
   if (message.getFlag('dcc', 'isFumble')) {
-    fumble = `<br>${message.system.fumbleInlineRoll}`
+    fumble = `<p class="emote-alert fumble">${message.system.fumblePrompt}!<p>${message.system.fumbleInlineRoll}`
   }
 
   const attackEmote = game.i18n.format('DCC.AttackRollEmote', {

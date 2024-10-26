@@ -402,12 +402,14 @@ a.inline-roll {
 
 .deed-result.critical,
 .dice-roll .dice-total.critical,
+.emote-alert.critical,
 .inline-roll.critical {
   color: green;
   font-weight: 900;
 }
 
 .dice-roll .dice-total.fumble,
+.emote-alert.fumble,
 .inline-roll.fumble {
   color: red;
 }
