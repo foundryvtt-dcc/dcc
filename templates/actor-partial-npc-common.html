@@ -153,11 +153,11 @@
 
     {{!-- Weapons --}}
     {{#* inline "weaponRow"}}
-      <li class="grid-col-span-9 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
+      <li class="grid-col-span-6 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
         <div class="attack-buttons">
           <div class="rollable weapon-button weapon-draggable" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
         </div>
-        <input class="weapon-name grid-col-span-3" type="text"
+        <input class="weapon-name" type="text"
                name="itemUpdates.{{id}}.name"
                value="{{weapon.name}}"/>
         <input type="text"
@@ -169,11 +169,11 @@
                value="{{weapon.system.damage}}"
         />
         {{#if melee}}
-          <input class="weapon-notes grid-col-span-2" type="text"
+          <input class="weapon-notes" type="text"
                  name="itemUpdates.{{id}}.system.description.summary"
                  value="{{{weapon.system.description.summary}}}"/>
         {{else}}
-          <input class="weapon-notes grid-col-span-2" type="text"
+          <input class="weapon-notes" type="text"
                  name="itemUpdates.{{id}}.system.range"
                  value="{{weapon.system.range}}"/>
         {{/if}}
@@ -187,13 +187,13 @@
     {{!-- Melee Weapons --}}
     <div class="dark-border grid-col-span-12">
       <div class="dark-title">{{localize "DCC.MeleeAttacks"}}</div>
-      <ol class="weapon-list" style="margin-bottom: 0">
-        <li class="grid-col-span-9 weapon-list-header">
+      <ol class="weapon-list npc-weapon-list" class="mb-0">
+        <li class="grid-col-span-6 weapon-list-header">
           <div title="{{localize 'DCC.Roll'}}"></div>
-          <div class="grid-col-span-3">{{localize "DCC.Name"}}</div>
+          <div>{{localize "DCC.Name"}}</div>
           <div>{{localize "DCC.ToHit"}}</div>
           <div>{{localize "DCC.Damage"}}</div>
-          <div class="grid-col-span-2">{{localize "DCC.Notes"}}</div>
+          <div>{{localize "DCC.Notes"}}</div>
           <div>
             <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon"
                data-melee=1>
@@ -211,13 +211,13 @@
     {{!-- Ranged Weapons --}}
     <div class="dark-border grid-col-span-12">
       <div class="dark-title">{{localize "DCC.RangedAttacks"}}</div>
-      <ol class="weapon-list" style="margin-bottom: 0">
-        <li class="grid-col-span-9 weapon-list-header">
+      <ol class="weapon-list npc-weapon-list" style="margin-bottom: 0">
+        <li class="grid-col-span-6 weapon-list-header">
           <div title="{{localize 'DCC.Roll'}}"></div>
-          <div class="grid-col-span-3">{{localize "DCC.Name"}}</div>
+          <div>{{localize "DCC.Name"}}</div>
           <div>{{localize "DCC.ToHit"}}</div>
           <div>{{localize "DCC.Damage"}}</div>
-          <div class="grid-col-span-2">{{localize "DCC.Range"}}</div>
+          <div>{{localize "DCC.Range"}}</div>
           <div>
             <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon">
               <i class="fas fa-plus" data-melee=0></i>

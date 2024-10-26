@@ -378,6 +378,12 @@ a.inline-roll {
     text-align: center;
   }
 
+  &.npc-weapon-list {
+    display: grid;
+    font-family: $book-antiqua;
+    grid-template-columns: 25px minmax(110px, 1fr) 55px 60px minmax(100px, 2fr) 39px;
+  }
+
   .weapon-list-header {
     display: grid;
     font-family: $cooper-black;

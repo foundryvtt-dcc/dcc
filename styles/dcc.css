@@ -513,6 +513,11 @@ a.inline-roll {
 .dcc .weapon-list input {
   text-align: center;
 }
+.dcc .weapon-list.npc-weapon-list {
+  display: grid;
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  grid-template-columns: 25px minmax(110px, 1fr) 55px 60px minmax(100px, 2fr) 39px;
+}
 .dcc .weapon-list .weapon-list-header {
   display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;
