@@ -1353,27 +1353,6 @@ class DCCActor extends Actor {
       return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
                     ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
     }
-
-    // Display basic chat card
-    if (!critResult) {
-      // Generate flags for the roll
-      const flags = {
-        'dcc.RollType': 'CriticalHit',
-        'dcc.ItemId': options.weaponId
-      }
-
-      // Fleeting luck if's a real crit (e.g. not forced by a backstab)
-      if (options.naturalCrit) {
-        game.dcc.FleetingLuck.updateFlagsForCrit(flags)
-      }
-
-      // Display the raw crit roll
-      await roll.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor: this }),
-        flavor: `${game.i18n.localize('DCC.CriticalHit')} !`,
-        flags
-      })
-    }
   }
 
   /**
