@@ -334,8 +334,6 @@ async function processSpellCheck (actor, spellData) {
   let roll = spellData.roll
   const item = spellData.item
   const flavor = spellData.flavor
-  const manifestation = spellData.manifestation
-  const mercurial = spellData.mercurial
 
   let crit = false
   let fumble = false
@@ -365,7 +363,7 @@ async function processSpellCheck (actor, spellData) {
           }
         }
       }
-      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble, manifestation, mercurial, item })
+      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble, item })
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {

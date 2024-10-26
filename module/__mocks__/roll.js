@@ -39,6 +39,10 @@ class RollMock {
     return true
   }
 
+  constructor (rollData) {
+    this.rollData = rollData
+  }
+
   options = {}
   terms = [
     {
