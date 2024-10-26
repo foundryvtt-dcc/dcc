@@ -365,7 +365,7 @@ async function processSpellCheck (actor, spellData) {
           }
         }
       }
-      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble, manifestation, mercurial, itemId: item?.id })
+      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble, manifestation, mercurial, item })
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {

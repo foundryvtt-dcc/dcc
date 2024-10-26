@@ -13,7 +13,7 @@ class SpellResult {
    * @param {String} manifestation manifestation of the spell from item
    * @param {Object} mercurial       mercurial magic effect from item
    */
-  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined, manifestation= '', mercurial = '' } = {}) {
+  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, item = undefined, manifestation = '', mercurial = '' } = {}) {
     const roll = result.roll
     messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
@@ -23,10 +23,10 @@ class SpellResult {
 
     // construct flags for the message
     const flags = {
-      'core.RollTable': result.id,
+      'core.RollTableId': result.id,
       'dcc.SpellCheck': true,
       'dcc.RollType': 'SpellCheck',
-      'dcc.ItemId': itemId
+      'dcc.ItemId': item.id
     }
 
     if (crit) {
@@ -58,6 +58,11 @@ class SpellResult {
       crit,
       fumble
     })
+
+    // Use the item name instead of the rollTable name to allow customizing spell names
+    if (item.name !== rollTable.name) {
+      messageData.content = messageData.content.replace(`<h1>${rollTable.name}</h1>`, `<h1>${item.name}</h1>`)
+    }
 
     // Create the chat message
     return ChatMessage.create(messageData, messageOptions)
