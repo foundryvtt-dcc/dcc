@@ -348,9 +348,11 @@ class DCCActor extends Actor {
     if (this.system.class.spellCheckOverride) {
       this.system.class.spellCheck = this.system.class.spellCheckOverride
     }
-    this.system.skills.divineAid.value = this.system.class.spellCheck
-    this.system.skills.turnUnholy.value = `${this.system.class.spellCheck}+${this.system.abilities.lck.mod}`
-    this.system.skills.layOnHands.value = this.system.class.spellCheck
+    if (this.system?.skills?.divineAid) {
+      this.system.skills.divineAid.value = this.system.class.spellCheck
+      this.system.skills.turnUnholy.value = `${this.system.class.spellCheck}+${this.system.abilities.lck.mod}`
+      this.system.skills.layOnHands.value = this.system.class.spellCheck
+    }
   }
 
   /**
