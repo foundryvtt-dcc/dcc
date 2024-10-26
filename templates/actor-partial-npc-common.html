@@ -105,7 +105,7 @@
                size="3"
                data-dtype="String"
           {{#if system.config.computeSpeed }}
-               title="{{localize " DCC.SpeedBase"}} {{distanceFormat system.attributes.speed.base}} {{localize "DCC.SpeedPenalty"}}
+               title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}}
                  {{distanceFormat system.attributes.ac.speedPenalty}}"
                disabled
           {{/if}}
@@ -118,7 +118,7 @@
       <div class="saving-throw-box grid-col-gap-5" id="{{id}}" data-save="{{id}}">
         <input id="system.saves.{{id}}.value" value="{{numberFormat save.value decimals=0 sign=true}}"
                name="system.saves.{{id}}.value" data-dtype="Number" placeholder="0">
-        <label for="system.saves.{{id}}.value" class="rollable">
+        <label for="system.saves.{{id}}.value" class="rollable" title="{{localize 'DCC.RollSavingThrowHint'}}">
           {{#if isFortitude}}{{localize "DCC.SavesFortitudeAbbr"}}{{else}}{{localize save.label}}{{/if}}
         </label>
       </div>

@@ -366,6 +366,7 @@
   "DCC.RollModifierTitleInitiative": "Initiative",
   "DCC.RollModifierUpDiceChain": "+1D",
   "DCC.RollPersonalityCheckHint": "Click to roll a Personality check, CMD/CTRL click for more options",
+  "DCC.RollSavingThrowHint": "Click to roll this save, CMD/CTRL click for more options",
   "DCC.RollSituationalBonus": "Situational Bonus?",
   "DCC.RollStaminaCheckHint": "Click to roll an Stamina check, CMD/CTRL click for more options",
   "DCC.RollStrengthCheckHint": "Click to roll a Strength check, CMD/CTRL click for more options",

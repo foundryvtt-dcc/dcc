@@ -991,14 +991,15 @@ class DCCActor extends Actor {
       ])
       await damageRoll.evaluate()
       foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
-      damageRoll.flavor = 'Damage'
+      damageRoll.flavor = game.i18n.localize('DCC.Damage')
       rolls.push(damageRoll)
-      const damageRollAnchor = await damageRoll.toAnchor()
+      const damageRollAnchor = await damageRoll.toAnchor({ classes: ['damage-applyable'], dataset: { damage: damageRoll.total } })
       damageInlineRoll = damageRollAnchor.outerHTML
       damagePrompt = game.i18n.localize('DCC.Damage')
     }
 
     // Deed roll
+    const deedDieRoll = attackRollResult.deedDieRoll
     const deedDieFormula = attackRollResult.deedDieFormula
     const deedDieRollResult = attackRollResult.deedDieRollResult
     const deedRollTotalResult = attackRollResult.deedRollTotalResult
@@ -1098,6 +1099,7 @@ class DCCActor extends Actor {
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
         deedDieFormula,
+        deedDieRoll,
         deedDieRollResult,
         deedRollTotalResult,
         deedRollSuccess,
@@ -1191,6 +1193,7 @@ class DCCActor extends Actor {
     attackRoll.dice[0].options.dcc = {
       upperThreshold: critRange
     }
+    let deedDieRoll
     let deedDieRollResult = ''
     let deedDieFormula = ''
     let deedRollTotalResult = ''
@@ -1201,6 +1204,7 @@ class DCCActor extends Actor {
         upperThreshold: 3
       }
       deedDieFormula = attackRoll.dice[1].formula
+      deedDieRoll = attackRoll.dice[1]
       deedDieRollResult = attackRoll.dice[1].total
       deedRollTotalResult = attackRoll.terms[2].total
       deedSucceed = deedDieRollResult > 2
@@ -1215,6 +1219,7 @@ class DCCActor extends Actor {
       d20RollResult,
       deedDieFormula,
       deedDieRollResult,
+      deedDieRoll,
       deedRollTotalResult,
       deedSucceed,
       crit,
