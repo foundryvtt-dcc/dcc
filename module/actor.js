@@ -489,6 +489,28 @@ class DCCActor extends Actor {
     return game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
   }
 
+  async rollInit (event, token) {
+    if (token?.combatant?.initiative) {
+      ui.notifications.warn(game.i18n.localize('DCC.AlreadyHasInitiative'))
+      return
+    }
+
+    const rollOptions = this.sheet._fillRollOptions(event)
+    let formula = null
+    if (rollOptions.showModifierDialog) {
+      formula = await this.getInitiativeRoll(formula, { showModifierDialog: true })
+    }
+
+    const options = {
+      createCombatants: true,
+      initiativeOptions: {
+        formula
+      }
+    }
+
+    token.actor.rollInitiative(options)
+  }
+
   // noinspection JSUnusedGlobalSymbols
   /**
    * Roll Hit Dice

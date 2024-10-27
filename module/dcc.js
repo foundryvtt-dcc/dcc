@@ -691,7 +691,7 @@ function _createDCCInitiativeMacro (data) {
   // Create the macro command
   return {
     name: game.i18n.localize('DCC.Initiative'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollInitiative({createCombatants: true}) }`,
+    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollInit(event, token) }`,
     img: EntityImages.imageForMacro('initiative')
   }
 }

@@ -701,25 +701,7 @@ class DCCActorSheet extends ActorSheet {
    */
   async _onRollInitiative (event) {
     event.preventDefault()
-    if (this.actor?.token?.combatant?.initiative) {
-      ui.notifications.warn(game.i18n.localize('DCC.AlreadyHasInitiative'))
-      return
-    }
-
-    const rollOptions = this._fillRollOptions(event)
-    let formula = null
-    if (rollOptions.showModifierDialog) {
-      formula = await this.actor.getInitiativeRoll(formula, { showModifierDialog: true })
-    }
-
-    const options = {
-      createCombatants: true,
-      initiativeOptions: {
-        formula
-      }
-    }
-
-    this.actor.rollInitiative(options)
+    this.actor.rollInit(event)
   }
 
   /**
