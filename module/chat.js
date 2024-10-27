@@ -1,4 +1,5 @@
 /* global canvas, game, TextEditor */
+// noinspection DuplicatedCode
 
 import { getCritTableResult, getFumbleTableResult } from './utilities.js'
 
@@ -191,19 +192,15 @@ export const emoteAttackRoll = function (message, html) {
  * @param data
  */
 export const emoteCritRoll = async function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Critical'))) return
-  const tableName = message.flavor.replace('Critical (', '').replace(')', '')
-
-  const critResult = await getCritTableResult(message.rolls[0], tableName)
-  const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isCrit')) return
 
   const critRollEmote = game.i18n.format(
     'DCC.RolledCritEmote',
     {
       actorName: data.alias,
       critInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
-      critTableName: tableName,
-      critResult: critText ? `:<br>${critText}` : '.'
+      critTableName: message.system.critTableName,
+      critResult: message.system.critResult ? `:<br>${message.system.critInlineRoll}` : '.'
     }
   )
 

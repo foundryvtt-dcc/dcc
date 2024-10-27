@@ -334,7 +334,7 @@
   "DCC.Roll": "Roll",
   "DCC.RollCritical": "Roll Critical",
   "DCC.RolledAbilityEmote": "{actorName} rolled {abilityInlineRollHTML} for their {abilityName}.",
-  "DCC.RolledCritEmote": "{actorName} rolled {critInlineRollHTML} on {critTableName}{critResult}",
+  "DCC.RolledCritEmote": "{actorName} rolled {critInlineRollHTML} on Crit Table {critTableName}{critResult}",
   "DCC.RolledDamageEmote": "{actorName} rolled {damageInlineRollHTML} for damage.",
   "DCC.RolledFumbleEmote": "{actorName} fumbled and got a {fumbleInlineRollHTML}{fumbleResult}",
   "DCC.RolledInitiativeEmote": "{actorName} rolled {initiativeInlineRollHTML} for initiative.",

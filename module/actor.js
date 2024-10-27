@@ -1224,6 +1224,7 @@ class DCCActor extends Actor {
 
   /**
    * Roll a Critical Hit
+   * Called from sheet and macros
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    */
   async rollCritical (options = {}) {
@@ -1240,52 +1241,41 @@ class DCCActor extends Actor {
       }
     ]
 
-    // Roll object for the crit die
-    let roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    const critRoll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    await critRoll.evaluate()
 
-    // Lookup the crit table if available
-    let critResult = null
-    for (const criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
-      if (criticalHitPackName) {
-        const pack = game.packs.get(criticalHitPackName)
-        if (pack) {
-          await pack.getIndex() // Load the compendium index
-          const critTableFilter =
-            `Crit Table ${options.critTableOverride || this.system.attributes.critical.table}`
+    const critTableName = this.system.attributes.critical.table
+    const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
 
-          const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
-          if (entry) {
-            const table = await pack.getDocument(entry._id)
-            critResult = await table.draw({ roll })
-          }
-        }
+    const critRollFormula = critRoll.formula
+    const critPrompt = game.i18n.localize('DCC.Critical')
+    foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
+    const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+
+    // Speaker object for the chat cards
+    const speaker = ChatMessage.getSpeaker({ actor: this })
+
+    const messageData = {
+      user: game.user.id,
+      speaker,
+      flavor: game.i18n.format('DCC.CritDie'),
+      flags: {
+        'dcc.isCrit': true,
+        'dcc.isNaturalCrit': true
+      },
+      rolls: [critRoll],
+      system: {
+        actorId: this.id,
+        critPrompt,
+        critResult,
+        critRoll,
+        critRollFormula,
+        critTableName,
+        critInlineRoll: critText
       }
     }
 
-    // Either roll the die or grab the roll from the table lookup
-    if (!critResult) {
-      await roll.evaluate()
-    } else {
-      roll = critResult.roll
-    }
-
-    // If fancy cards aren't disabled, return HTML for chat message
-    // Create the roll emote
-    const rollData = encodeURIComponent(JSON.stringify(roll))
-    const rollTotal = roll.total
-    const rollHTML = `<a class="inline-roll inline-result" data-roll="${rollData}" data-damage="${rollTotal}"
-            title="${game.dcc.DCCRoll.cleanFormula(roll.terms)}">
-            <i class="fas fa-dice-d20"></i> ${rollTotal}</a>`
-
-    // Display crit result or just a notification of the crit
-    if (critResult) {
-      return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
-                ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}<br/>
-                ${critResult.results[0].getChatText()}`
-    } else {
-      return ` <br/><br/><span style='color:#ff0000; font-weight: bolder'>
-                    ${game.i18n.localize('DCC.CriticalHit')}!</span> ${rollHTML}`
-    }
+    ChatMessage.create(messageData)
   }
 
   /**

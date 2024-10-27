@@ -267,7 +267,6 @@ class DCCActorSheet extends ActorSheet {
 
       // Hit Dice
       html.find('label[for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
-      html.find('label[for="system.attributes.hitDice.value"]').each(makeDraggable)
 
       // Saving Throws
       html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
@@ -298,7 +297,6 @@ class DCCActorSheet extends ActorSheet {
 
       // Crit Die
       html.find('label[for="system.attributes.critical.die"]').click(this._onRollCritDie.bind(this))
-      html.find('label[for="system.attributes.critical.die"]').each(makeDraggable)
 
       // Quantity increase / decrease
       html.find('.qty-decrease').click(this._onDecreaseQty.bind(this))
