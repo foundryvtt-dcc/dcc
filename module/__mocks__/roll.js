@@ -1,3 +1,5 @@
+// noinspection JSUnresolvedReference,JSUnusedLocalSymbols
+
 /**
  * Mocks for Foundry's Roll class
  */
@@ -17,6 +19,9 @@ global.rollEvaluateMock = vi.fn(() => {
     process.nextTick(() => { resolve({ total: 2 }) })
   })
 })
+global.rollFormulaMock = vi.fn((formula) => {
+  return formula
+}).mockName('formula')
 global.rollParseMock = vi.fn((formula) => {
   return [{ die: { faces: 4 } }]
 })
@@ -31,6 +36,7 @@ class RollMock {
   dice = [{ results: [10], options: {} }]
   toMessage = global.rollToMessageMock
   evaluate = global.rollEvaluateMock
+  formula = global.rollFormulaMock
   parse = global.rollParseMock
   render = global.rollRenderMock
   roll = global.rollEvaluateMock
@@ -43,9 +49,11 @@ class RollMock {
     this.rollData = rollData
   }
 
-  options = {}
+  options = { dcc: {} }
+  parts = {}
   terms = [
     {
+      apply: false,
       class: 'Die',
       options: {
         flavor: null

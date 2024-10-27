@@ -74,8 +74,10 @@ class DCCActorSheet extends ActorSheet {
       config: CONFIG.DCC
     }
 
+    /** @type {DCCActor} */
     data.actor = foundry.utils.duplicate(this.document)
     data.actor.name = this.document.name
+
     data.system = foundry.utils.duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters

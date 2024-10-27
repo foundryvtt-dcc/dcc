@@ -1,4 +1,5 @@
 /* global Dialog, ItemSheet, TextEditor, game, foundry, CONFIG */
+// noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
@@ -45,7 +46,7 @@ export class DCCItemSheet extends ItemSheet {
 
   /** @override */
   async getData (options) {
-    const data = await super.getData(options)
+    const data = super.getData(options)
 
     // Lookup the localizable string for the item's type
     data.typeString = CONFIG.DCC.items[data.type] || 'DCC.Unknown'
@@ -275,7 +276,7 @@ export class DCCItemSheet extends ItemSheet {
           lookup: {
             icon: '<i class="fas fa-check"></i>',
             label: game.i18n.localize('DCC.MercurialMagicButtonLookup'),
-            callback: () => this._lookupMercurialMagic(event, options)
+            callback: () => this._lookupMercurialMagic()
           },
           cancel: {
             icon: '<i class="fas fa-times"></i>',
@@ -312,11 +313,9 @@ export class DCCItemSheet extends ItemSheet {
 
   /**
    * Look up a Mercurial Magic effect
-   * @param {Event}  event   The originating click event
-   * @param options
    * @private
    */
-  _lookupMercurialMagic (event, options) {
+  _lookupMercurialMagic () {
     this.item.rollMercurialMagic(this.item.system.mercurialEffect.value)
     this.render(false)
   }

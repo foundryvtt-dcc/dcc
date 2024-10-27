@@ -11,6 +11,7 @@ import '../__mocks__/item.js'
 import DCCActor from '../actor'
 
 // Create Base Test Actor
+// noinspection JSCheckFunctionSignatures
 const actor = new DCCActor()
 
 test('prepareData sets ability modifiers', () => {
@@ -61,6 +62,11 @@ test('roll ability check', async () => {
         type: 'Modifier',
         label: 'AbilityStr',
         formula: -1
+      },
+      {
+        apply: true,
+        formula: '+0',
+        type: 'CheckPenalty'
       }
     ],
     {},
@@ -560,13 +566,20 @@ test('roll spell check', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'SpellCheck',
-        formula: '3'
+        formula: 1,
+        modifierLabel: 'Level'
+      },
+      {
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        formula: '+1',
+        modifierLabel: 'AbilityMod'
       },
       {
         type: 'CheckPenalty',
         apply: true,
-        formula: 0
+        formula: '+0',
+        label: 'CheckPenalty'
       },
       {
         type: 'Spellburn',
@@ -631,13 +644,20 @@ test('roll spell check int', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'SpellCheck',
-        formula: '3'
+        formula: 1,
+        modifierLabel: 'Level'
+      },
+      {
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        formula: '+1',
+        modifierLabel: 'AbilityMod'
       },
       {
         type: 'CheckPenalty',
         apply: true,
-        formula: 0
+        formula: '+0',
+        label: 'CheckPenalty'
       },
       {
         type: 'Spellburn',
@@ -701,13 +721,20 @@ test('roll spell check per', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'SpellCheck',
-        formula: '3'
+        formula: 1,
+        modifierLabel: 'Level'
+      },
+      {
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        formula: '+2',
+        modifierLabel: 'AbilityMod'
       },
       {
         type: 'CheckPenalty',
         apply: true,
-        formula: 0
+        formula: '+0',
+        label: 'CheckPenalty'
       },
       {
         type: 'Spellburn',

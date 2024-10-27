@@ -1,4 +1,4 @@
-/* global CONFIG, CONST, FormApplication, game, Hooks, foundry, ui, UserConfig */
+/* global CONFIG, CONST, FormApplication, game, Hooks, foundry, ui */
 
 class FleetingLuckDialog extends FormApplication {
   /** @override */
@@ -20,7 +20,7 @@ class FleetingLuckDialog extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options = {}) {
     const data = {}
     data.cssClass = 'dcc'
     data.user = game.user
@@ -45,8 +45,8 @@ class FleetingLuckDialog extends FormApplication {
   }
 
   /** @override */
-  setPosition (options = {}) {
-    const position = super.setPosition(options)
+  setPosition ({ left, top, width, height, scale } = {}) {
+    const position = super.setPosition({ left, top, width, height, scale })
     position.height = 'fit-content'
     return position
   }
@@ -75,7 +75,7 @@ class FleetingLuckDialog extends FormApplication {
     const userId = event.currentTarget.dataset.userId
     const user = game.users.get(userId)
     if (game.user.isGM || userId === game.user.id) {
-      await new UserConfig(user).render(true)
+      await user.sheet.render(true)
     }
   }
 
@@ -185,7 +185,7 @@ class FleetingLuckDialog extends FormApplication {
   }
 
   /** @override */
-  async close () {
+  async close (options = {}) {
     FleetingLuck.dialog = null
     return super.close()
   }
@@ -198,7 +198,7 @@ class FleetingLuck {
   static init () {
     if (game.user.isGM) {
       // For GM, register hooks to manage fleeting luck
-      Hooks.on('createChatMessage', (message, options, id) => {
+      Hooks.on('createChatMessage', (message) => {
         // Early out if automation is not enabled
         if (!FleetingLuck.automationEnabled) { return }
 
@@ -235,7 +235,7 @@ class FleetingLuck {
     }
 
     // All users refresh fleeting luck after user updates
-    Hooks.on('updateUser', (doc, change, options, userId) => {
+    Hooks.on('updateUser', (doc, change) => {
       if (change.avatar || change.flags?.dcc) {
         FleetingLuck.refresh()
       }
@@ -382,7 +382,7 @@ class FleetingLuck {
         FleetingLuck._clear(user.id)
       }
     })
-    FleetingLuck.addChatMessage(game.i18n.localize('DCC.FleetingLuckClearMessage'))
+    await FleetingLuck.addChatMessage(game.i18n.localize('DCC.FleetingLuckClearMessage'))
   }
 
   /**
@@ -394,7 +394,7 @@ class FleetingLuck {
         FleetingLuck._set(user.id, 1)
       }
     })
-    FleetingLuck.addChatMessage(game.i18n.localize('DCC.FleetingLuckResetMessage'))
+    await FleetingLuck.addChatMessage(game.i18n.localize('DCC.FleetingLuckResetMessage'))
   }
 
   /**

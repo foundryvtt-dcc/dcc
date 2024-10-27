@@ -6,7 +6,7 @@
  * @return {Promise}    A promise which resolves once the migration is completed
  */
 export const migrateWorld = async function () {
-  ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permenant: true }))
+  ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permanent: true }))
 
   // Migrate World Actors
   for (const a of game.actors) {
@@ -58,7 +58,7 @@ export const migrateWorld = async function () {
   // Set the migration as complete
   // parseFloat will pull out the major and minor version ignoring the patch version
   game.settings.set('dcc', 'systemMigrationVersion', parseFloat(game.system.version))
-  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permenant: true }))
+  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
 }
 
 /* -------------------------------------------- */

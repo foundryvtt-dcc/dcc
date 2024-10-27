@@ -3,11 +3,16 @@
 import DiceChain from './dice-chain.js'
 import { ensurePlus } from './utilities.js'
 
+// noinspection JSUnusedGlobalSymbols
 /**
  * Extend the base Item entity for DCC RPG
  * @extends {Item}
  */
 class DCCItem extends Item {
+
+  /** @type {DCCActor} */
+  actor
+
   prepareBaseData () {
     super.prepareBaseData()
 
@@ -221,7 +226,7 @@ class DCCItem extends Item {
       item: this,
       flavor,
       manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
-      mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {},
+      mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {}
     })
   }
 
@@ -265,7 +270,7 @@ class DCCItem extends Item {
         {
           type: 'Die',
           formula: '1d100'
-        },
+        }
       ]
 
       // Otherwise roll for a manifestation
@@ -312,7 +317,6 @@ class DCCItem extends Item {
       try {
         let result = manifestationResult.results[0].text.replace(';', '')
         result = result.charAt(0).toUpperCase() + result.slice(1)
-        const split = result.split('.')
         updates['system.manifestation.description'] = `<p>${result}</p>`
       } catch (err) {
         console.error(`Couldn't extract Manifestation result from table:\n${err}`)

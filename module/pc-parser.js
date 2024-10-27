@@ -62,7 +62,6 @@ function _parseJSONPCs (pcObject) {
       for (const weapon of pcObject.weapons) {
         // Split damage into component parts
         const damageWeapon = getFirstDie(weapon.attackDamage)
-        const damageWeaponMod = getFirstMod(weapon.attackDamage)
         const damageWeaponBonus = getFirstMod(weapon.name)
         const attackBonusWeapon = damageWeaponBonus
 

@@ -1,4 +1,4 @@
-export const defineStatusIcons = function (data) {
+export const defineStatusIcons = function () {
   window.CONFIG.statusEffects = window.CONFIG.statusEffects.concat([
     {
       id: 'armor-seized',

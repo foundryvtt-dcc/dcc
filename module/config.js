@@ -1,4 +1,6 @@
 // Namespace DCC Configuration Values
+// noinspection HtmlRequiredAltAttribute,HtmlUnknownTarget
+
 const DCC = {}
 
 // ASCII Artwork

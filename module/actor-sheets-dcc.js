@@ -1,4 +1,5 @@
 /* global TextEditor, game */
+// noinspection JSClosureCompilerSyntax
 
 /**
  * DCC specific character sheet overrides

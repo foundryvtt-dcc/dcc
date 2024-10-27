@@ -203,7 +203,7 @@ async function _onShowJournal (packName, journalName) {
   const index = await pack.getIndex()
   const metadata = await index.getName(journalName)
   const doc = await pack.getDocument(metadata._id)
-  doc.sheet.render(true)
+  await doc.sheet.render(true)
 }
 
 async function _onShowURI (uri) {
@@ -409,7 +409,7 @@ async function processSpellCheck (actor, spellData) {
       // Check for failed casting
       if (automate && !success) {
         // Lose the spell
-        actor.loseSpell(item)
+        await actor.loseSpell(item)
       }
     } else if (castingMode === 'cleric') {
       // Check if automation is enabled for Cleric spells
@@ -475,7 +475,7 @@ Hooks.on('renderChatMessage', (message, html, data) => {
     chat.emoteDamageRoll(message, html, data)
     chat.emoteInitiativeRoll(message, html, data)
   } else {
-    chat.lookupCriticalRoll(message, html, data)
+    chat.lookupCriticalRoll(message, html)
     chat.lookupFumbleRoll(message, html, data)
   }
 })
@@ -547,7 +547,7 @@ Hooks.on('dcc.setTurnUnholyTable', (value, fromSystemSetting = false) => {
 })
 
 // Entity creation hook
-Hooks.on('createActor', (entity, options, userId) => {
+Hooks.on('createActor', (entity) => {
   if (!game.user.isGM || entity.img) { return }
 
   // Assign an appropriate DCC actor image
@@ -559,7 +559,7 @@ Hooks.on('createActor', (entity, options, userId) => {
   }
 })
 
-Hooks.on('createItem', (entity, options, userId) => {
+Hooks.on('createItem', (entity) => {
   if (!game.user.isGM || entity.img) { return }
 
   // Assign an appropriate DCC item image
@@ -630,7 +630,7 @@ function createDCCMacro (data, slot) {
   // Call the appropriate function to generate a macro
   const macroData = handlers[data.type](data, slot)
   if (macroData) {
-    // Create and assign the macro in an async context, but hooks aren't async so we need to return immediately
+    // Create and assign the macro in an async context, but hooks aren't async, so we need to return immediately
     (async () => {
       // Create or reuse existing macro
       let macro = game.macros.contents.find(
@@ -645,7 +645,7 @@ function createDCCMacro (data, slot) {
           flags: { 'dcc.itemMacro': true }
         })
       }
-      game.user.assignHotbarMacro(macro, slot)
+      await game.user.assignHotbarMacro(macro, slot)
     })()
 
     // Prevent the default handler
@@ -658,10 +658,9 @@ function createDCCMacro (data, slot) {
 /**
  * Create a macro from an ability check drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCAbilityMacro (data, slot) {
+function _createDCCAbilityMacro (data) {
   if (data.type !== 'Ability') return
 
   // Create the macro command
@@ -684,10 +683,9 @@ function _createDCCAbilityMacro (data, slot) {
 /**
  * Create a macro from an initiative drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCInitiativeMacro (data, slot) {
+function _createDCCInitiativeMacro (data) {
   if (data.type !== 'Initiative') return
 
   // Create the macro command
@@ -701,10 +699,9 @@ function _createDCCInitiativeMacro (data, slot) {
 /**
  * Create a macro from a hit dice drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCHitDiceMacro (data, slot) {
+function _createDCCHitDiceMacro (data) {
   if (data.type !== 'Hit Dice') return
 
   // Create the macro command
@@ -718,10 +715,9 @@ function _createDCCHitDiceMacro (data, slot) {
 /**
  * Create a macro from a saving throw drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCSaveMacro (data, slot) {
+function _createDCCSaveMacro (data) {
   if (data.type !== 'Save') return
 
   // Create the macro command
@@ -736,10 +732,9 @@ function _createDCCSaveMacro (data, slot) {
 /**
  * Create a macro from a skill roll drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCSkillMacro (data, slot) {
+function _createDCCSkillMacro (data) {
   if (data.type !== 'Skill') return
 
   // Create the macro command
@@ -755,10 +750,9 @@ function _createDCCSkillMacro (data, slot) {
 /**
  * Create a macro from a luck die drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCLuckDieMacro (data, slot) {
+function _createDCCLuckDieMacro (data) {
   if (data.type !== 'Luck Die') return
   const die = data.data.die
 
@@ -773,10 +767,9 @@ function _createDCCLuckDieMacro (data, slot) {
 /**
  * Create a macro from a spell check drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCSpellCheckMacro (data, slot) {
+function _createDCCSpellCheckMacro (data) {
   if (data.type !== 'Spell Check') return
 
   // Create the macro command
@@ -798,10 +791,9 @@ function _createDCCSpellCheckMacro (data, slot) {
 /**
  * Create a macro from an attack bonus drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCAttackBonusMacro (data, slot) {
+function _createDCCAttackBonusMacro (data) {
   if (data.type !== 'Attack Bonus') return
   const die = data.data.die
 
@@ -816,10 +808,9 @@ function _createDCCAttackBonusMacro (data, slot) {
 /**
  * Create a macro from an action die drop.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCActionDiceMacro (data, slot) {
+function _createDCCActionDiceMacro (data) {
   if (data.type !== 'Action Dice') return
   const die = data.data.die
 
@@ -835,10 +826,9 @@ function _createDCCActionDiceMacro (data, slot) {
  * Create a Macro from a weapon drop.
  * Get an existing macro if one exists, otherwise create a new one.
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCWeaponMacro (data, slot) {
+function _createDCCWeaponMacro (data) {
   if (data.type !== 'Weapon') return
   const weapon = data.system.weapon
   const backstab = data.data.backstab
@@ -868,10 +858,9 @@ function _createDCCWeaponMacro (data, slot) {
 /**
  * Apply disapproval to an actor
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCApplyDisapprovalMacro (data, slot) {
+function _createDCCApplyDisapprovalMacro (data) {
   if (data.type !== 'Apply Disapproval') return
 
   // Create the macro command
@@ -885,10 +874,9 @@ function _createDCCApplyDisapprovalMacro (data, slot) {
 /**
  * Roll disapproval for an actor
  * @param {Object} data     The dropped data
- * @param {number} slot     The hotbar slot to use
  * @returns {Object}
  */
-function _createDCCRollDisapprovalMacro (data, slot) {
+function _createDCCRollDisapprovalMacro (data) {
   if (data.type !== 'Roll Disapproval') return
 
   // Create the macro command
@@ -907,6 +895,7 @@ function _createDCCRollDisapprovalMacro (data, slot) {
  * @return {Promise}
  */
 function rollDCCWeaponMacro (itemId, actorId, options = {}) {
+  /** @type {DCCActor} */
   const actor = game.actors.get(actorId)
 
   // Trigger the weapon roll

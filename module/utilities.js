@@ -41,22 +41,6 @@ export function getFirstMod (value) {
 }
 
 /**
- * Create an inline roll expression
- * @param {DCCRoll} roll - value to ensure has a plus
- * @param {string} type - value to add as data-<type> to the link
- * @return {string} - An inline roll expression built from teh roll
- */
-export function createInlineRollHTML (roll, type = 'damage') {
-  const rollData = encodeURIComponent(JSON.stringify(roll))
-  let iconClass = 'fa-dice-d20'
-  if (roll.dice[0]?.faces === 6) {
-    iconClass = 'fa-dice-d6'
-  }
-  return `<a class="inline-roll inline-result" data-roll="${rollData}" data-${type}="${roll.total}">
-            <i class="fas ${iconClass}"></i> ${roll.total}</a>`
-}
-
-/**
  * Draw a result from the crit table
  * @param roll - roll instance to use
  * @param critTableName - name of the crit table - like 'III'

@@ -9,6 +9,7 @@ class DCCCombatant extends Combatant {
   getInitiativeRoll (formula) {
     // Calculate the initiative roll and extract formula, or fallback to the default formula
     // Can't pass any options here - using the Roll Modifier Dialog would require this interface to be async
+    // noinspection JSUnresolvedReference
     return this.actor.getInitiativeRoll(formula)
   }
 }

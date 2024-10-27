@@ -4,8 +4,10 @@ import { getCritTableResult, getFumbleTableResult } from './utilities.js'
 
 /**
  * Highlight critical success or failure on d20 rolls
+ * @param message
+ * @param html
  */
-export const highlightCriticalSuccessFailure = function (message, html, data) {
+export const highlightCriticalSuccessFailure = function (message, html) {
   if (!message.rolls || !message.isContentVisible) return
 
   // Highlight rolls where the first part is a d20 roll
@@ -137,9 +139,8 @@ export const emoteAbilityRoll = function (message, html, data) {
  * Change attack rolls into emotes
  * @param message
  * @param html
- * @param data
  */
-export const emoteAttackRoll = function (message, html, data) {
+export const emoteAttackRoll = function (message, html) {
   if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.isToHit) return
 
   let deedRollHTML = ''
@@ -283,10 +284,9 @@ export const emoteInitiativeRoll = function (message, html, data) {
  * Look up a critical hit roll in the crit table specified in the flavor
  * @param message
  * @param html
- * @param data
  * @returns {Promise<void>}
  */
-export const lookupCriticalRoll = async function (message, html, data) {
+export const lookupCriticalRoll = async function (message, html) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Critical'))) return
   const tableName = message.flavor.replace('Critical (', '').replace(')', '')
 

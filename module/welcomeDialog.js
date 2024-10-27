@@ -33,7 +33,7 @@ class WelcomeDialog extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  async getData () {
+  async getData (options = {}) {
     const data = {}
     data.user = game.user
     data.copyright = await TextEditor.enrichHTML(game.i18n.localize(`${pubConstants.langRoot}.Welcome.Copyright`))

@@ -24,11 +24,11 @@ export class MeleeMissileBonusConfig extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options = {}) {
     const data = this.object
     data.isNPC = (this.object.type === 'NPC')
     data.isPC = (this.object.type === 'Player')
-    data.isZero = (this.object.system.details.level === 0)
+    data.isZero = (this.object.system.details.level.value === 0)
     data.user = game.user
     data.config = CONFIG.DCC
     return data
@@ -52,7 +52,7 @@ export class MeleeMissileBonusConfig extends FormApplication {
     // Update the actor
     await this.object.update(formData)
     // Re-draw the updated sheet
-    this.object.sheet.render(true)
+    await this.object.sheet.render(true)
   }
 }
 

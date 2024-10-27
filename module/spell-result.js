@@ -70,9 +70,8 @@ class SpellResult {
    * Process an incoming chat message and add relevant hooks
    * @param {Object} message  The ChatMessage entity
    * @param {Object} html     The HTML content of the message
-   * @param {Object} data     Extra data about the message
    */
-  static async processChatMessage (message, html, data) {
+  static async processChatMessage (message, html) {
     // No hooks for players, avoid shenanigans
     if (!game.user.isGM) { return }
 

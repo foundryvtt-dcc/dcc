@@ -15,6 +15,7 @@
   "DCC.AbilityInt": "Intelligence",
   "DCC.AbilityIntShort": "Int",
   "DCC.AbilityLck": "Luck",
+  "DCC.AbilityMod": "Ability Mod",
   "DCC.AbilityPer": "Personality",
   "DCC.AbilityPerShort": "Per",
   "DCC.AbilitySta": "Stamina",

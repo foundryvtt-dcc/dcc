@@ -1,4 +1,5 @@
 /* global foundry */
+// noinspection JSUnusedLocalSymbols
 
 import { vi } from 'vitest'
 import DCC from '../config.js'
@@ -9,8 +10,11 @@ import DCCRoll from './dcc-roll.js'
 /**
  * Item
  */
-const Item = vi.fn().mockImplementation(() => {
-}).mockName('Item')
+class Item {
+  quantity = {}
+  system = {}
+}
+
 global.Item = Item
 
 /**
@@ -90,6 +94,7 @@ class ActorMock {
                 adjustment: '+0'
               }
             },
+            lastRolledAttackBonus: '',
             level: {
               value: 1
             }
@@ -97,7 +102,9 @@ class ActorMock {
           class: {
             luckDie: '1d3',
             spellCheck: 3,
-            spellCheckAbility: 'int'
+            spellCheckAbility: 'int',
+            spellCheckOverride: '',
+            spellCheckOverrideDie: ''
           },
           skills: {
             customDieSkill: {
@@ -136,7 +143,9 @@ class ActorMock {
             maxLevel: 0,
             rollAttackBonus: false,
             computeAC: false,
+            computeCheckPenalty: true,
             baseACAbility: 'agl',
+            initiativeDieOverride: '',
             sortInventory: true,
             removeEmptyItems: true
           }
@@ -184,6 +193,7 @@ class ChatMessageMock {
 
 global.ChatMessage = ChatMessageMock
 
+// noinspection JSConstantReassignment
 /**
  * CONFIG
  */
@@ -219,6 +229,8 @@ class Game {
   constructor (worldData, sessionId, socket) {
     this.i18n = new Localization()
   }
+
+  dcc = {} // Set up below
 }
 
 global.Game = Game
@@ -269,12 +281,10 @@ global.CONFIG.ChatMessage = {
  */
 global.uiNotificationsWarnMock = vi.fn((message, options) => {}).mockName('ui.notifications.warn')
 global.uiNotificationsErrorMock = vi.fn((message, type, permanent) => {}).mockName('ui.notifications.error')
-const Notifications = vi.fn().mockImplementation(() => {
-  return {
-    warn: global.uiNotificationsWarnMock,
-    error: global.uiNotificationsErrorMock
-  }
-}).mockName('Notifications')
+class Notifications {
+  warn = global.uiNotificationsWarnMock
+  error = global.uiNotificationsErrorMock
+}
 global.ui = {
   notifications: new Notifications()
 }

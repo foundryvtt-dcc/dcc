@@ -34,7 +34,7 @@ export class DCCItemConfig extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options = {}) {
     const data = this.object
     data.user = game.user
     data.config = CONFIG.DCC
@@ -59,7 +59,7 @@ export class DCCItemConfig extends FormApplication {
     // Update the actor
     this.object.update(formData)
     // Re-draw the updated sheet
-    this.object.sheet.render(true)
+    await this.object.sheet.render(true)
   }
 }
 

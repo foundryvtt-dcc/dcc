@@ -29,8 +29,11 @@ function _prependSign (formula) {
  */
 function DCCDieTerm (options) {
   return [{
+    apply: false,
     type: 'Die',
     label: game.i18n.localize('DCC.RollModifierDieTerm'),
+    dieLabel: '',
+    modifierLabel: '',
     partial: 'systems/dcc/templates/roll-modifier-partial-die.html',
     formula: _cleanFormula(options.formula),
     presets: options.presets || []
@@ -328,7 +331,7 @@ class RollModifierDialog extends FormApplication {
 
     this._roll = this._constructRoll()
     this._resolve(this.roll)
-    super.close()
+    await super.close()
   }
 
   /**
@@ -376,7 +379,7 @@ class RollModifierDialog extends FormApplication {
   async _onCancel (event) {
     event.preventDefault()
     this._reject(null)
-    super.close()
+    await super.close()
   }
 
   /**
@@ -512,7 +515,7 @@ class RollModifierDialog extends FormApplication {
 
   /** @override */
   async close (options = {}) {
-    super.close(options)
+    await super.close(options)
     this._reject(null)
   }
 

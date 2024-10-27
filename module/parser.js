@@ -31,7 +31,7 @@ class DCCActorParser extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options = {}) {
     const context = {}
     context.user = game.user
     context.config = CONFIG.DCC
@@ -49,7 +49,7 @@ class DCCActorParser extends FormApplication {
 
   /**
    * Handle form submission
-   * @param {Object} event     Submission event
+   * @param {Event} event     Submission event
    * @param {Object} formData  Data from the form
    * @return {Object}
    */
@@ -238,8 +238,8 @@ async function createActors (type, folderId, actorData) {
 
         // Remove the old object and add the new one
         if (newItems.length > 0) {
-          actor.deleteEmbeddedDocuments('Item', [originalItem.id])
-          actor.createEmbeddedDocuments('Item', newItems)
+          await actor.deleteEmbeddedDocuments('Item', [originalItem.id])
+          await actor.createEmbeddedDocuments('Item', newItems)
         }
       }
     }
