@@ -508,7 +508,11 @@ class DCCActor extends Actor {
       }
     }
 
-    token.actor.rollInitiative(options)
+    if (token) {
+      token.actor.rollInitiative(options)
+    } else {
+      this.rollInitiative(options)
+    }
   }
 
   // noinspection JSUnusedGlobalSymbols
