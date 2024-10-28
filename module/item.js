@@ -121,14 +121,16 @@ class DCCItem extends Item {
    */
   async rollSpellCheck (abilityId = 'int', options = {}) {
     if (this.type !== 'spell') { return }
+
+    const actor = this.actor || this.parent
+
     if (this.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss') && this.system.config.castingMode === 'wizard') {
       return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
-        actor: this.actor.name,
+        actor: actor.name,
         spell: this.name
       }))
     }
 
-    const actor = this.actor
     const ability = actor.system.abilities[abilityId] || {}
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
