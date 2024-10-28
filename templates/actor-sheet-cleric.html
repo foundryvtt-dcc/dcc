@@ -37,16 +37,19 @@
         <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="per">
           <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
           <div class="grid-align-center p-5">
-            <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{ifThen system.class.spellCheckOverrideDie
-                                                                                        system.class.spellCheckOverrideDie
-                                                                                        system.attributes.actionDice.value}}{{system.class.spellCheck}}</div>
+            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
+              {{ifThen system.class.spellCheckOverrideDie system.class.spellCheckOverrideDie system.attributes.actionDice.value}}
+              {{system.class.spellCheck}}
+            </div>
 
             <div class="group-separator"></div>
 
             <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
               <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Die"}}</div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.attributes.actionDice.value}}</div>
-              <label class="group-indent" for="system.class.spellCheckOverrideDie">{{localize "DCC.Override"}}</label>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attributes.actionDice.value}}</div>
+              <label class="group-indent" for="system.class.spellCheckOverrideDie" title="{{localize 'DCC.OverrideHint'}}">
+                {{localize "DCC.Override"}}
+              </label>
               <input id="system.class.spellCheckOverrideDie" name="system.class.spellCheckOverrideDie"
                      value="{{system.class.spellCheckOverrideDie}}"
                      data-dtype="String"/>
@@ -56,19 +59,23 @@
 
             <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
               <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Bonus"}}</div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.class.spellCheck}}</div>
-              <div class="group-indent label-font" title="{{localize 'DCC.DisplayValue'}}">{{localize "DCC.Level"}}</div>
-              <div class="value-display center" title="{{localize 'DCC.DisplayValue'}}">{{system.details.level.value}}</div>
-              <div class="mr-3 group-indent label-font">{{localize "DCC.AbilityPerShort"}} {{localize "DCC.Modifier"}}</div>
-              <div class="value-display center" title="{{localize 'DCC.DisplayValue'}}">{{system.abilities.per.mod}}</div>
-              <label class="group-indent" for="system.class.spellCheckOverride">{{localize "DCC.Override"}}</label>
-              <input id="system.class.spellCheckOverride" name="system.class.spellCheckOverride" value="{{system.class.spellCheckOverride}}"
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.class.spellCheck}}</div>
+              <div class="group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.Level"}}</div>
+              <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.details.level.value}}</div>
+              <div class="mr-3 group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.AbilityPerShort"}} {{localize "DCC.Modifier"}}</div>
+              <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.abilities.per.mod}}</div>
+              <label class="group-indent" for="system.class.spellCheckOverride" title="{{localize 'DCC.OverrideHint'}}">
+                {{localize "DCC.Override"}}
+              </label>
+              <input id="system.class.spellCheckOverride"
+                     name="system.class.spellCheckOverride"
+                     value="{{system.class.spellCheckOverride}}"
                      data-dtype="String"/>
 
               <div class="group-separator"></div>
 
               <div class="label-font spell-check rollable mr-3 grid-col-span-2 center">
-                <div><i class="fas fa-dice-d20"></i> {{localize "DCC.Roll"}} {{localize "DCC.SpellCheck"}}</div>
+                <div title="{{localize 'DCC.RollSpellCheckHint'}}"><i class="fas fa-dice-d20"></i> {{localize "DCC.RollSpellCheck"}}</div>
               </div>
             </div>
           </div>
@@ -78,29 +85,29 @@
           <div class="dark-title" style="">{{localize "DCC.ClericAbilities"}}</div>
           <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
             <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
-              <label class="rollable" for="system.skills.divineAid.value">{{localize "DCC.DivineAid"}}</label>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.skills.divineAid.value}}</div>
+              <label class="rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}">{{localize "DCC.DivineAid"}}</label>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.divineAid.value}}</div>
             </div>
             <div></div>
             <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
-              <label class="rollable" for="system.skills.turnUnholy.value">{{localize "DCC.TurnUnholy"}}</label>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.skills.turnUnholy.value}}</div>
+              <label class="rollable" for="system.skills.turnUnholy.value" title="{{localize 'DCC.TurnUnholyHint'}}">{{localize "DCC.TurnUnholy"}}</label>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.turnUnholy.value}}</div>
             </div>
             <div></div>
             <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
-              <label class="rollable" for="system.skills.layOnHands.value">{{localize "DCC.LayOnHands"}}</label>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.skills.layOnHands.value}}</div>
+              <label class="rollable" for="system.skills.layOnHands.value" title="{{localize 'DCC.LayOnHandsHint'}}">{{localize "DCC.LayOnHands"}}</label>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.layOnHands.value}}</div>
             </div>
             <div></div>
             <div class="group-separator"></div>
             <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-              <label class="disapproval-range rollable" for="system.class.disapproval">{{localize "DCC.DisapprovalRange"}}</label>
+              <label class="disapproval-range rollable" for="system.class.disapproval" title="{{localize 'DCC.DisapprovalRangeHint'}}">{{localize "DCC.DisapprovalRange"}}</label>
               <select class="number" name="system.class.disapproval" id="system.class.disapproval">
                 {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
               </select>
             </div>
             <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-              <label class="disapproval-table rollable" for="system.class.disapprovalTable">{{localize "DCC.DisapprovalTable"}}</label>
+              <label class="disapproval-table rollable" for="system.class.disapprovalTable" title="{{localize 'DCC.DisapprovalTableHint'}}">{{localize "DCC.DisapprovalTable"}}</label>
               <select id="system.class.disapprovalTable" name="system.class.disapprovalTable">
                 {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable
                                 localize=true
@@ -109,7 +116,7 @@
               </select>
             </div>
             <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-              <label for="system.class.deity">{{localize "DCC.Deity"}}</label>
+              <label for="system.class.deity" title="{{localize 'DCC.DeityHint'}}">{{localize "DCC.Deity"}}</label>
               <input class="full-width" type="text" id="system.class.deity" name="system.class.deity"
                      value="{{system.class.deity}}" data-dtype="String"/>
             </div>

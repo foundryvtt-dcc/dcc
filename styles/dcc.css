@@ -675,7 +675,7 @@ a.inline-roll {
 }
 
 .dcc .item-list-spells {
-  grid-template-columns: 30px 22px 33px 1fr 1fr 35px 39px;
+  grid-template-columns: 30px 22px 33px 1fr 1fr 40px 39px;
 }
 .dcc .item-list-spells .spell-item-button {
   background-image: url("../../../icons/svg/d20-black.svg");

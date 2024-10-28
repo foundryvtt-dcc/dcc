@@ -47,9 +47,14 @@
                    value="{{system.skills.shieldBash.die}}" data-dtype="String"/>
           </div>
           <div class="grid-tpl-max-auto">
-            <label for="system.class.luckyWeapon">{{localize "DCC.LuckyWeapon"}}</label>
+            <label for="system.class.luckyWeapon" title="{{localize 'DCC.LuckyWeaponHint'}}">{{localize "DCC.LuckyWeapon"}}</label>
             <input class="full-width" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon"
                    value="{{system.class.luckyWeapon}}" data-dtype="String"/>
+          </div>
+          <div class="grid-tpl-max-auto">
+            <label for="system.class.luckyWeaponMod" title="{{localize 'DCC.LuckyWeaponModHint'}}">{{localize "DCC.LuckyWeaponMod"}}</label>
+            <input class="full-width" type="text" id="system.class.luckyWeaponMod" name="system.class.luckyWeaponMod"
+                   value="{{system.class.luckyWeaponMod}}" data-dtype="String"/>
           </div>
           <div>{{localize "DCC.Infravision"}}</div>
           <div>{{localize "DCC.MightyDeedsOfArms"}}</div>

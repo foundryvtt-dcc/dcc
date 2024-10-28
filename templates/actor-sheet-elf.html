@@ -40,7 +40,7 @@
           <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="int">
             <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
             <div class="grid-align-center p-5">
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{ifThen system.class.spellCheckOverrideDie
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{ifThen system.class.spellCheckOverrideDie
                                                                                           system.class.spellCheckOverrideDie
                                                                                           system.attributes.actionDice.value}}{{system.class.spellCheck}}</div>
 
@@ -48,8 +48,10 @@
 
               <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
                 <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Die"}}</div>
-                <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.attributes.actionDice.value}}</div>
-                <label class="group-indent" for="system.class.spellCheckOverrideDie">{{localize "DCC.Override"}}</label>
+                <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attributes.actionDice.value}}</div>
+                <label class="group-indent" for="system.class.spellCheckOverrideDie" title="{{localize 'DCC.OverrideHint'}}">
+                  {{localize "DCC.Override"}}
+                </label>
                 <input id="system.class.spellCheckOverrideDie" name="system.class.spellCheckOverrideDie"
                        value="{{system.class.spellCheckOverrideDie}}"
                        data-dtype="String"/>
@@ -59,13 +61,18 @@
 
               <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
                 <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Bonus"}}</div>
-                <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.class.spellCheck}}</div>
-                <div class="group-indent label-font" title="{{localize 'DCC.DisplayValue'}}">{{localize "DCC.Level"}}</div>
-                <div class="value-display center" title="{{localize 'DCC.DisplayValue'}}">{{system.details.level.value}}</div>
-                <div class="mr-3 group-indent label-font">{{localize "DCC.AbilityIntShort"}} {{localize "DCC.Modifier"}}</div>
-                <div class="value-display center" title="{{localize 'DCC.DisplayValue'}}">{{system.abilities.int.mod}}</div>
-                <label class="group-indent" for="system.class.spellCheckOverride">{{localize "DCC.Override"}}</label>
-                <input id="system.class.spellCheckOverride" name="system.class.spellCheckOverride" value="{{system.class.spellCheckOverride}}"
+                <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.class.spellCheck}}</div>
+                <div class="group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.Level"}}</div>
+                <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.details.level.value}}</div>
+                <div class="mr-3 group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">
+                  {{localize "DCC.AbilityIntShort"}} {{localize "DCC.Modifier"}}
+                </div>
+                <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.abilities.int.mod}}</div>
+                <label class="group-indent" for="system.class.spellCheckOverride" title="{{localize 'DCC.OverrideHint'}}">
+                  {{localize "DCC.Override"}}
+                </label>
+                <input id="system.class.spellCheckOverride" name="system.class.spellCheckOverride"
+                       value="{{system.class.spellCheckOverride}}"
                        data-dtype="String"/>
 
                 <div class="group-separator"></div>

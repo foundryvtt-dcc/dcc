@@ -24,13 +24,13 @@
         <div class="dark-border grid-col-span-6">
           <div class="dark-title">{{localize "DCC.ToHit"}}</div>
           <div class="grid-align-center p-5">
-            <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.actionDie}}{{system.toHit}}</div>
+            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}{{system.toHit}}</div>
 
             <div class="group-separator"></div>
 
             <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
               <div class="group-heading"> {{localize "DCC.ActionDie"}} </div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.actionDie}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}</div>
 
               <label class="group-indent {{#if system.config.actionDieOverride}}disabled{{/if}}" for="system.trained">
                 {{localize "DCC.WeaponPropertiesTrained"}}
@@ -51,7 +51,7 @@
 
             <div class="grid-tpl-max-auto-tight grid-col-gap-8">
               <div class="group-heading">{{localize "DCC.AttackBonus"}}</div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.attackBonus}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attackBonus}}</div>
 
               <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}"
                      for="system.attackBonusWeapon" title="{{localize 'DCC.OverrideHint'}}">
@@ -87,7 +87,7 @@
         <div class="dark-border grid-col-span-6">
           <div class="dark-title">{{localize "DCC.Damage"}}</div>
           <div class="grid-align-center p-5">
-            <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.damage}}</div>
+            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.damage}}</div>
 
             <div class="group-separator"></div>
 
@@ -103,7 +103,7 @@
 
             <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
               <div class="group-heading">{{localize "DCC.DamageBonus"}}</div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.damageBonus}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.damageBonus}}</div>
 
               <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}" for="system.damageWeaponBonus"
                      title="{{localize 'DCC.WeaponDamageBonusHint'}}">{{localize "DCC.WeaponBonus"}}</label>
@@ -150,7 +150,7 @@
         <div class="dark-border grid-col-span-6 grid-row-span-2">
           <div class="dark-title">{{localize "DCC.Initiative"}}</div>
           <div class="p-5 grid-align-center">
-            <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">
+            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
               {{system.initiativeDie}}{{#if system.initiativeBonus}}{{system.initiativeBonus}}{{/if}}
             </div>
 
@@ -158,7 +158,7 @@
 
             <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
               <div class="group-heading"> {{localize "DCC.InitiativeDie"}} </div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.initiativeDie}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.initiativeDie}}</div>
 
               <label class="group-indent {{#if system.config.initiativeDieOverride}}disabled{{/if}}"
                      for="system.twoHanded">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
@@ -181,7 +181,7 @@
 
             <div class="grid-tpl-max-auto-tight grid-col-gap-8">
               <div class="group-heading">{{localize "DCC.InitiativeBonus"}}</div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValue'}}">{{system.initiativeBonus}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.initiativeBonus}}</div>
 
               <label class="group-indent {{#if system.config.initiativeBonusOverride}}disabled{{/if}}"
                      for="system.initiativeWeaponBonus" title="{{localize 'DCC.OverrideHint'}}">
@@ -207,7 +207,7 @@
         <div class="dark-border grid-col-span-6">
           <div class="dark-title">{{localize "DCC.Critical"}}</div>
           <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
-            <div class="value-display grid-col-span-2" title="{{localize 'DCC.DisplayValue'}}">
+            <div class="value-display grid-col-span-2" title="{{localize 'DCC.DisplayValueHint'}}">
               {{localize "DCC.Crit"}} {{localize "DCC.on"}} {{system.critRange}}, {{localize "DCC.Roll"}}
               {{system.critDie}}{{system.lck.mod}} {{localize "DCC.on"}} {{localize "DCC.Table"}} {{system.critTable}}
             </div>

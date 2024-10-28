@@ -284,7 +284,8 @@
           "critRange": "20"
         },
         "class": {
-          "luckyWeapon": null
+          "luckyWeapon": null,
+          "luckyWeaponMod": "+0"
         }
       },
       "wizard": {
