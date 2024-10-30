@@ -43,83 +43,101 @@
           <div class="dark-title">{{localize "DCC.ThiefAbilities"}}</div>
           <div class="grid-tpl-two grid-row-gap-8 p-5">
             <div class="grid-tpl-max-25 grid-col-gap-5">
-              <label class="luck-die rollable" for="system.class.luckDie">{{localize "DCC.LuckDie"}}</label>
+              <label class="luck-die rollable" for="system.class.luckDie" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.LuckDie"}}
+              </label>
               <input type="text" id="system.class.luckDie" name="system.class.luckDie" value="{{system.class.luckDie}}"
                      data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="disableTrap">
-              <label class="skill-check rollable" for="system.skills.disableTrap.value">{{localize "DCC.DisableTrap"}}</label>
+              <label class="skill-check rollable" for="system.skills.disableTrap.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.DisableTrap"}}
+              </label>
               <input type="text" id="system.skills.disableTrap.value" name="system.skills.disableTrap.value"
                      value="{{system.skills.disableTrap.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5">
-              <label class="skill-check" for="system.class.backstab">{{localize "DCC.Backstab"}}</label>
+              <label class="skill-check" for="system.class.backstab" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.Backstab"}}
+              </label>
               <input type="text" id="system.class.backstab" name="system.class.backstab" value="{{system.class.backstab}}"
                      data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="forgeDocument">
-              <label class="skill-check rollable" for="system.skills.forgeDocument.value">{{localize
-                "DCC.ForgeDocument"}}</label>
+              <label class="skill-check rollable" for="system.skills.forgeDocument.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.ForgeDocument"}}
+              </label>
               <input type="text" id="system.skills.forgeDocument.value" name="system.skills.forgeDocument.value"
                      value="{{system.skills.forgeDocument.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="sneakSilently">
-              <label class="skill-check rollable" for="system.skills.sneakSilently.value">{{localize
-                "DCC.SneakSilently"}}</label>
+              <label class="skill-check rollable" for="system.skills.sneakSilently.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.SneakSilently"}}
+              </label>
               <input type="text" id="system.skills.sneakSilently.value" name="system.skills.sneakSilently.value"
                      value="{{system.skills.sneakSilently.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="disguiseSelf">
-              <label class="skill-check rollable" for="system.skills.disguiseSelf.value">{{localize
-                "DCC.DisguiseSelf"}}</label>
+              <label class="skill-check rollable" for="system.skills.disguiseSelf.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.DisguiseSelf"}}
+              </label>
               <input type="text" id="system.skills.disguiseSelf.value" name="system.skills.disguiseSelf.value"
                      value="{{system.skills.disguiseSelf.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="hideInShadows">
-              <label class="skill-check rollable" for="system.skills.hideInShadows.value">
+              <label class="skill-check rollable" for="system.skills.hideInShadows.value" title="{{localize 'DCC.ThiefSkillHint'}}">
                 {{localize "DCC.HideInShadows"}}
               </label>
               <input type="text" id="system.skills.hideInShadows.value" name="system.skills.hideInShadows.value"
                      value="{{system.skills.hideInShadows.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="readLanguages">
-              <label class="skill-check rollable" for="system.skills.readLanguages.value">{{localize
-                "DCC.ReadLanguages"}}</label>
+              <label class="skill-check rollable" for="system.skills.readLanguages.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.ReadLanguages"}}
+              </label>
               <input type="text" id="system.skills.readLanguages.value" name="system.skills.readLanguages.value"
                      value="{{system.skills.readLanguages.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="pickPockets">
-              <label class="skill-check rollable" for="system.skills.pickPockets.value">{{localize "DCC.PickPocket"}}</label>
+              <label class="skill-check rollable" for="system.skills.pickPockets.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.PickPocket"}}
+              </label>
               <input type="text" id="system.skills.pickPockets.value" name="system.skills.pickPockets.value"
                      value="{{system.skills.pickPockets.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="handlePoison">
-              <label class="skill-check rollable" for="system.skills.handlePoison.value">{{localize
-                "DCC.HandlePoison"}}</label>
+              <label class="skill-check rollable" for="system.skills.handlePoison.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.HandlePoison"}}
+              </label>
               <input type="text" id="system.skills.handlePoison.value" name="system.skills.handlePoison.value"
                      value="{{system.skills.handlePoison.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="climbSheerSurfaces">
-              <label class="skill-check rollable" for="system.skills.climbSheerSurfaces.value">{{localize
-                "DCC.ClimbSheerSurfaces"}}</label>
+              <label class="skill-check rollable" for="system.skills.climbSheerSurfaces.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.ClimbSheerSurfaces"}}
+              </label>
               <input type="text" id="system.skills.climbSheerSurfaces.value" name="system.skills.climbSheerSurfaces.value"
                      value="{{system.skills.climbSheerSurfaces.value}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="castSpellFromScroll">
-              <label class="skill-check rollable" for="system.skills.castSpellFromScroll.die">
+              <label class="skill-check rollable" for="system.skills.castSpellFromScroll.die" title="{{localize 'DCC.ThiefSkillHint'}}">
                 {{localize "DCC.CastSpellFromScroll"}}
               </label>
               <input type="text" id="system.skills.castSpellFromScroll.die" name="system.skills.castSpellFromScroll.die"
                      value="{{system.skills.castSpellFromScroll.die}}" data-dtype="String"/>
             </div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="pickLock">
-              <label class="skill-check rollable" for="system.skills.pickLock.value">{{localize "DCC.PickLock"}}</label>
+              <label class="skill-check rollable" for="system.skills.pickLock.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.PickLock"}}
+              </label>
               <input type="text" id="system.skills.pickLock.value" name="system.skills.pickLock.value"
                      value="{{system.skills.pickLock.value}}" data-dtype="String"/>
             </div>
             <div></div>
             <div class="grid-tpl-max-25 grid-col-gap-5" data-skill="findTrap">
-              <label class="skill-check rollable" for="system.skills.findTrap.value">{{localize "DCC.FindTrap"}}</label>
+              <label class="skill-check rollable" for="system.skills.findTrap.value" title="{{localize 'DCC.ThiefSkillHint'}}">
+                {{localize "DCC.FindTrap"}}
+              </label>
               <input type="text" id="system.skills.findTrap.value" name="system.skills.findTrap.value"
                      value="{{system.skills.findTrap.value}}" data-dtype="String"/>
             </div>

@@ -42,7 +42,9 @@
         <div class="grid-col-span-12 dark-title">{{localize "DCC.DwarfAbilities"}}</div>
         <div class="grid-col-span-12 dark-border grid-tpl-max grid-row-gap-8 p-5">
           <div class="grid-tpl-max-25" data-skill="shieldBash">
-            <label class="skill-check rollable" for="system.skills.shieldBash.die">{{localize "DCC.ShieldBash"}}</label>
+            <label class="skill-check rollable" for="system.skills.shieldBash.die" title="{{localize 'DCC.ShieldBashHint'}}">
+              {{localize "DCC.ShieldBash"}}
+            </label>
             <input type="text" id="system.skills.shieldBash.die" name="system.skills.shieldBash.die"
                    value="{{system.skills.shieldBash.die}}" data-dtype="String"/>
           </div>
