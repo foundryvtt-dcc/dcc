@@ -68,7 +68,7 @@ export const migrateWorld = async function () {
  * @param pack
  * @return {Promise}
  */
-export const migrateCompendium = async function (pack) {
+const migrateCompendium = async function (pack) {
   const documentName = pack.documentName
   if (!['Actor', 'Item', 'Scene'].includes(documentName)) return
 
@@ -121,7 +121,7 @@ export const migrateCompendium = async function (pack) {
  * @param {Actor} actor   The actor to Update
  * @return {Object}       The updateData to apply
  */
-export const migrateActorData = function (actor) {
+const migrateActorData = function (actor) {
   const updateData = { }
 
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
@@ -178,7 +178,7 @@ export const migrateActorData = function (actor) {
  * Migrate a single Item document to incorporate latest data model changes
  * @param item
  */
-export const migrateItemData = function (item) {
+const migrateItemData = function (item) {
   let updateData = {}
 
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
@@ -224,7 +224,7 @@ export const migrateItemData = function (item) {
  * @param {Object} scene  The Scene data to Update
  * @return {Object}       The updateData to apply
  */
-export const migrateSceneData = function (scene) {
+const migrateSceneData = function (scene) {
   const tokens = scene.tokens.map(token => {
     const t = token.toObject()
     const update = {}

@@ -1,6 +1,6 @@
 /* global FormApplication, game, CONFIG */
 
-export class DCCActorConfig extends FormApplication {
+class DCCActorConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.template =

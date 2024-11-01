@@ -9,7 +9,7 @@ import { ensurePlus } from './utilities.js'
  * Extend the basic ItemSheet for DCC RPG
  * @extends {ItemSheet}
  */
-export class DCCItemSheet extends ItemSheet {
+class DCCItemSheet extends ItemSheet {
   /** @override */
   static get defaultOptions () {
     return foundry.utils.mergeObject(super.defaultOptions, {

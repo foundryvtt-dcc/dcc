@@ -1,6 +1,6 @@
 /* global FormApplication, game, CONFIG */
 
-export class DCCItemConfig extends FormApplication {
+class DCCItemConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.width = 380

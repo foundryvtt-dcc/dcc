@@ -1,6 +1,6 @@
 /* global FormApplication, game, CONFIG */
 
-export class MeleeMissileBonusConfig extends FormApplication {
+class MeleeMissileBonusConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.template = 'systems/dcc/templates/dialog-melee-missile-bonus-adjustments.html'
