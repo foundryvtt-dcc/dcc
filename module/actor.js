@@ -111,54 +111,6 @@ class DCCActor extends Actor {
         this.system.attributes.speed.value = baseSpeed + speedPenalty
       }
     }
-
-    // Gather available action dice
-    try {
-      // Implicit migration for legacy actors
-      if (!this.system.config.actionDice) {
-        this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
-      }
-      // Parse the action dice expression from the config and produce a list of available dice
-      const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
-      const terms = actionDieExpression.terms
-      const actionDice = []
-      for (const term of terms) {
-        if (term instanceof foundry.dice.terms.Die) {
-          const termDie = `1d${term.faces}`
-
-          const termCount = term.number || 1
-          for (let i = 0; i < termCount; ++i) {
-            actionDice.push({ value: termDie, label: termDie })
-          }
-        }
-      }
-      this.system.attributes.actionDice.options = actionDice
-    } catch (err) { }
-
-    // Gather available initiative dice
-    try {
-      // Implicit migration for legacy actors
-      if (!this.system.config.initDice) {
-        this.system.config.initDice = this.system.attributes.initDice.value || '1d20'
-      }
-      // Parse the init dice expression from the config and produce a list of available dice
-      const initDieExpression = new Roll(this.system.config.initDice || '1d20')
-      const terms = initDieExpression.terms
-      const initDice = []
-
-      for (const term of terms) {
-        if (term instanceof foundry.dice.terms.Die) {
-          const termDie =
-            `1d${term.faces}`
-
-          const termCount = term.number || 1
-          for (let i = 0; i < termCount; ++i) {
-            initDice.push({ value: termDie, label: termDie })
-          }
-        }
-      }
-      this.system.attributes.initDice.options = initDice
-    } catch (err) { }
   }
 
   /**
@@ -273,21 +225,13 @@ class DCCActor extends Actor {
       if (!this.system.config.actionDice.match(/\dd/)) {
         ui.notifications.warn(game.i18n.localize('DCC.ActionDiceInvalid'))
       }
-      // Parse the action dice expression from the config and produce a list of available dice
-      const actionDieExpression = new Roll(this.system.config.actionDice || '1d20')
-      const terms = actionDieExpression.terms || actionDieExpression.parts
-      for (const term of terms) {
-        if (typeof (term) === 'object' && term.faces) {
-          const termDie = `1d${term.faces}`
-          const termCount = term.number || 1
-          for (let i = 0; i < termCount; ++i) {
-            actionDice.push({
-              label: termDie,
-              formula: termDie
-            })
-          }
-        }
-      }
+      const dieList = this.system.config.actionDice.split(',')
+      dieList.forEach(termDie => {
+        actionDice.push({
+          label: termDie,
+          formula: termDie
+        })
+      })
     } catch (err) {
       console.log(err)
     }
