@@ -1,11 +1,15 @@
 <form class="actor config-dialog" autocomplete="off">
-  <div class="grid-tpl-two grid-row-gap-8">
+  <div class="grid-tpl-two grid-row-gap-8 grid-col-gap-8">
     <div>
       <label for="statblocks">{{localize 'DCC.ActorImportStatblock'}}</label>
       <p><a
         href="https://purplesorcerer.com/create.php?oc=rulebook&mode=3d6&stats=&abLow=Any&abHigh=Any&hp=normal&at=toggle&display=text&sc=4">{{localize
         'DCC.PurpleSorcererPCLink'}}</a></p>
       <p><a href="https://purplesorcerer.com/create_upper.php">{{ localize 'DCC.PurpleSorcererUpperLevelLink'}}</a></p>
+      <p></p>
+      {{{ localize 'DCC.ActorImportPCHint'}}}
+      <p></p>
+      {{{ localize 'DCC.ActorImportNPCHint'}}}
     </div>
 
     <textarea style="height: 640px;" id="statblocks" name="statblocks"></textarea>

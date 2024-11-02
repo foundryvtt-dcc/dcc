@@ -195,7 +195,7 @@ function checkReleaseNotes () {
   // Register listeners for the buttons
   $(document).on('click', '.dcc-release-notes', () => _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog'))
   $(document).on('click', '.dcc-credits', () => _onShowJournal('dcc.dcc-userguide', 'Credits'))
-  $(document).on('click', '.dcc-user-guide', () => _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/DCC-System-User-Guide'))
+  $(document).on('click', '.dcc-user-guide', () => _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide'))
 }
 
 async function _onShowJournal (packName, journalName) {
