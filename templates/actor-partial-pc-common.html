@@ -56,9 +56,7 @@
       <input style="grid-area: 1/1" id="system.attributes.ac.value" name="system.attributes.ac.value"
              value="{{system.attributes.ac.value}}"
         {{#if system.config.computeAC }}
-             title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0
-                                                                                      sign=true}} {{localize
-               'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}}"
+             title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0 sign=true}} {{localize 'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}} - {{localize 'DCC.ConfigureHint'}}"
              disabled
         {{/if}}
              data-dtype="Number">
@@ -98,10 +96,11 @@
       >
 
       {{!-- Action Dice --}}
-      <label for="system.attributes.actionDice.value">{{localize "DCC.ActionDice"}}</label>
+      <label for="system.attributes.actionDice.value" title="{{localize 'DCC.ActionDiceSheetHint'}}">{{localize "DCC.ActionDie"}}</label>
       <input id="system.attributes.actionDice.value" name="system.attributes.actionDice.value"
              size="3"
              value="{{system.attributes.actionDice.value}}"
+             title="{{localize 'DCC.ActionDiceSheetHint'}}"
              data-dtype="String"
              placeholder="1d20"
       >
@@ -132,9 +131,10 @@
       >
 
       {{!-- Hit Die --}}
-      <label for="system.attributes.hitDice.value" class="rollable">{{localize "DCC.HitDice"}}</label>
+      <label for="system.attributes.hitDice.value" class="rollable" title="{{localize 'DCC.HitDieHint'}}">{{localize "DCC.HitDie"}}</label>
       <input id="system.attributes.hitDice.value" name="system.attributes.hitDice.value"
              size="3"
+             title="{{localize 'DCC.HitDieHint'}}"
              value="{{system.attributes.hitDice.value}}"
              data-dtype="String"
       >
@@ -146,8 +146,7 @@
              size="3"
              data-dtype="String"
         {{#if system.config.computeSpeed }}
-             title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}}
-               {{distanceFormat system.attributes.ac.speedPenalty}}"
+             title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}} {{distanceFormat system.attributes.ac.speedPenalty}} - {{localize 'DCC.ConfigureHint'}}"
              disabled
         {{/if}}
       >

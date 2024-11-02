@@ -1,4 +1,5 @@
-/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, CONST, ui */
+/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, CONST */
+// noinspection JSClosureCompilerSyntax
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -28,8 +29,7 @@ class DCCActorSheet extends ActorSheet {
       ],
       template: 'systems/dcc/templates/actor-sheet-npc.html'
     }
-    const finalOptions = foundry.utils.mergeObject(super.defaultOptions, options)
-    return finalOptions
+    return foundry.utils.mergeObject(super.defaultOptions, options)
   }
 
   /** @inheritdoc */
@@ -69,7 +69,7 @@ class DCCActorSheet extends ActorSheet {
       cssClass: isOwner ? 'editable' : 'locked',
       isNPC: this.document.type === 'NPC',
       isPC: this.document.type === 'Player',
-      isZero: this.document.system.details.level === 0,
+      isZero: this.document.system.details.level.value === 0,
       type: this.document.type,
       config: CONFIG.DCC
     }
@@ -405,15 +405,17 @@ class DCCActorSheet extends ActorSheet {
   _onDecreaseQty (event) {
     const itemId = this._findDataset(event.currentTarget, 'itemId')
     const item = this.actor.items.get(itemId)
-    let currQty = item.system?.quantity || 0
-    item.update({ 'system.quantity': currQty -= 1 })
+    let qty = item.system?.quantity || 0
+    qty -= 1
+    item.update({ 'system.quantity': qty })
   }
 
   _onIncreaseQty (event) {
     const itemId = this._findDataset(event.currentTarget, 'itemId')
-    const item = this.actor.items.get(itemId)
-    let currQty = item.system?.quantity || 0
-    item.update({ 'system.quantity': currQty += 1 })
+    const item = this.actor?.items.get(itemId)
+    let qty = item.system?.quantity || 0
+    qty += 1
+    item.update({ 'system.quantity': qty })
   }
 
   /**
