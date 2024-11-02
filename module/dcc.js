@@ -448,7 +448,7 @@ Hooks.on('hotbarDrop', (bar, data, slot) => {
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
 Hooks.on('renderChatMessage', (message, html, data) => {
-  if (!message.isContentVisible || !message.getFlag('dcc', 'isRoll')) return
+  if (!message.isRoll || !message.isContentVisible || !message.rolls.length) return
 
   if (game.user.isGM) {
     message.setFlag('core', 'canPopout', true)

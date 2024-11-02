@@ -145,14 +145,17 @@ export const emoteAbilityRoll = function (message, html, data) {
 export const emoteApplyDamageRoll = function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isApplyDamage')) return
 
+  message.content = message.content.replace('T', 't') //Lowercase message
+
   const applyDamageEmote = game.i18n.format(
     'DCC.ApplyDamageEmote',
     {
       targetName: data.alias,
-      damageAmount: message.flavor
+      damageInline: message.content
     }
   )
-  html.find('.message-content').html(abilityRollEmote)
+  message.rolls = []
+  html.find('.message-content').html(applyDamageEmote)
   html.find('header').remove()
 }
 
