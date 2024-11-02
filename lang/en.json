@@ -346,6 +346,7 @@
   "DCC.RolledDamageEmote": "{actorName} rolled {damageInlineRollHTML} for damage.",
   "DCC.RolledFumbleEmote": "{actorName} fumbled and got a {fumbleInlineRollHTML}{fumbleResult}",
   "DCC.RolledInitiativeEmote": "{actorName} rolled {initiativeInlineRollHTML} for initiative.",
+  "DCC.RolledSavingThrowEmote": "{actorName} rolled {saveInlineRollHTML} for their {type}.",
   "DCC.RollAgilityCheckHint": "Click to roll an Agility check, CMD/CTRL click for more options",
   "DCC.RollDamage": "Roll Damage",
   "DCC.RollDisapprovalMacroName": "Roll for Disapproval",

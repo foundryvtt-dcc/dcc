@@ -552,6 +552,7 @@ class DCCActor extends Actor {
     // Generate flags for the roll
     const flags = {
       'dcc.RollType': 'SavingThrow',
+      'dcc.isSave': true,
       'dcc.Save': saveId
     }
     game.dcc.FleetingLuck.updateFlags(flags, roll)

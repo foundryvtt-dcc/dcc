@@ -257,6 +257,28 @@ export const emoteFumbleRoll = async function (message, html, data) {
 }
 
 /**
+ * Change saving throw rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteSavingThrowRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isSave')) return
+
+  const saveRollEmote = game.i18n.format(
+    'DCC.RolledSavingThrowEmote',
+    {
+      actorName: data.alias,
+      type: message.flavor,
+      saveInlineRollHTML: message.rolls[0].toAnchor('Roll Save').outerHTML
+    }
+  )
+  html.find('.message-content').html(saveRollEmote)
+  html.find('header').remove()
+}
+
+/**
  * Change initiative rolls into emotes
  * @param message
  * @param html
