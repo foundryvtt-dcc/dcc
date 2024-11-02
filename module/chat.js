@@ -217,7 +217,7 @@ export const emoteAttackRoll = function (message, html) {
  * @param data
  */
 export const emoteCritRoll = function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isCrit')) return
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isCrit') || message.getFlag('dcc', 'isToHit')) return
 
   const critRollEmote = game.i18n.format(
     'DCC.RolledCritEmote',
