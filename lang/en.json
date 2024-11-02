@@ -32,7 +32,7 @@
   "DCC.ActorImport": "Import Actor(s)",
   "DCC.ActorImportConfirmationMessage": "This will import {number} actors. Are you sure you want to continue?",
   "DCC.ActorImportConfirmationPrompt": "Really import {number} actors?",
-  "DCC.ActorImportPCHint": "<p>For Zero-level, you can use <a href=\"https://purplesorcerer.com/create_party.php\">Purple Sorcerer</a> to customize your party generation, just make sure you use Style/Format of 'Plain Text' at the bottom.</p><p>For Upper level, also make sure you use Style/Format of 'Plain Text' at the bottom.</p>",
+  "DCC.ActorImportPCHint": "<p>For Zero-level, you can use <a href=\"https://purplesorcerer.com/create_party.php\">Purple Sorcerer</a> to customize your party generation, just make sure you use Style/Format of 'Plain Text' at the bottom.</p><p>For Upper level, also make sure you use Style of 'Upper Level Text' at the bottom.</p>",
   "DCC.ActorImportNPCHint": "<p>For NPC statlines, ensure you have the trailing period at the end, and you remove any non-standard stuff like armor.</p>",
   "DCC.ActorImportStatblock": "Statblock(s) or Statline(s)",
   "DCC.ActorTypeNPC": "NPC Statline(s)",
