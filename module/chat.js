@@ -122,7 +122,7 @@ function applyChatCardDamage (roll, multiplier) {
  * @param data
  */
 export const emoteAbilityRoll = function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.isAbilityCheck) return
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isAbilityCheck')) return
 
   const abilityRollEmote = game.i18n.format(
     'DCC.RolledAbilityEmote',
@@ -140,9 +140,29 @@ export const emoteAbilityRoll = function (message, html, data) {
  * Change attack rolls into emotes
  * @param message
  * @param html
+ * @param data
+ */
+export const emoteApplyDamageRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isApplyDamage')) return
+
+  const applyDamageEmote = game.i18n.format(
+    'DCC.ApplyDamageEmote',
+    {
+      targetName: data.alias,
+      damageAmount: message.flavor
+    }
+  )
+  html.find('.message-content').html(abilityRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change attack rolls into emotes
+ * @param message
+ * @param html
  */
 export const emoteAttackRoll = function (message, html) {
-  if (!message.rolls || !message.isContentVisible || !message.flags?.dcc?.isToHit) return
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isToHit')) return
 
   let deedRollHTML = ''
   if (message.system.deedDieRollResult) {
@@ -171,13 +191,15 @@ export const emoteAttackRoll = function (message, html) {
     fumble = `<p class="emote-alert fumble">${message.system.fumblePrompt}!<p>${message.system.fumbleInlineRoll}`
   }
 
+  const damageInlineRoll = message.system.damageInlineRoll.replaceAll('@ab', message.system.deedDieRollResult)
+
   const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
     actionName: message.getFlag('dcc', 'isBackstab') ? 'backstabs' : 'attacks',
     actorName: message.alias,
     weaponName: message.system.weaponName,
     rollHTML: message.rolls[0].toAnchor().outerHTML,
     deedRollHTML,
-    damageRollHTML: message.system.damageInlineRoll,
+    damageRollHTML: damageInlineRoll,
     crit,
     fumble
   })
@@ -191,7 +213,7 @@ export const emoteAttackRoll = function (message, html) {
  * @param html
  * @param data
  */
-export const emoteCritRoll = async function (message, html, data) {
+export const emoteCritRoll = function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isCrit')) return
 
   const critRollEmote = game.i18n.format(
@@ -218,11 +240,13 @@ export const emoteCritRoll = async function (message, html, data) {
 export const emoteDamageRoll = function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Damage'))) return
 
+  const damageRoll = message.rolls[0]
+
   const damageRollEmote = game.i18n.format(
     'DCC.RolledDamageEmote',
     {
       actorName: data.alias,
-      damageInlineRollHTML: message.rolls[0].toAnchor('Roll Damage').outerHTML
+      damageInlineRollHTML: damageRoll.toAnchor({ classes: ['damage-applyable'], dataset: { damage: damageRoll.total } }).outerHTML
     }
   )
   html.find('.message-content').html(damageRollEmote)
@@ -286,7 +310,7 @@ export const emoteSavingThrowRoll = function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const emoteInitiativeRoll = function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.flags?.core?.initiativeRoll) return
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'initiativeRoll')) return
 
   const initiativeRollEmote = game.i18n.format(
     'DCC.RolledInitiativeEmote',

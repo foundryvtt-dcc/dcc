@@ -164,7 +164,7 @@ test('roll saving throw', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'SavesFortitude Save',
     speaker: actor,
-    flags: { 'dcc.Save': 'frt', 'dcc.RollType': 'SavingThrow' }
+    flags: { 'dcc.Save': 'frt', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
   })
 
   await actor.rollSavingThrow('ref')
@@ -189,7 +189,7 @@ test('roll saving throw', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'SavesReflex Save',
     speaker: actor,
-    flags: { 'dcc.Save': 'ref', 'dcc.RollType': 'SavingThrow' }
+    flags: { 'dcc.Save': 'ref', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
   })
 
   await actor.rollSavingThrow('wil')
@@ -214,7 +214,7 @@ test('roll saving throw', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'SavesWill Save',
     speaker: actor,
-    flags: { 'dcc.Save': 'wil', 'dcc.RollType': 'SavingThrow' }
+    flags: { 'dcc.Save': 'wil', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
   })
 })
 

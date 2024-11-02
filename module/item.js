@@ -10,9 +10,6 @@ import { ensurePlus } from './utilities.js'
  */
 class DCCItem extends Item {
 
-  /** @type {DCCActor} */
-  actor
-
   prepareBaseData () {
     super.prepareBaseData()
 

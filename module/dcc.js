@@ -448,7 +448,7 @@ Hooks.on('hotbarDrop', (bar, data, slot) => {
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
 Hooks.on('renderChatMessage', (message, html, data) => {
-  if (!message.isRoll || !message.isContentVisible || !message.rolls.length) return
+  if (!message.isContentVisible || !message.getFlag('dcc', 'isRoll')) return
 
   if (game.user.isGM) {
     message.setFlag('core', 'canPopout', true)
@@ -474,6 +474,7 @@ Hooks.on('renderChatMessage', (message, html, data) => {
   if (emoteRolls === true) {
     message.setFlag('dcc', 'emoteRoll', true)
     chat.emoteAbilityRoll(message, html, data)
+    chat.emoteApplyDamageRoll(message, html, data)
     chat.emoteAttackRoll(message, html, data)
     chat.emoteCritRoll(message, html, data)
     chat.emoteFumbleRoll(message, html, data)

@@ -40,6 +40,7 @@
   "DCC.AlignmentN": "Neutral",
   "DCC.AlreadyHasInitiative": "Token already has initiative score in the Combat Tracker; not re-rolling",
   "DCC.Ammunition": "Ammunition",
+  "DCC.ApplyDamageEmote": "{target} Apply Damage for {damageAmount}",
   "DCC.ApplyDisapprovalMacroName": "Increase Disapproval Range",
   "DCC.Armor": "Armor",
   "DCC.ArmorClass": "Armor<br>Class",

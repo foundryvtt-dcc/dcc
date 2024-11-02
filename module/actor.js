@@ -222,6 +222,10 @@ class DCCActor extends Actor {
       if (!this.system.config.actionDice) {
         this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
+      if (this.system.config.actionDice.includes('+')) {x
+        this.system.config.actionDice = this.system.config.actionDice.replaceAll('+', ',')
+      }
+
       if (!this.system.config.actionDice.match(/\dd/)) {
         ui.notifications.warn(game.i18n.localize('DCC.ActionDiceInvalid'))
       }
@@ -903,7 +907,8 @@ class DCCActor extends Actor {
     // Damage roll
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      damageRollFormula = damageRollFormula.replace(this.system.details.attackBonus, `+${attackRollResult.deedRollTotalResult}`)
+      damageRollFormula = damageRollFormula.replaceAll(this.system.details.attackBonus, `+${attackRollResult.deedRollTotalResult}`)
+      damageRollFormula = damageRollFormula.replaceAll('@ab', attackRollResult.deedRollTotalResult)
     }
     if (options.backstab && weapon.system?.backstabDamage) {
       damageRollFormula = `${damageRollFormula}+${weapon.system?.backstabDamage || 0}`
@@ -1224,65 +1229,6 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Format an attack roll for display in-line
-   * @param {Object} rollResult   The roll result object for the roll
-   * @return {string}             Formatted HTML containing roll
-   */
-  _formatAttackRoll (rollResult) {
-    if (rollResult.rolled) {
-      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
-
-      // Check for Crit/Fumble
-      let critFailClass = ''
-      if (Number(rollResult.roll.dice[0].total) === 20) { critFailClass = 'critical ' } else if (Number(rollResult.roll.dice[0].total) === 1) { critFailClass = 'fumble ' }
-
-      return `<a class="${critFailClass}inline-roll inline-result" data-roll="${rollData}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.hitsAc}</a>`
-    } else {
-      return game.i18n.format('DCC.AttackRollInvalidFormulaInline', { formula: rollResult.formula })
-    }
-  }
-
-  /**
-   * Format a damage roll for display in-line
-   * @param {Object} rollResult   The roll result object for the roll
-   * @return {string}             Formatted HTML containing roll
-   */
-  _formatDamageRoll (rollResult) {
-    if (rollResult.rolled) {
-      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
-      const subdual = rollResult.subdual ? game.i18n.format('DCC.subdual') : ''
-      if (rollResult.damage > 0) {
-        return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="${rollResult.damage}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.damage}</a>${subdual}`
-      } else {
-        return `<a class="inline-roll inline-result damage-applyable" data-roll="${rollData}" data-damage="1" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> 1 (${rollResult.damage})</a>`
-      }
-    } else {
-      return game.i18n.format('DCC.DamageRollInvalidFormulaInline', { formula: rollResult.formula })
-    }
-  }
-
-  /**
-   * Format an Attack Bonus Roll for display in-line
-   * @param {Object} rollResult   The roll result object for the roll
-   * @return {string}             Formatted HTML containing roll
-   */
-  _formatAttackBonusRoll (rollResult) {
-    if (rollResult.rolled) {
-      const rollData = encodeURIComponent(JSON.stringify(rollResult.roll))
-      // Check for Crit/Fumble
-      let critFailClass = ''
-      if (Number(rollResult.attackBonus) >= 3) {
-        critFailClass = 'critical '
-      }
-      return game.i18n.format('DCC.AttackRollDeedEmoteSegment', {
-        deed: `<a class="${critFailClass} inline-roll inline-result" data-roll="${rollData}" title="${rollResult.formula}"><i class="fas fa-dice-d20"></i> ${rollResult.attackBonus}</a>`
-      })
-    } else {
-      return game.i18n.format('DCC.AttackBonusRollInvalidFormulaInline', { formula: rollResult.formula })
-    }
-  }
-
-  /**
    * Apply damage to this actor
    * @param {Number} damageAmount   Damage amount to apply
    * @param {Number} multiplier     Damage multiplier
@@ -1316,6 +1262,11 @@ class DCCActor extends Actor {
       const messageData = {
         user: game.user.id,
         speaker,
+        flavor: game.i18n.format(locString),
+        flags: {
+          'dcc.isApplyDamage': true,
+          'dcc.isRoll': true
+        },
         type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         content: game.i18n.format(locString, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
@@ -1374,6 +1325,9 @@ class DCCActor extends Actor {
     const messageData = {
       user: game.user.id,
       speaker,
+      flags: {
+        'dcc.isDisapproval': true
+      },
       type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
       sound: CONFIG.sounds.notification
