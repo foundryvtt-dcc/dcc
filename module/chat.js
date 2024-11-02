@@ -313,7 +313,7 @@ export const emoteSavingThrowRoll = function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const emoteInitiativeRoll = function (message, html, data) {
-  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'initiativeRoll')) return
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('core', 'initiativeRoll')) return
 
   const initiativeRollEmote = game.i18n.format(
     'DCC.RolledInitiativeEmote',
