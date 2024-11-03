@@ -6,6 +6,7 @@
   "TYPES.Item.equipment": "Equipment",
   "TYPES.Item.mount": "Mount",
   "TYPES.Item.skill": "Skill",
+  "TYPES.Item.spell": "Spell",
   "TYPES.Item.treasure": "Treasure",
   "TYPES.Item.weapon": "Weapon",
   "Dungeon Crawl Classics": "Dungeon Crawl Classics",
@@ -581,7 +582,6 @@
   "DCC.available": "available",
   "DCC.of": "of",
   "DCC.on": "on",
-  "DCC.spell": "spell",
   "DCC.subdual": " subdual ",
   "DCC.title": "Dungeon Crawl Classics"
 }
