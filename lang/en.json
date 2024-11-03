@@ -57,6 +57,7 @@
   "DCC.AsCoins": "As Coins",
   "DCC.AsCoinsHint": "Delete this item and move its value to your Funds",
   "DCC.ActionDiceHint": "Comma-separated list of character's Action Dice, e.g. 1d20,1d16",
+  "DCC.Attack": "Attack",
   "DCC.AttackBonus": "Attack Bonus",
   "DCC.AttackBonusConfigMode": "Attack Bonus Mode",
   "DCC.AttackBonusConfigModeAutoPerAttack": "Roll Per Attack",
