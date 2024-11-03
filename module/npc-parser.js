@@ -27,6 +27,7 @@ async function parseNPCs (npcString) {
     try {
       npcObjects.push(await parseNPC(npcSection))
     } catch (e) {
+      console.error(e)
       ui.notifications.warn(game.i18n.localize('DCC.ParseSingleNPCWarning'))
     }
 
@@ -35,10 +36,6 @@ async function parseNPCs (npcString) {
 
   return npcObjects
 }
-
-/**
- * Roll Hit Points
- */
 
 /**
  *  Parses NPC Stat Blocks (e.g. from published modules) into an NPC sheet
@@ -51,11 +48,9 @@ async function parseNPC (npcString) {
 
   npc.name = _firstMatch(/(.*?):.*/, npcString) || 'Unnamed'
   npc.name = npc.name.replace(/ ?\(\d+\)/, '')
-  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[(;.].*/, npcString) || '1d4'
-  let hp = ''
-  if (hd) {
-    hp = await new Roll(hd).evaluate().total
-  }
+  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[(;.].*/, npcString) || '1d8'
+  const hpRoll = await new Roll(hd).evaluate()
+  const hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
   npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,.].*/, npcString) || '10'
   npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp
@@ -76,26 +71,15 @@ async function parseNPC (npcString) {
   npc.attacks = _firstMatch(/.*Atk ?(.+?)[;.].*/, npcString) || ''
   npc.damage = _firstMatch(/.*Dmg ?(.+?)[;.].*/, npcString) || ''
 
-  /* Attacks */
-  let attackStringOne, attackStringTwo
-  if (npc.attacks.includes(' or ')) {
-    attackStringOne = _firstMatch(/(.*) or .*/, npc.attacks)
-    attackStringTwo = _firstMatch(/.* or (.*)/, npc.attacks)
-  } else {
-    attackStringOne = npc.attacks
-  }
-
   npc.items = []
-  if (attackStringOne) {
-    const parsedAttackOne = _parseAttack(attackStringOne, npc.damage)
-    if (parsedAttackOne.name) {
-      npc.items.push(parsedAttackOne)
-    }
-  }
-  if (attackStringTwo) {
-    const parsedAttackTwo = _parseAttack(attackStringTwo, npc.damage)
-    if (parsedAttackTwo.name) {
-      npc.items.push(parsedAttackTwo)
+
+  /* Attacks */
+  const attackRegex = /(?:^|or )([^]+?)(?= or |$)/gm
+  const matches = npc.attacks.matchAll(attackRegex)
+  for (const match of matches) {
+    const parsedAttack = _parseAttack(match[1], npc.damage)
+    if (parsedAttack) {
+      npc.items.push(parsedAttack)
     }
   }
 
@@ -111,7 +95,7 @@ async function parseNPC (npcString) {
  */
 function _parseAttack (attackString, damageString) {
   const attack = {
-    config: { inheritActionDie: true },
+    config: {},
     actionDie: '1d20',
     range: '',
     twoHanded: false,
@@ -121,8 +105,9 @@ function _parseAttack (attackString, damageString) {
       value: ''
     }
   }
-  const name = _firstMatch(/(.*?) [+-].*/, attackString)
-  attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString)
+  const name = _firstMatch(/(.*?) [+-].*/, attackString) || attackString
+  attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString) || ''
+  attack.config.attackBonusOverride = attack.toHit
   attack.damage = ''
   attack.melee = !(attackString.includes('ranged') || attackString.includes('missile'))
   if (damageString) {
@@ -133,12 +118,15 @@ function _parseAttack (attackString, damageString) {
 
     /*
      * If damage doesn't start with a number assume it's special
-     * Checking for dice expression would exclude constant damage values
+     * Checking for a roll expression would exclude constant damage values
      */
     if (_firstMatch(/(\d+.*)/, attack.damage) === '') {
       attack.description.summary = _firstMatch(/.*\((.*)\).*/, attackString) || attack.damage
       attack.damage = '0'
     }
+  }
+  if (attack.damage.includes('+') || attack.damage.includes('-')) {
+    attack.config.damageOverride = attack.damage
   }
   return {
     name,
@@ -153,7 +141,7 @@ function _parseAttack (attackString, damageString) {
  * @param {RegExp} regex       Regular expression to match against, containing at least one group
  * @param {string} string     The string to match against
  *
- * @return {string} First matched group or null if no match
+ * @return {string} First matched group or '' if no match
  */
 function _firstMatch (regex, string) {
   const result = string.match(regex)

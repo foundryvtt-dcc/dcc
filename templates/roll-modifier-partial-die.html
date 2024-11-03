@@ -1,4 +1,4 @@
-<label class="term-label" for="formula">{{label}}</label>
+<label class="term-label" for="term-{{index}}">{{label}}</label>
 <input type="text" class="term-field" name="term-{{index}}" id="term-{{index}}" placeholder="{{formula}}" value="{{formula}}"/>
 <div class="term-controls button-row">
   <div class="button-stack">
@@ -6,12 +6,12 @@
     <button class="dice-chain flat-button" data-term="{{index}}" data-mod="-1">{{localize 'DCC.RollModifierDownDiceChain'}}</button>
   </div>
   {{#if presets}}
-  <div class="button-stack">
-    {{#each presets}}
-    <button class="term-preset flat-button" data-term="{{../index}}" data-formula="{{this.formula}}">{{this.label}}</button>
-    {{/each}}
-  </div>
+    <div class="button-stack">
+      {{#each presets}}
+        <button class="term-preset flat-button" data-term="{{../index}}" data-formula="{{this.formula}}">{{this.label}}</button>
+      {{/each}}
+    </div>
   {{else}}
-  <button class="reset flat-button" data-term="{{index}}">{{localize 'DCC.RollModifierReset'}}</button>
+    <button class="reset flat-button" data-term="{{index}}">{{localize 'DCC.RollModifierReset'}}</button>
   {{/if}}
 </div>

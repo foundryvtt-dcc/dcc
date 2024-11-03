@@ -1,5 +1,7 @@
-/* global jest */
-/* eslint-env jest */
+/* global foundry */
+// noinspection JSUnusedLocalSymbols
+
+import { vi } from 'vitest'
 import DCC from '../config.js'
 import DCCRoll from './dcc-roll.js'
 
@@ -8,28 +10,31 @@ import DCCRoll from './dcc-roll.js'
 /**
  * Item
  */
-const Item = jest.fn().mockImplementation(() => {
-}).mockName('Item')
+class Item {
+  quantity = {}
+  system = {}
+}
+
 global.Item = Item
 
 /**
  * Collection
  */
-global.collectionFindMock = jest.fn().mockName('Collection.find')
-const Collection = jest.fn().mockImplementation(() => {
+global.collectionFindMock = vi.fn().mockName('Collection.find')
+const CollectionMock = vi.fn().mockImplementation(() => {
   return {
     find: global.collectionFindMock
   }
 }).mockName('Collection')
-global.Collection = Collection
+global.Collection = CollectionMock
 
 /**
  * Actor
  */
-global.itemTypesMock = jest.fn().mockName('Actor.itemTypes getter')
-global.actorUpdateMock = jest.fn(data => {}).mockName('Actor.update')
+global.itemTypesMock = vi.fn().mockName('Actor.itemTypes getter')
+global.actorUpdateMock = vi.fn(data => {}).mockName('Actor.update')
 
-class Actor {
+class ActorMock {
   constructor (data, options) {
     // If test-specific data is passed in use it, otherwise use default data
     if (data) {
@@ -68,7 +73,28 @@ class Actor {
             wil: { value: +2 }
           },
           details: {
-            attackBonus: 0,
+            attackBonus: '+0',
+            attackHitBonus: {
+              melee: {
+                value: '+0',
+                adjustment: '+0'
+              },
+              missile: {
+                value: '+0',
+                adjustment: '+0'
+              }
+            },
+            attackDamageBonus: {
+              melee: {
+                value: '+0',
+                adjustment: '+0'
+              },
+              missile: {
+                value: '+0',
+                adjustment: '+0'
+              }
+            },
+            lastRolledAttackBonus: '',
             level: {
               value: 1
             }
@@ -76,7 +102,9 @@ class Actor {
           class: {
             luckDie: '1d3',
             spellCheck: 3,
-            spellCheckAbility: 'int'
+            spellCheckAbility: 'int',
+            spellCheckOverride: '',
+            spellCheckOverrideDie: ''
           },
           skills: {
             customDieSkill: {
@@ -103,27 +131,28 @@ class Actor {
               die: '1d24',
               value: +3
             },
-            actionDieSkillWithLck: {
-              label: 'Action Die Skill With Lck',
+            actionDieAndValueSkillWithLck: {
+              label: 'Action Die And Value Skill With Lck',
               ability: 'lck',
-              value: +4
+              value: +1
             }
           },
           config: {
+            actionDice: '1d20',
             attackBonusMode: 'flat',
-            capLevel: false,
             maxLevel: 0,
             rollAttackBonus: false,
             computeAC: false,
+            computeCheckPenalty: true,
             baseACAbility: 'agl',
+            initiativeDieOverride: '',
             sortInventory: true,
             removeEmptyItems: true
           }
         }
-      }
-      )
+      })
     }
-    this.items = new Collection()
+    this.items = new global.Collection()
     this.prepareData()
     Object.defineProperty(this, 'itemTypes', {
       get: global.itemTypesMock
@@ -138,36 +167,33 @@ class Actor {
     return this.system
   }
 
+  rollInitiative (createCombatants, rerollInitiative, initiativeOptions) {
+    return this.getInitiativeRoll()
+  }
+
   update (data) {
     return global.actorUpdateMock(data)
   }
 }
 
-global.actor = new Actor()
-global.Actor = Actor
+global.actor = new ActorMock()
+global.Actor = ActorMock
 
 /**
  * ChatMessage
  */
-class ChatMessage {
-  constructor (data, options) {
-    // If test-specific data is passed in use it, otherwise use default data
-    if (data) {
-      this.data = data
-    }
-  }
+class ChatMessageMock {
+  static getSpeaker = vi.fn(({ scene, actor, token, alias } = {}) => { return actor })
+  static applyRollMode = vi.fn()
 
-  static getSpeaker ({ scene, actor, token, alias } = {}) {
-    return actor
-  }
+  static create (data, options = {}) { if (data) { this.data = data } }
 
-  static applyRollMode (messageData, rollMode) {
-
-  }
+  constructor (data, options = {}) { if (data) { this.data = data } }
 }
 
-global.ChatMessage = ChatMessage
+global.ChatMessage = ChatMessageMock
 
+// noinspection JSConstantReassignment
 /**
  * CONFIG
  */
@@ -203,15 +229,17 @@ class Game {
   constructor (worldData, sessionId, socket) {
     this.i18n = new Localization()
   }
+
+  dcc = {} // Set up below
 }
 
 global.Game = Game
 global.game = new Game()
 global.game.user = { _id: 1 }
-global.getDCCSkillTableMock = jest.fn((skillName) => { return null }).mockName('game.dcc.getSkillTable')
-global.processSpellCheckMock = jest.fn((actor, spellData) => { }).mockName('game.dcc.processSpellCheck')
-global.calculateCritAdjustment = jest.fn((original, adjusted) => { return 0 }).mockName('game.dcc.DiceChain.calculateCritAdjustment')
-global.updateFlagsMock = jest.fn((flags, roll) => { }).mockName('game.dcc.FleetingLuck.updateFlags')
+global.getDCCSkillTableMock = vi.fn((skillName) => { return null }).mockName('game.dcc.getSkillTable')
+global.processSpellCheckMock = vi.fn((actor, spellData) => { }).mockName('game.dcc.processSpellCheck')
+global.calculateCritAdjustment = vi.fn((original, adjusted) => { return 0 }).mockName('game.dcc.DiceChain.calculateCritAdjustment')
+global.updateFlagsMock = vi.fn((flags, roll) => { }).mockName('game.dcc.FleetingLuck.updateFlags')
 global.game.dcc = {
   DCCRoll,
   getSkillTable: global.getDCCSkillTableMock,
@@ -227,7 +255,7 @@ global.game.dcc = {
 /**
  * Settings
  */
-global.gameSettingsGetMock = jest.fn((module, key) => {}).mockName('game.settings.get')
+global.gameSettingsGetMock = vi.fn((module, key) => {}).mockName('game.settings.get')
 
 class ClientSettings {
   constructor (worldSettings) {
@@ -242,7 +270,7 @@ global.game.settings = new ClientSettings()
  */
 global.CONFIG.ChatMessage = {
   documentClass: {
-    create: jest.fn((messageData = {}) => {
+    create: vi.fn((messageData = {}) => {
       // console.log(messageData)
     })
   }
@@ -251,20 +279,18 @@ global.CONFIG.ChatMessage = {
 /**
  * Notifications
  */
-global.uiNotificationsWarnMock = jest.fn((message, options) => {}).mockName('ui.notifications.warn')
-global.uiNotificationsErrorMock = jest.fn((message, type, permenant) => {}).mockName('ui.notifications.error')
-const Notifications = jest.fn().mockImplementation(() => {
-  return {
-    warn: global.uiNotificationsWarnMock,
-    error: global.uiNotificationsErrorMock
-  }
-}).mockName('Notifications')
+global.uiNotificationsWarnMock = vi.fn((message, options) => {}).mockName('ui.notifications.warn')
+global.uiNotificationsErrorMock = vi.fn((message, type, permanent) => {}).mockName('ui.notifications.error')
+class Notifications {
+  warn = global.uiNotificationsWarnMock
+  error = global.uiNotificationsErrorMock
+}
 global.ui = {
   notifications: new Notifications()
 }
 
 /**
- * Global helper functions function
+ * Global helper functions
  */
 
 // Namespace for Foundry helper functions
@@ -375,7 +401,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
     if (has) {
       // 1.1 - Recursively merge an inner object
       if ((tv === 'Object') && (tx === 'Object') && recursive) {
-        global.mergeObject(x, v, {
+        global.foundry.utils.mergeObject(x, v, {
           insertKeys,
           insertValues,
           overwrite,
@@ -413,4 +439,23 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
 /**
  * Handlebars
  */
-global.loadTemplates = jest.fn((templateList) => {}).mockName('loadTemplates')
+global.loadTemplates = vi.fn((templateList) => {}).mockName('loadTemplates')
+
+class TextEditorMock {
+  static async enrichHTML (content, options = {}) {
+    return content
+  }
+}
+
+global.TextEditor = TextEditorMock
+
+/**
+ * Hooks
+ */
+class HooksMock {
+  static async callAll (hook, rolls, messageData) {
+    return true
+  }
+}
+
+global.Hooks = HooksMock

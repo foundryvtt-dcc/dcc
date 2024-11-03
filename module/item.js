@@ -1,5 +1,9 @@
 /* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
 
+import DiceChain from './dice-chain.js'
+import { ensurePlus } from './utilities.js'
+
+// noinspection JSUnusedGlobalSymbols
 /**
  * Extend the base Item entity for DCC RPG
  * @extends {Item}
@@ -10,30 +14,89 @@ class DCCItem extends Item {
 
     // If this item is owned by an actor, check for config settings to apply
     if (this.actor && this.actor.system && this.system.config) {
-      if (this.type === 'weapon') {
-        // Weapons can inherit the owner's action die
-        if (this.system.config.inheritActionDie) {
-          this.system.actionDie = this.actor.system.attributes.actionDice.value
+      this.isNPC = (this.actor.type === 'NPC')
+
+      // PC Weapon Items
+      if (this.type === 'weapon' && this.actor.type === 'Player') {
+        // Initiative Calculation
+        this.system.initiativeDie = this.actor.system.attributes.init.die
+        if (this.system.twoHanded) {
+          this.system.initiativeDie = DiceChain.bumpDie(this.system.initiativeDie, -1)
+        }
+        if (this.system.config.initiativeDieOverride) {
+          this.system.initiativeDie = this.system.config.initiativeDieOverride
+        }
+        this.system.initiativeBonus = ensurePlus(this.actor.system.attributes.init.value)
+        if (this.system.initiativeWeaponBonus) {
+          this.system.initiativeBonus = `${this.system.initiativeBonus}${this.system.initiativeWeaponBonus}`
+        }
+        if (this.system.config.initiativeBonusOverride) {
+          this.system.initiativeBonus = this.system.config.initiativeBonusOverride
         }
 
-        // Set default inherit crit range for legacy items
-        if (this.system.config.inheritCritRange === undefined) {
-          this.system.config.inheritCritRange = true
+        // Action Die Calculation
+        this.system.actionDie = this.actor.system.attributes.actionDice.value
+        if (!this.system.trained) {
+          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[untrained]`
+        }
+        if (this.system.config.actionDieOverride) {
+          this.system.actionDie = this.system.config.actionDieOverride
         }
 
-        // And inherit crit range if set
-        if (this.system.config.inheritCritRange) {
-          this.system.critRange = this.actor.system.details.critRange
+        // To-Hit Calculation
+        if (this.system.melee) {
+          this.system.attackBonus = this.actor.system.details.attackHitBonus?.melee?.value || '+0'
         } else {
-          // If not inheriting crit range make sure there is a value (for legacy items)
-          if (this.system.critRange === null || this.system.critRange === undefined) {
-            this.system.critRange = 20
+          this.system.attackBonus = this.actor.system.details.attackHitBonus?.missile?.value || '+0'
+        }
+        if (this.system.attackBonusWeapon) {
+          this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusWeapon}`
+        }
+        if (this.system.attackBonusLucky) {
+          this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusLucky}`
+        }
+        this.system.toHit = ensurePlus(this.system.attackBonus.includes('d') ? this.system.attackBonus : Roll.safeEval(this.system.attackBonus))
+        if (this.system.config.attackBonusOverride) {
+          this.system.toHit = ensurePlus(this.system.config.attackBonusOverride)
+        }
+
+        // Damage Calculation
+        if (this.system.melee) {
+          this.system.damage = this.actor.system.details.attackDamageBonus?.melee?.value || ''
+        } else {
+          this.system.damage = this.actor.system.details.attackDamageBonus?.missile?.value || ''
+        }
+        if (this.system.damageWeaponBonus) {
+          if (this.system.damage.includes('d') || this.system.damageWeaponBonus.includes('d')) {
+            this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
+          } else {
+            this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
           }
         }
-      } else if (this.type === 'spell') {
+        this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
+        if (this.system.doubleIfMounted) {
+          this.system.damage = `(${this.system.damage})*2`
+        }
+        if (this.system.subdual) {
+          this.system.damage = `${this.system.damage}[subdual]`
+        }
+        if (this.system.config.damageOverride) {
+          this.system.damage = this.system.config.damageOverride
+        }
+      }
+
+      // Crit Calculation
+      this.system.critRange = this.system.config.critRangeOverride || this.actor.system.details.critRange || 20
+      this.system.critDie = this.system.config.critDieOverride || this.actor.system.attributes.critical.die || '1d4'
+      this.system.critTable = this.system.config.critTableOverride || this.actor.system.attributes.critical.table || 'I'
+
+      if (this.type === 'spell') {
         // Spells can use the owner's action die for the spell check
         if (this.system.config.inheritActionDie) {
           this.system.spellCheck.die = this.actor.system.attributes.actionDice.value
+          if (this.actor.system.class.spellCheckOverrideDie) {
+            this.system.spellCheck.die = this.actor.system.class.spellCheckOverrideDie
+          }
         }
 
         // Spells can inherit the owner's spell check
@@ -56,9 +119,16 @@ class DCCItem extends Item {
    */
   async rollSpellCheck (abilityId = 'int', options = {}) {
     if (this.type !== 'spell') { return }
-    if (this.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss') && this.system.config.castingMode === 'wizard') { return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', { actor: this.actor.name, spell: this.name })) }
 
-    const actor = this.actor
+    const actor = this.actor || this.parent
+
+    if (this.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss') && this.system.config.castingMode === 'wizard') {
+      return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
+        actor: actor.name,
+        spell: this.name
+      }))
+    }
+
     const ability = actor.system.abilities[abilityId] || {}
     ability.label = CONFIG.DCC.abilities[abilityId]
     const spell = this.name
@@ -154,8 +224,18 @@ class DCCItem extends Item {
       rollTable: resultsTable,
       roll,
       item: this,
-      flavor
+      flavor,
+      manifestation: this.system?.manifestation?.displayInChat ? this.system?.manifestation : {},
+      mercurial: this.system?.mercurialEffect?.displayInChat ? this.system?.mercurialEffect : {}
     })
+  }
+
+  /**
+   * Check for an existing manifestation
+   * @return
+   */
+  hasExistingManifestation () {
+    return this.system?.manifestation?.value || this.system?.manifestation?.description
   }
 
   /**
@@ -163,7 +243,87 @@ class DCCItem extends Item {
    * @return
    */
   hasExistingMercurialMagic () {
-    return this.system.mercurialEffect.value || this.system.mercurialEffect.summary || this.system.mercurialEffect.description
+    return this.system?.mercurialEffect?.value || this.system?.mercurialEffect?.summary || this.system.mercurialEffect.description
+  }
+
+  /**
+   * Roll a or lookup new manifestation for a spell item
+   * @param {Number} lookup   Optional entry number to lookup instead of rolling
+   * @param options
+   * @return
+   */
+  async rollManifestation (lookup = undefined, options = {}) {
+    if (this.type !== 'spell') { return }
+
+    const actor = this.actor
+    if (!actor) { return }
+
+    let roll
+
+    if (lookup) {
+      // Look up a manifestation by value
+      roll = new Roll('@value', {
+        value: lookup
+      })
+    } else {
+      const terms = [
+        {
+          type: 'Die',
+          formula: '1d100'
+        }
+      ]
+
+      // Otherwise roll for a manifestation
+      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+    }
+
+    // Lookup the manifestation table if available
+    let manifestationResult = null
+    const manifestationPackName = game.settings.get('dcc', 'spellSideEffectsCompendium') || 'dcc-core-book.dcc-core-spell-effect-tables'
+    const manifestationTableName = `${this.name} Manifestation`
+    const pack = game.packs.get(manifestationPackName)
+    if (pack) {
+      await pack.getIndex() // Load the compendium index
+      const entry = pack.index.find((entity) => entity.name === manifestationTableName)
+      if (entry) {
+        const table = await pack.getDocument(entry._id)
+        manifestationResult = await table.draw({ roll })
+      } else {
+        ui.notifications.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
+      }
+    }
+
+    // Grab the result from the table if present
+    if (manifestationResult) {
+      roll = manifestationResult.roll
+    } else {
+      // Fall back to displaying just the roll
+      await roll.evaluate()
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor: game.i18n.localize('DCC.ManifestationRoll'),
+        flags: {
+          'dcc.RollType': 'Manifestation'
+        }
+      })
+    }
+
+    // Stow away the data in the appropriate fields
+    const updates = {}
+    updates['system.manifestation.value'] = roll.total
+    updates['system.manifestation.description'] = ''
+
+    if (manifestationResult) {
+      try {
+        let result = manifestationResult.results[0].text.replace(';', '')
+        result = result.charAt(0).toUpperCase() + result.slice(1)
+        updates['system.manifestation.description'] = `<p>${result}</p>`
+      } catch (err) {
+        console.error(`Couldn't extract Manifestation result from table:\n${err}`)
+      }
+    }
+
+    this.update(updates)
   }
 
   /**

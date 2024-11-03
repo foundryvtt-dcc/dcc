@@ -39,16 +39,14 @@ class DiceChain {
    * @returns {Number}             Rank of the largest die
    */
   static rankDiceExpression (expression) {
-    const roll = new Roll(expression)
-    return roll.evaluate().then((finalRank) => {
-      let rank = 0
-      const die = roll.terms[0]
-      const dieRank = CONFIG.DCC.DICE_CHAIN.indexOf(die.faces)
-      if (dieRank > rank) {
-        rank = dieRank
-      }
-      return rank
-    })
+    const rollParts = Roll.parse(expression)
+    let rank = 0
+    const die = rollParts[0].faces
+    const dieRank = CONFIG.DCC.DICE_CHAIN.indexOf(die)
+    if (dieRank > rank) {
+      rank = dieRank
+    }
+    return rank
   }
 
   /* Count the number of dice in an expression

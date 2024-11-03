@@ -29,8 +29,11 @@ function _prependSign (formula) {
  */
 function DCCDieTerm (options) {
   return [{
+    apply: false,
     type: 'Die',
     label: game.i18n.localize('DCC.RollModifierDieTerm'),
+    dieLabel: '',
+    modifierLabel: '',
     partial: 'systems/dcc/templates/roll-modifier-partial-die.html',
     formula: _cleanFormula(options.formula),
     presets: options.presets || []
@@ -174,6 +177,12 @@ function DCCCompoundTerm (options) {
         }
         terms.push(term)
       }
+    } else {
+      terms.push({
+        type: 'Compound',
+        partial: 'systems/dcc/templates/roll-modifier-partial-none.html',
+        formula: options.formula
+      })
     }
   }
   return terms
@@ -248,6 +257,7 @@ class RollModifierDialog extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.template = CONFIG.DCC.templates.rollModifierDialog
+    options.resizable = true
     return options
   }
 
@@ -281,7 +291,7 @@ class RollModifierDialog extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options) {
     const data = {}
     data.user = game.user
     data.options = this.options
@@ -321,7 +331,7 @@ class RollModifierDialog extends FormApplication {
 
     this._roll = this._constructRoll()
     this._resolve(this.roll)
-    super.close()
+    await super.close()
   }
 
   /**
@@ -369,7 +379,7 @@ class RollModifierDialog extends FormApplication {
   async _onCancel (event) {
     event.preventDefault()
     this._reject(null)
-    super.close()
+    await super.close()
   }
 
   /**
@@ -505,7 +515,7 @@ class RollModifierDialog extends FormApplication {
 
   /** @override */
   async close (options = {}) {
-    super.close(options)
+    await super.close(options)
     this._reject(null)
   }
 
@@ -611,8 +621,8 @@ async function showRollModifier (roll, options) {
   })
 }
 
-function createRollFromTerms (roll, options) {
-  return new RollModifierDialog(null, null, roll, options).roll
+function createRollFromTerms (terms, options) {
+  return new RollModifierDialog(null, null, terms, options).roll
 }
 
 export {

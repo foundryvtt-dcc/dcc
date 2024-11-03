@@ -1,16 +1,21 @@
-@import 'grid';
+@use 'grid';
 
 /* ----------------------------------------- */
 /*  Globals                                  */
 /* ----------------------------------------- */
 @font-face {
+  font-family: 'Cooper Black';
+  src: url('fonts/Cooper.otf') format('opentype');
+}
+
+@font-face {
   font-family: 'Book Antiqua';
-  src: url('fonts/Book-Antiqua.otf');
+  src: url('fonts/Book-Antiqua.otf') format('opentype');
 }
 
 @font-face {
   font-family: 'DuvallSmallCaps';
-  src: url('fonts/DuvallSmallCaps.otf');
+  src: url('fonts/DuvallSmallCaps.otf') format('opentype');
 }
 
 /* Common style elements */
@@ -18,25 +23,170 @@ $border-style: 2px groove #eeede0;
 
 $book-antiqua: 'Book Antiqua', 'Palatino Linotype', serif;
 $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
+$cooper-black: 'Cooper Black', 'Palatino Linotype', serif;
+$font-awesome: 'Font Awesome 6 Pro';
 
-.dcc .window-content {
-  font-family: $book-antiqua;
-  height: 100%;
-  overflow-y: hidden;
-  padding: 5px;
+.dcc {
+  img {
+    border: 0;
+  }
+
+  .box-inner {
+    padding: 0 5px 4px 5px;
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .data-font {
+    font-family: $book-antiqua;
+  }
+
+  .dark-border {
+    border: var(--dark-border);
+    border-top: 0;
+  }
+
+  .dark-title {
+    align-self: stretch;
+    background: var(--dark-bg);
+    color: var(--light-color);
+    font-family: $cooper-black;
+    height: 19px;
+    letter-spacing: 1px;
+    padding-top: 1px;
+    text-align: center;
+  }
+
+  .disabled {
+    opacity: 40%;
+  }
+
+  // Prosemirror richtext editor
+  .editor {
+    background: rgba(0, 0, 0, 0.05);
+    border: var(--dark-border);
+    border-top: 0;
+    font-family: $book-antiqua;
+    min-height: 285px;
+    padding: 0 8px;
+  }
+
+  .group-heading {
+    font-size: 13px;
+    font-family: $cooper-black;
+  }
+
+  .group-indent {
+    margin-left: 16px;
+  }
+
+  .group-separator {
+    border-bottom: 2px dotted var(--medium-color);
+    grid-column-end: span 2;
+    margin: 5px 0 5px 0;
+  }
+
+  label {
+    display: grid;
+    font-family: $cooper-black;
+  }
+
+  input {
+    background: none;
+    font-family: $book-antiqua;
+    height: 17px;
+    line-height: 1;
+    text-align: center;
+    background: none;
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+
+    &[type='checkbox'] {
+      height: 20px;
+      width: 20px;
+      margin: 0;
+    }
+
+    &:focus {
+      box-shadow: none;
+    }
+
+    &.full-width {
+      width: 100%;
+    }
+  }
+
+  select {
+    background: none;
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+    font-family: var(--data-font);
+    font-size: 12px;
+    height: 17px;
+    text-align: center;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .label-font {
+    font-family: $cooper-black;
+  }
+
+  .rollable:hover {
+    color: #000;
+    cursor: pointer;
+    text-shadow: 0 0 10px red;
+  }
+
+  &.sheet.actor.pc {
+    min-height: 639px;
+    min-width: 520px;
+  }
+
+  &.sheet.actor {
+    min-height: 339px;
+    min-width: 525px;
+  }
+
+  .value-display {
+    background: rgba(0, 0, 0, 0.05);
+    font-family: $book-antiqua;
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0;
+    text-align: center;
+  }
+
+  .window-content {
+    padding: 1px 8px 8px 8px;
+
+    form {
+      height: 100%;
+
+      .sheet-body {
+        display: grid;
+        height: calc(100% - 34px);
+      }
+    }
+  }
 }
 
-.dcc .window-content label {
-  font-family: $duvall;
-}
-
-.dcc .flex-padding {
-  flex: 1 0 0;
-  margin: 0;
+:root {
+  --dark-bg: url('images/denim.png');
+  --dark-border: 4px solid var(--dark-color);
+  --dark-color: rgba(0, 0, 0, 0.75);
+  --light-color: rgba(255, 255, 255, 0.77);
+  --medium-color: rgba(0, 0, 0, 0.3);
+  --data-font: 'Book Antiqua', serif;
+  --label-font: 'Cooper Black', serif;
 }
 
 /* ----------------------------------------- */
-/*  Headings
+/*  Journal Headings
 /* ----------------------------------------- */
 .journal-sheet h1 {
   font-family: $duvall;
@@ -57,339 +207,91 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 }
 
 /* ----------------------------------------- */
-/*  Rollable                                 */
+/*  Armor                                  */
 /* ----------------------------------------- */
 
-.dcc .rollable:hover {
-  color: #000;
-  cursor: pointer;
-  text-shadow: 0 0 10px red;
-}
+.dcc .armor-list {
+  column-gap: 5px;
+  display: grid;
+  grid-template-columns: min-content 30px minmax(30px, 1fr) 45px 53px 74px 82px 39px;
+  margin: 0 0 8px 0;
+  padding: 5px 5px 2px 5px;
 
-/* ----------------------------------------- */
-/*  Actor Sheet                              */
-/* ----------------------------------------- */
+  .armor-list-header {
+    display: grid;
+    font-family: $cooper-black;
+    font-size: 12px;
+    grid-template-columns: subgrid;
+    margin: 0 0 3px 0;
+    padding: 0;
+    text-align: center;
+  }
 
-.dcc.sheet.actor {
-  min-height: 633px;
-  min-width: 605px;
-}
+  .armor {
+    align-items: center;
+    display: grid;
+    justify-items: center;
+    margin-bottom: 5px;
+    grid-template-columns: subgrid;
 
-.dcc .editor,
-.dcc .editor-content {
-  height: 100%;
-}
-
-.choose-class-select {
-  font-size: 1.2rem;
-  width: 100%;
-}
-
-/* ----------------------------------------- */
-/*  Sheet Header                             */
-/* ----------------------------------------- */
-
-.dcc .sheet-header {
-  justify-content: flex-start;
-  margin-bottom: 10px;
-  overflow: hidden;
-}
-
-.dcc .sheet-header .profile-div {
-  align-items: center;
-  display: flex;
-  flex: 0 0 100px;
-  margin: 5px 10px 0 0;
-}
-
-.dcc .sheet-header .profile-div .profile-img {
-  height: auto;
-  margin-left: auto;
-  margin-right: auto;
-  max-height: 100px;
-  max-width: 100px;
-  width: auto;
-}
-
-.dcc .sheet-header h1.charname {
-  border-bottom: 0;
-  flex: 0 0 100%;
-  height: 50px;
-  margin: 5px 0;
-  padding: 0;
-}
-
-.dcc .sheet-header .upper-level div.charname {
-  flex: 0 0 100%;
-}
-
-.dcc .sheet-header .upper-level h1.charname {
-  flex: 1 0 75%;
-}
-
-.dcc .sheet-header h1.charname input {
-  height: 100%;
-  margin: 0;
-  width: 100%;
-}
-
-.dcc .sheet-header .upper-level div.level {
-  flex: 1 0 25%;
-  padding: 0 0 0 7px;
-}
-
-.dcc .sheet-header .upper-level div.level input {
-  text-align: center;
-}
-
-.dcc .alignment {
-  flex: 0 0 10%;
-  margin-left: 15px;
-  text-align: center;
-}
-
-.dcc .alignment select {
-  font-family: inherit;
-  height: 24px;
-  width: 90px;
-}
-
-.dcc .title input {
-  width: 100%;
-}
-
-.dcc .title label {
-  margin: 0 0 0 4px;
-}
-
-.dcc .occupation input {
-  width: 100%;
-}
-
-.dcc .occupation label {
-  margin: 0 0 0 4px;
-}
-
-.dcc.actor.sheet .character-main-top-row {
-  flex: 0 0 100px;
-}
-
-.dcc.actor.sheet .character-main-body-row {
-  flex: 1 0 100px;
-  margin-top: 15px;
-}
-
-/* ----------------------------------------- */
-/*  Action Dice                              */
-/* ----------------------------------------- */
-
-.dcc .npc-sheet .action-dice {
-  flex: 0 0 100px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .action-dice {
-  align-items: center;
-  flex: 0 0 80px;
-}
-
-/* ----------------------------------------- */
-/*  Attack Bonus                             */
-/* ----------------------------------------- */
-
-.dcc .npc-sheet .attack-bonus {
-  flex: 0 0 125px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .attack-bonus {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .attack-bonus input {
-  margin-right: 3px;
-}
-
-.dcc .attack-bonus-container.skills-container {
-  font-size: 1.2rem;
-  justify-content: left;
-  margin-top: 12px;
-
-  label.attack-bonus {
-    margin-left: 10px;
-    text-align: left;
-
-    .attack-bonus-button {
-      background-image: url('./images/game-icons-net/d4-black.svg');
-      background-repeat: no-repeat;
-      background-size: 22px 22px;
-      display: inline-block;
-      width: 30px;
+    input {
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 3px;
+      height: 22px;
     }
   }
 }
 
 /* ----------------------------------------- */
-/*  Ability Scores                           */
-/* ----------------------------------------- */
-
-.dcc.sheet.actor .ability-scores {
-  border: $border-style;
-  border-radius: 5px;
-  flex: 0 0 150px;
-  font-size: 20px;
-  height: 425px;
-  list-style: none;
-  margin: 7px;
-  padding: 0;
-}
-
-.dcc.sheet.actor .ability-scores .ability {
-  border-bottom: $border-style;
-  height: 70px;
-  padding-top: 3px;
-  text-align: center;
-}
-
-.dcc.sheet.actor .ability-scores .ability:last-child {
-  border-bottom: 0;
-}
-
-.dcc.sheet.actor .ability-scores .ability input.ability-score {
-  font-size: 24px;
-  height: 30px;
-  line-height: 32px;
-  margin: 0 auto;
-  width: 36px;
-}
-
-.dcc.sheet.actor .ability-scores .ability .ability-modifiers {
-  border-left: $border-style;
-  border-top: $border-style;
-  flex: 0 0 24px;
-  font-size: 16px;
-  height: 23px;
-  line-height: 22px;
-  margin: -15px 0 0 122px;
-  width: 25px;
-}
-
-/* ----------------------------------------- */
-/*  Armor                                  */
-/* ----------------------------------------- */
-
-.dcc .armor-heading {
-  background-image: url('./images/gauntlet.png');
-  background-position-x: 70px;
-  background-repeat: no-repeat;
-  background-size: 55px 17px;
-  border-bottom: $border-style;
-  flex: 0 0 10px;
-  font-family: $duvall;
-  font-size: 1.1rem;
-  line-height: 1.2rem;
-  margin: 8px 0 0;
-}
-
-.dcc .armor-list {
-  font-family: $book-antiqua;
-  margin: 0 8px 0 0;
-  padding-left: 8px;
-
-  .item-image {
-    flex: 0 0 24px;
-    margin-right: 8px;
-    margin-top: 3px;
-  }
-
-  input {
-    height: 30px;
-  }
-}
-
-.dcc .armor-list-header {
-  flex: 0 0 10px;
-  font-family: $duvall;
-  font-size: 0.8rem;
-  margin: 7px 0 2px;
-  padding: 0;
-}
-
-.dcc .armor-equipped {
-  flex: 0 0 20px;
-  margin: 0 8px 0 0;
-}
-
-.dcc .armor-bonus {
-  flex: 0 0 45px;
-  margin: 0 8px;
-  text-align: center;
-}
-
-.dcc .armor-checkpenalty {
-  flex: 0 0 60px;
-  margin: 0 8px 0 0;
-  text-align: center;
-}
-
-.dcc .armor-fumbledie {
-  flex: 0 0 80px;
-  text-align: center;
-}
-
-.dcc .armor-notes {
-  flex: 0.2 0 55px;
-  margin: 0 0 0 8px;
-}
-
-.dcc .armor-controls {
-  flex: 0 0 60px;
-  padding-left: 10px;
-}
-
-/* ----------------------------------------- */
-/*  Armor Class                              */
-/* ----------------------------------------- */
-
-.dcc .ac {
-  background-image: url('./images/shield.png');
-  background-repeat: no-repeat;
-  background-size: 60px 76px;
-  flex: 0 0 60px;
-  height: 99px;
-  margin: 10px 0 0 6px;
-  text-align: center;
-}
-
-.dcc .ac label {
-  font-size: 1.1rem;
-  line-height: 1.6rem;
-  margin: 31px auto 0;
-}
-
-.dcc .ac .ac-value {
-  font-size: 1.6rem;
-  height: 25px;
-  margin: 21px auto 0;
-  width: 35px;
-}
-
-
-/* ----------------------------------------- */
 /*  Chat Rolls                               */
 /* ----------------------------------------- */
+a.inline-roll {
+  line-height: 25px;
+}
+
+.deed-result.critical,
 .dice-roll .dice-total.critical,
+.emote-alert.critical,
 .inline-roll.critical {
   color: green;
   font-weight: 900;
 }
 
 .dice-roll .dice-total.fumble,
+.emote-alert.fumble,
 .inline-roll.fumble {
   color: red;
+}
+
+.flavor-text {
+  font-family: var(--label-font);
+}
+
+.message-content {
+  font-family: var(--data-font);
+}
+
+.message-sender {
+  font-family: var(--label-font);
+}
+
+.chat-message .table-draw .table-results .table-result .result-text {
+  line-height: 20px;
+}
+
+.chat-message .table-draw .mercurial,
+ .chat-message .table-draw .manifestation, {
+  border-top: 1px solid var(--color-border-light-primary);
+  color: var(--color-text-dark-secondary);
+  font-size: var(--font-size-12);
+  line-height: 22px;
+  margin-bottom: 8px;
+  padding: 5px 0;
+}
+
+.chat-message .table-draw th, {
+  padding: 5px;
 }
 
 /* ----------------------------------------- */
@@ -404,6 +306,7 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
         flex: 0 0 20px;
         flex-direction: column;
         justify-content: space-between;
+        margin-right: 3px;
       }
     }
   }
@@ -438,1064 +341,337 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 }
 
 /* ----------------------------------------- */
-/*  Criticals                                */
-/* ----------------------------------------- */
-
-.dcc .npc-sheet .crit-die {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .npc-sheet .crit-table {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: center;
-}
-
-.dcc .combat-basics .crit-die {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .crit-die input {
-  margin: 0 3px 0 2px;
-}
-
-.dcc .combat-basics .crit-table {
-  align-items: center;
-  flex: 0 0 100px;
-}
-
-.dcc .combat-basics .crit-table input {
-  margin-left: 4px;
-}
-
-/* ----------------------------------------- */
-/*  Experience                               */
-/* ----------------------------------------- */
-
-.dcc .experience {
-  flex: 0 0 80px;
-  margin: 0 0 0 10px;
-  text-align: left;
-}
-
-/* ----------------------------------------- */
-/*  Hit Dice                                 */
-/* ----------------------------------------- */
-
-.dcc .hd {
-  flex: 0 0 50px;
-  margin: 0 0 0 2px;
-  text-align: center;
-}
-
-.dcc .init-and-speed .hd {
-  align-items: center;
-  flex: 0 0 30px;
-  margin: 0;
-  text-align: right;
-}
-
-.dcc .init-and-speed.hd label {
-  font-size: 1.1rem;
-  margin: 10px auto 0 0;
-}
-
-.dcc .init-and-speed .hd .hd-value {
-  font-size: 1.1rem;
-  height: 25px;
-  text-align: center;
-  width: 40px;
-}
-
-/* ----------------------------------------- */
-/*  Hit Points                               */
-/* ----------------------------------------- */
-
-.dcc .hp {
-  background-image: url('./images/heart.png');
-  background-position-y: 9px;
-  background-repeat: no-repeat;
-  background-size: 80px 75px;
-  flex: 0 0 99px;
-  height: 99px;
-  margin: 0 0 0 5px;
-  text-align: center;
-}
-
-.dcc .hp .current-label {
-  font-size: 1.1rem;
-  line-height: 1.6rem;
-  margin: -8px auto 0 28px;
-}
-
-.dcc .hp .current {
-  font-size: 1.6rem;
-  height: 25px;
-  margin: 31px auto 0 23px;
-  width: 35px;
-}
-
-.dcc .hp .max {
-  font-size: 0.8rem;
-  height: 17px;
-  margin: 7px auto 0 63px;
-  width: 25px;
-}
-
-.dcc .hp .max-label {
-  font-size: 0.6rem;
-  line-height: 0.8rem;
-  margin: 2px auto 0 65px;
-}
-
-/* ----------------------------------------- */
-/*  Initiative                               */
-/* ----------------------------------------- */
-
-.dcc .init-and-speed {
-  flex: 1 0 100px;
-  margin: 7px 0 0;
-  text-align: right;
-}
-
-.dcc .init-and-speed .init {
-  align-items: center;
-  flex: 0 0 30px;
-}
-
-.dcc .init-and-speed .init label {
-  font-size: 1.1rem;
-}
-
-.dcc .init-and-speed .init .init-value {
-  font-size: 1.1rem;
-  text-align: center;
-  width: 40px;
-}
-
-.dcc .combat-basics .init {
-  align-items: center;
-  flex: 0 0 120px;
-}
-
-.dcc .combat-basics .init input:first-of-type {
-  margin-right: 4px;
-}
-
-.dcc .combat-basics .init input:last-of-type {
-  margin-right: 3px;
-}
-
-
-/* ----------------------------------------- */
 /*  Notes                              */
 /* ----------------------------------------- */
 
 .dcc .notes {
-  border: $border-style;
-  font-size: 14px;
-  height: 98%;
+  background-image: url('./images/FCI-spots-2-scroll-with-ink-and-candle.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  font-size: 16px;
   line-height: 24px;
-  padding: 2px;
+  margin: 0;
+
+  .editor {
+    min-height: 547px;
+  }
 }
-
-.dcc .notes-label {
-  font-family: $duvall;
-  font-size: 1.5rem;
-  margin-top: 20px;
-}
-
-/* ----------------------------------------- */
-/*  Speed                                    */
-/* ----------------------------------------- */
-
-.dcc .init-and-speed .speed {
-  flex: 0 0 30px;
-}
-
-.dcc .init-and-speed .speed label {
-  font-size: 1.1rem;
-  margin: 10px auto 0 0;
-}
-
-.dcc .init-and-speed .speed .speed-other {
-  margin: 5px 0 0;
-  width: 100px;
-}
-
-.dcc .init-and-speed .speed .speed-other-label {
-  font-size: 0.8rem;
-  line-height: 0.8rem;
-  margin: 0 7px 0 0;
-}
-
-.dcc .init-and-speed .speed .speed-value {
-  font-size: 1.1rem;
-  height: 25px;
-  text-align: center;
-  width: 40px;
-}
-
-.dcc .combat-basics .speed {
-  align-items: center;
-  flex: 0 0 60px;
-}
-
-/* ----------------------------------------- */
-/*  Saving Throws                            */
-/* ----------------------------------------- */
-
-.dcc.sheet.actor .saving-throws {
-  border: $border-style;
-  border-radius: 5px;
-  flex: 0 0 152px;
-  font-size: 20px;
-  height: 102px;
-  list-style: none;
-  margin: 7px 0 0;
-  padding: 2px 0 3px 7px;
-  text-align: left;
-}
-
-.dcc.sheet.actor .saving-throws .save {
-  margin-bottom: 0.25rem;
-}
-
-.dcc.sheet.actor .saving-throws span {
-  font-family: $book-antiqua;
-}
-
-.dcc.sheet.actor .saving-throws input {
-  font-family: $book-antiqua;
-  margin-bottom: 0;
-  text-align: center;
-  width: 36px;
-}
-
-/* ----------------------------------------- */
-/*  Special                                  */
-/* ----------------------------------------- */
-
-.dcc .special {
-  flex: 0 0 155px;
-  margin: 0 8px 0 0;
-}
-
-/* ----------------------------------------- */
-/*  Tabs                                     */
-/* ----------------------------------------- */
-
-.dcc .tabs {
-  height: 40px;
-}
-
-.dcc .tabs .item {
-  border: $border-style;
-  border-radius: 5px 5px 0 0;
-  flex: 1;
-  font-weight: bold;
-  height: 38px;
-  line-height: 35px;
-  margin-bottom: 10px;
-  padding: initial !important;
-}
-
-.dcc .tabs .item.active {
-  border-bottom: 0;
-  margin-bottom: 11px;
-  text-decoration: underline;
-  text-shadow: none;
-}
-
-.dcc .sheet-body {
-  overflow: hidden;
-}
-
-.dcc .sheet-body .tab {
-  height: 100%;
-  overflow-y: auto;
-}
-
 
 /* ----------------------------------------- */
 /*  Weapons                                  */
 /* ----------------------------------------- */
 
-.dcc .weapons {
-  margin: 10px 0 0;
-}
-
-.dcc .weapons-heading {
-  background-image: url('./images/axe.png');
-  background-position-x: 155px;
-  background-repeat: no-repeat;
-  background-size: 90px 18px;
-  border-bottom: $border-style;
-  flex: 0 0 10px;
-  font-family: $duvall;
-  font-size: 1.1rem;
-  line-height: 1.2rem;
-  margin: 10px 0 0;
-}
-
-.dcc .weapons-heading.ranged {
-  background-image: url('./images/bow.png');
-  background-position-x: 165px;
-  background-size: 90px 17px;
-}
-
 .dcc .weapon-list {
+  display: grid;
   font-family: $book-antiqua;
-  margin: 0;
-  padding-left: 8px;
+  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
+  justify-items: center;
+  margin: 0 0 8px 0;
+  padding: 5px 5px 0 5px;
 
-  .item-image {
-    flex: 0 0 24px;
-    margin-right: 8px;
-    margin-top: 3px;
+  img {
+    border: 0;
+    box-sizing: content-box;
   }
 
   input {
-    height: 30px;
-    margin: 0 8px 0 0;
+    text-align: center;
   }
-}
 
-.dcc .weapon-list-header {
-  flex: 0 0 10px;
-  font-family: $duvall;
-  font-size: 0.8rem;
-  margin: 0 0 1px;
-  padding: 0;
-}
+  &.npc-weapon-list {
+    display: grid;
+    font-family: $book-antiqua;
+    grid-template-columns: 25px minmax(110px, 1fr) 55px 60px minmax(100px, 2fr) 39px;
+  }
 
-.dcc .weapon {
-  flex: 0 0 35px;
-}
+  .weapon-list-header {
+    display: grid;
+    font-family: $cooper-black;
+    font-size: 12px;
+    grid-template-columns: subgrid;
+    margin: 0 0 3px 0;
+    padding: 0;
+    text-align: center;
+  }
 
-.dcc .weapon-button {
-  background-image: url('../../../icons/svg/d20-black.svg');
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
-  flex: 0 0 30px;
-  margin: 5px 0 0;
-}
+  .weapon {
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: center;
+    justify-items: center;
+    margin-bottom: 5px;
 
-.dcc .weapon-checkbox {
-  flex: 0 0 18px;
-  padding-left: 0;
-}
+    input {
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 3px;
+      height: 22px;
+    }
 
-.dcc .weapon-headericon {
-  flex: 0 0 24px;
-}
+    .attack-buttons {
+      display: grid;
+      column-gap: 10px;
+    }
 
-.dcc .backstab-button {
-  background-image: url('./images/backstab.png');
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
-  flex: 0 0 30px;
-  margin: 5px 0 0;
-}
+    .backstab-button {
+      background-image: url('./images/backstab.png');
+      background-repeat: no-repeat;
+      background-size: 22px 22px;
+      grid-row: 1;
+      width: 19px;
+      height: 19px;
+      margin: 1px 0 0 0;
+    }
 
-.dcc .roll-button {
-  background-image: url('../../../icons/svg/d20-black.svg');
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
-  flex: 0 0 30px;
-  margin: 21px 0 0;
-}
-
-.dcc .left-arrow-button {
-  background-image: url('./images/left-arrow.png');
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
-  flex: 0 0 30px;
-  margin: 5px 0 0;
-}
-
-.dcc .right-arrow-button {
-  background-image: url('./images/right-arrow.png');
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
-  flex: 0 0 30px;
-  margin: 5px 0 0;
-}
-
-.dcc .weapon-damage {
-  flex: 0 0 80px;
-  margin: 0 10px 0 0;
-  text-align: center;
-}
-
-.dcc .backstab-padding {
-  flex: 0 0 30px;
-}
-
-.dcc .weapon-name-label {
-  padding: 0 0 0 30px;
-}
-
-.dcc .weapon-notes {
-  flex: 0.2 0 55px;
-  margin: 0 8px 0 0;
-}
-
-.dcc .weapon-tohit {
-  flex: 0 0 100px;
-  margin: 0 6px 0 0;
-  text-align: center;
-}
-
-.dcc .weapon-special {
-  flex: 0 0 1;
-  text-align: center;
-}
-
-.dcc .weapon-controls {
-  flex: 0 0 60px;
-  padding-left: 10px;
-}
-
-/* ----------------------------------------- */
-/*  Upper Level                              */
-/* ----------------------------------------- */
-
-.dcc .combat-basics {
-  flex: 1 0 50%;
-  font-size: 0.8rem;
-  margin: 7px 0 0 7px;
-  text-align: center;
-}
-
-.dcc .character-grid {
-  border-top: $border-style;
-  display: grid;
-  font-size: 20px;
-  grid-template-columns: 150px 105px 1fr;
-  grid-template-rows: repeat(6, 70px);
-  list-style: none;
-  margin: 7px;
-  padding: 0;
-}
-
-.dcc.sheet.actor .character-grid .ability {
-  border-bottom: 2px groove #eeede0;
-  border-left: $border-style;
-  border-right: $border-style;
-  padding-top: 3px;
-  text-align: center;
-}
-
-.dcc.sheet.actor .character-grid .ability input.ability-score {
-  font-size: 24px;
-  height: 30px;
-  line-height: 32px;
-  margin: 0 auto;
-  width: 36px;
-}
-
-.dcc.sheet.actor .character-grid .ability .ability-modifiers {
-  border-left: $border-style;
-  border-top: $border-style;
-  font-size: 16px;
-  height: 23px;
-  line-height: 22px;
-  margin: -15px 0 0 122px;
-  width: 25px;
-}
-
-.dcc.sheet.actor .character-grid .save {
-  border-bottom: $border-style;
-  border-right: $border-style;
-  padding-top: 3px;
-  text-align: center;
-  width: 105px;
-}
-
-.dcc.sheet.actor .character-grid .save input {
-  font-size: 24px;
-  height: 30px;
-  line-height: 32px;
-  margin: 0 auto;
-  width: 56px;
-}
-
-.dcc.sheet.actor .character-grid .languages {
-  border-bottom: $border-style;
-  border-right: $border-style;
-  padding-right: 10px;
-  padding-top: 3px;
-  text-align: left;
-}
-
-.dcc.sheet.actor .character-grid .languages input {
-  font-size: 14px;
-  margin: 0 7px;
-}
-
-.dcc.sheet.actor .character-grid .birth-augur {
-  border-bottom: $border-style;
-  border-right: $border-style;
-  padding-right: 10px;
-  padding-top: 3px;
-  text-align: left;
-}
-
-.dcc.sheet.actor .character-grid .birth-augur input {
-  font-size: 14px;
-  margin: 0 7px;
-}
-
-.dcc.sheet.actor .character-grid .remainder {
-  border-bottom: $border-style;
-  border-right: $border-style;
-}
-
-.dcc #str {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.dcc #agl {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.dcc #sta {
-  grid-column: 1;
-  grid-row: 3;
-}
-
-.dcc #per {
-  grid-column: 1;
-  grid-row: 4;
-}
-
-.dcc #int {
-  grid-column: 1;
-  grid-row: 5;
-}
-
-.dcc #lck {
-  grid-column: 1;
-  grid-row: 6;
-}
-
-.dcc #pad {
-  border-bottom: $border-style;
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.dcc #ref {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.dcc #frt {
-  grid-column: 2;
-  grid-row: 3;
-}
-
-.dcc #wil {
-  grid-column: 2;
-  grid-row: 4;
-}
-
-.dcc #languages {
-  grid-column: 2 / span 2;
-  grid-row: 5;
-}
-
-.dcc #birth-augur {
-  grid-column: 2 / span 2;
-  grid-row: 6;
-}
-
-.dcc #remainder {
-  grid-column: 3;
-  grid-row: 1 / span 4;
-}
-
-.dcc .class {
-  font-size: 1.2rem;
-}
-
-.dcc .class-label {
-  font-family: $duvall;
-  font-size: 1.5rem;
-  margin-top: 20px;
-}
-
-.dcc .class-note {
-  flex: 0 0 100%;
-  margin: 0 6px 0 0;
-  text-align: left;
-}
-
-.dcc .class-note li {
-  margin: 6px;
+    .weapon-button {
+      background-image: url('../../../icons/svg/d20-black.svg');
+      background-repeat: no-repeat;
+      background-size: 22px 22px;
+      grid-row: 1;
+      width: 22px;
+      height: 22px;
+      margin: 1px 2px 0 0;
+    }
+  }
 }
 
 /* ----------------------------------------- */
 /*  Cleric Class                             */
 /* ----------------------------------------- */
 
-.dcc .lay-on-hands {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-
-  .container {
-    border: $border-style;
-    display: grid;
-    font-size: 0.8rem;
-  }
-
-  .lay-on-hands {
-    flex: 0 0 60%;
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .condition-healing {
-    flex: 0 0 34%;
-    grid-template-columns: 2fr 1fr;
-  }
-
-  div.item {
-    margin: 0;
+.dcc div.cleric-table {
+  table {
     text-align: center;
-  }
+    font-family: $book-antiqua;
+    margin-top: 10px;
 
-  div.header {
-    font-weight: bold;
-  }
-
-  div.top {
-    border-bottom: $border-style;
-  }
-
-  div.left {
-    border-right: $border-style;
-  }
-}
-
-.dcc .spells-container-cleric {
-  margin: 4px;
-}
-
-/* ----------------------------------------- */
-/*  Thief/Halfling Class                     */
-/* ----------------------------------------- */
-
-.dcc .skills-container {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 6px;
-
-  // Standard skill cards
-  > div {
-    display: grid;
-    flex: 0 48%;
-    grid-template-columns: auto 25%;
-    grid-template-rows: auto;
-    margin-bottom: 6px;
-
-    label {
-      font-family: $book-antiqua;
-      font-weight: bold;
-      padding-right: 6px;
-      text-align: right;
-    }
-
-    input {
-      height: 30px;
-      text-align: center;
-    }
-
-    input.string {
-      text-align: left;
-    }
-
-    select {
-      margin-left: 2px;
-      margin-right: 2px;
-    }
-
-    select.number {
-      text-align-last: right;
-    }
-  }
-
-  // Wide skill cards
-  > div.wide {
-    flex: 0 96%;
-    grid-template-columns: 50% 50%;
-  }
-
-  // Special case grids
-  > div.split-50-50 {
-    grid-template-columns: 50% 50%;
-  }
-
-  > div.split-75-25 {
-    grid-template-columns: 75% 25%;
-  }
-
-  > div.split-25-75 {
-    grid-template-columns: 25% 75%;
-  }
-
-  > div.split-50-25-25 {
-    grid-template-columns: 50% 25% 25%;
-  }
-
-  > div.split-50-12-12 {
-    grid-template-columns: 50% 12% 12%;
-  }
-
-  > div.split-60-40 {
-    grid-template-columns: 60% 40%;
-  }
-
-  > div.split-40-60 {
-    grid-template-columns: 40% 60%;
-  }
-
-  > div.split-67-33 {
-    grid-template-columns: 67% 33%;
-  }
-
-  > div.nosplit {
-    grid-template-columns: 100%;
-  }
-
-  > div.textarea {
-    border: $border-style;
-    grid-template-columns: 25% 75%;
-    grid-template-rows: auto minmax(100px, auto);
-
-    label {
-      text-align: left;
-    }
-
-    > div.editor {
-      grid-column: 1 / span 2;
+    td {
+      padding: 4px 12px 4px 0;
     }
   }
 }
 
+.dcc .cleric-spells-bg {
+  background-image: url('images/SA-12-20-ornate-glyph-page-ornament-SpotArt-12-Fantasy-Clip-Inks.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  height: 565px;
+}
+
 /* ----------------------------------------- */
-/*  Wizard/Elf Class                         */
+/*  Wizard/Elf
 /* ----------------------------------------- */
 
-.dcc .spells-container-wizard {
-  margin: 4px;
+.dcc .elf-bg {
+  background-image: url('./images/FCI-magic-items-1-9-shamen-crystal.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+}
+
+.dcc .wizard-bg {
+  background-image: url('./images/FCI-spots-8-33-Spellcasters-hat.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+}
+
+.dcc .wizard-spells-bg {
+  background-image: url('images/FCI-spots-8-32-Spell-Book-Stack.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+  min-height: 565px;
 }
 
 /* ----------------------------------------- */
 /*  Items                                    */
 /* ----------------------------------------- */
 
-.dcc .equipment-container {
-  height: 100%;
-  overflow-y: scroll;
+.dcc .equipment-bg {
+  background-image: url('./images/SA-4-26-FCI-spots-4-Shield-crossed-swords.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-size: contain;
+}
+
+.dcc .item {
+  align-items: center;
+  border-bottom: 0.5px solid burlywood;
+  display: grid;
+  font-size: 13px;
+  justify-items: center;
+  grid-template-columns: subgrid;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+
+  .item-control {
+    font-size: 14px;
+  }
+
+  &:last-child {
+    border-bottom: 0;
+    padding-bottom: 2px;
+    margin-bottom: 2px;
+  }
+}
+
+.dcc .conversions {
+  margin-top: 3px;
 }
 
 .dcc .item-heading {
   border-bottom: $border-style;
   flex: 0 0 10px;
-  font-family: $duvall;
+  font-family: $cooper-black;
+  letter-spacing: 1px;
   font-size: 1.1rem;
   line-height: 1.2rem;
   margin: 8px 0 0;
 }
 
 .dcc .item-list-header {
-  flex: 0 0 10px;
-  font-family: $duvall;
-  font-size: 0.8rem;
-  margin: 0 0 1px;
-  padding: 0;
+  border-bottom: 2px dotted var(--medium-color);
+  display: grid;
+  font-family: $cooper-black;
+  font-size: 12px;
+  grid-template-columns: subgrid;
+  margin: 0 0 5px 0;
+  padding: 0 0 5px 0;
 }
 
 .dcc .item-list {
-  padding-left: 8px;
+  display: grid;
+  font-family: $book-antiqua;
+  font-size: 12px;
+  grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
+  margin: 0 0 8px 0;
+  padding: 5px;
+  text-align: center;
+}
 
-  .item-equipped {
-    flex: 0 0 20px;
-    margin: 0 8px 0 0;
-  }
-
-  .item-lost {
-    flex: 0 0 20px;
-    margin: 0 8px 0 0;
-  }
-
-  .item-image {
-    flex: 0 0 24px;
-    margin-right: 8px;
-  }
-
-  .spell-item-button-heading {
-    flex: 0 0 40px;
-  }
+.dcc .item-list-spells {
+  grid-template-columns: 30px 22px 33px 1fr 1fr 40px 39px;
 
   .spell-item-button {
     background-image: url('../../../icons/svg/d20-black.svg');
     background-position: center;
     background-repeat: no-repeat;
     background-size: 22px 22px;
-    flex: 0 0 40px;
+    height: 22px;
+    width: 22px;
+  }
+}
+
+.dcc .item-list-currency {
+  display: grid;
+  grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 39px;
+}
+
+.dcc .left-arrow-button {
+  justify-self: center;
+  background-image: url('./images/left-arrow.png');
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  height: 22px;
+  width: 22px;
+}
+
+.dcc .right-arrow-button {
+  background-image: url('./images/right-arrow.png');
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  height: 22px;
+  width: 22px;
+}
+
+.dcc .roll-value-button {
+  background-image: url('/icons/svg/d20-black.svg');
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  height: 22px;
+  width: 22px;
+}
+
+/* ----------------------------------------- */
+/*  Item Sheet                               */
+/* ----------------------------------------- */
+
+.dcc.item .tab-body {
+  align-items: stretch;
+  display: grid;
+  column-gap: 5px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  justify-items: stretch;
+  overflow-x: clip;
+  row-gap: 5px;
+
+  .description {
+    font-family: $book-antiqua;
+
+    .editor {
+      min-height: 354px;
+    }
   }
 
-  .skill-name {
-    flex: 1 0 1px;
-  }
-
-  .skill-die {
-    flex: 0 0 60px;
-  }
-
-  .skill-modifier {
-    flex: 0 0 60px;
-  }
-
-  .skill-last-roll {
-    flex: 0 0 60px;
-    text-align: right;
-  }
-
-  .skill-freeform {
-    flex: 0 0 180px;
-  }
-
-  .item-level {
-    flex: 0 0 60px;
+  input {
+    background: none;
+    border-width: 0 0 1px 0;
+    border-radius: 0;
+    font-family: var(--data-font);
+    font-size: 12px;
+    height: 18px;
+    line-height: 15px;
     text-align: center;
+    vertical-align: middle;
+
+    &:focus {
+      box-shadow: none;
+    }
   }
 
-  .item-name {
-    flex: 1 0 1px;
+  input[type='checkbox'] {
+    background: none;
+    border: 0;
+    height: 12px;
+    margin: 0;
+    width: 12px;
   }
 
-  .item-description {
-    flex: 1 0 1px;
+  .item-img {
+    max-height: 64px;
   }
 
-  .item-weight {
-    flex: 0 0 60px;
-  }
-
-  .item-quantity {
-    flex: 0 0 70px;
-  }
-
-  .item-is-coins {
-    flex: 0 1 100px;
-    text-align: left;
-  }
-
-  .currency-field {
-    text-align: right;
-  }
-
-  h4.currency-field {
-    padding-right: 4px;
-  }
-
-  .item-pp {
-    flex: 0 0 50px;
-  }
-
-  .item-ep {
-    flex: 0 0 50px;
-  }
-
-  .item-gp {
-    flex: 0 0 50px;
-  }
-
-  .item-sp {
-    flex: 0 0 50px;
-  }
-
-  .item-cp {
-    flex: 0 0 50px;
-  }
-
-  .item-controls {
-    flex: 0 0 60px;
-    padding-left: 10px;
-  }
-}
-
-.dcc .skill-controls {
-  text-align: right;
-}
-
-/* ----------------------------------------- */
-/*  Items Sheet                              */
-/* ----------------------------------------- */
-
-.dcc.item {
-  .sheet-body.item {
+  .item-values {
+    column-gap: 4px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 50px minmax(80px, auto);
-  }
+    grid-template-columns: repeat(6, 1fr);
+    text-align: center;
 
-  .sheet-body.item .value-row {
-    grid-column: span 3 / span 3;
-  }
-
-  .sheet-body.weapon {
-    display: grid;
-    grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px 50px 50px 50px minmax(80px, auto);
-  }
-
-  .sheet-body.weapon .value-row {
-    grid-column: span 3 / span 3;
-  }
-
-  .sheet-body.armor {
-    display: grid;
-    grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px 50px 50px minmax(80px, auto);
-  }
-
-  .sheet-body.armor .value-row {
-    grid-column: span 3 / span 3;
-  }
-
-  .sheet-body .spell-header-extras {
-    display: grid;
-    gap: 10px;
-    grid-column: span 5 / span 5;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 0.5fr);
-    margin: 10px 0;
-    padding: 0;
-  }
-
-  .sheet-body.spell {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: 60px minmax(80px, auto) repeat(auto-fit, minmax(130px, auto));
-    width: 100%;
-  }
-
-  .sheet-body.spell .mercurial-effect-header {
-    display: grid;
-    grid-template-columns: 3fr 1fr 2fr;
-    grid-template-rows: 50px;
-  }
-
-  .sheet-body.treasure {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: 75px minmax(80px, auto);
-    width: 100%;
-  }
-
-  .sheet-body.skill {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: minmax(80px, auto);
-    width: 100%;
-  }
-
-  .value-row {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
-
-    .resource {
-      flex: 3 0 75px;
-    }
-
-    .conversions {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: space-around;
+    input {
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 3px;
+      line-height: 13px;
+      height: 15px;
     }
   }
 
-  .sheet-body {
-    .spell-header-overflow {
-      grid-column: 1 / span 3;
-    }
-
-    .description {
-      border: $border-style;
-      grid-column: 1 / span 3;
-      grid-row: 2;
-    }
-
-    .armor-header-extras {
-      display: grid;
-      grid-column: 1 / span 3;
-      grid-template-columns: minmax(90px, auto) minmax(120px, auto) minmax(90px, auto) minmax(60px, auto);
-    }
-
-    .weapon-header-basics {
-      display: grid;
-      grid-column: 1 / span 3;
-      grid-template-columns: minmax(115px, auto) minmax(125px, auto) minmax(100px, auto) minmax(150px, auto);
-    }
-
-    .weapon-header-extras {
-      display: grid;
-      grid-column: 1 / span 3;
-      grid-template-columns: minmax(125px, auto) minmax(115px, auto) minmax(100px, auto) minmax(150px, auto);
-    }
-
-    .weapon-summary {
-      grid-column: 1 / span 3;
-    }
-
-    .armor-summary {
-      grid-column: 1 / span 3;
-    }
-
-    .mercurial-effect-heading {
-      grid-column: 1;
-
-      h1 {
-        border: 0;
-        display: inline-block;
-      }
-    }
-
-    .mercurial-effect-value {
-      grid-column: 2;
-    }
-
-    .mercurial-effect-summary {
-      grid-column: 3;
-    }
-
-    .mercurial-effect-description {
-      border: $border-style;
-      grid-column: 1 / span 3;
-    }
+  label {
+    font-size: 12px;
+    line-height: 15px;
+    margin: 1px 0 0 0;
   }
 
-  .item-name {
-    flex: 1 1;
-  }
-
-  .item-type {
-    flex: 0 0 60px;
-    margin: 5px 0 0 5px;
+  .mercurial {
+    .editor {
+      min-height: 288px;
+    }
   }
 }
 
@@ -1504,70 +680,165 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 /* ----------------------------------------- */
 
 .config-dialog {
-  .form-group {
-    border-bottom: $border-style;
-    display: flex;
-    margin: 5px 0;
-    padding-bottom: 5px;
+  align-items: center;
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 
-    label {
-      flex: 0 0 48%;
-    }
-
-    label.span {
-      flex: 0 0 96%;
-    }
-
-    label.info {
-      padding-left: 10px;
-      padding-right: 10px;
-      text-align: center;
-    }
-
-    div.form-fields {
-      flex: 0 1 48%;
-    }
-
-    input {
-      text-align: right;
-    }
-
-    input.string {
-      text-align: left;
-    }
-  }
-}
-
-.sheet-config {
-  .tabs {
-    height: 40px;
-  }
-
-  .tabs .item {
-    border: $border-style;
-    border-radius: 5px 5px 0 0;
-    flex: 1;
+  label {
     font-weight: bold;
-    height: 38px;
-    line-height: 35px;
-    margin-bottom: 10px;
   }
 
-  .tabs .item.active {
-    border-bottom: 0;
-    margin-bottom: 11px;
-    text-decoration: underline;
-    text-shadow: none;
+  input {
+    margin: 2px 0 2px 0;
+    text-align: center;
+  }
+
+  select {
+    text-align: center;
+  }
+
+  .group-separator {
+    border-bottom: 2px dotted var(--medium-color);
+    margin: 2px 0 2px 0;
+    grid-column-end: span 2;
   }
 }
 
 /* ----------------------------------------- */
-/*  Fix sheet tabs in 0.7.4                  */
+/*  Skills
+/* ----------------------------------------- */
+
+.dcc .skill-list {
+  column-gap: 5px;
+  display: grid;
+  font-family: $book-antiqua;
+  grid-template-columns: minmax(100px, auto) 55px 60px 97px 50px;
+  margin: 0 0 8px 0;
+  padding: 5px 5px 2px 5px;
+  text-align: center;
+
+  img {
+    border: 0;
+    box-sizing: content-box;
+  }
+
+  input {
+    text-align: center;
+  }
+
+  .skill {
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: center;
+    justify-items: center;
+    margin-bottom: 5px;
+  }
+}
+
+.dcc .skills-bg {
+  background-image: url('./images/FCI-spots-8-14-Four-Potion-Bottles.webp');
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-position-y: bottom;
+  background-size: contain;
+  min-height: 540px;
+}
+
+/* ----------------------------------------- */
+/*  Tabs                                     */
 /* ----------------------------------------- */
 
 .dcc.sheet {
   .sheet-tabs.tabs {
-    border: 0;
+    font-family: $duvall;
+  }
+
+  a[data-tab] {
+    padding: 4px 0 4px 0;
+
+    &::before {
+      font-family: $font-awesome;
+      padding-right: 5px;
+    }
+  }
+
+  a[data-tab='armor']::before {
+    content: '\f3ed';
+  }
+
+  a[data-tab='character']::before {
+    content: '\f007';
+  }
+
+
+  a[data-tab='cleric']::before {
+    content: '\f3ed';
+  }
+
+  a[data-tab='description']::before {
+    content: '\f249';
+  }
+
+  a[data-tab='dwarf']::before {
+    content: '\f6eb';
+  }
+
+  a[data-tab='elf']::before {
+    content: '\f56b';
+  }
+
+  a[data-tab='equipment']::before {
+    content: '\f71d';
+  }
+
+  a[data-tab='halfling']::before {
+    content: '\e139';
+  }
+
+  a[data-tab='item']::before {
+    content: '\f723';
+  }
+
+  a[data-tab='manifestation']::before {
+    content: '\f890';
+  }
+
+  a[data-tab='mercurial']::before {
+    content: '\f72b';
+  }
+
+  a[data-tab='notes']::before {
+    content: '\f249';
+  }
+
+  a[data-tab='skills']::before {
+    content: '\f5dc';
+  }
+
+  a[data-tab='spell']::before {
+    content: '\f6b8';
+  }
+
+  a[data-tab='spells']::before,
+ a[data-tab='spell']::before, {
+    content: '\f6b8';
+  }
+
+  a[data-tab='warrior']::before {
+    content: '\f6eb';
+  }
+
+  a[data-tab='weapon']::before {
+    content: '\f71d';
+  }
+
+  a[data-tab='wizard']::before {
+    content: '\f6e8';
+  }
+
+  a[data-tab='thief']::before {
+    content: '\f504';
   }
 }
 
@@ -1576,11 +847,10 @@ $duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
 /* ----------------------------------------- */
 .dcc.sheet {
   a.external-link {
-    background: #ddd;
-    border: 1px solid #4b4a44;
-    border-radius: 2px;
-    color: #191813;
-    padding: 1px 4px;
+    background: none;
+    border: 0;
+    border-radius: none;
+    color: var(--dark-color);
     text-decoration: none;
     white-space: nowrap;
     word-break: break-all;
@@ -1601,21 +871,25 @@ form.dcc-roll-modifier {
   .formula-row {
     display: grid;
     grid-auto-flow: column;
-    grid-column-gap: 5px;
+    grid-column-gap: 20px;
     grid-row-gap: 0;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     grid-template-rows: auto auto minmax(60px, auto);
+    margin-left: 2px;
 
     .term-label {
-      font-family: $duvall;
+      font-family: $cooper-black;
+      text-align: center;
+      margin-bottom: 2px;
     }
 
     .term-field {
-      text-align: right;
+      text-align: center;
     }
 
     .term-controls {
-      margin-top: 8px;
+      margin: 8px 1px 0 0;
+      height: 90px;
     }
   }
 
@@ -1624,6 +898,7 @@ form.dcc-roll-modifier {
     flex: 1;
     flex-direction: row;
     justify-content: space-between;
+    margin-left: 2px;
 
     button {
       flex: 1;
@@ -1635,9 +910,23 @@ form.dcc-roll-modifier {
     display: flex;
     flex: 1;
     flex-direction: column;
+    margin-right: 4px;
+
+    &:last-child {
+      margin: 0;
+    }
 
     button.flat-button {
-      margin: 0;
+      line-height: 13px;
+      margin: 2px 0 0 0;
+
+      &:last-child {
+        margin-top: 4px;
+      }
+    }
+
+    label {
+      font-family: $cooper-black;
     }
   }
 
@@ -1665,7 +954,8 @@ form.dcc-roll-modifier {
   }
 
   input.stat {
-    text-align: right;
+    margin-top: 3px;
+    text-align: center;
   }
 }
 
@@ -1758,5 +1048,386 @@ form.dcc-roll-modifier {
       grid-column: 7;
       justify-self: center;
     }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Actor Sheet
+/* ----------------------------------------- */
+
+.dcc .character {
+  .character-grid {
+    column-gap: 8px;
+    display: grid;
+    grid-template-columns: 182px minmax(143px, auto) minmax(78px, auto) minmax(78px, auto);
+    grid-template-rows: minmax(46px, auto) minmax(114px, auto) repeat(5, 59px 9px) minmax(59px, auto);
+    height: 100%;
+  }
+
+  .ability-scores {
+    display: grid;
+    grid-template-rows: repeat(5, 68px);
+
+    .ability-box {
+      align-items: center;
+      display: grid;
+      font-size: 14px;
+      grid-template-columns: 85px 37px 60px;
+      grid-template-rows: 19px 20px 20px;
+
+      input {
+        border-width: 0 0 1px 0;
+        font-size: 14px;
+      }
+
+      input[id$='max'] {
+        height: 17px;
+        margin-right: 3px;
+      }
+
+      > label {
+        grid-column-end: span 2;
+      }
+
+      > label[for='system.abilities.sta.value'],
+      label[for='system.abilities.lck.value'] {
+        padding-top: 1.5px;
+      }
+    }
+
+    .ability-score {
+      align-self: stretch;
+      border: 5px solid var(--dark-color);
+      display: grid;
+      grid-row-end: span 3;
+
+      input {
+        align-self: center;
+        border: 0;
+        font-size: 30px;
+        height: unset;
+      }
+    }
+  }
+
+  .ac-and-hp {
+    display: grid;
+    grid-template-rows: 65px 19px 20px;
+    text-align: center;
+
+    input {
+      align-self: center;
+      border: 0;
+      font-size: 24px;
+      height: 17px;
+      margin-bottom: 5px;
+    }
+  }
+
+  .combat-basics {
+    align-items: center;
+    border: var(--dark-border);
+    border-top: 0;
+    column-gap: 5px;
+    display: grid;
+    font-size: 14px;
+    grid-column-end: span 3;
+    grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
+    grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+
+    label {
+      padding-left: 3px;
+      text-align: left;
+      padding-top: 2px;
+    }
+
+    input,
+ select {
+      font-size: 14px;
+      height: 17px;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+  }
+
+  .languages {
+    border: var(--dark-border);
+    border-top: 0;
+    display: grid;
+    font-size: 12px;
+    grid-column: 2;
+    grid-row: 13;
+    grid-column-end: span 3;
+    grid-template-rows: 19px minmax(20px, auto);
+    text-align: left;
+
+    label {
+      text-align: left;
+    }
+  }
+
+  .languages textarea,
+  .lucky-roll textarea, {
+    background: none;
+    border: 0;
+    font-family: var(--data-font);
+    font-size: 12px;
+    grid-row: 2;
+    line-height: 15px;
+    min-height: 0;
+    padding: 3px;
+    resize: none;
+    text-align: left;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .lucky-roll {
+    border: var(--dark-border);
+    border-top: 0;
+    display: grid;
+    grid-column: 2;
+    grid-column-end: span 3;
+    grid-row: 11;
+    grid-template-rows: 19px auto;
+    font-size: 12px;
+
+    label {
+      text-align: left;
+      padding-left: 3px;
+    }
+  }
+
+  .melee-missile-attack-damage {
+    align-items: center;
+    display: grid;
+    grid-column: 3;
+    grid-column-end: span 2;
+    grid-row: 3;
+    grid-template-columns: subgrid;
+    grid-template-rows: 69px 69px;
+
+    input {
+      border: 0;
+      font-size: 14px;
+      margin: 4px 8px 4px 8px;
+    }
+
+    label {
+      font-size: 12px;
+      padding-bottom: 2px;
+      height: 32px;
+    }
+  }
+
+  .name-and-level {
+    column-gap: 12px;
+    display: grid;
+    grid-column-end: span 4;
+    grid-template-rows: minmax(20px, auto) minmax(20px, auto);
+    grid-template-columns: minmax(160px, auto) minmax(113px, auto) minmax(170px, auto);
+    text-align: left;
+
+    label {
+      font-size: 13px;
+    }
+  }
+
+  .portrait {
+    border: var(--dark-border);
+    border-top: 0;
+    display: grid;
+    grid-row: 7;
+    grid-column: 3;
+    grid-column-end: span 2;
+    grid-row-end: span 3;
+    grid-template-rows: 19px auto;
+    font-size: 14px;
+
+    img {
+      border: 0;
+      justify-self: center;
+      align-self: center;
+    }
+  }
+
+  .row-separator {
+    border-bottom: 2px dotted var(--medium-color);
+    margin-bottom: 3px;
+  }
+
+  .saving-throws {
+    border: 0;
+    display: grid;
+    grid-column: 2;
+    grid-row: 5;
+    grid-row-end: span 3;
+    grid-template-rows: repeat(3, 69px);
+    margin: 0;
+    padding: 0;
+  }
+
+  .saving-throw-box {
+    align-items: center;
+    background: var(--dark-bg);
+    color: var(--light-color);
+    column-gap: 7px;
+    display: grid;
+    grid-template-columns: 54px 55px;
+    margin-bottom: 10px;
+    text-align: left;
+
+    input {
+      align-self: center;
+      background: #dbd9cd;
+      border-radius: 100px;
+      font-size: 18px;
+      height: 50px;
+      margin-left: 5px;
+      width: 50px;
+    }
+
+    label {
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+  }
+}
+
+.dcc {
+  .npc-grid {
+    height: 100%;
+
+    textarea {
+      background: none;
+      border: 0;
+      font-family: var(--data-font);
+      font-size: 12px;
+      line-height: 15px;
+      padding: 0;
+      resize: none;
+      text-align: left;
+
+      &:focus {
+        box-shadow: none;
+      }
+    }
+
+    .ac-and-hp {
+      display: grid;
+      font-size: 12px;
+      grid-template-rows: 50px 15px 17px;
+      text-align: center;
+
+      input {
+        align-self: center;
+        border: 0;
+        font-size: 22px;
+      }
+    }
+
+    .combat-basics {
+      column-gap: min(5px);
+      display: grid;
+      grid-template-columns: 86px minmax(35px, 1fr) 75px minmax(35px, 1fr);
+      grid-template-rows: minmax(17px, auto) minmax(18px, auto) minmax(18px, auto);
+      padding: 0 5px 2px 3px;
+    }
+
+    .name-and-level {
+      column-gap: 12px;
+      display: grid;
+      grid-template-columns: subgrid;
+      text-align: left;
+
+      label {
+        font-size: 13px;
+      }
+    }
+
+    .portrait {
+      .portrait-wrap {
+        height: calc(100% - 19px);
+        width: 100%;
+      }
+
+      img {
+        height: 100%;
+        width: 100%;
+        object-fit: contain;
+      }
+    }
+
+    .saving-throws {
+      display: grid;
+      row-gap: min(4px);
+      margin: 0 0 0.25px 0;
+      padding: 0;
+
+      .saving-throw-box {
+        align-items: center;
+        background: var(--dark-bg);
+        color: var(--light-color);
+        display: grid;
+        grid-template-columns: 24px 40px;
+        text-align: left;
+
+        input {
+          align-self: center;
+          background: #dbd9cd;
+          border-radius: 10px;
+          font-size: 12px;
+          height: 20px;
+          margin-left: 5px;
+          width: 20px;
+        }
+
+        label {
+          font-size: 11px;
+          letter-spacing: 1px;
+        }
+      }
+    }
+  }
+}
+
+
+// Welcome Dialog
+#dcc-welcome-dialog {
+  h1 {
+    font-family: $duvall;
+  }
+
+  form {
+    display: flex;
+    font-family: var(--data-font);
+    justify-content: space-between;
+    flex-direction: column;
+  }
+
+  div.credits {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+  }
+
+  div.logo-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    img.dcc-logo {
+      border: 0;
+    }
+  }
+
+  div.dcc-copyright {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
   }
 }

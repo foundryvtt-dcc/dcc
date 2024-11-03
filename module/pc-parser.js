@@ -1,9 +1,10 @@
 /* global game, ui, CONFIG */
 
 import EntityImages from './entity-images.js'
+import { getFirstDie, getFirstMod } from './utilities.js'
 
 /**
- *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an NPC sheet
+ *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an Actor sheet
  *
  *  @param {string} pcString The player stat block to import
  *  @return {Array}          Array of player character objects to create
@@ -13,6 +14,7 @@ function parsePCs (pcString) {
     const pcObject = JSON.parse(pcString)
     return _parseJSONPCs(pcObject)
   } catch (e) {
+    // console.error(e) // Debug only
     return _parseJSONPCs(_splitAndParsePlainPCsToJSON(pcString))
   }
 }
@@ -51,50 +53,35 @@ function _parseJSONPCs (pcObject) {
       pc['attributes.hp.value'] = pc['attributes.hp.max'] = pcObject.hitPoints
     }
     let hitDice = '1d4'
-    let findSecretDoors = CONFIG.DCC.abilityModifiers[pcObject.intelligenceScore] || 0
     if (pcObject.className) {
-      switch (pcObject.className.toLowerCase()) {
-        case 'cleric':
-          hitDice = '1d8'
-          break
-        case 'thief':
-          hitDice = '1d6'
-          break
-        case 'halfling':
-          hitDice = '1d6'
-          break
-        case 'warrior':
-          hitDice = '1d12'
-          break
-        case 'wizard':
-          hitDice = '1d4'
-          break
-        case 'dwarf':
-          hitDice = '1d10'
-          break
-        case 'elf':
-          hitDice = '1d6'
-          findSecretDoors += 4
-          break
-      }
+      hitDice = CONFIG.DCC.hitDiePerClass[pcObject.className.toLowerCase()]
     }
     pc['attributes.hitDice.value'] = hitDice
-    pc['skills.findSecretDoors.value'] = findSecretDoors
     pc.items = []
     if (pcObject.weapons) {
       for (const weapon of pcObject.weapons) {
+        // Split damage into component parts
+        const damageWeapon = getFirstDie(weapon.attackDamage)
+        const damageWeaponBonus = getFirstMod(weapon.name)
+        const attackBonusWeapon = damageWeaponBonus
+
         pc.items.push({
           name: weapon.name,
           type: 'weapon',
           img: weapon.img,
           system: {
-            toHit: weapon.attackMod || '0',
+            attackBonusWeapon,
+            toHit: weapon.attackMod || '+0',
             damage: weapon.attackDamage || '1d3',
+            damageWeapon,
+            damageWeaponBonus,
             melee: weapon.melee
           }
         })
       }
-    } else if (pcObject.weapon) {
+    }
+
+    if (pcObject.weapon && !pcObject.weapons) {
       pc.items.push({
         name: pcObject.weapon,
         type: 'weapon',
@@ -147,7 +134,7 @@ function _parseJSONPCs (pcObject) {
     }
     // Action Die
     if (pcObject.actionDice) {
-      pc['config.actionDice'] = pcObject.actionDice
+      pc['config.actionDice'] = pcObject.actionDice.replaceAll('+', ',')
     }
     // Attack Bonus
     if (pcObject.attackBonus) {

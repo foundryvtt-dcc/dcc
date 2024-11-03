@@ -3,6 +3,7 @@
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
 import parseNPCs from './npc-parser.js'
+import EntityImages from './entity-images.js'
 
 class DCCActorParser extends FormApplication {
   /**
@@ -30,11 +31,13 @@ class DCCActorParser extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options = {}) {
     const context = {}
     context.user = game.user
     context.config = CONFIG.DCC
     context.folders = []
+
+    context.importType = game.settings.get('dcc', 'lastImporterType')
 
     // Gather the list of actor folders
     for (const folder of game.actors.directory.folders) {
@@ -46,12 +49,14 @@ class DCCActorParser extends FormApplication {
 
   /**
    * Handle form submission
-   * @param {Object} event     Submission event
+   * @param {Event} event     Submission event
    * @param {Object} formData  Data from the form
    * @return {Object}
    */
   async _updateObject (event, formData) {
     event.preventDefault()
+
+    game.settings.set('dcc', 'lastImporterType', formData.type)
 
     await createActors(formData.type, formData.folderId, formData.statblocks)
   }
@@ -67,14 +72,21 @@ class DCCActorParser extends FormApplication {
 async function createActors (type, folderId, actorData) {
   // Process the stat block
   let parsedCharacters
-  try {
-    parsedCharacters = (type === 'Player') ? await parsePCs(actorData) : await parseNPCs(actorData)
-  } catch (e) {
-    console.error(e)
-    if (type === 'Player') {
+  if (type === 'Player') {
+    try {
+      parsedCharacters = parsePCs(actorData)
+    } catch (e) {
+      console.error(e)
       return ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
-    } else {
-      return ui.notifications.warn(game.i18n.localize('DCC.ParseNPCWarning'))
+    }
+  }
+
+  if (type === 'NPC') {
+    try {
+      parsedCharacters = await parseNPCs(actorData)
+    } catch (e) {
+      console.error(e)
+      return ui.notifications.warn(game.i18n.localize('DCC.ParsePlayerWarning'))
     }
   }
 
@@ -162,6 +174,7 @@ async function createActors (type, folderId, actorData) {
 
     // Create the actor
     const actor = await DCCActor.create({
+      img: EntityImages.imageForActor(type),
       name,
       type,
       folder: folderId,
@@ -205,8 +218,12 @@ async function createActors (type, folderId, actorData) {
 
             // Copy relevant fields from the original object to maintain modifiers and stats
             if (originalItem.type === 'weapon') {
+              newItem.system.attackBonusWeapon = originalItem.system.attackBonusWeapon
               newItem.system.toHit = originalItem.system.toHit
+              newItem.system.config = originalItem.system.config
               newItem.system.damage = originalItem.system.damage
+              newItem.system.damageWeapon = originalItem.system.damageWeapon
+              newItem.system.damageWeaponBonus = originalItem.system.damageWeaponBonus
               newItem.system.melee = originalItem.system.melee
               newItem.system.equipped = true
             } else if (originalItem.type === 'armor') {
@@ -221,11 +238,14 @@ async function createActors (type, folderId, actorData) {
 
         // Remove the old object and add the new one
         if (newItems.length > 0) {
-          actor.deleteEmbeddedDocuments('Item', [originalItem.id])
-          actor.createEmbeddedDocuments('Item', newItems)
+          await actor.deleteEmbeddedDocuments('Item', [originalItem.id])
+          await actor.createEmbeddedDocuments('Item', newItems)
         }
       }
     }
+
+    // Link Actor Data by Default
+    actor.updateSource({ prototypeToken: { actorLink: true } })
 
     actors.push(actor)
 
@@ -243,7 +263,7 @@ async function createActors (type, folderId, actorData) {
  * @return {Promise}
  */
 function onRenderActorDirectory (app, html) {
-  if (!game.user.hasPermission("ACTOR_CREATE")) {
+  if (!game.user.hasPermission('ACTOR_CREATE')) {
     return Promise.resolve()
   }
   const button = $(`<button class="import-actors"><i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImport')}</button>`)

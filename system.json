@@ -3,7 +3,7 @@
   "name": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
-  "version": "0.47.0",
+  "version": "0.50.0",
   "minimumCoreVersion": "12",
   "compatibility": {
     "maximum": "12",
@@ -30,6 +30,12 @@
   "esmodules": [
     "module/dcc.js"
   ],
+ "flags": {
+   "hotReload": {
+     "extensions": ["js", "css", "html", "json"],
+     "paths": ["lang", "templates", "styles"]
+   }
+ },
   "styles": [
     "styles/dcc.css"
   ],
@@ -66,13 +72,14 @@
     "distance": 5,
     "units": "ft"
   },
+  "background": "systems/dcc/styles/images/dcc-background.webp",
   "primaryTokenAttribute": "attributes.hp",
   "secondaryTokenAttribute": "abilities.lck.value",
   "socket": true,
   "initiative": "@attributes.init.die + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
-  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.47.0/system.json",
-  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.47.0/dcc.zip",
+  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.50.0/system.json",
+  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.50.0/dcc.zip",
   "protected": false,
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "license": "LICENSE.txt"

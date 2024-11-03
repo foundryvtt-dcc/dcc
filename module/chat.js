@@ -1,9 +1,14 @@
-/* global canvas, game */
+/* global canvas, game, TextEditor */
+// noinspection DuplicatedCode
+
+import { getCritTableResult, getFumbleTableResult } from './utilities.js'
 
 /**
  * Highlight critical success or failure on d20 rolls
+ * @param message
+ * @param html
  */
-export const highlightCriticalSuccessFailure = function (message, html, data) {
+export const highlightCriticalSuccessFailure = function (message, html) {
   if (!message.rolls || !message.isContentVisible) return
 
   // Highlight rolls where the first part is a d20 roll
@@ -103,10 +108,277 @@ export const addChatMessageContextOptions = function (html, options) {
  * @return {Promise}
  */
 function applyChatCardDamage (roll, multiplier) {
-  const amount = roll.find('.damage-applyable').attr('data-damage') ||
-    roll.find('.dice-total').text()
+  const amount = roll.find('.damage-applyable').attr('data-damage') || roll.find('.dice-total').text()
   return Promise.all(canvas.tokens.controlled.map(t => {
     const a = t.actor
     return a.applyDamage(amount, multiplier)
   }))
+}
+
+/**
+ * Change attack rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ */
+export const emoteAbilityRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isAbilityCheck')) return
+
+  const abilityRollEmote = game.i18n.format(
+    'DCC.RolledAbilityEmote',
+    {
+      actorName: data.alias,
+      abilityInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
+      abilityName: message.flavor
+    }
+  )
+  html.find('.message-content').html(abilityRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change attack rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ */
+export const emoteApplyDamageRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isApplyDamage')) return
+
+  message.content = message.content.replace('T', 't') // Lowercase message
+
+  const applyDamageEmote = game.i18n.format(
+    'DCC.ApplyDamageEmote',
+    {
+      targetName: data.alias,
+      damageInline: message.content
+    }
+  )
+  message.rolls = []
+  html.find('.message-content').html(applyDamageEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change attack rolls into emotes
+ * @param message
+ * @param html
+ */
+export const emoteAttackRoll = function (message, html) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isToHit')) return
+
+  let deedRollHTML = ''
+  if (message.system.deedDieRollResult) {
+    const critical = message.system.deedSucceed ? ' critical' : ''
+    let iconClass = 'fa-dice-d4'
+    if (message.system?.deedDieFormula.includes('d6') || message.system?.deedDieFormula.includes('d7')) {
+      iconClass = 'fa-dice-d6'
+    }
+    if (message.system?.deedDieFormula.includes('d8')) {
+      iconClass = 'fa-dice-d8'
+    }
+    if (message.system?.deedDieFormula.includes('d10')) {
+      iconClass = 'fa-dice-d10'
+    }
+    const deedDieHTML = `<a class="inline-roll${critical}" data-tooltip="${message.system?.deedDieFormula}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</a>`
+    deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
+  }
+
+  let crit = ''
+  if (message.getFlag('dcc', 'isCrit')) {
+    crit = `<p class="emote-alert critical">${message.system.critPrompt}!</p> ${message.system.critInlineRoll}`
+  }
+
+  let fumble = ''
+  if (message.getFlag('dcc', 'isFumble')) {
+    fumble = `<p class="emote-alert fumble">${message.system.fumblePrompt}!<p>${message.system.fumbleInlineRoll}`
+  }
+
+  const damageInlineRoll = message.system.damageInlineRoll.replaceAll('@ab', message.system.deedDieRollResult)
+
+  const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
+    actionName: message.getFlag('dcc', 'isBackstab') ? 'backstabs' : 'attacks',
+    actorName: message.alias,
+    weaponName: message.system.weaponName,
+    rollHTML: message.rolls[0].toAnchor().outerHTML,
+    deedRollHTML,
+    damageRollHTML: damageInlineRoll,
+    crit,
+    fumble
+  })
+  html.find('.message-content').html(attackEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change crit rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ */
+export const emoteCritRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isCrit') || message.getFlag('dcc', 'isToHit')) return
+
+  const critRollEmote = game.i18n.format(
+    'DCC.RolledCritEmote',
+    {
+      actorName: data.alias,
+      critInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
+      critTableName: message.system.critTableName,
+      critResult: message.system.critResult ? `:<br>${message.system.critInlineRoll}` : '.'
+    }
+  )
+
+  html.find('.message-content').html(critRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change damage rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteDamageRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Damage'))) return
+
+  const damageRoll = message.rolls[0]
+
+  const damageRollEmote = game.i18n.format(
+    'DCC.RolledDamageEmote',
+    {
+      actorName: data.alias,
+      damageInlineRollHTML: damageRoll.toAnchor({ classes: ['damage-applyable'], dataset: { damage: damageRoll.total } }).outerHTML
+    }
+  )
+  html.find('.message-content').html(damageRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change fumble rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteFumbleRoll = async function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
+  if (game.settings.get('dcc', 'emoteRolls') === false) return
+
+  const fumbleResult = await getFumbleTableResult(message.rolls[0])
+  let fumbleText = ''
+  if (fumbleResult) {
+    fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+  }
+
+  const fumbleRollEmote = game.i18n.format(
+    'DCC.RolledFumbleEmote',
+    {
+      actorName: data.alias,
+      fumbleInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
+      fumbleResult: fumbleText ? `:<br>${fumbleText}` : '.'
+    }
+  )
+
+  html.find('.message-content').html(fumbleRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change saving throw rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteSavingThrowRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isSave')) return
+
+  const saveRollEmote = game.i18n.format(
+    'DCC.RolledSavingThrowEmote',
+    {
+      actorName: data.alias,
+      type: message.flavor,
+      saveInlineRollHTML: message.rolls[0].toAnchor('Roll Save').outerHTML
+    }
+  )
+  html.find('.message-content').html(saveRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change initiative rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteInitiativeRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('core', 'initiativeRoll')) return
+
+  const initiativeRollEmote = game.i18n.format(
+    'DCC.RolledInitiativeEmote',
+    {
+      actorName: data.alias,
+      initiativeInlineRollHTML: message.rolls[0].toAnchor().outerHTML
+    }
+  )
+  html.find('.message-content').html(initiativeRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Change skill check rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteSkillCheckRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isSkillCheck')) return
+
+  const skillCheckRoll = message.rolls[0]
+
+  const skillCheckRollEmote = game.i18n.format(
+    'DCC.RolledSkillCheckEmote',
+    {
+      actorName: data.alias,
+      skillCheckInlineRollHTML: skillCheckRoll.toAnchor({ classes: ['damage-applyable'], dataset: { damage: skillCheckRoll.total } }).outerHTML,
+      skillName: message.flavor
+    }
+  )
+  html.find('.message-content').html(skillCheckRollEmote)
+  html.find('header').remove()
+}
+
+/**
+ * Look up a critical hit roll in the crit table specified in the flavor
+ * @param message
+ * @param html
+ * @returns {Promise<void>}
+ */
+export const lookupCriticalRoll = async function (message, html) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Critical'))) return
+  const tableName = message.flavor.replace('Critical (', '').replace(')', '')
+
+  const critResult = await getCritTableResult(message.rolls[0], tableName)
+  const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+  html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${critText}`)
+}
+
+/**
+ * Look up a fumble roll
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const lookupFumbleRoll = async function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
+
+  const fumbleResult = await getFumbleTableResult(message.rolls[0])
+  const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+  html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${fumbleText}`)
 }

@@ -1,59 +1,63 @@
 {{!-- Spells Tab --}}
-<div class="tab skills" data-group="primary" data-tab="skills">
-  <h4 class="class-label">{{localize "DCC.Skills"}}</h4>
-  <div class="skills-container-generic">
-    <ol class="item-list">
-      <li class="item flexrow item-list-header">
-        <div class="skill-name">{{localize "DCC.SkillName"}}</div>
-        <div class="skill-die">{{localize "DCC.SkillDie"}}</div>
-        <div class="skill-modifier">{{localize "DCC.SkillValue"}}</div>
-        <div class="skill-last-roll">{{localize "DCC.SkillResult"}}</div>
-        <div class="item-controls">
-          <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="skill"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
-        </div>
-      </li>
-      {{#each actor.skills as |skill id|}}
-      <li class="item skill-item flexrow" data-item-id="{{skill._id}}"
+<div class="tab skills-bg" data-group="primary" data-tab="skills">
+  <div class="dark-title">{{localize "DCC.Skills"}}</div>
+  <ol class="skill-list dark-border">
+    <li class="item-list-header grid-col-span-5">
+      <div class="skill-name">{{localize "DCC.SkillName"}}</div>
+      <div class="skill-die">{{localize "DCC.SkillDie"}}</div>
+      <div class="skill-modifier">{{localize "DCC.SkillValue"}}</div>
+      <div class="skill-last-roll">{{localize "DCC.SkillResult"}}</div>
+      <div>
+        <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="skill">
+          <i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+      </div>
+    </li>
+    {{#each actor.skills as |skill id|}}
+      <li class="item skill grid-col-span-5" data-item-id="{{skill._id}}"
           data-skill="{{skill.name}}">
         {{#if skill.config.freeform}}
-        <label class="skill-name" for="itemUpdates.{{skill._id}}.system.description.summary">{{skill.name}}</label>
+          <label class="skill-name" for="itemUpdates.{{skill._id}}.system.description.summary">{{skill.name}}</label>
         {{else}}
-        <label class="skill-check skill-name rollable">{{skill.name}}</label>
+          <label class="skill-check skill-name rollable">{{skill.name}}</label>
         {{/if}}
         {{#if skill.system.config.freeform}}
-        <div class="skill-freeform skill-field">
           <input type="text" id="itemUpdates.{{skill._id}}.system.description.summary"
-                  name="itemUpdates.{{skill._id}}.system.description.summary"
-                  value="{{skill.system.description.summary}}" data-dtype="String"/>
-        </div>
+                 name="itemUpdates.{{skill._id}}.system.description.summary"
+                 value="{{skill.system.description.summary}}" data-dtype="String"
+                 style="grid-column-end: span 3;"/>
         {{else}}
-        <div class="skill-die skill-field">
-           {{#if skill.system.config.useDie}}
-           <input type="text" id="itemUpdates.{{skill._id}}.system.die"
-                  name="itemUpdates.{{skill._id}}.system.die"
-                  value="{{skill.system.die}}" data-dtype="String"/>
-           {{/if}}
-        </div>
-        <div class="skill-modifier skill-field">
-           {{#if skill.system.config.useValue}}
-           <input type="text" id="itemUpdates.{{skill._id}}.system.value"
-                  name="itemUpdates.{{skill._id}}.system.value"
-                  value="{{numberFormat skill.system.value decimals=0 sign=true}}"
-                  data-dtype="Number"/>
-           {{/if}}
-        </div>
-        <div class="skill-last-roll">
-           {{#if skill.system.config.showLastResult}}
-           <label>{{skill.system.lastResult}}</label>
-           {{/if}}
-        </div>
+          <div>
+            {{#if skill.system.config.useDie}}
+              <input type="text" id="itemUpdates.{{skill._id}}.system.die"
+                     name="itemUpdates.{{skill._id}}.system.die"
+                     value="{{skill.system.die}}" data-dtype="String"/>
+            {{else}}
+              --
+            {{/if}}
+          </div>
+          <div>
+            {{#if skill.system.config.useValue}}
+              <input type="text" id="itemUpdates.{{skill._id}}.system.value"
+                     name="itemUpdates.{{skill._id}}.system.value"
+                     value="{{numberFormat skill.system.value decimals=0 sign=true}}"
+                     data-dtype="Number"/>
+            {{else}}
+              --
+            {{/if}}
+          </div>
+          <div>
+            {{#if skill.system.config.showLastResult}}
+              <label>{{skill.system.lastResult}}</label>
+            {{else}}
+              --
+            {{/if}}
+          </div>
         {{/if}}
-        <div class="item-controls">
-            <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
-            <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
+        <div>
+          <a class="item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
+          <a class="item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
         </div>
       </li>
-      {{/each}}
-    </ol>
-  </div>
+    {{/each}}
+  </ol>
 </div>

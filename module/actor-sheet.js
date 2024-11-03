@@ -1,6 +1,8 @@
-/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, $, CONST */
+/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, CONST */
+// noinspection JSClosureCompilerSyntax
 
 import DCCActorConfig from './actor-config.js'
+import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import EntityImages from './entity-images.js'
 
 /**
@@ -8,22 +10,26 @@ import EntityImages from './entity-images.js'
  * @extends {ActorSheet}
  */
 class DCCActorSheet extends ActorSheet {
+  static height = 450
+
   /** @override */
   static get defaultOptions () {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ['dcc', 'sheet', 'actor'],
-      template: 'systems/dcc/templates/actor-sheet-zero-level.html',
-      width: 600,
-      height: 600,
+    const options = {
+      classes: ['dcc', 'sheet', 'actor', 'npc'],
+      width: 520,
+      height: this.height,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
+      resizable: true,
       scrollY: [
         '.tab.character',
         '.tab.equipment .equipment-container',
         '.tab.skills',
         '.tab.spells'
-      ]
-    })
+      ],
+      template: 'systems/dcc/templates/actor-sheet-npc.html'
+    }
+    return foundry.utils.mergeObject(super.defaultOptions, options)
   }
 
   /** @inheritdoc */
@@ -34,13 +40,17 @@ class DCCActorSheet extends ActorSheet {
     if (this.actor.permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
       buttons.unshift(
         {
-          label: game.i18n.localize('DCC.ConfigureSheet'),
+          label: 'DCC.ConfigureSheet',
           class: 'configure-actor',
           icon: 'fas fa-code',
-          onclick: ev => this._onConfigureActor(ev)
+          onclick: ev => this._onConfigureActor(ev),
+          tooltip: 'DCC.ConfigureSheetHint'
         }
       )
     }
+
+    buttons[1].tooltip = 'DCC.SheetHint'
+    buttons[2].tooltip = 'DCC.TokenHint'
 
     return buttons
   }
@@ -59,45 +69,31 @@ class DCCActorSheet extends ActorSheet {
       cssClass: isOwner ? 'editable' : 'locked',
       isNPC: this.document.type === 'NPC',
       isPC: this.document.type === 'Player',
-      isZero: this.document.system.details.level === 0,
+      isZero: this.document.system.details.level.value === 0,
       type: this.document.type,
       config: CONFIG.DCC
     }
 
+    /** @type {DCCActor} */
     data.actor = foundry.utils.duplicate(this.document)
     data.actor.name = this.document.name
+
     data.system = foundry.utils.duplicate(this.document.system)
     data.labels = this.document.labels || {}
     data.filters = this._filters
 
     if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
       data.actor.img = EntityImages.imageForActor(data.type)
-    }
-
-    if (data.isNPC) {
-      this.options.template = 'systems/dcc/templates/actor-sheet-npc.html'
-    } else {
-      this.options.template = 'systems/dcc/templates/actor-sheet-zero-level.html'
-
-      if (!data.isZero) {
-        // Reorder saves on upper level sheet to define tabbing order
-        data.system.saves = {
-          ref: data.system.saves.ref,
-          frt: data.system.saves.frt,
-          wil: data.system.saves.wil
-        }
+      if (!data.actor.prototypeToken.texture.src || data.actor.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
+        data.actor.prototypeToken.texture.src = EntityImages.imageForActor(data.type)
       }
     }
-
-    // Should the Deed Roll button be available on the sheet?
-    data.system.config.rollAttackBonus = (this.actor.getAttackBonusMode() === 'manual')
 
     // Prepare item lists by type
     this._prepareItems(data)
 
     // Format Notes HTML
     data.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
-      async: true,
       relativeTo: this.actor,
       secrets: this.actor.isOwner
     })
@@ -105,7 +101,6 @@ class DCCActorSheet extends ActorSheet {
     // Format Corruption HTML if present
     if (this.actor.system.class?.corruption) {
       data.corruptionHTML = await TextEditor.enrichHTML(this.actor.system.class.corruption, {
-        async: true,
         relativeTo: this.actor,
         secrets: this.actor.isOwner
       })
@@ -132,13 +127,7 @@ class DCCActorSheet extends ActorSheet {
     const armor = []
     const ammunition = []
     const mounts = []
-    const spells = {
-      1: [],
-      2: [],
-      3: [],
-      4: [],
-      5: []
-    }
+    const spells = {}
     const skills = []
     const treasure = []
     const coins = []
@@ -169,7 +158,8 @@ class DCCActorSheet extends ActorSheet {
         } else {
           weapons.ranged.push(i)
         }
-      } if (i.type === 'ammunition') {
+      }
+      if (i.type === 'ammunition') {
         ammunition.push(i)
       } else if (i.type === 'armor') {
         armor.push(i)
@@ -266,35 +256,29 @@ class DCCActorSheet extends ActorSheet {
     // Owner Only Listeners
     if (this.actor.isOwner) {
       // Ability Checks
-      html.find('.ability-name').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-modifiers').click(this._onRollAbilityCheck.bind(this))
-      html.find('li.ability').each(makeDraggable)
-      html.find('div.ability-modifiers').each((index, element) => {
-        // Also make the luck modifier draggable for non-standard luck checks
-        if (element.parentElement.dataset.ability === 'lck') {
-          makeDraggable(index, element)
-        }
-      })
+      html.find('.ability-box label[for*=".value"]').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-box label[for="system.abilities.lck.mod"]').click(this._onRollAbilityCheck.bind(this))
+      html.find('.ability-box label[for*=".value"]').each(makeDraggable)
+      html.find('[data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
 
       // Initiative
-      html.find('.init-label').click(this._onRollInitiative.bind(this))
-      html.find('div.init').each(makeDraggable)
+      html.find('label[for="system.attributes.init.value"]').click(this._onRollInitiative.bind(this))
+      html.find('label[for="system.attributes.init.value"]').each(makeDraggable)
 
       // Hit Dice
-      html.find('.hd-label').click(this._onRollHitDice.bind(this))
-      html.find('div.hd').each(makeDraggable)
+      html.find('label[for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
 
       // Saving Throws
-      html.find('.save-name').click(this._onRollSavingThrow.bind(this))
-      html.find('li.save').each(makeDraggable)
+      html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
+      html.find('label[for*="system.saves"]').each(makeDraggable)
 
       // Skills
       html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
       html.find('label.skill-check').each(makeDraggable)
 
       // Luck Die
-      html.find('.luck-die').click(this._onRollLuckDie.bind(this))
-      html.find('label.luck-die').each(makeDraggable)
+      html.find('label[for*="system.class.luckDie"]').click(this._onRollLuckDie.bind(this))
+      html.find('label[for*="system.class.luckDie"]').each(makeDraggable)
 
       // Spell Checks
       html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
@@ -303,17 +287,18 @@ class DCCActorSheet extends ActorSheet {
       html.find('.spell-draggable').each(makeDraggable)
 
       // Disapproval
-      html.find('.disapproval-range').click(this._onApplyDisapproval.bind(this))
-      html.find('.disapproval-table').click(this._onRollDisapproval.bind(this))
-      html.find('label.disapproval-range').each(makeDraggable)
-      html.find('label.disapproval-table').each(makeDraggable)
-
-      // Attack Bonus
-      html.find('.attack-bonus.rollable').click(this._onRollAttackBonus.bind(this))
-      html.find('.attack-bonus').each(makeDraggable)
+      html.find('label[for="system.class.disapproval"]').click(this._onApplyDisapproval.bind(this))
+      html.find('label[for="system.class.disapprovalTable"]').click(this._onRollDisapproval.bind(this))
 
       // Action Dice
-      html.find('.action-dice').each(makeDraggable)
+      html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
+
+      // Crit Die
+      html.find('label[for="system.attributes.critical.die"]').click(this._onRollCritDie.bind(this))
+
+      // Quantity increase / decrease
+      html.find('.qty-decrease').click(this._onDecreaseQty.bind(this))
+      html.find('.qty-increase').click(this._onIncreaseQty.bind(this))
 
       // Weapons
       html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
@@ -323,6 +308,14 @@ class DCCActorSheet extends ActorSheet {
       // Draggable items, including armor
       html.find('.item-draggable').each(makeDraggable)
 
+      // Melee/Missile Attack/Damage Bonus Config
+      if (this.object.system.config.computeMeleeAndMissileAttackAndDamage) {
+        html.find('input[id*="system.details.attackHitBonus"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+        html.find('input[id*="system.details.attackDamageBonus"]').click(this._onConfigureMeleeMissileBonus.bind(this))
+        html.find('label[for*="system.details.attackHitBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
+        html.find('label[for*="system.details.attackDamageBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
+      }
+
       // Only for editable sheets
       if (this.options.editable) {
         // Add Inventory Item
@@ -330,8 +323,8 @@ class DCCActorSheet extends ActorSheet {
 
         // Update Inventory Item
         html.find('.item-edit').click(ev => {
-          const li = $(ev.currentTarget).parents('.item')
-          const item = this.actor.items.get(li.data('itemId'))
+          const itemId = this._findDataset(ev.currentTarget, 'itemId')
+          const item = this.actor.items.get(itemId)
           item.sheet.render(true)
         })
 
@@ -357,6 +350,29 @@ class DCCActorSheet extends ActorSheet {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 400) / 2
     }).render(true)
+  }
+
+  /**
+   * Display melee/missile bonus configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onConfigureMeleeMissileBonus (event) {
+    event.preventDefault()
+    new MeleeMissileBonusConfig(this.actor, {
+      top: this.position.top + 40,
+      left: this.position.left + (this.position.width - 400) / 2
+    }).render(true)
+  }
+
+  /**
+   * Display melee/missile bonus configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onRollMeleeMissileBonus (event) {
+    event.preventDefault()
+    console.log('on melee missile bonus')
   }
 
   /** Prompt to delete an item
@@ -386,15 +402,30 @@ class DCCActorSheet extends ActorSheet {
     }
   }
 
+  _onDecreaseQty (event) {
+    const itemId = this._findDataset(event.currentTarget, 'itemId')
+    const item = this.actor.items.get(itemId)
+    let qty = item.system?.quantity || 0
+    qty -= 1
+    item.update({ 'system.quantity': qty })
+  }
+
+  _onIncreaseQty (event) {
+    const itemId = this._findDataset(event.currentTarget, 'itemId')
+    const item = this.actor?.items.get(itemId)
+    let qty = item.system?.quantity || 0
+    qty += 1
+    item.update({ 'system.quantity': qty })
+  }
+
   /**
    * Delete an item
    * @param {Event}  event   The originating click event
    * @private
    */
   _deleteItem (event) {
-    const li = $(event.currentTarget).parents('.item')
-    this.actor.deleteEmbeddedDocuments('Item', [li.data('itemId')])
-    li.slideUp(200, () => this.render(false))
+    const itemId = this._findDataset(event.currentTarget, 'itemId')
+    this.actor.deleteEmbeddedDocuments('Item', [itemId])
   }
 
   /**
@@ -406,7 +437,7 @@ class DCCActorSheet extends ActorSheet {
     while (element && !(attribute in element.dataset)) {
       element = element.parentElement
     }
-    if (attribute in element.dataset) {
+    if (element && attribute in element.dataset) {
       return element.dataset[attribute]
     }
     return null
@@ -421,10 +452,12 @@ class DCCActorSheet extends ActorSheet {
 
     // Handle the various draggable elements on the sheet
     const classes = event.target.classList
-    if (classes.contains('ability')) {
+    const labelFor = event.currentTarget.getAttribute('for') || ''
+
+    if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
       // Normal ability rolls and DCC d20 roll under luck rolls
+      const rollUnder = (event.currentTarget.htmlFor === 'system.abilities.lck.value')
       const abilityId = this._findDataset(event.currentTarget, 'ability')
-      const rollUnder = (abilityId === 'lck')
       dragData = {
         type: 'Ability',
         actorId: this.actor.id,
@@ -433,26 +466,29 @@ class DCCActorSheet extends ActorSheet {
           rollUnder
         }
       }
-    } else if (classes.contains('ability-modifiers')) {
+    }
+
+    if (event.currentTarget.htmlFor === 'system.abilities.lck.mod') {
       // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
-      const abilityId = this._findDataset(event.currentTarget, 'ability')
-      if (abilityId) {
-        dragData = {
-          type: 'Ability',
-          actorId: this.actor.id,
-          data: {
-            abilityId,
-            rollUnder: false
-          }
+      dragData = {
+        type: 'Ability',
+        actorId: this.actor.id,
+        data: {
+          abilityId: 'lck',
+          rollUnder: false
         }
       }
-    } else if (classes.contains('init')) {
+    }
+
+    if (classes.contains('init') || labelFor === 'system.attributes.init.value') {
       dragData = {
         type: 'Initiative',
         actorId: this.actor.id,
         data: {}
       }
-    } else if (classes.contains('hd')) {
+    }
+
+    if (classes.contains('hd') || labelFor === 'system.attributes.hd.value') {
       dragData = {
         type: 'Hit Dice',
         actorId: this.actor.id,
@@ -460,13 +496,17 @@ class DCCActorSheet extends ActorSheet {
           dice: this.actor.system.attributes.hitDice.value
         }
       }
-    } else if (classes.contains('save')) {
+    }
+
+    if (classes.contains('save') || labelFor.includes('system.saves')) {
       dragData = {
         type: 'Save',
         actorId: this.actor.id,
         data: this._findDataset(event.currentTarget, 'save')
       }
-    } else if (classes.contains('skill-check')) {
+    }
+
+    if (classes.contains('skill-check')) {
       const skillId = this._findDataset(event.currentTarget, 'skill')
       const actorSkill = this.actor.system.skills[skillId]
       const skillName = actorSkill ? actorSkill.label : skillId
@@ -478,7 +518,9 @@ class DCCActorSheet extends ActorSheet {
           skillName
         }
       }
-    } else if (classes.contains('luck-die')) {
+    }
+
+    if (classes.contains('luck-die')) {
       dragData = {
         type: 'Luck Die',
         actorId: this.actor.id,
@@ -486,7 +528,9 @@ class DCCActorSheet extends ActorSheet {
           die: this.actor.system.class.luckDie
         }
       }
-    } else if (classes.contains('spell-check')) {
+    }
+
+    if (classes.contains('spell-check')) {
       dragData = {
         type: 'Spell Check',
         actorId: this.actor.id,
@@ -494,7 +538,9 @@ class DCCActorSheet extends ActorSheet {
           ability: this._findDataset(event.currentTarget, 'ability')
         }
       }
-    } else if (classes.contains('spell-draggable')) {
+    }
+
+    if (classes.contains('spell-draggable')) {
       const spell = this._findDataset(event.currentTarget, 'spell')
       const spellItem = this.actor.items.find(i => i.name === spell)
       let img
@@ -512,7 +558,9 @@ class DCCActorSheet extends ActorSheet {
           img
         }
       }
-    } else if (classes.contains('attack-bonus')) {
+    }
+
+    if (classes.contains('attack-bonus')) {
       dragData = {
         type: 'Attack Bonus',
         actorId: this.actor.id,
@@ -520,7 +568,9 @@ class DCCActorSheet extends ActorSheet {
           die: this.actor.system.details.attackBonus
         }
       }
-    } else if (classes.contains('action-dice')) {
+    }
+
+    if (classes.contains('action-dice')) {
       dragData = {
         type: 'Action Dice',
         actorId: this.actor.id,
@@ -528,7 +578,9 @@ class DCCActorSheet extends ActorSheet {
           die: this.actor.system.attributes.actionDice.value || '1d20'
         }
       }
-    } else if (classes.contains('weapon-draggable')) {
+    }
+
+    if (classes.contains('weapon-draggable')) {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const weapon = this.actor.items.get(itemId)
       dragData = Object.assign(
@@ -539,12 +591,13 @@ class DCCActorSheet extends ActorSheet {
           data: weapon,
           dccData: {
             weapon,
-            slot: this._findDataset(event.currentTarget, 'itemSlot'),
             backstab: classes.contains('backstab-button')
           }
         }
       )
-    } else if (classes.contains('item-draggable')) {
+    }
+
+    if (classes.contains('item-draggable')) {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const item = this.actor.items.get(itemId)
       dragData = Object.assign(
@@ -558,13 +611,17 @@ class DCCActorSheet extends ActorSheet {
           }
         }
       )
-    } else if (classes.contains('disapproval-range')) {
+    }
+
+    if (classes.contains('disapproval-range')) {
       dragData = {
         type: 'Apply Disapproval',
         actorId: this.actor.id,
         data: {}
       }
-    } else if (classes.contains('disapproval-table')) {
+    }
+
+    if (classes.contains('disapproval-table')) {
       dragData = {
         type: 'Roll Disapproval',
         actorId: this.actor.id,
@@ -604,13 +661,9 @@ class DCCActorSheet extends ActorSheet {
     const ability = event.currentTarget.parentElement.dataset.ability
 
     // Luck checks are roll under unless the user explicitly clicks the modifier
-    const rollUnder = (ability === 'lck') && (event.currentTarget.className !== 'ability-modifiers')
-
-    // Allow alternate behaviour if the modifier is clicked instead of the attribute
-    const modClick = (event.currentTarget.className === 'ability-modifiers')
+    const rollUnder = (ability === 'lck') && (event.currentTarget.htmlFor !== 'system.abilities.lck.mod')
 
     Object.assign(options, {
-      modClick,
       rollUnder
     })
 
@@ -618,14 +671,14 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /**
-   * Handle rolling Initiative
+   * Handle rolling Crit Die on its own
    * @param {Event} event   The originating click event
    * @private
    */
-  _onRollInitiative (event) {
+  _onRollCritDie (event) {
     event.preventDefault()
     const options = this._fillRollOptions(event)
-    this.actor.rollInitiative(this.token, options)
+    this.actor.rollCritical(options)
   }
 
   /**
@@ -637,6 +690,16 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     const options = this._fillRollOptions(event)
     this.actor.rollHitDice(options)
+  }
+
+  /**
+   * Handle rolling Initiative
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  async _onRollInitiative (event) {
+    event.preventDefault()
+    this.actor.rollInit(event)
   }
 
   /**
@@ -715,32 +778,18 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /**
-   * Handle rolling attack bonus
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onRollAttackBonus (event) {
-    if (this.actor.getAttackBonusMode() === 'manual') {
-      event.preventDefault()
-      const options = this._fillRollOptions(event)
-      this.actor.rollAttackBonus(options)
-      this.render(false)
-    }
-  }
-
-  /**
    * Handle rolling a weapon attack
    * @param {Event} event   The originating click event
    * @private
    */
   _onRollWeaponAttack (event) {
     event.preventDefault()
-    const slot = event.currentTarget.parentElement.dataset.itemSlot
+    const itemId = this._findDataset(event.currentTarget, 'itemId')
     const options = this._fillRollOptions(event)
     Object.assign(options, {
       backstab: event.currentTarget.classList.contains('backstab-button')
     })
-    this.actor.rollWeaponAttack(slot, options)
+    this.actor.rollWeaponAttack(itemId, options)
   }
 
   /**
@@ -756,7 +805,10 @@ class DCCActorSheet extends ActorSheet {
     // Grab any data associated with this control.
     const system = foundry.utils.duplicate(header.dataset)
     // Initialize a default name.
-    const name = `New ${type.capitalize()}`
+    let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
+    if (this.actor.type === 'NPC' && type === 'weapon') {
+      name = game.i18n.localize('DCC.NewAttack')
+    }
     // Prepare the item object.
     const itemData = {
       name,
@@ -774,17 +826,6 @@ class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  setPosition (options = {}) {
-    const position = super.setPosition(options)
-    const sheetBody = this.element.find('.sheet-body')
-    const bodyHeight = position.height - 192
-    sheetBody.css('height', bodyHeight)
-    return position
-  }
-
-  /* -------------------------------------------- */
-
-  /** @override */
   async _updateObject (event, formData) {
     // Handle owned item updates separately
     if (event.currentTarget) {
@@ -792,9 +833,9 @@ class DCCActorSheet extends ActorSheet {
       const expanded = foundry.utils.expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
-            parentElement.classList.contains('armor') ||
-            parentElement.classList.contains('spell-item') ||
-            parentElement.classList.contains('skill-field')) {
+          parentElement.classList.contains('armor') ||
+          parentElement.classList.contains('spell-item') ||
+          parentElement.classList.contains('skill-field')) {
           // Handle extra nesting in skill lists
           if (parentElement.classList.contains('skill-field')) {
             parentElement = parentElement.parentElement
@@ -805,6 +846,13 @@ class DCCActorSheet extends ActorSheet {
             const updateData = expanded.itemUpdates[itemId]
             await item.update(updateData)
           }
+        }
+      }
+
+      if (expanded.img) {
+        const tokenImg = this.actor.prototypeToken.texture.src
+        if (!tokenImg || tokenImg === 'icons/svg/mystery-man.svg' || tokenImg === 'systems/dcc/styles/images/actor.webp') {
+          foundry.utils.mergeObject(formData, { prototypeToken: { texture: { src: expanded.img } } })
         }
       }
     }

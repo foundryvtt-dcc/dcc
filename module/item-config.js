@@ -1,6 +1,6 @@
 /* global FormApplication, game, CONFIG */
 
-export class DCCItemConfig extends FormApplication {
+class DCCItemConfig extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
     options.width = 380
@@ -10,8 +10,6 @@ export class DCCItemConfig extends FormApplication {
   /** @override */
   get template () {
     switch (this.object.type) {
-      case 'weapon':
-        return 'systems/dcc/templates/dialog-item-config-weapon.html'
       case 'spell':
         return 'systems/dcc/templates/dialog-item-config-spell.html'
       case 'skill':
@@ -36,7 +34,7 @@ export class DCCItemConfig extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData () {
+  getData (options = {}) {
     const data = this.object
     data.user = game.user
     data.config = CONFIG.DCC
@@ -61,7 +59,7 @@ export class DCCItemConfig extends FormApplication {
     // Update the actor
     this.object.update(formData)
     // Re-draw the updated sheet
-    this.object.sheet.render(true)
+    await this.object.sheet.render(true)
   }
 }
 

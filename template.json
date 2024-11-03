@@ -46,7 +46,12 @@
           },
           "actionDice": {
             "value": "1d20",
-            "options": [{"value": "1d20", "label": "1d20"}]
+            "options": [
+              {
+                "value": "1d20",
+                "label": "1d20"
+              }
+            ]
           },
           "critical": {
             "die": "1d4",
@@ -69,6 +74,19 @@
             "die": "1d20",
             "value": 0
           },
+          "initDice": {
+            "value": "1d20",
+            "options": [
+              {
+                "value": "1d20",
+                "label": "1d20"
+              },
+              {
+                "value": "1d16",
+                "label": "1d16"
+              }
+            ]
+          },
           "speed": {
             "value": 30,
             "base": 30,
@@ -76,26 +94,58 @@
           }
         },
         "details": {
+          "alignment": "",
+          "attackBonus": "+0",
+          "attackHitBonus": {
+            "melee": {
+              "value": "+0",
+              "adjustment": "+0"
+            },
+            "missile": {
+              "value": "+0",
+              "adjustment": "+0"
+            }
+          },
+          "attackDamageBonus": {
+            "melee": {
+              "value": "+0",
+              "adjustment": "+0"
+            },
+            "missile": {
+              "value": "+0",
+              "adjustment": "+0"
+            }
+          },
+          "birthAugur": "",
+          "critRange": "20",
+          "languages": "",
           "level": {
             "value": 0
           },
-          "alignment": "",
-          "attackBonus": "+0",
-          "languages": "",
           "occupation": "",
+          "notes": {
+            "value": ""
+          },
           "title": "",
-          "notes": ""
+          "xp": {
+            "value": 0,
+            "min": 0,
+            "max": 10
+          }
         },
         "saves": {
           "frt": {
+            "abbreviation": "DCC.SavesFortitudeAbbr",
             "label": "DCC.SavesFortitude",
             "value": 0
           },
           "ref": {
+            "abbreviation": "DCC.SavesReflexAbbr",
             "label": "DCC.SavesReflex",
             "value": 0
           },
           "wil": {
+            "abbreviation": "DCC.SavesWillAbbr",
             "label": "DCC.SavesWill",
             "value": 0
           }
@@ -109,18 +159,9 @@
         }
       },
       "player": {
-        "details": {
-          "birthAugur": "",
-          "critRange": "20",
-          "xp": {
-            "value": 0,
-            "min": 0,
-            "max": 10
-          }
-        },
         "skills": {
-          "findSecretDoors": {
-            "label": "DCC.FindSecretDoors",
+          "detectSecretDoors": {
+            "label": "DCC.DetectSecretDoors",
             "value": "+0"
           }
         },
@@ -163,7 +204,7 @@
         }
       },
       "thief": {
-        "class" : {
+        "class": {
           "luckDie": "1d3",
           "backstab": "0"
         },
@@ -243,13 +284,16 @@
           "critRange": "20"
         },
         "class": {
-          "luckyWeapon": null
+          "luckyWeapon": null,
+          "luckyWeaponMod": "+0"
         }
       },
       "wizard": {
         "class": {
           "spellCheck": 1,
           "spellCheckAbility": "int",
+          "spellCheckDieOverride": null,
+          "spellCheckOverride": null,
           "patron": null,
           "familiar": null,
           "corruption": []
@@ -263,7 +307,7 @@
         },
         "skills": {
           "shieldBash": {
-            "label" : "DCC.ShieldBash",
+            "label": "DCC.ShieldBash",
             "ability": "str",
             "die": "1d14",
             "value": "+0",
@@ -276,9 +320,9 @@
           "spellCheck": 1
         },
         "skills": {
-          "findSecretDoors": {
+          "detectSecretDoors": {
             "label": "DCC.HeightenedSenses",
-            "ability" : "int",
+            "ability": "int",
             "value": "+4"
           }
         }
@@ -286,19 +330,18 @@
       "config": {
         "config": {
           "attackBonusMode": "flat",
-          "actionDice" : "1d20",
-          "capLevel": false,
-          "maxLevel" : 10,
+          "actionDice": "1d20",
+          "maxLevel": "",
           "rollAttackBonus": false,
           "computeAC": false,
           "baseACAbility": "agl",
-          "computeSpeed": false,
-          "computeCheckPenalty": false,
-          "sortInventory" : true,
-          "removeEmptyItems" : true,
-          "showSpells" : false,
-          "showSkills" : false,
-          "showMaxAbilities": true,
+          "computeSpeed": true,
+          "computeCheckPenalty": true,
+          "computeMeleeAndMissileAttackAndDamage": true,
+          "sortInventory": true,
+          "removeEmptyItems": true,
+          "showSpells": false,
+          "showSkills": false,
           "showBackstab": false
         }
       }
@@ -384,22 +427,38 @@
         "currency"
       ],
       "config": {
-        "inheritActionDie": true,
-        "inheritCritRange": true
+        "actionDieOverride": "",
+        "critDieOverride": "",
+        "critRangeOverride": "",
+        "critTableOverride": "",
+        "damageOverride": "",
+        "attackBonusOverride": "",
+        "initiativeBonusOverride": "",
+        "initiativeDieOverride": ""
       },
       "actionDie": "1d20",
-      "toHit": "+0",
-      "damage": "1d3",
-      "range": "",
-      "twoHanded": 0,
-      "melee": 0,
-      "shortRangeStrength": 0,
-      "subdual": 0,
-      "backstab": false,
-      "backstabDamage": null,
-      "doubleIfMounted": 0,
+      "attackBonus": "",
+      "attackBonusWeapon": "",
+      "attackBonusLucky": "",
+      "backstabDamage": "",
+      "critDie": "",
       "critRange": 20,
-      "trained": true
+      "critTable": "",
+      "damage": "1d3",
+      "damageWeapon": "1d3",
+      "damageBonus": "",
+      "damageWeaponBonus": "",
+      "doubleIfMounted": false,
+      "initiativeBonus": "",
+      "initiativeDie": "1d20",
+      "initiativeWeaponBonus": "",
+      "melee": false,
+      "range": "",
+      "shortRangeStrength": false,
+      "subdual": false,
+      "toHit": "+0",
+      "trained": true,
+      "twoHanded": false
     },
     "ammunition": {
       "templates": [
@@ -414,7 +473,7 @@
         "physicalItem",
         "currency"
       ],
-      "acBonus" : "+1",
+      "acBonus": "+1",
       "checkPenalty": "-0",
       "speed": "-0",
       "fumbleDie": "1d4"
@@ -449,7 +508,7 @@
         "inheritSpellCheck": true,
         "inheritCheckPenalty": true,
         "castingMode": "wizard",
-        "showMercurialEffect": false
+        "showMercurialTab": false
       },
       "level": 1,
       "lost": false,
@@ -460,21 +519,27 @@
       "results": {},
       "save": "",
       "spellCheck": {
-        "die" : "1d20",
+        "die": "1d20",
         "value": "+0",
         "penalty": "-0"
+      },
+      "manifestation": {
+        "value": "",
+        "description": "",
+        "displayInChat": true
       },
       "mercurialEffect": {
         "value": "",
         "summary": "",
-        "description": ""
+        "description": "",
+        "displayInChat": true
       }
     },
     "skill": {
       "templates": [
         "itemDescription"
       ],
-      "config" : {
+      "config": {
         "freeform": false,
         "useAbility": false,
         "useDie": false,

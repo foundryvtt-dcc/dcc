@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, CONST, game, foundry, renderTemplate, TextEditor */
+/* global ChatMessage, CONFIG, game, foundry, renderTemplate, TextEditor */
 
 class SpellResult {
   /**
@@ -7,24 +7,24 @@ class SpellResult {
    * @param {Object} result       The result object drawn from the table
    * @param {Object} messageData  Additional message data for the ChatMessage object
    * @param {Object} messageOptions  Additional options for the ChatMessage object
-   * @param {boolean} crit        The Spell Check was a nat 20
-   * @param {boolean} fumble      The Spell Check was a nat 1
-   * @param {String} itemId       ID of the spell item
+   * @param {boolean} crit         The Spell Check was a nat 20
+   * @param {boolean} fumble       The Spell Check was a nat 1
+   * @param {Object} item          The spell item
    */
-  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, itemId = undefined } = {}) {
+  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, item = undefined } = {}) {
     const roll = result.roll
     messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
     }, messageOptions)
 
-    const speaker = ChatMessage.getSpeaker({ user: game.user })
+    const speaker = ChatMessage.getSpeaker()
 
     // construct flags for the message
     const flags = {
-      'core.RollTable': result.id,
+      'core.RollTableId': result.id,
       'dcc.SpellCheck': true,
       'dcc.RollType': 'SpellCheck',
-      'dcc.ItemId': itemId
+      'dcc.ItemId': item?.id || null
     }
 
     if (crit) {
@@ -45,7 +45,9 @@ class SpellResult {
 
     // Render the chat card which combines the dice roll with the drawn results
     messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
-      description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
+      description: await TextEditor.enrichHTML(rollTable.description),
+      manifestation: item?.system?.manifestation || {},
+      mercurial: item?.system?.mercurialEffect || {},
       results: result.results.map(r => {
         return foundry.utils.duplicate(r)
       }),
@@ -55,6 +57,11 @@ class SpellResult {
       fumble
     })
 
+    // Use the item name instead of the rollTable name to allow customizing spell names
+    if (item && item.name !== rollTable.name) {
+      messageData.content = messageData.content.replace(`<h1>${rollTable.name}</h1>`, `<h1>${item.name}</h1>`)
+    }
+
     // Create the chat message
     return ChatMessage.create(messageData, messageOptions)
   }
@@ -63,9 +70,8 @@ class SpellResult {
    * Process an incoming chat message and add relevant hooks
    * @param {Object} message  The ChatMessage entity
    * @param {Object} html     The HTML content of the message
-   * @param {Object} data     Extra data about the message
    */
-  static async processChatMessage (message, html, data) {
+  static async processChatMessage (message, html) {
     // No hooks for players, avoid shenanigans
     if (!game.user.isGM) { return }
 
@@ -127,7 +133,7 @@ class SpellResult {
       const newResultRoll = (direction > 0) ? (entry.range[1]) + 1 : (entry.range[0] - 1)
       const newResult = rollTable.getResultsForRoll(newResultRoll)[0]
       const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
-        description: await TextEditor.enrichHTML(rollTable.description, { entities: true, async: true }),
+        description: await TextEditor.enrichHTML(rollTable.description),
         results: [newResult].map(r => {
           return foundry.utils.duplicate(r)
         }),

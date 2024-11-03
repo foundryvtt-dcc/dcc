@@ -1,84 +1,58 @@
 <form class="{{cssClass}}" autocomplete="off">
-    <header class="sheet-header">
-        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
-        <div class="header-fields">
-            <div class="flexrow">
-                <div class="item-name">
-                    <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
-                </div>
-                <label class="item-type" for="name">{{localize item.typeString}}</label>
-            </div>
+  <!-- Nav -->
+  <nav class="sheet-tabs tabs" data-group="item">
+    <a data-tab="item">{{localize "DCC.Item"}}</a>
+    <a data-tab="description">{{localize "DCC.Description"}}</a>
+  </nav>
 
-            <div class="flexrow">
-              <div class="resource flex1">
-                <label class="resource-label" for="system.isCoins">{{localize "DCC.AsCoins"}}</label>
-                <input type="checkbox" name="system.isCoins" id="system.isCoins"
-                    {{checked system.isCoins}} data-dtype="Boolean"/>
-              </div>
-              <div class="resource flex1">
-                <label class="resource-label">{{localize "DCC.Weight"}}</label>
-                <input type="text" name="system.weight" value="{{system.weight}}" data-dtype="Number"/>
-              </div>
-            </div>
+  <!-- Body -->
+  <section class="sheet-body">
+    <div class="tab" data-group="item" data-tab="item">
+      <div class="tab-body">
+        <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
+          <label for="name">{{localize "DCC.Name"}}</label>
+          <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
         </div>
-    </header>
 
-    <section class="sheet-body item treasure">
-      <div class="value-row">
+        <div class="dark-border grid-col-span-3">
+          <div class="dark-title">{{localize "DCC.SettingsLabel"}}</div>
+          <div class="box-inner">
+            <div class="grid-col-span-2 grid-tpl-max-auto grid-align-just-center" title="{{localize "DCC.AsCoinsHint"}}">
+              <label for="system.isCoins">{{localize "DCC.AsCoins"}}</label>
+              <input type="checkbox" style="height: 18px;" name="system.isCoins" id="system.isCoins"
+                {{checked system.isCoins}} data-dtype="Boolean"/>
+            </div>
+          </div>
+        </div>
+
         {{#if allowResolve}}
-        <div class="rollable roll-button">&nbsp;</div>
+          <div class="grid-col-span-2">&nbsp;</div>
+          <div class="grid-col-span-4 grid-tpl-max-auto grid-align-just-center">
+            <div class="roll-value-button">&nbsp;</div>
+            <label class="rollable roll-value-label">Roll Treasure Value</label>
+          </div>
         {{/if}}
-        <div class="resource">
-          <label class="resource-label">{{localize "DCC.CurrencyPP"}}</label>
-          <input type="text" name="system.value.pp" value="{{system.value.pp}}" data-dtype="String"/>
-          {{#if allowConversions}}
-          <div class="conversions">
-            <div class="rollable right-arrow-button" data-currency="pp">&nbsp;</div>
+
+        {{> systems/dcc/templates/item-sheet-partial-values.html }}
+
+        <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+          <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+          <div class="box-inner description">
+            {{{descriptionHTML}}}
           </div>
-          {{/if}}
         </div>
-        <div class="resource">
-          <label class="resource-label">{{localize "DCC.CurrencyEP"}}</label>
-          <input type="text" name="system.value.ep" value="{{system.value.ep}}" data-dtype="String"/>
-          {{#if allowConversions}}
-          <div class="conversions">
-            <div class="rollable left-arrow-button" data-currency="ep">&nbsp;</div>
-            <div class="rollable right-arrow-button" data-currency="ep">&nbsp;</div>
+        <div class="dark-border grid-col-span-3" style="max-height: 125px;">
+          <div class="dark-title">{{localize "DCC.Image"}}</div>
+          <div class="box-inner" style="padding-top: 5px;">
+            <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
           </div>
-          {{/if}}
         </div>
-        <div class="resource">
-          <label class="resource-label">{{localize "DCC.CurrencyGP"}}</label>
-          <input type="text" name="system.value.gp" value="{{system.value.gp}}" data-dtype="String"/>
-          {{#if allowConversions}}
-          <div class="conversions">
-            <div class="rollable left-arrow-button" data-currency="gp">&nbsp;</div>
-            <div class="rollable right-arrow-button" data-currency="gp">&nbsp;</div>
-          </div>
-          {{/if}}
-        </div>
-        <div class="resource">
-          <label class="resource-label">{{localize "DCC.CurrencySP"}}</label>
-          <input type="text" name="system.value.sp" value="{{system.value.sp}}" data-dtype="String"/>
-          {{#if allowConversions}}
-          <div class="conversions">
-            <div class="rollable left-arrow-button" data-currency="sp">&nbsp;</div>
-            <div class="rollable right-arrow-button" data-currency="sp">&nbsp;</div>
-          </div>
-          {{/if}}
-        </div>
-        <div class="resource">
-          <label class="resource-label">{{localize "DCC.CurrencyCP"}}</label>
-          <input type="text" name="system.value.cp" value="{{system.value.cp}}" data-dtype="String"/>
-          {{#if allowConversions}}
-          <div class="conversions">
-            <div class="rollable left-arrow-button" data-currency="cp">&nbsp;</div>
-          </div>
-          {{/if}}
-        </div>
+
+        <img src="systems/dcc/styles/images/SA-4-31-FCI-spots-4-Treasure-skull-magic-sword.webp" style="justify-self: center;"
+             class="grid-col-span-12" width="181" height="80">
       </div>
-      <div class="description">
-        {{editor descriptionHTML target="system.description.value" button=true editable=editable}}
-      </div>
-    </section>
+    </div>
+
+    {{> systems/dcc/templates/item-sheet-partial-description.html }}
+  </section>
 </form>

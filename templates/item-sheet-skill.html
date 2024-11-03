@@ -1,52 +1,47 @@
 <form class="{{cssClass}}" autocomplete="off">
-    <header class="sheet-header">
-        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
-        <div class="header-fields">
-            <div class="flexrow">
-                <div class="item-name">
-                    <h1 class="charname"><input name="name" id="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
-                </div>
-                <label class="item-type" for="name">{{localize item.typeString}}</label>
-            </div>
+  <!-- Nav -->
+  <nav class="sheet-tabs tabs" data-group="item">
+    <a data-tab="main">{{localize "DCC.Skill"}}</a>
+    <a data-tab="description">{{localize "DCC.Description"}}</a>
+  </nav>
 
-            {{#if system.config.freeform}}
-            <div class="resource">
-              <label class="resource-label" for="system.description.summary">{{localize "DCC.SkillSummary"}}</label>
-              <input type="text" name="system.description.summary" id="system.description.summary" value="{{system.description.summary}}"
-                     data-dtype="String"/>
-            </div>
-            {{else}}
-            <div class="flexrow">
-              <div class="resource flex1">
-                <label class="resource-label">{{localize "DCC.SkillAbility"}}</label>
-                <div>
-                  <select name="system.ability" id="system.ability"
-                          {{#if system.config.useAbility}}{{else}}disabled{{/if}}>
-                    {{selectOptions config.abilities selected=system.ability localize=true}}
-                  </select>
-                </div>
-              </div>
-              <div class="resource flex1">
-                <label class="resource-label">{{localize "DCC.SkillDie"}}</label>
-                <input type="text" name="system.die" value="{{system.die}}"
-                       {{#if system.config.useDie}}{{else}}disabled{{/if}}
-                       data-dtype="String"/>
-              </div>
-              <div class="resource flex1">
-                <label class="resource-label">{{localize "DCC.SkillValue"}}</label>
-                <input type="text" name="system.value"
-                       value="{{numberFormat system.value decimals=0 sign=true}}"
-                       {{#if system.config.useValue}}{{else}}disabled{{/if}}
-                       data-dtype="Number"/>
-              </div>
-            </div>
-            {{/if}}
+  <section class="sheet-body">
+    <div class="tab" data-group="item" data-tab="main">
+      <div class="tab-body">
+        <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
+          <label for="name">{{localize "DCC.Name"}}</label>
+          <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
         </div>
-    </header>
 
-    <section class="sheet-body skill">
-      <div class="description" style="grid-row: 1; margin-bottom: 2px">
-        {{editor descriptionHTML target="system.description.value" button=true editable=editable}}
+        <div class="dark-border grid-col-span-12">
+          <div class="dark-title">{{localize "DCC.SkillDetails"}}</div>
+          <div class="grid-tpl-max-auto grid-row-gap-8 p-5">
+            {{#if system.config.freeform}}
+              <label for="system.description.summary">{{localize "DCC.SkillSummary"}}</label>
+              <input type="text" name="system.description.summary" id="system.description.summary"
+                     value="{{system.description.summary}}"
+                     data-dtype="String"/>
+            {{else}}
+              <label title="{{localize 'DCC.SkillUseAbilityHint'}}">{{localize "DCC.SkillAbility"}}</label>
+              <select name="system.ability" id="system.ability" title="{{localize 'DCC.SkillUseAbilityHint'}}"
+                      {{#if system.config.useAbility}}{{else}}disabled{{/if}}>
+                {{selectOptions config.abilities selected=system.ability localize=true}}
+              </select>
+              <label title="{{localize 'DCC.SkillDieHint'}}">{{localize "DCC.SkillDie"}}</label>
+              <input type="text" name="system.die" value="{{system.die}}" title="{{localize 'DCC.SkillDieHint'}}"
+                     {{#if system.config.useDie}}{{else}}disabled{{/if}}
+                     data-dtype="String"/>
+              <label>{{localize "DCC.SkillValue"}}</label>
+              <input type="text" name="system.value"
+                     value="{{numberFormat system.value decimals=0 sign=true}}"
+                     {{#if system.config.useValue}}{{else}}disabled{{/if}}
+                     data-dtype="Number"/>
+            {{/if}}
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
+
+    {{> systems/dcc/templates/item-sheet-partial-description.html }}
+  </section>
 </form>

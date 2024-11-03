@@ -1,0 +1,44 @@
+<li class="chat-message message flexcol {{cssClass}}" data-message-id="{{message._id}}"
+    {{#if borderColor}}style="border-color:{{borderColor}}"{{/if}}>
+  <header class="message-header flexrow">
+    <h4 class="message-sender">{{alias}}</h4>
+    <span class="message-metadata">
+            <time class="message-timestamp">{{timeSince message.timestamp}}</time>
+      {{#if canDelete}}
+        <a aria-label="{{localize 'Delete'}}" class="message-delete"><i class="fas fa-trash"></i></a>
+      {{/if}}
+        </span>
+
+    {{#if isWhisper}}
+      <span class="whisper-to">{{localize 'CHAT.To'}}: {{whisperTo}}</span>
+    {{/if}}
+
+    {{#if message.flavor}}
+      {{#if message.flags.dcc.ShowAsEmote}}
+      {{else}}
+        <span class="flavor-text">{{{message.flavor}}}</span>
+      {{/if}}
+    {{/if}}
+  </header>
+  <div class="message-content">
+    {{#if message.system.attackRollHTML }}
+      {{{message.system.attackRollHTML}}}
+    {{else}}
+      {{{message.content}}}
+    {{/if}}
+    {{#if message.system.deedDieRollResult}}
+      <div class="pt-8 deed-result{{#if message.system.deedRollSuccess}} critical{{/if}}">
+        <strong>{{localize "DCC.DeedDie"}}:</strong> {{{message.system.deedDieRollResult}}}
+      </div>
+    {{/if}}
+    {{#if message.system.damageInlineRoll}}
+      <div class="pt-8"><strong>{{message.system.damagePrompt}}:</strong> {{{message.system.damageInlineRoll}}}</div>
+    {{/if}}
+    {{#if message.flags.dcc.isCrit}}
+      <div class="pt-8"><strong>{{message.system.critPrompt}}!</strong> {{{message.system.critInlineRoll}}}</div>
+    {{/if}}
+    {{#if message.flags.dcc.isFumble}}
+      <div class="pt-8"><strong>{{message.system.fumblePrompt}}!</strong> {{{message.system.fumbleInlineRoll}}}</div>
+    {{/if}}
+  </div>
+</li>

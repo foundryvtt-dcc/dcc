@@ -6,7 +6,7 @@
  * @return {Promise}    A promise which resolves once the migration is completed
  */
 export const migrateWorld = async function () {
-  ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permenant: true }))
+  ui.notifications.info(game.i18n.format('DCC.MigrationInfo', { systemVersion: game.system.version }, { permanent: true }))
 
   // Migrate World Actors
   for (const a of game.actors) {
@@ -58,7 +58,7 @@ export const migrateWorld = async function () {
   // Set the migration as complete
   // parseFloat will pull out the major and minor version ignoring the patch version
   game.settings.set('dcc', 'systemMigrationVersion', parseFloat(game.system.version))
-  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permenant: true }))
+  ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
 }
 
 /* -------------------------------------------- */
@@ -68,7 +68,7 @@ export const migrateWorld = async function () {
  * @param pack
  * @return {Promise}
  */
-export const migrateCompendium = async function (pack) {
+const migrateCompendium = async function (pack) {
   const documentName = pack.documentName
   if (!['Actor', 'Item', 'Scene'].includes(documentName)) return
 
@@ -121,7 +121,7 @@ export const migrateCompendium = async function (pack) {
  * @param {Actor} actor   The actor to Update
  * @return {Object}       The updateData to apply
  */
-export const migrateActorData = function (actor) {
+const migrateActorData = function (actor) {
   const updateData = { }
 
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
@@ -133,6 +133,18 @@ export const migrateActorData = function (actor) {
       'system.skills.turnUnholy.useDisapprovalRange': true,
       'system.skills.layOnHands.useDisapprovalRange': true
     })
+  }
+
+  // If migrating from earlier than 0.50.0 copy attackBonus to attackHitBonus
+  if ((currentVersion <= 0.50) || (currentVersion == null)) {
+    updateData.update({
+      'system.details.attackHitBonus.melee.value': actor.system.details.attackBonus,
+      'system.details.attackHitBonus.missile.value': actor.system.details.attackBonus
+    })
+    if (this.options.template === 'systems/dcc/templates/actor-sheet-npc.html' ||
+      this.options.template === 'systems/dcc/templates/actor-sheet-zero-level.html') {
+      this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
+    }
   }
 
   // Migrate Owned Items
@@ -166,7 +178,7 @@ export const migrateActorData = function (actor) {
  * Migrate a single Item document to incorporate latest data model changes
  * @param item
  */
-export const migrateItemData = function (item) {
+const migrateItemData = function (item) {
   let updateData = {}
 
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
@@ -212,7 +224,7 @@ export const migrateItemData = function (item) {
  * @param {Object} scene  The Scene data to Update
  * @return {Object}       The updateData to apply
  */
-export const migrateSceneData = function (scene) {
+const migrateSceneData = function (scene) {
   const tokens = scene.tokens.map(token => {
     const t = token.toObject()
     const update = {}

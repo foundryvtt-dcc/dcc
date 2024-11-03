@@ -1,18 +1,23 @@
 /* global Dialog, ItemSheet, TextEditor, game, foundry, CONFIG */
+// noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
+import { ensurePlus } from './utilities.js'
 
 /**
  * Extend the basic ItemSheet for DCC RPG
  * @extends {ItemSheet}
  */
-export class DCCItemSheet extends ItemSheet {
+class DCCItemSheet extends ItemSheet {
   /** @override */
   static get defaultOptions () {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['dcc', 'sheet', 'item'],
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
+      height: 442,
+      resizable: true,
+      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
+      width: 475,
       dragDrop: [{ dragSelector: null, dropSelector: null }]
     })
   }
@@ -21,6 +26,7 @@ export class DCCItemSheet extends ItemSheet {
   get template () {
     switch (this.object.type) {
       case 'weapon':
+        this.position.height = 663
         return 'systems/dcc/templates/item-sheet-weapon.html'
       case 'armor':
         return 'systems/dcc/templates/item-sheet-armor.html'
@@ -40,7 +46,7 @@ export class DCCItemSheet extends ItemSheet {
 
   /** @override */
   async getData (options) {
-    const data = await super.getData(options)
+    const data = super.getData(options)
 
     // Lookup the localizable string for the item's type
     data.typeString = CONFIG.DCC.items[data.type] || 'DCC.Unknown'
@@ -48,25 +54,36 @@ export class DCCItemSheet extends ItemSheet {
     if (data.item.type === 'spell') {
       // Allow mercurial magic roll only on wizard spells owned by an actor
       const castingMode = data.item.system.config.castingMode || 'wizard'
-      const forceShowMercurialEffect = data.item.system.config.showMercurialEffect
-      data.showMercurialRoll = !!this.actor && (castingMode === 'wizard' || forceShowMercurialEffect)
+      const forceShowMercurialTab = data.item.system.config.showMercurialTab
+      data.showMercurialTab = !!this.actor && (castingMode === 'wizard' || forceShowMercurialTab)
 
       // Format Mercurial Effect HTML
-      data.mercurialEffectHTML = await TextEditor.enrichHTML(this.item.system.mercurialEffect.description, {
-        async: true,
+      data.mercurialEffectHTML = await TextEditor.enrichHTML(this.item.system?.mercurialEffect?.description || '', {
         relativeTo: this.item,
         secrets: this.item.isOwner
       })
-    } else if (data.item.type === 'treasure') {
+
+      // Format Manifestation HTML
+      data.manifestationHTML = await TextEditor.enrichHTML(this.item.system?.manifestation?.description || '', {
+        relativeTo: this.item,
+        secrets: this.item.isOwner
+      })
+    }
+
+    if (data.item.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
       data.unresolved = data.item.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
-      // Only allow currency conversion on items representing coins that have a resolved value
-      data.allowConversions = data.item.system.isCoins && !data.unresolved && !this.limited
+      // Only allow currency conversion on items that have a resolved value
+      data.allowConversions = !data.unresolved && !this.limited
     }
 
     // Pass through the item data in the format we expect
     data.system = data.item.system
+
+    if (data.item.type === 'weapon' && this.actor) {
+      data.system.lck = { mod: ensurePlus(this.actor.system?.abilities?.lck?.mod) || '' }
+    }
 
     if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
       data.data.img = EntityImages.imageForItem(data.type)
@@ -74,7 +91,6 @@ export class DCCItemSheet extends ItemSheet {
 
     // Format Description HTML
     data.descriptionHTML = await TextEditor.enrichHTML(this.item.system.description.value, {
-      async: true,
       relativeTo: this.item,
       secrets: this.item.isOwner
     })
@@ -110,12 +126,14 @@ export class DCCItemSheet extends ItemSheet {
     if (this.item.isOwner) {
       // Roll mercurial effect for spells
       if (this.item.type === 'spell') {
+        html.find('.manifestation-roll').click(this._onRollManifestation.bind(this))
         html.find('.mercurial-roll').click(this._onRollMercurialMagic.bind(this))
       }
 
       // Roll value and currency conversions for treasure
       if (this.item.type === 'treasure') {
-        html.find('.roll-button').click(this._onRollValue.bind(this))
+        html.find('.roll-value-button').click(this._onRollValue.bind(this))
+        html.find('.roll-value-label').click(this._onRollValue.bind(this))
         html.find('.left-arrow-button').click(this._onConvertUpward.bind(this))
         html.find('.right-arrow-button').click(this._onConvertDownward.bind(this))
       }
@@ -165,7 +183,7 @@ export class DCCItemSheet extends ItemSheet {
 
     // Header buttons shown only with Owner permissions
     if (this.options.editable) {
-      if (this.object.type === 'spell' || this.object.type === 'weapon' || this.object.type === 'skill') {
+      if (this.object.type === 'spell' || this.object.type === 'skill') {
         buttons.unshift(
           {
             label: game.i18n.localize('DCC.ConfigureItem'),
@@ -206,6 +224,39 @@ export class DCCItemSheet extends ItemSheet {
   }
 
   /**
+   * Roll a new Manifestation, prompting to replace if necessary
+   */
+  _onRollManifestation (event) {
+    event.preventDefault()
+    const options = this._fillRollOptions(event)
+    // Prompt if there's an existing effect, or we're using the roll modifier dialog
+    if (!options.showModifierDialog && this.item.hasExistingManifestation()) {
+      new Dialog({
+        title: game.i18n.localize('DCC.ManifestationRerollPrompt'),
+        content: `<p>${game.i18n.localize('DCC.ManifestationRerollExplain')}</p>`,
+        buttons: {
+          reroll: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonReroll'),
+            callback: () => this._rollManifestation(event, options)
+          },
+          lookup: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonLookup'),
+            callback: () => this._lookupManifestation(event, options)
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonCancel')
+          }
+        }
+      }).render(true)
+    } else {
+      this._rollManifestation(event, options)
+    }
+  }
+
+  /**
    * Roll a new Mercurial Magic effect, prompting to replace if necessary
    */
   _onRollMercurialMagic (event) {
@@ -225,7 +276,7 @@ export class DCCItemSheet extends ItemSheet {
           lookup: {
             icon: '<i class="fas fa-check"></i>',
             label: game.i18n.localize('DCC.MercurialMagicButtonLookup'),
-            callback: () => this._lookupMercurialMagic(event, options)
+            callback: () => this._lookupMercurialMagic()
           },
           cancel: {
             icon: '<i class="fas fa-times"></i>',
@@ -236,6 +287,17 @@ export class DCCItemSheet extends ItemSheet {
     } else {
       this._rollMercurialMagic(event, options)
     }
+  }
+
+  /**
+   * Roll a new Manifestation
+   * @param {Event}  event   The originating click event
+   * @param options
+   * @private
+   */
+  _rollManifestation (event, options) {
+    this.item.rollManifestation(undefined, options)
+    this.render(false)
   }
 
   /**
@@ -251,11 +313,9 @@ export class DCCItemSheet extends ItemSheet {
 
   /**
    * Look up a Mercurial Magic effect
-   * @param {Event}  event   The originating click event
-   * @param options
    * @private
    */
-  _lookupMercurialMagic (event, options) {
+  _lookupMercurialMagic () {
     this.item.rollMercurialMagic(this.item.system.mercurialEffect.value)
     this.render(false)
   }

@@ -1,8 +1,8 @@
-/* global test, expect */
-/* eslint-env jest */
-
 /* Tests for NPC Parser */
 
+import { expect, test } from 'vitest'
+import '../__mocks__/foundry.js'
+import '../__mocks__/roll.js'
 import parseNPCs from '../npc-parser.js'
 
 /* Test snake */
@@ -234,7 +234,7 @@ test('shortstats', async () => {
     name: 'Stunty, the short and muddled',
     'attributes.init.value': '+1',
     'attributes.ac.value': '15',
-    'attributes.hitDice.value': '1d4',
+    'attributes.hitDice.value': '1d8',
     'attributes.hp.value': '4',
     'attributes.hp.max': '4',
     'attributes.speed.value': '30',
@@ -268,7 +268,7 @@ test('familiar', async () => {
     name: 'The bad guy\'s familiar',
     'attributes.init.value': '+0',
     'attributes.ac.value': '15',
-    'attributes.hitDice.value': '1d4',
+    'attributes.hitDice.value': '1d8',
     'attributes.hp.value': '2',
     'attributes.hp.max': '2',
     'attributes.speed.value': '30',
@@ -329,6 +329,116 @@ test('bonusguy', async () => {
         system: {
           toHit: '-2',
           damage: '1d4 - 3',
+          melee: true
+        }
+      }
+    ]
+  }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
+/* Test multiple attacks */
+test('chimeric', async () => {
+  const parsedNPC = await parseNPCs('Chimeric: Init +0; Atk lion bite +5 melee (2d4) or goat gore\n' +
+    '+4 melee (2d4) or snake bite +6 melee (1d10+2) or claws +4\n' +
+    'melee (1d3) or breathe fire; AC 18; HD 5d8+8; MV 30’ or\n' +
+    'fly 30’; Act 3d20; SP breathe fire 3/day; SV Fort +4, Ref +2,\n' +
+    'Will +2; AL C.')
+  const expected = {
+    name: 'Chimeric',
+    'attributes.init.value': '+0',
+    'attributes.ac.value': '18',
+    'attributes.hitDice.value': '5d8+8',
+    'attributes.hp.value': 2,
+    'attributes.hp.max': 2,
+    'attributes.special.value': 'breathe fire 3/day',
+    'attributes.speed.value': '30’',
+    'attributes.speed.other': 'fly 30’',
+    'config.actionDice': '3d20',
+    'saves.frt.value': '+4',
+    'saves.ref.value': '+2',
+    'saves.wil.value': '+2',
+    'details.alignment': 'c',
+    items: [
+      {
+        name: 'lion bite',
+        type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
+        system: {
+          toHit: '+5',
+          damage: '2d4',
+          melee: true
+        }
+      },
+      {
+        name: 'goat gore',
+        type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
+        system: {
+          toHit: '+4',
+          damage: '2d4',
+          melee: true
+        }
+      },
+      {
+        name: 'snake bite',
+        type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
+        system: {
+          toHit: '+6',
+          damage: '1d10+2',
+          melee: true
+        }
+      },
+      {
+        name: 'claws',
+        type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
+        system: {
+          toHit: '+4',
+          damage: '1d3',
+          melee: true
+        }
+      },
+      {
+        name: 'breathe fire',
+        type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
+        system: {
+          toHit: '',
+          damage: '0',
+          melee: true
+        }
+      }
+    ]
+  }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
+/* Test multiple attacks */
+test('witchharps', async () => {
+  const parsedNPC = await parseNPCs("Witchharps (8): Init +3; Atk talons +1 melee (1 point); AC 12; HD 2d8; hp 15, 6, 12, 9, 10, 7, 15, 9; MV flight 30'; Act 1d20; SP snatch and grab; SV Fort +1, Ref +2, Will +2; Path POD.")
+  const expected = {
+    name: 'Witchharps',
+    'attributes.init.value': '+3',
+    'attributes.ac.value': '12',
+    'attributes.hitDice.value': '2d8',
+    'attributes.hp.value': '15',
+    'attributes.hp.max': '15',
+    'attributes.special.value': 'snatch and grab',
+    'attributes.speed.value': 'flight 30\'',
+    'config.actionDice': '1d20',
+    'saves.frt.value': '+1',
+    'saves.ref.value': '+2',
+    'saves.wil.value': '+2',
+    items: [
+      {
+        name: 'talons',
+        type: 'weapon',
+        img: 'systems/dcc/styles/images/weapon.webp',
+        system: {
+          toHit: '+1',
+          damage: '1',
           melee: true
         }
       }

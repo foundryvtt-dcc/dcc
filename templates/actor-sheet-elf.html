@@ -1,89 +1,142 @@
 <form class="{{cssClass}}" autocomplete="off">
 
-    {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
-    <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Elf" data-dtype="String"/>
-    <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
+  {{!-- Hidden inputs to reflect the sheet class and force standard crit range --}}
+  <input type="hidden" id="system.details.sheetClass" name="system.details.sheetClass" value="Elf" data-dtype="String"/>
+  <input type="hidden" id="system.details.critRange" name="system.details.critRange" value="20" data-dtype="Number"/>
 
-    {{!-- Sheet Header --}}
-    {{> systems/dcc/templates/actor-partial-pc-header.html }}
+  {{!-- Sheet Tab Navigation --}}
+  <nav class="sheet-tabs tabs" data-group="primary">
+    <a data-tab="character" title="{{localize 'DCC.CharacterTabHint'}}">{{localize "DCC.Character"}}</a>
+    <a data-tab="equipment" title="{{localize 'DCC.EquipmentTabHint'}}">{{localize "DCC.Equipment"}}</a>
+    <a data-tab="elf" title="{{localize 'DCC.ElfTabHint'}}">{{localize "DCC.Elf"}}</a>
+    <a data-tab="spells" title="{{localize 'DCC.SpellsTabHint'}}">{{localize "DCC.ElfSpells"}}</a>
+    {{#if system.config.showSkills}}
+      <a data-tab="skills" title="{{localize 'DCC.SkillsTabHint'}}">{{localize "DCC.Skills"}}</a>
+    {{/if}}
+    <a data-tab="notes" title="{{localize 'DCC.NotesTabHint'}}">{{localize "DCC.Notes"}}</a>
+  </nav>
 
-    {{!-- Sheet Tab Navigation --}}
-    <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="character">{{localize "DCC.Character"}}</a>
-        <a class="item" data-tab="equipment">{{localize "DCC.Equipment"}}</a>
-        <a class="item" data-tab="class">{{localize "DCC.Elf"}}</a>
-        <a class="item" data-tab="spells">{{localize "DCC.ElfSpells"}}</a>
-        {{#if system.config.showSkills}}
-        <a class="item" data-tab="skills">{{localize "DCC.Skills"}}</a>
-        {{/if}}
-        <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
-    </nav>
+  {{!-- Sheet Body --}}
+  <section class="sheet-body">
 
-    {{!-- Sheet Body --}}
-    <section class="sheet-body">
+    {{!-- Character Tab --}}
+    {{> systems/dcc/templates/actor-partial-pc-common.html }}
 
-        {{!-- Character Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-common.html }}
+    {{!-- Equipment Tab --}}
+    {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
 
-        {{!-- Equipment Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-equipment.html }}
+    {{!-- Skills Tab --}}
+    {{> systems/dcc/templates/actor-partial-skills.html }}
 
-        {{!-- Skills Tab --}}
-        {{> systems/dcc/templates/actor-partial-skills.html }}
+    {{!-- Notes Tab --}}
+    {{> systems/dcc/templates/actor-partial-pc-notes.html }}
 
-        {{!-- Notes Tab --}}
-        {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+    {{!-- Class Tab --}}
+    <div class="grid-container tab elf-bg" data-group="primary" data-tab="elf">
+      <div class="grid-container">
+        <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
 
-        {{!-- Class Tab --}}
-        <div class="tab" data-group="primary" data-tab="class">
-            {{!-- Update spell check ability to use Intelligence --}}
-            <input type="hidden" id="system.class.spellCheckAbility" name="system.class.spellCheckAbility" value="int">
-            <div class="class">
-                <div class="skills-container">
-                    <div class="split-50-50" data-ability="int">
-                        <label class="spell-check rollable" for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
-                        <input type="text" id="system.class.spellCheck" name="system.class.spellCheck" value="{{system.class.spellCheck}}" data-dtype="String"/>
-                    </div>
-                    <div data-skill="findSecretDoors" class="split-60-40">
-                        <label class="skill-check rollable" for="system.details.findSecretDoors.value">{{localize "DCC.HeightenedSenses"}}</label>
-                        <input type="text" id="system.skills.findSecretDoors.value" name="system.skills.findSecretDoors.value" value="{{system.skills.findSecretDoors.value}}" data-dtype="String"/>
-                    </div>
+        <div class="grid-col-span-12 grid-container grid-row-gap-5 grid-col-gap-5 mb-8">
+          <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="int">
+            <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
+            <div class="grid-align-center p-5">
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{ifThen system.class.spellCheckOverrideDie
+                                                                                          system.class.spellCheckOverrideDie
+                                                                                          system.attributes.actionDice.value}}{{system.class.spellCheck}}</div>
 
-                    <div class="wide split-25-75">
-                        <label for="system.class.patron">{{localize "DCC.Patron"}}</label>
-                        <input class="string" type="text" id="system.class.patron" name="system.class.patron" value="{{system.class.patron}}" data-dtype="String"/>
-                    </div>
-    
-                    <div class="wide split-25-75">
-                        <label for="system.class.familiar">{{localize "DCC.Familiar"}}</label>
-                        <input class="string" type="text" id="system.class.familiar" name="system.class.familiar" value="{{system.class.familiar}}" data-dtype="String"/>
-                    </div>
-    
-                    <div class="wide textarea">
-                        <label for="system.class.corruption">{{localize "DCC.Corruptions"}}:</label>
-                        <label></label>
-                        {{editor corruptionHTML target="system.class.corruption" button=true editable=editable}}
-                    </div>
+              <div class="group-separator"></div>
+
+              <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+                <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Die"}}</div>
+                <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attributes.actionDice.value}}</div>
+                <label class="group-indent" for="system.class.spellCheckOverrideDie" title="{{localize 'DCC.OverrideHint'}}">
+                  {{localize "DCC.Override"}}
+                </label>
+                <input id="system.class.spellCheckOverrideDie" name="system.class.spellCheckOverrideDie"
+                       value="{{system.class.spellCheckOverrideDie}}"
+                       data-dtype="String"/>
+              </div>
+
+              <div class="group-separator"></div>
+
+              <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+                <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Bonus"}}</div>
+                <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.class.spellCheck}}</div>
+                <div class="group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.Level"}}</div>
+                <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.details.level.value}}</div>
+                <div class="mr-3 group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">
+                  {{localize "DCC.AbilityIntShort"}} {{localize "DCC.Modifier"}}
                 </div>
+                <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.abilities.int.mod}}</div>
+                <label class="group-indent" for="system.class.spellCheckOverride" title="{{localize 'DCC.OverrideHint'}}">
+                  {{localize "DCC.Override"}}
+                </label>
+                <input id="system.class.spellCheckOverride" name="system.class.spellCheckOverride"
+                       value="{{system.class.spellCheckOverride}}"
+                       data-dtype="String"/>
 
-                <ul class="class-note flexcol">
-                  {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-                  <li>{{{system.class.classLink}}}</li>
-                  {{/dccPackExists}}
-                  <li>{{localize "DCC.Infravision"}}</li>
-                  <ul class="class-note flexcol">
-                    <li><a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Infravision-and-Torches"><i class="fas fa-link"></i> {{localize "DCC.InfravisionLink"}}</a></li>
-                  </ul>
-                  <li>{{localize "DCC.HeightenedSensesDescription"}}</li>
-                  <li>{{localize "DCC.IronVulnerability"}}</li>
-                  <li>{{localize "DCC.ElfLuckMod"}}</li>
-                  <li>{{localize "DCC.ElfImmunities"}}</li>
-                </ul>
+                <div class="group-separator"></div>
+
+                <div class="label-font spell-check rollable mr-3 grid-col-span-2 center">
+                  <div><i class="fas fa-dice-d20"></i> {{localize "DCC.Roll"}} {{localize "DCC.SpellCheck"}}</div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div class="familiar grid-col-span-7 dark-border">
+            <label for="system.class.familiar" class="dark-title">{{localize "DCC.Familiar"}}</label>
+            <textarea id="system.class.familiar" name="system.class.familiar" rows="4" class="data-font"
+                      style="background: none; border: none"
+                      data-dtype="String">{{system.class.familiar}}</textarea>
+          </div>
+          <div class="patron grid-col-span-7 dark-border">
+            <label for="system.class.patron" class="dark-title">{{localize "DCC.Patron"}}</label>
+            <textarea id="system.class.patron" name="system.class.patron" rows="4" class="data-font"
+                      style="background: none; border: none"
+                      data-dtype="String">{{system.class.patron}}</textarea>
+          </div>
+          {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+            <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
+          {{/dccPackExists}}
         </div>
 
-        {{!-- Spells Tab --}}
-        {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
-    </section>
+        <div class="grid-col-span-12">
+          <div class="dark-border">
+            <div class="dark-title">Elf Abilities</div>
+            <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
+              <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
+                     title="{{localize 'DCC.HeightenedSensesDescription'}}">
+                {{localize "DCC.HeightenedSenses"}}
+              </label>
+              <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
+                     title="{{localize 'DCC.HeightenedSensesDescription'}}"
+                     value="{{system.skills.detectSecretDoors.value}}" data-dtype="String"/>
+            </div>
+            <div class="label-font">
+              {{localize "DCC.Infravision"}}
+            </div>
+            <div class="label-font">
+              {{localize "DCC.IronVulnerability"}}
+            </div>
+            <div class="label-font">
+              {{localize "DCC.ElfLuckMod"}}
+            </div>
+            <div class="label-font">
+              {{localize "DCC.ElfImmunities"}}
+            </div>
+          </div>
+        </div>
+        <p></p>
+        <div class="grid-col-span-12 grid-tpl-max">
+          <div class="grid-col-span-12 dark-title" style="">{{localize "DCC.Corruptions"}}</div>
+          {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
+        </div>
+      </div>
+    </div>
+
+    {{!-- Spells Tab --}}
+    {{> systems/dcc/templates/actor-partial-wizard-spells.html }}
+  </section>
 </form>
 

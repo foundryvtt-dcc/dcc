@@ -1,0 +1,163 @@
+{{!-- Equipment Tab --}}
+<div class="tab equipment-bg" data-group="primary" data-tab="equipment">
+  {{!-- Armor --}}
+  {{#* inline "armorRow"}}
+    <li class="grid-col-span-8 armor grid-col-gap-5" data-item-id="{{id}}" data-item-index="{{index}}">
+      <input type="checkbox"
+             name="itemUpdates.{{id}}.system.equipped"
+             data-dtype="Boolean" {{checked armor.system.equipped}}/>
+      <img class="item-draggable" src="{{armor.img}}" title="{{armor.name}}" alt="{{armor.name}}" width="22"
+           height="22">
+      <input type="text"
+             name="itemUpdates.{{id}}.name"
+             value="{{armor.name}}"/>
+      <input type="text"
+             name="itemUpdates.{{id}}.system.acBonus"
+             value="{{numberFormat armor.system.acBonus decimals=0 sign=true}}"/>
+      <input type="text"
+             name="itemUpdates.{{id}}.system.checkPenalty"
+             value="{{armor.system.checkPenalty}}"/>
+      <input type="text"
+             name="itemUpdates.{{id}}.system.fumbleDie"
+             value="{{armor.system.fumbleDie}}"/>
+      <input type="text"
+             name="itemUpdates.{{id}}.system.description.summary"
+             value="{{{armor.system.description.summary}}}"/>
+      <div>
+        <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i
+          class="fas fa-edit"></i></a>
+        <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i
+          class="fas fa-trash"></i></a>
+      </div>
+    </li>
+  {{/inline}}
+  <div class="dark-title">{{localize "DCC.Armor"}}</div>
+  <ol class="armor-list dark-border">
+    <li class="grid-col-span-8 armor-list-header">
+      <div class="" title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
+      <div></div>
+      <div>{{localize "DCC.Name"}}</div>
+      <div>{{localize "DCC.Bonus"}}</div>
+      <div>{{localize "DCC.Penalty"}}</div>
+      <div>{{localize "DCC.FumbleDie"}}</div>
+      <div>{{localize "DCC.Notes"}}</div>
+      <div>
+        <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="armor"><i
+          class="fas fa-plus"></i>
+          {{localize "DCC.Add"}}</a>
+      </div>
+    </li>
+    {{#each actor.armor as |armor index|}}
+      {{> armorRow armor=armor id=armor._id index=index}}
+    {{/each}}
+  </ol>
+
+  {{!-- Other items --}}
+  {{#* inline "ItemHeader"}}
+    <li class="grid-col-span-5 item-list-header">
+      <div></div>
+      <div>{{localize "DCC.Name"}}</div>
+      <div>{{localize "DCC.Notes"}}</div>
+      <div>{{localize "DCC.Quantity"}}</div>
+      <div>
+        <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="{{type}}"><i
+          class="fas fa-plus"></i>
+          {{localize "DCC.Add"}}</a>
+      </div>
+    </li>
+  {{/inline}}
+  {{#* inline "ItemRow"}}
+    <li class="grid-col-span-5 item item-draggable" data-item-id="{{item._id}}">
+      <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22">
+      <div>{{item.name}}</div>
+      <div>{{{item.system.description.summary}}}</div>
+      <div><i class="fa-thin fa-up qty-increase"></i> {{item.system.quantity}} <i class="fa-thin fa-down qty-decrease"></i></div>
+      <div>
+        <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i
+          class="fas fa-edit"></i></a>
+        <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i
+          class="fas fa-trash"></i></a>
+      </div>
+    </li>
+  {{/inline}}
+
+  {{!-- Equipment --}}
+  <div class="dark-title">{{localize "DCC.Equipment"}}</div>
+  <ol class="item-list dark-border">
+    {{> ItemHeader type="equipment"}}
+    {{#each actor.equipment as |equipment id|}}
+      {{> ItemRow item=equipment id=id}}
+    {{/each}}
+  </ol>
+  {{!-- Ammunition --}}
+  <div class="dark-title">{{localize "DCC.Ammunition"}}</div>
+  <ol class="item-list dark-border">
+    {{> ItemHeader type="ammunition"}}
+    {{#each actor.ammunition as |ammunition id|}}
+      {{> ItemRow item=ammunition id=id}}
+    {{/each}}
+  </ol>
+  {{!-- Mounts --}}
+  <div class="dark-title">{{localize "DCC.Mounts"}}</div>
+  <ol class="item-list dark-border">
+    {{> ItemHeader type="mount"}}
+    {{#each actor.mounts as |mount id|}}
+      {{> ItemRow item=mount id=id}}
+    {{/each}}
+  </ol>
+
+  {{!-- Treasure --}}
+  {{#* inline "TreasureRow"}}
+    <li class="grid-col-span-8 item item-draggable" data-item-id="{{item._id}}">
+      <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" width="22" height="22"/>
+      <div>{{item.name}}</div>
+      <div>{{item.value.pp}}</div>
+      <div>{{item.value.ep}}</div>
+      <div>{{item.value.gp}}</div>
+      <div>{{item.value.sp}}</div>
+      <div>{{item.value.cp}}</div>
+      <div>
+        <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
+        <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
+      </div>
+    </li>
+  {{/inline}}
+  <div class="dark-title">{{localize "DCC.Treasure"}}</div>
+  <ol class="item-list item-list-currency dark-border">
+    <li class="grid-col-span-8 item-list-header">
+      <div></div>
+      <div>{{localize "DCC.Name"}}</div>
+      <div>{{localize "DCC.CurrencyShortPP"}}</div>
+      <div>{{localize "DCC.CurrencyShortEP"}}</div>
+      <div>{{localize "DCC.CurrencyShortGP"}}</div>
+      <div>{{localize "DCC.CurrencyShortSP"}}</div>
+      <div>{{localize "DCC.CurrencyShortCP"}}</div>
+      <div>
+        <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="treasure">
+          <i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+      </div>
+    </li>
+    <li class="grid-col-span-8 item">
+      <div>
+        <img src="systems/dcc/styles/images/game-icons-net/coins.svg" title="{{localize 'DCC.Funds'}}"
+             width="22" height="22"/>
+      </div>
+      <div>{{localize 'DCC.Funds'}}</div>
+      <input type="text" name="system.currency.pp" placeholder="0"
+             value="{{numberFormat system.currency.pp decimals=0 sign=false}}" data-dtype="number"/>
+      <input type="text" name="system.currency.ep" placeholder="0"
+             value="{{numberFormat system.currency.ep decimals=0 sign=false}}" data-dtype="number"/>
+      <input type="text" name="system.currency.gp" placeholder="0"
+             value="{{numberFormat system.currency.gp decimals=0 sign=false}}" data-dtype="number"/>
+      <input type="text" name="system.currency.sp" placeholder="0"
+             value="{{numberFormat system.currency.sp decimals=0 sign=false}}" data-dtype="number"/>
+      <input type="text" name="system.currency.cp" placeholder="0"
+             value="{{numberFormat system.currency.cp decimals=0 sign=false}}" data-dtype="number"/>
+      <div></div>
+    </li>
+    {{#each actor.treasure as |treasure id|}}
+      {{> TreasureRow item=treasure id=id}}
+    {{/each}}
+  </ol>
+</div>
+{{!-- End Equipment Tab --}}
