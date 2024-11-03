@@ -316,7 +316,7 @@ test('roll Custom Die Skill', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'Custom Die Skill',
     speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkill' }
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkill', 'dcc.isSkillCheck': true }
   })
 })
 
@@ -355,7 +355,7 @@ test('roll Custom Die And Value Skill', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'Custom Die And Value Skill',
     speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkill' }
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkill', 'dcc.isSkillCheck': true }
   })
 })
 
@@ -394,7 +394,7 @@ test('roll Action Die Skill', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'Action Die Skill',
     speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkill' }
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieSkill', 'dcc.isSkillCheck': true }
   })
 })
 
@@ -427,7 +427,7 @@ test('roll Custom Die Skill With Int', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'Custom Die Skill With Int (AbilityInt)',
     speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkillWithInt' }
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieSkillWithInt', 'dcc.isSkillCheck': true }
   })
 })
 
@@ -466,7 +466,7 @@ test('roll Custom Die And Value Skill With Per', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'Custom Die And Value Skill With Per (AbilityPer)',
     speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkillWithPer' }
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'customDieAndValueSkillWithPer', 'dcc.isSkillCheck': true }
   })
 })
 
@@ -505,7 +505,7 @@ test('roll Custom Die And Value Luck', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'Action Die And Value Skill With Lck (AbilityLck)',
     speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieAndValueSkillWithLck' }
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.SkillId': 'actionDieAndValueSkillWithLck', 'dcc.isSkillCheck': true }
   })
 })
 
