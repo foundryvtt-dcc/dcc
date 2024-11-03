@@ -450,7 +450,7 @@ test('witchharps', async () => {
 /* Test multiple statlines */
 test('rodentsquad', async () => {
   const parsedNPC = await parseNPCs(
-    `Mega Mole: Init +5; Atk claws +6 melee (1d8+3) ; AC 17;
+          `Mega Mole: Init +5; Atk claws +6 melee (1d8+3) ; AC 17;
 HD 3d8; hp 16; MV 20’; Act 1d20; SV Fort +4, Ref +4, Will +2;
 AL C.
 

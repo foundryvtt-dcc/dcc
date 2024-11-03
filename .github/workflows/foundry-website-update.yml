@@ -1,0 +1,26 @@
+name: Foundry Website Update
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  update_foundry_website_post_release:
+    runs-on: ubuntu-latest
+    name: Foundry Website Update
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Foundry Website Update
+        id: foundry-website-update
+        uses: foundryvtt-dcc/foundry-package-release-action@main
+        with:
+          actionToken: ${{ secrets.GITHUB_TOKEN }}
+          manifestFileName: 'system.json'
+          foundryToken: ${{ secrets.FOUNDRY_PACKAGE_RELEASE_TOKEN }}
+          dryRun: false
