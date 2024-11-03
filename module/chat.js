@@ -327,6 +327,30 @@ export const emoteInitiativeRoll = function (message, html, data) {
 }
 
 /**
+ * Change skill check rolls into emotes
+ * @param message
+ * @param html
+ * @param data
+ * @returns {Promise<void>}
+ */
+export const emoteSkillCheckRoll = function (message, html, data) {
+  if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isSkillCheck')) return
+
+  const skillCheckRoll = message.rolls[0]
+
+  const skillCheckRollEmote = game.i18n.format(
+    'DCC.RolledSkillCheckEmote',
+    {
+      actorName: data.alias,
+      skillCheckInlineRollHTML: skillCheckRoll.toAnchor({ classes: ['damage-applyable'], dataset: { damage: skillCheckRoll.total } }).outerHTML,
+      skillName: message.flavor
+    }
+  )
+  html.find('.message-content').html(skillCheckRollEmote)
+  html.find('header').remove()
+}
+
+/**
  * Look up a critical hit roll in the crit table specified in the flavor
  * @param message
  * @param html

@@ -481,6 +481,7 @@ Hooks.on('renderChatMessage', (message, html, data) => {
     chat.emoteDamageRoll(message, html, data)
     chat.emoteInitiativeRoll(message, html, data)
     chat.emoteSavingThrowRoll(message, html, data)
+    chat.emoteSkillCheckRoll(message, html, data)
   } else {
     chat.lookupCriticalRoll(message, html)
     chat.lookupFumbleRoll(message, html, data)

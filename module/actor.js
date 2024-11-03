@@ -683,7 +683,8 @@ class DCCActor extends Actor {
       // Generate flags for the roll
       const flags = {
         'dcc.RollType': 'SkillCheck',
-        'dcc.SkillId': skillId
+        'dcc.SkillId': skillId,
+        'dcc.isSkillCheck': true
       }
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
