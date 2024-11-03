@@ -373,6 +373,8 @@ async function processSpellCheck (actor, spellData) {
       // Generate flags for the roll
       const flags = {
         'dcc.RollType': 'SpellCheck',
+        'dcc.isSpellCheck': true,
+        'dcc.isSkillCheck': true,
         'dcc.ItemId': item?.id
       }
       game.dcc.FleetingLuck.updateFlags(flags, roll)
