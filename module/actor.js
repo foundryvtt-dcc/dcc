@@ -222,7 +222,7 @@ class DCCActor extends Actor {
       if (!this.system.config.actionDice) {
         this.system.config.actionDice = this.system.attributes.actionDice.value || '1d20'
       }
-      if (this.system.config.actionDice.includes('+')) {x
+      if (this.system.config.actionDice.includes('+')) {
         this.system.config.actionDice = this.system.config.actionDice.replaceAll('+', ',')
       }
 
@@ -950,6 +950,7 @@ class DCCActor extends Actor {
     let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critRoll
     let critTableName = ''
+    let critText = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
       critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical.die}${luckMod}`
@@ -970,10 +971,14 @@ class DCCActor extends Actor {
         foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
         rolls.push(critRoll)
         const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
-        const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+        if (critResult) {
+          critTableName = critResult.results[0]?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
+          critText = await TextEditor.enrichHTML(critResult.results[0].text)
+          critText = `: <br>${critText}`
+        }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
         const critRollAnchor = critRoll.toAnchor().outerHTML
-        critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableText} ${critTableName}): <br>${critText}`)
+        critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableText} ${critTableName})${critText}`)
       }
     }
 
@@ -981,6 +986,8 @@ class DCCActor extends Actor {
     let fumbleRollFormula = ''
     let fumbleInlineRoll = ''
     let fumblePrompt = ''
+    let fumbleTableName = '(Table 4-2: Fumbles).'
+    let fumbleText = ''
     let fumbleRoll
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
@@ -1000,10 +1007,13 @@ class DCCActor extends Actor {
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
         const fumbleResult = await getFumbleTableResult(fumbleRoll.total)
-        const fumbleResultPrompt = game.i18n.localize('DCC.FumbleResult')
-        const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+        if (fumbleResult) {
+          fumbleTableName = `(${fumbleResult.results[0]?.parent?.link}):<br>`
+          fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+        }
+        const fumbleResultPrompt = game.i18n.localize('DCC.FumblePrompt')
         const fumbleRollAnchor = fumbleRoll.toAnchor().outerHTML
-        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleResultPrompt} ${fumbleRollAnchor}: <br>${fumbleText}`)
+        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleResultPrompt} ${fumbleRollAnchor} ${fumbleTableName} ${fumbleText}`)
       }
     }
 
@@ -1194,14 +1204,17 @@ class DCCActor extends Actor {
 
     const critRoll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
     await critRoll.evaluate()
+    const critRollFormula = critRoll.formula
+    const critPrompt = game.i18n.localize('DCC.Critical')
 
     const critTableName = this.system.attributes.critical.table
     const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
+    let critText = ''
+    if (critResult) {
+      critText = await TextEditor.enrichHTML(critResult.results[0].text)
+    }
 
-    const critRollFormula = critRoll.formula
-    const critPrompt = game.i18n.localize('DCC.Critical')
     foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
-    const critText = await TextEditor.enrichHTML(critResult.results[0].text)
 
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })

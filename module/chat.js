@@ -268,7 +268,10 @@ export const emoteFumbleRoll = async function (message, html, data) {
   if (game.settings.get('dcc', 'emoteRolls') === false) return
 
   const fumbleResult = await getFumbleTableResult(message.rolls[0])
-  const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+  let fumbleText = ''
+  if (fumbleResult) {
+    fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+  }
 
   const fumbleRollEmote = game.i18n.format(
     'DCC.RolledFumbleEmote',
