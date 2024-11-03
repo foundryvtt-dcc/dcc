@@ -119,6 +119,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/item-sheet-treasure.html',
     'systems/dcc/templates/item-sheet-weapon.html',
     'systems/dcc/templates/item-sheet-weapon-npc.html',
+    'systems/dcc/templates/item-sheet-weapon-pc.html',
     'systems/dcc/templates/roll-modifier-partial-die.html',
     'systems/dcc/templates/roll-modifier-partial-disapproval-die.html',
     'systems/dcc/templates/roll-modifier-partial-modifiers.html',
