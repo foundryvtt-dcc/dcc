@@ -81,6 +81,7 @@
   "DCC.CharacterPortrait": "Character Portrait",
   "DCC.CharacterTabHint": "Ability scores, saves, name, level, xp",
   "DCC.ChatContextDamage": "Apply Damage",
+  "DCC.ChatContextHealing": "Apply Healing",
   "DCC.Check": "Check",
   "DCC.CheckRollUnder": "Check (Roll Under)",
   "DCC.CheckPenalty": "Check Penalty",

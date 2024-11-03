@@ -38,8 +38,7 @@
           <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
           <div class="grid-align-center p-5">
             <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
-              {{ifThen system.class.spellCheckOverrideDie system.class.spellCheckOverrideDie system.attributes.actionDice.value}}
-              {{system.class.spellCheck}}
+              {{ifThen system.class.spellCheckOverrideDie system.class.spellCheckOverrideDie system.attributes.actionDice.value}}{{system.class.spellCheck}}
             </div>
 
             <div class="group-separator"></div>
@@ -85,20 +84,17 @@
           <div class="dark-title" style="">{{localize "DCC.ClericAbilities"}}</div>
           <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
             <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
-              <label class="rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}">{{localize "DCC.DivineAid"}}</label>
+              <label class="skill-check rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}">{{localize "DCC.DivineAid"}}</label>
               <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.divineAid.value}}</div>
             </div>
-            <div></div>
             <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
-              <label class="rollable" for="system.skills.turnUnholy.value" title="{{localize 'DCC.TurnUnholyHint'}}">{{localize "DCC.TurnUnholy"}}</label>
+              <label class="skill-check rollable" for="system.skills.turnUnholy.value" title="{{localize 'DCC.TurnUnholyHint'}}">{{localize "DCC.TurnUnholy"}}</label>
               <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.turnUnholy.value}}</div>
             </div>
-            <div></div>
             <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
-              <label class="rollable" for="system.skills.layOnHands.value" title="{{localize 'DCC.LayOnHandsHint'}}">{{localize "DCC.LayOnHands"}}</label>
+              <label class="skill-check rollable" for="system.skills.layOnHands.value" title="{{localize 'DCC.LayOnHandsHint'}}">{{localize "DCC.LayOnHands"}}</label>
               <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.layOnHands.value}}</div>
             </div>
-            <div></div>
             <div class="group-separator"></div>
             <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
               <label class="disapproval-range rollable" for="system.class.disapproval" title="{{localize 'DCC.DisapprovalRangeHint'}}">{{localize "DCC.DisapprovalRange"}}</label>
