@@ -430,7 +430,8 @@ a.inline-roll {
   line-height: 20px;
 }
 
-.chat-message .table-draw .mercurial, .chat-message .table-draw .manifestation {
+.chat-message .table-draw .mercurial,
+.chat-message .table-draw .manifestation {
   border-top: 1px solid var(--color-border-light-primary);
   color: var(--color-text-dark-secondary);
   font-size: var(--font-size-12);
@@ -896,7 +897,8 @@ a.inline-roll {
 .dcc.sheet a[data-tab=spell]::before {
   content: "\f6b8";
 }
-.dcc.sheet a[data-tab=spells]::before, .dcc.sheet a[data-tab=spell]::before {
+.dcc.sheet a[data-tab=spells]::before,
+.dcc.sheet a[data-tab=spell]::before {
   content: "\f6b8";
 }
 .dcc.sheet a[data-tab=warrior]::before {
@@ -1162,7 +1164,8 @@ form.dcc-roll-modifier input.stat {
   text-align: left;
   padding-top: 2px;
 }
-.dcc .character .combat-basics input, .dcc .character .combat-basics select {
+.dcc .character .combat-basics input,
+.dcc .character .combat-basics select {
   font-size: 14px;
   height: 17px;
   vertical-align: middle;
@@ -1285,7 +1288,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .character .saving-throw-box input {
   align-self: center;
-  background: #DBD9CD;
+  background: #dbd9cd;
   border-radius: 100px;
   font-size: 18px;
   height: 50px;
@@ -1365,7 +1368,7 @@ form.dcc-roll-modifier input.stat {
 }
 .dcc .npc-grid .saving-throws .saving-throw-box input {
   align-self: center;
-  background: #DBD9CD;
+  background: #dbd9cd;
   border-radius: 10px;
   font-size: 12px;
   height: 20px;

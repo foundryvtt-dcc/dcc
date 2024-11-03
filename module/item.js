@@ -9,7 +9,6 @@ import { ensurePlus } from './utilities.js'
  * @extends {Item}
  */
 class DCCItem extends Item {
-
   prepareBaseData () {
     super.prepareBaseData()
 
@@ -84,7 +83,6 @@ class DCCItem extends Item {
         if (this.system.config.damageOverride) {
           this.system.damage = this.system.config.damageOverride
         }
-
       }
 
       // Crit Calculation

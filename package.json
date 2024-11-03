@@ -1,26 +1,14 @@
 {
   "author": "Tim L. White <tim@cyface.com>",
-  "babel": {
-    "presets": [
-      [
-        "@babel/preset-env",
-        {
-          "targets": {
-            "node": "current"
-          }
-        }
-      ]
-    ]
-  },
   "bugs": {
     "url": "https://github.com/foundryvtt-dcc/dcc/issues"
   },
   "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
   "devDependencies": {
     "sass": "^1.69.3",
-    "standard": "^17.1.0",
-    "stylelint": "^15.10.3",
-    "stylelint-config-sass-guidelines": "^10.0.0",
+    "standard": "^17.1.2",
+    "stylelint": "^16.10.0",
+    "stylelint-config-sass-guidelines": "^12.1.0",
     "vitest": "^2.0.5"
   },
   "directories": {
@@ -44,7 +32,7 @@
     "url": "git+https://github.com/foundryvtt-dcc/dcc.git"
   },
   "scripts": {
-    "format": "standard --fix && stylelint \"**/*.scss\"",
+    "format": "standard --fix && stylelint \"**/*.scss\" --fix",
     "test": "vitest .",
     "scss": "sass styles/dcc.scss styles/dcc.css",
     "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css"

@@ -134,7 +134,7 @@ function _parseJSONPCs (pcObject) {
     }
     // Action Die
     if (pcObject.actionDice) {
-      pc['config.actionDice'] = pcObject.actionDice.replaceAll('+',',')
+      pc['config.actionDice'] = pcObject.actionDice.replaceAll('+', ',')
     }
     // Attack Bonus
     if (pcObject.attackBonus) {

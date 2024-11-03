@@ -1280,7 +1280,7 @@ class DCCActor extends Actor {
         isRoll: true,
         rolls: [await new Roll(deltaHp.toString()).evaluate()],
         flags: {
-          'dcc.isApplyDamage': true,
+          'dcc.isApplyDamage': true
         },
         type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         content: game.i18n.format(locString, { target: this.name, damage: Math.abs(deltaHp) }),

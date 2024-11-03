@@ -1,21 +1,21 @@
-@import 'grid';
+@use 'grid';
 
 /* ----------------------------------------- */
 /*  Globals                                  */
 /* ----------------------------------------- */
 @font-face {
-  font-family: "Cooper Black";
-  src: url("fonts/Cooper.otf") format("opentype");
+  font-family: 'Cooper Black';
+  src: url('fonts/Cooper.otf') format('opentype');
 }
 
 @font-face {
   font-family: 'Book Antiqua';
-  src: url('fonts/Book-Antiqua.otf') format("opentype");
+  src: url('fonts/Book-Antiqua.otf') format('opentype');
 }
 
 @font-face {
   font-family: 'DuvallSmallCaps';
-  src: url('fonts/DuvallSmallCaps.otf') format("opentype");
+  src: url('fonts/DuvallSmallCaps.otf') format('opentype');
 }
 
 /* Common style elements */
@@ -103,7 +103,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     border-width: 0 0 1px 0;
     border-radius: 0;
 
-    &[type="checkbox"] {
+    &[type='checkbox'] {
       height: 20px;
       width: 20px;
       margin: 0;
@@ -176,13 +176,13 @@ $font-awesome: 'Font Awesome 6 Pro';
 }
 
 :root {
-  --dark-bg: url("images/denim.png");
+  --dark-bg: url('images/denim.png');
   --dark-border: 4px solid var(--dark-color);
   --dark-color: rgba(0, 0, 0, 0.75);
   --light-color: rgba(255, 255, 255, 0.77);
   --medium-color: rgba(0, 0, 0, 0.3);
-  --data-font: "Book Antiqua", serif;
-  --label-font: "Cooper Black", serif;
+  --data-font: 'Book Antiqua', serif;
+  --label-font: 'Cooper Black', serif;
 }
 
 /* ----------------------------------------- */
@@ -235,7 +235,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     grid-template-columns: subgrid;
 
     input {
-      background: rgba(0, 0, 0, .1);
+      background: rgba(0, 0, 0, 0.1);
       border: 1px solid var(--color-border-light-tertiary);
       border-radius: 3px;
       height: 22px;
@@ -280,7 +280,8 @@ a.inline-roll {
   line-height: 20px;
 }
 
-.chat-message .table-draw .mercurial, .chat-message .table-draw .manifestation, {
+.chat-message .table-draw .mercurial,
+ .chat-message .table-draw .manifestation, {
   border-top: 1px solid var(--color-border-light-primary);
   color: var(--color-text-dark-secondary);
   font-size: var(--font-size-12);
@@ -402,7 +403,7 @@ a.inline-roll {
     margin-bottom: 5px;
 
     input {
-      background: rgba(0, 0, 0, .1);
+      background: rgba(0, 0, 0, 0.1);
       border: 1px solid var(--color-border-light-tertiary);
       border-radius: 3px;
       height: 22px;
@@ -501,7 +502,7 @@ a.inline-roll {
 
 .dcc .item {
   align-items: center;
-  border-bottom: .5px solid burlywood;
+  border-bottom: 0.5px solid burlywood;
   display: grid;
   font-size: 13px;
   justify-items: center;
@@ -634,7 +635,7 @@ a.inline-roll {
     }
   }
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     background: none;
     border: 0;
     height: 12px;
@@ -762,81 +763,82 @@ a.inline-roll {
     }
   }
 
-  a[data-tab="armor"]::before {
-    content: "\f3ed";
+  a[data-tab='armor']::before {
+    content: '\f3ed';
   }
 
-  a[data-tab="character"]::before {
-    content: "\f007";
+  a[data-tab='character']::before {
+    content: '\f007';
   }
 
 
-  a[data-tab="cleric"]::before {
-    content: "\f3ed";
+  a[data-tab='cleric']::before {
+    content: '\f3ed';
   }
 
-  a[data-tab="description"]::before {
-    content: "\f249";
+  a[data-tab='description']::before {
+    content: '\f249';
   }
 
-  a[data-tab="dwarf"]::before {
-    content: "\f6eb";
+  a[data-tab='dwarf']::before {
+    content: '\f6eb';
   }
 
-  a[data-tab="elf"]::before {
-    content: "\f56b";
+  a[data-tab='elf']::before {
+    content: '\f56b';
   }
 
-  a[data-tab="equipment"]::before {
-    content: "\f71d";
+  a[data-tab='equipment']::before {
+    content: '\f71d';
   }
 
-  a[data-tab="halfling"]::before {
-    content: "\e139";
+  a[data-tab='halfling']::before {
+    content: '\e139';
   }
 
-  a[data-tab="item"]::before {
-    content: "\f723";
+  a[data-tab='item']::before {
+    content: '\f723';
   }
 
-  a[data-tab="manifestation"]::before {
-    content: "\f890";
+  a[data-tab='manifestation']::before {
+    content: '\f890';
   }
 
-  a[data-tab="mercurial"]::before {
-    content: "\f72b";
+  a[data-tab='mercurial']::before {
+    content: '\f72b';
   }
 
-  a[data-tab="notes"]::before {
-    content: "\f249";
+  a[data-tab='notes']::before {
+    content: '\f249';
   }
 
-  a[data-tab="skills"]::before {
-    content: "\f5dc";
+  a[data-tab='skills']::before {
+    content: '\f5dc';
   }
 
-  a[data-tab="spell"]::before {
-    content: "\f6b8";
+  a[data-tab='spell']::before {
+    content: '\f6b8';
   }
 
-  a[data-tab="spells"]::before, a[data-tab="spell"]::before, {
-    content: "\f6b8";
+  a[data-tab='spells']::before,
+ a[data-tab='spell']::before, {
+    content: '\f6b8';
   }
 
-  a[data-tab="warrior"]::before {
-    content: "\f6eb";
+  a[data-tab='warrior']::before {
+    content: '\f6eb';
   }
 
-  a[data-tab="weapon"]::before {
-    content: "\f71d";
+  a[data-tab='weapon']::before {
+    content: '\f71d';
   }
 
-  a[data-tab="wizard"]::before {
-    content: "\f6e8";
+  a[data-tab='wizard']::before {
+    content: '\f6e8';
   }
 
-  a[data-tab="thief"]::before {
-    content: "\f504";
+  a[data-tab='thief']::before {
+    content: '\f504';
   }
 }
 
@@ -1141,7 +1143,8 @@ form.dcc-roll-modifier {
       padding-top: 2px;
     }
 
-    input, select {
+    input,
+ select {
       font-size: 14px;
       height: 17px;
       vertical-align: middle;
@@ -1280,7 +1283,7 @@ form.dcc-roll-modifier {
 
     input {
       align-self: center;
-      background: #DBD9CD;
+      background: #dbd9cd;
       border-radius: 100px;
       font-size: 18px;
       height: 50px;
@@ -1362,7 +1365,7 @@ form.dcc-roll-modifier {
     .saving-throws {
       display: grid;
       row-gap: min(4px);
-      margin: 0 0 .25px 0;
+      margin: 0 0 0.25px 0;
       padding: 0;
 
       .saving-throw-box {
@@ -1375,7 +1378,7 @@ form.dcc-roll-modifier {
 
         input {
           align-self: center;
-          background: #DBD9CD;
+          background: #dbd9cd;
           border-radius: 10px;
           font-size: 12px;
           height: 20px;

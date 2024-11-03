@@ -145,7 +145,7 @@ export const emoteAbilityRoll = function (message, html, data) {
 export const emoteApplyDamageRoll = function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isApplyDamage')) return
 
-  message.content = message.content.replace('T', 't') //Lowercase message
+  message.content = message.content.replace('T', 't') // Lowercase message
 
   const applyDamageEmote = game.i18n.format(
     'DCC.ApplyDamageEmote',
