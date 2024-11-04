@@ -36,9 +36,6 @@ Hooks.once('init', async function () {
 
   CONFIG.DCC = DCC
 
-  // Turn Map Notes on by default
-  game.settings.settings.get('core.notesDisplayToggle').default = true
-
   // noinspection JSUndefinedPropertyAssignment,JSUnusedGlobalSymbols
   game.dcc = {
     DCCActor,
@@ -167,6 +164,9 @@ Hooks.once('init', async function () {
 Hooks.once('ready', async function () {
   // Register system settings - needs to happen after packs are initialised
   await registerSystemSettings()
+
+  // Turn Map Notes on by default
+  game.settings.settings.get('core.notesDisplayToggle').default = true
 
   // Register the KeyState tracker
   game.dcc.KeyState = new KeyState()
