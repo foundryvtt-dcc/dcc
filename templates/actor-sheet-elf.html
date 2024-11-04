@@ -11,7 +11,7 @@
     <a data-tab="elf" title="{{localize 'DCC.ElfTabHint'}}">{{localize "DCC.Elf"}}</a>
     <a data-tab="spells" title="{{localize 'DCC.SpellsTabHint'}}">{{localize "DCC.ElfSpells"}}</a>
     {{#if system.config.showSkills}}
-      <a data-tab="skills" title="{{localize 'DCC.SkillsTabHint'}}">{{localize "DCC.Skills"}}</a>
+    <a data-tab="skills" title="{{localize 'DCC.SkillsTabHint'}}">{{localize "DCC.Skills"}}</a>
     {{/if}}
     <a data-tab="notes" title="{{localize 'DCC.NotesTabHint'}}">{{localize "DCC.Notes"}}</a>
   </nav>
@@ -40,9 +40,11 @@
           <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="int">
             <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
             <div class="grid-align-center p-5">
-              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{ifThen system.class.spellCheckOverrideDie
-                                                                                          system.class.spellCheckOverrideDie
-                                                                                          system.attributes.actionDice.value}}{{system.class.spellCheck}}</div>
+              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
+                {{ifThen system.class.spellCheckOverrideDie
+                system.class.spellCheckOverrideDie
+                system.attributes.actionDice.value}}{{system.class.spellCheck}}
+              </div>
 
               <div class="group-separator"></div>
 
@@ -97,7 +99,7 @@
                       data-dtype="String">{{system.class.patron}}</textarea>
           </div>
           {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-            <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
+          <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
           {{/dccPackExists}}
         </div>
 
