@@ -36,6 +36,9 @@ Hooks.once('init', async function () {
 
   CONFIG.DCC = DCC
 
+  // Turn Map Notes on by default
+  game.settings.settings.get('core.notesDisplayToggle').default = true
+
   // noinspection JSUndefinedPropertyAssignment,JSUnusedGlobalSymbols
   game.dcc = {
     DCCActor,
@@ -647,9 +650,7 @@ async function createDCCMacro (data, slot) {
   const macroData = handlers[data.type](data, slot)
   if (macroData) {
     // Create or reuse existing macro
-    let macro = game.macros.contents.find(
-      m => (m.name === macroData.name) && (m.command === macroData.command)
-    )
+    let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command))
     if (!macro) {
       macro = await Macro.create({
         name: macroData.name,
