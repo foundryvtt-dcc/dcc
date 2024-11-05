@@ -325,6 +325,20 @@ async function getSkillTable (skillName) {
   return null
 }
 
+Hooks.once('importAdventure', async function () {
+  // This is a client side setting so only the GM user is affected
+  game.settings.set('core', NotesLayer.TOGGLE_SETTING, true)
+
+  // Regenerate all the scene thumbnails, since the adventure packer doesn't do that
+  for (const scene of game.scenes) {
+    const t = await scene.createThumbnail({ img: scene.img || undefined })
+    if (t?.thumb) {
+      console.log(`Regenerated thumbnail for ${scene.name}`)
+      await scene.update({ thumb: t.thumb })
+    }
+  }
+})
+
 /**
  * Handle the results of a spell check cast through any mechanism
  * Apply a roll to a table and apply spell check logic for crits and fumbles
