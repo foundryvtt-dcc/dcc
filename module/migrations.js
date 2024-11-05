@@ -122,7 +122,7 @@ const migrateCompendium = async function (pack) {
  * @return {Object}       The updateData to apply
  */
 const migrateActorData = function (actor) {
-  const updateData = { }
+  const updateData = {}
 
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
 
@@ -142,7 +142,7 @@ const migrateActorData = function (actor) {
       'system.details.attackHitBonus.missile.value': actor.system.details.attackBonus
     })
     if (this.options.template === 'systems/dcc/templates/actor-sheet-npc.html' ||
-      this.options.template === 'systems/dcc/templates/actor-sheet-zero-level.html') {
+            this.options.template === 'systems/dcc/templates/actor-sheet-zero-level.html') {
       this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
     }
   }
@@ -208,6 +208,14 @@ const migrateItemData = function (item) {
         config: {
           castingMode: 'wizard'
         }
+      }
+    }
+  }
+
+  if (currentVersion < 0.50) {
+    if (item.type === 'weapon') {
+      if (item.damage && !item.damageWeapon) {
+        item.damageWeapon = item.damage
       }
     }
   }
