@@ -1,7 +1,7 @@
 /* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
 
 import DiceChain from './dice-chain.js'
-import { ensurePlus } from './utilities.js'
+import { ensurePlus, getFirstDie } from './utilities.js'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -61,6 +61,26 @@ class DCCItem extends Item {
         }
 
         // Damage Calculation
+        if (this.system.damage && !this.system.damageWeapon) {
+          this.actor.prepareBaseData()
+          const damageWeapon = getFirstDie(this.system.damage)
+          if (damageWeapon) {
+            let total = `${damageWeapon}${this.actor.system?.details?.attackDamageBonus?.melee?.value}`
+            if (!this.system?.melee) {
+              total = `${damageWeapon}${this.actor.system?.details?.attackDamageBonus?.missile?.value}`
+            }
+            if (this.system.damage === total || this.system.damage === total.replaceAll('+0', '')
+            ) {
+              this.system.damage = this.actor.system?.details?.attackDamageBonus?.melee?.value
+              this.system.damageWeapon = damageWeapon
+            } else {
+              this.system.config.damageOverride = this.system.damage
+            }
+          } else {
+            this.system.config.damageOverride = this.system.damage
+          }
+        }
+
         if (this.system.melee) {
           this.system.damage = this.actor.system.details.attackDamageBonus?.melee?.value || ''
         } else {

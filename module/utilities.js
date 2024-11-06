@@ -27,7 +27,7 @@ export function ensurePlus (value, includeZero = true) {
  */
 export function getFirstDie (value) {
   const firstDie = value.match(/\d\d?d\d\d?/)
-  return firstDie || ''
+  return firstDie[0] || ''
 }
 
 /**

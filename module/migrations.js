@@ -215,7 +215,7 @@ const migrateItemData = function (item) {
   if (currentVersion < 0.51) {
     if (item.type === 'weapon') {
       if (item.damage && !item.damageWeapon) {
-        item.damageWeapon = item.damage
+        item.config.damageOverride = item.damage
       }
     }
   }
