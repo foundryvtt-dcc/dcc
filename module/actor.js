@@ -970,7 +970,7 @@ class DCCActor extends Actor {
         await critRoll.evaluate()
         foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
         rolls.push(critRoll)
-        const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
+        const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
           critTableName = critResult.results[0]?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
           critText = await TextEditor.enrichHTML(critResult.results[0].text)
@@ -1208,7 +1208,7 @@ class DCCActor extends Actor {
     const critPrompt = game.i18n.localize('DCC.Critical')
 
     const critTableName = this.system.attributes.critical.table
-    const critResult = await getCritTableResult(critRoll.total, `Crit Table ${critTableName}`)
+    const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {
       critText = await TextEditor.enrichHTML(critResult.results[0].text)
