@@ -263,6 +263,207 @@ DCC.hitDiePerClass = {
   elf: '1d6'
 }
 
+DCC.monsterCriticalHits = [
+  {
+    'HD': 'Less than 1',
+    'Humanoids': 'III/d4',
+    'Dragons': 'DR/d4',
+    'Demons': 'DN/d3',
+    'Giants': '',
+    'Undead': 'U/d4',
+    'AllOther': 'M/d4'
+  },
+  {
+    'HD': '1',
+    'Humanoids': 'III/d6',
+    'Dragons': 'DR/d6',
+    'Demons': 'DN/d4',
+    'Giants': '',
+    'Undead': 'U/d6',
+    'AllOther': 'M/d6'
+  },
+  {
+    'HD': '2',
+    'Humanoids': 'III/d8',
+    'Dragons': 'DR/d8',
+    'Demons': 'DN/d4',
+    'Giants': '',
+    'Undead': 'U/d6',
+    'AllOther': 'M/d8'
+  },
+  {
+    'HD': '3',
+    'Humanoids': 'III/d8',
+    'Dragons': 'DR/d10',
+    'Demons': 'DN/d4',
+    'Giants': '',
+    'Undead': 'U/d8',
+    'AllOther': 'M/d8'
+  },
+  {
+    'HD': '4',
+    'Humanoids': 'III/d10',
+    'Dragons': 'DR/d12',
+    'Demons': 'DN/d4',
+    'Giants': 'G/d4',
+    'Undead': 'U/d8',
+    'AllOther': 'M/d10'
+  },
+  {
+    'HD': '5',
+    'Humanoids': 'III/d10',
+    'Dragons': 'DR/d14',
+    'Demons': 'DN/d6',
+    'Giants': 'G/d4',
+    'Undead': 'U/d10',
+    'AllOther': 'M/d10'
+  },
+  {
+    'HD': '6',
+    'Humanoids': 'IV/d12',
+    'Dragons': 'DR/d16',
+    'Demons': 'DN/d6',
+    'Giants': 'G/d4',
+    'Undead': 'U/d10',
+    'AllOther': 'M/d12'
+  },
+  {
+    'HD': '7',
+    'Humanoids': 'IV/d12',
+    'Dragons': 'DR/d20',
+    'Demons': 'DN/d8',
+    'Giants': 'G/d4',
+    'Undead': 'U/d12',
+    'AllOther': 'M/d12'
+  },
+  {
+    'HD': '8',
+    'Humanoids': 'IV/d14',
+    'Dragons': 'DR/d20',
+    'Demons': 'DN/d8',
+    'Giants': 'G/d4',
+    'Undead': 'U/d12',
+    'AllOther': 'M/d14'
+  },
+  {
+    'HD': '9',
+    'Humanoids': 'IV/d14',
+    'Dragons': 'DR/d24',
+    'Demons': 'DN/d10',
+    'Giants': 'G/d4',
+    'Undead': 'U/d14',
+    'AllOther': 'M/d14'
+  },
+  {
+    'HD': '10',
+    'Humanoids': 'IV/d16',
+    'Dragons': 'DR/d24',
+    'Demons': 'DN/d10',
+    'Giants': 'G/d4',
+    'Undead': 'U/d14',
+    'AllOther': 'M/d16'
+  },
+  {
+    'HD': '11',
+    'Humanoids': 'V/d16',
+    'Dragons': 'DR/2d14',
+    'Demons': 'DN/d12',
+    'Giants': 'G/d4',
+    'Undead': 'U/d16',
+    'AllOther': 'M/d16'
+  },
+  {
+    'HD': '12',
+    'Humanoids': 'V/d20',
+    'Dragons': 'DR/2d14',
+    'Demons': 'DN/d12',
+    'Giants': 'G/d6',
+    'Undead': 'U/d16',
+    'AllOther': 'M/d20'
+  },
+  {
+    'HD': '13',
+    'Humanoids': 'V/d20',
+    'Dragons': 'DR/d30',
+    'Demons': 'DN/d14',
+    'Giants': 'G/d6',
+    'Undead': 'U/d20',
+    'AllOther': 'M/d20'
+  },
+  {
+    'HD': '14',
+    'Humanoids': 'V/2d10',
+    'Dragons': 'DR/d30',
+    'Demons': 'DN/d14',
+    'Giants': 'G/d7',
+    'Undead': 'U/d20',
+    'AllOther': 'M/d20'
+  },
+  {
+    'HD': '15',
+    'Humanoids': 'V/2d10',
+    'Dragons': 'DR/2d16',
+    'Demons': 'DN/d16',
+    'Giants': 'G/d7',
+    'Undead': 'U/d24',
+    'AllOther': 'M/d20'
+  },
+  {
+    'HD': '16',
+    'Humanoids': 'V/2d12',
+    'Dragons': 'DR/2d16',
+    'Demons': 'DN/d16',
+    'Giants': 'G/d8',
+    'Undead': 'U/d24',
+    'AllOther': 'M/d24'
+  },
+  {
+    'HD': '17',
+    'Humanoids': 'V/2d12',
+    'Dragons': 'DR/2d20',
+    'Demons': 'DN/d20',
+    'Giants': 'G/d8',
+    'Undead': 'U/d30',
+    'AllOther': 'M/d24'
+  },
+  {
+    'HD': '18',
+    'Humanoids': 'V/2d14',
+    'Dragons': 'DR/2d20',
+    'Demons': 'DN/d20',
+    'Giants': 'G/d10',
+    'Undead': 'U/d30',
+    'AllOther': 'M/d24'
+  },
+  {
+    'HD': '19',
+    'Humanoids': 'V/2d14',
+    'Dragons': 'DR/3d20',
+    'Demons': 'DN/d24',
+    'Giants': 'G/d10',
+    'Undead': 'U/d30',
+    'AllOther': 'M/d30'
+  },
+  {
+    'HD': '20',
+    'Humanoids': 'V/3d10',
+    'Dragons': 'DR/3d20',
+    'Demons': 'DN/d24',
+    'Giants': 'G/d12',
+    'Undead': 'U/d30',
+    'AllOther': 'M/d30'
+  },
+  {
+    'HD': '21+',
+    'Humanoids': 'V/3d10',
+    'Dragons': 'DR/4d20',
+    'Demons': 'DN/d30',
+    'Giants': 'G/d12',
+    'Undead': 'U/d30',
+    'AllOther': 'M/d30'
+  }
+]
+
 // Import Types
 DCC.importTypes = {
   Player: 'DCC.ActorTypePlayer',
