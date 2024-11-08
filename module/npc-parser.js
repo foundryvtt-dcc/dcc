@@ -1,6 +1,7 @@
 /* global game, Roll, ui */
 
 import EntityImages from './entity-images.js'
+import DCC from './config.js'
 
 /**
  *  Parses one or more NPC Stat Blocks (e.g. from published modules) into actor data
@@ -61,6 +62,31 @@ async function parseNPC (npcString) {
   npc['saves.ref.value'] = _firstMatch(/.*Ref ?(.+?)[;,.].*/, npcString) || '+0'
   npc['saves.wil.value'] = _firstMatch(/.*Will ?(.+?)[;,.].*/, npcString) || '+0'
   npc['details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
+
+  /* Crits */
+  const hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
+  let npcType = 'other'
+  const npcStringLower = npcString.toLowerCase()
+  if (npcStringLower.includes('demon traits')) {
+    npcType = 'demon'
+  }
+  if (npcStringLower.includes('dragon') && npcStringLower.includes('breath')) {
+    npcType = 'dragon'
+  }
+  if (npcStringLower.includes('giant,')) {
+    npcType = 'giant'
+  }
+  if (DCC.humanoids.some(humanoidType => npcStringLower.includes(humanoidType))) {
+    npcType = 'humanoid'
+  }
+  if (npcStringLower.includes('un-dead')) {
+    npcType = 'undead'
+  }
+  const monsterCritInfo = DCC.monsterCriticalHits[hdCount]
+  if (monsterCritInfo) {
+    npc['attributes.critical.die'] = monsterCritInfo[npcType].die || '1d4'
+    npc['attributes.critical.table'] = monsterCritInfo[npcType].table || 'M'
+  }
 
   /* Speed */
   if (npc['attributes.speed.value'].includes('or')) {

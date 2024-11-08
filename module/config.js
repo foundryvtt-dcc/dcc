@@ -263,206 +263,200 @@ DCC.hitDiePerClass = {
   elf: '1d6'
 }
 
-DCC.monsterCriticalHits = [
-  {
-    'HD': 'Less than 1',
-    'Humanoids': 'III/d4',
-    'Dragons': 'DR/d4',
-    'Demons': 'DN/d3',
-    'Giants': '',
-    'Undead': 'U/d4',
-    'AllOther': 'M/d4'
-  },
-  {
-    'HD': '1',
-    'Humanoids': 'III/d6',
-    'Dragons': 'DR/d6',
-    'Demons': 'DN/d4',
-    'Giants': '',
-    'Undead': 'U/d6',
-    'AllOther': 'M/d6'
-  },
-  {
-    'HD': '2',
-    'Humanoids': 'III/d8',
-    'Dragons': 'DR/d8',
-    'Demons': 'DN/d4',
-    'Giants': '',
-    'Undead': 'U/d6',
-    'AllOther': 'M/d8'
-  },
-  {
-    'HD': '3',
-    'Humanoids': 'III/d8',
-    'Dragons': 'DR/d10',
-    'Demons': 'DN/d4',
-    'Giants': '',
-    'Undead': 'U/d8',
-    'AllOther': 'M/d8'
-  },
-  {
-    'HD': '4',
-    'Humanoids': 'III/d10',
-    'Dragons': 'DR/d12',
-    'Demons': 'DN/d4',
-    'Giants': 'G/d4',
-    'Undead': 'U/d8',
-    'AllOther': 'M/d10'
-  },
-  {
-    'HD': '5',
-    'Humanoids': 'III/d10',
-    'Dragons': 'DR/d14',
-    'Demons': 'DN/d6',
-    'Giants': 'G/d4',
-    'Undead': 'U/d10',
-    'AllOther': 'M/d10'
-  },
-  {
-    'HD': '6',
-    'Humanoids': 'IV/d12',
-    'Dragons': 'DR/d16',
-    'Demons': 'DN/d6',
-    'Giants': 'G/d4',
-    'Undead': 'U/d10',
-    'AllOther': 'M/d12'
-  },
-  {
-    'HD': '7',
-    'Humanoids': 'IV/d12',
-    'Dragons': 'DR/d20',
-    'Demons': 'DN/d8',
-    'Giants': 'G/d4',
-    'Undead': 'U/d12',
-    'AllOther': 'M/d12'
-  },
-  {
-    'HD': '8',
-    'Humanoids': 'IV/d14',
-    'Dragons': 'DR/d20',
-    'Demons': 'DN/d8',
-    'Giants': 'G/d4',
-    'Undead': 'U/d12',
-    'AllOther': 'M/d14'
-  },
-  {
-    'HD': '9',
-    'Humanoids': 'IV/d14',
-    'Dragons': 'DR/d24',
-    'Demons': 'DN/d10',
-    'Giants': 'G/d4',
-    'Undead': 'U/d14',
-    'AllOther': 'M/d14'
-  },
-  {
-    'HD': '10',
-    'Humanoids': 'IV/d16',
-    'Dragons': 'DR/d24',
-    'Demons': 'DN/d10',
-    'Giants': 'G/d4',
-    'Undead': 'U/d14',
-    'AllOther': 'M/d16'
-  },
-  {
-    'HD': '11',
-    'Humanoids': 'V/d16',
-    'Dragons': 'DR/2d14',
-    'Demons': 'DN/d12',
-    'Giants': 'G/d4',
-    'Undead': 'U/d16',
-    'AllOther': 'M/d16'
-  },
-  {
-    'HD': '12',
-    'Humanoids': 'V/d20',
-    'Dragons': 'DR/2d14',
-    'Demons': 'DN/d12',
-    'Giants': 'G/d6',
-    'Undead': 'U/d16',
-    'AllOther': 'M/d20'
-  },
-  {
-    'HD': '13',
-    'Humanoids': 'V/d20',
-    'Dragons': 'DR/d30',
-    'Demons': 'DN/d14',
-    'Giants': 'G/d6',
-    'Undead': 'U/d20',
-    'AllOther': 'M/d20'
-  },
-  {
-    'HD': '14',
-    'Humanoids': 'V/2d10',
-    'Dragons': 'DR/d30',
-    'Demons': 'DN/d14',
-    'Giants': 'G/d7',
-    'Undead': 'U/d20',
-    'AllOther': 'M/d20'
-  },
-  {
-    'HD': '15',
-    'Humanoids': 'V/2d10',
-    'Dragons': 'DR/2d16',
-    'Demons': 'DN/d16',
-    'Giants': 'G/d7',
-    'Undead': 'U/d24',
-    'AllOther': 'M/d20'
-  },
-  {
-    'HD': '16',
-    'Humanoids': 'V/2d12',
-    'Dragons': 'DR/2d16',
-    'Demons': 'DN/d16',
-    'Giants': 'G/d8',
-    'Undead': 'U/d24',
-    'AllOther': 'M/d24'
-  },
-  {
-    'HD': '17',
-    'Humanoids': 'V/2d12',
-    'Dragons': 'DR/2d20',
-    'Demons': 'DN/d20',
-    'Giants': 'G/d8',
-    'Undead': 'U/d30',
-    'AllOther': 'M/d24'
-  },
-  {
-    'HD': '18',
-    'Humanoids': 'V/2d14',
-    'Dragons': 'DR/2d20',
-    'Demons': 'DN/d20',
-    'Giants': 'G/d10',
-    'Undead': 'U/d30',
-    'AllOther': 'M/d24'
-  },
-  {
-    'HD': '19',
-    'Humanoids': 'V/2d14',
-    'Dragons': 'DR/3d20',
-    'Demons': 'DN/d24',
-    'Giants': 'G/d10',
-    'Undead': 'U/d30',
-    'AllOther': 'M/d30'
-  },
-  {
-    'HD': '20',
-    'Humanoids': 'V/3d10',
-    'Dragons': 'DR/3d20',
-    'Demons': 'DN/d24',
-    'Giants': 'G/d12',
-    'Undead': 'U/d30',
-    'AllOther': 'M/d30'
-  },
-  {
-    'HD': '21+',
-    'Humanoids': 'V/3d10',
-    'Dragons': 'DR/4d20',
-    'Demons': 'DN/d30',
-    'Giants': 'G/d12',
-    'Undead': 'U/d30',
-    'AllOther': 'M/d30'
-  }
+DCC.humanoids = [
+  'bugbear',
+  'gnoll',
+  'goblin',
+  'hobgoblin',
+  'hollow man',
+  'kobold',
+  'lizardman',
+  'man-bat',
+  'ogre',
+  'orcs',
+  'serpent-man',
+  'subhuman',
+  'troll'
 ]
+
+DCC.monsterCriticalHits = {
+  0: {
+    humanoid: { table: 'III', die: 'd4' },
+    dragon: { table: 'DR', die: 'd4' },
+    demon: { table: 'DN', die: 'd3' },
+    giant: { table: '', die: '' },
+    undead: { table: 'U', die: 'd4' },
+    other: { table: 'M', die: 'd4' }
+  },
+  1: {
+    humanoid: { table: 'III', die: 'd6' },
+    dragon: { table: 'DR', die: 'd6' },
+    demon: { table: 'DN', die: 'd4' },
+    giant: { table: '', die: '' },
+    undead: { table: 'U', die: 'd6' },
+    other: { table: 'M', die: 'd6' }
+  },
+  2: {
+    humanoid: { table: 'III', die: 'd8' },
+    dragon: { table: 'DR', die: 'd8' },
+    demon: { table: 'DN', die: 'd4' },
+    giant: { table: '', die: '' },
+    undead: { table: 'U', die: 'd6' },
+    other: { table: 'M', die: 'd8' }
+  },
+  3: {
+    humanoid: { table: 'III', die: 'd8' },
+    dragon: { table: 'DR', die: 'd10' },
+    demon: { table: 'DN', die: 'd4' },
+    giant: { table: '', die: '' },
+    undead: { table: 'U', die: 'd8' },
+    other: { table: 'M', die: 'd8' }
+  },
+  4: {
+    humanoid: { table: 'III', die: 'd10' },
+    dragon: { table: 'DR', die: 'd12' },
+    demon: { table: 'DN', die: 'd4' },
+    giant: { table: 'G', die: 'd4' },
+    undead: { table: 'U', die: 'd8' },
+    other: { table: 'M', die: 'd10' }
+  },
+  5: {
+    humanoid: { table: 'III', die: 'd10' },
+    dragon: { table: 'DR', die: 'd14' },
+    demon: { table: 'DN', die: 'd6' },
+    giant: { table: 'G', die: 'd4' },
+    undead: { table: 'U', die: 'd10' },
+    other: { table: 'M', die: 'd10' }
+  },
+  6: {
+    humanoid: { table: 'IV', die: 'd12' },
+    dragon: { table: 'DR', die: 'd16' },
+    demon: { table: 'DN', die: 'd6' },
+    giant: { table: 'G', die: 'd4' },
+    undead: { table: 'U', die: 'd10' },
+    other: { table: 'M', die: 'd12' }
+  },
+  7: {
+    humanoid: { table: 'IV', die: 'd12' },
+    dragon: { table: 'DR', die: 'd20' },
+    demon: { table: 'DN', die: 'd8' },
+    giant: { table: 'G', die: 'd4' },
+    undead: { table: 'U', die: 'd12' },
+    other: { table: 'M', die: 'd12' }
+  },
+  8: {
+    humanoid: { table: 'IV', die: 'd14' },
+    dragon: { table: 'DR', die: 'd20' },
+    demon: { table: 'DN', die: 'd8' },
+    giant: { table: 'G', die: 'd4' },
+    undead: { table: 'U', die: 'd12' },
+    other: { table: 'M', die: 'd14' }
+  },
+  9: {
+    humanoid: { table: 'IV', die: 'd14' },
+    dragon: { table: 'DR', die: 'd24' },
+    demon: { table: 'DN', die: 'd10' },
+    giant: { table: 'G', die: 'd4' },
+    undead: { table: 'U', die: 'd14' },
+    other: { table: 'M', die: 'd14' }
+  },
+  10: {
+    humanoid: { table: 'IV', die: 'd16' },
+    dragon: { table: 'DR', die: 'd24' },
+    demon: { table: 'DN', die: 'd10' },
+    giant: { table: 'G', die: 'd4' },
+    undead: { table: 'U', die: 'd14' },
+    other: { table: 'M', die: 'd16' }
+  },
+  11: {
+    humanoid: { table: 'V', die: 'd16' },
+    dragon: { table: 'DR', die: '2d14' },
+    demon: { table: 'DN', die: 'd12' },
+    giant: { table: 'G', die: 'd4' },
+    undead: { table: 'U', die: 'd16' },
+    other: { table: 'M', die: 'd16' }
+  },
+  12: {
+    humanoid: { table: 'V', die: 'd20' },
+    dragon: { table: 'DR', die: '2d14' },
+    demon: { table: 'DN', die: 'd12' },
+    giant: { table: 'G', die: 'd6' },
+    undead: { table: 'U', die: 'd16' },
+    other: { table: 'M', die: 'd20' }
+  },
+  13: {
+    humanoid: { table: 'V', die: 'd20' },
+    dragon: { table: 'DR', die: 'd30' },
+    demon: { table: 'DN', die: 'd14' },
+    giant: { table: 'G', die: 'd6' },
+    undead: { table: 'U', die: 'd20' },
+    other: { table: 'M', die: 'd20' }
+  },
+  14: {
+    humanoid: { table: 'V', die: '2d10' },
+    dragon: { table: 'DR', die: 'd30' },
+    demon: { table: 'DN', die: 'd14' },
+    giant: { table: 'G', die: 'd7' },
+    undead: { table: 'U', die: 'd20' },
+    other: { table: 'M', die: 'd20' }
+  },
+  15: {
+    humanoid: { table: 'V', die: '2d10' },
+    dragon: { table: 'DR', die: '2d16' },
+    demon: { table: 'DN', die: 'd16' },
+    giant: { table: 'G', die: 'd7' },
+    undead: { table: 'U', die: 'd24' },
+    other: { table: 'M', die: 'd20' }
+  },
+  16: {
+    humanoid: { table: 'V', die: '2d12' },
+    dragon: { table: 'DR', die: '2d16' },
+    demon: { table: 'DN', die: 'd16' },
+    giant: { table: 'G', die: 'd8' },
+    undead: { table: 'U', die: 'd24' },
+    other: { table: 'M', die: 'd24' }
+  },
+  17: {
+    humanoid: { table: 'V', die: '2d12' },
+    dragon: { table: 'DR', die: '2d20' },
+    demon: { table: 'DN', die: 'd20' },
+    giant: { table: 'G', die: 'd8' },
+    undead: { table: 'U', die: 'd30' },
+    other: { table: 'M', die: 'd24' }
+  },
+  18: {
+    humanoid: { table: 'V', die: '2d14' },
+    dragon: { table: 'DR', die: '2d20' },
+    demon: { table: 'DN', die: 'd20' },
+    giant: { table: 'G', die: 'd10' },
+    undead: { table: 'U', die: 'd30' },
+    other: { table: 'M', die: 'd24' }
+  },
+  19: {
+    humanoid: { table: 'V', die: '2d14' },
+    dragon: { table: 'DR', die: '3d20' },
+    demon: { table: 'DN', die: 'd24' },
+    giant: { table: 'G', die: 'd10' },
+    undead: { table: 'U', die: 'd30' },
+    other: { table: 'M', die: 'd30' }
+  },
+  20: {
+    humanoid: { table: 'V', die: '3d10' },
+    dragon: { table: 'DR', die: '3d20' },
+    demon: { table: 'DN', die: 'd24' },
+    giant: { table: 'G', die: 'd12' },
+    undead: { table: 'U', die: 'd30' },
+    other: { table: 'M', die: 'd30' }
+  },
+  21: {
+    humanoid: { table: 'V', die: '3d10' },
+    dragon: { table: 'DR', die: '4d20' },
+    demon: { table: 'DN', die: 'd30' },
+    giant: { table: 'G', die: 'd12' },
+    undead: { table: 'U', die: 'd30' },
+    other: { table: 'M', die: 'd30' }
+  }
+}
 
 // Import Types
 DCC.importTypes = {
