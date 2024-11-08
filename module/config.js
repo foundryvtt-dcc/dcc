@@ -298,7 +298,6 @@ DCC.humanoidHints = [
   'hobgoblin',
   'hollow man',
   'huntress',
-  'king',
   'knight',
   'kindred',
   'kobold',
