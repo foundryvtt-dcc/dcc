@@ -59,6 +59,9 @@ async function parseNPC (npcString) {
   if (hd.includes('¼')) {
     hd = `${hd.replace('¼', '1')}/4`
   }
+  if (hd.includes('1/4')) {
+    hd = `${hd.replace('1/4', '1')}/4`
+  }
   npc['attributes.hitDice.value'] = hd
   const hpRoll = await new Roll(hd).evaluate()
   let hp = hpRoll.total
