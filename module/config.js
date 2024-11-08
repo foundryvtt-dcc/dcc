@@ -263,20 +263,54 @@ DCC.hitDiePerClass = {
   elf: '1d6'
 }
 
+DCC.giants = [
+  'cyclops',
+  'giant'
+]
+
+DCC.giantsNotGiants = [
+  'ant',
+  'beetle',
+  'centipede',
+  'lizard',
+  'rat',
+  'scorpion',
+  'snake'
+]
+
 DCC.humanoids = [
+  'acolyte',
+  'assassin',
+  'bandit',
+  'beserker',
   'bugbear',
+  'centaur',
+  'deep one',
+  'dimensional sailor',
+  'fortune teller',
+  'friar',
   'gnoll',
   'goblin',
   'hobgoblin',
   'hollow man',
+  'king',
+  'knight',
   'kobold',
+  'living statue',
   'lizardman',
+  'magician',
+  'man-at-arms',
+  'noble',
   'ogre',
   'orc',
+  'peasant',
+  'sage',
   'serpent-man',
   'subhuman',
+  'time traveler',
   'troglodyte',
-  'troll'
+  'troll',
+  'witch'
 ]
 
 DCC.monsterCriticalHits = {
