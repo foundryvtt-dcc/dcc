@@ -278,7 +278,7 @@ DCC.giantsNotGiants = [
   'snake'
 ]
 
-DCC.humanoids = [
+DCC.humanoidHints = [
   'acolyte',
   'agent',
   'assassin',
