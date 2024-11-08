@@ -271,11 +271,11 @@ DCC.humanoids = [
   'hollow man',
   'kobold',
   'lizardman',
-  'man-bat',
   'ogre',
-  'orcs',
+  'orc',
   'serpent-man',
   'subhuman',
+  'troglodyte',
   'troll'
 ]
 
