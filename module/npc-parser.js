@@ -64,7 +64,10 @@ async function parseNPC (npcString) {
   npc['details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
 
   /* Crits */
-  const hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
+  let hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
+  if (hdCount > 21) {
+    hdCount = 21
+  }
   let npcType = 'other'
   const npcStringLower = npcString.toLowerCase()
   if (npcStringLower.includes('demon traits')) {

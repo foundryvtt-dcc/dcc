@@ -326,7 +326,7 @@ DCC.monsterCriticalHits = {
     humanoid: { table: 'III', die: 'd4' },
     dragon: { table: 'DR', die: 'd4' },
     demon: { table: 'DN', die: 'd3' },
-    giant: { table: '', die: '' },
+    giant: { table: 'G', die: 'd4' },
     undead: { table: 'U', die: 'd4' },
     other: { table: 'M', die: 'd4' }
   },
@@ -334,7 +334,7 @@ DCC.monsterCriticalHits = {
     humanoid: { table: 'III', die: 'd6' },
     dragon: { table: 'DR', die: 'd6' },
     demon: { table: 'DN', die: 'd4' },
-    giant: { table: '', die: '' },
+    giant: { table: 'G', die: 'd4' },
     undead: { table: 'U', die: 'd6' },
     other: { table: 'M', die: 'd6' }
   },
@@ -342,7 +342,7 @@ DCC.monsterCriticalHits = {
     humanoid: { table: 'III', die: 'd8' },
     dragon: { table: 'DR', die: 'd8' },
     demon: { table: 'DN', die: 'd4' },
-    giant: { table: '', die: '' },
+    giant: { table: 'G', die: 'd4' },
     undead: { table: 'U', die: 'd6' },
     other: { table: 'M', die: 'd8' }
   },
@@ -350,7 +350,7 @@ DCC.monsterCriticalHits = {
     humanoid: { table: 'III', die: 'd8' },
     dragon: { table: 'DR', die: 'd10' },
     demon: { table: 'DN', die: 'd4' },
-    giant: { table: '', die: '' },
+    giant: { table: 'G', die: 'd4' },
     undead: { table: 'U', die: 'd8' },
     other: { table: 'M', die: 'd8' }
   },
