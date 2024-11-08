@@ -318,7 +318,6 @@ DCC.humanoidHints = [
   'sword',
   'time traveler',
   'troglodyte',
-  'troll',
   'witch'
 ]
 
