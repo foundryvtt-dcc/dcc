@@ -73,13 +73,13 @@ async function parseNPC (npcString) {
   if (npcStringLower.includes('dragon') && npcStringLower.includes('breath')) {
     npcType = 'dragon'
   }
+  if (DCC.humanoids.some(humanoidType => npcStringLower.includes(humanoidType))) {
+    npcType = 'humanoid'
+  }
   if (DCC.giants.some(humanoidType => npcStringLower.includes(humanoidType))) {
     if (!DCC.giantsNotGiants.some(humanoidType => npcStringLower.includes(humanoidType))) {
       npcType = 'giant'
     }
-  }
-  if (DCC.humanoids.some(humanoidType => npcStringLower.includes(humanoidType))) {
-    npcType = 'humanoid'
   }
   if (npcStringLower.includes('un-dead')) {
     npcType = 'undead'
