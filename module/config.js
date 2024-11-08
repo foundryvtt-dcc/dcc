@@ -284,6 +284,7 @@ DCC.humanoids = [
   'assassin',
   'bandit',
   'beserker',
+  'blade',
   'bugbear',
   'centaur',
   'club',
