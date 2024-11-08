@@ -49,9 +49,19 @@ async function parseNPC (npcString) {
 
   npc.name = _firstMatch(/(.*?):.*/, npcString) || 'Unnamed'
   npc.name = npc.name.replace(/ ?\(\d+\)/, '')
-  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[(;.].*/, npcString) || '1d8'
+  let hd = _firstMatch(/.*HD ?(.+?)[(;.].*/, npcString) || '1d8'
+  if (hd.includes('½')) {
+    hd = `${hd.replace('½', '1')}/2`
+  }
+  if (hd.includes('⅓')) {
+    hd = `${hd.replace('⅓', '1')}/3`
+  }
+  if (hd.includes('¼')) {
+    hd = `${hd.replace('¼', '1')}/4`
+  }
+  npc['attributes.hitDice.value'] = hd
   const hpRoll = await new Roll(hd).evaluate()
-  const hp = hpRoll.total
+  let hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
   npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,.].*/, npcString) || '10'
   npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp
@@ -64,9 +74,17 @@ async function parseNPC (npcString) {
   npc['details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
 
   /* Crits */
-  let hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
+  let hdCount = 1
+  try {
+    hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
+  } catch (error) {
+    hdCount = 0
+  }
   if (hdCount > 21) {
     hdCount = 21
+  }
+  if (hd.includes('/')) {
+    hdCount = 0
   }
   let npcType = 'other'
   const npcStringLower = npcString.toLowerCase()
