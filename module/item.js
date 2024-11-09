@@ -119,6 +119,10 @@ class DCCItem extends Item {
           }
         }
 
+        if (this.isNPC) {
+          this.system.config.inheritSpellCheck = false
+        }
+
         // Spells can inherit the owner's spell check
         if (this.system.config.inheritSpellCheck) {
           this.system.spellCheck.value = this.actor.system.class.spellCheck
