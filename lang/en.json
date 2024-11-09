@@ -71,7 +71,7 @@
   "DCC.AttackRollInvalidFormulaInline": "<b>Invalid To Hit formula '{formula}'</b>",
   "DCC.Avatar": "User Avatar",
   "DCC.Backstab": "Backstab",
-  "DCC.BackstabBonus": "Backstab Bonus",
+  "DCC.BackstabDamage": "Backstab Damage",
   "DCC.BackstabRoll": "Backstab Roll with {weapon}",
   "DCC.BadValueFormulaWarning": "Bad formula in item value field!",
   "DCC.BaseACAbilityConfig": "Base AC Ability",
