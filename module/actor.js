@@ -779,13 +779,13 @@ class DCCActor extends Actor {
     if (this.system.class.spellCheckOverrideDie) {
       die = this.system.class.spellCheckOverrideDie
     }
-    const level = this.system.details.level.value
-    const abilityMod = ensurePlus(ability.mod) || +0
+    const level = ensurePlus(this.system.details.level.value)
+    const abilityMod = ensurePlus(ability?.mod || 0) || +0
     let bonus = ''
     if (this.system.class.spellCheckOverride) {
       bonus = this.system.class.spellCheckOverride
     }
-    const checkPenalty = ensurePlus(this.system.attributes.ac.checkPenalty || '0')
+    const checkPenalty = ensurePlus(this.system?.attributes?.ac?.checkPenalty || '0')
     const isIdolMagic = this.system.details.sheetClass === 'Cleric'
     const applyCheckPenalty = !isIdolMagic
     options.title = game.i18n.localize('DCC.SpellCheck')
