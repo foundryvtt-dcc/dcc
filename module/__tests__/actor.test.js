@@ -566,7 +566,7 @@ test('roll spell check', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        formula: 1,
+        formula: '+1',
         modifierLabel: 'Level'
       },
       {
@@ -644,7 +644,7 @@ test('roll spell check int', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        formula: 1,
+        formula: '+1',
         modifierLabel: 'Level'
       },
       {
@@ -721,7 +721,7 @@ test('roll spell check per', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        formula: 1,
+        formula: '+1',
         modifierLabel: 'Level'
       },
       {
