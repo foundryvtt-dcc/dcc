@@ -15,6 +15,7 @@
       <a data-tab="skills" title="{{localize 'DCC.SkillsTabHint'}}">{{localize "DCC.Skills"}}</a>
     {{/if}}
     <a data-tab="notes" title="{{localize 'DCC.NotesTabHint'}}">{{localize "DCC.Notes"}}</a>
+    <a data-tab="effects" title="{{localize 'DCC.EffectsTabHint'}}">{{localize "DCC.Effects"}}</a>
   </nav>
 
   {{!-- Sheet Body --}}
@@ -34,6 +35,9 @@
 
     {{!-- Notes Tab --}}
     {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+
+    {{!-- Active Effects Tab --}}
+    {{> systems/dcc/templates/actor-partial-active-effects.html }}
 
     {{!-- Class Tab --}}
     <div class="tab" data-group="primary" data-tab="warrior">

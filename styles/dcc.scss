@@ -99,7 +99,6 @@ $font-awesome: 'Font Awesome 6 Pro';
     height: 17px;
     line-height: 1;
     text-align: center;
-    background: none;
     border-width: 0 0 1px 0;
     border-radius: 0;
 
@@ -355,6 +354,53 @@ a.inline-roll {
 
   .editor {
     min-height: 547px;
+  }
+}
+
+/* ----------------------------------------- */
+/*  Effects                                  */
+/* ----------------------------------------- */
+
+.dcc .effect-list {
+  display: grid;
+  font-family: $book-antiqua;
+  grid-template-columns: min-content minmax(370px, auto) 60px 39px;
+  justify-items: center;
+  margin: 0 0 8px 0;
+  padding: 5px 5px 0 5px;
+
+  img {
+    border: 0;
+    box-sizing: content-box;
+  }
+
+  input {
+    text-align: center;
+  }
+
+  .effect-list-header {
+    display: grid;
+    font-family: $cooper-black;
+    font-size: 12px;
+    grid-template-columns: subgrid;
+    margin: 0 0 3px 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  .effect {
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: center;
+    justify-items: center;
+    margin-bottom: 5px;
+
+    input {
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--color-border-light-tertiary);
+      border-radius: 3px;
+      height: 22px;
+    }
   }
 }
 
@@ -761,6 +807,10 @@ a.inline-roll {
       font-family: $font-awesome;
       padding-right: 5px;
     }
+  }
+
+  a[data-tab='effects']::before {
+    content: '\f890';
   }
 
   a[data-tab='armor']::before {

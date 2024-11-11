@@ -332,11 +332,36 @@ class DCCActorSheet extends ActorSheet {
         html.find('.item-delete').click(ev => {
           this._onDeleteItem(ev)
         })
+
+        // Add Effects
+        html.find('.effect-create').click(this._onEffectCreate.bind(this))
+
+        // Update Effect
+        html.find('.effect-edit').click(ev => {
+          const effectId = this._findDataset(ev.currentTarget, 'effectId')
+          const effect = this.actor.effects.get(effectId)
+          effect.sheet.render(true)
+        })
+
+        // Delete Effect
+        html.find('.effect-delete').click(ev => {
+          this._onEffectDelete(ev)
+        })
       }
     } else {
       // Otherwise remove rollable classes
       html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
     }
+  }
+
+  /**
+   * Delete an effect
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _deleteEffect (event) {
+    const effectId = this._findDataset(event.currentTarget, 'effectId')
+    this.actor.deleteEmbeddedDocuments('ActiveEffect', [effectId])
   }
 
   /**
@@ -790,6 +815,54 @@ class DCCActorSheet extends ActorSheet {
       backstab: event.currentTarget.classList.contains('backstab-button')
     })
     this.actor.rollWeaponAttack(itemId, options)
+  }
+
+  /**
+   * Handle creating a new Effect for the actor using initial data defined in the HTML dataset
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onEffectCreate (event) {
+    event.preventDefault()
+    const header = event.currentTarget
+    // Grab any data associated with this control.
+    const system = foundry.utils.duplicate(header.dataset)
+    // Initialize a default name.
+    const name = game.i18n.localize('DCC.ActiveEffect')
+    // Prepare the item object.
+    const effectData = {
+      name,
+      system
+    }
+    // Finally, create the item!
+    return this.actor.createEmbeddedDocuments('ActiveEffect', [effectData])
+  }
+
+  /** Prompt to delete an effect
+   * @param {Event}  event   The originating click event
+   * @private
+   */
+  _onEffectDelete (event) {
+    event.preventDefault()
+    if (game.settings.get('dcc', 'promptForItemDeletion')) {
+      new Dialog({
+        title: game.i18n.localize('DCC.DeleteItem'),
+        content: `<p>${game.i18n.localize('DCC.DeleteItemExplain')}</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.Yes'),
+            callback: () => this._deleteEffect(event)
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('DCC.No')
+          }
+        }
+      }).render(true)
+    } else {
+      this._deleteEffect(event)
+    }
   }
 
   /**

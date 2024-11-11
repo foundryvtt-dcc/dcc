@@ -1,0 +1,43 @@
+{{!-- Active Effects Tab --}}
+<div class="tab" data-group="primary" data-tab="effects">
+  <div>
+    {{!-- Effects --}}
+    {{#* inline "effectRow"}}
+      <li class="grid-col-span-9 effect grid-col-gap-5" data-effect-id="{{id}}">
+        <input type="checkbox"
+               name="effectUpdates.{{id}}.system.active"
+               data-dtype="Boolean" {{checked effect.system.active}}/>
+        <input class="effect-name" type="text"
+               name="effectUpdates.{{id}}.name"
+               value="{{effect.name}}"/>
+        <input type="checkbox"
+               name="effectUpdates.{{id}}.system.temporary"
+               data-dtype="Boolean" {{checked effect.system.temporary}}/>
+        <div>
+          <a class="effect-control effect-edit" title="{{localize 'DCC.ItemEdit'}}">
+            <i class="fas fa-edit"></i></a>
+          <a class="effect-control effect-delete" title="{{localize 'DCC.ItemDelete'}}">
+            <i class="fas fa-trash"></i></a>
+        </div>
+      </li>
+    {{/inline}}
+    <div class="dark-title">{{localize "DCC.ActiveEffects"}}</div>
+    <ol class="effect-list dark-border">
+      <li class="grid-col-span-9 effect-list-header">
+        <div title="{{localize 'DCC.Active'}}"><i class="fa-solid fa-lightbulb-on"></i></div>
+        <div>{{localize "DCC.Name"}}</div>
+        <div title="{{localize 'DCC.Temporary'}}">{{localize 'DCC.Temp'}}?</div>
+        <div>
+          <a class="effect-control effect-create" title="{{localize 'DCC.ItemCreate'}}" data-type="effect"
+             data-melee=1>
+            <i class="fas fa-plus"></i>
+            {{localize "DCC.Add"}}
+          </a>
+        </div>
+      </li>
+      {{#each actor.effects as |effect index|}}
+        {{> effectRow effect=effect id=effect._id index=index}}
+      {{/each}}
+    </ol>
+  </div>
+</div>
