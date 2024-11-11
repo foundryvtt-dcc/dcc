@@ -294,6 +294,7 @@
   "DCC.MeleeDamageAdjustment": "Melee Damage Bonus Adjustment",
   "DCC.MeleeDamageHint": "Calculated from Attack Bonus (deed die) for Warriors and Dwarves + Strength Bonus, or just Strength Bonus for others",
   "DCC.MeleeWeapons": "Melee Weapons",
+  "DCC.MeleeMissileBonusConfigHint": "These values are auto-calculated, click the value to override the defaults",
   "DCC.MeleeMissileBonusConfigTitle": "Melee and Missile Bonus Config",
   "DCC.MercurialEffect": "Mercurial Effect",
   "DCC.MercurialEffectSummary": "Summary",
