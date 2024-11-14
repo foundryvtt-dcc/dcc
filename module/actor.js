@@ -32,6 +32,13 @@ class DCCActor extends Actor {
 
     this.calculateSpellCheck()
 
+    // Set NPC computations to manual
+    if (this.type === 'NPC') {
+      this.system.config.computeSpeed = false
+      this.system.config.computeCheckPenalty = false
+      this.system.config.computeMeleeAndMissileAttackAndDamage = false
+    }
+
     // Cap level if required
     if (config.maxLevel) {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
