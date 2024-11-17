@@ -1,6 +1,7 @@
 /* global game, Roll, ui */
 
 import EntityImages from './entity-images.js'
+import DCC from './config.js'
 
 /**
  *  Parses one or more NPC Stat Blocks (e.g. from published modules) into actor data
@@ -48,9 +49,22 @@ async function parseNPC (npcString) {
 
   npc.name = _firstMatch(/(.*?):.*/, npcString) || 'Unnamed'
   npc.name = npc.name.replace(/ ?\(\d+\)/, '')
-  const hd = npc['attributes.hitDice.value'] = _firstMatch(/.*HD ?(.+?)[(;.].*/, npcString) || '1d8'
+  let hd = _firstMatch(/.*HD ?(.+?)[(;.].*/, npcString) || '1d8'
+  if (hd.includes('½')) {
+    hd = `${hd.replace('½', '1')}/2`
+  }
+  if (hd.includes('⅓')) {
+    hd = `${hd.replace('⅓', '1')}/3`
+  }
+  if (hd.includes('¼')) {
+    hd = `${hd.replace('¼', '1')}/4`
+  }
+  if (hd.includes('1/4')) {
+    hd = `${hd.replace('1/4', '1')}/4`
+  }
+  npc['attributes.hitDice.value'] = hd
   const hpRoll = await new Roll(hd).evaluate()
-  const hp = hpRoll.total
+  let hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
   npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,.].*/, npcString) || '10'
   npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp
@@ -61,6 +75,44 @@ async function parseNPC (npcString) {
   npc['saves.ref.value'] = _firstMatch(/.*Ref ?(.+?)[;,.].*/, npcString) || '+0'
   npc['saves.wil.value'] = _firstMatch(/.*Will ?(.+?)[;,.].*/, npcString) || '+0'
   npc['details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
+
+  /* Crits */
+  let hdCount = 1
+  try {
+    hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
+  } catch (error) {
+    hdCount = 0
+  }
+  if (hdCount > 21) {
+    hdCount = 21
+  }
+  if (hd.includes('/')) {
+    hdCount = 0
+  }
+  let npcType = 'other'
+  const npcStringLower = npcString.toLowerCase()
+  if (npcStringLower.includes('demon traits')) {
+    npcType = 'demon'
+  }
+  if (npcStringLower.includes('dragon') && npcStringLower.includes('breath')) {
+    npcType = 'dragon'
+  }
+  if (DCC.humanoidHints.some(humanoidType => npcStringLower.includes(humanoidType))) {
+    npcType = 'humanoid'
+  }
+  if (DCC.giants.some(humanoidType => npcStringLower.includes(humanoidType))) {
+    if (!DCC.giantsNotGiants.some(humanoidType => npcStringLower.includes(humanoidType))) {
+      npcType = 'giant'
+    }
+  }
+  if (npcStringLower.includes('un-dead')) {
+    npcType = 'undead'
+  }
+  const monsterCritInfo = DCC.monsterCriticalHits[hdCount]
+  if (monsterCritInfo) {
+    npc['attributes.critical.die'] = monsterCritInfo[npcType].die || '1d4'
+    npc['attributes.critical.table'] = monsterCritInfo[npcType].table || 'M'
+  }
 
   /* Speed */
   if (npc['attributes.speed.value'].includes('or')) {

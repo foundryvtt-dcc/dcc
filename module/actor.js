@@ -32,6 +32,13 @@ class DCCActor extends Actor {
 
     this.calculateSpellCheck()
 
+    // Set NPC computations to manual
+    if (this.type === 'NPC') {
+      this.system.config.computeSpeed = false
+      this.system.config.computeCheckPenalty = false
+      this.system.config.computeMeleeAndMissileAttackAndDamage = false
+    }
+
     // Cap level if required
     if (config.maxLevel) {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
@@ -299,8 +306,11 @@ class DCCActor extends Actor {
     }
     if (this.system?.skills?.divineAid) {
       this.system.skills.divineAid.value = this.system.class.spellCheck
+      this.system.skills.divineAid.ability = ""
       this.system.skills.turnUnholy.value = `${this.system.class.spellCheck}+${this.system.abilities.lck.mod}`
+      this.system.skills.turnUnholy.ability = ""
       this.system.skills.layOnHands.value = this.system.class.spellCheck
+      this.system.skills.layOnHands.ability = ""
     }
   }
 
@@ -779,13 +789,13 @@ class DCCActor extends Actor {
     if (this.system.class.spellCheckOverrideDie) {
       die = this.system.class.spellCheckOverrideDie
     }
-    const level = this.system.details.level.value
-    const abilityMod = ensurePlus(ability.mod) || +0
+    const level = ensurePlus(this.system.details.level.value)
+    const abilityMod = ensurePlus(ability?.mod || 0) || +0
     let bonus = ''
     if (this.system.class.spellCheckOverride) {
       bonus = this.system.class.spellCheckOverride
     }
-    const checkPenalty = ensurePlus(this.system.attributes.ac.checkPenalty || '0')
+    const checkPenalty = ensurePlus(this.system?.attributes?.ac?.checkPenalty || '0')
     const isIdolMagic = this.system.details.sheetClass === 'Cleric'
     const applyCheckPenalty = !isIdolMagic
     options.title = game.i18n.localize('DCC.SpellCheck')

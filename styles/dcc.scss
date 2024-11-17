@@ -99,7 +99,6 @@ $font-awesome: 'Font Awesome 6 Pro';
     height: 17px;
     line-height: 1;
     text-align: center;
-    background: none;
     border-width: 0 0 1px 0;
     border-radius: 0;
 
@@ -849,7 +848,7 @@ a.inline-roll {
   a.external-link {
     background: none;
     border: 0;
-    border-radius: none;
+    border-radius: 0;
     color: var(--dark-color);
     text-decoration: none;
     white-space: nowrap;

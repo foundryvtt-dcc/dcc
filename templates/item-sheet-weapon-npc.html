@@ -61,6 +61,9 @@
         <div class="dark-border grid-col-span-6 grid-row-span-2">
           <div class="dark-title">{{localize "DCC.Initiative"}}</div>
           <div class="p-5 grid-align-center grid-tpl-max-auto-tight grid-col-gap-8">
+            <div class="group-heading"> {{localize "DCC.InitiativeDie"}} </div>
+            <input id="system.initiativeDie" name="system.initiativeDie" value="{{system.initiativeDie}}" data-dtype="String"/>
+
             <label class="" for="system.initiativeBonus">{{localize "DCC.InitiativeBonus"}}</label>
             <input id="system.initiativeBonus" name="system.initiativeBonus"
                    value="{{system.initiativeBonus}}" data-dtype="String"/>
