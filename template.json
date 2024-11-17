@@ -184,20 +184,17 @@
         "skills": {
           "divineAid": {
             "label": "DCC.DivineAid",
-            "ability": "per",
             "value": 0,
             "useDisapprovalRange": true,
             "drainDisapproval": 10
           },
           "turnUnholy": {
             "label": "DCC.TurnUnholy",
-            "ability": "per",
             "value": 0,
             "useDisapprovalRange": true
           },
           "layOnHands": {
             "label": "DCC.LayOnHands",
-            "ability": "per",
             "value": 0,
             "useDisapprovalRange": true
           }
