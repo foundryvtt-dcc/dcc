@@ -28,7 +28,6 @@ class MeleeMissileBonusConfig extends FormApplication {
     const data = this.object
     data.isNPC = (this.object.type === 'NPC')
     data.isPC = (this.object.type === 'Player')
-    data.isTemplate = (this.object.type === 'Template')
     data.isZero = (this.object.system.details.level.value === 0)
     data.user = game.user
     data.config = CONFIG.DCC

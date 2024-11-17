@@ -66,35 +66,35 @@ Hooks.once('init', async function () {
     makeDefault: true
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
-    types: ['NPC', 'Player', 'Template'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetCleric'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, {
-    types: ['NPC', 'Player', 'Template'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetThief'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
-    types: ['NPC', 'Player', 'Template'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetHalfling'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, {
-    types: ['NPC', 'Player', 'Template'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetWarrior'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, {
-    types: ['NPC', 'Player', 'Template'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetWizard'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
-    types: ['NPC', 'Player', 'Template'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetDwarf'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
-    types: ['NPC', 'Player', 'Template'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetElf'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
-    types: ['NPC', 'Player', 'Template'],
+    types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetGeneric'
   })
   Items.unregisterSheet('core', ItemSheet)
@@ -116,6 +116,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/item-sheet-partial-description.html',
     'systems/dcc/templates/item-sheet-partial-values.html',
     'systems/dcc/templates/item-sheet-armor.html',
+    'systems/dcc/templates/item-sheet-level.html',
     'systems/dcc/templates/item-sheet-treasure.html',
     'systems/dcc/templates/item-sheet-weapon.html',
     'systems/dcc/templates/item-sheet-weapon-npc.html',

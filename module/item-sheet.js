@@ -30,6 +30,8 @@ class DCCItemSheet extends ItemSheet {
         return 'systems/dcc/templates/item-sheet-weapon.html'
       case 'armor':
         return 'systems/dcc/templates/item-sheet-armor.html'
+      case 'level':
+        return 'systems/dcc/templates/item-sheet-level.html'
       case 'spell':
         return 'systems/dcc/templates/item-sheet-spell.html'
       case 'skill':
@@ -90,10 +92,12 @@ class DCCItemSheet extends ItemSheet {
     }
 
     // Format Description HTML
-    data.descriptionHTML = await TextEditor.enrichHTML(this.item.system.description.value, {
-      relativeTo: this.item,
-      secrets: this.item.isOwner
-    })
+    if (this.item.system.description) {
+      data.descriptionHTML = await TextEditor.enrichHTML(this.item.system.description.value, {
+        relativeTo: this.item,
+        secrets: this.item.isOwner
+      })
+    }
 
     data.config = CONFIG.DCC
 

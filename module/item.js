@@ -19,10 +19,9 @@ class DCCItem extends Item {
     }
 
     this.isNPC = (this.actor?.type === 'NPC')
-    this.isTemplate = (this.actor?.type === 'Template')
 
     // PC Weapon Items or Un-owned Items
-    if (this.type === 'weapon' && !this.isNPC && !this.isTemplate) {
+    if (this.type === 'weapon' && !this.isNPC) {
       // Initiative Calculation
       this.system.initiativeDie = this.actor?.system?.attributes?.init?.die || '1d20'
       if (this.system.twoHanded) {
@@ -138,7 +137,7 @@ class DCCItem extends Item {
         }
       }
 
-        if (this.isNPC || this.isTemplate) {
+        if (this.isNPC) {
           this.system.config.inheritSpellCheck = false
         }
 

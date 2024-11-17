@@ -2,8 +2,7 @@
   "Actor": {
     "types": [
       "Player",
-      "NPC",
-      "Template"
+      "NPC"
     ],
     "templates": {
       "common": {
@@ -379,23 +378,6 @@
         "spellCheck": 1,
         "spellCheckAbility": "int"
       }
-    },
-    "Template": {
-      "templates": [
-        "common",
-        "config",
-        "player",
-        "cleric",
-        "thief",
-        "halfling",
-        "warrior",
-        "wizard",
-        "dwarf",
-        "elf"
-      ],
-      "class": {
-        "className": "Zero-Level"
-      }
     }
   },
   "Item": {
@@ -404,6 +386,7 @@
       "ammunition",
       "armor",
       "equipment",
+      "level",
       "mount",
       "spell",
       "treasure",
@@ -499,6 +482,12 @@
         "physicalItem",
         "currency"
       ]
+    },
+    "level": {
+      "alignment": "",
+      "class": "",
+      "level": "",
+      "levelData": ""
     },
     "mount": {
       "templates": [

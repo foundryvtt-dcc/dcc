@@ -1,0 +1,31 @@
+<form class="{{cssClass}}" autocomplete="off">
+    <!-- Nav -->
+    <nav class="sheet-tabs tabs" data-group="item">
+        <a data-tab="main">{{localize "DCC.Level"}}</a>
+    </nav>
+
+    <section class="sheet-body">
+        <div class="tab" data-group="item" data-tab="main">
+            <div class="tab-body">
+                <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
+                    <label for="name">{{localize "DCC.Name"}}</label>
+                    <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
+                    <label for="system.class">{{localize "DCC.Class"}}</label>
+                    <input id="system.class" name="system.class" value="{{item.system.class}}"
+                           placeholder="" autocomplete="off" size="25">
+                    <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
+                    <input id="system.details.alignment" name="system.details.alignment" value="{{system.details.alignment}}"
+                           placeholder="" autocomplete="off" size="25">
+                    <label for="system.level">{{localize "DCC.Level"}}</label>
+                    <input id="system.level" name="system.level" value="{{item.system.level}}"
+                           placeholder="" autocomplete="off" size="25">
+                </div>
+
+                <div class="dark-border grid-col-span-12">
+                    <div class="dark-title">{{localize "DCC.LevelData"}}</div>
+                    <textarea id="system.levelData" name="system.levelData">{{system.levelData}}</textarea>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
