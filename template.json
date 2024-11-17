@@ -2,7 +2,8 @@
   "Actor": {
     "types": [
       "Player",
-      "NPC"
+      "NPC",
+      "Template"
     ],
     "templates": {
       "common": {
@@ -377,6 +378,23 @@
       "class": {
         "spellCheck": 1,
         "spellCheckAbility": "int"
+      }
+    },
+    "Template": {
+      "templates": [
+        "common",
+        "config",
+        "player",
+        "cleric",
+        "thief",
+        "halfling",
+        "warrior",
+        "wizard",
+        "dwarf",
+        "elf"
+      ],
+      "class": {
+        "className": "Zero-Level"
       }
     }
   },
