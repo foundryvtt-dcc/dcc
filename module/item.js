@@ -12,122 +12,139 @@ class DCCItem extends Item {
   prepareBaseData () {
     super.prepareBaseData()
 
-    // If this item is owned by an actor, check for config settings to apply
-    if (this.actor && this.actor.system && this.system.config) {
-      this.isNPC = (this.actor.type === 'NPC')
+    // Non-actor-owned items
+    if (this.type === 'weapon' && !this.actor) {
+      this.system.attackBonus = ''
+      this.system.toHit = ''
+    }
 
-      // PC Weapon Items
-      if (this.type === 'weapon' && this.actor.type === 'Player') {
-        // Initiative Calculation
-        this.system.initiativeDie = this.actor.system.attributes.init.die
-        if (this.system.twoHanded) {
-          this.system.initiativeDie = DiceChain.bumpDie(this.system.initiativeDie, -1)
-        }
-        if (this.system.config.initiativeDieOverride) {
-          this.system.initiativeDie = this.system.config.initiativeDieOverride
-        }
-        this.system.initiativeBonus = ensurePlus(this.actor.system.attributes.init.value)
-        if (this.system.initiativeWeaponBonus) {
-          this.system.initiativeBonus = `${this.system.initiativeBonus}${this.system.initiativeWeaponBonus}`
-        }
-        if (this.system.config.initiativeBonusOverride) {
-          this.system.initiativeBonus = this.system.config.initiativeBonusOverride
-        }
+    this.isNPC = (this.actor?.type === 'NPC')
 
-        // Action Die Calculation
-        this.system.actionDie = this.actor.system.attributes.actionDice.value
-        if (!this.system.trained) {
-          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[untrained]`
-        }
-        if (this.system.config.actionDieOverride) {
-          this.system.actionDie = this.system.config.actionDieOverride
-        }
+    // PC Weapon Items or Un-owned Items
+    if (this.type === 'weapon' && !this.isNPC) {
+      // Initiative Calculation
+      this.system.initiativeDie = this.actor?.system?.attributes?.init?.die || '1d20'
+      if (this.system.twoHanded) {
+        this.system.initiativeDie = DiceChain.bumpDie(this.system.initiativeDie, -1)
+      }
+      if (this.system.config.initiativeDieOverride) {
+        this.system.initiativeDie = this.system.config.initiativeDieOverride
+      }
+      this.system.initiativeBonus = ensurePlus(this.actor?.system?.attributes?.init?.value || '')
+      if (this.system.initiativeWeaponBonus) {
+        this.system.initiativeBonus = `${this.system.initiativeBonus}${this.system.initiativeWeaponBonus}`
+      }
+      if (this.system.config.initiativeBonusOverride) {
+        this.system.initiativeBonus = this.system.config.initiativeBonusOverride
+      }
 
-        // To-Hit Calculation
-        if (this.system.melee) {
-          this.system.attackBonus = this.actor.system.details.attackHitBonus?.melee?.value || '+0'
-        } else {
-          this.system.attackBonus = this.actor.system.details.attackHitBonus?.missile?.value || '+0'
-        }
-        if (this.system.attackBonusWeapon) {
-          this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusWeapon}`
-        }
-        if (this.system.attackBonusLucky) {
-          this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusLucky}`
-        }
-        this.system.toHit = ensurePlus(this.system.attackBonus.includes('d') ? this.system.attackBonus : Roll.safeEval(this.system.attackBonus))
-        if (this.system.config.attackBonusOverride) {
-          this.system.toHit = ensurePlus(this.system.config.attackBonusOverride)
-        }
+      // Action Die Calculation
+      this.system.actionDie = this.actor?.system?.attributes?.actionDice?.value || ''
+      if (!this.system.trained) {
+        this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[untrained]`
+      }
+      if (this.system.config.actionDieOverride) {
+        this.system.actionDie = this.system.config.actionDieOverride
+      }
 
-        // Damage Calculation
-        if (this.system.damage && !this.system.damageWeapon) {
+      // To-Hit Calculation
+      if (this.system.melee) {
+        this.system.attackBonus = this.actor?.system?.details?.attackHitBonus?.melee?.value || '+0'
+      } else {
+        this.system.attackBonus = this.actor?.system?.details?.attackHitBonus?.missile?.value || '+0'
+      }
+      if (this.system.attackBonusWeapon) {
+        this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusWeapon}`
+      }
+      if (this.system.attackBonusLucky) {
+        this.system.attackBonus = `${this.system.attackBonus}${this.system.attackBonusLucky}`
+      }
+      this.system.toHit = ensurePlus(this.system.attackBonus.includes('d') ? this.system.attackBonus : Roll.safeEval(this.system.attackBonus))
+      if (this.system.config.attackBonusOverride) {
+        this.system.toHit = ensurePlus(this.system.config.attackBonusOverride)
+      }
+
+      // Damage Calculation
+      // First handle older items that may not have damageWeapon set
+      if (this.system.damage && !this.system.damageWeapon) {
+        // Refresh actor data if this is an owned item
+        if (this.actor) {
           this.actor.prepareBaseData()
-          const damageWeapon = getFirstDie(this.system.damage)
-          if (damageWeapon) {
-            let total = `${damageWeapon}${this.actor.system?.details?.attackDamageBonus?.melee?.value}`
-            if (!this.system?.melee) {
-              total = `${damageWeapon}${this.actor.system?.details?.attackDamageBonus?.missile?.value}`
-            }
-            if (this.system.damage === total || this.system.damage === total.replaceAll('+0', '')
-            ) {
-              this.system.damage = this.actor.system?.details?.attackDamageBonus?.melee?.value
-              this.system.damageWeapon = damageWeapon
-            } else {
-              this.system.config.damageOverride = this.system.damage
-            }
+        }
+
+        // Get the first die of the damage and see if that can be the weapon damage
+        // Otherwise set the current damage value as the override
+        const damageWeapon = getFirstDie(this.system.damage) || ''
+        if (damageWeapon) {
+          let total = `${damageWeapon}${this.actor?.system?.details?.attackDamageBonus?.melee?.value || ''}`
+          if (!this.system?.melee) {
+            total = `${damageWeapon}${this.actor?.system?.details?.attackDamageBonus?.missile?.value || ''}`
+          }
+          if (this.system.damage === total || this.system.damage === total.replaceAll('+0', '')
+          ) {
+            this.system.damage = this.actor?.system?.details?.attackDamageBonus?.melee?.value || ''
+            this.system.damageWeapon = damageWeapon
           } else {
             this.system.config.damageOverride = this.system.damage
           }
-        }
-
-        if (this.system.melee) {
-          this.system.damage = this.actor.system.details.attackDamageBonus?.melee?.value || ''
         } else {
-          this.system.damage = this.actor.system.details.attackDamageBonus?.missile?.value || ''
-        }
-        if (this.system.damageWeaponBonus) {
-          if (this.system.damage.includes('d') || this.system.damageWeaponBonus.includes('d')) {
-            this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
-          } else {
-            this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
-          }
-        }
-        this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
-        if (this.system.doubleIfMounted) {
-          this.system.damage = `(${this.system.damage})*2`
-        }
-        if (this.system.subdual) {
-          this.system.damage = `${this.system.damage}[subdual]`
-        }
-        if (this.system.config.damageOverride) {
-          this.system.damage = this.system.config.damageOverride
+          this.system.config.damageOverride = this.system.damage
         }
       }
 
-      // Crit Calculation
-      this.system.critRange = this.system.config.critRangeOverride || this.actor.system.details.critRange || 20
-      this.system.critDie = this.system.config.critDieOverride || this.actor.system.attributes.critical.die || '1d4'
-      this.system.critTable = this.system.config.critTableOverride || this.actor.system.attributes.critical.table || 'I'
+      // Next calculate the correct value from the weapon damage and other settings
 
-      if (this.type === 'spell') {
-        // Spells can use the owner's action die for the spell check
-        if (this.system.config.inheritActionDie) {
-          this.system.spellCheck.die = this.actor.system.attributes.actionDice.value
-          if (this.actor.system.class.spellCheckOverrideDie) {
-            this.system.spellCheck.die = this.actor.system.class.spellCheckOverrideDie
-          }
-        }
+      // Start by setting the damage to any bonus from the actor
+      if (this.system.melee) {
+        this.system.damage = this.actor?.system?.details?.attackDamageBonus?.melee?.value || ''
+      } else {
+        this.system.damage = this.actor?.system?.details?.attackDamageBonus?.missile?.value || ''
+      }
 
-        // Spells can inherit the owner's spell check
-        if (this.system.config.inheritSpellCheck) {
-          this.system.spellCheck.value = this.actor.system.class.spellCheck
+      // Then add in any weapon bonus - formatting dependent on whether there is a deed from the actor
+      if (this.system.damageWeaponBonus) {
+        if (this.system.damage.includes('d') || this.system.damageWeaponBonus.includes('d')) {
+          this.system.damage = `${this.system.damage}${this.system.damageWeaponBonus}`
+        } else {
+          this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
         }
+      }
+      this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
 
-        // Spells can inherit the owner's check penalty
-        if (this.system.config.inheritCheckPenalty) {
-          this.system.spellCheck.penalty = this.actor.system.attributes.ac.checkPenalty
+      // Final checkboxes that can affect things
+      if (this.system.doubleIfMounted) {
+        this.system.damage = `(${this.system.damage})*2`
+      }
+      if (this.system.subdual) {
+        this.system.damage = `${this.system.damage}[subdual]`
+      }
+      if (this.system.config.damageOverride) {
+        this.system.damage = this.system?.config?.damageOverride
+      }
+    }
+
+    // Crit Calculation
+    this.system.critRange = this.system?.config?.critRangeOverride || this.actor?.system?.details?.critRange || 20
+    this.system.critDie = this.system?.config?.critDieOverride || this.actor?.system?.attributes?.critical?.die || '1d4'
+    this.system.critTable = this.system?.config?.critTableOverride || this.actor?.system?.attributes?.critical?.table || 'I'
+
+    if (this.type === 'spell') {
+      // Spells can use the owner's action die for the spell check
+      if (this.system.config.inheritActionDie) {
+        this.system.spellCheck.die = this.actor?.system?.attributes?.actionDice?.value || '1d20'
+        if (this.actor?.system?.class?.spellCheckOverrideDie) {
+          this.system.spellCheck.die = this.actor?.system?.class?.spellCheckOverrideDie
         }
+      }
+
+      // Spells can inherit the owner's spell check
+      if (this.system.config.inheritSpellCheck) {
+        this.system.spellCheck.value = this.actor?.system?.class?.spellCheck || '+0'
+      }
+
+      // Spells can inherit the owner's check penalty
+      if (this.system.config.inheritCheckPenalty) {
+        this.system.spellCheck.penalty = this.actor?.system?.attributes?.ac?.checkPenalty || ''
       }
     }
   }

@@ -26,7 +26,13 @@ export function ensurePlus (value, includeZero = true) {
  * @return {string} - first die expression or an empty string if none
  */
 export function getFirstDie (value) {
+  if (!value) {
+    return ''
+  }
   const firstDie = value.match(/\d\d?d\d\d?/)
+  if (!firstDie) {
+    return ''
+  }
   return firstDie[0] || ''
 }
 
