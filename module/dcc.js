@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, Roll, ui, loadTemplates, Handlebars */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, Roll, ui, loadTemplates, Handlebars */
 
 /**
  * DCC
@@ -66,31 +66,31 @@ Hooks.once('init', async function () {
     makeDefault: true
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetCleric'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetThief'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetHalfling'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetWarrior'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetWizard'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetDwarf'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetElf'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {

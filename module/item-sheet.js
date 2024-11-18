@@ -312,6 +312,15 @@ class DCCItemSheet extends ItemSheet {
   }
 
   /**
+   * Look up a Manifestation
+   * @private
+   */
+  _lookupManifestation () {
+    this.item.rollManifestation(this.item.system.manifestation.value)
+    this.render(false)
+  }
+
+  /**
    * Look up a Mercurial Magic effect
    * @private
    */
