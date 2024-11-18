@@ -904,6 +904,15 @@ a.inline-roll {
 .dcc.sheet a[data-tab=level]::before {
   content: "\f3bf";
 }
+.dcc.sheet a[data-tab=level-lawful]::before {
+  content: "\f24e";
+}
+.dcc.sheet a[data-tab=level-neutral]::before {
+  content: "=";
+}
+.dcc.sheet a[data-tab=level-chaotic]::before {
+  content: "\f7d4";
+}
 .dcc.sheet a[data-tab=manifestation]::before {
   content: "\f890";
 }

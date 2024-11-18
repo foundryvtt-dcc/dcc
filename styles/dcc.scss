@@ -819,6 +819,18 @@ a.inline-roll {
     content: '\f3bf';
   }
 
+  a[data-tab='level-lawful']::before {
+    content: '\f24e';
+  }
+
+  a[data-tab='level-neutral']::before {
+    content: '\3d';
+  }
+
+  a[data-tab='level-chaotic']::before {
+    content: '\f7d4';
+  }
+
   a[data-tab='manifestation']::before {
     content: '\f890';
   }
