@@ -300,6 +300,10 @@ class DCCActor extends Actor {
    * Calculate Spell Check
    */
   calculateSpellCheck () {
+    if (!this.system.class) {
+      return
+    }
+
     let abilityBonus = ensurePlus(this.system.abilities.int.mod)
     if (this.system.class.spellCheckAbility === 'per') {
       abilityBonus = ensurePlus(this.system.abilities.per.mod)

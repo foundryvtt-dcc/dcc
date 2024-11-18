@@ -2,8 +2,8 @@
 
   {{!-- Sheet Tab Navigation --}}
   <nav class="sheet-tabs tabs" data-group="primary">
-    <a class="item" data-tab="party">{{localize "DCC.Party"}}</a>
-    <a class="item" data-tab="notes">{{localize "DCC.Notes"}}</a>
+    <a data-tab="party" title="{{localize 'DCC.Party'}}">{{localize "DCC.Party"}}</a>
+    <a data-tab="notes" title="{{localize 'DCC.Notes'}}">{{localize "DCC.Notes"}}</a>
   </nav>
 
   {{!-- Sheet Body --}}
@@ -23,17 +23,17 @@
           <i class="fas fa-heart"></i>
           <label class="hp-summary">{{actor.system.attributes.hp.value}} / {{actor.system.attributes.hp.max}}</label>
           <div></div>
-          <label class="save-label rollable" data-save="ref">{{localize "DCC.SavesReflexAbbr"}}</label>
+          <label class="save-label party-draggable rollable" data-save="ref">{{localize "DCC.SavesReflexAbbr"}}</label>
           <label>{{numberFormat actor.system.saves.ref.value decimals=0 sign=true}}</label>
-          <label class="save-label rollable" data-save="frt">{{localize "DCC.SavesFortitudeAbbr"}}</label>
+          <label class="save-label party-draggable rollable" data-save="frt">{{localize "DCC.SavesFortitudeAbbr"}}</label>
           <label>{{numberFormat actor.system.saves.frt.value decimals=0 sign=true}}</label>
-          <label class="save-label rollable" data-save="wil">{{localize "DCC.SavesWillAbbr"}}</label>
+          <label class="save-label party-draggable rollable" data-save="wil">{{localize "DCC.SavesWillAbbr"}}</label>
           <label>{{numberFormat actor.system.saves.wil.value decimals=0 sign=true}}</label>
-          <i class="weapon rollable fas fa-hammer"></i>
+          <i class="weapon party-draggable rollable fas fa-hammer" data-item-id="{{activeMelee}}"></i>
           <select class="weapon-dropdown" id="activeMelee" name="weaponUpdates.{{id}}.melee">
             {{selectOptions melee selected=activeMelee labelAttr="name" valueAttr="id"}}
           </select>
-          <i class="weapon rollable fas fa-bow-arrow"></i>
+          <i class="weapon party-draggable rollable fas fa-bow-arrow" data-item-id="{{activeRanged}}"></i>
           <select class="weapon-dropdown" id="activeRanged" name="weaponUpdates.{{id}}.ranged">
             {{selectOptions ranged selected=activeRanged labelAttr="name" valueAttr="id"}}
           </select>
@@ -46,32 +46,32 @@
           <label>{{actor.system.attributes.ac.value}}</label>
           <i class="fas fa-heart"></i>
           <label class="hp-summary">{{actor.system.attributes.hp.value}} / {{actor.system.attributes.hp.max}}</label>
-          <label class="ability-label rollable" data-ability="str">{{localize "DCC.AbilityStrShort"}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="str">{{localize "DCC.AbilityStrShort"}}</label>
           <label>{{numberFormat actor.system.abilities.str.mod decimals=0 sign=true}}</label>
-          <label class="ability-label rollable" data-ability="agl">{{localize "DCC.AbilityAglShort"}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="agl">{{localize "DCC.AbilityAglShort"}}</label>
           <label>{{numberFormat actor.system.abilities.agl.mod decimals=0 sign=true}}</label>
-          <label class="ability-label rollable" data-ability="sta">{{localize "DCC.AbilityStaShort"}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="sta">{{localize "DCC.AbilityStaShort"}}</label>
           <label>{{numberFormat actor.system.abilities.sta.mod decimals=0 sign=true}}</label>
-          <label class="ability-label rollable" data-ability="per">{{localize "DCC.AbilityPerShort"}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="per">{{localize "DCC.AbilityPerShort"}}</label>
           <label>{{numberFormat actor.system.abilities.per.mod decimals=0 sign=true}}</label>
-          <label class="ability-label rollable" data-ability="int">{{localize "DCC.AbilityIntShort"}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="int">{{localize "DCC.AbilityIntShort"}}</label>
           <label>{{numberFormat actor.system.abilities.int.mod decimals=0 sign=true}}</label>
-          <label class="ability-label rollable" data-ability="lck">{{localize "DCC.AbilityLckShort"}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="lck">{{localize "DCC.AbilityLckShort"}}</label>
           <label>{{numberFormat actor.system.abilities.lck.mod decimals=0 sign=true}}</label>
           <div class="filler"></div>
-          <label class="save-label rollable" data-save="ref">{{localize "DCC.SavesReflexAbbr"}}</label>
+          <label class="save-label party-draggable rollable" data-save="ref">{{localize "DCC.SavesReflexAbbr"}}</label>
           <label>{{numberFormat actor.system.saves.ref.value decimals=0 sign=true}}</label>
-          <label class="save-label rollable" data-save="frt">{{localize "DCC.SavesFortitudeAbbr"}}</label>
+          <label class="save-label party-draggable rollable" data-save="frt">{{localize "DCC.SavesFortitudeAbbr"}}</label>
           <label>{{numberFormat actor.system.saves.frt.value decimals=0 sign=true}}</label>
-          <label class="save-label rollable" data-save="wil">{{localize "DCC.SavesWillAbbr"}}</label>
+          <label class="save-label party-draggable rollable" data-save="wil">{{localize "DCC.SavesWillAbbr"}}</label>
           <label>{{numberFormat actor.system.saves.wil.value decimals=0 sign=true}}</label>
           <div class="filler"></div>
           <div class="filler"></div>
-          <i class="weapon rollable fas fa-hammer"></i>
+          <i class="weapon party-draggable rollable fas fa-hammer" data-item-id="{{activeMelee}}"></i>
           <select class="weapon-dropdown" id="activeMelee" name="weaponUpdates.{{id}}.melee">
             {{selectOptions melee selected=activeMelee labelAttr="name" valueAttr="id"}}
           </select>
-          <i class="weapon rollable fas fa-bow-arrow"></i>
+          <i class="weapon party-draggable rollable fas fa-bow-arrow" data-item-id="{{activeRanged}}"></i>
           <select class="weapon-dropdown" id="activeRanged" name="weaponUpdates.{{id}}.ranged">
             {{selectOptions ranged selected=activeRanged labelAttr="name" valueAttr="id"}}
           </select>
