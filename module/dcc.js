@@ -498,7 +498,7 @@ async function processSpellCheck (actor, spellData) {
 /* -------------------------------------------- */
 // Create a macro when a rollable is dropped on the hotbar
 Hooks.on('hotbarDrop', (bar, data, slot) => {
-  createDCCMacro(data, slot)
+  return createDCCMacro(data, slot)
 })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
