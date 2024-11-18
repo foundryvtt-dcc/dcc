@@ -137,16 +137,25 @@
           "frt": {
             "abbreviation": "DCC.SavesFortitudeAbbr",
             "label": "DCC.SavesFortitude",
+            "classBonus": "",
+            "otherBonus": "",
+            "override": "",
             "value": 0
           },
           "ref": {
             "abbreviation": "DCC.SavesReflexAbbr",
             "label": "DCC.SavesReflex",
+            "classBonus": "",
+            "otherBonus": "",
+            "override": "",
             "value": 0
           },
           "wil": {
             "abbreviation": "DCC.SavesWillAbbr",
             "label": "DCC.SavesWill",
+            "classBonus": "",
+            "otherBonus": "",
+            "override": "",
             "value": 0
           }
         },
@@ -177,6 +186,11 @@
         "class": {
           "spellCheck": 1,
           "spellCheckAbility": "per",
+          "spellsLevel1": 0,
+          "spellsLevel2": 0,
+          "spellsLevel3": 0,
+          "spellsLevel4": 0,
+          "spellsLevel5": 0,
           "deity": null,
           "disapproval": "1",
           "disapprovalTable": "Disapproval"
@@ -287,6 +301,8 @@
       },
       "wizard": {
         "class": {
+          "knownSpells": 0,
+          "maxSpellLevel": 0,
           "spellCheck": 1,
           "spellCheckAbility": "int",
           "spellCheckDieOverride": null,
