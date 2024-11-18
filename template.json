@@ -484,10 +484,12 @@
       ]
     },
     "level": {
-      "alignment": "",
       "class": "",
       "level": "",
-      "levelData": ""
+      "levelData": "",
+      "levelDataLawful": "",
+      "levelDataNeutral": "",
+      "levelDataChaotic": ""
     },
     "mount": {
       "templates": [
