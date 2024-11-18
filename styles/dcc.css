@@ -116,6 +116,12 @@
   grid-template-columns: max-content 25%;
 }
 
+.grid-tpl-max-50 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 50%;
+}
+
 .grid-tpl-max-auto {
   display: grid;
   grid-row-gap: 5px;
@@ -779,6 +785,20 @@ a.inline-roll {
 .dcc.item .tab-body .mercurial .editor {
   min-height: 288px;
 }
+.dcc.item .tab-body textarea {
+  background: none;
+  border: 0;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  line-height: 15px;
+  height: 100%;
+  padding: 3px;
+  resize: none;
+  text-align: left;
+}
+.dcc.item .tab-body textarea:focus {
+  box-shadow: none;
+}
 
 /* ----------------------------------------- */
 /*  Config Dialogs                           */
@@ -880,6 +900,9 @@ a.inline-roll {
 }
 .dcc.sheet a[data-tab=item]::before {
   content: "\f723";
+}
+.dcc.sheet a[data-tab=level]::before {
+  content: "\f3bf";
 }
 .dcc.sheet a[data-tab=manifestation]::before {
   content: "\f890";
@@ -1163,8 +1186,7 @@ form.dcc-roll-modifier input.stat {
   text-align: left;
   padding-top: 2px;
 }
-.dcc .character .combat-basics input,
-.dcc .character .combat-basics select {
+.dcc .character .combat-basics input, .dcc .character .combat-basics select {
   font-size: 14px;
   height: 17px;
   vertical-align: middle;

@@ -1,29 +1,36 @@
-<form class="{{cssClass}}" autocomplete="off">
+<form class="{{cssClass}} sheet-body" autocomplete="off">
     <!-- Nav -->
     <nav class="sheet-tabs tabs" data-group="item">
-        <a data-tab="main">{{localize "DCC.Level"}}</a>
+        <a data-tab="level">{{localize "DCC.Level"}}</a>
     </nav>
 
-    <section class="sheet-body">
-        <div class="tab" data-group="item" data-tab="main">
-            <div class="tab-body">
-                <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
-                    <label for="name">{{localize "DCC.Name"}}</label>
-                    <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
-                    <label for="system.class">{{localize "DCC.Class"}}</label>
-                    <input id="system.class" name="system.class" value="{{item.system.class}}"
-                           placeholder="" autocomplete="off" size="25">
-                    <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
-                    <input id="system.details.alignment" name="system.details.alignment" value="{{system.details.alignment}}"
-                           placeholder="" autocomplete="off" size="25">
-                    <label for="system.level">{{localize "DCC.Level"}}</label>
-                    <input id="system.level" name="system.level" value="{{item.system.level}}"
-                           placeholder="" autocomplete="off" size="25">
+    <section style="height: 100%;">
+        <div class="tab" data-group="item" data-tab="level" style="height: calc(100% - 34px);">
+            <div class="tab-body" style="grid-template-rows: 50px auto; height: 100%">
+                <div class="grid-col-span-12 grid-tpl-max-50 grid-col-gap-8" style="margin-bottom: 5px">
+                    <div class="grid-tpl-max-auto">
+                        <label for="name">{{localize "DCC.Name"}}</label>
+                        <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off"
+                               size="25">
+                        <label for="system.class">{{localize "DCC.Class"}}</label>
+                        <input id="system.class" name="system.class" value="{{item.system.class}}"
+                               placeholder="" autocomplete="off" size="25">
+                    </div>
+                    <div class="grid-tpl-max-auto">
+                        <label for="system.details.alignment" style="margin-right: 8px;">{{localize
+                                "DCC.Alignment"}}</label>
+                        <input id="system.details.alignment" name="system.details.alignment"
+                               value="{{system.details.alignment}}"
+                               placeholder="" autocomplete="off" size="25">
+                        <label for="system.level">{{localize "DCC.Level"}}</label>
+                        <input id="system.level" name="system.level" value="{{item.system.level}}"
+                               placeholder="" autocomplete="off" size="25">
+                    </div>
                 </div>
 
                 <div class="dark-border grid-col-span-12">
                     <div class="dark-title">{{localize "DCC.LevelData"}}</div>
-                    <textarea id="system.levelData" name="system.levelData">{{system.levelData}}</textarea>
+                    <textarea id="system.levelData" name="system.levelData" style="height:100%">{{system.levelData}}</textarea>
                 </div>
             </div>
         </div>
