@@ -20,3 +20,6 @@ metadata export-ignore
 
 # Version File
 version.txt export-ignore
+
+# Auto-generated CSS File line-endings
+styles/dcc.css text eol=lf
