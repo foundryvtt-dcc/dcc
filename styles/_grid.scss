@@ -116,6 +116,12 @@
   grid-template-columns: max-content 25%;
 }
 
+.grid-tpl-max-50 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 50%;
+}
+
 .grid-tpl-max-auto {
   display: grid;
   grid-row-gap: 5px;

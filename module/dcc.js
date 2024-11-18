@@ -116,6 +116,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/item-sheet-partial-description.html',
     'systems/dcc/templates/item-sheet-partial-values.html',
     'systems/dcc/templates/item-sheet-armor.html',
+    'systems/dcc/templates/item-sheet-level.html',
     'systems/dcc/templates/item-sheet-treasure.html',
     'systems/dcc/templates/item-sheet-weapon.html',
     'systems/dcc/templates/item-sheet-weapon-npc.html',

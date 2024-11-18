@@ -386,6 +386,7 @@
       "ammunition",
       "armor",
       "equipment",
+      "level",
       "mount",
       "spell",
       "treasure",
@@ -481,6 +482,12 @@
         "physicalItem",
         "currency"
       ]
+    },
+    "level": {
+      "alignment": "",
+      "class": "",
+      "level": "",
+      "levelData": ""
     },
     "mount": {
       "templates": [

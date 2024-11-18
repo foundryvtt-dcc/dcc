@@ -156,6 +156,7 @@ DCC.items = {
   weapon: 'DCC.Weapon',
   ammunition: 'DCC.Ammunition',
   armor: 'DCC.Armor',
+  level: 'DCC.Level',
   equipment: 'DCC.Equipment',
   mount: 'DCC.Mount',
   spell: 'DCC.Spell',
