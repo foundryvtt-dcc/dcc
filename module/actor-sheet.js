@@ -329,6 +329,9 @@ class DCCActorSheet extends ActorSheet {
         html.find('label[for*="system.details.attackDamageBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
       }
 
+      // Party Sheet
+      html.find('.party-draggable').each(makeDraggable)
+
       // Only for editable sheets
       if (this.options.editable) {
         // Add Inventory Item
@@ -530,6 +533,50 @@ class DCCActorSheet extends ActorSheet {
         type: 'Save',
         actorId: this.actor.id,
         data: this._findDataset(event.currentTarget, 'save')
+      }
+    }
+
+    if (classes.contains('party-draggable')) {
+      const actorId = this._findDataset(event.currentTarget, 'actorId')
+      const partyActor = game.actors.get(actorId)
+      if (partyActor) {
+        if (classes.contains('ability-label')) {
+          // Normal ability rolls and DCC d20 roll under luck rolls
+          const abilityId = this._findDataset(event.currentTarget, 'ability')
+          const rollUnder = (abilityId === 'lck')
+          dragData = {
+            type: 'Ability',
+            actorId,
+            data: {
+              abilityId,
+              rollUnder
+            }
+          }
+        }
+        else if (classes.contains('save-label')) {
+          const saveId = this._findDataset(event.currentTarget, 'save')
+          dragData = {
+            type: 'Save',
+            actorId,
+            data: saveId
+          }
+        }
+        else if (classes.contains('weapon')) {
+          const itemId = this._findDataset(event.currentTarget, 'itemId')
+          const weapon = partyActor.items.get(itemId)
+          dragData = Object.assign(
+            weapon.toDragData(),
+            {
+              dccType: 'Weapon',
+              actorId,
+              data: weapon,
+              dccData: {
+                weapon,
+                backstab: false
+              }
+            }
+          )
+        }
       }
     }
 

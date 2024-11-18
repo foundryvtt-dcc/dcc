@@ -1,18 +1,18 @@
 /* global $, ActorSheet, CONFIG, Dialog, game, foundry */
 
+import DCCActorSheet from './actor-sheet.js'
 import EntityImages from './entity-images.js'
 
 /**
  * Extend the basic ActorSheet to represent a party
  * @extends {ActorSheet}
  */
-class DCCPartySheet extends ActorSheet {
+class DCCPartySheet extends DCCActorSheet {
   /** @override */
   static get defaultOptions () {
     const options = {
       classes: ['dcc', 'sheet', 'actor', 'party'],
-      width: 600,
-      // height: 600,
+      height: 635,
       tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
       dragDrop: [{ dragSelector: null, dropSelector: null }],
       scrollY: [
@@ -22,6 +22,14 @@ class DCCPartySheet extends ActorSheet {
     }
     const finalOptions = foundry.utils.mergeObject(super.defaultOptions, options)
     return finalOptions
+  }
+
+  /** @inheritdoc */
+  _getHeaderButtons () {
+    const buttons = super._getHeaderButtons()
+
+    // Remove the Config button
+    return buttons.filter((button) => button.class !== 'configure-actor')
   }
 
   /* -------------------------------------------- */
@@ -56,6 +64,12 @@ class DCCPartySheet extends ActorSheet {
     // Prepare item lists by type
     this._prepareParty(data)
 
+    // Format Notes HTML
+    data.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
+      relativeTo: this.actor,
+      secrets: this.actor.isOwner
+    })
+
     return data
   }
 
@@ -83,7 +97,28 @@ class DCCPartySheet extends ActorSheet {
       }
 
       if (actor) {
-        const memberData = foundry.utils.mergeObject(foundry.utils.duplicate(member), { actor, melee, ranged, isNPC: actor.type === 'NPC' })
+        const memberData = foundry.utils.mergeObject(
+          foundry.utils.duplicate(member),
+          {
+            actor,
+            melee,
+            ranged,
+            isNPC: actor.type === 'NPC'
+          }
+        )
+
+        // Ensure activeMelee and activeRanged are set if valid
+        if (!memberData.activeMelee && melee.length > 0) {
+          memberData.activeMelee = melee[0].id
+        }
+        if (!memberData.activeRanged && ranged.length > 0) {
+          memberData.activeRanged = ranged[0].id
+        }
+
+        // Are melee and ranged weapons valid?
+        memberData.hasMelee = !!memberData.hasMelee
+        memberData.hasRanged = !!memberData.hasRanged
+
         actorData.partyMembers.push(memberData)
       }
     }
@@ -231,9 +266,10 @@ class DCCPartySheet extends ActorSheet {
     event.preventDefault()
     const actorId = event.currentTarget.parentElement.dataset.actorId
     const abilityId = event.currentTarget.dataset.ability
+    const options = this._fillRollOptions(event)
     const actor = game.actors.get(actorId)
     if (actor) {
-      actor.rollAbilityCheck(abilityId)
+      actor.rollAbilityCheck(abilityId, options)
     }
   }
 
@@ -241,9 +277,10 @@ class DCCPartySheet extends ActorSheet {
     event.preventDefault()
     const actorId = event.currentTarget.parentElement.dataset.actorId
     const saveId = event.currentTarget.dataset.save
+    const options = this._fillRollOptions(event)
     const actor = game.actors.get(actorId)
     if (actor) {
-      actor.rollSavingThrow(saveId)
+      actor.rollSavingThrow(saveId, options)
     }
   }
 
@@ -251,9 +288,10 @@ class DCCPartySheet extends ActorSheet {
     event.preventDefault()
     const actorId = event.currentTarget.parentElement.dataset.actorId
     const weaponId = event.currentTarget.nextElementSibling.value
+    const options = this._fillRollOptions(event)
     const actor = game.actors.get(actorId)
     if (actor) {
-      actor.rollWeaponAttack(weaponId)
+      actor.rollWeaponAttack(weaponId, options)
     }
   }
 
