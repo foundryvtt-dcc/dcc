@@ -330,7 +330,9 @@
       },
       "elf": {
         "class": {
-          "spellCheck": 1
+          "spellCheck": 1,
+          "knownSpells": 0,
+          "maxSpellLevel": 0
         },
         "skills": {
           "detectSecretDoors": {
