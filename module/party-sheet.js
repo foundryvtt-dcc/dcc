@@ -159,9 +159,28 @@ class DCCPartySheet extends DCCActorSheet {
   }
 
   /**
+   * Check a member is elegible to join the party
+   *
+   * @param {string} actorId   Uuid of the actor to add
+   * @return {undefined}
+   */
+  async _validateMember(actorId) {
+    const actorRef = foundry.utils.parseUuid(actorId)
+    const actor = await game.actors.get(actorRef.id)
+
+    // Actor must be valid
+    if (!actor) { return false }
+
+    // Cannot add a Party Sheet to a Party
+    if (actor.type === 'Party') { return false }
+
+    return true
+  }
+
+  /**
    * Add a member to the party
    *
-   * @param {string} actorId   Id of the actor to add
+   * @param {string} actorId   Uuid of the actor to add
    * @return {undefined}
    */
   _addMember (actorId) {
@@ -351,7 +370,11 @@ class DCCPartySheet extends DCCActorSheet {
 
     if (!this.actor.isOwner) return false
 
+    if (!await this._validateMember(data.uuid)) return false
+
     this._addMember(data.uuid)
+
+    return true
   }
 
   /** @override */
