@@ -2,6 +2,8 @@
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult } from './utilities.js'
+import DCCActorConfig from './actor-config.js'
+import DCCActorLevelChange from './actor-level-change.js'
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -306,12 +308,19 @@ class DCCActor extends Actor {
     }
     if (this.system?.skills?.divineAid) {
       this.system.skills.divineAid.value = this.system.class.spellCheck
-      this.system.skills.divineAid.ability = ""
+      this.system.skills.divineAid.ability = ''
       this.system.skills.turnUnholy.value = `${this.system.class.spellCheck}+${this.system.abilities.lck.mod}`
-      this.system.skills.turnUnholy.ability = ""
+      this.system.skills.turnUnholy.ability = ''
       this.system.skills.layOnHands.value = this.system.class.spellCheck
-      this.system.skills.layOnHands.ability = ""
+      this.system.skills.layOnHands.ability = ''
     }
+  }
+
+  /**
+   * Level Change
+   */
+  levelChange () {
+    new DCCActorLevelChange(this).render(true)
   }
 
   /**

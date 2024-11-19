@@ -560,6 +560,13 @@ Hooks.on('dcc.setLayOnHandsTable', (value, fromSystemSetting = false) => {
   }
 })
 
+// Level Data
+Hooks.on('dcc.setLevelData', (value, fromSystemSetting = false) => {
+  if (fromSystemSetting || !CONFIG.DCC.levelData) {
+    CONFIG.DCC.levelData = value
+  }
+})
+
 // Mercurial Magic table
 Hooks.on('dcc.setMercurialMagicTable', (value, fromSystemSetting = false) => {
   // Set mercurial magic table if unset, or if applying the system setting (which takes precedence)

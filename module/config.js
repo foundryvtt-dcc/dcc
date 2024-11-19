@@ -5,10 +5,10 @@ const DCC = {}
 
 // ASCII Artwork
 DCC.ASCII = `_______________________________
-______  _____  _____ 
+______  _____  _____
 |  _  \\/  __ \\/  __ \\
 | | | || /  \\/| /  \\/
-| | | || |    | |    
+| | | || |    | |
 | |/ / | \\__/\\| \\__/\\
 |___/   \\____/ \\____/
 _______________________________`
@@ -535,6 +535,7 @@ DCC.DICE_CHAIN = [
 DCC.criticalHitPacks = null
 DCC.disapprovalPacks = null
 DCC.divineAidTable = null
+DCC.levelData = null
 DCC.fumbleTable = null
 DCC.layOnHandsTable = null
 DCC.mercurialMagicTable = null
