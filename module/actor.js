@@ -13,6 +13,8 @@ class DCCActor extends Actor {
   prepareBaseData () {
     super.prepareBaseData()
 
+    this.isNPC = (this.type === 'NPC')
+
     // Ability modifiers
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
@@ -30,10 +32,12 @@ class DCCActor extends Actor {
       this.calculateMeleeAndMissileAttackAndDamage()
     }
 
-    this.calculateSpellCheck()
+    if (!isNPC) {
+      this.calculateSpellCheck()
+    }
 
     // Set NPC computations to manual
-    if (this.type === 'NPC') {
+    if (isNPC) {
       this.system.config.computeSpeed = false
       this.system.config.computeCheckPenalty = false
       this.system.config.computeMeleeAndMissileAttackAndDamage = false
@@ -66,8 +70,8 @@ class DCCActor extends Actor {
       }
     }
     data.attributes.fumble = foundry.utils.mergeObject(
-      data.attributes.fumble || {},
-      { die: fumbleDie }
+            data.attributes.fumble || {},
+            { die: fumbleDie }
     )
     if (data.config.computeCheckPenalty) {
       data.attributes.ac.checkPenalty = checkPenalty
@@ -153,34 +157,34 @@ class DCCActor extends Actor {
     const data = super.getRollData()
 
     const customData = foundry.utils.mergeObject(
-      data,
-      {
-        str: data.abilities.str.mod,
-        agi: data.abilities.agl.mod,
-        agl: data.abilities.agl.mod,
-        sta: data.abilities.sta.mod,
-        per: data.abilities.per.mod,
-        int: data.abilities.int.mod,
-        lck: data.abilities.lck.mod,
-        initiative: data.attributes.init.value,
-        maxStr: data.abilities.str.maxMod,
-        maxAgi: data.abilities.agl.maxMod,
-        maxAgl: data.abilities.agl.maxMod,
-        maxSta: data.abilities.sta.maxMod,
-        maxPer: data.abilities.per.maxMod,
-        maxInt: data.abilities.int.maxMod,
-        maxLck: data.abilities.lck.maxMod,
-        ref: data.saves.ref.value,
-        frt: data.saves.frt.value,
-        wil: data.saves.wil.value,
-        ac: data.attributes.ac.value,
-        check: data.attributes.ac.checkPenalty,
-        speed: data.attributes.speed.value,
-        hp: data.attributes.hp.value,
-        maxhp: data.attributes.hp.max,
-        level: data.details.level.value,
-        cl: data.details.level.value
-      }
+            data,
+            {
+              str: data.abilities.str.mod,
+              agi: data.abilities.agl.mod,
+              agl: data.abilities.agl.mod,
+              sta: data.abilities.sta.mod,
+              per: data.abilities.per.mod,
+              int: data.abilities.int.mod,
+              lck: data.abilities.lck.mod,
+              initiative: data.attributes.init.value,
+              maxStr: data.abilities.str.maxMod,
+              maxAgi: data.abilities.agl.maxMod,
+              maxAgl: data.abilities.agl.maxMod,
+              maxSta: data.abilities.sta.maxMod,
+              maxPer: data.abilities.per.maxMod,
+              maxInt: data.abilities.int.maxMod,
+              maxLck: data.abilities.lck.maxMod,
+              ref: data.saves.ref.value,
+              frt: data.saves.frt.value,
+              wil: data.saves.wil.value,
+              ac: data.attributes.ac.value,
+              check: data.attributes.ac.checkPenalty,
+              speed: data.attributes.speed.value,
+              hp: data.attributes.hp.value,
+              maxhp: data.attributes.hp.max,
+              level: data.details.level.value,
+              cl: data.details.level.value
+            }
     )
 
     // Get the relevant attack bonus (direct or rolled)
@@ -306,11 +310,11 @@ class DCCActor extends Actor {
     }
     if (this.system?.skills?.divineAid) {
       this.system.skills.divineAid.value = this.system.class.spellCheck
-      this.system.skills.divineAid.ability = ""
+      this.system.skills.divineAid.ability = ''
       this.system.skills.turnUnholy.value = `${this.system.class.spellCheck}+${this.system.abilities.lck.mod}`
-      this.system.skills.turnUnholy.ability = ""
+      this.system.skills.turnUnholy.ability = ''
       this.system.skills.layOnHands.value = this.system.class.spellCheck
-      this.system.skills.layOnHands.ability = ""
+      this.system.skills.layOnHands.ability = ''
     }
   }
 
@@ -819,20 +823,20 @@ class DCCActor extends Actor {
       })
     } else {
       terms.push(
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-          modifierLabel: game.i18n.localize('DCC.Level'),
-          formula: level
-        }
+              {
+                type: 'Compound',
+                dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+                modifierLabel: game.i18n.localize('DCC.Level'),
+                formula: level
+              }
       )
       terms.push(
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-          modifierLabel: game.i18n.localize('DCC.AbilityMod'),
-          formula: abilityMod
-        }
+              {
+                type: 'Compound',
+                dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+                modifierLabel: game.i18n.localize('DCC.AbilityMod'),
+                formula: abilityMod
+              }
       )
     }
 
@@ -1138,10 +1142,10 @@ class DCCActor extends Actor {
 
     /* Roll the Attack */
     const rollOptions = Object.assign(
-      {
-        title: game.i18n.localize('DCC.ToHit')
-      },
-      options
+            {
+              title: game.i18n.localize('DCC.ToHit')
+            },
+            options
     )
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
     await attackRoll.evaluate()
