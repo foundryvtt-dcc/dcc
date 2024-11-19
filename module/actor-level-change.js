@@ -44,6 +44,18 @@ class DCCActorLevelChange extends FormApplication {
     super.activateListeners(html)
 
     html.find('.level-increase').click(this._increaseLevel.bind(this))
+    html.find('.level-decrease').click(this._decreaseLevel.bind(this))
+  }
+
+  async _decreaseLevel () {
+    const currentLevel = this.object.system.details.level.value
+    await this.object.update({ 'system.details.level.value': currentLevel - 1 })
+    const levelItem = await this._lookupLevelItem(this.object.system.class.className.toLowerCase(), currentLevel - 1)
+    if (levelItem) {
+      this.element.find('#levelValue').html(this.object.system.details.level.value)
+      this.element.find('#levelDataDisplay').html(levelItem.system.levelData)
+    }
+    console.log(levelItem)
   }
 
   async _increaseLevel () {
@@ -51,7 +63,8 @@ class DCCActorLevelChange extends FormApplication {
     await this.object.update({ 'system.details.level.value': currentLevel + 1 })
     const levelItem = await this._lookupLevelItem(this.object.system.class.className.toLowerCase(), currentLevel + 1)
     if (levelItem) {
-      this.element.find('#levelDataDisplay').html(levelItem.system.levelData)
+      this.element.find('#system\\.details\\.level\\.value').html(this.object.system.details.level.value)
+      this.element.find('#levelDataDisplay').html(`<h3>Updates at your new level:</h3> ${levelItem.system.levelData}`)
     }
     console.log(levelItem)
   }
