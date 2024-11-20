@@ -147,6 +147,12 @@ const migrateActorData = function (actor) {
     }
   }
 
+  if (actor.system.details.luckyRoll) {
+    updateData.update({
+      'system.details.birthAugur': actor.system.details.luckyRoll
+    })
+  }
+
   // Migrate Owned Items
   let hasItemUpdates = false
   let items = []
