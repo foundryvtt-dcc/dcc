@@ -32,12 +32,12 @@ class DCCActor extends Actor {
       this.calculateMeleeAndMissileAttackAndDamage()
     }
 
-    if (!isNPC) {
+    if (!this.isNPC) {
       this.calculateSpellCheck()
     }
 
     // Set NPC computations to manual
-    if (isNPC) {
+    if (this.isNPC) {
       this.system.config.computeSpeed = false
       this.system.config.computeCheckPenalty = false
       this.system.config.computeMeleeAndMissileAttackAndDamage = false
@@ -986,8 +986,8 @@ class DCCActor extends Actor {
         rolls.push(critRoll)
         const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
-          critTableName = critResult.results[0]?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
-          critText = await TextEditor.enrichHTML(critResult.results[0].text)
+          critTableName = critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
+          critText = await TextEditor.enrichHTML(critResult.text)
           critText = `: <br>${critText}`
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
@@ -1221,11 +1221,12 @@ class DCCActor extends Actor {
     const critRollFormula = critRoll.formula
     const critPrompt = game.i18n.localize('DCC.Critical')
 
-    const critTableName = this.system.attributes.critical.table
+    let critTableName = this.system.attributes.critical.table
     const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {
-      critText = await TextEditor.enrichHTML(critResult.results[0].text)
+      critText = await TextEditor.enrichHTML(critResult.text)
+      critTableName = await TextEditor.enrichHTML(critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`))
     }
 
     foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
