@@ -276,6 +276,9 @@ class DCCActorSheet extends ActorSheet {
       html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
       html.find('label.skill-check').each(makeDraggable)
 
+      // Level Change
+      html.find('label[for*="system.details.level.value"]').click(this._onLevelChange.bind(this))
+
       // Luck Die
       html.find('label[for*="system.class.luckDie"]').click(this._onRollLuckDie.bind(this))
       html.find('label[for*="system.class.luckDie"]').each(makeDraggable)
@@ -636,6 +639,16 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
+
+  /**
+   * Handle changing Level
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onLevelChange (event) {
+    event.preventDefault()
+    this.actor.levelChange()
+  }
 
   /**
    * Fill options for a roll based on event
