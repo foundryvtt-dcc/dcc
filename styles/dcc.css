@@ -339,7 +339,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Journal Headings
+/*  Journal Styles
 /* ----------------------------------------- */
 .journal-sheet h1 {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
@@ -356,6 +356,10 @@
 }
 
 .journal-sheet div.editor-content {
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+}
+
+.journal-sheet .journal-page-content {
   font-family: "Book Antiqua", "Palatino Linotype", serif;
 }
 
