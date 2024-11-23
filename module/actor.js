@@ -1020,10 +1020,10 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        const fumbleResult = await getFumbleTableResult(fumbleRoll.total)
+        const fumbleResult = await getFumbleTableResult(fumbleRoll)
         if (fumbleResult) {
-          fumbleTableName = `(${fumbleResult.results[0]?.parent?.link}):<br>`
-          fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+          fumbleTableName = `(${fumbleResult?.parent?.link}):<br>`
+          fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
         }
         const fumbleResultPrompt = game.i18n.localize('DCC.FumblePrompt')
         const fumbleRollAnchor = fumbleRoll.toAnchor().outerHTML

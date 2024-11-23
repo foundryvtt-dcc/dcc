@@ -84,7 +84,6 @@ export async function getCritTableResult (roll, critTableName) {
  */
 export async function getFumbleTableResult (roll) {
 // Lookup the fumble table if available
-  let fumbleResult = null
   const fumbleTableName = CONFIG.DCC.fumbleTable
   if (fumbleTableName) {
     const fumbleTablePath = fumbleTableName.split('.')
@@ -97,8 +96,8 @@ export async function getFumbleTableResult (roll) {
       const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
       if (entry) {
         const table = await pack.getDocument(entry._id)
-        fumbleResult = await table.draw({ roll, displayChat: false })
-        return fumbleResult
+        const fumbleResult = table.getResultsForRoll(roll.total)
+        return fumbleResult[0] || 'Unable to find fumble result'
       }
     }
   }
