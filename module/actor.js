@@ -15,6 +15,8 @@ class DCCActor extends Actor {
   prepareBaseData () {
     super.prepareBaseData()
 
+    this.isNPC = (this.type === 'NPC')
+
     // Ability modifiers
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
@@ -32,10 +34,12 @@ class DCCActor extends Actor {
       this.calculateMeleeAndMissileAttackAndDamage()
     }
 
-    this.calculateSpellCheck()
+    if (!this.isNPC) {
+      this.calculateSpellCheck()
+    }
 
     // Set NPC computations to manual
-    if (this.type === 'NPC') {
+    if (this.isNPC) {
       this.system.config.computeSpeed = false
       this.system.config.computeCheckPenalty = false
       this.system.config.computeMeleeAndMissileAttackAndDamage = false
@@ -68,8 +72,8 @@ class DCCActor extends Actor {
       }
     }
     data.attributes.fumble = foundry.utils.mergeObject(
-      data.attributes.fumble || {},
-      { die: fumbleDie }
+            data.attributes.fumble || {},
+            { die: fumbleDie }
     )
     if (data.config.computeCheckPenalty) {
       data.attributes.ac.checkPenalty = checkPenalty
@@ -155,34 +159,34 @@ class DCCActor extends Actor {
     const data = super.getRollData()
 
     const customData = foundry.utils.mergeObject(
-      data,
-      {
-        str: data.abilities.str.mod,
-        agi: data.abilities.agl.mod,
-        agl: data.abilities.agl.mod,
-        sta: data.abilities.sta.mod,
-        per: data.abilities.per.mod,
-        int: data.abilities.int.mod,
-        lck: data.abilities.lck.mod,
-        initiative: data.attributes.init.value,
-        maxStr: data.abilities.str.maxMod,
-        maxAgi: data.abilities.agl.maxMod,
-        maxAgl: data.abilities.agl.maxMod,
-        maxSta: data.abilities.sta.maxMod,
-        maxPer: data.abilities.per.maxMod,
-        maxInt: data.abilities.int.maxMod,
-        maxLck: data.abilities.lck.maxMod,
-        ref: data.saves.ref.value,
-        frt: data.saves.frt.value,
-        wil: data.saves.wil.value,
-        ac: data.attributes.ac.value,
-        check: data.attributes.ac.checkPenalty,
-        speed: data.attributes.speed.value,
-        hp: data.attributes.hp.value,
-        maxhp: data.attributes.hp.max,
-        level: data.details.level.value,
-        cl: data.details.level.value
-      }
+            data,
+            {
+              str: data.abilities.str.mod,
+              agi: data.abilities.agl.mod,
+              agl: data.abilities.agl.mod,
+              sta: data.abilities.sta.mod,
+              per: data.abilities.per.mod,
+              int: data.abilities.int.mod,
+              lck: data.abilities.lck.mod,
+              initiative: data.attributes.init.value,
+              maxStr: data.abilities.str.maxMod,
+              maxAgi: data.abilities.agl.maxMod,
+              maxAgl: data.abilities.agl.maxMod,
+              maxSta: data.abilities.sta.maxMod,
+              maxPer: data.abilities.per.maxMod,
+              maxInt: data.abilities.int.maxMod,
+              maxLck: data.abilities.lck.maxMod,
+              ref: data.saves.ref.value,
+              frt: data.saves.frt.value,
+              wil: data.saves.wil.value,
+              ac: data.attributes.ac.value,
+              check: data.attributes.ac.checkPenalty,
+              speed: data.attributes.speed.value,
+              hp: data.attributes.hp.value,
+              maxhp: data.attributes.hp.max,
+              level: data.details.level.value,
+              cl: data.details.level.value
+            }
     )
 
     // Get the relevant attack bonus (direct or rolled)
@@ -828,20 +832,20 @@ class DCCActor extends Actor {
       })
     } else {
       terms.push(
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-          modifierLabel: game.i18n.localize('DCC.Level'),
-          formula: level
-        }
+              {
+                type: 'Compound',
+                dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+                modifierLabel: game.i18n.localize('DCC.Level'),
+                formula: level
+              }
       )
       terms.push(
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-          modifierLabel: game.i18n.localize('DCC.AbilityMod'),
-          formula: abilityMod
-        }
+              {
+                type: 'Compound',
+                dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+                modifierLabel: game.i18n.localize('DCC.AbilityMod'),
+                formula: abilityMod
+              }
       )
     }
 
@@ -991,8 +995,8 @@ class DCCActor extends Actor {
         rolls.push(critRoll)
         const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
-          critTableName = critResult.results[0]?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
-          critText = await TextEditor.enrichHTML(critResult.results[0].text)
+          critTableName = critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
+          critText = await TextEditor.enrichHTML(critResult.text)
           critText = `: <br>${critText}`
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
@@ -1025,10 +1029,10 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        const fumbleResult = await getFumbleTableResult(fumbleRoll.total)
+        const fumbleResult = await getFumbleTableResult(fumbleRoll)
         if (fumbleResult) {
-          fumbleTableName = `(${fumbleResult.results[0]?.parent?.link}):<br>`
-          fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+          fumbleTableName = `(${fumbleResult?.parent?.link}):<br>`
+          fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
         }
         const fumbleResultPrompt = game.i18n.localize('DCC.FumblePrompt')
         const fumbleRollAnchor = fumbleRoll.toAnchor().outerHTML
@@ -1147,10 +1151,10 @@ class DCCActor extends Actor {
 
     /* Roll the Attack */
     const rollOptions = Object.assign(
-      {
-        title: game.i18n.localize('DCC.ToHit')
-      },
-      options
+            {
+              title: game.i18n.localize('DCC.ToHit')
+            },
+            options
     )
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
     await attackRoll.evaluate()
@@ -1226,11 +1230,12 @@ class DCCActor extends Actor {
     const critRollFormula = critRoll.formula
     const critPrompt = game.i18n.localize('DCC.Critical')
 
-    const critTableName = this.system.attributes.critical.table
+    let critTableName = this.system.attributes.critical.table
     const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {
-      critText = await TextEditor.enrichHTML(critResult.results[0].text)
+      critText = await TextEditor.enrichHTML(critResult.text)
+      critTableName = await TextEditor.enrichHTML(critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`))
     }
 
     foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })

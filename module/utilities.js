@@ -1,4 +1,5 @@
 /* global game, CONFIG */
+
 /**
  * Ensure modifiers have a + on the front of them if they aren't negative
  * @param {string} value - value to ensure has a plus
@@ -52,6 +53,11 @@ export function getFirstMod (value) {
  * @param critTableName - name of the crit table - like 'III'
  */
 export async function getCritTableResult (roll, critTableName) {
+  // Make sure the roll is evaluated first
+  if (!roll._evaluated) {
+    await roll.evaluate()
+  }
+
   // Lookup the crit table if available
   let critResult = null
   for (const criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
@@ -64,8 +70,8 @@ export async function getCritTableResult (roll, critTableName) {
         const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
         if (entry) {
           const table = await pack.getDocument(entry._id)
-          critResult = await table.draw({ roll, displayChat: false })
-          return critResult
+          critResult = await table.getResultsForRoll(roll.total)
+          return critResult[0] || 'Unable to find crit result'
         }
       }
     }
@@ -78,7 +84,6 @@ export async function getCritTableResult (roll, critTableName) {
  */
 export async function getFumbleTableResult (roll) {
 // Lookup the fumble table if available
-  let fumbleResult = null
   const fumbleTableName = CONFIG.DCC.fumbleTable
   if (fumbleTableName) {
     const fumbleTablePath = fumbleTableName.split('.')
@@ -91,8 +96,8 @@ export async function getFumbleTableResult (roll) {
       const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
       if (entry) {
         const table = await pack.getDocument(entry._id)
-        fumbleResult = await table.draw({ roll, displayChat: false })
-        return fumbleResult
+        const fumbleResult = table.getResultsForRoll(roll.total)
+        return fumbleResult[0] || 'Unable to find fumble result'
       }
     }
   }

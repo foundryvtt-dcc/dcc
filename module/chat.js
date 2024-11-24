@@ -364,7 +364,7 @@ export const lookupCriticalRoll = async function (message, html) {
   const tableName = message.flavor.replace('Critical (', '').replace(')', '')
 
   const critResult = await getCritTableResult(message.rolls[0], tableName)
-  const critText = await TextEditor.enrichHTML(critResult.results[0].text)
+  const critText = await TextEditor.enrichHTML(critResult.text)
   html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${critText}`)
 }
 
