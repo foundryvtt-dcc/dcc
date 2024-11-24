@@ -114,8 +114,6 @@ class DCCItem extends Item {
       } else {
         this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
       }
-
-      // Final checkboxes that can affect things
       if (this.system.subdual) {
         this.system.damage = `${this.system.damage}[subdual]`
       }
