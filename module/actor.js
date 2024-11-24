@@ -276,7 +276,7 @@ class DCCActor extends Actor {
     let missileAttackBonus
     let meleeAttackDamage
     let missileAttackDamage
-    if (attackBonus.includes('d')) {
+    if (attackBonus.toString().includes('d')) {
       const deedDie = attackBonus.match(/[+-]?((\d+)?d\d+)/) ? attackBonus.match(/[+-]?((\d+)?d\d+)/)[1] : attackBonus
       const attackBonusBonus = attackBonus.match(/([+-]\d+)$/) ? parseInt(attackBonus.match(/([+-]\d+)$/)[0]) : 0
       meleeAttackBonus = `${ensurePlus(deedDie)}${ensurePlus(strengthBonus + meleeAttackBonusAdjustment + attackBonusBonus, false)}`
