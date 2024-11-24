@@ -210,7 +210,7 @@ export const registerSystemSettings = async function () {
     hint: 'DCC.SettingEmoteRollsHint',
     scope: 'client',
     type: Boolean,
-    default: false,
+    default: true,
     config: true
   })
 
