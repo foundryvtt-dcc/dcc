@@ -109,12 +109,13 @@ class DCCItem extends Item {
           this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
         }
       }
-      this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
+      if (this.system.doubleIfMounted) {
+        this.system.damage = `(${this.system.damageWeapon})*2${this.system.damage}`
+      } else {
+        this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
+      }
 
       // Final checkboxes that can affect things
-      if (this.system.doubleIfMounted) {
-        this.system.damage = `(${this.system.damage})*2`
-      }
       if (this.system.subdual) {
         this.system.damage = `${this.system.damage}[subdual]`
       }
