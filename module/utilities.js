@@ -65,16 +65,21 @@ export async function getCritTableResult (roll, critTableName) {
       const pack = game.packs.get(criticalHitPackName)
       if (pack) {
         await pack.getIndex() // Load the compendium index
-        const critTableFilter = critTableName
-
-        const entry = pack.index.find((entity) => entity.name.startsWith(critTableFilter))
+        const entry = pack.index.find((entity) => entity.name.startsWith(critTableName))
         if (entry) {
           const table = await pack.getDocument(entry._id)
-          critResult = await table.getResultsForRoll(roll.total)
+          critResult = table.getResultsForRoll(roll.total)
           return critResult[0] || 'Unable to find crit result'
         }
       }
     }
+  }
+
+  // Try in the local world if we've gotten this far and not returned
+  const worldCritTables = game.tables.find((entity) => entity.name.startsWith(critTableName))
+  if (worldCritTables) {
+    critResult = worldCritTables.getResultsForRoll(roll.total)
+    return critResult[0] || 'Unable to find crit result'
   }
 }
 
