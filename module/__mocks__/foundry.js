@@ -4,18 +4,27 @@
 import { vi } from 'vitest'
 import DCC from '../config.js'
 import DCCRoll from './dcc-roll.js'
+import path from 'path'
+import fs from 'fs'
 
 // console.log('Loading Foundry Mocks')
 
 /**
  * Item
  */
-class Item {
-  quantity = {}
-  system = {}
+class MockItem {
+  constructor (data = {}, context = {}) {
+    if (data.type) {
+      this.system = getTemplateData('Item', data.type)
+      this.type = data.type
+    }
+    Object.assign(this, data)
+  }
+
+  prepareBaseData () {}
 }
 
-global.Item = Item
+global.Item = MockItem
 
 /**
  * Collection
@@ -281,10 +290,12 @@ global.CONFIG.ChatMessage = {
  */
 global.uiNotificationsWarnMock = vi.fn((message, options) => {}).mockName('ui.notifications.warn')
 global.uiNotificationsErrorMock = vi.fn((message, type, permanent) => {}).mockName('ui.notifications.error')
+
 class Notifications {
   warn = global.uiNotificationsWarnMock
   error = global.uiNotificationsErrorMock
 }
+
 global.ui = {
   notifications: new Notifications()
 }
@@ -459,3 +470,25 @@ class HooksMock {
 }
 
 global.Hooks = HooksMock
+
+export function getTemplateData (documentClass, type) {
+  if (!documentClass || !type) {
+    return null
+  }
+
+  const filePath = path.join(__dirname, '..', '..', 'template.json')
+  const fileContent = fs.readFileSync(filePath, 'utf-8')
+  const templateData = JSON.parse(fileContent)
+  const templateDataForClass = templateData[documentClass]
+  const templateDataForType = templateDataForClass[type] || {}
+
+  let documentData = {}
+
+  // Loop over all the templates for the class and merge them together
+  for (const template of templateDataForType.templates || []) {
+    Object.assign(documentData, templateDataForClass.templates[template])
+  }
+  // Add in the data from the type itself
+  Object.assign(documentData, templateDataForType)
+  return documentData || null
+}
