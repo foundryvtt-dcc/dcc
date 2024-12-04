@@ -58,7 +58,7 @@ class DCCActorSheetThief extends DCCActorSheet {
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
-        'system.details.showBackstab': true
+        'system.config.showBackstab': true
       })
     }
 
