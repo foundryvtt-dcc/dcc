@@ -20,6 +20,15 @@ class DCCItem extends Item {
 
     this.isNPC = (this.actor?.type === 'NPC')
 
+    // NPC Weapon Items
+    if (this.type === 'weapon' && this.isNPC) {
+      // Action Die Calculation
+      this.system.actionDie = this.actor?.system?.attributes?.actionDice?.value || ''
+      if (this.system.config.actionDieOverride) {
+        this.system.actionDie = this.system.config.actionDieOverride
+      }
+    }
+
     // PC Weapon Items or Un-owned Items
     if (this.type === 'weapon' && !this.isNPC) {
       // Initiative Calculation
