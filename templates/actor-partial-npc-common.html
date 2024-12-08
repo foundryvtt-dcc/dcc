@@ -25,12 +25,6 @@
       </svg>
       <input style="grid-area: 1/1; margin-bottom: 4px;" id="system.attributes.ac.value" name="system.attributes.ac.value"
              value="{{system.attributes.ac.value}}"
-        {{#if system.config.computeAC }}
-             title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0
-                                                                                      sign=true}} {{localize
-               'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}}"
-             disabled
-        {{/if}}
              data-dtype="Number">
       <label for="system.attributes.ac.value" style="grid-area: 2/1/4/1; line-height: 14px;">
         {{{localize "DCC.ArmorClass"}}}
@@ -41,11 +35,11 @@
       </svg>
 
       {{!-- HP --}}
-      <input style="grid-area: 1/2; margin-bottom: 4px;" id="system.attributes.hp.value" name="system.attributes.hp.value"
+      <input style="grid-area: 1/2; margin-bottom: 4px; width: 100%;" id="system.attributes.hp.value" name="system.attributes.hp.value"
              value="{{system.attributes.hp.value}}"
              data-dtype="Number">
       <label for="system.attributes.hp.value" style="grid-row: 2; min-width: 72px; margin-top: 4px;">{{localize
-        "DCC.HitPoints"}}</label>
+              "DCC.HitPoints"}}</label>
       <div class="grid-tpl-max-auto" style="grid-area: 3/2;">
         <label style="line-height: 16px;" for="system.attributes.hp.max">{{localize "DCC.Max"}}:</label>
         <input style="font-size: 12px; height: 16px; border-bottom: 1px solid rgba(0, 0, 0, 0.5); width: min-content;"
@@ -133,10 +127,10 @@
     <div class="dark-border grid-col-span-10">
       <label class="dark-title" for="system.attributes.special.value">{{localize "DCC.Special"}}</label>
       <div class="h-100-19 p-3">
-      <textarea id="system.attributes.special.value"
-          name="system.attributes.special.value"
-          style="height: 100%;"
-          data-dtype="String">{{system.attributes.special.value}}</textarea>
+        <textarea id="system.attributes.special.value"
+                  name="system.attributes.special.value"
+                  data-dtype="String"
+                  style="height: 100%;">{{system.attributes.special.value}}</textarea>
       </div>
     </div>
 
@@ -179,9 +173,9 @@
         {{/if}}
         <div>
           <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i
-            class="fas fa-edit"></i></a>
+                  class="fas fa-edit"></i></a>
           <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i
-            class="fas fa-trash"></i></a>
+                  class="fas fa-trash"></i></a>
         </div>
       </li>
     {{/inline}}

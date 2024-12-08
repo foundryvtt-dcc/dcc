@@ -935,14 +935,9 @@ class DCCActor extends Actor {
       damageRollFormula = damageRollFormula.replaceAll('@ab', attackRollResult.deedRollTotalResult)
     }
     if (options.backstab && weapon.system?.backstabDamage) {
-      damageRollFormula = `${damageRollFormula}+${weapon.system?.backstabDamage || 0}`
+      damageRollFormula = damageRollFormula.replace(weapon.system?.damageWeapon, weapon.system?.backstabDamage)
     }
-    if (damageRollFormula.includes('-')) {
-      damageRollFormula = `max(${damageRollFormula}, 1)`
-    }
-    let damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
-    let damagePrompt = game.i18n.localize('DCC.RollDamage')
-    let damageRoll
+    let damageRoll, damageInlineRoll, damagePrompt
     if (automateDamageFumblesCrits) {
       damageRoll = game.dcc.DCCRoll.createRoll([
         {
@@ -954,10 +949,19 @@ class DCCActor extends Actor {
       await damageRoll.evaluate()
       foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
       damageRoll.flavor = game.i18n.localize('DCC.Damage')
+      if (damageRoll.total < 1) {
+        damageRoll._total = 1
+      }
       rolls.push(damageRoll)
       const damageRollAnchor = await damageRoll.toAnchor({ classes: ['damage-applyable'], dataset: { damage: damageRoll.total } })
       damageInlineRoll = damageRollAnchor.outerHTML
       damagePrompt = game.i18n.localize('DCC.Damage')
+    } else {
+      if (damageRollFormula.includes('-')) {
+        damageRollFormula = `max(${damageRollFormula}, 1)`
+      }
+      damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
+      damagePrompt = game.i18n.localize('DCC.RollDamage')
     }
 
     // Deed roll

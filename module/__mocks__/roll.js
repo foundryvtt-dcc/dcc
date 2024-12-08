@@ -28,6 +28,9 @@ global.rollParseMock = vi.fn((formula) => {
 global.rollRenderMock = vi.fn((formula) => {
   return ''
 })
+global.rollSafeEvalMock = vi.fn((expression) => {
+  return expression
+}).mockName('safeEval')
 global.rollValidateMock = vi.fn((formula) => {
   return true
 }).mockName('validate')
@@ -40,6 +43,7 @@ class RollMock {
   parse = global.rollParseMock
   render = global.rollRenderMock
   roll = global.rollEvaluateMock
+  static safeEval = global.rollSafeEvalMock
 
   static validate () {
     return true
