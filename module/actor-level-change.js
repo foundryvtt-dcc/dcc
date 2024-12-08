@@ -34,6 +34,7 @@ class DCCActorLevelChange extends FormApplication {
     data.isZero = (this.object.system.details.level.value === 0)
     data.user = game.user
     data.config = CONFIG.DCC
+    data.currentLevel = this.object.system.details.level.value
     return data
   }
 
@@ -71,7 +72,8 @@ class DCCActorLevelChange extends FormApplication {
         .trim() // Remove leading/trailing whitespace
         .split('\n') // Split into lines
         .reduce((acc, line) => {
-          const [key, value] = line.split('=')
+          let [key, value] = line.split('=')
+          key = game.i18n.localize(`DCC.${key}`)
           acc[key] = isNaN(value) ? value : Number(value) // Convert numeric values
           return acc
         }, {})
@@ -106,16 +108,16 @@ class DCCActorLevelChange extends FormApplication {
    * @private
    */
   async _decreaseLevel () {
-    const currentLevel = this.object.system.details.level.value
-    await this.object.update({ 'system.details.level.value': currentLevel - 1 })
-    const levelItem = await this._lookupLevelItem(this.object.system.class.className.toLowerCase(), currentLevel - 1)
+    this.object.currentLevel = this.object.currentLevel - 1
+    const levelItem = await this._lookupLevelItem(this.object.system.class.className.toLowerCase(), this.object.currentLevel)
     if (levelItem) {
       const levelData = await this._getLevelDataFromItem(levelItem)
       const levelDataString = Object.entries(levelData)
-        .map(([key, value]) => `<div>${key}=${value}</div>`)
+        .map(([key, value]) => `<div>${key} = ${value}</div>`)
         .join('\n')
-      this.element.find('#system\\.details\\.level\\.value').html(this.object.system.details.level.value)
-      this.element.find('#levelDataDisplay').html(`<h3>Updates at your new level:</h3> ${levelDataString}`)
+      this.element.find('#system\\.details\\.level\\.value').html(this.object.currentLevel)
+      const levelDataHeader = game.i18n.localize('DCC.UpdatesAtLevel')
+      this.element.find('#levelDataDisplay').html(`<h3>${levelDataHeader}</h3> ${levelDataString}`)
     }
     // console.log(levelItem)
   }
@@ -126,16 +128,16 @@ class DCCActorLevelChange extends FormApplication {
    * @private
    */
   async _increaseLevel () {
-    const currentLevel = this.object.system.details.level.value
-    await this.object.update({ 'system.details.level.value': currentLevel + 1 })
-    const levelItem = await this._lookupLevelItem(this.object.system.class.className.toLowerCase(), currentLevel + 1)
+    this.object.currentLevel = this.object.currentLevel + 1
+    const levelItem = await this._lookupLevelItem(this.object.system.class.className.toLowerCase(), this.object.currentLevel)
     if (levelItem) {
       const levelData = await this._getLevelDataFromItem(levelItem)
       const levelDataString = Object.entries(levelData)
-        .map(([key, value]) => `<div>${key}=${value}</div>`)
+        .map(([key, value]) => `<div>${key} = ${value}</div>`)
         .join('\n')
-      this.element.find('#system\\.details\\.level\\.value').html(this.object.system.details.level.value)
-      this.element.find('#levelDataDisplay').html(`<h3>Updates at your new level:</h3> ${levelDataString}`)
+      this.element.find('#system\\.details\\.level\\.value').html(this.object.currentLevel)
+      const levelDataHeader = game.i18n.localize('DCC.UpdatesAtLevel')
+      this.element.find('#levelDataDisplay').html(`<h3>${levelDataHeader}</h3> ${levelDataString}`)
     }
     // console.log(levelItem)
   }
