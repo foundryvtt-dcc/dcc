@@ -162,7 +162,7 @@ class DCCItem extends Item {
    * @param {String} abilityId    The ability used for this spell
    * @param options
    */
-  async rollSpellCheck (abilityId = 'int', options = {}) {
+  async rollSpellCheck (abilityId = '', options = {}) {
     if (this.type !== 'spell') { return }
 
     const actor = this.actor || this.parent

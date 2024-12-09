@@ -304,6 +304,9 @@ class DCCActor extends Actor {
     if (this.system.class.spellCheckAbility === 'per') {
       abilityBonus = ensurePlus(this.system.abilities.per.mod)
     }
+    if (this.system.class.spellCheckAbility === '') {
+      abilityBonus = ''
+    }
     this.system.class.spellCheck = ensurePlus(this.system.details.level.value + abilityBonus)
     if (this.system.class.spellCheckOverride) {
       this.system.class.spellCheck = this.system.class.spellCheckOverride
