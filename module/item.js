@@ -243,7 +243,7 @@ class DCCItem extends Item {
 
     // Lookup the appropriate table
     const resultsRef = this.system.results
-    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table
+    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table.replace('RollTable.', '')
     let resultsTable
     // If a collection is specified then check the appropriate pack for the spell
     if (resultsRef.collection) {
