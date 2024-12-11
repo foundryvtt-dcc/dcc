@@ -381,7 +381,7 @@ class DCCActorSheet extends ActorSheet {
     event.preventDefault()
     new SavingThrowConfig(this.actor, {
       top: this.position.top + 40,
-      left: this.position.left + (this.position.width - 400) / 2
+      left: this.position.left + (this.position.width - 250) / 2
     }).render(true)
   }
 
