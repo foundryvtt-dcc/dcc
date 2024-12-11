@@ -110,7 +110,7 @@ class DCCActorLevelChange extends FormApplication {
    * @private
    */
   async _decreaseLevel () {
-    this.object.currentLevel = this.object.currentLevel - 1
+    this.object.currentLevel = parseInt(this.object.currentLevel) - 1
     return this._updateLevelUpDisplay()
   }
 
@@ -120,7 +120,7 @@ class DCCActorLevelChange extends FormApplication {
    * @private
    */
   async _increaseLevel () {
-    this.object.currentLevel = this.object.currentLevel + 1
+    this.object.currentLevel = parseInt(this.object.currentLevel) + 1
     return this._updateLevelUpDisplay()
   }
 
