@@ -26,40 +26,45 @@
   {{/if}}
   {{#if isPC}}
     <label for="system.config.computeAC" title="{{localize 'DCC.ComputeACConfigHint'}}">{{localize "DCC.ComputeACConfig"}}</label>
-    <input type="checkbox" name="system.config.computeAC" id="system.config.computeAC" {{checked system.config.computeAC}}
-           data-dtype="boolean"/>
+    <input type="checkbox" name="system.config.computeAC" id="system.config.computeAC" {{checked system.config.computeAC}} data-dtype="boolean"/>
     <label for="system.config.baseACAbility">{{localize "DCC.BaseACAbilityConfig"}}</label>
     <select name="system.config.baseACAbility" id="system.config.baseACAbility">
       {{selectOptions config.abilities selected=system.config.baseACAbility localize=true}}
     </select>
     <div class="group-separator"></div>
     <label for="system.config.computeSpeed" title="{{localize 'DCC.ComputeSpeedConfigHint'}}">{{localize "DCC.ComputeSpeedConfig"}}</label>
-    <input type="checkbox" name="system.config.computeSpeed" id="system.config.computeSpeed" {{checked
-      system.config.computeSpeed}}
+    <input type="checkbox" name="system.config.computeSpeed" id="system.config.computeSpeed" {{checked system.config.computeSpeed}}
            data-dtype="boolean"/>
     <label for="system.attributes.speed.base">{{localize "DCC.SpeedBase"}}</label>
     <input type="text" name="system.attributes.speed.base" id="system.attributes.speed.base"
            value="{{distanceFormat system.attributes.speed.base}}" data-dtype="number"/>
     <div class="group-separator"></div>
     <label for="system.config.computeMeleeAndMissileAttackAndDamage"
-           title="{{localize "DCC.ComputeMeleeAndMissileAttackAndDamageHint"}}">{{localize
-      "DCC.ComputeMeleeAndMissileAttackAndDamage"}}</label>
+           title="{{localize "DCC.ComputeMeleeAndMissileAttackAndDamageHint"}}">
+      {{localize "DCC.ComputeMeleeAndMissileAttackAndDamage"}}
+    </label>
     <input type="checkbox" name="system.config.computeMeleeAndMissileAttackAndDamage"
-           id="system.config.computeMeleeAndMissileAttackAndDamage" {{checked
-      system.config.computeMeleeAndMissileAttackAndDamage}}
+           id="system.config.computeMeleeAndMissileAttackAndDamage" {{checked system.config.computeMeleeAndMissileAttackAndDamage}}
+           data-dtype="boolean"/>
+    <label for="system.config.computeSavingThrows"
+           title="{{localize "DCC.ComputeSavingThrowsHint"}}">{{localize "DCC.ComputeSavingThrows"}}
+    </label>
+    <input type="checkbox" name="system.config.computeSavingThrows"
+           id="system.config.computeSavingThrows" {{checked system.config.computeSavingThrows}}
            data-dtype="boolean"/>
     <div class="group-separator"></div>
-    <label for="system.config.computeCheckPenalty" title="{{localize 'DCC.ComputeCheckPenaltyConfigHint'}}">{{localize "DCC.ComputeCheckPenaltyConfig"}}</label>
-    <input type="checkbox" name="system.config.computeCheckPenalty" id="system.config.computeCheckPenalty" {{checked
-      system.config.computeCheckPenalty}} data-dtype="boolean"/>
+    <label for="system.config.computeCheckPenalty" title="{{localize 'DCC.ComputeCheckPenaltyConfigHint'}}">
+      {{localize "DCC.ComputeCheckPenaltyConfig"}}
+    </label>
+    <input type="checkbox" name="system.config.computeCheckPenalty" id="system.config.computeCheckPenalty"
+      {{checked system.config.computeCheckPenalty}} data-dtype="boolean"/>
     <label for="system.attributes.ac.checkPenalty" title="{{localize 'DCC.CheckPenaltyConfigHint'}}">{{localize "DCC.CheckPenalty"}}</label>
     <input type="text" name="system.attributes.ac.checkPenalty" id="system.attributes.ac.checkPenalty"
            value="{{numberFormat system.attributes.ac.checkPenalty decimals=0 sign=false}}" data-dtype="number"/>
     <div class="group-separator"></div>
     <label for="system.config.showBackstab" title="{{localize 'DCC.ShowBackstabConfigHint'}}">{{localize "DCC.ShowBackstabConfig"}}</label>
-    <input type="checkbox" name="system.config.showBackstab" id="system.config.showBackstab" {{checked
-      system.config.showBackstab}}
-           data-dtype="boolean"/>
+    <input type="checkbox" name="system.config.showBackstab" id="system.config.showBackstab"
+      {{checked system.config.showBackstab}} data-dtype="boolean"/>
   {{/if}}
   <div class="group-separator"></div>
   <label for="system.config.showSpells" title="{{localize 'DCC.ShowSpellsConfigHint'}}">{{localize "DCC.ShowSpellsConfig"}}</label>

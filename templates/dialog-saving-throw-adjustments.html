@@ -1,0 +1,34 @@
+<form class="actor config-dialog" autocomplete="off">
+  <div class="grid-container">
+    <p class="grid-col-span-12"><i>{{localize "DCC.SavingThrowAdjustmentsConfigHint"}}</i></p>
+    <div class="grid-col-span-12 grid-tpl-max-10 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
+      <div>
+        <h3>{{localize "DCC.SavesReflex"}}</h3>
+        <label for="system.saves.ref.classBonus">{{localize "DCC.SavingThrowClassBonus"}}</label>
+        <input type="text" name="system.saves.ref.classBonus"
+               id="system.saves.ref.classBonus"
+               value="{{system.saves.ref.classBonus}}"
+               placeholder="+0"
+        >
+        <label for="system.saves.ref.otherBonus">{{localize "DCC.SavingThrowOtherBonus"}}</label>
+        <input type="text" name="system.saves.ref.otherBonus"
+               id="system.saves.ref.otherBonus"
+               value="{{system.saves.ref.otherBonus}}"
+               placeholder="+0"
+        >
+        <label for="system.saves.ref.override">{{localize "DCC.SavingThrowOverride"}}</label>
+        <input type="text" name="system.saves.ref.override"
+               id="system.saves.ref.override"
+               value="{{system.saves.ref.override}}"
+               placeholder="+0"
+        >
+      </div>
+    </div>
+    <div class="group-separator"></div>
+    <footer class="grid-col-span-12 sheet-footer">
+      <button type="submit">
+        <i class="fas fa-save"></i>{{localize "DCC.SaveSheetConfig"}}
+      </button>
+    </footer>
+  </div>
+</form>

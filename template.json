@@ -353,6 +353,7 @@
           "computeSpeed": true,
           "computeCheckPenalty": true,
           "computeMeleeAndMissileAttackAndDamage": true,
+          "computeSavingThrows": true,
           "sortInventory": true,
           "removeEmptyItems": true,
           "showSpells": false,

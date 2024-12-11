@@ -232,7 +232,9 @@
     {{#* inline "save"}}
       <div class="saving-throw-box" id="{{id}}" data-save="{{id}}">
         <input id="system.saves.{{id}}.value" value="{{numberFormat save.value decimals=0 sign=true}}"
-               name="system.saves.{{id}}.value" data-dtype="Number" placeholder="0">
+               name="system.saves.{{id}}.value" data-dtype="Number" placeholder="0"
+               {{#if system.config.computeSavingThrows}}readonly{{/if}}
+        >
         <label for="system.saves.{{id}}.value" class="rollable" title="{{localize 'DCC.RollSavingThrowHint'}}">{{localize save.label}}</label>
       </div>
     {{/inline}}
