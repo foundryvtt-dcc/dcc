@@ -31,11 +31,17 @@ class DCCActor extends Actor {
     // Compute Melee/Missile Attack/Damage
     // Here as opposed to derived since items depend on these values
     if (config.computeMeleeAndMissileAttackAndDamage) {
-      this.calculateMeleeAndMissileAttackAndDamage()
+      this.computeMeleeAndMissileAttackAndDamage()
+    }
+
+    // Compute Saving Throws
+    // Here as opposed to derived since items depend on these values
+    if (config.computeSavingThrows) {
+      this.computeSavingThrows()
     }
 
     if (!this.isNPC) {
-      this.calculateSpellCheck()
+      this.computeSpellCheck()
     }
 
     // Set NPC computations to manual
@@ -262,9 +268,9 @@ class DCCActor extends Actor {
     return actionDice
   }
 
-  /** Calculate Melee/Missile Base Attack and Damage Modifiers
+  /** Compute Melee/Missile Base Attack and Damage Modifiers
    */
-  calculateMeleeAndMissileAttackAndDamage () {
+  computeMeleeAndMissileAttackAndDamage () {
     const attackBonus = this.system.details.attackBonus || '0'
     const strengthBonus = parseInt(this.system.abilities.str.mod) || 0
     const agilityBonus = parseInt(this.system.abilities.agl.mod) || 0
@@ -298,10 +304,41 @@ class DCCActor extends Actor {
     this.system.details.attackBonus = ensurePlus(attackBonus, false) || '+0'
   }
 
-  /**
-   * Calculate Spell Check
+  /** Compute Saving Throws
    */
-  calculateSpellCheck () {
+  computeSavingThrows () {
+    const level = this.system.details.level.value
+    const perMod = this.system.abilities.per.mod
+    const aglMod = this.system.abilities.agl.mod
+    const staMod = this.system.abilities.sta.mod
+    const refSaveClassBonus = this.system.saves.ref.classBonus
+    const refSaveOtherBonus = this.system.saves.ref.otherBonus
+    const refSaveOverride = this.system.saves.ref.override
+    const frtSaveClassBonus = this.system.saves.frt.classBonus
+    const frtSaveOtherBonus = this.system.saves.frt.otherBonus
+    const frtSaveOverride = this.system.saves.frt.override
+    const wilSaveClassBonus = this.system.saves.wil.classBonus
+    const wilSaveOtherBonus = this.system.saves.wil.otherBonus
+    const wilSaveOverride = this.system.saves.wil.override
+
+    this.system.saves.ref.value = ensurePlus( aglMod + refSaveClassBonus + refSaveOtherBonus)
+    if (refSaveOverride) {
+      this.system.saves.ref.value = ensurePlus(refSaveOverride)
+    }
+    this.system.saves.frt.value = ensurePlus(staMod + frtSaveClassBonus + frtSaveOtherBonus)
+    if (frtSaveOverride) {
+      this.system.saves.frt.value = ensurePlus(frtSaveOverride)
+    }
+    this.system.saves.wil.value = ensurePlus(perMod + wilSaveClassBonus + wilSaveOtherBonus)
+    if (wilSaveOverride) {
+      this.system.saves.wil.value = ensurePlus(wilSaveOverride)
+    }
+  }
+
+  /**
+   * Compute Spell Check
+   */
+  computeSpellCheck () {
     let abilityBonus = ensurePlus(this.system.abilities.int.mod)
     if (this.system.class.spellCheckAbility === 'per') {
       abilityBonus = ensurePlus(this.system.abilities.per.mod)
