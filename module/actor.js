@@ -78,8 +78,8 @@ class DCCActor extends Actor {
       }
     }
     data.attributes.fumble = foundry.utils.mergeObject(
-            data.attributes.fumble || {},
-            { die: fumbleDie }
+      data.attributes.fumble || {},
+      { die: fumbleDie }
     )
     if (data.config.computeCheckPenalty) {
       data.attributes.ac.checkPenalty = checkPenalty
@@ -165,34 +165,34 @@ class DCCActor extends Actor {
     const data = super.getRollData()
 
     const customData = foundry.utils.mergeObject(
-            data,
-            {
-              str: data.abilities.str.mod,
-              agi: data.abilities.agl.mod,
-              agl: data.abilities.agl.mod,
-              sta: data.abilities.sta.mod,
-              per: data.abilities.per.mod,
-              int: data.abilities.int.mod,
-              lck: data.abilities.lck.mod,
-              initiative: data.attributes.init.value,
-              maxStr: data.abilities.str.maxMod,
-              maxAgi: data.abilities.agl.maxMod,
-              maxAgl: data.abilities.agl.maxMod,
-              maxSta: data.abilities.sta.maxMod,
-              maxPer: data.abilities.per.maxMod,
-              maxInt: data.abilities.int.maxMod,
-              maxLck: data.abilities.lck.maxMod,
-              ref: data.saves.ref.value,
-              frt: data.saves.frt.value,
-              wil: data.saves.wil.value,
-              ac: data.attributes.ac.value,
-              check: data.attributes.ac.checkPenalty,
-              speed: data.attributes.speed.value,
-              hp: data.attributes.hp.value,
-              maxhp: data.attributes.hp.max,
-              level: data.details.level.value,
-              cl: data.details.level.value
-            }
+      data,
+      {
+        str: data.abilities.str.mod,
+        agi: data.abilities.agl.mod,
+        agl: data.abilities.agl.mod,
+        sta: data.abilities.sta.mod,
+        per: data.abilities.per.mod,
+        int: data.abilities.int.mod,
+        lck: data.abilities.lck.mod,
+        initiative: data.attributes.init.value,
+        maxStr: data.abilities.str.maxMod,
+        maxAgi: data.abilities.agl.maxMod,
+        maxAgl: data.abilities.agl.maxMod,
+        maxSta: data.abilities.sta.maxMod,
+        maxPer: data.abilities.per.maxMod,
+        maxInt: data.abilities.int.maxMod,
+        maxLck: data.abilities.lck.maxMod,
+        ref: data.saves.ref.value,
+        frt: data.saves.frt.value,
+        wil: data.saves.wil.value,
+        ac: data.attributes.ac.value,
+        check: data.attributes.ac.checkPenalty,
+        speed: data.attributes.speed.value,
+        hp: data.attributes.hp.value,
+        maxhp: data.attributes.hp.max,
+        level: data.details.level.value,
+        cl: data.details.level.value
+      }
     )
 
     // Get the relevant attack bonus (direct or rolled)
@@ -307,21 +307,20 @@ class DCCActor extends Actor {
   /** Compute Saving Throws
    */
   computeSavingThrows () {
-    const level = this.system.details.level.value
-    const perMod = this.system.abilities.per.mod
-    const aglMod = this.system.abilities.agl.mod
-    const staMod = this.system.abilities.sta.mod
-    const refSaveClassBonus = this.system.saves.ref.classBonus
-    const refSaveOtherBonus = this.system.saves.ref.otherBonus
-    const refSaveOverride = this.system.saves.ref.override
-    const frtSaveClassBonus = this.system.saves.frt.classBonus
-    const frtSaveOtherBonus = this.system.saves.frt.otherBonus
-    const frtSaveOverride = this.system.saves.frt.override
-    const wilSaveClassBonus = this.system.saves.wil.classBonus
-    const wilSaveOtherBonus = this.system.saves.wil.otherBonus
-    const wilSaveOverride = this.system.saves.wil.override
+    const perMod = parseInt(this.system.abilities.per.mod)
+    const aglMod = parseInt(this.system.abilities.agl.mod)
+    const staMod = parseInt(this.system.abilities.sta.mod)
+    const refSaveClassBonus = parseInt(this.system.saves.ref.classBonus || 0)
+    const refSaveOtherBonus = parseInt(this.system.saves.ref.otherBonus || 0)
+    const refSaveOverride = parseInt(this.system.saves.ref.override || 0)
+    const frtSaveClassBonus = parseInt(this.system.saves.frt.classBonus || 0)
+    const frtSaveOtherBonus = parseInt(this.system.saves.frt.otherBonus || 0)
+    const frtSaveOverride = parseInt(this.system.saves.frt.override || 0)
+    const wilSaveClassBonus = parseInt(this.system.saves.wil.classBonus || 0)
+    const wilSaveOtherBonus = parseInt(this.system.saves.wil.otherBonus || 0)
+    const wilSaveOverride = parseInt(this.system.saves.wil.override || 0)
 
-    this.system.saves.ref.value = ensurePlus( aglMod + refSaveClassBonus + refSaveOtherBonus)
+    this.system.saves.ref.value = ensurePlus(aglMod + refSaveClassBonus + refSaveOtherBonus)
     if (refSaveOverride) {
       this.system.saves.ref.value = ensurePlus(refSaveOverride)
     }
@@ -869,20 +868,20 @@ class DCCActor extends Actor {
       })
     } else {
       terms.push(
-              {
-                type: 'Compound',
-                dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-                modifierLabel: game.i18n.localize('DCC.Level'),
-                formula: level
-              }
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+          modifierLabel: game.i18n.localize('DCC.Level'),
+          formula: level
+        }
       )
       terms.push(
-              {
-                type: 'Compound',
-                dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-                modifierLabel: game.i18n.localize('DCC.AbilityMod'),
-                formula: abilityMod
-              }
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+          modifierLabel: game.i18n.localize('DCC.AbilityMod'),
+          formula: abilityMod
+        }
       )
     }
 
@@ -1192,10 +1191,10 @@ class DCCActor extends Actor {
 
     /* Roll the Attack */
     const rollOptions = Object.assign(
-            {
-              title: game.i18n.localize('DCC.ToHit')
-            },
-            options
+      {
+        title: game.i18n.localize('DCC.ToHit')
+      },
+      options
     )
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
     await attackRoll.evaluate()

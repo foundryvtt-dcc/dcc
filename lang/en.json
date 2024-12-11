@@ -103,6 +103,7 @@
   "DCC.ComputeCheckPenaltyConfigHint": "Compute Check Penalty based on equipped armor and apply it to checks",
   "DCC.ComputeMeleeAndMissileAttackAndDamage": "Compute Melee/Missile Atk/Dmg",
   "DCC.ComputeMeleeAndMissileAttackAndDamageHint": "Automatically Compute the Melee and Missile Attack and Damage Boxes on the Character tab",
+  "DCC.ComputeSavingThrows": "Compute Saving Throws",
   "DCC.ComputeSpeedConfig": "Compute Speed",
   "DCC.ComputeSpeedConfigHint": "Compute Speed from Base Speed (below) and subtracting armor speed penalties",
   "DCC.ConfigureItem": "Config",
