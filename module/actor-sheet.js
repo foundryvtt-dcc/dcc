@@ -39,18 +39,22 @@ class DCCActorSheet extends ActorSheet {
     // Header buttons shown only with Owner permission
     if (this.actor.permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
       buttons.unshift(
-        {
-          label: 'DCC.ConfigureSheet',
-          class: 'configure-actor',
-          icon: 'fas fa-code',
-          onclick: ev => this._onConfigureActor(ev),
-          tooltip: 'DCC.ConfigureSheetHint'
-        }
+              {
+                label: 'DCC.ConfigureSheet',
+                class: 'configure-actor',
+                icon: 'fas fa-code',
+                onclick: ev => this._onConfigureActor(ev),
+                tooltip: 'DCC.ConfigureSheetHint'
+              }
       )
     }
 
-    buttons[1].tooltip = 'DCC.SheetHint'
-    buttons[2].tooltip = 'DCC.TokenHint'
+    if (buttons[1]) {
+      buttons[1].tooltip = 'DCC.SheetHint'
+    }
+    if (buttons[2]) {
+      buttons[2].tooltip = 'DCC.TokenHint'
+    }
 
     return buttons
   }
@@ -584,16 +588,16 @@ class DCCActorSheet extends ActorSheet {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const weapon = this.actor.items.get(itemId)
       dragData = Object.assign(
-        weapon.toDragData(),
-        {
-          dccType: 'Weapon',
-          actorId: this.actor.id,
-          data: weapon,
-          dccData: {
-            weapon,
-            backstab: classes.contains('backstab-button')
-          }
-        }
+              weapon.toDragData(),
+              {
+                dccType: 'Weapon',
+                actorId: this.actor.id,
+                data: weapon,
+                dccData: {
+                  weapon,
+                  backstab: classes.contains('backstab-button')
+                }
+              }
       )
     }
 
@@ -601,15 +605,15 @@ class DCCActorSheet extends ActorSheet {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const item = this.actor.items.get(itemId)
       dragData = Object.assign(
-        item.toDragData(),
-        {
-          dccType: 'Item',
-          actorId: this.actor.id,
-          data: item,
-          dccData: {
-            item
-          }
-        }
+              item.toDragData(),
+              {
+                dccType: 'Item',
+                actorId: this.actor.id,
+                data: item,
+                dccData: {
+                  item
+                }
+              }
       )
     }
 
@@ -833,9 +837,9 @@ class DCCActorSheet extends ActorSheet {
       const expanded = foundry.utils.expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
-          parentElement.classList.contains('armor') ||
-          parentElement.classList.contains('spell-item') ||
-          parentElement.classList.contains('skill-field')) {
+                parentElement.classList.contains('armor') ||
+                parentElement.classList.contains('spell-item') ||
+                parentElement.classList.contains('skill-field')) {
           // Handle extra nesting in skill lists
           if (parentElement.classList.contains('skill-field')) {
             parentElement = parentElement.parentElement
