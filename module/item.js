@@ -334,7 +334,15 @@ class DCCItem extends Item {
         const table = await pack.getDocument(entry._id)
         manifestationResult = await table.draw({ roll })
       } else {
-        ui.notifications.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
+        console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
+      }
+    }
+
+    // Local Lookup
+    if (!manifestationResult) {
+      const table = game.tables.getName(manifestationTableName)
+      if (table) {
+        manifestationResult = await table.draw({ roll })
       }
     }
 
