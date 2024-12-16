@@ -4,6 +4,7 @@
   "TYPES.Item.ammunition": "Ammunition",
   "TYPES.Item.armor": "Armor",
   "TYPES.Item.equipment": "Equipment",
+  "TYPES.Item.level": "Level",
   "TYPES.Item.mount": "Mount",
   "TYPES.Item.skill": "Skill",
   "TYPES.Item.spell": "Spell",
