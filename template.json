@@ -72,7 +72,7 @@
           },
           "init": {
             "die": "1d20",
-            "value": 0
+            "value": "+0"
           },
           "initDice": {
             "value": "1d20",
@@ -353,6 +353,7 @@
           "computeSpeed": true,
           "computeCheckPenalty": true,
           "computeMeleeAndMissileAttackAndDamage": true,
+          "computeSavingThrows": true,
           "sortInventory": true,
           "removeEmptyItems": true,
           "showSpells": false,

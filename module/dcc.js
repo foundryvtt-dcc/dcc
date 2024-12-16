@@ -155,6 +155,28 @@ Hooks.once('init', async function () {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
   })
 
+  /**
+   * Get a template from the server by fetch request and caching the retrieved result
+   * Duplicated from Foundry since there is no way to pass preventIndent to the whole template otherwise
+   * @param {string} path           The web-accessible HTML template URL
+   * @param {string} [id]           An ID to register the partial with.
+   * @returns {Promise<Function>}   A Promise which resolves to the compiled Handlebars template
+   */
+  async function getTemplate (path, id) {
+    if (path in Handlebars.partials) return Handlebars.partials[path]
+    const htmlString = await new Promise((resolve, reject) => {
+      game.socket.emit('template', path, resp => {
+        if (resp.error) return reject(new Error(resp.error))
+        return resolve(resp.html)
+      })
+    })
+    const compiled = Handlebars.compile(htmlString, { preventIndent: true })
+    Handlebars.registerPartial(id ?? path, compiled)
+    console.log(`Foundry VTT | Retrieved and compiled template ${path}`)
+    return compiled
+  }
+  window.getTemplate = getTemplate
+
   // Override ChatMessage to use our template
   CONFIG.ChatMessage.template = 'systems/dcc/templates/chat-message.html'
 })

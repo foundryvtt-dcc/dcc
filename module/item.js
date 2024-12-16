@@ -20,6 +20,15 @@ class DCCItem extends Item {
 
     this.isNPC = (this.actor?.type === 'NPC')
 
+    // NPC Weapon Items
+    if (this.type === 'weapon' && this.isNPC) {
+      // Action Die Calculation
+      this.system.actionDie = this.actor?.system?.attributes?.actionDice?.value || ''
+      if (this.system.config.actionDieOverride) {
+        this.system.actionDie = this.system.config.actionDieOverride
+      }
+    }
+
     // PC Weapon Items or Un-owned Items
     if (this.type === 'weapon' && !this.isNPC) {
       // Initiative Calculation
@@ -109,11 +118,10 @@ class DCCItem extends Item {
           this.system.damage = ensurePlus(Roll.safeEval(`${this.system.damage}${this.system.damageWeaponBonus}`))
         }
       }
-      this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
-
-      // Final checkboxes that can affect things
       if (this.system.doubleIfMounted) {
-        this.system.damage = `(${this.system.damage})*2`
+        this.system.damage = `(${this.system.damageWeapon})*2${this.system.damage}`
+      } else {
+        this.system.damage = `${this.system.damageWeapon}${this.system.damage}`
       }
       if (this.system.subdual) {
         this.system.damage = `${this.system.damage}[subdual]`
