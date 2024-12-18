@@ -152,10 +152,11 @@ class DCCActorLevelChange extends FormApplication {
       this.element.find('#levelDataDisplay').html(`<h3>${levelDataHeader}</h3> ${levelDataString}`)
 
       // Hit Points
-      let hpExpression = `+(${this.object.system.attributes.hitDice.value}${ensurePlus(this.object.system?.abilities?.sta?.mod)})`
+      const hitDie = levelData['system.attributes.hitDice.value'] || '1d6'
+      let hpExpression = `+(${hitDie}${ensurePlus(this.object.system?.abilities?.sta?.mod)})`
       const levelDifference = parseInt(this.object.currentLevel) - parseInt(this.object.system.details.level.value)
       if (levelDifference !== 1) {
-        hpExpression = DiceChain.bumpDieCount(this.object.system.attributes.hitDice.value, levelDifference)
+        hpExpression = DiceChain.bumpDieCount(hitDie, levelDifference)
 
         const staModTotal = levelDifference * this.object.system?.abilities?.sta?.mod
         hpExpression = `+(${hpExpression}${ensurePlus(staModTotal)})`

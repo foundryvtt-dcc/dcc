@@ -606,6 +606,7 @@
   "DCC.system.attributes.actionDice.value": "Action Dice",
   "DCC.system.attributes.critical.die": "Crit Die",
   "DCC.system.attributes.critical.table": "Crit Table",
+  "DCC.system.attributes.hitDice.value": "Hit Die",
   "DCC.system.attributes.hp.value": "Hit Points",
   "DCC.system.attributes.hp.max": "Max Hit Points",
   "DCC.system.class.backstab": "Backstab",
