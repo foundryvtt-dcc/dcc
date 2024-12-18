@@ -36,7 +36,9 @@
     "format": "standard --fix && stylelint \"**/*.scss\" --fix",
     "test": "vitest .",
     "scss": "sass styles/dcc.scss styles/dcc.css",
-    "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css"
+    "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css",
+    "todb": "node module/compilePacks.js",
+    "tojson": "node module/extractPacks.js"
   },
   "type": "module",
   "version": "0.50.0"

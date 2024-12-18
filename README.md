@@ -10,6 +10,8 @@ Join us on the [virtual-tabletop channel](https://discord.gg/2PR9YH9) on the Goo
 
 You can purchase a module containing copyrighted Goodman Games content ready for out-of-the-box use in Foundry VTT from the [Goodman Games Web Store](https://goodman-games.com/store/product/foundryvtt-dcc-compendium-license-key/) .
 
+Work Process (for developers): https://github.com/foundryvtt-dcc/dcc/wiki/GitHub-Flow-Process-with-JSON-LevelDB
+
 ###### Maintainers
 * Steve Barnett (@mooped)
 * Christian Ovsenik (@algnc)
@@ -21,7 +23,7 @@ You can purchase a module containing copyrighted Goodman Games content ready for
 * Jonathan Dorety (@jdorety)
 * Radoslaw Grzanka (@radoslawg)
 * Tyler Kostuch (@TylerKostuch)
-* @sasquach45932 
+* @sasquach45932
 
 Contains some icon art from game-icons.net.
 

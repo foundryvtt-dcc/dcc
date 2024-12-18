@@ -1,0 +1,35 @@
+{
+  "name": "Set Up NPC Token",
+  "type": "script",
+  "author": "QljWNZW91EoRV9gI",
+  "img": "icons/svg/stoned.svg",
+  "scope": "global",
+  "command": "if (actor && token) { \n  game.dcc.getMacroActor()\n  token.document.update({\n    \"displayName\": CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER,\n    \"img\": actor.img,\n    \"bar1\": {\n      attribute: \"attributes.hp\"\n    },\n    \"bar2\": {\n      attribute: \"attributes.ac.value\"\n    },\n    \"displayBars\": CONST.TOKEN_DISPLAY_MODES.OWNER_HOVER\n  })\n} else {\n \n ui.notifications.warn(game.i18n.localize(\"DCC.MacroNoTokenSelected\"))\n}",
+  "folder": null,
+  "sort": 0,
+  "flags": {
+    "core": {
+      "sourceId": "Macro.gcZNHJLJHwfFgDBJ"
+    },
+    "combat-utility-belt": {
+      "macroTrigger": ""
+    }
+  },
+  "_id": "ErepavP4zvGhUfz5",
+  "_stats": {
+    "coreVersion": "12.331",
+    "systemId": null,
+    "systemVersion": null,
+    "createdTime": null,
+    "modifiedTime": 1730562468214,
+    "lastModifiedBy": "Z5sF20aqpqiMr5lV",
+    "compendiumSource": null,
+    "duplicateSource": null
+  },
+  "ownership": {
+    "default": 0,
+    "P51jlrrEqhAFF2kz": 3,
+    "QljWNZW91EoRV9gI": 3
+  },
+  "_key": "!macros!ErepavP4zvGhUfz5"
+}

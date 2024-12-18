@@ -1,0 +1,64 @@
+{
+  "_id": "RvxZne9f9frrYsCH",
+  "name": "Credits",
+  "folder": null,
+  "sort": 0,
+  "flags": {
+    "core": {
+      "sourceId": "JournalEntry.E3C8K6RHnuswkYoB"
+    }
+  },
+  "pages": [
+    {
+      "name": "Credits",
+      "type": "text",
+      "title": {
+        "show": false,
+        "level": 1
+      },
+      "text": {
+        "format": 1,
+        "content": "<p>Based on material ©2012 Goodman Games, used with permission.</p><p></p><p>Contains some icon art from game-icons.net and <a href=\"https://www.drivethrurpg.com/en/publisher/762/outland-arts/category/30007/fantasy-clip-inks?keyword=fantasy%20clip%20inks\">Fantasy Clip Inks</a> (licensed by Tim L. White).</p><p></p><p>Note that this system does not contain content from copyrighted DCC products, only rollable character sheets.</p><p>You can purchase modules containing copyrighted Goodman Games content ready for out-of-the-box use in Foundry VTT from the <a href=\"https://goodman-games.com/store/product/foundryvtt-dcc-compendium-license-key/\">Goodman Games Web Store.</a></p><p></p><p>The <strong>online user guide</strong> for this system can be found <a href=\"https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide\">here</a>.</p><p></p><p>Join us on the <a href=\"https://discord.gg/foundryvtt\">FoundryVTT Discord</a> on the #dcc channel to chat and get help.</p><p></p><h2>Maintainers</h2><ul><li>Steve Barnett (@mooped)</li><li>Christian Ovsenik (@algnc)</li><li>Tim L. White (@TimLWhite, @cyface, tim@cyface.com)</li></ul><p></p><h2>Contributors</h2><ul><li>Connor Stone (@ckwk)</li><li>Alexander Dotor-Mohring (@adotor)</li><li>Radoslaw Grzanka (@radoslawg)</li><li>Tyler Kostuck (@TylerKostuch)</li><li>@sasquach45932</li></ul>"
+      },
+      "_stats": {
+        "coreVersion": "12.331",
+        "systemId": null,
+        "systemVersion": null,
+        "createdTime": null,
+        "modifiedTime": 1730563714226,
+        "lastModifiedBy": "Z5sF20aqpqiMr5lV",
+        "compendiumSource": null,
+        "duplicateSource": null
+      },
+      "_id": "kJLg3YsUg96AmRf7",
+      "system": {},
+      "image": {},
+      "video": {
+        "controls": true,
+        "volume": 0.5
+      },
+      "src": null,
+      "sort": 0,
+      "ownership": {
+        "default": -1
+      },
+      "flags": {},
+      "_key": "!journal.pages!RvxZne9f9frrYsCH.kJLg3YsUg96AmRf7"
+    }
+  ],
+  "_stats": {
+    "coreVersion": "12.328",
+    "systemId": null,
+    "systemVersion": null,
+    "createdTime": null,
+    "modifiedTime": 1720381698340,
+    "lastModifiedBy": "LFdps7vf20kqQZZv",
+    "compendiumSource": null,
+    "duplicateSource": null
+  },
+  "ownership": {
+    "default": 0,
+    "wWErSsSXezizF0nw": 3
+  },
+  "_key": "!journal!RvxZne9f9frrYsCH"
+}
