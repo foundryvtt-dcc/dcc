@@ -1,4 +1,4 @@
-/* global FormApplication, game, CONFIG */
+/* global FormApplication, game, CONFIG, ui */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus } from './utilities.js'
@@ -12,6 +12,16 @@ class DCCActorLevelChange extends FormApplication {
     options.height = 580
     options.resizable = true
     return options
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Runs when the dialog is closed without submitting
+   */
+  async close (options = {}) {
+    this.object.currentLevel = this.object.system.details.level.value || 0
+    await super.close(options)
   }
 
   /* -------------------------------------------- */
@@ -37,7 +47,12 @@ class DCCActorLevelChange extends FormApplication {
     data.isZero = (this.object.system.details.level.value === 0)
     data.user = game.user
     data.config = CONFIG.DCC
-    data.currentLevel = this.object.system.details.level.value
+    data.currentLevel = this.object.system.details.level.value || 0
+    data.classNameLower = this.object.system.class.className.toLowerCase()
+    if (!data.classNameLower || data.classNameLower === 'generic') {
+      ui.notifications.error(game.i18n.localize('DCC.ChooseAClass'))
+      return this.close({ force: true })
+    }
     return data
   }
 
@@ -125,7 +140,7 @@ class DCCActorLevelChange extends FormApplication {
   }
 
   async _updateLevelUpDisplay () {
-    const levelItem = await this._lookupLevelItem(this.object.system.class.className.toLowerCase(), this.object.currentLevel)
+    const levelItem = await this._lookupLevelItem(this.object.classNameLower, this.object.currentLevel)
     if (levelItem) {
       // Level Data
       const levelData = await this._getLevelDataFromItem(levelItem)
@@ -172,17 +187,17 @@ class DCCActorLevelChange extends FormApplication {
 
     // Try and get data for the new level from the compendium
     const newLevel = this.object.currentLevel
-    const levelItem = await this._lookupLevelItem(this.object.system.class.className.toLowerCase(), newLevel)
+    const levelItem = await this._lookupLevelItem(this.object.classNameLower, newLevel)
 
     if (levelItem) {
       // Get Level Data for new level and update this actor
-      let levelData = await this._getLevelDataFromItem(levelItem)
+      const levelData = await this._getLevelDataFromItem(levelItem)
       levelData['system.details.level.value'] = newLevel
 
       // Roll new Hit Points
       if (this.object.newHitPointsExpression) {
         const hpRoll = new Roll(this.object.newHitPointsExpression)
-        await hpRoll.toMessage({ 'flavor': game.i18n.localize('DCC.HitDiceRoll'), 'speaker': ChatMessage.getSpeaker({ actor: this.object }) })
+        await hpRoll.toMessage({ flavor: game.i18n.localize('DCC.HitDiceRoll'), speaker: ChatMessage.getSpeaker({ actor: this.object }) })
         const newHp = this.object.system.attributes.hp.value + hpRoll.total
         const newMaxHp = parseInt(this.object.system.attributes.hp.max) + hpRoll.total
         levelData['system.attributes.hp.value'] = newHp
