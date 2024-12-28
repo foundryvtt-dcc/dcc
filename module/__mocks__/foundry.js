@@ -10,6 +10,12 @@ import fs from 'fs'
 // console.log('Loading Foundry Mocks')
 
 /**
+ * FormApplication
+ */
+class FormApplicationMock {}
+global.FormApplication = FormApplicationMock
+
+/**
  * Item
  */
 class MockItem {
