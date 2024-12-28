@@ -516,7 +516,9 @@ Hooks.on('renderChatMessage', (message, html, data) => {
   }
 
   if (emoteRolls === true) {
-    message.setFlag('dcc', 'emoteRoll', true)
+    if (game.user.isGM) {
+      message.setFlag('dcc', 'emoteRoll', true)
+    }
     chat.emoteAbilityRoll(message, html, data)
     chat.emoteApplyDamageRoll(message, html, data)
     chat.emoteAttackRoll(message, html, data)

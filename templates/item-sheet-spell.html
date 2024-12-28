@@ -65,7 +65,7 @@
                    placeholder="+0" data-dtype="String"/>
             <label for="system.spellCheck.penalty" style="font-size: 11px;">{{localize "DCC.CheckPenalty"}}:</label>
             <input type="text" name="system.spellCheck.penalty"
-                   value="{{numberFormat system.spellCheck.penalty decimals=0 sign=true}}"
+                   value="{{system.spellCheck.penalty}}"
               {{#if system.config.inheritCheckPenalty}}
                    title="{{localize 'DCC.InheritTooltip'}}"
                    disabled

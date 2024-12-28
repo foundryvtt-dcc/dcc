@@ -162,7 +162,7 @@ class DCCItem extends Item {
    * @param {String} abilityId    The ability used for this spell
    * @param options
    */
-  async rollSpellCheck (abilityId = 'int', options = {}) {
+  async rollSpellCheck (abilityId = '', options = {}) {
     if (this.type !== 'spell') { return }
 
     const actor = this.actor || this.parent
@@ -243,7 +243,7 @@ class DCCItem extends Item {
 
     // Lookup the appropriate table
     const resultsRef = this.system.results
-    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table
+    const predicate = t => t.name === resultsRef.table || t._id === resultsRef.table.replace('RollTable.', '')
     let resultsTable
     // If a collection is specified then check the appropriate pack for the spell
     if (resultsRef.collection) {
@@ -334,7 +334,15 @@ class DCCItem extends Item {
         const table = await pack.getDocument(entry._id)
         manifestationResult = await table.draw({ roll })
       } else {
-        ui.notifications.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
+        console.warn(game.i18n.localize('DCC.SpellSideEffectsCompendiumNotFoundWarning'))
+      }
+    }
+
+    // Local Lookup
+    if (!manifestationResult) {
+      const table = game.tables.getName(manifestationTableName)
+      if (table) {
+        manifestationResult = await table.draw({ roll })
       }
     }
 
