@@ -1,0 +1,32 @@
+{
+  "name": "Update All Players",
+  "type": "script",
+  "author": "QljWNZW91EoRV9gI",
+  "img": "icons/svg/dice-target.svg",
+  "scope": "global",
+  "command": "for (const _actor of game.actors) {\n  if (!_actor) { continue }\n  if (_actor.type !== 'Player') { continue }\n  _actor.update({\n    \"token.name\": _actor.name,\n    \"token.displayName\": CONST.TOKEN_DISPLAY_MODES.HOVER,\n    \"token.img\": _actor.img,\n    \"token.bar1\": {\n      attribute: \"attributes.hp\"\n    },\n    \"token.bar2\": {\n      attribute: \"attributes.ac.value\"\n    },\n    \"token.displayBars\": CONST.TOKEN_DISPLAY_MODES.ALWAYS,\n    \"token.vision\": true,\n    \"token.actorLink\": true\n  })\n}",
+  "folder": null,
+  "sort": 0,
+  "flags": {
+    "core": {
+      "sourceId": "Macro.zj9e4K1GnzvVr6N7"
+    }
+  },
+  "_id": "KRmTTJ41ty9y59lG",
+  "_stats": {
+    "coreVersion": "12.328",
+    "systemId": null,
+    "systemVersion": null,
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null
+  },
+  "ownership": {
+    "default": 0,
+    "P51jlrrEqhAFF2kz": 3,
+    "QljWNZW91EoRV9gI": 3
+  },
+  "_key": "!macros!KRmTTJ41ty9y59lG"
+}

@@ -284,7 +284,7 @@ a.inline-roll {
 }
 
 .chat-message .table-draw .mercurial,
- .chat-message .table-draw .manifestation, {
+.chat-message .table-draw .manifestation, {
   border-top: 1px solid var(--color-border-light-primary);
   color: var(--color-text-dark-secondary);
   font-size: var(--font-size-12);
@@ -676,6 +676,22 @@ a.inline-roll {
       min-height: 288px;
     }
   }
+
+  textarea {
+    background: none;
+    border: 0;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
+    line-height: 15px;
+    height: 100%;
+    padding: 3px;
+    resize: none;
+    text-align: left;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
 }
 
 /* ----------------------------------------- */
@@ -803,6 +819,22 @@ a.inline-roll {
     content: '\f723';
   }
 
+  a[data-tab='level']::before {
+    content: '\f3bf';
+  }
+
+  a[data-tab='level-lawful']::before {
+    content: '\f24e';
+  }
+
+  a[data-tab='level-neutral']::before {
+    content: '\3d';
+  }
+
+  a[data-tab='level-chaotic']::before {
+    content: '\f7d4';
+  }
+
   a[data-tab='manifestation']::before {
     content: '\f890';
   }
@@ -824,7 +856,7 @@ a.inline-roll {
   }
 
   a[data-tab='spells']::before,
- a[data-tab='spell']::before, {
+  a[data-tab='spell']::before, {
     content: '\f6b8';
   }
 
@@ -1146,8 +1178,7 @@ form.dcc-roll-modifier {
       padding-top: 2px;
     }
 
-    input,
- select {
+    input, select {
       font-size: 14px;
       height: 17px;
       vertical-align: middle;
@@ -1218,6 +1249,7 @@ form.dcc-roll-modifier {
     input {
       border: 0;
       font-size: 14px;
+      height: 15px;
       margin: 4px 8px 4px 8px;
     }
 

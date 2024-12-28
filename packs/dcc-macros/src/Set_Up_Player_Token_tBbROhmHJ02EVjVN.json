@@ -1,0 +1,35 @@
+{
+  "name": "Set Up Player Token",
+  "type": "script",
+  "author": "QljWNZW91EoRV9gI",
+  "img": "icons/svg/aura.svg",
+  "scope": "global",
+  "command": "if (actor && token) { \n  token.document.update({\n    \"name\": actor.name,\n    \"displayName\": CONST.TOKEN_DISPLAY_MODES.HOVER,\n    \"img\": actor.img,\n    \"bar1\": {\n      attribute: \"attributes.hp\"\n    },\n    \"bar2\": {\n      attribute: \"attributes.ac.value\"\n    },\n    \"displayBars\": CONST.TOKEN_DISPLAY_MODES.ALWAYS,\n    \"vision\": true,\n    \"actorLink\": true\n  })\n} else {\n \n ui.notifications.warn(game.i18n.localize(\"DCC.MacroNoTokenSelected\"))\n}",
+  "folder": null,
+  "sort": 0,
+  "flags": {
+    "core": {
+      "sourceId": "Macro.t5crrNVau7wgKpIT"
+    },
+    "combat-utility-belt": {
+      "macroTrigger": ""
+    }
+  },
+  "_id": "tBbROhmHJ02EVjVN",
+  "_stats": {
+    "coreVersion": "12.331",
+    "systemId": null,
+    "systemVersion": null,
+    "createdTime": null,
+    "modifiedTime": 1730562457071,
+    "lastModifiedBy": "Z5sF20aqpqiMr5lV",
+    "compendiumSource": null,
+    "duplicateSource": null
+  },
+  "ownership": {
+    "default": 0,
+    "P51jlrrEqhAFF2kz": 3,
+    "QljWNZW91EoRV9gI": 3
+  },
+  "_key": "!macros!tBbROhmHJ02EVjVN"
+}

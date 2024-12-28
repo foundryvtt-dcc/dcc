@@ -116,6 +116,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/item-sheet-partial-description.html',
     'systems/dcc/templates/item-sheet-partial-values.html',
     'systems/dcc/templates/item-sheet-armor.html',
+    'systems/dcc/templates/item-sheet-level.html',
     'systems/dcc/templates/item-sheet-treasure.html',
     'systems/dcc/templates/item-sheet-weapon.html',
     'systems/dcc/templates/item-sheet-weapon-npc.html',
@@ -486,10 +487,7 @@ async function processSpellCheck (actor, spellData) {
 /* -------------------------------------------- */
 // Create a macro when a rollable is dropped on the hotbar
 Hooks.on('hotbarDrop', (bar, data, slot) => {
-  if (['Item', 'ActiveEffect'].includes(data.type)) {
-    createDCCMacro(data, slot)
-    return false
-  }
+  createDCCMacro(data, slot)
 })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
@@ -582,6 +580,13 @@ Hooks.on('dcc.setLayOnHandsTable', (value, fromSystemSetting = false) => {
   // Set lay on hands table if unset, or if applying the system setting (which takes precedence)
   if (fromSystemSetting || !CONFIG.DCC.layOnHandsTable) {
     CONFIG.DCC.layOnHandsTable = value
+  }
+})
+
+// Level Data
+Hooks.on('dcc.setLevelData', (value, fromSystemSetting = false) => {
+  if (fromSystemSetting || !CONFIG.DCC.levelData) {
+    CONFIG.DCC.levelData = value
   }
 })
 

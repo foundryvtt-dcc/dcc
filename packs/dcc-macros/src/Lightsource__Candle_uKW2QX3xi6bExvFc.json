@@ -1,0 +1,35 @@
+{
+  "name": "Lightsource: Candle",
+  "type": "script",
+  "author": "QljWNZW91EoRV9gI",
+  "img": "icons/svg/obelisk.svg",
+  "scope": "global",
+  "command": "if (token) {\n  token.document.update({\n    light: {\n      dim: 20,\n      bright: 5,\n      animation: {\n        speed: 1,\n        intensity: 1,\n        type: 'torch'\n      },\n      color: '#9c6d0c',\n      alpha: 0.1\n    }\n  })\n} else {\n \n ui.notifications.warn(game.i18n.localize(\"DCC.MacroNoTokenSelected\"))\n}",
+  "folder": null,
+  "sort": 0,
+  "flags": {
+    "core": {
+      "sourceId": "Macro.plZe7KH6AVX0Tb6t"
+    },
+    "combat-utility-belt": {
+      "macroTrigger": ""
+    }
+  },
+  "_id": "uKW2QX3xi6bExvFc",
+  "_stats": {
+    "coreVersion": "12.328",
+    "systemId": null,
+    "systemVersion": null,
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null
+  },
+  "ownership": {
+    "default": 0,
+    "P51jlrrEqhAFF2kz": 3,
+    "QljWNZW91EoRV9gI": 3
+  },
+  "_key": "!macros!uKW2QX3xi6bExvFc"
+}

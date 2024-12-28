@@ -191,7 +191,7 @@
 
     {{!-- Melee Attack Values --}}
     <div class="melee-missile-attack-damage grid-col-span-2">
-      <div class="dark-border grid-tpl-max mb-8">
+      <div class="dark-border grid-tpl-max mb-10">
         <label for="system.details.attackHitBonus.melee.value" class="dark-title"
                title="{{localize 'DCC.MeleeAttackHint'}}">{{{localize 'DCC.MeleeAttack'}}}</label>
         <input id="system.details.attackHitBonus.melee.value" name="system.details.attackHitBonus.melee.value"
@@ -199,7 +199,7 @@
                {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
         >
       </div>
-      <div class="dark-border grid-tpl-max mb-8">
+      <div class="dark-border grid-tpl-max mb-10">
         <label for="system.details.attackDamageBonus.melee.value" class="dark-title" title="{{localize 'DCC.MeleeDamageHint'}}">
           {{{localize 'DCC.MeleeDamage'}}}
         </label>
@@ -209,7 +209,7 @@
         >
       </div>
       {{!-- Missile Attack Values --}}
-      <div class="dark-border grid-tpl-max mb-8">
+      <div class="dark-border grid-tpl-max mb-11">
         <label for="system.details.attackHitBonus.missile.value" class="dark-title" title="{{localize 'DCC.MissileAttackHint'}}">
           {{{localize 'DCC.MissileAttack'}}}</label>
         <input id="system.details.attackHitBonus.missile.value" name="system.details.attackHitBonus.missile.value"
@@ -217,7 +217,7 @@
                {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
         >
       </div>
-      <div class="dark-border grid-tpl-max mb-8">
+      <div class="dark-border grid-tpl-max mb-11">
         <label for="system.details.attackDamageBonus.missile.value" class="dark-title" title="{{localize 'DCC.MissileDamageHint'}}">
           {{{localize 'DCC.MissileDamage'}}}
         </label>
@@ -231,8 +231,10 @@
     {{!-- Saving throws --}}
     {{#* inline "save"}}
       <div class="saving-throw-box" id="{{id}}" data-save="{{id}}">
-        <input id="system.saves.{{id}}.value" value="{{numberFormat save.value decimals=0 sign=true}}"
-               name="system.saves.{{id}}.value" data-dtype="Number" placeholder="0">
+        <input id="system.saves.{{id}}.value" value="{{save.value}}"
+               name="system.saves.{{id}}.value" placeholder="+0"
+               {{#if system.config.computeSavingThrows}}readonly{{/if}}
+        >
         <label for="system.saves.{{id}}.value" class="rollable" title="{{localize 'DCC.RollSavingThrowHint'}}">{{localize save.label}}</label>
       </div>
     {{/inline}}

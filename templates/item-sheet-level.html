@@ -1,0 +1,65 @@
+<form class="{{cssClass}} sheet-body" autocomplete="off">
+  <!-- Nav -->
+  <nav class="sheet-tabs tabs" data-group="item">
+    <a data-tab="level">{{localize "DCC.Level"}}</a>
+    <a data-tab="level-lawful">{{localize "DCC.AlignmentL"}}</a>
+    <a data-tab="level-neutral">{{localize "DCC.AlignmentN"}}</a>
+    <a data-tab="level-chaotic">{{localize "DCC.AlignmentC"}}</a>
+  </nav>
+
+  <section style="height: 100%;">
+    <div class="tab" data-group="item" data-tab="level" style="height: calc(100% - 34px);">
+      <div class="tab-body" style="grid-template-rows: 50px auto; height: 100%">
+        <div class="grid-col-span-12 grid-col-gap-8 mb-5">
+          <div class="grid-tpl-max-auto">
+            <label for="name">{{localize "DCC.Name"}}</label>
+            <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
+          </div>
+          <div class="grid-tpl-max-auto">
+            <label for="system.class">{{localize "DCC.Class"}}</label>
+            <input id="system.class" name="system.class" value="{{item.system.class}}"
+                   placeholder="" autocomplete="off" size="25">
+            <label for="system.level">{{localize "DCC.Level"}}</label>
+            <input id="system.level" name="system.level" value="{{item.system.level}}"
+                   placeholder="" autocomplete="off" size="25">
+          </div>
+        </div>
+
+        <div class="dark-border grid-col-span-12 mt-8">
+          <label class="dark-title" for="system.levelData" style="margin: 0">{{localize "DCC.LevelData"}}</label>
+          <textarea id="system.levelData" name="system.levelData" style="height: 100%">{{system.levelData}}</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="tab" data-group="item" data-tab="level-lawful" style="height: calc(100% - 34px);">
+      <div class="tab-body" style="height: 100%">
+        <div class="grid-col-span-12 grid-tpl-max-50 grid-col-gap-8" style="margin-bottom: 5px; height: 100%">
+          <div class="dark-border grid-col-span-12" style="height: 100%">
+            <label class="dark-title" for="system.levelDataLawful" style="margin: 0">{{localize "DCC.LevelData"}} - {{localize "DCC.AlignmentL"}}</label>
+            <textarea id="system.levelDataLawful" name="system.levelDataLawful" style="height: 100%">{{system.levelDataLawful}}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab" data-group="item" data-tab="level-neutral" style="height: calc(100% - 34px);">
+      <div class="tab-body" style="height: 100%">
+        <div class="grid-col-span-12 grid-tpl-max-50 grid-col-gap-8" style="margin-bottom: 5px; height: 100%">
+          <div class="dark-border grid-col-span-12" style="height: 100%">
+            <label class="dark-title" for="system.levelDataNeutral" style="margin: 0">{{localize "DCC.LevelData"}} - {{localize "DCC.AlignmentN"}}</label>
+            <textarea id="system.levelDataNeutral" name="system.levelDataNeutral" style="height:100%">{{system.levelDataNeutral}}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab" data-group="item" data-tab="level-chaotic" style="height: calc(100% - 34px);">
+      <div class="tab-body" style="height: 100%">
+        <div class="grid-col-span-12 grid-tpl-max-50 grid-col-gap-8" style="margin-bottom: 5px; height: 100%">
+          <div class="dark-border grid-col-span-12" style="height: 100%">
+            <label class="dark-title" for="system.levelDataChaotic" style="margin: 0">{{localize "DCC.LevelData"}} - {{localize "DCC.AlignmentC"}}</label>
+            <textarea id="system.levelDataChaotic" name="system.levelDataChaotic" style="height:100%">{{system.levelDataChaotic}}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</form>

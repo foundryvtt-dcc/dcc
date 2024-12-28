@@ -3,6 +3,7 @@
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
+import SavingThrowConfig from './saving-throw-config.js'
 import EntityImages from './entity-images.js'
 
 /**
@@ -275,10 +276,16 @@ class DCCActorSheet extends ActorSheet {
       // Saving Throws
       html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
       html.find('label[for*="system.saves"]').each(makeDraggable)
+      if (this.object.system.config.computeSavingThrows) {
+        html.find('input[id*="system.saves"]').click(this._onConfigureSavingThrows.bind(this))
+      }
 
       // Skills
       html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
       html.find('label.skill-check').each(makeDraggable)
+
+      // Level Change
+      html.find('label[for*="system.details.level.value"]').click(this._onLevelChange.bind(this))
 
       // Luck Die
       html.find('label[for*="system.class.luckDie"]').click(this._onRollLuckDie.bind(this))
@@ -366,6 +373,19 @@ class DCCActorSheet extends ActorSheet {
     new MeleeMissileBonusConfig(this.actor, {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 400) / 2
+    }).render(true)
+  }
+
+  /**
+   * Display saving throw configuration settings
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onConfigureSavingThrows (event) {
+    event.preventDefault()
+    new SavingThrowConfig(this.actor, {
+      top: this.position.top + 40,
+      left: this.position.left + (this.position.width - 250) / 2
     }).render(true)
   }
 
@@ -640,6 +660,16 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
+
+  /**
+   * Handle changing Level
+   * @param {Event} event   The originating click event
+   * @private
+   */
+  _onLevelChange (event) {
+    event.preventDefault()
+    this.actor.levelChange()
+  }
 
   /**
    * Fill options for a roll based on event
