@@ -50,3 +50,11 @@ dcc.lock
 
 # Mac cache files
 .DS_store
+
+# Foundry DB Files
+packs/**/*.ldb
+packs/**/*.log
+packs/**/LOCK
+packs/**/LOG*
+packs/**/CURRENT
+packs/**/MANIFEST*
