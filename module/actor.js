@@ -34,14 +34,11 @@ class DCCActor extends Actor {
       this.computeMeleeAndMissileAttackAndDamage()
     }
 
-    // Compute Saving Throws
-    // Here as opposed to derived since items depend on these values
-    if (config.computeSavingThrows) {
-      this.computeSavingThrows()
-    }
-
     if (!this.isNPC) {
       this.computeSpellCheck()
+      if (config.computeSavingThrows) {
+        this.computeSavingThrows()
+      }
     }
 
     // Set NPC computations to manual

@@ -276,7 +276,7 @@ class DCCActorSheet extends ActorSheet {
       // Saving Throws
       html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
       html.find('label[for*="system.saves"]').each(makeDraggable)
-      if (this.object.system.config.computeSavingThrows) {
+      if (this.object.system.config.computeSavingThrows && this.isPC) {
         html.find('input[id*="system.saves"]').click(this._onConfigureSavingThrows.bind(this))
       }
 
