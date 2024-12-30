@@ -970,8 +970,8 @@ class DCCActor extends Actor {
     // Damage roll
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      damageRollFormula = damageRollFormula.replaceAll(this.system.details.attackBonus, `+${attackRollResult.deedRollTotalResult}`)
-      damageRollFormula = damageRollFormula.replaceAll('@ab', attackRollResult.deedRollTotalResult)
+      damageRollFormula = damageRollFormula.replaceAll(this.system.details.attackBonus, `+${attackRollResult.deedDieRollResult}`)
+      damageRollFormula = damageRollFormula.replaceAll('@ab', attackRollResult.deedDieRollResult)
     }
     if (options.backstab && weapon.system?.backstabDamage) {
       damageRollFormula = damageRollFormula.replace(weapon.system?.damageWeapon, weapon.system?.backstabDamage)
@@ -1150,7 +1150,7 @@ class DCCActor extends Actor {
    */
   async rollToHit (weapon, options = {}) {
     /* Grab the To Hit modifier */
-    const toHit = weapon.system?.toHit
+    const toHit = weapon.system?.toHit.replaceAll('@ab', this.system.details.attackBonus)
 
     const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
 
