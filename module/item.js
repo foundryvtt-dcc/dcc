@@ -19,7 +19,7 @@ class DCCItem extends Item {
     }
 
     this.isNPC = (this.actor?.type === 'NPC')
-    this.isPC = (this.object.type === 'Player')
+    this.isPC = (this.actor?.type === 'Player')
 
     // NPC Weapon Items
     if (this.type === 'weapon' && this.isNPC) {
@@ -27,6 +27,9 @@ class DCCItem extends Item {
       this.system.actionDie = this.actor?.system?.attributes?.actionDice?.value || ''
       if (this.system.config.actionDieOverride) {
         this.system.actionDie = this.system.config.actionDieOverride
+      }
+      if (!this.system.damage && this.system.damageWeapon) {
+        this.system.damage = this.system.damageWeapon
       }
     }
 
