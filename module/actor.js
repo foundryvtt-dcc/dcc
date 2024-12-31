@@ -2,7 +2,6 @@
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult } from './utilities.js'
-import DCCActorConfig from './actor-config.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 // noinspection JSUnusedGlobalSymbols
