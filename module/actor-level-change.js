@@ -1,4 +1,4 @@
-/* global FormApplication, game, CONFIG, ui */
+/* global ChatMessage, FormApplication, game, CONFIG, Roll, ui */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus } from './utilities.js'
@@ -90,7 +90,7 @@ class DCCActorLevelChange extends FormApplication {
         .trim() // Remove leading/trailing whitespace
         .split('\n') // Split into lines
         .reduce((acc, line) => {
-          let [key, value] = line.split('=')
+          const [key, value] = line.split('=')
           acc[key] = isNaN(value) ? value : Number(value) // Convert numeric values
           return acc
         }, {})
@@ -195,6 +195,13 @@ class DCCActorLevelChange extends FormApplication {
       const levelData = await this._getLevelDataFromItem(levelItem)
       levelData['system.details.level.value'] = newLevel
 
+      // Adjust ActionDice
+      const actionDice = levelData['system.attributes.actionDice.value']
+      levelData['system.config.actionDice'] = actionDice
+      if (actionDice.includes(',')) {
+        levelData['system.attributes.actionDice.value'] = actionDice.split(',')[0].trim()
+      }
+
       // Roll new Hit Points
       if (this.object.newHitPointsExpression) {
         const hpRoll = new Roll(this.object.newHitPointsExpression)
@@ -218,7 +225,7 @@ class DCCActorLevelChange extends FormApplication {
         flavor: game.i18n.format('DCC.LevelChanged', { level: newLevel }),
         speaker: ChatMessage.getSpeaker({ actor: this.object }),
         flags: {
-          'dcc.isLevelChange': true,
+          'dcc.isLevelChange': true
         },
         content: levelDataString
       }
