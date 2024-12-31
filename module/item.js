@@ -19,6 +19,7 @@ class DCCItem extends Item {
     }
 
     this.isNPC = (this.actor?.type === 'NPC')
+    this.isPC = (this.object.type === 'Player')
 
     // NPC Weapon Items
     if (this.type === 'weapon' && this.isNPC) {
@@ -30,7 +31,7 @@ class DCCItem extends Item {
     }
 
     // PC Weapon Items or Un-owned Items
-    if (this.type === 'weapon' && !this.isNPC) {
+    if (this.type === 'weapon' && this.isPC) {
       // Initiative Calculation
       this.system.initiativeDie = this.actor?.system?.attributes?.init?.die || '1d20'
       if (this.system.twoHanded) {

@@ -15,6 +15,7 @@ class DCCActor extends Actor {
     super.prepareBaseData()
 
     this.isNPC = (this.type === 'NPC')
+    this.isPC = (this.object.type === 'Player')
 
     // Ability modifiers
     const abilities = this.system.abilities
@@ -27,24 +28,24 @@ class DCCActor extends Actor {
     const config = this._getConfig()
     const data = this.system
 
+    // Set NPC computations to manual
+    if (this.isNPC) {
+      this.system.config.computeSpeed = false
+      this.system.config.computeCheckPenalty = false
+      this.system.config.computeMeleeAndMissileAttackAndDamage = false
+    }
+
     // Compute Melee/Missile Attack/Damage
     // Here as opposed to derived since items depend on these values
     if (config.computeMeleeAndMissileAttackAndDamage) {
       this.computeMeleeAndMissileAttackAndDamage()
     }
 
-    if (!this.isNPC) {
+    if (this.isPC) {
       this.computeSpellCheck()
       if (config.computeSavingThrows) {
         this.computeSavingThrows()
       }
-    }
-
-    // Set NPC computations to manual
-    if (this.isNPC) {
-      this.system.config.computeSpeed = false
-      this.system.config.computeCheckPenalty = false
-      this.system.config.computeMeleeAndMissileAttackAndDamage = false
     }
 
     // Cap level if required
