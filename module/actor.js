@@ -967,8 +967,14 @@ class DCCActor extends Actor {
     // Damage roll
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      damageRollFormula = damageRollFormula.replaceAll(this.system.details.attackBonus, `+${attackRollResult.deedDieRollResult}`)
-      damageRollFormula = damageRollFormula.replaceAll('@ab', attackRollResult.deedDieRollResult)
+      const deedDie = attackRollResult.deedDieFormula.replace('1d', 'd')
+      damageRollFormula = damageRollFormula.replaceAll(deedDie, `+${attackRollResult.deedDieRollResult}`)
+      if (damageRollFormula.includes('@ab')) {
+        // This does not handle very high level characters that might have a deed die and a deed die modifier
+        // But since @ab really should only be for NPCs, we don't have a way of splitting out such a mod from a strength mod
+        // So when building NPCs, ensure that @ab really only accounts for the deed die, not a deed die mod, you can add that to the damage formula
+        damageRollFormula = damageRollFormula.replaceAll('@ab', attackRollResult.deedDieRollResult)
+      }
     }
     if (options.backstab && weapon.system?.backstabDamage) {
       damageRollFormula = damageRollFormula.replace(weapon.system?.damageWeapon, weapon.system?.backstabDamage)
@@ -1004,7 +1010,6 @@ class DCCActor extends Actor {
     const deedDieRoll = attackRollResult.deedDieRoll
     const deedDieFormula = attackRollResult.deedDieFormula
     const deedDieRollResult = attackRollResult.deedDieRollResult
-    const deedRollTotalResult = attackRollResult.deedRollTotalResult
     const deedRollSuccess = attackRollResult.deedDieRollResult > 2
 
     // Crit roll
@@ -1113,7 +1118,6 @@ class DCCActor extends Actor {
         deedDieFormula,
         deedDieRoll,
         deedDieRollResult,
-        deedRollTotalResult,
         deedRollSuccess,
         fumbleInlineRoll,
         fumblePrompt,
@@ -1209,7 +1213,6 @@ class DCCActor extends Actor {
     let deedDieRoll
     let deedDieRollResult = ''
     let deedDieFormula = ''
-    let deedRollTotalResult = ''
     let deedSucceed = false
     if (attackRoll.dice.length > 1) {
       attackRoll.dice[1].options.dcc = {
@@ -1219,7 +1222,6 @@ class DCCActor extends Actor {
       deedDieFormula = attackRoll.dice[1].formula
       deedDieRoll = attackRoll.dice[1]
       deedDieRollResult = attackRoll.dice[1].total
-      deedRollTotalResult = attackRoll.terms[2].total
       deedSucceed = deedDieRollResult > 2
     }
 
@@ -1233,7 +1235,6 @@ class DCCActor extends Actor {
       deedDieFormula,
       deedDieRollResult,
       deedDieRoll,
-      deedRollTotalResult,
       deedSucceed,
       crit,
       formula: game.dcc.DCCRoll.cleanFormula(attackRoll.terms),
