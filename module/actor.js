@@ -15,7 +15,7 @@ class DCCActor extends Actor {
     super.prepareBaseData()
 
     this.isNPC = (this.type === 'NPC')
-    this.isPC = (this.object.type === 'Player')
+    this.isPC = (this.type === 'Player')
 
     // Ability modifiers
     const abilities = this.system.abilities
