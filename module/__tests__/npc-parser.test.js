@@ -417,7 +417,7 @@ test('chimeric', async () => {
 
 /* Test multiple attacks */
 test('witchharps', async () => {
-  const parsedNPC = await parseNPCs("Witchharps (8): Init +3; Atk talons +1 melee (1 point); AC 12; HD 2d8; hp 15, 6, 12, 9, 10, 7, 15, 9; MV flight 30'; Act 1d20; SP snatch and grab; SV Fort +1, Ref +2, Will +2; Path POD.")
+  const parsedNPC = await parseNPCs('Witchharps (8): Init +3; Atk talons +1 melee (1 point); AC 12; HD 2d8; hp 15, 6, 12, 9, 10, 7, 15, 9; MV flight 30\'; Act 1d20; SP snatch and grab; SV Fort +1, Ref +2, Will +2; Path POD.')
   const expected = {
     name: 'Witchharps',
     'attributes.init.value': '+3',
@@ -450,7 +450,7 @@ test('witchharps', async () => {
 /* Test multiple statlines */
 test('rodentsquad', async () => {
   const parsedNPC = await parseNPCs(
-          `Mega Mole: Init +5; Atk claws +6 melee (1d8+3) ; AC 17;
+    `Mega Mole: Init +5; Atk claws +6 melee (1d8+3) ; AC 17;
 HD 3d8; hp 16; MV 20’; Act 1d20; SV Fort +4, Ref +4, Will +2;
 AL C.
 
@@ -552,7 +552,7 @@ Ref +4, Will +2; AL C.`
 /* Test giant stat block */
 test('giant', async () => {
   const parsedNPC = await parseNPCs(
-          `Gabbie (stone giant): Init +1; Atk club +18 melee (3d8+10)
+    `Gabbie (stone giant): Init +1; Atk club +18 melee (3d8+10)
 or hurled stone +10 missile fire (1d8+10, range 200’); Crit
 20-24 G/d4; AC 17; HD 12d10 (hp 72); MV 40’; Act 1d24; SP
 infravision 60’, stone camouflage, transmute earth; SV Fort
@@ -563,13 +563,16 @@ infravision 60’, stone camouflage, transmute earth; SV Fort
       name: 'Gabbie (stone giant)',
       'attributes.init.value': '+1',
       'attributes.ac.value': '17',
+      'attributes.critical.die': 'd4',
+      'attributes.critical.table': 'G',
       'attributes.hitDice.value': '12d10',
       'attributes.speed.value': '40’',
       'config.actionDice': '1d24',
+      'details.alignment': 'n',
+      'details.critRange': '20',
       'saves.frt.value': '+12',
       'saves.ref.value': '+6',
       'saves.wil.value': '+8',
-      'details.alignment': 'n',
       items: [
         {
           name: 'club',
@@ -602,3 +605,43 @@ infravision 60’, stone camouflage, transmute earth; SV Fort
   ]
   expect(parsedNPC).toMatchObject(expected)
 })
+
+/* Test giant stat block */
+test('Cool creature', async () => {
+  const parsedNPC = await parseNPCs(
+    `Cool creature (1+1/round): Init -1; Atk burning fist +1 melee (1d3 plus 1 hp of heat damage); Crit M/ d6; AC 14; HD 1d8+1 (hp 6 each); MV 30'; Act 1d20; SP immune to fire, vulnerable to cold (+1d6 damage); SV Fort +4, Ref -1, Will +3; AL N.`
+  )
+  const expected = [
+    {
+      name: 'Cool creature (1+1/round)',
+      'attributes.init.value': '-1',
+      'attributes.ac.value': '14',
+      'attributes.critical.die': 'd6',
+      'attributes.critical.table': 'M',
+      'attributes.hitDice.value': '1d8+1',
+      'attributes.speed.value': '30\'',
+      'config.actionDice': '1d20',
+      'saves.frt.value': '+4',
+      'saves.ref.value': '-1',
+      'saves.wil.value': '+3',
+      'details.alignment': 'n',
+      items: [
+        {
+          name: 'burning fist',
+          type: 'weapon',
+          img: 'systems/dcc/styles/images/weapon.webp',
+          system: {
+            actionDie: '1d20',
+            backstab: false,
+            backstabDamage: null,
+            toHit: '+1',
+            damage: '1d3',
+            melee: true
+          }
+        }
+      ]
+    }
+  ]
+  expect(parsedNPC).toMatchObject(expected)
+})
+

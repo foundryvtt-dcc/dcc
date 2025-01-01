@@ -77,41 +77,52 @@ async function parseNPC (npcString) {
   npc['details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
 
   /* Crits */
-  let hdCount = 1
-  try {
-    hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
-  } catch (error) {
-    hdCount = 0
+  // Try to get Crit directly from the stat block
+  const critMatch = npcString.match(/.*Crit ?(.+?)[;.].*/)
+  if (critMatch) {
+    npc['attributes.critical.die'] = critMatch[1].match(/\/(.*)$/)[1] || '1d4'
+    npc['attributes.critical.table'] = critMatch[1].match(/[A-Z](?=\/)/)[0] || 'M'
+    npc['details.critRange'] = critMatch[1].match(/(\d+)-\d+(?= )/)[1] || 'M' || '20'
   }
-  if (hdCount > 21) {
-    hdCount = 21
-  }
-  if (hd.includes('/')) {
-    hdCount = 0
-  }
-  let npcType = 'other'
-  const npcStringLower = npcString.toLowerCase()
-  if (npcStringLower.includes('demon traits')) {
-    npcType = 'demon'
-  }
-  if (npcStringLower.includes('dragon') && npcStringLower.includes('breath')) {
-    npcType = 'dragon'
-  }
-  if (DCC.humanoidHints.some(humanoidType => npcStringLower.includes(humanoidType))) {
-    npcType = 'humanoid'
-  }
-  if (DCC.giants.some(humanoidType => npcStringLower.includes(humanoidType))) {
-    if (!DCC.giantsNotGiants.some(humanoidType => npcStringLower.includes(humanoidType))) {
-      npcType = 'giant'
+
+  // Guess Crit based on HD and name string
+  if (!npc['attributes.critical.die']) {
+    let hdCount = 1
+    try {
+      hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
+    } catch (error) {
+      hdCount = 0
     }
-  }
-  if (npcStringLower.includes('un-dead')) {
-    npcType = 'undead'
-  }
-  const monsterCritInfo = DCC.monsterCriticalHits[hdCount]
-  if (monsterCritInfo) {
-    npc['attributes.critical.die'] = monsterCritInfo[npcType].die || '1d4'
-    npc['attributes.critical.table'] = monsterCritInfo[npcType].table || 'M'
+    if (hdCount > 21) {
+      hdCount = 21
+    }
+    if (hd.includes('/')) {
+      hdCount = 0
+    }
+    let npcType = 'other'
+    const npcStringLower = npcString.toLowerCase()
+    if (npcStringLower.includes('demon traits')) {
+      npcType = 'demon'
+    }
+    if (npcStringLower.includes('dragon') && npcStringLower.includes('breath')) {
+      npcType = 'dragon'
+    }
+    if (DCC.humanoidHints.some(humanoidType => npcStringLower.includes(humanoidType))) {
+      npcType = 'humanoid'
+    }
+    if (DCC.giants.some(humanoidType => npcStringLower.includes(humanoidType))) {
+      if (!DCC.giantsNotGiants.some(humanoidType => npcStringLower.includes(humanoidType))) {
+        npcType = 'giant'
+      }
+    }
+    if (npcStringLower.includes('un-dead')) {
+      npcType = 'undead'
+    }
+    const monsterCritInfo = DCC.monsterCriticalHits[hdCount]
+    if (monsterCritInfo) {
+      npc['attributes.critical.die'] = monsterCritInfo[npcType].die || '1d4'
+      npc['attributes.critical.table'] = monsterCritInfo[npcType].table || 'M'
+    }
   }
 
   /* Speed */
