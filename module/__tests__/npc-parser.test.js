@@ -606,7 +606,7 @@ infravision 60’, stone camouflage, transmute earth; SV Fort
   expect(parsedNPC).toMatchObject(expected)
 })
 
-/* Test giant stat block */
+/* Test stat block with crit after attacks */
 test('Cool creature', async () => {
   const parsedNPC = await parseNPCs(
     `Cool creature (1+1/round): Init -1; Atk burning fist +1 melee (1d3 plus 1 hp of heat damage); Crit M/ d6; AC 14; HD 1d8+1 (hp 6 each); MV 30'; Act 1d20; SP immune to fire, vulnerable to cold (+1d6 damage); SV Fort +4, Ref -1, Will +3; AL N.`
@@ -636,6 +636,45 @@ test('Cool creature', async () => {
             backstabDamage: null,
             toHit: '+1',
             damage: '1d3',
+            melee: true
+          }
+        }
+      ]
+    }
+  ]
+  expect(parsedNPC).toMatchObject(expected)
+})
+
+/* Test DT-style stat block */
+test('Wormy the Warrior', async () => {
+  const parsedNPC = await parseNPCs(
+    `Wormy Bonechewer (warrior): Init +3; Atk longsword +2+deed die melee (1d8+2+deed die); AC 16 (chainmail & shield); HD 3d12+6; hp 42; MV 25'; Act 1d20; SP Mighty Deed of Arms, deed die (+d5); SV Fort +3, Ref +3, Will +2; AL C; Crit 19-20 IV/d16.`
+  )
+  const expected = [
+    {
+      name: 'Wormy Bonechewer (warrior)',
+      'attributes.init.value': '+3',
+      'attributes.ac.value': '16',
+      'attributes.critical.die': 'd16',
+      'attributes.critical.table': 'IV',
+      'attributes.hitDice.value': '3d12+6',
+      'attributes.speed.value': '25\'',
+      'config.actionDice': '1d20',
+      'saves.frt.value': '+3',
+      'saves.ref.value': '+3',
+      'saves.wil.value': '+2',
+      'details.alignment': 'c',
+      items: [
+        {
+          name: 'longsword',
+          type: 'weapon',
+          img: 'systems/dcc/styles/images/weapon.webp',
+          system: {
+            actionDie: '1d20',
+            backstab: false,
+            backstabDamage: null,
+            toHit: '+2+@ab',
+            damage: '1d8+2+@ab',
             melee: true
           }
         }

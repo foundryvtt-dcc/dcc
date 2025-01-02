@@ -66,7 +66,7 @@ async function parseNPC (npcString) {
   const hpRoll = await new Roll(hd).evaluate()
   let hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
-  npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,.].*/, npcString) || '10'
+  npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,. ].*/, npcString) || '10'
   npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp
   npc['attributes.speed.value'] = _firstMatch(/.*MV ?(.+?)[;.].*/, npcString) || '30'
   npc['config.actionDice'] = _firstMatch(/.*Act ?(.+?)[;.].*/, npcString) || '1d20'
@@ -75,14 +75,22 @@ async function parseNPC (npcString) {
   npc['saves.ref.value'] = _firstMatch(/.*Ref ?(.+?)[;,.].*/, npcString) || '+0'
   npc['saves.wil.value'] = _firstMatch(/.*Will ?(.+?)[;,.].*/, npcString) || '+0'
   npc['details.alignment'] = (_firstMatch(/.*AL ?(.+?)\..*/, npcString) || 'n').toLowerCase()
+  if (npc['details.alignment'].includes(';')) {
+    npc['details.alignment'] = npc['details.alignment'].split(';')[0].trim()
+  }
 
   /* Crits */
   // Try to get Crit directly from the stat block
   const critMatch = npcString.match(/.*Crit ?(.+?)[;.].*/)
   if (critMatch) {
-    npc['attributes.critical.die'] = critMatch[1].match(/\/(.*)$/)[1] || '1d4'
-    npc['attributes.critical.table'] = critMatch[1].match(/[A-Z](?=\/)/)[0] || 'M'
-    npc['details.critRange'] = critMatch[1].match(/(\d+)-\d+(?= )/)[1] || 'M' || '20'
+    npc['attributes.critical.die'] = critMatch[1].match(/\/(.*)$/)[1].trim() || '1d4'
+    npc['attributes.critical.table'] = critMatch[1].match(/[A-Z][A-Z]?(?=\/)/)[0] || 'M'
+    const critRangeMatch = critMatch[1].match(/(\d+)-\d+(?= )/)
+    if (critRangeMatch) {
+      npc['details.critRange'] = critRangeMatch[1] || 20
+    } else {
+      npc['details.critRange'] = 20
+    }
   }
 
   // Guess Crit based on HD and name string
@@ -168,6 +176,7 @@ function _parseAttack (attackString, damageString) {
       value: ''
     }
   }
+  attackString = attackString.replace('deed die', '@ab')
   const name = _firstMatch(/(.*?) [+-].*/, attackString) || attackString
   attack.toHit = _firstMatch(/.*? ([+-].*?) .*/, attackString) || ''
   attack.config.attackBonusOverride = attack.toHit
@@ -178,6 +187,9 @@ function _parseAttack (attackString, damageString) {
   } else {
     attack.description.value = _firstMatch(/.*\(\w+(?:\s*[+-]\s*\d+)? (.*)\).*/, attackString) || ''
     attack.damage = _firstMatch(/.*\((\w+(?:\s*[+-]\s*\d+)?).*\).*/, attackString) || ''
+    if (attackString.includes('@ab')) {
+      attack.damage += '+@ab'
+    }
 
     /*
      * If damage doesn't start with a number assume it's special
