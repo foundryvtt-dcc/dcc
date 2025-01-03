@@ -1060,7 +1060,9 @@ class DCCActor extends Actor {
     let useNPCFumbles = false
     try {
       useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || false
-    } catch {}
+    } catch {
+      // Do nothing; already false by default
+    }
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
       fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
