@@ -1,7 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
-import { ensurePlus, getCritTableResult, getFumbleTableResult } from './utilities.js'
+import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 // noinspection JSUnusedGlobalSymbols
@@ -1057,9 +1057,18 @@ class DCCActor extends Actor {
     let fumbleTableName = '(Table 4-2: Fumbles).'
     let fumbleText = ''
     let fumbleRoll
+    let useNPCFumbles = false
+    try {
+      useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || false
+    } catch {
+      // Do nothing; already false by default
+    }
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
       fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
+      if (this.isNPC && useNPCFumbles) {
+        fumbleRollFormula = '1d10'
+      }
       fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble]]`)
       fumblePrompt = game.i18n.localize('DCC.RollFumble')
       if (automateDamageFumblesCrits) {
@@ -1074,7 +1083,13 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        const fumbleResult = await getFumbleTableResult(fumbleRoll)
+        let fumbleResult
+        if (this.isPC || !useNPCFumbles) {
+          fumbleResult = await getFumbleTableResult(fumbleRoll)
+        } else {
+          fumbleTableName = weapon.system?.critTable || this.system.attributes.critical.table
+          fumbleResult = await getNPCFumbleTableResult(fumbleRoll, fumbleTableName)
+        }
         if (fumbleResult) {
           fumbleTableName = `(${fumbleResult?.parent?.link}):<br>`
           fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
