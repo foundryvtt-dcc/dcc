@@ -107,3 +107,33 @@ export async function getFumbleTableResult (roll) {
     }
   }
 }
+
+/**
+ * Draw a result from the monster fumble table
+ * @param roll - roll instance to use
+ * @param fumbleTableName - name of the fumble table - like 'G'
+ */
+export async function getNPCFumbleTableResult (roll, fumbleTableName) {
+// Lookup the fumble table if available
+  if (fumbleTableName) {
+    const humanoidCritTables = ['III', 'IV', 'V']
+    if (humanoidCritTables.some(critTableName => fumbleTableName.includes(critTableName))) {
+      fumbleTableName = 'H'
+    }
+    fumbleTableName = `Fumble Table ${fumbleTableName}`
+    if (fumbleTableName === 'Fumble Table EL') {
+      fumbleTableName = 'Crit/Fumble Table EL'
+    }
+    const fumblePackName = 'dcc-core-book.dcc-monster-fumble-tables'
+    const pack = game.packs.get(fumblePackName)
+    if (pack) {
+      await pack.getIndex() // Load the compendium index
+      const entry = pack.index.filter((entity) => entity.name.startsWith(fumbleTableName))
+      if (entry) {
+        const table = await pack.getDocument(entry[0]._id)
+        const fumbleResult = table.getResultsForRoll(roll.total)
+        return fumbleResult[0] || 'Unable to find fumble result'
+      }
+    }
+  }
+}

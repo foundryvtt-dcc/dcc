@@ -1,7 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
-import { ensurePlus, getCritTableResult, getFumbleTableResult } from './utilities.js'
+import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 // noinspection JSUnusedGlobalSymbols
@@ -1074,7 +1074,13 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        const fumbleResult = await getFumbleTableResult(fumbleRoll)
+        let fumbleResult
+        if (this.isPC) {
+          fumbleResult = await getFumbleTableResult(fumbleRoll)
+        } else {
+          fumbleTableName = weapon.system?.critTable || this.system.attributes.critical.table
+          fumbleResult = await getNPCFumbleTableResult(fumbleRoll, fumbleTableName)
+        }
         if (fumbleResult) {
           fumbleTableName = `(${fumbleResult?.parent?.link}):<br>`
           fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
