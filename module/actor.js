@@ -1060,6 +1060,9 @@ class DCCActor extends Actor {
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
       fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
+      if (this.isNPC && game.settings.get('dcc-core-book', 'registerNPCFumbleTables')) {
+        fumbleRollFormula = '1d10'
+      }
       fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble]]`)
       fumblePrompt = game.i18n.localize('DCC.RollFumble')
       if (automateDamageFumblesCrits) {
@@ -1075,7 +1078,7 @@ class DCCActor extends Actor {
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
         let fumbleResult
-        if (this.isPC) {
+        if (this.isPC || game.settings.get('dcc-core-book', 'registerNPCFumbleTables') === false) {
           fumbleResult = await getFumbleTableResult(fumbleRoll)
         } else {
           fumbleTableName = weapon.system?.critTable || this.system.attributes.critical.table
