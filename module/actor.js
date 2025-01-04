@@ -1091,7 +1091,7 @@ class DCCActor extends Actor {
           fumbleResult = await getNPCFumbleTableResult(fumbleRoll, fumbleTableName)
         }
         if (fumbleResult) {
-          fumbleTableName = `(${fumbleResult?.parent?.link}):<br>`
+          fumbleTableName = `(${fumbleResult?.parent?.link}):<br>`.replace('Fumble Table ', '').replace('Crit/', '')
           fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
         }
         const fumbleResultPrompt = game.i18n.localize('DCC.FumblePrompt')

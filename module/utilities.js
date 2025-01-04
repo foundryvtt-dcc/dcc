@@ -58,6 +58,12 @@ export async function getCritTableResult (roll, critTableName) {
     await roll.evaluate()
   }
 
+  // Check to see if this is the Elemental Crit/Fumble table
+  if (critTableName === 'Crit Table EL') {
+    critTableName = 'Crit/Fumble Table EL'
+    CONFIG.DCC.criticalHitPacks.addPack('dcc-core-book.dcc-monster-fumble-tables')
+  }
+
   // Lookup the crit table if available
   let critResult = null
   for (const criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
