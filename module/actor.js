@@ -107,6 +107,7 @@ class DCCActor extends Actor {
       const baseACAbility = this.system.abilities[config.baseACAbility] || { mod: 0 }
       const baseSpeed = parseInt(this.system.attributes.speed.base)
       const abilityMod = baseACAbility.mod
+      const acOtherMod = parseInt(this.system.attributes.ac.otherMod) || 0
       const abilityLabel = baseACAbility.label
       let armorBonus = 0
       let speedPenalty = 0
@@ -120,11 +121,19 @@ class DCCActor extends Actor {
         this.system.attributes.ac.baseAbility = abilityMod
         this.system.attributes.ac.baseAbilityLabel = abilityLabel
         this.system.attributes.ac.armorBonus = armorBonus
-        this.system.attributes.ac.value = 10 + abilityMod + armorBonus
+        this.system.attributes.ac.value = 10 + abilityMod + armorBonus + acOtherMod
       }
       if (config.computeSpeed) {
         this.system.attributes.ac.speedPenalty = speedPenalty
         this.system.attributes.speed.value = baseSpeed + speedPenalty
+      }
+    }
+
+    // Compute Initiative if required
+    if (this.isPC && config.computeInitiative) {
+      this.system.attributes.init.value = parseInt(this.system.abilities.agl.mod) + parseInt(this.system.attributes.init.otherMod || 0)
+      if (config.addClassLevelToInitiative) {
+        this.system.attributes.init.value += this.system.details.level.value
       }
     }
   }

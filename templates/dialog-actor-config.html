@@ -2,6 +2,7 @@
   <label for="system.config.actionDice" title="{{localize 'DCC.ActionDiceHint'}}">{{localize "DCC.ActionDice"}}</label>
   <input type="text" name="system.config.actionDice" id="system.config.actionDice" value="{{system.config.actionDice}}"
          data-dtype="string"/>
+
   <div class="group-separator"></div>
   {{#if isPC}}
     <label for="system.config.maxLevel" title="{{localize 'DCC.MaxLevelHint'}}">{{localize "DCC.MaxLevelConfig"}}</label>
@@ -13,11 +14,13 @@
     <input type="text" name="system.details.attackBonus" id="system.details.attackBonus"
            value="{{system.details.attackBonus}}" data-dtype="number"/>
   {{/if}}
+
   <div class="group-separator"></div>
   <label for="system.config.attackBonusMode" title="{{localize 'DCC.AttackBonusConfigModeHint'}}">{{localize "DCC.AttackBonusConfigMode"}}</label>
   <select name="system.config.attackBonusMode" id="system.config.attackBonusMode">
     {{selectOptions config.attackBonusModes selected=system.config.attackBonusMode localize=true}}
   </select>
+
   <div class="group-separator"></div>
   {{#if isNPC}}
     <label for="system.class.spellCheck">{{localize "DCC.SpellCheck"}}</label>
@@ -27,10 +30,15 @@
   {{#if isPC}}
     <label for="system.config.computeAC" title="{{localize 'DCC.ComputeACConfigHint'}}">{{localize "DCC.ComputeACConfig"}}</label>
     <input type="checkbox" name="system.config.computeAC" id="system.config.computeAC" {{checked system.config.computeAC}} data-dtype="boolean"/>
+
     <label for="system.config.baseACAbility">{{localize "DCC.BaseACAbilityConfig"}}</label>
     <select name="system.config.baseACAbility" id="system.config.baseACAbility">
       {{selectOptions config.abilities selected=system.config.baseACAbility localize=true}}
     </select>
+    <label for="system.attributes.ac.otherMod" title="{{localize 'DCC.ACOtherModHint'}}">{{localize "DCC.ACOtherMod"}}</label>
+    <input type="text" name="system.attributes.ac.otherMod" id="system.attributes.ac.otherMod"
+           value="{{system.attributes.ac.otherMod}}" data-dtype="number"/>
+
     <div class="group-separator"></div>
     <label for="system.config.computeSpeed" title="{{localize 'DCC.ComputeSpeedConfigHint'}}">{{localize "DCC.ComputeSpeedConfig"}}</label>
     <input type="checkbox" name="system.config.computeSpeed" id="system.config.computeSpeed" {{checked system.config.computeSpeed}}
@@ -38,6 +46,7 @@
     <label for="system.attributes.speed.base">{{localize "DCC.SpeedBase"}}</label>
     <input type="text" name="system.attributes.speed.base" id="system.attributes.speed.base"
            value="{{distanceFormat system.attributes.speed.base}}" data-dtype="number"/>
+
     <div class="group-separator"></div>
     <label for="system.config.computeMeleeAndMissileAttackAndDamage"
            title="{{localize "DCC.ComputeMeleeAndMissileAttackAndDamageHint"}}">
@@ -46,12 +55,32 @@
     <input type="checkbox" name="system.config.computeMeleeAndMissileAttackAndDamage"
            id="system.config.computeMeleeAndMissileAttackAndDamage" {{checked system.config.computeMeleeAndMissileAttackAndDamage}}
            data-dtype="boolean"/>
+
+    <div class="group-separator"></div>
+    <label for="system.config.computeInitiative" title="{{localize "DCC.ComputeInitiativeConfigHint"}}">
+      {{localize "DCC.ComputeInitiativeConfig"}}
+    </label>
+    <input type="checkbox" name="system.config.computeInitiative"
+           id="system.config.computeInitiative" {{checked system.config.computeInitiative}}
+           data-dtype="boolean"/>
+    <label for="system.config.addClassLevelToInitiative" title="{{localize "DCC.AddClassLevelToInitiativeConfigHint"}}">
+      {{localize "DCC.AddClassLevelToInitiativeConfig"}}
+    </label>
+    <input type="checkbox" name="system.config.addClassLevelToInitiative"
+           id="system.config.addClassLevelToInitiative" {{checked system.config.addClassLevelToInitiative}}
+           data-dtype="boolean"/>
+    <label for="system.attributes.init.otherMod" title="{{localize 'DCC.InitiativeOtherModHint'}}">{{localize "DCC.InitiativeOtherMod"}}</label>
+    <input type="text" name="system.attributes.init.otherMod" id="system.attributes.init.otherMod"
+           value="{{system.attributes.init.otherMod}}" data-dtype="number"/>
+
+    <div class="group-separator"></div>
     <label for="system.config.computeSavingThrows"
            title="{{localize "DCC.ComputeSavingThrowsHint"}}">{{localize "DCC.ComputeSavingThrows"}}
     </label>
     <input type="checkbox" name="system.config.computeSavingThrows"
            id="system.config.computeSavingThrows" {{checked system.config.computeSavingThrows}}
            data-dtype="boolean"/>
+
     <div class="group-separator"></div>
     <label for="system.config.computeCheckPenalty" title="{{localize 'DCC.ComputeCheckPenaltyConfigHint'}}">
       {{localize "DCC.ComputeCheckPenaltyConfig"}}
@@ -61,11 +90,13 @@
     <label for="system.attributes.ac.checkPenalty" title="{{localize 'DCC.CheckPenaltyConfigHint'}}">{{localize "DCC.CheckPenalty"}}</label>
     <input type="text" name="system.attributes.ac.checkPenalty" id="system.attributes.ac.checkPenalty"
            value="{{numberFormat system.attributes.ac.checkPenalty decimals=0 sign=false}}" data-dtype="number"/>
+
     <div class="group-separator"></div>
     <label for="system.config.showBackstab" title="{{localize 'DCC.ShowBackstabConfigHint'}}">{{localize "DCC.ShowBackstabConfig"}}</label>
     <input type="checkbox" name="system.config.showBackstab" id="system.config.showBackstab"
       {{checked system.config.showBackstab}} data-dtype="boolean"/>
   {{/if}}
+
   <div class="group-separator"></div>
   <label for="system.config.showSpells" title="{{localize 'DCC.ShowSpellsConfigHint'}}">{{localize "DCC.ShowSpellsConfig"}}</label>
   <input type="checkbox" name="system.config.showSpells" id="system.config.showSpells" {{checked system.config.showSpells}}
@@ -73,6 +104,7 @@
   <label for="system.config.showSkills" title="{{localize 'DCC.ShowSkillsConfigHint'}}">{{localize "DCC.ShowSkillsConfig"}}</label>
   <input type="checkbox" name="system.config.showSkills" id="system.config.showSkills" {{checked system.config.showSkills}}
          data-dtype="boolean"/>
+
   <div class="group-separator"></div>
   <label for="system.config.sortInventory" title="{{localize 'DCC.SortInventoryConfigHint'}}">{{localize "DCC.SortInventoryConfig"}}</label>
   <input type="checkbox" name="system.config.sortInventory" id="system.config.sortInventory"
@@ -80,6 +112,7 @@
   <label for="system.config.removeEmptyItems" title="{{localize 'DCC.RemoveEmptyItemsConfigHint'}}">{{localize "DCC.RemoveEmptyItemsConfig"}}</label>
   <input type="checkbox" name="system.config.removeEmptyItems" id="system.config.removeEmptyItems"
     {{checked system.config.removeEmptyItems}} data-dtype="boolean"/>
+
   <footer class="grid-col-span-2 mt-8">
     <button type="submit">
       <i class="fas fa-save"></i>{{localize "DCC.SaveSheetConfig"}}

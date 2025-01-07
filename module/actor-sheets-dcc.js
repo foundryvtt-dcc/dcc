@@ -28,7 +28,8 @@ class DCCActorSheetCleric extends DCCActorSheet {
         'system.details.sheetClass': 'Cleric',
         'system.class.spellCheckAbility': 'per',
         'system.details.critRange': 20,
-        'system.config.attackBonusMode': 'flat'
+        'system.config.attackBonusMode': 'flat',
+        'system.config.addClassLevelToInitiative': false
       })
     }
 
@@ -58,7 +59,8 @@ class DCCActorSheetThief extends DCCActorSheet {
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
-        'system.config.showBackstab': true
+        'system.config.showBackstab': true,
+        'system.config.addClassLevelToInitiative': false
       })
     }
 
@@ -87,7 +89,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
         'system.details.sheetClass': 'Halfling',
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat'
+        'system.config.attackBonusMode': 'flat',
+        'system.config.addClassLevelToInitiative': false
       })
     }
 
@@ -116,7 +119,8 @@ class DCCActorSheetWarrior extends DCCActorSheet {
         'system.class.className': game.i18n.localize('DCC.Warrior'),
         'system.details.sheetClass': 'Warrior',
         'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'autoPerAttack'
+        'system.config.attackBonusMode': 'autoPerAttack',
+        'system.config.addClassLevelToInitiative': true
       })
     }
 
@@ -146,7 +150,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
         'system.class.spellCheckAbility': 'int',
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat'
+        'system.config.attackBonusMode': 'flat',
+        'system.config.addClassLevelToInitiative': false
       })
     }
 
@@ -176,7 +181,8 @@ class DCCActorSheetDwarf extends DCCActorSheet {
         'system.details.sheetClass': 'Dwarf',
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'autoPerAttack',
-        'system.skills.shieldBash.useDeed': true
+        'system.skills.shieldBash.useDeed': true,
+        'system.config.addClassLevelToInitiative': false
       })
     }
 
@@ -206,7 +212,8 @@ class DCCActorSheetElf extends DCCActorSheet {
         'system.class.spellCheckAbility': 'int',
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat'
+        'system.config.attackBonusMode': 'flat',
+        'system.config.addClassLevelToInitiative': false
       })
     }
 
@@ -230,7 +237,8 @@ class DCCActorSheetGeneric extends DCCActorSheet {
 
     this.actor.update({
       'system.class.className': game.i18n.localize('DCC.Generic'),
-      'system.config.attackBonusMode': 'flat'
+      'system.config.attackBonusMode': 'flat',
+      'system.config.addClassLevelToInitiative': false
     })
 
     return data

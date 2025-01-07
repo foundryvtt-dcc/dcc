@@ -42,6 +42,7 @@
           "ac": {
             "value": 10,
             "checkPenalty": 0,
+            "otherMod": 0,
             "speedPenalty": 0
           },
           "actionDice": {
@@ -72,6 +73,7 @@
           },
           "init": {
             "die": "1d20",
+            "otherMod": 0,
             "value": "+0"
           },
           "initDice": {
@@ -346,12 +348,14 @@
         "config": {
           "attackBonusMode": "flat",
           "actionDice": "1d20",
+          "addClassLevelToInitiative": false,
           "maxLevel": "",
           "rollAttackBonus": false,
-          "computeAC": false,
+          "computeAC": true,
           "baseACAbility": "agl",
           "computeSpeed": true,
           "computeCheckPenalty": true,
+          "computeInitiative": true,
           "computeMeleeAndMissileAttackAndDamage": true,
           "computeSavingThrows": true,
           "sortInventory": true,
