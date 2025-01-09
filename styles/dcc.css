@@ -1217,18 +1217,18 @@ form.dcc-roll-modifier input.stat {
   vertical-align: middle;
   margin-right: 8px;
 }
-.dcc .character .languages {
+.dcc .character .languages, .dcc .character .lucky-roll {
   border: var(--dark-border);
   border-top: 0;
   display: grid;
   font-size: 12px;
   grid-column: 2;
-  grid-row: 13;
   grid-column-end: span 3;
-  grid-template-rows: 19px minmax(20px, auto);
+  grid-template-rows: 19px 19px;
+  height: 59px;
   text-align: left;
 }
-.dcc .character .languages label {
+.dcc .character .languages label, .dcc .character .lucky-roll label {
   text-align: left;
   padding-left: 3px;
 }
@@ -1239,29 +1239,16 @@ form.dcc-roll-modifier input.stat {
   font-family: var(--data-font);
   font-size: 12px;
   grid-row: 2;
-  line-height: 15px;
-  min-height: 0;
-  padding: 3px;
+  height: 17px;
+  min-height: 38px;
+  overflow: hidden;
+  padding: 0 5px 2px 5px;
   resize: none;
   text-align: left;
 }
 .dcc .character .languages textarea:focus,
 .dcc .character .lucky-roll textarea:focus {
   box-shadow: none;
-}
-.dcc .character .lucky-roll {
-  border: var(--dark-border);
-  border-top: 0;
-  display: grid;
-  grid-column: 2;
-  grid-column-end: span 3;
-  grid-row: 11;
-  grid-template-rows: 19px auto;
-  font-size: 12px;
-}
-.dcc .character .lucky-roll label {
-  text-align: left;
-  padding-left: 3px;
 }
 .dcc .character .melee-missile-attack-damage {
   align-items: center;
