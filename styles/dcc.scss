@@ -121,7 +121,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     background: none;
     border-width: 0 0 1px 0;
     border-radius: 0;
-    font-family: var(--data-font);
+    font-family: $duvall;
     font-size: 12px;
     height: 17px;
     text-align: center;
@@ -268,15 +268,15 @@ a.inline-roll {
 }
 
 .flavor-text {
-  font-family: var(--label-font);
+  font-family: $cooper-black;
 }
 
 .message-content {
-  font-family: var(--data-font);
+  font-family: $book-antiqua;
 }
 
 .message-sender {
-  font-family: var(--label-font);
+  font-family: $cooper-black;
 }
 
 .chat-message .table-draw .table-results .table-result .result-text {
@@ -626,7 +626,7 @@ a.inline-roll {
     background: none;
     border-width: 0 0 1px 0;
     border-radius: 0;
-    font-family: var(--data-font);
+    font-family: $book-antiqua;
     font-size: 12px;
     height: 18px;
     line-height: 15px;
@@ -1207,7 +1207,7 @@ form.dcc-roll-modifier {
   .lucky-roll textarea, {
     background: none;
     border: 0;
-    font-family: var(--data-font);
+    font-family: $book-antiqua;
     font-size: 12px;
     grid-row: 2;
     height: 17px;
@@ -1287,7 +1287,7 @@ form.dcc-roll-modifier {
     grid-column: 2;
     grid-row: 5;
     grid-row-end: span 3;
-    grid-template-rows: repeat(3, 69px);
+    grid-template-rows: repeat(3, 68px);
     margin: 0;
     padding: 0;
   }
@@ -1299,7 +1299,7 @@ form.dcc-roll-modifier {
     column-gap: 7px;
     display: grid;
     grid-template-columns: 54px 55px;
-    margin-bottom: 10px;
+    height: 59px;
     text-align: left;
 
     input {
@@ -1326,7 +1326,7 @@ form.dcc-roll-modifier {
     textarea {
       background: none;
       border: 0;
-      font-family: var(--data-font);
+      font-family: $book-antiqua;
       font-size: 12px;
       line-height: 15px;
       padding: 0;
@@ -1425,7 +1425,7 @@ form.dcc-roll-modifier {
 
   form {
     display: flex;
-    font-family: var(--data-font);
+    font-family: $book-antiqua;
     justify-content: space-between;
     flex-direction: column;
   }
