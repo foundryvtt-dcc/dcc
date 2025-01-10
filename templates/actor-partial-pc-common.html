@@ -10,7 +10,9 @@
       </div>
 
       <div class="grid-tpl-max-auto">
-        <label for="system.details.level.value">{{class.className}} {{localize "DCC.Level"}}</label>
+        <label for="system.details.level.value" class="rollable" title="{{localize 'DCC.LevelUpHint'}}">
+          {{localize "DCC.Level"}}
+        </label>
         <input id="system.details.level.value" name="system.details.level.value"
                value="{{system.details.level.value}}" maxlength="6" size="3" data-dtype="Number">
       </div>
@@ -56,7 +58,10 @@
       <input style="grid-area: 1/1" id="system.attributes.ac.value" name="system.attributes.ac.value"
              value="{{system.attributes.ac.value}}"
         {{#if system.config.computeAC }}
-             title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0 sign=true}} {{localize 'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}} - {{localize 'DCC.ConfigureHint'}}"
+             title="{{localize system.attributes.ac.baseAbilityLabel}} {{numberFormat system.attributes.ac.baseAbility decimals=0
+                                                                                      sign=true}} {{localize
+               'DCC.ArmorPropertiesACBonus'}} {{numberFormat system.attributes.ac.armorBonus decimals=0 sign=true}} - {{localize
+               'DCC.ConfigureHint'}}"
              disabled
         {{/if}}
              data-dtype="Number">
@@ -146,7 +151,8 @@
              size="3"
              data-dtype="String"
         {{#if system.config.computeSpeed }}
-             title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}} {{distanceFormat system.attributes.ac.speedPenalty}} - {{localize 'DCC.ConfigureHint'}}"
+             title="{{localize 'DCC.SpeedBase'}} {{distanceFormat system.attributes.speed.base}} {{localize 'DCC.SpeedPenalty'}} {{distanceFormat
+               system.attributes.ac.speedPenalty}} - {{localize 'DCC.ConfigureHint'}}"
              disabled
         {{/if}}
       >

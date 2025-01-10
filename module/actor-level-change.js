@@ -74,7 +74,7 @@ class DCCActorLevelChange extends FormApplication {
    * @return levelData <object>
    */
   async _getLevelDataFromItem (levelItem) {
-    if (levelItem) {
+    if (levelItem.hasOwnProperty('system')) {
       let levelData = levelItem.system.levelData
       if (this.object.system.details.alignment === 'l') {
         levelData += levelItem.system.levelDataLawful
@@ -95,6 +95,7 @@ class DCCActorLevelChange extends FormApplication {
           return acc
         }, {})
     }
+    return {}
   }
 
   /**
@@ -117,6 +118,7 @@ class DCCActorLevelChange extends FormApplication {
         return item
       }
     }
+    return {}
   }
 
   /**
@@ -141,7 +143,7 @@ class DCCActorLevelChange extends FormApplication {
 
   async _updateLevelUpDisplay () {
     const levelItem = await this._lookupLevelItem(this.object.classNameLower, this.object.currentLevel)
-    if (levelItem) {
+    if (levelItem.hasOwnProperty('system')) {
       // Level Data
       const levelData = await this._getLevelDataFromItem(levelItem)
       const levelDataString = Object.entries(levelData)
@@ -171,6 +173,8 @@ class DCCActorLevelChange extends FormApplication {
       this.object.newHitPointsExpression = hpExpression
       const hitPointsString = `Hit Points = ${hpExpression}`
       this.element.find('#hitPoints').html(`<h3>Adjust Hit Points</h3> ${hitPointsString}`)
+    } else {
+      this.element.find('#levelDataDisplay').html(game.i18n.localize('DCC.LevelDataNotFound'))
     }
   }
 
