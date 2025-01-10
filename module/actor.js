@@ -94,6 +94,8 @@ class DCCActor extends Actor {
       this.system.skills.detectSecretDoors.value = '+4'
     }
 
+    this.system.skills.castSpellFromScroll.value = '0'
+
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
       this.update({

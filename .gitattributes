@@ -21,6 +21,13 @@ metadata export-ignore
 # Version File
 version.txt export-ignore
 
+# JSON of Packs
+packs/**/src/*.json export-ignore
+
+# Other ignores
+.editorconfig export-ignore
+.stylelintrc export-ignore
+
 # Auto-generated CSS File line-endings
 styles/dcc.css text eol=lf
 
