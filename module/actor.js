@@ -30,6 +30,7 @@ class DCCActor extends Actor {
 
     // Set NPC computations to manual
     if (this.isNPC) {
+      this.system.config.computeAC = false
       this.system.config.computeSpeed = false
       this.system.config.computeCheckPenalty = false
       this.system.config.computeMeleeAndMissileAttackAndDamage = false
