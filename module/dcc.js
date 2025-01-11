@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, Roll, ui, loadTemplates, Handlebars */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, Roll, ui, loadTemplates, Handlebars, NumericTerm, OperatorTerm */
 
 /**
  * DCC
@@ -175,6 +175,7 @@ Hooks.once('init', async function () {
     console.log(`Foundry VTT | Retrieved and compiled template ${path}`)
     return compiled
   }
+
   window.getTemplate = getTemplate
 
   // Override ChatMessage to use our template
@@ -387,28 +388,33 @@ async function processSpellCheck (actor, spellData) {
   try {
     // Apply the roll to the table if present
     if (rollTable) {
-      const results = await rollTable.draw({ roll, displayChat: false })
+      const result = await rollTable.draw({ roll, displayChat: false })
 
-      if (results.roll.dice.length > 0) {
-        roll = results.roll
-        naturalRoll = roll.dice[0].total
+      if (result.roll.dice.length > 0) {
+        // Next three lines are used to force crit for testing
+        // result.roll._total += (20-result.roll.terms[0].total)
+        // result.roll.terms[0].results[0].result = 20
+        // result.roll.terms[0]._total = 20
+
+        naturalRoll = result.roll.dice[0].total
         if (naturalRoll === 1) {
           const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
-          roll = fumbleResult.roll
-          results.results = fumbleResult.results
+          result.roll = fumbleResult.roll
+          result.results = fumbleResult.results
           fumble = true
         } else if (naturalRoll === 20) {
           if (actor.type === 'Player') {
-            const critRoll = results.roll.total + actor.system.details.level.value
-            const critRollObject = new Roll(String(critRoll))
-            const critResult = await rollTable.draw({ roll: critRollObject, displayChat: false })
-            roll = critResult.roll
-            results.results = critResult.results
+            const critRoll = result.roll.total + actor.system.details.level.value
+            result.results = rollTable.getResultsForRoll(critRoll)
+            result.roll.terms.push(new OperatorTerm({ operator: '+' }))
+            result.roll.terms.push(new NumericTerm({ number: parseInt(actor.system.details.level.value) }))
+            result.roll._formula += ` + ${actor.system.details.level.value}`
+            result.roll._total += actor.system.details.level.value
             crit = true
           }
         }
       }
-      await game.dcc.SpellResult.addChatMessage(rollTable, results, { crit, fumble, item })
+      await game.dcc.SpellResult.addChatMessage(rollTable, result, { crit, fumble, item })
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
