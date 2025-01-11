@@ -95,7 +95,9 @@ class DCCActor extends Actor {
       this.system.skills.detectSecretDoors.value = '+4'
     }
 
-    this.system.skills.castSpellFromScroll.value = '0'
+    if (this.system.details.sheetClass === 'Thief') {
+      this.system.skills.castSpellFromScroll.value = '0'
+    }
 
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
@@ -1112,6 +1114,16 @@ class DCCActor extends Actor {
       }
     }
 
+    const flags = {
+      'dcc.isToHit': true,
+      'dcc.isBackstab': options.backstab,
+      'dcc.isFumble': attackRollResult.fumble,
+      'dcc.isCrit': attackRollResult.crit,
+      'dcc.isNaturalCrit': attackRollResult.naturalCrit,
+      'dcc.isMelee': weapon.system?.melee
+    }
+    game.dcc.FleetingLuck.updateFlags(flags, attackRollResult.roll)
+
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
@@ -1119,14 +1131,7 @@ class DCCActor extends Actor {
       user: game.user.id,
       speaker,
       flavor: game.i18n.format(options.backstab ? 'DCC.BackstabRoll' : 'DCC.AttackRoll', { weapon: weapon.name }),
-      flags: {
-        'dcc.isToHit': true,
-        'dcc.isBackstab': options.backstab,
-        'dcc.isFumble': attackRollResult.fumble,
-        'dcc.isCrit': attackRollResult.crit,
-        'dcc.isNaturalCrit': attackRollResult.naturalCrit,
-        'dcc.isMelee': weapon.system?.melee
-      },
+      flags,
       rolls,
       system: {
         actorId: this.id,

@@ -448,11 +448,11 @@ class FleetingLuck {
     const d = roll.dice[0].values[0]
 
     // Natural 20 or natural 1
-    if (d === 20) {
+    if (d === 20 || flags['dcc.isCrit']) {
       FleetingLuck.updateFlagsForCrit(flags)
     }
 
-    if (d === 1) {
+    if (d === 1 || flags['dcc.isFumble']) {
       FleetingLuck.updateFlagsForFumble(flags)
     }
   }

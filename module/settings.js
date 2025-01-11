@@ -268,6 +268,7 @@ export const registerSystemSettings = async function () {
   game.settings.register('dcc', 'enableFleetingLuck', {
     name: 'DCC.SettingEnableFleetingLuck',
     hint: 'DCC.SettingEnableFleetingLuckHint',
+    requiresReload: true,
     scope: 'world',
     type: Boolean,
     default: false,
@@ -280,6 +281,7 @@ export const registerSystemSettings = async function () {
   game.settings.register('dcc', 'automateFleetingLuck', {
     name: 'DCC.SettingAutomateFleetingLuck',
     hint: 'DCC.SettingAutomateFleetingLuckHint',
+    requiresReload: true,
     scope: 'world',
     type: Boolean,
     default: true,
