@@ -183,7 +183,7 @@ class DCCItem extends Item {
     const spell = this.name
     options.title = game.i18n.format('DCC.RollModifierTitleCasting', { spell })
     const die = this.system.spellCheck.die
-    const bonus = this.system.spellCheck.value.toString()
+    const bonus = Roll.safeEval(this.system.spellCheck.value.toString())
 
     // Calculate check penalty if relevant
     let checkPenalty
