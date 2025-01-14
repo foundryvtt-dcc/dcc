@@ -94,10 +94,11 @@
              value="{{system.attributes.init.die}}" size="3"
              placeholder="1d20"
       >
-      <label for="system.attributes.init.value" class="rollable" title="{{localize 'DCC.InitSheetHint'}}>{{localize "DCC.Initiative"}}</label>
+      <label for="system.attributes.init.value" class="rollable" title="{{localize 'DCC.InitSheetHint'}}">{{localize "DCC.Initiative"}}</label>
       <input id="system.attributes.init.value" name="system.attributes.init.value"
              value="{{numberFormat system.attributes.init.value decimals=0 sign=true}}" size="3"
              placeholder="+0" data-dtype="Number"
+             title="{{localize 'DCC.InitSheetHint'}}"
              {{#if system.config.computeInitiative}}readonly{{/if}}
       >
 
