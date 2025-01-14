@@ -1180,6 +1180,7 @@ form.dcc-roll-modifier input.stat {
   border: 0;
   font-size: 30px;
   height: unset;
+  width: 50px;
 }
 .dcc .character .ac-and-hp {
   display: grid;
