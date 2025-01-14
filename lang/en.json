@@ -557,6 +557,7 @@
   "DCC.TakeDamage": "Takes {damage} HP of damage.",
   "DCC.Thief": "Thief",
   "DCC.ThiefAbilities": "Thief Abilities",
+  "DCC.ThiefBackstabSkillHint": "There is a backstab button on each weapon on the equipment that that can be used to roll a backstab",
   "DCC.ThiefClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#thief]{Thief}",
   "DCC.ThiefSkillHint": "Click to roll this skill, CMD/CTRL click for more options",
   "DCC.ThiefTabHint": "Find traps, climb walls, sneak silently, etc.",
