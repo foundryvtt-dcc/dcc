@@ -68,6 +68,12 @@
                   {{localize "DCC.AbilityIntShort"}} {{localize "DCC.Modifier"}}
                 </div>
                 <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.abilities.int.mod}}</div>
+                <label class="group-indent" for="system.class.spellCheckOtherMod" title="{{localize 'DCC.OtherModHint'}}">
+                  {{localize "DCC.SpellCheckOtherMod"}}
+                </label>
+                <input id="system.class.spellCheckOtherMod" name="system.class.spellCheckOtherMod"
+                       value="{{system.class.spellCheckOtherMod}}"
+                       data-dtype="String"/>
                 <label class="group-indent" for="system.class.spellCheckOverride" title="{{localize 'DCC.OverrideHint'}}">
                   {{localize "DCC.Override"}}
                 </label>

@@ -6,7 +6,10 @@
  * @return {Object}
  */
 function _cleanFormula (formula) {
-  return formula.toString().replace(/\s+/g, '').replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-')
+  if (formula) {
+    return formula.toString().replace(/\s+/g, '').replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-')
+  }
+  return ''
 }
 
 /**

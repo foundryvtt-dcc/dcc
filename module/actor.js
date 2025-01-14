@@ -349,14 +349,18 @@ class DCCActor extends Actor {
    * Compute Spell Check
    */
   computeSpellCheck () {
-    let abilityBonus = ensurePlus(this.system.abilities.int.mod)
+    let abilityMod = ensurePlus(this.system.abilities.int.mod)
     if (this.system.class.spellCheckAbility === 'per') {
-      abilityBonus = ensurePlus(this.system.abilities.per.mod)
+      abilityMod = ensurePlus(this.system.abilities.per.mod)
     }
     if (this.system.class.spellCheckAbility === '') {
-      abilityBonus = ''
+      abilityMod = ''
     }
-    this.system.class.spellCheck = ensurePlus(this.system.details.level.value + abilityBonus)
+    let otherMod = ''
+    if (this.system.class.spellCheckOtherMod) {
+      otherMod = ensurePlus(this.system.class.spellCheckOtherMod)
+    }
+    this.system.class.spellCheck = ensurePlus(this.system.details.level.value + abilityMod + otherMod)
     if (this.system.class.spellCheckOverride) {
       this.system.class.spellCheck = this.system.class.spellCheckOverride
     }
@@ -854,6 +858,10 @@ class DCCActor extends Actor {
     }
     const level = ensurePlus(this.system.details.level.value)
     const abilityMod = ensurePlus(ability?.mod || 0) || +0
+    let otherMod = ''
+    if (this.system.class.spellCheckOtherMod) {
+      otherMod = ensurePlus(this.system.class.spellCheckOtherMod)
+    }
     let bonus = ''
     if (this.system.class.spellCheckOverride) {
       bonus = this.system.class.spellCheckOverride
@@ -895,6 +903,14 @@ class DCCActor extends Actor {
           dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
           modifierLabel: game.i18n.localize('DCC.AbilityMod'),
           formula: abilityMod
+        }
+      )
+      terms.push(
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+          modifierLabel: game.i18n.localize('DCC.SpellCheckOtherMod'),
+          formula: otherMod
         }
       )
     }

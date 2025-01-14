@@ -307,6 +307,7 @@
           "maxSpellLevel": 0,
           "spellCheck": 1,
           "spellCheckAbility": "int",
+          "spellCheckOtherMod": null,
           "spellCheckDieOverride": null,
           "spellCheckOverride": null,
           "patron": null,
