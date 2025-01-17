@@ -1,4 +1,4 @@
-/* global DCCItem, actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, dccItemRollSpellCheckMock, uiNotificationsWarnMock, game */
+/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game */
 /**
  * Tests for Actor.js using Foundry Mocks.
  * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js
@@ -61,7 +61,7 @@ test('roll ability check', async () => {
       {
         type: 'Modifier',
         label: 'AbilityStr',
-        formula: -1
+        formula: '-1'
       },
       {
         apply: true,
@@ -124,7 +124,7 @@ test('roll ability check', async () => {
       {
         type: 'Modifier',
         label: 'AbilityLck',
-        formula: 3
+        formula: '+3'
       }
     ],
     {},
@@ -581,10 +581,10 @@ test('roll spell check', async () => {
         modifierLabel: 'AbilityMod'
       },
       {
-        'dieLabel': 'RollModifierDieTerm',
-        'formula': '',
-        'modifierLabel': 'SpellCheckOtherMod',
-        'type': 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        formula: '',
+        modifierLabel: 'SpellCheckOtherMod',
+        type: 'Compound'
       },
       {
         type: 'CheckPenalty',
@@ -665,10 +665,10 @@ test('roll spell check int', async () => {
         modifierLabel: 'AbilityMod'
       },
       {
-        'dieLabel': 'RollModifierDieTerm',
-        'formula': '',
-        'modifierLabel': 'SpellCheckOtherMod',
-        'type': 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        formula: '',
+        modifierLabel: 'SpellCheckOtherMod',
+        type: 'Compound'
       },
       {
         type: 'CheckPenalty',
@@ -748,10 +748,10 @@ test('roll spell check per', async () => {
         modifierLabel: 'AbilityMod'
       },
       {
-        'dieLabel': 'RollModifierDieTerm',
-        'formula': '',
-        'modifierLabel': 'SpellCheckOtherMod',
-        'type': 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        formula: '',
+        modifierLabel: 'SpellCheckOtherMod',
+        type: 'Compound'
       },
       {
         type: 'CheckPenalty',
