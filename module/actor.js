@@ -442,7 +442,7 @@ class DCCActor extends Actor {
         {
           type: 'Modifier',
           label: abilityLabel,
-          formula: ability.mod
+          formula: ensurePlus(ability.mod)
         }
       ]
 
