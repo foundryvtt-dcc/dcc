@@ -486,7 +486,7 @@ class DCCActor extends Actor {
 
     // Set up the roll
     let die = this.system.attributes.init.die || '1d20'
-    const init = this.system.attributes.init.value
+    const init = ensurePlus(this.system.attributes.init.value)
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
 
     const twoHandedWeapon = this.items.find(t => t.system.twoHanded && t.system.equipped)
