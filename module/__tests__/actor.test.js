@@ -232,7 +232,7 @@ test('roll initiative', async () => {
       {
         type: 'Modifier',
         label: 'Initiative',
-        formula: -1
+        formula: '-1'
       }
     ],
     actor.getRollData(),
