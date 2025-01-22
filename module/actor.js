@@ -570,12 +570,11 @@ class DCCActor extends Actor {
 
     // Players have a stamina modifier they can add
     if (this.type === 'Player') {
-      const sta = this.system.abilities.sta || {}
-      const modifier = sta.mod = sta.value ? CONFIG.DCC.abilityModifiers[sta.value] : '+0'
+      const staminaMod = ensurePlus(this.system.abilities.sta.mod) || '+0'
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilitySta'),
-        formula: modifier
+        formula: staminaMod
       })
     }
 
