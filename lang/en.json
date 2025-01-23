@@ -114,6 +114,7 @@
   "DCC.ComputeMeleeAndMissileAttackAndDamage": "Compute Melee/Missile Atk/Dmg",
   "DCC.ComputeMeleeAndMissileAttackAndDamageHint": "Automatically Compute the Melee and Missile Attack and Damage Boxes on the Character tab",
   "DCC.ComputeSavingThrows": "Compute Saving Throws",
+  "DCC.ComputeSavingThrowsHint": "Compute Saving Throws automatically - you can add adjustments to the calculation by clicking on a Saving Throw value",
   "DCC.ComputeSpeedConfig": "Compute Speed",
   "DCC.ComputeSpeedConfigHint": "Compute Speed from Base Speed (below) and subtracting armor speed penalties",
   "DCC.ConfigureItem": "Config",
