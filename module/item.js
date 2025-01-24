@@ -183,7 +183,13 @@ class DCCItem extends Item {
     const spell = this.name
     options.title = game.i18n.format('DCC.RollModifierTitleCasting', { spell })
     const die = this.system.spellCheck.die
-    const bonus = Roll.safeEval(this.system.spellCheck.value.toString())
+    let bonus = this.system.spellCheck.value.toString()
+
+    // Consolidate the spell check value so that the modifier dialog is not too wide
+    // Unless people are using variables, in which case the DCC roll parser needs to deal with those
+    if (!this.system.spellCheck.value.includes('@')) {
+      bonus = Roll.safeEval(bonus)
+    }
 
     // Calculate check penalty if relevant
     let checkPenalty
