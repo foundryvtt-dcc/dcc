@@ -413,6 +413,7 @@ class DCCItem extends Item {
         value: lookup
       })
     } else {
+      const modifier = (ability.mod * 10).toString()
       const terms = [
         {
           type: 'Die',
@@ -421,7 +422,7 @@ class DCCItem extends Item {
         {
           type: 'Modifier',
           label: game.i18n.localize('DCC.AbilityLck'),
-          formula: ability.mod * 10
+          formula: ensurePlus(modifier)
         }
       ]
 
