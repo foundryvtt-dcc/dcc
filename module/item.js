@@ -334,7 +334,7 @@ class DCCItem extends Item {
 
     // Lookup the manifestation table if available
     let manifestationResult = null
-    const manifestationPackName = game.settings.get('dcc', 'spellSideEffectsCompendium') || 'dcc-core-book.dcc-core-spell-effect-tables'
+    const manifestationPackName = game.settings.get('dcc', 'spellSideEffectsCompendium') || 'dcc-core-book.dcc-core-spell-side-effect-tables'
     const manifestationTableName = `${this.name} Manifestation`
     const pack = game.packs.get(manifestationPackName)
     if (pack) {
