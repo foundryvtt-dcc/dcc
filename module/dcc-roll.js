@@ -1,4 +1,4 @@
-/* global Roll */
+/* global DiceTerm, Roll */
 
 import * as RollModifier from './roll-modifier.js'
 
