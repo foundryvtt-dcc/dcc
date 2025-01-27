@@ -770,16 +770,16 @@ class DCCActor extends Actor {
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
         flags
       })
+
+      // Need to drain disapproval
+      if (skill && skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
+        await this.applyDisapproval(skill.drainDisapproval)
+      }
     }
 
     // Store last result if required
     if (skillItem && skillItem.system.config.showLastResult) {
       skillItem.update({ 'system.lastResult': roll.total })
-    }
-
-    // Need to drain disapproval
-    if (skill && skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
-      await this.applyDisapproval(skill.drainDisapproval)
     }
   }
 
@@ -1494,12 +1494,12 @@ class DCCActor extends Actor {
   /**
    * Roll disapproval
    * @private
-   * @param formula
+   * @param terms
    * @param options
    */
-  async _onRollDisapproval (formula, options = {}) {
+  async _onRollDisapproval (terms, options = {}) {
     try {
-      const roll = await game.dcc.DCCRoll.createRoll(formula, this.getRollData(), options)
+      const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
       if (!roll) { return }
 
@@ -1534,7 +1534,7 @@ class DCCActor extends Actor {
       }
     } catch (err) {
       if (err) {
-        ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning', { formula }))
+        ui.notifications.warn(game.i18n.format('DCC.DisapprovalFormulaWarning'))
       }
     }
   }

@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, Roll, ui, loadTemplates, Handlebars, NumericTerm, OperatorTerm */
+/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, loadTemplates, Handlebars */
 
 /**
  * DCC
@@ -377,44 +377,49 @@ async function processSpellCheck (actor, spellData) {
   // - item (optional): the item representing the spell or spell-like skill
   // - flavor: flavor text for the spell if no table is available to provide it
   const rollTable = spellData.rollTable
-  let roll = spellData.roll
+  const roll = spellData.roll
   const item = spellData.item
   const flavor = spellData.flavor
 
   let crit = false
   let fumble = false
   let naturalRoll = null
+  let result = null
+
+  // Make sure we evaluate the roll
+  if (!roll._evaluated) {
+    await roll.evaluate()
+  }
 
   try {
     // Apply the roll to the table if present
     if (rollTable) {
-      const result = await rollTable.draw({ roll, displayChat: false })
+      result = rollTable.getResultsForRoll(roll.total)
 
-      if (result.roll.dice.length > 0) {
+      if (roll.dice.length > 0) {
         // Next three lines are used to force crit for testing
-        // result.roll._total += (20-result.roll.terms[0].total)
-        // result.roll.terms[0].results[0].result = 20
-        // result.roll.terms[0]._total = 20
+        // roll._total += (20-roll.terms[0].total)
+        // roll.terms[0].results[0].result = 20
+        // roll.terms[0]._total = 20
 
-        naturalRoll = result.roll.dice[0].total
+        naturalRoll = roll.dice[0].total
         if (naturalRoll === 1) {
-          const fumbleResult = await rollTable.draw({ roll: new Roll('1'), displayChat: false })
-          result.roll = fumbleResult.roll
+          const fumbleResult = rollTable.getResultsForRoll(1)
           result.results = fumbleResult.results
           fumble = true
         } else if (naturalRoll === 20) {
           if (actor.type === 'Player') {
-            const critRoll = result.roll.total + actor.system.details.level.value
+            const critRoll = roll.total + actor.system.details.level.value
             result.results = rollTable.getResultsForRoll(critRoll)
-            result.roll.terms.push(new OperatorTerm({ operator: '+' }))
-            result.roll.terms.push(new NumericTerm({ number: parseInt(actor.system.details.level.value) }))
-            result.roll._formula += ` + ${actor.system.details.level.value}`
-            result.roll._total += actor.system.details.level.value
+            roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
+            roll.terms.push(new foundry.dice.terms.NumericTerm({ number: parseInt(actor.system.details.level.value) }))
+            roll._formula += ` + ${actor.system.details.level.value}`
+            roll._total += actor.system.details.level.value
             crit = true
           }
         }
       }
-      await game.dcc.SpellResult.addChatMessage(rollTable, result, { crit, fumble, item })
+      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, { crit, fumble, item })
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
@@ -436,11 +441,6 @@ async function processSpellCheck (actor, spellData) {
         flavor,
         flags
       })
-    }
-
-    // Determine the natural value of the roll if not yet known
-    if (!naturalRoll && roll.terms.length > 0 && roll.terms[0].results) {
-      naturalRoll = roll.terms[0].results[0].result
     }
 
     // Determine casting mode from the item or actor - default to wizard

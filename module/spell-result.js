@@ -3,6 +3,7 @@
 class SpellResult {
   /**
    * Create a chat message for a Spell Check result
+   * @param {Object} roll   The Roll for the spell check
    * @param {Object} rollTable    The RollTable representing spell results
    * @param {Object} result       The result object drawn from the table
    * @param {Object} messageData  Additional message data for the ChatMessage object
@@ -11,8 +12,7 @@ class SpellResult {
    * @param {boolean} fumble       The Spell Check was a nat 1
    * @param {Object} item          The spell item
    */
-  static async addChatMessage (rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, item = undefined } = {}) {
-    const roll = result.roll
+  static async addChatMessage (roll, rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, item = undefined } = {}) {
     messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
     }, messageOptions)
@@ -53,9 +53,9 @@ class SpellResult {
     // Render the chat card which combines the dice roll with the drawn results
     messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
       description: await TextEditor.enrichHTML(rollTable.description),
-      manifestation: manifestation,
-      mercurial: mercurial,
-      results: result.results.map(r => {
+      manifestation,
+      mercurial,
+      results: result.map(r => {
         return foundry.utils.duplicate(r)
       }),
       rollHTML: rollTable.displayRoll ? await roll.render() : null,

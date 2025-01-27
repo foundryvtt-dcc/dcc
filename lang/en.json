@@ -350,6 +350,7 @@
   "DCC.No": "No",
   "DCC.NoFolder": "-",
   "DCC.NoModifiableTerms": "No modifiable terms found in roll formula",
+  "DCC.NoSpellResultsTableWarning": "Spell Results Table not defined for this spell",
   "DCC.Notes": "Notes",
   "DCC.NotesTabHint": "Free-form notes about this character",
   "DCC.Occupation": "Occupation",
