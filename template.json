@@ -233,7 +233,7 @@
             "value": "0"
           },
           "pickPockets": {
-            "label": "DCC.PickPockets",
+            "label": "DCC.PickPocket",
             "ability": "agl",
             "value": "0"
           },
