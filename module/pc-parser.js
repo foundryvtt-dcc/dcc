@@ -2,6 +2,7 @@
 
 import EntityImages from './entity-images.js'
 import { getFirstDie, getFirstMod } from './utilities.js'
+import DCC from './config.js'
 
 /**
  *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an Actor sheet
@@ -99,12 +100,33 @@ function _parseJSONPCs (pcObject) {
     }
     if (pcObject.saveReflex) {
       pc['saves.ref.value'] = pcObject.saveReflex
+      pc['saves.ref.classBonus'] = pcObject.saveReflex
+      if (pcObject.agilityScore) {
+        const agilityMod = DCC.abilityModifiers[pcObject.agilityScore]
+        if (agilityMod !== 0) {
+          pc['saves.ref.classBonus'] = parseInt(pcObject.saveReflex) + (agilityMod * -1)
+        }
+      }
     }
     if (pcObject.saveFort) {
       pc['saves.frt.value'] = pcObject.saveFort
+      pc['saves.frt.classBonus'] = pcObject.saveFort
+      if (pcObject.staminaScore) {
+        const staminaMod = DCC.abilityModifiers[pcObject.staminaScore]
+        if (staminaMod !== 0) {
+          pc['saves.frt.classBonus'] = parseInt(pcObject.saveFort) + (staminaMod * -1)
+        }
+      }
     }
     if (pcObject.saveWill) {
       pc['saves.wil.value'] = pcObject.saveWill
+      pc['saves.wil.classBonus'] = pcObject.saveWill
+      if (pcObject.personalityScore) {
+        const personalityMod = DCC.abilityModifiers[pcObject.personalityScore]
+        if (personalityMod !== 0) {
+          pc['saves.wil.classBonus'] = parseInt(pcObject.saveWill) + (personalityMod * -1)
+        }
+      }
     }
 
     // Attributes only in upper level exports
