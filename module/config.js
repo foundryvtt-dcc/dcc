@@ -628,7 +628,7 @@ DCC.macroImages = {
 
 // Templates
 DCC.templates = {
-  attackRoll: 'systems/dcc/templates/chat-card-attack-roll.html',
+  attackResult: 'systems/dcc/templates/chat-card-attack-result.html',
   rollModifierDialog: 'systems/dcc/templates/dialog-roll-modifiers.html',
   spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
 }

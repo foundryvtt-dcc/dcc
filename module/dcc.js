@@ -177,9 +177,6 @@ Hooks.once('init', async function () {
   }
 
   window.getTemplate = getTemplate
-
-  // Override ChatMessage to use our template
-  CONFIG.ChatMessage.template = 'systems/dcc/templates/chat-message.html'
 })
 
 /* -------------------------------------------- */

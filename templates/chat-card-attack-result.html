@@ -1,0 +1,15 @@
+{{{message.system.attackRollHTML}}}
+{{#if message.system.deedDieRollResult}}
+  <div class="pt-8 deed-result{{#if message.system.deedRollSuccess}} critical{{/if}}">
+    <strong>{{localize "DCC.DeedDie"}}:</strong> {{{message.system.deedDieRollResult}}}
+  </div>
+{{/if}}
+{{#if message.system.damageInlineRoll}}
+  <div class="pt-8"><strong>{{message.system.damagePrompt}}:</strong> {{{message.system.damageInlineRoll}}}</div>
+{{/if}}
+{{#if message.flags.dcc.isCrit}}
+  <div class="pt-8"><strong>{{message.system.critPrompt}}!</strong> {{{message.system.critInlineRoll}}}</div>
+{{/if}}
+{{#if message.flags.dcc.isFumble}}
+  <div class="pt-8"><strong>{{message.system.fumblePrompt}}!</strong> {{{message.system.fumbleInlineRoll}}}</div>
+{{/if}}

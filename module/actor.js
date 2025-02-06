@@ -515,7 +515,7 @@ class DCCActor extends Actor {
   }
 
   async rollInit (event, token) {
-    if (token?.combatant?.initiative) {
+    if (token?.combatant?.initiative || this.inCombat) {
       ui.notifications.warn(game.i18n.localize('DCC.AlreadyHasInitiative'))
       return
     }
@@ -536,7 +536,7 @@ class DCCActor extends Actor {
     if (token) {
       token.actor.rollInitiative(options)
     } else {
-      this.rollInitiative(options)
+      await this.rollInitiative(options)
     }
   }
 
@@ -621,7 +621,7 @@ class DCCActor extends Actor {
       {
         type: 'Modifier',
         label: modifierLabel,
-        formula: save.value
+        formula: ensurePlus(save.value)
       }
     ]
 
@@ -1186,6 +1186,8 @@ class DCCActor extends Actor {
      */
     Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
 
+    messageData.content = await renderTemplate(CONFIG.DCC.templates.attackResult, {message: messageData})
+
     // Output the results
     ChatMessage.applyRollMode(messageData, rollMode)
     ChatMessage.create(messageData)
@@ -1313,7 +1315,7 @@ class DCCActor extends Actor {
       {
         type: 'Modifier',
         label: game.i18n.localize('DCC.AbilityLck'),
-        formula: parseInt(this.system.abilities.lck.mod || '0')
+        formula: ensurePlus(this.system.abilities.lck.mod)
       }
     ]
 
