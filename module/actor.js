@@ -969,6 +969,7 @@ class DCCActor extends Actor {
    */
   async rollWeaponAttack (weaponId, options = {}) {
     const automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
+    const rollMode = game.settings.get("core", "rollMode")
 
     // First try and find the item by id
     const weapon = this.items.find(i => i.id === weaponId)
@@ -996,8 +997,7 @@ class DCCActor extends Actor {
     // Damage roll
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      const deedDie = attackRollResult.deedDieFormula.replace('1d', 'd')
-      damageRollFormula = damageRollFormula.replaceAll(deedDie, `+${attackRollResult.deedDieRollResult}`)
+      damageRollFormula = damageRollFormula.replaceAll(attackRollResult.deedDieFormula, `+${attackRollResult.deedDieRollResult}`)
       if (damageRollFormula.includes('@ab')) {
         // This does not handle very high level characters that might have a deed die and a deed die modifier
         // But since @ab really should only be for NPCs, we don't have a way of splitting out such a mod from a strength mod
@@ -1187,6 +1187,7 @@ class DCCActor extends Actor {
     Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
 
     // Output the results
+    ChatMessage.applyRollMode(messageData, rollMode)
     ChatMessage.create(messageData)
   }
 
@@ -1267,6 +1268,9 @@ class DCCActor extends Actor {
         upperThreshold: 3
       }
       deedDieFormula = attackRoll.dice[1].formula
+      if (!this.system.details.attackBonus.startsWith('+1')){
+        deedDieFormula = deedDieFormula.replace(/^1/, '')
+      }
       deedDieRoll = attackRoll.dice[1]
       deedDieRollResult = attackRoll.dice[1].total
       deedSucceed = deedDieRollResult > 2
