@@ -266,6 +266,7 @@ global.game.dcc = {
     updateFlags: global.updateFlagsMock
   }
 }
+global.renderTemplate = vi.fn((template, data) => { return '' }).mockName('renderTemplate')
 
 /**
  * Settings

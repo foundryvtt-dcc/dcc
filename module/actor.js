@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry */
+/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry, renderTemplate */
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'

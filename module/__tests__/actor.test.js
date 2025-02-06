@@ -153,7 +153,7 @@ test('roll saving throw', async () => {
       {
         type: 'Modifier',
         label: 'SavesFortitude',
-        formula: -1
+        formula: '-1'
       }
     ],
     actor.getRollData(),
@@ -178,7 +178,7 @@ test('roll saving throw', async () => {
       {
         type: 'Modifier',
         label: 'SavesReflex',
-        formula: 0
+        formula: '+0'
       }
     ],
     actor.getRollData(),
@@ -203,7 +203,7 @@ test('roll saving throw', async () => {
       {
         type: 'Modifier',
         label: 'SavesWill',
-        formula: 2
+        formula: '+2'
       }
     ],
     actor.getRollData(),
