@@ -969,7 +969,7 @@ class DCCActor extends Actor {
    */
   async rollWeaponAttack (weaponId, options = {}) {
     const automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
-    const rollMode = game.settings.get("core", "rollMode")
+    const rollMode = game.settings.get('core', 'rollMode')
 
     // First try and find the item by id
     const weapon = this.items.find(i => i.id === weaponId)
@@ -1010,16 +1010,22 @@ class DCCActor extends Actor {
     }
     let damageRoll, damageInlineRoll, damagePrompt
     if (automateDamageFumblesCrits) {
+      const flavorMatch = damageRollFormula.match(/\[(.*)]/)
+      let flavor = ''
+      if (flavorMatch) {
+        flavor = flavorMatch[1]
+        damageRollFormula = damageRollFormula.replace(/\[.*]/, '')
+      }
       damageRoll = game.dcc.DCCRoll.createRoll([
         {
           type: 'Compound',
           dieLabel: game.i18n.localize('DCC.Damage'),
+          flavor,
           formula: damageRollFormula
         }
       ])
       await damageRoll.evaluate()
       foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
-      damageRoll.flavor = game.i18n.localize('DCC.Damage')
       if (damageRoll.total < 1) {
         damageRoll._total = 1
       }
@@ -1186,7 +1192,7 @@ class DCCActor extends Actor {
      */
     Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
 
-    messageData.content = await renderTemplate(CONFIG.DCC.templates.attackResult, {message: messageData})
+    messageData.content = await renderTemplate(CONFIG.DCC.templates.attackResult, { message: messageData })
 
     // Output the results
     ChatMessage.applyRollMode(messageData, rollMode)
@@ -1270,7 +1276,7 @@ class DCCActor extends Actor {
         upperThreshold: 3
       }
       deedDieFormula = attackRoll.dice[1].formula
-      if (!this.system.details.attackBonus.startsWith('+1')){
+      if (!this.system.details.attackBonus.startsWith('+1')) {
         deedDieFormula = deedDieFormula.replace(/^1/, '')
       }
       deedDieRoll = attackRoll.dice[1]

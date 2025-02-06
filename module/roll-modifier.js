@@ -38,6 +38,7 @@ function DCCDieTerm (options) {
     dieLabel: '',
     modifierLabel: '',
     partial: 'systems/dcc/templates/roll-modifier-partial-die.html',
+    flavor: options.flavor,
     formula: _cleanFormula(options.formula),
     presets: options.presets || []
   }]
@@ -168,6 +169,9 @@ function DCCCompoundTerm (options) {
           term.label = rawTerm
         } else if (dieLabel) {
           term.label = dieLabel
+        }
+        if (options.flavor) {
+          term.flavor = options.flavor
         }
         terms.push(term)
       }
