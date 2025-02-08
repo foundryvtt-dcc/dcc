@@ -40,6 +40,7 @@ class SpellResult {
       speaker,
       rolls: [roll],
       sound: roll ? CONFIG.sounds.dice : null,
+      system: {spellId: item?.id},
       flags
     }, messageData)
 
