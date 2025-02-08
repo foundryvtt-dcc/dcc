@@ -759,6 +759,7 @@ class DCCActor extends Actor {
       // Generate flags for the roll
       const flags = {
         'dcc.RollType': 'SkillCheck',
+        'dcc.ItemId': skillId,
         'dcc.SkillId': skillId,
         'dcc.isSkillCheck': true
       }
@@ -768,7 +769,8 @@ class DCCActor extends Actor {
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
-        flags
+        flags,
+        system: {skillId}
       })
 
       // Need to drain disapproval

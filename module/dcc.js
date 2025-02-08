@@ -436,7 +436,8 @@ async function processSpellCheck (actor, spellData) {
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
         flavor,
-        flags
+        flags,
+        system: { spellId: item?.id }
       })
     }
 
