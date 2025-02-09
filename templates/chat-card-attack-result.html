@@ -7,9 +7,9 @@
 {{#if message.system.damageInlineRoll}}
   <div class="pt-8"><strong>{{message.system.damagePrompt}}:</strong> {{{message.system.damageInlineRoll}}}</div>
 {{/if}}
-{{#if message.flags.dcc.isCrit}}
+{{#if message.system.critInlineRoll}}
   <div class="pt-8"><strong>{{message.system.critPrompt}}!</strong> {{{message.system.critInlineRoll}}}</div>
 {{/if}}
-{{#if message.flags.dcc.isFumble}}
+{{#if message.system.fumbleInlineRoll}}
   <div class="pt-8"><strong>{{message.system.fumblePrompt}}!</strong> {{{message.system.fumbleInlineRoll}}}</div>
 {{/if}}

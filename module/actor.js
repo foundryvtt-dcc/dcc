@@ -1032,8 +1032,7 @@ class DCCActor extends Actor {
         damageRoll._total = 1
       }
       rolls.push(damageRoll)
-      const damageRollAnchor = await damageRoll.toAnchor({ classes: ['damage-applyable'], dataset: { damage: damageRoll.total } })
-      damageInlineRoll = damageRollAnchor.outerHTML
+      damageInlineRoll = await damageRoll.toAnchor({ classes: ['damage-applyable', 'inline-dsn-hidden'], dataset: { damage: damageRoll.total } }).outerHTML
       damagePrompt = game.i18n.localize('DCC.Damage')
     } else {
       if (damageRollFormula.includes('-')) {
@@ -1082,7 +1081,7 @@ class DCCActor extends Actor {
           critText = `: <br>${critText}`
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
-        const critRollAnchor = critRoll.toAnchor().outerHTML
+        const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
         critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableText} ${critTableName})${critText}`)
       }
     }
@@ -1132,7 +1131,7 @@ class DCCActor extends Actor {
           fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
         }
         const fumbleResultPrompt = game.i18n.localize('DCC.FumblePrompt')
-        const fumbleRollAnchor = fumbleRoll.toAnchor().outerHTML
+        const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
         fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleResultPrompt} ${fumbleRollAnchor} ${fumbleTableName} ${fumbleText}`)
       }
     }
