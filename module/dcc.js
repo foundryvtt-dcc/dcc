@@ -706,6 +706,12 @@ async function createDCCMacro (data, slot) {
         flags: { 'dcc.itemMacro': true }
       })
     }
+    // Set permissions so all players can execute the macro
+    let permissions = macro.ownership
+    permissions.default = 2 // 2 = Observer, allows execution
+    macro.update({ ownership: permissions })
+
+    // Assign the macro to the hotbar slot
     await game.user.assignHotbarMacro(macro, slot)
   }
   return true
