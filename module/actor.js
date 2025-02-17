@@ -770,7 +770,7 @@ class DCCActor extends Actor {
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
         flags,
-        system: {skillId}
+        system: { skillId }
       })
 
       // Need to drain disapproval
@@ -1032,7 +1032,10 @@ class DCCActor extends Actor {
         damageRoll._total = 1
       }
       rolls.push(damageRoll)
-      damageInlineRoll = await damageRoll.toAnchor({ classes: ['damage-applyable', 'inline-dsn-hidden'], dataset: { damage: damageRoll.total } }).outerHTML
+      damageInlineRoll = await damageRoll.toAnchor({
+        classes: ['damage-applyable', 'inline-dsn-hidden'],
+        dataset: { damage: damageRoll.total }
+      }).outerHTML
       damagePrompt = game.i18n.localize('DCC.Damage')
     } else {
       if (damageRollFormula.includes('-')) {
@@ -1246,7 +1249,7 @@ class DCCActor extends Actor {
         type: 'Modifier',
         label: game.i18n.localize('DCC.Backstab'),
         presets: [],
-        formula: parseInt(this.system.class.backstab)
+        formula: parseInt(this.system?.class?.backstab || '+0')
       })
     }
 

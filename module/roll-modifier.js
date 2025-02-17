@@ -7,7 +7,7 @@
  */
 function _cleanFormula (formula) {
   if (formula) {
-    return formula.toString().replace(/\s+/g, '').replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-')
+    return formula.toString().replace(/\s+/g, '').replace(/\+\+/g, '+').replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-').replace(/\+$/, '')
   }
   return ''
 }
