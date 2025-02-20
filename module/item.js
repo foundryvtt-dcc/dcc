@@ -101,7 +101,9 @@ class DCCItem extends Item {
             this.system.config.damageOverride = this.system.damage
           }
         } else {
-          this.system.config.damageOverride = this.system.damage
+          if (this.system.damage !== '+0') {
+            this.system.config.damageOverride = this.system.damage
+          }
         }
       }
 
