@@ -1032,7 +1032,7 @@ class DCCActor extends Actor {
         damageRoll._total = 1
       }
       rolls.push(damageRoll)
-      damageInlineRoll = await damageRoll.toAnchor({
+      damageInlineRoll = damageRoll.toAnchor({
         classes: ['damage-applyable', 'inline-dsn-hidden'],
         dataset: { damage: damageRoll.total }
       }).outerHTML
@@ -1130,12 +1130,13 @@ class DCCActor extends Actor {
           fumbleResult = await getNPCFumbleTableResult(fumbleRoll, fumbleTableName)
         }
         if (fumbleResult) {
-          fumbleTableName = `(${fumbleResult?.parent?.link}):<br>`.replace('Fumble Table ', '').replace('Crit/', '')
+          fumbleTableName = `${fumbleResult?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
           fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
         }
         const fumbleResultPrompt = game.i18n.localize('DCC.FumblePrompt')
+        const onPrep = game.i18n.localize('DCC.on')
         const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
-        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleResultPrompt} ${fumbleRollAnchor} ${fumbleTableName} ${fumbleText}`)
+        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor} ${onPrep} ${fumbleTableName} ${fumbleText}`)
       }
     }
 
