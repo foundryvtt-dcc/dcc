@@ -189,16 +189,16 @@ class DCCItem extends Item {
 
     // Consolidate the spell check value so that the modifier dialog is not too wide
     // Unless people are using variables, in which case the DCC roll parser needs to deal with those
-    if (!this.system.spellCheck.value.includes('@')) {
+    if (bonus.includes('@')) {
       bonus = Roll.safeEval(bonus)
     }
 
     // Calculate check penalty if relevant
     let checkPenalty
     if (this.system.config.inheritCheckPenalty) {
-      checkPenalty = parseInt(actor.system.attributes.ac.checkPenalty || 0)
+      checkPenalty = parseInt(actor.system.attributes.ac.checkPenalty || '0')
     } else {
-      checkPenalty = parseInt(this.system.spellCheck.penalty || 0)
+      checkPenalty = parseInt(this.system.spellCheck.penalty || '0')
     }
 
     // Determine the casting mode
