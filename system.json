@@ -4,7 +4,7 @@
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": "0.51.42",
   "compatibility": {
-    "maximum": "12",
+    "maximum": "13",
     "minimum": "12",
     "verified": "12"
   },

@@ -40,7 +40,7 @@ class DCCActorParser extends FormApplication {
     context.importType = game.settings.get('dcc', 'lastImporterType')
 
     // Gather the list of actor folders
-    for (const folder of game.actors.directory.folders) {
+    for (const folder of game.folders.filter(folder => folder.type === 'Actor')) {
       context.folders.push({ id: folder._id, name: folder.name })
     }
 
@@ -262,20 +262,34 @@ async function createActors (type, folderId, actorData) {
  * @param {object}   html
  * @return {Promise}
  */
-function onRenderActorDirectory (app, html) {
+function onRenderActorDirectory(app, html) {
   if (!game.user.hasPermission('ACTOR_CREATE')) {
     return Promise.resolve()
   }
-  const button = $(`<button class="import-actors"><i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImport')}</button>`)
-  button.on('click', () => {
+
+  // Create a new button element using vanilla JavaScript
+  const button = document.createElement('button')
+  button.classList.add('import-actors')
+  button.classList.add('p-8')
+  button.innerHTML = `<i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImport')}`
+
+  // Add the click event listener
+  button.addEventListener('click', () => {
     new DCCActorParser().render(true)
   })
-  let footer = html.find('.directory-footer')
-  if (footer.length === 0) {
-    footer = $('<footer class="directory-footer"></footer>')
-    html.append(footer)
+
+  // Find the footer element in the html (DocumentElement)
+  let footer = html.querySelector('.directory-footer')
+
+  // If no footer exists, create one and append it to the html
+  if (!footer) {
+    footer = document.createElement('footer')
+    footer.classList.add('directory-footer')
+    html.appendChild(footer) // Append the new footer
   }
-  footer.append(button)
+
+  // Append the button to the footer
+  footer.appendChild(button)
 }
 
 export default { onRenderActorDirectory, createActors }
