@@ -262,7 +262,7 @@ async function createActors (type, folderId, actorData) {
  * @param {object}   html
  * @return {Promise}
  */
-function onRenderActorDirectory(app, html) {
+function onRenderActorDirectory (app, html) {
   if (!game.user.hasPermission('ACTOR_CREATE')) {
     return Promise.resolve()
   }
