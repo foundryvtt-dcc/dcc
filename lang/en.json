@@ -644,7 +644,7 @@
   "DCC.system.saves.frt.classBonus": "Fortitude Save",
   "DCC.system.saves.ref.classBonus": "Reflex Save",
   "DCC.system.saves.wil.classBonus": "Will Save",
-  "DCC.system.skills.castSpellFromScroll.value": "Cast Spell from Scroll",
+  "DCC.system.skills.castSpellFromScroll.die": "Cast Spell from Scroll",
   "DCC.system.skills.climbSheerSurfaces.value": "Clime Sheer Surfaces",
   "DCC.system.skills.disableTrap.value": "Disable Trap",
   "DCC.system.skills.disguiseSelf.value": "Disguise Self",
