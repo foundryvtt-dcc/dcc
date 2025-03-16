@@ -484,7 +484,7 @@
   },
   "DCC.SheetConfig": "Sheet Configuration",
   "DCC.ShieldBash": "Shield Bash",
-  "DCC.ShieldBashHint": "Click to roll a shield bash, CMD/CTRL click for more options",
+  "DCC.ShieldBashHint": "Die size to use for shield bash attacks; set up a shield bash weapon in the equipment tab and use this as the action die override.",
   "DCC.ShowBackstabConfig": "Show Backstab",
   "DCC.ShowBackstabConfigHint": "Show Backstab attack option in Equipment tab for weapons (e.g. for Thieves)",
   "DCC.ShowMercurialTabConfig": "Show Mercurial Effect Tab",
