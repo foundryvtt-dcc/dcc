@@ -311,6 +311,12 @@
 .dcc select:focus {
   box-shadow: none;
 }
+.dcc .theme-dark {
+  background-image: url("/ui/parchment.jpg");
+}
+.dcc .theme-light {
+  background-image: url("/ui/parchment.jpg");
+}
 .dcc .label-font {
   font-family: "Cooper Black", "Palatino Linotype", serif;
 }

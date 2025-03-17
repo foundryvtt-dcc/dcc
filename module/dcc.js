@@ -229,8 +229,8 @@ function checkReleaseNotes () {
 
 async function _onShowJournal (packName, journalName) {
   const pack = game.packs.get(packName)
-  const index = await pack.getIndex()
-  const metadata = await index.getName(journalName)
+  // const index = await pack.getIndex()
+  const metadata = await pack.index.getName(journalName)
   const doc = await pack.getDocument(metadata._id)
   await doc.sheet.render(true)
 }
@@ -262,7 +262,7 @@ function registerTables () {
       for (const packName of manager.packs) {
         const pack = game.packs.get(packName)
         if (pack) {
-          await pack.getIndex()
+          // await pack.getIndex()
           for (const [key, value] of pack.index.entries()) {
             CONFIG.DCC.disapprovalTables[key] = {
               name: value.name,

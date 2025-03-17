@@ -55,7 +55,7 @@ export const registerSystemSettings = async function () {
   const rollTables = { '': 'Automatic' }
   try {
     for (const pack of tableCompendiums) {
-      await pack.getIndex()
+      // await pack.getIndex()
       pack.index.forEach(function (value) {
         rollTables[`${pack.metadata.id}.${value.name}`] = pack.metadata.label + ': ' + value.name
       })

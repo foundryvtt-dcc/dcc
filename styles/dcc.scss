@@ -131,6 +131,14 @@ $font-awesome: 'Font Awesome 6 Pro';
     }
   }
 
+  .theme-dark {
+    background-image: url('/ui/parchment.jpg');
+  }
+
+  .theme-light {
+    background-image: url('/ui/parchment.jpg');
+  }
+
   .label-font {
     font-family: $cooper-black;
   }

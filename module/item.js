@@ -264,7 +264,7 @@ class DCCItem extends Item {
     if (resultsRef.collection) {
       const pack = game.packs.get(resultsRef.collection)
       if (pack) {
-        await pack.getIndex()
+        // await pack.getIndex()
         const entry = pack.index.find(predicate)
         resultsTable = await pack.getDocument(entry._id)
       }

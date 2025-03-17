@@ -12,17 +12,27 @@ import DCCActorSheet from './actor-sheet.js'
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetCleric extends DCCActorSheet {
-  static height = 635
+
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 635
+    }
+  }
+
+  static {
+    this._initializeActorSheetClass()
+  }
 
   /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-cleric.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Cleric')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+    const { actor: a, source: s, incomplete: i } = context
 
-    if (data.system.details.sheetClass !== 'Cleric') {
+    a.system.class.className = game.i18n.localize('DCC.Cleric')
+    a.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
+
+    if (a.system.details.sheetClass !== 'Cleric') {
       this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Cleric'),
         'system.details.sheetClass': 'Cleric',
@@ -33,7 +43,7 @@ class DCCActorSheetCleric extends DCCActorSheet {
       })
     }
 
-    return data
+    return context
   }
 }
 

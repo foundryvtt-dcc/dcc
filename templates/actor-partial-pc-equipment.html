@@ -1,5 +1,5 @@
 {{!-- Equipment Tab --}}
-<div class="tab equipment-bg" data-group="primary" data-tab="equipment">
+<section class="tab equipment-bg {{tabs.equipment.id}} {{tabs.equipment.cssClass}}" data-tab="{{tabs.equipment.id}}" data-group="{{tabs.equipment.group}}">
   {{!-- Melee Weapons --}}
   {{#* inline "weaponRow"}}
     <li class="grid-col-span-9 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
@@ -96,5 +96,5 @@
   </ol>
 
   {{> systems/dcc/templates/actor-partial-npc-equipment.html }}
-</div>
+</section>
 {{!-- End Equipment Tab --}}

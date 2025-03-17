@@ -1,127 +1,152 @@
-/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, CONST */
-// noinspection JSClosureCompilerSyntax
+/* global CONFIG, TextEditor, game, getDocumentClass, foundry, CONST */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
 import EntityImages from './entity-images.js'
 
+const { api, sheets } = foundry.applications
+
 /**
  * Extend the basic ActorSheet
  * @extends {ActorSheet}
  */
-class DCCActorSheet extends ActorSheet {
-  static height = 450
-
-  /** @override */
-  static get defaultOptions () {
-    const options = {
-      classes: ['dcc', 'sheet', 'actor', 'npc'],
+class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'actor', 'standard-form', 'themed', 'theme-light', 'pc'],
+    tag: 'form',
+    position: {
       width: 520,
-      height: this.height,
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
-      dragDrop: [{ dragSelector: null, dropSelector: null }],
+      height: 450
+    },
+    actions: {
+      configureActor: DCCActorSheet.#onConfigureActor,
+      itemCreate: DCCActorSheet.#onItemCreate,
+      itemEdit: DCCActorSheet.#onItemEdit,
+      itemDelete: DCCActorSheet.#onItemDelete
+    },
+    form: {
+      submitOnChange: true
+    },
+    actor: {
+      type: 'Player'
+    },
+    window: {
       resizable: true,
-      scrollY: [
-        '.tab.character',
-        '.tab.equipment .equipment-container',
-        '.tab.skills',
-        '.tab.spells'
-      ],
-      template: 'systems/dcc/templates/actor-sheet-npc.html'
+      controls: [
+        {
+          action: 'configureActor',
+          icon: 'fas fa-code',
+          label: 'DCC.ConfigureSheet',
+          ownership: 'OWNER'
+        }
+      ]
     }
-    return foundry.utils.mergeObject(super.defaultOptions, options)
   }
 
-  /** @inheritdoc */
-  _getHeaderButtons () {
-    const buttons = super._getHeaderButtons()
-
-    // Header buttons shown only with Owner permission
-    if (this.actor.permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
-      buttons.unshift(
-              {
-                label: 'DCC.ConfigureSheet',
-                class: 'configure-actor',
-                icon: 'fas fa-code',
-                onclick: ev => this._onConfigureActor(ev),
-                tooltip: 'DCC.ConfigureSheetHint'
-              }
-      )
+  /** @override */
+  static PARTS = {
+    body: {
+      id: 'body',
+      template: 'systems/dcc/templates/body.html'
+    },
+    tabs: {
+      id: 'tabs',
+      template: 'systems/dcc/templates/actor-partial-tabs.html'
+    },
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    notes: {
+      id: 'notes',
+      template: 'systems/dcc/templates/actor-partial-pc-notes.html'
+    },
+    skills: {
+      id: 'skills',
+      template: 'systems/dcc/templates/actor-partial-skills.html'
+    },
+    clericSpells: {
+      id: 'clericSpells',
+      template: 'systems/dcc/templates/actor-partial-cleric-spells.html'
+    },
+    wizardSpells: {
+      id: 'wizardSpells',
+      template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
     }
+  }
 
-    if (buttons[1]) {
-      buttons[1].tooltip = 'DCC.SheetHint'
-    }
-    if (buttons[2]) {
-      buttons[2].tooltip = 'DCC.TokenHint'
-    }
+  /**
+   * Define the structure of tabs used by this Item Sheet.
+   * @type {Record<string, Record<string, ApplicationTab>>}
+   */
+  static TABS = {
+    sheet: [
+      { id: 'character', group: 'sheet', label: 'DCC.Character' },
+      { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+      { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
+    ]
+  }
 
-    return buttons
+  /** @override */
+  tabGroups = {
+    sheet: 'character'
   }
 
   /* -------------------------------------------- */
 
+  /**
+   * A method which can be called by subclasses in a static initialization block to refine configuration options at the
+   * class level.
+   */
+  static _initializeActorSheetClass () {
+    const actor = this.DEFAULT_OPTIONS.actor
+    this.PARTS = foundry.utils.deepClone(this.PARTS)
+    this.TABS = foundry.utils.deepClone(this.TABS)
+  }
+
+  /* -------------------------------------------- */
+  /*  Sheet Rendering                             */
+
+  /* -------------------------------------------- */
+
   /** @override */
-  async getData (options) {
-    // Basic data
-    const isOwner = this.document.isOwner
-    const data = {
-      isOwner,
-      limited: this.document.limited,
-      options: this.options,
-      editable: this.isEditable,
-      cssClass: isOwner ? 'editable' : 'locked',
+  async _prepareContext (options) {
+    const tabGroups = this.#getTabs()
+    return {
+      actor: this.document,
+      config: CONFIG.DCC,
+      corruptionHTML: this.#prepareCorruption(),
+      fieldDisabled: this.isEditable ? '' : 'disabled',
+      incomplete: {},
+      equipment: this.#prepareItems(),
+      img: this.#prepareImage(),
+      isEditable: this.isEditable,
+      isOwner: this.document.isOwner,
       isNPC: this.document.type === 'NPC',
       isPC: this.document.type === 'Player',
       isZero: this.document.system.details.level.value === 0,
-      type: this.document.type,
-      config: CONFIG.DCC
+      notesHTML: await this.#prepareNotes(),
+      source: this.document.toObject(),
+      system: this.document.system,
+      tabGroups,
+      tabs: tabGroups.sheet
     }
-
-    /** @type {DCCActor} */
-    data.actor = foundry.utils.duplicate(this.document)
-    data.actor.name = this.document.name
-
-    data.system = foundry.utils.duplicate(this.document.system)
-    data.labels = this.document.labels || {}
-    data.filters = this._filters
-
-    if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-      data.actor.img = EntityImages.imageForActor(data.type)
-      if (!data.actor.prototypeToken.texture.src || data.actor.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
-        data.actor.prototypeToken.texture.src = EntityImages.imageForActor(data.type)
-      }
-    }
-
-    // Prepare item lists by type
-    this._prepareItems(data)
-
-    // Format Notes HTML
-    data.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
-      relativeTo: this.actor,
-      secrets: this.actor.isOwner
-    })
-
-    // Format Corruption HTML if present
-    if (this.actor.system.class?.corruption) {
-      data.corruptionHTML = await TextEditor.enrichHTML(this.actor.system.class.corruption, {
-        relativeTo: this.actor,
-        secrets: this.actor.isOwner
-      })
-    }
-
-    return data
   }
 
   /**
    * Organize and classify Items for Character sheets.
    *
    * @return {undefined}
-   * @param sheetData
    */
-  async _prepareItems (sheetData) {
-    const actorData = sheetData.actor
+  async #prepareItems () {
+    const sheetData = this.document
+    const actorData = this.document
 
     // Initialize containers.
     const equipment = []
@@ -137,7 +162,7 @@ class DCCActorSheet extends ActorSheet {
     const treasure = []
     const coins = []
 
-    let inventory = this.actor.items
+    let inventory = this.document.items
     if (sheetData.system.config.sortInventory) {
       // Shallow copy and lexical sort
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
@@ -188,7 +213,7 @@ class DCCActorSheet extends ActorSheet {
 
         if (i.system.isCoins) {
           // Safe to treat as coins if the item's value is resolved
-          const item = this.actor.items.get(i._id)
+          const item = this.document.items.get(i._id)
           if (!item.needsValueRoll()) {
             treatAsCoins = true
           }
@@ -237,9 +262,58 @@ class DCCActorSheet extends ActorSheet {
     actorData.spells = spells
     actorData.skills = skills
     actorData.treasure = treasure
+
+    return this.document.items
   }
 
   /* -------------------------------------------- */
+
+  /**
+   * Prepare enriched notes HTML for the actor.
+   * @returns {notes: string}
+   */
+  async #prepareNotes () {
+    const context = { relativeTo: this.document, secrets: this.document.isOwner }
+    return TextEditor.enrichHTML(this.actor.system.details.notes.value, context)
+  }
+
+  /**
+   * Prepare enriched corruption HTML for the actor.
+   * @returns {corruption: string}
+   */
+  async #prepareCorruption () {
+    if (this.document.system.class?.corruption) {
+      const context = { relativeTo: this.document, secrets: this.document.isOwner }
+      return await TextEditor.enrichHTML(this.actor.system.class.corruption, context)
+    }
+  }
+
+  /**
+   * Configure the tabs used by this sheet.
+   * @returns {Record<string, Record<string, ApplicationTab>>}
+   */
+  #getTabs () {
+    const tabs = {}
+    for (const [groupId, config] of Object.entries(this.constructor.TABS)) {
+      const group = {}
+      for (const t of config) {
+        const active = this.tabGroups[t.group] === t.id
+        group[t.id] = Object.assign({ active, cssClass: active ? 'active' : '' }, t)
+      }
+      tabs[groupId] = group
+    }
+    return tabs
+  }
+
+  #prepareImage () {
+    if (!this.document.img || this.document.img === 'icons/svg/mystery-man.svg') {
+      this.document.img = EntityImages.imageForActor(this.document.type)
+      if (!this.document.prototypeToken.texture.src || this.document.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
+        this.document.prototypeToken.texture.src = EntityImages.imageForActor(this.document.type)
+      }
+    }
+    return this.document.img
+  }
 
   /** @override */
   activateListeners (html) {
@@ -352,10 +426,11 @@ class DCCActorSheet extends ActorSheet {
 
   /**
    * Display sheet specific configuration settings
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event
+   * @returns {Promise<void>}
    */
-  _onConfigureActor (event) {
+  static async #onConfigureActor (event) {
     event.preventDefault()
     new DCCActorConfig(this.actor, {
       top: this.position.top + 40,
@@ -400,32 +475,72 @@ class DCCActorSheet extends ActorSheet {
     console.log('on melee missile bonus')
   }
 
+  /**
+   * Get the Item document associated with an action event.
+   * @param {PointerEvent} event
+   * @returns {DCCItem}
+   */
+  #getEventItem (event) {
+    const itemId = event.target.closest('.line-item')?.dataset.itemId
+    return this.actor.items.get(itemId, { strict: true })
+  }
+
+  /**
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event
+   * @returns {Promise<void>}
+   */
+  static async #onItemCreate (event) {
+    const cls = getDocumentClass('Item')
+    await cls.createDialog({ type: 'weapon' }, { parent: this.document, pack: this.document.pack })
+  }
+
+  /**
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event
+   * @returns {Promise<void>}
+   */
+  static async #onItemDelete (event) {
+    const item = this.#getEventItem(event)
+    await item.deleteDialog()
+  }
+
+  /**
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event
+   * @returns {Promise<void>}
+   */
+  static async #onItemEdit (event) {
+    const item = this.#getEventItem(event)
+    await item.sheet.render({ force: true })
+  }
+
   /** Prompt to delete an item
    * @param {Event}  event   The originating click event
    * @private
    */
-  _onDeleteItem (event) {
-    event.preventDefault()
-    if (game.settings.get('dcc', 'promptForItemDeletion')) {
-      new Dialog({
-        title: game.i18n.localize('DCC.DeleteItem'),
-        content: `<p>${game.i18n.localize('DCC.DeleteItemExplain')}</p>`,
-        buttons: {
-          yes: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.Yes'),
-            callback: () => this._deleteItem(event)
-          },
-          no: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.No')
-          }
-        }
-      }).render(true)
-    } else {
-      this._deleteItem(event)
-    }
-  }
+  // _onDeleteItem (event) {
+  //   event.preventDefault()
+  //   if (game.settings.get('dcc', 'promptForItemDeletion')) {
+  //     new Dialog({
+  //       title: game.i18n.localize('DCC.DeleteItem'),
+  //       content: `<p>${game.i18n.localize('DCC.DeleteItemExplain')}</p>`,
+  //       buttons: {
+  //         yes: {
+  //           icon: '<i class="fas fa-check"></i>',
+  //           label: game.i18n.localize('DCC.Yes'),
+  //           callback: () => this._deleteItem(event)
+  //         },
+  //         no: {
+  //           icon: '<i class="fas fa-times"></i>',
+  //           label: game.i18n.localize('DCC.No')
+  //         }
+  //       }
+  //     }).render(true)
+  //   } else {
+  //     this._deleteItem(event)
+  //   }
+  // }
 
   _onDecreaseQty (event) {
     const itemId = this._findDataset(event.currentTarget, 'itemId')
@@ -448,10 +563,10 @@ class DCCActorSheet extends ActorSheet {
    * @param {Event}  event   The originating click event
    * @private
    */
-  _deleteItem (event) {
-    const itemId = this._findDataset(event.currentTarget, 'itemId')
-    this.actor.deleteEmbeddedDocuments('Item', [itemId])
-  }
+  // _deleteItem (event) {
+  //   const itemId = this._findDataset(event.currentTarget, 'itemId')
+  //   this.actor.deleteEmbeddedDocuments('Item', [itemId])
+  // }
 
   /**
    * Search the object and then its parent elements for a dataset attribute
@@ -609,16 +724,16 @@ class DCCActorSheet extends ActorSheet {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const weapon = this.actor.items.get(itemId)
       dragData = Object.assign(
-              weapon.toDragData(),
-              {
-                dccType: 'Weapon',
-                actorId: this.actor.id,
-                data: weapon,
-                dccData: {
-                  weapon,
-                  backstab: classes.contains('backstab-button')
-                }
-              }
+        weapon.toDragData(),
+        {
+          dccType: 'Weapon',
+          actorId: this.actor.id,
+          data: weapon,
+          dccData: {
+            weapon,
+            backstab: classes.contains('backstab-button')
+          }
+        }
       )
     }
 
@@ -626,15 +741,15 @@ class DCCActorSheet extends ActorSheet {
       const itemId = this._findDataset(event.currentTarget, 'itemId')
       const item = this.actor.items.get(itemId)
       dragData = Object.assign(
-              item.toDragData(),
-              {
-                dccType: 'Item',
-                actorId: this.actor.id,
-                data: item,
-                dccData: {
-                  item
-                }
-              }
+        item.toDragData(),
+        {
+          dccType: 'Item',
+          actorId: this.actor.id,
+          data: item,
+          dccData: {
+            item
+          }
+        }
       )
     }
 
@@ -868,9 +983,9 @@ class DCCActorSheet extends ActorSheet {
       const expanded = foundry.utils.expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
-                parentElement.classList.contains('armor') ||
-                parentElement.classList.contains('spell-item') ||
-                parentElement.classList.contains('skill-field')) {
+          parentElement.classList.contains('armor') ||
+          parentElement.classList.contains('spell-item') ||
+          parentElement.classList.contains('skill-field')) {
           // Handle extra nesting in skill lists
           if (parentElement.classList.contains('skill-field')) {
             parentElement = parentElement.parentElement

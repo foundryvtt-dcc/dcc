@@ -1,7 +1,7 @@
 {{!-- Notes Tab --}}
-<div class="tab" data-group="primary" data-tab="notes">
+<section class="tab {{tabs.notes.id}} {{tabs.notes.cssClass}}" data-tab="{{tabs.notes.id}}" data-group="{{tabs.notes.group}}">
   <div class="dark-title">{{localize "DCC.Notes"}}</div>
   <div class="notes">
     {{editor notesHTML target="system.details.notes.value" engine="prosemirror" button=true editable=editable}}
   </div>
-</div>
+</section>

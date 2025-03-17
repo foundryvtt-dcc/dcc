@@ -138,8 +138,8 @@ async function createActors (type, folderId, actorData) {
       const pack = game.packs.get(packPath)
       if (!pack) continue
 
-      const index = await pack.getIndex()
-      for (const entry of index) {
+      // const index = await pack.getIndex()
+      for (const entry of pack.index) {
         itemMap[entry.name] = entry
       }
     }

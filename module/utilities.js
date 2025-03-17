@@ -70,7 +70,7 @@ export async function getCritTableResult (roll, critTableName) {
     if (criticalHitPackName) {
       const pack = game.packs.get(criticalHitPackName)
       if (pack) {
-        await pack.getIndex() // Load the compendium index
+        // await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name.startsWith(critTableName))
         if (entry) {
           const table = await pack.getDocument(entry._id)
