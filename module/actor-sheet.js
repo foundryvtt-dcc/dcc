@@ -1,4 +1,4 @@
-/* global CONFIG, TextEditor, game, getDocumentClass, foundry, CONST */
+/* global CONFIG, TextEditor, game, getDocumentClass, foundry */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -14,7 +14,7 @@ const { api, sheets } = foundry.applications
 class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor', 'standard-form', 'themed', 'theme-light', 'pc'],
+    classes: ['dcc', 'sheet', 'actor', 'themed', 'theme-light', 'pc'],
     tag: 'form',
     position: {
       width: 520,
@@ -105,7 +105,6 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * class level.
    */
   static _initializeActorSheetClass () {
-    const actor = this.DEFAULT_OPTIONS.actor
     this.PARTS = foundry.utils.deepClone(this.PARTS)
     this.TABS = foundry.utils.deepClone(this.TABS)
   }

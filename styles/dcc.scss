@@ -779,6 +779,9 @@ a.inline-roll {
 .dcc.sheet {
   .sheet-tabs.tabs {
     font-family: $duvall;
+    max-height: 25px;
+    border-top: 0;
+    margin-bottom: 8px;
   }
 
   a[data-tab] {

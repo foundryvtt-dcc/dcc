@@ -888,6 +888,9 @@ a.inline-roll {
 /* ----------------------------------------- */
 .dcc.sheet .sheet-tabs.tabs {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  max-height: 25px;
+  border-top: 0;
+  margin-bottom: 8px;
 }
 .dcc.sheet a[data-tab] {
   padding: 4px 0 4px 0;
