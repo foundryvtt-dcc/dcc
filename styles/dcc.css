@@ -369,6 +369,16 @@
   line-height: 1.5em;
 }
 
+.journal-sheet h3 {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  line-height: 1.2em;
+}
+
+.journal-sheet h4 {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  line-height: 1.1em;
+}
+
 .journal-sheet form input[name=name] {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
 }
@@ -379,6 +389,14 @@
 
 .journal-sheet .journal-page-content {
   font-family: "Book Antiqua", "Palatino Linotype", serif;
+}
+
+.journal-entry table th,
+.journal-entry table td {
+  padding: 5px;
+}
+.journal-entry table tr td:first-child {
+  padding-left: 8px;
 }
 
 /* ----------------------------------------- */
@@ -882,6 +900,7 @@ a.inline-roll {
 /* ----------------------------------------- */
 .dcc.sheet .sheet-tabs.tabs {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  max-height: 30px;
 }
 .dcc.sheet a[data-tab] {
   padding: 4px 0 4px 0;

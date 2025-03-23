@@ -197,6 +197,16 @@ $font-awesome: 'Font Awesome 6 Pro';
   line-height: 1.5em;
 }
 
+.journal-sheet h3 {
+  font-family: $duvall;
+  line-height: 1.2em;
+}
+
+.journal-sheet h4 {
+  font-family: $duvall;
+  line-height: 1.1em;
+}
+
 .journal-sheet form input[name='name'] {
   font-family: $duvall;
 }
@@ -207,6 +217,17 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .journal-sheet .journal-page-content {
   font-family: $book-antiqua;
+}
+
+.journal-entry {
+  table th,
+  table td {
+    padding: 5px;
+  }
+
+  table tr td:first-child {
+    padding-left: 8px;
+  }
 }
 
 /* ----------------------------------------- */
@@ -771,6 +792,7 @@ a.inline-roll {
 .dcc.sheet {
   .sheet-tabs.tabs {
     font-family: $duvall;
+    max-height: 30px;
   }
 
   a[data-tab] {
