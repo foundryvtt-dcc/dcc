@@ -411,7 +411,7 @@
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 1.3em;
   text-align: center;
-  color: var(--dark-border);
+  color: var(--dark-color);
   margin: 0.3em 0;
 }
 
