@@ -202,7 +202,7 @@ $font-awesome: 'Font Awesome 6 Pro';
   line-height: 1.2em;
 }
 
-.journal-sheet h4 {
+.journal-sheet h4:not(.window-title) {
   font-family: $duvall;
   line-height: 1.1em;
 }
@@ -227,6 +227,25 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   table tr td:first-child {
     padding-left: 8px;
+  }
+
+  .journal-entry-page,
+  .editor-content {
+    .sidebar {
+      border: var(--dark-border);
+      padding: 0.5em;
+      margin: 0.5em 0;
+      background: var(--light-color);
+      overflow: hidden;
+
+      h4 {
+        font-family: $duvall;
+        font-size: 1.3em;
+        text-align: center;
+        color: var(--dark-border);
+        margin: 0.3em 0;
+      }
+    }
   }
 }
 

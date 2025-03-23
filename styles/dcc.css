@@ -374,7 +374,7 @@
   line-height: 1.2em;
 }
 
-.journal-sheet h4 {
+.journal-sheet h4:not(.window-title) {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   line-height: 1.1em;
 }
@@ -397,6 +397,22 @@
 }
 .journal-entry table tr td:first-child {
   padding-left: 8px;
+}
+.journal-entry .journal-entry-page .sidebar,
+.journal-entry .editor-content .sidebar {
+  border: var(--dark-border);
+  padding: 0.5em;
+  margin: 0.5em 0;
+  background: var(--light-color);
+  overflow: hidden;
+}
+.journal-entry .journal-entry-page .sidebar h4,
+.journal-entry .editor-content .sidebar h4 {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-size: 1.3em;
+  text-align: center;
+  color: var(--dark-border);
+  margin: 0.3em 0;
 }
 
 /* ----------------------------------------- */
