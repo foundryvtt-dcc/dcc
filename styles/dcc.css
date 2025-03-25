@@ -1402,9 +1402,12 @@ form.dcc-roll-modifier input.stat {
 .dcc .npc-grid .combat-basics {
   column-gap: 5px;
   display: grid;
-  grid-template-columns: 86px minmax(35px, 1fr) 75px minmax(35px, 1fr);
+  grid-template-columns: 72px minmax(75px, 1fr) 61px minmax(15px, 1fr);
   grid-template-rows: minmax(17px, auto) minmax(18px, auto) minmax(18px, auto);
   padding: 0 5px 2px 3px;
+}
+.dcc .npc-grid .combat-basics label {
+  font-size: 12px;
 }
 .dcc .npc-grid .name-and-level {
   column-gap: 12px;
