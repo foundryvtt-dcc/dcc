@@ -419,6 +419,9 @@
     "templates": {
       "itemDescription": {
         "description": {
+          "judge": {
+            "value": ""
+          },
           "value": "",
           "chat": "",
           "unidentified": "",

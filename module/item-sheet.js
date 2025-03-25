@@ -99,7 +99,17 @@ class DCCItemSheet extends ItemSheet {
       })
     }
 
+    // Format Judge Description HTML
+    if (this.item.system?.description?.judge) {
+      data.judgeDescriptionHTML = await TextEditor.enrichHTML(this.item.system.description.judge.value, {
+        relativeTo: this.item,
+        secrets: this.item.isOwner
+      })
+    }
+
     data.config = CONFIG.DCC
+
+    data.isGM = game.user.isGM
 
     return data
   }

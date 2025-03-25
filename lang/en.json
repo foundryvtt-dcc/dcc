@@ -266,6 +266,8 @@
   "DCC.ItemTypeSpellPl": "Spells",
   "DCC.ItemTypeWeaponPl": "Weapons",
   "DCC.ItemValues": "Item Values",
+  "DCC.JudgeDescription": "Judge Description",
+  "DCC.JudgeOnlyDescription": "Judge-Only Description",
   "DCC.Languages": "Languages",
   "DCC.LanguagesCommon": "Common",
   "DCC.LanguagesDraconic": "Draconic",

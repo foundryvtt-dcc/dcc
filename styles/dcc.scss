@@ -229,6 +229,14 @@ $font-awesome: 'Font Awesome 6 Pro';
     padding-left: 8px;
   }
 
+  .journal-entry-page {
+    p {
+      margin-bottom: clamp(0.8em, 2vw, 1.4em);
+      margin-top: 0;
+      font-weight: 550;
+    }
+  }
+
   .journal-entry-page,
   .editor-content {
     .sidebar {
@@ -858,6 +866,10 @@ a.inline-roll {
 
   a[data-tab='item']::before {
     content: '\f723';
+  }
+
+  a[data-tab='judge-description']::before {
+    content: '\e3a5';
   }
 
   a[data-tab='level']::before {

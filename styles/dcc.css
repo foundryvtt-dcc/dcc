@@ -398,6 +398,11 @@
 .journal-entry table tr td:first-child {
   padding-left: 8px;
 }
+.journal-entry .journal-entry-page p {
+  margin-bottom: clamp(0.8em, 2vw, 1.4em);
+  margin-top: 0;
+  font-weight: 550;
+}
 .journal-entry .journal-entry-page .sidebar,
 .journal-entry .editor-content .sidebar {
   border: var(--dark-border);
@@ -951,6 +956,9 @@ a.inline-roll {
 }
 .dcc.sheet a[data-tab=item]::before {
   content: "\f723";
+}
+.dcc.sheet a[data-tab=judge-description]::before {
+  content: "\e3a5";
 }
 .dcc.sheet a[data-tab=level]::before {
   content: "\f3bf";
