@@ -1373,6 +1373,7 @@ form.dcc-roll-modifier input.stat {
 
 .dcc .npc-grid {
   height: 100%;
+  grid-template-rows: 18px 81px minmax(80px, auto) minmax(40px, min-content) minmax(40px, min-content);
 }
 .dcc .npc-grid textarea {
   background: none;
