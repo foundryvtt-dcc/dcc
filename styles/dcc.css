@@ -398,10 +398,18 @@
 .journal-entry table tr td:first-child {
   padding-left: 8px;
 }
+.journal-entry .journal-entry-page li p {
+  margin-bottom: clamp(0.7em, 1vw, 0.8em);
+  margin-top: 0;
+}
 .journal-entry .journal-entry-page p {
   margin-bottom: clamp(0.8em, 2vw, 1.4em);
   margin-top: 0;
   font-weight: 550;
+}
+.journal-entry .journal-entry-page table td p {
+  padding: 5px;
+  margin-bottom: 0;
 }
 .journal-entry .journal-entry-page .sidebar,
 .journal-entry .editor-content .sidebar {

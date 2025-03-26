@@ -230,10 +230,21 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   .journal-entry-page {
+    li p {
+      margin-bottom: clamp(0.7em, 1vw, .8em);
+      margin-top: 0;
+    }
+
     p {
       margin-bottom: clamp(0.8em, 2vw, 1.4em);
       margin-top: 0;
       font-weight: 550;
+    }
+
+
+    table td p {
+      padding: 5px;
+      margin-bottom: 0;
     }
   }
 
