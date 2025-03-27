@@ -407,7 +407,7 @@
   margin-top: 0;
   font-weight: 550;
 }
-.journal-entry .journal-entry-page table td p {
+.journal-entry .journal-entry-page table td p, .journal-entry .journal-entry-page table th p {
   padding: 5px;
   margin-bottom: 0;
 }
