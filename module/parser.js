@@ -40,7 +40,7 @@ class DCCActorParser extends FormApplication {
     context.importType = game.settings.get('dcc', 'lastImporterType')
 
     // Gather the list of actor folders
-    for (const folder of game.folders.filter(folder => folder.type === 'Actor')) {
+    for (const folder of game.actors.directory.folders) {
       context.folders.push({ id: folder._id, name: folder.name })
     }
 

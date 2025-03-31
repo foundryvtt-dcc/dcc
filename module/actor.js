@@ -171,6 +171,18 @@ class DCCActor extends Actor {
     return defaultConfig
   }
 
+  /* -------------------------------------------- */
+
+  /** @inheritdoc */
+  _initializeSource (source, options) {
+    source = super._initializeSource(source, options)
+    // Set Players to link actor data by default.
+    if (source.type === 'Player') {
+      source.prototypeToken.actorLink = true
+    }
+    return source
+  }
+
   /** @override */
   getRollData () {
     const data = super.getRollData()
@@ -982,7 +994,7 @@ class DCCActor extends Actor {
     }
 
     // Warn if weapon is not equipped
-    if (!weapon.system?.equipped && game.settings.get('dcc', 'checkWeaponEquipment')) return ui.notifications.warn(game.i18n.localize('DCC.WeaponWarningUnequipped'))
+    if (!weapon.system?.equipped && game.settings.get('dcc', 'checkWeaponEquipment') && this.isPC) return ui.notifications.warn(game.i18n.localize('DCC.WeaponWarningUnequipped'))
 
     // Accumulate all rolls for sending to the chat message
     const rolls = []
@@ -1455,8 +1467,11 @@ class DCCActor extends Actor {
    * Apply a point of disapproval
    */
   async applyDisapproval (amount = 1) {
-    const speaker = ChatMessage.getSpeaker({ actor: this })
+    if (this.isNPC) {
+      return
+    }
 
+    const speaker = ChatMessage.getSpeaker({ actor: this })
     // Calculate new disapproval
     const newRange = Math.min(parseInt(this.system.class.disapproval) + amount, 20)
 
