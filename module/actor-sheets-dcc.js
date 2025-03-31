@@ -12,7 +12,6 @@ import DCCActorSheet from './actor-sheet.js'
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetCleric extends DCCActorSheet {
-
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
@@ -27,13 +26,13 @@ class DCCActorSheetCleric extends DCCActorSheet {
   /** @override */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-    const { actor: a, source: s, incomplete: i } = context
+    const { actor } = context
 
-    a.system.class.className = game.i18n.localize('DCC.Cleric')
-    a.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
+    actor.system.class.className = game.i18n.localize('DCC.Cleric')
+    actor.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
 
-    if (a.system.details.sheetClass !== 'Cleric') {
-      this.actor.update({
+    if (actor.system.details.sheetClass !== 'Cleric') {
+      actor.update({
         'system.class.className': game.i18n.localize('DCC.Cleric'),
         'system.details.sheetClass': 'Cleric',
         'system.class.spellCheckAbility': 'per',
@@ -52,18 +51,28 @@ class DCCActorSheetCleric extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetThief extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 635
+    }
+  }
+
+  static {
+    this._initializeActorSheetClass()
+  }
 
   /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+    const { actor } = context
     this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
     this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Thief')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
+    actor.system.class.className = game.i18n.localize('DCC.Thief')
+    actor.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
 
-    if (data.system.details.sheetClass !== 'Thief') {
-      this.actor.update({
+    if (actor.system.details.sheetClass !== 'Thief') {
+      actor.update({
         'system.class.className': game.i18n.localize('DCC.Thief'),
         'system.details.sheetClass': 'Thief',
         'system.details.critRange': 20,
@@ -74,7 +83,7 @@ class DCCActorSheetThief extends DCCActorSheet {
       })
     }
 
-    return data
+    return actor
   }
 }
 
@@ -83,18 +92,28 @@ class DCCActorSheetThief extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetHalfling extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 635
+    }
+  }
+
+  static {
+    this._initializeActorSheetClass()
+  }
 
   /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+    const { actor } = context
     this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
     this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Halfling')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
+    actor.system.class.className = game.i18n.localize('DCC.Halfling')
+    actor.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
 
-    if (data.system.details.sheetClass !== 'Halfling') {
-      this.actor.update({
+    if (actor.system.details.sheetClass !== 'Halfling') {
+      actor.update({
         'system.class.className': game.i18n.localize('DCC.Halfling'),
         'system.details.sheetClass': 'Halfling',
         'system.details.critRange': 20,
@@ -104,7 +123,7 @@ class DCCActorSheetHalfling extends DCCActorSheet {
       })
     }
 
-    return data
+    return actor
   }
 }
 

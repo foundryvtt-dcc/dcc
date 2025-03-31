@@ -1,7 +1,7 @@
 {{!-- Notes Tab --}}
-<section class="tab {{tabs.notes.id}} {{tabs.notes.cssClass}}" data-tab="{{tabs.notes.id}}" data-group="{{tabs.notes.group}}">
-  <div class="dark-title">{{localize "DCC.Notes"}}</div>
-  <div class="notes">
-    {{editor notesHTML target="system.details.notes.value" engine="prosemirror" button=true editable=editable}}
+<section class="tab notes-bg {{tabs.notes.id}} {{tabs.notes.cssClass}}" data-tab="{{tabs.notes.id}}" data-group="{{tabs.notes.group}}">
+  <div class="grid-col-span-12" style="height: 100%;">
+    <div class="dark-title">{{localize "DCC.Notes"}}</div>
+    {{editor notesHTML target="system.details.notes.value" engine="prosemirror" button=true editable=editable class="grid-col-span-12"}}
   </div>
 </section>

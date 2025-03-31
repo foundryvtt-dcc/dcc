@@ -247,6 +247,7 @@
   background: var(--dark-bg);
   color: var(--light-color);
   font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-size: 14px;
   height: 19px;
   letter-spacing: 1px;
   padding-top: 1px;
@@ -375,16 +376,6 @@
   line-height: 1.5em;
 }
 
-.journal-sheet h3 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  line-height: 1.2em;
-}
-
-.journal-sheet h4:not(.window-title) {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  line-height: 1.1em;
-}
-
 .journal-sheet form input[name=name] {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
 }
@@ -395,43 +386,6 @@
 
 .journal-sheet .journal-page-content {
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-}
-
-.journal-entry table th,
-.journal-entry table td {
-  padding: 5px;
-}
-.journal-entry table tr td:first-child {
-  padding-left: 8px;
-}
-.journal-entry .journal-entry-page li p {
-  margin-bottom: clamp(0.7em, 1vw, 0.8em);
-  margin-top: 0;
-}
-.journal-entry .journal-entry-page p {
-  margin-bottom: clamp(0.8em, 2vw, 1.4em);
-  margin-top: 0;
-  font-weight: 550;
-}
-.journal-entry .journal-entry-page table td p, .journal-entry .journal-entry-page table th p {
-  padding: 5px;
-  margin-bottom: 0;
-}
-.journal-entry .journal-entry-page .sidebar,
-.journal-entry .editor-content .sidebar {
-  border: var(--dark-border);
-  padding: 0.5em;
-  margin: 0.5em 0;
-  background: var(--light-color);
-  overflow: hidden;
-}
-.journal-entry .journal-entry-page .sidebar h4,
-.journal-entry .editor-content .sidebar h4 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
-  font-size: 1.3em;
-  text-align: center;
-  color: var(--dark-color);
-  margin: 0.3em 0;
 }
 
 /* ----------------------------------------- */
@@ -558,16 +512,21 @@ a.inline-roll {
 /*  Notes                              */
 /* ----------------------------------------- */
 .dcc .notes {
+  font-size: 16px;
+  margin: 0;
+}
+.dcc .notes .editor {
+  line-height: 24px;
+  min-height: 547px;
+}
+
+.dcc .notes-bg {
   background-image: url("./images/FCI-spots-2-scroll-with-ink-and-candle.webp");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   font-size: 16px;
-  line-height: 24px;
   margin: 0;
-}
-.dcc .notes .editor {
-  min-height: 547px;
 }
 
 /* ----------------------------------------- */
@@ -973,9 +932,6 @@ a.inline-roll {
 .dcc.sheet a[data-tab=item]::before {
   content: "\f723";
 }
-.dcc.sheet a[data-tab=judge-description]::before {
-  content: "\e3a5";
-}
 .dcc.sheet a[data-tab=level]::before {
   content: "\f3bf";
 }
@@ -999,9 +955,6 @@ a.inline-roll {
 }
 .dcc.sheet a[data-tab=skills]::before {
   content: "\f5dc";
-}
-.dcc.sheet a[data-tab=spell]::before {
-  content: "\f6b8";
 }
 .dcc.sheet a[data-tab=spells]::before,
 .dcc.sheet a[data-tab=spell]::before {
@@ -1397,7 +1350,6 @@ form.dcc-roll-modifier input.stat {
 
 .dcc .npc-grid {
   height: 100%;
-  grid-template-rows: 18px 81px minmax(80px, auto) minmax(40px, min-content) minmax(40px, min-content);
 }
 .dcc .npc-grid textarea {
   background: none;
@@ -1426,12 +1378,9 @@ form.dcc-roll-modifier input.stat {
 .dcc .npc-grid .combat-basics {
   column-gap: 5px;
   display: grid;
-  grid-template-columns: 72px minmax(75px, 1fr) 61px minmax(15px, 1fr);
+  grid-template-columns: 86px minmax(35px, 1fr) 75px minmax(35px, 1fr);
   grid-template-rows: minmax(17px, auto) minmax(18px, auto) minmax(18px, auto);
   padding: 0 5px 2px 3px;
-}
-.dcc .npc-grid .combat-basics label {
-  font-size: 12px;
 }
 .dcc .npc-grid .name-and-level {
   column-gap: 12px;

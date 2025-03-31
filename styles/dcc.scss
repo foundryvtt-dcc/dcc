@@ -53,6 +53,7 @@ $font-awesome: 'Font Awesome 6 Pro';
     background: var(--dark-bg);
     color: var(--light-color);
     font-family: $cooper-black;
+    font-size: 14px;
     height: 19px;
     letter-spacing: 1px;
     padding-top: 1px;
@@ -356,17 +357,22 @@ a.inline-roll {
 /* ----------------------------------------- */
 
 .dcc .notes {
+  font-size: 16px;
+  margin: 0;
+
+  .editor {
+    line-height: 24px;
+    min-height: 547px;
+  }
+}
+
+.dcc .notes-bg {
   background-image: url('./images/FCI-spots-2-scroll-with-ink-and-candle.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   font-size: 16px;
-  line-height: 24px;
   margin: 0;
-
-  .editor {
-    min-height: 547px;
-  }
 }
 
 /* ----------------------------------------- */
@@ -860,10 +866,6 @@ a.inline-roll {
 
   a[data-tab='skills']::before {
     content: '\f5dc';
-  }
-
-  a[data-tab='spell']::before {
-    content: '\f6b8';
   }
 
   a[data-tab='spells']::before,

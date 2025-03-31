@@ -47,13 +47,13 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
 
   /** @override */
   static PARTS = {
-    body: {
-      id: 'body',
-      template: 'systems/dcc/templates/body.html'
-    },
     tabs: {
       id: 'tabs',
       template: 'systems/dcc/templates/actor-partial-tabs.html'
+    },
+    body: {
+      id: 'body',
+      template: 'systems/dcc/templates/actor-sheet-body.html'
     },
     character: {
       id: 'character',
@@ -89,6 +89,9 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     sheet: [
       { id: 'character', group: 'sheet', label: 'DCC.Character' },
       { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+      { id: 'clericSpells', group: 'sheet', label: 'DCC.Spells' },
+      { id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' },
+      { id: 'skills', group: 'sheet', label: 'DCC.Skills' },
       { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
     ]
   }
@@ -131,11 +134,25 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       isPC: this.document.type === 'Player',
       isZero: this.document.system.details.level.value === 0,
       notesHTML: await this.#prepareNotes(),
+      parts: {},
       source: this.document.toObject(),
       system: this.document.system,
       tabGroups,
       tabs: tabGroups.sheet
     }
+  }
+
+  /** @override */
+  _configureRenderOptions (options) {
+    // This fills in `options.parts` with an array of ALL part keys by default
+    // So we need to call `super` first
+    super._configureRenderOptions(options)
+
+    // Remove skills part if skills tab is disabled
+    if (!this.document?.system?.config?.showSkills) {
+      options.parts = options.parts.filter(part => part !== 'skills')
+    }
+    console.log(options)
   }
 
   /**
@@ -297,10 +314,16 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       const group = {}
       for (const t of config) {
         const active = this.tabGroups[t.group] === t.id
-        group[t.id] = Object.assign({ active, cssClass: active ? 'active' : '' }, t)
+        group[t.id] = Object.assign({ active, cssClass: active ? 'active' : '', tooltip: `${t.label}TabHint` }, t)
       }
       tabs[groupId] = group
+
+      // Hide skills tab if not enabled
+      if (!this.document?.system?.config?.showSkills) {
+        delete group.skills
+      }
     }
+
     return tabs
   }
 

@@ -512,6 +512,7 @@
   "DCC.SkillUseAbilityHint": "Use </> Config in title bar to enable this",
   "DCC.SkillValue": "Modifier",
   "DCC.Skills": "Skills",
+  "DCC.SkillsTabHint": "Custom skills and abilities",
   "DCC.SneakAndHide": "Sneak and Hide",
   "DCC.SneakSilently": "Sneak silently",
   "DCC.SortInventoryConfig": "Sort Inventory",
