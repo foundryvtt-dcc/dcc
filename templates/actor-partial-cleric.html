@@ -1,5 +1,5 @@
 {{!-- Class Tab --}}
-<div class="tab" data-group="primary" data-tab="cleric">
+<section class="tab {{tabs.cleric.id}} {{tabs.cleric.cssClass}}" data-tab="{{tabs.cleric.id}}" data-group="{{tabs.cleric.group}}">
   <div class="grid-col-span-12 grid-container grid-row-gap-5 grid-col-gap-5 mb-8">
     <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="per">
       <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
@@ -28,7 +28,8 @@
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.class.spellCheck}}</div>
           <div class="group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.Level"}}</div>
           <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.details.level.value}}</div>
-          <div class="mr-3 group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.AbilityPerShort"}} {{localize "DCC.Modifier"}}</div>
+          <div class="mr-3 group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.AbilityPerShort"}} {{localize
+            "DCC.Modifier"}}</div>
           <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.abilities.per.mod}}</div>
           <label class="group-indent" for="system.class.spellCheckOverride" title="{{localize 'DCC.OverrideHint'}}">
             {{localize "DCC.Override"}}
@@ -51,7 +52,8 @@
       <div class="dark-title" style="">{{localize "DCC.ClericAbilities"}}</div>
       <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
-          <label class="skill-check rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}">{{localize "DCC.DivineAid"}}</label>
+          <label class="skill-check rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}">{{localize
+            "DCC.DivineAid"}}</label>
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.divineAid.value}}</div>
         </div>
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
@@ -64,13 +66,15 @@
         </div>
         <div class="group-separator"></div>
         <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-          <label class="disapproval-range rollable" for="system.class.disapproval" title="{{localize 'DCC.DisapprovalRangeHint'}}">{{localize "DCC.DisapprovalRange"}}</label>
+          <label class="disapproval-range rollable" for="system.class.disapproval" title="{{localize 'DCC.DisapprovalRangeHint'}}">{{localize
+            "DCC.DisapprovalRange"}}</label>
           <select class="number" name="system.class.disapproval" id="system.class.disapproval">
             {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
           </select>
         </div>
         <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-          <label class="disapproval-table rollable" for="system.class.disapprovalTable" title="{{localize 'DCC.DisapprovalTableHint'}}">{{localize "DCC.DisapprovalTable"}}</label>
+          <label class="disapproval-table rollable" for="system.class.disapprovalTable" title="{{localize 'DCC.DisapprovalTableHint'}}">{{localize
+            "DCC.DisapprovalTable"}}</label>
           <select id="system.class.disapprovalTable" name="system.class.disapprovalTable">
             {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable
                             localize=true
@@ -168,4 +172,4 @@
       </table>
     </div>
   </div>
-</div>
+</section>

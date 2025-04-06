@@ -1,0 +1,36 @@
+{{!-- Class Tab --}}
+<section class="tab {{tabs.warrior.id}} {{tabs.warrior.cssClass}}" data-tab="{{tabs.warrior.id}}" data-group="{{tabs.warrior.group}}">
+  <div class="grid-container label-font">
+    <div class="grid-col-span-12 dark-title">{{localize "DCC.WarriorAbilities"}}</div>
+    <div class="grid-col-span-12 dark-border grid-tpl-max grid-row-gap-8 p-5">
+      <div class="grid-tpl-max-25">
+        <label for="system.details.critRange">{{localize "DCC.CritRange"}}</label>
+        <select name="system.details.critRange" id="system.details.critRange">
+          {{selectOptions config.critRanges selected=system.details.critRange localize=true}}
+        </select>
+      </div>
+      <div class="grid-tpl-max-auto">
+        <label for="system.class.luckyWeapon" title="{{localize 'DCC.LuckyWeaponHint'}}">{{localize "DCC.LuckyWeapon"}}</label>
+        <input class="full-width" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon"
+               value="{{system.class.luckyWeapon}}" data-dtype="String"/>
+      </div>
+      <div class="grid-tpl-max-auto">
+        <label for="system.class.luckyWeaponMod" title="{{localize 'DCC.LuckyWeaponModHint'}}">{{localize "DCC.LuckyWeaponMod"}}</label>
+        <input class="full-width" type="text" id="system.class.luckyWeaponMod" name="system.class.luckyWeaponMod"
+               value="{{system.class.luckyWeaponMod}}" data-dtype="String"/>
+      </div>
+      <div class="grid-tpl-max">{{localize "DCC.AddClassLevelToInitiative"}}</div>
+      <div>
+        <a class="external-link" href="https://github.com/foundryvtt-dcc/dcc/wiki/Mighty-Deeds">
+          <i class="fas fa-link"></i> {{localize "DCC.MightyDeedsHowToLink"}}
+        </a>
+      </div>
+      {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+        <div>{{{system.class.classLink}}}</div>
+        <div>{{{system.class.mightyDeedsLink}}}</div>
+      {{/dccPackExists}}
+    </div>
+    <img class="grid-col-span-12" src="systems/dcc/styles/images/SA-3-27-FCI-spots1-Axe-Sword-Shield-tiny.webp" height="350px" width="490px"
+         style="margin: 30px 0 0 10px;">
+  </div>
+</section>

@@ -1,6 +1,7 @@
 {
   "ACTOR.TypeNPC": "NPC",
   "TYPES.Actor.Player": "Player",
+  "TYPES.Actor.NPC": "NPC",
   "TYPES.Item.ammunition": "Ammunition",
   "TYPES.Item.armor": "Armor",
   "TYPES.Item.equipment": "Equipment",

@@ -27,6 +27,10 @@ $cooper-black: 'Cooper Black', 'Palatino Linotype', serif;
 $font-awesome: 'Font Awesome 6 Pro';
 
 .dcc {
+  &.application {
+    --header-height: 24px;
+  }
+
   img {
     border: 0;
   }
@@ -151,8 +155,8 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   &.sheet.actor.pc {
-    min-height: 639px;
-    min-width: 520px;
+    min-height: 629px;
+    min-width: 525px;
   }
 
   &.sheet.actor {
@@ -868,7 +872,9 @@ a.inline-roll {
     content: '\f5dc';
   }
 
+  a[data-tab='clericSpells']::before,
   a[data-tab='spells']::before,
+  a[data-tab='wizardSpells']::before,
   a[data-tab='spell']::before, {
     content: '\f6b8';
   }

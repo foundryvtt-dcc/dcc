@@ -226,6 +226,9 @@
   src: url("fonts/DuvallSmallCaps.otf") format("opentype");
 }
 /* Common style elements */
+.dcc.application {
+  --header-height: 24px;
+}
 .dcc img {
   border: 0;
 }
@@ -327,8 +330,8 @@
   text-shadow: 0 0 10px red;
 }
 .dcc.sheet.actor.pc {
-  min-height: 639px;
-  min-width: 520px;
+  min-height: 629px;
+  min-width: 525px;
 }
 .dcc.sheet.actor {
   min-height: 339px;
@@ -956,7 +959,9 @@ a.inline-roll {
 .dcc.sheet a[data-tab=skills]::before {
   content: "\f5dc";
 }
+.dcc.sheet a[data-tab=clericSpells]::before,
 .dcc.sheet a[data-tab=spells]::before,
+.dcc.sheet a[data-tab=wizardSpells]::before,
 .dcc.sheet a[data-tab=spell]::before {
   content: "\f6b8";
 }

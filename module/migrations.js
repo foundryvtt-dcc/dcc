@@ -143,7 +143,7 @@ const migrateActorData = function (actor) {
     })
     if (this.options.template === 'systems/dcc/templates/actor-sheet-npc.html' ||
             this.options.template === 'systems/dcc/templates/actor-sheet-zero-level.html') {
-      this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
+      this.options.template = 'systems/dcc/templates/actor-partial-generic.html'
     }
   }
 

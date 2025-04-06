@@ -113,6 +113,12 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/actor-partial-skills.html',
     'systems/dcc/templates/actor-partial-wizard-spells.html',
     'systems/dcc/templates/actor-partial-cleric-spells.html',
+    'systems/dcc/templates/actor-partial-dwarf.html',
+    'systems/dcc/templates/actor-partial-elf.html',
+    'systems/dcc/templates/actor-partial-halfling.html',
+    'systems/dcc/templates/actor-partial-thief.html',
+    'systems/dcc/templates/actor-partial-warrior.html',
+    'systems/dcc/templates/actor-partial-wizard.html',
     'systems/dcc/templates/item-sheet-partial-description.html',
     'systems/dcc/templates/item-sheet-partial-judge-description.html',
     'systems/dcc/templates/item-sheet-partial-values.html',
@@ -156,28 +162,28 @@ Hooks.once('init', async function () {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
   })
 
-  /**
-   * Get a template from the server by fetch request and caching the retrieved result
-   * Duplicated from Foundry since there is no way to pass preventIndent to the whole template otherwise
-   * @param {string} path           The web-accessible HTML template URL
-   * @param {string} [id]           An ID to register the partial with.
-   * @returns {Promise<Function>}   A Promise which resolves to the compiled Handlebars template
-   */
-  async function getTemplate (path, id) {
-    if (path in Handlebars.partials) return Handlebars.partials[path]
-    const htmlString = await new Promise((resolve, reject) => {
-      game.socket.emit('template', path, resp => {
-        if (resp.error) return reject(new Error(resp.error))
-        return resolve(resp.html)
-      })
-    })
-    const compiled = Handlebars.compile(htmlString, { preventIndent: true })
-    Handlebars.registerPartial(id ?? path, compiled)
-    console.log(`Foundry VTT | Retrieved and compiled template ${path}`)
-    return compiled
-  }
-
-  window.getTemplate = getTemplate
+  // /**
+  //  * Get a template from the server by fetch request and caching the retrieved result
+  //  * Duplicated from Foundry since there is no way to pass preventIndent to the whole template otherwise
+  //  * @param {string} path           The web-accessible HTML template URL
+  //  * @param {string} [id]           An ID to register the partial with.
+  //  * @returns {Promise<Function>}   A Promise which resolves to the compiled Handlebars template
+  //  */
+  // async function getTemplate (path, id) {
+  //   if (path in Handlebars.partials) return Handlebars.partials[path]
+  //   const htmlString = await new Promise((resolve, reject) => {
+  //     game.socket.emit('template', path, resp => {
+  //       if (resp.error) return reject(new Error(resp.error))
+  //       return resolve(resp.html)
+  //     })
+  //   })
+  //   const compiled = Handlebars.compile(htmlString, { preventIndent: true })
+  //   Handlebars.registerPartial(id ?? path, compiled)
+  //   console.log(`Foundry VTT | Retrieved and compiled template ${path}`)
+  //   return compiled
+  // }
+  //
+  // window.getTemplate = getTemplate
 })
 
 /* -------------------------------------------- */

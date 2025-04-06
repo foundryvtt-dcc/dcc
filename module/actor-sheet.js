@@ -14,7 +14,7 @@ const { api, sheets } = foundry.applications
 class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor', 'themed', 'theme-light', 'pc'],
+    classes: ['dcc', 'sheet', 'actor', 'themed', 'theme-light'],
     tag: 'form',
     position: {
       width: 520,
@@ -45,7 +45,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     }
   }
 
-  /** @override */
+  /** @inheritDoc */
   static PARTS = {
     tabs: {
       id: 'tabs',
@@ -63,65 +63,61 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       id: 'equipment',
       template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
     },
-    notes: {
-      id: 'notes',
-      template: 'systems/dcc/templates/actor-partial-pc-notes.html'
-    },
     skills: {
       id: 'skills',
       template: 'systems/dcc/templates/actor-partial-skills.html'
     },
-    clericSpells: {
-      id: 'clericSpells',
-      template: 'systems/dcc/templates/actor-partial-cleric-spells.html'
-    },
     wizardSpells: {
       id: 'wizardSpells',
       template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
+    },
+    notes: {
+      id: 'notes',
+      template: 'systems/dcc/templates/actor-partial-pc-notes.html'
     }
   }
 
   /**
-   * Define the structure of tabs used by this Item Sheet.
-   * @type {Record<string, Record<string, ApplicationTab>>}
+   * Define the structure of tabs used by this sheet.
+   * @type {Record<string, ApplicationTabsConfiguration>}
    */
   static TABS = {
-    sheet: [
-      { id: 'character', group: 'sheet', label: 'DCC.Character' },
-      { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-      { id: 'clericSpells', group: 'sheet', label: 'DCC.Spells' },
-      { id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' },
-      { id: 'skills', group: 'sheet', label: 'DCC.Skills' },
-      { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
-    ]
+    sheet: { // this is the group name
+      tabs:
+        [
+          { id: 'character', group: 'sheet', label: 'DCC.Character' },
+          { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' }
+        ],
+      initial: 'character'
+    }
   }
-
-  /** @override */
-  tabGroups = {
-    sheet: 'character'
-  }
-
-  /* -------------------------------------------- */
 
   /**
-   * A method which can be called by subclasses in a static initialization block to refine configuration options at the
-   * class level.
+   * Define the structure of tabs specific to a character class (should be overridden in class specific sheets).
+   * @type {Record<string, ApplicationTabsConfiguration>}
    */
-  static _initializeActorSheetClass () {
-    this.PARTS = foundry.utils.deepClone(this.PARTS)
-    this.TABS = foundry.utils.deepClone(this.TABS)
+  static CLASS_TABS = {}
+
+  /**
+   * Define the structure of tabs to appear after the class tabs (if any). This allows for additional tabs to be added to the end of the tab list.
+   * @type {Record<string, ApplicationTabsConfiguration>}
+   */
+  static END_TABS = {
+    sheet: { // this is the group name
+      tabs:
+        [
+          { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
+        ]
+    }
   }
 
-  /* -------------------------------------------- */
-  /*  Sheet Rendering                             */
-
-  /* -------------------------------------------- */
-
-  /** @override */
+  /* @inheritDoc */
   async _prepareContext (options) {
-    const tabGroups = this.#getTabs()
-    return {
-      actor: this.document,
+    const context = await super._prepareContext(options)
+
+    this.options.classes.push(this.document.type === 'Player' ? 'pc' : 'npc')
+
+    return foundry.utils.mergeObject(context, {
       config: CONFIG.DCC,
       corruptionHTML: this.#prepareCorruption(),
       fieldDisabled: this.isEditable ? '' : 'disabled',
@@ -136,23 +132,62 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       notesHTML: await this.#prepareNotes(),
       parts: {},
       source: this.document.toObject(),
-      system: this.document.system,
-      tabGroups,
-      tabs: tabGroups.sheet
-    }
+      system: this.document.system
+    })
   }
 
-  /** @override */
-  _configureRenderOptions (options) {
-    // This fills in `options.parts` with an array of ALL part keys by default
-    // So we need to call `super` first
-    super._configureRenderOptions(options)
+  /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
 
     // Remove skills part if skills tab is disabled
     if (!this.document?.system?.config?.showSkills) {
-      options.parts = options.parts.filter(part => part !== 'skills')
+      delete parts.skills
     }
-    console.log(options)
+
+    // Remove wizard spells part if spells are disabled
+    if (!this.document?.system?.config?.showSpells && !this.constructor?.CLASS_PARTS?.wizardSpells) {
+      delete parts.wizardSpells
+    }
+
+    // Allow subclasses to define additional parts
+    for (const [key, part] of Object.entries(this.constructor.CLASS_PARTS || [])) {
+      if (!part || !part.template) continue
+      parts[key] = part
+    }
+
+    return parts
+  }
+
+  /** @inheritdoc */
+  _prepareTabs (group) {
+    const tabs = super._prepareTabs(group)
+
+    // Allow subclasses to define additional tabs (they also need to define these in CLASS_PARTS)
+    if (this.constructor.CLASS_TABS && this.constructor.CLASS_TABS[group]?.tabs) {
+      for (const tab of this.constructor.CLASS_TABS[group].tabs) {
+        if (!tab || !tab.id) continue
+        tabs[tab.id] = tab
+      }
+    }
+
+    // Add in optional tabs
+    if (this.document?.system?.config?.showSkills && !tabs.skills) {
+      tabs.skills = { id: 'skills', group: 'sheet', label: 'DCC.Skills' }
+    }
+    if (this.document?.system?.config?.showSpells && !tabs.wizardSpells) {
+      tabs.wizardSpells = { id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' }
+    }
+
+    // Add end tabs (e.g. notes)
+    if (this.constructor.END_TABS && this.constructor.END_TABS[group].tabs) {
+      for (const tab of this.constructor.END_TABS[group].tabs) {
+        if (!tab || !tab.id) continue
+        tabs[tab.id] = tab
+      }
+    }
+
+    return tabs
   }
 
   /**
@@ -302,29 +337,6 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       const context = { relativeTo: this.document, secrets: this.document.isOwner }
       return await TextEditor.enrichHTML(this.actor.system.class.corruption, context)
     }
-  }
-
-  /**
-   * Configure the tabs used by this sheet.
-   * @returns {Record<string, Record<string, ApplicationTab>>}
-   */
-  #getTabs () {
-    const tabs = {}
-    for (const [groupId, config] of Object.entries(this.constructor.TABS)) {
-      const group = {}
-      for (const t of config) {
-        const active = this.tabGroups[t.group] === t.id
-        group[t.id] = Object.assign({ active, cssClass: active ? 'active' : '', tooltip: `${t.label}TabHint` }, t)
-      }
-      tabs[groupId] = group
-
-      // Hide skills tab if not enabled
-      if (!this.document?.system?.config?.showSkills) {
-        delete group.skills
-      }
-    }
-
-    return tabs
   }
 
   #prepareImage () {

@@ -456,6 +456,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
 
 /**
  * Handlebars
+ * @templateList {Array<string>} A list of template paths to load
  */
 global.loadTemplates = vi.fn((templateList) => {}).mockName('loadTemplates')
 

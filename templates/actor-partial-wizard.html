@@ -1,0 +1,82 @@
+{{!-- Class Tab --}}
+<section class="tab {{tabs.wizard.id}} {{tabs.wizard.cssClass}}" data-tab="{{tabs.wizard.id}}" data-group="{{tabs.wizard.group}}">
+  <div class="grid-container">
+    <div class="grid-col-span-12 grid-container grid-row-gap-5 grid-col-gap-5 mb-8">
+      <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="int">
+        <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
+        <div class="grid-align-center p-5">
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
+            {{ifThen system.class.spellCheckOverrideDie system.class.spellCheckOverrideDie system.attributes.actionDice.value}}
+            {{system.class.spellCheck}}
+          </div>
+
+          <div class="group-separator"></div>
+
+          <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+            <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Die"}}</div>
+            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attributes.actionDice.value}}</div>
+            <label class="group-indent" for="system.class.spellCheckOverrideDie" title="{{localize 'DCC.OverrideHint'}}">
+              {{localize "DCC.Override"}}
+            </label>
+            <input id="system.class.spellCheckOverrideDie" name="system.class.spellCheckOverrideDie"
+                   value="{{system.class.spellCheckOverrideDie}}"
+                   data-dtype="String"/>
+          </div>
+
+          <div class="group-separator"></div>
+
+          <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+            <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Bonus"}}</div>
+            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.class.spellCheck}}</div>
+            <div class="group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.Level"}}</div>
+            <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.details.level.value}}</div>
+            <div class="mr-3 group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">
+              {{localize "DCC.AbilityIntShort"}} {{localize "DCC.Modifier"}}
+            </div>
+            <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.abilities.int.mod}}</div>
+            <label class="group-indent" for="system.class.spellCheckOtherMod" title="{{localize 'DCC.OtherModHint'}}">
+              {{localize "DCC.SpellCheckOtherMod"}}
+            </label>
+            <input id="system.class.spellCheckOtherMod" name="system.class.spellCheckOtherMod"
+                   value="{{system.class.spellCheckOtherMod}}"
+                   data-dtype="String"/>
+
+            <label class="group-indent" for="system.class.spellCheckOverride" title="{{localize 'DCC.OverrideHint'}}">
+              {{localize "DCC.Override"}}
+            </label>
+            <input id="system.class.spellCheckOverride" name="system.class.spellCheckOverride"
+                   value="{{system.class.spellCheckOverride}}"
+                   data-dtype="String"/>
+
+            <div class="group-separator"></div>
+
+            <div class="label-font spell-check rollable mr-3 grid-col-span-2 center" title="{{localize 'DCC.RollSpellCheckHint'}}">
+              <div><i class="fas fa-dice-d20"></i> {{localize "DCC.Roll"}} {{localize "DCC.SpellCheck"}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="familiar grid-col-span-7 dark-border">
+        <label for="system.class.familiar" class="dark-title">{{localize "DCC.Familiar"}}</label>
+        <textarea id="system.class.familiar" name="system.class.familiar" rows="4" class="data-font"
+                  style="background: none; border: none"
+                  data-dtype="String">{{system.class.familiar}}</textarea>
+      </div>
+      <div class="patron grid-col-span-7 dark-border">
+        <label for="system.class.patron" class="dark-title">{{localize "DCC.Patron"}}</label>
+        <textarea id="system.class.patron" name="system.class.patron" rows="4" class="data-font"
+                  style="background: none; border: none"
+                  data-dtype="String">{{system.class.patron}}</textarea>
+      </div>
+      {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+        <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
+      {{/dccPackExists}}
+    </div>
+
+    <div class="grid-col-span-12 grid-tpl-max">
+      <div class="grid-col-span-12 dark-title" style="">{{localize "DCC.Corruptions"}}</div>
+      {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
+    </div>
+  </div>
+</section>

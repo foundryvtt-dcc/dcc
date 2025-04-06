@@ -5,7 +5,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="@types/jest" level="application" />
-    <orderEntry type="library" name="foundry.js-win" level="project" />
-    <orderEntry type="library" name="foundry-esm.js-win" level="project" />
+    <orderEntry type="library" name="Foundry v13" level="project" />
   </component>
 </module>

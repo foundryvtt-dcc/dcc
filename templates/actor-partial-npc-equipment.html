@@ -1,5 +1,5 @@
 {{!-- Equipment Tab --}}
-<div class="tab equipment-bg" data-group="primary" data-tab="equipment">
+<section class="tab equipment-bg {{tabs.equipment.id}} {{tabs.equipment.cssClass}}" data-tab="{{tabs.equipment.id}}" data-group="{{tabs.equipment.group}}">
   {{!-- Armor --}}
   {{#* inline "armorRow"}}
     <li class="grid-col-span-8 armor grid-col-gap-5" data-item-id="{{id}}" data-item-index="{{index}}">
@@ -159,5 +159,5 @@
       {{> TreasureRow item=treasure id=id}}
     {{/each}}
   </ol>
-</div>
+</section>
 {{!-- End Equipment Tab --}}
