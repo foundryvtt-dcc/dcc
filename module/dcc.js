@@ -364,7 +364,7 @@ Hooks.once('importAdventure', async function () {
 /**
  * Handle the results of a spell check cast through any mechanism
  * Apply a roll to a table and apply spell check logic for crits and fumbles
- * @param {Object} actor        The actor rolling the check
+ * @param {Actor} actor        The actor rolling the check
  * @param {Object} spellData    Information about the spell being cast
  * @returns {Object}            Table result object
  */
@@ -708,7 +708,7 @@ async function createDCCMacro (data, slot) {
       })
     }
     // Set permissions so all players can execute the macro
-    let permissions = macro.ownership
+    const permissions = macro.ownership
     permissions.default = 2 // 2 = Observer, allows execution
     macro.update({ ownership: permissions })
 
