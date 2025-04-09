@@ -1,5 +1,5 @@
 {{!-- Spells Tab --}}
-<section class="tab cleric-spells-bg spells" data-group="primary" data-tab="spells">
+<section class="tab cleric-spells-bg {{tabs.clericSpells.id}} {{tabs.clericSpells.cssClass}}" data-tab="{{tabs.clericSpells.id}}" data-group="{{tabs.clericSpells.group}}">
   <div class="dark-title" style="">{{localize "DCC.Spells"}}</div>
   <ol class="item-list item-list-spells">
     <li class="item item-list-header grid-col-span-7">
@@ -10,8 +10,7 @@
       <div></div>
       <div>{{localize "DCC.SpellLost"}}</div>
       <div>
-        <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="spell"><i class="fas fa-plus"></i> {{localize
-          "DCC.Add"}}</a>
+        <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="spell"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
       </div>
     </li>
     {{#each actor.spells as |spells spelllevel|}}
@@ -38,8 +37,8 @@
         </li>
       {{/each}}
     {{else}}
-      <li class="item">
-        <div style="grid-column-end: span 8; height: 50px; padding-top: 14px;">{{localize "DCC.SpellTabHelp"}}</div>
+      <li class="item grid-col-span-8 mt-8">
+        <div class="grid-col-span-8">{{localize "DCC.SpellTabHelp"}}</div>
       </li>
     {{/each}}
   </ol>

@@ -310,6 +310,16 @@ export const registerSystemSettings = async function () {
     config: false
   })
 
+  /**
+   * Last used Importer Folder ID
+   */
+  game.settings.register('dcc', 'lastImporterFolderId', {
+    scope: 'world',
+    type: String,
+    default: '',
+    config: false
+  })
+
   // Show Welcome Dialog
   game.settings.register(pubConstants.name, 'showWelcomeDialog', {
     name: `${pubConstants.langRoot}.Settings.ShowWelcomeDialog`,

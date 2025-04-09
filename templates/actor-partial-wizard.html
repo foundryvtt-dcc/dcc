@@ -59,13 +59,13 @@
 
       <div class="familiar grid-col-span-7 dark-border">
         <label for="system.class.familiar" class="dark-title">{{localize "DCC.Familiar"}}</label>
-        <textarea id="system.class.familiar" name="system.class.familiar" rows="4" class="data-font"
+        <textarea id="system.class.familiar" name="system.class.familiar" rows="5" class="data-font"
                   style="background: none; border: none"
                   data-dtype="String">{{system.class.familiar}}</textarea>
       </div>
       <div class="patron grid-col-span-7 dark-border">
         <label for="system.class.patron" class="dark-title">{{localize "DCC.Patron"}}</label>
-        <textarea id="system.class.patron" name="system.class.patron" rows="4" class="data-font"
+        <textarea id="system.class.patron" name="system.class.patron" rows="5" class="data-font"
                   style="background: none; border: none"
                   data-dtype="String">{{system.class.patron}}</textarea>
       </div>
@@ -74,7 +74,7 @@
       {{/dccPackExists}}
     </div>
 
-    <div class="grid-col-span-12 grid-tpl-max">
+    <div class="grid-col-span-12 grid-tpl-max corruption-wizard">
       <div class="grid-col-span-12 dark-title" style="">{{localize "DCC.Corruptions"}}</div>
       {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
     </div>

@@ -136,6 +136,11 @@ $font-awesome: 'Font Awesome 6 Pro';
     }
   }
 
+  textarea {
+    width: 100%;
+    min-height: 50px;
+  }
+
   .theme-dark {
     background-image: url('/ui/parchment.jpg');
   }
@@ -210,6 +215,16 @@ $font-awesome: 'Font Awesome 6 Pro';
   line-height: 1.5em;
 }
 
+.journal-sheet h3 {
+  font-family: $duvall;
+  line-height: 1.2em;
+}
+
+.journal-sheet h4:not(.window-title) {
+  font-family: $duvall;
+  line-height: 1.1em;
+}
+
 .journal-sheet form input[name='name'] {
   font-family: $duvall;
 }
@@ -220,6 +235,55 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 .journal-sheet .journal-page-content {
   font-family: $book-antiqua;
+}
+
+.journal-entry {
+  table th,
+  table td {
+    padding: 5px;
+  }
+
+  table tr td:first-child {
+    padding-left: 8px;
+  }
+
+  .journal-entry-page {
+    li p {
+      margin-bottom: clamp(0.7em, 1vw, .8em);
+      margin-top: 0;
+    }
+
+    p {
+      margin-bottom: clamp(0.8em, 2vw, 1.4em);
+      margin-top: 0;
+      font-weight: 550;
+    }
+
+
+    table td p, table th p {
+      padding: 5px;
+      margin-bottom: 0;
+    }
+  }
+
+  .journal-entry-page,
+  .editor-content {
+    .sidebar {
+      border: var(--dark-border);
+      padding: 0.5em;
+      margin: 0.5em 0;
+      background: var(--light-color);
+      overflow: hidden;
+
+      h4 {
+        font-family: $duvall;
+        font-size: 1.3em;
+        text-align: center;
+        color: var(--dark-color);
+        margin: 0.3em 0;
+      }
+    }
+  }
 }
 
 /* ----------------------------------------- */
@@ -465,7 +529,7 @@ a.inline-roll {
   table {
     text-align: center;
     font-family: $book-antiqua;
-    margin-top: 10px;
+    margin: 10px 0 0 0;
 
     td {
       padding: 4px 12px 4px 0;
@@ -508,6 +572,16 @@ a.inline-roll {
   background-position-y: bottom;
   background-size: contain;
   min-height: 565px;
+}
+
+.dcc .corruption .editor {
+  min-height: 128px;
+  padding-top: 5px;
+}
+
+.dcc .corruption-wizard .editor {
+  min-height: 259px;
+  padding-top: 5px;
 }
 
 /* ----------------------------------------- */
@@ -840,6 +914,10 @@ a.inline-roll {
     content: '\f723';
   }
 
+  a[data-tab='judge-description']::before {
+    content: '\e3a5';
+  }
+
   a[data-tab='level']::before {
     content: '\f3bf';
   }
@@ -1157,10 +1235,11 @@ form.dcc-roll-modifier {
 
       input {
         align-self: center;
+        justify-self: center;
         border: 0;
         font-size: 30px;
-        height: unset;
-        width: 50px;
+        height: 46px;
+        width: 47px;
       }
     }
   }
@@ -1175,7 +1254,9 @@ form.dcc-roll-modifier {
       border: 0;
       font-size: 24px;
       height: 17px;
+      justify-self: center;
       margin-bottom: 5px;
+      width: 37px;
     }
   }
 
@@ -1275,6 +1356,7 @@ form.dcc-roll-modifier {
 
     label {
       font-size: 13px;
+      margin-right: 3px;
     }
   }
 
@@ -1342,6 +1424,7 @@ form.dcc-roll-modifier {
 .dcc {
   .npc-grid {
     height: 100%;
+    grid-template-rows: 18px 81px minmax(80px, auto) minmax(40px, min-content) minmax(40px, min-content);
 
     textarea {
       background: none;
@@ -1374,9 +1457,13 @@ form.dcc-roll-modifier {
     .combat-basics {
       column-gap: min(5px);
       display: grid;
-      grid-template-columns: 86px minmax(35px, 1fr) 75px minmax(35px, 1fr);
+      grid-template-columns: 72px minmax(75px, 1fr) 61px minmax(15px, 1fr);
       grid-template-rows: minmax(17px, auto) minmax(18px, auto) minmax(18px, auto);
       padding: 0 5px 2px 3px;
+
+      label {
+        font-size: 12px;
+      }
     }
 
     .name-and-level {

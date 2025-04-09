@@ -59,50 +59,52 @@
 
       <div class="familiar grid-col-span-7 dark-border">
         <label for="system.class.familiar" class="dark-title">{{localize "DCC.Familiar"}}</label>
-        <textarea id="system.class.familiar" name="system.class.familiar" rows="4" class="data-font"
+        <textarea id="system.class.familiar" name="system.class.familiar" rows="5" class="data-font"
                   style="background: none; border: none"
                   data-dtype="String">{{system.class.familiar}}</textarea>
       </div>
       <div class="patron grid-col-span-7 dark-border">
         <label for="system.class.patron" class="dark-title">{{localize "DCC.Patron"}}</label>
-        <textarea id="system.class.patron" name="system.class.patron" rows="4" class="data-font"
+        <textarea id="system.class.patron" name="system.class.patron" rows="5" class="data-font"
                   style="background: none; border: none"
                   data-dtype="String">{{system.class.patron}}</textarea>
       </div>
-      {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-        <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
-      {{/dccPackExists}}
     </div>
 
     <div class="grid-col-span-12">
       <div class="dark-border">
         <div class="dark-title">Elf Abilities</div>
-        <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
-          <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
-                 title="{{localize 'DCC.HeightenedSensesDescription'}}">
-            {{localize "DCC.HeightenedSenses"}}
-          </label>
-          <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
-                 title="{{localize 'DCC.HeightenedSensesDescription'}}"
-                 value="{{system.skills.detectSecretDoors.value}}" data-dtype="String"/>
-        </div>
-        <div class="label-font">
-          {{localize "DCC.Infravision"}}
-        </div>
-        <div class="label-font">
-          {{localize "DCC.IronVulnerability"}}
-        </div>
-        <div class="label-font">
-          {{localize "DCC.ElfLuckMod"}}
-        </div>
-        <div class="label-font">
-          {{localize "DCC.ElfImmunities"}}
+        <div class="p-5">
+          <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
+            <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
+                   title="{{localize 'DCC.HeightenedSensesDescription'}}">
+              {{localize "DCC.HeightenedSenses"}}
+            </label>
+            <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
+                   title="{{localize 'DCC.HeightenedSensesDescription'}}"
+                   value="{{system.skills.detectSecretDoors.value}}" data-dtype="String"/>
+          </div>
+          <div class="label-font">
+            {{localize "DCC.Infravision"}}
+          </div>
+          <div class="label-font">
+            {{localize "DCC.IronVulnerability"}}
+          </div>
+          <div class="label-font">
+            {{localize "DCC.ElfLuckMod"}}
+          </div>
+          <div class="label-font">
+            {{localize "DCC.ElfImmunities"}}
+          </div>
+
+          {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+            <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
+          {{/dccPackExists}}
         </div>
       </div>
     </div>
-    <p></p>
-    <div class="grid-col-span-12 grid-tpl-max">
-      <div class="grid-col-span-12 dark-title" style="">{{localize "DCC.Corruptions"}}</div>
+    <div class="grid-col-span-12 grid-tpl-max corruption mt-8">
+      <div class="grid-col-span-12 dark-title">{{localize "DCC.Corruptions"}}</div>
       {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
     </div>
   </div>

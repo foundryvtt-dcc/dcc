@@ -386,6 +386,9 @@ class DCCActorSheetGeneric extends DCCActorSheet {
     }
   }
 
+  /** @inheritDoc */
+  static CLASS_TABS = {}
+
   /** @override */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)

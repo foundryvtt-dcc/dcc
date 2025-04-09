@@ -115,7 +115,9 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    this.options.classes.push(this.document.type === 'Player' ? 'pc' : 'npc')
+    if (!this.options.classes.includes(' pc') && !this.options.classes.includes(' npc')) {
+      this.options.classes.push(this.document.type === 'Player' ? 'pc' : 'npc')
+    }
 
     return foundry.utils.mergeObject(context, {
       config: CONFIG.DCC,
@@ -160,30 +162,28 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   }
 
   /** @inheritdoc */
-  _prepareTabs (group) {
-    const tabs = super._prepareTabs(group)
+  _getTabsConfig (group) {
+    const tabs = foundry.utils.deepClone(super._getTabsConfig(group))
 
-    // Allow subclasses to define additional tabs (they also need to define these in CLASS_PARTS)
+    // Allow subclasses to define additional tabs (they also need to define CLASS_PARTS)
     if (this.constructor.CLASS_TABS && this.constructor.CLASS_TABS[group]?.tabs) {
       for (const tab of this.constructor.CLASS_TABS[group].tabs) {
-        if (!tab || !tab.id) continue
-        tabs[tab.id] = tab
+        tabs.tabs.push(tab)
       }
     }
 
     // Add in optional tabs
     if (this.document?.system?.config?.showSkills && !tabs.skills) {
-      tabs.skills = { id: 'skills', group: 'sheet', label: 'DCC.Skills' }
+      tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills' })
     }
     if (this.document?.system?.config?.showSpells && !tabs.wizardSpells) {
-      tabs.wizardSpells = { id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' }
+      tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' })
     }
 
     // Add end tabs (e.g. notes)
     if (this.constructor.END_TABS && this.constructor.END_TABS[group].tabs) {
       for (const tab of this.constructor.END_TABS[group].tabs) {
-        if (!tab || !tab.id) continue
-        tabs[tab.id] = tab
+        tabs.tabs.push(tab)
       }
     }
 

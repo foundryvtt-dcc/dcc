@@ -177,7 +177,7 @@ class DCCActor extends Actor {
   _initializeSource (source, options) {
     source = super._initializeSource(source, options)
     // Set Players to link actor data by default.
-    if (source.type === 'Player') {
+    if (source.type === 'Player' && (Object.hasOwn(source, 'getFlag') && source.getFlag('item-piles', 'data') === undefined)) {
       source.prototypeToken.actorLink = true
     }
     return source
@@ -902,30 +902,24 @@ class DCCActor extends Actor {
         formula: bonus
       })
     } else {
-      terms.push(
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-          modifierLabel: game.i18n.localize('DCC.Level'),
-          formula: level
-        }
-      )
-      terms.push(
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-          modifierLabel: game.i18n.localize('DCC.AbilityMod'),
-          formula: abilityMod
-        }
-      )
-      terms.push(
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-          modifierLabel: game.i18n.localize('DCC.SpellCheckOtherMod'),
-          formula: otherMod
-        }
-      )
+      terms.push({
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize('DCC.Level'),
+        formula: level
+      })
+      terms.push({
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize('DCC.AbilityMod'),
+        formula: abilityMod
+      })
+      terms.push({
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize('DCC.SpellCheckOtherMod'),
+        formula: otherMod
+      })
     }
 
     terms.push({
@@ -1145,7 +1139,6 @@ class DCCActor extends Actor {
           fumbleTableName = `${fumbleResult?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
           fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
         }
-        const fumbleResultPrompt = game.i18n.localize('DCC.FumblePrompt')
         const onPrep = game.i18n.localize('DCC.on')
         const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
         fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor} ${onPrep} ${fumbleTableName} ${fumbleText}`)

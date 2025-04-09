@@ -12,12 +12,16 @@ class SpellResult {
    * @param {boolean} fumble       The Spell Check was a nat 1
    * @param {Object} item          The spell item
    */
-  static async addChatMessage (roll, rollTable, result, { messageData = {}, messageOptions = {}, crit = false, fumble = false, item = undefined } = {}) {
+  static async addChatMessage (roll, rollTable, result, {
+    messageData = {},
+    messageOptions = {},
+    crit = false,
+    fumble = false,
+    item = undefined
+  } = {}) {
     messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
     }, messageOptions)
-
-    const speaker = ChatMessage.getSpeaker()
 
     // construct flags for the message
     const flags = {
@@ -37,10 +41,10 @@ class SpellResult {
     messageData = foundry.utils.mergeObject({
       flavor: game.i18n.localize('DCC.SpellCheckCardMessage'),
       user: game.user.id,
-      speaker,
+      speaker: { actor: item.actor?.id || null, alias: item.actor?.name || null },
       rolls: [roll],
       sound: roll ? CONFIG.sounds.dice : null,
-      system: {spellId: item?.id},
+      system: { spellId: item?.id },
       flags
     }, messageData)
 

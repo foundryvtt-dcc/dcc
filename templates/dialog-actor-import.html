@@ -20,14 +20,9 @@
     </select>
 
     <label for="folderId">{{localize 'DCC.Folder'}}</label>
-
     <select id="folderId" name="folderId">
-      <option value="" selected>{{localize 'DCC.NoFolder'}}</option>
-      {{#each folders}}
-        <option value="{{id}}">{{name}}</option>
-      {{/each}}
+      {{selectOptions folders selected=importFolderId localize=true}}
     </select>
-
 
     <footer class="grid-col-span-2">
       <button type="submit">
