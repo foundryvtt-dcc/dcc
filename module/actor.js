@@ -526,19 +526,25 @@ class DCCActor extends Actor {
     return game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
   }
 
-  async rollInit (event, token) {
+  /**
+   * Optionally show modifier dialog, then pass off to Foundry's actor rollInitiative
+   * @param event
+   * @param options
+   * @param token
+   * @returns {Promise<void>}
+   */
+  async rollInit (event, options, token) {
     if (token?.combatant?.initiative || this.inCombat) {
       ui.notifications.warn(game.i18n.localize('DCC.AlreadyHasInitiative'))
       return
     }
 
-    const rollOptions = this.sheet._fillRollOptions(event)
     let formula = null
-    if (rollOptions.showModifierDialog) {
+    if (options.showModifierDialog) {
       formula = await this.getInitiativeRoll(formula, { showModifierDialog: true })
     }
 
-    const options = {
+    const initOptions = {
       createCombatants: true,
       initiativeOptions: {
         formula
@@ -546,9 +552,9 @@ class DCCActor extends Actor {
     }
 
     if (token) {
-      token.actor.rollInitiative(options)
+      token.actor.rollInitiative(initOptions)
     } else {
-      await this.rollInitiative(options)
+      await this.rollInitiative(initOptions)
     }
   }
 

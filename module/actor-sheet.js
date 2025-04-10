@@ -429,7 +429,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
 
         // Update Inventory Item
         html.find('.item-edit').click(ev => {
-          const itemId = this._findDataset(ev.currentTarget, 'itemId')
+          const itemId = this.#findDataset(ev.currentTarget, 'itemId')
           const item = this.actor.items.get(itemId)
           item.sheet.render(true)
         })
@@ -475,10 +475,12 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
 
   /**
    * Display saving throw configuration settings
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  static async #configureSavingThrows (event) {
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #configureSavingThrows (event, target) {
     new SavingThrowConfig(this.actor, {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
@@ -553,7 +555,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   // }
 
   async #decreaseQty (event) {
-    const itemId = this._findDataset(event.currentTarget, 'itemId')
+    const itemId = this.#findDataset(event.currentTarget, 'itemId')
     const item = this.actor.items.get(itemId)
     let qty = item.system?.quantity || 0
     qty -= 1
@@ -561,7 +563,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   }
 
   async #increaseQty (event) {
-    const itemId = this._findDataset(event.currentTarget, 'itemId')
+    const itemId = this.#findDataset(event.currentTarget, 'itemId')
     const item = this.actor?.items.get(itemId)
     let qty = item.system?.quantity || 0
     qty += 1
@@ -574,7 +576,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @private
    */
   // async #deleteItem (event) {
-  //   const itemId = this._findDataset(event.currentTarget, 'itemId')
+  //   const itemId = this.#findDataset(event.currentTarget, 'itemId')
   //   this.actor.deleteEmbeddedDocuments('Item', [itemId])
   // }
 
@@ -583,7 +585,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {Object} element    The starting element
    * @param {String} attribute  The name of the dataset attribute
    */
-  #findDataset (element, attribute) {
+  static #findDataset (element, attribute) {
     while (element && !(attribute in element.dataset)) {
       element = element.parentElement
     }
@@ -602,12 +604,12 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
 
     // Handle the various draggable elements on the sheet
     const classes = event.target.classList
-    const labelFor = target.getAttribute('for') || ''
+    const labelFor = event.target.getAttribute('for') || ''
 
     if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
       // Normal ability rolls and DCC d20 roll under luck rolls
-      const rollUnder = (target.htmlFor === 'system.abilities.lck.value')
-      const abilityId = this._findDataset(event.currentTarget, 'ability')
+      const rollUnder = (event.target.htmlFor === 'system.abilities.lck.value')
+      const abilityId = this.#findDataset(event.currentTarget, 'ability')
       dragData = {
         type: 'Ability',
         actorId: this.actor.id,
@@ -652,12 +654,12 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       dragData = {
         type: 'Save',
         actorId: this.actor.id,
-        data: this._findDataset(event.currentTarget, 'save')
+        data: this.#findDataset(event.currentTarget, 'save')
       }
     }
 
     if (classes.contains('skill-check')) {
-      const skillId = this._findDataset(event.currentTarget, 'skill')
+      const skillId = this.#findDataset(event.currentTarget, 'skill')
       const actorSkill = this.actor.system.skills[skillId]
       const skillName = actorSkill ? actorSkill.label : skillId
       dragData = {
@@ -685,13 +687,13 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
         type: 'Spell Check',
         actorId: this.actor.id,
         data: {
-          ability: this._findDataset(event.currentTarget, 'ability')
+          ability: this.#findDataset(event.currentTarget, 'ability')
         }
       }
     }
 
     if (classes.contains('spell-draggable')) {
-      const spell = this._findDataset(event.currentTarget, 'spell')
+      const spell = this.#findDataset(event.currentTarget, 'spell')
       const spellItem = this.actor.items.find(i => i.name === spell)
       let img
       if (spellItem) {
@@ -703,7 +705,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
         actorId: this.actor.id,
         data: spellItem,
         dccData: {
-          ability: this._findDataset(event.currentTarget, 'ability'),
+          ability: this.#findDataset(event.currentTarget, 'ability'),
           spell,
           img
         }
@@ -731,7 +733,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     }
 
     if (classes.contains('weapon-draggable')) {
-      const itemId = this._findDataset(event.currentTarget, 'itemId')
+      const itemId = this.#findDataset(event.currentTarget, 'itemId')
       const weapon = this.actor.items.get(itemId)
       dragData = Object.assign(
         weapon.toDragData(),
@@ -748,7 +750,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     }
 
     if (classes.contains('item-draggable')) {
-      const itemId = this._findDataset(event.currentTarget, 'itemId')
+      const itemId = this.#findDataset(event.currentTarget, 'itemId')
       const item = this.actor.items.get(itemId)
       dragData = Object.assign(
         item.toDragData(),
@@ -862,7 +864,8 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @returns {Promise<void>}
    */
   static async #rollInitiative (event, target) {
-    this.actor.rollInit(event)
+    const options = this.#fillRollOptions(event)
+    this.actor.rollInit(event, options)
   }
 
   /**
