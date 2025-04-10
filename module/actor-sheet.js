@@ -21,10 +21,18 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       height: 450
     },
     actions: {
-      configureActor: DCCActorSheet.#onConfigureActor,
-      itemCreate: DCCActorSheet.#onItemCreate,
-      itemEdit: DCCActorSheet.#onItemEdit,
-      itemDelete: DCCActorSheet.#onItemDelete
+      configureActor: this.#configureActor,
+      configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
+      configureSavingThrows: this.#configureSavingThrows,
+      itemCreate: this.#itemCreate,
+      itemEdit: this.#itemEdit,
+      itemDelete: this.#itemDelete,
+      levelChange: this.#levelChange,
+      rollAbilityCheck: this.#rollAbilityCheck,
+      rollCritDie: this.#rollCritDie,
+      rollHitDice: this.#rollHitDice,
+      rollInitiative: this.#rollInitiative,
+      rollSavingThrow: this.#rollSavingThrow
     },
     form: {
       submitOnChange: true
@@ -369,31 +377,18 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     // Owner Only Listeners
     if (this.actor.isOwner) {
       // Ability Checks
-      html.find('.ability-box label[for*=".value"]').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-box label[for="system.abilities.lck.mod"]').click(this._onRollAbilityCheck.bind(this))
       html.find('.ability-box label[for*=".value"]').each(makeDraggable)
       html.find('[data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
 
       // Initiative
-      html.find('label[for="system.attributes.init.value"]').click(this._onRollInitiative.bind(this))
       html.find('label[for="system.attributes.init.value"]').each(makeDraggable)
 
-      // Hit Dice
-      html.find('label[for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
-
       // Saving Throws
-      html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
       html.find('label[for*="system.saves"]').each(makeDraggable)
-      if (this.object.system.config.computeSavingThrows && this.object.isPC) {
-        html.find('input[id*="system.saves"]').click(this._onConfigureSavingThrows.bind(this))
-      }
 
       // Skills
       html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
       html.find('label.skill-check').each(makeDraggable)
-
-      // Level Change
-      html.find('label[for*="system.details.level.value"]').click(this._onLevelChange.bind(this))
 
       // Luck Die
       html.find('label[for*="system.class.luckDie"]').click(this._onRollLuckDie.bind(this))
@@ -427,14 +422,6 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       // Draggable items, including armor
       html.find('.item-draggable').each(makeDraggable)
 
-      // Melee/Missile Attack/Damage Bonus Config
-      if (this.object.system.config.computeMeleeAndMissileAttackAndDamage) {
-        html.find('input[id*="system.details.attackHitBonus"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-        html.find('input[id*="system.details.attackDamageBonus"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-        html.find('label[for*="system.details.attackHitBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
-        html.find('label[for*="system.details.attackDamageBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
-      }
-
       // Only for editable sheets
       if (this.options.editable) {
         // Add Inventory Item
@@ -464,7 +451,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {PointerEvent} event
    * @returns {Promise<void>}
    */
-  static async #onConfigureActor (event) {
+  static async #configureActor (event) {
     event.preventDefault()
     new DCCActorConfig(this.actor, {
       top: this.position.top + 40,
@@ -474,11 +461,12 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
 
   /**
    * Display melee/missile bonus configuration settings
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onConfigureMeleeMissileBonus (event) {
-    event.preventDefault()
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #configureMeleeMissileBonus (event, target) {
     new MeleeMissileBonusConfig(this.actor, {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 400) / 2
@@ -490,9 +478,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {Event} event   The originating click event
    * @private
    */
-  _onConfigureSavingThrows (event) {
-    console.log('configure saving throws')
-    event.preventDefault()
+  static async #configureSavingThrows (event) {
     new SavingThrowConfig(this.actor, {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
@@ -500,21 +486,11 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   }
 
   /**
-   * Display melee/missile bonus configuration settings
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onRollMeleeMissileBonus (event) {
-    event.preventDefault()
-    console.log('on melee missile bonus')
-  }
-
-  /**
    * Get the Item document associated with an action event.
    * @param {PointerEvent} event
    * @returns {DCCItem}
    */
-  #getEventItem (event) {
+  async #getEventItem (event) {
     const itemId = event.target.closest('.line-item')?.dataset.itemId
     return this.actor.items.get(itemId, { strict: true })
   }
@@ -524,7 +500,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {PointerEvent} event
    * @returns {Promise<void>}
    */
-  static async #onItemCreate (event) {
+  static async #itemCreate (event) {
     const cls = getDocumentClass('Item')
     await cls.createDialog({ type: 'weapon' }, { parent: this.document, pack: this.document.pack })
   }
@@ -534,7 +510,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {PointerEvent} event
    * @returns {Promise<void>}
    */
-  static async #onItemDelete (event) {
+  static async #itemDelete (event) {
     const item = this.#getEventItem(event)
     await item.deleteDialog()
   }
@@ -544,7 +520,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {PointerEvent} event
    * @returns {Promise<void>}
    */
-  static async #onItemEdit (event) {
+  static async #itemEdit (event) {
     const item = this.#getEventItem(event)
     await item.sheet.render({ force: true })
   }
@@ -553,7 +529,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {Event}  event   The originating click event
    * @private
    */
-  // _onDeleteItem (event) {
+  // static async #deleteItem (event) {
   //   event.preventDefault()
   //   if (game.settings.get('dcc', 'promptForItemDeletion')) {
   //     new Dialog({
@@ -576,7 +552,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   //   }
   // }
 
-  _onDecreaseQty (event) {
+  async #decreaseQty (event) {
     const itemId = this._findDataset(event.currentTarget, 'itemId')
     const item = this.actor.items.get(itemId)
     let qty = item.system?.quantity || 0
@@ -584,7 +560,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     item.update({ 'system.quantity': qty })
   }
 
-  _onIncreaseQty (event) {
+  async #increaseQty (event) {
     const itemId = this._findDataset(event.currentTarget, 'itemId')
     const item = this.actor?.items.get(itemId)
     let qty = item.system?.quantity || 0
@@ -597,7 +573,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {Event}  event   The originating click event
    * @private
    */
-  // _deleteItem (event) {
+  // async #deleteItem (event) {
   //   const itemId = this._findDataset(event.currentTarget, 'itemId')
   //   this.actor.deleteEmbeddedDocuments('Item', [itemId])
   // }
@@ -607,7 +583,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {Object} element    The starting element
    * @param {String} attribute  The name of the dataset attribute
    */
-  _findDataset (element, attribute) {
+  #findDataset (element, attribute) {
     while (element && !(attribute in element.dataset)) {
       element = element.parentElement
     }
@@ -626,11 +602,11 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
 
     // Handle the various draggable elements on the sheet
     const classes = event.target.classList
-    const labelFor = event.currentTarget.getAttribute('for') || ''
+    const labelFor = target.getAttribute('for') || ''
 
     if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
       // Normal ability rolls and DCC d20 roll under luck rolls
-      const rollUnder = (event.currentTarget.htmlFor === 'system.abilities.lck.value')
+      const rollUnder = (target.htmlFor === 'system.abilities.lck.value')
       const abilityId = this._findDataset(event.currentTarget, 'ability')
       dragData = {
         type: 'Ability',
@@ -642,7 +618,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
       }
     }
 
-    if (event.currentTarget.htmlFor === 'system.abilities.lck.mod') {
+    if (target.htmlFor === 'system.abilities.lck.mod') {
       // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
       dragData = {
         type: 'Ability',
@@ -809,15 +785,14 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     }
   }
 
-  /* -------------------------------------------- */
-
   /**
-   * Handle changing Level
-   * @param {Event} event   The originating click event
-   * @private
+   * Handle changing level
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onLevelChange (event) {
-    event.preventDefault()
+  static async #levelChange (event, target) {
     this.actor.levelChange()
   }
 
@@ -826,7 +801,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @param {Event} event   The originating click event
    * @private
    */
-  _fillRollOptions (event) {
+  #fillRollOptions (event) {
     const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
     return {
       showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey)
@@ -835,17 +810,18 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
 
   /**
    * Handle rolling an Ability check
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollAbilityCheck (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
+  static async #rollAbilityCheck (event, target) {
+    const options = this.#fillRollOptions(event)
 
-    const ability = event.currentTarget.parentElement.dataset.ability
+    const ability = target.parentElement.dataset.ability
 
     // Luck checks are roll under unless the user explicitly clicks the modifier
-    const rollUnder = (ability === 'lck') && (event.currentTarget.htmlFor !== 'system.abilities.lck.mod')
+    const rollUnder = (ability === 'lck') && (target.htmlFor !== 'system.abilities.lck.mod')
 
     Object.assign(options, {
       rollUnder
@@ -856,57 +832,62 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
 
   /**
    * Handle rolling Crit Die on its own
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollCritDie (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
+  static async #rollCritDie (event, target) {
+    const options = this.#fillRollOptions(event)
     this.actor.rollCritical(options)
   }
 
   /**
    * Handle rolling Hit Dice
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollHitDice (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
+  static async #rollHitDice (event, target) {
+    const options = this.#fillRollOptions(event)
     this.actor.rollHitDice(options)
   }
 
   /**
    * Handle rolling Initiative
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  async _onRollInitiative (event) {
-    event.preventDefault()
+  static async #rollInitiative (event, target) {
     this.actor.rollInit(event)
   }
 
   /**
    * Handle rolling a saving throw
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollSavingThrow (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
-    const save = event.currentTarget.parentElement.dataset.save
+  static async #rollSavingThrow (event, target) {
+    const options = this.#fillRollOptions(event)
+    const save = target.parentElement.dataset.save
     this.actor.rollSavingThrow(save, options)
   }
 
   /**
    * Handle rolling a skill check
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollSkillCheck (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
-    const skill = event.currentTarget.parentElement.dataset.skill
+  static async #rollSkillCheck (event) {
+    const options = this.#fillRollOptions(event)
+    const skill = target.parentElement.dataset.skill
     this.actor.rollSkillCheck(skill, options)
     this.render(false)
   }
@@ -918,7 +899,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    */
   _onRollLuckDie (event) {
     event.preventDefault()
-    const options = this._fillRollOptions(event)
+    const options = this.#fillRollOptions(event)
     this.actor.rollLuckDie(options)
   }
 
@@ -929,8 +910,8 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    */
   _onRollSpellCheck (event) {
     event.preventDefault()
-    const options = this._fillRollOptions(event)
-    const dataset = event.currentTarget.parentElement.dataset
+    const options = this.#fillRollOptions(event)
+    const dataset = target.parentElement.dataset
     if (dataset.itemId) {
       // Roll through a spell item
       const item = this.actor.items.find(i => i.id === dataset.itemId)
@@ -957,21 +938,23 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    */
   _onRollDisapproval (event) {
     event.preventDefault()
-    const options = this._fillRollOptions(event)
+    const options = this.#fillRollOptions(event)
     this.actor.rollDisapproval(undefined, options)
   }
 
   /**
    * Handle rolling a weapon attack
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollWeaponAttack (event) {
+  static async #rollWeaponAttack (event, target) {
     event.preventDefault()
-    const itemId = this._findDataset(event.currentTarget, 'itemId')
-    const options = this._fillRollOptions(event)
+    const itemId = this.#findDataset(target, 'itemId')
+    const options = this.#fillRollOptions(event)
     Object.assign(options, {
-      backstab: event.currentTarget.classList.contains('backstab-button')
+      backstab: target.classList.contains('backstab-button')
     })
     this.actor.rollWeaponAttack(itemId, options)
   }
@@ -1013,7 +996,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   async _updateObject (event, formData) {
     // Handle owned item updates separately
     if (event.currentTarget) {
-      let parentElement = event.currentTarget.parentElement
+      let parentElement = target.parentElement
       const expanded = foundry.utils.expandObject(formData)
       if (expanded.itemUpdates) {
         if (parentElement.classList.contains('weapon') ||
