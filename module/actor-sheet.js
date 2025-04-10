@@ -470,11 +470,31 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    @this {DCCActorSheet}
    @param {PointerEvent} event   The originating click event
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
-   @returns {Promise<void>}
+   @returns {Promise<Document[]>}
    **/
-  async #itemCreate (event, target) {
-    const cls = getDocumentClass('Item')
-    await cls.createDialog({ type: 'weapon' }, { parent: this.document, pack: this.document.pack })
+  static async #itemCreate (event, target) {
+    const header = target
+    // Get the type of item to create.
+    const type = header.dataset.type
+    // Grab any data associated with this control.
+    const system = foundry.utils.duplicate(header.dataset)
+    // Initialize a default name.
+    let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
+    if (this.actor.type === 'NPC' && type === 'weapon') {
+      name = game.i18n.localize('DCC.NewAttack')
+    }
+    // Prepare the item object.
+    const itemData = {
+      name,
+      img: EntityImages.imageForItem(type),
+      type,
+      system
+    }
+    // Remove the type from the dataset since it's in the itemData.type prop.
+    delete itemData.system.type
+
+    // Finally, create the item!
+    return this.actor.createEmbeddedDocuments('Item', [itemData])
   }
 
   /**
@@ -484,8 +504,8 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  async #itemDelete (event, target) {
-    const itemId = this.#findDataset(target, 'itemId')
+  static async #itemDelete (event, target) {
+    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
     const item = this.actor.items.get(itemId)
     await item.deleteDialog()
   }
@@ -497,38 +517,11 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  async #itemEdit (event, target) {
-    const itemId = this.#findDataset(target, 'itemId')
-    const item = this.actor.items.get(itemId)
+  static async #itemEdit (event, target) {
+    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
+    const item = this.document.items.get(itemId)
     await item.sheet.render({ force: true })
   }
-
-  /** Prompt to delete an item
-   * @param {Event}  event   The originating click event
-   * @private
-   */
-  // static async #deleteItem (event) {
-  //   event.preventDefault()
-  //   if (game.settings.get('dcc', 'promptForItemDeletion')) {
-  //     new Dialog({
-  //       title: game.i18n.localize('DCC.DeleteItem'),
-  //       content: `<p>${game.i18n.localize('DCC.DeleteItemExplain')}</p>`,
-  //       buttons: {
-  //         yes: {
-  //           icon: '<i class="fas fa-check"></i>',
-  //           label: game.i18n.localize('DCC.Yes'),
-  //           callback: () => this._deleteItem(event)
-  //         },
-  //         no: {
-  //           icon: '<i class="fas fa-times"></i>',
-  //           label: game.i18n.localize('DCC.No')
-  //         }
-  //       }
-  //     }).render(true)
-  //   } else {
-  //     this._deleteItem(event)
-  //   }
-  // }
 
   async #decreaseQty (event) {
     const itemId = this.#findDataset(event.currentTarget, 'itemId')
@@ -545,16 +538,6 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     qty += 1
     item.update({ 'system.quantity': qty })
   }
-
-  /**
-   * Delete an item
-   * @param {Event}  event   The originating click event
-   * @private
-   */
-  // async #deleteItem (event) {
-  //   const itemId = this.#findDataset(event.currentTarget, 'itemId')
-  //   this.actor.deleteEmbeddedDocuments('Item', [itemId])
-  // }
 
   /**
    * Create a macro when a rollable element is dragged
@@ -822,7 +805,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @returns {Promise<void>}
    */
   static async #rollAbilityCheck (event, target) {
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
 
     const ability = target.parentElement.dataset.ability
 
@@ -844,7 +827,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @returns {Promise<void>}
    */
   static async #rollCritDie (event, target) {
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     this.actor.rollCritical(options)
   }
 
@@ -856,7 +839,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @returns {Promise<void>}
    */
   static async #rollHitDice (event, target) {
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     this.actor.rollHitDice(options)
   }
 
@@ -868,7 +851,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @returns {Promise<void>}
    */
   static async #rollInitiative (event, target) {
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     this.actor.rollInit(event, options)
   }
 
@@ -880,7 +863,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @returns {Promise<void>}
    */
   static async #rollSavingThrow (event, target) {
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     const save = target.parentElement.dataset.save
     this.actor.rollSavingThrow(save, options)
   }
@@ -893,7 +876,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @returns {Promise<void>}
    */
   static async #rollSkillCheck (event, target) {
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     const skill = target.parentElement.dataset.skill
     this.actor.rollSkillCheck(skill, options)
     this.render(false)
@@ -907,7 +890,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    * @returns {Promise<void>}
    */
   static async #rollLuckDie (event, target) {
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     this.actor.rollLuckDie(options)
   }
 
@@ -919,7 +902,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    @returns {Promise<void>}
    **/
   static async #rollSpellCheck (event, target) {
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     const dataset = target.parentElement.dataset
     if (dataset.itemId) {
       // Roll through a spell item
@@ -947,7 +930,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
    */
   _onRollDisapproval (event) {
     event.preventDefault()
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     this.actor.rollDisapproval(undefined, options)
   }
 
@@ -961,7 +944,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   static async #rollWeaponAttack (event, target) {
     event.preventDefault()
     const itemId = this.#findDataset(target, 'itemId')
-    const options = this.#fillRollOptions(event)
+    const options = DCCActorSheet.#fillRollOptions(event)
     Object.assign(options, {
       backstab: target.classList.contains('backstab-button')
     })
