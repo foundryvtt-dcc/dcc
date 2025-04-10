@@ -41,7 +41,7 @@ class SpellResult {
     messageData = foundry.utils.mergeObject({
       flavor: game.i18n.localize('DCC.SpellCheckCardMessage'),
       user: game.user.id,
-      speaker: { actor: item.actor?.id || null, alias: item.actor?.name || null },
+      speaker: { actor: item?.actor?.id || null, alias: item?.actor?.name || null },
       rolls: [roll],
       sound: roll ? CONFIG.sounds.dice : null,
       system: { spellId: item?.id },

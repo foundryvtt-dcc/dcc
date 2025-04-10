@@ -381,13 +381,14 @@ async function processSpellCheck (actor, spellData) {
 
   let crit = false
   let fumble = false
-  let naturalRoll = null
   let result = null
 
   // Make sure we evaluate the roll
   if (!roll._evaluated) {
     await roll.evaluate()
   }
+
+  const naturalRoll = roll.dice[0].total
 
   try {
     // Apply the roll to the table if present
@@ -400,7 +401,6 @@ async function processSpellCheck (actor, spellData) {
         // roll.terms[0].results[0].result = 20
         // roll.terms[0]._total = 20
 
-        naturalRoll = roll.dice[0].total
         if (naturalRoll === 1) {
           const fumbleResult = rollTable.getResultsForRoll(1)
           result.results = fumbleResult.results
