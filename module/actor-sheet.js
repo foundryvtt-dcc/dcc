@@ -133,6 +133,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
     const items = await this.#prepareItems()
 
     foundry.utils.mergeObject(context, {
+      actor: this.document,
       config: CONFIG.DCC,
       corruptionHTML: this.#prepareCorruption(),
       fieldDisabled: this.isEditable ? '' : 'disabled',
@@ -466,7 +467,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   }
 
   /**
-   * Open the item create dialog
+   * Create an inline item
    @this {DCCActorSheet}
    @param {PointerEvent} event   The originating click event
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
@@ -775,7 +776,7 @@ class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) 
   }
 
   /**
-   * Handle changing level
+   * Open level change dialog
    * @this {DCCActorSheet}
    * @param {PointerEvent} event   The originating click event
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
