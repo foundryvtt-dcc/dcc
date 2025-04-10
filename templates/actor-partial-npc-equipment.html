@@ -47,7 +47,7 @@
           {{localize "DCC.Add"}}</a>
       </div>
     </li>
-    {{#each actor.armor as |armor index|}}
+    {{#each equipment.armor as |armor index|}}
       {{> armorRow armor=armor id=armor._id index=index}}
     {{/each}}
   </ol>
@@ -85,7 +85,7 @@
   <div class="dark-title">{{localize "DCC.Equipment"}}</div>
   <ol class="item-list dark-border">
     {{> ItemHeader type="equipment"}}
-    {{#each actor.equipment as |equipment id|}}
+    {{#each equipment.equipment as |equipment id|}}
       {{> ItemRow item=equipment id=id}}
     {{/each}}
   </ol>
@@ -93,7 +93,7 @@
   <div class="dark-title">{{localize "DCC.Ammunition"}}</div>
   <ol class="item-list dark-border">
     {{> ItemHeader type="ammunition"}}
-    {{#each actor.ammunition as |ammunition id|}}
+    {{#each equipment.ammunition as |ammunition id|}}
       {{> ItemRow item=ammunition id=id}}
     {{/each}}
   </ol>
@@ -101,7 +101,7 @@
   <div class="dark-title">{{localize "DCC.Mounts"}}</div>
   <ol class="item-list dark-border">
     {{> ItemHeader type="mount"}}
-    {{#each actor.mounts as |mount id|}}
+    {{#each equipment.mounts as |mount id|}}
       {{> ItemRow item=mount id=id}}
     {{/each}}
   </ol>
@@ -155,7 +155,7 @@
              value="{{numberFormat system.currency.cp decimals=0 sign=false}}" data-dtype="number"/>
       <div></div>
     </li>
-    {{#each actor.treasure as |treasure id|}}
+    {{#each equipment.treasure as |treasure id|}}
       {{> TreasureRow item=treasure id=id}}
     {{/each}}
   </ol>

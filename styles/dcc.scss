@@ -18,6 +18,14 @@
   src: url('fonts/DuvallSmallCaps.otf') format('opentype');
 }
 
+input[type="checkbox"]:checked::after {
+  color: transparent;
+}
+
+input[type="checkbox"]::before {
+  content: none;
+}
+
 /* Common style elements */
 $border-style: 2px groove #eeede0;
 

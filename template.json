@@ -175,13 +175,6 @@
             "label": "DCC.DetectSecretDoors",
             "value": "+0"
           }
-        },
-        "inventory": {
-          "weapons": [],
-          "ammunition": [],
-          "armor": [],
-          "equipment": [],
-          "mount": []
         }
       },
       "cleric": {

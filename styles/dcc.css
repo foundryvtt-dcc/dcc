@@ -225,6 +225,14 @@
   font-family: "DuvallSmallCaps";
   src: url("fonts/DuvallSmallCaps.otf") format("opentype");
 }
+input[type=checkbox]:checked::after {
+  color: transparent;
+}
+
+input[type=checkbox]::before {
+  content: none;
+}
+
 /* Common style elements */
 .dcc.application {
   --header-height: 24px;
