@@ -994,9 +994,9 @@ class DCCActor extends Actor {
     const rolls = []
 
     // Attack roll
-    const target = game.user.targets.first; // Get the first targeted token
-    options.target = target; // Optionally add target to options if needed elsewhere
-    const attackRollResult = await this.rollToHit(weapon, target, options)
+    const targets = game.user.targets; // Get the set of targeted tokens
+    options.targets = targets; // Add targets set to options
+    const attackRollResult = await this.rollToHit(weapon, targets, options)
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
     }
@@ -1214,11 +1214,11 @@ class DCCActor extends Actor {
   /**
    * Roll a weapon's attack roll
    * @param {Object} weapon      The weapon object being used for the roll
-   * @param {Object} target     The target of the attack
+   * @param {Set<Token>} targets The set of targets for the attack
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
-  async rollToHit (weapon, target, options = {}) {
+  async rollToHit (weapon, targets, options = {}) {
     /* Grab the To Hit modifier */
     const toHit = weapon.system?.toHit.replaceAll('@ab', this.system.details.attackBonus)
 
@@ -1263,7 +1263,7 @@ class DCCActor extends Actor {
     }
 
     // Allow modules to modify the terms before the roll is created
-    Hooks.callAll('dcc.modifyAttackRollTerms', terms, this, weapon, target, options);
+    Hooks.callAll('dcc.modifyAttackRollTerms', terms, this, weapon, targets, options);
 
     /* Roll the Attack */
     const rollOptions = Object.assign(
