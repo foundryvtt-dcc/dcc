@@ -661,7 +661,7 @@ Hooks.on('createActor', async (actor, options, userId) => {
 
   // Check if this is a brand-new actor (not a duplicate or import)
   // Ensure it's not the fake actor created by the Item Piles module
-  if (!options.temporary && !options.keepId && !actor.name.includes(('Item Pile'))) {
+  if (!options.temporary && !options.keepId && actor.type === 'Player' && !actor.name.includes(('Item Pile'))) {
     // Update the prototypeToken to set actorLink to true
     await actor.update({ 'prototypeToken.actorLink': true })
   }
