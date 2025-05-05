@@ -173,16 +173,6 @@ class DCCActor extends Actor {
 
   /* -------------------------------------------- */
 
-  /** @inheritdoc */
-  _initializeSource (source, options) {
-    source = super._initializeSource(source, options)
-    // Set Players to link actor data by default.
-    if (source.type === 'Player' && (Object.hasOwn(source, 'getFlag') && source.getFlag('item-piles', 'data') === undefined)) {
-      source.prototypeToken.actorLink = true
-    }
-    return source
-  }
-
   /** @override */
   getRollData () {
     const data = super.getRollData()

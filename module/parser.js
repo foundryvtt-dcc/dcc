@@ -247,7 +247,9 @@ async function createActors (type, folderId, actorData) {
     }
 
     // Link Actor Data by Default
-    actor.updateSource({ prototypeToken: { actorLink: true } })
+    if (type === 'Player') {
+      actor.updateSource({ prototypeToken: { actorLink: true } })
+    }
 
     actors.push(actor)
 

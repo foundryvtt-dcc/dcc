@@ -653,6 +653,20 @@ Hooks.on('applyActiveEffect', (actor, change) => {
   return update
 })
 
+// Set Player actor prototype tokens to Link Actor Data by default
+Hooks.on('createActor', async (actor, options, userId) => {
+  // Only proceed if this is the user who triggered the creation
+  // This prevents the code from running multiple times on different clients
+  if (userId !== game.user.id) return
+
+  // Check if this is a brand-new actor (not a duplicate or import)
+  // Ensure it's not the fake actor created by the Item Piles module
+  if (!options.temporary && !options.keepId && !actor.name.includes(('Item Pile'))) {
+    // Update the prototypeToken to set actorLink to true
+    await actor.update({ 'prototypeToken.actorLink': true })
+  }
+})
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
 
