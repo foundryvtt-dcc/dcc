@@ -984,6 +984,7 @@ class DCCActor extends Actor {
     const rolls = []
 
     // Attack roll
+    options.targets = game.user.targets // Add targets set to options
     const attackRollResult = await this.rollToHit(weapon, options)
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
@@ -1177,6 +1178,7 @@ class DCCActor extends Actor {
         fumbleRoll,
         fumbleRollFormula,
         hitsAc: attackRollResult.hitsAc,
+        targets:game.user.targets,
         weaponId,
         weaponName: weapon.name
       }
@@ -1248,6 +1250,9 @@ class DCCActor extends Actor {
         formula: parseInt(this.system?.class?.backstab || '+0')
       })
     }
+
+    // Allow modules to modify the terms before the roll is created
+    Hooks.callAll('dcc.modifyAttackRollTerms', terms, this, weapon, options);
 
     /* Roll the Attack */
     const rollOptions = Object.assign(
