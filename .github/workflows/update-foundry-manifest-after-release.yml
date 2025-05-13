@@ -5,6 +5,9 @@ on:
     types:
       - published
 
+permissions:
+  contents: write
+
 jobs:
   update_manifest_post_release:
     runs-on: ubuntu-latest
