@@ -1405,14 +1405,12 @@ class DCCActor extends Actor {
       const messageData = {
         user: game.user.id,
         speaker,
-        flavor: game.i18n.format(locString),
-        isRoll: true,
-        rolls: [await new Roll(deltaHp.toString()).evaluate()],
+        // flavor: game.i18n.format(locString, { damage: Math.abs(deltaHp) }),
         flags: {
           'dcc.isApplyDamage': true
         },
+        content: game.i18n.format(locString, { damage: Math.abs(deltaHp) }),
         type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
-        content: game.i18n.format(locString, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
