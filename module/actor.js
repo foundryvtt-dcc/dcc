@@ -986,6 +986,8 @@ class DCCActor extends Actor {
     // Attack roll
     options.targets = game.user.targets // Add targets set to options
     const attackRollResult = await this.rollToHit(weapon, options)
+      if (!attackRollResult) return; // <-- if the attack roll is cancelled, return
+
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
     }
@@ -1252,8 +1254,9 @@ class DCCActor extends Actor {
     }
 
     // Allow modules to modify the terms before the roll is created
-    Hooks.callAll('dcc.modifyAttackRollTerms', terms, this, weapon, options);
-
+    const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options);
+    if (!proceed) return; // Cancel the attack roll if any listener returns false 
+    
     /* Roll the Attack */
     const rollOptions = Object.assign(
       {
