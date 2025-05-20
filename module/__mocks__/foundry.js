@@ -474,6 +474,10 @@ class HooksMock {
   static async callAll (hook, rolls, messageData) {
     return true
   }
+  
+  static call (hook, ...args) {
+    return true
+  }
 }
 
 global.Hooks = HooksMock
