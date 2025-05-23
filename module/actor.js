@@ -998,7 +998,13 @@ class DCCActor extends Actor {
     // Damage roll
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      damageRollFormula = damageRollFormula.replaceAll(attackRollResult.deedDieFormula, `+${attackRollResult.deedDieRollResult}`)
+      const rawDeedFormula = attackRollResult.deedDieFormula; // e.g. "d4"
+      const deedBonusStringComponent = ensurePlus(rawDeedFormula); // e.g. "+d4", this is what's in the damage formula from warrior bonus
+      const deedNumericResult = attackRollResult.deedDieRollResult.toString(); // e.g. "4"
+      // Determine sign from how deed was added to formula, then append numeric result
+      const replacementDeedValueString = (deedBonusStringComponent.startsWith("-") ? "-" : "+") + deedNumericResult; // e.g. "+4"
+      damageRollFormula = damageRollFormula.replace(deedBonusStringComponent, replacementDeedValueString);
+
       if (damageRollFormula.includes('@ab')) {
         // This does not handle very high level characters that might have a deed die and a deed die modifier
         // But since @ab really should only be for NPCs, we don't have a way of splitting out such a mod from a strength mod
