@@ -5,13 +5,14 @@ import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
 import EntityImages from './entity-images.js'
 
-const { api, sheets } = foundry.applications
+const { HandlebarsApplicationMixin } = foundry.applications.api
+const { TextEditor } = foundry.applications.ux
+const { ActorSheetV2 } = foundry.applications.sheets
 
 /**
  * Extend the basic ActorSheet
- * @extends {ActorSheet}
  */
-class DCCActorSheet extends api.HandlebarsApplicationMixin(sheets.ActorSheetV2) {
+class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     classes: ['dcc', 'sheet', 'actor', 'themed', 'theme-light'],

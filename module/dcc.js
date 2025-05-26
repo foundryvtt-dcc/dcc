@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, loadTemplates, Handlebars */
+/* global $, Actors, ActorSheetV2, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, loadTemplates, Handlebars */
 
 /**
  * DCC
@@ -27,6 +27,11 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCActorSheet from './actor-sheet.js'
+
+const { Actors } = foundry.documents.collections
+const { ActorSheetV2 } = foundry.applications.sheets
+const { loadTemplates } = foundry.applications.handlebars
+const { Items } = foundry.documents.collections
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -59,7 +64,7 @@ Hooks.once('init', async function () {
   CONFIG.Combatant.documentClass = DCCCombatant
 
   // Register sheet application classes
-  Actors.unregisterSheet('core', ActorSheet)
+  Actors.unregisterSheet('core', ActorSheetV2)
   Actors.registerSheet('dcc', DCCActorSheet, {
     types: ['NPC'],
     label: 'DCC.DCCActorSheet',
@@ -502,8 +507,10 @@ Hooks.on('hotbarDrop', (bar, data, slot) => {
 })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
-Hooks.on('renderChatMessage', (message, html, data) => {
+Hooks.on('renderChatMessageHTML', (message, html, data) => {
   if (!message.isRoll || !message.isContentVisible || !message.rolls.length) return
+
+  html = $(html)
 
   if (game.user.isGM) {
     message.setFlag('core', 'canPopout', true)

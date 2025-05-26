@@ -4,10 +4,10 @@
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
 import { ensurePlus } from './utilities.js'
+const { TextEditor } = foundry.applications.ux
 
 /**
  * Extend the basic ItemSheet for DCC RPG
- * @extends {ItemSheet}
  */
 class DCCItemSheet extends ItemSheet {
   /** @override */
