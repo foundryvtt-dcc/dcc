@@ -269,8 +269,10 @@ export const emoteFumbleRoll = async function (message, html, data) {
 
   const fumbleResult = await getFumbleTableResult(message.rolls[0])
   let fumbleText = ''
-  if (fumbleResult) {
-    fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+  if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.text) {
+    fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
+  } else if (typeof fumbleResult === 'string') {
+    fumbleText = fumbleResult
   }
 
   const fumbleRollEmote = game.i18n.format(
@@ -379,6 +381,11 @@ export const lookupFumbleRoll = async function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
 
   const fumbleResult = await getFumbleTableResult(message.rolls[0])
-  const fumbleText = await TextEditor.enrichHTML(fumbleResult.results[0].text)
+  let fumbleText = ''
+  if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.text) {
+    fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
+  } else if (typeof fumbleResult === 'string') {
+    fumbleText = fumbleResult
+  }
   html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${fumbleText}`)
 }

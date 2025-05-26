@@ -173,16 +173,6 @@ class DCCActor extends Actor {
 
   /* -------------------------------------------- */
 
-  /** @inheritdoc */
-  _initializeSource (source, options) {
-    source = super._initializeSource(source, options)
-    // Set Players to link actor data by default.
-    if (source.type === 'Player' && (Object.hasOwn(source, 'getFlag') && source.getFlag('item-piles', 'data') === undefined)) {
-      source.prototypeToken.actorLink = true
-    }
-    return source
-  }
-
   /** @override */
   getRollData () {
     const data = super.getRollData()
@@ -1000,7 +990,10 @@ class DCCActor extends Actor {
     const rolls = []
 
     // Attack roll
+    options.targets = game.user.targets // Add targets set to options
     const attackRollResult = await this.rollToHit(weapon, options)
+      if (!attackRollResult) return; // <-- if the attack roll is cancelled, return
+
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
     }
@@ -1011,7 +1004,13 @@ class DCCActor extends Actor {
     // Damage roll
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      damageRollFormula = damageRollFormula.replaceAll(attackRollResult.deedDieFormula, `+${attackRollResult.deedDieRollResult}`)
+      const rawDeedFormula = attackRollResult.deedDieFormula; // e.g. "d4"
+      const deedBonusStringComponent = ensurePlus(rawDeedFormula); // e.g. "+d4", this is what's in the damage formula from warrior bonus
+      const deedNumericResult = attackRollResult.deedDieRollResult.toString(); // e.g. "4"
+      // Determine sign from how deed was added to formula, then append numeric result
+      const replacementDeedValueString = (deedBonusStringComponent.startsWith("-") ? "-" : "+") + deedNumericResult; // e.g. "+4"
+      damageRollFormula = damageRollFormula.replace(deedBonusStringComponent, replacementDeedValueString);
+
       if (damageRollFormula.includes('@ab')) {
         // This does not handle very high level characters that might have a deed die and a deed die modifier
         // But since @ab really should only be for NPCs, we don't have a way of splitting out such a mod from a strength mod
@@ -1193,6 +1192,7 @@ class DCCActor extends Actor {
         fumbleRoll,
         fumbleRollFormula,
         hitsAc: attackRollResult.hitsAc,
+        targets:game.user.targets,
         weaponId,
         weaponName: weapon.name
       }
@@ -1264,6 +1264,10 @@ class DCCActor extends Actor {
         formula: parseInt(this.system?.class?.backstab || '+0')
       })
     }
+
+    // Allow modules to modify the terms before the roll is created
+    const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options);
+    if (!proceed) return; // Cancel the attack roll if any listener returns false
 
     /* Roll the Attack */
     const rollOptions = Object.assign(
@@ -1416,14 +1420,11 @@ class DCCActor extends Actor {
       const messageData = {
         user: game.user.id,
         speaker,
-        flavor: game.i18n.format(locString),
-        isRoll: true,
-        rolls: [await new Roll(deltaHp.toString()).evaluate()],
         flags: {
           'dcc.isApplyDamage': true
         },
+        content: game.i18n.format(locString, { damage: Math.abs(deltaHp) }),
         type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
-        content: game.i18n.format(locString, { target: this.name, damage: Math.abs(deltaHp) }),
         sound: CONFIG.sounds.notification
       }
       ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))

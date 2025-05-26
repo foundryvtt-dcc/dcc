@@ -370,7 +370,7 @@ Hooks.once('importAdventure', async function () {
 /**
  * Handle the results of a spell check cast through any mechanism
  * Apply a roll to a table and apply spell check logic for crits and fumbles
- * @param {Object} actor        The actor rolling the check
+ * @param {Actor} actor        The actor rolling the check
  * @param {Object} spellData    Information about the spell being cast
  * @returns {Object}            Table result object
  */
@@ -387,13 +387,14 @@ async function processSpellCheck (actor, spellData) {
 
   let crit = false
   let fumble = false
-  let naturalRoll = null
   let result = null
 
   // Make sure we evaluate the roll
   if (!roll._evaluated) {
     await roll.evaluate()
   }
+
+  const naturalRoll = roll.dice[0].total
 
   try {
     // Apply the roll to the table if present
@@ -406,7 +407,6 @@ async function processSpellCheck (actor, spellData) {
         // roll.terms[0].results[0].result = 20
         // roll.terms[0]._total = 20
 
-        naturalRoll = roll.dice[0].total
         if (naturalRoll === 1) {
           const fumbleResult = rollTable.getResultsForRoll(1)
           result.results = fumbleResult.results
@@ -659,6 +659,20 @@ Hooks.on('applyActiveEffect', (actor, change) => {
   return update
 })
 
+// Set Player actor prototype tokens to Link Actor Data by default
+Hooks.on('createActor', async (actor, options, userId) => {
+  // Only proceed if this is the user who triggered the creation
+  // This prevents the code from running multiple times on different clients
+  if (userId !== game.user.id) return
+
+  // Check if this is a brand-new actor (not a duplicate or import)
+  // Ensure it's not the fake actor created by the Item Piles module
+  if (!options.temporary && !options.keepId && actor.type === 'Player' && !actor.name.includes(('Item Pile'))) {
+    // Update the prototypeToken to set actorLink to true
+    await actor.update({ 'prototypeToken.actorLink': true })
+  }
+})
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
 
@@ -714,7 +728,7 @@ async function createDCCMacro (data, slot) {
       })
     }
     // Set permissions so all players can execute the macro
-    let permissions = macro.ownership
+    const permissions = macro.ownership
     permissions.default = 2 // 2 = Observer, allows execution
     macro.update({ ownership: permissions })
 

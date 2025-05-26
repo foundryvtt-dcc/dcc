@@ -140,7 +140,6 @@ async function createActors (type, folderId, actorData) {
       const pack = game.packs.get(packPath)
       if (!pack) continue
 
-      // const index = await pack.getIndex()
       for (const entry of pack.index) {
         itemMap[entry.name] = entry
       }
@@ -247,7 +246,9 @@ async function createActors (type, folderId, actorData) {
     }
 
     // Link Actor Data by Default
-    actor.updateSource({ prototypeToken: { actorLink: true } })
+    if (type === 'Player') {
+      actor.updateSource({ prototypeToken: { actorLink: true } })
+    }
 
     actors.push(actor)
 

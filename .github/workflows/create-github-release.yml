@@ -11,6 +11,8 @@ on:
 
 jobs:
   create_github_release:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     name: Foundry Release
     steps:
