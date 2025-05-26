@@ -8,6 +8,7 @@ import EntityImages from './entity-images.js'
 const { HandlebarsApplicationMixin } = foundry.applications.api
 const { TextEditor } = foundry.applications.ux
 const { ActorSheetV2 } = foundry.applications.sheets
+const { ApplicationTabsConfiguration } = foundry.applications.types
 
 /**
  * Extend the basic ActorSheet

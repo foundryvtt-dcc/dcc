@@ -32,6 +32,7 @@ const { Actors } = foundry.documents.collections
 const { ActorSheetV2 } = foundry.applications.sheets
 const { loadTemplates } = foundry.applications.handlebars
 const { Items } = foundry.documents.collections
+const { ItemSheetV2 } = foundry.applications.sheets
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -102,7 +103,7 @@ Hooks.once('init', async function () {
     types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetGeneric'
   })
-  Items.unregisterSheet('core', ItemSheet)
+  Items.unregisterSheet('core', ItemSheetV2)
   Items.registerSheet('dcc', DCCItemSheet, {
     label: 'DCC.DCCItemSheet',
     makeDefault: true
@@ -189,6 +190,23 @@ Hooks.once('init', async function () {
   // }
   //
   // window.getTemplate = getTemplate
+})
+
+/* -------------------------------------------- */
+/*  Initialize Fleeting Luck Button             */
+/*  In v13, has to happen before ready hook     */
+/* -------------------------------------------- */
+Hooks.on('getSceneControlButtons', (controls) => {
+  controls.tokens.tools.fleetingLuck = {
+    name: 'fleetingLuck',
+    title: game.i18n.localize('DCC.FleetingLuck'),
+    icon: 'fas fa-balance-scale-left',
+    onChange: (event, active) => {
+      game.dcc.FleetingLuck.show()
+    },
+    toggle: true,
+    active: true
+  }
 })
 
 /* -------------------------------------------- */

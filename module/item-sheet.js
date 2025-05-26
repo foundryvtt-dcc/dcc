@@ -5,21 +5,34 @@ import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
 import { ensurePlus } from './utilities.js'
 const { TextEditor } = foundry.applications.ux
+const { ItemSheetV2 } = foundry.applications.sheets
 
 /**
  * Extend the basic ItemSheet for DCC RPG
  */
-class DCCItemSheet extends ItemSheet {
-  /** @override */
-  static get defaultOptions () {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ['dcc', 'sheet', 'item'],
-      height: 442,
-      resizable: true,
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
+class DCCItemSheet extends ItemSheetV2 {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'item', 'themed', 'theme-light'],
+    tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
+    position: {
       width: 475,
-      dragDrop: [{ dragSelector: null, dropSelector: null }]
-    })
+      height: 442
+    },
+    form: {
+      submitOnChange: true
+    },
+    window: {
+      resizable: true,
+      controls: [
+        {
+          action: 'configureActor',
+          icon: 'fas fa-code',
+          label: 'DCC.ConfigureSheet',
+          ownership: 'OWNER'
+        }
+      ]
+    }
   }
 
   /** @override */
@@ -47,8 +60,8 @@ class DCCItemSheet extends ItemSheet {
   }
 
   /** @override */
-  async getData (options) {
-    const data = super.getData(options)
+  async _prepareContext (options) {
+    const data = super._prepareContext(options)
 
     // Lookup the localizable string for the item's type
     data.typeString = CONFIG.DCC.items[data.type] || 'DCC.Unknown'

@@ -1,26 +1,43 @@
-/* global CONFIG, CONST, FormApplication, game, Hooks, foundry, ui */
+/* global CONFIG, CONST, FormApplicationV2, game, Hooks, foundry, ui */
 
-class FleetingLuckDialog extends FormApplication {
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
+class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
-  static get defaultOptions () {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'fleeting-luck',
-      template: 'systems/dcc/templates/dialog-fleeting-luck.html',
-      height: 'fit-content',
-      width: 400
-    })
+  static DEFAULT_OPTIONS = {
+    id: 'fleeting-luck',
+    classes: ['dcc', 'sheet', 'fleeting-luck', 'themed', 'theme-light'],
+    position: {
+      width: 400,
+      height: 'fit-content'
+    },
+    actions: {
+      openUserConfiguration: this._onOpenUserConfiguration,
+      takeLuck: this._onTakeLuck,
+      giveLuck: this._onGiveLuck,
+      clearLuck: this._onClearLuck,
+      toggleFilter: this._onToggleFilter,
+      spendLuck: this._onSpendLuck,
+      clearAllLuck: this._onClearAllLuck,
+      resetAllLuck: this._onResetAllLuck
+    },
+    title: 'DCC.FleetingLuckTitle',
+    window: {
+      resizable: true
+    }
   }
 
-  /** @override */
-  get title () {
-    return game.i18n.localize('DCC.FleetingLuck')
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-fleeting-luck.html'
+    }
   }
 
   /**
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData (options = {}) {
+  _prepareContext (options = {}) {
     const data = {}
     data.cssClass = 'dcc'
     data.user = game.user
@@ -51,26 +68,12 @@ class FleetingLuckDialog extends FormApplication {
     return position
   }
 
-  /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
-
-    html.find('.avatar').click(this._onOpenUserConfiguration.bind(this))
-    html.find('.minus').click(this._onTakeLuck.bind(this))
-    html.find('.plus').click(this._onGiveLuck.bind(this))
-    html.find('.clear').click(this._onClearLuck.bind(this))
-    html.find('.filter').click(this._onToggleFilter.bind(this))
-    html.find('.spend').click(this._onSpendLuck.bind(this))
-    html.find('.clear-all').click(this._onClearAllLuck.bind(this))
-    html.find('.reset-all').click(this._onResetAllLuck.bind(this))
-  }
-
   /**
    * Open the User Configuration if permissions allow
    * @param {Event} event   The originating click event
    * @private
    */
-  async _onOpenUserConfiguration (event) {
+  static async _onOpenUserConfiguration (event) {
     event.preventDefault()
     const userId = event.currentTarget.dataset.userId
     const user = game.users.get(userId)
@@ -84,7 +87,7 @@ class FleetingLuckDialog extends FormApplication {
    * @param {Event} event   The originating click event
    * @private
    */
-  async _onTakeLuck (event) {
+  static async _onTakeLuck (event) {
     event.preventDefault()
     const userId = event.currentTarget.dataset.userId
     await FleetingLuck.take(userId, 1)
@@ -95,7 +98,7 @@ class FleetingLuckDialog extends FormApplication {
    * @param {Event} event   The originating click event
    * @private
    */
-  async _onGiveLuck (event) {
+  static async _onGiveLuck (event) {
     event.preventDefault()
     const userId = event.currentTarget.dataset.userId
     await FleetingLuck.give(userId, 1)
@@ -106,7 +109,7 @@ class FleetingLuckDialog extends FormApplication {
    * @param {Event} event   The originating click event
    * @private
    */
-  async _onSpendLuck (event) {
+  static async _onSpendLuck (event) {
     event.preventDefault()
 
     const userId = event.currentTarget.dataset.userId
@@ -142,7 +145,7 @@ class FleetingLuckDialog extends FormApplication {
    * @param {Event} event   The originating click event
    * @private
    */
-  async _onClearLuck (event) {
+  static async _onClearLuck (event) {
     event.preventDefault()
     const userId = event.currentTarget.dataset.userId
     await FleetingLuck.clear(userId)
@@ -153,7 +156,7 @@ class FleetingLuckDialog extends FormApplication {
    * @param {Event} event   The originating click event
    * @private
    */
-  async _onClearAllLuck (event) {
+  static async _onClearAllLuck (event) {
     event.preventDefault()
     await FleetingLuck.clearAll()
   }
@@ -163,7 +166,7 @@ class FleetingLuckDialog extends FormApplication {
    * @param {Event} event   The originating click event
    * @private
    */
-  async _onResetAllLuck (event) {
+  static async _onResetAllLuck (event) {
     event.preventDefault()
     await FleetingLuck.resetAll()
   }
@@ -173,16 +176,16 @@ class FleetingLuckDialog extends FormApplication {
    * @param {Event} event   The originating click event
    * @private
    */
-  async _onToggleFilter (event) {
+  static async _onToggleFilter (event) {
     event.preventDefault()
     await FleetingLuck.toggleFilter()
   }
 
-  /** @override */
-  async _updateObject (event, formData) {
-    event.preventDefault()
-    this.render()
-  }
+  // /** @override */
+  // async _updateObject (event, formData) {
+  //   event.preventDefault()
+  //   this.render()
+  // }
 
   /** @override */
   async close (options = {}) {
@@ -240,26 +243,6 @@ class FleetingLuck {
         FleetingLuck.refresh()
       }
     })
-
-    // Add the toolbar button for all users
-    Hooks.on('getSceneControlButtons', (controls) => {
-      const tokenTools = controls.find(t => t.name === 'token')
-      if (FleetingLuck.enabled && tokenTools) {
-        tokenTools.tools.push({
-          name: 'fleetingluck',
-          title: game.i18n.localize('DCC.FleetingLuck'),
-          icon: 'fas fa-balance-scale-left',
-          onClick: () => {
-            FleetingLuck.show()
-          },
-          active: FleetingLuck?.visible,
-          toggle: true
-        })
-      }
-    })
-
-    // Refresh the scene controls
-    ui.controls.initialize()
   }
 
   /**

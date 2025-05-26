@@ -2,10 +2,10 @@
   <div class="fleeting-luck">
     {{#if user.isGM}}
       <div class="fleeting-luck-header-judge">
-        <button class="reset-all" title="{{localize 'DCC.FleetingLuckResetButtonTitle'}}">
+        <button class="reset-all" data-action="resetAllLuck"  title="{{localize 'DCC.FleetingLuckResetButtonTitle'}}">
           <i class="fas fa-dice-one"></i> {{localize 'DCC.FleetingLuckResetButton'}}
         </button>
-        <button class="clear-all" title="{{localize 'DCC.FleetingLuckClearButtonTitle'}}">
+        <button class="clear-all" data-action="clearAllLuck" title="{{localize 'DCC.FleetingLuckClearButtonTitle'}}">
           <i class="fas fa-trash-alt"></i> {{localize 'DCC.FleetingLuckClearButton'}}
         </button>
       </div>
