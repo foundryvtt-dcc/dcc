@@ -855,7 +855,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #rollInitiative (event, target) {
     const options = DCCActorSheet.#fillRollOptions(event)
-    this.actor.rollInit(event, options)
+    await this.actor.rollInit(event, options)
   }
 
   /**
@@ -866,9 +866,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #rollSavingThrow (event, target) {
+    event.preventDefault() // Stops the Save Config from opening
     const options = DCCActorSheet.#fillRollOptions(event)
     const save = target.parentElement.dataset.save
-    this.actor.rollSavingThrow(save, options)
+    await this.actor.rollSavingThrow(save, options)
   }
 
   /**
@@ -881,8 +882,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #rollSkillCheck (event, target) {
     const options = DCCActorSheet.#fillRollOptions(event)
     const skill = target.parentElement.dataset.skill
-    this.actor.rollSkillCheck(skill, options)
-    this.render(false)
+    await this.actor.rollSkillCheck(skill, options)
+    // this.render(false)
   }
 
   /**
@@ -911,10 +912,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       // Roll through a spell item
       const item = this.actor.items.find(i => i.id === dataset.itemId)
       const ability = dataset.ability || ''
-      item.rollSpellCheck(ability, options)
+      await item.rollSpellCheck(ability, options)
     } else {
       // Roll a raw spell check for the actor
-      this.actor.rollSpellCheck(options)
+      await this.actor.rollSpellCheck(options)
     }
   }
 

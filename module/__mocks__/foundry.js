@@ -83,9 +83,9 @@ class ActorMock {
             }
           },
           saves: {
-            frt: { value: -1 },
-            ref: { value: 0 },
-            wil: { value: +2 }
+            frt: { value: '-1' },
+            ref: { value: '0' },
+            wil: { value: '+2' }
           },
           details: {
             attackBonus: '+0',
@@ -475,7 +475,7 @@ class HooksMock {
   static async callAll (hook, rolls, messageData) {
     return true
   }
-  
+
   static call (hook, ...args) {
     return true
   }
