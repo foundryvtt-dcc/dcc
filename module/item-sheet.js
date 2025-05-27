@@ -4,13 +4,15 @@
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
 import { ensurePlus } from './utilities.js'
-const { TextEditor } = foundry.applications.ux
+const { ApplicationTabsConfiguration } = foundry.applications.types
+const { HandlebarsApplicationMixin } = foundry.applications.api
 const { ItemSheetV2 } = foundry.applications.sheets
+const { TextEditor } = foundry.applications.ux
 
 /**
  * Extend the basic ItemSheet for DCC RPG
  */
-class DCCItemSheet extends ItemSheetV2 {
+class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     classes: ['dcc', 'sheet', 'item', 'themed', 'theme-light'],
@@ -35,88 +37,124 @@ class DCCItemSheet extends ItemSheetV2 {
     }
   }
 
-  /** @override */
-  get template () {
-    switch (this.object.type) {
-      case 'weapon':
-        this.position.height = 663
-        return 'systems/dcc/templates/item-sheet-weapon.html'
-      case 'armor':
-        return 'systems/dcc/templates/item-sheet-armor.html'
-      case 'level':
-        return 'systems/dcc/templates/item-sheet-level.html'
-      case 'spell':
-        return 'systems/dcc/templates/item-sheet-spell.html'
-      case 'skill':
-        return 'systems/dcc/templates/item-sheet-skill.html'
-      case 'treasure':
-        return 'systems/dcc/templates/item-sheet-treasure.html'
-      case 'equipment':
-      case 'ammunition':
-      case 'mount':
-      default:
-        return 'systems/dcc/templates/item-sheet-equipment.html'
+  /** @inheritDoc */
+  static PARTS = {
+    tabs: {
+      id: 'tabs',
+      template: 'systems/dcc/templates/item-sheet-partial-tabs.html'
+    },
+    body: {
+      id: 'body',
+      template: 'systems/dcc/templates/item-sheet-body.html'
+    },
+    description: {
+      id: 'description',
+      template: 'systems/dcc/templates/item-sheet-partial-description.html'
     }
+  }
+
+  /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
+
+    if (this.document.type) {
+      parts[this.document.type] = {
+        id: this.document.type,
+        template: `systems/dcc/templates/item-sheet-${this.document.type}.html`
+      }
+    }
+
+    return parts
+  }
+
+
+  /**
+   * Define the structure of tabs used by this sheet.
+   * @type {Record<string, ApplicationTabsConfiguration>}
+   */
+  static TABS = {
+    sheet: { // this is the group name
+      tabs:
+        [
+          { id: 'weapon', group: 'sheet', label: 'DCC.Weapon' },
+          { id: 'description', group: 'sheet', label: 'DCC.Description' }
+        ],
+      initial: 'equipment'
+    }
+  }
+
+  /** @inheritdoc */
+  _getTabsConfig (group) {
+    const tabs = foundry.utils.deepClone(super._getTabsConfig(group))
+    const initCapTypeName = this.document.type.charAt(0).toUpperCase() + this.document.type.slice(1)
+    tabs.tabs[0] = {'id': this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
+    tabs.initial = this.document.type
+    this.tabGroups[group] = this.document.type
+    return tabs
   }
 
   /** @override */
   async _prepareContext (options) {
-    const data = super._prepareContext(options)
+    const data = await super._prepareContext(options)
+
+    if (data.document.type === 'weapon') {
+      this.position.height = 663
+    }
 
     // Lookup the localizable string for the item's type
-    data.typeString = CONFIG.DCC.items[data.type] || 'DCC.Unknown'
+    data.typeString = CONFIG.DCC.items[data.document.type] || 'DCC.Unknown'
 
-    if (data.item.type === 'spell') {
+    if (data.document.type === 'spell') {
       // Allow mercurial magic roll only on wizard spells owned by an actor
-      const castingMode = data.item.system.config.castingMode || 'wizard'
-      const forceShowMercurialTab = data.item.system.config.showMercurialTab
+      const castingMode = data.document.system.config.castingMode || 'wizard'
+      const forceShowMercurialTab = data.document.system.config.showMercurialTab
       data.showMercurialTab = !!this.actor && (castingMode === 'wizard' || forceShowMercurialTab)
 
       // Format Mercurial Effect HTML
-      data.mercurialEffectHTML = await TextEditor.enrichHTML(this.item.system?.mercurialEffect?.description || '', {
-        relativeTo: this.item,
-        secrets: this.item.isOwner
+      data.mercurialEffectHTML = await TextEditor.enrichHTML(this.document.system?.mercurialEffect?.description || '', {
+        relativeTo: this.document,
+        secrets: this.document.isOwner
       })
 
       // Format Manifestation HTML
-      data.manifestationHTML = await TextEditor.enrichHTML(this.item.system?.manifestation?.description || '', {
-        relativeTo: this.item,
-        secrets: this.item.isOwner
+      data.manifestationHTML = await TextEditor.enrichHTML(this.document.system?.manifestation?.description || '', {
+        relativeTo: this.document,
+        secrets: this.document.isOwner
       })
     }
 
-    if (data.item.type === 'treasure') {
+    if (data.document.type === 'treasure') {
       // Allow rolling the item's value if it's unresolved and owned by an actor
-      data.unresolved = data.item.needsValueRoll()
+      data.unresolved = data.document.needsValueRoll()
       data.allowResolve = data.unresolved && !!this.actor && !this.limited
       // Only allow currency conversion on items that have a resolved value
       data.allowConversions = !data.unresolved && !this.limited
     }
 
     // Pass through the item data in the format we expect
-    data.system = data.item.system
+    data.system = data.document.system
 
-    if (data.item.type === 'weapon' && this.actor) {
+    if (data.document.type === 'weapon' && this.actor) {
       data.system.lck = { mod: ensurePlus(this.actor.system?.abilities?.lck?.mod) || '' }
     }
 
-    if (!data.item.img || data.item.img === 'icons/svg/mystery-man.svg') {
-      data.data.img = EntityImages.imageForItem(data.type)
+    if (!data.document.img || data.document.img === 'icons/svg/mystery-man.svg') {
+      data.data.img = EntityImages.imageForItem(data.document.type)
     }
 
     // Format Description HTML
-    if (this.item.system.description) {
-      data.descriptionHTML = await TextEditor.enrichHTML(this.item.system.description.value, {
-        relativeTo: this.item,
-        secrets: this.item.isOwner
+    if (this.document.system.description) {
+      data.descriptionHTML = await TextEditor.enrichHTML(this.document.system.description.value, {
+        relativeTo: this.document,
+        secrets: this.document.isOwner
       })
     }
 
     // Format Judge Description HTML
-    if (this.item.system?.description?.judge) {
-      data.judgeDescriptionHTML = await TextEditor.enrichHTML(this.item.system.description.judge.value, {
-        relativeTo: this.item,
-        secrets: this.item.isOwner
+    if (this.document.system?.description?.judge) {
+      data.judgeDescriptionHTML = await TextEditor.enrichHTML(this.document.system.description.judge.value, {
+        relativeTo: this.document,
+        secrets: this.document.isOwner
       })
     }
 
@@ -130,9 +168,9 @@ class DCCItemSheet extends ItemSheetV2 {
   /** @override */
   setPosition (options = {}) {
     const position = super.setPosition(options)
-    const sheetBody = this.element.find('.sheet-body')
+    const sheetBody = this.element.querySelector('.sheet-body')
     const bodyHeight = position.height - 160
-    sheetBody.css('height', bodyHeight)
+    sheetBody.style.height = bodyHeight + 'px'
     return position
   }
 
@@ -153,16 +191,16 @@ class DCCItemSheet extends ItemSheetV2 {
     if (this.item.isOwner) {
       // Roll mercurial effect for spells
       if (this.item.type === 'spell') {
-        html.find('.manifestation-roll').click(this._onRollManifestation.bind(this))
-        html.find('.mercurial-roll').click(this._onRollMercurialMagic.bind(this))
+        html.querySelector('.manifestation-roll').addEventListener('click', this._onRollManifestation.bind(this))
+        html.querySelector('.mercurial-roll').addEventListener('click', this._onRollMercurialMagic.bind(this))
       }
 
       // Roll value and currency conversions for treasure
       if (this.item.type === 'treasure') {
-        html.find('.roll-value-button').click(this._onRollValue.bind(this))
-        html.find('.roll-value-label').click(this._onRollValue.bind(this))
-        html.find('.left-arrow-button').click(this._onConvertUpward.bind(this))
-        html.find('.right-arrow-button').click(this._onConvertDownward.bind(this))
+        html.querySelector('.roll-value-button').addEventListener('click', this._onRollValue.bind(this))
+        html.querySelector('.roll-value-label').addEventListener('click', this._onRollValue.bind(this))
+        html.querySelector('.left-arrow-button').addEventListener('click', this._onConvertUpward.bind(this))
+        html.querySelector('.right-arrow-button').addEventListener('click', this._onConvertDownward.bind(this))
       }
     }
   }
