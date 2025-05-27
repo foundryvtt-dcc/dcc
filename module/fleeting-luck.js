@@ -12,18 +12,18 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       height: 'fit-content'
     },
     actions: {
-      openUserConfiguration: this._onOpenUserConfiguration,
-      takeLuck: this._onTakeLuck,
-      giveLuck: this._onGiveLuck,
-      clearLuck: this._onClearLuck,
-      toggleFilter: this._onToggleFilter,
-      spendLuck: this._onSpendLuck,
-      clearAllLuck: this._onClearAllLuck,
-      resetAllLuck: this._onResetAllLuck
+      openUserConfiguration: this.#onOpenUserConfiguration,
+      takeLuck: this.#onTakeLuck,
+      giveLuck: this.#onGiveLuck,
+      clearLuck: this.#onClearLuck,
+      toggleFilter: this.#onToggleFilter,
+      spendLuck: this.#onSpendLuck,
+      clearAllLuck: this.#onClearAllLuck,
+      resetAllLuck: this.#onResetAllLuck
     },
-    title: 'DCC.FleetingLuckTitle',
     window: {
-      resizable: true
+      resizable: true,
+      title: 'DCC.FleetingLuck'
     }
   }
 
@@ -70,12 +70,13 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Open the User Configuration if permissions allow
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  static async _onOpenUserConfiguration (event) {
-    event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
+  static async #onOpenUserConfiguration (event, target) {
+    const userId = target.dataset.userId
     const user = game.users.get(userId)
     if (game.user.isGM || userId === game.user.id) {
       await user.sheet.render(true)
@@ -84,41 +85,43 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle removing fleeting luck from a player
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  static async _onTakeLuck (event) {
-    event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
+  static async #onTakeLuck (event, target) {
+    const userId = target.dataset.userId
     await FleetingLuck.take(userId, 1)
   }
 
   /**
    * Handle giving fleeting luck to a player
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  static async _onGiveLuck (event) {
-    event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
+  static async #onGiveLuck (event, target) {
+    const userId = target.dataset.userId
     await FleetingLuck.give(userId, 1)
   }
 
   /**
    * Handle spending fleeting luck
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  static async _onSpendLuck (event) {
-    event.preventDefault()
-
-    const userId = event.currentTarget.dataset.userId
+  static async #onSpendLuck (event, target) {
+    const userId = target.dataset.userId
     const fleetingLuckValue = FleetingLuck.getValue(userId)
 
     if (fleetingLuckValue <= 0) {
       const user = game.users.get(userId)
       ui.notifications.warn(game.i18n.format('DCC.FleetingLuckSpendNoLuckWarning', { user: user.name }))
-      return
+      return Promise.reject(new Error(game.i18n.localize('DCC.FleetingLuckSpendNoLuckWarning')))
     }
 
     const terms = [
@@ -142,42 +145,46 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle removing all fleeting luck from a player
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  static async _onClearLuck (event) {
-    event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
+  static async #onClearLuck (event, target) {
+    const userId = target.dataset.userId
     await FleetingLuck.clear(userId)
   }
 
   /**
    * Handle removing all fleeting luck from all players
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  static async _onClearAllLuck (event) {
-    event.preventDefault()
+  static async #onClearAllLuck (event, target) {
     await FleetingLuck.clearAll()
   }
 
   /**
    * Handle resetting fleeting luck for all players
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  static async _onResetAllLuck (event) {
-    event.preventDefault()
+  static async #onResetAllLuck (event, target) {
     await FleetingLuck.resetAll()
   }
 
   /**
    * Handle filter toggle
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  static async _onToggleFilter (event) {
-    event.preventDefault()
+  static async #onToggleFilter (event, target) {
     await FleetingLuck.toggleFilter()
   }
 
@@ -200,6 +207,14 @@ class FleetingLuck {
    */
   static init () {
     if (game.user.isGM) {
+
+      if (!FleetingLuck.enabled) {
+        const element = document.querySelector('[data-tool="fleetingLuck"]')
+        if (element) {
+          element.remove()
+        }
+      }
+
       // For GM, register hooks to manage fleeting luck
       Hooks.on('createChatMessage', (message) => {
         // Early out if automation is not enabled

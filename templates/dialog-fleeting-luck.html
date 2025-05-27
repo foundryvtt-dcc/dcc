@@ -2,19 +2,19 @@
   <div class="fleeting-luck">
     {{#if user.isGM}}
       <div class="fleeting-luck-header-judge">
-        <button class="reset-all" data-action="resetAllLuck"  title="{{localize 'DCC.FleetingLuckResetButtonTitle'}}">
+        <button class="reset-all" data-action="resetAllLuck" type="button"  title="{{localize 'DCC.FleetingLuckResetButtonTitle'}}">
           <i class="fas fa-dice-one"></i> {{localize 'DCC.FleetingLuckResetButton'}}
         </button>
-        <button class="clear-all" data-action="clearAllLuck" title="{{localize 'DCC.FleetingLuckClearButtonTitle'}}">
+        <button class="clear-all" data-action="clearAllLuck" type="button" title="{{localize 'DCC.FleetingLuckClearButtonTitle'}}">
           <i class="fas fa-trash-alt"></i> {{localize 'DCC.FleetingLuckClearButton'}}
         </button>
       </div>
     {{else}}
       <div class="fleeting-luck-header">
-        <button class="filter" title="{{localize 'DCC.FleetingLuckFilterButtonTitle'}}">
+        <button class="filter" data-action="toggleFilter" type="button" title="{{localize 'DCC.FleetingLuckFilterButtonTitle'}}">
           <i class="fas fa-filter"></i>
         </button>
-        <button class="spend" data-user-id="{{user.id}}" title="{{localize 'DCC.FleetingLuckSpendButtonTitle'}}">
+        <button class="spend" data-action="spendLuck" type="button" data-user-id="{{user.id}}" title="{{localize 'DCC.FleetingLuckSpendButtonTitle'}}">
           <i class="fas fa-coins"></i> {{localize 'DCC.FleetingLuckSpendButton'}}
         </button>
       </div>
@@ -26,11 +26,11 @@
         </div>
         <label class="name">{{name}}</label>
         {{#if ../user.isGM}}
-          <i class="spend fas fa-coins" data-user-id="{{userId}}" title="{{localize 'DCC.FleetingLuckSpendTitle'}}"></i>
-          <i class="minus fas fa-minus" data-user-id="{{userId}}" title="{{localize 'DCC.FleetingLuckTakeTitle'}}"></i>
+          <i class="spend fas fa-coins" data-action="spendLuck" data-user-id="{{userId}}" title="{{localize 'DCC.FleetingLuckSpendTitle'}}"></i>
+          <i class="minus fas fa-minus" data-action="takeLuck" data-user-id="{{userId}}" title="{{localize 'DCC.FleetingLuckTakeTitle'}}"></i>
           <label class="value">{{fleetingLuck}}</label>
-          <i class="plus fas fa-plus" data-user-id="{{userId}}" title="{{localize 'DCC.FleetingLuckGiveTitle'}}"></i>
-          <i class="clear fas fa-trash-alt" data-user-id="{{userId}}" title="{{localize 'DCC.FleetingLuckClearTitle'}}"></i>
+          <i class="plus fas fa-plus" data-action="giveLuck" data-user-id="{{userId}}" title="{{localize 'DCC.FleetingLuckGiveTitle'}}"></i>
+          <i class="clear fas fa-trash-alt" data-action="clearLuck" data-user-id="{{userId}}" title="{{localize 'DCC.FleetingLuckClearTitle'}}"></i>
         {{else}}
           <label class="value-wide">{{fleetingLuck}}</label>
         {{/if}}

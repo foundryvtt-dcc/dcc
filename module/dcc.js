@@ -192,10 +192,12 @@ Hooks.once('init', async function () {
   // window.getTemplate = getTemplate
 })
 
-/* -------------------------------------------- */
-/*  Initialize Fleeting Luck Button             */
-/*  In v13, has to happen before ready hook     */
-/* -------------------------------------------- */
+/* --------------------------------------------- */
+/*  Initialize Fleeting Luck Button              */
+/*  In v13, has to happen before ready hook      */
+/*  The button is removed in FleetingLuck.init() */
+/*  If Fleeting Luck is disabled                 */
+/* --------------------------------------------- */
 Hooks.on('getSceneControlButtons', (controls) => {
   controls.tokens.tools.fleetingLuck = {
     name: 'fleetingLuck',
@@ -204,7 +206,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
     onChange: (event, active) => {
       game.dcc.FleetingLuck.show()
     },
-    toggle: true,
+    button: true,
     active: true
   }
 })
