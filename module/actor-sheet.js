@@ -866,7 +866,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #rollSavingThrow (event, target) {
-    event.preventDefault() // Stops the Save Config from opening
+    event.preventDefault() // Stops the Save Config from opening because clicking label elements focus their input
     const options = DCCActorSheet.#fillRollOptions(event)
     const save = target.parentElement.dataset.save
     await this.actor.rollSavingThrow(save, options)
