@@ -239,7 +239,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
-        this.actor.deleteEmbeddedDocuments('Item', [i._id])
+        await this.actor.deleteEmbeddedDocuments('Item', [i._id])
         continue
       }
 

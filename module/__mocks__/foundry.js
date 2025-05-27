@@ -115,6 +115,7 @@ class ActorMock {
             }
           },
           class: {
+            corruption: '',
             luckDie: '1d3',
             spellCheck: 3,
             spellCheckAbility: 'int',
@@ -244,6 +245,8 @@ class Game {
   constructor (worldData, sessionId, socket) {
     this.i18n = new Localization()
   }
+
+  user = {} // Set up below
 
   dcc = {} // Set up below
 }

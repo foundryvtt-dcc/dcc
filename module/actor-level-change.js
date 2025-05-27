@@ -6,8 +6,7 @@ import { ensurePlus } from './utilities.js'
 class DCCActorLevelChange extends FormApplication {
   static get defaultOptions () {
     const options = super.defaultOptions
-    options.template =
-      'systems/dcc/templates/dialog-actor-level-change.html'
+    options.template = 'systems/dcc/templates/dialog-actor-level-change.html'
     options.width = 380
     options.height = 580
     options.resizable = true

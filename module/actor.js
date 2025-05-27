@@ -226,7 +226,7 @@ class DCCActor extends Actor {
   /**
    * Get Attack Bonus Mode
    * Translate the Attack Bonus Mode into a valid value
-   * Invalid values default to 'flat''
+   * Invalid values default to 'flat'
    * @return {String}  A valid Attack Bonus Mode name
    */
   getAttackBonusMode () {
@@ -333,17 +333,17 @@ class DCCActor extends Actor {
     const wilSaveOtherBonus = parseInt(this.system.saves.wil.otherBonus || 0)
     const wilSaveOverride = parseInt(this.system.saves.wil.override || 0)
 
-    this.system.saves.ref.value = ensurePlus(aglMod + refSaveClassBonus + refSaveOtherBonus)
+    this.system.saves.ref.value = ensurePlus(`${aglMod + refSaveClassBonus + refSaveOtherBonus}`)
     if (refSaveOverride) {
-      this.system.saves.ref.value = ensurePlus(refSaveOverride)
+      this.system.saves.ref.value = ensurePlus(`${refSaveOverride}`)
     }
-    this.system.saves.frt.value = ensurePlus(staMod + frtSaveClassBonus + frtSaveOtherBonus)
+    this.system.saves.frt.value = ensurePlus(`${staMod + frtSaveClassBonus + frtSaveOtherBonus}`)
     if (frtSaveOverride) {
-      this.system.saves.frt.value = ensurePlus(frtSaveOverride)
+      this.system.saves.frt.value = ensurePlus(`${frtSaveOverride}`)
     }
-    this.system.saves.wil.value = ensurePlus(perMod + wilSaveClassBonus + wilSaveOtherBonus)
+    this.system.saves.wil.value = ensurePlus(`${perMod + wilSaveClassBonus + wilSaveOtherBonus}`)
     if (wilSaveOverride) {
-      this.system.saves.wil.value = ensurePlus(wilSaveOverride)
+      this.system.saves.wil.value = ensurePlus(`${wilSaveOverride}`)
     }
   }
 
@@ -1206,7 +1206,7 @@ class DCCActor extends Actor {
      * @param {object} messageData                     Data to send to the chat card
      * @param {object} data
      */
-    Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
+    await Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
 
     messageData.content = await renderTemplate(CONFIG.DCC.templates.attackResult, { message: messageData })
 
