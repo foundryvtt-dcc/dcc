@@ -1097,13 +1097,15 @@ class DCCActor extends Actor {
     let fumbleRollFormula = ''
     let fumbleInlineRoll = ''
     let fumblePrompt = ''
-    let useNPCFumbles = false; 
+    let useNPCFumbles = true; //even if core compendium isn't installed, still show correct fumble table in flavor text 
     try {
-      useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || false
+      useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || true
     } catch {
-      // Do nothing; already false by default
+       // warn to console log
+       console.warn('DCC | Error reading "registerNPCFumbleTables" setting from "dcc-core-book" module. Defaulting useNPCFumbles to true.');
     }
-    let fumbleTableName = (this.isPC || !useNPCFumbles) ? '(Table 4-2: Fumbles).' : getFumbleTableNameFromCritTableName(critTableName);
+    let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName);
+
     let fumbleText = ''
     let fumbleRoll
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
