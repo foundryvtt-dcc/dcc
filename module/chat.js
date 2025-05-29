@@ -283,7 +283,7 @@ export const emoteFumbleRoll = async function (message, html, data) {
     fumbleText = fumbleResult
   } else {
     // No fumble table available or no result found
-    fumbleText = '(No fumble table available)'
+    fumbleText = game.i18n.localize('DCC.FumbleTableUnavailable')
   }
   
   const rollHTML = await message.rolls[0].render()
@@ -373,7 +373,7 @@ export const lookupCriticalRoll = async function (message, html) {
   if (!critResult || !critResult.text) {
     // No table available or no result found - just show the roll
     const rollHTML = await message.rolls[0].render()
-    html.find('.message-content').html(`${rollHTML} (No critical table available)`)
+    html.find('.message-content').html(`${rollHTML} ${game.i18n.localize('DCC.CritTableUnavailable')}`)
     return
   }
   
@@ -418,7 +418,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
     fumbleText = fumbleResult
   } else {
     // No fumble table available or no result found
-    fumbleText = '(No fumble table available)'
+    fumbleText = game.i18n.localize('DCC.FumbleTableUnavailable')
   }
   
   const rollHTML = await message.rolls[0].render()
