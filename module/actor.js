@@ -1061,12 +1061,11 @@ class DCCActor extends Actor {
     let critInlineRoll = ''
     let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critRoll
-    let critTableName = ''
+    let critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || '';
     let critText = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
       critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'}${luckMod}`
-      critTableName = weapon.system?.critTable || this.system.attributes.critical?.table;
       const criticalText = game.i18n.localize('DCC.Critical')
       const critTableText = game.i18n.localize('DCC.CritTable')
       critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
@@ -1104,8 +1103,7 @@ class DCCActor extends Actor {
     } catch {
       // Do nothing; already false by default
     }
-    const critTableNameForFumble = weapon.system?.critTable || this.system.attributes.critical?.table || '';
-    let fumbleTableName = (this.isPC || !useNPCFumbles) ? '(Table 4-2: Fumbles).' : getFumbleTableNameFromCritTableName(critTableNameForFumble);
+    let fumbleTableName = (this.isPC || !useNPCFumbles) ? '(Table 4-2: Fumbles).' : getFumbleTableNameFromCritTableName(critTableName);
     let fumbleText = ''
     let fumbleRoll
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
@@ -1132,7 +1130,6 @@ class DCCActor extends Actor {
         if (this.isPC || !useNPCFumbles) {
           fumbleResult = await getFumbleTableResult(fumbleRoll)
         } else {
-          const critTableName = weapon.system?.critTable || this.system.attributes.critical?.table
           fumbleTableName = getFumbleTableNameFromCritTableName(critTableName)
           fumbleResult = await getNPCFumbleTableResult(fumbleRoll, fumbleTableName)
         }
