@@ -268,8 +268,9 @@ export const emoteFumbleRoll = async function (message, html, data) {
   if (game.settings.get('dcc', 'emoteRolls') === false) return
 
   let fumbleResult;
-  const pcFumbleTableIdentifier = '(Table 4-2: Fumbles).';
-  if (message.system && message.system.fumbleTableName && message.system.fumbleTableName !== pcFumbleTableIdentifier) {
+  const pcFumbleTableIdentifier = 'Table 4-2: Fumbles';
+  
+  if (message.system?.fumbleTableName && !message.system.fumbleTableName.includes(pcFumbleTableIdentifier)) {
     fumbleResult = await getNPCFumbleTableResult(message.rolls[0], message.system.fumbleTableName);
   } else {
     fumbleResult = await getFumbleTableResult(message.rolls[0]);
@@ -280,19 +281,13 @@ export const emoteFumbleRoll = async function (message, html, data) {
     fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
+  } else {
+    // No fumble table available or no result found
+    fumbleText = '(No fumble table available)'
   }
-
-  const fumbleRollEmote = game.i18n.format(
-    'DCC.RolledFumbleEmote',
-    {
-      actorName: data.alias,
-      fumbleInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
-      fumbleResult: fumbleText ? `:<br>${fumbleText}` : '.'
-    }
-  )
-
-  html.find('.message-content').html(fumbleRollEmote)
-  html.find('header').remove()
+  
+  const rollHTML = await message.rolls[0].render()
+  html.find('.message-content').html(`${rollHTML}<br>${fumbleText}`);
 }
 
 /**
@@ -373,9 +368,18 @@ export const lookupCriticalRoll = async function (message, html) {
   const tableName = message.flavor.replace('Critical (', '').replace(')', '')
 
   const critResult = await getCritTableResult(message.rolls[0], tableName)
+  
+  // Check if we got a result from the table lookup
+  if (!critResult || !critResult.text) {
+    // No table available or no result found - just show the roll
+    const rollHTML = await message.rolls[0].render()
+    html.find('.message-content').html(`${rollHTML} (No critical table available)`)
+    return
+  }
+  
   const critText = await TextEditor.enrichHTML(critResult.text)
-  const rollHTML = message.rolls[0].toAnchor().outerHTML;
-  html.find('.message-content').html(`${rollHTML}  ${critText}`)
+  const rollHTML = await message.rolls[0].render()
+  html.find('.message-content').html(`${rollHTML}<br>${critText}`)
 }
 
 /**
@@ -412,7 +416,11 @@ export const lookupFumbleRoll = async function (message, html, data) {
     fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
+  } else {
+    // No fumble table available or no result found
+    fumbleText = '(No fumble table available)'
   }
-  const rollHTML = message.rolls[0].toAnchor().outerHTML;
-  html.find('.message-content').html(`${rollHTML}  ${fumbleText}`);
+  
+  const rollHTML = await message.rolls[0].render()
+  html.find('.message-content').html(`${rollHTML}<br>${fumbleText}`);
 }

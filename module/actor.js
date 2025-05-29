@@ -1186,6 +1186,7 @@ class DCCActor extends Actor {
         fumblePrompt,
         fumbleRoll,
         fumbleRollFormula,
+        fumbleTableName,
         hitsAc: attackRollResult.hitsAc,
         targets:game.user.targets,
         weaponId,
