@@ -1,7 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry, renderTemplate */
 // noinspection JSUnresolvedReference
 
-import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
+import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 // noinspection JSUnusedGlobalSymbols
@@ -1098,22 +1098,23 @@ class DCCActor extends Actor {
     let fumbleRollFormula = ''
     let fumbleInlineRoll = ''
     let fumblePrompt = ''
-    let fumbleTableName = '(Table 4-2: Fumbles).'
-    let fumbleText = ''
-    let fumbleRoll
-    let useNPCFumbles = false
+    let useNPCFumbles = false; 
     try {
       useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || false
     } catch {
       // Do nothing; already false by default
     }
+    const critTableNameForFumble = weapon.system?.critTable || this.system.attributes.critical.table || '';
+    let fumbleTableName = (this.isPC || !useNPCFumbles) ? '(Table 4-2: Fumbles).' : getFumbleTableNameFromCritTableName(critTableNameForFumble);
+    let fumbleText = ''
+    let fumbleRoll
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
       fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
       if (this.isNPC && useNPCFumbles) {
         fumbleRollFormula = '1d10'
       }
-      fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble]]`)
+      fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble (${fumbleTableName})]] (${fumbleTableName})`)
       fumblePrompt = game.i18n.localize('DCC.RollFumble')
       if (automateDamageFumblesCrits) {
         fumblePrompt = game.i18n.localize('DCC.Fumble')
@@ -1127,11 +1128,12 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        let fumbleResult
+        let fumbleResult      
         if (this.isPC || !useNPCFumbles) {
           fumbleResult = await getFumbleTableResult(fumbleRoll)
         } else {
-          fumbleTableName = weapon.system?.critTable || this.system.attributes.critical.table
+          const critTableName = weapon.system?.critTable || this.system.attributes.critical.table
+          fumbleTableName = getFumbleTableNameFromCritTableName(critTableName)
           fumbleResult = await getNPCFumbleTableResult(fumbleRoll, fumbleTableName)
         }
         if (fumbleResult) {
