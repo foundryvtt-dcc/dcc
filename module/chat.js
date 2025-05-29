@@ -374,7 +374,8 @@ export const lookupCriticalRoll = async function (message, html) {
 
   const critResult = await getCritTableResult(message.rolls[0], tableName)
   const critText = await TextEditor.enrichHTML(critResult.text)
-  html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${critText}`)
+  const rollHTML = message.rolls[0].toAnchor().outerHTML;
+  html.find('.message-content').html(`${rollHTML}  ${critText}`)
 }
 
 /**
@@ -412,5 +413,6 @@ export const lookupFumbleRoll = async function (message, html, data) {
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
   }
-  html.find('.message-content').html(`<strong>${message.rolls[0].total}</strong> - ${fumbleText}`)
+  const rollHTML = message.rolls[0].toAnchor().outerHTML;
+  html.find('.message-content').html(`${rollHTML}  ${fumbleText}`);
 }
