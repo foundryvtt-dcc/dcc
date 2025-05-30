@@ -447,13 +447,8 @@ class FleetingLuck {
 
     const d = roll.dice[0].values[0]
 
-    // Use Natural Crit flag if available
-    if (flags['dcc.isNaturalCrit'] !== undefined && flags['dcc.isNaturalCrit'] === true) {
-      flags['dcc.isCrit'] = true
-    }
-
     // Natural 20 or natural 1
-    if (d === 20 || flags['dcc.isCrit']) {
+    if (d === 20 || flags['dcc.isNaturalCrit']) {
       FleetingLuck.updateFlagsForCrit(flags)
     }
 
