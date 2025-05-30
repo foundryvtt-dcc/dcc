@@ -1,7 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry, renderTemplate */
 // noinspection JSUnresolvedReference
 
-import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
+import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 // noinspection JSUnusedGlobalSymbols
@@ -1061,12 +1061,11 @@ class DCCActor extends Actor {
     let critInlineRoll = ''
     let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critRoll
-    let critTableName = ''
+    let critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || '';
     let critText = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
-      critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical.die}${luckMod}`
-      critTableName = weapon.system?.critTable || this.system.attributes.critical.table
+      critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'}${luckMod}`
       const criticalText = game.i18n.localize('DCC.Critical')
       const critTableText = game.i18n.localize('DCC.CritTable')
       critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
@@ -1098,22 +1097,24 @@ class DCCActor extends Actor {
     let fumbleRollFormula = ''
     let fumbleInlineRoll = ''
     let fumblePrompt = ''
-    let fumbleTableName = '(Table 4-2: Fumbles).'
+    let useNPCFumbles = true; //even if core compendium isn't installed, still show correct fumble table in flavor text 
+    try {
+      useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || true
+    } catch {
+       // warn to console log
+       console.warn('DCC | Error reading "registerNPCFumbleTables" setting from "dcc-core-book" module. Defaulting useNPCFumbles to true.');
+    }
+    let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName);
+
     let fumbleText = ''
     let fumbleRoll
-    let useNPCFumbles = false
-    try {
-      useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || false
-    } catch {
-      // Do nothing; already false by default
-    }
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
       fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
       if (this.isNPC && useNPCFumbles) {
         fumbleRollFormula = '1d10'
       }
-      fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble]]`)
+      fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble (${fumbleTableName})]] (${fumbleTableName})`)
       fumblePrompt = game.i18n.localize('DCC.RollFumble')
       if (automateDamageFumblesCrits) {
         fumblePrompt = game.i18n.localize('DCC.Fumble')
@@ -1127,11 +1128,11 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        let fumbleResult
+        let fumbleResult      
         if (this.isPC || !useNPCFumbles) {
           fumbleResult = await getFumbleTableResult(fumbleRoll)
         } else {
-          fumbleTableName = weapon.system?.critTable || this.system.attributes.critical.table
+          fumbleTableName = getFumbleTableNameFromCritTableName(critTableName)
           fumbleResult = await getNPCFumbleTableResult(fumbleRoll, fumbleTableName)
         }
         if (fumbleResult) {
@@ -1185,6 +1186,7 @@ class DCCActor extends Actor {
         fumblePrompt,
         fumbleRoll,
         fumbleRollFormula,
+        fumbleTableName,
         hitsAc: attackRollResult.hitsAc,
         targets:game.user.targets,
         weaponId,
@@ -1330,7 +1332,7 @@ class DCCActor extends Actor {
     const terms = [
       {
         type: 'Die',
-        formula: options.critDieOverride || this.system.attributes.critical.die
+        formula: options.critDieOverride || this.system.attributes.critical?.die || '1d10'
       },
       {
         type: 'Modifier',
@@ -1344,7 +1346,7 @@ class DCCActor extends Actor {
     const critRollFormula = critRoll.formula
     const critPrompt = game.i18n.localize('DCC.Critical')
 
-    let critTableName = this.system.attributes.critical.table
+    let critTableName = this.system.attributes.critical?.table;
     const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {
