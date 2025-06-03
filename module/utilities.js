@@ -115,21 +115,32 @@ export async function getFumbleTableResult (roll) {
 }
 
 /**
+ * Determine the fumble table name from a crit table name
+ * @param {string} critTableName - name of the crit table - like 'III'
+ * @return {string} - fumble table name - like 'Fumble Table H'
+ */
+export function getFumbleTableNameFromCritTableName (critTableName) {
+  if (!critTableName) {
+    return '(Table 4-2: Fumbles).'; // Default PC fumble table
+  }
+  const humanoidCritTables = ['III', 'IV', 'V']
+  if (humanoidCritTables.some(ctn => critTableName.includes(ctn))) {
+    return 'Fumble Table H'
+  }
+  if (critTableName === 'Crit Table EL') {
+    return 'Crit/Fumble Table EL'
+  }
+  return `Fumble Table ${critTableName}`
+}
+
+/**
  * Draw a result from the monster fumble table
  * @param roll - roll instance to use
- * @param fumbleTableName - name of the fumble table - like 'G'
+ * @param fumbleTableName - name of the fumble table - like 'Fumble Table M'
  */
 export async function getNPCFumbleTableResult (roll, fumbleTableName) {
 // Lookup the fumble table if available
   if (fumbleTableName) {
-    const humanoidCritTables = ['III', 'IV', 'V']
-    if (humanoidCritTables.some(critTableName => fumbleTableName.includes(critTableName))) {
-      fumbleTableName = 'H'
-    }
-    fumbleTableName = `Fumble Table ${fumbleTableName}`
-    if (fumbleTableName === 'Fumble Table EL') {
-      fumbleTableName = 'Crit/Fumble Table EL'
-    }
     const fumblePackName = 'dcc-core-book.dcc-monster-fumble-tables'
     const pack = game.packs.get(fumblePackName)
     if (pack) {
