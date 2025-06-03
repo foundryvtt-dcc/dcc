@@ -394,7 +394,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   //     html.find('label[for*="system.saves"]').each(makeDraggable)
   //
   //     // Skills
-  //     html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
   //     html.find('label.skill-check').each(makeDraggable)
   //
   //     // Luck Die
@@ -413,9 +412,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   //
   //     // Action Dice
   //     html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
-  //
-  //     // Crit Die
-  //     html.find('label[for="system.attributes.critical.die"]').click(this._onRollCritDie.bind(this))
   //
   //     // Quantity increase / decrease
   //     html.find('.qty-decrease').click(this._onDecreaseQty.bind(this))
@@ -791,9 +787,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /**
    * Fill options for a roll based on event
    * @param {Event} event   The originating click event
-   * @private
    */
-  static #fillRollOptions (event) {
+  static fillRollOptions (event) {
     const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
     return {
       showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey)
@@ -808,7 +803,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #rollAbilityCheck (event, target) {
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
 
     const ability = target.parentElement.dataset.ability
 
@@ -830,7 +825,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #rollCritDie (event, target) {
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollCritical(options)
   }
 
@@ -842,7 +837,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #rollHitDice (event, target) {
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollHitDice(options)
   }
 
@@ -854,7 +849,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #rollInitiative (event, target) {
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     await this.actor.rollInit(event, options)
   }
 
@@ -867,7 +862,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #rollSavingThrow (event, target) {
     event.preventDefault() // Stops the Save Config from opening because clicking label elements focus their input
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     const save = target.parentElement.dataset.save
     await this.actor.rollSavingThrow(save, options)
   }
@@ -880,7 +875,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #rollSkillCheck (event, target) {
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     const skill = target.parentElement.dataset.skill
     await this.actor.rollSkillCheck(skill, options)
     // this.render(false)
@@ -894,7 +889,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #rollLuckDie (event, target) {
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollLuckDie(options)
   }
 
@@ -906,7 +901,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @returns {Promise<void>}
    **/
   static async #rollSpellCheck (event, target) {
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     const dataset = target.parentElement.dataset
     if (dataset.itemId) {
       // Roll through a spell item
@@ -934,7 +929,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   _onRollDisapproval (event) {
     event.preventDefault()
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollDisapproval(undefined, options)
   }
 
@@ -948,7 +943,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #rollWeaponAttack (event, target) {
     event.preventDefault()
     const itemId = this.#findDataset(target, 'itemId')
-    const options = DCCActorSheet.#fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     Object.assign(options, {
       backstab: target.classList.contains('backstab-button')
     })

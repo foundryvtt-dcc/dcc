@@ -1,5 +1,7 @@
 /* global Application, CONFIG, Die, FormApplication, OperatorTerm, Roll, game */
 
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
 /**
  * Clean a formula by stripping any spaces and duplicate signs
  * @param formula {Object}
@@ -238,7 +240,7 @@ function constructDCCTerm (type, data = {}, options = {}) {
   return []
 }
 
-class RollModifierDialog extends FormApplication {
+class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Construct a Roll Modifier Dialog
    * @params resolve {Function}     Function to resolve the promise
@@ -248,10 +250,9 @@ class RollModifierDialog extends FormApplication {
    * @return {Object}
    */
   constructor (resolve, reject, terms, options = {}) {
-    super()
+    super(options)
     this._resolve = resolve
     this._reject = reject
-    Object.assign(this.options, options)
     if (terms instanceof Array) {
       this._terms = this._constructTermsFromArray(terms)
     } else {
@@ -355,15 +356,16 @@ class RollModifierDialog extends FormApplication {
     }
     // Build a new Roll object from the collected terms
     let formula = ''
-    if (this._state !== Application.RENDER_STATES.NONE) {
+    if (this._state !== ApplicationV2.RENDER_STATES.NONE && this.element) {
       // Once the form is constructed extract data from the form fields
-      this.element.find('input.term-field').each((index, element) => {
-        if (index > 0) {
-          formula += '+'
-        }
-        formula += element.value
-        resolveTerm(element.value, this.terms[index])
-      })
+      this.element.querySelectorAll('input.term-field').forEach(
+        (element, index) => {
+          if (index > 0) {
+            formula += '+'
+          }
+          formula += element.value
+          resolveTerm(element.value, this.terms[index])
+        })
     } else {
       // Otherwise extract data straight from the terms array
       for (const term of this.terms) {

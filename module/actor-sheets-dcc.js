@@ -6,6 +6,7 @@
  */
 
 import DCCActorSheet from './actor-sheet.js'
+
 const { TextEditor } = foundry.applications.ux
 
 /**
