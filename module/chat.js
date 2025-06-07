@@ -365,7 +365,8 @@ export const emoteSkillCheckRoll = function (message, html, data) {
  */
 export const lookupCriticalRoll = async function (message, html) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Critical'))) return
-  const tableName = message.flavor.replace('Critical (', '').replace(')', '')
+  const criticalText = game.i18n.localize('DCC.Critical')
+  const tableName = message.flavor.replace(`${criticalText} (`, '').replace(')', '')
 
   const critResult = await getCritTableResult(message.rolls[0], tableName)
   

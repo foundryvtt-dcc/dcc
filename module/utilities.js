@@ -50,7 +50,7 @@ export function getFirstMod (value) {
 /**
  * Draw a result from the crit table
  * @param roll - roll instance to use
- * @param critTableName - name of the crit table - like 'III'
+ * @param critTableName - name of the crit table - like 'Crit Table III' -- might be localized, e.g. "Table d'critique III"
  */
 export async function getCritTableResult (roll, critTableName) {
   // Make sure the roll is evaluated first
@@ -58,9 +58,14 @@ export async function getCritTableResult (roll, critTableName) {
     await roll.evaluate()
   }
 
+  // Extract the crit table suffix (e.g. "III" from "Crit Table III")
+  const critTableText = game.i18n.localize('DCC.CritTable')
+  const critTableSuffix = critTableName.replace(critTableText, '').trim()
+  let critTableCanonical = "Crit Table " + critTableSuffix
+
   // Check to see if this is the Elemental Crit/Fumble table
-  if (critTableName === 'Crit Table EL') {
-    critTableName = 'Crit/Fumble Table EL'
+  if (critTableSuffix === 'EL') {
+    critTableCanonical = 'Crit/Fumble Table EL'
     CONFIG.DCC.criticalHitPacks.addPack('dcc-core-book.dcc-monster-fumble-tables')
   }
 
@@ -71,7 +76,7 @@ export async function getCritTableResult (roll, critTableName) {
       const pack = game.packs.get(criticalHitPackName)
       if (pack) {
         await pack.getIndex() // Load the compendium index
-        const entry = pack.index.find((entity) => entity.name.startsWith(critTableName))
+        const entry = pack.index.find((entity) => entity.name.startsWith(critTableCanonical))
         if (entry) {
           const table = await pack.getDocument(entry._id)
           critResult = table.getResultsForRoll(roll.total)
@@ -82,7 +87,7 @@ export async function getCritTableResult (roll, critTableName) {
   }
 
   // Try in the local world if we've gotten this far and not returned
-  const worldCritTables = game.tables.find((entity) => entity.name.startsWith(critTableName))
+  const worldCritTables = game.tables.find((entity) => entity.name.startsWith(critTableCanonical))
   if (worldCritTables) {
     critResult = worldCritTables.getResultsForRoll(roll.total)
     return critResult[0] || 'Unable to find crit result'
@@ -127,7 +132,8 @@ export function getFumbleTableNameFromCritTableName (critTableName) {
   if (humanoidCritTables.some(ctn => critTableName.includes(ctn))) {
     return 'Fumble Table H'
   }
-  if (critTableName === 'Crit Table EL') {
+  const critTableText = game.i18n.localize('DCC.CritTable')
+  if (critTableName === `${critTableText} EL`) {
     return 'Crit/Fumble Table EL'
   }
   return `Fumble Table ${critTableName}`
