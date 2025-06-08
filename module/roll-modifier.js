@@ -299,7 +299,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData (options) {
+  _prepareContext (options) {
     const data = {}
     data.user = game.user
     data.options = this.options

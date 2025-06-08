@@ -1,21 +1,33 @@
-/* global FormApplication, game, CONFIG */
+/* global game, CONFIG */
 
-class SavingThrowConfig extends FormApplication {
-  static get defaultOptions () {
-    const options = super.defaultOptions
-    options.template = 'systems/dcc/templates/dialog-saving-throw-adjustments.html'
-    options.width = 270
-    return options
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
+class SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @override */
+  static DEFAULT_OPTIONS = {
+    id: 'saving-throw-config',
+    classes: ['dcc', 'sheet', 'saving-throw-config', 'themed', 'theme-light'],
+    position: {
+      width: 270,
+      height: 'fit-content'
+    },
+    tag: 'aside',
+    form: {
+      submitOnChange: true
+    },
+    actor: {
+      type: 'Player'
+    },
+    window: {
+      resizable: true,
+      title: 'DCC.SavingThrowConfigTitle'
+    }
   }
 
-  /* -------------------------------------------- */
-
-  /**
-   * Add the Entity name into the window title
-   * @type {String}
-   */
-  get title () {
-    return `${this.object.name}: ${game.i18n.localize('DCC.SavingThrowConfigTitle')}`
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-saving-throw-adjustments.html'
+    }
   }
 
   /* -------------------------------------------- */
@@ -24,36 +36,34 @@ class SavingThrowConfig extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData (options = {}) {
-    const data = this.object
-    data.isNPC = (this.object.type === 'NPC')
-    data.isPC = (this.object.type === 'Player')
-    data.isZero = (this.object.system.details.level.value === 0)
-    data.user = game.user
-    data.config = CONFIG.DCC
-    return data
+  async _prepareContext (options = {}) {
+    const context = await super._prepareContext(options)
+    const data = this.options.object
+    context.object = data
+    context.actor = data
+    context.isNPC = (data.type === 'NPC')
+    context.isPC = (data.type === 'Player')
+    context.isZero = (data.system.details.level.value === 0)
+    context.user = game.user
+    context.config = CONFIG.DCC
+    return context
   }
 
   /* -------------------------------------------- */
 
-  /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
-  }
-
-  /**
-   * This method is called upon form submission after form data is validated
-   * @param event {Event}       The initial triggering submission event
-   * @param formData {Object}   The object of validated form data with which to update the object
-   * @private
-   */
-  async _updateObject (event, formData) {
-    event.preventDefault()
-    // Update the actor
-    await this.object.update(formData)
-    // Re-draw the updated sheet
-    await this.object.sheet.render(true)
-  }
+  // /**
+  //  * This method is called upon form submission after form data is validated
+  //  * @param event {Event}       The initial triggering submission event
+  //  * @param formData {Object}   The object of validated form data with which to update the object
+  //  * @private
+  //  */
+//   async _updateObject (event, formData) {
+//     event.preventDefault()
+//     // Update the actor
+//     await this.object.update(formData)
+//     // Re-draw the updated sheet
+//     await this.object.sheet.render(true)
+//   }
 }
 
 export default SavingThrowConfig
