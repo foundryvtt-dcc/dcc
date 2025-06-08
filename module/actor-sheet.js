@@ -45,7 +45,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     actor: {
       type: 'Player'
     },
-    dragDrop: this.#createDragDropHandlers(),
+    dragDrop: this.#createDragDropHandlers,
     window: {
       resizable: true,
       controls: [
@@ -767,7 +767,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    **/
   static async #configureSavingThrows (event, target) {
-    new SavingThrowConfig({object: this.actor,
+    new SavingThrowConfig({document: this.document,
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
     }).render(true)

@@ -11,9 +11,10 @@ class SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       width: 270,
       height: 'fit-content'
     },
-    tag: 'aside',
+    tag: 'form',
     form: {
-      submitOnChange: true
+      handler: SavingThrowConfig.#onSubmitForm,
+      closeOnSubmit: true
     },
     actor: {
       type: 'Player'
@@ -38,7 +39,7 @@ class SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _prepareContext (options = {}) {
     const context = await super._prepareContext(options)
-    const data = this.options.object
+    const data = this.options.document
     context.object = data
     context.actor = data
     context.isNPC = (data.type === 'NPC')
@@ -51,19 +52,19 @@ class SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /* -------------------------------------------- */
 
-  // /**
-  //  * This method is called upon form submission after form data is validated
-  //  * @param event {Event}       The initial triggering submission event
-  //  * @param formData {Object}   The object of validated form data with which to update the object
-  //  * @private
-  //  */
-//   async _updateObject (event, formData) {
-//     event.preventDefault()
-//     // Update the actor
-//     await this.object.update(formData)
-//     // Re-draw the updated sheet
-//     await this.object.sheet.render(true)
-//   }
+  /**
+   * This method is called upon form submission after form data is validated
+   * @param event {Event}       The initial triggering submission event
+   * @param form {HTMLFormElement}  The HTML form element that was submitted
+   * @param formData {HTMLFormElement}  The object of validated form data with which to update the object
+   */
+  static async #onSubmitForm(event, form, formData) {
+    event.preventDefault()
+    // Update the actor
+    await this.options.document.update(formData.object)
+    // Re-draw the updated sheet
+    await this.options.document.sheet.render(true)
+  }
 }
 
 export default SavingThrowConfig
