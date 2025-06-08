@@ -1,5 +1,7 @@
 /* global game, renderTemplate, ChatMessage */
 
+const {renderTemplate} = foundry.applications.handlebars
+
 class ReleaseNotes {
   static async addChatCard () {
     const message = game.i18n.localize('DCC.ReleaseNotesMessage')

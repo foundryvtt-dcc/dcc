@@ -225,14 +225,6 @@
   font-family: "DuvallSmallCaps";
   src: url("fonts/DuvallSmallCaps.otf") format("opentype");
 }
-input[type=checkbox]:checked::after {
-  color: transparent;
-}
-
-input[type=checkbox]::before {
-  content: none;
-}
-
 /* Common style elements */
 .dcc.application {
   --header-height: 24px;
@@ -304,6 +296,14 @@ input[type=checkbox]::before {
   height: 20px;
   width: 20px;
   margin: 0;
+}
+.dcc input[type=checkbox]:checked::after {
+  color: transparent;
+}
+.dcc input[type=checkbox]::before {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .dcc input:focus {
   box-shadow: none;
@@ -1513,32 +1513,19 @@ form.dcc-roll-modifier input.stat {
   letter-spacing: 1px;
 }
 
-#dcc-welcome-dialog h1 {
+#dcc-welcome-dialog aside {
+  display: grid;
+  grid-template-columns: 100%;
+}
+#dcc-welcome-dialog h2 {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-size: 24px;
+  margin: 20px 0 0 0;
 }
-#dcc-welcome-dialog form {
-  display: flex;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  justify-content: space-between;
-  flex-direction: column;
-}
-#dcc-welcome-dialog div.credits {
-  display: flex;
-  justify-content: space-between;
-  flex-direction: column;
-}
-#dcc-welcome-dialog div.logo-container {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-}
-#dcc-welcome-dialog div.logo-container img.dcc-logo {
-  border: 0;
-}
-#dcc-welcome-dialog div.dcc-copyright {
-  display: flex;
-  justify-content: space-between;
-  flex-direction: column;
+#dcc-welcome-dialog h3 {
+  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-size: 20px;
+  margin: 0;
 }
 
 /*# sourceMappingURL=dcc.css.map */

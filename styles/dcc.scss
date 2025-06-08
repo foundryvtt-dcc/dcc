@@ -18,13 +18,8 @@
   src: url('fonts/DuvallSmallCaps.otf') format('opentype');
 }
 
-input[type="checkbox"]:checked::after {
-  color: transparent;
-}
 
-input[type="checkbox"]::before {
-  content: none;
-}
+
 
 /* Common style elements */
 $border-style: 2px groove #eeede0;
@@ -119,6 +114,16 @@ $font-awesome: 'Font Awesome 6 Pro';
       height: 20px;
       width: 20px;
       margin: 0;
+
+      &:checked::after {
+        color: transparent;
+      }
+
+      &::before {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
     }
 
     &:focus {
@@ -1097,6 +1102,7 @@ form.dcc-roll-modifier {
     margin-top: 3px;
     text-align: center;
   }
+
 }
 
 /* ----------------------------------------- */
@@ -1534,36 +1540,20 @@ form.dcc-roll-modifier {
 
 // Welcome Dialog
 #dcc-welcome-dialog {
-  h1 {
+  aside {
+    display: grid;
+    grid-template-columns: 100%;
+  }
+
+  h2 {
     font-family: $duvall;
+    font-size: 24px;
+    margin: 20px 0 0 0;
   }
 
-  form {
-    display: flex;
-    font-family: $book-antiqua;
-    justify-content: space-between;
-    flex-direction: column;
-  }
-
-  div.credits {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
-  }
-
-  div.logo-container {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-
-    img.dcc-logo {
-      border: 0;
-    }
-  }
-
-  div.dcc-copyright {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
+  h3 {
+    font-family: $cooper-black;
+    font-size: 20px;
+    margin: 0;
   }
 }

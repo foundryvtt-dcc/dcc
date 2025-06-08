@@ -45,6 +45,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     actor: {
       type: 'Player'
     },
+    dragDrop: this.#createDragDropHandlers(),
     window: {
       resizable: true,
       controls: [
@@ -401,7 +402,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   //     html.find('label[for*="system.class.luckDie"]').each(makeDraggable)
   //
   //     // Spell Checks
-  //     html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
   //     html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
   //     html.find('label.spell-check').each(makeDraggable)
   //     html.find('.spell-draggable').each(makeDraggable)
@@ -1017,6 +1017,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     // Update the Actor
     return this.object.update(formData)
+  }
+
+  static #createDragDropHandlers () {
+    console.log('DCCActorSheet#_createDragDropHandlers')
   }
 }
 

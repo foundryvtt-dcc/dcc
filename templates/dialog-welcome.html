@@ -1,29 +1,36 @@
-<form autocomplete="off" class="p-5">
-  <div class="info">
-    <h1 class="p-5">{{{heading}}}</h1>
+<aside>
+  <div>
+    <h2>{{{heading}}}</h2>
     {{{info}}}
   </div>
-  <div class="logo-container">
-    <img class="dcc-logo" src="{{{logoURL}}}" alt="{{{logoAlt}}}" width="337px" height="200px"/>
+  <div class="grid-just-center">
+    <img style="border:0" src="{{{logoURL}}}" alt="{{{logoAlt}}}" width="337px" height="200px"/>
   </div>
-  <div class="credits">
+  <div>
     {{{credits}}}
   </div>
-  <div class="dcc-copyright">
+  <div>
     {{{copyright}}}
   </div>
-  <div class="form-group">
-    <input name="data.doNotShow" id="data.doNotShow" type="checkbox"></input>
-    <label for="data.doNotShow">{{{doNotShow}}}</label>
+  <div class="mt-8 mb-8 grid-tpl-max-auto">
+    <input name="showWelcomeDialog" id="showWelcomeDialog" type="checkbox" data-action="doNotShow" title="{{showWelcomeDialogLabelHint}}" {{checked showWelcomeDialog}}></input>
+    <label for="showWelcomeDialog" style="margin-left: 8px; margin-top: 1px;" title="{{showWelcomeDialogLabelHint}}">{{{showWelcomeDialogLabel}}}</label>
   </div>
-  <footer class="sheet-footer flexrow">
+  <footer class="mt-8 grid-just-center">
     {{#if importContentLabel}}
-      <button type="submit" class="import-content flex1">
+      <button type="submit">
         <i class="fas fa-file-import"></i>{{{importContentLabel}}}
       </button>
     {{/if}}
-    <button type="submit" class="flex1">
-      <i class="fas fa-save"></i>{{{submitLabel}}}
-    </button>
+    {{#if submitLabel}}
+      <button type="submit">
+        <i class="fas fa-save"></i>{{{submitLabel}}}
+      </button>
+    {{/if}}
+    {{#if closeLabel}}
+      <button type="submit" data-action="close">
+        <i class="fas fa-xmark"></i>{{{closeLabel}}}
+      </button>
+    {{/if}}
   </footer>
-</form>
+</aside>
