@@ -1,0 +1,1673 @@
+{
+  "img": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_Squire_280px.webp",
+  "name": "Squire Cleric",
+  "type": "Player",
+  "folder": "aR5HpwCOwBWzFboK",
+  "system": {
+    "abilities": {
+      "str": {
+        "label": "DCC.AbilityStr",
+        "value": 8,
+        "max": 8
+      },
+      "agl": {
+        "label": "DCC.AbilityAgl",
+        "value": 5,
+        "max": 5
+      },
+      "sta": {
+        "label": "DCC.AbilitySta",
+        "value": 8,
+        "max": 8
+      },
+      "per": {
+        "label": "DCC.AbilityPer",
+        "value": 13,
+        "max": 13
+      },
+      "int": {
+        "label": "DCC.AbilityInt",
+        "value": 11,
+        "max": 11
+      },
+      "lck": {
+        "label": "DCC.AbilityLck",
+        "value": 9,
+        "max": 9
+      }
+    },
+    "attributes": {
+      "ac": {
+        "value": "13",
+        "checkPenalty": 0,
+        "otherMod": 0,
+        "speedPenalty": 0
+      },
+      "actionDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          }
+        ]
+      },
+      "critical": {
+        "die": "1d12",
+        "table": "III"
+      },
+      "fumble": {
+        "die": "1d4"
+      },
+      "hitDice": {
+        "value": "1d8"
+      },
+      "hp": {
+        "value": 30,
+        "min": 0,
+        "max": "30",
+        "temp": 0,
+        "tempmax": 0
+      },
+      "init": {
+        "die": "1d20",
+        "otherMod": 0,
+        "value": -2
+      },
+      "initDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          },
+          {
+            "value": "1d16",
+            "label": "1d16"
+          }
+        ]
+      },
+      "speed": {
+        "value": "25",
+        "base": 30,
+        "special": ""
+      }
+    },
+    "details": {
+      "alignment": "l",
+      "attackBonus": "+3",
+      "attackHitBonus": {
+        "melee": {
+          "value": "+2",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+1",
+          "adjustment": "+0"
+        }
+      },
+      "attackDamageBonus": {
+        "melee": {
+          "value": "-1",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+0",
+          "adjustment": "+0"
+        }
+      },
+      "birthAugur": "Unholy house (Corruption rolls) (+0)",
+      "critRange": 20,
+      "languages": "Common",
+      "level": {
+        "value": 5
+      },
+      "occupation": {
+        "value": "Squire"
+      },
+      "notes": {
+        "value": "Equipment:<br/>  Mirror - hand-sized (10 gp)<br/>  Steel helmet (Trade Goods)<br/><br/>Starting Funds: 41 cp + 1331 gp<br/>Birth Augur: Unholy house (Corruption rolls) (+0)<br/>Languages: Common<br/><br/>Spells:<br/>1) Detect Evil<br/>1) Detect Magic<br/>1) Holy Sanctuary<br/>1) Resist Cold or Heat<br/>1) Second Sight<br/>1) Word of Command<br/>2) Binding<br/>2) Cure Paralysis<br/>2) Curse<br/>2) Neutralize Poison/Disease<br/>2) Restore Vitality<br/>3) Bolt from the Blue<br/>3) Spiritual Weapon<br/>"
+      },
+      "title": {
+        "value": ""
+      },
+      "xp": {
+        "value": 0,
+        "min": 0,
+        "max": 10
+      },
+      "sheetClass": "Cleric"
+    },
+    "saves": {
+      "frt": {
+        "abbreviation": "DCC.SavesFortitudeAbbr",
+        "label": "DCC.SavesFortitude",
+        "classBonus": 2,
+        "otherBonus": "",
+        "override": "",
+        "value": "+1"
+      },
+      "ref": {
+        "abbreviation": "DCC.SavesReflexAbbr",
+        "label": "DCC.SavesReflex",
+        "classBonus": 1,
+        "otherBonus": "",
+        "override": "",
+        "value": "-1"
+      },
+      "wil": {
+        "abbreviation": "DCC.SavesWillAbbr",
+        "label": "DCC.SavesWill",
+        "classBonus": 3,
+        "otherBonus": "",
+        "override": "",
+        "value": "+4"
+      }
+    },
+    "currency": {
+      "pp": "0",
+      "ep": "0",
+      "gp": "1331",
+      "sp": "0",
+      "cp": "41"
+    },
+    "config": {
+      "attackBonusMode": "flat",
+      "actionDice": "1d20",
+      "addClassLevelToInitiative": false,
+      "maxLevel": "",
+      "rollAttackBonus": false,
+      "computeAC": true,
+      "baseACAbility": "agl",
+      "computeSpeed": true,
+      "computeCheckPenalty": true,
+      "computeInitiative": true,
+      "computeMeleeAndMissileAttackAndDamage": true,
+      "computeSavingThrows": true,
+      "sortInventory": true,
+      "removeEmptyItems": true,
+      "showSpells": false,
+      "showSkills": false,
+      "showBackstab": false
+    },
+    "skills": {
+      "detectSecretDoors": {
+        "label": "DCC.HeightenedSenses",
+        "value": "+4",
+        "ability": "int"
+      },
+      "divineAid": {
+        "label": "DCC.DivineAid",
+        "value": 0,
+        "useDisapprovalRange": true,
+        "drainDisapproval": 10
+      },
+      "turnUnholy": {
+        "label": "DCC.TurnUnholy",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "layOnHands": {
+        "label": "DCC.LayOnHands",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "sneakSilently": {
+        "label": "DCC.SneakSilently",
+        "ability": "agl",
+        "value": "0"
+      },
+      "hideInShadows": {
+        "label": "DCC.HideInShadows",
+        "ability": "agl",
+        "value": "0"
+      },
+      "pickPockets": {
+        "label": "DCC.PickPocket",
+        "ability": "agl",
+        "value": "0"
+      },
+      "climbSheerSurfaces": {
+        "label": "DCC.ClimbSheerSurfaces",
+        "ability": "agl",
+        "value": "0"
+      },
+      "pickLock": {
+        "label": "DCC.PickLock",
+        "ability": "agl",
+        "value": "0"
+      },
+      "findTrap": {
+        "label": "DCC.FindTrap",
+        "ability": "int",
+        "value": "0"
+      },
+      "disableTrap": {
+        "label": "DCC.DisableTrap",
+        "ability": "agl",
+        "value": "0"
+      },
+      "forgeDocument": {
+        "label": "DCC.ForgeDocument",
+        "ability": "agl",
+        "value": "0"
+      },
+      "disguiseSelf": {
+        "label": "DCC.DisguiseSelf",
+        "ability": "per",
+        "value": "0"
+      },
+      "readLanguages": {
+        "label": "DCC.ReadLanguages",
+        "ability": "int",
+        "value": "0"
+      },
+      "handlePoison": {
+        "label": "DCC.HandlePoison",
+        "value": "0"
+      },
+      "castSpellFromScroll": {
+        "label": "DCC.CastSpellFromScroll",
+        "ability": "int",
+        "die": "1d10",
+        "value": "0"
+      },
+      "sneakAndHide": {
+        "label": "DCC.SneakAndHide",
+        "value": "+3"
+      },
+      "shieldBash": {
+        "label": "DCC.ShieldBash",
+        "ability": "str",
+        "die": "1d14",
+        "value": "+0",
+        "useDeed": true
+      }
+    },
+    "inventory": {
+      "weapons": [],
+      "ammunition": [],
+      "armor": [],
+      "equipment": [],
+      "mount": []
+    },
+    "class": {
+      "spellCheck": "+6",
+      "spellCheckAbility": "per",
+      "spellsLevel1": 0,
+      "spellsLevel2": 0,
+      "spellsLevel3": 0,
+      "spellsLevel4": 0,
+      "spellsLevel5": 0,
+      "deity": "",
+      "disapproval": "1",
+      "disapprovalTable": "dcc-core-book.dcc-core-disapproval.Disapproval",
+      "luckDie": "1d3",
+      "backstab": "0",
+      "luckyWeapon": null,
+      "luckyWeaponMod": "+0",
+      "knownSpells": 0,
+      "maxSpellLevel": 0,
+      "spellCheckOtherMod": null,
+      "spellCheckDieOverride": null,
+      "spellCheckOverride": "",
+      "patron": null,
+      "familiar": null,
+      "corruption": [],
+      "className": "Cleric",
+      "spellCheckOverrideDie": ""
+    }
+  },
+  "items": [
+    {
+      "name": "Mirror - hand-sized (10 gp)",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "hCFVRfxqFY7bsVgg",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Steel helmet",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "v1BMqzejbCzMNfq9",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Neutralize Poison/Disease",
+      "img": "systems/dcc/styles/images/spell.webp",
+      "type": "spell",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": "2",
+        "lost": false,
+        "range": "",
+        "duration": "",
+        "page": "",
+        "castingTime": "",
+        "results": {},
+        "save": "",
+        "spellCheck": {
+          "die": "1d20",
+          "value": "+6",
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": "",
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        }
+      },
+      "_id": "FYV6PBHyOrst2r7W",
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Longsword",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/broadsword.svg",
+      "effects": [],
+      "_id": "CTRfP98hwR6uZG4m",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306607,
+        "modifiedTime": 1749930306607,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 10,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d8-1",
+        "damageWeapon": "1d8",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+2",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 100000
+    },
+    {
+      "name": "+1 Mace",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/flanged-mace.svg",
+      "effects": [],
+      "_id": "6upAH1em0M9CilDd",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306619,
+        "modifiedTime": 1749930306619,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 5,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": [
+          "+1"
+        ],
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d6+0",
+        "damageWeapon": "1d6",
+        "damageBonus": "",
+        "damageWeaponBonus": [
+          "+1"
+        ],
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+3",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 1700000
+    },
+    {
+      "_id": "qZ5bfSawBTU7zqvs",
+      "name": "Chainmail",
+      "type": "armor",
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/chain-mail.svg",
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306626,
+        "modifiedTime": 1749930306626,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": "0",
+          "ep": "0",
+          "gp": "150",
+          "sp": "0",
+          "cp": "0"
+        },
+        "acBonus": "+5",
+        "checkPenalty": "-5",
+        "speed": "-5'",
+        "fumbleDie": "1d12"
+      }
+    },
+    {
+      "name": "Detect Evil",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/spyglass.svg",
+      "effects": [],
+      "_id": "FF96QLmK9E3fohN0",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306634,
+        "modifiedTime": 1749930306634,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric holds up his holy symbol and detects emanations of evil within a ray that extends straight out 5&rsquo; wide and 60&rsquo; (or more) ahead of the symbol. The definition of &ldquo;evil&rdquo; is based on the cleric: generally it encompasses creatures of opposed alignment, those unholy to the cleric&rsquo;s deity, and those with clearly harmful intent. Depending on the strength of the spell, it may detect even more subtle dangers. This spell does not reveal creatures that are otherwise hidden but does inform the cleric that evil intentions radiate from a certain position. This spell may be reversed to detect good, which means creatures of allied alignment, common deity, or similar holy goals.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Detect Evil]{Detect Evil}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "60 radius from cleric or more (see below)",
+        "duration": "6 turns",
+        "page": "259",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Detect Evil",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "Will vs. spell check DC (sometimes)",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Detect Magic",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/magic-swirl.svg",
+      "effects": [],
+      "_id": "3Sz0I83HDTD0SOiL",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306642,
+        "modifiedTime": 1749930306642,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric knows if there has been an enchantment laid upon a person, place or thing within range. The range is a cone, 30&rsquo; long and 30&rsquo; wide at its end, emanating from the cleric&rsquo;s holy symbol.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Detect Magic]{Detect Magic}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "30 or more",
+        "duration": "2 turns",
+        "page": "260",
+        "castingTime": "2 actions",
+        "results": {
+          "table": "Detect Magic",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "Will vs. spell check DC (sometimes)",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Holy Sanctuary",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/laurels.svg",
+      "effects": [],
+      "_id": "Bf4joMmyWn9VQO38",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306649,
+        "modifiedTime": 1749930306649,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric invokes a place of sanctuary where he and his allies are safe from harm.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Holy Sanctuary]{Holy Sanctuary}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "Self or more",
+        "duration": "1 round or more",
+        "page": "263",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Holy Sanctuary",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "Will save vs. spell check",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Resist Cold or Heat",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/burning-passion.svg",
+      "effects": [],
+      "_id": "JX7W4zMCnRjZ7omZ",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306656,
+        "modifiedTime": 1749930306656,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric repels the chilling effects of cold or heat, protecting himself and others. He can withstand such conditions without discomfort. When casting the spell, the cleric chooses which effect to resist (heat or cold). It is possible to cast the spell twice and create a resistance to both effects.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Resist Cold or Heat]{Resist Cold or Heat}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "Self or more",
+        "duration": "1 round or more",
+        "page": "266",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Resist Cold or Heat",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "N/A",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Second Sight",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/octogonal-eye.svg",
+      "effects": [],
+      "_id": "Ih4URdbA9DAJJgTH",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306663,
+        "modifiedTime": 1749930306663,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>Using sortilege, haruspicy, or some other method appropriate to the cleric, he augurs the future. In doing so, the cleric gains insight about the consequences his actions will bring.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Second Sight]{Second Sight}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "Self",
+        "duration": "1 round or more",
+        "page": "267",
+        "castingTime": "1 turn",
+        "results": {
+          "table": "Second Sight",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "N/A",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Word of Command",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/lightning-shout.svg",
+      "effects": [],
+      "_id": "XfWiqd5ZCUG5HRr6",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306670,
+        "modifiedTime": 1749930306670,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric speaks a powerful word that carries with it the commanding will of his deity. Creatures hearing the word are bound to obey. The word must be a single word, which must describe an action. For example, &ldquo;go,&rdquo; &ldquo;attack,&rdquo; &ldquo;retreat,&rdquo; &ldquo;speak,&rdquo; &ldquo;swim,&rdquo; &ldquo;grovel,&rdquo; &ldquo;silence,&rdquo; and so on. The word must be spoken in the direction of a single sentient target within range. That target receives a Will save to resist; if failed, it must obey the command for its next round. The command is interpreted by the creature&rsquo;s natural thought processes; e.g., issuing an &ldquo;attack&rdquo; command to an herbivore may have a different response than to a carnivore. The word of command cannot be longer in length than a single word and may be subject to misinterpretation. If the command is completely contrary to a creature&rsquo;s natural instinct, it receives a +4 bonus to its Will save to resist; for example, commanding a desert lizard to &ldquo;swim&rdquo; or any command of &ldquo;suicide.&rdquo;</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Word of Command]{Word of Command}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "30 or more",
+        "duration": "1 round or more",
+        "page": "268",
+        "castingTime": "1 round",
+        "results": {
+          "table": "Word of Command",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "Will save vs. spell check",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Binding",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/crossed-chains.svg",
+      "effects": [],
+      "_id": "vrxYnZPjVRaLABuF",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306677,
+        "modifiedTime": 1749930306677,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>With this spell, the cleric binds a supernatural creature and forces it to obey his will. The spell is easiest if the creature has already been summoned for control via another spell. But the cleric may also cast this spell to control creatures encountered on their native planes.</p>\n<p>The cleric may target one creature already under the control of another spellcaster and summoned via another spell (for example, animal summoning, monster summoning, or invisible companion) or native to a non-material plane (for example, demons, devils, elementals, spirits, ghosts, etc.). The cleric binds that creature to obey his will instead of the will of its current master. A Will save is allowed to resist, but the Will save is made by the other spellcaster not the target creature, which is already dominated. If the check is successful, control of the bound creature transfers to the cleric casting binding. The cleric retains control for a time, after which control reverts back to the original caster (by which time the original summoning or controlling spell may have ended). This spell does not affect familiars or other creatures that voluntarily obey a spellcaster, only those under forcible control.</p>\n<p>Under certain circumstances, as noted below, the cleric may affect other targets as well.</p>\n<p>A creature under the cleric&rsquo;s control can be commanded to take any action normally within its power, similar to the animal summoning spell. The creature must be capable of hearing the cleric&rsquo;s commands and will execute them to the best of its ability. Suicidal or inherently contradictory commands grant the target another Will save to resist.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Binding]{Binding}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 2,
+        "lost": false,
+        "range": "30 or more",
+        "duration": "Varies",
+        "page": "270",
+        "castingTime": "1 round",
+        "results": {
+          "table": "Binding",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "Will vs. spell check DC",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Cure Paralysis",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/move.svg",
+      "effects": [],
+      "_id": "od10n8zApVQ8dfVf",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306683,
+        "modifiedTime": 1749930306683,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric frees a creature from paralysis. More powerful castings also cure petrifaction and other motion-limiting effects.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Cure Paralysis]{Cure Paralysis}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 2,
+        "lost": false,
+        "range": "Touch or more",
+        "duration": "One day or permanent (see below)",
+        "page": "272",
+        "castingTime": "1 round",
+        "results": {
+          "table": "Cure Paralysis",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "N/A",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Curse",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/cursed-star.svg",
+      "effects": [],
+      "_id": "wt9e3Xli0hroRWQX",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306690,
+        "modifiedTime": 1749930306690,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric utters a profound curse upon another creature, which always receives a Will save to resist. This spell must be used carefully, for it is considered a powerful act of intervention by one&rsquo;s deity. Uttering severe curses, such as those that affect entire families or communities or which extend across the generations, are considered a sin. Longer rituals entailing longer casting times may be appropriate for more sinister curses. See Appendix C for examples of simple curses with a background beyond game mechanics.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Curse]{Curse}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 2,
+        "lost": false,
+        "range": "Sight",
+        "duration": "Varies (see below)",
+        "page": "273",
+        "castingTime": "1 round",
+        "results": {
+          "table": "Curse",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "Will vs. spell check DC",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Restore Vitality",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/stump-regrowth.svg",
+      "effects": [],
+      "_id": "wkXHAKJEPEV6U4LO",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306696,
+        "modifiedTime": 1749930306696,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric restores lost vitality to a creature. Typically this restores lost ability scores or broken/severed limbs, though it can also heal. This spell cannot restore lost Luck. The spell can be cast on the cleric or an ally.</p>\n<p>In playtests, some groups attempted to combine this spell with a wizard&rsquo;s spellburn to create a &ldquo;one-two combo&rdquo; &ndash; the wizard would burn points for spellburn, the cleric would immediately restore those points, then the wizard would burn those points again. Although legal within the letter of the rules, it is important that the judge recall that DCC RPG is a game where magic is not an act of chemistry; it is an invocation of the wills of supernatural creatures. Cleric magic is the act of divine creatures, and wizard magic is frequently the result of deals, agreements, and arrangements with demons, devils, ghosts, and supernatural patrons. Using restore vitality to offset spellburn will inevitably create trouble for the cleric, whose deity surely does not appreciate his power being used to heal wounds deliberately created to further the ends of another supernatural creature!</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Restore Vitality]{Restore Vitality}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 2,
+        "lost": false,
+        "range": "Touch or further",
+        "duration": "Permanent",
+        "page": "278",
+        "castingTime": "1 turn",
+        "results": {
+          "table": "Restore Vitality",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "N/A",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Bolt from the Blue",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/lightning-storm.svg",
+      "effects": [],
+      "_id": "HAnq8j2Ivqq4Qxov",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306702,
+        "modifiedTime": 1749930306702,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric calls down divine vengeance upon those who stand in the way of his deity&rsquo;s agenda, causing physical and mental anguish, loss of ability scores, and other debilitating results.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Bolt from the Blue]{Bolt from the Blue}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 3,
+        "lost": false,
+        "range": "100",
+        "duration": "1 round",
+        "page": "287",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Bolt from the Blue",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "See below",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Spiritual Weapon",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/winged-scepter.svg",
+      "effects": [],
+      "_id": "imWbiLnOy76fcuh4",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930306708,
+        "modifiedTime": 1749930306708,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The cleric empowers his own personal weapon with his faith, allowing it to smite his enemies as if wielded by an unseen warrior. Attacks with this weapon use the cleric&rsquo;s normal melee attack modifier and his normal attack dice, although the melee attack roll is adjusted by the cleric&rsquo;s Strength or Personality modifier (whichever is higher). Greater spell checks increase attack and damage rolls, as well as add additional</p>\n<p>action dice. The weapon uses the cleric&rsquo;s crit die and table for determining the results of a critical hit. If cast upon a magical weapon, the cleric adds any &ldquo;pluses&rdquo; the weapon has to his spell check. The spiritual weapon itself cannot be targeted or damaged by physical attacks, but can be rendered harmless with a dispel magic or a similar magic-negating effect.</p>\n<p>Additionally, while the spiritual weapon is empowered, it also gains one or more special abilities. The cleric may choose one of the following, as noted in the spell descriptions:</p>\n<p><strong>Unholy avenger:</strong> The weapon inflicts an additional +1 damage against unholy creatures.</p>\n<p><strong>Holy shock:</strong> Creatures struck by the blade must make a DC 10 Fort save or be dazed (-1 to all rolls for next turn).</p>\n<p><strong>Light of the lord:</strong> The weapon glows a brilliant yellow, providing illumination equivalent to torchlight.</p>\n<p><strong>Sacred defender: </strong>The weapon parries attacks aimed at the cleric by the creature it is directed to fight, giving that creature a -2 penalty to all attacks against the cleric.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Spiritual Weapon]{Spiritual Weapon}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "cleric",
+          "showMercurialTab": false
+        },
+        "level": 3,
+        "lost": false,
+        "range": "60 + 20 per CL",
+        "duration": "1 round per CL",
+        "page": "291",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Spiritual Weapon",
+          "collection": "dcc-core-book.dcc-core-spell-tables-cleric"
+        },
+        "save": "N/A",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    }
+  ],
+  "prototypeToken": {
+    "name": "Squire Cleric",
+    "displayName": 0,
+    "actorLink": true,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_Squire_280px.webp",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": "attributes.hp"
+    },
+    "bar2": {
+      "attribute": "abilities.lck.value"
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "effects": [],
+  "flags": {
+    "core": {
+      "sheetClass": "dcc.DCCActorSheetCleric"
+    },
+    "exportSource": {
+      "world": "baselinev12",
+      "system": "dcc",
+      "coreVersion": "12.343",
+      "systemVersion": "0.51.61"
+    }
+  },
+  "_stats": {
+    "coreVersion": "12.343",
+    "systemId": "dcc",
+    "systemVersion": "0.51.61",
+    "createdTime": 1749930306559,
+    "modifiedTime": 1749930420752,
+    "lastModifiedBy": "SACrbgt190Rix7Wx"
+  }
+}

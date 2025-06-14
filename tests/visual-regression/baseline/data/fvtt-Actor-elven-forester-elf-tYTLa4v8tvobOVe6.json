@@ -1,0 +1,1469 @@
+{
+  "img": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_ElvenForester_Male_280px.webp",
+  "name": "Elven forester Elf",
+  "type": "Player",
+  "folder": "aR5HpwCOwBWzFboK",
+  "system": {
+    "abilities": {
+      "str": {
+        "label": "DCC.AbilityStr",
+        "value": 13,
+        "max": 13
+      },
+      "agl": {
+        "label": "DCC.AbilityAgl",
+        "value": 12,
+        "max": 12
+      },
+      "sta": {
+        "label": "DCC.AbilitySta",
+        "value": 8,
+        "max": 8
+      },
+      "per": {
+        "label": "DCC.AbilityPer",
+        "value": 15,
+        "max": 15
+      },
+      "int": {
+        "label": "DCC.AbilityInt",
+        "value": 12,
+        "max": 12
+      },
+      "lck": {
+        "label": "DCC.AbilityLck",
+        "value": 12,
+        "max": 12
+      }
+    },
+    "attributes": {
+      "ac": {
+        "value": "12",
+        "checkPenalty": 0,
+        "otherMod": 0,
+        "speedPenalty": 0
+      },
+      "actionDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          }
+        ]
+      },
+      "critical": {
+        "die": "1d10",
+        "table": "II"
+      },
+      "fumble": {
+        "die": "1d4"
+      },
+      "hitDice": {
+        "value": "1d6"
+      },
+      "hp": {
+        "value": 13,
+        "min": 0,
+        "max": "13",
+        "temp": 0,
+        "tempmax": 0
+      },
+      "init": {
+        "die": "1d20",
+        "otherMod": 0,
+        "value": 0
+      },
+      "initDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          },
+          {
+            "value": "1d16",
+            "label": "1d16"
+          }
+        ]
+      },
+      "speed": {
+        "value": "30",
+        "base": 30,
+        "special": ""
+      }
+    },
+    "details": {
+      "alignment": "n",
+      "attackBonus": "+3",
+      "attackHitBonus": {
+        "melee": {
+          "value": "+4",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+3",
+          "adjustment": "+0"
+        }
+      },
+      "attackDamageBonus": {
+        "melee": {
+          "value": "+1",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+0",
+          "adjustment": "+0"
+        }
+      },
+      "birthAugur": "Charmed house (Armor Class) (+0)",
+      "critRange": 20,
+      "languages": "Common, Elf, Troglodyte",
+      "level": {
+        "value": 5
+      },
+      "occupation": {
+        "value": "Elven forester"
+      },
+      "notes": {
+        "value": "Equipment:<br/>  Torch (1 cp)<br/>  Herbs (1 lb.) (Trade Goods)<br/><br/>Starting Funds: 21 cp + 2013 gp<br/>Birth Augur: Charmed house (Armor Class) (+0)<br/>Languages: Common, Elf, Troglodyte<br/>Elven traits: Heightened senses, iron vulnerability, Infravision<br/><br/>Spells:<br/>1) Patron Bond<br/>1) Invoke Patron<br/>1) Animal Summoning<br/>1) Cantrip<br/>1) Color Spray<br/>1) Mending<br/>2) Knock<br/>2) Strength<br/>3) Planar Step<br/>"
+      },
+      "title": {
+        "value": ""
+      },
+      "xp": {
+        "value": 0,
+        "min": 0,
+        "max": 10
+      },
+      "sheetClass": "Elf"
+    },
+    "saves": {
+      "frt": {
+        "abbreviation": "DCC.SavesFortitudeAbbr",
+        "label": "DCC.SavesFortitude",
+        "classBonus": 2,
+        "otherBonus": "",
+        "override": "",
+        "value": "+1"
+      },
+      "ref": {
+        "abbreviation": "DCC.SavesReflexAbbr",
+        "label": "DCC.SavesReflex",
+        "classBonus": "2",
+        "otherBonus": "",
+        "override": "",
+        "value": "+2"
+      },
+      "wil": {
+        "abbreviation": "DCC.SavesWillAbbr",
+        "label": "DCC.SavesWill",
+        "classBonus": 3,
+        "otherBonus": "",
+        "override": "",
+        "value": "+4"
+      }
+    },
+    "currency": {
+      "pp": "0",
+      "ep": "0",
+      "gp": "2013",
+      "sp": "0",
+      "cp": "21"
+    },
+    "config": {
+      "attackBonusMode": "flat",
+      "actionDice": "1d20,1d14",
+      "addClassLevelToInitiative": false,
+      "maxLevel": "",
+      "rollAttackBonus": false,
+      "computeAC": true,
+      "baseACAbility": "agl",
+      "computeSpeed": true,
+      "computeCheckPenalty": true,
+      "computeInitiative": true,
+      "computeMeleeAndMissileAttackAndDamage": true,
+      "computeSavingThrows": true,
+      "sortInventory": true,
+      "removeEmptyItems": true,
+      "showSpells": false,
+      "showSkills": false,
+      "showBackstab": false
+    },
+    "skills": {
+      "detectSecretDoors": {
+        "label": "DCC.HeightenedSenses",
+        "value": "+4",
+        "ability": "int"
+      },
+      "divineAid": {
+        "label": "DCC.DivineAid",
+        "value": 0,
+        "useDisapprovalRange": true,
+        "drainDisapproval": 10
+      },
+      "turnUnholy": {
+        "label": "DCC.TurnUnholy",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "layOnHands": {
+        "label": "DCC.LayOnHands",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "sneakSilently": {
+        "label": "DCC.SneakSilently",
+        "ability": "agl",
+        "value": "0"
+      },
+      "hideInShadows": {
+        "label": "DCC.HideInShadows",
+        "ability": "agl",
+        "value": "0"
+      },
+      "pickPockets": {
+        "label": "DCC.PickPocket",
+        "ability": "agl",
+        "value": "0"
+      },
+      "climbSheerSurfaces": {
+        "label": "DCC.ClimbSheerSurfaces",
+        "ability": "agl",
+        "value": "0"
+      },
+      "pickLock": {
+        "label": "DCC.PickLock",
+        "ability": "agl",
+        "value": "0"
+      },
+      "findTrap": {
+        "label": "DCC.FindTrap",
+        "ability": "int",
+        "value": "0"
+      },
+      "disableTrap": {
+        "label": "DCC.DisableTrap",
+        "ability": "agl",
+        "value": "0"
+      },
+      "forgeDocument": {
+        "label": "DCC.ForgeDocument",
+        "ability": "agl",
+        "value": "0"
+      },
+      "disguiseSelf": {
+        "label": "DCC.DisguiseSelf",
+        "ability": "per",
+        "value": "0"
+      },
+      "readLanguages": {
+        "label": "DCC.ReadLanguages",
+        "ability": "int",
+        "value": "0"
+      },
+      "handlePoison": {
+        "label": "DCC.HandlePoison",
+        "value": "0"
+      },
+      "castSpellFromScroll": {
+        "label": "DCC.CastSpellFromScroll",
+        "ability": "int",
+        "die": "1d10",
+        "value": "0"
+      },
+      "sneakAndHide": {
+        "label": "DCC.SneakAndHide",
+        "value": "+3"
+      },
+      "shieldBash": {
+        "label": "DCC.ShieldBash",
+        "ability": "str",
+        "die": "1d14",
+        "value": "+0",
+        "useDeed": true
+      }
+    },
+    "inventory": {
+      "weapons": [],
+      "ammunition": [],
+      "armor": [],
+      "equipment": [],
+      "mount": []
+    },
+    "class": {
+      "spellCheck": "+5",
+      "spellCheckAbility": "int",
+      "spellsLevel1": 0,
+      "spellsLevel2": 0,
+      "spellsLevel3": 0,
+      "spellsLevel4": 0,
+      "spellsLevel5": 0,
+      "deity": null,
+      "disapproval": 1,
+      "disapprovalTable": "Disapproval",
+      "luckDie": "1d3",
+      "backstab": "0",
+      "luckyWeapon": null,
+      "luckyWeaponMod": "+0",
+      "knownSpells": 0,
+      "maxSpellLevel": 0,
+      "spellCheckOtherMod": "",
+      "spellCheckDieOverride": null,
+      "spellCheckOverride": "",
+      "patron": "",
+      "familiar": "",
+      "corruption": [],
+      "className": "Elf",
+      "spellCheckOverrideDie": ""
+    }
+  },
+  "items": [
+    {
+      "name": "Torch (1 cp)",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "JANoALbtP0c6kILA",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Herbs (1 lb.)",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "X5k0yc3yKeTaOxbZ",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Staff",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/wizard-staff.svg",
+      "effects": [],
+      "_id": "4t5ZcP5kUHZSvGnN",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766053,
+        "modifiedTime": 1749930766053,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 5,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d4+1",
+        "damageWeapon": "1d4",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+4",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 1600000
+    },
+    {
+      "name": "Longsword",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/broadsword.svg",
+      "effects": [],
+      "_id": "cd5ztyd0wPqd47cJ",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766064,
+        "modifiedTime": 1749930766064,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 10,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d8+1",
+        "damageWeapon": "1d8",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+4",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 100000
+    },
+    {
+      "name": "Dagger",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/broad-dagger.svg",
+      "effects": [],
+      "_id": "v4EPjdqM9etjTJVq",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766073,
+        "modifiedTime": 1749930766073,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": "0",
+          "ep": "0",
+          "gp": "3",
+          "sp": "0",
+          "cp": "0"
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": "1d10",
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d4+1",
+        "damageWeapon": "1d4",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "10/20/30",
+        "shortRangeStrength": true,
+        "subdual": false,
+        "toHit": "+4",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": true
+      },
+      "folder": null,
+      "sort": 2000000
+    },
+    {
+      "_id": "vExZBNIecieLXcJn",
+      "name": "Leather",
+      "type": "armor",
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/leather-vest.svg",
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766081,
+        "modifiedTime": 1749930766081,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": "0",
+          "ep": "0",
+          "gp": "20",
+          "sp": "0",
+          "cp": "0"
+        },
+        "acBonus": "+2",
+        "checkPenalty": "-1",
+        "speed": "",
+        "fumbleDie": "1d8"
+      }
+    },
+    {
+      "_id": "dVTfsNEmWXLP7PKt",
+      "name": "Patron Bond",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/linked-rings.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766089,
+        "modifiedTime": 1749930766089,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster commits himself to the service of a supernatural lord, forming a pact to gain its support as his patron so long as he continues to please it with his service. This patron may be a demon, devil, ghost, spirit, elemental, angel, chaos lord, or other supernatural being who accepts the caster&rsquo;s service. The</p>\n<p>initial ceremony takes one week to complete. Once the pact is made, the caster may invoke the patron&rsquo;s support with the spell invoke patron, and it may or may not answer as it sees fit. In return for the patron&rsquo;s assistance, it may ask the caster to do certain things. The caster must act faithfully in its service at all times, lest it cast him off. The caster may perform more than one ceremony to serve multiple masters, but doing so may raise questions as to his true loyalties. This is dangerous magic; a supernatural patron is not the same as the deity that a cleric may worship. The caster should be forewarned that he is in communion with almighty spirits.</p>\n<p>Alternately, once the caster has formed a bond with his patron, this spell may be cast to create a bond between another mortal and the caster&rsquo;s patron. The mortal need not be a spellcaster; in fact, the second mortal usually is not. In this case, both the caster and the recipient must spend a week on the ceremony, which requires a mighty oath to declare allegiance to the patron. Very powerful creatures are more likely to successfully bond with patrons (who look more favorably upon powerful followers). Typically, a casting of patron bond on behalf of another receives a bonus of +2 if the subject is of 5th-level (5 HD) or higher and +4 if the subject is of 9th-level (9 HD) or higher. At the end of the ceremony, the casting of the spell seals the bond. Recruiting additional followers for his patron brings the caster favor and may grant boons to the other followers; though, their patron will ask fealty of them in exchange.</p>\n<p>Note that continued casting of this spell may taint the caster, both spiritually and physically.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Patron Bond]{Patron Bond}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "Self or touch",
+        "duration": "Lifetime",
+        "page": "148",
+        "castingTime": "1 week + quests",
+        "results": {
+          "table": "Patron Bond",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "nbzrfp9ylfWnTMlS",
+      "name": "Invoke Patron",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/hand-of-god.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766096,
+        "modifiedTime": 1749930766096,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>In order to learn this spell, the caster must first cast patron bond. The particulars of this spell vary according to the terms of the patron. In casting this spell, the wizard invokes the name of a supernatural patron to request aid. This spell requires at least 1 point of spellburn. The patron responds by sending aid according to the nature of its followers; the judge will provide specifics. Note that continued casting of this spell may taint the wizard spiritually and physically.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Invoke Patron]{Invoke Patron}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "Self",
+        "duration": "Varies",
+        "page": "144",
+        "castingTime": "1 round; limited x per bond.",
+        "results": {
+          "table": "Invoke Patron",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "NtuCRaTkLj8TxA8d",
+      "name": "Animal Summoning",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/bear-head.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766101,
+        "modifiedTime": 1749930766101,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster invokes animal spirits to summon forth a mundane animal. The caster must be familiar with the animal type and have some material remnant to expend in casting the spell (e.g., hair, fur, paw, tooth, skull, etc.).</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Animal Summoning]{Animal Summoning}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "20'",
+        "duration": "Varies",
+        "page": "129",
+        "castingTime": "1 round",
+        "results": {
+          "table": "Animal Summoning",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "U3rRfWsnfQeKOI34",
+      "name": "Cantrip",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/hand.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766108,
+        "modifiedTime": 1749930766108,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>As wizards learn their craft, they practice many minor incantations that produce simple visual or auditory effects. This spell can be used to apply magical energy to many minor tasks. With the inherent risks that come from spellcasting, few wizards are so bold as to frequently invoke cantrips, but their availability is sometimes valuable. The cantrip spell can be used to enact any effect the caster pronounces at casting, within the limits of the spell, as outlined on the spell check table below.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Cantrip]{Cantrip}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "Varies",
+        "duration": "Varies",
+        "page": "130",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Cantrip",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "Will vs. spell check as applicable",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "rWazBohS3CRwXNqC",
+      "name": "Color Spray",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/explosive-materials.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766114,
+        "modifiedTime": 1749930766114,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster summons forth a spray of brilliant colors that blind and dazzle the target.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Color Spray]{Color Spray}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "40'",
+        "duration": "Instantaneous",
+        "page": "135",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Color Spray",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "Will vs. check",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "1IvmboqxHoIelM6W",
+      "name": "Mending",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/sewing-string.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766119,
+        "modifiedTime": 1749930766119,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster can repair damaged objects, generally of a simple and mundane nature. The reverse spell, tear, can cause minor defects and offers a Fort save to the affected object.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Mending]{Mending}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "5'",
+        "duration": "Varies",
+        "page": "147",
+        "castingTime": "1 round",
+        "results": {
+          "table": "Mending",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Knock",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/door-ring-handle.svg",
+      "effects": [],
+      "_id": "XB3cdwfFzyqNnx6l",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766125,
+        "modifiedTime": 1749930766125,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster forces open a locked portal or object.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Knock]{Knock}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 2,
+        "lost": false,
+        "range": "30' or more",
+        "duration": "Permanent",
+        "page": "175",
+        "castingTime": "1 round",
+        "results": {
+          "table": "Knock",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "N/A",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Strength",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/weight-lifting-up.svg",
+      "effects": [],
+      "_id": "fIY3fKMHL1VDF6d6",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766131,
+        "modifiedTime": 1749930766131,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>With an arcane incantation, the caster grants physical strength to a willing target.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Strength]{Strength}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 2,
+        "lost": false,
+        "range": "Varies",
+        "duration": "Varies",
+        "page": "198",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Strength",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "N/A",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Planar Step",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/magic-portal.svg",
+      "effects": [],
+      "_id": "8Uu18zJRAltomHhu",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930766136,
+        "modifiedTime": 1749930766136,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>With this spell, the caster steps to another place in the universe. At its lesser castings, this spell allows the caster to teleport to another place on the same world. At its higher castings, this spell takes the caster to other planes or even dimensions with a single step. The spell transports caster and all his belongings and potentially other creatures as well.</p>\n<p>The higher the spell check, the further the caster travels and the more accurately he arrives. The success of this spell is determined in large part by the caster&rsquo;s familiarity with the location to which he intends to arrive. Each spell check result indicates the base chance of success depending on where the caster attempts to travel and his level of familiarity. This percentile chance is rolled when the caster decides where to travel. If the percentile indicates failure, the caster automatically suffers a misfire.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Planar Step]{Planar Step}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 3,
+        "lost": false,
+        "range": "Potentially infinite (see below)",
+        "duration": "Permanent transfer of location",
+        "page": "225",
+        "castingTime": "1 round or more (see below)",
+        "results": {
+          "table": "Planar Step",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "Unwilling targets receive Will save vs. spell effect",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    }
+  ],
+  "prototypeToken": {
+    "name": "Elven forester Elf",
+    "displayName": 0,
+    "actorLink": true,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_ElvenForester_Male_280px.webp",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": "attributes.hp"
+    },
+    "bar2": {
+      "attribute": "abilities.lck.value"
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "effects": [],
+  "flags": {
+    "core": {
+      "sheetClass": "dcc.DCCActorSheetElf"
+    },
+    "exportSource": {
+      "world": "baselinev12",
+      "system": "dcc",
+      "coreVersion": "12.343",
+      "systemVersion": "0.51.61"
+    }
+  },
+  "_stats": {
+    "coreVersion": "12.343",
+    "systemId": "dcc",
+    "systemVersion": "0.51.61",
+    "createdTime": 1749930766014,
+    "modifiedTime": 1749930877697,
+    "lastModifiedBy": "SACrbgt190Rix7Wx"
+  }
+}
