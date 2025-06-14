@@ -768,12 +768,21 @@ class DCCActor extends Actor {
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
       // Convert the roll to a chat message
-      roll.toMessage({
+      const systemData = { skillId }
+      const messageData = {
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
         flags,
-        system: { skillId }
-      })
+        system: systemData
+      }
+      
+      if (skillItem && skillItem.system.description.value) {
+        systemData.skillDescription = skillItem.system.description.value
+        const rollHTML = await roll.render()
+        messageData.content = `${rollHTML}<div class="skill-description">${skillItem.system.description.value}</div>`
+      }
+      
+      roll.toMessage(messageData)
 
       // Need to drain disapproval
       if (skill && skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
