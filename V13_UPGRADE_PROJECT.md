@@ -1,0 +1,245 @@
+# V13 Upgrade Project - DCC System
+
+This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
+
+## 1. FormApplication (V1) → ApplicationV2 Migrations Needed
+
+The following files extend `FormApplication` and need to be migrated to `ApplicationV2`:
+
+### High Priority - Core Functionality
+1. **`module/actor-config.js`**
+   - Class: `DCCActorConfig extends FormApplication`
+   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+   - Purpose: Actor configuration dialog
+
+2. **`module/item-config.js`**
+   - Class: `DCCItemConfig extends FormApplication`
+   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+   - Purpose: Item configuration dialog
+
+3. **`module/actor-level-change.js`**
+   - Class: `DCCActorLevelChange extends FormApplication`
+   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+   - Purpose: Level change interface
+
+4. **`module/melee-missile-bonus-config.js`**
+   - Class: `MeleeMissileBonusConfig extends FormApplication`
+   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+   - Purpose: Combat bonus configuration
+
+5. **`module/parser.js`**
+   - Class: `DCCActorParser extends FormApplication`
+   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+   - Purpose: NPC/PC stat block parser
+
+### Mixed V1/V2 Pattern
+6. **`module/roll-modifier.js`**
+   - Imports both `FormApplication` and `ApplicationV2`
+   - Contains V1 patterns but may be partially migrated
+   - Needs review and completion of V2 migration
+
+## 2. Dialog (V1) → DialogV2 Migrations Needed
+
+Multiple files use the V1 `Dialog` class that should be migrated to `foundry.applications.api.DialogV2`:
+
+- `module/actor-sheet.js`
+- `module/saving-throw-config.js`
+- `module/roll-modifier.js`
+- `module/welcomeDialog.js`
+- `module/fleeting-luck.js`
+- `module/actor.js`
+- `module/parser.js`
+- `module/item-sheet.js`
+- `module/item.js`
+
+## 3. jQuery Usage (Deprecated in V13)
+
+The following files contain jQuery code that needs to be replaced with vanilla JavaScript:
+
+### **module/dcc.js**
+- **Line 1**: Global $ declaration
+- **Lines 261-263**: Event handlers using `$(document).on()`
+- **Line 537**: jQuery wrapping of HTML element
+
+### **module/key-state.js**
+- **Line 1**: Global $ declaration
+- **Line 10**: `$(document).bind()` event binding
+
+### **module/actor-sheet.js**
+- **Lines 388-426**: Multiple jQuery selectors (commented out but should be removed)
+
+### **module/roll-modifier.js**
+- **Lines 318-328**: jQuery event handlers (`.find()`, `.click()`, `.change()`)
+- **Lines 403-522**: jQuery form manipulation (`.find()`, `.val()`)
+
+### **module/chat.js**
+- **Lines 56-58**: jQuery class manipulation (`.addClass()`)
+- **Lines 77-78, 111**: jQuery selectors (`.find()`, `.attr()`, `.text()`)
+- **Multiple lines**: jQuery HTML manipulation (`.html()`, `.remove()`)
+
+### **module/actor-level-change.js**
+- **Lines 64-65**: jQuery event handlers (`.click()`)
+- **Lines 151, 153, 177, 179**: jQuery HTML manipulation (`.html()`)
+
+### Common jQuery Patterns to Replace:
+- `$(selector)` → `document.querySelector(selector)` or `document.querySelectorAll(selector)`
+- `.find()` → `.querySelector()` or `.querySelectorAll()`
+- `.click(handler)` → `.addEventListener('click', handler)`
+- `.on(event, handler)` → `.addEventListener(event, handler)`
+- `.html(content)` → `.innerHTML = content`
+- `.text(content)` → `.textContent = content`
+- `.val()` → `.value`
+- `.addClass()` → `.classList.add()`
+- `.removeClass()` → `.classList.remove()`
+- `.attr()` → `.getAttribute()` or `.setAttribute()`
+
+## 4. Already Migrated to V2
+
+The following components have already been migrated to V2 patterns:
+
+### Sheets (Using ActorSheetV2/ItemSheetV2)
+- **`module/actor-sheet.js`**: `DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2)`
+- **`module/item-sheet.js`**: `DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2)`
+- **`module/actor-sheets-dcc.js`**: Multiple classes extending `DCCActorSheet`
+
+### Dialogs (Using ApplicationV2)
+- **`module/fleeting-luck.js`**: `FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2)`
+- **`module/welcomeDialog.js`**: `WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2)`
+- **`module/saving-throw-config.js`**: `SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2)`
+
+## 5. Migration Priority
+
+### Phase 1 - Critical Core Components
+1. **Fix `getSceneControlButtons` hook usage** in `module/dcc.js` (breaking change in V13)
+2. Remove all jQuery dependencies (high impact, system-wide)
+3. Migrate `actor-config.js` and `item-config.js` (core configuration)
+4. Migrate `parser.js` (import functionality)
+
+### Phase 2 - Game Mechanics
+1. Migrate `actor-level-change.js` (leveling system)
+2. Migrate `melee-missile-bonus-config.js` (combat modifiers)
+3. Complete `roll-modifier.js` migration
+
+### Phase 3 - Dialog Cleanup
+1. Replace all `Dialog` usage with `DialogV2`
+2. Test and verify all dialog interactions
+
+## 6. Additional V13 Breaking Changes and Requirements
+
+### Critical Breaking Changes from V13.341
+
+**Sheet Registration Removal**: The most critical breaking change in V13.341:
+- **Issue**: "To resolve an issue with Actor and Item sheets falling back to the AppV1 sheets, default actor and item sheet registrations have been removed."
+- **Impact**: All systems must explicitly re-register their actor and item sheets
+- **Required Action**: Systems need to call `Actors.registerSheet()` and `Items.registerSheet()` for all their sheet classes
+
+### UI and Framework Changes
+
+**CSS Layers Migration**:
+- Foundry V13 uses CSS Cascade Layers for all UI elements
+- All system and module styles are automatically opted into this feature
+- Eliminates need for "specificity hacks" to override core styles
+- CSS hierarchy: base → specific → general → exceptions → modules → system → layouts → compatibility → applications → blocks → elements → variables → reset
+
+**jQuery Deprecation**:
+- jQuery is being actively deprecated in V13
+- All jQuery usage should be replaced with vanilla JavaScript
+- This affects event handlers, DOM manipulation, and AJAX calls
+
+**ApplicationV2 Migration**:
+- 23 of 88 applications migrated to ApplicationV2 in V13
+- All main game UI elements now use ApplicationV2
+- All canvas document configuration sheets migrated
+- Chat tab of sidebar migrated to ApplicationV2
+
+### Text Editor Changes
+
+**TinyMCE Deprecation**:
+- TinyMCE deprecation timeline moved forward from V15 to V14
+- Systems should migrate to ProseMirror editor
+- ProseMirror provides collaborative editing and auto-save features
+
+### API Changes
+
+**ESModule Migrations**:
+- Canvas and Shader classes migrated to ESModules with `foundry.<group>` namespace
+- Container classes and QuadTree class migrated
+- Pings, Interaction, MouseInteractionManager, RenderFlags, and CanvasAnimation classes migrated
+- Pixi shapes and Graphics extension classes migrated
+- Geometry classes (Ray, LimitedAnglePolygon, etc.), TextureLoader, and PreciseText classes migrated
+- CanvasLayer classes (InteractionLayer, PlaceablesLayer, ControlsLayer) migrated
+- **Old global names still work with deprecation warnings until V15**
+
+**Method Signature Changes**:
+- `Roll#render` now contains reference to containing `ChatMessage` if rendered in that context
+- `BaseGrid#measurePath` result includes Euclidean distance as `.euclidean` property
+- `CalendarData#add` method added for time calculations without database commits
+- `NumberField#toInput` no longer creates range picker if field is nullable
+- `NumberField#step` behavior changed to match HTML input step size
+- `TextureExtractor#extract` return type changed for compression mode NONE
+
+**Data Model Changes**:
+- `PlaylistSound` Data Model: initial `channel` field value now `""` instead of undefined
+- `SceneControls#controls` data structure changed from array to record of control sets and tools
+- **Breaking change for `getSceneControlButtons` hook**
+
+### DCC-Specific Breaking Change Impact
+
+**getSceneControlButtons Hook (module/dcc.js)**:
+The DCC system uses this hook to add the Fleeting Luck button:
+```javascript
+// Current V12 code that will break in V13:
+Hooks.on('getSceneControlButtons', (controls) => {
+  controls.tokens.tools.fleetingLuck = {
+    name: 'fleetingLuck',
+    title: game.i18n.localize('DCC.FleetingLuck'),
+    icon: 'fas fa-balance-scale-left',
+    onChange: (event, active) => {
+      game.dcc.FleetingLuck.show()
+    },
+    button: true,
+    active: true
+  }
+})
+```
+
+**Required Fix**: The data structure has changed from array-based to record-based. Need to update the hook handler to work with the new `SceneControl` and `SceneControlTool` types.
+
+**Chat and Roll Changes**:
+- Roll modes no longer used in `ChatMessage#_preCreate` if `options.rollMode` not set
+- `ChatMessage.applyRollMode` no longer overwrites existing whisper recipients for private/blind rolls
+
+**Database Operations**:
+- Added new `ClientDocument.createDialog` and `ClientDocument.deleteDialog` parameters
+
+**Deprecation Warnings**:
+- `GridLayer#measureDistance` now supplies more informative deprecation warning
+- Various ApplicationV2-related deprecation warnings for V1 patterns
+- ESModule classes accessible via old global names with deprecation warnings until V15
+
+### Platform Requirements
+
+**Node.js Version**:
+- V13 requires Node 20+ for those launching via NodeJS
+- Older Node versions no longer supported
+
+### New Build Options
+
+**Portable Windows Build**:
+- New portable Electron build for Windows
+- New cross-platform headless Node.js build option
+- Portable build allows USB drive deployment
+
+## 7. Testing Requirements
+
+After each migration phase:
+1. **Sheet Registration**: Verify all actor/item sheets properly register and display
+2. Test all migrated forms/dialogs open correctly
+3. Verify data persistence (form submissions save properly)
+4. Check event handlers work without jQuery
+5. **CSS Compatibility**: Ensure styles work with new CSS Layers system
+6. **Text Editor**: Test any rich text functionality with new ProseMirror editor
+7. Ensure no console errors related to deprecated APIs
+8. Test with both new and existing actors/items
+9. **Node Version**: Verify Node 20+ compatibility for headless deployments
+10. **Module Compatibility**: Test with all modules disabled (V13 default behavior)
