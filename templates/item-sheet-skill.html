@@ -8,9 +8,16 @@
   <section class="sheet-body">
     <div class="tab" data-group="item" data-tab="main">
       <div class="tab-body">
-        <div class="grid-col-span-12 grid-tpl-max-auto" style="margin-bottom: 5px;">
+        <div class="grid-col-span-8 grid-tpl-max-auto mb-5">
           <label for="name">{{localize "DCC.Name"}}</label>
           <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
+        </div>
+        <div class="grid-col-span-4">&nbsp;</div>
+
+        <div class="grid-col-span-12 grid-tpl-max-auto">
+          <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
+          <input type="text" id="system.description.summary" name="system.description.summary"
+                 value="{{system.description.summary}}" data-dtype="String"/>
         </div>
 
         <div class="dark-border grid-col-span-12">
@@ -37,6 +44,19 @@
                      {{#if system.config.useValue}}{{else}}disabled{{/if}}
                      data-dtype="Number"/>
             {{/if}}
+          </div>
+        </div>
+
+        <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+          <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+          <div class="box-inner description">
+            {{{descriptionHTML}}}
+          </div>
+        </div>
+        <div class="dark-border grid-col-span-3" style="max-height: 127px;">
+          <div class="dark-title">{{localize "DCC.Image"}}</div>
+          <div class="p-5">
+            <img src="{{item.img}}" data-edit="img" title="{{item.name}}" alt="{{item.name}}"/>
           </div>
         </div>
       </div>

@@ -895,7 +895,7 @@ a.inline-roll {
   column-gap: 5px;
   display: grid;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
-  grid-template-columns: minmax(100px, auto) 55px 60px 97px 50px;
+  grid-template-columns: 28px minmax(100px, auto) 55px 60px 97px 50px;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
   text-align: center;
