@@ -812,6 +812,15 @@ a.inline-roll {
     justify-items: center;
     margin-bottom: 5px;
   }
+
+  .skill-summary-text {
+    grid-column: 1 / -1;
+    color: #666;
+    font-size: 0.9em;
+    padding-top: 4px;
+    text-align: left !important;
+    width: 100%;
+  }
 }
 
 .dcc .skills-bg {

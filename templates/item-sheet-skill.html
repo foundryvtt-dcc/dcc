@@ -17,7 +17,7 @@
         <div class="dark-border grid-col-span-12">
           <div class="dark-title">{{localize "DCC.SkillDetails"}}</div>
           <div class="grid-tpl-max-auto grid-row-gap-8 p-5">
-            {{#if system.config.freeform}}
+            {{#if system.config.useSummary}}
               <label for="system.description.summary">{{localize "DCC.SkillSummary"}}</label>
               <input type="text" name="system.description.summary" id="system.description.summary"
                      value="{{system.description.summary}}"

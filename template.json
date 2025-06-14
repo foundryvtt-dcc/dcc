@@ -573,14 +573,14 @@
         "itemDescription"
       ],
       "config": {
-        "freeform": true,
+        "useSummary": true,
         "useAbility": true,
         "useDie": true,
         "useValue": true,
         "showLastResult": true
       },
       "ability": "",
-      "die": "d20",
+      "die": "1d20",
       "value": "",
       "lastResult": "0"
     }
