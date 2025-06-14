@@ -573,15 +573,15 @@
         "itemDescription"
       ],
       "config": {
-        "freeform": false,
-        "useAbility": false,
-        "useDie": false,
+        "freeform": true,
+        "useAbility": true,
+        "useDie": true,
         "useValue": true,
-        "showLastResult": false
+        "showLastResult": true
       },
-      "ability": "int",
-      "die": "1d20",
-      "value": "+0",
+      "ability": "",
+      "die": "d20",
+      "value": "",
       "lastResult": "0"
     }
   }

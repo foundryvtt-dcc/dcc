@@ -662,26 +662,32 @@ class DCCActor extends Actor {
           label: skillItem.name
         }
         if (skillItem.system.config.useAbility) {
-          skill.ability = skillItem.system.ability
+          skill.ability = skillItem.system.ability || null
         }
         if (skillItem.system.config.useDie) {
-          skill.die = skillItem.system.die
+          skill.die = skillItem.system.die || null
         }
         if (skillItem.system.config.useValue) {
           skill.value = skillItem.system.value ?? undefined
         }
       }
     }
-    let die = skill.die || this.system.attributes.actionDice.value || '1d20'
+    let die = (skill.die && skill.die.trim()) ? skill.die : null
+    let hasDie = !!die
 
     // Handle Override Die for special Cleric Skills
-    if (skill.useDisapprovalRange) {
-      if (this.system.class.spellCheckOverrideDie) {
-        die = this.system.class.spellCheckOverrideDie
-      }
+    if (skill.useDisapprovalRange && this.system.class.spellCheckOverrideDie) {
+      die = this.system.class.spellCheckOverrideDie
+      hasDie = true
     }
 
-    const ability = skill.ability || null
+    // If no die is specified and no override, fall back to action dice for backward compatibility with built-in skills
+    if (!hasDie && !skillItem) {
+      die = this.system.attributes.actionDice.value || '1d20'
+      hasDie = true
+    }
+
+    const ability = skill.ability && skill.ability.trim() ? skill.ability : null
     let abilityLabel = ''
     let abilityMod = 0
     if (ability) {
@@ -694,12 +700,15 @@ class DCCActor extends Actor {
     // Collate terms for the roll
     const terms = []
 
-    terms.push({
-      type: 'Die',
-      label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
-      formula: die,
-      presets: this.getActionDice({ includeUntrained: true })
-    })
+    // Only add a die term if a die is specified
+    if (hasDie) {
+      terms.push({
+        type: 'Die',
+        label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
+        formula: die,
+        presets: this.getActionDice({ includeUntrained: true })
+      })
+    }
 
     if (skill.value !== undefined) {
       let formula = skill.value.toString()
@@ -733,6 +742,24 @@ class DCCActor extends Actor {
         formula: checkPenalty,
         apply: checkPenaltyCouldApply
       })
+    }
+
+    // If no meaningful terms, just show the description without a roll
+    if (terms.length === 0) {
+      if (skillItem && skillItem.system.description.value) {
+        ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          content: `<div class="skill-description">${skillItem.system.description.value}</div>`,
+          flags: {
+            'dcc.RollType': 'SkillCheck',
+            'dcc.ItemId': skillId,
+            'dcc.SkillId': skillId,
+            'dcc.isSkillCheck': true
+          },
+          system: { skillId, skillDescription: skillItem.system.description.value }
+        })
+      }
+      return
     }
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)

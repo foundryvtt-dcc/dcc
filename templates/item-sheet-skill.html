@@ -22,21 +22,24 @@
               <input type="text" name="system.description.summary" id="system.description.summary"
                      value="{{system.description.summary}}"
                      data-dtype="String"/>
-            {{else}}
+            {{/if}}
+            {{#if system.config.useAbility}}
               <label title="{{localize 'DCC.SkillUseAbilityHint'}}">{{localize "DCC.SkillAbility"}}</label>
-              <select name="system.ability" id="system.ability" title="{{localize 'DCC.SkillUseAbilityHint'}}"
-                      {{#if system.config.useAbility}}{{else}}disabled{{/if}}>
+              <select name="system.ability" id="system.ability" title="{{localize 'DCC.SkillUseAbilityHint'}}">
+                <option value="">{{localize "DCC.None"}}</option>
                 {{selectOptions config.abilities selected=system.ability localize=true}}
               </select>
+            {{/if}}
+            {{#if system.config.useDie}}
               <label title="{{localize 'DCC.SkillDieHint'}}">{{localize "DCC.SkillDie"}}</label>
               <input type="text" name="system.die" value="{{system.die}}" title="{{localize 'DCC.SkillDieHint'}}"
-                     {{#if system.config.useDie}}{{else}}disabled{{/if}}
                      data-dtype="String"/>
+            {{/if}}
+            {{#if system.config.useValue}}
               <label>{{localize "DCC.SkillValue"}}</label>
               <input type="text" name="system.value"
-                     value="{{numberFormat system.value decimals=0 sign=true}}"
-                     {{#if system.config.useValue}}{{else}}disabled{{/if}}
-                     data-dtype="Number"/>
+                     value="{{#if system.value}}{{numberFormat system.value decimals=0 sign=true}}{{/if}}"
+                     data-dtype="String"/>
             {{/if}}
           </div>
         </div>
