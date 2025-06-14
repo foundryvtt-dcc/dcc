@@ -20,6 +20,8 @@ metadata export-ignore
 
 # Tests
 tests export-ignore
+module/__mocks__/ export-ignore
+module/__tests__/ export-ignore
 
 # Version File
 version.txt export-ignore
