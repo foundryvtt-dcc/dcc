@@ -743,13 +743,17 @@ class DCCActor extends Actor {
         apply: checkPenaltyCouldApply
       })
     }
-
+    // debug: show terms
+    console.log('terms', terms)
     // If no meaningful terms, just show the description without a roll
-    if (terms.length === 0) {
+    const hasMeaningfulTerms = terms.some(term => term.formula && term.formula.trim() !== '')
+    if (terms.length === 0 || !hasMeaningfulTerms) {
       if (skillItem && skillItem.system.description.value) {
         ChatMessage.create({
           speaker: ChatMessage.getSpeaker({ actor: this }),
           content: `<div class="skill-description">${skillItem.system.description.value}</div>`,
+          flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
+
           flags: {
             'dcc.RollType': 'SkillCheck',
             'dcc.ItemId': skillId,
