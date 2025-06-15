@@ -14,6 +14,7 @@ This document tracks all components in the DCC system that need to be upgraded f
 
 ### ❌ **REMAINING WORK** (High Priority)
 - **V13 HTML→DOM conversion** needed in 6 files ❌ **CRITICAL FOR V13**
+- **V13 API deprecations** - Document update using deprecated `data:` parameter ❌ **CRITICAL**
 - **5 FormApplication classes** still need migration to ApplicationV2
 - **Dialog → DialogV2** migration in 2 files remaining  
 - **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅
@@ -138,6 +139,20 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 - `html.attr('data-id', value)` → `html.setAttribute('data-id', value)`
 
 **🚨 FormApplication Files**: When converting FormApplication classes to ApplicationV2, any commented-out jQuery code in `activateListeners()` should be **preserved** as it shows the V12 event handlers that need to become V2 actions.
+
+## 3. V13 API Deprecations Found in DCC Codebase ❌
+
+### **module/item-sheet.js:234** ❌ **CRITICAL - BREAKS IN V13**
+- **Issue**: Using deprecated `data:` parameter for document updates
+- **Current Code**: `this.object.update({ data: { results } })`
+- **V13 Replacement**: `this.object.update({ system: { results } })`
+- **Impact**: Will cause errors when updating item system data in V13
+
+### **module/actor-sheet.js** ❌ **REVIEW NEEDED**
+- **Issue**: Multiple drag/drop data structures using `data:` property
+- **Lines**: 561, 573, 584, 592, 602, 617, 627, 637, 655, 666, 676, 693, 706, 716, 730, 747, 759, 767
+- **Current Pattern**: `dragData = { type: 'Ability', actorId: this.actor.id, data: { abilityId, rollUnder } }`
+- **Status**: Custom DCC system drag data - may not be affected by V13 changes but should be reviewed for consistency
 
 ### Common jQuery Patterns to Replace:
 - `$(selector)` → `document.querySelector(selector)` or `document.querySelectorAll(selector)`

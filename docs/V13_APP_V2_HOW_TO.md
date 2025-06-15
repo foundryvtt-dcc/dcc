@@ -28,6 +28,96 @@ html.innerHTML = '<p>Content</p>'
 html.classList.add('active')
 ```
 
+## V13 API Deprecations and Breaking Changes
+
+### Document Update API Changes ❌ **CRITICAL**
+
+**V12 Pattern (BREAKS in V13):**
+```javascript
+// Using 'data:' parameter for system data updates
+this.object.update({
+  data: { results }
+})
+```
+
+**V13 Pattern (REQUIRED):**
+```javascript
+// Use 'system:' parameter instead of 'data:'
+this.object.update({
+  system: { results }
+})
+```
+
+### Package API Changes
+
+Several Package properties have been renamed in V13:
+
+**Deprecated → Replacement:**
+- `Package#name` → `Package#id`
+- `Package#minimumCoreVersion` → `Package#compatibility.minimum`
+- `Package#dependencies` → `Package#relationships.requires`
+- `Package#system` → `Package#relationships.systems`
+- `Package#media.link` → `Package#media.url`
+- `Package#packs.entity` → `Package#packs.type`
+- `Package#packs.private` → `Package#packs.ownership`
+
+### Document and DataModel Changes
+
+**Document System Data Access:**
+```javascript
+// V12 (deprecated)
+const systemData = document.data.system
+Document.hasSystemData
+
+// V13 (correct)
+const systemData = document.system
+Document.hasTypeData
+```
+
+**DataModel Validation:**
+```javascript
+// V12 (deprecated)
+ModelValidationError
+DataModel#_validateModel()
+
+// V13 (correct)
+DataModelValidationError
+DataModel.validateJoint() // now static
+```
+
+**System Data Model Configuration:**
+```javascript
+// V13 uses new configuration structure
+CONFIG.Actor.dataModels = {
+  character: MyCharacterModel,
+  npc: MyNPCModel
+}
+```
+
+### UUID Resolution Changes
+
+**V12 Pattern (deprecated):**
+```javascript
+const doc = await fromUuid(uuid, relative)
+```
+
+**V13 Pattern (required):**
+```javascript
+const doc = await fromUuid(uuid, {relative})
+```
+
+### Worker Manager Changes
+
+**V12 (deprecated):**
+```javascript
+WorkerManager#getWorker()
+```
+
+**V13 (correct):**
+```javascript
+WorkerManager#get()
+```
+
 ## 1. Change Class Inheritance
 
 ### For Actor Sheets
