@@ -900,23 +900,23 @@ test('computeSavingThrows calculates correct values', () => {
 
 test('computeSavingThrows handles zero overrides correctly', () => {
   actor.system.config.computeSavingThrows = true
-  
+
   // Test that zero overrides are applied correctly (not ignored)
   actor.system.saves.ref.override = '0'
   actor.system.saves.frt.override = 0
   actor.system.saves.wil.override = '0'
   actor.computeSavingThrows()
-  
+
   expect(actor.system.saves.ref.value).toEqual('+0') // Should use override value of 0
   expect(actor.system.saves.frt.value).toEqual('+0') // Should use override value of 0
   expect(actor.system.saves.wil.value).toEqual('+0') // Should use override value of 0
-  
+
   // Test that empty/null/undefined overrides are ignored
   actor.system.saves.ref.override = ''
   actor.system.saves.frt.override = null
   actor.system.saves.wil.override = undefined
   actor.computeSavingThrows()
-  
+
   expect(actor.system.saves.ref.value).toEqual('-1') // Should use calculated value (agl -1)
   expect(actor.system.saves.frt.value).toEqual('+0') // Should use calculated value (sta 0)
   expect(actor.system.saves.wil.value).toEqual('+2') // Should use calculated value (per 2)
