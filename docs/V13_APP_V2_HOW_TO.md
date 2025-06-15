@@ -151,6 +151,20 @@ class MyDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
 **Important**: Dialogs and forms MUST include `tag: 'form'` in DEFAULT_OPTIONS to function properly.
 
+**⚠️ CRITICAL for Forms**: When using `tag: 'form'`, the template file should NOT contain a `<form>` element. ApplicationV2 wraps the entire content in the specified tag. Use `<section>` or `<div>` as the root element in your template instead:
+
+```html
+<!-- WRONG: Nested forms are invalid HTML -->
+<form class="config-dialog">
+  <!-- content -->
+</form>
+
+<!-- CORRECT: Use section or div -->
+<section class="config-dialog">
+  <!-- content -->
+</section>
+```
+
 ### V1 Pattern (Old):
 ```javascript
 static get defaultOptions () {
@@ -331,7 +345,197 @@ export default class DCCActorConfig extends HandlebarsApplicationMixin(Applicati
 }
 ```
 
-## 6. Additional V2 Concepts
+## 6. Real-World Example: DCCActorConfig Conversion
+
+Here's a complete, working example of converting `actor-config.js` from V1 to V2:
+
+### Before (V1 - FormApplication):
+```javascript
+/* global FormApplication, game, CONFIG */
+
+class DCCActorConfig extends FormApplication {
+  static get defaultOptions () {
+    const options = super.defaultOptions
+    options.template = 'systems/dcc/templates/dialog-actor-config.html'
+    options.width = 380
+    return options
+  }
+
+  get title () {
+    return `${this.object.name}: ${game.i18n.localize('DCC.SheetConfig')}`
+  }
+
+  getData (options = {}) {
+    const data = this.object
+    data.isNPC = (this.object.type === 'NPC')
+    data.isPC = (this.object.type === 'Player')
+    data.isZero = (this.object.system.details.level.value === 0)
+    data.user = game.user
+    data.config = CONFIG.DCC
+    return data
+  }
+
+  async _updateObject (event, formData) {
+    event.preventDefault()
+    await this.object.update(formData)
+    await this.object.sheet.render(true)
+  }
+}
+```
+
+### After (V2 - ApplicationV2):
+```javascript
+/* global game, CONFIG, foundry */
+
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
+class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'actor-config', 'themed', 'theme-light'],
+    tag: 'form',
+    position: {
+      width: 380,
+      height: 'auto'
+    },
+    window: {
+      title: 'DCC.SheetConfig',
+      resizable: false
+    },
+    form: {
+      handler: DCCActorConfig.#onSubmitForm,
+      submitOnChange: false,
+      closeOnSubmit: true
+    }
+  }
+
+  /** @inheritDoc */
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-actor-config.html'
+    }
+  }
+
+  /**
+   * Get the document being configured
+   * @type {Actor}
+   */
+  get document () {
+    return this.options.document
+  }
+
+  get title () {
+    return `${this.document.name}: ${game.i18n.localize('DCC.SheetConfig')}`
+  }
+
+  async _prepareContext (options = {}) {
+    const context = await super._prepareContext(options)
+    const actor = this.document
+    
+    context.isNPC = (actor.type === 'NPC')
+    context.isPC = (actor.type === 'Player')
+    context.isZero = (actor.system.details.level.value === 0)
+    context.user = game.user
+    context.config = CONFIG.DCC
+    context.system = actor.system
+    context.actor = actor
+    
+    return context
+  }
+
+  /**
+   * Handle form submission
+   * @this {DCCActorConfig}
+   * @param {SubmitEvent} event - The form submission event
+   * @param {HTMLFormElement} form - The form element
+   * @param {FormDataExtended} formData - The processed form data
+   * @private
+   */
+  static async #onSubmitForm (event, form, formData) {
+    event.preventDefault()
+    await this.document.update(formData.object)
+    await this.document.sheet.render(true)
+  }
+}
+```
+
+### Key Changes Made:
+1. **Import Structure**: Added `const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api`
+2. **Base Class**: Changed from `FormApplication` to `HandlebarsApplicationMixin(ApplicationV2)`
+3. **DEFAULT_OPTIONS**: Converted `defaultOptions` getter to static property with proper structure
+4. **PARTS**: Added static PARTS for template handling
+5. **Context Method**: Renamed `getData` to `_prepareContext` with async signature
+6. **Document Reference**: Added `get document()` getter that returns `this.options.document`
+7. **Form Configuration**: Added `tag: 'form'` and form options with handler method
+8. **Form Submission**: Replaced `_updateObject` with static `#onSubmitForm` handler
+
+### Instantiation Change:
+```javascript
+// V1 Pattern (Old):
+new DCCActorConfig(this.actor, {
+  top: this.position.top + 40,
+  left: this.position.left + (this.position.width - 400) / 2
+}).render(true)
+
+// V2 Pattern (New):
+new DCCActorConfig({
+  document: this.actor,
+  position: {
+    top: this.position.top + 40,
+    left: this.position.left + (this.position.width - 400) / 2
+  }
+}).render(true)
+```
+
+**Critical**: In ApplicationV2, all parameters including the document are passed in the options object, not as separate parameters.
+
+This example shows a minimal but complete V2 conversion that preserves all original functionality while upgrading to the new V13 API structure.
+
+## 7. Form Submission in ApplicationV2
+
+ApplicationV2 handles form submission differently than FormApplication. There are two main patterns:
+
+### Pattern 1: Static Form Handler (Recommended)
+```javascript
+static DEFAULT_OPTIONS = {
+  tag: 'form',
+  form: {
+    handler: MyClass.#onSubmitForm,  // Static method reference
+    closeOnSubmit: true,             // Auto-close on successful submit
+    submitOnChange: false            // Don't auto-submit on changes
+  }
+}
+
+/**
+ * Handle form submission
+ * @this {MyClass}
+ * @param {SubmitEvent} event - The form submission event
+ * @param {HTMLFormElement} form - The form element
+ * @param {FormDataExtended} formData - The processed form data
+ */
+static async #onSubmitForm(event, form, formData) {
+  event.preventDefault()
+  // Note: formData.object contains the flattened form data
+  await this.document.update(formData.object)
+}
+```
+
+### Pattern 2: Instance Method (Legacy Support)
+```javascript
+// This pattern still works but is less preferred
+async _updateObject(event, formData) {
+  event.preventDefault()
+  await this.document.update(formData)
+}
+```
+
+### Important Notes:
+- When using static handler, form data is in `formData.object`
+- When using `_updateObject`, form data is directly in `formData`
+- Always prevent default form submission with `event.preventDefault()`
+- Use `closeOnSubmit: true` to auto-close dialogs after saving
+
+## 8. Additional V2 Concepts
 
 ### Templates (PARTS)
 V2 uses a PARTS system for templates:

@@ -782,9 +782,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #configureActor (event) {
     event.preventDefault()
-    new DCCActorConfig(this.actor, {
-      top: this.position.top + 40,
-      left: this.position.left + (this.position.width - 400) / 2
+    new DCCActorConfig({
+      document: this.actor,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + (this.position.width - 400) / 2
+      }
     }).render(true)
   }
 

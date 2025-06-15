@@ -2,7 +2,7 @@
 
 This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
 
-## Current Migration Status: ~70% Complete ✅
+## Current Migration Status: ~75% Complete ✅
 
 **Last Updated**: December 2024
 
@@ -15,7 +15,7 @@ This document tracks all components in the DCC system that need to be upgraded f
 ### ❌ **REMAINING WORK** (High Priority)
 - **V13 HTML→DOM conversion** needed in 6 files ❌ **CRITICAL FOR V13**
 - **V13 API deprecations** - Document update using deprecated `data:` parameter ❌ **CRITICAL**
-- **5 FormApplication classes** still need migration to ApplicationV2
+- **4 FormApplication classes** still need migration to ApplicationV2
 - **Dialog → DialogV2** migration in 2 files remaining  
 - **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅
 
@@ -23,10 +23,10 @@ This document tracks all components in the DCC system that need to be upgraded f
 
 The following files extend `FormApplication` and need to be migrated to `ApplicationV2`:
 
-### High Priority - Core Functionality ❌ **PENDING**
-1. **`module/actor-config.js`** ❌
-   - Class: `DCCActorConfig extends FormApplication`
-   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+### High Priority - Core Functionality
+1. **`module/actor-config.js`** ✅ **COMPLETED**
+   - Class: `DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2)`
+   - V2 Patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, `_updateObject()`
    - Purpose: Actor configuration dialog
 
 2. **`module/item-config.js`** ❌
