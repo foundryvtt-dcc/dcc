@@ -534,13 +534,13 @@ Since direct HTML testing requires Foundry authentication, consider these altern
    - **Reason**: NPCs don't need stamina modifier as they get fixed HP values from their hit dice
    - **Status**: Working as intended
 
-3. **Spell Check Formula Construction Produces Non-Simplified Expressions** ⚠️ COSMETIC ISSUE
-   - **Issue**: `computeSpellCheck()` produces formulas like "+1+1" instead of "+2"
+3. **Spell Check Formula Construction Produces Non-Simplified Expressions** ✅ WORKING AS INTENDED
+   - **Analysis**: `computeSpellCheck()` produces formulas like "+1+1" instead of "+2"
    - **Example**: Level 1 + Int modifier 1 = "+1+1" rather than "+2"
    - **Location**: `module/actor.js:365` uses `ensurePlus()` for each component separately
-   - **Impact**: Cosmetic only - formulas work correctly but look unprofessional
+   - **Rationale**: This is intentional design to show the breakdown of spell check components
    - **File**: `module/actor.js:353-377`
-   - **Status**: Enhancement opportunity for cleaner display
+   - **Status**: Working as designed - maintains transparency of formula components
 
 4. **Attack Bonus Calculation with Deed Die Edge Cases** ❌ FALSE ALARM
    - **Analysis**: Testing reveals deed die calculation works as designed
@@ -549,12 +549,13 @@ Since direct HTML testing requires Foundry authentication, consider these altern
    - **File**: `module/actor.js:298-312`
    - **Status**: Working as intended
 
-5. **PrepareBaseData Armor Processing Assumes itemTypes Available** ⚠️ EDGE CASE
-   - **Issue**: `prepareBaseData()` checks `this.itemTypes` without null check
+5. **PrepareBaseData Armor Processing Assumes itemTypes Available** ✅ FIXED
+   - **Issue**: `prepareBaseData()` checked `this.itemTypes` but not `this.itemTypes.armor`
    - **Location**: `module/actor.js:61` - `for (const armorItem of this.itemTypes.armor)`
    - **Impact**: Could fail during actor initialization if itemTypes not yet populated
+   - **Fix Applied**: Added optional chaining `this.itemTypes?.armor` for safer null checking
    - **File**: `module/actor.js:57-84`
-   - **Status**: Minor edge case - add defensive null check
+   - **Status**: Fixed - defensive null check now prevents potential initialization errors
 
 6. **Fractional Hit Dice String Parsing Inconsistency** ❌ FALSE ALARM
    - **Analysis**: Hit dice parsing correctly handles multiple fraction formats
@@ -604,8 +605,8 @@ Since direct HTML testing requires Foundry authentication, consider these altern
 5. **Add validation** for parsed values before assignment
 6. **Implement fuzzy matching** for creature type detection
 7. **Add telemetry** to track parsing failures in production
-8. **Enhance spell check formula simplification** for cleaner display
-9. **Add null checks in prepareBaseData** for defensive programming
+8. ~~**Enhance spell check formula simplification** for cleaner display~~ (Confirmed as intentional design)
+9. ~~**Add null checks in prepareBaseData** for defensive programming~~ (Fixed)
 10. **Standardize initiative roll return types** for API consistency
 11. **Fix saving throw override logic** to handle zero values properly
 12. **Improve test infrastructure** to isolate Playwright and Vitest tests

@@ -58,7 +58,7 @@ class DCCActor extends Actor {
     let fumbleDieRank = 0
     let fumbleDie = '1d4'
     let checkPenalty = 0
-    if (this.itemTypes) {
+    if (this.itemTypes?.armor) {
       for (const armorItem of this.itemTypes.armor) {
         if (armorItem.system.equipped) {
           try {
