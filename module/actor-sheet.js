@@ -552,16 +552,14 @@ class DCCActorSheet extends ActorSheet {
               rollUnder
             }
           }
-        }
-        else if (classes.contains('save-label')) {
+        } else if (classes.contains('save-label')) {
           const saveId = this._findDataset(event.currentTarget, 'save')
           dragData = {
             type: 'Save',
             actorId,
             data: saveId
           }
-        }
-        else if (classes.contains('weapon')) {
+        } else if (classes.contains('weapon')) {
           const itemId = this._findDataset(event.currentTarget, 'itemId')
           const weapon = partyActor.items.get(itemId)
           dragData = Object.assign(

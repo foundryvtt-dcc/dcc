@@ -1,11 +1,11 @@
-/* global $, ActorSheet, CONFIG, Dialog, game, foundry */
+/* global $, CONFIG, Dialog, game, foundry, TextEditor */
 
 import DCCActorSheet from './actor-sheet.js'
 import EntityImages from './entity-images.js'
 
 /**
  * Extend the basic ActorSheet to represent a party
- * @extends {ActorSheet}
+ * @extends {DCCActorSheet}
  */
 class DCCPartySheet extends DCCActorSheet {
   /** @override */
@@ -20,8 +20,7 @@ class DCCPartySheet extends DCCActorSheet {
       ],
       template: 'systems/dcc/templates/actor-sheet-party.html'
     }
-    const finalOptions = foundry.utils.mergeObject(super.defaultOptions, options)
-    return finalOptions
+    return foundry.utils.mergeObject(super.defaultOptions, options)
   }
 
   /** @inheritdoc */
@@ -35,7 +34,7 @@ class DCCPartySheet extends DCCActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  async getData () {
+  async getData (options) {
     // Basic data
     const isOwner = this.document.isOwner
     const data = {
@@ -164,7 +163,7 @@ class DCCPartySheet extends DCCActorSheet {
    * @param {string} actorId   Uuid of the actor to add
    * @return {undefined}
    */
-  async _validateMember(actorId) {
+  async _validateMember (actorId) {
     const actorRef = foundry.utils.parseUuid(actorId)
     const actor = await game.actors.get(actorRef.id)
 
@@ -172,9 +171,9 @@ class DCCPartySheet extends DCCActorSheet {
     if (!actor) { return false }
 
     // Cannot add a Party Sheet to a Party
-    if (actor.type === 'Party') { return false }
+    return actor.type !== 'Party';
 
-    return true
+
   }
 
   /**

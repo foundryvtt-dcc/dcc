@@ -17,7 +17,7 @@ class SpellResult {
     messageOptions = {},
     crit = false,
     fumble = false,
-    itemId = undefined
+    item = undefined
   } = {}) {
     messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
