@@ -204,7 +204,7 @@ test('smultist', async () => {
     'attributes.hp.value': '21',
     'attributes.hp.max': '21',
     'attributes.speed.value': '20’',
-    'attributes.special.value': '3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges', // @TODO: Is it worth finding a way to ignore colons inside brackets?
+    'attributes.special.value': '3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges; see stats below)', // Fixed: No longer truncated at semicolon
     'config.actionDice': '1d20',
     'saves.frt.value': '+3',
     'saves.ref.value': '+4',

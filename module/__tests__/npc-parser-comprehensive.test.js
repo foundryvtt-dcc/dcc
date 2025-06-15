@@ -160,10 +160,9 @@ describe('NPC Parser Comprehensive Tests', () => {
 
       it('should handle complex movement descriptions', async () => {
         const result = await parseNPCs('Test: Init +0; AC 10; HP 5; MV 25\' or climb 25\' or burrow 10\'; Act 1d20; SV Fort +0, Ref +0, Will +0; AL N.')
-        // Parser splits on first 'or' and puts everything after first 'or' in the 'other' field
-        // So '25' or climb 25' or burrow 10'' becomes: value='25' or climb 25'' and other='burrow 10''
-        expect(result[0]['attributes.speed.value']).toBe('25\' or climb 25\'')
-        expect(result[0]['attributes.speed.other']).toBe('burrow 10\'')
+        // Fixed: Parser now correctly handles all movement modes
+        expect(result[0]['attributes.speed.value']).toBe('25\'')
+        expect(result[0]['attributes.speed.other']).toBe('climb 25\' or burrow 10\'')
       })
     })
 
@@ -175,7 +174,7 @@ describe('NPC Parser Comprehensive Tests', () => {
 
       it('should handle complex special abilities with semicolons', async () => {
         const result = await parseNPCs('Test: Init +0; AC 10; HP 5; MV 30\'; Act 1d20; SP poison (DC 15 Fort save or die; half damage on success); SV Fort +0, Ref +0, Will +0; AL N.')
-        expect(result[0]['attributes.special.value']).toBe('poison (DC 15 Fort save or die')
+        expect(result[0]['attributes.special.value']).toBe('poison (DC 15 Fort save or die; half damage on success)')
       })
 
       it('should handle missing special abilities', async () => {

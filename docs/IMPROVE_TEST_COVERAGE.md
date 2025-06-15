@@ -419,31 +419,34 @@ Since direct HTML testing requires Foundry authentication, consider these altern
 
 ### NPC Parser Issues
 
-1. **Movement Speed Parsing Limitation**
-   - **Issue**: Parser only handles two movement modes properly (splits on first "or")
+1. **Movement Speed Parsing Limitation** ✅ FIXED
+   - **Issue**: Parser only handled two movement modes properly (split on first "or")
    - **Example**: `MV 25' or climb 25' or burrow 10'` incorrectly parsed as:
      - `speed.value`: `25' or climb 25'` 
      - `speed.other`: `burrow 10'`
-   - **Expected**: Should parse all three movement modes separately
-   - **File**: `module/npc-parser.js:137-140`
+   - **Fix Applied**: Now correctly splits all movement modes:
+     - `speed.value`: `25'`
+     - `speed.other`: `climb 25' or burrow 10'`
+   - **File**: `module/npc-parser.js:137-144`
 
-2. **Hit Dice Parsing Bug for Giants**
-   - **Issue**: HD count extraction uses `parseInt` on full regex match instead of capture group
-   - **Example**: `HD 12d8` results in `hdCount = 0` instead of `12`
-   - **Impact**: Incorrect critical hit table assignment for giants
-   - **File**: `module/npc-parser.js:100`
-   - **Fix**: Change `parseInt(hd.match(/(\\d*)d/)[0] || 1)` to `parseInt(hd.match(/(\\d*)d/)[1] || 1)`
+2. **Hit Dice Parsing Bug for Giants** ❌ FALSE ALARM
+   - **Reported Issue**: HD count extraction uses `parseInt` on full regex match instead of capture group
+   - **Analysis**: This is NOT actually a bug - `parseInt('12d')` correctly returns `12`
+   - **Reason**: JavaScript's `parseInt` stops at first non-numeric character, so both `[0]` and `[1]` work
+   - **Status**: No fix needed - current implementation is correct
 
-3. **Special Ability Parsing Truncation**
-   - **Issue**: Special abilities containing semicolons are truncated at the semicolon
-   - **Example**: `SP poison (DC 15 Fort save or die; half damage on success)` becomes `poison (DC 15 Fort save or die`
-   - **Impact**: Loss of important ability information
-   - **File**: `module/npc-parser.js:73`
+3. **Special Ability Parsing Truncation** ✅ FIXED
+   - **Issue**: Special abilities containing semicolons were truncated at the semicolon
+   - **Example**: `SP poison (DC 15 Fort save or die; half damage on success)` became `poison (DC 15 Fort save or die`
+   - **Fix Applied**: Now correctly captures complete special abilities including semicolons within parentheses
+   - **Result**: `SP poison (DC 15 Fort save or die; half damage on success)` → `poison (DC 15 Fort save or die; half damage on success)`
+   - **File**: `module/npc-parser.js:73-75`
 
-4. **Alignment Field Semicolon Handling**
-   - **Issue**: Alignment parsing splits on semicolon but only in some cases
-   - **Example**: Inconsistent handling between different stat block formats
-   - **File**: `module/npc-parser.js:78-80`
+4. **Alignment Field Semicolon Handling** ❌ FALSE ALARM
+   - **Reported Issue**: Alignment parsing splits on semicolon but only in some cases
+   - **Analysis**: This is NOT a bug - it's defensive code that intentionally handles semicolons
+   - **Code**: Lines 78-80 specifically check for and handle semicolons by taking the first part
+   - **Status**: No fix needed - current implementation is correct
 
 ### PC Parser Issues
 

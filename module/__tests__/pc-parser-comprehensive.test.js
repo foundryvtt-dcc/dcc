@@ -33,7 +33,7 @@ describe('PC Parser Comprehensive Tests', () => {
       it('should handle string and numeric ability scores', async () => {
         const stringScores = parsePCs('{"strengthScore": "18", "agilityScore": "12"}')
         const numericScores = parsePCs('{"strengthScore": 18, "agilityScore": 12}')
-        
+
         expect(stringScores[0]['abilities.str.value']).toBe('18')
         expect(stringScores[0]['abilities.agl.value']).toBe('12')
         expect(numericScores[0]['abilities.str.value']).toBe(18)
@@ -136,7 +136,7 @@ describe('PC Parser Comprehensive Tests', () => {
           "actionDice": "1d20+1d16",
           "attackBonus": "d6+2"
         }`)
-        
+
         expect(result[0]['details.alignment']).toBe('c')
         expect(result[0]['class.className']).toBe('Wizard')
         expect(result[0]['details.level.value']).toBe('5')
@@ -165,7 +165,7 @@ describe('PC Parser Comprehensive Tests', () => {
         Strength: 10 (0)
         AC: 10; HP: 5
         Speed: 30; Init: 0; Ref: 0; Fort: 0; Will: 0`
-        
+
         const result = parsePCs(text)
         expect(result[0]['details.occupation.value']).toBe('Farmer')
         expect(result[0].items.filter(item => item.type === 'weapon')).toHaveLength(0)
@@ -176,7 +176,7 @@ describe('PC Parser Comprehensive Tests', () => {
         Strength: (invalid)
         Agility: 15 (+1)
         AC: 10; HP: 5`
-        
+
         const result = parsePCs(text)
         expect(result[0]['abilities.str.value']).toBeNull()
         expect(result[0]['abilities.agl.value']).toBe('15')
@@ -186,7 +186,7 @@ describe('PC Parser Comprehensive Tests', () => {
         const text = `0-level Occupation: Minimalist
         Strength: 10 (0)
         AC: 10; HP: 5`
-        
+
         const result = parsePCs(text)
         expect(result[0]['details.occupation.value']).toBe('Minimalist')
         expect(result[0]['attributes.ac.value']).toBe('10')
@@ -198,7 +198,7 @@ describe('PC Parser Comprehensive Tests', () => {
         const text = `0-level Occupation: Fighter
         Weapon: Sword +2 (dmg 1d8+2 plus fire)
         AC: 10; HP: 5`
-        
+
         const result = parsePCs(text)
         const weapon = result[0].items.find(item => item.type === 'weapon')
         expect(weapon.name).toBe('Sword')
@@ -212,7 +212,7 @@ describe('PC Parser Comprehensive Tests', () => {
         const text = `Chaotic Wizard (3rd level)
         Occupation: Former farmer
         Strength: 12 (+1)`
-        
+
         const result = parsePCs(text)
         expect(result[0]['details.alignment']).toBe('c')
         expect(result[0]['class.className']).toBe('Wizard')
@@ -224,7 +224,7 @@ describe('PC Parser Comprehensive Tests', () => {
         const text = `Lawful Warrior (2nd level)
         AC: (15)* (Chainmail & Shield (+6) Check penalty (-5) Fumble die (d12))
         HP: 20`
-        
+
         const result = parsePCs(text)
         expect(result[0]['attributes.ac.value']).toBe('15')
         expect(result[0]['details.armorData']).toBe('Chainmail & Shield (+6) Check penalty (-5) Fumble die (d12)')
@@ -238,7 +238,7 @@ describe('PC Parser Comprehensive Tests', () => {
         3) Fireball
         4) Polymorph
         5) Teleport`
-        
+
         const result = parsePCs(text)
         expect(result[0]['class.spellCheck']).toBe('+10')
         const spells = result[0].items.filter(item => item.type === 'spell')
@@ -256,7 +256,7 @@ describe('PC Parser Comprehensive Tests', () => {
         Sneak Silently: 15 (+2)
         Pick Lock: 12 (+1)
         Cast Spell From Scroll (d12)`
-        
+
         const result = parsePCs(text)
         expect(result[0]['class.backstab']).toBe('3')
         expect(result[0]['skills.sneakSilently.value']).toBe('15')
@@ -269,7 +269,7 @@ describe('PC Parser Comprehensive Tests', () => {
         Occupation Weapon: Club melee +5 (dmg 1d4+2+deed)
         Main Weapon: Sword melee +6 (dmg 1d8+3+deed)
         Secondary Weapon: Bow ranged +3 (dmg 1d6+deed)`
-        
+
         const result = parsePCs(text)
         const weapons = result[0].items.filter(item => item.type === 'weapon')
         expect(weapons).toHaveLength(3)
@@ -290,7 +290,7 @@ describe('PC Parser Comprehensive Tests', () => {
         0-level Occupation: Blacksmith  
         Strength: 15 (+1)
         AC: 11; HP: 6`
-        
+
         const result = parsePCs(text)
         expect(result).toHaveLength(2)
         expect(result[0]['details.occupation.value']).toBe('Farmer')
@@ -308,7 +308,7 @@ describe('PC Parser Comprehensive Tests', () => {
         Occupation: Former peasant  
         Strength: 12 (+1)
         HP: 8`
-        
+
         const result = parsePCs(text)
         expect(result).toHaveLength(2)
         expect(result[0]['details.occupation.value']).toBe('Peasant')
@@ -336,7 +336,7 @@ describe('PC Parser Comprehensive Tests', () => {
     it('should handle incomplete weapon parsing', async () => {
       const text = `0-level Occupation: Fighter
       Weapon: Broken (dmg`
-      
+
       const result = parsePCs(text)
       expect(result[0].items.filter(item => item.type === 'weapon')).toHaveLength(0)
     })
@@ -377,7 +377,7 @@ describe('PC Parser Comprehensive Tests', () => {
       Random text in between
       Chaotic Wizard (2nd level)
       More random text`
-      
+
       const result = parsePCs(text)
       expect(result).toHaveLength(2)
       expect(result[0]['details.occupation.value']).toBe('Incomplete')
@@ -401,7 +401,7 @@ describe('PC Parser Comprehensive Tests', () => {
         "equipment3": "Rations (1 day)",
         "tradeGood": "Fine pottery"
       }`)
-      
+
       const equipment = result[0].items.filter(item => item.type === 'equipment')
       expect(equipment).toHaveLength(4)
       expect(equipment.map(e => e.name)).toContain('Rope (50 ft)')
@@ -413,7 +413,7 @@ describe('PC Parser Comprehensive Tests', () => {
       Spells: (Spell Check: d20)
       1) Light
       2) Invisibility`
-      
+
       const result = parsePCs(text)
       expect(result[0]['class.spellCheck']).toBe('')
       const spells = result[0].items.filter(item => item.type === 'spell')
@@ -428,7 +428,7 @@ describe('PC Parser Comprehensive Tests', () => {
     it('should handle weapon damage with deed replacement', async () => {
       const text = `Lawful Warrior (3rd level)
       Occupation Weapon: Sword melee +5 (dmg 1d8+3+deed)`
-      
+
       const result = parsePCs(text)
       const weapon = result[0].items.find(item => item.type === 'weapon')
       expect(weapon.system.damage).toBe('1d8+3+@ab')
@@ -439,7 +439,7 @@ describe('PC Parser Comprehensive Tests', () => {
       Thief Skills:
       Sneak Silently: 10 (+1)
       Hide In Shadows: 8 (0)`
-      
+
       const result = parsePCs(text)
       expect(result[0]['skills.sneakAndHide.value']).toBe('10')
       expect(result[0]['skills.sneakSilently.value']).toBe('10')
@@ -478,17 +478,17 @@ describe('PC Parser Comprehensive Tests', () => {
     it('should determine melee vs ranged correctly', async () => {
       const meleeText = `0-level Occupation: Fighter
       Weapon: Club melee +1 (dmg 1d4+1)`
-      
+
       const rangedText = `0-level Occupation: Hunter  
       Weapon: Bow ranged +2 (dmg 1d6)`
-      
+
       const unknownText = `0-level Occupation: Peasant
       Weapon: Rock +0 (dmg 1d3)`
-      
+
       const meleeResult = parsePCs(meleeText)
       const rangedResult = parsePCs(rangedText)
       const unknownResult = parsePCs(unknownText)
-      
+
       expect(meleeResult[0].items[0].system.melee).toBe(true)
       expect(rangedResult[0].items[0].system.melee).toBe(false)
       expect(unknownResult[0].items[0].system.melee).toBe(true) // Default
@@ -507,7 +507,7 @@ describe('PC Parser Comprehensive Tests', () => {
       Occupation Weapon: Dagger melee +2 (dmg 1d4+1)
       Main Weapon:
       Secondary Weapon:`
-      
+
       const result = parsePCs(text)
       const weapons = result[0].items.filter(item => item.type === 'weapon')
       expect(weapons).toHaveLength(1)
