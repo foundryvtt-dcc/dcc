@@ -68,7 +68,7 @@ This plan outlines a comprehensive strategy to improve test coverage for the Dun
 - **Test Type**: Unit tests
 - **Status**: Implemented comprehensive test suite with 44 test cases covering all utility functions
 
-#### 1.3 DCC Roll System Core
+#### 1.3 DCC Roll System Core ✅ COMPLETE
 - **File**: `module/dcc-roll.js`
 - **Test Coverage**:
   - Roll formula parsing and cleaning
@@ -76,6 +76,7 @@ This plan outlines a comprehensive strategy to improve test coverage for the Dun
   - Roll creation with various options
   - Error handling for malformed formulas
 - **Test Type**: Unit tests with enhanced mocks
+- **Status**: Implemented comprehensive test suite with 38 test cases covering all core functionality
 
 ### Phase 2: Parser Enhancement (Priority: HIGH)
 *Target: 2-3 weeks*
