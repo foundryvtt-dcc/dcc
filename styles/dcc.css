@@ -407,7 +407,8 @@
   margin-top: 0;
   font-weight: 550;
 }
-.journal-entry .journal-entry-page table td p, .journal-entry .journal-entry-page table th p {
+.journal-entry .journal-entry-page table td p,
+.journal-entry .journal-entry-page table th p {
   padding: 5px;
   margin-bottom: 0;
 }
@@ -1271,13 +1272,15 @@ form.dcc-roll-modifier input.stat {
   text-align: left;
   padding-top: 2px;
 }
-.dcc .character .combat-basics input, .dcc .character .combat-basics select {
+.dcc .character .combat-basics input,
+.dcc .character .combat-basics select {
   font-size: 14px;
   height: 17px;
   vertical-align: middle;
   margin-right: 8px;
 }
-.dcc .character .languages, .dcc .character .lucky-roll {
+.dcc .character .languages,
+.dcc .character .lucky-roll {
   border: var(--dark-border);
   border-top: 0;
   display: grid;
@@ -1288,7 +1291,8 @@ form.dcc-roll-modifier input.stat {
   height: 59px;
   text-align: left;
 }
-.dcc .character .languages label, .dcc .character .lucky-roll label {
+.dcc .character .languages label,
+.dcc .character .lucky-roll label {
   text-align: left;
   padding-left: 3px;
 }

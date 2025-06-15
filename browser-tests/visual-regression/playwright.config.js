@@ -1,5 +1,5 @@
 // @ts-check
-const { defineConfig, devices } = require('@playwright/test');
+const { defineConfig, devices } = require('@playwright/test')
 
 module.exports = defineConfig({
   testDir: './',
@@ -10,25 +10,25 @@ module.exports = defineConfig({
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:30000',
-    trace: 'on-first-retry',
+    trace: 'on-first-retry'
   },
   expect: {
     toHaveScreenshot: {
       mode: 'only-changed',
-      threshold: 0.2,
-    },
+      threshold: 0.2
+    }
   },
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
       testDir: './',
-      snapshotDir: './baseline/screenshots',
-    },
+      snapshotDir: './baseline/screenshots'
+    }
   ],
   webServer: {
     command: 'npm run start-foundry',
     port: 30000,
-    reuseExistingServer: !process.env.CI,
-  },
-});
+    reuseExistingServer: !process.env.CI
+  }
+})

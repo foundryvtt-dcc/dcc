@@ -204,7 +204,7 @@ test('smultist', async () => {
     'attributes.hp.value': '21',
     'attributes.hp.max': '21',
     'attributes.speed.value': '20’',
-    'attributes.special.value': '3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges', // @TODO: Is it worth finding a way to ignore colons inside brackets?
+    'attributes.special.value': '3d6 control check, able to cast arms of the angel, squid-mass (when killed, an squid-mass emerges; see stats below)', // Fixed: No longer truncated at semicolon
     'config.actionDice': '1d20',
     'saves.frt.value': '+3',
     'saves.ref.value': '+4',
@@ -609,7 +609,7 @@ infravision 60’, stone camouflage, transmute earth; SV Fort
 /* Test stat block with crit after attacks */
 test('Cool creature', async () => {
   const parsedNPC = await parseNPCs(
-    `Cool creature (1+1/round): Init -1; Atk burning fist +1 melee (1d3 plus 1 hp of heat damage); Crit M/ d6; AC 14; HD 1d8+1 (hp 6 each); MV 30'; Act 1d20; SP immune to fire, vulnerable to cold (+1d6 damage); SV Fort +4, Ref -1, Will +3; AL N.`
+    'Cool creature (1+1/round): Init -1; Atk burning fist +1 melee (1d3 plus 1 hp of heat damage); Crit M/ d6; AC 14; HD 1d8+1 (hp 6 each); MV 30\'; Act 1d20; SP immune to fire, vulnerable to cold (+1d6 damage); SV Fort +4, Ref -1, Will +3; AL N.'
   )
   const expected = [
     {
@@ -648,7 +648,7 @@ test('Cool creature', async () => {
 /* Test DT-style stat block */
 test('Wormy the Warrior', async () => {
   const parsedNPC = await parseNPCs(
-    `Wormy Bonechewer (warrior): Init +3; Atk longsword +2+deed die melee (1d8+2+deed die); AC 16 (chainmail & shield); HD 3d12+6; hp 42; MV 25'; Act 1d20; SP Mighty Deed of Arms, deed die (+d5); SV Fort +3, Ref +3, Will +2; AL C; Crit 19-20 IV/d16.`
+    'Wormy Bonechewer (warrior): Init +3; Atk longsword +2+deed die melee (1d8+2+deed die); AC 16 (chainmail & shield); HD 3d12+6; hp 42; MV 25\'; Act 1d20; SP Mighty Deed of Arms, deed die (+d5); SV Fort +3, Ref +3, Will +2; AL C; Crit 19-20 IV/d16.'
   )
   const expected = [
     {
@@ -684,3 +684,27 @@ test('Wormy the Warrior', async () => {
   expect(parsedNPC).toMatchObject(expected)
 })
 
+/* Test fractional HD parsing */
+test('fractional HD', async () => {
+  const parsedNPC = await parseNPCs('Tiny Creature: Init +0; Atk bite +1 melee (1d2); AC 12; HD ½d4; hp 1; MV 10\'; Act 1d20; SV Fort +0, Ref +2, Will +0; AL N.')
+  const expected = {
+    name: 'Tiny Creature',
+    'attributes.hitDice.value': '1d4/2'
+  }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
+/* Test creature type detection for critical hits */
+test('creature type detection', async () => {
+  const humanoidNPC = await parseNPCs('Goblin Scout: Init +2; Atk shortsword +1 melee (1d6); AC 13; HD 1d8; hp 4; MV 30\'; Act 1d20; SV Fort +1, Ref +2, Will +0; AL C.')
+  expect(humanoidNPC[0]['attributes.critical.table']).toBe('III')
+  expect(humanoidNPC[0]['attributes.critical.die']).toBe('d6')
+})
+
+/* Test error handling with malformed input */
+test('malformed input handling', async () => {
+  // Should not throw errors even with malformed input
+  const result = await parseNPCs('This is not a valid stat block at all.')
+  expect(Array.isArray(result)).toBe(true)
+  expect(result.length).toBeGreaterThanOrEqual(0)
+})
