@@ -414,6 +414,29 @@ The most critical change is adding `data-action` attributes to HTML elements tha
 4. **Context Binding**: Use `@this {ClassName}` JSDoc to specify context
 5. **HTML Attributes**: Add `data-action="actionName"` to trigger the action
 
+### JSDoc Documentation for Action Methods
+
+When renaming action methods from `_methodName` to `#methodName`, update the JSDoc comments to include the required `@this` annotation and proper parameter types:
+
+```javascript
+/**
+ * Open the item edit dialog
+ * @this {DCCActorSheet}
+ * @param {PointerEvent} event   The originating click event
+ * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+ * @returns {Promise<void>}
+ */
+static async #itemEdit(event, target) {
+  // Implementation
+}
+```
+
+**Required JSDoc Elements**:
+- `@this {ClassName}` - Specifies the context binding for static methods
+- `@param {PointerEvent} event` - The triggering event (always first parameter)
+- `@param {HTMLElement} target` - The element with the data-action attribute (always second parameter)
+- `@returns {Promise<void>}` - Return type (typically Promise<void> for async actions)
+
 ### Common Migration Examples:
 
 ```javascript
