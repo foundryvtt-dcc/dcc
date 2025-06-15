@@ -1,5 +1,3 @@
-/* global $ */
-
 class KeyState {
   /**
    * Construct a KeyState object
@@ -7,7 +5,9 @@ class KeyState {
   constructor () {
     this._ctrlKeyState = false
     this._shiftKeyState = false
-    $(document).bind('keydown keyup click', (event) => this.handleEvent(event))
+    document.addEventListener('keydown', (event) => this.handleEvent(event))
+    document.addEventListener('keyup', (event) => this.handleEvent(event))
+    document.addEventListener('click', (event) => this.handleEvent(event))
   }
 
   /**

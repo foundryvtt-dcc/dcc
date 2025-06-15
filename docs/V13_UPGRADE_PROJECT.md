@@ -2,84 +2,103 @@
 
 This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
 
-## 1. FormApplication (V1) → ApplicationV2 Migrations Needed
+## Current Migration Status: ~70% Complete ✅
+
+**Last Updated**: December 2024
+
+### ✅ **COMPLETED** (Critical V13.341 Requirements)
+- **Sheet Registration**: All actor/item sheets properly registered in `dcc.js` 
+- **getSceneControlButtons Hook**: Updated for new V13 data structure
+- **Core Sheet Migration**: Actor/Item sheets using ActorSheetV2/ItemSheetV2
+- **Major Dialog Migration**: FleetingLuck, Welcome, SavingThrow dialogs migrated to ApplicationV2
+
+### ❌ **REMAINING WORK** (High Priority)
+- **5 FormApplication classes** still need migration to ApplicationV2
+- **jQuery elimination** in 3 files (dcc.js, party-sheet.js) - key-state.js ✅ COMPLETED  
+- **Dialog → DialogV2** migration in 4 files
+
+## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ❌
 
 The following files extend `FormApplication` and need to be migrated to `ApplicationV2`:
 
-### High Priority - Core Functionality
-1. **`module/actor-config.js`**
+### High Priority - Core Functionality ❌ **PENDING**
+1. **`module/actor-config.js`** ❌
    - Class: `DCCActorConfig extends FormApplication`
    - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
    - Purpose: Actor configuration dialog
 
-2. **`module/item-config.js`**
+2. **`module/item-config.js`** ❌
    - Class: `DCCItemConfig extends FormApplication`
    - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
    - Purpose: Item configuration dialog
 
-3. **`module/actor-level-change.js`**
+3. **`module/actor-level-change.js`** ❌
    - Class: `DCCActorLevelChange extends FormApplication`
    - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
    - Purpose: Level change interface
 
-4. **`module/melee-missile-bonus-config.js`**
+4. **`module/melee-missile-bonus-config.js`** ❌
    - Class: `MeleeMissileBonusConfig extends FormApplication`
    - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
    - Purpose: Combat bonus configuration
 
-5. **`module/parser.js`**
+5. **`module/parser.js`** ❌
    - Class: `DCCActorParser extends FormApplication`
    - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
    - Purpose: NPC/PC stat block parser
 
-### Mixed V1/V2 Pattern
-6. **`module/roll-modifier.js`**
-   - Imports both `FormApplication` and `ApplicationV2`
-   - Contains V1 patterns but may be partially migrated
-   - Needs review and completion of V2 migration
+### Already Migrated ✅ **COMPLETED**
+6. **`module/roll-modifier.js`** ✅
+   - Successfully migrated to `HandlebarsApplicationMixin(ApplicationV2)`
+   - Uses V2 patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, actions
+   - Full V2 migration completed
 
-## 2. Dialog (V1) → DialogV2 Migrations Needed
+## 2. Dialog (V1) → DialogV2 Migrations Needed ❌
 
-Multiple files use the V1 `Dialog` class that should be migrated to `foundry.applications.api.DialogV2`:
+### Remaining Dialog Usage ❌ **PENDING**
+- `module/item-sheet.js` (lines 299, 332) ❌
+- `module/parser.js` (line 105) ❌  
+- `module/party-sheet.js` (line 261) ❌
 
-- `module/actor-sheet.js`
-- `module/saving-throw-config.js`
-- `module/roll-modifier.js`
-- `module/welcomeDialog.js`
-- `module/fleeting-luck.js`
-- `module/actor.js`
-- `module/parser.js`
-- `module/item-sheet.js`
-- `module/item.js`
+### Already Migrated or No Usage ✅ **COMPLETED**
+- `module/actor-sheet.js` ✅ (No Dialog usage found)
+- `module/saving-throw-config.js` ✅ (Migrated to ApplicationV2)
+- `module/roll-modifier.js` ✅ (Migrated to ApplicationV2)
+- `module/welcomeDialog.js` ✅ (Migrated to ApplicationV2)
+- `module/fleeting-luck.js` ✅ (Migrated to ApplicationV2)
+- `module/actor.js` ✅ (No Dialog usage found)
+- `module/item.js` ✅ (No Dialog usage found)
 
-## 3. jQuery Usage (Deprecated in V13)
+## 3. jQuery Usage (Deprecated in V13) ❌
 
-The following files contain jQuery code that needs to be replaced with vanilla JavaScript:
+### Remaining jQuery Usage ❌ **PENDING**
 
-### **module/dcc.js**
-- **Line 1**: Global $ declaration
-- **Lines 261-263**: Event handlers using `$(document).on()`
-- **Line 537**: jQuery wrapping of HTML element
+### **module/dcc.js** ❌
+- **Line 1**: Global $ declaration  
+- **Lines 267-269**: Event handlers using `$(document).on()`
+- **Line 541**: jQuery wrapping of HTML element
 
-### **module/key-state.js**
-- **Line 1**: Global $ declaration
-- **Line 10**: `$(document).bind()` event binding
+### **module/key-state.js** ✅
+- **Line 1**: Global $ declaration - REMOVED
+- **Line 10**: `$(document).bind()` event binding - REPLACED with vanilla JS
 
-### **module/actor-sheet.js**
-- **Lines 388-426**: Multiple jQuery selectors (commented out but should be removed)
+### **module/party-sheet.js** ❌
+- **Line 258**: `$(event.currentTarget).parents('.item').slideUp(200, ...)`
+- **Line 320**: `const li = $(event.currentTarget).parents('.item')`
 
-### **module/roll-modifier.js**
-- **Lines 318-328**: jQuery event handlers (`.find()`, `.click()`, `.change()`)
-- **Lines 403-522**: jQuery form manipulation (`.find()`, `.val()`)
+### Already Cleaned ✅ **COMPLETED**
 
-### **module/chat.js**
-- **Lines 56-58**: jQuery class manipulation (`.addClass()`)
-- **Lines 77-78, 111**: jQuery selectors (`.find()`, `.attr()`, `.text()`)
-- **Multiple lines**: jQuery HTML manipulation (`.html()`, `.remove()`)
+### **module/actor-sheet.js** ✅
+- Previously mentioned jQuery usage has been removed
 
-### **module/actor-level-change.js**
-- **Lines 64-65**: jQuery event handlers (`.click()`)
-- **Lines 151, 153, 177, 179**: jQuery HTML manipulation (`.html()`)
+### **module/roll-modifier.js** ✅  
+- Migrated to ApplicationV2, jQuery usage eliminated
+
+### **module/chat.js** ✅
+- jQuery usage has been replaced with vanilla JavaScript
+
+### **module/actor-level-change.js** ✅
+- Still uses FormApplication but jQuery usage appears cleaned
 
 ### Common jQuery Patterns to Replace:
 - `$(selector)` → `document.querySelector(selector)` or `document.querySelectorAll(selector)`
@@ -93,35 +112,40 @@ The following files contain jQuery code that needs to be replaced with vanilla J
 - `.removeClass()` → `.classList.remove()`
 - `.attr()` → `.getAttribute()` or `.setAttribute()`
 
-## 4. Already Migrated to V2
+## 4. Already Migrated to V2 ✅ **COMPLETED**
 
 The following components have already been migrated to V2 patterns:
 
-### Sheets (Using ActorSheetV2/ItemSheetV2)
-- **`module/actor-sheet.js`**: `DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2)`
-- **`module/item-sheet.js`**: `DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2)`
-- **`module/actor-sheets-dcc.js`**: Multiple classes extending `DCCActorSheet`
+### Sheets (Using ActorSheetV2/ItemSheetV2) ✅
+- **`module/actor-sheet.js`**: `DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2)` ✅
+- **`module/item-sheet.js`**: `DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2)` ✅
+- **`module/actor-sheets-dcc.js`**: Multiple classes extending `DCCActorSheet` ✅
 
-### Dialogs (Using ApplicationV2)
-- **`module/fleeting-luck.js`**: `FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2)`
-- **`module/welcomeDialog.js`**: `WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2)`
-- **`module/saving-throw-config.js`**: `SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2)`
+### Dialogs (Using ApplicationV2) ✅
+- **`module/fleeting-luck.js`**: `FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2)` ✅
+- **`module/welcomeDialog.js`**: `WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2)` ✅
+- **`module/saving-throw-config.js`**: `SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2)` ✅
+- **`module/roll-modifier.js`**: `RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2)` ✅
 
-## 5. Migration Priority
+### Critical V13.341 Requirements ✅
+- **Sheet Registration**: All actor/item sheets properly registered in `module/dcc.js` ✅
+- **getSceneControlButtons Hook**: Updated for new V13 data structure ✅
 
-### Phase 1 - Critical Core Components
-1. **Fix `getSceneControlButtons` hook usage** in `module/dcc.js` (breaking change in V13)
-2. Remove all jQuery dependencies (high impact, system-wide)
-3. Migrate `actor-config.js` and `item-config.js` (core configuration)
-4. Migrate `parser.js` (import functionality)
+## 5. Updated Migration Priority ⚡
 
-### Phase 2 - Game Mechanics
-1. Migrate `actor-level-change.js` (leveling system)
-2. Migrate `melee-missile-bonus-config.js` (combat modifiers)
-3. Complete `roll-modifier.js` migration
+### Phase 1 - Critical Core Components ❌ **REMAINING**
+1. ~~**Fix `getSceneControlButtons` hook usage** in `module/dcc.js`~~ ✅ **COMPLETED**
+2. **Remove remaining jQuery dependencies** (2 files: dcc.js, party-sheet.js) - key-state.js ✅ COMPLETED
+3. **Migrate `actor-config.js` and `item-config.js`** (core configuration) ❌
+4. **Migrate `parser.js`** (import functionality) ❌
 
-### Phase 3 - Dialog Cleanup
-1. Replace all `Dialog` usage with `DialogV2`
+### Phase 2 - Game Mechanics ❌ **REMAINING**
+1. **Migrate `actor-level-change.js`** (leveling system) ❌
+2. **Migrate `melee-missile-bonus-config.js`** (combat modifiers) ❌
+3. ~~Complete `roll-modifier.js` migration~~ ✅ **COMPLETED**
+
+### Phase 3 - Dialog Cleanup ❌ **REMAINING**
+1. **Replace remaining `Dialog` usage with `DialogV2`** (3 files) ❌
 2. Test and verify all dialog interactions
 
 ## 6. Additional V13 Breaking Changes and Requirements
