@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     exclude: [
       '**/node_modules/**',
-      '**/tests/visual-regression/**'
+      '**/browser-tests/**'
     ]
   }
 })
