@@ -36,7 +36,7 @@ function _parseJSONPCs (pcObject) {
     if (pcObject.name) {
       pc.name = pcObject.name
     }
-    pc['details.occupation.value'] = pcObject.occTitle || ''
+    pc['details.occupation.value'] = pcObject.occTitle ? pcObject.occTitle.trim() : ''
     pc['abilities.str.value'] = pcObject.strengthScore || 10
     pc['abilities.agl.value'] = pcObject.agilityScore || 10
     pc['abilities.sta.value'] = pcObject.staminaScore || 10
@@ -55,7 +55,7 @@ function _parseJSONPCs (pcObject) {
     }
     let hitDice = '1d4'
     if (pcObject.className) {
-      hitDice = CONFIG.DCC.hitDiePerClass[pcObject.className.toLowerCase()]
+      hitDice = CONFIG.DCC.hitDiePerClass[pcObject.className.toLowerCase()] || '1d4'
     }
     pc['attributes.hitDice.value'] = hitDice
     pc.items = []
@@ -164,6 +164,7 @@ function _parseJSONPCs (pcObject) {
     }
     // Armor
     if (pcObject.armorData) {
+      pc['details.armorData'] = pcObject.armorData
       const armor = _parseArmor(pcObject.armorData)
       if (armor) {
         pc.items.push(armor)
@@ -330,7 +331,8 @@ function _parsePlainPCToJSON (pcString) {
   pcObject.name = _firstMatch(pcString.match(/Name:\s+(.+)[;\n$]/))
 
   // Try parsing as a zero level first
-  pcObject.occTitle = _firstMatch(pcString.match(/0-level Occupation:\s+(.+)[;\n$]/))
+  const occMatch = _firstMatch(pcString.match(/0-level Occupation:\s+(.+)[;\n$]/))
+  pcObject.occTitle = occMatch ? occMatch.trim() : null
 
   pcObject.strengthScore = _firstMatch(pcString.match(/Strength:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
   pcObject.agilityScore = _firstMatch(pcString.match(/Agility:\s+(\d+)\s+\([+-]?\d+\)[;\n$]/))
@@ -346,8 +348,8 @@ function _parsePlainPCToJSON (pcString) {
   const weapon = (weaponString && weaponString.length > 0) ? _parseWeapon(weaponString[1]) : null
   if (weapon) {
     pcObject.weapon = weapon.name
-    pcObject.attackMod = weapon.attackMod
-    pcObject.attackDamage = weapon.attackDamage
+    pcObject.attackMod = weapon.system.toHit
+    pcObject.attackDamage = weapon.system.damage
   }
 
   pcObject.speed = _firstMatch(pcString.match(/Speed:\s+(\d+)[;\n$]/))
@@ -365,7 +367,8 @@ function _parsePlainPCToJSON (pcString) {
 
   // See if upper level fields are present
   if (!pcObject.occTitle) {
-    pcObject.occTitle = _firstMatch(pcString.match(/Occupation:\s+(.+)[;\n$]/))
+    const upperOccMatch = _firstMatch(pcString.match(/Occupation:\s+(.+)[;\n$]/))
+    pcObject.occTitle = upperOccMatch ? upperOccMatch.trim() : null
     pcObject.armorClass = _firstMatch(pcString.match(/AC:\s+\((\d+)\)\*?/)) || pcObject.armorClass
     pcObject.armorData = _firstMatch(pcString.match(/AC:\s+\(\d+\)\*?\s+\((.*)\)/))
     pcObject.critDie = _firstMatch(pcString.match(/Crit Die\/Table:\s+(\d+d\d+)\/.*[;\n$]/))
@@ -417,37 +420,37 @@ function _parsePlainPCToJSON (pcString) {
     }
 
     pcObject.weapons = []
-    const weapon1String = pcString.match(/Occupation Weapon:[ \t]*([^\n].*)[;\n$]/)
-    const weapon1 = (weapon1String && weapon1String.length > 0) ? _parseWeapon(weapon1String[1]) : null
+    const weapon1String = pcString.match(/Occupation Weapon:[ \t]*([^\n].*?)(?:[;\n]|$)/)
+    const weapon1 = (weapon1String && weapon1String.length > 0 && weapon1String[1].trim().length > 0) ? _parseWeapon(weapon1String[1].trim()) : null
     if (weapon1) {
       pcObject.weapons.push({
         name: weapon1.name,
         img: EntityImages.imageForItem('weapon'),
-        attackMod: weapon1.attackMod,
-        attackDamage: weapon1.attackDamage,
-        melee: weapon1.melee
+        attackMod: weapon1.system.toHit,
+        attackDamage: weapon1.system.damage,
+        melee: weapon1.system.melee
       })
     }
-    const weapon2String = pcString.match(/Main Weapon:[ \t]*([^\n].*)[;\n$]/)
-    const weapon2 = (weapon2String && weapon2String.length > 0) ? _parseWeapon(weapon2String[1]) : null
+    const weapon2String = pcString.match(/Main Weapon:[ \t]*([^\n].*?)(?:[;\n]|$)/)
+    const weapon2 = (weapon2String && weapon2String.length > 0 && weapon2String[1].trim().length > 0) ? _parseWeapon(weapon2String[1].trim()) : null
     if (weapon2) {
       pcObject.weapons.push({
         name: weapon2.name,
         img: EntityImages.imageForItem('weapon'),
-        attackMod: weapon2.attackMod,
-        attackDamage: weapon2.attackDamage,
-        melee: weapon2.melee
+        attackMod: weapon2.system.toHit,
+        attackDamage: weapon2.system.damage,
+        melee: weapon2.system.melee
       })
     }
-    const weapon3String = pcString.match(/Secondary Weapon:[ \t]*([^\n].*)[;\n$]/)
-    const weapon3 = (weapon3String && weapon3String.length > 0) ? _parseWeapon(weapon3String[1]) : null
+    const weapon3String = pcString.match(/Secondary Weapon:[ \t]*([^\n].*?)(?:[;\n]|$)/)
+    const weapon3 = (weapon3String && weapon3String.length > 0 && weapon3String[1].trim().length > 0) ? _parseWeapon(weapon3String[1].trim()) : null
     if (weapon3) {
       pcObject.weapons.push({
         name: weapon3.name,
         img: EntityImages.imageForItem('weapon'),
-        attackMod: weapon3.attackMod,
-        attackDamage: weapon3.attackDamage,
-        melee: weapon3.melee
+        attackMod: weapon3.system.toHit,
+        attackDamage: weapon3.system.damage,
+        melee: weapon3.system.melee
       })
     }
   }
@@ -468,19 +471,53 @@ function _parseWeapon (weaponString) {
   if (weaponString.length === 0) { return }
   const weaponData = weaponString.match(/^(.*)\s+(.+)\s+\((?:dmg\s+)?(.+)\)$/)
   if (weaponData && weaponData.length === 4) {
+    // Check for melee/ranged BEFORE cleaning the name
     let melee = true
-    if (!weaponString.match(/melee/)) {
+    if (weaponData[1].match(/ranged/)) {
       melee = false
     }
-    const damage = weaponData[3].replace('deed', '@ab')
+
+    // Extract dice notation from damage, handling deed replacement and additional text
+    const damageText = weaponData[3].replace('deed', '@ab')
+    let damage = damageText
+    let specialNotes = ''
+
+    // Match dice notation including @ab, but preserve descriptive text
+    const diceMatch = damageText.match(/(\d*d\d+(?:[+-](?:\d+|@ab))*)(.*)/i)
+    if (diceMatch) {
+      damage = diceMatch[1]
+      // If there's additional text after the dice notation, preserve it as special notes
+      if (diceMatch[2] && diceMatch[2].trim().length > 0) {
+        specialNotes = diceMatch[2].trim()
+      }
+    } else {
+      // If no dice found, use the full text after deed replacement
+      damage = damageText.split(' ')[0] // Take first word/expression only
+      // Preserve any remaining text as special notes
+      const remainingText = damageText.split(' ').slice(1).join(' ')
+      if (remainingText.length > 0) {
+        specialNotes = remainingText
+      }
+    }
+
     const name = weaponData[1].replace(/\s+melee/, '').replace(/\s+ranged/, '')
-    return {
+    const weapon = {
       name,
       img: EntityImages.imageForItem('weapon'),
-      attackMod: weaponData[2],
-      attackDamage: damage,
-      melee
+      system: {
+        toHit: weaponData[2],
+        damage,
+        melee
+      }
     }
+
+    // Add special notes to weapon description if present
+    if (specialNotes.length > 0) {
+      weapon.system.description = weapon.system.description || {}
+      weapon.system.description.value = specialNotes
+    }
+
+    return weapon
   }
 
   return null

@@ -1,0 +1,820 @@
+{
+  "img": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_HalflingTrader_280px.webp",
+  "name": "Halfling chicken butcher Halfling",
+  "type": "Player",
+  "folder": "aR5HpwCOwBWzFboK",
+  "system": {
+    "abilities": {
+      "str": {
+        "label": "DCC.AbilityStr",
+        "value": 15,
+        "max": 15
+      },
+      "agl": {
+        "label": "DCC.AbilityAgl",
+        "value": 14,
+        "max": 14
+      },
+      "sta": {
+        "label": "DCC.AbilitySta",
+        "value": 11,
+        "max": 11
+      },
+      "per": {
+        "label": "DCC.AbilityPer",
+        "value": 13,
+        "max": 13
+      },
+      "int": {
+        "label": "DCC.AbilityInt",
+        "value": 13,
+        "max": 13
+      },
+      "lck": {
+        "label": "DCC.AbilityLck",
+        "value": 10,
+        "max": 10
+      }
+    },
+    "attributes": {
+      "ac": {
+        "value": "14",
+        "checkPenalty": 0,
+        "otherMod": 0,
+        "speedPenalty": 0
+      },
+      "actionDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          }
+        ]
+      },
+      "critical": {
+        "die": "1d12",
+        "table": "III"
+      },
+      "fumble": {
+        "die": "1d4"
+      },
+      "hitDice": {
+        "value": "1d6"
+      },
+      "hp": {
+        "value": 30,
+        "min": 0,
+        "max": "30",
+        "temp": 0,
+        "tempmax": 0
+      },
+      "init": {
+        "die": "1d20",
+        "otherMod": 0,
+        "value": 1
+      },
+      "initDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          },
+          {
+            "value": "1d16",
+            "label": "1d16"
+          }
+        ]
+      },
+      "speed": {
+        "value": "20",
+        "base": 30,
+        "special": ""
+      }
+    },
+    "details": {
+      "alignment": "l",
+      "attackBonus": "+4",
+      "attackHitBonus": {
+        "melee": {
+          "value": "+5",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+5",
+          "adjustment": "+0"
+        }
+      },
+      "attackDamageBonus": {
+        "melee": {
+          "value": "+1",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+0",
+          "adjustment": "+0"
+        }
+      },
+      "birthAugur": "Guardian angel (Savings throws to escape traps) (+0)",
+      "critRange": 20,
+      "languages": "Common, Halfling, Goblin, Alignment",
+      "level": {
+        "value": 5
+      },
+      "occupation": {
+        "value": "Halfling chicken butcher"
+      },
+      "notes": {
+        "value": "Equipment:<br/>  Iron spike (1 sp)<br/>  Chicken meat (5 lbs.) (Trade Goods)<br/><br/>Starting Funds: 36 cp + 1522 gp<br/>Birth Augur: Guardian angel (Savings throws to escape traps) (+0)<br/>Languages: Common, Halfling, Goblin, Alignment<br/>Halfling ability: Infravision<br/><br/>Skills:<br/>Sneak Silently: 7 (-2)<br/>Hide In Shadows: 7 (-2)"
+      },
+      "title": {
+        "value": ""
+      },
+      "xp": {
+        "value": 0,
+        "min": 0,
+        "max": 10
+      },
+      "sheetClass": "Halfling"
+    },
+    "saves": {
+      "frt": {
+        "abbreviation": "DCC.SavesFortitudeAbbr",
+        "label": "DCC.SavesFortitude",
+        "classBonus": "2",
+        "otherBonus": "",
+        "override": "",
+        "value": "+2"
+      },
+      "ref": {
+        "abbreviation": "DCC.SavesReflexAbbr",
+        "label": "DCC.SavesReflex",
+        "classBonus": 3,
+        "otherBonus": "",
+        "override": "",
+        "value": "+4"
+      },
+      "wil": {
+        "abbreviation": "DCC.SavesWillAbbr",
+        "label": "DCC.SavesWill",
+        "classBonus": 3,
+        "otherBonus": "",
+        "override": "",
+        "value": "+4"
+      }
+    },
+    "currency": {
+      "pp": "0",
+      "ep": "0",
+      "gp": "1522",
+      "sp": "0",
+      "cp": "36"
+    },
+    "config": {
+      "attackBonusMode": "flat",
+      "actionDice": "1d20",
+      "addClassLevelToInitiative": false,
+      "maxLevel": "",
+      "rollAttackBonus": false,
+      "computeAC": true,
+      "baseACAbility": "agl",
+      "computeSpeed": true,
+      "computeCheckPenalty": true,
+      "computeInitiative": true,
+      "computeMeleeAndMissileAttackAndDamage": true,
+      "computeSavingThrows": true,
+      "sortInventory": true,
+      "removeEmptyItems": true,
+      "showSpells": false,
+      "showSkills": false,
+      "showBackstab": false
+    },
+    "skills": {
+      "detectSecretDoors": {
+        "label": "DCC.HeightenedSenses",
+        "value": "+4",
+        "ability": "int"
+      },
+      "divineAid": {
+        "label": "DCC.DivineAid",
+        "value": 0,
+        "useDisapprovalRange": true,
+        "drainDisapproval": 10
+      },
+      "turnUnholy": {
+        "label": "DCC.TurnUnholy",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "layOnHands": {
+        "label": "DCC.LayOnHands",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "sneakSilently": {
+        "label": "DCC.SneakSilently",
+        "ability": "agl",
+        "value": "7"
+      },
+      "hideInShadows": {
+        "label": "DCC.HideInShadows",
+        "ability": "agl",
+        "value": "7"
+      },
+      "pickPockets": {
+        "label": "DCC.PickPocket",
+        "ability": "agl",
+        "value": "0"
+      },
+      "climbSheerSurfaces": {
+        "label": "DCC.ClimbSheerSurfaces",
+        "ability": "agl",
+        "value": "0"
+      },
+      "pickLock": {
+        "label": "DCC.PickLock",
+        "ability": "agl",
+        "value": "0"
+      },
+      "findTrap": {
+        "label": "DCC.FindTrap",
+        "ability": "int",
+        "value": "0"
+      },
+      "disableTrap": {
+        "label": "DCC.DisableTrap",
+        "ability": "agl",
+        "value": "0"
+      },
+      "forgeDocument": {
+        "label": "DCC.ForgeDocument",
+        "ability": "agl",
+        "value": "0"
+      },
+      "disguiseSelf": {
+        "label": "DCC.DisguiseSelf",
+        "ability": "per",
+        "value": "0"
+      },
+      "readLanguages": {
+        "label": "DCC.ReadLanguages",
+        "ability": "int",
+        "value": "0"
+      },
+      "handlePoison": {
+        "label": "DCC.HandlePoison",
+        "value": "0"
+      },
+      "castSpellFromScroll": {
+        "label": "DCC.CastSpellFromScroll",
+        "ability": "int",
+        "die": "1d10",
+        "value": "0"
+      },
+      "sneakAndHide": {
+        "label": "DCC.SneakAndHide",
+        "value": "7"
+      },
+      "shieldBash": {
+        "label": "DCC.ShieldBash",
+        "ability": "str",
+        "die": "1d14",
+        "value": "+0",
+        "useDeed": true
+      }
+    },
+    "inventory": {
+      "weapons": [],
+      "ammunition": [],
+      "armor": [],
+      "equipment": [],
+      "mount": []
+    },
+    "class": {
+      "spellCheck": 1,
+      "spellCheckAbility": "int",
+      "spellsLevel1": 0,
+      "spellsLevel2": 0,
+      "spellsLevel3": 0,
+      "spellsLevel4": 0,
+      "spellsLevel5": 0,
+      "deity": null,
+      "disapproval": 1,
+      "disapprovalTable": "Disapproval",
+      "luckDie": "1d3",
+      "backstab": "0",
+      "luckyWeapon": null,
+      "luckyWeaponMod": "+0",
+      "knownSpells": 0,
+      "maxSpellLevel": 0,
+      "spellCheckOtherMod": null,
+      "spellCheckDieOverride": null,
+      "spellCheckOverride": null,
+      "patron": null,
+      "familiar": null,
+      "corruption": [],
+      "className": "Halfling"
+    }
+  },
+  "items": [
+    {
+      "name": "Iron spike (1 sp)",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "4Gg6lyjKseO0UH8w",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Chicken meat (5 lbs.)",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "tE0uHLrXxS27RxHB",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Handaxe",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/wood-axe.svg",
+      "effects": [],
+      "_id": "aYQKA1qH3FhYZ5mA",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930797736,
+        "modifiedTime": 1749930797736,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 4,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d6+1",
+        "damageWeapon": "1d6",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "10/20/30",
+        "shortRangeStrength": true,
+        "subdual": false,
+        "toHit": "+5",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 600000
+    },
+    {
+      "name": "Short sword",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/broad-dagger.svg",
+      "effects": [],
+      "_id": "j4TPReNfAR9DIJGv",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930797744,
+        "modifiedTime": 1749930797744,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 7,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d6+1",
+        "damageWeapon": "1d6",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+5",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 300000
+    },
+    {
+      "name": "Short sword",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/broad-dagger.svg",
+      "effects": [],
+      "_id": "oJpYP6swdsuD9NSt",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930797749,
+        "modifiedTime": 1749930797749,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 7,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d6+1",
+        "damageWeapon": "1d6",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+5",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 300000
+    },
+    {
+      "_id": "MHXKKPaPRbJgLucJ",
+      "name": "Hide",
+      "type": "armor",
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/animal-hide.svg",
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930797757,
+        "modifiedTime": 1749930797757,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": "0",
+          "ep": "0",
+          "gp": "30",
+          "sp": "0",
+          "cp": "0"
+        },
+        "acBonus": "+3",
+        "checkPenalty": "-3",
+        "speed": "",
+        "fumbleDie": "1d12"
+      }
+    }
+  ],
+  "prototypeToken": {
+    "name": "Halfling chicken butcher Halfling",
+    "displayName": 0,
+    "actorLink": true,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_HalflingTrader_280px.webp",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": "attributes.hp"
+    },
+    "bar2": {
+      "attribute": "abilities.lck.value"
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "effects": [],
+  "flags": {
+    "core": {
+      "sheetClass": "dcc.DCCActorSheetHalfling"
+    },
+    "exportSource": {
+      "world": "baselinev12",
+      "system": "dcc",
+      "coreVersion": "12.343",
+      "systemVersion": "0.51.61"
+    }
+  },
+  "_stats": {
+    "coreVersion": "12.343",
+    "systemId": "dcc",
+    "systemVersion": "0.51.61",
+    "createdTime": 1749930797711,
+    "modifiedTime": 1749930893463,
+    "lastModifiedBy": "SACrbgt190Rix7Wx"
+  }
+}

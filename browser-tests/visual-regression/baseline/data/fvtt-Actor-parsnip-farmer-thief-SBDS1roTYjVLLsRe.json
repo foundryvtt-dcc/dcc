@@ -1,0 +1,820 @@
+{
+  "img": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_Gongfarmer_Male_280px.webp",
+  "name": "Parsnip Farmer Thief",
+  "type": "Player",
+  "folder": "aR5HpwCOwBWzFboK",
+  "system": {
+    "abilities": {
+      "str": {
+        "label": "DCC.AbilityStr",
+        "value": 17,
+        "max": 17
+      },
+      "agl": {
+        "label": "DCC.AbilityAgl",
+        "value": 13,
+        "max": 13
+      },
+      "sta": {
+        "label": "DCC.AbilitySta",
+        "value": 7,
+        "max": 7
+      },
+      "per": {
+        "label": "DCC.AbilityPer",
+        "value": 7,
+        "max": 7
+      },
+      "int": {
+        "label": "DCC.AbilityInt",
+        "value": 11,
+        "max": 11
+      },
+      "lck": {
+        "label": "DCC.AbilityLck",
+        "value": 10,
+        "max": 10
+      }
+    },
+    "attributes": {
+      "ac": {
+        "value": "14",
+        "checkPenalty": 0,
+        "otherMod": 0,
+        "speedPenalty": 0
+      },
+      "actionDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          }
+        ]
+      },
+      "critical": {
+        "die": "1d20",
+        "table": "II"
+      },
+      "fumble": {
+        "die": "1d4"
+      },
+      "hitDice": {
+        "value": "1d6"
+      },
+      "hp": {
+        "value": 17,
+        "min": 0,
+        "max": "17",
+        "temp": 0,
+        "tempmax": 0
+      },
+      "init": {
+        "die": "1d20",
+        "otherMod": 0,
+        "value": 1
+      },
+      "initDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          },
+          {
+            "value": "1d16",
+            "label": "1d16"
+          }
+        ]
+      },
+      "speed": {
+        "value": "30",
+        "base": 30,
+        "special": ""
+      }
+    },
+    "details": {
+      "alignment": "c",
+      "attackBonus": "+3",
+      "attackHitBonus": {
+        "melee": {
+          "value": "+5",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+4",
+          "adjustment": "+0"
+        }
+      },
+      "attackDamageBonus": {
+        "melee": {
+          "value": "+2",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+0",
+          "adjustment": "+0"
+        }
+      },
+      "birthAugur": "Conceived on horseback (Mounted attack rolls) (+0)",
+      "critRange": 20,
+      "languages": "Common, Thieves' Cant",
+      "level": {
+        "value": 5
+      },
+      "occupation": {
+        "value": "Parsnip Farmer"
+      },
+      "notes": {
+        "value": "Equipment:<br/>  Oil - 1 flask (2 sp)<br/>  Goat (Trade Goods)<br/><br/>Starting Funds: 30 cp + 1009 gp<br/>Birth Augur: Conceived on horseback (Mounted attack rolls) (+0)<br/>Languages: Common, Thieves' Cant<br/><br/>Skills:<br/>Backstab: 9 (0)<br/>Sneak Silently: 8 (-1)<br/>Hide In Shadows: 7 (-1)<br/>Pick Pocket: 3 (-1)<br/>Climb Sheer Surfaces: 7 (-1)<br/>Pick Lock: 7 (-1)<br/>Find Trap: 8 (0)<br/>Disable Trap: 3 (-1)<br/>Forge Document: 2 (-1)<br/>Disguise Self: 8 (-1)<br/>Read Languages: 3 (0)<br/>Handle Poison: 9 (0)<br/>Cast Spell From Scroll (d14)"
+      },
+      "title": {
+        "value": ""
+      },
+      "xp": {
+        "value": 0,
+        "min": 0,
+        "max": 10
+      },
+      "sheetClass": "Thief"
+    },
+    "saves": {
+      "frt": {
+        "abbreviation": "DCC.SavesFortitudeAbbr",
+        "label": "DCC.SavesFortitude",
+        "classBonus": 2,
+        "otherBonus": "",
+        "override": "",
+        "value": "+1"
+      },
+      "ref": {
+        "abbreviation": "DCC.SavesReflexAbbr",
+        "label": "DCC.SavesReflex",
+        "classBonus": 3,
+        "otherBonus": "",
+        "override": "",
+        "value": "+4"
+      },
+      "wil": {
+        "abbreviation": "DCC.SavesWillAbbr",
+        "label": "DCC.SavesWill",
+        "classBonus": 1,
+        "otherBonus": "",
+        "override": "",
+        "value": "+0"
+      }
+    },
+    "currency": {
+      "pp": "0",
+      "ep": "0",
+      "gp": "1009",
+      "sp": "0",
+      "cp": "30"
+    },
+    "config": {
+      "attackBonusMode": "flat",
+      "actionDice": "1d20",
+      "addClassLevelToInitiative": false,
+      "maxLevel": "",
+      "rollAttackBonus": false,
+      "computeAC": true,
+      "baseACAbility": "agl",
+      "computeSpeed": true,
+      "computeCheckPenalty": true,
+      "computeInitiative": true,
+      "computeMeleeAndMissileAttackAndDamage": true,
+      "computeSavingThrows": true,
+      "sortInventory": true,
+      "removeEmptyItems": true,
+      "showSpells": false,
+      "showSkills": false,
+      "showBackstab": true
+    },
+    "skills": {
+      "detectSecretDoors": {
+        "label": "DCC.HeightenedSenses",
+        "value": "+4",
+        "ability": "int"
+      },
+      "divineAid": {
+        "label": "DCC.DivineAid",
+        "value": 0,
+        "useDisapprovalRange": true,
+        "drainDisapproval": 10
+      },
+      "turnUnholy": {
+        "label": "DCC.TurnUnholy",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "layOnHands": {
+        "label": "DCC.LayOnHands",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "sneakSilently": {
+        "label": "DCC.SneakSilently",
+        "ability": "agl",
+        "value": "8"
+      },
+      "hideInShadows": {
+        "label": "DCC.HideInShadows",
+        "ability": "agl",
+        "value": "7"
+      },
+      "pickPockets": {
+        "label": "DCC.PickPocket",
+        "ability": "agl",
+        "value": "3"
+      },
+      "climbSheerSurfaces": {
+        "label": "DCC.ClimbSheerSurfaces",
+        "ability": "agl",
+        "value": "7"
+      },
+      "pickLock": {
+        "label": "DCC.PickLock",
+        "ability": "agl",
+        "value": "7"
+      },
+      "findTrap": {
+        "label": "DCC.FindTrap",
+        "ability": "int",
+        "value": "8"
+      },
+      "disableTrap": {
+        "label": "DCC.DisableTrap",
+        "ability": "agl",
+        "value": "3"
+      },
+      "forgeDocument": {
+        "label": "DCC.ForgeDocument",
+        "ability": "agl",
+        "value": "2"
+      },
+      "disguiseSelf": {
+        "label": "DCC.DisguiseSelf",
+        "ability": "per",
+        "value": "8"
+      },
+      "readLanguages": {
+        "label": "DCC.ReadLanguages",
+        "ability": "int",
+        "value": "3"
+      },
+      "handlePoison": {
+        "label": "DCC.HandlePoison",
+        "value": "9"
+      },
+      "castSpellFromScroll": {
+        "label": "DCC.CastSpellFromScroll",
+        "ability": "int",
+        "die": "1d14",
+        "value": "0"
+      },
+      "sneakAndHide": {
+        "label": "DCC.SneakAndHide",
+        "value": "8"
+      },
+      "shieldBash": {
+        "label": "DCC.ShieldBash",
+        "ability": "str",
+        "die": "1d14",
+        "value": "+0",
+        "useDeed": true
+      }
+    },
+    "inventory": {
+      "weapons": [],
+      "ammunition": [],
+      "armor": [],
+      "equipment": [],
+      "mount": []
+    },
+    "class": {
+      "spellCheck": 1,
+      "spellCheckAbility": "int",
+      "spellsLevel1": 0,
+      "spellsLevel2": 0,
+      "spellsLevel3": 0,
+      "spellsLevel4": 0,
+      "spellsLevel5": 0,
+      "deity": null,
+      "disapproval": 1,
+      "disapprovalTable": "Disapproval",
+      "luckDie": "1d3",
+      "backstab": "9",
+      "luckyWeapon": null,
+      "luckyWeaponMod": "+0",
+      "knownSpells": 0,
+      "maxSpellLevel": 0,
+      "spellCheckOtherMod": null,
+      "spellCheckDieOverride": null,
+      "spellCheckOverride": null,
+      "patron": null,
+      "familiar": null,
+      "corruption": [],
+      "className": "Thief"
+    }
+  },
+  "items": [
+    {
+      "name": "Oil - 1 flask (2 sp)",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "tiN0hPCC0JHIeaiW",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Goat",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "oLy2KUZqTE7Naent",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Spear",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/spear-feather.svg",
+      "effects": [],
+      "_id": "BoiDPtFrRDCNzqQe",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930608089,
+        "modifiedTime": 1749930608089,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": "0",
+          "ep": "0",
+          "gp": "3",
+          "sp": "0",
+          "cp": "0"
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": "",
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d8+2",
+        "damageWeapon": "1d8",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+5",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 2600000
+    },
+    {
+      "name": "Short sword",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/broad-dagger.svg",
+      "effects": [],
+      "_id": "iPidLDSO6dObhyPN",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930608095,
+        "modifiedTime": 1749930608095,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 7,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d6+2",
+        "damageWeapon": "1d6",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+5",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 300000
+    },
+    {
+      "name": "Shortbow",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/high-shot.svg",
+      "effects": [],
+      "_id": "pDQc8RaFGxiqC5fR",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930608103,
+        "modifiedTime": 1749930608103,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 25,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d6+0",
+        "damageWeapon": "1d6",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": false,
+        "range": "50/100/150",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+4",
+        "trained": true,
+        "twoHanded": true,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 2200000
+    },
+    {
+      "_id": "3ozPCNaYMiFJ4On8",
+      "name": "Studded Leather",
+      "type": "armor",
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/leather-armor.svg",
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930608110,
+        "modifiedTime": 1749930608110,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": "0",
+          "ep": "0",
+          "gp": "45",
+          "sp": "0",
+          "cp": "0"
+        },
+        "acBonus": "+3",
+        "checkPenalty": "-2",
+        "speed": "",
+        "fumbleDie": "1d8"
+      }
+    }
+  ],
+  "prototypeToken": {
+    "name": "Parsnip Farmer Thief",
+    "displayName": 0,
+    "actorLink": true,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_Gongfarmer_Male_280px.webp",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": "attributes.hp"
+    },
+    "bar2": {
+      "attribute": "abilities.lck.value"
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "effects": [],
+  "flags": {
+    "core": {
+      "sheetClass": "dcc.DCCActorSheetThief"
+    },
+    "exportSource": {
+      "world": "baselinev12",
+      "system": "dcc",
+      "coreVersion": "12.343",
+      "systemVersion": "0.51.61"
+    }
+  },
+  "_stats": {
+    "coreVersion": "12.343",
+    "systemId": "dcc",
+    "systemVersion": "0.51.61",
+    "createdTime": 1749930608062,
+    "modifiedTime": 1749930946678,
+    "lastModifiedBy": "SACrbgt190Rix7Wx"
+  }
+}

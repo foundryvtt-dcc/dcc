@@ -64,13 +64,15 @@ async function parseNPC (npcString) {
   }
   npc['attributes.hitDice.value'] = hd
   const hpRoll = await new Roll(hd).evaluate()
-  let hp = hpRoll.total
+  const hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
   npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,. ].*/, npcString) || '10'
   npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp
   npc['attributes.speed.value'] = _firstMatch(/.*MV ?(.+?)[;.].*/, npcString) || '30'
   npc['config.actionDice'] = _firstMatch(/.*Act ?(.+?)[;.].*/, npcString) || '1d20'
-  npc['attributes.special.value'] = _firstMatch(/.*SP ?(.+?);.*/, npcString) || ''
+  // Parse special abilities without truncating at semicolons within parentheses
+  const spMatch = npcString.match(/.*SP ?(.+?)(?:;\s*(?:Act|SV|AL)|$)/)
+  npc['attributes.special.value'] = spMatch ? spMatch[1].trim() : ''
   npc['saves.frt.value'] = _firstMatch(/.*Fort ?(.+?)[;,.].*/, npcString) || '+0'
   npc['saves.ref.value'] = _firstMatch(/.*Ref ?(.+?)[;,.].*/, npcString) || '+0'
   npc['saves.wil.value'] = _firstMatch(/.*Will ?(.+?)[;,.].*/, npcString) || '+0'
@@ -135,8 +137,12 @@ async function parseNPC (npcString) {
 
   /* Speed */
   if (npc['attributes.speed.value'].includes('or')) {
-    npc['attributes.speed.other'] = _firstMatch(/.* or (.*)/, npc['attributes.speed.value'])
-    npc['attributes.speed.value'] = _firstMatch(/(.*) or .*/, npc['attributes.speed.value'])
+    // Parse all movement modes separated by 'or'
+    const movementModes = npc['attributes.speed.value'].split(/\s+or\s+/)
+    if (movementModes.length > 1) {
+      npc['attributes.speed.value'] = movementModes[0].trim()
+      npc['attributes.speed.other'] = movementModes.slice(1).join(' or ').trim()
+    }
   }
 
   npc.attacks = _firstMatch(/.*Atk ?(.+?)[;.].*/, npcString) || ''

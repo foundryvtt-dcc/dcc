@@ -564,7 +564,8 @@ DCC.defaultItemImages = {
   armor: 'systems/dcc/styles/images/armor.webp',
   spell: 'systems/dcc/styles/images/spell.webp',
   treasure: 'systems/dcc/styles/images/coins.webp',
-  weapon: 'systems/dcc/styles/images/weapon.webp'
+  weapon: 'systems/dcc/styles/images/weapon.webp',
+  skill: 'systems/dcc/styles/images/skill.webp'
 }
 
 // Default macro images

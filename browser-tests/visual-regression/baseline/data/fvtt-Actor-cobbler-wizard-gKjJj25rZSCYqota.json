@@ -1,0 +1,1397 @@
+{
+  "img": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_Cobbler_Female_280px.webp",
+  "name": "Cobbler Wizard",
+  "type": "Player",
+  "folder": "aR5HpwCOwBWzFboK",
+  "system": {
+    "abilities": {
+      "str": {
+        "label": "DCC.AbilityStr",
+        "value": 5,
+        "max": 5
+      },
+      "agl": {
+        "label": "DCC.AbilityAgl",
+        "value": 10,
+        "max": 10
+      },
+      "sta": {
+        "label": "DCC.AbilitySta",
+        "value": 10,
+        "max": 10
+      },
+      "per": {
+        "label": "DCC.AbilityPer",
+        "value": 12,
+        "max": 12
+      },
+      "int": {
+        "label": "DCC.AbilityInt",
+        "value": 12,
+        "max": 12
+      },
+      "lck": {
+        "label": "DCC.AbilityLck",
+        "value": 14,
+        "max": 14
+      }
+    },
+    "attributes": {
+      "ac": {
+        "value": "10",
+        "checkPenalty": 0,
+        "otherMod": 0,
+        "speedPenalty": 0
+      },
+      "actionDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          }
+        ]
+      },
+      "critical": {
+        "die": "1d10",
+        "table": "I"
+      },
+      "fumble": {
+        "die": "1d4"
+      },
+      "hitDice": {
+        "value": "1d4"
+      },
+      "hp": {
+        "value": 13,
+        "min": 0,
+        "max": "13",
+        "temp": 0,
+        "tempmax": 0
+      },
+      "init": {
+        "die": "1d20",
+        "otherMod": 0,
+        "value": 0
+      },
+      "initDice": {
+        "value": "1d20",
+        "options": [
+          {
+            "value": "1d20",
+            "label": "1d20"
+          },
+          {
+            "value": "1d16",
+            "label": "1d16"
+          }
+        ]
+      },
+      "speed": {
+        "value": "30",
+        "base": 30,
+        "special": ""
+      }
+    },
+    "details": {
+      "alignment": "n",
+      "attackBonus": "+2",
+      "attackHitBonus": {
+        "melee": {
+          "value": "+0",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+2",
+          "adjustment": "+0"
+        }
+      },
+      "attackDamageBonus": {
+        "melee": {
+          "value": "-2",
+          "adjustment": "+0"
+        },
+        "missile": {
+          "value": "+0",
+          "adjustment": "+0"
+        }
+      },
+      "birthAugur": "Pack hunter (Attack/damage rolls for 0-level weapon) (+1)",
+      "critRange": 20,
+      "languages": "Common",
+      "level": {
+        "value": 5
+      },
+      "occupation": {
+        "value": "Cobbler"
+      },
+      "notes": {
+        "value": "Equipment:<br/>  Torch (1 cp)<br/>  Shoehorn (Trade Goods)<br/><br/>Starting Funds: 44 cp + 1221 gp<br/>Birth Augur: Pack hunter (Attack/damage rolls for 0-level weapon) (+1)<br/>Languages: Common<br/><br/>Spells:<br/>1) Animal Summoning<br/>1) Comprehend Languages<br/>1) Magic Shield<br/>1) Sleep<br/>1) Ward Portal<br/>2) Levitate<br/>2) Monster Summoning<br/>3) Eldritch Hound<br/>"
+      },
+      "title": {
+        "value": ""
+      },
+      "xp": {
+        "value": 0,
+        "min": 0,
+        "max": 10
+      },
+      "sheetClass": "Wizard"
+    },
+    "saves": {
+      "frt": {
+        "abbreviation": "DCC.SavesFortitudeAbbr",
+        "label": "DCC.SavesFortitude",
+        "classBonus": "1",
+        "otherBonus": "",
+        "override": "",
+        "value": "+1"
+      },
+      "ref": {
+        "abbreviation": "DCC.SavesReflexAbbr",
+        "label": "DCC.SavesReflex",
+        "classBonus": "2",
+        "otherBonus": "",
+        "override": "",
+        "value": "+2"
+      },
+      "wil": {
+        "abbreviation": "DCC.SavesWillAbbr",
+        "label": "DCC.SavesWill",
+        "classBonus": "3",
+        "otherBonus": "",
+        "override": "",
+        "value": "+3"
+      }
+    },
+    "currency": {
+      "pp": "0",
+      "ep": "0",
+      "gp": "1221",
+      "sp": "0",
+      "cp": "44"
+    },
+    "config": {
+      "attackBonusMode": "flat",
+      "actionDice": "1d20,1d14",
+      "addClassLevelToInitiative": false,
+      "maxLevel": "",
+      "rollAttackBonus": false,
+      "computeAC": true,
+      "baseACAbility": "agl",
+      "computeSpeed": true,
+      "computeCheckPenalty": true,
+      "computeInitiative": true,
+      "computeMeleeAndMissileAttackAndDamage": true,
+      "computeSavingThrows": true,
+      "sortInventory": true,
+      "removeEmptyItems": true,
+      "showSpells": false,
+      "showSkills": false,
+      "showBackstab": false
+    },
+    "skills": {
+      "detectSecretDoors": {
+        "label": "DCC.HeightenedSenses",
+        "value": "+4",
+        "ability": "int"
+      },
+      "divineAid": {
+        "label": "DCC.DivineAid",
+        "value": 0,
+        "useDisapprovalRange": true,
+        "drainDisapproval": 10
+      },
+      "turnUnholy": {
+        "label": "DCC.TurnUnholy",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "layOnHands": {
+        "label": "DCC.LayOnHands",
+        "value": 0,
+        "useDisapprovalRange": true
+      },
+      "sneakSilently": {
+        "label": "DCC.SneakSilently",
+        "ability": "agl",
+        "value": "0"
+      },
+      "hideInShadows": {
+        "label": "DCC.HideInShadows",
+        "ability": "agl",
+        "value": "0"
+      },
+      "pickPockets": {
+        "label": "DCC.PickPocket",
+        "ability": "agl",
+        "value": "0"
+      },
+      "climbSheerSurfaces": {
+        "label": "DCC.ClimbSheerSurfaces",
+        "ability": "agl",
+        "value": "0"
+      },
+      "pickLock": {
+        "label": "DCC.PickLock",
+        "ability": "agl",
+        "value": "0"
+      },
+      "findTrap": {
+        "label": "DCC.FindTrap",
+        "ability": "int",
+        "value": "0"
+      },
+      "disableTrap": {
+        "label": "DCC.DisableTrap",
+        "ability": "agl",
+        "value": "0"
+      },
+      "forgeDocument": {
+        "label": "DCC.ForgeDocument",
+        "ability": "agl",
+        "value": "0"
+      },
+      "disguiseSelf": {
+        "label": "DCC.DisguiseSelf",
+        "ability": "per",
+        "value": "0"
+      },
+      "readLanguages": {
+        "label": "DCC.ReadLanguages",
+        "ability": "int",
+        "value": "0"
+      },
+      "handlePoison": {
+        "label": "DCC.HandlePoison",
+        "value": "0"
+      },
+      "castSpellFromScroll": {
+        "label": "DCC.CastSpellFromScroll",
+        "ability": "int",
+        "die": "1d10",
+        "value": "0"
+      },
+      "sneakAndHide": {
+        "label": "DCC.SneakAndHide",
+        "value": "+3"
+      },
+      "shieldBash": {
+        "label": "DCC.ShieldBash",
+        "ability": "str",
+        "die": "1d14",
+        "value": "+0",
+        "useDeed": true
+      }
+    },
+    "inventory": {
+      "weapons": [],
+      "ammunition": [],
+      "armor": [],
+      "equipment": [],
+      "mount": []
+    },
+    "class": {
+      "spellCheck": "+5",
+      "spellCheckAbility": "int",
+      "spellsLevel1": 0,
+      "spellsLevel2": 0,
+      "spellsLevel3": 0,
+      "spellsLevel4": 0,
+      "spellsLevel5": 0,
+      "deity": null,
+      "disapproval": 1,
+      "disapprovalTable": "Disapproval",
+      "luckDie": "1d3",
+      "backstab": "0",
+      "luckyWeapon": null,
+      "luckyWeaponMod": "+0",
+      "knownSpells": 0,
+      "maxSpellLevel": 0,
+      "spellCheckOtherMod": "",
+      "spellCheckDieOverride": null,
+      "spellCheckOverride": "",
+      "patron": "",
+      "familiar": "",
+      "corruption": [],
+      "className": "Wizard",
+      "spellCheckOverrideDie": ""
+    }
+  },
+  "items": [
+    {
+      "name": "Torch (1 cp)",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "EpFpPhHN6XPSOUCA",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Shoehorn",
+      "type": "equipment",
+      "img": "systems/dcc/styles/images/item.webp",
+      "_id": "4h8EGye2lMWH5QzG",
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 0,
+          "sp": 0,
+          "cp": 0
+        }
+      },
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "ownership": {
+        "default": 0
+      },
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": null,
+        "modifiedTime": null,
+        "lastModifiedBy": null
+      }
+    },
+    {
+      "name": "Dagger",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/broad-dagger.svg",
+      "effects": [],
+      "_id": "Q96sj8JhL8xwQHAl",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671165,
+        "modifiedTime": 1749930671165,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": "0",
+          "ep": "0",
+          "gp": "3",
+          "sp": "0",
+          "cp": "0"
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": "1d10",
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d4-2",
+        "damageWeapon": "1d4",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "10/20/30",
+        "shortRangeStrength": true,
+        "subdual": false,
+        "toHit": "+0",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": true
+      },
+      "folder": null,
+      "sort": 2000000
+    },
+    {
+      "name": "Longsword",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/broadsword.svg",
+      "effects": [],
+      "_id": "wdmoRtfrtJPCmfcw",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671176,
+        "modifiedTime": 1749930671176,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 10,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d8-2",
+        "damageWeapon": "1d8",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": true,
+        "range": "-",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+0",
+        "trained": true,
+        "twoHanded": false,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 100000
+    },
+    {
+      "name": "Crossbow",
+      "type": "weapon",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/crossbow.svg",
+      "effects": [],
+      "_id": "Z7DXuvpRaMEKNCnC",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671186,
+        "modifiedTime": 1749930671186,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": 0,
+          "ep": 0,
+          "gp": 30,
+          "sp": 0,
+          "cp": 0
+        },
+        "config": {
+          "actionDieOverride": "",
+          "critDieOverride": "",
+          "critRangeOverride": "",
+          "critTableOverride": "",
+          "damageOverride": "",
+          "attackBonusOverride": "",
+          "initiativeBonusOverride": "",
+          "initiativeDieOverride": ""
+        },
+        "actionDie": "",
+        "attackBonus": "",
+        "attackBonusWeapon": "",
+        "attackBonusLucky": "",
+        "backstabDamage": null,
+        "critDie": "",
+        "critRange": 20,
+        "critTable": "",
+        "damage": "1d6+0",
+        "damageWeapon": "1d6",
+        "damageBonus": "",
+        "damageWeaponBonus": "",
+        "doubleIfMounted": false,
+        "initiativeBonus": "",
+        "initiativeDie": "1d20",
+        "initiativeWeaponBonus": "",
+        "melee": false,
+        "range": "80/160/240",
+        "shortRangeStrength": false,
+        "subdual": false,
+        "toHit": "+2",
+        "trained": true,
+        "twoHanded": true,
+        "backstab": false
+      },
+      "folder": null,
+      "sort": 200000
+    },
+    {
+      "_id": "Bb8S0bzc3dJ2IAwM",
+      "name": "Unarmored",
+      "type": "armor",
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/underwear-shorts.svg",
+      "effects": [],
+      "folder": null,
+      "sort": 0,
+      "flags": {},
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671195,
+        "modifiedTime": 1749930671195,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "quantity": 1,
+        "weight": 0,
+        "equipped": true,
+        "identified": true,
+        "value": {
+          "pp": "0",
+          "ep": "0",
+          "gp": "0",
+          "sp": "0",
+          "cp": "0"
+        },
+        "acBonus": "+0",
+        "checkPenalty": "0",
+        "speed": "",
+        "fumbleDie": "1d4"
+      }
+    },
+    {
+      "_id": "4Bd2E36JvLDtoiNO",
+      "name": "Animal Summoning",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/bear-head.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671204,
+        "modifiedTime": 1749930671204,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster invokes animal spirits to summon forth a mundane animal. The caster must be familiar with the animal type and have some material remnant to expend in casting the spell (e.g., hair, fur, paw, tooth, skull, etc.).</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Animal Summoning]{Animal Summoning}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "20'",
+        "duration": "Varies",
+        "page": "129",
+        "castingTime": "1 round",
+        "results": {
+          "table": "Animal Summoning",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "gUpqPdpIjD3pHGxm",
+      "name": "Comprehend Languages",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/read.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671211,
+        "modifiedTime": 1749930671211,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster can understand non-magical words or images (such as treasure maps) that would otherwise be unintelligible.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Comprehend Languages]{Comprehend Languages}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "Self",
+        "duration": "Varies",
+        "page": "136",
+        "castingTime": "1 turn",
+        "results": {
+          "table": "Comprehend Languages",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "qrIKNn0klFkBo5bc",
+      "name": "Magic Shield",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/shield-reflect.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671218,
+        "modifiedTime": 1749930671218,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster conjures up a magical shield that defends him from opponents.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Magic Shield]{Magic Shield}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "Touch",
+        "duration": "Varies",
+        "page": "146",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Magic Shield",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "4pH8g8IgzhLB6PV4",
+      "name": "Sleep",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/night-sleep.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671225,
+        "modifiedTime": 1749930671225,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster lulls a target into a deep, sound sleep.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Sleep]{Sleep}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": false,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "60'",
+        "duration": "Varies",
+        "page": "155",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Sleep",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "Will vs. spell check DC",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "_id": "g7wDlzO5Iyvxsjoh",
+      "name": "Ward Portal",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/closed-doors.svg",
+      "effects": [],
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671231,
+        "modifiedTime": 1749930671231,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster magically wards a portal against passage. Any door, trap door, gate, portcullis, grate, or other such portal can be affected.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Ward Portal]{Ward Portal}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 1,
+        "lost": false,
+        "range": "10'",
+        "duration": "Varies",
+        "page": "160",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Ward Portal",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Levitate",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/floating-platforms.svg",
+      "effects": [],
+      "_id": "qORXPBd6awJMfbCF",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671238,
+        "modifiedTime": 1749930671238,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster or a target chosen by the caster levitates into the air. This spell is useful for getting over walls or into canyons and handy for carrying heavy objects.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Levitate]{Levitate}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 2,
+        "lost": false,
+        "range": "Self or further (see below)",
+        "duration": "Varies",
+        "page": "176",
+        "castingTime": "1 action",
+        "results": {
+          "table": "Levitate",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "Will vs. spell check",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Monster Summoning",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/brute.svg",
+      "effects": [],
+      "_id": "9ty5L2JJVjHvHyig",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671244,
+        "modifiedTime": 1749930671244,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster must spend half the casting time drawing pentacle, then the remaining casting time conjuring monster spirits. At end of the turn, the caster summons forth a monster. He must be familiar with the monster, and it must be native to this plane of existence. The master must have some material remnant of the monster to expend in the spell (e.g., hair, fur, paw, tooth, skull, etc.).</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Monster Summoning]{Monster Summoning}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 2,
+        "lost": false,
+        "range": "20'",
+        "duration": "Varies",
+        "page": "184",
+        "castingTime": "1 turn or less",
+        "results": {
+          "table": "Monster Summoning",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "None",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    },
+    {
+      "name": "Eldritch Hound",
+      "type": "spell",
+      "flags": {},
+      "img": "modules/dcc-core-book/assets/svg/game-icons-net/hound.svg",
+      "effects": [],
+      "_id": "D5gk41YYeo7scIBF",
+      "_stats": {
+        "compendiumSource": null,
+        "duplicateSource": null,
+        "coreVersion": "12.343",
+        "systemId": "dcc",
+        "systemVersion": "0.51.61",
+        "createdTime": 1749930671249,
+        "modifiedTime": 1749930671249,
+        "lastModifiedBy": "SACrbgt190Rix7Wx"
+      },
+      "ownership": {
+        "default": 0,
+        "U5X07uKi3FMVWkQ1": 3,
+        "SACrbgt190Rix7Wx": 3
+      },
+      "system": {
+        "description": {
+          "judge": {
+            "value": ""
+          },
+          "value": "<p>The caster summons forth an otherworldly hound to hunt for him. This eldritch hunter is a vile creature of the Abyss with no good intentions. This spell requires a minimum of 1 point of spellburn, and that spellburn will not heal until the eldritch hound returns from whence it came. It has no permanent form on the material plane and usually appears as a shadow or steaming mist. The caster must make known to the hound the object or person it seeks in clear and direct terms; ambiguity may result in the wrong target being sought. A physical sample, such as clothing, hair, or a vial of blood, is preferable; a painting, description, name (or true name) is of secondary value. The hound has an extraordinary sense of smell, as well as rudimentary ESP and second sight. Provided with sufficient foundational evidence and a trail to seek, it is usually very successful in finding its target. It will seek and return the specified person or object, dead or alive, to the place where it was first summoned. It has no preference between &ldquo;dead&rdquo; or &ldquo;alive&rdquo; and usually chooses the most expedient manner. Of course, if the object is on a distant continent or in a dangerous labyrinth, the eldritch hound may be in for a long and potentially unsuccessful journey. A caster who attempts to place terms on the hound &ndash; such as to retrieve an object alive or to make a retrieval only at a certain time or after a certain event, may or may not succeed, as noted in the spell check results below.</p>\n<p>Unless noted otherwise, the hound flies at 100&rsquo;, has ability scores of 14, and can perform any action a normal man could perform. It listens but never speaks. It has AC 18, [[/roll 4d12]] hp, attacks at +8 ([[/roll 2d6]] damage), and saves as the caster. It will not fight arbitrarily or even in the caster&rsquo;s defense &ndash; it will only fight to retrieve the specified person or object, and only then if combat is completely unavoidable. It is patient and would prefer to wait than fight. Provided with sufficient information, there is a base chance the hound succeeds in finding the trail of its target (as noted in the spell checks below), though it cannot shift between planes (unless noted otherwise below), and success in locating the object does not always mean success in retrieving it within the indicated time. The judge may modify this base chance as appropriate.</p><br><p><strong>Spell Data:</strong> @Compendium[dcc-core-book.dcc-core-spell-journals.Eldritch Hound]{Eldritch Hound}</p>",
+          "chat": "",
+          "unidentified": "",
+          "summary": ""
+        },
+        "source": "",
+        "config": {
+          "inheritActionDie": true,
+          "inheritSpellCheck": true,
+          "inheritCheckPenalty": true,
+          "castingMode": "wizard",
+          "showMercurialTab": false
+        },
+        "level": 3,
+        "lost": false,
+        "range": "Varies",
+        "duration": "Varies",
+        "page": "211",
+        "castingTime": "1 turn",
+        "results": {
+          "table": "Eldritch Hound",
+          "collection": "dcc-core-book.dcc-core-spell-tables-wizard"
+        },
+        "save": "N/A",
+        "spellCheck": {
+          "die": "1d20",
+          "value": 0,
+          "penalty": "-0"
+        },
+        "manifestation": {
+          "value": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "mercurialEffect": {
+          "value": null,
+          "summary": "",
+          "description": "",
+          "displayInChat": true
+        },
+        "available": true
+      },
+      "folder": null,
+      "sort": 0
+    }
+  ],
+  "prototypeToken": {
+    "name": "Cobbler Wizard",
+    "displayName": 0,
+    "actorLink": true,
+    "appendNumber": false,
+    "prependAdjective": false,
+    "width": 1,
+    "height": 1,
+    "texture": {
+      "src": "worlds/baselinev12/data/assets/tokens/0level/DCC_0-level_Cobbler_Female_280px.webp",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "offsetX": 0,
+      "offsetY": 0,
+      "fit": "contain",
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "tint": "#ffffff",
+      "alphaThreshold": 0.75
+    },
+    "hexagonalShape": 0,
+    "lockRotation": false,
+    "rotation": 0,
+    "alpha": 1,
+    "disposition": -1,
+    "displayBars": 0,
+    "bar1": {
+      "attribute": "attributes.hp"
+    },
+    "bar2": {
+      "attribute": "abilities.lck.value"
+    },
+    "light": {
+      "negative": false,
+      "priority": 0,
+      "alpha": 0.5,
+      "angle": 360,
+      "bright": 0,
+      "color": null,
+      "coloration": 1,
+      "dim": 0,
+      "attenuation": 0.5,
+      "luminosity": 0.5,
+      "saturation": 0,
+      "contrast": 0,
+      "shadows": 0,
+      "animation": {
+        "type": null,
+        "speed": 5,
+        "intensity": 5,
+        "reverse": false
+      },
+      "darkness": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    "sight": {
+      "enabled": false,
+      "range": 0,
+      "angle": 360,
+      "visionMode": "basic",
+      "color": null,
+      "attenuation": 0.1,
+      "brightness": 0,
+      "saturation": 0,
+      "contrast": 0
+    },
+    "detectionModes": [],
+    "occludable": {
+      "radius": 0
+    },
+    "ring": {
+      "enabled": false,
+      "colors": {
+        "ring": null,
+        "background": null
+      },
+      "effects": 1,
+      "subject": {
+        "scale": 1,
+        "texture": null
+      }
+    },
+    "flags": {},
+    "randomImg": false
+  },
+  "effects": [],
+  "flags": {
+    "core": {
+      "sheetClass": "dcc.DCCActorSheetWizard"
+    },
+    "exportSource": {
+      "world": "baselinev12",
+      "system": "dcc",
+      "coreVersion": "12.343",
+      "systemVersion": "0.51.61"
+    }
+  },
+  "_stats": {
+    "coreVersion": "12.343",
+    "systemId": "dcc",
+    "systemVersion": "0.51.61",
+    "createdTime": 1749930671128,
+    "modifiedTime": 1749930850147,
+    "lastModifiedBy": "SACrbgt190Rix7Wx"
+  }
+}
