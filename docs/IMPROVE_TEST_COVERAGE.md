@@ -48,7 +48,7 @@ This plan outlines a comprehensive strategy to improve test coverage for the Dun
 ### Phase 1: Core Logic Foundation (Priority: HIGH)
 *Target: 2-3 weeks*
 
-#### 1.1 Dice Chain System Testing
+#### 1.1 Dice Chain System Testing ✅ COMPLETE
 - **File**: `module/dice-chain.js`
 - **Test Coverage**: 
   - Die face progression algorithms
@@ -56,8 +56,9 @@ This plan outlines a comprehensive strategy to improve test coverage for the Dun
   - Edge cases (d2, d100+, invalid inputs)
   - Critical adjustment calculations
 - **Test Type**: Unit tests (minimal Foundry dependency)
+- **Status**: Implemented comprehensive test suite with 100% coverage
 
-#### 1.2 Utility Functions Testing
+#### 1.2 Utility Functions Testing ✅ COMPLETE
 - **File**: `module/utilities.js`  
 - **Test Coverage**:
   - Formatting functions (ability modifiers, dice notation)
@@ -65,6 +66,7 @@ This plan outlines a comprehensive strategy to improve test coverage for the Dun
   - String manipulation helpers
   - Number parsing and validation
 - **Test Type**: Unit tests
+- **Status**: Implemented comprehensive test suite with 44 test cases covering all utility functions
 
 #### 1.3 DCC Roll System Core
 - **File**: `module/dcc-roll.js`

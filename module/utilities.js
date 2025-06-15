@@ -152,7 +152,7 @@ export async function getNPCFumbleTableResult (roll, fumbleTableName) {
     if (pack) {
       await pack.getIndex() // Load the compendium index
       const entry = pack.index.filter((entity) => entity.name.startsWith(fumbleTableName))
-      if (entry) {
+      if (entry.length > 0) {
         const table = await pack.getDocument(entry[0]._id)
         const fumbleResult = table.getResultsForRoll(roll.total)
         return fumbleResult[0] || 'Unable to find fumble result'
