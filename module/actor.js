@@ -325,25 +325,25 @@ class DCCActor extends Actor {
     const staMod = parseInt(this.system.abilities.sta.mod)
     const refSaveClassBonus = parseInt(this.system.saves.ref.classBonus || 0)
     const refSaveOtherBonus = parseInt(this.system.saves.ref.otherBonus || 0)
-    const refSaveOverride = parseInt(this.system.saves.ref.override || 0)
+    const refSaveOverride = this.system.saves.ref.override
     const frtSaveClassBonus = parseInt(this.system.saves.frt.classBonus || 0)
     const frtSaveOtherBonus = parseInt(this.system.saves.frt.otherBonus || 0)
-    const frtSaveOverride = parseInt(this.system.saves.frt.override || 0)
+    const frtSaveOverride = this.system.saves.frt.override
     const wilSaveClassBonus = parseInt(this.system.saves.wil.classBonus || 0)
     const wilSaveOtherBonus = parseInt(this.system.saves.wil.otherBonus || 0)
-    const wilSaveOverride = parseInt(this.system.saves.wil.override || 0)
+    const wilSaveOverride = this.system.saves.wil.override
 
     this.system.saves.ref.value = ensurePlus(aglMod + refSaveClassBonus + refSaveOtherBonus)
-    if (refSaveOverride) {
-      this.system.saves.ref.value = ensurePlus(refSaveOverride)
+    if (refSaveOverride !== null && refSaveOverride !== undefined && refSaveOverride !== '') {
+      this.system.saves.ref.value = ensurePlus(parseInt(refSaveOverride))
     }
     this.system.saves.frt.value = ensurePlus(staMod + frtSaveClassBonus + frtSaveOtherBonus)
-    if (frtSaveOverride) {
-      this.system.saves.frt.value = ensurePlus(frtSaveOverride)
+    if (frtSaveOverride !== null && frtSaveOverride !== undefined && frtSaveOverride !== '') {
+      this.system.saves.frt.value = ensurePlus(parseInt(frtSaveOverride))
     }
     this.system.saves.wil.value = ensurePlus(perMod + wilSaveClassBonus + wilSaveOtherBonus)
-    if (wilSaveOverride) {
-      this.system.saves.wil.value = ensurePlus(wilSaveOverride)
+    if (wilSaveOverride !== null && wilSaveOverride !== undefined && wilSaveOverride !== '') {
+      this.system.saves.wil.value = ensurePlus(parseInt(wilSaveOverride))
     }
   }
 

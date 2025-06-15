@@ -571,12 +571,14 @@ Since direct HTML testing requires Foundry authentication, consider these altern
    - **File**: `module/actor.js:483-517`
    - **Status**: API design consideration - should standardize return type
 
-8. **Saving Throw Override Logic Silently Ignores Zero Values** ⚠️ LOGIC QUIRK
-   - **Issue**: `computeSavingThrows()` uses `if (refSaveOverride)` which treats 0 as falsy
-   - **Location**: `module/actor.js:337-347` - override logic skips legitimate zero overrides
-   - **Impact**: Cannot explicitly set save to 0 using override field
+8. **Saving Throw Override Logic Silently Ignores Zero Values** ✅ FIXED
+   - **Issue**: `computeSavingThrows()` used `if (refSaveOverride)` which treated 0 as falsy
+   - **Location**: `module/actor.js:337-347` - override logic skipped legitimate zero overrides
+   - **Impact**: Could not explicitly set save to 0 using override field
+   - **Fix Applied**: Changed to explicit null/undefined/empty string checks: `if (override !== null && override !== undefined && override !== '')`
+   - **Testing**: Added comprehensive test to verify zero overrides work and empty values are ignored
    - **File**: `module/actor.js:320-348`
-   - **Status**: Minor logic bug - should check for null/undefined instead of falsy
+   - **Status**: Fixed - zero overrides now work correctly while empty values are properly ignored
 
 ### Test Infrastructure Issues Discovered
 
@@ -608,7 +610,7 @@ Since direct HTML testing requires Foundry authentication, consider these altern
 8. ~~**Enhance spell check formula simplification** for cleaner display~~ (Confirmed as intentional design)
 9. ~~**Add null checks in prepareBaseData** for defensive programming~~ (Fixed)
 10. **Standardize initiative roll return types** for API consistency
-11. **Fix saving throw override logic** to handle zero values properly
+11. ~~**Fix saving throw override logic** to handle zero values properly~~ (Fixed)
 12. **Improve test infrastructure** to isolate Playwright and Vitest tests
 13. **Expand CONFIG.DCC mocks** for comprehensive critical hit and disapproval testing
 
