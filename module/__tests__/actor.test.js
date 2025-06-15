@@ -45,7 +45,7 @@ test('roll ability check', async () => {
     [
       {
         type: 'Die',
-        label: 'ActionDie',
+        label: 'Action Die',
         formula: '1d20',
         presets: [
           {
@@ -60,7 +60,7 @@ test('roll ability check', async () => {
       },
       {
         type: 'Modifier',
-        label: 'AbilityStr',
+        label: 'Strength',
         formula: '-1'
       },
       {
@@ -71,10 +71,10 @@ test('roll ability check', async () => {
     ],
     {},
     {
-      title: 'AbilityStr Check'
+      title: 'Strength Check'
     })
   expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'AbilityStr Check',
+    flavor: 'Strength Check',
     speaker: actor,
     flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck', checkPenaltyCouldApply: true, 'dcc.isAbilityCheck': true }
   })
@@ -92,11 +92,11 @@ test('roll ability check', async () => {
     {},
     {
       rollUnder: true,
-      title: 'AbilityLck Check'
+      title: 'Luck Check'
     }
   )
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
-    flavor: 'AbilityLck CheckRollUnder',
+    flavor: 'Luck CheckRollUnder',
     speaker: actor,
     flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder', 'dcc.isAbilityCheck': true }
   })
@@ -108,7 +108,7 @@ test('roll ability check', async () => {
     [
       {
         type: 'Die',
-        label: 'ActionDie',
+        label: 'Action Die',
         formula: '1d20',
         presets: [
           {
@@ -123,17 +123,17 @@ test('roll ability check', async () => {
       },
       {
         type: 'Modifier',
-        label: 'AbilityLck',
+        label: 'Luck',
         formula: '+3'
       }
     ],
     {},
     {
       rollUnder: false,
-      title: 'AbilityLck Check'
+      title: 'Luck Check'
     })
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
-    flavor: 'AbilityLck Check',
+    flavor: 'Luck Check',
     speaker: actor,
     flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck', 'dcc.isAbilityCheck': true }
   })
@@ -152,17 +152,17 @@ test('roll saving throw', async () => {
       },
       {
         type: 'Modifier',
-        label: 'SavesFortitude',
+        label: 'Fortitude',
         formula: '-1'
       }
     ],
     actor.getRollData(),
     {
-      title: 'SavesFortitude Save'
+      title: 'Fortitude Save'
     }
   )
   expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'SavesFortitude Save',
+    flavor: 'Fortitude Save',
     speaker: actor,
     flags: { 'dcc.Save': 'frt', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
   })
@@ -177,17 +177,17 @@ test('roll saving throw', async () => {
       },
       {
         type: 'Modifier',
-        label: 'SavesReflex',
+        label: 'Reflex',
         formula: '+0'
       }
     ],
     actor.getRollData(),
     {
-      title: 'SavesReflex Save'
+      title: 'Reflex Save'
     }
   )
   expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'SavesReflex Save',
+    flavor: 'Reflex Save',
     speaker: actor,
     flags: { 'dcc.Save': 'ref', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
   })
@@ -202,17 +202,17 @@ test('roll saving throw', async () => {
       },
       {
         type: 'Modifier',
-        label: 'SavesWill',
+        label: 'Will',
         formula: '+2'
       }
     ],
     actor.getRollData(),
     {
-      title: 'SavesWill Save'
+      title: 'Will Save'
     }
   )
   expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'SavesWill Save',
+    flavor: 'Will Save',
     speaker: actor,
     flags: { 'dcc.Save': 'wil', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
   })
@@ -237,7 +237,7 @@ test('roll initiative', async () => {
     ],
     actor.getRollData(),
     {
-      title: 'RollModifierTitleInitiative'
+      title: 'Initiative'
     }
   )
 })
@@ -279,13 +279,14 @@ test('roll weapon attack dagger', async () => {
       {
         type: 'Compound',
         dieLabel: 'DeedDie',
-        modifierLabel: 'ToHit',
+        modifierLabel: 'Attack',
         formula: '+2'
       }
     ],
-    Object.assign({ critical: 16 }, actor.getRollData()),
+    Object.assign({ critical: 20 }, actor.getRollData()),
     {
-      title: 'ToHit'
+      targets: undefined,
+      title: 'Attack'
     }
   )
 })
@@ -377,7 +378,7 @@ test('roll Action Die Skill', async () => {
     [
       {
         type: 'Die',
-        label: 'ActionDie',
+        label: 'Action Die',
         formula: '1d20',
         presets: [
           {
@@ -439,7 +440,7 @@ test('roll Custom Die Skill With Int', async () => {
     }
   )
   expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Custom Die Skill With Int (AbilityInt)',
+    flavor: 'Custom Die Skill With Int (Intelligence)',
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieSkillWithInt', 'dcc.SkillId': 'customDieSkillWithInt', 'dcc.isSkillCheck': true },
     system: {
@@ -471,7 +472,7 @@ test('roll Custom Die And Value Skill With Per', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'Custom Die And Value Skill With Per (AbilityPer)',
+        modifierLabel: 'Custom Die And Value Skill With Per (Personality)',
         formula: '3 + 2'
       }
     ],
@@ -481,7 +482,7 @@ test('roll Custom Die And Value Skill With Per', async () => {
     }
   )
   expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Custom Die And Value Skill With Per (AbilityPer)',
+    flavor: 'Custom Die And Value Skill With Per (Personality)',
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieAndValueSkillWithPer', 'dcc.SkillId': 'customDieAndValueSkillWithPer', 'dcc.isSkillCheck': true },
     system: {
@@ -497,7 +498,7 @@ test('roll Custom Die And Value Luck', async () => {
     [
       {
         type: 'Die',
-        label: 'ActionDie',
+        label: 'Action Die',
         formula: '1d20',
         presets: [
           {
@@ -513,7 +514,7 @@ test('roll Custom Die And Value Luck', async () => {
       {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'Action Die And Value Skill With Lck (AbilityLck)',
+        modifierLabel: 'Action Die And Value Skill With Lck (Luck)',
         formula: '1 + 3'
       }
     ],
@@ -523,7 +524,7 @@ test('roll Custom Die And Value Luck', async () => {
     }
   )
   expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Action Die And Value Skill With Lck (AbilityLck)',
+    flavor: 'Action Die And Value Skill With Lck (Luck)',
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'actionDieAndValueSkillWithLck', 'dcc.SkillId': 'actionDieAndValueSkillWithLck', 'dcc.isSkillCheck': true },
     system: {
@@ -549,7 +550,7 @@ test('roll luck die', async () => {
     ],
     actor.getRollData(),
     {
-      title: 'LuckDie'
+      title: 'Luck Die'
     }
   )
   expect(actorUpdateMock).toHaveBeenCalledTimes(1)
@@ -573,7 +574,7 @@ test('roll spell check', async () => {
     [
       {
         type: 'Die',
-        label: 'ActionDie',
+        label: 'Action Die',
         formula: '1d20',
         presets: [
           {
@@ -596,19 +597,19 @@ test('roll spell check', async () => {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
         formula: '+1',
-        modifierLabel: 'AbilityMod'
+        modifierLabel: 'Ability Modifier'
       },
       {
         dieLabel: 'RollModifierDieTerm',
         formula: '',
-        modifierLabel: 'SpellCheckOtherMod',
+        modifierLabel: 'Other Modifier',
         type: 'Compound'
       },
       {
         type: 'CheckPenalty',
         apply: true,
         formula: '+0',
-        label: 'CheckPenalty'
+        label: 'Check Penalty'
       },
       {
         type: 'Spellburn',
@@ -622,7 +623,7 @@ test('roll spell check', async () => {
     actor.getRollData(),
     {
       abilityId: 'int',
-      title: 'SpellCheck'
+      title: 'Spell Check'
     }
   )
   expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(1)
@@ -640,7 +641,7 @@ test('roll spell check', async () => {
         ]
       }),
       item: null,
-      flavor: 'SpellCheck (AbilityInt)'
+      flavor: 'Spell Check (Intelligence)'
     }
   )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
@@ -657,7 +658,7 @@ test('roll spell check int', async () => {
     [
       {
         type: 'Die',
-        label: 'ActionDie',
+        label: 'Action Die',
         formula: '1d20',
         presets: [
           {
@@ -680,19 +681,19 @@ test('roll spell check int', async () => {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
         formula: '+1',
-        modifierLabel: 'AbilityMod'
+        modifierLabel: 'Ability Modifier'
       },
       {
         dieLabel: 'RollModifierDieTerm',
         formula: '',
-        modifierLabel: 'SpellCheckOtherMod',
+        modifierLabel: 'Other Modifier',
         type: 'Compound'
       },
       {
         type: 'CheckPenalty',
         apply: true,
         formula: '+0',
-        label: 'CheckPenalty'
+        label: 'Check Penalty'
       },
       {
         type: 'Spellburn',
@@ -706,7 +707,7 @@ test('roll spell check int', async () => {
     actor.getRollData(),
     {
       abilityId: 'int',
-      title: 'SpellCheck'
+      title: 'Spell Check'
     }
   )
   expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
@@ -723,7 +724,7 @@ test('roll spell check int', async () => {
         ]
       }),
       item: null,
-      flavor: 'SpellCheck (AbilityInt)'
+      flavor: 'Spell Check (Intelligence)'
     }
   )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
@@ -740,7 +741,7 @@ test('roll spell check per', async () => {
     [
       {
         type: 'Die',
-        label: 'ActionDie',
+        label: 'Action Die',
         formula: '1d20',
         presets: [
           {
@@ -763,19 +764,19 @@ test('roll spell check per', async () => {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
         formula: '+2',
-        modifierLabel: 'AbilityMod'
+        modifierLabel: 'Ability Modifier'
       },
       {
         dieLabel: 'RollModifierDieTerm',
         formula: '',
-        modifierLabel: 'SpellCheckOtherMod',
+        modifierLabel: 'Other Modifier',
         type: 'Compound'
       },
       {
         type: 'CheckPenalty',
         apply: true,
         formula: '+0',
-        label: 'CheckPenalty'
+        label: 'Check Penalty'
       },
       {
         type: 'Spellburn',
@@ -789,7 +790,7 @@ test('roll spell check per', async () => {
     actor.getRollData(),
     {
       abilityId: 'per',
-      title: 'SpellCheck'
+      title: 'Spell Check'
     }
   )
   expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
@@ -806,7 +807,7 @@ test('roll spell check per', async () => {
         ]
       }),
       item: null,
-      flavor: 'SpellCheck (AbilityPer)'
+      flavor: 'Spell Check (Personality)'
     }
   )
   expect(collectionFindMock).toHaveBeenCalledTimes(0)

@@ -16,18 +16,65 @@ class FormApplicationMock {}
 global.FormApplication = FormApplicationMock
 
 /**
- * Item
+ * Item - Enhanced to better simulate real item behavior
  */
 class MockItem {
   constructor (data = {}, context = {}) {
+    this._id = data._id || 'mock-item-id'
+    this.name = data.name || 'Mock Item'
+    
     if (data.type) {
-      this.system = getTemplateData('Item', data.type)
+      this.system = getTemplateData('Item', data.type) || {}
       this.type = data.type
     }
+    
     Object.assign(this, data)
+    
+    // Enhanced system defaults for common item types (applied after data assignment)
+    if (this.type === 'weapon') {
+      // Set enhanced defaults, overriding template defaults where needed
+      const weaponDefaults = {
+        melee: true,
+        damage: '1d6',
+        attackBonus: '+0',
+        critRange: 20,
+        critDie: '1d6',
+        critTable: 'III'
+      }
+      this.system = Object.assign(this.system || {}, weaponDefaults)
+    } else if (this.type === 'armor') {
+      const armorDefaults = {
+        equipped: false,
+        checkPenalty: 0,
+        fumbleDie: '1d4'
+      }
+      this.system = Object.assign(this.system || {}, armorDefaults)
+    }
+    this.actor = null // Will be set when added to an actor
   }
 
-  prepareBaseData () {}
+  prepareBaseData () {
+    // Enhanced preparation for weapons and armor
+    if (this.type === 'weapon' && this.actor) {
+      this._prepareWeaponData()
+    } else if (this.type === 'armor') {
+      this._prepareArmorData()
+    }
+  }
+
+  _prepareWeaponData () {
+    // Simulate basic weapon preparation
+    if (!this.system.initiativeDie) {
+      this.system.initiativeDie = this.actor.system.attributes.actionDice?.value || '1d20'
+    }
+  }
+
+  _prepareArmorData () {
+    // Simulate basic armor preparation
+    if (!this.system.fumbleDie) {
+      this.system.fumbleDie = '1d4'
+    }
+  }
 }
 
 global.Item = MockItem
@@ -46,7 +93,17 @@ global.Collection = CollectionMock
 /**
  * Actor
  */
-global.itemTypesMock = vi.fn().mockName('Actor.itemTypes getter')
+// Enhanced itemTypes mock that returns proper collections by type
+global.itemTypesMock = vi.fn(() => {
+  return {
+    armor: [],
+    weapon: [],
+    equipment: [],
+    spell: [],
+    skill: [],
+    treasure: []
+  }
+}).mockName('Actor.itemTypes getter')
 global.actorUpdateMock = vi.fn(data => {}).mockName('Actor.update')
 
 class ActorMock {
@@ -60,12 +117,12 @@ class ActorMock {
       Object.assign(this, {
         system: {
           abilities: {
-            str: { value: 6, mod: -1, label: 'DCC.AbilityStr' },
-            agl: { value: 8, mod: -1, label: 'DCC.AbilityAgl' },
-            sta: { value: 12, mod: 0, label: 'DCC.AbilitySta' },
-            int: { value: 14, mod: 1, label: 'DCC.AbilityInt' },
-            per: { value: 16, mod: 2, label: 'DCC.AbilityPer' },
-            lck: { value: 18, mod: 3, label: 'DCC.AbilityLck' }
+            str: { value: 6, label: 'DCC.AbilityStr' },
+            agl: { value: 8, label: 'DCC.AbilityAgl' },
+            sta: { value: 12, label: 'DCC.AbilitySta' },
+            int: { value: 14, label: 'DCC.AbilityInt' },
+            per: { value: 16, label: 'DCC.AbilityPer' },
+            lck: { value: 18, label: 'DCC.AbilityLck' }
           },
           attributes: {
             ac: {
@@ -175,7 +232,18 @@ class ActorMock {
   }
 
   prepareData () {
-    // console.log('Mock Actor: super prepareData was called')
+    // Simulate the real prepareBaseData behavior for ability modifiers
+    this.prepareBaseData()
+  }
+
+  prepareBaseData () {
+    // Calculate ability modifiers using CONFIG.DCC.abilityModifiers like the real actor
+    const abilities = this.system.abilities
+    for (const abilityId in abilities) {
+      const config = global.CONFIG?.DCC?.abilityModifiers || DCC.abilityModifiers
+      abilities[abilityId].mod = config[abilities[abilityId].value] || 0
+      abilities[abilityId].maxMod = config[abilities[abilityId].max] || abilities[abilityId].mod
+    }
   }
 
   getRollData () {
@@ -191,7 +259,6 @@ class ActorMock {
   }
 }
 
-global.actor = new ActorMock()
 global.Actor = ActorMock
 
 /**
@@ -210,27 +277,80 @@ global.ChatMessage = ChatMessageMock
 
 // noinspection JSConstantReassignment
 /**
- * CONFIG
+ * CONFIG - Enhanced to better simulate Foundry environment
  */
-global.CONFIG = { DCC }
-global.CONFIG.sounds = { dice: 'diceSound' }
-global.CONST = { CHAT_MESSAGE_STYLES: { EMOTE: 'emote' } }
+global.CONFIG = { 
+  DCC: JSON.parse(JSON.stringify(DCC)), // Deep copy to avoid mutations
+  sounds: { dice: 'diceSound' },
+  Actor: {
+    documentClass: ActorMock
+  },
+  Item: {
+    documentClass: MockItem
+  }
+}
+
+// Enhanced CONST to include more Foundry constants
+global.CONST = { 
+  CHAT_MESSAGE_STYLES: { 
+    EMOTE: 'emote',
+    IC: 'ic',
+    OOC: 'ooc' 
+  },
+  DICE_ROLL_MODES: {
+    PUBLIC: 'roll',
+    PRIVATE: 'gmroll',
+    BLIND: 'blindroll',
+    SELF: 'selfroll'
+  },
+  ENTITY_TYPES: {
+    ACTOR: 'Actor',
+    ITEM: 'Item'
+  }
+}
+
+// Create global actor instance after CONFIG is set up
+global.actor = new ActorMock()
 
 /**
- * Localization
+ * Localization - Enhanced with common DCC localizations
  */
 class Localization {
+  constructor () {
+    // Common DCC localization strings for more realistic testing
+    this.translations = {
+      'DCC.AbilityStr': 'Strength',
+      'DCC.AbilityAgl': 'Agility', 
+      'DCC.AbilitySta': 'Stamina',
+      'DCC.AbilityPer': 'Personality',
+      'DCC.AbilityInt': 'Intelligence',
+      'DCC.AbilityLck': 'Luck',
+      'DCC.ActionDie': 'Action Die',
+      'DCC.RollModifierTitleInitiative': 'Initiative',
+      'DCC.ToHit': 'Attack',
+      'DCC.SavesReflex': 'Reflex',
+      'DCC.SavesFortitude': 'Fortitude', 
+      'DCC.SavesWill': 'Will',
+      'DCC.SpellCheck': 'Spell Check',
+      'DCC.LuckDie': 'Luck Die',
+      'DCC.Level': 'Level',
+      'DCC.AbilityMod': 'Ability Modifier',
+      'DCC.SpellCheckOtherMod': 'Other Modifier',
+      'DCC.CheckPenalty': 'Check Penalty',
+      'DCC.Spellburn': 'Spellburn'
+    }
+  }
+
   localize (stringId) {
-    // Just strip the DCC off the string ID to simulate the lookup
-    return stringId.replace('DCC.', '')
+    // Return actual translation if available, otherwise strip DCC prefix
+    return this.translations[stringId] || stringId.replace('DCC.', '')
   }
 
   format (stringId, data = {}) {
-    let returnString = stringId.replace('DCC.', '')
+    let returnString = this.localize(stringId)
     for (const datum in data) {
-      returnString += `,${datum}:${data[datum]}`
+      returnString = returnString.replace(`{${datum}}`, data[datum])
     }
-    returnString += data.toString()
     return returnString
   }
 }
@@ -255,12 +375,28 @@ global.getDCCSkillTableMock = vi.fn((skillName) => { return null }).mockName('ga
 global.processSpellCheckMock = vi.fn((actor, spellData) => { }).mockName('game.dcc.processSpellCheck')
 global.calculateCritAdjustment = vi.fn((original, adjusted) => { return 0 }).mockName('game.dcc.DiceChain.calculateCritAdjustment')
 global.updateFlagsMock = vi.fn((flags, roll) => { }).mockName('game.dcc.FleetingLuck.updateFlags')
+
+// Enhanced DiceChain mock with actual DCC dice chain logic
+global.rankDiceExpressionMock = vi.fn((expression) => {
+  // Simulate the ranking of dice expressions based on the DCC dice chain
+  const diceChain = [3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30]
+  const match = expression.match(/d(\d+)/)
+  if (match) {
+    const dieSize = parseInt(match[1])
+    const rank = diceChain.indexOf(dieSize)
+    return rank >= 0 ? rank : 0
+  }
+  return 0
+}).mockName('game.dcc.DiceChain.rankDiceExpression')
+
 global.game.dcc = {
   DCCRoll,
   getSkillTable: global.getDCCSkillTableMock,
   processSpellCheck: global.processSpellCheckMock,
   DiceChain: {
-    calculateCritAdjustment: global.calculateCritAdjustment
+    calculateCritAdjustment: global.calculateCritAdjustment,
+    rankDiceExpression: global.rankDiceExpressionMock,
+    DICE_CHAIN: [3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30]
   },
   FleetingLuck: {
     updateFlags: global.updateFlagsMock
@@ -269,9 +405,34 @@ global.game.dcc = {
 global.renderTemplate = vi.fn((template, data) => { return '' }).mockName('renderTemplate')
 
 /**
- * Settings
+ * Settings - Enhanced with common DCC setting defaults
  */
-global.gameSettingsGetMock = vi.fn((module, key) => {}).mockName('game.settings.get')
+global.gameSettingsGetMock = vi.fn((module, key) => {
+  // Return realistic defaults for common DCC settings
+  if (module === 'dcc') {
+    switch (key) {
+      case 'criticalHitPacks':
+        return 'dcc-core-book.dcc-crits'
+      case 'fumbleTable':
+        return 'dcc-core-book.dcc-fumbles'
+      case 'disapprovalPacks':
+        return 'dcc-core-book.dcc-disapproval'
+      case 'divineAidTable':
+        return 'dcc-core-book.dcc-divine-aid'
+      case 'mercurialMagicTable':
+        return 'dcc-core-book.dcc-mercurial-magic'
+      case 'turnUnholyTable':
+        return 'dcc-core-book.dcc-turn-unholy'
+      case 'layOnHandsTable':
+        return 'dcc-core-book.dcc-lay-on-hands'
+      case 'levelData':
+        return 'dcc-core-book.dcc-level-data'
+      default:
+        return undefined
+    }
+  }
+  return undefined
+}).mockName('game.settings.get')
 
 class ClientSettings {
   constructor (worldSettings) {
