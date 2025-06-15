@@ -791,7 +791,7 @@ a.inline-roll {
   column-gap: 5px;
   display: grid;
   font-family: $book-antiqua;
-  grid-template-columns: minmax(100px, auto) 55px 60px 97px 50px;
+  grid-template-columns: 28px minmax(100px, auto) 55px 60px 97px 50px;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
   text-align: center;
@@ -811,6 +811,15 @@ a.inline-roll {
     align-items: center;
     justify-items: center;
     margin-bottom: 5px;
+  }
+
+  .skill-summary-text {
+    grid-column: 1 / -1;
+    color: #666;
+    font-size: 0.9em;
+    padding-top: 4px;
+    text-align: left !important;
+    width: 100%;
   }
 }
 
