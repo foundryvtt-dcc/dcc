@@ -93,16 +93,20 @@ This plan outlines a comprehensive strategy to improve test coverage for the Dun
 - **Test Data**: Created comprehensive test fixtures
 - **Status**: Implemented comprehensive test suite with 604 lines of edge case coverage and enhanced existing tests
 
-#### 2.2 PC Parser Comprehensive Testing  
+#### 2.2 PC Parser Comprehensive Testing ✅ COMPLETE
 - **File**: `module/pc-parser.js`
 - **Current State**: Basic tests exist
-- **Expansion Needed**:
+- **Expansion Completed**:
   - Purple Sorcerer JSON format variations
   - Plain text format parsing
   - Partial data handling
   - Class-specific parsing
   - Equipment and spell parsing
+  - Error handling and edge cases
+  - Weapon parsing edge cases
+  - Notes field population
 - **Test Data**: Real-world character examples
+- **Status**: Implemented comprehensive test suite with 517 lines covering all parser functionality and edge cases
 
 ### Phase 3: Core System Integration (Priority: HIGH)
 *Target: 3-4 weeks*
@@ -440,6 +444,50 @@ Since direct HTML testing requires Foundry authentication, consider these altern
    - **Issue**: Alignment parsing splits on semicolon but only in some cases
    - **Example**: Inconsistent handling between different stat block formats
    - **File**: `module/npc-parser.js:78-80`
+
+### PC Parser Issues
+
+1. **Missing Hit Dice Configuration for Classes**
+   - **Issue**: Class-specific hit dice configuration is not loaded from CONFIG.DCC
+   - **Example**: Test expects warrior to have '1d12' hit dice but gets undefined
+   - **Impact**: Characters created with wrong hit dice affecting HP calculations
+   - **File**: `module/pc-parser.js:56-60`
+   - **Fix**: Ensure CONFIG.DCC.hitDiePerClass is properly mocked or loaded
+
+2. **Default Value Handling Inconsistency** 
+   - **Issue**: Parser uses default values (10, 30) instead of null for missing fields
+   - **Example**: Missing ability scores default to 10 instead of null
+   - **Impact**: Test expectations don't match parser behavior
+   - **File**: `module/pc-parser.js:40-52, 97`
+   - **Fix**: Standardize whether to use defaults or null for missing data
+
+3. **Weapon Damage Parsing with Special Text**
+   - **Issue**: Parser includes descriptive text in damage value instead of just dice notation
+   - **Example**: "1d8+2 plus fire" should parse as "1d8+2" damage, not full string
+   - **Impact**: Invalid damage calculations and character sheet display
+   - **File**: `module/pc-parser.js:467-487` (weapon parsing)
+   - **Fix**: Extract only dice notation from damage field
+
+4. **Armor Data Parsing Not Implemented for Plain Text**
+   - **Issue**: armorData field parsing is not implemented for plain text format
+   - **Example**: AC format "(15)* (Chainmail & Shield...)" doesn't populate armorData
+   - **Impact**: Armor information is lost during character import
+   - **File**: `module/pc-parser.js:370` 
+   - **Fix**: Implement armor description extraction for upper-level plain text
+
+5. **Incomplete Multiple Weapon Parsing**
+   - **Issue**: Parser doesn't handle empty weapon slots properly
+   - **Example**: "Main Weapon:" with no content should be skipped, not create empty weapon
+   - **Impact**: Empty weapons appear in character sheet
+   - **File**: `module/pc-parser.js:431-442`
+   - **Fix**: Add length check before parsing weapon strings
+
+6. **Text Processing Trailing Whitespace**
+   - **Issue**: Occupation names include trailing whitespace after parsing
+   - **Example**: "Blacksmith " instead of "Blacksmith"
+   - **Impact**: Inconsistent data and potential display issues
+   - **File**: `module/pc-parser.js:333` and other text extraction points
+   - **Fix**: Add trim() to all text extractions
 
 ### Other Potential Issues
 
