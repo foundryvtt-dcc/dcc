@@ -1,6 +1,5 @@
 import { describe, test, expect } from 'vitest'
 import '../__mocks__/foundry.js'
-import DCCActor from '../actor.js'
 
 describe('Enhanced Foundry Mocks', () => {
   test('CONFIG.DCC.abilityModifiers is properly available', () => {
@@ -12,10 +11,10 @@ describe('Enhanced Foundry Mocks', () => {
   test('Actor mock properly calculates ability modifiers', () => {
     // Test with the basic ActorMock instead of full DCCActor to avoid complex dependencies
     const actor = new global.Actor()
-    
+
     // Manually set ability values and run prepareBaseData
     actor.system.abilities.str.value = 14
-    actor.system.abilities.agl.value = 8  
+    actor.system.abilities.agl.value = 8
     actor.system.abilities.sta.value = 16
     actor.prepareBaseData()
 
@@ -48,11 +47,11 @@ describe('Enhanced Foundry Mocks', () => {
   })
 
   test('Item mock enhanced with proper defaults for weapons', () => {
-    const weapon = new global.Item({ 
-      type: 'weapon', 
-      name: 'Test Sword' 
+    const weapon = new global.Item({
+      type: 'weapon',
+      name: 'Test Sword'
     })
-    
+
     // Test that template data is merged with our enhanced defaults
     expect(weapon.name).toBe('Test Sword')
     expect(weapon.type).toBe('weapon')
@@ -65,11 +64,11 @@ describe('Enhanced Foundry Mocks', () => {
   })
 
   test('Item mock enhanced with proper defaults for armor', () => {
-    const armor = new global.Item({ 
-      type: 'armor', 
-      name: 'Test Mail' 
+    const armor = new global.Item({
+      type: 'armor',
+      name: 'Test Mail'
     })
-    
+
     // Test that template data is merged with our enhanced defaults
     expect(armor.name).toBe('Test Mail')
     expect(armor.type).toBe('armor')
