@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheetV2, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, loadTemplates, Handlebars */
+/* global $, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, Handlebars */
 
 /**
  * DCC
@@ -27,6 +27,7 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCActorSheet from './actor-sheet.js'
+import DCCPartySheet from './party-sheet.js'
 
 const { Actors } = foundry.documents.collections
 const { ActorSheetV2 } = foundry.applications.sheets
@@ -104,6 +105,11 @@ Hooks.once('init', async function () {
     label: 'DCC.DCCActorSheetGeneric'
   })
   Items.unregisterSheet('core', ItemSheetV2)
+  Actors.registerSheet('dcc', DCCPartySheet, {
+    makeDefault: true,
+    types: ['Party'],
+    label: 'DCC.DCCPartySheet'
+  })
   Items.registerSheet('dcc', DCCItemSheet, {
     label: 'DCC.DCCItemSheet',
     makeDefault: true
@@ -265,7 +271,6 @@ function checkReleaseNotes () {
 
 async function _onShowJournal (packName, journalName) {
   const pack = game.packs.get(packName)
-  // const index = await pack.getIndex()
   const metadata = await pack.index.getName(journalName)
   const doc = await pack.getDocument(metadata._id)
   await doc.sheet.render(true)
@@ -298,7 +303,6 @@ function registerTables () {
       for (const packName of manager.packs) {
         const pack = game.packs.get(packName)
         if (pack) {
-          // await pack.getIndex()
           for (const [key, value] of pack.index.entries()) {
             CONFIG.DCC.disapprovalTables[key] = {
               name: value.name,

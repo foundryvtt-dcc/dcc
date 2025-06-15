@@ -1,4 +1,4 @@
-/* global CONFIG, CONST, FormApplicationV2, game, Hooks, foundry, ui */
+/* global CONFIG, CONST, game, Hooks, foundry, ui */
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
@@ -207,7 +207,6 @@ class FleetingLuck {
    */
   static init () {
     if (game.user.isGM) {
-
       if (!FleetingLuck.enabled) {
         const element = document.querySelector('[data-tool="fleetingLuck"]')
         if (element) {

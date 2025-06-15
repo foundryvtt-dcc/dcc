@@ -1,4 +1,4 @@
-/* global game, CONFIG */
+/* global game, CONFIG, foundry */
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
@@ -58,7 +58,7 @@ class SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param form {HTMLFormElement}  The HTML form element that was submitted
    * @param formData {HTMLFormElement}  The object of validated form data with which to update the object
    */
-  static async #onSubmitForm(event, form, formData) {
+  static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
     // Update the actor
     await this.options.document.update(formData.object)

@@ -1,4 +1,4 @@
-/* global CONFIG, Dialog, foundry, fromUuid, FormApplication, game, Hooks, ui, $ */
+/* global CONFIG, Dialog, foundry, fromUuid, FormApplication, game, Hooks, ui */
 
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'

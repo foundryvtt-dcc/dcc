@@ -1,4 +1,4 @@
-/* global CONFIG, TextEditor, game, getDocumentClass, foundry */
+/* global CONFIG, game, foundry */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -8,6 +8,7 @@ import EntityImages from './entity-images.js'
 const { HandlebarsApplicationMixin } = foundry.applications.api
 const { TextEditor } = foundry.applications.ux
 const { ActorSheetV2 } = foundry.applications.sheets
+// eslint-disable-next-line no-unused-vars
 const { ApplicationTabsConfiguration } = foundry.applications.types
 
 /**
@@ -602,6 +603,48 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
     }
 
+    if (classes.contains('party-draggable')) {
+      const actorId = this._findDataset(event.currentTarget, 'actorId')
+      const partyActor = game.actors.get(actorId)
+      if (partyActor) {
+        if (classes.contains('ability-label')) {
+          // Normal ability rolls and DCC d20 roll under luck rolls
+          const abilityId = this._findDataset(event.currentTarget, 'ability')
+          const rollUnder = (abilityId === 'lck')
+          dragData = {
+            type: 'Ability',
+            actorId,
+            data: {
+              abilityId,
+              rollUnder
+            }
+          }
+        } else if (classes.contains('save-label')) {
+          const saveId = this._findDataset(event.currentTarget, 'save')
+          dragData = {
+            type: 'Save',
+            actorId,
+            data: saveId
+          }
+        } else if (classes.contains('weapon')) {
+          const itemId = this._findDataset(event.currentTarget, 'itemId')
+          const weapon = partyActor.items.get(itemId)
+          dragData = Object.assign(
+            weapon.toDragData(),
+            {
+              dccType: 'Weapon',
+              actorId,
+              data: weapon,
+              dccData: {
+                weapon,
+                backstab: false
+              }
+            }
+          )
+        }
+      }
+    }
+
     if (classes.contains('skill-check')) {
       const skillId = this.#findDataset(event.currentTarget, 'skill')
       const actorSkill = this.actor.system.skills[skillId]
@@ -767,7 +810,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    **/
   static async #configureSavingThrows (event, target) {
-    new SavingThrowConfig({document: this.document,
+    new SavingThrowConfig({
+      document: this.document,
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
     }).render(true)
@@ -1022,6 +1066,9 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static #createDragDropHandlers () {
     console.log('DCCActorSheet#_createDragDropHandlers')
   }
+
+  // Need to Make the Party Draggable Draggable
+  // html.find('.party-draggable').each(makeDraggable)
 }
 
 export default DCCActorSheet

@@ -73,7 +73,7 @@ class DCCActorLevelChange extends FormApplication {
    * @return levelData <object>
    */
   async _getLevelDataFromItem (levelItem) {
-    if (levelItem.hasOwnProperty('system')) {
+    if (Object.prototype.hasOwnProperty.call(levelItem, 'system')) {
       let levelData = levelItem.system.levelData
       if (this.object.system.details.alignment === 'l') {
         levelData += levelItem.system.levelDataLawful
@@ -142,7 +142,7 @@ class DCCActorLevelChange extends FormApplication {
 
   async _updateLevelUpDisplay () {
     const levelItem = await this._lookupLevelItem(this.object.classNameLower, this.object.currentLevel)
-    if (levelItem.hasOwnProperty('system')) {
+    if (Object.prototype.hasOwnProperty.call(levelItem, 'system')) {
       // Level Data
       const levelData = await this._getLevelDataFromItem(levelItem)
       const levelDataString = Object.entries(levelData)

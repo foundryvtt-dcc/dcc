@@ -1,10 +1,9 @@
-/* global FormApplication, TextEditor, game */
+/* global game, foundry */
 
 import { pubConstants } from './settings.js'
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 const { TextEditor } = foundry.applications.ux
-const { ApplicationTabsConfiguration } = foundry.applications.types
 
 class WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor (options = {}) {
@@ -16,10 +15,10 @@ class WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: `${pubConstants.name}-welcome-dialog`,
     classes: ['dcc', 'welcome-dialog', 'themed', 'theme-light'],
-    tag: "aside",
+    tag: 'aside',
     position: {
       width: 600,
-      height: "auto"
+      height: 'auto'
     },
     window: {
       resizable: true,
@@ -34,7 +33,7 @@ class WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   static PARTS = {
     content: {
       template: `${pubConstants.templates}dialog-welcome.html`,
-      scrollable: [''],
+      scrollable: ['']
     }
   }
 

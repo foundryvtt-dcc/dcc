@@ -1,0 +1,17 @@
+{
+  "name": "dcc-visual-regression-tests",
+  "version": "1.0.0",
+  "description": "Visual regression tests for DCC system",
+  "private": true,
+  "scripts": {
+    "start-foundry": "export $(cat .env | xargs) && node $FOUNDRY_MAINJS_PATH --world=\"baselinev12\" --noupdate",
+    "install:browsers": "npx playwright install chromium",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "DEBUG=pw:webserver playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}

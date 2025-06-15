@@ -1,4 +1,4 @@
-/* global Application, CONFIG, Die, FormApplication, OperatorTerm, Roll, game */
+/* global CONFIG, Die, OperatorTerm, Roll, game, foundry */
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 

@@ -58,7 +58,7 @@ class DCCActor extends Actor {
     let fumbleDieRank = 0
     let fumbleDie = '1d4'
     let checkPenalty = 0
-    if (this.itemTypes) {
+    if (this.itemTypes?.armor) {
       for (const armorItem of this.itemTypes.armor) {
         if (armorItem.system.equipped) {
           try {
@@ -325,25 +325,25 @@ class DCCActor extends Actor {
     const staMod = parseInt(this.system.abilities.sta.mod)
     const refSaveClassBonus = parseInt(this.system.saves.ref.classBonus || 0)
     const refSaveOtherBonus = parseInt(this.system.saves.ref.otherBonus || 0)
-    const refSaveOverride = parseInt(this.system.saves.ref.override || 0)
+    const refSaveOverride = this.system.saves.ref.override
     const frtSaveClassBonus = parseInt(this.system.saves.frt.classBonus || 0)
     const frtSaveOtherBonus = parseInt(this.system.saves.frt.otherBonus || 0)
-    const frtSaveOverride = parseInt(this.system.saves.frt.override || 0)
+    const frtSaveOverride = this.system.saves.frt.override
     const wilSaveClassBonus = parseInt(this.system.saves.wil.classBonus || 0)
     const wilSaveOtherBonus = parseInt(this.system.saves.wil.otherBonus || 0)
-    const wilSaveOverride = parseInt(this.system.saves.wil.override || 0)
+    const wilSaveOverride = this.system.saves.wil.override
 
     this.system.saves.ref.value = ensurePlus(`${aglMod + refSaveClassBonus + refSaveOtherBonus}`)
-    if (refSaveOverride) {
-      this.system.saves.ref.value = ensurePlus(`${refSaveOverride}`)
+    if (refSaveOverride !== null && refSaveOverride !== undefined && refSaveOverride !== '') {
+      this.system.saves.ref.value = ensurePlus(parseInt(refSaveOverride))
     }
     this.system.saves.frt.value = ensurePlus(`${staMod + frtSaveClassBonus + frtSaveOtherBonus}`)
-    if (frtSaveOverride) {
-      this.system.saves.frt.value = ensurePlus(`${frtSaveOverride}`)
+    if (frtSaveOverride !== null && frtSaveOverride !== undefined && frtSaveOverride !== '') {
+      this.system.saves.frt.value = ensurePlus(parseInt(frtSaveOverride))
     }
     this.system.saves.wil.value = ensurePlus(`${perMod + wilSaveClassBonus + wilSaveOtherBonus}`)
-    if (wilSaveOverride) {
-      this.system.saves.wil.value = ensurePlus(`${wilSaveOverride}`)
+    if (wilSaveOverride !== null && wilSaveOverride !== undefined && wilSaveOverride !== '') {
+      this.system.saves.wil.value = ensurePlus(parseInt(wilSaveOverride))
     }
   }
 
@@ -351,6 +351,10 @@ class DCCActor extends Actor {
    * Compute Spell Check
    */
   computeSpellCheck () {
+    if (!this.system.class) {
+      return
+    }
+
     let abilityMod = ensurePlus(this.system.abilities.int.mod)
     if (this.system.class.spellCheckAbility === 'per') {
       abilityMod = ensurePlus(this.system.abilities.per.mod)
@@ -530,7 +534,7 @@ class DCCActor extends Actor {
     }
 
     let formula = null
-    if (options.showModifierDialog) {
+    if (options?.showModifierDialog) {
       formula = await this.getInitiativeRoll(formula, { showModifierDialog: true })
     }
 
@@ -668,26 +672,32 @@ class DCCActor extends Actor {
           label: skillItem.name
         }
         if (skillItem.system.config.useAbility) {
-          skill.ability = skillItem.system.ability
+          skill.ability = skillItem.system.ability || null
         }
         if (skillItem.system.config.useDie) {
-          skill.die = skillItem.system.die
+          skill.die = skillItem.system.die || null
         }
         if (skillItem.system.config.useValue) {
           skill.value = skillItem.system.value ?? undefined
         }
       }
     }
-    let die = skill.die || this.system.attributes.actionDice.value || '1d20'
+    let die = (skill.die && skill.die.trim()) ? skill.die : null
+    let hasDie = !!die
 
     // Handle Override Die for special Cleric Skills
-    if (skill.useDisapprovalRange) {
-      if (this.system.class.spellCheckOverrideDie) {
-        die = this.system.class.spellCheckOverrideDie
-      }
+    if (skill.useDisapprovalRange && this.system.class.spellCheckOverrideDie) {
+      die = this.system.class.spellCheckOverrideDie
+      hasDie = true
     }
 
-    const ability = skill.ability || null
+    // If no die is specified and no override, fall back to action dice for backward compatibility with built-in skills
+    if (!hasDie && !skillItem) {
+      die = this.system.attributes.actionDice.value || '1d20'
+      hasDie = true
+    }
+
+    const ability = skill.ability && skill.ability.trim() ? skill.ability : null
     let abilityLabel = ''
     let abilityMod = 0
     if (ability) {
@@ -700,12 +710,15 @@ class DCCActor extends Actor {
     // Collate terms for the roll
     const terms = []
 
-    terms.push({
-      type: 'Die',
-      label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
-      formula: die,
-      presets: this.getActionDice({ includeUntrained: true })
-    })
+    // Only add a die term if a die is specified
+    if (hasDie) {
+      terms.push({
+        type: 'Die',
+        label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
+        formula: die,
+        presets: this.getActionDice({ includeUntrained: true })
+      })
+    }
 
     if (skill.value !== undefined) {
       let formula = skill.value.toString()
@@ -741,6 +754,27 @@ class DCCActor extends Actor {
       })
     }
 
+    // If no meaningful terms, just show the description without a roll
+    const hasMeaningfulTerms = terms.some(term => term.formula && term.formula.trim() !== '')
+    if (terms.length === 0 || !hasMeaningfulTerms) {
+      if (skillItem && skillItem.system.description.value) {
+        ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          content: `<div class="skill-description">${skillItem.system.description.value}</div>`,
+          flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
+
+          flags: {
+            'dcc.RollType': 'SkillCheck',
+            'dcc.ItemId': skillId,
+            'dcc.SkillId': skillId,
+            'dcc.isSkillCheck': true
+          },
+          system: { skillId, skillDescription: skillItem.system.description.value }
+        })
+      }
+      return
+    }
+
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
     // Handle special cleric spellchecks that are treated as skills
@@ -774,12 +808,21 @@ class DCCActor extends Actor {
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
       // Convert the roll to a chat message
-      roll.toMessage({
+      const systemData = { skillId }
+      const messageData = {
         speaker: ChatMessage.getSpeaker({ actor: this }),
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`,
         flags,
-        system: { skillId }
-      })
+        system: systemData
+      }
+
+      if (skillItem && skillItem.system.description.value) {
+        systemData.skillDescription = skillItem.system.description.value
+        const rollHTML = await roll.render()
+        messageData.content = `${rollHTML}<div class="skill-description">${skillItem.system.description.value}</div>`
+      }
+
+      roll.toMessage(messageData)
 
       // Need to drain disapproval
       if (skill && skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
@@ -992,7 +1035,7 @@ class DCCActor extends Actor {
     // Attack roll
     options.targets = game.user.targets // Add targets set to options
     const attackRollResult = await this.rollToHit(weapon, options)
-      if (!attackRollResult) return; // <-- if the attack roll is cancelled, return
+    if (!attackRollResult) return // <-- if the attack roll is cancelled, return
 
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
@@ -1004,12 +1047,12 @@ class DCCActor extends Actor {
     // Damage roll
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      const rawDeedFormula = attackRollResult.deedDieFormula; // e.g. "d4"
-      const deedBonusStringComponent = ensurePlus(rawDeedFormula); // e.g. "+d4", this is what's in the damage formula from warrior bonus
-      const deedNumericResult = attackRollResult.deedDieRollResult.toString(); // e.g. "4"
+      const rawDeedFormula = attackRollResult.deedDieFormula // e.g. "d4"
+      const deedBonusStringComponent = ensurePlus(rawDeedFormula) // e.g. "+d4", this is what's in the damage formula from warrior bonus
+      const deedNumericResult = attackRollResult.deedDieRollResult.toString() // e.g. "4"
       // Determine sign from how deed was added to formula, then append numeric result
-      const replacementDeedValueString = (deedBonusStringComponent.startsWith("-") ? "-" : "+") + deedNumericResult; // e.g. "+4"
-      damageRollFormula = damageRollFormula.replace(deedBonusStringComponent, replacementDeedValueString);
+      const replacementDeedValueString = (deedBonusStringComponent.startsWith('-') ? '-' : '+') + deedNumericResult // e.g. "+4"
+      damageRollFormula = damageRollFormula.replace(deedBonusStringComponent, replacementDeedValueString)
 
       if (damageRollFormula.includes('@ab')) {
         // This does not handle very high level characters that might have a deed die and a deed die modifier
@@ -1067,7 +1110,7 @@ class DCCActor extends Actor {
     let critInlineRoll = ''
     let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critRoll
-    let critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || '';
+    let critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || ''
     let critText = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
@@ -1103,14 +1146,14 @@ class DCCActor extends Actor {
     let fumbleRollFormula = ''
     let fumbleInlineRoll = ''
     let fumblePrompt = ''
-    let useNPCFumbles = true; //even if core compendium isn't installed, still show correct fumble table in flavor text 
+    let useNPCFumbles = true // even if core compendium isn't installed, still show correct fumble table in flavor text
     try {
       useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || true
     } catch {
-       // warn to console log
-       console.warn('DCC | Error reading "registerNPCFumbleTables" setting from "dcc-core-book" module. Defaulting useNPCFumbles to true.');
+      // warn to console log
+      console.warn('DCC | Error reading "registerNPCFumbleTables" setting from "dcc-core-book" module. Defaulting useNPCFumbles to true.')
     }
-    let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName);
+    let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName)
 
     let fumbleText = ''
     let fumbleRoll
@@ -1134,7 +1177,7 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        let fumbleResult      
+        let fumbleResult
         if (this.isPC || !useNPCFumbles) {
           fumbleResult = await getFumbleTableResult(fumbleRoll)
         } else {
@@ -1194,7 +1237,7 @@ class DCCActor extends Actor {
         fumbleRollFormula,
         fumbleTableName,
         hitsAc: attackRollResult.hitsAc,
-        targets:game.user.targets,
+        targets: game.user.targets,
         weaponId,
         weaponName: weapon.name
       }
@@ -1268,8 +1311,8 @@ class DCCActor extends Actor {
     }
 
     // Allow modules to modify the terms before the roll is created
-    const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options);
-    if (!proceed) return; // Cancel the attack roll if any listener returns false
+    const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options)
+    if (!proceed) return // Cancel the attack roll if any listener returns false
 
     /* Roll the Attack */
     const rollOptions = Object.assign(
@@ -1352,7 +1395,7 @@ class DCCActor extends Actor {
     const critRollFormula = critRoll.formula
     const critPrompt = game.i18n.localize('DCC.Critical')
 
-    let critTableName = this.system.attributes.critical?.table;
+    let critTableName = this.system.attributes.critical?.table
     const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {

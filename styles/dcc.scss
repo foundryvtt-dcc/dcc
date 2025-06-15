@@ -262,7 +262,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   .journal-entry-page {
     li p {
-      margin-bottom: clamp(0.7em, 1vw, .8em);
+      margin-bottom: clamp(0.7em, 1vw, 0.8em);
       margin-top: 0;
     }
 
@@ -273,7 +273,8 @@ $font-awesome: 'Font Awesome 6 Pro';
     }
 
 
-    table td p, table th p {
+    table td p,
+    table th p {
       padding: 5px;
       margin-bottom: 0;
     }
@@ -598,6 +599,65 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Party Sheet                              */
+/* ----------------------------------------- */
+
+.dcc .party {
+  border: $border-style;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(auto-fill, minmax(100px, auto));
+
+  .character-row {
+    border: $border-style;
+    display: grid;
+    grid-gap: 2px 3px;
+    grid-template-columns: 96px repeat(12, 1fr);
+    grid-template-rows: 1fr 1fr 1fr 1fr minmax(1fr, auto) minmax(1fr, auto);
+
+    .name {
+      grid-column: 1 / span 13;
+      grid-row: 1;
+    }
+
+    .portrait {
+      grid-column: 1;
+      grid-row: 2 / span 4;
+
+      img {
+        height: 96px;
+        width: 96px;
+      }
+    }
+
+    .occupation {
+      grid-column: span 7;
+    }
+
+    .special {
+      grid-column: span 11;
+    }
+
+    .hp-summary {
+      grid-column: span 2;
+    }
+
+    .weapon {
+      grid-column: span 1;
+    }
+
+    .weapon-dropdown {
+      grid-column: span 4;
+    }
+
+    .filler {
+      grid-column: span 2;
+    }
+  }
+}
+
+/* ----------------------------------------- */
 /*  Items                                    */
 /* ----------------------------------------- */
 
@@ -785,7 +845,7 @@ a.inline-roll {
   textarea {
     background: none;
     border: 0;
-    font-family: "Courier New", Courier, monospace;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 12px;
     line-height: 15px;
     height: 100%;
@@ -837,7 +897,7 @@ a.inline-roll {
   column-gap: 5px;
   display: grid;
   font-family: $book-antiqua;
-  grid-template-columns: minmax(100px, auto) 55px 60px 97px 50px;
+  grid-template-columns: 28px minmax(100px, auto) 55px 60px 97px 50px;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
   text-align: center;
@@ -857,6 +917,15 @@ a.inline-roll {
     align-items: center;
     justify-items: center;
     margin-bottom: 5px;
+  }
+
+  .skill-summary-text {
+    grid-column: 1 / -1;
+    color: #666;
+    font-size: 0.9em;
+    padding-top: 4px;
+    text-align: left !important;
+    width: 100%;
   }
 }
 
@@ -1293,7 +1362,8 @@ form.dcc-roll-modifier {
       padding-top: 2px;
     }
 
-    input, select {
+    input,
+    select {
       font-size: 14px;
       height: 17px;
       vertical-align: middle;
@@ -1301,7 +1371,8 @@ form.dcc-roll-modifier {
     }
   }
 
-  .languages, .lucky-roll {
+  .languages,
+  .lucky-roll {
     border: var(--dark-border);
     border-top: 0;
     display: grid;

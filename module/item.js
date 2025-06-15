@@ -12,6 +12,11 @@ class DCCItem extends Item {
   prepareBaseData () {
     super.prepareBaseData()
 
+    // Backwards compatibility: set useSummary if freeform is true
+    if (this.type === 'skill' && this.system.config.freeform && !this.system.config.useSummary) {
+      this.system.config.useSummary = true
+    }
+
     // Non-actor-owned items
     if (this.type === 'weapon' && !this.actor) {
       this.system.attackBonus = ''

@@ -267,13 +267,13 @@ export const emoteFumbleRoll = async function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
   if (game.settings.get('dcc', 'emoteRolls') === false) return
 
-  let fumbleResult;
-  const pcFumbleTableIdentifier = 'Table 4-2: Fumbles';
-  
+  let fumbleResult
+  const pcFumbleTableIdentifier = 'Table 4-2: Fumbles'
+
   if (message.system?.fumbleTableName && !message.system.fumbleTableName.includes(pcFumbleTableIdentifier)) {
-    fumbleResult = await getNPCFumbleTableResult(message.rolls[0], message.system.fumbleTableName);
+    fumbleResult = await getNPCFumbleTableResult(message.rolls[0], message.system.fumbleTableName)
   } else {
-    fumbleResult = await getFumbleTableResult(message.rolls[0]);
+    fumbleResult = await getFumbleTableResult(message.rolls[0])
   }
 
   let fumbleText = ''
@@ -285,9 +285,9 @@ export const emoteFumbleRoll = async function (message, html, data) {
     // No fumble table available or no result found
     fumbleText = game.i18n.localize('DCC.FumbleTableUnavailable')
   }
-  
+
   const rollHTML = await message.rolls[0].render()
-  html.find('.message-content').html(`${rollHTML}<br>${fumbleText}`);
+  html.find('.message-content').html(`${rollHTML}<br>${fumbleText}`)
 }
 
 /**
@@ -365,10 +365,11 @@ export const emoteSkillCheckRoll = function (message, html, data) {
  */
 export const lookupCriticalRoll = async function (message, html) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Critical'))) return
-  const tableName = message.flavor.replace('Critical (', '').replace(')', '')
+  const criticalText = game.i18n.localize('DCC.Critical')
+  const tableName = message.flavor.replace(`${criticalText} (`, '').replace(')', '')
 
   const critResult = await getCritTableResult(message.rolls[0], tableName)
-  
+
   // Check if we got a result from the table lookup
   if (!critResult || !critResult.text) {
     // No table available or no result found - just show the roll
@@ -376,7 +377,7 @@ export const lookupCriticalRoll = async function (message, html) {
     html.find('.message-content').html(`${rollHTML} ${game.i18n.localize('DCC.CritTableUnavailable')}`)
     return
   }
-  
+
   const critText = await TextEditor.enrichHTML(critResult.text)
   const rollHTML = await message.rolls[0].render()
   html.find('.message-content').html(`${rollHTML}<br>${critText}`)
@@ -392,23 +393,23 @@ export const lookupCriticalRoll = async function (message, html) {
 export const lookupFumbleRoll = async function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
 
-  let fumbleResult;
-  const pcFumbleTableIdentifier = '(Table 4-2: Fumbles).';
-  let tableToUse = null;
+  let fumbleResult
+  const pcFumbleTableIdentifier = '(Table 4-2: Fumbles).'
+  let tableToUse = null
 
   if (message.system && message.system.fumbleTableName) {
-      tableToUse = message.system.fumbleTableName;
+    tableToUse = message.system.fumbleTableName
   } else if (message.flavor) { // Fallback in case the fumble table is not set
-      const match = message.flavor.match(/\((Fumble Table [A-Z0-9\s]+|Crit\/Fumble Table EL)\)/);
-      if (match && match[1]) {
-          tableToUse = match[1];
-      }
+    const match = message.flavor.match(/\((Fumble Table [A-Z0-9\s]+|Crit\/Fumble Table EL)\)/)
+    if (match && match[1]) {
+      tableToUse = match[1]
+    }
   }
 
   if (tableToUse && tableToUse !== pcFumbleTableIdentifier) {
-    fumbleResult = await getNPCFumbleTableResult(message.rolls[0], tableToUse);
+    fumbleResult = await getNPCFumbleTableResult(message.rolls[0], tableToUse)
   } else {
-    fumbleResult = await getFumbleTableResult(message.rolls[0]);
+    fumbleResult = await getFumbleTableResult(message.rolls[0])
   }
 
   let fumbleText = ''
@@ -420,7 +421,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
     // No fumble table available or no result found
     fumbleText = game.i18n.localize('DCC.FumbleTableUnavailable')
   }
-  
+
   const rollHTML = await message.rolls[0].render()
-  html.find('.message-content').html(`${rollHTML}<br>${fumbleText}`);
+  html.find('.message-content').html(`${rollHTML}<br>${fumbleText}`)
 }

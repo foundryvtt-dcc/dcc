@@ -1,9 +1,10 @@
-/* global Dialog, ItemSheet, TextEditor, game, foundry, CONFIG */
+/* global Dialog, game, foundry, CONFIG */
 // noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
 import EntityImages from './entity-images.js'
 import { ensurePlus } from './utilities.js'
+// eslint-disable-next-line no-unused-vars
 const { ApplicationTabsConfiguration } = foundry.applications.types
 const { HandlebarsApplicationMixin } = foundry.applications.api
 const { ItemSheetV2 } = foundry.applications.sheets
@@ -67,7 +68,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return parts
   }
 
-
   /**
    * Define the structure of tabs used by this sheet.
    * @type {Record<string, ApplicationTabsConfiguration>}
@@ -87,7 +87,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _getTabsConfig (group) {
     const tabs = foundry.utils.deepClone(super._getTabsConfig(group))
     const initCapTypeName = this.document.type.charAt(0).toUpperCase() + this.document.type.slice(1)
-    tabs.tabs[0] = {'id': this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
+    tabs.tabs[0] = { id: this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
     tabs.initial = this.document.type
     this.tabGroups[group] = this.document.type
     return tabs

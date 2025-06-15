@@ -1,4 +1,4 @@
-/* global TextEditor, game */
+/* global game, foundry */
 // noinspection JSClosureCompilerSyntax
 
 /**
