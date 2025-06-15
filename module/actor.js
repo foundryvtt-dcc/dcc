@@ -986,7 +986,7 @@ class DCCActor extends Actor {
     // Attack roll
     options.targets = game.user.targets // Add targets set to options
     const attackRollResult = await this.rollToHit(weapon, options)
-      if (!attackRollResult) return; // <-- if the attack roll is cancelled, return
+    if (!attackRollResult) return // <-- if the attack roll is cancelled, return
 
     if (attackRollResult.naturalCrit) {
       options.naturalCrit = true
@@ -998,12 +998,12 @@ class DCCActor extends Actor {
     // Damage roll
     let damageRollFormula = weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
-      const rawDeedFormula = attackRollResult.deedDieFormula; // e.g. "d4"
-      const deedBonusStringComponent = ensurePlus(rawDeedFormula); // e.g. "+d4", this is what's in the damage formula from warrior bonus
-      const deedNumericResult = attackRollResult.deedDieRollResult.toString(); // e.g. "4"
+      const rawDeedFormula = attackRollResult.deedDieFormula // e.g. "d4"
+      const deedBonusStringComponent = ensurePlus(rawDeedFormula) // e.g. "+d4", this is what's in the damage formula from warrior bonus
+      const deedNumericResult = attackRollResult.deedDieRollResult.toString() // e.g. "4"
       // Determine sign from how deed was added to formula, then append numeric result
-      const replacementDeedValueString = (deedBonusStringComponent.startsWith("-") ? "-" : "+") + deedNumericResult; // e.g. "+4"
-      damageRollFormula = damageRollFormula.replace(deedBonusStringComponent, replacementDeedValueString);
+      const replacementDeedValueString = (deedBonusStringComponent.startsWith('-') ? '-' : '+') + deedNumericResult // e.g. "+4"
+      damageRollFormula = damageRollFormula.replace(deedBonusStringComponent, replacementDeedValueString)
 
       if (damageRollFormula.includes('@ab')) {
         // This does not handle very high level characters that might have a deed die and a deed die modifier
@@ -1061,7 +1061,7 @@ class DCCActor extends Actor {
     let critInlineRoll = ''
     let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critRoll
-    let critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || '';
+    let critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || ''
     let critText = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
@@ -1097,14 +1097,14 @@ class DCCActor extends Actor {
     let fumbleRollFormula = ''
     let fumbleInlineRoll = ''
     let fumblePrompt = ''
-    let useNPCFumbles = true; //even if core compendium isn't installed, still show correct fumble table in flavor text 
+    let useNPCFumbles = true // even if core compendium isn't installed, still show correct fumble table in flavor text
     try {
       useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || true
     } catch {
-       // warn to console log
-       console.warn('DCC | Error reading "registerNPCFumbleTables" setting from "dcc-core-book" module. Defaulting useNPCFumbles to true.');
+      // warn to console log
+      console.warn('DCC | Error reading "registerNPCFumbleTables" setting from "dcc-core-book" module. Defaulting useNPCFumbles to true.')
     }
-    let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName);
+    let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName)
 
     let fumbleText = ''
     let fumbleRoll
@@ -1128,7 +1128,7 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        let fumbleResult      
+        let fumbleResult
         if (this.isPC || !useNPCFumbles) {
           fumbleResult = await getFumbleTableResult(fumbleRoll)
         } else {
@@ -1188,7 +1188,7 @@ class DCCActor extends Actor {
         fumbleRollFormula,
         fumbleTableName,
         hitsAc: attackRollResult.hitsAc,
-        targets:game.user.targets,
+        targets: game.user.targets,
         weaponId,
         weaponName: weapon.name
       }
@@ -1262,9 +1262,9 @@ class DCCActor extends Actor {
     }
 
     // Allow modules to modify the terms before the roll is created
-    const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options);
-    if (!proceed) return; // Cancel the attack roll if any listener returns false 
-    
+    const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options)
+    if (!proceed) return // Cancel the attack roll if any listener returns false
+
     /* Roll the Attack */
     const rollOptions = Object.assign(
       {
@@ -1346,7 +1346,7 @@ class DCCActor extends Actor {
     const critRollFormula = critRoll.formula
     const critPrompt = game.i18n.localize('DCC.Critical')
 
-    let critTableName = this.system.attributes.critical?.table;
+    let critTableName = this.system.attributes.critical?.table
     const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {

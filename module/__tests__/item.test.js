@@ -1,7 +1,6 @@
 import { describe, beforeEach, test, expect, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCItem from '../item.js'
-import { itemConstructorSpy, prepareBaseDataSpy } from '../__mocks__/foundry.js'
 
 describe('DCCItem Weapon Calculations', () => {
   let item, actor, prepareBaseDataSpy
@@ -26,8 +25,8 @@ describe('DCCItem Weapon Calculations', () => {
         details: {
           attackHitBonus: { melee: { value: '+2' }, missile: { value: '+1' } },
           attackDamageBonus: { melee: { value: '+3' }, missile: { value: '+1' } },
-          critRange: 19,
-        },
+          critRange: 19
+        }
       }
     }
 

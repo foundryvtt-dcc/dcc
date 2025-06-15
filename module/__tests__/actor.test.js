@@ -322,9 +322,9 @@ test('roll Custom Die Skill', async () => {
     flavor: 'Custom Die Skill',
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieSkill', 'dcc.SkillId': 'customDieSkill', 'dcc.isSkillCheck': true },
-    'system': {
-      'skillId': 'customDieSkill',
-    },
+    system: {
+      skillId: 'customDieSkill'
+    }
   })
 })
 
@@ -363,10 +363,10 @@ test('roll Custom Die And Value Skill', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'Custom Die And Value Skill',
     speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck','dcc.ItemId': 'customDieAndValueSkill', 'dcc.SkillId': 'customDieAndValueSkill', 'dcc.isSkillCheck': true },
-    'system': {
-      'skillId': 'customDieAndValueSkill',
-    },
+    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieAndValueSkill', 'dcc.SkillId': 'customDieAndValueSkill', 'dcc.isSkillCheck': true },
+    system: {
+      skillId: 'customDieAndValueSkill'
+    }
   })
 })
 
@@ -406,9 +406,9 @@ test('roll Action Die Skill', async () => {
     flavor: 'Action Die Skill',
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'actionDieSkill', 'dcc.SkillId': 'actionDieSkill', 'dcc.isSkillCheck': true },
-    'system': {
-      'skillId': 'actionDieSkill',
-    },
+    system: {
+      skillId: 'actionDieSkill'
+    }
   })
 })
 
@@ -442,9 +442,9 @@ test('roll Custom Die Skill With Int', async () => {
     flavor: 'Custom Die Skill With Int (AbilityInt)',
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieSkillWithInt', 'dcc.SkillId': 'customDieSkillWithInt', 'dcc.isSkillCheck': true },
-    'system': {
-      'skillId': 'customDieSkillWithInt',
-    },
+    system: {
+      skillId: 'customDieSkillWithInt'
+    }
   })
 })
 
@@ -484,9 +484,9 @@ test('roll Custom Die And Value Skill With Per', async () => {
     flavor: 'Custom Die And Value Skill With Per (AbilityPer)',
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieAndValueSkillWithPer', 'dcc.SkillId': 'customDieAndValueSkillWithPer', 'dcc.isSkillCheck': true },
-    'system': {
-      'skillId': 'customDieAndValueSkillWithPer',
-    },
+    system: {
+      skillId: 'customDieAndValueSkillWithPer'
+    }
   })
 })
 
@@ -526,9 +526,9 @@ test('roll Custom Die And Value Luck', async () => {
     flavor: 'Action Die And Value Skill With Lck (AbilityLck)',
     speaker: actor,
     flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'actionDieAndValueSkillWithLck', 'dcc.SkillId': 'actionDieAndValueSkillWithLck', 'dcc.isSkillCheck': true },
-    'system': {
-      'skillId': 'actionDieAndValueSkillWithLck',
-    },
+    system: {
+      skillId: 'actionDieAndValueSkillWithLck'
+    }
   })
 })
 

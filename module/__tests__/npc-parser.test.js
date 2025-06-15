@@ -609,7 +609,7 @@ infravision 60’, stone camouflage, transmute earth; SV Fort
 /* Test stat block with crit after attacks */
 test('Cool creature', async () => {
   const parsedNPC = await parseNPCs(
-    `Cool creature (1+1/round): Init -1; Atk burning fist +1 melee (1d3 plus 1 hp of heat damage); Crit M/ d6; AC 14; HD 1d8+1 (hp 6 each); MV 30'; Act 1d20; SP immune to fire, vulnerable to cold (+1d6 damage); SV Fort +4, Ref -1, Will +3; AL N.`
+    'Cool creature (1+1/round): Init -1; Atk burning fist +1 melee (1d3 plus 1 hp of heat damage); Crit M/ d6; AC 14; HD 1d8+1 (hp 6 each); MV 30\'; Act 1d20; SP immune to fire, vulnerable to cold (+1d6 damage); SV Fort +4, Ref -1, Will +3; AL N.'
   )
   const expected = [
     {
@@ -648,7 +648,7 @@ test('Cool creature', async () => {
 /* Test DT-style stat block */
 test('Wormy the Warrior', async () => {
   const parsedNPC = await parseNPCs(
-    `Wormy Bonechewer (warrior): Init +3; Atk longsword +2+deed die melee (1d8+2+deed die); AC 16 (chainmail & shield); HD 3d12+6; hp 42; MV 25'; Act 1d20; SP Mighty Deed of Arms, deed die (+d5); SV Fort +3, Ref +3, Will +2; AL C; Crit 19-20 IV/d16.`
+    'Wormy Bonechewer (warrior): Init +3; Atk longsword +2+deed die melee (1d8+2+deed die); AC 16 (chainmail & shield); HD 3d12+6; hp 42; MV 25\'; Act 1d20; SP Mighty Deed of Arms, deed die (+d5); SV Fort +3, Ref +3, Will +2; AL C; Crit 19-20 IV/d16.'
   )
   const expected = [
     {
@@ -683,4 +683,3 @@ test('Wormy the Warrior', async () => {
   ]
   expect(parsedNPC).toMatchObject(expected)
 })
-

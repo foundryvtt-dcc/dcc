@@ -231,7 +231,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   .journal-entry-page {
     li p {
-      margin-bottom: clamp(0.7em, 1vw, .8em);
+      margin-bottom: clamp(0.7em, 1vw, 0.8em);
       margin-top: 0;
     }
 
@@ -242,7 +242,8 @@ $font-awesome: 'Font Awesome 6 Pro';
     }
 
 
-    table td p, table th p {
+    table td p,
+ table th p {
       padding: 5px;
       margin-bottom: 0;
     }
@@ -739,7 +740,7 @@ a.inline-roll {
   textarea {
     background: none;
     border: 0;
-    font-family: "Courier New", Courier, monospace;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 12px;
     line-height: 15px;
     height: 100%;
@@ -1243,7 +1244,8 @@ form.dcc-roll-modifier {
       padding-top: 2px;
     }
 
-    input, select {
+    input,
+ select {
       font-size: 14px;
       height: 17px;
       vertical-align: middle;
@@ -1251,7 +1253,8 @@ form.dcc-roll-modifier {
     }
   }
 
-  .languages, .lucky-roll {
+  .languages,
+ .lucky-roll {
     border: var(--dark-border);
     border-top: 0;
     display: grid;

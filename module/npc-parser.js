@@ -64,7 +64,7 @@ async function parseNPC (npcString) {
   }
   npc['attributes.hitDice.value'] = hd
   const hpRoll = await new Roll(hd).evaluate()
-  let hp = hpRoll.total
+  const hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
   npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,. ].*/, npcString) || '10'
   npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp

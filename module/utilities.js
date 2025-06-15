@@ -61,7 +61,7 @@ export async function getCritTableResult (roll, critTableName) {
   // Extract the crit table suffix (e.g. "III" from "Crit Table III")
   const critTableText = game.i18n.localize('DCC.CritTable')
   const critTableSuffix = critTableName.replace(critTableText, '').trim()
-  let critTableCanonical = "Crit Table " + critTableSuffix
+  let critTableCanonical = 'Crit Table ' + critTableSuffix
 
   // Check to see if this is the Elemental Crit/Fumble table
   if (critTableSuffix === 'EL') {
@@ -126,7 +126,7 @@ export async function getFumbleTableResult (roll) {
  */
 export function getFumbleTableNameFromCritTableName (critTableName) {
   if (!critTableName) {
-    return '(Table 4-2: Fumbles).'; // Default PC fumble table
+    return '(Table 4-2: Fumbles).' // Default PC fumble table
   }
   const humanoidCritTables = ['III', 'IV', 'V']
   if (humanoidCritTables.some(ctn => critTableName.includes(ctn))) {

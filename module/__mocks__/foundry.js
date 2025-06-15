@@ -474,7 +474,7 @@ class HooksMock {
   static async callAll (hook, rolls, messageData) {
     return true
   }
-  
+
   static call (hook, ...args) {
     return true
   }
@@ -493,7 +493,7 @@ export function getTemplateData (documentClass, type) {
   const templateDataForClass = templateData[documentClass]
   const templateDataForType = templateDataForClass[type] || {}
 
-  let documentData = {}
+  const documentData = {}
 
   // Loop over all the templates for the class and merge them together
   for (const template of templateDataForType.templates || []) {
