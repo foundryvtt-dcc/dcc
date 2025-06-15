@@ -14,8 +14,8 @@ This document tracks all components in the DCC system that need to be upgraded f
 
 ### ❌ **REMAINING WORK** (High Priority)
 - **5 FormApplication classes** still need migration to ApplicationV2
-- **jQuery elimination** in 3 files (dcc.js, party-sheet.js) - key-state.js ✅ COMPLETED  
-- **Dialog → DialogV2** migration in 4 files
+- **jQuery elimination** in 1 file (dcc.js) - key-state.js ✅ party-sheet.js ✅ COMPLETED  
+- **Dialog → DialogV2** migration in 3 files - party-sheet.js ✅ COMPLETED
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ❌
 
@@ -58,7 +58,7 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 ### Remaining Dialog Usage ❌ **PENDING**
 - `module/item-sheet.js` (lines 299, 332) ❌
 - `module/parser.js` (line 105) ❌  
-- `module/party-sheet.js` (line 261) ❌
+- `module/party-sheet.js` (line 261) ✅ COMPLETED
 
 ### Already Migrated or No Usage ✅ **COMPLETED**
 - `module/actor-sheet.js` ✅ (No Dialog usage found)
@@ -82,9 +82,9 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 - **Line 1**: Global $ declaration - REMOVED
 - **Line 10**: `$(document).bind()` event binding - REPLACED with vanilla JS
 
-### **module/party-sheet.js** ❌
-- **Line 258**: `$(event.currentTarget).parents('.item').slideUp(200, ...)`
-- **Line 320**: `const li = $(event.currentTarget).parents('.item')`
+### **module/party-sheet.js** ✅
+- **Line 258**: `$(event.currentTarget).parents('.item').slideUp(200, ...)` - REPLACED with vanilla JS
+- **Line 320**: `const li = $(event.currentTarget).parents('.item')` - REPLACED with vanilla JS
 
 ### Already Cleaned ✅ **COMPLETED**
 
@@ -135,7 +135,7 @@ The following components have already been migrated to V2 patterns:
 
 ### Phase 1 - Critical Core Components ❌ **REMAINING**
 1. ~~**Fix `getSceneControlButtons` hook usage** in `module/dcc.js`~~ ✅ **COMPLETED**
-2. **Remove remaining jQuery dependencies** (2 files: dcc.js, party-sheet.js) - key-state.js ✅ COMPLETED
+2. **Remove remaining jQuery dependencies** (1 file: dcc.js) - key-state.js ✅ party-sheet.js ✅ COMPLETED
 3. **Migrate `actor-config.js` and `item-config.js`** (core configuration) ❌
 4. **Migrate `parser.js`** (import functionality) ❌
 

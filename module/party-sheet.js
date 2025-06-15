@@ -1,4 +1,4 @@
-/* global $, CONFIG, Dialog, game, foundry, TextEditor */
+/* global CONFIG, game, foundry, TextEditor */
 
 import DCCActorSheet from './actor-sheet.js'
 import EntityImages from './entity-images.js'
@@ -255,10 +255,17 @@ class DCCPartySheet extends DCCActorSheet {
     const actorId = event.currentTarget.parentElement.dataset.actorId
     const removeMember = function (context) {
       context._removeMember(actorId)
-      $(event.currentTarget).parents('.item').slideUp(200, () => context.render(false))
+      const item = event.currentTarget.closest('.item')
+      item.style.transition = 'height 0.2s ease-out'
+      item.style.height = '0px'
+      item.style.overflow = 'hidden'
+      setTimeout(() => {
+        item.remove()
+        context.render(false)
+      }, 200)
     }
     if (game.settings.get('dcc', 'promptForItemDeletion')) {
-      new Dialog({
+      new foundry.applications.api.DialogV2({
         title: game.i18n.localize('DCC.PartyDeletePrompt'),
         content: `<p>${game.i18n.localize('DCC.PartyDeleteExplain')}</p>`,
         buttons: {
@@ -317,9 +324,16 @@ class DCCPartySheet extends DCCActorSheet {
    * @private
    */
   _deleteItem (event) {
-    const li = $(event.currentTarget).parents('.item')
-    this.actor.deleteOwnedItem(li.data('itemId'))
-    li.slideUp(200, () => this.render(false))
+    const li = event.currentTarget.closest('.item')
+    const itemId = li.dataset.itemId
+    this.actor.deleteOwnedItem(itemId)
+    li.style.transition = 'height 0.2s ease-out'
+    li.style.height = '0px'
+    li.style.overflow = 'hidden'
+    setTimeout(() => {
+      li.remove()
+      this.render(false)
+    }, 200)
   }
 
   /** @override */
