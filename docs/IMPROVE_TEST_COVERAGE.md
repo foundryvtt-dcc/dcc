@@ -519,6 +519,82 @@ Since direct HTML testing requires Foundry authentication, consider these altern
    - **Suggestion**: Better error isolation and recovery
    - **File**: `module/npc-parser.js:28-35`
 
+### Actor System Issues (Phase 3.1 Findings)
+
+1. **Missing CONFIG.DCC.criticalHitPacks Setup in Tests** ❌ TEST INFRASTRUCTURE 
+   - **Issue**: `rollCritical()` method attempts to access `CONFIG.DCC.criticalHitPacks.packs` but this is null in test environment
+   - **Location**: `module/actor.js:1389` calls `getCritTableResult()` which reads `CONFIG.DCC.criticalHitPacks.packs`
+   - **Impact**: Critical hit tests fail due to null reference error
+   - **File**: `module/utilities.js:74`
+   - **Status**: Test infrastructure issue - CONFIG mocks need enhancement
+
+2. **Hit Dice Implementation Missing Stamina Modifier for NPCs** ❌ FALSE ALARM
+   - **Analysis**: Review of `rollHitDice()` method shows NPC handling is correct
+   - **Code**: Lines 585-592 show NPCs auto-update HP with roll total, Players get interactive dialog
+   - **Reason**: NPCs don't need stamina modifier as they get fixed HP values from their hit dice
+   - **Status**: Working as intended
+
+3. **Spell Check Formula Construction Produces Non-Simplified Expressions** ⚠️ COSMETIC ISSUE
+   - **Issue**: `computeSpellCheck()` produces formulas like "+1+1" instead of "+2"
+   - **Example**: Level 1 + Int modifier 1 = "+1+1" rather than "+2"
+   - **Location**: `module/actor.js:365` uses `ensurePlus()` for each component separately
+   - **Impact**: Cosmetic only - formulas work correctly but look unprofessional
+   - **File**: `module/actor.js:353-377`
+   - **Status**: Enhancement opportunity for cleaner display
+
+4. **Attack Bonus Calculation with Deed Die Edge Cases** ❌ FALSE ALARM
+   - **Analysis**: Testing reveals deed die calculation works as designed
+   - **Code**: `computeMeleeAndMissileAttackAndDamage()` correctly handles deed die expressions
+   - **Evidence**: "+1d3" formula is correct representation for variable deed die bonus
+   - **File**: `module/actor.js:298-312`
+   - **Status**: Working as intended
+
+5. **PrepareBaseData Armor Processing Assumes itemTypes Available** ⚠️ EDGE CASE
+   - **Issue**: `prepareBaseData()` checks `this.itemTypes` without null check
+   - **Location**: `module/actor.js:61` - `for (const armorItem of this.itemTypes.armor)`
+   - **Impact**: Could fail during actor initialization if itemTypes not yet populated
+   - **File**: `module/actor.js:57-84`
+   - **Status**: Minor edge case - add defensive null check
+
+6. **Fractional Hit Dice String Parsing Inconsistency** ❌ FALSE ALARM
+   - **Analysis**: Hit dice parsing correctly handles multiple fraction formats
+   - **Code**: Lines 556-563 properly convert ½, ¼ symbols and Unicode variants
+   - **Evidence**: Test shows ceil() formulas generated correctly
+   - **File**: `module/actor.js:550-583`
+   - **Status**: Working as intended
+
+7. **Initiative Roll Formula Returns Promise vs Roll Object Inconsistency** ⚠️ API INCONSISTENCY
+   - **Issue**: `getInitiativeRoll()` returns different types depending on input parameters
+   - **Location**: `module/actor.js:516` returns Promise, but sometimes called expecting Roll object
+   - **Impact**: Potential type confusion in calling code
+   - **File**: `module/actor.js:483-517`
+   - **Status**: API design consideration - should standardize return type
+
+8. **Saving Throw Override Logic Silently Ignores Zero Values** ⚠️ LOGIC QUIRK
+   - **Issue**: `computeSavingThrows()` uses `if (refSaveOverride)` which treats 0 as falsy
+   - **Location**: `module/actor.js:337-347` - override logic skips legitimate zero overrides
+   - **Impact**: Cannot explicitly set save to 0 using override field
+   - **File**: `module/actor.js:320-348`
+   - **Status**: Minor logic bug - should check for null/undefined instead of falsy
+
+### Test Infrastructure Issues Discovered
+
+1. **Vitest Configuration Conflict with Playwright Tests**
+   - **Issue**: `npm test` command includes Playwright files despite exclusion patterns
+   - **Solution**: Use specific file paths like `npm test module/__tests__/actor.test.js`
+   - **File**: `package.json:47-52` - vitest exclude pattern needs refinement
+
+2. **Mock Object Property Redefinition Restrictions**
+   - **Issue**: Cannot redefine `itemTypes` property on actor mock for multiple tests
+   - **Impact**: Limits ability to test different item configurations in same file
+   - **Status**: Test design consideration
+
+3. **CONFIG.DCC Mock Coverage Gaps**
+   - **Issue**: Several CONFIG.DCC properties missing in mock setup
+   - **Examples**: `criticalHitPacks`, `disapprovalPacks` 
+   - **Impact**: Critical hit and disapproval tests fail
+   - **Status**: Mock enhancement needed
+
 ### Recommendations
 
 1. **Refactor movement parsing** to handle unlimited movement modes
@@ -528,6 +604,12 @@ Since direct HTML testing requires Foundry authentication, consider these altern
 5. **Add validation** for parsed values before assignment
 6. **Implement fuzzy matching** for creature type detection
 7. **Add telemetry** to track parsing failures in production
+8. **Enhance spell check formula simplification** for cleaner display
+9. **Add null checks in prepareBaseData** for defensive programming
+10. **Standardize initiative roll return types** for API consistency
+11. **Fix saving throw override logic** to handle zero values properly
+12. **Improve test infrastructure** to isolate Playwright and Vitest tests
+13. **Expand CONFIG.DCC mocks** for comprehensive critical hit and disapproval testing
 
 ## Conclusion
 
