@@ -243,7 +243,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
 
     table td p,
- table th p {
+    table th p {
       padding: 5px;
       margin-bottom: 0;
     }
@@ -1245,7 +1245,7 @@ form.dcc-roll-modifier {
     }
 
     input,
- select {
+    select {
       font-size: 14px;
       height: 17px;
       vertical-align: middle;
@@ -1254,7 +1254,7 @@ form.dcc-roll-modifier {
   }
 
   .languages,
- .lucky-roll {
+  .lucky-roll {
     border: var(--dark-border);
     border-top: 0;
     display: grid;
