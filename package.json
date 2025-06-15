@@ -47,7 +47,6 @@
   "vitest": {
     "exclude": [
       "**/node_modules/**",
-      "**/tests/visual-regression/**",
       "**/browser-tests/**"
     ]
   }
