@@ -805,13 +805,13 @@ class DCCActor extends Actor {
         flags,
         system: systemData
       }
-      
+
       if (skillItem && skillItem.system.description.value) {
         systemData.skillDescription = skillItem.system.description.value
         const rollHTML = await roll.render()
         messageData.content = `${rollHTML}<div class="skill-description">${skillItem.system.description.value}</div>`
       }
-      
+
       roll.toMessage(messageData)
 
       // Need to drain disapproval

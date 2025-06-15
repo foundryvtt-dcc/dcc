@@ -22,14 +22,14 @@ class MockItem {
   constructor (data = {}, context = {}) {
     this._id = data._id || 'mock-item-id'
     this.name = data.name || 'Mock Item'
-    
+
     if (data.type) {
       this.system = getTemplateData('Item', data.type) || {}
       this.type = data.type
     }
-    
+
     Object.assign(this, data)
-    
+
     // Enhanced system defaults for common item types (applied after data assignment)
     if (this.type === 'weapon') {
       // Set enhanced defaults, overriding template defaults where needed
@@ -279,7 +279,7 @@ global.ChatMessage = ChatMessageMock
 /**
  * CONFIG - Enhanced to better simulate Foundry environment
  */
-global.CONFIG = { 
+global.CONFIG = {
   DCC: JSON.parse(JSON.stringify(DCC)), // Deep copy to avoid mutations
   sounds: { dice: 'diceSound' },
   Actor: {
@@ -291,11 +291,11 @@ global.CONFIG = {
 }
 
 // Enhanced CONST to include more Foundry constants
-global.CONST = { 
-  CHAT_MESSAGE_STYLES: { 
+global.CONST = {
+  CHAT_MESSAGE_STYLES: {
     EMOTE: 'emote',
     IC: 'ic',
-    OOC: 'ooc' 
+    OOC: 'ooc'
   },
   DICE_ROLL_MODES: {
     PUBLIC: 'roll',
@@ -320,7 +320,7 @@ class Localization {
     // Common DCC localization strings for more realistic testing
     this.translations = {
       'DCC.AbilityStr': 'Strength',
-      'DCC.AbilityAgl': 'Agility', 
+      'DCC.AbilityAgl': 'Agility',
       'DCC.AbilitySta': 'Stamina',
       'DCC.AbilityPer': 'Personality',
       'DCC.AbilityInt': 'Intelligence',
@@ -329,7 +329,7 @@ class Localization {
       'DCC.RollModifierTitleInitiative': 'Initiative',
       'DCC.ToHit': 'Attack',
       'DCC.SavesReflex': 'Reflex',
-      'DCC.SavesFortitude': 'Fortitude', 
+      'DCC.SavesFortitude': 'Fortitude',
       'DCC.SavesWill': 'Will',
       'DCC.SpellCheck': 'Spell Check',
       'DCC.LuckDie': 'Luck Die',
