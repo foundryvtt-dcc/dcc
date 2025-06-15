@@ -171,9 +171,7 @@ class DCCPartySheet extends DCCActorSheet {
     if (!actor) { return false }
 
     // Cannot add a Party Sheet to a Party
-    return actor.type !== 'Party';
-
-
+    return actor.type !== 'Party'
   }
 
   /**
