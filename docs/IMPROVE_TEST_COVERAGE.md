@@ -411,6 +411,60 @@ Since direct HTML testing requires Foundry authentication, consider these altern
 - Bug correlation with test coverage
 - Developer satisfaction surveys
 
+## Potential Bugs Discovered During Testing
+
+### NPC Parser Issues
+
+1. **Movement Speed Parsing Limitation**
+   - **Issue**: Parser only handles two movement modes properly (splits on first "or")
+   - **Example**: `MV 25' or climb 25' or burrow 10'` incorrectly parsed as:
+     - `speed.value`: `25' or climb 25'` 
+     - `speed.other`: `burrow 10'`
+   - **Expected**: Should parse all three movement modes separately
+   - **File**: `module/npc-parser.js:137-140`
+
+2. **Hit Dice Parsing Bug for Giants**
+   - **Issue**: HD count extraction uses `parseInt` on full regex match instead of capture group
+   - **Example**: `HD 12d8` results in `hdCount = 0` instead of `12`
+   - **Impact**: Incorrect critical hit table assignment for giants
+   - **File**: `module/npc-parser.js:100`
+   - **Fix**: Change `parseInt(hd.match(/(\\d*)d/)[0] || 1)` to `parseInt(hd.match(/(\\d*)d/)[1] || 1)`
+
+3. **Special Ability Parsing Truncation**
+   - **Issue**: Special abilities containing semicolons are truncated at the semicolon
+   - **Example**: `SP poison (DC 15 Fort save or die; half damage on success)` becomes `poison (DC 15 Fort save or die`
+   - **Impact**: Loss of important ability information
+   - **File**: `module/npc-parser.js:73`
+
+4. **Alignment Field Semicolon Handling**
+   - **Issue**: Alignment parsing splits on semicolon but only in some cases
+   - **Example**: Inconsistent handling between different stat block formats
+   - **File**: `module/npc-parser.js:78-80`
+
+### Other Potential Issues
+
+1. **Fractional HD Regex Patterns**
+   - **Issue**: Multiple separate regex replacements for fractions could be consolidated
+   - **Current**: Separate replacements for ½, ⅓, ¼, 1/4
+   - **Suggestion**: Single regex pattern to handle all fraction formats
+   - **File**: `module/npc-parser.js:53-64`
+
+2. **Error Handling in Batch Parsing**
+   - **Issue**: Single malformed stat block prevents parsing of subsequent valid blocks
+   - **Current**: Logs error but continues processing
+   - **Suggestion**: Better error isolation and recovery
+   - **File**: `module/npc-parser.js:28-35`
+
+### Recommendations
+
+1. **Refactor movement parsing** to handle unlimited movement modes
+2. **Fix HD parsing regex** to correctly extract dice count
+3. **Improve special ability parsing** to preserve full text including semicolons
+4. **Standardize alignment parsing** across all input formats
+5. **Add validation** for parsed values before assignment
+6. **Implement fuzzy matching** for creature type detection
+7. **Add telemetry** to track parsing failures in production
+
 ## Conclusion
 
 This comprehensive testing strategy balances thorough coverage with practical implementation constraints. By focusing on business logic first and building comprehensive mocks, we can achieve significant quality improvements without requiring full Foundry VTT integration for every test.
