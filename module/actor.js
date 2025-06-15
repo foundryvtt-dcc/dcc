@@ -743,8 +743,7 @@ class DCCActor extends Actor {
         apply: checkPenaltyCouldApply
       })
     }
-    // debug: show terms
-    console.log('terms', terms)
+
     // If no meaningful terms, just show the description without a roll
     const hasMeaningfulTerms = terms.some(term => term.formula && term.formula.trim() !== '')
     if (terms.length === 0 || !hasMeaningfulTerms) {
