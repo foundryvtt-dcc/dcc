@@ -339,7 +339,7 @@ describe('DCCRoll', () => {
       // Test with various null/undefined combinations that don't cause errors
       await expect(DCCRoll.createRoll(null, {}, {})).resolves.toBeDefined()
       await expect(DCCRoll.createRoll('1d20', null, {})).resolves.toBeDefined()
-      
+
       // Note: null options will cause an error due to accessing .rollData property
       // This is expected behavior, so we verify it throws an error
       try {

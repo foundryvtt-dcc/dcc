@@ -683,3 +683,28 @@ test('Wormy the Warrior', async () => {
   ]
   expect(parsedNPC).toMatchObject(expected)
 })
+
+/* Test fractional HD parsing */
+test('fractional HD', async () => {
+  const parsedNPC = await parseNPCs('Tiny Creature: Init +0; Atk bite +1 melee (1d2); AC 12; HD ½d4; hp 1; MV 10\'; Act 1d20; SV Fort +0, Ref +2, Will +0; AL N.')
+  const expected = {
+    name: 'Tiny Creature',
+    'attributes.hitDice.value': '1d4/2'
+  }
+  expect(parsedNPC).toMatchObject([expected])
+})
+
+/* Test creature type detection for critical hits */
+test('creature type detection', async () => {
+  const humanoidNPC = await parseNPCs('Goblin Scout: Init +2; Atk shortsword +1 melee (1d6); AC 13; HD 1d8; hp 4; MV 30\'; Act 1d20; SV Fort +1, Ref +2, Will +0; AL C.')
+  expect(humanoidNPC[0]['attributes.critical.table']).toBe('III')
+  expect(humanoidNPC[0]['attributes.critical.die']).toBe('d6')
+})
+
+/* Test error handling with malformed input */
+test('malformed input handling', async () => {
+  // Should not throw errors even with malformed input
+  const result = await parseNPCs('This is not a valid stat block at all.')
+  expect(Array.isArray(result)).toBe(true)
+  expect(result.length).toBeGreaterThanOrEqual(0)
+})
