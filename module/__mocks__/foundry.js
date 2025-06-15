@@ -28,27 +28,37 @@ class MockItem {
       this.type = data.type
     }
 
-    Object.assign(this, data)
-
-    // Enhanced system defaults for common item types (applied after data assignment)
+    // Enhanced system defaults for common item types (applied after template but before explicit data)
     if (this.type === 'weapon') {
       // Set enhanced defaults, overriding template defaults where needed
       const weaponDefaults = {
         melee: true,
         damage: '1d6',
         attackBonus: '+0',
+        toHit: '+0',
         critRange: 20,
         critDie: '1d6',
         critTable: 'III'
       }
-      this.system = Object.assign(this.system || {}, weaponDefaults)
+      // Apply our defaults over template data
+      this.system = Object.assign({}, this.system, weaponDefaults)
+    }
+
+    Object.assign(this, data)
+
+    // Apply any explicit system data from constructor
+    if (this.type === 'weapon' && data.system) {
+      Object.assign(this.system, data.system)
     } else if (this.type === 'armor') {
       const armorDefaults = {
         equipped: false,
         checkPenalty: 0,
         fumbleDie: '1d4'
       }
-      this.system = Object.assign(this.system || {}, armorDefaults)
+      this.system = Object.assign({}, this.system, armorDefaults)
+      if (data.system) {
+        Object.assign(this.system, data.system)
+      }
     }
     this.actor = null // Will be set when added to an actor
   }
@@ -668,4 +678,15 @@ export function getTemplateData (documentClass, type) {
   // Add in the data from the type itself
   Object.assign(documentData, templateDataForType)
   return documentData || null
+}
+
+// Mock DCCActorLevelChange
+global.DCCActorLevelChange = class DCCActorLevelChange {
+  constructor (actor) {
+    this.actor = actor
+  }
+
+  render (force) {
+    return true
+  }
 }

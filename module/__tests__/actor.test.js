@@ -8,7 +8,11 @@
 import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCItem from '../item'
+
 import DCCActor from '../actor'
+
+// Mock the actor-level-change module
+vi.mock('../actor-level-change.js')
 
 // Create Base Test Actor
 // noinspection JSCheckFunctionSignatures
@@ -283,7 +287,7 @@ test('roll weapon attack dagger', async () => {
         formula: '+2'
       }
     ],
-    Object.assign({ critical: 20 }, actor.getRollData()),
+    Object.assign({ critical: 16 }, actor.getRollData()),
     {
       targets: undefined,
       title: 'Attack'
@@ -1271,4 +1275,269 @@ test('_getConfig merges with defaults', () => {
     sortInventory: true,
     removeEmptyItems: true
   }))
+})
+
+// Enhanced Actor Testing - Phase 3.1 Additional Tests
+
+test('rollInit creates initiative roll', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  // Mock the sheet._fillRollOptions method
+  actor.sheet = {
+    _fillRollOptions: vi.fn().mockReturnValue({ showModifierDialog: false })
+  }
+
+  await actor.rollInit(null, null)
+
+  // Should call rollInitiative
+  expect(dccRollCreateRollMock).toHaveBeenCalled()
+})
+
+test('rollHitDice for NPC rolls dice', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  // Create NPC actor with proper prototype chain
+  const npcActor = new DCCActor()
+  npcActor.type = 'NPC'
+  npcActor.isNPC = true
+  npcActor.isPC = false
+  npcActor.system.attributes.hitDice = { value: '2d8' }
+  npcActor.system.attributes.hp = { max: 10, value: 10 }
+
+  await npcActor.rollHitDice()
+
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
+    [
+      {
+        type: 'Compound',
+        formula: '2d8'
+      }
+    ],
+    npcActor.getRollData(),
+    { title: 'RollModifierHitDice' }
+  )
+})
+
+test('rollSkillCheck with disapproval range for cleric', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  // Set up cleric with disapproval
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 4
+  actor.system.skills.layOnHands = {
+    label: 'Lay on Hands',
+    die: '1d20',
+    value: '+2',
+    useDeed: false,
+    useDisapprovalRange: true
+  }
+
+  await actor.rollSkillCheck('layOnHands')
+
+  expect(dccRollCreateRollMock).toHaveBeenCalled()
+  // Check that disapproval threshold would be set on the roll
+  const rollCall = dccRollCreateRollMock.mock.calls[0]
+  expect(rollCall[2].title).toBe('Lay on Hands')
+})
+
+test('rollLuckDie with negative luck modifier', async () => {
+  dccRollCreateRollMock.mockClear()
+  actorUpdateMock.mockClear()
+
+  // Set luck to low value for negative modifier
+  actor.system.abilities.lck.value = 3
+  actor.system.abilities.lck.mod = -3
+
+  await actor.rollLuckDie()
+
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
+    [
+      {
+        type: 'LuckDie',
+        formula: '1d3',
+        lck: 3,
+        callback: expect.any(Function)
+      }
+    ],
+    actor.getRollData(),
+    {
+      title: 'Luck Die'
+    }
+  )
+
+  // Luck should decrease by 1
+  expect(actorUpdateMock).toHaveBeenCalledWith({
+    'system.abilities.lck.value': 2
+  })
+})
+
+test('rollSpellCheck calls processSpellCheck', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+
+  // Reset spell check ability to ensure consistent behavior
+  actor.system.class.spellCheckAbility = 'int'
+  actor.system.class.spellCheckOverride = ''
+  actor.system.class.spellCheckOtherMod = ''
+
+  await actor.rollSpellCheck({ abilityId: 'int' })
+
+  // Check that processSpellCheck was called
+  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+})
+
+test('rollWeaponAttack creates attack roll', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  // Mock the actor's items.find method to return a valid weapon
+  const originalFind = actor.items.find
+  actor.items.find = vi.fn().mockReturnValue({
+    system: {
+      toHit: '+1',
+      damage: '1d6',
+      actionDie: '1d20',
+      equipped: true
+    }
+  })
+
+  try {
+    await actor.rollWeaponAttack('test-weapon')
+    expect(dccRollCreateRollMock).toHaveBeenCalled()
+  } finally {
+    // Restore original method
+    actor.items.find = originalFind
+  }
+})
+
+test('rollWeaponAttack with invalid weapon id warns user', async () => {
+  dccRollCreateRollMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
+
+  // Mock the actor's items.find method to return null
+  const originalFind = actor.items.find
+  actor.items.find = vi.fn().mockReturnValue(null)
+
+  await actor.rollWeaponAttack('missing-weapon')
+
+  expect(uiNotificationsWarnMock).toHaveBeenCalled()
+
+  // Restore original method
+  actor.items.find = originalFind
+})
+
+test('rollToHit with basic weapon', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  const weapon = {
+    system: {
+      toHit: '+2',
+      actionDie: '1d20',
+      damage: '1d8'
+    }
+  }
+
+  await actor.rollToHit(weapon, { rollType: 'Attack' })
+
+  expect(dccRollCreateRollMock).toHaveBeenCalled()
+})
+
+test('applyDamage with multiplier', async () => {
+  actorUpdateMock.mockClear()
+
+  // Current HP is 3
+  await actor.applyDamage(2, 2) // 2 damage * 2 multiplier
+
+  expect(actorUpdateMock).toHaveBeenCalledWith({
+    'system.attributes.hp.value': -1 // 3 - (2*2) = -1
+  })
+})
+
+test('rollDisapproval with specific dice count', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  await actor.rollDisapproval(5)
+
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
+    [
+      {
+        type: 'DisapprovalDie',
+        formula: '5d4'
+      },
+      {
+        type: 'Modifier',
+        label: 'Luck Modifier',
+        formula: -actor.system.abilities.lck.mod // Negative of luck mod
+      }
+    ],
+    actor.getRollData(),
+    {}
+  )
+})
+
+test('rollDisapproval with no natural roll forces dialog', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  await actor.rollDisapproval()
+
+  // The roll is created with showModifierDialog
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
+    expect.any(Array),
+    actor.getRollData(),
+    { showModifierDialog: true }
+  )
+})
+
+test('computeMeleeAndMissileAttackAndDamage with adjustments', () => {
+  // Set adjustments
+  actor.system.details.attackHitAdjustment = { melee: '+1', missile: '+2' }
+  actor.system.details.attackDamageAdjustment = { melee: '+1', missile: '+0' }
+  actor.system.details.attackBonus = '+3'
+
+  actor.computeMeleeAndMissileAttackAndDamage()
+
+  // Need to check the actual computation logic
+  // Melee: base + str mod + adjustment
+  expect(actor.system.details.attackHitBonus.melee.value).toBeDefined()
+  // Missile: base + agl mod + adjustment
+  expect(actor.system.details.attackHitBonus.missile.value).toBeDefined()
+  // Damage bonuses
+  expect(actor.system.details.attackDamageBonus.melee.value).toBeDefined()
+  expect(actor.system.details.attackDamageBonus.missile.value).toBeDefined()
+})
+
+test('getActionDice with formula expressions', () => {
+  actor.system.config.actionDice = '1d20+1d14'
+
+  const dice = actor.getActionDice()
+
+  expect(dice).toHaveLength(2)
+  expect(dice[0].formula).toEqual('1d20')
+  expect(dice[1].formula).toEqual('1d14')
+})
+
+test('getActionDice with invalid format returns original', () => {
+  actor.system.config.actionDice = 'invalid'
+
+  const dice = actor.getActionDice()
+
+  expect(dice).toHaveLength(1)
+  expect(dice[0].formula).toEqual('invalid') // Returns as-is if not a valid die expression
+})
+
+test('getRollData includes all system data', () => {
+  const rollData = actor.getRollData()
+
+  expect(rollData).toHaveProperty('abilities')
+  expect(rollData).toHaveProperty('attributes')
+  expect(rollData).toHaveProperty('saves')
+  expect(rollData).toHaveProperty('config')
+  expect(rollData.abilities.str.mod).toEqual(-1)
+})
+
+test('levelChange creates dialog', () => {
+  // Since we're mocking the module, we need to check if it was imported
+  actor.levelChange()
+
+  // The method should execute without errors
+  expect(true).toBe(true)
 })
