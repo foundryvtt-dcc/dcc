@@ -553,6 +553,65 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Party Sheet                              */
+/* ----------------------------------------- */
+
+.dcc .party {
+  border: $border-style;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(auto-fill, minmax(100px, auto));
+
+  .character-row {
+    border: $border-style;
+    display: grid;
+    grid-gap: 2px 3px;
+    grid-template-columns: 96px repeat(12, 1fr);
+    grid-template-rows: 1fr 1fr 1fr 1fr minmax(1fr, auto) minmax(1fr, auto);
+
+    .name {
+      grid-column: 1 / span 13;
+      grid-row: 1;
+    }
+
+    .portrait {
+      grid-column: 1;
+      grid-row: 2 / span 4;
+
+      img {
+        height: 96px;
+        width: 96px;
+      }
+    }
+
+    .occupation {
+      grid-column: span 7;
+    }
+
+    .special {
+      grid-column: span 11;
+    }
+
+    .hp-summary {
+      grid-column: span 2;
+    }
+
+    .weapon {
+      grid-column: span 1;
+    }
+
+    .weapon-dropdown {
+      grid-column: span 4;
+    }
+
+    .filler {
+      grid-column: span 2;
+    }
+  }
+}
+
+/* ----------------------------------------- */
 /*  Items                                    */
 /* ----------------------------------------- */
 

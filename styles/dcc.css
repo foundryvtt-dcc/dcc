@@ -682,6 +682,53 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Party Sheet                              */
+/* ----------------------------------------- */
+.dcc .party {
+  border: 2px groove #eeede0;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(auto-fill, minmax(100px, auto));
+}
+.dcc .party .character-row {
+  border: 2px groove #eeede0;
+  display: grid;
+  grid-gap: 2px 3px;
+  grid-template-columns: 96px repeat(12, 1fr);
+  grid-template-rows: 1fr 1fr 1fr 1fr minmax(1fr, auto) minmax(1fr, auto);
+}
+.dcc .party .character-row .name {
+  grid-column: 1/span 13;
+  grid-row: 1;
+}
+.dcc .party .character-row .portrait {
+  grid-column: 1;
+  grid-row: 2/span 4;
+}
+.dcc .party .character-row .portrait img {
+  height: 96px;
+  width: 96px;
+}
+.dcc .party .character-row .occupation {
+  grid-column: span 7;
+}
+.dcc .party .character-row .special {
+  grid-column: span 11;
+}
+.dcc .party .character-row .hp-summary {
+  grid-column: span 2;
+}
+.dcc .party .character-row .weapon {
+  grid-column: span 1;
+}
+.dcc .party .character-row .weapon-dropdown {
+  grid-column: span 4;
+}
+.dcc .party .character-row .filler {
+  grid-column: span 2;
+}
+
+/* ----------------------------------------- */
 /*  Items                                    */
 /* ----------------------------------------- */
 .dcc .equipment-bg {

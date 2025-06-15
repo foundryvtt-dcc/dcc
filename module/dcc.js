@@ -27,6 +27,7 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCActorSheet from './actor-sheet.js'
+import DCCPartySheet from './party-sheet.js'
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -96,6 +97,11 @@ Hooks.once('init', async function () {
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
     types: ['NPC', 'Player'],
     label: 'DCC.DCCActorSheetGeneric'
+  })
+  Actors.registerSheet('dcc', DCCPartySheet, {
+    makeDefault: true,
+    types: ['Party'],
+    label: 'DCC.DCCPartySheet'
   })
   Items.unregisterSheet('core', ItemSheet)
   Items.registerSheet('dcc', DCCItemSheet, {
@@ -492,7 +498,7 @@ async function processSpellCheck (actor, spellData) {
 /* -------------------------------------------- */
 // Create a macro when a rollable is dropped on the hotbar
 Hooks.on('hotbarDrop', (bar, data, slot) => {
-  createDCCMacro(data, slot)
+  return createDCCMacro(data, slot)
 })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling

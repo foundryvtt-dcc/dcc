@@ -2,7 +2,8 @@
   "Actor": {
     "types": [
       "Player",
-      "NPC"
+      "NPC",
+      "Party"
     ],
     "templates": {
       "common": {
@@ -402,6 +403,11 @@
         "spellCheck": 1,
         "spellCheckAbility": "int"
       }
+    },
+    "Party": {
+      "templates": [
+        "common"
+      ]
     }
   },
   "Item": {

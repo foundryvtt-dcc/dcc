@@ -1,0 +1,91 @@
+<form class="{{cssClass}}" autocomplete="off">
+
+  {{!-- Sheet Tab Navigation --}}
+  <nav class="sheet-tabs tabs" data-group="primary">
+    <a data-tab="party" title="{{localize 'DCC.Party'}}">{{localize "DCC.Party"}}</a>
+    <a data-tab="notes" title="{{localize 'DCC.Notes'}}">{{localize "DCC.Notes"}}</a>
+  </nav>
+
+  {{!-- Sheet Body --}}
+  <section class="sheet-body">
+    {{!-- Party Tab --}}
+    <div class="tab" data-group="primary" data-tab="party">
+      <div class="party">
+        {{#each partyMembers}}
+        <div class="character-row" data-actor-id="{{id}}">
+          <div class="dark-title name">{{actor.name}}</div>
+          <div class="portrait">
+            <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" alt="{{localize 'DCC.CharacterPortrait'}}'"/>
+          </div>
+          {{#if isNPC}}
+          <i class="fas fa-shield-alt"></i>
+          <label>{{actor.system.attributes.ac.value}}</label>
+          <i class="fas fa-heart"></i>
+          <label class="hp-summary">{{actor.system.attributes.hp.value}} / {{actor.system.attributes.hp.max}}</label>
+          <div></div>
+          <label class="save-label party-draggable rollable" data-save="ref">{{localize "DCC.SavesReflexAbbr"}}</label>
+          <label>{{numberFormat actor.system.saves.ref.value decimals=0 sign=true}}</label>
+          <label class="save-label party-draggable rollable" data-save="frt">{{localize "DCC.SavesFortitudeAbbr"}}</label>
+          <label>{{numberFormat actor.system.saves.frt.value decimals=0 sign=true}}</label>
+          <label class="save-label party-draggable rollable" data-save="wil">{{localize "DCC.SavesWillAbbr"}}</label>
+          <label>{{numberFormat actor.system.saves.wil.value decimals=0 sign=true}}</label>
+          <i class="weapon party-draggable rollable fas fa-hammer" data-item-id="{{activeMelee}}"></i>
+          <select class="weapon-dropdown" id="activeMelee" name="weaponUpdates.{{id}}.melee">
+            {{selectOptions melee selected=activeMelee labelAttr="name" valueAttr="id"}}
+          </select>
+          <i class="weapon party-draggable rollable fas fa-bow-arrow" data-item-id="{{activeRanged}}"></i>
+          <select class="weapon-dropdown" id="activeRanged" name="weaponUpdates.{{id}}.ranged">
+            {{selectOptions ranged selected=activeRanged labelAttr="name" valueAttr="id"}}
+          </select>
+          <a class="party-control party-edit" title="{{localize 'DCC.PartyEdit'}}"><i class="fas fa-user-cog"></i></a>
+          <a class="party-control party-delete" title="{{localize 'DCC.PartyDelete'}}"><i class="fas fa-user-times"></i></a>
+          <label class="special">{{actor.system.attributes.special.value}}</label>
+          {{else}}
+          <label class="occupation">{{actor.system.details.occupation.value}}</label>
+          <i class="fas fa-shield-alt"></i>
+          <label>{{actor.system.attributes.ac.value}}</label>
+          <i class="fas fa-heart"></i>
+          <label class="hp-summary">{{actor.system.attributes.hp.value}} / {{actor.system.attributes.hp.max}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="str">{{localize "DCC.AbilityStrShort"}}</label>
+          <label>{{numberFormat actor.system.abilities.str.mod decimals=0 sign=true}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="agl">{{localize "DCC.AbilityAglShort"}}</label>
+          <label>{{numberFormat actor.system.abilities.agl.mod decimals=0 sign=true}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="sta">{{localize "DCC.AbilityStaShort"}}</label>
+          <label>{{numberFormat actor.system.abilities.sta.mod decimals=0 sign=true}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="per">{{localize "DCC.AbilityPerShort"}}</label>
+          <label>{{numberFormat actor.system.abilities.per.mod decimals=0 sign=true}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="int">{{localize "DCC.AbilityIntShort"}}</label>
+          <label>{{numberFormat actor.system.abilities.int.mod decimals=0 sign=true}}</label>
+          <label class="ability-label party-draggable rollable" data-ability="lck">{{localize "DCC.AbilityLckShort"}}</label>
+          <label>{{numberFormat actor.system.abilities.lck.mod decimals=0 sign=true}}</label>
+          <div class="filler"></div>
+          <label class="save-label party-draggable rollable" data-save="ref">{{localize "DCC.SavesReflexAbbr"}}</label>
+          <label>{{numberFormat actor.system.saves.ref.value decimals=0 sign=true}}</label>
+          <label class="save-label party-draggable rollable" data-save="frt">{{localize "DCC.SavesFortitudeAbbr"}}</label>
+          <label>{{numberFormat actor.system.saves.frt.value decimals=0 sign=true}}</label>
+          <label class="save-label party-draggable rollable" data-save="wil">{{localize "DCC.SavesWillAbbr"}}</label>
+          <label>{{numberFormat actor.system.saves.wil.value decimals=0 sign=true}}</label>
+          <div class="filler"></div>
+          <div class="filler"></div>
+          <i class="weapon party-draggable rollable fas fa-hammer" data-item-id="{{activeMelee}}"></i>
+          <select class="weapon-dropdown" id="activeMelee" name="weaponUpdates.{{id}}.melee">
+            {{selectOptions melee selected=activeMelee labelAttr="name" valueAttr="id"}}
+          </select>
+          <i class="weapon party-draggable rollable fas fa-bow-arrow" data-item-id="{{activeRanged}}"></i>
+          <select class="weapon-dropdown" id="activeRanged" name="weaponUpdates.{{id}}.ranged">
+            {{selectOptions ranged selected=activeRanged labelAttr="name" valueAttr="id"}}
+          </select>
+          <a class="party-control party-edit" title="{{localize 'DCC.PartyEdit'}}"><i class="fas fa-user-cog"></i></a>
+          <a class="party-control party-delete" title="{{localize 'DCC.PartyDelete'}}"><i class="fas fa-user-times"></i></a>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{!-- End Party Tab --}}
+
+    {{!-- Notes Tab --}}
+    {{> systems/dcc/templates/actor-partial-pc-notes.html }}
+  </section>
+</form>
+
