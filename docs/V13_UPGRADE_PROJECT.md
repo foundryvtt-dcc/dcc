@@ -13,9 +13,10 @@ This document tracks all components in the DCC system that need to be upgraded f
 - **Major Dialog Migration**: FleetingLuck, Welcome, SavingThrow dialogs migrated to ApplicationV2
 
 ### ❌ **REMAINING WORK** (High Priority)
+- **V13 HTML→DOM conversion** needed in 6 files ❌ **CRITICAL FOR V13**
 - **5 FormApplication classes** still need migration to ApplicationV2
-- **jQuery elimination** in 1 file (dcc.js) - key-state.js ✅ party-sheet.js ✅ COMPLETED  
-- **Dialog → DialogV2** migration in 3 files - party-sheet.js ✅ COMPLETED
+- **Dialog → DialogV2** migration in 2 files remaining  
+- **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ❌
 
@@ -73,10 +74,11 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 
 ### Remaining jQuery Usage ❌ **PENDING**
 
-### **module/dcc.js** ❌
-- **Line 1**: Global $ declaration  
-- **Lines 267-269**: Event handlers using `$(document).on()`
-- **Line 541**: jQuery wrapping of HTML element
+### **module/dcc.js** ✅
+- **Line 1**: Global $ declaration - REMOVED
+- **Lines 267-269**: Event handlers using `$(document).on()` - REPLACED with vanilla JS event delegation
+- **Line 541**: jQuery wrapping of HTML element - REMOVED
+- **Line 552**: jQuery `.find()` and `.attr()` - REPLACED with vanilla JS
 
 ### **module/key-state.js** ✅
 - **Line 1**: Global $ declaration - REMOVED
@@ -94,11 +96,48 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 ### **module/roll-modifier.js** ✅  
 - Migrated to ApplicationV2, jQuery usage eliminated
 
-### **module/chat.js** ✅
-- jQuery usage has been replaced with vanilla JavaScript
+### **FILES NEEDING V13 HTML→DOM CONVERSION** ❌
 
-### **module/actor-level-change.js** ✅
-- Still uses FormApplication but jQuery usage appears cleaned
+### **module/chat.js** ❌ **HIGH PRIORITY**
+- 20+ instances of `html.find()`, `html.html()`, `html.addClass()`, `html.remove()`
+- Chat rendering functions use V12 jQuery-style html parameters
+
+### **module/actor-level-change.js** ❌ **HIGH PRIORITY**
+- `html.find('.level-increase').click()` and similar patterns
+- FormApplication activateListeners using jQuery-style html
+
+### **module/party-sheet.js** ❌ **HIGH PRIORITY**  
+- Multiple `html.find()` calls in activateListeners method
+- Party sheet event handling using jQuery-style html
+
+### **module/roll-modifier.js** ❌ **MEDIUM PRIORITY**
+- Multiple `html.find()` button click handlers
+- Roll modifier dialog using jQuery-style html  
+
+### **module/spell-result.js** ❌ **MEDIUM PRIORITY**
+- `html.find()` for spell result navigation buttons
+
+### **module/actor-sheet.js** ❌ **SPECIAL CASE**
+- Contains commented-out jQuery-style code in `activateListeners()` 
+- **DO NOT REMOVE** - This code shows the V12 event handlers that need to become V2 `actions`
+- Required for proper ApplicationV2 conversion mapping
+
+### **CRITICAL V13 Change: HTML Element Transition**
+
+**Foundry V12 → V13 Breaking Change:**
+- **V12**: `html` parameters in hooks and methods are **jQuery objects** with `.find()`, `.html()`, `.addClass()` methods
+- **V13**: `html` parameters are **plain DOM elements** without jQuery methods
+- **Migration Required**: All `html.find()`, `html.html()`, `html.addClass()` etc. must be converted to vanilla DOM
+
+**Common V13 Conversions Needed:**
+- `html.find('.selector')` → `html.querySelector('.selector')` or `html.querySelectorAll('.selector')`
+- `html.html(content)` → `html.innerHTML = content`
+- `html.addClass('class')` → `html.classList.add('class')`
+- `html.removeClass('class')` → `html.classList.remove('class')`
+- `html.attr('data-id')` → `html.getAttribute('data-id')`
+- `html.attr('data-id', value)` → `html.setAttribute('data-id', value)`
+
+**🚨 FormApplication Files**: When converting FormApplication classes to ApplicationV2, any commented-out jQuery code in `activateListeners()` should be **preserved** as it shows the V12 event handlers that need to become V2 actions.
 
 ### Common jQuery Patterns to Replace:
 - `$(selector)` → `document.querySelector(selector)` or `document.querySelectorAll(selector)`
@@ -135,7 +174,7 @@ The following components have already been migrated to V2 patterns:
 
 ### Phase 1 - Critical Core Components ❌ **REMAINING**
 1. ~~**Fix `getSceneControlButtons` hook usage** in `module/dcc.js`~~ ✅ **COMPLETED**
-2. **Remove remaining jQuery dependencies** (1 file: dcc.js) - key-state.js ✅ party-sheet.js ✅ COMPLETED
+2. ~~**Remove remaining jQuery dependencies**~~ ✅ **FULLY COMPLETED** - key-state.js ✅ party-sheet.js ✅ dcc.js ✅
 3. **Migrate `actor-config.js` and `item-config.js`** (core configuration) ❌
 4. **Migrate `parser.js`** (import functionality) ❌
 

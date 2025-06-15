@@ -2,6 +2,32 @@
 
 This guide provides step-by-step instructions for converting Foundry V1 applications (FormApplication) to V2 applications (ApplicationV2/ActorSheetV2).
 
+## CRITICAL V13 Breaking Change: HTML Elements
+
+**Foundry V12 vs V13 HTML Parameter Change:**
+- **V12**: `html` parameters in hooks, `activateListeners()`, and chat functions are **jQuery objects**
+- **V13**: `html` parameters are **plain DOM elements** (no jQuery methods)
+
+**This affects ALL of these patterns:**
+- `html.find('.selector')` ❌ (breaks in V13)
+- `html.html(content)` ❌ (breaks in V13) 
+- `html.addClass('class')` ❌ (breaks in V13)
+- `html.removeClass('class')` ❌ (breaks in V13)
+- `html.attr('attribute')` ❌ (breaks in V13)
+
+**Required V13 Conversions:**
+```javascript
+// V12 jQuery-style (BREAKS in V13)
+html.find('.my-button').click(handler)
+html.html('<p>Content</p>')
+html.addClass('active')
+
+// V13 DOM-style (V13 compatible)
+html.querySelector('.my-button').addEventListener('click', handler)
+html.innerHTML = '<p>Content</p>'
+html.classList.add('active')
+```
+
 ## 1. Change Class Inheritance
 
 ### For Actor Sheets
@@ -252,6 +278,23 @@ See the dedicated tabs section below for detailed tab migration instructions.
 ## 7. Converting Event Handlers (activateListeners → actions)
 
 In V2, the `activateListeners` method is replaced by the `actions` system in `DEFAULT_OPTIONS`. Event handlers become static methods with `#` prefix (private) or regular methods if they need external access.
+
+### 🚨 **IMPORTANT: Commented-Out jQuery Code**
+
+If you see commented-out jQuery code in `activateListeners()` methods, **DO NOT REMOVE IT**. This code shows:
+- The original V12 event handlers that need to be converted to V2 actions
+- All the functionality that must be mapped to the new actions system
+- The complete list of interactions the sheet/dialog should support
+
+**Example of commented code to preserve:**
+```javascript
+// KEEP THIS - it shows what actions are needed:
+//   html.find('.ability-label').click(this._onRollAbilityCheck.bind(this))
+//   html.find('.item-create').click(this._onItemCreate.bind(this))
+//   html.find('.item-delete').click(this._onItemDelete.bind(this))
+```
+
+This maps to V2 actions and data-action attributes in templates.
 
 ### V1 Pattern (Old):
 ```javascript

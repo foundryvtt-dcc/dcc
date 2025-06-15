@@ -1,4 +1,4 @@
-/* global $, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, Handlebars */
+/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, Handlebars */
 
 /**
  * DCC
@@ -264,9 +264,15 @@ function checkReleaseNotes () {
   }
 
   // Register listeners for the buttons
-  $(document).on('click', '.dcc-release-notes', () => _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog'))
-  $(document).on('click', '.dcc-credits', () => _onShowJournal('dcc.dcc-userguide', 'Credits'))
-  $(document).on('click', '.dcc-user-guide', () => _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide'))
+  document.addEventListener('click', (event) => {
+    if (event.target.classList.contains('dcc-release-notes')) {
+      _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog')
+    } else if (event.target.classList.contains('dcc-credits')) {
+      _onShowJournal('dcc.dcc-userguide', 'Credits')
+    } else if (event.target.classList.contains('dcc-user-guide')) {
+      _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide')
+    }
+  })
 }
 
 async function _onShowJournal (packName, journalName) {
@@ -538,8 +544,6 @@ Hooks.on('hotbarDrop', (bar, data, slot) => {
 Hooks.on('renderChatMessageHTML', (message, html, data) => {
   if (!message.isRoll || !message.isContentVisible || !message.rolls.length) return
 
-  html = $(html)
-
   if (game.user.isGM) {
     message.setFlag('core', 'canPopout', true)
   }
@@ -549,7 +553,10 @@ Hooks.on('renderChatMessageHTML', (message, html, data) => {
   // Add data-item-id for modules that want to use it
   const itemId = message.getFlag('dcc', 'ItemId')
   if (itemId !== undefined) {
-    html.find('.message-content').attr('data-item-id', itemId)
+    const messageContent = html.querySelector('.message-content')
+    if (messageContent) {
+      messageContent.setAttribute('data-item-id', itemId)
+    }
   }
 
   let emoteRolls = false
