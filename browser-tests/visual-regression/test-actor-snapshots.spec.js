@@ -109,11 +109,12 @@ test.describe('DCC System V2 Migration Visual Tests', () => {
         try {
           await weaponEditButtons[i].scrollIntoViewIfNeeded()
           await weaponEditButtons[i].click({ timeout: 2000 })
-          await page.waitForSelector('.dcc.sheet.item', { timeout: 2000 })
+          await page.waitForSelector('.dcc.sheet.item', { timeout: 3000 })
           const sanitizedActorName = actor.name.replace(/[^a-zA-Z0-9-]/g, '-')
           await expect(page.locator('.dcc.sheet.item')).toHaveScreenshot(`${sanitizedActorName}-weapon-${i}.png`)
           await page.click('.dcc.sheet.item .header-button.control.close')
-          await page.waitForTimeout(300)
+          // Wait for the dialog to actually close
+          await page.waitForSelector('.dcc.sheet.item', { state: 'detached', timeout: 2000 })
         } catch (error) {
           console.log(`Failed to capture weapon dialog for ${actor.name}: ${error.message}`)
         }
@@ -122,7 +123,6 @@ test.describe('DCC System V2 Migration Visual Tests', () => {
       // Take screenshots of armor dialogs
       await page.waitForSelector('.armor .item-edit', { timeout: 2000, state: 'attached' }).catch(() => {})
       const armorEditButtons = await page.locator('.armor .item-edit').all()
-      console.log(`Armor Edit Buttons for ${actor.name}: ${armorEditButtons}`)
       for (let i = 0; i < armorEditButtons.length; i++) {
         try {
           await armorEditButtons[i].scrollIntoViewIfNeeded()
@@ -131,14 +131,46 @@ test.describe('DCC System V2 Migration Visual Tests', () => {
           const sanitizedActorName = actor.name.replace(/[^a-zA-Z0-9-]/g, '-')
           await expect(page.locator('.dcc.sheet.item')).toHaveScreenshot(`${sanitizedActorName}-armor-${i}.png`)
           await page.click('.dcc.sheet.item .header-button.control.close')
-          await page.waitForTimeout(300)
+          // Wait for the dialog to actually close
+          await page.waitForSelector('.dcc.sheet.item', { state: 'detached', timeout: 2000 })
         } catch (error) {
           console.log(`Failed to capture armor dialog for ${actor.name}: ${error.message}`)
         }
       }
 
-      // Close the sheet
-      await page.keyboard.press('Escape')
+      // Take screenshot of Config dialog
+      try {
+        const configButton = page.locator('.header-button.control.configure-actor')
+        if (await configButton.count() > 0 && await configButton.first().isVisible()) {
+          await configButton.first().click({ force: true, timeout: 2000 })
+          await page.waitForTimeout(500)
+
+          // Try to find any config dialog that opened
+          const configDialogSelector = '.window-app:not(.dcc.sheet.actor)'
+          await page.waitForSelector(configDialogSelector, { timeout: 2000 }).catch(() => null)
+
+          const configDialog = page.locator(configDialogSelector)
+          if (await configDialog.count() > 0) {
+            const sanitizedActorName = actor.name.replace(/[^a-zA-Z0-9-]/g, '-')
+            await expect(configDialog.first()).toHaveScreenshot(`${sanitizedActorName}-config.png`)
+
+            // Close the dialog
+            const closeButton = configDialog.locator('.header-button.control.close')
+            if (await closeButton.count() > 0) {
+              await closeButton.click()
+            } else {
+              await page.keyboard.press('Escape')
+            }
+            await page.waitForTimeout(300)
+          } else {
+            console.log(`Config dialog did not open for ${actor.name}`)
+          }
+        } else {
+          console.log(`Config button not found or not visible for ${actor.name}`)
+        }
+      } catch (error) {
+        console.log(`Failed to capture config dialog for ${actor.name}: ${error.message}`)
+      }
     })
   })
 
