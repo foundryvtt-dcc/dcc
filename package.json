@@ -41,5 +41,11 @@
     "tojson": "node module/extractPacks.js"
   },
   "type": "module",
-  "version": "0.50.0"
+  "version": "0.50.0",
+  "vitest": {
+    "exclude": [
+      "**/node_modules/**",
+      "**/tests/visual-regression/**"
+    ]
+  }
 }
