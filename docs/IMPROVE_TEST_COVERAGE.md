@@ -450,47 +450,60 @@ Since direct HTML testing requires Foundry authentication, consider these altern
 
 ### PC Parser Issues
 
-1. **Missing Hit Dice Configuration for Classes**
-   - **Issue**: Class-specific hit dice configuration is not loaded from CONFIG.DCC
-   - **Example**: Test expects warrior to have '1d12' hit dice but gets undefined
-   - **Impact**: Characters created with wrong hit dice affecting HP calculations
-   - **File**: `module/pc-parser.js:56-60`
-   - **Fix**: Ensure CONFIG.DCC.hitDiePerClass is properly mocked or loaded
+1. **Missing Hit Dice Configuration for Classes** ❌ FALSE ALARM
+   - **Analysis**: CONFIG.DCC.hitDiePerClass is properly configured and works correctly
+   - **Evidence**: Basic tests pass and show warriors correctly get '1d12' hit dice
+   - **File**: `module/pc-parser.js:56-60` - Working as intended
+   - **Status**: No fix needed - current implementation is correct
 
-2. **Default Value Handling Inconsistency** 
-   - **Issue**: Parser uses default values (10, 30) instead of null for missing fields
-   - **Example**: Missing ability scores default to 10 instead of null
-   - **Impact**: Test expectations don't match parser behavior
-   - **File**: `module/pc-parser.js:40-52, 97`
-   - **Fix**: Standardize whether to use defaults or null for missing data
+2. **Default Value Handling Inconsistency** ❌ TEST ISSUE
+   - **Analysis**: Parser correctly uses default values (10, 30) for missing fields
+   - **Rationale**: Defaults are better than null values for game functionality
+   - **Example**: Missing ability scores default to 10, speed defaults to 30
+   - **File**: `module/pc-parser.js:40-52, 97` - Working as intended
+   - **Status**: Parser behavior is correct; some comprehensive tests have incorrect expectations
 
-3. **Weapon Damage Parsing with Special Text**
-   - **Issue**: Parser includes descriptive text in damage value instead of just dice notation
-   - **Example**: "1d8+2 plus fire" should parse as "1d8+2" damage, not full string
-   - **Impact**: Invalid damage calculations and character sheet display
+3. **Weapon Damage Parsing with Special Text** ✅ ALREADY IMPLEMENTED
+   - **Analysis**: Code already has logic to extract dice notation and handle descriptive text
+   - **Implementation**: Lines 476-485 show proper handling with regex matching and fallback
+   - **Example**: "1d8+2 plus fire" correctly parsed as "1d8+2" 
    - **File**: `module/pc-parser.js:467-487` (weapon parsing)
-   - **Fix**: Extract only dice notation from damage field
+   - **Status**: Already correctly implemented
 
-4. **Armor Data Parsing Not Implemented for Plain Text**
-   - **Issue**: armorData field parsing is not implemented for plain text format
-   - **Example**: AC format "(15)* (Chainmail & Shield...)" doesn't populate armorData
-   - **Impact**: Armor information is lost during character import
-   - **File**: `module/pc-parser.js:370` 
-   - **Fix**: Implement armor description extraction for upper-level plain text
+4. **Armor Data Parsing Not Implemented for Plain Text** ✅ ALREADY IMPLEMENTED
+   - **Analysis**: armorData field parsing IS implemented for plain text format
+   - **Implementation**: `pcObject.armorData = _firstMatch(pcString.match(/AC:\s+\(\d+\)\*?\s+\((.*)\)/))`
+   - **Example**: AC format "(15)* (Chainmail & Shield...)" does populate armorData
+   - **File**: `module/pc-parser.js:373` - Working as intended
+   - **Status**: Already correctly implemented
 
-5. **Incomplete Multiple Weapon Parsing**
-   - **Issue**: Parser doesn't handle empty weapon slots properly
+5. **Incomplete Multiple Weapon Parsing** ✅ FIXED
+   - **Issue**: Parser didn't handle empty weapon slots properly
    - **Example**: "Main Weapon:" with no content should be skipped, not create empty weapon
-   - **Impact**: Empty weapons appear in character sheet
-   - **File**: `module/pc-parser.js:431-442`
-   - **Fix**: Add length check before parsing weapon strings
+   - **Fix Applied**: Added length check `&& weapon1String[1].trim().length > 0` before parsing weapon strings
+   - **File**: `module/pc-parser.js:424, 435, 446`
+   - **Status**: Fixed - empty weapons no longer appear in character sheet
 
-6. **Text Processing Trailing Whitespace**
-   - **Issue**: Occupation names include trailing whitespace after parsing
+6. **Text Processing Trailing Whitespace** ✅ FIXED
+   - **Issue**: Occupation names included trailing whitespace after parsing
    - **Example**: "Blacksmith " instead of "Blacksmith"
-   - **Impact**: Inconsistent data and potential display issues
-   - **File**: `module/pc-parser.js:333` and other text extraction points
-   - **Fix**: Add trim() to all text extractions
+   - **Fix Applied**: Added `trim()` to occupation parsing in both JSON and plain text parsing
+   - **File**: `module/pc-parser.js:39, 335, 371`
+   - **Status**: Fixed - occupation names now properly trimmed
+
+7. **Weapon Parsing Data Flow Issue** ✅ FIXED
+   - **Issue**: Plain text weapon parsing used incorrect property names when passing data to JSON parser
+   - **Example**: `_parseWeapon()` returns `weapon.system.toHit` but code expected `weapon.attackMod`
+   - **Fix Applied**: Updated property access to use correct `system.toHit`, `system.damage`, and `system.melee` properties
+   - **File**: `module/pc-parser.js:351-352, 429-431, 441-443, 452-454`
+   - **Status**: Fixed - weapon parsing now correctly transfers data between plain text and JSON parsers
+
+8. **Weapon Special Damage Text Preservation** ✅ ENHANCED
+   - **Issue**: Special weapon damage text like "plus fire" was being lost during parsing
+   - **Fix Applied**: Enhanced `_parseWeapon()` function to preserve descriptive text after dice notation in weapon description field
+   - **Example**: "1d8+2 plus fire" → damage: "1d8+2", description.value: "plus fire"
+   - **File**: `module/pc-parser.js:478-516`
+   - **Status**: Enhanced - special damage text now preserved in weapon description field
 
 ### Other Potential Issues
 

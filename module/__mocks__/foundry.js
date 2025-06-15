@@ -337,7 +337,12 @@ class Localization {
       'DCC.AbilityMod': 'Ability Modifier',
       'DCC.SpellCheckOtherMod': 'Other Modifier',
       'DCC.CheckPenalty': 'Check Penalty',
-      'DCC.Spellburn': 'Spellburn'
+      'DCC.Spellburn': 'Spellburn',
+      'DCC.StartingFunds': 'Starting Funds',
+      'DCC.Equipment': 'Equipment',
+      'DCC.TradeGoods': 'Trade Goods',
+      'DCC.BirthAugur': 'Birth Augur',
+      'DCC.Languages': 'Languages'
     }
   }
 

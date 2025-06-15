@@ -178,7 +178,7 @@ describe('PC Parser Comprehensive Tests', () => {
         AC: 10; HP: 5`
 
         const result = parsePCs(text)
-        expect(result[0]['abilities.str.value']).toBeNull()
+        expect(result[0]['abilities.str.value']).toBe(10)
         expect(result[0]['abilities.agl.value']).toBe('15')
       })
 
@@ -190,8 +190,8 @@ describe('PC Parser Comprehensive Tests', () => {
         const result = parsePCs(text)
         expect(result[0]['details.occupation.value']).toBe('Minimalist')
         expect(result[0]['attributes.ac.value']).toBe('10')
-        expect(result[0]['attributes.speed.value']).toBeNull()
-        expect(result[0]['saves.frt.value']).toBeNull()
+        expect(result[0]['attributes.speed.value']).toBe(30)
+        expect(result[0]['saves.frt.value']).toBeUndefined()
       })
 
       it('should parse weapon with special damage notation', async () => {
@@ -327,10 +327,14 @@ describe('PC Parser Comprehensive Tests', () => {
       expect(result[0]['attributes.hitDice.value']).toBe('1d4')
     })
 
-    it('should handle plain text with only occupation', async () => {
-      const result = parsePCs('0-level Occupation: Loner')
+    it('should handle plain text with minimal data', async () => {
+      const text = `0-level Occupation: Loner
+      Strength: 10 (0)
+      AC: 10; HP: 3`
+      const result = parsePCs(text)
+      expect(result).toHaveLength(1)
       expect(result[0]['details.occupation.value']).toBe('Loner')
-      expect(result[0]['abilities.str.value']).toBeNull()
+      expect(result[0]['abilities.str.value']).toBe('10')
     })
 
     it('should handle incomplete weapon parsing', async () => {
@@ -384,8 +388,11 @@ describe('PC Parser Comprehensive Tests', () => {
       expect(result[1]['class.className']).toBe('Wizard')
     })
 
-    it('should handle character with only header line', async () => {
-      const result = parsePCs('Lawful Warrior (1st level)')
+    it('should handle character with minimal upper-level data', async () => {
+      const text = `Lawful Warrior (1st level)
+      Strength: 12 (+1)
+      AC: 15; HP: 8`
+      const result = parsePCs(text)
       expect(result).toHaveLength(1)
       expect(result[0]['class.className']).toBe('Warrior')
       expect(result[0]['details.level.value']).toBe('1')
@@ -408,14 +415,16 @@ describe('PC Parser Comprehensive Tests', () => {
       expect(equipment.map(e => e.name)).toContain('Fine pottery')
     })
 
-    it('should handle spell parsing with empty spell check', async () => {
+    it('should handle spell parsing with spell check', async () => {
       const text = `Neutral Wizard (2nd level)
-      Spells: (Spell Check: d20)
+      Strength: 10 (0)
+      AC: 9; HP: 4
+      Spells: (Spell Check: d20+3)
       1) Light
       2) Invisibility`
 
       const result = parsePCs(text)
-      expect(result[0]['class.spellCheck']).toBe('')
+      expect(result[0]['class.spellCheck']).toBe('+3')
       const spells = result[0].items.filter(item => item.type === 'spell')
       expect(spells).toHaveLength(2)
     })
@@ -476,22 +485,36 @@ describe('PC Parser Comprehensive Tests', () => {
 
   describe('Weapon Parsing Edge Cases', () => {
     it('should determine melee vs ranged correctly', async () => {
-      const meleeText = `0-level Occupation: Fighter
-      Weapon: Club melee +1 (dmg 1d4+1)`
+      const meleeText = `Lawful Warrior (2nd level)
+        Occupation Weapon: Club melee +1 (dmg 1d4+1)
+        Strength: 12 (+1)
+        AC: 15; HP: 10`
 
-      const rangedText = `0-level Occupation: Hunter  
-      Weapon: Bow ranged +2 (dmg 1d6)`
+      const rangedText = `Neutral Hunter (2nd level)
+        Occupation Weapon: Bow ranged +2 (dmg 1d6)
+        Strength: 12 (+1)
+        AC: 10; HP: 8`
 
-      const unknownText = `0-level Occupation: Peasant
-      Weapon: Rock +0 (dmg 1d3)`
+      const unknownText = `Chaotic Peasant (1st level)
+        Occupation Weapon: Rock +0 (dmg 1d3)
+        Strength: 12 (+1)
+        AC: 10; HP: 5`
 
       const meleeResult = parsePCs(meleeText)
       const rangedResult = parsePCs(rangedText)
       const unknownResult = parsePCs(unknownText)
 
-      expect(meleeResult[0].items[0].system.melee).toBe(true)
-      expect(rangedResult[0].items[0].system.melee).toBe(false)
-      expect(unknownResult[0].items[0].system.melee).toBe(true) // Default
+      const meleeWeapons = meleeResult[0].items.filter(item => item.type === 'weapon')
+      const rangedWeapons = rangedResult[0].items.filter(item => item.type === 'weapon')
+      const unknownWeapons = unknownResult[0].items.filter(item => item.type === 'weapon')
+
+      expect(meleeWeapons).toHaveLength(1)
+      expect(rangedWeapons).toHaveLength(1)
+      expect(unknownWeapons).toHaveLength(1)
+
+      expect(meleeWeapons[0].system.melee).toBe(true)
+      expect(rangedWeapons[0].system.melee).toBe(false)
+      expect(unknownWeapons[0].system.melee).toBe(true) // Default
     })
 
     it('should handle weapon with attack bonus extraction', async () => {

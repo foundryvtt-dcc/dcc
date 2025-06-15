@@ -44,7 +44,7 @@ export function getFirstDie (value) {
  */
 export function getFirstMod (value) {
   const firstMod = value.match(/[+-]\d\d?/)
-  return firstMod || ''
+  return firstMod ? firstMod[0] : ''
 }
 
 /**

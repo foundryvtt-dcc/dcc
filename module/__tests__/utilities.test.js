@@ -104,27 +104,27 @@ describe('Utilities', () => {
 
   describe('getFirstMod', () => {
     it('extracts positive modifiers', () => {
-      expect(getFirstMod('+5')[0]).toBe('+5')
-      expect(getFirstMod('+10')[0]).toBe('+10')
-      expect(getFirstMod('+1')[0]).toBe('+1')
+      expect(getFirstMod('+5')).toBe('+5')
+      expect(getFirstMod('+10')).toBe('+10')
+      expect(getFirstMod('+1')).toBe('+1')
     })
 
     it('extracts negative modifiers', () => {
-      expect(getFirstMod('-5')[0]).toBe('-5')
-      expect(getFirstMod('-10')[0]).toBe('-10')
-      expect(getFirstMod('-1')[0]).toBe('-1')
+      expect(getFirstMod('-5')).toBe('-5')
+      expect(getFirstMod('-10')).toBe('-10')
+      expect(getFirstMod('-1')).toBe('-1')
     })
 
     it('extracts first modifier from complex expressions', () => {
-      expect(getFirstMod('1d6+5-2')[0]).toBe('+5')
-      expect(getFirstMod('2d8-3+1')[0]).toBe('-3')
-      expect(getFirstMod('roll+1-5')[0]).toBe('+1')
+      expect(getFirstMod('1d6+5-2')).toBe('+5')
+      expect(getFirstMod('2d8-3+1')).toBe('-3')
+      expect(getFirstMod('roll+1-5')).toBe('+1')
     })
 
     it('handles double-digit modifiers', () => {
-      expect(getFirstMod('+15')[0]).toBe('+15')
-      expect(getFirstMod('-20')[0]).toBe('-20')
-      expect(getFirstMod('+99')[0]).toBe('+99')
+      expect(getFirstMod('+15')).toBe('+15')
+      expect(getFirstMod('-20')).toBe('-20')
+      expect(getFirstMod('+99')).toBe('+99')
     })
 
     it('returns empty string for no modifiers', () => {
@@ -140,8 +140,8 @@ describe('Utilities', () => {
     })
 
     it('does not match invalid modifiers', () => {
-      expect(getFirstMod('+100')[0]).toBe('+10') // Regex captures first 2 digits
-      expect(getFirstMod('-100')[0]).toBe('-10') // Regex captures first 2 digits
+      expect(getFirstMod('+100')).toBe('+10') // Regex captures first 2 digits
+      expect(getFirstMod('-100')).toBe('-10') // Regex captures first 2 digits
     })
   })
 
