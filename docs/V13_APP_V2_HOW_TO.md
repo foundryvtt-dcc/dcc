@@ -118,6 +118,31 @@ WorkerManager#getWorker()
 WorkerManager#get()
 ```
 
+### Hook Name Changes
+
+**Chat Message Rendering Hook:**
+```javascript
+// V12 (deprecated in V13)
+Hooks.on('renderChatMessage', (message, html, data) => {
+  // html is jQuery object in V12, DOM element in V13
+})
+
+// V13 (correct)
+Hooks.on('renderChatMessageHTML', (message, html, data) => {
+  // html is always a DOM element (not jQuery)
+  // Use vanilla JavaScript DOM methods
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = content
+  }
+})
+```
+
+**Important Notes:**
+- `renderChatMessage` is deprecated in V13, use `renderChatMessageHTML` instead
+- The `html` parameter is always a plain DOM element (never jQuery) in both hooks in V13
+- All jQuery methods (`html.find()`, `html.html()`, etc.) must be replaced with vanilla JavaScript
+
 ## 1. Change Class Inheritance
 
 ### For Actor Sheets
