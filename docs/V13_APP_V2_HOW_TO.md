@@ -1987,3 +1987,107 @@ Add to `.gitignore`:
 - [ ] Test with CSS Layers compatibility
 - [ ] Verify Node 20+ compatibility
 - [ ] Test all functionality
+
+## 13. Handling Image Edits in ApplicationV2
+
+ApplicationV2 uses a different approach for handling image edits compared to V1. Instead of the `data-edit` attribute, V2 uses the actions system with `data-action` attributes.
+
+### V1 Pattern (Deprecated):
+```html
+<img id="portrait" src="{{img}}" data-edit="img" height="100px" width="100px" alt="{{localize 'DCC.CharacterPortrait'}}">
+```
+
+### V2 Pattern (Required):
+
+#### Template Update:
+```html
+<img id="portrait" src="{{img}}" data-action="editImage" data-field="img" height="100px" width="100px" alt="{{localize 'DCC.CharacterPortrait'}}">
+```
+
+#### Sheet Class Configuration:
+```javascript
+class MyActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+  static DEFAULT_OPTIONS = {
+    actions: {
+      editImage: MyActorSheet.#onEditImage
+    }
+  };
+
+  /**
+   * Handle image editing
+   * @this {MyActorSheet}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
+   * @private
+   */
+  static async #onEditImage(event, target) {
+    const field = target.dataset.field || "img";
+    const current = foundry.utils.getProperty(this.document, field);
+    
+    const fp = new foundry.applications.apps.FilePicker({
+      type: "image",
+      current: current,
+      callback: (path) => {
+        this.document.update({ [field]: path });
+      }
+    });
+    
+    fp.render(true);
+  }
+}
+```
+
+### Important V13 FilePicker Change:
+**CRITICAL**: In V13, the global `FilePicker` has been moved to `foundry.applications.apps.FilePicker`. Using the old global will show a deprecation warning:
+
+```
+Error: You are accessing the global "FilePicker" which is now namespaced under foundry.applications.apps.FilePicker.implementation
+Deprecated since Version 13
+```
+
+**V12 Pattern (Deprecated):**
+```javascript
+const fp = new FilePicker({
+  type: "image",
+  current: current,
+  callback: (path) => {
+    this.document.update({ [field]: path });
+  }
+});
+```
+
+**V13 Pattern (Required):**
+```javascript
+const fp = new foundry.applications.apps.FilePicker({
+  type: "image",
+  current: current,
+  callback: (path) => {
+    this.document.update({ [field]: path });
+  }
+});
+```
+
+### Key Changes:
+1. **Remove `data-edit`**: Replace with `data-action="editImage"`
+2. **Add `data-field`**: Specify which field to update (defaults to "img")
+3. **Define Action**: Add `editImage` to the `actions` object in `DEFAULT_OPTIONS`
+4. **Implement Handler**: Create static `#onEditImage` method with proper V2 signature
+5. **Use `this.document`**: Reference the document through the action context
+
+### Alternative Field Names:
+```html
+<!-- For token image -->
+<img src="{{prototypeToken.texture.src}}" data-action="editImage" data-field="prototypeToken.texture.src">
+
+<!-- For custom image fields -->
+<img src="{{system.customImage}}" data-action="editImage" data-field="system.customImage">
+```
+
+### Multiple Image Support:
+For sheets with multiple editable images, use the same action with different `data-field` attributes:
+```html
+<img src="{{img}}" data-action="editImage" data-field="img" alt="Portrait">
+<img src="{{prototypeToken.texture.src}}" data-action="editImage" data-field="prototypeToken.texture.src" alt="Token">
+```
+
+The `#onEditImage` handler will automatically handle different fields based on the `data-field` attribute.

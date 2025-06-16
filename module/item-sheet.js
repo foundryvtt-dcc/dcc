@@ -8,7 +8,8 @@ import { ensurePlus } from './utilities.js'
 const { ApplicationTabsConfiguration } = foundry.applications.types
 const { HandlebarsApplicationMixin } = foundry.applications.api
 const { ItemSheetV2 } = foundry.applications.sheets
-const { TextEditor } = foundry.applications.ux
+// eslint-disable-next-line no-unused-vars
+const { TextEditor, DragDrop } = foundry.applications.ux
 
 /**
  * Extend the basic ItemSheet for DCC RPG
@@ -23,6 +24,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       height: 442
     },
     form: {
+      handler: DCCItemSheet.#onSubmitForm,
       submitOnChange: true
     },
     window: {
@@ -35,7 +37,16 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           ownership: 'OWNER'
         }
       ]
-    }
+    },
+    actions: {
+      editImage: this.#editImage,
+      rollManifestation: this.#rollManifestation,
+      rollMercurialMagic: this.#rollMercurialMagic,
+      rollValue: this.#rollValue,
+      convertUpward: this.#convertUpward,
+      convertDownward: this.#convertDownward
+    },
+    dragDrop: this.#createDragDropHandlers
   }
 
   /** @inheritDoc */
@@ -65,6 +76,18 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
     }
 
+    // Add spell-specific tabs
+    if (this.document.type === 'spell') {
+      parts.manifestation = {
+        id: 'manifestation',
+        template: 'systems/dcc/templates/item-sheet-spell-manifestation.html'
+      }
+      parts.mercurial = {
+        id: 'mercurial',
+        template: 'systems/dcc/templates/item-sheet-spell-mercurial.html'
+      }
+    }
+
     return parts
   }
 
@@ -87,9 +110,32 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _getTabsConfig (group) {
     const tabs = foundry.utils.deepClone(super._getTabsConfig(group))
     const initCapTypeName = this.document.type.charAt(0).toUpperCase() + this.document.type.slice(1)
-    tabs.tabs[0] = { id: this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
-    tabs.initial = this.document.type
-    this.tabGroups[group] = this.document.type
+
+    if (this.document.type === 'spell') {
+      // Spell items have multiple tabs
+      tabs.tabs = [
+        { id: 'spell', group: 'sheet', label: 'DCC.Spell' },
+        { id: 'manifestation', group: 'sheet', label: 'DCC.Manifestation' },
+        { id: 'description', group: 'sheet', label: 'DCC.Description' }
+      ]
+
+      // Add mercurial tab only if it should be shown
+      const castingMode = this.document.system.config.castingMode || 'wizard'
+      const forceShowMercurialTab = this.document.system.config.showMercurialTab
+      const showMercurialTab = !!this.actor && (castingMode === 'wizard' || forceShowMercurialTab)
+
+      if (showMercurialTab) {
+        tabs.tabs.splice(2, 0, { id: 'mercurial', group: 'sheet', label: 'DCC.Mercurial' })
+      }
+
+      tabs.initial = 'spell'
+    } else {
+      // Other item types use the standard configuration
+      tabs.tabs[0] = { id: this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
+      tabs.initial = this.document.type
+    }
+
+    this.tabGroups[group] = tabs.initial
     return tabs
   }
 
@@ -161,6 +207,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     data.config = CONFIG.DCC
 
     data.isGM = game.user.isGM
+    data.editable = this.isEditable
 
     return data
   }
@@ -174,35 +221,170 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     return position
   }
 
-  /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
-
-    // Everything below here is only needed if the sheet is editable
-    if (!this.options.editable) return
-
-    // Make this droppable for RollTables if this is a spell
-    if (this.item.type === 'spell') {
-      this.form.ondragover = ev => this._onDragOver(ev)
-      this.form.ondrop = ev => this._onDrop(ev)
-    }
-
-    // Owner only listeners
-    if (this.item.isOwner) {
-      // Roll mercurial effect for spells
-      if (this.item.type === 'spell') {
-        html.querySelector('.manifestation-roll').addEventListener('click', this._onRollManifestation.bind(this))
-        html.querySelector('.mercurial-roll').addEventListener('click', this._onRollMercurialMagic.bind(this))
+  /**
+   * Create drag-and-drop workflow handlers for this Application
+   * @returns {DragDrop[]} An array of DragDrop handlers
+   * @private
+   */
+  static #createDragDropHandlers () {
+    return [{
+      dropSelector: '.sheet-body',
+      permissions: {
+        drop: this._canDragDrop.bind(this)
+      },
+      callbacks: {
+        drop: this._onDrop.bind(this)
       }
+    }]
+  }
 
-      // Roll value and currency conversions for treasure
-      if (this.item.type === 'treasure') {
-        html.querySelector('.roll-value-button').addEventListener('click', this._onRollValue.bind(this))
-        html.querySelector('.roll-value-label').addEventListener('click', this._onRollValue.bind(this))
-        html.querySelector('.left-arrow-button').addEventListener('click', this._onConvertUpward.bind(this))
-        html.querySelector('.right-arrow-button').addEventListener('click', this._onConvertDownward.bind(this))
-      }
+  /**
+   * Check if drag/drop is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragDrop (selector) {
+    // Only allow drops on spell items
+    return this.document.type === 'spell' && this.isEditable
+  }
+
+  /**
+   * Roll a new Manifestation
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #rollManifestation (event, target) {
+    event.preventDefault()
+    if (!this.document.isOwner) return
+
+    const options = this._fillRollOptions(event)
+    // Prompt if there's an existing effect, or we're using the roll modifier dialog
+    if (!options.showModifierDialog && this.document.hasExistingManifestation()) {
+      new Dialog({
+        title: game.i18n.localize('DCC.ManifestationRerollPrompt'),
+        content: `<p>${game.i18n.localize('DCC.ManifestationRerollExplain')}</p>`,
+        buttons: {
+          reroll: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonReroll'),
+            callback: () => this._rollManifestation(event, options)
+          },
+          lookup: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonLookup'),
+            callback: () => this._lookupManifestation(event, options)
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('DCC.ManifestationButtonCancel')
+          }
+        }
+      }).render(true)
+    } else {
+      this._rollManifestation(event, options)
     }
+  }
+
+  /**
+   * Roll a new Mercurial Magic effect
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #rollMercurialMagic (event, target) {
+    event.preventDefault()
+    if (!this.document.isOwner) return
+
+    const options = this._fillRollOptions(event)
+    // Prompt if there's an existing effect, or we're using the roll modifier dialog
+    if (!options.showModifierDialog && this.document.hasExistingMercurialMagic()) {
+      new Dialog({
+        title: game.i18n.localize('DCC.MercurialMagicRerollPrompt'),
+        content: `<p>${game.i18n.localize('DCC.MercurialMagicRerollExplain')}</p>`,
+        buttons: {
+          reroll: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.MercurialMagicButtonReroll'),
+            callback: () => this._rollMercurialMagic(event, options)
+          },
+          lookup: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('DCC.MercurialMagicButtonLookup'),
+            callback: () => this._lookupMercurialMagic()
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('DCC.MercurialMagicButtonCancel')
+          }
+        }
+      }).render(true)
+    } else {
+      this._rollMercurialMagic(event, options)
+    }
+  }
+
+  /**
+   * Roll the value of this item
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #rollValue (event, target) {
+    event.preventDefault()
+    if (!this.document.isOwner) return
+
+    await this.document.rollValue()
+    this.render(false)
+  }
+
+  /**
+   * Convert currency upward
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #convertUpward (event, target) {
+    event.preventDefault()
+    if (!this.document.isOwner) return
+
+    await this.document.convertCurrencyUpward(target.dataset.currency)
+    this.render(false)
+  }
+
+  /**
+   * Convert currency downward
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #convertDownward (event, target) {
+    event.preventDefault()
+    if (!this.document.isOwner) return
+
+    await this.document.convertCurrencyDownward(target.dataset.currency)
+    this.render(false)
+  }
+
+  /**
+   * Handle editing an image
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #editImage (event, target) {
+    const field = target.dataset.field || 'img'
+    const current = foundry.utils.getProperty(this.document, field)
+    
+    const fp = new foundry.applications.apps.FilePicker({
+      type: 'image',
+      current: current,
+      callback: (path) => {
+        this.document.update({ [field]: path })
+      }
+    })
+    
+    fp.render(true)
   }
 
   async _onDrop (event) {
@@ -216,7 +398,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return false
     }
 
-    if (this.item.type === 'spell') {
+    if (this.document.type === 'spell') {
       // Handle dropping a roll table to set the spells table
       if (data.type === 'RollTable') {
         // Expected format from the tables tab
@@ -231,7 +413,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           results.collection = data.pack
         }
         this.object.update({
-          data: { results }
+          system: { results }
         })
       }
     }
@@ -270,7 +452,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    */
   _onConfigureItem (event) {
     event.preventDefault()
-    new DCCItemConfig(this.item, {
+    new DCCItemConfig(this.document, {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 400) / 2
     }).render(true)
@@ -289,79 +471,13 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   /**
-   * Roll a new Manifestation, prompting to replace if necessary
-   */
-  _onRollManifestation (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
-    // Prompt if there's an existing effect, or we're using the roll modifier dialog
-    if (!options.showModifierDialog && this.item.hasExistingManifestation()) {
-      new Dialog({
-        title: game.i18n.localize('DCC.ManifestationRerollPrompt'),
-        content: `<p>${game.i18n.localize('DCC.ManifestationRerollExplain')}</p>`,
-        buttons: {
-          reroll: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.ManifestationButtonReroll'),
-            callback: () => this._rollManifestation(event, options)
-          },
-          lookup: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.ManifestationButtonLookup'),
-            callback: () => this._lookupManifestation(event, options)
-          },
-          cancel: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.ManifestationButtonCancel')
-          }
-        }
-      }).render(true)
-    } else {
-      this._rollManifestation(event, options)
-    }
-  }
-
-  /**
-   * Roll a new Mercurial Magic effect, prompting to replace if necessary
-   */
-  _onRollMercurialMagic (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
-    // Prompt if there's an existing effect, or we're using the roll modifier dialog
-    if (!options.showModifierDialog && this.item.hasExistingMercurialMagic()) {
-      new Dialog({
-        title: game.i18n.localize('DCC.MercurialMagicRerollPrompt'),
-        content: `<p>${game.i18n.localize('DCC.MercurialMagicRerollExplain')}</p>`,
-        buttons: {
-          reroll: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.MercurialMagicButtonReroll'),
-            callback: () => this._rollMercurialMagic(event, options)
-          },
-          lookup: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.MercurialMagicButtonLookup'),
-            callback: () => this._lookupMercurialMagic()
-          },
-          cancel: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.MercurialMagicButtonCancel')
-          }
-        }
-      }).render(true)
-    } else {
-      this._rollMercurialMagic(event, options)
-    }
-  }
-
-  /**
    * Roll a new Manifestation
    * @param {Event}  event   The originating click event
    * @param options
    * @private
    */
   _rollManifestation (event, options) {
-    this.item.rollManifestation(undefined, options)
+    this.document.rollManifestation(undefined, options)
     this.render(false)
   }
 
@@ -372,7 +488,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _rollMercurialMagic (event, options) {
-    this.item.rollMercurialMagic(undefined, options)
+    this.document.rollMercurialMagic(undefined, options)
     this.render(false)
   }
 
@@ -381,7 +497,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _lookupManifestation () {
-    this.item.rollManifestation(this.item.system.manifestation.value)
+    this.document.rollManifestation(this.document.system.manifestation.value)
     this.render(false)
   }
 
@@ -390,35 +506,31 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _lookupMercurialMagic () {
-    this.item.rollMercurialMagic(this.item.system.mercurialEffect.value)
+    this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
     this.render(false)
   }
 
-  /**
-   * Roll the value of this item
-   */
-  _onRollValue (event) {
-    event.preventDefault()
-    this.item.rollValue()
-    this.render(false)
+  static async #onSubmitForm (event, form, formData) {
+    // Store current active tab before submission
+    const activeTab = this.element.querySelector('.tab.active')?.dataset.tab
+
+    // Process the form data
+    const data = foundry.utils.expandObject(formData.object)
+    await this.document.update(data)
+
+    // Restore active tab after render
+    if (activeTab) {
+      await this.render()
+      this._restoreActiveTab(activeTab)
+    }
   }
 
-  /**
-   * Convert currency upwards
-   */
-  _onConvertUpward (event) {
-    event.preventDefault()
-    this.item.convertCurrencyUpward(event.currentTarget.dataset.currency)
-    this.render(false)
-  }
-
-  /**
-   * Convert currency downwards
-   */
-  _onConvertDownward (event) {
-    event.preventDefault()
-    this.item.convertCurrencyDownward(event.currentTarget.dataset.currency)
-    this.render(false)
+  _restoreActiveTab (tabName) {
+    // Wait for render to complete, then restore tab
+    setTimeout(() => {
+      const tab = this.element.querySelector(`[data-tab="${tabName}"]`)
+      if (tab) tab.click()
+    }, 0)
   }
 }
 

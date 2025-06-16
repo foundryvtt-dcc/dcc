@@ -27,6 +27,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       configureActor: this.#configureActor,
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
+      editImage: this.#editImage,
       itemCreate: this.#itemCreate,
       itemEdit: this.#itemEdit,
       itemDelete: this.#itemDelete,
@@ -38,7 +39,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollLuckDie: this.#rollLuckDie,
       rollSavingThrow: this.#rollSavingThrow,
       rollSkillCheck: this.#rollSkillCheck,
-      rollSpellCheck: this.#rollSpellCheck
+      rollSpellCheck: this.#rollSpellCheck,
+      rollWeaponAttack: this.#rollWeaponAttack
     },
     form: {
       submitOnChange: true
@@ -140,10 +142,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       actor: this.document,
       config: CONFIG.DCC,
       corruptionHTML: this.#prepareCorruption(),
-      fieldDisabled: this.isEditable ? '' : 'disabled',
       incomplete: {},
       img: this.#prepareImage(),
-      isEditable: this.isEditable,
       isOwner: this.document.isOwner,
       isNPC: this.document.type === 'NPC',
       isPC: this.document.type === 'Player',
@@ -328,9 +328,9 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       'equipment.equipment': equipment,
       'equipment.mounts': mounts,
       'equipment.treasure': treasure,
-      'equipment.skills': skills,
-      'equipment.spells': spells,
-      'equipment.weapons': weapons
+      'equipment.weapons': weapons,
+      skills,
+      spells
     }
   }
 
@@ -473,16 +473,18 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @returns {Promise<Document[]>}
    **/
   static async #itemCreate (event, target) {
-    const header = target
+    console.log('ItemCreate', event, target)
+    console.log(this.actor)
     // Get the type of item to create.
-    const type = header.dataset.type
+    const type = target.dataset.type
     // Grab any data associated with this control.
-    const system = foundry.utils.duplicate(header.dataset)
+    const system = foundry.utils.duplicate(target.dataset)
     // Initialize a default name.
     let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
     if (this.actor.type === 'NPC' && type === 'weapon') {
       name = game.i18n.localize('DCC.NewAttack')
     }
+    console.log(target.dataset.type)
     // Prepare the item object.
     const itemData = {
       name,
@@ -818,6 +820,28 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
     }).render(true)
+  }
+
+  /**
+   * Handle image editing
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
+   * @private
+   */
+  static async #editImage (event, target) {
+    const field = target.dataset.field || 'img'
+    const current = foundry.utils.getProperty(this.document, field)
+    
+    const fp = new foundry.applications.apps.FilePicker({
+      type: 'image',
+      current: current,
+      callback: (path) => {
+        this.document.update({ [field]: path })
+      }
+    })
+    
+    fp.render(true)
   }
 
   /**

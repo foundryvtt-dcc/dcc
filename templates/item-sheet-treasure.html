@@ -26,8 +26,8 @@
       {{#if allowResolve}}
       <div class="grid-col-span-2">&nbsp;</div>
       <div class="grid-col-span-4 grid-tpl-max-auto grid-align-just-center">
-        <div class="roll-value-button">&nbsp;</div>
-        <label class="rollable roll-value-label">Roll Treasure Value</label>
+        <div class="roll-value-button" data-action="rollValue">&nbsp;</div>
+        <label class="rollable roll-value-label" data-action="rollValue">Roll Treasure Value</label>
       </div>
       {{/if}}
 
@@ -42,7 +42,7 @@
       <div class="dark-border grid-col-span-3" style="max-height: 125px;">
         <div class="dark-title">{{localize "DCC.Image"}}</div>
         <div class="box-inner" style="padding-top: 5px;">
-          <img src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+          <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}"/>
         </div>
       </div>
 
