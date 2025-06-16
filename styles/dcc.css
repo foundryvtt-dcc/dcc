@@ -548,7 +548,7 @@ a.inline-roll {
 }
 .table-draw .spell-check-mod {
   background: rgba(0, 0, 0, 0.1);
-  border: 1px solid #999;
+  border: 2px solid #999;
   border-radius: 3px;
   box-shadow: 0 0 2px #fff inset;
   height: 24px;
@@ -955,8 +955,8 @@ a.inline-roll {
   align-items: center;
   column-gap: 8px;
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  row-gap: 2px;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  row-gap: 4px;
   padding: 5px 0 0 0;
 }
 .config-dialog label {
@@ -969,65 +969,56 @@ a.inline-roll {
   justify-self: start;
 }
 .config-dialog input {
-  width: auto !important;
-  height: 22px !important;
-  line-height: 1 !important;
-  padding: 2px 4px !important;
-  margin: 3px 0 1px 5px;
-  background: rgba(0, 0, 0, 0.1) !important;
-  border: 1px solid #999 !important;
-  border-radius: 3px !important;
-  box-shadow: none !important;
-  outline: none !important;
+  height: 22px;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.1);
+  border: 2px solid #999;
+  border-radius: 3px;
+  box-shadow: none;
+  margin: 0;
+  outline: none;
   text-align: center;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
-  justify-self: start;
+  justify-self: stretch;
 }
 .config-dialog input:focus {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 .config-dialog input[type=checkbox] {
-  width: 20px !important;
-  height: 20px !important;
-  margin: 0 !important;
+  width: 20px;
+  height: 20px;
+  margin: 0;
   text-align: left;
-  border: none !important;
-  border-bottom: none !important;
-  background: none !important;
-  justify-self: start !important;
+  border-style: none;
+  background: none;
+  justify-self: start;
 }
 .config-dialog input[type=checkbox]:before, .config-dialog input[type=checkbox]:after {
-  border: none !important;
-  border-bottom: none !important;
+  border-style: none;
 }
 .config-dialog select {
-  width: auto !important;
-  height: 22px !important;
-  line-height: 1 !important;
-  padding: 2px 4px !important;
-  margin: 3px 0 1px 5px;
-  background: rgba(0, 0, 0, 0.1) !important;
-  border: 1px solid #999 !important;
-  border-radius: 3px !important;
-  box-shadow: none !important;
-  outline: none !important;
+  height: 24px;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.1);
+  border: 2px solid #999;
+  border-radius: 3px;
+  box-shadow: none;
+  outline: none;
   text-align: center;
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   font-size: 12px;
-  justify-self: start;
+  justify-self: stretch;
 }
 .config-dialog select:focus {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 .config-dialog input[type=checkbox] {
-  border: none !important;
-  border-bottom: none !important;
-  background: none !important;
-  width: 20px !important;
-  height: 20px !important;
-  justify-self: start !important;
+  border-style: none;
+  background: none;
+  width: 20px;
+  height: 20px;
+  justify-self: start;
 }
 .config-dialog .group-separator {
   border-bottom: 2px dotted var(--medium-color);

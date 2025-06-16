@@ -8,7 +8,7 @@ class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ['dcc', 'sheet', 'actor-config', 'themed', 'theme-light'],
     tag: 'form',
     position: {
-      width: 410,
+      width: 350,
       height: 'auto'
     },
     window: {
