@@ -19,8 +19,6 @@
 }
 
 
-
-
 /* Common style elements */
 $border-style: 2px groove #eeede0;
 
@@ -898,7 +896,7 @@ a.inline-roll {
       box-shadow: none;
     }
 
-    &[type="checkbox"] {
+    &[type='checkbox'] {
       width: 20px;
       height: 20px;
       margin: 0;
@@ -908,7 +906,8 @@ a.inline-roll {
       justify-self: start;
 
       // Ensure no inherited styling from parent input rules
-      &:before, &:after {
+      &::before,
+      &::after {
         border-style: none;
       }
     }
@@ -934,7 +933,7 @@ a.inline-roll {
   }
 
   // Additional specific checkbox override to remove underlines
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     border-style: none;
     background: none;
     width: 20px;

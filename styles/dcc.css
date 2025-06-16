@@ -993,7 +993,7 @@ a.inline-roll {
   background: none;
   justify-self: start;
 }
-.config-dialog input[type=checkbox]:before, .config-dialog input[type=checkbox]:after {
+.config-dialog input[type=checkbox]::before, .config-dialog input[type=checkbox]::after {
   border-style: none;
 }
 .config-dialog select {
