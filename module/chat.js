@@ -52,10 +52,13 @@ export const highlightCriticalSuccessFailure = function (message, html) {
     }
 
     // Apply highlights
-    if (d.total >= upperThreshold) {
-      html.find('.dice-total').addClass(upperClass)
-    } else if (d.total <= lowerThreshold) {
-      html.find('.dice-total').addClass(lowerClass)
+    const diceTotal = html.querySelector('.dice-total')
+    if (diceTotal) {
+      if (d.total >= upperThreshold) {
+        diceTotal.classList.add(upperClass)
+      } else if (d.total <= lowerThreshold) {
+        diceTotal.classList.add(lowerClass)
+      }
     }
   })
 }
@@ -74,8 +77,8 @@ export const highlightCriticalSuccessFailure = function (message, html) {
 export const addChatMessageContextOptions = function (html, options) {
   const canApply = function (li) {
     if (canvas.tokens.controlled.length === 0) return false
-    if (li.find('.damage-applyable').length) return true
-    if (li.find('.dice-total').length) return true
+    if (li.querySelector('.damage-applyable')) return true
+    if (li.querySelector('.dice-total')) return true
   }
 
   options.push(
@@ -108,7 +111,9 @@ export const addChatMessageContextOptions = function (html, options) {
  * @return {Promise}
  */
 function applyChatCardDamage (roll, multiplier) {
-  const amount = roll.find('.damage-applyable').attr('data-damage') || roll.find('.dice-total').text()
+  const damageApplyable = roll.querySelector('.damage-applyable')
+  const diceTotal = roll.querySelector('.dice-total')
+  const amount = damageApplyable?.getAttribute('data-damage') || diceTotal?.textContent
   return Promise.all(canvas.tokens.controlled.map(t => {
     const a = t.actor
     return a.applyDamage(amount, multiplier)
@@ -132,8 +137,14 @@ export const emoteAbilityRoll = function (message, html, data) {
       abilityName: message.flavor
     }
   )
-  html.find('.message-content').html(abilityRollEmote)
-  html.find('header').remove()
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = abilityRollEmote
+  }
+  const header = html.querySelector('header')
+  if (header) {
+    header.remove()
+  }
 }
 
 /**
@@ -155,8 +166,14 @@ export const emoteApplyDamageRoll = function (message, html, data) {
     }
   )
   message.rolls = []
-  html.find('.message-content').html(applyDamageEmote)
-  html.find('header').remove()
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = applyDamageEmote
+  }
+  const header = html.querySelector('header')
+  if (header) {
+    header.remove()
+  }
 }
 
 /**
@@ -206,8 +223,14 @@ export const emoteAttackRoll = function (message, html) {
     crit,
     fumble
   })
-  html.find('.message-content').html(attackEmote)
-  html.find('header').remove()
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = attackEmote
+  }
+  const header = html.querySelector('header')
+  if (header) {
+    header.remove()
+  }
 }
 
 /**
@@ -229,8 +252,14 @@ export const emoteCritRoll = function (message, html, data) {
     }
   )
 
-  html.find('.message-content').html(critRollEmote)
-  html.find('header').remove()
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = critRollEmote
+  }
+  const header = html.querySelector('header')
+  if (header) {
+    header.remove()
+  }
 }
 
 /**
@@ -252,8 +281,14 @@ export const emoteDamageRoll = function (message, html, data) {
       damageInlineRollHTML: damageRoll.toAnchor({ classes: ['damage-applyable'], dataset: { damage: damageRoll.total } }).outerHTML
     }
   )
-  html.find('.message-content').html(damageRollEmote)
-  html.find('header').remove()
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = damageRollEmote
+  }
+  const header = html.querySelector('header')
+  if (header) {
+    header.remove()
+  }
 }
 
 /**
@@ -287,7 +322,10 @@ export const emoteFumbleRoll = async function (message, html, data) {
   }
 
   const rollHTML = await message.rolls[0].render()
-  html.find('.message-content').html(`${rollHTML}<br>${fumbleText}`)
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = `${rollHTML}<br>${fumbleText}`
+  }
 }
 
 /**
@@ -308,8 +346,14 @@ export const emoteSavingThrowRoll = function (message, html, data) {
       saveInlineRollHTML: message.rolls[0].toAnchor('Roll Save').outerHTML
     }
   )
-  html.find('.message-content').html(saveRollEmote)
-  html.find('header').remove()
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = saveRollEmote
+  }
+  const header = html.querySelector('header')
+  if (header) {
+    header.remove()
+  }
 }
 
 /**
@@ -329,8 +373,14 @@ export const emoteInitiativeRoll = function (message, html, data) {
       initiativeInlineRollHTML: message.rolls[0].toAnchor().outerHTML
     }
   )
-  html.find('.message-content').html(initiativeRollEmote)
-  html.find('header').remove()
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = initiativeRollEmote
+  }
+  const header = html.querySelector('header')
+  if (header) {
+    header.remove()
+  }
 }
 
 /**
@@ -353,8 +403,14 @@ export const emoteSkillCheckRoll = function (message, html, data) {
       skillName: message.flavor
     }
   )
-  html.find('.message-content').html(skillCheckRollEmote)
-  html.find('header').remove()
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = skillCheckRollEmote
+  }
+  const header = html.querySelector('header')
+  if (header) {
+    header.remove()
+  }
 }
 
 /**
@@ -374,13 +430,19 @@ export const lookupCriticalRoll = async function (message, html) {
   if (!critResult || !critResult.text) {
     // No table available or no result found - just show the roll
     const rollHTML = await message.rolls[0].render()
-    html.find('.message-content').html(`${rollHTML} ${game.i18n.localize('DCC.CritTableUnavailable')}`)
+    const messageContent = html.querySelector('.message-content')
+    if (messageContent) {
+      messageContent.innerHTML = `${rollHTML} ${game.i18n.localize('DCC.CritTableUnavailable')}`
+    }
     return
   }
 
   const critText = await TextEditor.enrichHTML(critResult.text)
   const rollHTML = await message.rolls[0].render()
-  html.find('.message-content').html(`${rollHTML}<br>${critText}`)
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = `${rollHTML}<br>${critText}`
+  }
 }
 
 /**
@@ -423,5 +485,8 @@ export const lookupFumbleRoll = async function (message, html, data) {
   }
 
   const rollHTML = await message.rolls[0].render()
-  html.find('.message-content').html(`${rollHTML}<br>${fumbleText}`)
+  const messageContent = html.querySelector('.message-content')
+  if (messageContent) {
+    messageContent.innerHTML = `${rollHTML}<br>${fumbleText}`
+  }
 }
