@@ -1077,6 +1077,144 @@ _configureRenderParts(options) {
 </section>
 ```
 
+### ⚠️ **CRITICAL CSS WARNING for Tab Display**
+
+**Problem**: If the parent element containing your tabs has a `display` CSS property set (e.g., `display: grid`, `display: flex`), **ALL tabs will be visible at once** and tab switching will not work properly.
+
+**Why This Happens**: Foundry's tab system relies on default display behavior. When you set a specific display property on the parent container, it overrides Foundry's tab hiding mechanism.
+
+**Example of the Problem**:
+```css
+/* WRONG - This will break tab switching */
+.sheet-body {
+  display: grid;  /* This causes ALL tabs to show at once */
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ALSO WRONG */
+.tab-content {
+  display: flex;  /* This will also break tab switching */
+}
+```
+
+**Solution**: Never set `display` properties on elements that directly contain tabs. Instead, add a wrapper div inside each tab:
+
+```html
+<!-- CORRECT Tab Template Structure -->
+<section class="tab {{tabs.character.cssClass}}" data-tab="{{tabs.character.id}}" data-group="{{tabs.character.group}}">
+  <div class="tab-content-wrapper">  <!-- Add wrapper for layout -->
+    <!-- Now you can safely use display: grid or flex on the wrapper -->
+    <div class="character-grid">
+      <!-- Your content here -->
+    </div>
+  </div>
+</section>
+```
+
+```css
+/* CORRECT - Apply display properties to inner elements */
+.tab-content-wrapper {
+  /* No display property here */
+}
+
+.character-grid {
+  display: grid;  /* Safe to use on inner elements */
+  grid-template-columns: 1fr 1fr;
+}
+```
+
+**Debugging Tips**:
+- If all tabs show at once, check your CSS for any `display` properties on `.sheet-body`, `.tab`, or similar parent elements
+- Use browser dev tools to inspect computed styles on tab containers
+- Look for any CSS rules that might be setting display properties globally
+
+### 🚨 **CRITICAL: Tab Template Root Element Requirements**
+
+**Tab templates MUST have proper root element structure to work in V13:**
+
+1. **REQUIRED `tab` class**: The root element must have the CSS class `tab`
+2. **REQUIRED tab data attributes**: The root element must include dynamic tab attributes:
+   - `data-tab="{{tabs.tabId.id}}"`
+   - `data-group="{{tabs.tabId.group}}"`
+   - `{{tabs.tabId.cssClass}}` for dynamic CSS classes
+3. **REQUIRED element type**: Use `<section>` or `<div>` (never `<form>` inside a form)
+
+#### ✅ **CORRECT Tab Template Structure**:
+```html
+{{!-- Individual Tab Template (e.g., actor-partial-character.html) --}}
+<section class="tab {{tabs.character.id}} {{tabs.character.cssClass}}" 
+         data-tab="{{tabs.character.id}}" 
+         data-group="{{tabs.character.group}}">
+  {{!-- Tab content here --}}
+  <div class="character-details">
+    <!-- form fields, etc. -->
+  </div>
+</section>
+```
+
+#### ✅ **CORRECT Item Sheet Tab Template**:
+```html
+{{!-- Spell Details Tab (item-sheet-spell.html) --}}
+<section class="tab-body {{tabs.spell.id}} {{tabs.spell.cssClass}}" 
+         data-tab="{{tabs.spell.id}}" 
+         data-group="{{tabs.spell.group}}">
+  {{!-- Spell form fields --}}
+  <div class="grid-col-span-12 grid-tpl-max-auto mb-5">
+    <label for="name">{{localize "DCC.Name"}}</label>
+    <input id="name" name="name" value="{{document.name}}" />
+  </div>
+  {{!-- More content --}}
+</section>
+```
+
+#### ❌ **INCORRECT Examples**:
+```html
+{{!-- WRONG: Missing tab class --}}
+<section data-tab="{{tabs.character.id}}">
+  <!-- content -->
+</section>
+
+{{!-- WRONG: Missing data attributes --}}
+<section class="tab">
+  <!-- content -->
+</section>
+
+{{!-- WRONG: Static tab ID instead of dynamic --}}
+<section class="tab" data-tab="character" data-group="sheet">
+  <!-- content -->
+</section>
+
+{{!-- WRONG: Form element inside form application --}}
+<form class="tab {{tabs.character.id}}" data-tab="{{tabs.character.id}}">
+  <!-- Creates invalid nested forms -->
+</form>
+```
+
+#### **Why These Attributes Are Required**:
+- **Tab Switching**: Foundry's tab system uses these attributes to show/hide tabs
+- **CSS Targeting**: The dynamic classes allow proper styling and transitions
+- **Event Handling**: Tab navigation relies on these data attributes
+- **Accessibility**: Screen readers need proper tab structure for navigation
+
+#### **Template Variable Names**:
+The `{{tabs.tabId}}` variables come from your `_getTabsConfig()` method or `TABS` configuration:
+```javascript
+// In your sheet class
+static TABS = {
+  sheet: {
+    tabs: [
+      { id: 'character', group: 'sheet', label: 'DCC.Character' },
+      { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' }
+    ]
+  }
+}
+
+// This creates these template variables:
+// {{tabs.character.id}} = 'character'
+// {{tabs.character.group}} = 'sheet'
+// {{tabs.character.cssClass}} = CSS classes for active state, etc.
+```
+
 ### Migration Checklist for Tabs:
 - [ ] Split monolithic template into separate tab templates
 - [ ] Create navigation template for tab buttons

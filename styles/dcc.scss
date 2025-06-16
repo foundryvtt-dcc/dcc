@@ -332,7 +332,7 @@ $font-awesome: 'Font Awesome 6 Pro';
       border-radius: 3px;
       height: 22px;
 
-      &[type="checkbox"] {
+      &[type='checkbox'] {
         height: unset;
         background: unset;
       }
@@ -510,7 +510,7 @@ a.inline-roll {
       border-radius: 3px;
       height: 22px;
 
-      &[type="checkbox"] {
+      &[type='checkbox'] {
         height: unset;
         background: unset;
       }
@@ -811,13 +811,12 @@ a.inline-roll {
     }
 
     &[type='checkbox'] {
-        background: none;
-        border: 0;
-        margin: 0;
-     }
+      background: none;
+      border: 0;
+      margin: 0;
+    }
   }
 
-  input
 
   .item-img {
     max-height: 64px;
@@ -893,7 +892,7 @@ a.inline-roll {
     height: 22px;
     line-height: 1;
     background: rgba(0, 0, 0, 0.1);
-    border: 2px solid #999;
+    border: 0;
     border-radius: 3px;
     box-shadow: none;
     margin: 0;
@@ -907,15 +906,12 @@ a.inline-roll {
     }
 
     &[type='checkbox'] {
-      width: 20px;
-      height: 20px;
       margin: 0;
       text-align: left;
       border-style: none;
       background: none;
       justify-self: start;
 
-      // Ensure no inherited styling from parent input rules
       &::before,
       &::after {
         border-style: none;
@@ -927,7 +923,7 @@ a.inline-roll {
     height: 24px;
     line-height: 1;
     background: rgba(0, 0, 0, 0.1);
-    border: 2px solid #999;
+    border: 0;
     border-radius: 3px;
     box-shadow: none;
     outline: none;

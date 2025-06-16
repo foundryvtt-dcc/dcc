@@ -915,7 +915,7 @@ a.inline-roll {
   border: 0;
   margin: 0;
 }
-.dcc.item .tab-body input .item-img {
+.dcc.item .tab-body .item-img {
   max-height: 64px;
 }
 .dcc.item .tab-body .item-values {
@@ -978,7 +978,7 @@ a.inline-roll {
   height: 22px;
   line-height: 1;
   background: rgba(0, 0, 0, 0.1);
-  border: 2px solid #999;
+  border: 0;
   border-radius: 3px;
   box-shadow: none;
   margin: 0;
@@ -991,8 +991,6 @@ a.inline-roll {
   box-shadow: none;
 }
 .config-dialog input[type=checkbox] {
-  width: 20px;
-  height: 20px;
   margin: 0;
   text-align: left;
   border-style: none;
@@ -1006,7 +1004,7 @@ a.inline-roll {
   height: 24px;
   line-height: 1;
   background: rgba(0, 0, 0, 0.1);
-  border: 2px solid #999;
+  border: 0;
   border-radius: 3px;
   box-shadow: none;
   outline: none;
