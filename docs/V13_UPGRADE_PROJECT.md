@@ -28,11 +28,13 @@ The following files extend `FormApplication` and need to be migrated to `Applica
    - Class: `DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2)`
    - V2 Patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, `_updateObject()`
    - Purpose: Actor configuration dialog
+   - **CSS Styling**: Config dialog CSS fully updated for V13 compatibility with proper checkbox alignment and v12 appearance maintained
 
 2. **`module/item-config.js`** ❌
    - Class: `DCCItemConfig extends FormApplication`
    - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
    - Purpose: Item configuration dialog
+   - **CSS Issues**: Checkboxes are not positioned correctly in the item config dialog - needs CSS tweaks similar to actor-config
 
 3. **`module/actor-level-change.js`** ❌
    - Class: `DCCActorLevelChange extends FormApplication`
