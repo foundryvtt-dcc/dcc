@@ -354,7 +354,7 @@
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   font-size: 13px;
   font-weight: bold;
-  margin: 0;
+  margin: 0 0 0 1px;
   text-align: center;
 }
 .dcc .window-content {
@@ -482,6 +482,10 @@
   border: 1px solid var(--color-border-light-tertiary);
   border-radius: 3px;
   height: 22px;
+}
+.dcc .armor-list .armor input[type=checkbox] {
+  height: unset;
+  background: unset;
 }
 
 /* ----------------------------------------- */
@@ -636,6 +640,10 @@ a.inline-roll {
   border: 1px solid var(--color-border-light-tertiary);
   border-radius: 3px;
   height: 22px;
+}
+.dcc .weapon-list .weapon input[type=checkbox] {
+  height: unset;
+  background: unset;
 }
 .dcc .weapon-list .weapon .attack-buttons {
   display: grid;
@@ -905,11 +913,9 @@ a.inline-roll {
 .dcc.item .tab-body input[type=checkbox] {
   background: none;
   border: 0;
-  height: 12px;
   margin: 0;
-  width: 12px;
 }
-.dcc.item .tab-body .item-img {
+.dcc.item .tab-body input .item-img {
   max-height: 64px;
 }
 .dcc.item .tab-body .item-values {

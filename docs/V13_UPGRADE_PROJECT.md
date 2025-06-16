@@ -7,7 +7,7 @@ This document tracks all components in the DCC system that need to be upgraded f
 **Last Updated**: December 2024
 
 ### ✅ **COMPLETED** (Critical V13.341 Requirements)
-- **Sheet Registration**: All actor/item sheets properly registered in `dcc.js` 
+- **Sheet Registration**: All actor/item sheets properly registered in `dcc.js`
 - **getSceneControlButtons Hook**: Updated for new V13 data structure
 - **Core Sheet Migration**: Actor/Item sheets using ActorSheetV2/ItemSheetV2
 - **Major Dialog Migration**: FleetingLuck, Welcome, SavingThrow dialogs migrated to ApplicationV2
@@ -16,7 +16,7 @@ This document tracks all components in the DCC system that need to be upgraded f
 - **V13 HTML→DOM conversion** needed in 6 files ❌ **CRITICAL FOR V13**
 - **V13 API deprecations** - Document update using deprecated `data:` parameter ❌ **CRITICAL**
 - **4 FormApplication classes** still need migration to ApplicationV2
-- **Dialog → DialogV2** migration in 2 files remaining  
+- **Dialog → DialogV2** migration in 2 files remaining
 - **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ❌
@@ -34,7 +34,11 @@ The following files extend `FormApplication` and need to be migrated to `Applica
    - Class: `DCCItemConfig extends FormApplication`
    - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
    - Purpose: Item configuration dialog
-   - **CSS Issues**: Checkboxes are not positioned correctly in the item config dialog - needs CSS tweaks similar to actor-config
+   - **CSS Issues**:
+     - Checkboxes are not positioned correctly in the item config dialog - needs CSS tweaks similar to actor-config
+     - **UPDATE**: `item-sheet-weapon-pc` template checkboxes fixed ✅
+     - **UPDATE**: Equipment tab checkboxes fixed ✅
+     - **ISSUE**: item-sheet-weapon-pc image not displaying correctly ❌
 
 3. **`module/actor-level-change.js`** ❌
    - Class: `DCCActorLevelChange extends FormApplication`
@@ -61,7 +65,7 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 
 ### Remaining Dialog Usage ❌ **PENDING**
 - `module/item-sheet.js` (lines 299, 332) ❌
-- `module/parser.js` (line 105) ❌  
+- `module/parser.js` (line 105) ❌
 - `module/party-sheet.js` (line 261) ✅ COMPLETED
 
 ### Already Migrated or No Usage ✅ **COMPLETED**
@@ -96,7 +100,7 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 ### **module/actor-sheet.js** ✅
 - Previously mentioned jQuery usage has been removed
 
-### **module/roll-modifier.js** ✅  
+### **module/roll-modifier.js** ✅
 - Migrated to ApplicationV2, jQuery usage eliminated
 
 ### **FILES NEEDING V13 HTML→DOM CONVERSION** ❌
@@ -109,19 +113,19 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 - `html.find('.level-increase').click()` and similar patterns
 - FormApplication activateListeners using jQuery-style html
 
-### **module/party-sheet.js** ❌ **HIGH PRIORITY**  
+### **module/party-sheet.js** ❌ **HIGH PRIORITY**
 - Multiple `html.find()` calls in activateListeners method
 - Party sheet event handling using jQuery-style html
 
 ### **module/roll-modifier.js** ❌ **MEDIUM PRIORITY**
 - Multiple `html.find()` button click handlers
-- Roll modifier dialog using jQuery-style html  
+- Roll modifier dialog using jQuery-style html
 
 ### **module/spell-result.js** ❌ **MEDIUM PRIORITY**
 - `html.find()` for spell result navigation buttons
 
 ### **module/actor-sheet.js** ❌ **SPECIAL CASE**
-- Contains commented-out jQuery-style code in `activateListeners()` 
+- Contains commented-out jQuery-style code in `activateListeners()`
 - **DO NOT REMOVE** - This code shows the V12 event handlers that need to become V2 `actions`
 - Required for proper ApplicationV2 conversion mapping
 
