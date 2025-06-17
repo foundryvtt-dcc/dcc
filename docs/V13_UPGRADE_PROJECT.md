@@ -211,6 +211,7 @@ The following components have already been migrated to V2 patterns:
 - **`module/fleeting-luck.js`**: `FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2)` ✅
 - **`module/welcomeDialog.js`**: `WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2)` ✅
 - **`module/saving-throw-config.js`**: `SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2)` ✅
+  - **CSS Styling**: Dialog styling updated for V13 compatibility ✅
 - **`module/roll-modifier.js`**: `RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2)` ✅
 
 ### Critical V13.341 Requirements ✅
@@ -400,6 +401,7 @@ After 100% migration completion:
    - **Roll Modifier Dialog**: Update styling for V13 compatibility after ApplicationV2 conversion
    - **Party Sheet**: Verify styling works correctly after jQuery→DOM conversion
    - **Melee/Missile Config Dialog**: Dialog styling updated for V13 compatibility ✅
+   - **Saving Throw Config Dialog**: Dialog styling updated for V13 compatibility ✅
 5. Ensure no console errors related to deprecated APIs ✅
 6. Test with both new and existing actors/items
 7. **Node Version**: Verify Node 20+ compatibility for headless deployments
