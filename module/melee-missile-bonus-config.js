@@ -8,7 +8,7 @@ class MeleeMissileBonusConfig extends HandlebarsApplicationMixin(ApplicationV2) 
     classes: ['dcc', 'sheet', 'melee-missile-bonus-config', 'themed', 'theme-light'],
     tag: 'form',
     position: {
-      width: 380,
+      width: 316,
       height: 'auto'
     },
     window: {

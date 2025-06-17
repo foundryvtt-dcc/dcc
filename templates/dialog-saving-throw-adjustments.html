@@ -1,7 +1,9 @@
-<section class="actor config-dialog grid-container">
+<section class="actor grid-container">
   <p class="grid-col-span-12"><i>{{localize "DCC.SavingThrowAdjustmentsConfigHint"}}</i></p>
-  <h3 class="grid-col-span-12 mb-8">{{localize "DCC.SavesReflex"}}</h3>
-  <div class="grid-col-span-12 grid-tpl-max-10 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
+
+  <div class="group-separator grid-col-span-12"></div>
+  <p class="grid-col-span-12 mb-8 group-heading">{{localize "DCC.SavesReflex"}}</p>
+  <div class="group-indent grid-col-span-12 grid-tpl-max-15 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
     <label for="system.saves.ref.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
     <input type="text" name="system.saves.ref.classBonus"
            id="system.saves.ref.classBonus"
@@ -21,8 +23,9 @@
            placeholder="+0"
     >
   </div>
-  <h3 class="grid-col-span-12 mb-8">{{localize "DCC.SavesFortitude"}}</h3>
-  <div class="grid-col-span-12 grid-tpl-max-10 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
+  <div class="group-separator  grid-col-span-12"></div>
+  <p class="grid-col-span-12 mb-8 group-heading">{{localize "DCC.SavesFortitude"}}</p>
+  <div class="group-indent grid-col-span-12 grid-tpl-max-15 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
     <label for="system.saves.frt.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
     <input type="text" name="system.saves.frt.classBonus"
            id="system.saves.frt.classBonus"
@@ -42,8 +45,9 @@
            placeholder="+0"
     >
   </div>
-  <h3 class="grid-col-span-12 mb-8">{{localize "DCC.SavesWill"}}</h3>
-  <div class="grid-col-span-12 grid-tpl-max-10 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
+  <div class="group-separator  grid-col-span-12"></div>
+  <p class="grid-col-span-12 mb-8 group-heading">{{localize "DCC.SavesWill"}}</p>
+  <div class="group-indent grid-col-span-12 grid-tpl-max-15 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
     <label for="system.saves.wil.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
     <input type="text" name="system.saves.wil.classBonus"
            id="system.saves.wil.classBonus"
@@ -63,9 +67,8 @@
            placeholder="+0"
     >
   </div>
-  <div class="mb-8"></div>
-  <footer class="grid-col-span-12 sheet-footer">
-    <button type="submit">
+  <footer class="mt-8 grid-col-span-12 grid-align-just-center">
+    <button type="submit" class=" grid-col-span-12">
       <i class="fas fa-save"></i>{{localize "DCC.SaveSheetConfig"}}
     </button>
   </footer>

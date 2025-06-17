@@ -628,7 +628,6 @@ DCC.macroImages = {
   d20: 'systems/dcc/styles/images/game-icons-net/dice-twenty-faces-twenty.svg'
 }
 
-
 // Actor importer warning threshold
 DCC.actorImporterPromptThreshold = 25
 
