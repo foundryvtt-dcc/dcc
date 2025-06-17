@@ -59,6 +59,7 @@ All FormApplication classes have been successfully migrated to ApplicationV2:
    - Purpose: Combat bonus configuration
    - **Constructor Fix**: Updated instantiation in `actor-sheet.js` to use V2 pattern
    - **Template Fix**: Removed form wrapper to prevent double form nesting
+   - **CSS Styling**: Dialog styling updated for V13 compatibility ✅
 
 5. **`module/parser.js`** ✅ **COMPLETED**
    - Class: `DCCActorParser extends HandlebarsApplicationMixin(ApplicationV2)`
@@ -398,6 +399,7 @@ After 100% migration completion:
    - **Dialog Styling**: Fix parser dialog styling for V13 compatibility
    - **Roll Modifier Dialog**: Update styling for V13 compatibility after ApplicationV2 conversion
    - **Party Sheet**: Verify styling works correctly after jQuery→DOM conversion
+   - **Melee/Missile Config Dialog**: Dialog styling updated for V13 compatibility ✅
 5. Ensure no console errors related to deprecated APIs ✅
 6. Test with both new and existing actors/items
 7. **Node Version**: Verify Node 20+ compatibility for headless deployments
