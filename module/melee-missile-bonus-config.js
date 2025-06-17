@@ -1,58 +1,87 @@
-/* global FormApplication, game, CONFIG */
+/* global game, CONFIG, foundry */
 
-class MeleeMissileBonusConfig extends FormApplication {
-  static get defaultOptions () {
-    const options = super.defaultOptions
-    options.template = 'systems/dcc/templates/dialog-melee-missile-bonus-adjustments.html'
-    options.width = 380
-    return options
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
+class MeleeMissileBonusConfig extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'melee-missile-bonus-config', 'themed', 'theme-light'],
+    tag: 'form',
+    position: {
+      width: 380,
+      height: 'auto'
+    },
+    window: {
+      title: 'DCC.MeleeMissileBonusConfigTitle',
+      resizable: false
+    },
+    form: {
+      handler: MeleeMissileBonusConfig.#onSubmitForm,
+      submitOnChange: false,
+      closeOnSubmit: true
+    }
+  }
+
+  /** @inheritDoc */
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-melee-missile-bonus-adjustments.html'
+    }
   }
 
   /* -------------------------------------------- */
 
   /**
-   * Add the Entity name into the window title
+   * Get the document being configured
+   * @type {Actor}
+   */
+  get document () {
+    return this.options.document
+  }
+
+  /**
+   * Get the window title including the actor name
    * @type {String}
    */
   get title () {
-    return `${this.object.name}: ${game.i18n.localize('DCC.MeleeMissileBonusConfigTitle')}`
+    return `${this.document.name}: ${game.i18n.localize('DCC.MeleeMissileBonusConfigTitle')}`
   }
 
   /* -------------------------------------------- */
 
   /**
-   * Construct and return the data object used to render the HTML template for this form application.
-   * @return {Object}
+   * Prepare context data for rendering the HTML template
+   * @param {Object} options - Rendering options
+   * @return {Object} The context data
    */
-  getData (options = {}) {
-    const data = this.object
-    data.isNPC = (this.object.type === 'NPC')
-    data.isPC = (this.object.type === 'Player')
-    data.isZero = (this.object.system.details.level.value === 0)
-    data.user = game.user
-    data.config = CONFIG.DCC
-    return data
-  }
+  async _prepareContext (options = {}) {
+    const context = await super._prepareContext(options)
+    const actor = this.document
 
-  /* -------------------------------------------- */
+    context.isNPC = (actor.type === 'NPC')
+    context.isPC = (actor.type === 'Player')
+    context.isZero = (actor.system.details.level.value === 0)
+    context.user = game.user
+    context.config = CONFIG.DCC
+    context.system = actor.system
 
-  /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
+    return context
   }
 
   /**
-   * This method is called upon form submission after form data is validated
-   * @param event {Event}       The initial triggering submission event
-   * @param formData {Object}   The object of validated form data with which to update the object
+   * Handle form submission
+   * @this {MeleeMissileBonusConfig}
+   * @param {SubmitEvent} event - The form submission event
+   * @param {HTMLFormElement} form - The form element
+   * @param {FormDataExtended} formData - The processed form data
    * @private
    */
-  async _updateObject (event, formData) {
+  static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
     // Update the actor
-    await this.object.update(formData)
+    await this.document.update(formData.object)
     // Re-draw the updated sheet
-    await this.object.sheet.render(true)
+    await this.document.sheet.render(true)
   }
 }
 

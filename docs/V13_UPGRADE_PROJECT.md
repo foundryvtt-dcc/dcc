@@ -2,7 +2,7 @@
 
 This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
 
-## Current Migration Status: ~90% Complete ✅
+## Current Migration Status: ~92% Complete ✅
 
 **Last Updated**: January 2025
 
@@ -19,7 +19,7 @@ This document tracks all components in the DCC system that need to be upgraded f
 
 ### ❌ **REMAINING WORK** (High Priority)
 - **V13 HTML→DOM conversion** needed in 5 files ❌ **CRITICAL FOR V13**
-- **2 FormApplication classes** still need migration to ApplicationV2
+- **1 FormApplication class** still needs migration to ApplicationV2
 - **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ❌
@@ -48,10 +48,11 @@ The following files extend `FormApplication` and need to be migrated to `Applica
    - **V2 Actions**: Level increase/decrease buttons use `data-action` attributes
    - **Constructor Fix**: Updated instantiation in `actor.js` to use V2 pattern
 
-4. **`module/melee-missile-bonus-config.js`** ❌
-   - Class: `MeleeMissileBonusConfig extends FormApplication`
-   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+4. **`module/melee-missile-bonus-config.js`** ✅ **COMPLETED**
+   - Class: `MeleeMissileBonusConfig extends HandlebarsApplicationMixin(ApplicationV2)`
+   - V2 Patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, static `#onSubmitForm()`
    - Purpose: Combat bonus configuration
+   - **Constructor Fix**: Updated instantiation in `actor-sheet.js` to use V2 pattern
 
 5. **`module/parser.js`** ❌
    - Class: `DCCActorParser extends FormApplication`
@@ -202,9 +203,9 @@ The following components have already been migrated to V2 patterns:
 3. ~~**Migrate `actor-config.js` and `item-config.js`** (core configuration)~~ ✅ **COMPLETED**
 4. **Migrate `parser.js`** (import functionality) ❌ **REMAINING**
 
-### Phase 2 - Game Mechanics ❌ **REMAINING**
+### Phase 2 - Game Mechanics ✅ **COMPLETED**
 1. ~~**Migrate `actor-level-change.js`** (leveling system)~~ ✅ **COMPLETED**
-2. **Migrate `melee-missile-bonus-config.js`** (combat modifiers) ❌
+2. ~~**Migrate `melee-missile-bonus-config.js`** (combat modifiers)~~ ✅ **COMPLETED**
 3. ~~Complete `roll-modifier.js` migration~~ ✅ **COMPLETED**
 
 ### Phase 3 - Dialog Cleanup ❌ **REMAINING**

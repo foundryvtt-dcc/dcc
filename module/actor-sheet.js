@@ -811,9 +811,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    **/
   static async #configureMeleeMissileBonus (event, target) {
-    new MeleeMissileBonusConfig(this.actor, {
-      top: this.position.top + 40,
-      left: this.position.left + (this.position.width - 400) / 2
+    new MeleeMissileBonusConfig({
+      document: this.actor,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + (this.position.width - 400) / 2
+      }
     }).render(true)
   }
 
