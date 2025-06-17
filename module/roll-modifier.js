@@ -1,4 +1,4 @@
-/* global CONFIG, Die, OperatorTerm, Roll, game, foundry */
+/* global Die, OperatorTerm, Roll, game, foundry */
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
@@ -293,7 +293,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static PARTS = {
     form: {
-      template: CONFIG.DCC.templates.rollModifierDialog
+      template: 'systems/dcc/templates/dialog-roll-modifiers.html'
     }
   }
 

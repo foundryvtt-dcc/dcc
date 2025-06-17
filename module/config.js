@@ -628,12 +628,6 @@ DCC.macroImages = {
   d20: 'systems/dcc/styles/images/game-icons-net/dice-twenty-faces-twenty.svg'
 }
 
-// Templates
-DCC.templates = {
-  attackResult: 'systems/dcc/templates/chat-card-attack-result.html',
-  rollModifierDialog: 'systems/dcc/templates/dialog-roll-modifiers.html',
-  spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
-}
 
 // Actor importer warning threshold
 DCC.actorImporterPromptThreshold = 25

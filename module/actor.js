@@ -1253,7 +1253,7 @@ class DCCActor extends Actor {
      */
     await Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
 
-    messageData.content = await renderTemplate(CONFIG.DCC.templates.attackResult, { message: messageData })
+    messageData.content = await renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
 
     // Output the results
     ChatMessage.applyRollMode(messageData, rollMode)

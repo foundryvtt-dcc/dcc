@@ -56,7 +56,7 @@ class SpellResult {
     }
 
     // Render the chat card which combines the dice roll with the drawn results
-    messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
+    messageData.content = await renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
       description: await TextEditor.enrichHTML(rollTable.description),
       manifestation,
       mercurial,
@@ -148,7 +148,7 @@ class SpellResult {
       const entry = rollTable.results.get(resultId)
       const newResultRoll = (direction > 0) ? (entry.range[1]) + 1 : (entry.range[0] - 1)
       const newResult = rollTable.getResultsForRoll(newResultRoll)[0]
-      const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
+      const newContent = await renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
         description: await TextEditor.enrichHTML(rollTable.description),
         results: [newResult].map(r => {
           return foundry.utils.duplicate(r)

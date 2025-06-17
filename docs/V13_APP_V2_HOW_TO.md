@@ -1666,7 +1666,133 @@ class MyActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 The following properties are no longer needed in V2:
 - `@extends` JSDoc comments (use `@inheritDoc` instead)
 
-## 12. Critical V13 Breaking Changes
+## 12. Static Initializer Configuration Issue
+
+**CRITICAL V13 Issue**: You cannot use CONFIG-based values in static field initializers because CONFIG is not yet available during class definition.
+
+### Problem Example:
+```javascript
+// ❌ BROKEN - CONFIG.DCC is undefined during static initialization
+class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  static PARTS = {
+    form: {
+      template: CONFIG.DCC.templates.rollModifierDialog  // ERROR: undefined
+    }
+  }
+}
+```
+
+### Error Message:
+```
+Uncaught TypeError: Cannot read properties of undefined (reading 'templates')
+    at <static_initializer> (roll-modifier.js:296:28)
+```
+
+### Solutions:
+
+#### Solution 1: Hard-code Values (Recommended)
+Remove configuration dependency and hard-code template paths:
+
+```javascript
+// ✅ WORKING - Hard-coded template path
+class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-roll-modifiers.html'
+    }
+  }
+}
+```
+
+#### Solution 2: Use Getter Method
+Convert static property to getter that executes at runtime:
+
+```javascript
+// ✅ WORKING - Getter executes after CONFIG is available
+class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  static get PARTS() {
+    return {
+      form: {
+        template: CONFIG.DCC.templates.rollModifierDialog
+      }
+    }
+  }
+}
+```
+
+#### Solution 3: Dynamic Assignment in Init Hook
+Set up templates after CONFIG is initialized:
+
+```javascript
+// In your system's init hook, after CONFIG.DCC is set
+Hooks.once('init', () => {
+  CONFIG.DCC = DCC;
+  
+  // Now safe to reference CONFIG values
+  RollModifierDialog.PARTS = {
+    form: {
+      template: CONFIG.DCC.templates.rollModifierDialog
+    }
+  };
+});
+```
+
+### Why This Happens:
+- **Static initializers** run when the class is first parsed/loaded
+- **CONFIG assignment** happens later in the `init` hook
+- **Timing mismatch** causes CONFIG.DCC to be undefined during class definition
+- **ES modules** and V13 changes make this timing more strict
+
+### Migration Steps:
+1. **Find CONFIG references** in static properties (`PARTS`, `DEFAULT_OPTIONS`, etc.)
+2. **Choose solution approach** (hard-coding recommended for simplicity)
+3. **Update all affected classes** in your system
+4. **Remove CONFIG template objects** if no longer needed
+5. **Test thoroughly** to ensure all templates load correctly
+
+### Real-world Example from DCC System:
+```javascript
+// Before (broken):
+// config.js
+DCC.templates = {
+  attackResult: 'systems/dcc/templates/chat-card-attack-result.html',
+  rollModifierDialog: 'systems/dcc/templates/dialog-roll-modifiers.html',
+  spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
+}
+
+// roll-modifier.js  
+static PARTS = {
+  form: {
+    template: CONFIG.DCC.templates.rollModifierDialog  // ❌ Breaks
+  }
+}
+
+// After (working):
+// config.js - Remove templates object entirely
+
+// roll-modifier.js
+static PARTS = {
+  form: {
+    template: 'systems/dcc/templates/dialog-roll-modifiers.html'  // ✅ Works
+  }
+}
+
+// spell-result.js
+messageData.content = await renderTemplate(
+  'systems/dcc/templates/chat-card-spell-result.html',  // ✅ Hard-coded
+  { ... }
+)
+
+// actor.js  
+messageData.content = await renderTemplate(
+  'systems/dcc/templates/chat-card-attack-result.html',  // ✅ Hard-coded
+  { message: messageData }
+)
+```
+
+This approach removes the configuration abstraction but eliminates the timing issue and makes template paths more explicit and easier to find.
+
+## 13. Critical V13 Breaking Changes
 
 ### Sheet Registration Removal (V13.341)
 **CRITICAL**: Default actor and item sheet registrations have been removed in V13.341. All systems must explicitly register their sheets:
