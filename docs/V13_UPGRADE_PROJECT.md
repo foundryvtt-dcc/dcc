@@ -53,6 +53,7 @@ The following files extend `FormApplication` and need to be migrated to `Applica
    - V2 Patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, static `#onSubmitForm()`
    - Purpose: Combat bonus configuration
    - **Constructor Fix**: Updated instantiation in `actor-sheet.js` to use V2 pattern
+   - **Template Fix**: Removed form wrapper to prevent double form nesting
 
 5. **`module/parser.js`** ❌
    - Class: `DCCActorParser extends FormApplication`
