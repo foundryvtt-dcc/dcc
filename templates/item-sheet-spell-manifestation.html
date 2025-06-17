@@ -23,18 +23,20 @@
     </div>
     <div class="grid-col-span-12">
       <div class="dark-title">{{localize "DCC.Manifestation"}}</div>
-      {{#if editable}}
-        <prose-mirror
-          name="system.manifestation.description"
-          button="true"
-          editable="{{editable}}"
-          toggled="false"
-          value="{{system.manifestation.description}}">
+      <div class="manifestation">
+        {{#if editable}}
+          <prose-mirror
+            name="system.manifestation.description"
+            button="true"
+            editable="{{editable}}"
+            toggled="false"
+            value="{{system.manifestation.description}}">
+            {{{manifestationHTML}}}
+          </prose-mirror>
+        {{else}}
           {{{manifestationHTML}}}
-        </prose-mirror>
-      {{else}}
-        {{{manifestationHTML}}}
-      {{/if}}
+        {{/if}}
+      </div>
     </div>
   </div>
 </section>

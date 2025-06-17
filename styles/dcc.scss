@@ -77,6 +77,14 @@ $font-awesome: 'Font Awesome 6 Pro';
     font-family: $book-antiqua;
     min-height: 285px;
     padding: 0 8px;
+
+    .editor-content {
+      padding: 5px;
+    }
+
+    .toggle {
+      margin: 5px 5px 0 0
+    }
   }
 
   .group-heading {
@@ -795,6 +803,22 @@ a.inline-roll {
     }
   }
 
+  .manifestation {
+    font-family: $book-antiqua;
+
+    .editor {
+      min-height: 332px;
+    }
+  }
+
+  .mercurial {
+    font-family: $book-antiqua;
+
+    .editor {
+      min-height: 315px;
+    }
+  }
+
   input {
     background: none;
     border-width: 0 0 1px 0;
@@ -841,12 +865,6 @@ a.inline-roll {
     font-size: 12px;
     line-height: 15px;
     margin: 1px 0 0 0;
-  }
-
-  .mercurial {
-    .editor {
-      min-height: 288px;
-    }
   }
 
   textarea {

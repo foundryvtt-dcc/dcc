@@ -1,42 +1,46 @@
 {{!-- Mercurial Magic Tab --}}
 <section class="tab {{tabs.mercurial.id}} {{tabs.mercurial.cssClass}}" data-tab="{{tabs.mercurial.id}}" data-group="{{tabs.mercurial.group}}">
   <div class="tab-body">
-    <div class="grid-col-span-3 grid-tpl-max-auto">
-      <label class="mercurial-roll rollable grid-tpl-max-auto" for="system.mercurialEffect.value"
-             data-action="rollMercurialMagic">
-        <i class="fas fa-dice-d20">&nbsp;</i> {{localize "DCC.MercurialEffectValue"}}</label>
-      <input name="system.mercurialEffect.value" id="system.mercurialEffect.value"
-             value="{{system.mercurialEffect.value}}" data-dtype="Number"/>
-    </div>
-    <div class="grid-col-span-3">&nbsp;</div>
-    <div class="grid-col-span-3 grid-tpl-max-auto">
-      <label class="grid-tpl-max-auto" for="system.mercurialEffect.displayInChat">
-        {{localize "DCC.DisplayInChat"}}
-      </label>
-      <input type="checkbox" name="system.mercurialEffect.displayInChat" id="system.mercurialEffect.displayInChat"
-        {{checked system.mercurialEffect.displayInChat}} data-dtype="Boolean"
-             style="height: 17px; margin-left: 5px"
-      />
-    </div>
-    <div class="grid-col-span-12 grid-tpl-max-auto">
-      <label for="system.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
-      <input name="system.mercurialEffect.summary" id="system.mercurialEffect.summary"
-             value="{{system.mercurialEffect.summary}}" data-dtype="String"/>
+    <div class="grid-col-span-12 grid-container">
+      <div class="grid-col-span-3 grid-tpl-max-auto">
+        <label class="mercurial-roll rollable grid-tpl-max-auto" for="system.mercurialEffect.value"
+               data-action="rollMercurialMagic">
+          <i class="fas fa-dice-d20">&nbsp;</i> {{localize "DCC.MercurialEffectValue"}}</label>
+        <input name="system.mercurialEffect.value" id="system.mercurialEffect.value"
+               value="{{system.mercurialEffect.value}}" data-dtype="Number"/>
+      </div>
+      <div class="grid-col-span-3">&nbsp;</div>
+      <div class="grid-col-span-3 grid-tpl-max-auto">
+        <label class="grid-tpl-max-auto" for="system.mercurialEffect.displayInChat">
+          {{localize "DCC.DisplayInChat"}}
+        </label>
+        <input type="checkbox" name="system.mercurialEffect.displayInChat" id="system.mercurialEffect.displayInChat"
+          {{checked system.mercurialEffect.displayInChat}} data-dtype="Boolean"
+               style="height: 17px; margin-left: 5px"
+        />
+      </div>
+      <div class="grid-col-span-12 grid-tpl-max-auto">
+        <label for="system.mercurialEffect.summary">{{localize "DCC.MercurialEffectSummary"}}</label>
+        <input name="system.mercurialEffect.summary" id="system.mercurialEffect.summary"
+               value="{{system.mercurialEffect.summary}}" data-dtype="String"/>
+      </div>
     </div>
     <div class="grid-col-span-12">
       <div class="dark-title">{{localize "DCC.MercurialEffect"}}</div>
-      {{#if editable}}
-        <prose-mirror
-          name="system.mercurialEffect.description"
-          button="true"
-          editable="{{editable}}"
-          toggled="false"
-          value="{{system.mercurialEffect.description}}">
+      <div class="mercurial">
+        {{#if editable}}
+          <prose-mirror
+            name="system.mercurialEffect.description"
+            button="true"
+            editable="{{editable}}"
+            toggled="false"
+            value="{{system.mercurialEffect.description}}">
+            {{{mercurialEffectHTML}}}
+          </prose-mirror>
+        {{else}}
           {{{mercurialEffectHTML}}}
-        </prose-mirror>
-      {{else}}
-        {{{mercurialEffectHTML}}}
-      {{/if}}
+        {{/if}}
+      </div>
     </div>
     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
       <div class="grid-col-span-4">

@@ -110,6 +110,12 @@
   grid-template-columns: max-content 10%;
 }
 
+.grid-tpl-max-15 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 15%;
+}
+
 .grid-tpl-max-25 {
   display: grid;
   grid-row-gap: 5px;

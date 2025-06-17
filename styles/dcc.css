@@ -110,6 +110,12 @@
   grid-template-columns: max-content 10%;
 }
 
+.grid-tpl-max-15 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 15%;
+}
+
 .grid-tpl-max-25 {
   display: grid;
   grid-row-gap: 5px;
@@ -266,6 +272,12 @@
   font-family: "Book Antiqua", "Palatino Linotype", serif;
   min-height: 285px;
   padding: 0 8px;
+}
+.dcc .editor .editor-content {
+  padding: 5px;
+}
+.dcc .editor .toggle {
+  margin: 5px 5px 0 0;
 }
 .dcc .group-heading {
   font-size: 13px;
@@ -896,6 +908,18 @@ a.inline-roll {
 .dcc.item .tab-body .description .editor {
   min-height: 354px;
 }
+.dcc.item .tab-body .manifestation {
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+}
+.dcc.item .tab-body .manifestation .editor {
+  min-height: 332px;
+}
+.dcc.item .tab-body .mercurial {
+  font-family: "Book Antiqua", "Palatino Linotype", serif;
+}
+.dcc.item .tab-body .mercurial .editor {
+  min-height: 315px;
+}
 .dcc.item .tab-body input {
   background: none;
   border-width: 0 0 1px 0;
@@ -935,9 +959,6 @@ a.inline-roll {
   font-size: 12px;
   line-height: 15px;
   margin: 1px 0 0 0;
-}
-.dcc.item .tab-body .mercurial .editor {
-  min-height: 288px;
 }
 .dcc.item .tab-body textarea {
   background: none;

@@ -8,25 +8,25 @@
 
     <div class="dark-border grid-col-span-6">
       <div class="dark-title mb-3">{{localize "DCC.SpellDetails"}}</div>
-      <div class="box-inner grid-tpl-max-auto">
-        <label for="system.level">{{localize "DCC.Level"}}:</label>
-        <input type="text" id="system.level" name="system.level"
+      <div class="box-inner grid-tpl-max-auto grid-col-gap-8">
+        <label for="system.level" class="mr-5">{{localize "DCC.Level"}}:</label>
+        <input id="system.level" name="system.level"
                value="{{numberFormat system.level decimals=0 sign=false}}"
                placeholder="1" data-dtype="Number"/>
         <label for="system.range">{{localize "DCC.SpellRange"}}:</label>
-        <input type="text" name="system.range" id="system.range" value="{{system.range}}"
+        <input name="system.range" id="system.range" value="{{system.range}}"
                placeholder="N/A" data-dtype="String"/>
         <label for="system.duration">{{localize "DCC.SpellDuration"}}:</label>
-        <input type="text" name="system.duration" id="system.duration" value="{{system.duration}}"
+        <input name="system.duration" id="system.duration" value="{{system.duration}}"
                placeholder="N/A" data-dtype="String"/>
         <label for="system.castingTime" style="font-size: 11px;">{{localize "DCC.SpellCastingTime"}}:</label>
-        <input type="text" name="system.castingTime" id="system.castingTime" value="{{system.castingTime}}"
+        <input name="system.castingTime" id="system.castingTime" value="{{system.castingTime}}"
                placeholder="N/A" data-dtype="String"/>
         <label for="system.save">{{localize "DCC.SpellSave"}}:</label>
-        <input type="text" name="system.save" id="system.save" value="{{system.save}}"
+        <input name="system.save" id="system.save" value="{{system.save}}"
                placeholder="N/A" data-dtype="String"/>
         <label for="system.page">{{localize "DCC.SpellPage"}}:</label>
-        <input type="text" name="system.page" id="system.page"
+        <input name="system.page" id="system.page"
                value="{{system.page}}"
                placeholder="N/A" data-dtype="String"/>
       </div>
