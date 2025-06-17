@@ -376,89 +376,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return this.document.img
   }
 
-  /** @override */
-  // activateListeners (html) {
-  //   super.activateListeners(html)
-  //
-  //   // Everything below here is only needed if the sheet is editable
-  //   if (!this.options.editable) return
-  //
-  //   // Drag event handler
-  //   // const dragHandler = ev => this._onDragStart(ev)
-  //
-  //   // Helper function to make things draggable
-  //   const makeDraggable = function (index, element) {
-  //     // Add draggable attribute and dragstart listener.
-  //     element.setAttribute('draggable', true)
-  //     element.addEventListener('dragstart', dragHandler, false)
-  //   }
-  //
-  //   // Owner Only Listeners
-  //   if (this.actor.isOwner) {
-  //     // Ability Checks
-  //     html.find('.ability-box label[for*=".value"]').each(makeDraggable)
-  //     html.find('[data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
-  //
-  //     // Initiative
-  //     html.find('label[for="system.attributes.init.value"]').each(makeDraggable)
-  //
-  //     // Saving Throws
-  //     html.find('label[for*="system.saves"]').each(makeDraggable)
-  //
-  //     // Skills
-  //     html.find('label.skill-check').each(makeDraggable)
-  //
-  //     // Luck Die
-  //     html.find('label[for*="system.class.luckDie"]').click(this._onRollLuckDie.bind(this))
-  //     html.find('label[for*="system.class.luckDie"]').each(makeDraggable)
-  //
-  //     // Spell Checks
-  //     html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
-  //     html.find('label.spell-check').each(makeDraggable)
-  //     html.find('.spell-draggable').each(makeDraggable)
-  //
-  //     // Disapproval
-  //     html.find('label[for="system.class.disapproval"]').click(this._onApplyDisapproval.bind(this))
-  //     html.find('label[for="system.class.disapprovalTable"]').click(this._onRollDisapproval.bind(this))
-  //
-  //     // Action Dice
-  //     html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
-  //
-  //     // Quantity increase / decrease
-  //     html.find('.qty-decrease').click(this._onDecreaseQty.bind(this))
-  //     html.find('.qty-increase').click(this._onIncreaseQty.bind(this))
-  //
-  //     // Weapons
-  //     html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
-  //     html.find('.backstab-button').click(this._onRollWeaponAttack.bind(this))
-  //     html.find('.weapon-draggable').each(makeDraggable)
-  //
-  //     // Draggable items, including armor
-  //     html.find('.item-draggable').each(makeDraggable)
-  //
-  //     // Only for editable sheets
-  //     if (this.options.editable) {
-  //       // Add Inventory Item
-  //       html.find('.item-create').click(this._onItemCreate.bind(this))
-  //
-  //       // Update Inventory Item
-  //       html.find('.item-edit').click(ev => {
-  //         const itemId = this.#findDataset(ev.currentTarget, 'itemId')
-  //         const item = this.actor.items.get(itemId)
-  //         item.sheet.render(true)
-  //       })
-  //
-  //       // Delete Inventory Item
-  //       html.find('.item-delete').click(ev => {
-  //         this._onDeleteItem(ev)
-  //       })
-  //     }
-  //   } else {
-  //     // Otherwise remove rollable classes
-  //     html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
-  //   }
-  // }
-
   /**
    * Search the object and then its parent elements for a dataset attribute
    @this {DCCActorSheet}
@@ -536,7 +453,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #decreaseQty (event) {
-    const itemId = this.#findDataset(event.currentTarget, 'itemId')
+    const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
     const item = this.actor.items.get(itemId)
     let qty = item.system?.quantity || 0
     qty -= 1
@@ -544,7 +461,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   async #increaseQty (event) {
-    const itemId = this.#findDataset(event.currentTarget, 'itemId')
+    const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
     const item = this.actor?.items.get(itemId)
     let qty = item.system?.quantity || 0
     qty += 1
@@ -566,7 +483,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
       // Normal ability rolls and DCC d20 roll under luck rolls
       const rollUnder = (event.target.htmlFor === 'system.abilities.lck.value')
-      const abilityId = this.#findDataset(event.currentTarget, 'ability')
+      const abilityId = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
       dragData = {
         type: 'Ability',
         actorId: this.actor.id,
@@ -611,17 +528,17 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       dragData = {
         type: 'Save',
         actorId: this.actor.id,
-        data: this.#findDataset(event.currentTarget, 'save')
+        data: DCCActorSheet.#findDataset(event.currentTarget, 'save')
       }
     }
 
     if (classes.contains('party-draggable')) {
-      const actorId = this._findDataset(event.currentTarget, 'actorId')
+      const actorId = DCCActorSheet._findDataset(event.currentTarget, 'actorId')
       const partyActor = game.actors.get(actorId)
       if (partyActor) {
         if (classes.contains('ability-label')) {
           // Normal ability rolls and DCC d20 roll under luck rolls
-          const abilityId = this._findDataset(event.currentTarget, 'ability')
+          const abilityId = DCCActorSheet._findDataset(event.currentTarget, 'ability')
           const rollUnder = (abilityId === 'lck')
           dragData = {
             type: 'Ability',
@@ -632,14 +549,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             }
           }
         } else if (classes.contains('save-label')) {
-          const saveId = this._findDataset(event.currentTarget, 'save')
+          const saveId = DCCActorSheet._findDataset(event.currentTarget, 'save')
           dragData = {
             type: 'Save',
             actorId,
             data: saveId
           }
         } else if (classes.contains('weapon')) {
-          const itemId = this._findDataset(event.currentTarget, 'itemId')
+          const itemId = DCCActorSheet._findDataset(event.currentTarget, 'itemId')
           const weapon = partyActor.items.get(itemId)
           dragData = Object.assign(
             weapon.toDragData(),
@@ -658,7 +575,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     if (classes.contains('skill-check')) {
-      const skillId = this.#findDataset(event.currentTarget, 'skill')
+      const skillId = DCCActorSheet.#findDataset(event.currentTarget, 'skill')
       const actorSkill = this.actor.system.skills[skillId]
       const skillName = actorSkill ? actorSkill.label : skillId
       dragData = {
@@ -686,13 +603,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         type: 'Spell Check',
         actorId: this.actor.id,
         data: {
-          ability: this.#findDataset(event.currentTarget, 'ability')
+          ability: DCCActorSheet.#findDataset(event.currentTarget, 'ability')
         }
       }
     }
 
     if (classes.contains('spell-draggable')) {
-      const spell = this.#findDataset(event.currentTarget, 'spell')
+      const spell = DCCActorSheet.#findDataset(event.currentTarget, 'spell')
       const spellItem = this.actor.items.find(i => i.name === spell)
       let img
       if (spellItem) {
@@ -704,7 +621,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         actorId: this.actor.id,
         data: spellItem,
         dccData: {
-          ability: this.#findDataset(event.currentTarget, 'ability'),
+          ability: DCCActorSheet.#findDataset(event.currentTarget, 'ability'),
           spell,
           img
         }
@@ -732,7 +649,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     if (classes.contains('weapon-draggable')) {
-      const itemId = this.#findDataset(event.currentTarget, 'itemId')
+      const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
       const weapon = this.actor.items.get(itemId)
       dragData = Object.assign(
         weapon.toDragData(),
@@ -749,7 +666,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     if (classes.contains('item-draggable')) {
-      const itemId = this.#findDataset(event.currentTarget, 'itemId')
+      const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
       const item = this.actor.items.get(itemId)
       dragData = Object.assign(
         item.toDragData(),
