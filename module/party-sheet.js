@@ -346,32 +346,42 @@ class DCCPartySheet extends DCCActorSheet {
     // Owner Only Listeners
     if (this.actor.isOwner) {
       // Update party member
-      html.find('.party-edit').click(ev => {
-        this._editMember(ev.currentTarget.parentElement.dataset.actorId)
+      html.querySelectorAll('.party-edit').forEach(el => {
+        el.addEventListener('click', ev => {
+          this._editMember(ev.currentTarget.parentElement.dataset.actorId)
+        })
       })
 
       // Remove party member
-      html.find('.party-delete').click(ev => {
-        this._onRemoveMember(ev)
+      html.querySelectorAll('.party-delete').forEach(el => {
+        el.addEventListener('click', ev => {
+          this._onRemoveMember(ev)
+        })
       })
 
       // Ability rolls
-      html.find('.ability-label').click(ev => {
-        this._onRollAbility(ev)
+      html.querySelectorAll('.ability-label').forEach(el => {
+        el.addEventListener('click', ev => {
+          this._onRollAbility(ev)
+        })
       })
 
       // Saving throws
-      html.find('.save-label').click(ev => {
-        this._onRollSave(ev)
+      html.querySelectorAll('.save-label').forEach(el => {
+        el.addEventListener('click', ev => {
+          this._onRollSave(ev)
+        })
       })
 
       // Melee and ranged attacks
-      html.find('.weapon').click(ev => {
-        this._onRollAttack(ev)
+      html.querySelectorAll('.weapon').forEach(el => {
+        el.addEventListener('click', ev => {
+          this._onRollAttack(ev)
+        })
       })
     } else {
       // Otherwise remove rollable classes
-      html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
+      html.querySelectorAll('.rollable').forEach(el => el.classList.remove('rollable'))
     }
   }
 

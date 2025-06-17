@@ -89,8 +89,12 @@ class SpellResult {
 
     // Check it's a DCC spellcheck, otherwise leave it alone
     if (message.getFlag('dcc', 'SpellCheck')) {
-      html.find('.spell-shift-up').click(SpellResult._onNextResult.bind(message))
-      html.find('.spell-shift-down').click(SpellResult._onPreviousResult.bind(message))
+      html.querySelectorAll('.spell-shift-up').forEach(el => {
+        el.addEventListener('click', SpellResult._onNextResult.bind(message))
+      })
+      html.querySelectorAll('.spell-shift-down').forEach(el => {
+        el.addEventListener('click', SpellResult._onPreviousResult.bind(message))
+      })
     }
   }
 
