@@ -22,6 +22,11 @@ This document tracks all components in the DCC system that need to be upgraded f
 - **FormApplication migrations** ✅ **COMPLETED** - All classes migrated to ApplicationV2
 - **jQuery elimination** ✅ **COMPLETED** - All files converted to vanilla DOM
 
+### ⚠️ **POST-MIGRATION STYLING UPDATES NEEDED**
+- **Roll Modifier Dialog**: Review and update CSS styling after ApplicationV2 conversion
+- **Party Sheet**: Verify CSS styling works correctly after jQuery→DOM event handler conversion
+- **Parser Dialog**: Fix dialog styling for V13 compatibility (noted during migration)
+
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ✅ **COMPLETED**
 
 All FormApplication classes have been successfully migrated to ApplicationV2:
@@ -385,13 +390,15 @@ Hooks.on('getSceneControlButtons', (controls) => {
 7. **Chat Integration**: Updated chat hooks work without deprecation warnings ✅
 
 ### ❌ **REMAINING TESTING NEEDED**
-After remaining migration phases:
-1. Test all migrated FormApplication classes open correctly
-2. Verify data persistence for remaining forms
-3. Check event handlers work without jQuery in remaining files
+After 100% migration completion:
+1. Test all migrated FormApplication classes open correctly ✅
+2. Verify data persistence for all forms ✅
+3. Check event handlers work without jQuery ✅
 4. **CSS Compatibility**: Ensure styles work with new CSS Layers system
    - **Dialog Styling**: Fix parser dialog styling for V13 compatibility
-5. Ensure no console errors related to deprecated APIs
+   - **Roll Modifier Dialog**: Update styling for V13 compatibility after ApplicationV2 conversion
+   - **Party Sheet**: Verify styling works correctly after jQuery→DOM conversion
+5. Ensure no console errors related to deprecated APIs ✅
 6. Test with both new and existing actors/items
 7. **Node Version**: Verify Node 20+ compatibility for headless deployments
 8. **Module Compatibility**: Test with all modules disabled (V13 default behavior)
