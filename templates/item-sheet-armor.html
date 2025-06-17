@@ -3,7 +3,7 @@
   <div class="tab-body">
     <div class="grid-col-span-6 grid-tpl-max-auto" style="margin-bottom: 5px;">
       <label for="name">{{localize "DCC.Name"}}</label>
-      <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
+      <input id="name" name="name" value="{{document.name}}" placeholder="Name" autocomplete="off" size="25">
     </div>
 
     <div class="grid-col-span-6 grid-tpl-max-auto">
@@ -14,29 +14,29 @@
 
     <div class="dark-border grid-col-span-6">
       <div class="dark-title">{{localize "DCC.ArmorSettings"}}</div>
-      <div class="box-inner grid-tpl-max-auto">
-        <input type="checkbox" id="system.equipped" name="system.equipped" style="margin: 7px 7px 0 0;" data-dtype="Boolean" {{checked
-               system.equipped}}/>
-        <label for="system.equipped" style="margin: 5px 0 0 0;">{{localize "DCC.ItemPropertiesEquipped"}}</label>
+      <div class="box-inner grid-tpl-max-auto mt-5 grid-col-gap-8 grid-align-center">
+        <label for="system.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
+        <input type="checkbox" id="system.equipped" name="system.equipped"
+               data-dtype="Boolean" {{checked system.equipped}}/>
       </div>
     </div>
 
     <div class="dark-border grid-col-span-6">
       <div class="dark-title">{{localize "DCC.ArmorDetails"}}</div>
-      <div class="box-inner grid-tpl-max-auto">
+      <div class="box-inner grid-tpl-max-auto grid-col-gap-8">
         <label for="system.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
-        <input type="text" id="system.acBonus" name="system.acBonus"
+        <input id="system.acBonus" name="system.acBonus"
                value="{{numberFormat system.acBonus decimals=0 sign=true}}"
                placeholder="+0" data-dtype="Number"/>
         <label for="system.checkPenalty">{{localize "DCC.ArmorPropertiesCheckPenalty"}}</label>
-        <input type="text" id="system.checkPenalty" name="system.checkPenalty"
+        <input id="system.checkPenalty" name="system.checkPenalty"
                value="{{numberFormat system.checkPenalty decimals=0 sign=true}}"
                placeholder="-0" data-dtype="Number"/>
         <label for="system.fumbleDie">{{localize "DCC.ArmorPropertiesFumbleDie"}}</label>
-        <input type="text" id="system.fumbleDie" name="system.fumbleDie" value="{{system.fumbleDie}}"
+        <input id="system.fumbleDie" name="system.fumbleDie" value="{{system.fumbleDie}}"
                placeholder="1d4" data-dtype="String"/>
         <label for="system.speed">{{localize "DCC.ArmorPropertiesSpeed"}}</label>
-        <input type="text" id="system.speed" name="system.speed" value="{{distanceFormat system.speed}}"
+        <input id="system.speed" name="system.speed" value="{{distanceFormat system.speed}}"
                placeholder="-0'" data-dtype="String"/>
       </div>
     </div>

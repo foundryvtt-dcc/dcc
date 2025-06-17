@@ -1167,10 +1167,9 @@ a.inline-roll {
 /*  Roll Modifier Dialog                     */
 /* ----------------------------------------- */
 
-form.dcc-roll-modifier {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+.dcc-roll-modifier {display: grid;
+  grid-template-rows: 1fr auto;
+  row-gap: 15px;
 
   min-width: 400px;
 
@@ -1179,7 +1178,7 @@ form.dcc-roll-modifier {
     grid-auto-flow: column;
     grid-column-gap: 20px;
     grid-row-gap: 0;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
     grid-template-rows: auto auto minmax(60px, auto);
     margin-left: 2px;
 
@@ -1195,40 +1194,37 @@ form.dcc-roll-modifier {
 
     .term-controls {
       margin: 8px 1px 0 0;
-      height: 90px;
     }
   }
 
   .button-row {
-    display: flex;
-    flex: 1;
-    flex-direction: row;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, .5fr));
+    gap: 8px;
     margin-left: 2px;
 
     button {
-      flex: 1;
+      justify-self: stretch;
     }
   }
 
   .button-stack {
-    align-items: center;
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    margin-right: 4px;
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    gap: 4px;
+    justify-items: center;
 
     &:last-child {
       margin: 0;
     }
 
     button.flat-button {
-      line-height: 13px;
-      margin: 2px 0 0 0;
+      width: 100%;
+      padding: 1px 2px;
+    }
 
-      &:last-child {
-        margin-top: 4px;
-      }
+    input {
+      width: 100%;
     }
 
     label {
@@ -1236,34 +1232,10 @@ form.dcc-roll-modifier {
     }
   }
 
-  .dialog-buttons {
-    margin-top: 8px;
-  }
-
   button.flat-button {
     background: rgba(0, 0, 0, 0.05);
     border: 2px groove #c9c7b8;
-    margin: 0 5px 0 0;
   }
-
-  button.flat-button:last-child {
-    margin-right: 0;
-  }
-
-  label.checkbox-label {
-    line-height: 26px;
-    padding-left: 8px;
-  }
-
-  input.checkbox {
-    text-align: right;
-  }
-
-  input.stat {
-    margin-top: 3px;
-    text-align: center;
-  }
-
 }
 
 /* ----------------------------------------- */

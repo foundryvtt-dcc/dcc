@@ -354,7 +354,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
     this._roll = this._constructRoll()
     this._resolve(this.roll)
-    await super.close()
+    await this.close()
   }
 
   /**

@@ -1211,84 +1211,63 @@ a.inline-roll {
 /* ----------------------------------------- */
 /*  Roll Modifier Dialog                     */
 /* ----------------------------------------- */
-form.dcc-roll-modifier {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+.dcc-roll-modifier {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  row-gap: 15px;
   min-width: 400px;
 }
-form.dcc-roll-modifier .formula-row {
+.dcc-roll-modifier .formula-row {
   display: grid;
   grid-auto-flow: column;
   grid-column-gap: 20px;
   grid-row-gap: 0;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
   grid-template-rows: auto auto minmax(60px, auto);
   margin-left: 2px;
 }
-form.dcc-roll-modifier .formula-row .term-label {
+.dcc-roll-modifier .formula-row .term-label {
   font-family: "Cooper Black", "Palatino Linotype", serif;
   text-align: center;
   margin-bottom: 2px;
 }
-form.dcc-roll-modifier .formula-row .term-field {
+.dcc-roll-modifier .formula-row .term-field {
   text-align: center;
 }
-form.dcc-roll-modifier .formula-row .term-controls {
+.dcc-roll-modifier .formula-row .term-controls {
   margin: 8px 1px 0 0;
-  height: 90px;
 }
-form.dcc-roll-modifier .button-row {
-  display: flex;
-  flex: 1;
-  flex-direction: row;
-  justify-content: space-between;
+.dcc-roll-modifier .button-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 0.5fr));
+  gap: 8px;
   margin-left: 2px;
 }
-form.dcc-roll-modifier .button-row button {
-  flex: 1;
+.dcc-roll-modifier .button-row button {
+  justify-self: stretch;
 }
-form.dcc-roll-modifier .button-stack {
-  align-items: center;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  margin-right: 4px;
+.dcc-roll-modifier .button-stack {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: 4px;
+  justify-items: center;
 }
-form.dcc-roll-modifier .button-stack:last-child {
+.dcc-roll-modifier .button-stack:last-child {
   margin: 0;
 }
-form.dcc-roll-modifier .button-stack button.flat-button {
-  line-height: 13px;
-  margin: 2px 0 0 0;
+.dcc-roll-modifier .button-stack button.flat-button {
+  width: 100%;
+  padding: 1px 2px;
 }
-form.dcc-roll-modifier .button-stack button.flat-button:last-child {
-  margin-top: 4px;
+.dcc-roll-modifier .button-stack input {
+  width: 100%;
 }
-form.dcc-roll-modifier .button-stack label {
+.dcc-roll-modifier .button-stack label {
   font-family: "Cooper Black", "Palatino Linotype", serif;
 }
-form.dcc-roll-modifier .dialog-buttons {
-  margin-top: 8px;
-}
-form.dcc-roll-modifier button.flat-button {
+.dcc-roll-modifier button.flat-button {
   background: rgba(0, 0, 0, 0.05);
   border: 2px groove #c9c7b8;
-  margin: 0 5px 0 0;
-}
-form.dcc-roll-modifier button.flat-button:last-child {
-  margin-right: 0;
-}
-form.dcc-roll-modifier label.checkbox-label {
-  line-height: 26px;
-  padding-left: 8px;
-}
-form.dcc-roll-modifier input.checkbox {
-  text-align: right;
-}
-form.dcc-roll-modifier input.stat {
-  margin-top: 3px;
-  text-align: center;
 }
 
 /* ----------------------------------------- */

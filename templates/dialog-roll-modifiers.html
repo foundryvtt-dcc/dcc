@@ -4,12 +4,9 @@
       {{> (lookup . 'partial') }}
     {{/each}}
   </div>
-  <footer class="button-row dialog-buttons">
-    <button type="submit" class="roll flat-button">
+  <footer class="grid-col-span-2" style="width: 100%;">
+    <button type="submit" class="roll flat-button" style="width: 100%;">
       <i class="fas fa-dice-d20"></i>&nbsp;{{rollLabel}}
-    </button>
-    <button type="button" data-action="cancel" class="cancel flat-button">
-      <i class="fas fa-times"></i>&nbsp;{{cancelLabel}}
     </button>
   </footer>
 </section>
