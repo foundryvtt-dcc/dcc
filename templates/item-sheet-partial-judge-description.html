@@ -4,8 +4,18 @@
     <div class="grid-col-span-12">
       <div class="dark-title">{{localize "DCC.JudgeOnlyDescription"}}</div>
       <div class="description">
-        {{editor judgeDescriptionHTML target="system.description.judge.value" engine="prosemirror" button=true
-                 editable=editable}}
+        {{#if editable}}
+          <prose-mirror
+            name="system.description.judge.value"
+            button="true"
+            editable="{{editable}}"
+            toggled="false"
+            value="{{system.description.judge.value}}">
+            {{{judgeDescriptionHTML}}}
+          </prose-mirror>
+        {{else}}
+          {{{judgeDescriptionHTML}}}
+        {{/if}}
       </div>
     </div>
   </div>

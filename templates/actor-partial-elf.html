@@ -50,7 +50,7 @@
 
             <div class="group-separator"></div>
 
-            <div class="label-font spell-check rollable mr-3 grid-col-span-2 center">
+            <div class="label-font spell-check rollable mr-3 grid-col-span-2 center" data-action="rollSpellCheck">
               <div><i class="fas fa-dice-d20"></i> {{localize "DCC.Roll"}} {{localize "DCC.SpellCheck"}}</div>
             </div>
           </div>
@@ -77,7 +77,7 @@
         <div class="p-5">
           <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
             <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
-                   title="{{localize 'DCC.HeightenedSensesDescription'}}">
+                   title="{{localize 'DCC.HeightenedSensesDescription'}}" data-action="rollSkillCheck">
               {{localize "DCC.HeightenedSenses"}}
             </label>
             <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
@@ -105,7 +105,18 @@
     </div>
     <div class="grid-col-span-12 grid-tpl-max corruption mt-8">
       <div class="grid-col-span-12 dark-title">{{localize "DCC.Corruptions"}}</div>
-      {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
+      {{#if editable}}
+        <prose-mirror
+          name="system.class.corruption"
+          button="true"
+          editable="{{editable}}"
+          toggled="false"
+          value="{{system.class.corruption}}">
+          {{{corruptionHTML}}}
+        </prose-mirror>
+      {{else}}
+        {{{corruptionHTML}}}
+      {{/if}}
     </div>
   </div>
 </section>

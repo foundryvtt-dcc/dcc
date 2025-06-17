@@ -50,7 +50,7 @@
 
             <div class="group-separator"></div>
 
-            <div class="label-font spell-check rollable mr-3 grid-col-span-2 center" title="{{localize 'DCC.RollSpellCheckHint'}}">
+            <div class="label-font spell-check rollable mr-3 grid-col-span-2 center" title="{{localize 'DCC.RollSpellCheckHint'}}" data-action="rollSpellCheck">
               <div><i class="fas fa-dice-d20"></i> {{localize "DCC.Roll"}} {{localize "DCC.SpellCheck"}}</div>
             </div>
           </div>
@@ -76,7 +76,18 @@
 
     <div class="grid-col-span-12 grid-tpl-max corruption-wizard">
       <div class="grid-col-span-12 dark-title" style="">{{localize "DCC.Corruptions"}}</div>
-      {{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
+      {{#if editable}}
+        <prose-mirror
+          name="system.class.corruption"
+          button="true"
+          editable="{{editable}}"
+          toggled="false"
+          value="{{system.class.corruption}}">
+          {{{corruptionHTML}}}
+        </prose-mirror>
+      {{else}}
+        {{{corruptionHTML}}}
+      {{/if}}
     </div>
   </div>
 </section>

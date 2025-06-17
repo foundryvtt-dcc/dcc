@@ -2,6 +2,17 @@
 <section class="tab notes-bg {{tabs.notes.id}} {{tabs.notes.cssClass}}" data-tab="{{tabs.notes.id}}" data-group="{{tabs.notes.group}}">
   <div class="grid-col-span-12" style="height: 100%;">
     <div class="dark-title">{{localize "DCC.Notes"}}</div>
-    {{editor notesHTML target="system.details.notes.value" engine="prosemirror" button=true editable=editable class="grid-col-span-12"}}
+    {{#if editable}}
+      <prose-mirror
+        name="system.details.notes.value"
+        button="true"
+        editable="{{editable}}"
+        toggled="false"
+        value="{{system.details.notes.value}}">
+        {{{notesHTML}}}
+      </prose-mirror>
+    {{else}}
+      {{{notesHTML}}}
+    {{/if}}
   </div>
 </section>

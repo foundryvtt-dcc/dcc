@@ -9,7 +9,7 @@
       <div class="skill-modifier">{{localize "DCC.SkillValue"}}</div>
       <div class="skill-last-roll">{{localize "DCC.SkillResult"}}</div>
       <div>
-        <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="skill">
+        <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-action="itemCreate" data-type="skill">
           <i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
       </div>
     </li>
@@ -17,9 +17,9 @@
 
       <li class="item skill grid-col-span-6{{#if skill.system.description.summary}} skill-with-summary{{/if}}" data-item-id="{{skill._id}}"
           data-skill="{{skill.name}}">
-          <div class="skill-check rollable"><img src="{{skill.img}}" alt="{{skill.name}}" title="{{skill.name}}" width="24" height="24"/>
+          <div class="skill-check rollable" data-action="rollSkillCheck"><img src="{{skill.img}}" alt="{{skill.name}}" title="{{skill.name}}" width="24" height="24"/>
 </div>
-        <label class="skill-check skill-name rollable">{{skill.name}}</label>
+        <label class="skill-check skill-name rollable" data-action="rollSkillCheck">{{skill.name}}</label>
         <div>
           {{#if skill.system.config.useDie}}
             {{#if skill.system.die}}
@@ -54,8 +54,8 @@
           {{/if}}
         </div>
         <div>
-          <a class="item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
-          <a class="item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
+          <a class="item-edit" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit" data-item-id="{{skill._id}}"><i class="fas fa-edit"></i></a>
+          <a class="item-delete" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete" data-item-id="{{skill._id}}"><i class="fas fa-trash"></i></a>
         </div>
         {{#if (and skill.system.config.useSummary skill.system.description.summary)}}
         <div class="skill-summary-text">

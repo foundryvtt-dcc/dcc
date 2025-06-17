@@ -1,5 +1,5 @@
 {{!-- Manifestation Tab --}}
-<section class="tab {{tabs.manifestation.id}}{{tabs.manifestation.cssClass}}"
+<section class="tab {{tabs.manifestation.id}} {{tabs.manifestation.cssClass}}"
          data-tab="{{tabs.manifestation.id}}"
          data-group="{{tabs.manifestation.group}}">
   <div class="tab-body">
@@ -23,8 +23,18 @@
     </div>
     <div class="grid-col-span-12">
       <div class="dark-title">{{localize "DCC.Manifestation"}}</div>
-      {{editor manifestationHTML target="system.manifestation.description" engine="prosemirror" button=true
-               editable=editable}}
+      {{#if editable}}
+        <prose-mirror
+          name="system.manifestation.description"
+          button="true"
+          editable="{{editable}}"
+          toggled="false"
+          value="{{system.manifestation.description}}">
+          {{{manifestationHTML}}}
+        </prose-mirror>
+      {{else}}
+        {{{manifestationHTML}}}
+      {{/if}}
     </div>
   </div>
 </section>

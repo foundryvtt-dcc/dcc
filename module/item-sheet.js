@@ -1,4 +1,4 @@
-/* global Dialog, game, foundry, CONFIG */
+/* global game, foundry, CONFIG */
 // noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
@@ -10,6 +10,7 @@ const { HandlebarsApplicationMixin } = foundry.applications.api
 const { ItemSheetV2 } = foundry.applications.sheets
 // eslint-disable-next-line no-unused-vars
 const { TextEditor, DragDrop } = foundry.applications.ux
+const { DialogV2 } = foundry.applications.api
 
 /**
  * Extend the basic ItemSheet for DCC RPG
@@ -24,7 +25,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       height: 442
     },
     form: {
-      handler: DCCItemSheet.#onSubmitForm,
       submitOnChange: true
     },
     window: {
@@ -135,7 +135,10 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       tabs.initial = this.document.type
     }
 
-    this.tabGroups[group] = tabs.initial
+    // Only set the initial tab if one isn't already selected (to preserve current tab on re-render)
+    if (!this.tabGroups[group]) {
+      this.tabGroups[group] = tabs.initial
+    }
     return tabs
   }
 
@@ -261,26 +264,20 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const options = this._fillRollOptions(event)
     // Prompt if there's an existing effect, or we're using the roll modifier dialog
     if (!options.showModifierDialog && this.document.hasExistingManifestation()) {
-      new Dialog({
-        title: game.i18n.localize('DCC.ManifestationRerollPrompt'),
+      foundry.applications.api.DialogV2.confirm({
+        window: { title: game.i18n.localize('DCC.ManifestationRerollPrompt') },
         content: `<p>${game.i18n.localize('DCC.ManifestationRerollExplain')}</p>`,
-        buttons: {
-          reroll: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.ManifestationButtonReroll'),
-            callback: () => this._rollManifestation(event, options)
-          },
-          lookup: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.ManifestationButtonLookup'),
-            callback: () => this._lookupManifestation(event, options)
-          },
-          cancel: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.ManifestationButtonCancel')
-          }
+        yes: {
+          icon: 'fas fa-dice-d20',
+          label: game.i18n.localize('DCC.ManifestationButtonReroll'),
+          callback: () => this._rollManifestation(event, options)
+        },
+        no: {
+          icon: 'fas fa-search',
+          label: game.i18n.localize('DCC.ManifestationButtonLookup'),
+          callback: () => this._lookupManifestation(event, options)
         }
-      }).render(true)
+      })
     } else {
       this._rollManifestation(event, options)
     }
@@ -299,26 +296,20 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const options = this._fillRollOptions(event)
     // Prompt if there's an existing effect, or we're using the roll modifier dialog
     if (!options.showModifierDialog && this.document.hasExistingMercurialMagic()) {
-      new Dialog({
-        title: game.i18n.localize('DCC.MercurialMagicRerollPrompt'),
+      foundry.applications.api.DialogV2.confirm({
+        window: { title: game.i18n.localize('DCC.MercurialMagicRerollPrompt') },
         content: `<p>${game.i18n.localize('DCC.MercurialMagicRerollExplain')}</p>`,
-        buttons: {
-          reroll: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.MercurialMagicButtonReroll'),
-            callback: () => this._rollMercurialMagic(event, options)
-          },
-          lookup: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.MercurialMagicButtonLookup'),
-            callback: () => this._lookupMercurialMagic()
-          },
-          cancel: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.MercurialMagicButtonCancel')
-          }
+        yes: {
+          icon: 'fas fa-dice-d20',
+          label: game.i18n.localize('DCC.MercurialMagicButtonReroll'),
+          callback: () => this._rollMercurialMagic(event, options)
+        },
+        no: {
+          icon: 'fas fa-search',
+          label: game.i18n.localize('DCC.MercurialMagicButtonLookup'),
+          callback: () => this._lookupMercurialMagic()
         }
-      }).render(true)
+      })
     } else {
       this._rollMercurialMagic(event, options)
     }
@@ -375,15 +366,15 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static async #editImage (event, target) {
     const field = target.dataset.field || 'img'
     const current = foundry.utils.getProperty(this.document, field)
-    
+
     const fp = new foundry.applications.apps.FilePicker({
       type: 'image',
-      current: current,
+      current,
       callback: (path) => {
         this.document.update({ [field]: path })
       }
     })
-    
+
     fp.render(true)
   }
 
@@ -477,8 +468,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _rollManifestation (event, options) {
+    console.log('rollManifestation')
     this.document.rollManifestation(undefined, options)
-    this.render(false)
   }
 
   /**
@@ -488,8 +479,19 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _rollMercurialMagic (event, options) {
+    console.log('rollMercurialMagic')
     this.document.rollMercurialMagic(undefined, options)
-    this.render(false)
+    // No need to render - the document update will trigger re-render automatically
+  }
+
+  /**
+   * Roll a new Mercurial Magic effect
+   * @param {Event}  event   The originating click event
+   * @param options
+   * @private
+   */
+  _fooBar (event, options) {
+    console.log('fooBar')
   }
 
   /**
@@ -498,7 +500,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    */
   _lookupManifestation () {
     this.document.rollManifestation(this.document.system.manifestation.value)
-    this.render(false)
+    // No need to render - the document update will trigger re-render automatically
   }
 
   /**
@@ -506,31 +508,9 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _lookupMercurialMagic () {
+    console.log('lookupMercurialMagic')
     this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
-    this.render(false)
-  }
-
-  static async #onSubmitForm (event, form, formData) {
-    // Store current active tab before submission
-    const activeTab = this.element.querySelector('.tab.active')?.dataset.tab
-
-    // Process the form data
-    const data = foundry.utils.expandObject(formData.object)
-    await this.document.update(data)
-
-    // Restore active tab after render
-    if (activeTab) {
-      await this.render()
-      this._restoreActiveTab(activeTab)
-    }
-  }
-
-  _restoreActiveTab (tabName) {
-    // Wait for render to complete, then restore tab
-    setTimeout(() => {
-      const tab = this.element.querySelector(`[data-tab="${tabName}"]`)
-      if (tab) tab.click()
-    }, 0)
+    // No need to render - the document update will trigger re-render automatically
   }
 }
 

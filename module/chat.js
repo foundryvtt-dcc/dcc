@@ -137,6 +137,7 @@ export const emoteAbilityRoll = function (message, html, data) {
       abilityName: message.flavor
     }
   )
+
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
     messageContent.innerHTML = abilityRollEmote

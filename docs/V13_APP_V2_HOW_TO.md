@@ -1958,7 +1958,131 @@ Add to `.gitignore`:
 - Examples: `actor-sheet-cleric-character-tab.png`, `item-sheet-weapon-melee.png`
 ```
 
-## 13. Migration Checklist
+## 13. ProseMirror Editor Migration in V13 ApplicationV2
+
+**CRITICAL**: V13 ApplicationV2 requires migrating from the `{{editor}}` handlebars helper to the new `<prose-mirror>` custom element.
+
+### Required Template Migration
+
+**Old V12 Pattern (Deprecated):**
+```handlebars
+{{editor corruptionHTML target="system.class.corruption" engine="prosemirror" button=true editable=editable}}
+```
+
+**New V13 Pattern (Required):**
+```handlebars
+{{#if editable}}
+  <prose-mirror
+    name="system.class.corruption"
+    button="true"
+    editable="{{editable}}"
+    toggled="false"
+    value="{{system.class.corruption}}">
+    {{{corruptionHTML}}}
+  </prose-mirror>
+{{else}}
+  {{{corruptionHTML}}}
+{{/if}}
+```
+
+### Key `<prose-mirror>` Attributes
+
+- **`name`**: Form field path for submission (e.g., `"system.class.corruption"`)
+- **`button`**: Show toggle button (`"true"` or `"false"`)
+- **`editable`**: Pass through editable state (`"{{editable}}"`)
+- **`toggled`**: Initial toggle state (`"false"` for closed by default)
+- **`value`**: Raw field data for editing (`"{{system.class.corruption}}"`)
+- **Content**: Enriched HTML for display (`{{{corruptionHTML}}}`)
+
+### Context Preparation (Unchanged)
+
+Continue enriching content in `_prepareContext()`:
+
+```javascript
+async _prepareContext(options) {
+  const context = await super._prepareContext(options);
+  
+  // Enrich content for display
+  context.corruptionHTML = await TextEditor.enrichHTML(
+    this.document.system.class.corruption,
+    { 
+      secrets: this.document.isOwner,
+      relativeTo: this.document 
+    }
+  );
+  
+  return context;
+}
+```
+
+### Complete Migration Example
+
+**ApplicationV2 Class:**
+```javascript
+class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    
+    // Enrich corruption content
+    context.corruptionHTML = await this.#prepareCorruption();
+    
+    return context;
+  }
+
+  async #prepareCorruption() {
+    if (this.actor.system.class) {
+      const context = { relativeTo: this.document, secrets: this.document.isOwner }
+      let corruption = this.actor.system.class.corruption || ''
+      
+      // Handle corrupted Promise strings
+      if (corruption === '[object Promise]') {
+        corruption = ''
+        this.actor.update({ 'system.class.corruption': '' })
+      }
+      
+      return await TextEditor.enrichHTML(corruption, context)
+    }
+    return ''
+  }
+}
+```
+
+**Template:**
+```handlebars
+<div class="corruption-section">
+  <div class="dark-title">{{localize "DCC.Corruptions"}}</div>
+  {{#if editable}}
+    <prose-mirror
+      name="system.class.corruption"
+      button="true"
+      editable="{{editable}}"
+      toggled="false"
+      value="{{system.class.corruption}}">
+      {{{corruptionHTML}}}
+    </prose-mirror>
+  {{else}}
+    {{{corruptionHTML}}}
+  {{/if}}
+</div>
+```
+
+### Key Benefits
+
+- **Native form integration** - Automatic form submission handling
+- **Conditional editing** - Clean separation of edit/view modes
+- **Better performance** - Improved editor performance in V13
+- **Cleaner markup** - No need for complex wrapper elements
+
+### Migration Checklist
+
+- [ ] Replace all `{{editor}}` helpers with `<prose-mirror>` elements
+- [ ] Add `{{#if editable}}` conditional wrapper
+- [ ] Provide read-only fallback in `{{else}}` clause  
+- [ ] Update field paths in `name` and `value` attributes
+- [ ] Move enrichment to `_prepareContext()` with `await`
+- [ ] Test editor functionality and form submission
+
+## 14. Migration Checklist
 
 - [ ] **Set up visual regression testing environment**
 - [ ] **Take baseline screenshots of all components**
@@ -1984,6 +2108,7 @@ Add to `.gitignore`:
 - [ ] Update `_onDragStart()` implementation if needed
 - [ ] Change `this.object` to `this.document` throughout
 - [ ] Remove all jQuery usage
+- [ ] **CRITICAL: Migrate all `{{editor}}` helpers to `<prose-mirror>` custom elements**
 - [ ] Test with CSS Layers compatibility
 - [ ] Verify Node 20+ compatibility
 - [ ] Test all functionality

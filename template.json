@@ -306,7 +306,7 @@
           "spellCheckOverride": null,
           "patron": null,
           "familiar": null,
-          "corruption": []
+          "corruption": ""
         }
       },
       "dwarf": {

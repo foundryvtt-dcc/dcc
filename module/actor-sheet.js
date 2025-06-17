@@ -20,7 +20,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     classes: ['dcc', 'sheet', 'actor', 'themed', 'theme-light'],
     tag: 'form',
     position: {
-      width: 520,
+      width: 555,
       height: 450
     },
     actions: {
@@ -141,7 +141,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     foundry.utils.mergeObject(context, {
       actor: this.document,
       config: CONFIG.DCC,
-      corruptionHTML: this.#prepareCorruption(),
+      corruptionHTML: await this.#prepareCorruption(),
       incomplete: {},
       img: this.#prepareImage(),
       isOwner: this.document.isOwner,
@@ -157,6 +157,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     return context
   }
+
 
   /** @inheritDoc */
   _configureRenderParts (options) {
@@ -350,10 +351,20 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {corruption: string}
    */
   async #prepareCorruption () {
-    if (this.document.system.class?.corruption) {
+    if (this.actor.system.class) {
       const context = { relativeTo: this.document, secrets: this.document.isOwner }
-      return await TextEditor.enrichHTML(this.actor.system.class.corruption, context)
+      let corruption = this.actor.system.class.corruption || ''
+
+      // If corruption is "[object Promise]" string, reset it to empty and fix the data
+      if (corruption === '[object Promise]') {
+        corruption = ''
+        // Fix the actor data to prevent this from happening again
+        this.actor.update({ 'system.class.corruption': '' })
+      }
+
+      return await TextEditor.enrichHTML(corruption, context)
     }
+    return ''
   }
 
   #prepareImage () {
@@ -832,15 +843,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #editImage (event, target) {
     const field = target.dataset.field || 'img'
     const current = foundry.utils.getProperty(this.document, field)
-    
+
     const fp = new foundry.applications.apps.FilePicker({
       type: 'image',
-      current: current,
+      current,
       callback: (path) => {
         this.document.update({ [field]: path })
       }
     })
-    
+
     fp.render(true)
   }
 

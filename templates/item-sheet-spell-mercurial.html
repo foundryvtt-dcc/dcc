@@ -25,8 +25,18 @@
     </div>
     <div class="grid-col-span-12">
       <div class="dark-title">{{localize "DCC.MercurialEffect"}}</div>
-      {{editor mercurialEffectHTML target="system.mercurialEffect.description" engine="prosemirror" button=true
-               editable=editable}}
+      {{#if editable}}
+        <prose-mirror
+          name="system.mercurialEffect.description"
+          button="true"
+          editable="{{editable}}"
+          toggled="false"
+          value="{{system.mercurialEffect.description}}">
+          {{{mercurialEffectHTML}}}
+        </prose-mirror>
+      {{else}}
+        {{{mercurialEffectHTML}}}
+      {{/if}}
     </div>
     {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
       <div class="grid-col-span-4">
