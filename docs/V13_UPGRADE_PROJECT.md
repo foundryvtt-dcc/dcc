@@ -2,7 +2,7 @@
 
 This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
 
-## Current Migration Status: ~92% Complete ✅
+## Current Migration Status: ~95% Complete ✅
 
 **Last Updated**: January 2025
 
@@ -19,12 +19,12 @@ This document tracks all components in the DCC system that need to be upgraded f
 
 ### ❌ **REMAINING WORK** (High Priority)
 - **V13 HTML→DOM conversion** needed in 5 files ❌ **CRITICAL FOR V13**
-- **1 FormApplication class** still needs migration to ApplicationV2
+- **FormApplication migrations** COMPLETED ✅ - All classes migrated to ApplicationV2
 - **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅
 
-## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ❌
+## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ✅ **COMPLETED**
 
-The following files extend `FormApplication` and need to be migrated to `ApplicationV2`:
+All FormApplication classes have been successfully migrated to ApplicationV2:
 
 ### High Priority - Core Functionality
 1. **`module/actor-config.js`** ✅ **COMPLETED**
@@ -55,11 +55,13 @@ The following files extend `FormApplication` and need to be migrated to `Applica
    - **Constructor Fix**: Updated instantiation in `actor-sheet.js` to use V2 pattern
    - **Template Fix**: Removed form wrapper to prevent double form nesting
 
-5. **`module/parser.js`** ❌
-   - Class: `DCCActorParser extends FormApplication`
-   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
-   - Purpose: NPC/PC stat block parser
-   - **Additional**: Also contains Dialog usage that needs DialogV2 migration
+5. **`module/parser.js`** ✅ **COMPLETED**
+   - Class: `DCCActorParser extends HandlebarsApplicationMixin(ApplicationV2)`
+   - V2 Patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, static `#onSubmitForm()`
+   - Purpose: NPC/PC stat block parser (import functionality)
+   - **Constructor Fix**: Updated instantiation to use V2 pattern
+   - **Template Fix**: Removed form wrapper to prevent double form nesting
+   - **Dialog Migration**: Converted deprecated Dialog to DialogV2.confirm()
 
 ### Already Migrated ✅ **COMPLETED**
 6. **`module/roll-modifier.js`** ✅
@@ -67,11 +69,11 @@ The following files extend `FormApplication` and need to be migrated to `Applica
    - Uses V2 patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, actions
    - Full V2 migration completed
 
-## 2. Dialog (V1) → DialogV2 Migrations Needed ❌
+## 2. Dialog (V1) → DialogV2 Migrations Needed ✅ **COMPLETED**
 
-### Remaining Dialog Usage ❌ **PENDING**
-- `module/parser.js` (line 105) ❌
-- `module/party-sheet.js` (line 261) ✅ COMPLETED
+### Remaining Dialog Usage ✅ **COMPLETED**
+- `module/parser.js` (line 105) ✅ **COMPLETED** - Migrated to DialogV2.confirm()
+- `module/party-sheet.js` (line 261) ✅ **COMPLETED**
 
 ### Already Migrated or No Usage ✅ **COMPLETED**
 - `module/item-sheet.js` ✅ **COMPLETED** - Migrated manifestation and mercurial magic dialogs to DialogV2.confirm
@@ -198,19 +200,19 @@ The following components have already been migrated to V2 patterns:
 
 ## 5. Updated Migration Priority ⚡
 
-### Phase 1 - Critical Core Components ✅ **MOSTLY COMPLETED**
+### Phase 1 - Critical Core Components ✅ **COMPLETED**
 1. ~~**Fix `getSceneControlButtons` hook usage** in `module/dcc.js`~~ ✅ **COMPLETED**
 2. ~~**Remove remaining jQuery dependencies**~~ ✅ **FULLY COMPLETED** - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅
 3. ~~**Migrate `actor-config.js` and `item-config.js`** (core configuration)~~ ✅ **COMPLETED**
-4. **Migrate `parser.js`** (import functionality) ❌ **REMAINING**
+4. ~~**Migrate `parser.js`** (import functionality)~~ ✅ **COMPLETED**
 
 ### Phase 2 - Game Mechanics ✅ **COMPLETED**
 1. ~~**Migrate `actor-level-change.js`** (leveling system)~~ ✅ **COMPLETED**
 2. ~~**Migrate `melee-missile-bonus-config.js`** (combat modifiers)~~ ✅ **COMPLETED**
 3. ~~Complete `roll-modifier.js` migration~~ ✅ **COMPLETED**
 
-### Phase 3 - Dialog Cleanup ❌ **REMAINING**
-1. **Replace remaining `Dialog` usage with `DialogV2`** (1 file remaining: parser.js) ❌
+### Phase 3 - Dialog Cleanup ✅ **COMPLETED**
+1. ~~**Replace remaining `Dialog` usage with `DialogV2`** (parser.js)~~ ✅ **COMPLETED**
 2. Test and verify all dialog interactions
 
 ## 6. Recent V13 ApplicationV2 Compatibility Fixes ✅ **COMPLETED**
