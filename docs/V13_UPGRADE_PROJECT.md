@@ -2,7 +2,7 @@
 
 This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
 
-## Current Migration Status: ~97% Complete ✅
+## Current Migration Status: ~98% Complete ✅
 
 **Last Updated**: January 2025
 
@@ -18,9 +18,9 @@ This document tracks all components in the DCC system that need to be upgraded f
 - **Chat Hook Migration**: Updated from renderChatMessage to renderChatMessageHTML ✅
 
 ### ❌ **REMAINING WORK** (High Priority)
-- **V13 HTML→DOM conversion** needed in 4 files ❌ **CRITICAL FOR V13**
+- **V13 HTML→DOM conversion** needed in 3 files ❌ **CRITICAL FOR V13**
 - **FormApplication migrations** COMPLETED ✅ - All classes migrated to ApplicationV2
-- **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅ chat.js ✅
+- **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅ chat.js ✅ actor-sheet.js ✅
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ✅ **COMPLETED**
 
@@ -137,10 +137,12 @@ All FormApplication classes have been successfully migrated to ApplicationV2:
 ### **module/spell-result.js** ❌ **MEDIUM PRIORITY**
 - `html.find()` for spell result navigation buttons
 
-### **module/actor-sheet.js** ❌ **SPECIAL CASE**
-- Contains commented-out jQuery-style code in `activateListeners()`
-- **DO NOT REMOVE** - This code shows the V12 event handlers that need to become V2 `actions`
-- Required for proper ApplicationV2 conversion mapping
+### **module/actor-sheet.js** ✅ **SPECIAL CASE VERIFIED**
+- Contains commented-out jQuery-style code in `activateListeners()` (lines ~1880-2800)
+- **Verification Complete**: All V12 handlers have corresponding V2 actions implemented
+- **V2 Actions**: 16 actions cover all functionality (rolls, items, config, special actions)
+- **DO NOT REMOVE**: Commented code preserved as V12→V2 conversion reference
+- **Status**: Full V2 functionality confirmed, no missing implementations
 
 ### **CRITICAL V13 Change: HTML Element Transition**
 
