@@ -2,21 +2,25 @@
 
 This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
 
-## Current Migration Status: ~75% Complete ✅
+## Current Migration Status: ~85% Complete ✅
 
-**Last Updated**: December 2024
+**Last Updated**: January 2025
 
 ### ✅ **COMPLETED** (Critical V13.341 Requirements)
 - **Sheet Registration**: All actor/item sheets properly registered in `dcc.js`
 - **getSceneControlButtons Hook**: Updated for new V13 data structure
 - **Core Sheet Migration**: Actor/Item sheets using ActorSheetV2/ItemSheetV2
 - **Major Dialog Migration**: FleetingLuck, Welcome, SavingThrow dialogs migrated to ApplicationV2
+- **ProseMirror Migration**: All {{editor}} helpers migrated to <prose-mirror> custom elements ✅
+- **V13 Action System**: All spell check and skill check actions properly wired ✅
+- **Tab Persistence**: Item sheet tab jumping issue fixed ✅
+- **Dialog V2 Migration**: Item sheet dialogs migrated from deprecated Dialog to DialogV2 ✅
+- **Chat Hook Migration**: Updated from renderChatMessage to renderChatMessageHTML ✅
 
 ### ❌ **REMAINING WORK** (High Priority)
 - **V13 HTML→DOM conversion** needed in 6 files ❌ **CRITICAL FOR V13**
 - **V13 API deprecations** - Document update using deprecated `data:` parameter ❌ **CRITICAL**
 - **4 FormApplication classes** still need migration to ApplicationV2
-- **Dialog → DialogV2** migration in 2 files remaining
 - **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ❌
@@ -64,11 +68,11 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 ## 2. Dialog (V1) → DialogV2 Migrations Needed ❌
 
 ### Remaining Dialog Usage ❌ **PENDING**
-- `module/item-sheet.js` (lines 299, 332) ❌
 - `module/parser.js` (line 105) ❌
 - `module/party-sheet.js` (line 261) ✅ COMPLETED
 
 ### Already Migrated or No Usage ✅ **COMPLETED**
+- `module/item-sheet.js` ✅ **COMPLETED** - Migrated manifestation and mercurial magic dialogs to DialogV2.confirm
 - `module/actor-sheet.js` ✅ (No Dialog usage found)
 - `module/saving-throw-config.js` ✅ (Migrated to ApplicationV2)
 - `module/roll-modifier.js` ✅ (Migrated to ApplicationV2)
@@ -205,10 +209,49 @@ The following components have already been migrated to V2 patterns:
 3. ~~Complete `roll-modifier.js` migration~~ ✅ **COMPLETED**
 
 ### Phase 3 - Dialog Cleanup ❌ **REMAINING**
-1. **Replace remaining `Dialog` usage with `DialogV2`** (3 files) ❌
+1. **Replace remaining `Dialog` usage with `DialogV2`** (1 file remaining: parser.js) ❌
 2. Test and verify all dialog interactions
 
-## 6. Additional V13 Breaking Changes and Requirements
+## 6. Recent V13 ApplicationV2 Compatibility Fixes ✅ **COMPLETED**
+
+### ProseMirror Editor Migration ✅ **COMPLETED**
+- **All {{editor}} helpers migrated** to `<prose-mirror>` custom elements across all templates
+- **Templates updated**:
+  - `actor-partial-wizard.html`: Corruption field editor
+  - `actor-partial-elf.html`: Corruption field editor  
+  - `actor-partial-pc-notes.html`: Notes editor
+  - `item-sheet-partial-description.html`: Item description editor
+  - `item-sheet-partial-judge-description.html`: Judge description editor
+  - `item-sheet-spell-manifestation.html`: Manifestation editor
+  - `item-sheet-spell-mercurial.html`: Mercurial effect editor
+
+### V13 Action System Integration ✅ **COMPLETED**
+- **Spell Check Actions**: All spell check buttons now use `data-action="rollSpellCheck"`
+  - Wizard spell check button wired up
+  - Cleric spell check button wired up  
+  - Elf spell check button wired up
+  - Individual spell buttons in spell lists wired up
+- **Skill Check Actions**: All skill check buttons use `data-action="rollSkillCheck"`
+  - General skill checks wired up
+  - Detect secret doors on elf sheet wired up
+- **Item Actions**: All item management buttons use proper actions
+  - `data-action="itemCreate"` for add buttons
+  - `data-action="itemEdit"` for edit buttons
+  - `data-action="itemDelete"` for delete buttons
+
+### Critical Bug Fixes ✅ **COMPLETED**
+- **ProseMirror Editor Blanking**: Fixed CSS class spacing issue in manifestation template
+- **Corruption Field Promise Error**: Fixed async/await handling in `#prepareCorruption()` method
+- **Tab Persistence**: Fixed item sheet tabs jumping back to first tab during actions
+- **Dialog Deprecation**: Replaced deprecated Dialog with DialogV2 in item sheets
+- **Chat Hook Compatibility**: Updated from `renderChatMessage` to `renderChatMessageHTML`
+
+### Template Data Structure Updates ✅ **COMPLETED**
+- **Corruption Field**: Changed from array to string in `template.json`
+- **Context Preparation**: All HTML enrichment properly awaited in `_prepareContext()`
+- **Form Integration**: All ProseMirror editors properly integrate with V2 form submission
+
+## 7. Additional V13 Breaking Changes and Requirements
 
 ### Critical Breaking Changes from V13.341
 
@@ -314,16 +357,24 @@ Hooks.on('getSceneControlButtons', (controls) => {
 - New cross-platform headless Node.js build option
 - Portable build allows USB drive deployment
 
-## 7. Testing Requirements
+## 8. Testing Requirements
 
-After each migration phase:
-1. **Sheet Registration**: Verify all actor/item sheets properly register and display
-2. Test all migrated forms/dialogs open correctly
-3. Verify data persistence (form submissions save properly)
-4. Check event handlers work without jQuery
-5. **CSS Compatibility**: Ensure styles work with new CSS Layers system
-6. **Text Editor**: Test any rich text functionality with new ProseMirror editor
-7. Ensure no console errors related to deprecated APIs
-8. Test with both new and existing actors/items
-9. **Node Version**: Verify Node 20+ compatibility for headless deployments
-10. **Module Compatibility**: Test with all modules disabled (V13 default behavior)
+### ✅ **COMPLETED TESTING**
+1. **Sheet Registration**: All actor/item sheets properly register and display ✅
+2. **ProseMirror Editors**: All rich text editors function correctly without blanking ✅
+3. **Action System**: All spell checks, skill checks, and item actions work properly ✅
+4. **Tab Persistence**: Item sheet tabs maintain selection during actions ✅
+5. **Dialog Integration**: V2 dialogs (manifestation, mercurial magic) function correctly ✅
+6. **Form Submission**: All ProseMirror content saves properly to database ✅
+7. **Chat Integration**: Updated chat hooks work without deprecation warnings ✅
+
+### ❌ **REMAINING TESTING NEEDED**
+After remaining migration phases:
+1. Test all migrated FormApplication classes open correctly
+2. Verify data persistence for remaining forms
+3. Check event handlers work without jQuery in remaining files
+4. **CSS Compatibility**: Ensure styles work with new CSS Layers system
+5. Ensure no console errors related to deprecated APIs
+6. Test with both new and existing actors/items
+7. **Node Version**: Verify Node 20+ compatibility for headless deployments
+8. **Module Compatibility**: Test with all modules disabled (V13 default behavior)
