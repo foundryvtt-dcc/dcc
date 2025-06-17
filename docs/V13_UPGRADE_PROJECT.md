@@ -2,7 +2,7 @@
 
 This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
 
-## Current Migration Status: ~95% Complete ✅
+## Current Migration Status: ~97% Complete ✅
 
 **Last Updated**: January 2025
 
@@ -18,9 +18,9 @@ This document tracks all components in the DCC system that need to be upgraded f
 - **Chat Hook Migration**: Updated from renderChatMessage to renderChatMessageHTML ✅
 
 ### ❌ **REMAINING WORK** (High Priority)
-- **V13 HTML→DOM conversion** needed in 5 files ❌ **CRITICAL FOR V13**
+- **V13 HTML→DOM conversion** needed in 4 files ❌ **CRITICAL FOR V13**
 - **FormApplication migrations** COMPLETED ✅ - All classes migrated to ApplicationV2
-- **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅
+- **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅ chat.js ✅
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ✅ **COMPLETED**
 
@@ -114,9 +114,13 @@ All FormApplication classes have been successfully migrated to ApplicationV2:
 
 ### **FILES NEEDING V13 HTML→DOM CONVERSION** ❌
 
-### **module/chat.js** ❌ **HIGH PRIORITY**
-- 20+ instances of `html.find()`, `html.html()`, `html.addClass()`, `html.remove()`
-- Chat rendering functions use V12 jQuery-style html parameters
+### **module/chat.js** ✅ **COMPLETED**
+- All jQuery usage converted to vanilla DOM methods
+- `html.find()` → `html.querySelector()` / `html.querySelectorAll()`
+- `html.addClass()` → `element.classList.add()`
+- `html.html()` → `element.innerHTML`
+- `$.hover()` → `addEventListener('mouseenter/mouseleave')`
+- Chat rendering functions now use V13 DOM elements
 
 ### **module/actor-level-change.js** ✅ **COMPLETED**
 - All jQuery usage converted to vanilla DOM (querySelector, innerHTML)
