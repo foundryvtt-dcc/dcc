@@ -514,6 +514,81 @@ new DCCActorConfig({
 
 **Critical**: In ApplicationV2, all parameters including the document are passed in the options object, not as separate parameters.
 
+### ⚠️ **CRITICAL ApplicationV2 Constructor Pattern**
+
+**The most common migration issue** is incorrect instantiation of ApplicationV2 classes. This will cause dialogs to not open or throw errors.
+
+#### FormApplication V1 Constructor Pattern (Old):
+```javascript
+// V1 FormApplication takes document as first parameter, options as second
+new DCCItemConfig(this.document, {
+  top: this.position.top + 40,
+  left: this.position.left + (this.position.width - 400) / 2
+}).render(true)
+```
+
+#### ApplicationV2 Constructor Pattern (New):
+```javascript
+// V2 ApplicationV2 takes ALL parameters in a single options object
+new DCCItemConfig({
+  document: this.document,  // Document goes INSIDE the options object
+  position: {
+    top: this.position.top + 40,
+    left: this.position.left + (this.position.width - 400) / 2
+  }
+}).render(true)
+```
+
+#### Common Instantiation Examples:
+
+**Actor Configuration:**
+```javascript
+// V1 (FormApplication)
+new DCCActorConfig(this.actor, { position: { ... } })
+
+// V2 (ApplicationV2)
+new DCCActorConfig({ document: this.actor, position: { ... } })
+```
+
+**Item Configuration:**
+```javascript
+// V1 (FormApplication)
+new DCCItemConfig(this.document, { position: { ... } })
+
+// V2 (ApplicationV2)
+new DCCItemConfig({ document: this.document, position: { ... } })
+```
+
+**Custom Dialogs:**
+```javascript
+// V1 (FormApplication)
+new SavingThrowConfig(this.actor, { position: { ... } })
+
+// V2 (ApplicationV2)
+new SavingThrowConfig({ document: this.actor, position: { ... } })
+```
+
+#### Why This Matters:
+- **V1**: Expects separate document and options parameters
+- **V2**: Expects a single options object with document nested inside
+- **Wrong pattern**: Dialog won't open or will throw constructor errors
+- **Correct pattern**: Dialog opens normally with proper document access
+
+#### Document Access Inside V2 Classes:
+```javascript
+// In your ApplicationV2 class
+get document() {
+  return this.options.document  // Document comes from options object
+}
+
+// Usage in methods
+async _prepareContext(options) {
+  const context = await super._prepareContext(options)
+  context.actor = this.document  // this.document refers to options.document
+  return context
+}
+```
+
 This example shows a minimal but complete V2 conversion that preserves all original functionality while upgrading to the new V13 API structure.
 
 ## 7. Form Submission in ApplicationV2

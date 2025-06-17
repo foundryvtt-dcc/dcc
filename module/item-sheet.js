@@ -98,10 +98,10 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     sheet: { // this is the group name
       tabs:
         [
-          { id: 'weapon', group: 'sheet', label: 'DCC.Weapon' },
+          { id: 'item', group: 'sheet', label: 'DCC.Item' }, // This gets replaced dynamically
           { id: 'description', group: 'sheet', label: 'DCC.Description' }
         ],
-      initial: 'equipment'
+      initial: 'item' // This gets set dynamically in _getTabsConfig
     }
   }
 
@@ -134,10 +134,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       tabs.initial = this.document.type
     }
 
-    // Only set the initial tab if one isn't already selected (to preserve current tab on re-render)
-    if (!this.tabGroups[group]) {
-      this.tabGroups[group] = tabs.initial
-    }
+    this.tabGroups[group] = tabs.initial
     return tabs
   }
 
@@ -442,9 +439,12 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    */
   _onConfigureItem (event) {
     event.preventDefault()
-    new DCCItemConfig(this.document, {
-      top: this.position.top + 40,
-      left: this.position.left + (this.position.width - 400) / 2
+    new DCCItemConfig({
+      document: this.document,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + (this.position.width - 400) / 2
+      }
     }).render(true)
   }
 
