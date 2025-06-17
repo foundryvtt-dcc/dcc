@@ -62,6 +62,7 @@ All FormApplication classes have been successfully migrated to ApplicationV2:
    - **Constructor Fix**: Updated instantiation to use V2 pattern
    - **Template Fix**: Removed form wrapper to prevent double form nesting
    - **Dialog Migration**: Converted deprecated Dialog to DialogV2.confirm()
+   - **⚠️ Styling Issue**: Dialog styling needs to be fixed for V13 compatibility
 
 ### Already Migrated ✅ **COMPLETED**
 6. **`module/roll-modifier.js`** ✅
@@ -377,6 +378,7 @@ After remaining migration phases:
 2. Verify data persistence for remaining forms
 3. Check event handlers work without jQuery in remaining files
 4. **CSS Compatibility**: Ensure styles work with new CSS Layers system
+   - **Dialog Styling**: Fix parser dialog styling for V13 compatibility
 5. Ensure no console errors related to deprecated APIs
 6. Test with both new and existing actors/items
 7. **Node Version**: Verify Node 20+ compatibility for headless deployments
