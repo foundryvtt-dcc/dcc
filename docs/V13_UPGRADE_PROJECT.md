@@ -2,7 +2,7 @@
 
 This document tracks all components in the DCC system that need to be upgraded for full Foundry V13 compatibility.
 
-## Current Migration Status: ~85% Complete ✅
+## Current Migration Status: ~90% Complete ✅
 
 **Last Updated**: January 2025
 
@@ -18,10 +18,9 @@ This document tracks all components in the DCC system that need to be upgraded f
 - **Chat Hook Migration**: Updated from renderChatMessage to renderChatMessageHTML ✅
 
 ### ❌ **REMAINING WORK** (High Priority)
-- **V13 HTML→DOM conversion** needed in 6 files ❌ **CRITICAL FOR V13**
-- **V13 API deprecations** - Document update using deprecated `data:` parameter ❌ **CRITICAL**
-- **4 FormApplication classes** still need migration to ApplicationV2
-- **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅
+- **V13 HTML→DOM conversion** needed in 5 files ❌ **CRITICAL FOR V13**
+- **2 FormApplication classes** still need migration to ApplicationV2
+- **jQuery elimination** COMPLETED ✅ - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ❌
 
@@ -34,20 +33,20 @@ The following files extend `FormApplication` and need to be migrated to `Applica
    - Purpose: Actor configuration dialog
    - **CSS Styling**: Config dialog CSS fully updated for V13 compatibility with proper checkbox alignment and v12 appearance maintained
 
-2. **`module/item-config.js`** ❌
-   - Class: `DCCItemConfig extends FormApplication`
-   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+2. **`module/item-config.js`** ✅ **COMPLETED**
+   - Class: `DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2)`
+   - V2 Patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, static `#onSubmitForm()`
    - Purpose: Item configuration dialog
-   - **CSS Issues**:
-     - Checkboxes are not positioned correctly in the item config dialog - needs CSS tweaks similar to actor-config
-     - **UPDATE**: `item-sheet-weapon-pc` template checkboxes fixed ✅
-     - **UPDATE**: Equipment tab checkboxes fixed ✅
-     - **ISSUE**: item-sheet-weapon-pc image not displaying correctly ❌
+   - **Constructor Fix**: Updated instantiation pattern from FormApplication V1 to ApplicationV2
+   - **Template Selection**: Dynamic template selection based on item type (spell vs skill)
 
-3. **`module/actor-level-change.js`** ❌
-   - Class: `DCCActorLevelChange extends FormApplication`
-   - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
+3. **`module/actor-level-change.js`** ✅ **COMPLETED**
+   - Class: `DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2)`
+   - V2 Patterns: `DEFAULT_OPTIONS`, `PARTS`, `_prepareContext()`, static `#onSubmitForm()`
    - Purpose: Level change interface
+   - **jQuery Elimination**: All jQuery usage converted to vanilla DOM
+   - **V2 Actions**: Level increase/decrease buttons use `data-action` attributes
+   - **Constructor Fix**: Updated instantiation in `actor.js` to use V2 pattern
 
 4. **`module/melee-missile-bonus-config.js`** ❌
    - Class: `MeleeMissileBonusConfig extends FormApplication`
@@ -58,6 +57,7 @@ The following files extend `FormApplication` and need to be migrated to `Applica
    - Class: `DCCActorParser extends FormApplication`
    - V1 Patterns: `get defaultOptions()`, `getData()`, `activateListeners()`, `_updateObject()`
    - Purpose: NPC/PC stat block parser
+   - **Additional**: Also contains Dialog usage that needs DialogV2 migration
 
 ### Already Migrated ✅ **COMPLETED**
 6. **`module/roll-modifier.js`** ✅
@@ -113,9 +113,9 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 - 20+ instances of `html.find()`, `html.html()`, `html.addClass()`, `html.remove()`
 - Chat rendering functions use V12 jQuery-style html parameters
 
-### **module/actor-level-change.js** ❌ **HIGH PRIORITY**
-- `html.find('.level-increase').click()` and similar patterns
-- FormApplication activateListeners using jQuery-style html
+### **module/actor-level-change.js** ✅ **COMPLETED**
+- All jQuery usage converted to vanilla DOM (querySelector, innerHTML)
+- V2 action handlers replace activateListeners pattern
 
 ### **module/party-sheet.js** ❌ **HIGH PRIORITY**
 - Multiple `html.find()` calls in activateListeners method
@@ -152,11 +152,10 @@ The following files extend `FormApplication` and need to be migrated to `Applica
 
 ## 3. V13 API Deprecations Found in DCC Codebase ❌
 
-### **module/item-sheet.js:234** ❌ **CRITICAL - BREAKS IN V13**
+### **module/item-sheet.js:234** ✅ **COMPLETED**
 - **Issue**: Using deprecated `data:` parameter for document updates
-- **Current Code**: `this.object.update({ data: { results } })`
-- **V13 Replacement**: `this.object.update({ system: { results } })`
-- **Impact**: Will cause errors when updating item system data in V13
+- **Fix Applied**: Changed `this.object.update({ data: { results } })` to `this.object.update({ system: { results } })`
+- **Status**: V13 API deprecation resolved
 
 ### **module/actor-sheet.js** ❌ **REVIEW NEEDED**
 - **Issue**: Multiple drag/drop data structures using `data:` property
@@ -197,14 +196,14 @@ The following components have already been migrated to V2 patterns:
 
 ## 5. Updated Migration Priority ⚡
 
-### Phase 1 - Critical Core Components ❌ **REMAINING**
+### Phase 1 - Critical Core Components ✅ **MOSTLY COMPLETED**
 1. ~~**Fix `getSceneControlButtons` hook usage** in `module/dcc.js`~~ ✅ **COMPLETED**
-2. ~~**Remove remaining jQuery dependencies**~~ ✅ **FULLY COMPLETED** - key-state.js ✅ party-sheet.js ✅ dcc.js ✅
-3. **Migrate `actor-config.js` and `item-config.js`** (core configuration) ❌
-4. **Migrate `parser.js`** (import functionality) ❌
+2. ~~**Remove remaining jQuery dependencies**~~ ✅ **FULLY COMPLETED** - key-state.js ✅ party-sheet.js ✅ dcc.js ✅ actor-level-change.js ✅
+3. ~~**Migrate `actor-config.js` and `item-config.js`** (core configuration)~~ ✅ **COMPLETED**
+4. **Migrate `parser.js`** (import functionality) ❌ **REMAINING**
 
 ### Phase 2 - Game Mechanics ❌ **REMAINING**
-1. **Migrate `actor-level-change.js`** (leveling system) ❌
+1. ~~**Migrate `actor-level-change.js`** (leveling system)~~ ✅ **COMPLETED**
 2. **Migrate `melee-missile-bonus-config.js`** (combat modifiers) ❌
 3. ~~Complete `roll-modifier.js` migration~~ ✅ **COMPLETED**
 

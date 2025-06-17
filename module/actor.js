@@ -384,7 +384,7 @@ class DCCActor extends Actor {
    * Level Change
    */
   levelChange () {
-    new DCCActorLevelChange(this).render(true)
+    new DCCActorLevelChange({ document: this }).render(true)
   }
 
   /**
