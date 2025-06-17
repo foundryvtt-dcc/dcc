@@ -3,20 +3,20 @@
 <div class="term-controls button-row">
   <div class="button-stack">
     <label>{{localize 'DCC.AbilityStrShort'}}</label>
-    <button class="spellburn flat-button" data-term="{{index}}" data-mod="+1" data-stat="str">{{localize 'DCC.RollModifierAddBonus'}}</button>
+    <button data-action="modifySpellburn" class="flat-button" data-term="{{index}}" data-mod="+1" data-stat="str">{{localize 'DCC.RollModifierAddBonus'}}</button>
     <input type="text" class="stat" id="str" value="{{str}}" data-max="{{str}}"/>
-    <button class="spellburn flat-button" data-term="{{index}}" data-mod="-1" data-stat="str">{{localize 'DCC.RollModifierSubBonus'}}</button>
+    <button data-action="modifySpellburn" class="flat-button" data-term="{{index}}" data-mod="-1" data-stat="str">{{localize 'DCC.RollModifierSubBonus'}}</button>
   </div>
   <div class="button-stack">
     <label>{{localize 'DCC.AbilityAglShort'}}</label>
-    <button class="spellburn flat-button" data-term="{{index}}" data-mod="+1" data-stat="agl">{{localize 'DCC.RollModifierAddBonus'}}</button>
+    <button data-action="modifySpellburn" class="flat-button" data-term="{{index}}" data-mod="+1" data-stat="agl">{{localize 'DCC.RollModifierAddBonus'}}</button>
     <input type="text" class="stat" id="agl" value="{{agl}}" data-max="{{agl}}"/>
-    <button class="spellburn flat-button" data-term="{{index}}" data-mod="-1" data-stat="agl">{{localize 'DCC.RollModifierSubBonus'}}</button>
+    <button data-action="modifySpellburn" class="flat-button" data-term="{{index}}" data-mod="-1" data-stat="agl">{{localize 'DCC.RollModifierSubBonus'}}</button>
   </div>
   <div class="button-stack">
     <label>{{localize 'DCC.AbilityStaShort'}}</label>
-    <button class="spellburn flat-button" data-term="{{index}}" data-mod="+1" data-stat="sta">{{localize 'DCC.RollModifierAddBonus'}}</button>
+    <button data-action="modifySpellburn" class="flat-button" data-term="{{index}}" data-mod="+1" data-stat="sta">{{localize 'DCC.RollModifierAddBonus'}}</button>
     <input type="text" class="stat" id="sta" value="{{sta}}" data-max="{{sta}}"/>
-    <button class="spellburn flat-button" data-term="{{index}}" data-mod="-1" data-stat="sta">{{localize 'DCC.RollModifierSubBonus'}}</button>
+    <button data-action="modifySpellburn" class="flat-button" data-term="{{index}}" data-mod="-1" data-stat="sta">{{localize 'DCC.RollModifierSubBonus'}}</button>
   </div>
 </div>

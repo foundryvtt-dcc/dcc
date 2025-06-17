@@ -2,5 +2,5 @@
 <input type="text" class="term-field" name="term-{{index}}" id="term-{{index}}" placeholder="{{formula}}" value="{{formula}}"/>
 <div class="term-controls button-row">
   <div style="padding-right: 50px;">{{localize "DCC.NoModifiableTerms"}}</div>
-  <button class="reset flat-button" data-term="{{index}}">{{localize 'DCC.RollModifierReset'}}</button>
+  <button data-action="resetTerm" class="flat-button" data-term="{{index}}">{{localize 'DCC.RollModifierReset'}}</button>
 </div>

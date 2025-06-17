@@ -1,4 +1,4 @@
-<form autocomplete="off" class="dcc-roll-modifier">
+<section class="dcc-roll-modifier">
   <div class="formula-row">
     {{#each terms}}
       {{> (lookup . 'partial') }}
@@ -8,5 +8,8 @@
     <button type="submit" class="roll flat-button">
       <i class="fas fa-dice-d20"></i>&nbsp;{{rollLabel}}
     </button>
+    <button type="button" data-action="cancel" class="cancel flat-button">
+      <i class="fas fa-times"></i>&nbsp;{{cancelLabel}}
+    </button>
   </footer>
-</form>
+</section>

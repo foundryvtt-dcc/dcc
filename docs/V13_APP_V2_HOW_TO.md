@@ -1327,18 +1327,59 @@ static TABS = {
 
 ## 9. jQuery Removal
 
-Replace jQuery with vanilla JavaScript:
+**⚠️ CRITICAL NOTE**: When migrating to ApplicationV2, jQuery references in `activateListeners()` methods should be converted to **ACTIONS**, not vanilla JavaScript.
+
+### jQuery in activateListeners → Actions (Preferred for ApplicationV2)
+
+When you see jQuery code in `activateListeners()`, it should be converted to the ApplicationV2 actions system:
+
+```javascript
+// V1 jQuery (OLD):
+activateListeners(html) {
+  html.find('.roll-button').click(this._onRoll.bind(this))
+  html.find('.delete-item').click(this._onDelete.bind(this))
+}
+
+// V2 Actions (CORRECT):
+static DEFAULT_OPTIONS = {
+  actions: {
+    roll: this.#onRoll,
+    deleteItem: this.#onDelete
+  }
+}
+
+// Template uses data-action:
+<button data-action="roll">Roll</button>
+<button data-action="deleteItem">Delete</button>
+```
+
+### jQuery to Vanilla JS (Only for Hook Functions and Non-ApplicationV2 Code)
+
+Replace jQuery with vanilla JavaScript only in hooks, chat functions, and other non-ApplicationV2 contexts:
 
 | jQuery | Vanilla JS |
 |--------|------------|
 | `$(selector)` | `document.querySelector(selector)` |
 | `html.find('.class')` | `html.querySelector('.class')` |
-| `html.find('.class').click(handler)` | Use actions instead |
+| `html.find('.class').click(handler)` | `html.querySelector('.class').addEventListener('click', handler)` |
 | `.val()` | `.value` |
 | `.html(content)` | `.innerHTML = content` |
 | `.text(content)` | `.textContent = content` |
 | `.addClass('class')` | `.classList.add('class')` |
 | `.attr('data-id')` | `.getAttribute('data-id')` |
+
+### When to Use Each Approach
+
+**Use Actions (ApplicationV2):**
+- Converting FormApplication/ActorSheet/ItemSheet classes
+- Any `activateListeners()` method in V2 applications
+- Event handlers in sheet templates
+
+**Use Vanilla JS:**
+- Chat hook functions (`renderChatMessageHTML`)
+- Directory hooks (`renderActorDirectory`)
+- System initialization code
+- Utility functions that manipulate DOM outside of ApplicationV2
 
 ## 10. Additional Migration Patterns
 
