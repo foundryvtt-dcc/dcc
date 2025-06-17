@@ -1,13 +1,12 @@
 <section class="actor level-change-dialog">
   <div class="grid-tpl-two grid-row-gap-8 grid-col-gap-8">
-    <div class="grid-col-span-2">
-      <h3>Change Character Level</h3>
+    <div class="grid-col-span-2 data-font">
       <p>Do you want to increase or decrease your level?</p>
       <div class="grid-just-center"><div><i class="fa-thin fa-up" data-action="increaseLevel"></i> <span id="system.details.level.value">{{system.details.level.value}}</span> <i class="fa-thin fa-down" data-action="decreaseLevel"></i></div></div>
     </div>
     <div id="levelDataDisplay" class="grid-col-span-2"></div>
     <div id="hitPoints" class="grid-col-span-2"></div>
-    <footer class="grid-col-span-2">
+    <footer class="grid-col-span-2 grid-align-just-center">
       <button type="submit">
         <i class="fas fa-user"></i>{{localize 'DCC.ApplyLevelChanges'}}
       </button>
