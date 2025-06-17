@@ -158,7 +158,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return context
   }
 
-
   /** @inheritDoc */
   _configureRenderParts (options) {
     const parts = super._configureRenderParts(options)

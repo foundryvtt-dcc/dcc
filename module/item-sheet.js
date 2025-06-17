@@ -10,7 +10,6 @@ const { HandlebarsApplicationMixin } = foundry.applications.api
 const { ItemSheetV2 } = foundry.applications.sheets
 // eslint-disable-next-line no-unused-vars
 const { TextEditor, DragDrop } = foundry.applications.ux
-const { DialogV2 } = foundry.applications.api
 
 /**
  * Extend the basic ItemSheet for DCC RPG
