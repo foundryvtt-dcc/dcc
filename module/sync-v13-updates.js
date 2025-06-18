@@ -192,8 +192,8 @@ async function createBranchAndCopyFiles (repoPath, repoName) {
       console.log(`Checking lang/en.json in ${repoName}...`)
       let langContent = readFileSync(langFilePath, 'utf8')
       let langUpdated = false
-      let changesApplied = []
-      
+      const changesApplied = []
+
       // Replace DoNotShow with ShowWelcomeDialogLabel
       if (langContent.includes('"DoNotShow": "Do not show this message on startup"')) {
         langContent = langContent.replace(
@@ -203,7 +203,7 @@ async function createBranchAndCopyFiles (repoPath, repoName) {
         langUpdated = true
         changesApplied.push('DoNotShow → ShowWelcomeDialogLabel')
       }
-      
+
       // Replace DoNotShowHint with ShowWelcomeDialogHint
       if (langContent.includes('"DoNotShowHint": "Do not show this welcome dialog again until it is re-enabled in the Module Settings dialog."')) {
         langContent = langContent.replace(
@@ -213,7 +213,7 @@ async function createBranchAndCopyFiles (repoPath, repoName) {
         langUpdated = true
         changesApplied.push('DoNotShowHint → ShowWelcomeDialogHint')
       }
-      
+
       // Replace h2 tags with h3 tags
       if (langContent.includes('<h2>') || langContent.includes('</h2>')) {
         langContent = langContent.replace(/<h2>/g, '<h3>')
@@ -221,7 +221,7 @@ async function createBranchAndCopyFiles (repoPath, repoName) {
         langUpdated = true
         changesApplied.push('h2 tags → h3 tags')
       }
-      
+
       if (langUpdated) {
         console.log(`✓ Updated lang/en.json in ${repoName}:`)
         changesApplied.forEach(change => console.log(`  - ${change}`))
@@ -301,14 +301,14 @@ async function main () {
     // Process each repository
     for (const repo of repos) {
       console.log(`\n--- Processing ${repo.name} ---`)
-      
+
       // Check if module.json exists before cloning
       const hasModuleJson = await checkModuleJsonExists(repo.name)
       if (!hasModuleJson) {
         console.log(`Skipping ${repo.name} - no module.json found`)
         continue
       }
-      
+
       const repoPath = await cloneOrUpdateRepo(repo)
 
       if (repoPath && await hasRequiredFiles(repoPath)) {
