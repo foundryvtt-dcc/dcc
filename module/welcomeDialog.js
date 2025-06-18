@@ -22,7 +22,8 @@ class WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     window: {
       resizable: true,
-      minimizable: false
+      minimizable: false,
+      title: `${pubConstants.langRoot}.Welcome.Title`
     },
     actions: {
       importContent: this.#importContent,
@@ -35,16 +36,6 @@ class WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       template: `${pubConstants.templates}dialog-welcome.html`,
       scrollable: ['']
     }
-  }
-
-  /* -------------------------------------------- */
-
-  /**
-   * Title
-   * @type {String}
-   */
-  get title () {
-    return game.i18n.localize(`${pubConstants.langRoot}.Welcome.Title`)
   }
 
   /* -------------------------------------------- */
