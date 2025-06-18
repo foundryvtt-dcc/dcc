@@ -603,7 +603,6 @@ a.inline-roll {
   word-break: break-all;
 }
 .table-draw .spell-check-mod h4 {
-  flex: 0;
   font-size: 20px;
 }
 .table-draw .spell-check-mod .critical {
@@ -869,7 +868,6 @@ a.inline-roll {
 
 .dcc .item-heading {
   border-bottom: 2px groove #eeede0;
-  flex: 0 0 10px;
   font-family: "Cooper Black", "Palatino Linotype", serif;
   letter-spacing: 1px;
   font-size: 1.1rem;
@@ -1685,17 +1683,18 @@ a.inline-roll {
   letter-spacing: 1px;
 }
 
-#dcc-welcome-dialog aside {
+.welcome-dialog aside {
   display: grid;
   grid-template-columns: 100%;
+  padding: 8px;
 }
-#dcc-welcome-dialog h2 {
+.welcome-dialog h2 {
   font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 24px;
   margin: 20px 0 0 0;
 }
-#dcc-welcome-dialog h3 {
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+.welcome-dialog h3 {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
   font-size: 20px;
   margin: 0;
 }

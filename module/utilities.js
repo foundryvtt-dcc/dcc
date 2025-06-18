@@ -71,7 +71,7 @@ export async function getCritTableResult (roll, critTableName) {
 
   // Lookup the crit table if available
   let critResult = null
-  for (const criticalHitPackName of CONFIG.DCC.criticalHitPacks.packs) {
+  for (const criticalHitPackName of CONFIG.DCC?.criticalHitPacks?.packs || []) {
     if (criticalHitPackName) {
       const pack = game.packs.get(criticalHitPackName)
       if (pack) {

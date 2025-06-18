@@ -11,6 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const MODULES_DIR = '/Users/timwhite/FoundryVTT/Data/modules'
 const SOURCE_DIR = join(__dirname, '..')
+const SAILORS_SOURCE_DIR = '/Users/timwhite/FoundryVTT/Data/modules/dcc-sailors-on-the-starless-sea'
 const ORG_NAME = 'foundryvtt-dcc'
 const BRANCH_NAME = 'feature/v13'
 const COMMIT_MESSAGE = 'v13 upgrade'
@@ -19,6 +20,11 @@ const COMMIT_MESSAGE = 'v13 upgrade'
 const FILES_TO_COPY = [
   'templates/dialog-welcome.html',
   'module/welcomeDialog.js'
+]
+
+// Files to copy conditionally (only if they already exist in target repo)
+const CONDITIONAL_FILES_TO_COPY = [
+  'module/adventureImporter.js'
 ]
 
 async function getOrgRepos () {
@@ -186,6 +192,33 @@ async function createBranchAndCopyFiles (repoPath, repoName) {
       }
     }
 
+    // Copy conditional files (only if they already exist in target repo)
+    for (const file of CONDITIONAL_FILES_TO_COPY) {
+      const sourcePath = join(SAILORS_SOURCE_DIR, file)
+      const destPath = join(repoPath, file)
+
+      // Only copy if the destination file already exists
+      if (existsSync(destPath) && existsSync(sourcePath)) {
+        // Check if files are different
+        const sourceContent = readFileSync(sourcePath, 'utf8')
+        const destContent = readFileSync(destPath, 'utf8')
+        const isDifferent = sourceContent !== destContent
+
+        if (isDifferent) {
+          console.log(`Copying ${file} to ${repoName} (conditional)...`)
+          copyFileSync(sourcePath, destPath)
+          await execAsync(`git add ${file}`, { cwd: repoPath })
+          filesChanged = true
+        } else {
+          console.log(`${file} is already up to date in ${repoName}`)
+        }
+      } else if (existsSync(destPath)) {
+        console.log(`Skipping ${file} - source file not found: ${sourcePath}`)
+      } else {
+        console.log(`Skipping ${file} - destination file does not exist in ${repoName}`)
+      }
+    }
+
     // Update lang/en.json file
     const langFilePath = join(repoPath, 'lang/en.json')
     if (existsSync(langFilePath)) {
@@ -228,8 +261,68 @@ async function createBranchAndCopyFiles (repoPath, repoName) {
         writeFileSync(langFilePath, langContent, 'utf8')
         await execAsync('git add lang/en.json', { cwd: repoPath })
         filesChanged = true
-      } else {
-        console.log(`lang/en.json is already up to date in ${repoName}`)
+      }
+
+      // Check and update Welcome.CloseLabel separately to ensure it runs even if other updates were already made
+      try {
+        // Re-read the file to get the latest content
+        langContent = readFileSync(langFilePath, 'utf8')
+        const langData = JSON.parse(langContent)
+        let closeLabelUpdated = false
+
+        // Function to find and update Welcome object recursively
+        function findAndUpdateWelcome (obj, path = '') {
+          let updated = false
+          for (const key in obj) {
+            if (key === 'Welcome' && typeof obj[key] === 'object') {
+              console.log(`  - Found Welcome object at path: ${path}${key}`)
+
+              // Check and update CloseLabel
+              if (!obj[key].CloseLabel || obj[key].CloseLabel !== 'Close') {
+                console.log(`  - Current CloseLabel value: ${obj[key].CloseLabel || 'undefined'}`)
+                obj[key].CloseLabel = 'Close'
+                updated = true
+              } else {
+                console.log('  - CloseLabel already set to "Close"')
+              }
+
+              // Check and update SubmitLabel
+              if (Object.hasOwn(obj[key], 'SubmitLabel') && obj[key].SubmitLabel !== '') {
+                console.log(`  - Current SubmitLabel value: "${obj[key].SubmitLabel}"`)
+                obj[key].SubmitLabel = ''
+                updated = true
+              } else if (Object.hasOwn(obj[key], 'SubmitLabel')) {
+                console.log('  - SubmitLabel already set to empty string')
+              } else {
+                console.log('  - No SubmitLabel key found')
+              }
+
+              return updated
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+              if (findAndUpdateWelcome(obj[key], path + key + '.')) {
+                updated = true
+              }
+            }
+          }
+          return updated
+        }
+
+        console.log('  Searching for Welcome object...')
+        if (findAndUpdateWelcome(langData)) {
+          langContent = JSON.stringify(langData, null, 2)
+          closeLabelUpdated = true
+          console.log(`✓ Updated lang/en.json in ${repoName}:`)
+          console.log('  - Added/Updated Welcome properties')
+          writeFileSync(langFilePath, langContent, 'utf8')
+          await execAsync('git add lang/en.json', { cwd: repoPath })
+          filesChanged = true
+        }
+
+        if (!langUpdated && !closeLabelUpdated) {
+          console.log(`lang/en.json is already up to date in ${repoName}`)
+        }
+      } catch (parseError) {
+        console.warn(`Could not parse lang/en.json in ${repoName} as JSON for CloseLabel update: ${parseError.message}`)
       }
     } else {
       console.log(`No lang/en.json file found in ${repoName}`)

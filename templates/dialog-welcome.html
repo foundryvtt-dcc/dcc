@@ -1,4 +1,4 @@
-<aside class="data-font">
+<aside class="data-font welcome-dialog">
   <div>
     <h3 class="heading-font mt-8">{{{heading}}}</h3>
     {{{info}}}
@@ -18,7 +18,7 @@
   </div>
   <footer class="mt-8 grid-just-center">
     {{#if importContentLabel}}
-      <button type="submit">
+      <button type="submit" data-action="importContent">
         <i class="fas fa-file-import"></i>{{{importContentLabel}}}
       </button>
     {{/if}}
@@ -28,7 +28,7 @@
       </button>
     {{/if}}
     {{#if closeLabel}}
-      <button type="submit" data-action="close" class="mt-8">
+      <button data-action="close" class="mt-8">
         <i class="fas fa-xmark"></i>{{{closeLabel}}}
       </button>
     {{/if}}

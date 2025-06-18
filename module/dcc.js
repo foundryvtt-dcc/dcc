@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, Handlebars */
+/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, ui, Handlebars */
 
 /**
  * DCC
@@ -396,7 +396,7 @@ async function getSkillTable (skillName) {
 
 Hooks.once('importAdventure', async function () {
   // This is a client side setting so only the GM user is affected
-  game.settings.set('core', NotesLayer.TOGGLE_SETTING, true)
+  game.settings.set('core', foundry.canvas.layers.NotesLayer.TOGGLE_SETTING, true)
 
   // Regenerate all the scene thumbnails, since the adventure packer doesn't do that
   for (const scene of game.scenes) {

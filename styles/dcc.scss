@@ -454,7 +454,6 @@ a.inline-roll {
     word-break: break-all;
 
     h4 {
-      flex: 0;
       font-size: 20px;
     }
 
@@ -761,7 +760,6 @@ a.inline-roll {
 
 .dcc .item-heading {
   border-bottom: $border-style;
-  flex: 0 0 10px;
   font-family: $cooper-black;
   letter-spacing: 1px;
   font-size: 1.1rem;
@@ -1725,10 +1723,11 @@ a.inline-roll {
 
 
 // Welcome Dialog
-#dcc-welcome-dialog {
+.welcome-dialog {
   aside {
     display: grid;
     grid-template-columns: 100%;
+    padding: 8px;
   }
 
   h2 {
@@ -1738,7 +1737,7 @@ a.inline-roll {
   }
 
   h3 {
-    font-family: $cooper-black;
+    font-family: $duvall;
     font-size: 20px;
     margin: 0;
   }

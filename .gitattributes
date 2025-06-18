@@ -38,3 +38,6 @@ styles/dcc.css text eol=lf
 
 # Don't Mess with Line Endings
 * text=auto
+
+# Special Scripts
+module/sync-v13-updates.js export-ignore

@@ -48,7 +48,11 @@ this.object.update({
 })
 ```
 
-### Package API Changes
+### V13 Namespace Deprecations ❌ **CRITICAL**
+
+FoundryVTT V13 has moved many global objects into namespaced modules. Using the old global references will show deprecation warnings and break in V15.
+
+#### Package API Changes
 
 Several Package properties have been renamed in V13:
 
@@ -61,43 +65,146 @@ Several Package properties have been renamed in V13:
 - `Package#packs.entity` → `Package#packs.type`
 - `Package#packs.private` → `Package#packs.ownership`
 
-### renderTemplate Namespacing ❌ **CRITICAL**
+#### Applications & UX Objects
 
 **V12 Pattern (BREAKS in V13):**
 ```javascript
-// Global renderTemplate is deprecated in V13
-messageData.content = await renderTemplate('systems/dcc/templates/chat-card.html', data)
+// Global objects are deprecated
+TextEditor.enrichHTML(content)
+FilePicker.browse()
+renderTemplate('template.html', data)
 ```
 
 **V13 Pattern (REQUIRED):**
 ```javascript
-// Use namespaced foundry.applications.handlebars.renderTemplate
-messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card.html', data)
+// Use namespaced foundry objects
+foundry.applications.ux.TextEditor.implementation.enrichHTML(content)
+foundry.applications.apps.FilePicker.browse()
+foundry.applications.handlebars.renderTemplate('template.html', data)
 ```
+
+**Complete List of Applications & UX Namespace Changes:**
+- `TextEditor` → `foundry.applications.ux.TextEditor.implementation`
+- `renderTemplate` → `foundry.applications.handlebars.renderTemplate`
+- `FilePicker` → `foundry.applications.apps.FilePicker`
 
 **Alternative Pattern (Cleaner):**
 ```javascript
 // Import at top of file for cleaner code
 const { renderTemplate } = foundry.applications.handlebars
+const { TextEditor } = foundry.applications.ux
 
 // Then use normally
 messageData.content = await renderTemplate('systems/dcc/templates/chat-card.html', data)
 ```
 
-**Why This Matters:**
-- **V13 Breaking Change**: Global `renderTemplate` shows deprecation warnings and will be removed in V15
-- **All Template Rendering**: Affects any code that renders templates outside of ApplicationV2 (chat cards, notifications, etc.)
-- **Common Locations**: Actor methods, item methods, chat hooks, and utility functions
+#### Canvas Layer Classes
 
-**Mock Testing Update:**
-When using the namespaced version, update your test mocks:
+**V12 Pattern (BREAKS in V13):**
+```javascript
+// Global canvas layer classes are deprecated
+game.settings.set('core', NotesLayer.TOGGLE_SETTING, true)
+InteractionLayer.prototype.method()
+PlaceablesLayer.SOMETHING
+```
+
+**V13 Pattern (REQUIRED):**
+```javascript
+// Use namespaced foundry.canvas.layers
+game.settings.set('core', foundry.canvas.layers.NotesLayer.TOGGLE_SETTING, true)
+foundry.canvas.layers.InteractionLayer.prototype.method()
+foundry.canvas.layers.PlaceablesLayer.SOMETHING
+```
+
+**Complete List of Canvas Layer Namespace Changes:**
+- `NotesLayer` → `foundry.canvas.layers.NotesLayer`
+- `InteractionLayer` → `foundry.canvas.layers.InteractionLayer`
+- `PlaceablesLayer` → `foundry.canvas.layers.PlaceablesLayer`
+- `ControlsLayer` → `foundry.canvas.layers.ControlsLayer`
+
+#### Geometry Classes
+
+**V12 Pattern (BREAKS in V13):**
+```javascript
+// Global geometry classes are deprecated
+const ray = new Ray(origin, direction)
+const polygon = new LimitedAnglePolygon(center, radius, angle)
+```
+
+**V13 Pattern (REQUIRED):**
+```javascript
+// Use namespaced foundry.geometry
+const ray = new foundry.geometry.Ray(origin, direction)
+const polygon = new foundry.geometry.LimitedAnglePolygon(center, radius, angle)
+```
+
+**Complete List of Geometry Namespace Changes:**
+- `Ray` → `foundry.geometry.Ray`
+- `LimitedAnglePolygon` → `foundry.geometry.LimitedAnglePolygon`
+
+#### Canvas Utilities
+
+**V12 Pattern (BREAKS in V13):**
+```javascript
+// Global canvas utilities are deprecated
+TextureLoader.load()
+const text = new PreciseText()
+```
+
+**V13 Pattern (REQUIRED):**
+```javascript
+// Use namespaced foundry.canvas utilities
+foundry.canvas.TextureLoader.load()
+const text = new foundry.canvas.PreciseText()
+```
+
+**Complete List of Canvas Utility Namespace Changes:**
+- `TextureLoader` → `foundry.canvas.TextureLoader`
+- `PreciseText` → `foundry.canvas.PreciseText`
+
+#### Why These Changes Matter:
+- **V13 Breaking Change**: Global objects show deprecation warnings and will be removed in V15
+- **All System Code**: Affects any code that uses these global objects
+- **Common Locations**: Actor methods, item methods, chat hooks, utility functions, and canvas interactions
+
+#### Mock Testing Update:
+When using the namespaced versions, update your test mocks:
 ```javascript
 // Add to your foundry mocks
 global.foundry = {
   applications: {
     handlebars: {
       renderTemplate: vi.fn((template, data) => { return '' }).mockName('renderTemplate')
+    },
+    ux: {
+      TextEditor: {
+        implementation: {
+          enrichHTML: vi.fn().mockResolvedValue(''),
+          getDragEventData: vi.fn()
+        }
+      }
+    },
+    apps: {
+      FilePicker: vi.fn().mockImplementation(() => ({
+        render: vi.fn()
+      }))
     }
+  },
+  canvas: {
+    layers: {
+      NotesLayer: { TOGGLE_SETTING: 'notesDisplayToggle' },
+      InteractionLayer: vi.fn(),
+      PlaceablesLayer: vi.fn(),
+      ControlsLayer: vi.fn()
+    },
+    TextureLoader: {
+      load: vi.fn()
+    },
+    PreciseText: vi.fn()
+  },
+  geometry: {
+    Ray: vi.fn(),
+    LimitedAnglePolygon: vi.fn()
   }
 }
 ```
