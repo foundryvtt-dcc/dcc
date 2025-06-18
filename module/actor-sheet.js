@@ -16,6 +16,7 @@ const { ApplicationTabsConfiguration } = foundry.applications.types
  * Extend the basic ActorSheet
  */
 class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+  #dragDrop
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     classes: ['dcc', 'sheet', 'actor', 'themed', 'theme-light'],
@@ -49,7 +50,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     actor: {
       type: 'Player'
     },
-    dragDrop: this.#createDragDropHandlers,
+    dragDrop: [{
+      dragSelector: '[data-drag="true"]',
+      dropSelector: '.item-list'
+    }],
     window: {
       resizable: true,
       controls: [
@@ -129,6 +133,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
   }
 
+  constructor (options = {}) {
+    super(options)
+    this.#dragDrop = this.#createDragDropHandlers()
+  }
+
   /* @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
@@ -157,6 +166,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     })
 
     return context
+  }
+
+  /** @inheritDoc */
+  _onRender (context, options) {
+    this.#dragDrop.forEach((d) => d.bind(this.element))
   }
 
   /** @inheritDoc */
@@ -475,11 +489,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target element
    * @override */
   _onDragStart (event, target) {
+    const li = event.currentTarget
+
+    // Check if element is draggable
+    if (!li.dataset.drag) return
+
     let dragData = null
 
-    // Get the drag action from the data attribute
-    const dragAction = event.target.dataset.dragAction
-    if (!dragAction) return
+    // Use data-drag-action for specific drag types
+    const dragAction = li.dataset.dragAction
 
     // Get common data
     const actorId = this.actor.id
@@ -1015,19 +1033,19 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {DragDrop[]} An array of DragDrop handlers
    * @private
    */
-  static #createDragDropHandlers () {
-    return [{
-      dragSelector: '[data-drag-action]',
-      dropSelector: '.item-list',
-      permissions: {
-        dragstart: this.prototype._canDragStart.bind(this),
-        drop: this.prototype._canDragDrop.bind(this)
-      },
-      callbacks: {
-        dragstart: this.prototype._onDragStart.bind(this),
-        drop: this.prototype._onDrop.bind(this)
+  #createDragDropHandlers () {
+    return this.options.dragDrop.map((d) => {
+      d.permissions = {
+        dragstart: this._canDragStart.bind(this),
+        drop: this._canDragDrop.bind(this)
       }
-    }]
+      d.callbacks = {
+        dragstart: this._onDragStart.bind(this),
+        dragover: this._onDragOver.bind(this),
+        drop: this._onDrop.bind(this)
+      }
+      return new DragDrop(d)
+    })
   }
 
   /**
@@ -1046,6 +1064,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   _canDragDrop (selector) {
     return this.document.isOwner && this.isEditable
+  }
+
+  /**
+   * Handle drag over events
+   * @param {DragEvent} event
+   */
+  _onDragOver (event) {
+    // Optional: handle dragover events if needed
   }
 
   /**

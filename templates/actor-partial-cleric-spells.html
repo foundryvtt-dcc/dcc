@@ -18,12 +18,12 @@
         <li class="item spell-item spell-draggable grid-col-span-7" data-item-id="{{item._id}}"
             data-ability="per" data-die="{{item.spellCheck.die}}"
             data-bonus="{{item.spellCheck.value}}"
-            data-spell="{{item.name}}" data-drag-action="item">
+            data-spell="{{item.name}}" data-drag="true" data-drag-action="item">
           <div class="item-image">
             <img src="{{item.img}}" title="{{item.name}}"
-                 width="24" height="24" data-drag-action="item"/>
+                 width="24" height="24" data-drag="true" data-drag-action="item"/>
           </div>
-          <div class="rollable spell-item-button" title="Cast spell" data-action="rollSpellCheck" data-drag-action="spellCheck">&nbsp;</div>
+          <div class="rollable spell-item-button" title="Cast spell" data-action="rollSpellCheck" data-drag="true" data-drag-action="spellCheck">&nbsp;</div>
           <div class="item-level">{{item.system.level}}</div>
           <div class="item-name">{{item.name}}</div>
           <div></div>
