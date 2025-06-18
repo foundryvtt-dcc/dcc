@@ -1,4 +1,4 @@
-/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry, renderTemplate */
+/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
@@ -1253,7 +1253,7 @@ class DCCActor extends Actor {
      */
     await Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
 
-    messageData.content = await renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
+    messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
 
     // Output the results
     ChatMessage.applyRollMode(messageData, rollMode)

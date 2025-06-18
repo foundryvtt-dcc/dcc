@@ -26,6 +26,8 @@ This document tracks all components in the DCC system that need to be upgraded f
 - **Roll Modifier Dialog**: Review and update CSS styling after ApplicationV2 conversion
 - **Party Sheet**: Verify CSS styling works correctly after jQuery→DOM event handler conversion
 - **Parser Dialog**: Fix dialog styling for V13 compatibility (noted during migration)
+- **Spell Chat Card**: Fix formatting on the spell chat card
+- **Item Treasure Sheet**: Fix the "treasure" tab on the item treasure sheet
 
 ## 1. FormApplication (V1) → ApplicationV2 Migrations Needed ✅ **COMPLETED**
 

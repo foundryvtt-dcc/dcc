@@ -61,6 +61,47 @@ Several Package properties have been renamed in V13:
 - `Package#packs.entity` → `Package#packs.type`
 - `Package#packs.private` → `Package#packs.ownership`
 
+### renderTemplate Namespacing ❌ **CRITICAL**
+
+**V12 Pattern (BREAKS in V13):**
+```javascript
+// Global renderTemplate is deprecated in V13
+messageData.content = await renderTemplate('systems/dcc/templates/chat-card.html', data)
+```
+
+**V13 Pattern (REQUIRED):**
+```javascript
+// Use namespaced foundry.applications.handlebars.renderTemplate
+messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card.html', data)
+```
+
+**Alternative Pattern (Cleaner):**
+```javascript
+// Import at top of file for cleaner code
+const { renderTemplate } = foundry.applications.handlebars
+
+// Then use normally
+messageData.content = await renderTemplate('systems/dcc/templates/chat-card.html', data)
+```
+
+**Why This Matters:**
+- **V13 Breaking Change**: Global `renderTemplate` shows deprecation warnings and will be removed in V15
+- **All Template Rendering**: Affects any code that renders templates outside of ApplicationV2 (chat cards, notifications, etc.)
+- **Common Locations**: Actor methods, item methods, chat hooks, and utility functions
+
+**Mock Testing Update:**
+When using the namespaced version, update your test mocks:
+```javascript
+// Add to your foundry mocks
+global.foundry = {
+  applications: {
+    handlebars: {
+      renderTemplate: vi.fn((template, data) => { return '' }).mockName('renderTemplate')
+    }
+  }
+}
+```
+
 ### Document and DataModel Changes
 
 **Document System Data Access:**

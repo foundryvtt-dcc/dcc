@@ -52,7 +52,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     },
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
-      dropSelector: '.item-list'
+      dropSelector: '.item-list, .weapon-list, .armor-list, .skill-list'
     }],
     window: {
       resizable: true,
@@ -576,11 +576,30 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         break
 
       case 'spellCheck':
-        dragData = {
-          type: 'Spell Check',
-          actorId,
-          data: {
-            ability: DCCActorSheet.#findDataset(event.currentTarget, 'ability')
+        {
+          const ability = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
+          const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
+          const spell = DCCActorSheet.#findDataset(event.currentTarget, 'spell')
+
+          const dragDataContent = { ability }
+
+          // If we have an itemId, include spell details for item-based macros
+          if (itemId) {
+            const item = this.actor.items.get(itemId)
+            if (item) {
+              dragDataContent.itemId = itemId
+              dragDataContent.name = item.name
+              dragDataContent.img = item.img
+            }
+          } else if (spell) {
+            // Fallback to spell name from data attribute
+            dragDataContent.name = spell
+          }
+
+          dragData = {
+            type: 'Spell Check',
+            actorId,
+            data: dragDataContent
           }
         }
         break
@@ -647,17 +666,18 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
           const item = this.actor.items.get(itemId)
           if (item) {
-            dragData = Object.assign(
-              item.toDragData(),
-              {
-                dccType: 'Item',
-                actorId,
-                data: item,
-                dccData: {
-                  item
-                }
+            // Use 'DCC Item' for spells to prevent Foundry's default macro creation
+            // Use 'Item' for other items to maintain normal drag/drop functionality
+            const dragType = item.type === 'spell' ? 'DCC Item' : 'Item'
+
+            dragData = {
+              type: dragType,
+              actorId,
+              data: item,
+              system: {
+                item
               }
-            )
+            }
           }
         }
         break
@@ -1082,6 +1102,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _onDrop (event) {
     const data = foundry.applications.ux.TextEditor.getDragEventData(event)
     if (!data) return false
+
+    // Convert 'DCC Item' back to 'Item' for inventory drops
+    if (data.type === 'DCC Item') {
+      data.type = 'Item'
+    }
 
     // Handle different drop types - delegate to base class
     return super._onDrop?.(event)

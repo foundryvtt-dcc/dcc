@@ -537,7 +537,7 @@ async function processSpellCheck (actor, spellData) {
 /* -------------------------------------------- */
 // Create a macro when a rollable is dropped on the hotbar
 Hooks.on('hotbarDrop', (bar, data, slot) => {
-  createDCCMacro(data, slot)
+  return createDCCMacro(data, slot)
 })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
@@ -739,6 +739,8 @@ async function createDCCMacro (data, slot) {
     'Attack Bonus': _createDCCAttackBonusMacro,
     'Action Dice': _createDCCActionDiceMacro,
     Weapon: _createDCCWeaponMacro,
+    Item: _createDCCItemMacro,
+    'DCC Item': _createDCCItemMacro,
     'Apply Disapproval': _createDCCApplyDisapprovalMacro,
     'Roll Disapproval': _createDCCRollDisapprovalMacro
   }
@@ -776,6 +778,7 @@ async function createDCCMacro (data, slot) {
 
     // Assign the macro to the hotbar slot
     await game.user.assignHotbarMacro(macro, slot)
+    return false // Prevent Foundry's default behavior
   }
   return true
 }
@@ -900,14 +903,23 @@ function _createDCCSpellCheckMacro (data) {
   // Create the macro command
   const spell = data.data.name || null
   const img = data.data.img || null
+  const itemId = data.data.itemId || null
+
   const macroData = {
     name: spell || game.i18n.localize('DCC.SpellCheck'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck() }`,
     img: img || EntityImages.imageForMacro('spellCheck')
   }
 
-  if (spell) {
+  // If we have an itemId, create an item-based macro
+  if (itemId) {
+    const uuid = `Actor.${data.actorId}.Item.${itemId}`
+    macroData.command = `const _item = await fromUuid("${uuid}"); if (_item) { _item.rollSpellCheck() }`
+  } else if (spell) {
+    // Fallback to actor-based spell check with spell name
     macroData.command = `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck(Object.assign({ spell: "${spell}" }, game.dcc.getMacroOptions())) }`
+  } else {
+    // Generic spell check
+    macroData.command = `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck() }`
   }
 
   return macroData
@@ -978,6 +990,37 @@ function _createDCCWeaponMacro (data) {
   }
 
   return macroData
+}
+
+/**
+ * Create a macro from an item drop.
+ * @param {Object} data     The dropped data
+ * @returns {Object}
+ */
+function _createDCCItemMacro (data) {
+  if (data.type !== 'Item' && data.type !== 'DCC Item') return
+
+  const item = data.system.item || data.data
+  if (!item) return
+
+  // Generate the UUID for the item
+  const uuid = `Actor.${data.actorId}.Item.${item._id}`
+
+  // Handle spell items
+  if (item.type === 'spell') {
+    return {
+      name: item.name,
+      command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.rollSpellCheck() }`,
+      img: item.img
+    }
+  }
+
+  // For other item types, create a generic macro
+  return {
+    name: item.name,
+    command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.roll() }`,
+    img: item.img || EntityImages.imageForItem(item.type)
+  }
 }
 
 /**

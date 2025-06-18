@@ -561,6 +561,11 @@ a.inline-roll {
 /* ----------------------------------------- */
 /*  Spell Check Chat Card                    */
 /* ----------------------------------------- */
+.table-draw h1 {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-size: 18px;
+  margin-top: 8px;
+}
 .table-draw .table-results .table-result .result-range {
   align-items: center;
   display: flex;

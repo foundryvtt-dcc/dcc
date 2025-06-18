@@ -492,7 +492,12 @@ global.ui = {
 
 // Namespace for Foundry helper functions
 global.foundry = {
-  utils: {}
+  utils: {},
+  applications: {
+    handlebars: {
+      renderTemplate: vi.fn((template, data) => { return '' }).mockName('renderTemplate')
+    }
+  }
 }
 
 // Foundry's implementation of getType

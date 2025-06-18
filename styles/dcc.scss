@@ -407,6 +407,12 @@ a.inline-roll {
 /*  Spell Check Chat Card                    */
 /* ----------------------------------------- */
 .table-draw {
+  h1 {
+    font-family: $duvall;
+    font-size: 18px;
+    margin-top: 8px;
+  }
+
   .table-results {
     .table-result {
       .result-range {
