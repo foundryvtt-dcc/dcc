@@ -433,7 +433,8 @@ a.inline-roll {
         justify-items: center;
         margin-right: 3px;
 
-        .spell-shift-down, .spell-shift-up {
+        .spell-shift-down,
+ .spell-shift-up {
           cursor: pointer;
         }
       }

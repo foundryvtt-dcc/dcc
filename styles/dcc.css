@@ -586,7 +586,8 @@ a.inline-roll {
   justify-items: center;
   margin-right: 3px;
 }
-.table-draw .table-results .table-result .result-range .spell-shift-down, .table-draw .table-results .table-result .result-range .spell-shift-up {
+.table-draw .table-results .table-result .result-range .spell-shift-down,
+.table-draw .table-results .table-result .result-range .spell-shift-up {
   cursor: pointer;
 }
 .table-draw .spell-check-mod {
