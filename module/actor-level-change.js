@@ -100,7 +100,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
    * @return levelData <object>
    */
   async _getLevelDataFromItem (levelItem) {
-    if (Object.prototype.hasOwnProperty.call(levelItem, 'system')) {
+    if (Object.hasOwn(levelItem, 'system')) {
       let levelData = levelItem.system.levelData
       if (this.document.system.details.alignment === 'l') {
         levelData += levelItem.system.levelDataLawful
@@ -173,7 +173,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _updateLevelUpDisplay () {
     const levelItem = await this._lookupLevelItem(this.document.classNameLower, this.document.currentLevel)
-    if (Object.prototype.hasOwnProperty.call(levelItem, 'system')) {
+    if (Object.hasOwn(levelItem, 'system')) {
       // Level Data
       const levelData = await this._getLevelDataFromItem(levelItem)
       const levelDataString = Object.entries(levelData)

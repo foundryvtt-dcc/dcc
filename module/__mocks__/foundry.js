@@ -523,7 +523,7 @@ global.setProperty = function (object, key, value) {
     const parts = key.split('.')
     key = parts.pop()
     target = parts.reduce((o, i) => {
-      if (!Object.prototype.hasOwnProperty.call(o, i)) o[i] = {}
+      if (!Object.hasOwn(o, i)) o[i] = {}
       return o[i]
     }, object)
   }
@@ -589,7 +589,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
 
     // Get the existing object
     let x = original[k]
-    let has = Object.prototype.hasOwnProperty.call(original, k)
+    let has = Object.hasOwn(original, k)
     let tx = global.getType(x)
 
     // Ensure that inner objects exist
