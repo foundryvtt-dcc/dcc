@@ -802,6 +802,11 @@ a.inline-roll {
   justify-self: end;
   margin-left: 10px;
 }
+.dcc .party-body .character-row .fa-shield-alt,
+.dcc .party-body .character-row .fa-heart {
+  justify-self: end;
+  margin-top: 2px;
+}
 .dcc .party-body .empty-party {
   text-align: center;
   padding: 2rem;
