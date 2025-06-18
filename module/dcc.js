@@ -968,7 +968,7 @@ function _createDCCActionDiceMacro (data) {
 function _createDCCWeaponMacro (data) {
   if (data.type !== 'Weapon') return
   const weapon = data.system.weapon
-  const backstab = data.data.backstab
+  const backstab = data.system?.backstab
   const options = {
     backstab
   }
