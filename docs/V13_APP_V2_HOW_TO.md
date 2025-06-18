@@ -1469,7 +1469,7 @@ setPosition(options = {}) {
 
 ### Drag and Drop Migration
 
-V2 uses a different approach for configuring drag and drop functionality. Instead of configuring DragDrop objects in defaultOptions, you configure a method that creates them.
+V2 uses a completely different approach for drag and drop functionality. Unlike V1 which automatically bound drag/drop handlers, V2 requires manual initialization and binding in the constructor and `_onRender` method.
 
 #### V1 Pattern (Old):
 ```javascript
@@ -1486,75 +1486,108 @@ activateListeners(html) {
 }
 ```
 
-#### V2 Pattern (New):
+#### V2 Pattern (New) - Step-by-Step Implementation:
+
+**1. Import DragDrop and configure DEFAULT_OPTIONS:**
 ```javascript
 const { DragDrop } = foundry.applications.ux
 
-static DEFAULT_OPTIONS = {
-  // Reference the handler creation method
-  dragDrop: this.#createDragDropHandlers
+class MyAppV2 extends HandlebarsApplicationMixin(ApplicationV2) {
+  static DEFAULT_OPTIONS = {
+    // Configure drag/drop selector array
+    dragDrop: [{ 
+      dragSelector: '[data-drag="true"]',  // Note: data-drag="true" attribute 
+      dropSelector: '.drop-zone' 
+    }]
+  }
+}
+```
+
+**2. Initialize DragDrop in constructor:**
+```javascript
+constructor(options = {}) {
+  super(options)
+  this.#dragDrop = this.#createDragDropHandlers()
 }
 
-/**
- * Create drag-and-drop workflow handlers for this Application
- * @returns {DragDrop[]} An array of DragDrop handlers
- * @private
- */
-static #createDragDropHandlers() {
-  return [{
-    dragSelector: '.item',
-    dropSelector: '.item-list',
-    permissions: {
+#createDragDropHandlers() {
+  return this.options.dragDrop.map((d) => {
+    d.permissions = {
       dragstart: this._canDragStart.bind(this),
       drop: this._canDragDrop.bind(this)
-    },
-    callbacks: {
+    }
+    d.callbacks = {
       dragstart: this._onDragStart.bind(this),
       dragover: this._onDragOver.bind(this),
       drop: this._onDrop.bind(this)
     }
-  }]
+    return new DragDrop(d)
+  })
 }
+```
 
+**3. Add draggable elements to templates with `data-drag="true"`:**
+```html
+<ol class="items">
+  {{#each items}}
+  <li data-drag="true" data-item-id="{{this.id}}">{{this.name}}</li>
+  {{/each}}
+</ol>
+
+<!-- For specific drag actions, use data-drag-action -->
+<label data-drag="true" data-drag-action="ability" data-ability="str">
+  Strength
+</label>
+```
+
+**4. Bind DragDrop listeners in _onRender:**
+```javascript
+_onRender(context, options) {
+  this.#dragDrop.forEach((d) => d.bind(this.element))
+}
+```
+
+**5. Implement required callback methods:**
+```javascript
 // Permission methods (required)
 _canDragStart(selector) {
-  return this.isEditable
+  return this.document.isOwner && this.isEditable
 }
 
 _canDragDrop(selector) {
-  return this.isEditable
+  return this.document.isOwner && this.isEditable
 }
 
-// Event handlers (implement as needed)
+// Event handlers
 _onDragStart(event) {
-  const el = event.currentTarget
-  if ('link' in event.target.dataset) return
-
+  const li = event.currentTarget
+  
+  // Use data-drag-action for specific drag types
+  const dragAction = li.dataset.dragAction
   let dragData = null
   
-  // Handle different draggable element types
-  const classes = event.target.classList
-  
-  if (classes.contains('item-draggable')) {
-    const itemId = el.dataset.itemId
-    const item = this.actor.items.get(itemId)
-    dragData = Object.assign(item.toDragData(), {
-      dccType: 'Item',
-      actorId: this.actor.id,
-      data: item
-    })
+  switch (dragAction) {
+    case 'ability':
+      dragData = {
+        type: 'Ability',
+        actorId: this.actor.id,
+        data: { abilityId: li.dataset.ability }
+      }
+      break
+      
+    case 'item':
+      const itemId = li.dataset.itemId
+      const item = this.actor.items.get(itemId)
+      dragData = Object.assign(item.toDragData(), {
+        dccType: 'Item',
+        actorId: this.actor.id,
+        data: item
+      })
+      break
   }
   
-  if (classes.contains('ability-name')) {
-    const abilityId = el.dataset.ability
-    dragData = {
-      type: 'Ability',
-      actorId: this.actor.id,
-      data: { abilityId }
-    }
-  }
-
   if (dragData) {
+    if (this.actor.isToken) dragData.tokenId = this.actor.token.id
     event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
   }
 }
@@ -1564,103 +1597,39 @@ _onDragOver(event) {
 }
 
 _onDrop(event) {
-  const data = TextEditor.getDragEventData(event)
+  const data = foundry.applications.ux.TextEditor.getDragEventData(event)
+  if (!data) return false
+  
   // Handle the dropped data
+  // Delegate to base class for standard item drops
+  return super._onDrop?.(event)
 }
 ```
 
 #### Key Differences:
 
-1. **Handler Creation**: Use `#createDragDropHandlers()` method instead of array in defaultOptions
-2. **Permission Methods**: Must implement `_canDragStart()` and `_canDragDrop()` 
-3. **Callback Binding**: Explicitly bind methods in the callbacks configuration
-4. **Import Required**: Must import `DragDrop` from `foundry.applications.ux`
+1. **Manual Initialization**: V2 requires manual creation and binding of DragDrop instances in the constructor
+2. **Template Attribute**: Use `data-drag="true"` attribute to mark draggable elements
+3. **Manual Binding**: Must call `d.bind(this.element)` in `_onRender()` method
+4. **Permission Methods**: Must implement `_canDragStart()` and `_canDragDrop()` 
+5. **Import Required**: Must import `DragDrop` from `foundry.applications.ux`
+6. **Constructor Required**: Unlike V1's automatic binding, V2 requires explicit setup in constructor
 
-#### Complete Implementation Example:
+#### ⚠️ Important Notes:
 
-```javascript
-import { DragDrop } from foundry.applications.ux
-
-class MyActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
-  static DEFAULT_OPTIONS = {
-    dragDrop: this.#createDragDropHandlers
-  }
-
-  static #createDragDropHandlers() {
-    return [{
-      dragSelector: '.item-draggable, .ability-name, .skill-check',
-      dropSelector: '.item-list',
-      permissions: {
-        dragstart: this._canDragStart.bind(this),
-        drop: this._canDragDrop.bind(this)
-      },
-      callbacks: {
-        dragstart: this._onDragStart.bind(this),
-        drop: this._onDrop.bind(this)
-      }
-    }]
-  }
-
-  _canDragStart(selector) {
-    return this.document.isOwner && this.isEditable
-  }
-
-  _canDragDrop(selector) {
-    return this.document.isOwner && this.isEditable
-  }
-
-  _onDragStart(event) {
-    // Implementation from existing actor-sheet.js
-    let dragData = null
-    const classes = event.target.classList
-    
-    // Handle multiple drag types based on element classes
-    if (classes.contains('ability-name')) {
-      const abilityId = event.currentTarget.dataset.ability
-      dragData = {
-        type: 'Ability',
-        actorId: this.actor.id,
-        data: { abilityId }
-      }
-    }
-    
-    if (classes.contains('item-draggable')) {
-      const itemId = event.currentTarget.dataset.itemId
-      const item = this.actor.items.get(itemId)
-      dragData = Object.assign(item.toDragData(), {
-        dccType: 'Item',
-        actorId: this.actor.id,
-        data: item
-      })
-    }
-
-    if (dragData) {
-      if (this.actor.isToken) dragData.tokenId = this.actor.token.id
-      event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
-    }
-  }
-
-  async _onDrop(event) {
-    const data = TextEditor.getDragEventData(event)
-    if (!data) return
-    
-    // Handle different drop types
-    if (data.type === 'Item') {
-      return this._onDropItem(event, data)
-    }
-    
-    return super._onDrop(event)
-  }
-}
-```
+- **`data-drag="true"` is required** - Elements must have this attribute to be draggable
+- **Manual binding is critical** - Forgetting to call `d.bind(this.element)` in `_onRender()` will result in non-functional drag/drop
+- **Constructor initialization** - The `#createDragDropHandlers()` must be called in the constructor
+- **Array configuration** - `dragDrop` in `DEFAULT_OPTIONS` should be an array of configuration objects, not a method reference
 
 #### Migration Notes:
 
-- The `_onDragStart` method signature changes: V1 uses `(event)`, V2 also receives the element as second parameter but it's typically not used
+- **Critical Difference**: V1 automatically bound drag/drop handlers, V2 requires manual initialization and binding
 - Permission methods are required in V2 but were optional in V1
 - Multiple drag/drop handlers can be defined by returning multiple objects in the array
+- The `_onDragStart` method signature remains the same: `(event)`
 - The drag/drop functionality must be explicitly enabled through the dragDrop configuration
-- **Important**: In the current DCC system, the `#createDragDropHandlers()` method in actor-sheet.js is not yet implemented - this will need to be completed for drag/drop to work
+- **Note**: The DCC system uses a simplified approach with `data-drag-action` attributes instead of `data-drag="true"` for better organization
 
 ### Removed Properties
 The following properties are no longer needed in V2:
