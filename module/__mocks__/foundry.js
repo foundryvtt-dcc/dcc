@@ -496,6 +496,11 @@ global.foundry = {
   applications: {
     handlebars: {
       renderTemplate: vi.fn((template, data) => { return '' }).mockName('renderTemplate')
+    },
+    ux: {
+      TextEditor: {
+        enrichHTML: vi.fn(async (content, options = {}) => content).mockName('TextEditor.enrichHTML')
+      }
     }
   }
 }
