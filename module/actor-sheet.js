@@ -368,13 +368,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (this.actor.system.class) {
       const context = { relativeTo: this.document, secrets: this.document.isOwner }
       let corruption = this.actor.system.class.corruption || ''
-
-      // If corruption is "[object Promise]" string, reset it to empty and fix the data
-      if (corruption === '[object Promise]') {
-        corruption = ''
-        // Fix the actor data to prevent this from happening again
-        this.actor.update({ 'system.class.corruption': '' })
-      }
+      console.log('Corruption', corruption)
 
       return await TextEditor.enrichHTML(corruption, context)
     }
