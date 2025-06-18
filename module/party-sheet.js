@@ -34,7 +34,18 @@ class DCCPartySheet extends DCCActorSheet {
       rollAttack: this.#rollAttack,
       editImage: this.#editImage
     },
-    dragDrop: this.#createDragDropHandlers
+    dragDrop: [{
+      dragSelector: '.party-draggable',
+      dropSelector: '.party',
+      permissions: {
+        dragstart: '_canDragStart',
+        drop: '_canDragDrop'
+      },
+      callbacks: {
+        dragstart: '_onDragStart',
+        drop: '_onDrop'
+      }
+    }]
   }
 
   /** @inheritDoc */
@@ -163,7 +174,6 @@ class DCCPartySheet extends DCCActorSheet {
    * Setter for the members of the party
    *
    * @param members {Array} List of party members
-   * @return {Array}
    */
   set members (members) {
     if (members instanceof Array) {
@@ -181,7 +191,7 @@ class DCCPartySheet extends DCCActorSheet {
   }
 
   /**
-   * Check a member is elegible to join the party
+   * Check a member is eligible to join the party
    *
    * @param {string} actorId   Uuid of the actor to add
    * @return {undefined}
@@ -254,23 +264,10 @@ class DCCPartySheet extends DCCActorSheet {
     this.render(false)
   }
 
-  /**
-   * Open the sheet for a member from the party
-   *
-   * @param {string} actorId   Id of the actor to edit
-   * @return {undefined}
-   */
-  _editMember (actorId) {
-    const actor = game.actors.get(actorId)
-    if (actor) {
-      actor.sheet.render(true)
-    }
-  }
-
   /* -------------------------------------------- */
 
   /**
-   * Edit a party member
+   * Open the party member's sheet for editing
    * @this {DCCPartySheet}
    * @param {PointerEvent} event
    * @param {HTMLElement} target
@@ -314,8 +311,8 @@ class DCCPartySheet extends DCCActorSheet {
     }
 
     if (game.settings.get('dcc', 'promptForItemDeletion')) {
-      new foundry.applications.api.DialogV2({
-        window: { title: game.i18n.localize('DCC.PartyDeletePrompt') },
+      await new foundry.applications.api.DialogV2({
+        window: { title: 'DCC.PartyDeletePrompt' },
         content: `<p>${game.i18n.localize('DCC.PartyDeleteExplain')}</p>`,
         buttons: {
           yes: {

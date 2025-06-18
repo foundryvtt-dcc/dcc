@@ -1,8 +1,6 @@
 {{!-- Sheet Tab Navigation --}}
-<nav class="sheet-tabs tabs" data-group="sheet">
+<nav class="sheet-tabs tabs">
   {{#each tabs as |tab|}}
-    <a class="item {{#if tab.active}}active{{/if}}" data-tab="{{tab.id}}">
-      {{localize tab.label}}
-    </a>
+    <a class="{{tab.cssClass}}" data-action="tab" data-group="{{tab.group}}" data-tab="{{tab.id}}" data-tooltip="{{localize tab.tooltip}}">{{localize tab.label}}</a>
   {{/each}}
 </nav>

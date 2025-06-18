@@ -628,7 +628,7 @@ a.inline-roll {
 /*  Party Sheet                              */
 /* ----------------------------------------- */
 
-.dcc .party {
+.dcc .party-body {
   border: $border-style;
 
   display: grid;
@@ -671,6 +671,8 @@ a.inline-roll {
 
     .weapon {
       grid-column: span 1;
+      justify-self: end;
+      margin-right: 5px;
     }
 
     .weapon-dropdown {
@@ -679,6 +681,23 @@ a.inline-roll {
 
     .filler {
       grid-column: span 2;
+    }
+
+    .party-control {
+      justify-self: end;
+      margin-left: 10px;
+    }
+  }
+
+  .empty-party {
+    text-align: center;
+    padding: 2rem;
+
+    p {
+      font-family: $book-antiqua;
+      font-style: italic;
+      color: #666;
+      margin: 0;
     }
   }
 }
@@ -1177,7 +1196,8 @@ a.inline-roll {
 /*  Roll Modifier Dialog                     */
 /* ----------------------------------------- */
 
-.dcc-roll-modifier {display: grid;
+.dcc-roll-modifier {
+  display: grid;
   grid-template-rows: 1fr auto;
   row-gap: 15px;
 

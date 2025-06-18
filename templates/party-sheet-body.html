@@ -1,5 +1,5 @@
-{{!-- Sheet Body --}}
 <section class="sheet-body">
-  {{> party}}
-  {{> notes}}
+  {{#each tabs as |tab|}}
+    <template data-application-part="{{tab.id}}"></template>
+  {{/each}}
 </section>

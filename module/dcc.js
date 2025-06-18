@@ -149,7 +149,9 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/roll-modifier-partial-modifiers.html',
     'systems/dcc/templates/roll-modifier-partial-none.html',
     'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
-    'systems/dcc/templates/roll-modifier-partial-spellburn.html'
+    'systems/dcc/templates/roll-modifier-partial-spellburn.html',
+    'systems/dcc/templates/party-sheet-partial-party.html',
+    'systems/dcc/templates/party-sheet-partial-tabs.html'
   ]
   await loadTemplates(templatePaths)
 

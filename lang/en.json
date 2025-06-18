@@ -1,5 +1,6 @@
 {
   "ACTOR.TypeNPC": "NPC",
+  "TYPES.Actor.Party": "Party",
   "TYPES.Actor.Player": "Player",
   "TYPES.Actor.NPC": "NPC",
   "TYPES.Item.ammunition": "Ammunition",
@@ -377,6 +378,7 @@
   "DCC.PartyDeletePrompt": "Remove Member",
   "DCC.PartyDeleteExplain": "This will remove the actor from the party.",
   "DCC.PartyEdit": "Edit Member",
+  "DCC.PartyEmpty": "Drag and drop an actor here",
   "DCC.Patron": "Patron",
   "DCC.Penalty": "Penalty",
   "DCC.PickLock": "Pick lock",
