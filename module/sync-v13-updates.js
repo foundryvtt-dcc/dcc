@@ -47,15 +47,6 @@ async function isGitRepo (path) {
   }
 }
 
-async function getCurrentBranch (repoPath) {
-  try {
-    const { stdout } = await execAsync('git branch --show-current', { cwd: repoPath })
-    return stdout.trim()
-  } catch {
-    return null
-  }
-}
-
 async function checkExistingPR (repoName) {
   try {
     // Check for existing PRs with the v13 branch
