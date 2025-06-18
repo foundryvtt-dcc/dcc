@@ -1095,7 +1095,7 @@ class DCCActor extends Actor {
       if (damageRollFormula.includes('-')) {
         damageRollFormula = `max(${damageRollFormula}, 1)`
       }
-      damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
+      damageInlineRoll = await foundry.applications.ux.TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
       damagePrompt = game.i18n.localize('DCC.RollDamage')
     }
 
@@ -1117,7 +1117,7 @@ class DCCActor extends Actor {
       critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'}${luckMod}`
       const criticalText = game.i18n.localize('DCC.Critical')
       const critTableText = game.i18n.localize('DCC.CritTable')
-      critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
+      critInlineRoll = await foundry.applications.ux.TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
       if (automateDamageFumblesCrits) {
         critPrompt = game.i18n.localize('DCC.Critical')
         critRoll = game.dcc.DCCRoll.createRoll([
@@ -1133,7 +1133,7 @@ class DCCActor extends Actor {
         const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
           critTableName = critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
-          critText = await TextEditor.enrichHTML(critResult.text)
+          critText = await foundry.applications.ux.TextEditor.enrichHTML(critResult.text)
           critText = `: <br>${critText}`
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
@@ -1587,7 +1587,6 @@ class DCCActor extends Actor {
         if (disapprovalPackName && disapprovalTableName) {
           const pack = game.packs.get(disapprovalPackName)
           if (pack) {
-            await pack.getIndex() // Load the compendium index
             const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
             if (entry) {
               disapprovalTable = await pack.getDocument(entry._id)

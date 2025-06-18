@@ -1,4 +1,4 @@
-/* global canvas, game, TextEditor */
+/* global canvas, foundry, game */
 // noinspection DuplicatedCode
 
 import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
@@ -314,7 +314,7 @@ export const emoteFumbleRoll = async function (message, html, data) {
 
   let fumbleText = ''
   if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.text) {
-    fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
+    fumbleText = await foundry.applications.ux.TextEditor.enrichHTML(fumbleResult.text)
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
   } else {
@@ -438,7 +438,7 @@ export const lookupCriticalRoll = async function (message, html) {
     return
   }
 
-  const critText = await TextEditor.enrichHTML(critResult.text)
+  const critText = await foundry.applications.ux.TextEditor.enrichHTML(critResult.text)
   const rollHTML = await message.rolls[0].render()
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
@@ -477,7 +477,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
 
   let fumbleText = ''
   if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.text) {
-    fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
+    fumbleText = await foundry.applications.ux.TextEditor.enrichHTML(fumbleResult.text)
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
   } else {

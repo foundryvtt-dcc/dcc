@@ -269,7 +269,6 @@ class DCCItem extends Item {
     if (resultsRef.collection) {
       const pack = game.packs.get(resultsRef.collection)
       if (pack) {
-        // await pack.getIndex()
         const entry = pack.index.find(predicate)
         resultsTable = await pack.getDocument(entry._id)
       }
@@ -348,7 +347,6 @@ class DCCItem extends Item {
     const manifestationTableName = `${this.name} Manifestation`
     const pack = game.packs.get(manifestationPackName)
     if (pack) {
-      await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name === manifestationTableName)
       if (entry) {
         const table = await pack.getDocument(entry._id)
@@ -450,7 +448,6 @@ class DCCItem extends Item {
         pack = game.packs.get(mercurialMagicTablePath[0] + '.' + mercurialMagicTablePath[1])
       }
       if (pack) {
-        await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
         if (entry) {
           const table = await pack.getDocument(entry._id)

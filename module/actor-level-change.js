@@ -136,7 +136,6 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     // Lookup the level item
     const pack = game.packs.get(CONFIG.DCC.levelData)
     if (pack) {
-      // await pack.getIndex() // Load the compendium index
       const entry = pack.index.find(item => item.name === `${className}-${level}`)
       if (entry) {
         const item = await pack.getDocument(entry._id)

@@ -107,7 +107,6 @@ export async function getFumbleTableResult (roll) {
       pack = game.packs.get(fumbleTablePath[0] + '.' + fumbleTablePath[1])
     }
     if (pack) {
-      await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name === fumbleTablePath[2])
       if (entry) {
         const table = await pack.getDocument(entry._id)
@@ -149,7 +148,6 @@ export async function getNPCFumbleTableResult (roll, fumbleTableName) {
     const fumblePackName = 'dcc-core-book.dcc-monster-fumble-tables'
     const pack = game.packs.get(fumblePackName)
     if (pack) {
-      await pack.getIndex() // Load the compendium index
       const entry = pack.index.filter((entity) => entity.name.startsWith(fumbleTableName))
       if (entry.length > 0) {
         const table = await pack.getDocument(entry[0]._id)

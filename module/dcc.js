@@ -383,7 +383,6 @@ async function getSkillTable (skillName) {
       pack = game.packs.get(tablePath[0] + '.' + tablePath[1])
     }
     if (pack) {
-      await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name === tablePath[2])
       if (entry) {
         return pack.getDocument(entry._id)
