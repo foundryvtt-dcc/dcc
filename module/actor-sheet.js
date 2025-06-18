@@ -6,7 +6,8 @@ import SavingThrowConfig from './saving-throw-config.js'
 import EntityImages from './entity-images.js'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
-const { TextEditor } = foundry.applications.ux
+// eslint-disable-next-line no-unused-vars
+const { TextEditor, DragDrop } = foundry.applications.ux
 const { ActorSheetV2 } = foundry.applications.sheets
 // eslint-disable-next-line no-unused-vars
 const { ApplicationTabsConfiguration } = foundry.applications.types
@@ -509,7 +510,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'hit-dice':
+      case 'hitDice':
         dragData = {
           type: 'Hit Dice',
           actorId,
@@ -546,7 +547,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'luck-die':
+      case 'luckDie':
         dragData = {
           type: 'Luck Die',
           actorId,
@@ -556,7 +557,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'spell-check':
+      case 'spellCheck':
         dragData = {
           type: 'Spell Check',
           actorId,
@@ -566,7 +567,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'attack-bonus':
+      case 'attackBonus':
         dragData = {
           type: 'Attack Bonus',
           actorId,
@@ -576,7 +577,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'action-dice':
+      case 'actionDice':
         dragData = {
           type: 'Action Dice',
           actorId,
@@ -586,7 +587,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'disapproval-range':
+      case 'disapprovalRange':
         dragData = {
           type: 'Apply Disapproval',
           actorId,
@@ -594,7 +595,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'disapproval-table':
+      case 'disapprovalTable':
         dragData = {
           type: 'Roll Disapproval',
           actorId,
