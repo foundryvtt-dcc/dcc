@@ -38,6 +38,18 @@ async function hasRequiredFiles (repoPath) {
   return existsSync(moduleJsonPath) && existsSync(welcomeHtmlPath)
 }
 
+async function checkModuleJsonExists (repoName) {
+  try {
+    // Check if module.json exists in the repository
+    const { stdout } = await execAsync(
+      `gh api repos/${ORG_NAME}/${repoName}/contents/module.json --jq '.name'`
+    )
+    return stdout.trim() === 'module.json'
+  } catch {
+    return false
+  }
+}
+
 async function isGitRepo (path) {
   try {
     await execAsync('git rev-parse --git-dir', { cwd: path })
@@ -110,7 +122,7 @@ async function cloneOrUpdateRepo (repo) {
       console.log(`Directory exists but is not a git repo: ${repo.name}. Removing and cloning fresh...`)
       rmSync(repoPath, { recursive: true, force: true })
       try {
-        await execAsync(`git clone ${repo.sshUrl} ${repoPath}`)
+        await execAsync(`git clone --progress ${repo.sshUrl} ${repoPath}`)
       } catch (error) {
         console.error(`Error cloning ${repo.name}:`, error.message)
         return null
@@ -119,7 +131,7 @@ async function cloneOrUpdateRepo (repo) {
   } else {
     console.log(`Cloning repository: ${repo.name}`)
     try {
-      await execAsync(`git clone ${repo.sshUrl} ${repoPath}`)
+      await execAsync(`git clone --progress ${repo.sshUrl} ${repoPath}`)
     } catch (error) {
       console.error(`Error cloning ${repo.name}:`, error.message)
       return null
@@ -172,6 +184,55 @@ async function createBranchAndCopyFiles (repoPath, repoName) {
       } else {
         console.warn(`Source file not found: ${sourcePath}`)
       }
+    }
+
+    // Update lang/en.json file
+    const langFilePath = join(repoPath, 'lang/en.json')
+    if (existsSync(langFilePath)) {
+      console.log(`Checking lang/en.json in ${repoName}...`)
+      let langContent = readFileSync(langFilePath, 'utf8')
+      let langUpdated = false
+      let changesApplied = []
+      
+      // Replace DoNotShow with ShowWelcomeDialogLabel
+      if (langContent.includes('"DoNotShow": "Do not show this message on startup"')) {
+        langContent = langContent.replace(
+          '"DoNotShow": "Do not show this message on startup"',
+          '"ShowWelcomeDialogLabel": "Show this message on startup"'
+        )
+        langUpdated = true
+        changesApplied.push('DoNotShow → ShowWelcomeDialogLabel')
+      }
+      
+      // Replace DoNotShowHint with ShowWelcomeDialogHint
+      if (langContent.includes('"DoNotShowHint": "Do not show this welcome dialog again until it is re-enabled in the Module Settings dialog."')) {
+        langContent = langContent.replace(
+          '"DoNotShowHint": "Do not show this welcome dialog again until it is re-enabled in the Module Settings dialog."',
+          '"ShowWelcomeDialogHint": "Show this welcome dialog again until it is re-enabled in the Module Settings dialog."'
+        )
+        langUpdated = true
+        changesApplied.push('DoNotShowHint → ShowWelcomeDialogHint')
+      }
+      
+      // Replace h2 tags with h3 tags
+      if (langContent.includes('<h2>') || langContent.includes('</h2>')) {
+        langContent = langContent.replace(/<h2>/g, '<h3>')
+        langContent = langContent.replace(/<\/h2>/g, '</h3>')
+        langUpdated = true
+        changesApplied.push('h2 tags → h3 tags')
+      }
+      
+      if (langUpdated) {
+        console.log(`✓ Updated lang/en.json in ${repoName}:`)
+        changesApplied.forEach(change => console.log(`  - ${change}`))
+        writeFileSync(langFilePath, langContent, 'utf8')
+        await execAsync('git add lang/en.json', { cwd: repoPath })
+        filesChanged = true
+      } else {
+        console.log(`lang/en.json is already up to date in ${repoName}`)
+      }
+    } else {
+      console.log(`No lang/en.json file found in ${repoName}`)
     }
 
     // Update module.json to change maximum version from 12 to 13
@@ -240,6 +301,14 @@ async function main () {
     // Process each repository
     for (const repo of repos) {
       console.log(`\n--- Processing ${repo.name} ---`)
+      
+      // Check if module.json exists before cloning
+      const hasModuleJson = await checkModuleJsonExists(repo.name)
+      if (!hasModuleJson) {
+        console.log(`Skipping ${repo.name} - no module.json found`)
+        continue
+      }
+      
       const repoPath = await cloneOrUpdateRepo(repo)
 
       if (repoPath && await hasRequiredFiles(repoPath)) {
