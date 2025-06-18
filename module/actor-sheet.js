@@ -368,8 +368,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (this.actor.system.class) {
       const context = { relativeTo: this.document, secrets: this.document.isOwner }
       const corruption = this.actor.system.class.corruption || ''
-      console.log('Corruption', corruption)
-
       return await TextEditor.enrichHTML(corruption, context)
     }
     return ''
