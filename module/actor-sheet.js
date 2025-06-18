@@ -1020,8 +1020,55 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return this.object.update(formData)
   }
 
+  /**
+   * Create drag-and-drop workflow handlers for this Application
+   * @returns {DragDrop[]} An array of DragDrop handlers
+   * @private
+   */
   static #createDragDropHandlers () {
-    console.log('DCCActorSheet#_createDragDropHandlers')
+    return [{
+      dragSelector: '.ability-name, .init, .hd, .save, .party-draggable, .skill-check, .luck-die, .spell-check, .spell-draggable, .attack-bonus, .action-dice, .weapon-draggable, .item-draggable, .disapproval-range, .disapproval-table, label[for*=".value"], label[for*="system.saves"], label[for*="system.attributes.init.value"], label[for*="system.class.luckDie"], label[for*="system.attributes.actionDice.value"], label[for="system.abilities.lck.mod"], label[for*="system.attributes.hd.value"]',
+      dropSelector: '.item-list',
+      permissions: {
+        dragstart: this.prototype._canDragStart.bind(this),
+        drop: this.prototype._canDragDrop.bind(this)
+      },
+      callbacks: {
+        dragstart: this.prototype._onDragStart.bind(this),
+        drop: this.prototype._onDrop.bind(this)
+      }
+    }]
+  }
+
+  /**
+   * Check if drag start is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragStart (selector) {
+    return this.document.isOwner && this.isEditable
+  }
+
+  /**
+   * Check if drag/drop is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragDrop (selector) {
+    return this.document.isOwner && this.isEditable
+  }
+
+  /**
+   * Handle drop events
+   * @param {DragEvent} event
+   * @returns {Promise<boolean|void>}
+   */
+  async _onDrop (event) {
+    const data = foundry.applications.ux.TextEditor.getDragEventData(event)
+    if (!data) return false
+
+    // Handle different drop types - delegate to base class
+    return super._onDrop?.(event)
   }
 
   // Need to Make the Party Draggable Draggable
