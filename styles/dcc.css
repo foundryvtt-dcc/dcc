@@ -295,6 +295,9 @@
   grid-column-end: span 2;
   margin: 5px 0 5px 0;
 }
+.dcc .heading-font {
+  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+}
 .dcc label {
   display: grid;
   font-family: "Cooper Black", "Palatino Linotype", serif;

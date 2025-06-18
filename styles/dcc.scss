@@ -102,6 +102,10 @@ $font-awesome: 'Font Awesome 6 Pro';
     margin: 5px 0 5px 0;
   }
 
+  .heading-font {
+    font-family: $duvall;
+  }
+
   label {
     display: grid;
     font-family: $cooper-black;

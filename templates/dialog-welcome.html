@@ -1,19 +1,19 @@
-<aside>
+<aside class="data-font">
   <div>
-    <h2>{{{heading}}}</h2>
+    <h3 class="heading-font mt-8">{{{heading}}}</h3>
     {{{info}}}
   </div>
   <div class="grid-just-center">
     <img style="border:0" src="{{{logoURL}}}" alt="{{{logoAlt}}}" width="337px" height="200px"/>
   </div>
-  <div>
+  <div class="mt-8">
     {{{credits}}}
   </div>
-  <div>
+  <div style="margin-top: 25px;">
     {{{copyright}}}
   </div>
   <div class="mt-8 mb-8 grid-tpl-max-auto">
-    <input name="showWelcomeDialog" id="showWelcomeDialog" type="checkbox" data-action="doNotShow" title="{{showWelcomeDialogLabelHint}}" {{checked showWelcomeDialog}}></input>
+    <input name="showWelcomeDialog" id="showWelcomeDialog" type="checkbox" data-action="doNotShow" title="{{showWelcomeDialogLabelHint}}" {{checked showWelcomeDialog}}>
     <label for="showWelcomeDialog" style="margin-left: 8px; margin-top: 1px;" title="{{showWelcomeDialogLabelHint}}">{{{showWelcomeDialogLabel}}}</label>
   </div>
   <footer class="mt-8 grid-just-center">
@@ -28,7 +28,7 @@
       </button>
     {{/if}}
     {{#if closeLabel}}
-      <button type="submit" data-action="close">
+      <button type="submit" data-action="close" class="mt-8">
         <i class="fas fa-xmark"></i>{{{closeLabel}}}
       </button>
     {{/if}}
