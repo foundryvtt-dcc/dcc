@@ -540,6 +540,10 @@ a.inline-roll {
   font-family: "Cooper Black", "Palatino Linotype", serif;
 }
 
+.chat-message {
+  background-image: url("/ui/parchment.jpg");
+}
+
 .chat-message .table-draw .table-results .table-result .result-text {
   line-height: 20px;
 }
@@ -566,13 +570,24 @@ a.inline-roll {
   font-size: 18px;
   margin-top: 8px;
 }
+.table-draw .table-results {
+  list-style: none;
+  margin-top: 12px;
+  padding: 0;
+}
+.table-draw .table-results .table-result {
+  display: grid;
+  grid-template-columns: 20px auto;
+  column-gap: 5px;
+  padding: 0;
+}
 .table-draw .table-results .table-result .result-range {
-  align-items: center;
-  display: flex;
-  flex: 0 0 20px;
-  flex-direction: column;
-  justify-content: space-between;
+  padding-top: 5px;
+  justify-items: center;
   margin-right: 3px;
+}
+.table-draw .table-results .table-result .result-range .spell-shift-down, .table-draw .table-results .table-result .result-range .spell-shift-up {
+  cursor: pointer;
 }
 .table-draw .spell-check-mod {
   background: rgba(0, 0, 0, 0.1);
