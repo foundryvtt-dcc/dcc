@@ -476,69 +476,181 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _onDragStart (event, target) {
     let dragData = null
 
-    // Handle the various draggable elements on the sheet
+    // Get the drag action from the data attribute
+    const dragAction = event.target.dataset.dragAction
+    if (!dragAction) return
+
+    // Get common data
+    const actorId = this.actor.id
     const classes = event.target.classList
-    const labelFor = event.target.getAttribute('for') || ''
 
-    if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
-      // Normal ability rolls and DCC d20 roll under luck rolls
-      const rollUnder = (event.target.htmlFor === 'system.abilities.lck.value')
-      const abilityId = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
-      dragData = {
-        type: 'Ability',
-        actorId: this.actor.id,
-        data: {
-          abilityId,
-          rollUnder
+    switch (dragAction) {
+      case 'ability':
+        {
+          const abilityId = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
+          const labelFor = event.target.getAttribute('for') || ''
+          const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
+          dragData = {
+            type: 'Ability',
+            actorId,
+            data: {
+              abilityId,
+              rollUnder
+            }
+          }
         }
-      }
-    }
+        break
 
-    if (target.htmlFor === 'system.abilities.lck.mod') {
-      // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
-      dragData = {
-        type: 'Ability',
-        actorId: this.actor.id,
-        data: {
-          abilityId: 'lck',
-          rollUnder: false
+      case 'initiative':
+        dragData = {
+          type: 'Initiative',
+          actorId,
+          data: {}
         }
-      }
-    }
+        break
 
-    if (classes.contains('init') || labelFor === 'system.attributes.init.value') {
-      dragData = {
-        type: 'Initiative',
-        actorId: this.actor.id,
-        data: {}
-      }
-    }
-
-    if (classes.contains('hd') || labelFor === 'system.attributes.hd.value') {
-      dragData = {
-        type: 'Hit Dice',
-        actorId: this.actor.id,
-        data: {
-          dice: this.actor.system.attributes.hitDice.value
+      case 'hit-dice':
+        dragData = {
+          type: 'Hit Dice',
+          actorId,
+          data: {
+            dice: this.actor.system.attributes.hitDice.value
+          }
         }
-      }
+        break
+
+      case 'save':
+        {
+          const saveId = DCCActorSheet.#findDataset(event.currentTarget, 'save')
+          dragData = {
+            type: 'Save',
+            actorId,
+            data: saveId
+          }
+        }
+        break
+
+      case 'skill':
+        {
+          const skillId = DCCActorSheet.#findDataset(event.currentTarget, 'skill')
+          const actorSkill = this.actor.system.skills[skillId]
+          const skillName = actorSkill ? actorSkill.label : skillId
+          dragData = {
+            type: 'Skill',
+            actorId,
+            data: {
+              skillId,
+              skillName
+            }
+          }
+        }
+        break
+
+      case 'luck-die':
+        dragData = {
+          type: 'Luck Die',
+          actorId,
+          data: {
+            die: this.actor.system.class.luckDie
+          }
+        }
+        break
+
+      case 'spell-check':
+        dragData = {
+          type: 'Spell Check',
+          actorId,
+          data: {
+            ability: DCCActorSheet.#findDataset(event.currentTarget, 'ability')
+          }
+        }
+        break
+
+      case 'attack-bonus':
+        dragData = {
+          type: 'Attack Bonus',
+          actorId,
+          data: {
+            die: this.actor.system.details.attackBonus
+          }
+        }
+        break
+
+      case 'action-dice':
+        dragData = {
+          type: 'Action Dice',
+          actorId,
+          data: {
+            die: this.actor.system.attributes.actionDice.value || '1d20'
+          }
+        }
+        break
+
+      case 'disapproval-range':
+        dragData = {
+          type: 'Apply Disapproval',
+          actorId,
+          data: {}
+        }
+        break
+
+      case 'disapproval-table':
+        dragData = {
+          type: 'Roll Disapproval',
+          actorId,
+          data: {}
+        }
+        break
+
+      case 'weapon':
+        {
+          const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
+          const weapon = this.actor.items.get(itemId)
+          if (weapon) {
+            dragData = Object.assign(
+              weapon.toDragData(),
+              {
+                dccType: 'Weapon',
+                actorId,
+                data: weapon,
+                dccData: {
+                  weapon,
+                  backstab: classes.contains('backstab-button')
+                }
+              }
+            )
+          }
+        }
+        break
+
+      case 'item':
+        {
+          const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
+          const item = this.actor.items.get(itemId)
+          if (item) {
+            dragData = Object.assign(
+              item.toDragData(),
+              {
+                dccType: 'Item',
+                actorId,
+                data: item,
+                dccData: {
+                  item
+                }
+              }
+            )
+          }
+        }
+        break
     }
 
-    if (classes.contains('save') || labelFor.includes('system.saves')) {
-      dragData = {
-        type: 'Save',
-        actorId: this.actor.id,
-        data: DCCActorSheet.#findDataset(event.currentTarget, 'save')
-      }
-    }
-
-    if (classes.contains('party-draggable')) {
-      const actorId = DCCActorSheet._findDataset(event.currentTarget, 'actorId')
+    // Handle legacy drag classes for party draggable and other elements that haven't been updated yet
+    if (!dragData && classes.contains('party-draggable')) {
+      const actorId = DCCActorSheet.#findDataset(event.currentTarget, 'actorId')
       const partyActor = game.actors.get(actorId)
       if (partyActor) {
         if (classes.contains('ability-label')) {
-          // Normal ability rolls and DCC d20 roll under luck rolls
-          const abilityId = DCCActorSheet._findDataset(event.currentTarget, 'ability')
+          const abilityId = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
           const rollUnder = (abilityId === 'lck')
           dragData = {
             type: 'Ability',
@@ -549,14 +661,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             }
           }
         } else if (classes.contains('save-label')) {
-          const saveId = DCCActorSheet._findDataset(event.currentTarget, 'save')
+          const saveId = DCCActorSheet.#findDataset(event.currentTarget, 'save')
           dragData = {
             type: 'Save',
             actorId,
             data: saveId
           }
         } else if (classes.contains('weapon')) {
-          const itemId = DCCActorSheet._findDataset(event.currentTarget, 'itemId')
+          const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
           const weapon = partyActor.items.get(itemId)
           dragData = Object.assign(
             weapon.toDragData(),
@@ -571,129 +683,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             }
           )
         }
-      }
-    }
-
-    if (classes.contains('skill-check')) {
-      const skillId = DCCActorSheet.#findDataset(event.currentTarget, 'skill')
-      const actorSkill = this.actor.system.skills[skillId]
-      const skillName = actorSkill ? actorSkill.label : skillId
-      dragData = {
-        type: 'Skill',
-        actorId: this.actor.id,
-        data: {
-          skillId,
-          skillName
-        }
-      }
-    }
-
-    if (classes.contains('luck-die')) {
-      dragData = {
-        type: 'Luck Die',
-        actorId: this.actor.id,
-        data: {
-          die: this.actor.system.class.luckDie
-        }
-      }
-    }
-
-    if (classes.contains('spell-check')) {
-      dragData = {
-        type: 'Spell Check',
-        actorId: this.actor.id,
-        data: {
-          ability: DCCActorSheet.#findDataset(event.currentTarget, 'ability')
-        }
-      }
-    }
-
-    if (classes.contains('spell-draggable')) {
-      const spell = DCCActorSheet.#findDataset(event.currentTarget, 'spell')
-      const spellItem = this.actor.items.find(i => i.name === spell)
-      let img
-      if (spellItem) {
-        img = spellItem.img
-      }
-      dragData = {
-        type: 'Item',
-        dccType: 'Spell Check',
-        actorId: this.actor.id,
-        data: spellItem,
-        dccData: {
-          ability: DCCActorSheet.#findDataset(event.currentTarget, 'ability'),
-          spell,
-          img
-        }
-      }
-    }
-
-    if (classes.contains('attack-bonus')) {
-      dragData = {
-        type: 'Attack Bonus',
-        actorId: this.actor.id,
-        data: {
-          die: this.actor.system.details.attackBonus
-        }
-      }
-    }
-
-    if (classes.contains('action-dice')) {
-      dragData = {
-        type: 'Action Dice',
-        actorId: this.actor.id,
-        data: {
-          die: this.actor.system.attributes.actionDice.value || '1d20'
-        }
-      }
-    }
-
-    if (classes.contains('weapon-draggable')) {
-      const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-      const weapon = this.actor.items.get(itemId)
-      dragData = Object.assign(
-        weapon.toDragData(),
-        {
-          dccType: 'Weapon',
-          actorId: this.actor.id,
-          data: weapon,
-          dccData: {
-            weapon,
-            backstab: classes.contains('backstab-button')
-          }
-        }
-      )
-    }
-
-    if (classes.contains('item-draggable')) {
-      const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-      const item = this.actor.items.get(itemId)
-      dragData = Object.assign(
-        item.toDragData(),
-        {
-          dccType: 'Item',
-          actorId: this.actor.id,
-          data: item,
-          dccData: {
-            item
-          }
-        }
-      )
-    }
-
-    if (classes.contains('disapproval-range')) {
-      dragData = {
-        type: 'Apply Disapproval',
-        actorId: this.actor.id,
-        data: {}
-      }
-    }
-
-    if (classes.contains('disapproval-table')) {
-      dragData = {
-        type: 'Roll Disapproval',
-        actorId: this.actor.id,
-        data: {}
       }
     }
 
@@ -1027,7 +1016,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static #createDragDropHandlers () {
     return [{
-      dragSelector: '.ability-name, .init, .hd, .save, .party-draggable, .skill-check, .luck-die, .spell-check, .spell-draggable, .attack-bonus, .action-dice, .weapon-draggable, .item-draggable, .disapproval-range, .disapproval-table, label[for*=".value"], label[for*="system.saves"], label[for*="system.attributes.init.value"], label[for*="system.class.luckDie"], label[for*="system.attributes.actionDice.value"], label[for="system.abilities.lck.mod"], label[for*="system.attributes.hd.value"]',
+      dragSelector: '[data-drag-action]',
       dropSelector: '.item-list',
       permissions: {
         dragstart: this.prototype._canDragStart.bind(this),

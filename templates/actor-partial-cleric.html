@@ -42,7 +42,7 @@
 
           <div class="group-separator"></div>
 
-          <div class="label-font spell-check rollable mr-3 grid-col-span-2 center" data-action="rollSpellCheck">
+          <div class="label-font spell-check rollable mr-3 grid-col-span-2 center" data-action="rollSpellCheck" data-drag-action="spell-check">
             <div title="{{localize 'DCC.RollSpellCheckHint'}}"><i class="fas fa-dice-d20"></i> {{localize "DCC.RollSpellCheck"}}</div>
           </div>
         </div>
@@ -54,26 +54,26 @@
       <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
           <label class="skill-check rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}"
-                 data-action="rollSkillCheck">
+                 data-action="rollSkillCheck" data-drag-action="skill">
             {{localize "DCC.DivineAid"}}
           </label>
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.divineAid.value}}</div>
         </div>
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
-          <label class="skill-check rollable" data-action="rollSkillCheck" title="{{localize 'DCC.TurnUnholyHint'}}">
+          <label class="skill-check rollable" data-action="rollSkillCheck" data-drag-action="skill" title="{{localize 'DCC.TurnUnholyHint'}}">
             {{localize "DCC.TurnUnholy"}}
           </label>
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.turnUnholy.value}}</div>
         </div>
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
-          <label class="skill-check rollable" data-action="rollSkillCheck" title="{{localize 'DCC.LayOnHandsHint'}}">
+          <label class="skill-check rollable" data-action="rollSkillCheck" data-drag-action="skill" title="{{localize 'DCC.LayOnHandsHint'}}">
             {{localize "DCC.LayOnHands"}}
           </label>
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.layOnHands.value}}</div>
         </div>
         <div class="group-separator"></div>
         <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-          <label class="disapproval-range rollable" for="system.class.disapproval" title="{{localize 'DCC.DisapprovalRangeHint'}}">
+          <label class="disapproval-range rollable" for="system.class.disapproval" title="{{localize 'DCC.DisapprovalRangeHint'}}" data-drag-action="disapproval-range">
             {{localize "DCC.DisapprovalRange"}}
           </label>
           <select class="number" name="system.class.disapproval" id="system.class.disapproval">
@@ -81,7 +81,7 @@
           </select>
         </div>
         <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
-          <label class="disapproval-table rollable" for="system.class.disapprovalTable" title="{{localize 'DCC.DisapprovalTableHint'}}">
+          <label class="disapproval-table rollable" for="system.class.disapprovalTable" title="{{localize 'DCC.DisapprovalTableHint'}}" data-drag-action="disapproval-table">
             {{localize "DCC.DisapprovalTable"}}
           </label>
           <select id="system.class.disapprovalTable" name="system.class.disapprovalTable">

@@ -21,11 +21,11 @@
         <li class="item spell-item spell-draggable grid-col-span-7" data-item-id="{{item._id}}"
             data-ability="int" data-die="{{item.spellCheck.die}}"
             data-bonus="{{item.spellCheck.value}}"
-            data-spell="{{item.name}}">
+            data-spell="{{item.name}}" data-drag-action="item">
           <div class="item-image">
-            <img class="spell-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="24" height="24">
+            <img class="spell-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="24" height="24" data-drag-action="item">
           </div>
-          <div class="rollable spell-item-button" data-action="rollSpellCheck">&nbsp;</div>
+          <div class="rollable spell-item-button" data-action="rollSpellCheck" data-drag-action="spell-check">&nbsp;</div>
           <div>{{item.system.level}}</div>
           <div class="item-name">{{item.name}}</div>
           <div class="item-notes">

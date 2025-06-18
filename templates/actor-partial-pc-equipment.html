@@ -9,9 +9,9 @@
       <img class="weapon-draggable" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}"
            width="22" height="22">
       <div class="attack-buttons">
-        <div class="rollable weapon-button weapon-draggable" data-action="rollWeaponAttack" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
+        <div class="rollable weapon-button weapon-draggable" data-action="rollWeaponAttack" data-drag-action="weapon" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
         {{#if canBackstab}}
-          <div class="rollable backstab-button weapon-draggable" data-action="rollWeaponAttack">&nbsp;</div>
+          <div class="rollable backstab-button weapon-draggable" data-action="rollWeaponAttack" data-drag-action="weapon">&nbsp;</div>
         {{/if}}
       </div>
       <input class="weapon-name" type="text"

@@ -17,9 +17,9 @@
 
       <li class="item skill grid-col-span-6{{#if skill.system.description.summary}} skill-with-summary{{/if}}" data-item-id="{{skill._id}}"
           data-skill="{{skill.name}}">
-          <div class="skill-check rollable" data-action="rollSkillCheck"><img src="{{skill.img}}" alt="{{skill.name}}" title="{{skill.name}}" width="24" height="24"/>
+          <div class="skill-check rollable" data-action="rollSkillCheck" data-drag-action="skill"><img src="{{skill.img}}" alt="{{skill.name}}" title="{{skill.name}}" width="24" height="24"/>
 </div>
-        <label class="skill-check skill-name rollable" data-action="rollSkillCheck">{{skill.name}}</label>
+        <label class="skill-check skill-name rollable" data-action="rollSkillCheck" data-drag-action="skill">{{skill.name}}</label>
         <div>
           {{#if skill.system.config.useDie}}
             {{#if skill.system.die}}
