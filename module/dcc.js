@@ -764,17 +764,13 @@ async function createDCCMacro (data, slot) {
     let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command))
     if (!macro) {
       macro = await Macro.create({
-        name: `${macroData.name}-${game.user.name}`,
+        name: `${macroData.name}-${data.actorId}`,
         type: 'script',
         img: macroData.img,
         command: macroData.command,
         flags: { 'dcc.itemMacro': true }
       })
     }
-    // Set permissions so all players can execute the macro
-    const permissions = macro.ownership
-    permissions.default = 2 // 2 = Observer, allows execution
-    macro.update({ ownership: permissions })
 
     // Assign the macro to the hotbar slot
     await game.user.assignHotbarMacro(macro, slot)
