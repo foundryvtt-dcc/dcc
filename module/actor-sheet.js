@@ -79,11 +79,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     },
     character: {
       id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+      template: 'systems/dcc/templates/actor-partial-npc-common.html'
     },
     equipment: {
       id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+      template: 'systems/dcc/templates/actor-partial-npc-equipment.html'
     },
     skills: {
       id: 'skills',

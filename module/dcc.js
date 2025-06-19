@@ -6,6 +6,7 @@
 
 // Import Modules
 import DCCActor from './actor.js'
+import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
 import DCCCombatant from './combatant.js'
 import DCCItem from './item.js'
@@ -66,11 +67,19 @@ Hooks.once('init', async function () {
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheetV2)
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
+  
+  // NPC sheets - DCCActorSheet as default, with Generic as option
+  Actors.registerSheet('dcc', DCCActorSheet, {
     types: ['NPC'],
-    label: 'DCC.DCCActorSheetGeneric',
+    label: 'DCC.DCCActorSheet',
     makeDefault: true
   })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
+    types: ['NPC'],
+    label: 'DCC.DCCActorSheetGeneric'
+  })
+  
+  // PC sheets - class-specific sheets only
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
     types: ['Player'],
     label: 'DCC.DCCActorSheetCleric'
@@ -100,7 +109,7 @@ Hooks.once('init', async function () {
     label: 'DCC.DCCActorSheetElf'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetGeneric'
   })
   Items.unregisterSheet('core', ItemSheetV2)

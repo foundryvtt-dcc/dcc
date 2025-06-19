@@ -15,6 +15,12 @@ const { TextEditor } = foundry.applications.ux
  */
 class DCCActorSheetCleric extends DCCActorSheet {
   /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
+  /** @inheritDoc */
   static CLASS_PARTS = {
     clericSpells: {
       id: 'clericSpells',
@@ -66,6 +72,12 @@ class DCCActorSheetCleric extends DCCActorSheet {
  */
 class DCCActorSheetThief extends DCCActorSheet {
   /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
+  /** @inheritDoc */
   static CLASS_PARTS = {
     thief: {
       id: 'thief',
@@ -112,6 +124,12 @@ class DCCActorSheetThief extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetHalfling extends DCCActorSheet {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
   /**
    * Parts specific to this class
    **/
@@ -162,6 +180,12 @@ class DCCActorSheetHalfling extends DCCActorSheet {
  */
 class DCCActorSheetWarrior extends DCCActorSheet {
   /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
+  /** @inheritDoc */
   static CLASS_PARTS = {
     warrior: {
       id: 'warrior',
@@ -206,6 +230,12 @@ class DCCActorSheetWarrior extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetWizard extends DCCActorSheet {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
   /** @inheritDoc */
   static CLASS_PARTS = {
     wizard: {
@@ -259,6 +289,12 @@ class DCCActorSheetWizard extends DCCActorSheet {
  */
 class DCCActorSheetDwarf extends DCCActorSheet {
   /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
+  /** @inheritDoc */
   static CLASS_PARTS = {
     dwarf: {
       id: 'dwarf',
@@ -304,6 +340,12 @@ class DCCActorSheetDwarf extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetElf extends DCCActorSheet {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
   /** @inheritDoc */
   static CLASS_PARTS = {
     elf: {
@@ -357,6 +399,12 @@ class DCCActorSheetElf extends DCCActorSheet {
  */
 class DCCActorSheetGeneric extends DCCActorSheet {
   /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
+  /** @inheritDoc */
   static PARTS = {
     tabs: {
       id: 'tabs',
@@ -368,11 +416,11 @@ class DCCActorSheetGeneric extends DCCActorSheet {
     },
     character: {
       id: 'character',
-      template: 'systems/dcc/templates/actor-partial-npc-common.html'
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
     },
     equipment: {
       id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-npc-equipment.html'
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
     },
     skills: {
       id: 'skills',

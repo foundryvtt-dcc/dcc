@@ -23,11 +23,9 @@ class DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @inheritDoc */
-  get PARTS () {
-    return {
-      form: {
-        template: this._getTemplate()
-      }
+  static PARTS = {
+    form: {
+      template: null // Will be set dynamically
     }
   }
 
@@ -46,22 +44,11 @@ class DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /* -------------------------------------------- */
-
-  /**
-   * Get the document being configured
-   * @type {Item}
-   */
-  get document () {
-    return this.options.document
-  }
-
-  /**
-   * Get the window title including the item name
-   * @type {String}
-   */
-  get title () {
-    return `${this.document.name}: ${game.i18n.localize('DCC.ItemConfig')}`
+  /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
+    parts.form.template = this._getTemplate()
+    return parts
   }
 
   /* -------------------------------------------- */
@@ -73,7 +60,7 @@ class DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _prepareContext (options = {}) {
     const context = await super._prepareContext(options)
-    const item = this.document
+    const item = this.options.document
 
     // Copy item data to context
     Object.assign(context, item)

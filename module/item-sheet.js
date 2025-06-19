@@ -30,7 +30,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       resizable: true,
       controls: [
         {
-          action: 'configureActor',
+          action: 'configureItem',
           icon: 'fas fa-code',
           label: 'DCC.ConfigureSheet',
           ownership: 'OWNER'
@@ -43,7 +43,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       rollMercurialMagic: this.#rollMercurialMagic,
       rollValue: this.#rollValue,
       convertUpward: this.#convertUpward,
-      convertDownward: this.#convertDownward
+      convertDownward: this.#convertDownward,
+      configureItem: this.#configureItem
     },
     dragDrop: this.#createDragDropHandlers
   }
@@ -434,10 +435,12 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   /**
    * Display item specific configuration settings
-   * @param {Event} event   The originating click event
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @private
    */
-  _onConfigureItem (event) {
+  static async #configureItem (event, target) {
     event.preventDefault()
     new DCCItemConfig({
       document: this.document,
