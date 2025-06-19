@@ -6,7 +6,7 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   static DEFAULT_OPTIONS = {
     id: 'fleeting-luck',
-    classes: ['dcc', 'sheet', 'fleeting-luck', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'fleeting-luck', 'themed'],
     position: {
       width: 400,
       height: 'fit-content'

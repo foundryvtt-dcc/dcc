@@ -1,8 +1,8 @@
 {{!-- Class Tab --}}
 <section class="tab {{tabs.cleric.id}} {{tabs.cleric.cssClass}}" data-tab="{{tabs.cleric.id}}" data-group="{{tabs.cleric.group}}">
   <div class="grid-col-span-12 grid-container grid-row-gap-5 grid-col-gap-5 mb-8">
-    <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="per">
-      <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
+    <div class="grid-col-span-5 grid-row-span-2 box-border" data-ability="per">
+      <div class="box-title">{{localize "DCC.SpellCheck"}}</div>
       <div class="grid-align-center p-5">
         <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
           {{ifThen system.class.spellCheckOverrideDie system.class.spellCheckOverrideDie
@@ -49,8 +49,8 @@
       </div>
     </div>
 
-    <div class="grid-col-span-7 dark-border">
-      <div class="dark-title" style="">{{localize "DCC.ClericAbilities"}}</div>
+    <div class="grid-col-span-7 box-border">
+      <div class="box-title" style="">{{localize "DCC.ClericAbilities"}}</div>
       <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
         <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
           <label class="skill-check rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}"
@@ -103,14 +103,10 @@
       <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
     {{/dccPackExists}}
   </div>
-  <div class="tab-body grid-container">
-    <div class="dark-border grid-col-span-12">
-
-    </div>
-
+  <div class="grid-container">
     <div class="grid-col-span-12 cleric-table">
-      <table class="dark-border">
-        <thead class="dark-title">
+      <table class="box-border">
+        <thead class="box-title">
         <tr>
           <th>Lay On Hands (alignment step)</th>
           <th>12</th>
@@ -145,8 +141,8 @@
       </table>
     </div>
     <div class="grid-col-span-12 cleric-table">
-      <table class="dark-border">
-        <thead class="dark-title">
+      <table class="box-border">
+        <thead class="box-title">
         <tr>
           <th>Condition</th>
           <th>Dice</th>

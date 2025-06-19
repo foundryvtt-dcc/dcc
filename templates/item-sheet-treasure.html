@@ -8,8 +8,8 @@
       <input id="name" name="name" value="{{document.name}}" placeholder="Name" autocomplete="off" size="25">
     </div>
 
-    <div class="dark-border grid-col-span-3">
-      <div class="dark-title">{{localize "DCC.SettingsLabel"}}</div>
+    <div class="box-border grid-col-span-3">
+      <div class="box-title">{{localize "DCC.SettingsLabel"}}</div>
       <div class="box-inner">
         <div class="grid-col-span-2 grid-tpl-max-auto grid-align-just-center" title="{{localize " DCC.AsCoinsHint
             "}}">
@@ -30,21 +30,18 @@
 
     {{> systems/dcc/templates/item-sheet-partial-values.html }}
 
-    <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
-      <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+    <div class="box-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+      <div class="box-title">{{localize "DCC.DescriptionPreview"}}</div>
       <div class="box-inner description">
         {{{descriptionHTML}}}
       </div>
     </div>
-    <div class="dark-border grid-col-span-3" style="max-height: 125px;">
-      <div class="dark-title">{{localize "DCC.Image"}}</div>
+    <div class="box-border grid-col-span-3" style="max-height: 125px;">
+      <div class="box-title">{{localize "DCC.Image"}}</div>
       <div class="box-inner" style="padding-top: 5px;">
-        <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}"/>
+        <img src="{{document.img}}" data-action="editImage" data-field="img" alt="{{document.name}}" title="{{document.name}}"/>
       </div>
     </div>
-
-    <img src="systems/dcc/styles/images/SA-4-31-FCI-spots-4-Treasure-skull-magic-sword.webp" style="justify-self: center;"
-         class="grid-col-span-12" width="181" height="80">
   </div>
 
   {{> systems/dcc/templates/item-sheet-partial-judge-description.html }}

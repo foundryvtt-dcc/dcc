@@ -1,6 +1,6 @@
 <!-- Item Values -->
-<div class="grid-col-span-12 dark-border">
-  <div class="dark-title">{{localize "DCC.ItemValues"}}</div>
+<div class="grid-col-span-12 box-border">
+  <div class="box-title">{{localize "DCC.ItemValues"}}</div>
   <div class="box-inner">
     <div class="item-values">
       <div>
@@ -20,7 +20,7 @@
         <label for="system.value.ep">{{localize "DCC.CurrencyEP"}}</label>
         <input type="text" id="system.value.ep" name="system.value.ep" value="{{system.value.ep}}" data-dtype="String"/>
         {{#if allowConversions}}
-          <div class="conversions grid-just-center"">
+          <div class="conversions grid-just-center">
             <div class="rollable left-arrow-button" data-currency="ep" data-action="convertUpward">&nbsp;</div>
             <div class="rollable right-arrow-button" data-currency="ep" data-action="convertDownward">&nbsp;</div>
           </div>
@@ -30,7 +30,7 @@
         <label for="system.value.gp">{{localize "DCC.CurrencyGP"}}</label>
         <input type="text" id="system.value.gp" name="system.value.gp" value="{{system.value.gp}}" data-dtype="String"/>
         {{#if allowConversions}}
-          <div class="conversions grid-just-center"">
+          <div class="conversions grid-just-center">
             <div class="rollable left-arrow-button" data-currency="gp" data-action="convertUpward">&nbsp;</div>
             <div class="rollable right-arrow-button" data-currency="gp" data-action="convertDownward">&nbsp;</div>
           </div>

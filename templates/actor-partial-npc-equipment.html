@@ -6,7 +6,7 @@
       <input type="checkbox"
              name="itemUpdates.{{id}}.system.equipped"
              data-dtype="Boolean" {{checked armor.system.equipped}}/>
-      <img class="item-draggable" src="{{armor.img}}" title="{{armor.name}}" alt="{{armor.name}}" width="22"
+      <img class="item-draggable icon-filter" src="{{armor.img}}" title="{{armor.name}}" alt="{{armor.name}}" width="22"
            height="22">
       <input type="text"
              name="itemUpdates.{{id}}.name"
@@ -29,8 +29,8 @@
       </div>
     </li>
   {{/inline}}
-  <div class="dark-title">{{localize "DCC.Armor"}}</div>
-  <ol class="armor-list dark-border">
+  <div class="box-title">{{localize "DCC.Armor"}}</div>
+  <ol class="armor-list box-border">
     <li class="grid-col-span-8 armor-list-header">
       <div class="" title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
       <div></div>
@@ -64,7 +64,7 @@
   {{/inline}}
   {{#* inline "ItemRow"}}
     <li class="grid-col-span-5 item item-draggable" data-item-id="{{item._id}}">
-      <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22">
+      <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22">
       <div>{{item.name}}</div>
       <div>{{{item.system.description.summary}}}</div>
       <div><i class="fa-thin fa-up qty-increase"></i> {{item.system.quantity}} <i class="fa-thin fa-down qty-decrease"></i></div>
@@ -76,24 +76,24 @@
   {{/inline}}
 
   {{!-- Equipment --}}
-  <div class="dark-title">{{localize "DCC.Equipment"}}</div>
-  <ol class="item-list dark-border">
+  <div class="box-title">{{localize "DCC.Equipment"}}</div>
+  <ol class="item-list box-border">
     {{> ItemHeader type="equipment"}}
     {{#each equipment.equipment as |equipment id|}}
       {{> ItemRow item=equipment id=id}}
     {{/each}}
   </ol>
   {{!-- Ammunition --}}
-  <div class="dark-title">{{localize "DCC.Ammunition"}}</div>
-  <ol class="item-list dark-border">
+  <div class="box-title">{{localize "DCC.Ammunition"}}</div>
+  <ol class="item-list box-border">
     {{> ItemHeader type="ammunition"}}
     {{#each equipment.ammunition as |ammunition id|}}
       {{> ItemRow item=ammunition id=id}}
     {{/each}}
   </ol>
   {{!-- Mounts --}}
-  <div class="dark-title">{{localize "DCC.Mounts"}}</div>
-  <ol class="item-list dark-border">
+  <div class="box-title">{{localize "DCC.Mounts"}}</div>
+  <ol class="item-list box-border">
     {{> ItemHeader type="mount"}}
     {{#each equipment.mounts as |mount id|}}
       {{> ItemRow item=mount id=id}}
@@ -103,7 +103,7 @@
   {{!-- Treasure --}}
   {{#* inline "TreasureRow"}}
     <li class="grid-col-span-8 item item-draggable" data-item-id="{{item._id}}">
-      <img class="item-draggable" src="{{item.img}}" title="{{item.name}}" width="22" height="22"/>
+      <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22"/>
       <div>{{item.name}}</div>
       <div>{{item.value.pp}}</div>
       <div>{{item.value.ep}}</div>
@@ -116,8 +116,8 @@
       </div>
     </li>
   {{/inline}}
-  <div class="dark-title">{{localize "DCC.Treasure"}}</div>
-  <ol class="item-list item-list-currency dark-border">
+  <div class="box-title">{{localize "DCC.Treasure"}}</div>
+  <ol class="item-list item-list-currency box-border">
     <li class="grid-col-span-8 item-list-header">
       <div></div>
       <div>{{localize "DCC.Name"}}</div>
@@ -133,7 +133,7 @@
     </li>
     <li class="grid-col-span-8 item">
       <div>
-        <img src="systems/dcc/styles/images/game-icons-net/coins.svg" title="{{localize 'DCC.Funds'}}" width="22" height="22"/>
+        <img src="systems/dcc/styles/images/game-icons-net/coins.svg" class="icon-filter" title="{{localize 'DCC.Funds'}}" alt="{{localize 'DCC.Funds'}}" width="22" height="22"/>
       </div>
       <div>{{localize 'DCC.Funds'}}</div>
       <input type="text" name="system.currency.pp" placeholder="0"

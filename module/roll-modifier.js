@@ -263,7 +263,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'roll-modifier', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'roll-modifier'],
     tag: 'form',
     position: {
       width: 'auto',

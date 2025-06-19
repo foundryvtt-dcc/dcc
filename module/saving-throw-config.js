@@ -6,7 +6,7 @@ class SavingThrowConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   static DEFAULT_OPTIONS = {
     id: 'saving-throw-config',
-    classes: ['dcc', 'sheet', 'saving-throw-config', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'saving-throw-config'],
     position: {
       width: 270,
       height: 'fit-content'

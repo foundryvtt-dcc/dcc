@@ -49,7 +49,7 @@
 
     {{!-- Combat Basics --}}
     <div class="grid-col-span-7">
-      <div class="dark-title">Combat Basics</div>
+      <div class="box-title">Combat Basics</div>
       <div class="combat-basics grid-align-center h-100-19">
         {{!-- Action Dice --}}
         <label for="system.attributes.actionDice.value">{{localize "DCC.ActionDice"}}</label>
@@ -124,8 +124,8 @@
     </div>
 
     {{!-- Special --}}
-    <div class="dark-border grid-col-span-10">
-      <label class="dark-title" for="system.attributes.special.value">{{localize "DCC.Special"}}</label>
+    <div class="box-border grid-col-span-10">
+      <label class="box-title" for="system.attributes.special.value">{{localize "DCC.Special"}}</label>
       <div class="h-100-19 p-3">
         <textarea id="system.attributes.special.value"
                   name="system.attributes.special.value"
@@ -135,8 +135,8 @@
     </div>
 
     {{!-- Portrait --}}
-    <div class="dark-border grid-col-span-2 portrait">
-      <div class="dark-title">{{localize "DCC.Portrait"}}</div>
+    <div class="box-border grid-col-span-2 portrait">
+      <div class="box-title">{{localize "DCC.Portrait"}}</div>
       <div class="p-3 grid-align-just-center portrait-wrap">
         <img id="portrait" src="{{actor.img}}"
              data-action="editImage" data-field="img" height="48px" width="48px"
@@ -181,8 +181,8 @@
     {{/inline}}
 
     {{!-- Melee Weapons --}}
-    <div class="dark-border grid-col-span-12">
-      <div class="dark-title">{{localize "DCC.MeleeAttacks"}}</div>
+    <div class="box-border grid-col-span-12">
+      <div class="box-title">{{localize "DCC.MeleeAttacks"}}</div>
       <ol class="weapon-list npc-weapon-list" class="mb-0">
         <li class="grid-col-span-6 weapon-list-header">
           <div title="{{localize 'DCC.Roll'}}"></div>
@@ -205,8 +205,8 @@
     </div>
 
     {{!-- Ranged Weapons --}}
-    <div class="dark-border grid-col-span-12">
-      <div class="dark-title">{{localize "DCC.RangedAttacks"}}</div>
+    <div class="box-border grid-col-span-12">
+      <div class="box-title">{{localize "DCC.RangedAttacks"}}</div>
       <ol class="weapon-list npc-weapon-list" style="margin-bottom: 0">
         <li class="grid-col-span-6 weapon-list-header">
           <div title="{{localize 'DCC.Roll'}}"></div>

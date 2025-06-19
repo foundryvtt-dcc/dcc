@@ -17,7 +17,7 @@ const { TextEditor, DragDrop } = foundry.applications.ux
 class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'item', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'item'],
     tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
     position: {
       width: 475,
@@ -143,7 +143,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const data = await super._prepareContext(options)
 
     if (data.document.type === 'weapon') {
-      this.position.height = 663
+      this.position.height = 685
     }
 
     // Lookup the localizable string for the item's type

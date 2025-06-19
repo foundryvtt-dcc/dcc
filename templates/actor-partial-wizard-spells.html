@@ -1,7 +1,7 @@
 {{!-- Spells Tab --}}
 <section class="tab wizard-spells-bg {{tabs.wizardSpells.id}} {{tabs.wizardSpells.cssClass}}" data-tab="{{tabs.wizardSpells.id}}"
          data-group="{{tabs.wizardSpells.group}}">
-  <div class="dark-title" style="">{{localize "DCC.Spells"}}</div>
+  <div class="box-title" style="">{{localize "DCC.Spells"}}</div>
   <ol class="item-list item-list-spells">
     <li class="item item-list-header grid-col-span-7">
       <div></div>
@@ -23,9 +23,9 @@
             data-bonus="{{item.spellCheck.value}}"
             data-spell="{{item.name}}" data-drag="true" data-drag-action="item">
           <div class="item-image">
-            <img class="spell-draggable" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="24" height="24" data-drag="true" data-drag-action="item">
+            <img class="spell-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="24" height="24" data-drag="true" data-drag-action="item">
           </div>
-          <div class="rollable spell-item-button" data-action="rollSpellCheck" data-drag="true" data-drag-action="spellCheck">&nbsp;</div>
+          <div class="rollable spell-item-button icon-filter" data-action="rollSpellCheck" data-drag="true" data-drag-action="spellCheck">&nbsp;</div>
           <div>{{item.system.level}}</div>
           <div class="item-name">{{item.name}}</div>
           <div class="item-notes">

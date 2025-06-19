@@ -5,10 +5,10 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor-config', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'actor-config'],
     tag: 'form',
     position: {
-      width: 350,
+      width: 420,
       height: 'auto'
     },
     window: {

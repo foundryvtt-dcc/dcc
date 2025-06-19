@@ -15,14 +15,14 @@
              value="{{system.description.summary}}" data-dtype="String"/>
     </div>
 
-    <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
-      <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+    <div class="box-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+      <div class="box-title">{{localize "DCC.DescriptionPreview"}}</div>
       <div class="box-inner description">
         {{{descriptionHTML}}}
       </div>
     </div>
-    <div class="dark-border grid-col-span-3" style="max-height: 127px;">
-      <div class="dark-title">{{localize "DCC.Image"}}</div>
+    <div class="box-border grid-col-span-3" style="max-height: 127px;">
+      <div class="box-title">{{localize "DCC.Image"}}</div>
       <div class="p-5">
         <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}" alt="{{document.name}}"/>
       </div>
@@ -30,7 +30,10 @@
 
     {{> systems/dcc/templates/item-sheet-partial-values.html }}
 
-    <img src="systems/dcc/styles/images/SA-4-31-FCI-spots-4-Treasure-skull-magic-sword.webp" style="justify-self: center;"
-         class="grid-col-span-12" width="248" height="125">
+    <img src="systems/dcc/styles/images/SA-4-31-FCI-spots-4-Treasure-skull-magic-sword.webp"
+         style="justify-self: center;"
+         alt=""
+         class="grid-col-span-12 background-art-filter"
+         width="248" height="125">
   </div>
 </section>

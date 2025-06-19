@@ -1,22 +1,22 @@
 {{!-- Class Tab --}}
 <section class="tab {{tabs.dwarf.id}} {{tabs.dwarf.cssClass}}" data-tab="{{tabs.dwarf.id}}" data-group="{{tabs.dwarf.group}}">
     <div class="grid-container label-font">
-        <div class="grid-col-span-12 dark-title">{{localize "DCC.DwarfAbilities"}}</div>
-        <div class="grid-col-span-12 dark-border grid-tpl-max grid-row-gap-8 p-5">
-            <div class="grid-tpl-max-25" data-skill="shieldBash">
+        <div class="grid-col-span-12 box-title">{{localize "DCC.DwarfAbilities"}}</div>
+        <div class="grid-col-span-12 box-border grid-tpl-max grid-row-gap-8 p-5">
+            <div class="grid-tpl-max-25 grid-col-gap-8" data-skill="shieldBash">
                 <label class="skill-check" for="system.skills.shieldBash.die" title="{{localize 'DCC.ShieldBashHint'}}">
                     {{localize "DCC.ShieldBash"}}
                 </label>
                 <input type="text" id="system.skills.shieldBash.die" name="system.skills.shieldBash.die"
                        value="{{system.skills.shieldBash.die}}" data-dtype="String"/>
             </div>
-            <div class="grid-tpl-max-auto">
+            <div class="grid-tpl-max-auto grid-col-gap-8">
                 <label for="system.class.luckyWeapon" title="{{localize 'DCC.LuckyWeaponHint'}}">{{localize
                         "DCC.LuckyWeapon"}}</label>
                 <input class="full-width" type="text" id="system.class.luckyWeapon" name="system.class.luckyWeapon"
                        value="{{system.class.luckyWeapon}}" data-dtype="String"/>
             </div>
-            <div class="grid-tpl-max-auto">
+            <div class="grid-tpl-max-15 grid-col-gap-8">
                 <label for="system.class.luckyWeaponMod" title="{{localize 'DCC.LuckyWeaponModHint'}}">{{localize
                         "DCC.LuckyWeaponMod"}}</label>
                 <input class="full-width" type="text" id="system.class.luckyWeaponMod"
@@ -36,8 +36,9 @@
                 <div>{{{system.class.mightyDeedsLink}}}</div>
             {{/dccPackExists}}
         </div>
-        <img class="grid-col-span-12" src="systems/dcc/styles/images/SA-1-25-FCI-spots1-shield-spiked-kite.webp"
+        <img class="grid-col-span-12 background-art-filter" src="systems/dcc/styles/images/SA-1-25-FCI-spots1-shield-spiked-kite.webp"
              height="310px" width="450px"
+             alt=""
              style="margin: 30px 0 0 10px;">
     </div>
 </section>

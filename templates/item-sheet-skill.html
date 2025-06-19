@@ -7,8 +7,8 @@
         </div>
         <div class="grid-col-span-4">&nbsp;</div>
 
-        <div class="dark-border grid-col-span-12">
-          <div class="dark-title">{{localize "DCC.SkillDetails"}}</div>
+        <div class="box-border grid-col-span-12">
+          <div class="box-title">{{localize "DCC.SkillDetails"}}</div>
           <div class="grid-tpl-max-auto grid-row-gap-8 p-5">
             {{#if system.config.useSummary}}
               <label for="system.description.summary">{{localize "DCC.SkillSummary"}}</label>
@@ -37,14 +37,14 @@
           </div>
         </div>
 
-        <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
-          <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+        <div class="box-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+          <div class="box-title">{{localize "DCC.DescriptionPreview"}}</div>
           <div class="box-inner description">
             {{{descriptionHTML}}}
           </div>
         </div>
-        <div class="dark-border grid-col-span-3" style="max-height: 127px;">
-          <div class="dark-title">{{localize "DCC.Image"}}</div>
+        <div class="box-border grid-col-span-3" style="max-height: 127px;">
+          <div class="box-title">{{localize "DCC.Image"}}</div>
           <div class="p-5">
             <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}" alt="{{document.name}}"/>
           </div>

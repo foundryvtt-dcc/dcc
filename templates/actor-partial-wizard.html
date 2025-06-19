@@ -2,8 +2,8 @@
 <section class="tab {{tabs.wizard.id}} {{tabs.wizard.cssClass}}" data-tab="{{tabs.wizard.id}}" data-group="{{tabs.wizard.group}}">
   <div class="grid-container">
     <div class="grid-col-span-12 grid-container grid-row-gap-5 grid-col-gap-5 mb-8">
-      <div class="grid-col-span-5 grid-row-span-2 dark-border" data-ability="int">
-        <div class="dark-title">{{localize "DCC.SpellCheck"}}</div>
+      <div class="grid-col-span-5 grid-row-span-2 box-border" data-ability="int">
+        <div class="box-title">{{localize "DCC.SpellCheck"}}</div>
         <div class="grid-align-center p-5">
           <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
             {{ifThen system.class.spellCheckOverrideDie system.class.spellCheckOverrideDie system.attributes.actionDice.value}}
@@ -57,25 +57,25 @@
         </div>
       </div>
 
-      <div class="familiar grid-col-span-7 dark-border">
-        <label for="system.class.familiar" class="dark-title">{{localize "DCC.Familiar"}}</label>
+      <div class="familiar grid-col-span-7 box-border">
+        <label for="system.class.familiar" class="box-title">{{localize "DCC.Familiar"}}</label>
         <textarea id="system.class.familiar" name="system.class.familiar" rows="5" class="data-font"
                   style="background: none; border: none"
                   data-dtype="String">{{system.class.familiar}}</textarea>
       </div>
-      <div class="patron grid-col-span-7 dark-border">
-        <label for="system.class.patron" class="dark-title">{{localize "DCC.Patron"}}</label>
+      <div class="patron grid-col-span-7 box-border">
+        <label for="system.class.patron" class="box-title">{{localize "DCC.Patron"}}</label>
         <textarea id="system.class.patron" name="system.class.patron" rows="5" class="data-font"
                   style="background: none; border: none"
                   data-dtype="String">{{system.class.patron}}</textarea>
       </div>
       {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
-        <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
+        <div class="label-font mt-3" style="color: var(--system-primary-color)">{{{system.class.classLink}}}</div>
       {{/dccPackExists}}
     </div>
 
     <div class="grid-col-span-12 grid-tpl-max corruption-wizard">
-      <div class="grid-col-span-12 dark-title" style="">{{localize "DCC.Corruptions"}}</div>
+      <div class="grid-col-span-12 box-title" style="">{{localize "DCC.Corruptions"}}</div>
       {{#if editable}}
         <prose-mirror
           name="system.class.corruption"

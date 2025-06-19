@@ -5,7 +5,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 class DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'item-config', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'item-config', 'themed'],
     tag: 'form',
     position: {
       width: 380,

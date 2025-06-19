@@ -10,7 +10,7 @@ const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applicat
 class DCCActorParser extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor-parser', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'actor-parser'],
     tag: 'form',
     position: {
       width: 600,

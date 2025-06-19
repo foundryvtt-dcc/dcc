@@ -6,10 +6,10 @@
       <input type="checkbox"
              name="itemUpdates.{{id}}.system.equipped"
              data-dtype="Boolean" {{checked weapon.system.equipped}}/>
-      <img class="weapon-draggable" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}"
+      <img class="weapon-draggable icon-filter" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}"
            width="22" height="22">
       <div class="attack-buttons">
-        <div class="rollable weapon-button weapon-draggable" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
+        <div class="rollable weapon-button weapon-draggable icon-filter" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
         {{#if canBackstab}}
           <div class="rollable backstab-button weapon-draggable" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon">&nbsp;</div>
         {{/if}}
@@ -38,7 +38,7 @@
       {{/if}}
       <input type="checkbox"
              name="itemUpdates.{{id}}.system.trained"
-             style="margin-left: 3px;"
+             style="margin-left: 5px;"
              data-dtype="Boolean" {{checked weapon.system.trained}}/>
       <div>
         <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
@@ -46,8 +46,8 @@
       </div>
     </li>
   {{/inline}}
-  <div class="dark-title">{{localize "DCC.MeleeWeapons"}}</div>
-  <ol class="weapon-list dark-border">
+  <div class="box-title">{{localize "DCC.MeleeWeapons"}}</div>
+  <ol class="weapon-list box-border">
     <li class="grid-col-span-9 weapon-list-header">
       <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
       <div></div>
@@ -71,8 +71,8 @@
   </ol>
 
   {{!-- Ranged Weapons --}}
-  <div class="dark-title">{{localize "DCC.RangedWeapons"}}</div>
-  <ol class="weapon-list dark-border">
+  <div class="box-title">{{localize "DCC.RangedWeapons"}}</div>
+  <ol class="weapon-list box-border">
     <li class="grid-col-span-9 weapon-list-header">
       <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
       <div></div>

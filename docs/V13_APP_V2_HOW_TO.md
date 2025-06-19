@@ -10,7 +10,7 @@ This guide provides step-by-step instructions for converting Foundry V1 applicat
 
 **This affects ALL of these patterns:**
 - `html.find('.selector')` ❌ (breaks in V13)
-- `html.html(content)` ❌ (breaks in V13) 
+- `html.html(content)` ❌ (breaks in V13)
 - `html.addClass('class')` ❌ (breaks in V13)
 - `html.removeClass('class')` ❌ (breaks in V13)
 - `html.attr('attribute')` ❌ (breaks in V13)
@@ -360,7 +360,7 @@ static get defaultOptions () {
 ```javascript
 /** @inheritDoc */
 static DEFAULT_OPTIONS = {
-  classes: ['dcc', 'sheet', 'actor', 'themed', 'theme-light'],
+  classes: ['dcc', 'sheet', 'actor'],
   tag: 'form',  // REQUIRED for dialogs and forms
   position: {
     width: 600,
@@ -484,7 +484,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 export default class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor-config', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'actor-config'],
     tag: 'form',  // REQUIRED for dialogs and forms
     position: {
       width: 400,
@@ -565,7 +565,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor-config', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'actor-config'],
     tag: 'form',
     position: {
       width: 380,
@@ -604,7 +604,7 @@ class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext (options = {}) {
     const context = await super._prepareContext(options)
     const actor = this.document
-    
+
     context.isNPC = (actor.type === 'NPC')
     context.isPC = (actor.type === 'Player')
     context.isZero = (actor.system.details.level.value === 0)
@@ -612,7 +612,7 @@ class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     context.config = CONFIG.DCC
     context.system = actor.system
     context.actor = actor
-    
+
     return context
   }
 
@@ -842,17 +842,17 @@ This maps to V2 actions and data-action attributes in templates.
 ```javascript
 activateListeners(html) {
   super.activateListeners(html)
-  
+
   // Click handlers
   html.find('.ability-label').click(this._onRollAbilityCheck.bind(this))
   html.find('.save-label').click(this._onRollSavingThrow.bind(this))
   html.find('.skill-check').click(this._onRollSkillCheck.bind(this))
-  
+
   // Button handlers
   html.find('button.item-create').click(this._onItemCreate.bind(this))
   html.find('button.item-edit').click(this._onItemEdit.bind(this))
   html.find('button.item-delete').click(this._onItemDelete.bind(this))
-  
+
   // Change handlers
   html.find('input.checkbox').change(this._onCheckboxChange.bind(this))
 }
@@ -1182,7 +1182,7 @@ For applications where tabs vary based on document type or settings, override `_
 // From item-sheet.js
 _getTabsConfig(group) {
   const tabs = foundry.utils.deepClone(super._getTabsConfig(group))
-  
+
   // Change first tab based on item type
   const initCapTypeName = this.document.type.charAt(0).toUpperCase() + this.document.type.slice(1)
   tabs.tabs[0] = {
@@ -1191,7 +1191,7 @@ _getTabsConfig(group) {
     label: `DCC.${initCapTypeName}`
   }
   tabs.initial = this.document.type
-  
+
   return tabs
 }
 ```
@@ -1222,26 +1222,26 @@ static END_TABS = {
 // Override _getTabsConfig to merge all tabs
 _getTabsConfig(group) {
   const tabs = foundry.utils.deepClone(super._getTabsConfig(group))
-  
+
   // Add class-specific tabs (defined by subclasses)
   if (this.constructor.CLASS_TABS?.[group]?.tabs) {
     for (const tab of this.constructor.CLASS_TABS[group].tabs) {
       tabs.tabs.push(tab)
     }
   }
-  
+
   // Add conditional tabs based on settings
   if (this.document?.system?.config?.showSkills) {
     tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills' })
   }
-  
+
   // Add end tabs
   if (this.constructor.END_TABS?.[group]?.tabs) {
     for (const tab of this.constructor.END_TABS[group].tabs) {
       tabs.tabs.push(tab)
     }
   }
-  
+
   return tabs
 }
 ```
@@ -1264,7 +1264,7 @@ class DCCActorSheetCleric extends DCCActorSheet {
       template: 'systems/dcc/templates/actor-partial-cleric.html'
     }
   }
-  
+
   // Define cleric-specific tabs
   static CLASS_TABS = {
     sheet: {
@@ -1284,19 +1284,19 @@ For dynamic template selection based on document properties:
 ```javascript
 _configureRenderParts(options) {
   const parts = super._configureRenderParts(options)
-  
+
   // Add class-specific parts
   for (const [key, part] of Object.entries(this.constructor.CLASS_PARTS || [])) {
     if (part?.template) {
       parts[key] = part
     }
   }
-  
+
   // Conditionally remove parts
   if (!this.document?.system?.config?.showSpells) {
     delete parts.wizardSpells
   }
-  
+
   return parts
 }
 ```
@@ -1390,8 +1390,8 @@ _configureRenderParts(options) {
 #### ✅ **CORRECT Tab Template Structure**:
 ```html
 {{!-- Individual Tab Template (e.g., actor-partial-character.html) --}}
-<section class="tab {{tabs.character.id}} {{tabs.character.cssClass}}" 
-         data-tab="{{tabs.character.id}}" 
+<section class="tab {{tabs.character.id}} {{tabs.character.cssClass}}"
+         data-tab="{{tabs.character.id}}"
          data-group="{{tabs.character.group}}">
   {{!-- Tab content here --}}
   <div class="character-details">
@@ -1403,8 +1403,8 @@ _configureRenderParts(options) {
 #### ✅ **CORRECT Item Sheet Tab Template**:
 ```html
 {{!-- Spell Details Tab (item-sheet-spell.html) --}}
-<section class="tab-body {{tabs.spell.id}} {{tabs.spell.cssClass}}" 
-         data-tab="{{tabs.spell.id}}" 
+<section class="tab-body {{tabs.spell.id}} {{tabs.spell.cssClass}}"
+         data-tab="{{tabs.spell.id}}"
          data-group="{{tabs.spell.group}}">
   {{!-- Spell form fields --}}
   <div class="grid-col-span-12 grid-tpl-max-auto mb-5">
@@ -1643,9 +1643,9 @@ const { DragDrop } = foundry.applications.ux
 class MyAppV2 extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     // Configure drag/drop selector array
-    dragDrop: [{ 
-      dragSelector: '[data-drag="true"]',  // Note: data-drag="true" attribute 
-      dropSelector: '.drop-zone' 
+    dragDrop: [{
+      dragSelector: '[data-drag="true"]',  // Note: data-drag="true" attribute
+      dropSelector: '.drop-zone'
     }]
   }
 }
@@ -1709,11 +1709,11 @@ _canDragDrop(selector) {
 // Event handlers
 _onDragStart(event) {
   const li = event.currentTarget
-  
+
   // Use data-drag-action for specific drag types
   const dragAction = li.dataset.dragAction
   let dragData = null
-  
+
   switch (dragAction) {
     case 'ability':
       dragData = {
@@ -1722,7 +1722,7 @@ _onDragStart(event) {
         data: { abilityId: li.dataset.ability }
       }
       break
-      
+
     case 'item':
       const itemId = li.dataset.itemId
       const item = this.actor.items.get(itemId)
@@ -1733,7 +1733,7 @@ _onDragStart(event) {
       })
       break
   }
-  
+
   if (dragData) {
     if (this.actor.isToken) dragData.tokenId = this.actor.token.id
     event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
@@ -1747,7 +1747,7 @@ _onDragOver(event) {
 _onDrop(event) {
   const data = foundry.applications.ux.TextEditor.getDragEventData(event)
   if (!data) return false
-  
+
   // Handle the dropped data
   // Delegate to base class for standard item drops
   return super._onDrop?.(event)
@@ -1759,7 +1759,7 @@ _onDrop(event) {
 1. **Manual Initialization**: V2 requires manual creation and binding of DragDrop instances in the constructor
 2. **Template Attribute**: Use `data-drag="true"` attribute to mark draggable elements
 3. **Manual Binding**: Must call `d.bind(this.element)` in `_onRender()` method
-4. **Permission Methods**: Must implement `_canDragStart()` and `_canDragDrop()` 
+4. **Permission Methods**: Must implement `_canDragStart()` and `_canDragDrop()`
 5. **Import Required**: Must import `DragDrop` from `foundry.applications.ux`
 6. **Constructor Required**: Unlike V1's automatic binding, V2 requires explicit setup in constructor
 
@@ -1844,7 +1844,7 @@ Set up templates after CONFIG is initialized:
 // In your system's init hook, after CONFIG.DCC is set
 Hooks.once('init', () => {
   CONFIG.DCC = DCC;
-  
+
   // Now safe to reference CONFIG values
   RollModifierDialog.PARTS = {
     form: {
@@ -1877,7 +1877,7 @@ DCC.templates = {
   spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
 }
 
-// roll-modifier.js  
+// roll-modifier.js
 static PARTS = {
   form: {
     template: CONFIG.DCC.templates.rollModifierDialog  // ❌ Breaks
@@ -1900,7 +1900,7 @@ messageData.content = await renderTemplate(
   { ... }
 )
 
-// actor.js  
+// actor.js
 messageData.content = await renderTemplate(
   'systems/dcc/templates/chat-card-attack-result.html',  // ✅ Hard-coded
   { message: messageData }
@@ -1923,20 +1923,20 @@ Hooks.once('init', () => {
     makeDefault: true,
     label: 'DCC.SheetPlayer'
   })
-  
+
   Actors.registerSheet('dcc', DCCActorSheetNPC, {
     types: ['NPC'],
     makeDefault: true,
     label: 'DCC.SheetNPC'
   })
-  
+
   // Register class-specific sheets
   Actors.registerSheet('dcc', DCCActorSheetCleric, {
     types: ['Player'],
     makeDefault: false,
     label: 'DCC.SheetCleric'
   })
-  
+
   // Register Item sheets
   Items.registerSheet('dcc', DCCItemSheet, {
     makeDefault: true,
@@ -2026,10 +2026,10 @@ test.describe('DCC System V2 Migration Visual Tests', () => {
     // Open actor sheet
     await page.click('[data-document-id="actor-id"]');
     await page.waitForSelector('.dcc.actor.sheet');
-    
+
     // Take screenshot
     await expect(page.locator('.dcc.actor.sheet')).toHaveScreenshot('actor-sheet.png');
-    
+
     // Test each tab
     const tabs = ['character', 'equipment', 'notes'];
     for (const tab of tabs) {
@@ -2056,13 +2056,13 @@ test.describe('DCC System V2 Migration Visual Tests', () => {
 test('Actor sheet maintains styling', async ({ page }) => {
   await page.goto('/game');
   await page.click('.actor[data-document-id="test-actor"]');
-  
+
   const sheet = page.locator('.dcc.actor.sheet');
-  
+
   // Test key CSS properties
   await expect(sheet).toHaveCSS('width', '520px');
   await expect(sheet).toHaveCSS('height', '450px');
-  
+
   // Test tab styling
   const tabs = page.locator('.sheet-tabs .item');
   await expect(tabs.first()).toHaveCSS('background-color', 'rgb(...)');
@@ -2077,11 +2077,11 @@ test('Form elements work correctly', async ({ page }) => {
   // Test form inputs maintain functionality
   await page.fill('input[name="system.abilities.str.value"]', '15');
   await expect(page.locator('input[name="system.abilities.str.value"]')).toHaveValue('15');
-  
+
   // Test dropdowns
   await page.selectOption('select[name="system.class.className"]', 'Cleric');
   await expect(page.locator('select[name="system.class.className"]')).toHaveValue('Cleric');
-  
+
   // Test checkboxes
   await page.check('input[name="system.config.showSpells"]');
   await expect(page.locator('input[name="system.config.showSpells"]')).toBeChecked();
@@ -2093,7 +2093,7 @@ test('Form elements work correctly', async ({ page }) => {
 **Browser Matrix**:
 ```
 - [ ] Chrome/Edge (latest)
-- [ ] Firefox (latest) 
+- [ ] Firefox (latest)
 - [ ] Safari (if on Mac)
 - [ ] Chrome Mobile (responsive)
 ```
@@ -2106,7 +2106,7 @@ test('Accessibility maintained', async ({ page }) => {
   // Check ARIA labels and roles
   await expect(page.locator('.sheet-tabs')).toHaveAttribute('role', 'tablist');
   await expect(page.locator('.tab-content')).toHaveAttribute('role', 'tabpanel');
-  
+
   // Check form labels
   const inputs = page.locator('input[type="text"], input[type="number"]');
   for (const input of await inputs.all()) {
@@ -2128,7 +2128,7 @@ test('Sheet rendering performance', async ({ page }) => {
   await page.click('.actor[data-document-id="test-actor"]');
   await page.waitForSelector('.dcc.actor.sheet', { state: 'visible' });
   const loadTime = Date.now() - startTime;
-  
+
   expect(loadTime).toBeLessThan(1000); // Should load within 1 second
 });
 ```
@@ -2140,10 +2140,10 @@ test('Sheet rendering performance', async ({ page }) => {
 test('Animations work correctly', async ({ page }) => {
   // Test tab switching animations
   await page.click('[data-tab="equipment"]');
-  
+
   // Wait for transition to complete
   await page.waitForTimeout(300);
-  
+
   // Verify active state
   await expect(page.locator('[data-tab="equipment"]')).toHaveClass(/active/);
 });
@@ -2156,10 +2156,10 @@ test('Animations work correctly', async ({ page }) => {
 test('Data saves correctly', async ({ page }) => {
   // Change a value
   await page.fill('input[name="system.abilities.str.value"]', '18');
-  
+
   // Submit form (trigger auto-save or manual save)
   await page.keyboard.press('Tab'); // Trigger change event
-  
+
   // Reload and verify
   await page.reload();
   await page.click('.actor[data-document-id="test-actor"]');
@@ -2360,16 +2360,16 @@ Continue enriching content in `_prepareContext()`:
 ```javascript
 async _prepareContext(options) {
   const context = await super._prepareContext(options);
-  
+
   // Enrich content for display
   context.corruptionHTML = await TextEditor.enrichHTML(
     this.document.system.class.corruption,
-    { 
+    {
       secrets: this.document.isOwner,
-      relativeTo: this.document 
+      relativeTo: this.document
     }
   );
-  
+
   return context;
 }
 ```
@@ -2381,10 +2381,10 @@ async _prepareContext(options) {
 class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    
+
     // Enrich corruption content
     context.corruptionHTML = await this.#prepareCorruption();
-    
+
     return context;
   }
 
@@ -2392,13 +2392,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (this.actor.system.class) {
       const context = { relativeTo: this.document, secrets: this.document.isOwner }
       let corruption = this.actor.system.class.corruption || ''
-      
+
       // Handle corrupted Promise strings
       if (corruption === '[object Promise]') {
         corruption = ''
         this.actor.update({ 'system.class.corruption': '' })
       }
-      
+
       return await TextEditor.enrichHTML(corruption, context)
     }
     return ''
@@ -2436,7 +2436,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
 - [ ] Replace all `{{editor}}` helpers with `<prose-mirror>` elements
 - [ ] Add `{{#if editable}}` conditional wrapper
-- [ ] Provide read-only fallback in `{{else}}` clause  
+- [ ] Provide read-only fallback in `{{else}}` clause
 - [ ] Update field paths in `name` and `value` attributes
 - [ ] Move enrichment to `_prepareContext()` with `await`
 - [ ] Test editor functionality and form submission
@@ -2507,7 +2507,7 @@ class MyActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #onEditImage(event, target) {
     const field = target.dataset.field || "img";
     const current = foundry.utils.getProperty(this.document, field);
-    
+
     const fp = new foundry.applications.apps.FilePicker({
       type: "image",
       current: current,
@@ -2515,7 +2515,7 @@ class MyActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         this.document.update({ [field]: path });
       }
     });
-    
+
     fp.render(true);
   }
 }

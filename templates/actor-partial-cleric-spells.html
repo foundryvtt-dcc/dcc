@@ -1,6 +1,6 @@
 {{!-- Spells Tab --}}
 <section class="tab cleric-spells-bg {{tabs.clericSpells.id}} {{tabs.clericSpells.cssClass}}" data-tab="{{tabs.clericSpells.id}}" data-group="{{tabs.clericSpells.group}}">
-  <div class="dark-title" style="">{{localize "DCC.Spells"}}</div>
+  <div class="box-title" style="">{{localize "DCC.Spells"}}</div>
   <ol class="item-list item-list-spells">
     <li class="item item-list-header grid-col-span-7">
       <div></div>
@@ -20,7 +20,7 @@
             data-bonus="{{item.spellCheck.value}}"
             data-spell="{{item.name}}" data-drag="true" data-drag-action="item">
           <div class="item-image">
-            <img src="{{item.img}}" title="{{item.name}}"
+            <img src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}"
                  width="24" height="24" data-drag="true" data-drag-action="item"/>
           </div>
           <div class="rollable spell-item-button" title="Cast spell" data-action="rollSpellCheck" data-drag="true" data-drag-action="spellCheck">&nbsp;</div>

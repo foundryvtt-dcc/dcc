@@ -12,8 +12,8 @@
     </div>
 
     <!-- To Hit -->
-    <div class="dark-border grid-col-span-6">
-      <div class="dark-title">{{localize "DCC.ToHit"}}</div>
+    <div class="box-border grid-col-span-6">
+      <div class="box-title">{{localize "DCC.ToHit"}}</div>
       <div class="grid-align-center p-5">
         <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}{{system.toHit}}</div>
 
@@ -75,8 +75,8 @@
     </div>
 
     <!-- Damage -->
-    <div class="dark-border grid-col-span-6">
-      <div class="dark-title">{{localize "DCC.Damage"}}</div>
+    <div class="box-border grid-col-span-6">
+      <div class="box-title">{{localize "DCC.Damage"}}</div>
       <div class="grid-align-center p-5">
         <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.damage}}</div>
 
@@ -138,8 +138,8 @@
     </div>
 
     <!-- Initiative -->
-    <div class="dark-border grid-col-span-6 grid-row-span-2">
-      <div class="dark-title">{{localize "DCC.Initiative"}}</div>
+    <div class="box-border grid-col-span-6 grid-row-span-2">
+      <div class="box-title">{{localize "DCC.Initiative"}}</div>
       <div class="p-5 grid-align-center">
         <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
           {{system.initiativeDie}}{{#if system.initiativeBonus}}{{system.initiativeBonus}}{{/if}}
@@ -195,8 +195,8 @@
     </div>
 
     <!-- Critical Hits -->
-    <div class="dark-border grid-col-span-6">
-      <div class="dark-title">{{localize "DCC.Critical"}}</div>
+    <div class="box-border grid-col-span-6">
+      <div class="box-title">{{localize "DCC.Critical"}}</div>
       <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
         <div class="value-display grid-col-span-2" title="{{localize 'DCC.DisplayValueHint'}}">
           {{localize "DCC.Crit"}} {{localize "DCC.on"}} {{system.critRange}}, {{localize "DCC.Roll"}}
@@ -220,8 +220,8 @@
     </div>
 
     <!-- Attack Distance -->
-    <div class="dark-border grid-col-span-6 grid-align-center">
-      <div class="dark-title">{{localize "DCC.AttackDistance"}}</div>
+    <div class="box-border grid-col-span-6 grid-align-center">
+      <div class="box-title">{{localize "DCC.AttackDistance"}}</div>
       <div class="p-5 grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
         <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
           <label for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
@@ -241,8 +241,8 @@
 
     {{> systems/dcc/templates/item-sheet-partial-values.html }}
 
-    <div class="dark-border grid-col-span-10" title="{{localize 'DCC.DescriptionTooltip'}}">
-      <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+    <div class="box-border grid-col-span-10" title="{{localize 'DCC.DescriptionTooltip'}}">
+      <div class="box-title">{{localize "DCC.DescriptionPreview"}}</div>
       <div class="p-5 grid-align-center">
         <div class="description">
           {{{descriptionHTML}}}
@@ -250,8 +250,8 @@
       </div>
     </div>
 
-    <div class="dark-border grid-col-span-2" style="max-height: 81px;">
-      <div class="dark-title">{{localize "DCC.Image"}}</div>
+    <div class="box-border grid-col-span-2" style="max-height: 81px;">
+      <div class="box-title">{{localize "DCC.Image"}}</div>
       <div class="p-5 grid-align-just-center">
         <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}" alt="{{document.name}}" height="48px" width="48px"/>
       </div>

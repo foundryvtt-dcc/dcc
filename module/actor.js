@@ -1133,7 +1133,7 @@ class DCCActor extends Actor {
         const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
           critTableName = critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
-          critText = await foundry.applications.ux.TextEditor.enrichHTML(critResult.text)
+          critText = await foundry.applications.ux.TextEditor.enrichHTML(critResult.description)
           critText = `: <br>${critText}`
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
@@ -1186,7 +1186,7 @@ class DCCActor extends Actor {
         }
         if (fumbleResult) {
           fumbleTableName = `${fumbleResult?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
-          fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
+          fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
         }
         const onPrep = game.i18n.localize('DCC.on')
         const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
@@ -1399,7 +1399,7 @@ class DCCActor extends Actor {
     const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {
-      critText = await TextEditor.enrichHTML(critResult.text)
+      critText = await TextEditor.enrichHTML(critResult.description)
       critTableName = await TextEditor.enrichHTML(critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`))
     }
 

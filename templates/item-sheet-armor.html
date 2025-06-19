@@ -12,8 +12,8 @@
              data-dtype="String"/>
     </div>
 
-    <div class="dark-border grid-col-span-6">
-      <div class="dark-title">{{localize "DCC.ArmorSettings"}}</div>
+    <div class="box-border grid-col-span-6">
+      <div class="box-title">{{localize "DCC.ArmorSettings"}}</div>
       <div class="box-inner grid-tpl-max-auto mt-5 grid-col-gap-8 grid-align-center">
         <label for="system.equipped">{{localize "DCC.ItemPropertiesEquipped"}}</label>
         <input type="checkbox" id="system.equipped" name="system.equipped"
@@ -21,8 +21,8 @@
       </div>
     </div>
 
-    <div class="dark-border grid-col-span-6">
-      <div class="dark-title">{{localize "DCC.ArmorDetails"}}</div>
+    <div class="box-border grid-col-span-6">
+      <div class="box-title">{{localize "DCC.ArmorDetails"}}</div>
       <div class="box-inner grid-tpl-max-auto grid-col-gap-8">
         <label for="system.acBonus">{{localize "DCC.ArmorPropertiesACBonus"}}</label>
         <input id="system.acBonus" name="system.acBonus"
@@ -44,8 +44,8 @@
     {{> systems/dcc/templates/item-sheet-partial-values.html }}
 
 
-    <div class="dark-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
-      <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
+    <div class="box-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+      <div class="box-title">{{localize "DCC.DescriptionPreview"}}</div>
       <div class="box-inner">
         <div class="description">
           {{{descriptionHTML}}}
@@ -53,14 +53,17 @@
       </div>
     </div>
 
-    <div class="dark-border grid-col-span-3" style="max-height: 126px;">
-      <div class="dark-title">{{localize "DCC.Image"}}</div>
+    <div class="box-border grid-col-span-3" style="max-height: 126px;">
+      <div class="box-title">{{localize "DCC.Image"}}</div>
       <div class="box-inner" style="padding-top: 5px;">
-        <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}"/>
+        <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}" alt="{{document.name}}"/>
       </div>
     </div>
 
-    <img src="systems/dcc/styles/images/FCI-spots-8-7-Dragon-Tail-Ornament.webp" style="justify-self: center;" class="grid-col-span-12"
+    <img src="systems/dcc/styles/images/FCI-spots-8-7-Dragon-Tail-Ornament.webp"
+         style="justify-self: center;"
+         alt=""
+         class="grid-col-span-12 background-art-filter"
          width="450" height="20">
 
   </div>

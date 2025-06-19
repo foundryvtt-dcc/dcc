@@ -1,8 +1,8 @@
 {{!-- Class Tab --}}
 <section class="tab {{tabs.thief.id}} {{tabs.thief.cssClass}}" data-tab="{{tabs.thief.id}}" data-group="{{tabs.thief.group}}">
   <div class="grid-container">
-    <div class="grid-col-span-12 dark-border">
-      <div class="dark-title">{{localize "DCC.ThiefAbilities"}}</div>
+    <div class="grid-col-span-12 box-border">
+      <div class="box-title">{{localize "DCC.ThiefAbilities"}}</div>
       <div class="grid-tpl-two grid-row-gap-8 p-5">
         <div class="grid-tpl-max-25 grid-col-gap-5">
           <label class="luck-die rollable" for="system.class.luckDie" title="{{localize 'DCC.ThiefSkillHint'}}" data-action="rollLuckDie" data-drag="true" data-drag-action="luckDie">
@@ -108,7 +108,10 @@
         {{/dccPackExists}}
       </div>
     </div>
-    <img class="grid-col-span-12" src="systems/dcc/styles/images/SA-4-10-FCI-spots-4-Grappling-hook-and-rope.webp" height="300px" width="600px"
+    <img class="grid-col-span-12 background-art-filter"
+         src="systems/dcc/styles/images/SA-4-10-FCI-spots-4-Grappling-hook-and-rope.webp"
+         alt=""
+         height="300px" width="600px"
          style="margin-top: 25px;">
   </div>
 </section>

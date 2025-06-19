@@ -19,7 +19,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   #dragDrop
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'actor'],
     tag: 'form',
     position: {
       width: 555,
@@ -407,8 +407,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @returns {Promise<Document[]>}
    **/
   static async #itemCreate (event, target) {
-    console.log('ItemCreate', event, target)
-    console.log(this.actor)
     // Get the type of item to create.
     const type = target.dataset.type
     // Grab any data associated with this control.

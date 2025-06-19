@@ -11,7 +11,7 @@ const { TextEditor } = foundry.applications.ux
 class DCCPartySheet extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor', 'party', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'actor', 'party'],
     tag: 'form',
     position: {
       width: 800,

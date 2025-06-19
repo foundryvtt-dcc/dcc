@@ -8,7 +8,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'actor-level-change', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'actor-level-change', 'themed'],
     tag: 'form',
     position: {
       width: 380,

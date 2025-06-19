@@ -236,11 +236,8 @@
   src: url("fonts/DuvallSmallCaps.otf") format("opentype");
 }
 /* Common style elements */
-.dcc.application {
-  --header-height: 24px;
-}
-.dcc img {
-  border: 0;
+.dcc {
+  color: var(--system-primary-color);
 }
 .dcc .box-inner {
   padding: 0 5px 4px 5px;
@@ -248,22 +245,30 @@
 .dcc .center {
   text-align: center;
 }
-.dcc .data-font {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+.dcc .content-link {
+  background: transparent;
+  color: var(--system-primary-color);
+  font-family: var(--system-label-font), serif;
+  padding: 2px;
 }
-.dcc .dark-border {
-  border: var(--dark-border);
+.dcc .data-font {
+  font-family: var(--system-data-font), serif;
+}
+.dcc .background-art-filter {
+  filter: var(--system-background-art-filter);
+}
+.dcc .box-border {
+  border: var(--system-frame-border);
   border-top: 0;
 }
-.dcc .dark-title {
+.dcc .box-title {
   align-self: stretch;
-  background: var(--dark-bg);
-  color: var(--light-color);
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  background: var(--system-frame-background);
+  color: var(--system-frame-title-color);
+  font-family: var(--system-label-font), serif;
   font-size: 14px;
   height: 19px;
-  letter-spacing: 1px;
-  padding-top: 1px;
+  letter-spacing: 0.5px;
   text-align: center;
 }
 .dcc .disabled {
@@ -271,9 +276,9 @@
 }
 .dcc .editor {
   background: rgba(0, 0, 0, 0.05);
-  border: var(--dark-border);
+  border: var(--system-frame-border);
   border-top: 0;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   min-height: 285px;
   padding: 0 8px;
 }
@@ -285,56 +290,70 @@
 }
 .dcc .group-heading {
   font-size: 13px;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
 }
 .dcc .group-indent {
   margin-left: 16px;
 }
 .dcc .group-separator {
-  border-bottom: 2px dotted var(--medium-color);
+  border-bottom: 2px dotted var(--system-secondary-color);
   grid-column-end: span 2;
   margin: 5px 0 5px 0;
 }
 .dcc .heading-font {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
 }
-.dcc label {
-  display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+.dcc .icon-filter {
+  filter: var(--system-icon-filter);
 }
 .dcc input {
-  background: none;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  background: 0;
+  color: var(--input-text-color);
+  font-family: var(--system-data-font), serif;
   height: 17px;
   line-height: 1;
   text-align: center;
   border-width: 0 0 1px 0;
   border-radius: 0;
+  border-color: var(--system-input-background-color);
 }
 .dcc input[type=checkbox] {
-  height: 20px;
-  width: 20px;
-  margin: 0;
-}
-.dcc input[type=checkbox]:checked::after {
-  color: transparent;
+  aspect-ratio: 1/1;
 }
 .dcc input[type=checkbox]::before {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--system-input-background-color);
+  background: var(--system-input-background);
+}
+.dcc input[type=checkbox]:checked::after {
+  background: var(--system-input-background);
+  color: var(--system-input-background-color);
+}
+.dcc input[type=checkbox]:checked::before {
+  background: var(--system-input-background);
+  color: var(--system-input-text-color);
+  outline: 0;
 }
 .dcc input:focus {
   box-shadow: none;
 }
+.dcc input:focus-visible {
+  box-shadow: none;
+  outline: 1px solid orange;
+  border-radius: unset;
+}
 .dcc input.full-width {
   width: 100%;
 }
+.dcc label {
+  display: grid;
+  font-family: var(--system-label-font), serif;
+  letter-spacing: 0.5px;
+}
 .dcc select {
-  background: none;
+  background: var(--system-input-background);
   border-width: 0 0 1px 0;
   border-radius: 0;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   font-size: 12px;
   height: 17px;
   text-align: center;
@@ -342,35 +361,24 @@
 .dcc select:focus {
   box-shadow: none;
 }
+.dcc img {
+  border: 0;
+}
 .dcc textarea {
   width: 100%;
   min-height: 50px;
 }
-.dcc .theme-dark {
-  background-image: url("/ui/parchment.jpg");
-}
-.dcc .theme-light {
-  background-image: url("/ui/parchment.jpg");
-}
 .dcc .label-font {
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
 }
 .dcc .rollable:hover {
   color: #000;
   cursor: pointer;
   text-shadow: 0 0 10px red;
 }
-.dcc.sheet.actor.pc {
-  min-height: 629px;
-  min-width: 525px;
-}
-.dcc.sheet.actor {
-  min-height: 339px;
-  min-width: 525px;
-}
 .dcc .value-display {
-  background: rgba(0, 0, 0, 0.05);
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  background: var(--system-value-display-background-color);
+  font-family: var(--system-data-font), serif;
   font-size: 13px;
   font-weight: bold;
   margin: 0 0 0 1px;
@@ -378,58 +386,48 @@
 }
 .dcc .window-content {
   padding: 1px 8px 8px 8px;
+  overflow: scroll;
 }
-.dcc .window-content form {
-  height: 100%;
-}
-.dcc .window-content form .sheet-body {
+.dcc .window-content .sheet-body {
   display: grid;
   height: calc(100% - 34px);
-}
-
-:root {
-  --dark-bg: url("images/denim.png");
-  --dark-border: 4px solid var(--dark-color);
-  --dark-color: rgba(0, 0, 0, 0.75);
-  --light-color: rgba(255, 255, 255, 0.77);
-  --medium-color: rgba(0, 0, 0, 0.3);
-  --data-font: "Book Antiqua", serif;
-  --label-font: "Cooper Black", serif;
 }
 
 /* ----------------------------------------- */
 /*  Journal Styles
 /* ----------------------------------------- */
-.journal-sheet h1 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+.journal-sheet h1:not(.window-title) {
+  font-family: var(--system-heading-font), serif;
   line-height: 1.3em;
+  color: var(--system-secondary-text);
 }
 
 .journal-sheet h2 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
   line-height: 1.5em;
+  color: var(--system-secondary-text);
 }
 
 .journal-sheet h3 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
   line-height: 1.2em;
 }
 
 .journal-sheet h4:not(.window-title) {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
   line-height: 1.1em;
 }
 
-.journal-sheet form input[name=name] {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+.journal-sheet input[name=name] {
+  font-family: var(--system-heading-font), serif;
 }
 
 .journal-sheet div.editor-content {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
 }
 
 .journal-sheet .journal-page-content {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
 }
 
 .journal-entry table th,
@@ -438,6 +436,20 @@
 }
 .journal-entry table tr td:first-child {
   padding-left: 8px;
+}
+.journal-entry .journal-entry-content {
+  background-image: var(--system-background);
+  color: var(--system-primary-color);
+}
+.journal-entry .journal-entry-content .content-link {
+  background: var(--system-light-bg);
+  color: var(--system-primary-color);
+  padding: 2px;
+  margin-right: 2px;
+  line-height: 30px;
+}
+.journal-entry .journal-entry-content .content-link > i {
+  color: var(--system-primary-color);
 }
 .journal-entry .journal-entry-page li p {
   margin-bottom: clamp(0.7em, 1vw, 0.8em);
@@ -455,18 +467,18 @@
 }
 .journal-entry .journal-entry-page .sidebar,
 .journal-entry .editor-content .sidebar {
-  border: var(--dark-border);
+  border: var(--system-frame-border);
   padding: 0.5em;
   margin: 0.5em 0;
-  background: var(--light-color);
+  background: var(--system-frame-background);
   overflow: hidden;
 }
 .journal-entry .journal-entry-page .sidebar h4,
 .journal-entry .editor-content .sidebar h4 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
   font-size: 1.3em;
   text-align: center;
-  color: var(--dark-color);
+  color: var(--system-primary-color);
   margin: 0.3em 0;
 }
 
@@ -482,7 +494,7 @@
 }
 .dcc .armor-list .armor-list-header {
   display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
   font-size: 12px;
   grid-template-columns: subgrid;
   margin: 0 0 3px 0;
@@ -497,14 +509,9 @@
   grid-template-columns: subgrid;
 }
 .dcc .armor-list .armor input {
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--color-border-light-tertiary);
+  background: var(--system-input-background);
   border-radius: 3px;
   height: 22px;
-}
-.dcc .armor-list .armor input[type=checkbox] {
-  height: unset;
-  background: unset;
 }
 
 /* ----------------------------------------- */
@@ -512,6 +519,8 @@
 /* ----------------------------------------- */
 a.inline-roll {
   line-height: 25px;
+  color: var(--system-primrary-text);
+  background: transparent;
 }
 
 .deed-result.critical,
@@ -529,19 +538,33 @@ a.inline-roll {
 }
 
 .flavor-text {
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
 }
 
 .message-content {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
 }
 
 .message-sender {
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
 }
 
 .chat-message {
-  background-image: url("/ui/parchment.jpg");
+  background: var(--system-background);
+  color: var(--system-primary-color);
+}
+.chat-message .message-header {
+  color: var(--system-primary-color);
+}
+.chat-message .table-draw {
+  color: var(--system-primary-color);
+}
+.chat-message .table-draw .table-description {
+  color: var(--system-primary-color);
+}
+.chat-message .table-draw .table-description .content-link {
+  background: transparent;
+  color: var(--system-primary-color);
 }
 
 .chat-message .table-draw .table-results .table-result .result-text {
@@ -566,14 +589,16 @@ a.inline-roll {
 /*  Spell Check Chat Card                    */
 /* ----------------------------------------- */
 .table-draw h1 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
   font-size: 18px;
   margin-top: 8px;
+  color: var(--system-heading-color);
 }
 .table-draw .table-results {
   list-style: none;
   margin-top: 12px;
   padding: 0;
+  color: var(--system-primary-color);
 }
 .table-draw .table-results .table-result {
   display: grid;
@@ -591,14 +616,8 @@ a.inline-roll {
   cursor: pointer;
 }
 .table-draw .spell-check-mod {
-  background: rgba(0, 0, 0, 0.1);
-  border: 2px solid #999;
-  border-radius: 3px;
-  box-shadow: 0 0 2px #fff inset;
-  height: 24px;
-  line-height: 24px;
-  margin-top: 5px;
-  position: relative;
+  background: transparent;
+  margin-top: 8px;
   text-align: center;
   word-break: break-all;
 }
@@ -640,8 +659,9 @@ a.inline-roll {
 /* ----------------------------------------- */
 .dcc .weapon-list {
   display: grid;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
+  grid-column-gap: 5px;
   justify-items: center;
   margin: 0 0 8px 0;
   padding: 5px 5px 0 5px;
@@ -655,12 +675,12 @@ a.inline-roll {
 }
 .dcc .weapon-list.npc-weapon-list {
   display: grid;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   grid-template-columns: 25px minmax(110px, 1fr) 55px 60px minmax(100px, 2fr) 39px;
 }
 .dcc .weapon-list .weapon-list-header {
   display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
   font-size: 12px;
   grid-template-columns: subgrid;
   margin: 0 0 3px 0;
@@ -675,14 +695,9 @@ a.inline-roll {
   margin-bottom: 5px;
 }
 .dcc .weapon-list .weapon input {
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--color-border-light-tertiary);
+  background: var(--system-input-background);
   border-radius: 3px;
   height: 22px;
-}
-.dcc .weapon-list .weapon input[type=checkbox] {
-  height: unset;
-  background: unset;
 }
 .dcc .weapon-list .weapon .attack-buttons {
   display: grid;
@@ -698,7 +713,7 @@ a.inline-roll {
   margin: 1px 0 0 0;
 }
 .dcc .weapon-list .weapon .weapon-button {
-  background-image: url("../../../icons/svg/d20-black.svg");
+  background-image: var(--system-d20-icon);
   background-repeat: no-repeat;
   background-size: 22px 22px;
   grid-row: 1;
@@ -710,13 +725,18 @@ a.inline-roll {
 /* ----------------------------------------- */
 /*  Cleric Class                             */
 /* ----------------------------------------- */
-.dcc div.cleric-table table {
-  text-align: center;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+.dcc .cleric-table table {
+  font-family: var(--system-data-font), serif;
   margin: 10px 0 0 0;
 }
-.dcc div.cleric-table table td {
-  padding: 4px 12px 4px 0;
+.dcc .cleric-table table td {
+  padding: 4px 12px 4px 4px;
+}
+.dcc .cleric-table table th {
+  padding: 0 3px 3px 3px;
+}
+.dcc .cleric-table table.box-border {
+  border-top: var(--system-frame-border);
 }
 
 .dcc .cleric-spells-bg {
@@ -725,6 +745,7 @@ a.inline-roll {
   background-position: center;
   background-size: contain;
   height: 565px;
+  filter: sepia(1);
 }
 
 /* ----------------------------------------- */
@@ -761,7 +782,7 @@ a.inline-roll {
 }
 
 .dcc .corruption-wizard .editor {
-  min-height: 282px;
+  min-height: 260px;
   padding-top: 5px;
 }
 
@@ -769,38 +790,44 @@ a.inline-roll {
 /*  Party Sheet                              */
 /* ----------------------------------------- */
 .dcc .party-body {
-  border: 2px groove #eeede0;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: repeat(auto-fill, minmax(100px, auto));
+  grid-gap: 10px;
 }
 .dcc .party-body .character-row {
-  border: 2px groove #eeede0;
+  border: var(--system-party-sheet-border);
   display: grid;
   grid-gap: 2px 3px;
   grid-template-columns: 96px repeat(12, 1fr);
-  grid-template-rows: 1fr 1fr 1fr 1fr minmax(1fr, auto) minmax(1fr, auto);
+}
+.dcc .party-body .character-row .ac-summary {
+  margin-top: 3px;
 }
 .dcc .party-body .character-row .name {
   grid-column: 1/span 13;
   grid-row: 1;
+  padding-top: 0;
 }
 .dcc .party-body .character-row .portrait {
   grid-column: 1;
   grid-row: 2/span 4;
 }
 .dcc .party-body .character-row .portrait img {
-  height: 96px;
-  width: 96px;
+  height: 90px;
+  width: 90px;
+  padding: 6px;
 }
 .dcc .party-body .character-row .occupation {
   grid-column: span 7;
+  margin-top: 3px;
 }
 .dcc .party-body .character-row .special {
   grid-column: span 11;
 }
 .dcc .party-body .character-row .hp-summary {
   grid-column: span 2;
+  margin-top: 3px;
 }
 .dcc .party-body .character-row .weapon {
   grid-column: span 1;
@@ -809,6 +836,7 @@ a.inline-roll {
 }
 .dcc .party-body .character-row .weapon-dropdown {
   grid-column: span 4;
+  margin-bottom: 5px;
 }
 .dcc .party-body .character-row .filler {
   grid-column: span 2;
@@ -820,14 +848,14 @@ a.inline-roll {
 .dcc .party-body .character-row .fa-shield-alt,
 .dcc .party-body .character-row .fa-heart {
   justify-self: end;
-  margin-top: 2px;
+  margin-top: 5px;
 }
 .dcc .party-body .empty-party {
   text-align: center;
   padding: 2rem;
 }
 .dcc .party-body .empty-party p {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   font-style: italic;
   color: #666;
   margin: 0;
@@ -867,8 +895,8 @@ a.inline-roll {
 }
 
 .dcc .item-heading {
-  border-bottom: 2px groove #eeede0;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  border-bottom: var(--system-party-sheet-border);
+  font-family: var(--system-label-font), serif;
   letter-spacing: 1px;
   font-size: 1.1rem;
   line-height: 1.2rem;
@@ -876,9 +904,9 @@ a.inline-roll {
 }
 
 .dcc .item-list-header {
-  border-bottom: 2px dotted var(--medium-color);
+  border-bottom: 2px dotted var(--system-secondary-color);
   display: grid;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
   font-size: 12px;
   grid-template-columns: subgrid;
   margin: 0 0 5px 0;
@@ -887,7 +915,7 @@ a.inline-roll {
 
 .dcc .item-list {
   display: grid;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   font-size: 12px;
   grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
   margin: 0 0 8px 0;
@@ -899,7 +927,7 @@ a.inline-roll {
   grid-template-columns: 30px 22px 33px 1fr 1fr 40px 39px;
 }
 .dcc .item-list-spells .spell-item-button {
-  background-image: url("../../../icons/svg/d20-black.svg");
+  background-image: var(--system-d20-icon);
   background-position: center;
   background-repeat: no-repeat;
   background-size: 22px 22px;
@@ -950,19 +978,19 @@ a.inline-roll {
   row-gap: 5px;
 }
 .dcc.item .tab-body .description {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
 }
 .dcc.item .tab-body .description .editor {
   min-height: 354px;
 }
 .dcc.item .tab-body .manifestation {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
 }
 .dcc.item .tab-body .manifestation .editor {
   min-height: 332px;
 }
 .dcc.item .tab-body .mercurial {
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
 }
 .dcc.item .tab-body .mercurial .editor {
   min-height: 315px;
@@ -971,7 +999,7 @@ a.inline-roll {
   background: none;
   border-width: 0 0 1px 0;
   border-radius: 0;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   font-size: 12px;
   height: 18px;
   line-height: 15px;
@@ -980,11 +1008,6 @@ a.inline-roll {
 }
 .dcc.item .tab-body input:focus {
   box-shadow: none;
-}
-.dcc.item .tab-body input[type=checkbox] {
-  background: none;
-  border: 0;
-  margin: 0;
 }
 .dcc.item .tab-body .item-img {
   max-height: 64px;
@@ -1029,13 +1052,13 @@ a.inline-roll {
   align-items: center;
   column-gap: 8px;
   display: grid;
-  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   row-gap: 4px;
   padding: 5px 0 0 0;
 }
 .config-dialog label {
   font-weight: bold;
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
   font-size: 13px;
   margin: 0;
   line-height: normal;
@@ -1058,26 +1081,21 @@ a.inline-roll {
   outline: none;
   box-shadow: none;
 }
-.config-dialog input[type=checkbox] {
-  margin: 0;
-  text-align: left;
-  border-style: none;
-  background: none;
-  justify-self: start;
-}
-.config-dialog input[type=checkbox]::before, .config-dialog input[type=checkbox]::after {
-  border-style: none;
+.config-dialog input:focus-visible {
+  box-shadow: none;
+  border-radius: unset;
+  outline: 1px solid orange;
 }
 .config-dialog select {
   height: 24px;
   line-height: 1;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--system-input-background);
   border: 0;
   border-radius: 3px;
   box-shadow: none;
   outline: none;
   text-align: center;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   font-size: 12px;
   justify-self: stretch;
 }
@@ -1085,15 +1103,8 @@ a.inline-roll {
   outline: none;
   box-shadow: none;
 }
-.config-dialog input[type=checkbox] {
-  border-style: none;
-  background: none;
-  width: 20px;
-  height: 20px;
-  justify-self: start;
-}
 .config-dialog .group-separator {
-  border-bottom: 2px dotted var(--medium-color);
+  border-bottom: 2px dotted var(--system-secondary-color);
   margin: 2px 0 2px 0;
   grid-column-end: span 2;
 }
@@ -1111,7 +1122,7 @@ a.inline-roll {
 .dcc .skill-list {
   column-gap: 5px;
   display: grid;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   grid-template-columns: 28px minmax(100px, auto) 55px 60px 97px 50px;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
@@ -1153,7 +1164,7 @@ a.inline-roll {
 /*  Tabs                                     */
 /* ----------------------------------------- */
 .dcc.sheet .sheet-tabs.tabs {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
   max-height: 25px;
   border-top: 0;
   margin-bottom: 8px;
@@ -1162,7 +1173,7 @@ a.inline-roll {
   padding: 4px 0 4px 0;
 }
 .dcc.sheet a[data-tab]::before {
-  font-family: "Font Awesome 6 Pro";
+  font-family: var(--system-icon-font), serif;
   padding-right: 5px;
 }
 .dcc.sheet a[data-tab=armor]::before {
@@ -1245,7 +1256,7 @@ a.inline-roll {
   background: none;
   border: 0;
   border-radius: 0;
-  color: var(--dark-color);
+  color: var(--system-primary-color);
   text-decoration: none;
   white-space: nowrap;
   word-break: break-all;
@@ -1270,7 +1281,7 @@ a.inline-roll {
   margin-left: 2px;
 }
 .dcc-roll-modifier .formula-row .term-label {
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
   text-align: center;
   margin-bottom: 2px;
 }
@@ -1306,7 +1317,7 @@ a.inline-roll {
   width: 100%;
 }
 .dcc-roll-modifier .button-stack label {
-  font-family: "Cooper Black", "Palatino Linotype", serif;
+  font-family: var(--system-label-font), serif;
 }
 .dcc-roll-modifier button.flat-button {
   background: rgba(0, 0, 0, 0.05);
@@ -1413,9 +1424,6 @@ a.inline-roll {
 .dcc .character .ability-scores .ability-box input {
   border-width: 0 0 1px 0;
   font-size: 14px;
-}
-.dcc .character .ability-scores .ability-box input[id$=max] {
-  height: 17px;
   margin-right: 3px;
 }
 .dcc .character .ability-scores .ability-box > label {
@@ -1427,7 +1435,7 @@ a.inline-roll {
 }
 .dcc .character .ability-scores .ability-score {
   align-self: stretch;
-  border: 5px solid var(--dark-color);
+  border: 5px solid var(--system-border-color);
   display: grid;
   grid-row-end: span 3;
 }
@@ -1455,11 +1463,11 @@ a.inline-roll {
 }
 .dcc .character .combat-basics {
   align-items: center;
-  border: var(--dark-border);
+  border: var(--system-frame-border);
   border-top: 0;
   column-gap: 5px;
   display: grid;
-  font-size: 14px;
+  font-size: 13px;
   grid-column-end: span 3;
   grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
   grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
@@ -1473,14 +1481,16 @@ a.inline-roll {
 }
 .dcc .character .combat-basics input,
 .dcc .character .combat-basics select {
+  background: var(--system-input-background);
   font-size: 14px;
   height: 17px;
   vertical-align: middle;
   margin-right: 8px;
+  border: 0;
 }
 .dcc .character .languages,
 .dcc .character .lucky-roll {
-  border: var(--dark-border);
+  border: var(--system-frame-border);
   border-top: 0;
   display: grid;
   font-size: 12px;
@@ -1499,7 +1509,7 @@ a.inline-roll {
 .dcc .character .lucky-roll textarea {
   background: none;
   border: 0;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   font-size: 12px;
   grid-row: 2;
   height: 17px;
@@ -1532,6 +1542,7 @@ a.inline-roll {
   font-size: 12px;
   padding-bottom: 2px;
   height: 32px;
+  padding-top: 1px;
 }
 .dcc .character .name-and-level {
   column-gap: 12px;
@@ -1546,7 +1557,7 @@ a.inline-roll {
   margin-right: 3px;
 }
 .dcc .character .portrait {
-  border: var(--dark-border);
+  border: var(--system-frame-border);
   border-top: 0;
   display: grid;
   grid-row: 7;
@@ -1562,7 +1573,7 @@ a.inline-roll {
   align-self: center;
 }
 .dcc .character .row-separator {
-  border-bottom: 2px dotted var(--medium-color);
+  border-bottom: 2px dotted var(--system-secondary-color);
   margin-bottom: 3px;
 }
 .dcc .character .saving-throws {
@@ -1577,8 +1588,7 @@ a.inline-roll {
 }
 .dcc .character .saving-throw-box {
   align-items: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
+  background: var(--system-frame-background);
   column-gap: 7px;
   display: grid;
   grid-template-columns: 54px 55px;
@@ -1587,7 +1597,7 @@ a.inline-roll {
 }
 .dcc .character .saving-throw-box input {
   align-self: center;
-  background: #dbd9cd;
+  background: var(--system-background);
   border-radius: 100px;
   font-size: 18px;
   height: 50px;
@@ -1597,6 +1607,7 @@ a.inline-roll {
 .dcc .character .saving-throw-box label {
   font-size: 14px;
   letter-spacing: 1px;
+  color: var(--system-frame-title-color);
 }
 
 .dcc .npc-grid {
@@ -1606,7 +1617,7 @@ a.inline-roll {
 .dcc .npc-grid textarea {
   background: none;
   border: 0;
-  font-family: "Book Antiqua", "Palatino Linotype", serif;
+  font-family: var(--system-data-font), serif;
   font-size: 12px;
   line-height: 15px;
   padding: 0;
@@ -1615,6 +1626,10 @@ a.inline-roll {
 }
 .dcc .npc-grid textarea:focus {
   box-shadow: none;
+}
+.dcc .npc-grid textarea:focus-visible {
+  box-shadow: none;
+  outline: none;
 }
 .dcc .npc-grid .ac-and-hp {
   display: grid;
@@ -1632,7 +1647,7 @@ a.inline-roll {
   display: grid;
   grid-template-columns: 72px minmax(75px, 1fr) 61px minmax(15px, 1fr);
   grid-template-rows: minmax(17px, auto) minmax(18px, auto) minmax(18px, auto);
-  padding: 0 5px 2px 3px;
+  padding: 1px 5px 2px 3px;
 }
 .dcc .npc-grid .combat-basics label {
   font-size: 12px;
@@ -1663,8 +1678,8 @@ a.inline-roll {
 }
 .dcc .npc-grid .saving-throws .saving-throw-box {
   align-items: center;
-  background: var(--dark-bg);
-  color: var(--light-color);
+  background: var(--system-frame-background);
+  color: var(--system-frame-border);
   display: grid;
   grid-template-columns: 24px 40px;
   text-align: left;
@@ -1689,12 +1704,12 @@ a.inline-roll {
   padding: 8px;
 }
 .welcome-dialog h2 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
   font-size: 24px;
   margin: 20px 0 0 0;
 }
 .welcome-dialog h3 {
-  font-family: "DuvallSmallCaps", "Palatino Linotype", serif;
+  font-family: var(--system-heading-font), serif;
   font-size: 20px;
   margin: 0;
 }

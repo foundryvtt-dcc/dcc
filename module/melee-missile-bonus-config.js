@@ -5,7 +5,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 class MeleeMissileBonusConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
-    classes: ['dcc', 'sheet', 'melee-missile-bonus-config', 'themed', 'theme-light'],
+    classes: ['dcc', 'sheet', 'melee-missile-bonus-config'],
     tag: 'form',
     position: {
       width: 316,

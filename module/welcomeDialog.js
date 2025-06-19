@@ -14,7 +14,7 @@ class WelcomeDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     id: `${pubConstants.name}-welcome-dialog`,
-    classes: ['dcc', 'welcome-dialog', 'themed', 'theme-light'],
+    classes: ['dcc', 'welcome-dialog'],
     tag: 'aside',
     position: {
       width: 600,

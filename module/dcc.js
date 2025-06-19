@@ -26,7 +26,6 @@ import { defineStatusIcons } from './status-icons.js'
 
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
-import DCCActorSheet from './actor-sheet.js'
 import DCCPartySheet from './party-sheet.js'
 
 const { Actors } = foundry.documents.collections
@@ -67,9 +66,9 @@ Hooks.once('init', async function () {
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheetV2)
-  Actors.registerSheet('dcc', DCCActorSheet, {
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
     types: ['NPC'],
-    label: 'DCC.DCCActorSheet',
+    label: 'DCC.DCCActorSheetGeneric',
     makeDefault: true
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
