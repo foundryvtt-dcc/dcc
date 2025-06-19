@@ -8,7 +8,7 @@ class DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ['dcc', 'sheet', 'item-config', 'themed'],
     tag: 'form',
     position: {
-      width: 380,
+      width: 400,
       height: 'auto'
     },
     window: {
@@ -34,7 +34,7 @@ class DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {string} Template path
    */
   _getTemplate () {
-    switch (this.document.type) {
+    switch (this.options.document.type) {
       case 'spell':
         return 'systems/dcc/templates/dialog-item-config-spell.html'
       case 'skill':
@@ -89,9 +89,9 @@ class DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
     // Update the item with the form data
-    await this.document.update(formData.object)
+    await this.options.document.update(formData.object)
     // Re-draw the updated sheet
-    await this.document.sheet.render(true)
+    await this.options.document.sheet.render(true)
   }
 }
 

@@ -20,6 +20,7 @@ class DCCActorSheetCleric extends DCCActorSheet {
       height: 640
     }
   }
+
   /** @inheritDoc */
   static CLASS_PARTS = {
     clericSpells: {
@@ -77,6 +78,7 @@ class DCCActorSheetThief extends DCCActorSheet {
       height: 640
     }
   }
+
   /** @inheritDoc */
   static CLASS_PARTS = {
     thief: {
@@ -130,6 +132,7 @@ class DCCActorSheetHalfling extends DCCActorSheet {
       height: 640
     }
   }
+
   /**
    * Parts specific to this class
    **/
@@ -185,6 +188,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
       height: 640
     }
   }
+
   /** @inheritDoc */
   static CLASS_PARTS = {
     warrior: {
@@ -236,6 +240,7 @@ class DCCActorSheetWizard extends DCCActorSheet {
       height: 640
     }
   }
+
   /** @inheritDoc */
   static CLASS_PARTS = {
     wizard: {
@@ -294,6 +299,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
       height: 640
     }
   }
+
   /** @inheritDoc */
   static CLASS_PARTS = {
     dwarf: {
@@ -346,6 +352,7 @@ class DCCActorSheetElf extends DCCActorSheet {
       height: 640
     }
   }
+
   /** @inheritDoc */
   static CLASS_PARTS = {
     elf: {
@@ -404,6 +411,7 @@ class DCCActorSheetGeneric extends DCCActorSheet {
       height: 640
     }
   }
+
   /** @inheritDoc */
   static PARTS = {
     tabs: {

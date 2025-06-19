@@ -67,7 +67,7 @@ Hooks.once('init', async function () {
 
   // Register sheet application classes
   Actors.unregisterSheet('core', ActorSheetV2)
-  
+
   // NPC sheets - DCCActorSheet as default, with Generic as option
   Actors.registerSheet('dcc', DCCActorSheet, {
     types: ['NPC'],
@@ -78,7 +78,7 @@ Hooks.once('init', async function () {
     types: ['NPC'],
     label: 'DCC.DCCActorSheetGeneric'
   })
-  
+
   // PC sheets - class-specific sheets only
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
     types: ['Player'],
