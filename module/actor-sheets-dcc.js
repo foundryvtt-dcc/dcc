@@ -23,6 +23,14 @@ class DCCActorSheetCleric extends DCCActorSheet {
 
   /** @inheritDoc */
   static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
     clericSpells: {
       id: 'clericSpells',
       template: 'systems/dcc/templates/actor-partial-cleric-spells.html'
@@ -37,6 +45,8 @@ class DCCActorSheetCleric extends DCCActorSheet {
   static CLASS_TABS = {
     sheet: {
       tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
         { id: 'cleric', group: 'sheet', label: 'DCC.Cleric' },
         { id: 'clericSpells', group: 'sheet', label: 'DCC.ClericSpells' }
       ]
@@ -81,6 +91,14 @@ class DCCActorSheetThief extends DCCActorSheet {
 
   /** @inheritDoc */
   static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
     thief: {
       id: 'thief',
       template: 'systems/dcc/templates/actor-partial-thief.html'
@@ -91,6 +109,8 @@ class DCCActorSheetThief extends DCCActorSheet {
   static CLASS_TABS = {
     sheet: {
       tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
         { id: 'thief', group: 'sheet', label: 'DCC.Thief' }
       ]
     }
@@ -137,6 +157,14 @@ class DCCActorSheetHalfling extends DCCActorSheet {
    * Parts specific to this class
    **/
   static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
     halfling: {
       id: 'halfling',
       template: 'systems/dcc/templates/actor-partial-halfling.html'
@@ -149,6 +177,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   static CLASS_TABS = {
     sheet: {
       tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
         { id: 'halfling', group: 'sheet', label: 'DCC.Halfling' }
       ]
     }
@@ -191,6 +221,14 @@ class DCCActorSheetWarrior extends DCCActorSheet {
 
   /** @inheritDoc */
   static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
     warrior: {
       id: 'warrior',
       template: 'systems/dcc/templates/actor-partial-warrior.html'
@@ -201,6 +239,8 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   static CLASS_TABS = {
     sheet: {
       tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
         { id: 'warrior', group: 'sheet', label: 'DCC.Warrior' }
       ]
     }
@@ -243,6 +283,14 @@ class DCCActorSheetWizard extends DCCActorSheet {
 
   /** @inheritDoc */
   static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
     wizard: {
       id: 'wizard',
       template: 'systems/dcc/templates/actor-partial-wizard.html'
@@ -257,6 +305,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
   static CLASS_TABS = {
     sheet: {
       tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
         { id: 'wizard', group: 'sheet', label: 'DCC.Wizard' },
         { id: 'wizardSpells', group: 'sheet', label: 'DCC.WizardSpells' }
       ]
@@ -302,6 +352,14 @@ class DCCActorSheetDwarf extends DCCActorSheet {
 
   /** @inheritDoc */
   static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
     dwarf: {
       id: 'dwarf',
       template: 'systems/dcc/templates/actor-partial-dwarf.html'
@@ -312,6 +370,8 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   static CLASS_TABS = {
     sheet: {
       tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
         { id: 'dwarf', group: 'sheet', label: 'DCC.Dwarf' }
       ]
     }
@@ -355,6 +415,14 @@ class DCCActorSheetElf extends DCCActorSheet {
 
   /** @inheritDoc */
   static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
     elf: {
       id: 'elf',
       template: 'systems/dcc/templates/actor-partial-elf.html'
@@ -369,6 +437,8 @@ class DCCActorSheetElf extends DCCActorSheet {
   static CLASS_TABS = {
     sheet: {
       tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
         { id: 'elf', group: 'sheet', label: 'DCC.Elf' },
         { id: 'wizardSpells', group: 'sheet', label: 'DCC.WizardSpells' }
       ]
