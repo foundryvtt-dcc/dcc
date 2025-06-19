@@ -764,7 +764,7 @@ async function createDCCMacro (data, slot) {
     let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command))
     if (!macro) {
       macro = await Macro.create({
-        name: macroData.name,
+        name: `${macroData.name}-${game.user.name}`,
         type: 'script',
         img: macroData.img,
         command: macroData.command,
