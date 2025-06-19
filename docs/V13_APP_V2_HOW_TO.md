@@ -381,7 +381,7 @@ static DEFAULT_OPTIONS = {
 ### Key Changes:
 - Change from getter method to static property
 - Add `/** @inheritDoc */` comment
-- Add `'themed', 'theme-light'` to classes array
+- Add `'themed', 'theme-light'` to classes array ⚠️ **WORKAROUND ONLY** - this forces light mode but should not be a long-term solution
 - **Add `tag: 'form'` (REQUIRED for all dialogs and forms)**
 - Move `width` and `height` into `position` object
 - Move `resizable` into `window` object
