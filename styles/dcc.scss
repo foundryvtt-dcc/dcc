@@ -1663,7 +1663,7 @@ a.inline-roll {
     .combat-basics {
       column-gap: min(5px);
       display: grid;
-      grid-template-columns: 72px minmax(75px, 1fr) 61px minmax(15px, 1fr);
+      grid-template-columns: 77px minmax(75px, 1fr) 69px minmax(15px, 1fr);
       grid-template-rows: minmax(17px, auto) minmax(18px, auto) minmax(18px, auto);
       padding: 1px 5px 2px 3px;
 
@@ -1712,7 +1712,7 @@ a.inline-roll {
 
         input {
           align-self: center;
-          background: #dbd9cd;
+          background: var(--system-input-background);
           border-radius: 10px;
           font-size: 12px;
           height: 20px;

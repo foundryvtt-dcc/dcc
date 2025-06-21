@@ -39,6 +39,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       levelChange: this.#levelChange,
       rollAbilityCheck: this.#rollAbilityCheck,
       rollCritDie: this.#rollCritDie,
+      rollDisapproval: this.#rollDisapproval,
       rollHitDice: this.#rollHitDice,
       rollInitiative: this.#rollInitiative,
       rollLuckDie: this.#rollLuckDie,
@@ -965,7 +966,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #rollDisapproval (event) {
+  static async #rollDisapproval (event, target) {
     event.preventDefault()
     const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollDisapproval(undefined, options)
