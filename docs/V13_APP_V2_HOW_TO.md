@@ -272,13 +272,79 @@ static async #onSubmitForm(event, form, formData) {
 }
 ```
 
-**Pattern 2: Instance Method (Legacy Support)**
+### Inline Item Modifications on Actor Sheets
+
+When you need to edit items inline on an actor sheet (e.g., weapons, equipment, spells), you must handle these updates separately from the main actor update. This is because ApplicationV2's form validation will strip out nested item data.
+
+**Template Pattern:**
+```html
+{{!-- Use "items" prefix for inline item edits --}}
+<li class="weapon" data-item-id="{{weapon._id}}">
+  <input type="text" 
+         name="items.{{weapon._id}}.name" 
+         value="{{weapon.name}}"/>
+  <input type="checkbox" 
+         name="items.{{weapon._id}}.system.equipped" 
+         {{checked weapon.system.equipped}}/>
+  <input type="text" 
+         name="items.{{weapon._id}}.system.damage" 
+         value="{{weapon.system.damage}}"/>
+</li>
+```
+
+**Implementation Pattern (actor-sheet.js:1025-1066):**
 ```javascript
-async _updateObject(event, formData) {
-  event.preventDefault()
-  await this.document.update(formData) // Note: formData directly
+/** @override */
+_processFormData(event, form, formData) {
+  // Extract the raw form data object BEFORE validation strips out items
+  const expanded = foundry.utils.expandObject(formData.object)
+  
+  // Handle items separately if they exist
+  if (expanded.items) {
+    // Store for later processing
+    this._pendingItemUpdates = Object.entries(expanded.items).map(([id, itemData]) => ({
+      _id: id,
+      ...itemData
+    }))
+    
+    // Remove from the expanded object
+    delete expanded.items
+    
+    // Flatten and replace the existing formData.object properties
+    const flattened = foundry.utils.flattenObject(expanded)
+    
+    // Clear existing object and repopulate (since we can't reassign)
+    for (const key in formData.object) {
+      delete formData.object[key]
+    }
+    Object.assign(formData.object, flattened)
+  }
+  
+  // Call parent with modified formData
+  return super._processFormData(event, form, formData)
+}
+
+/** @override */
+async _processSubmitData(event, form, formData) {
+  // Process the actor data normally
+  const result = await super._processSubmitData(event, form, formData)
+  
+  // Now handle any pending item updates
+  if (this._pendingItemUpdates?.length > 0) {
+    await this.document.updateEmbeddedDocuments('Item', this._pendingItemUpdates)
+    delete this._pendingItemUpdates // Clean up
+  }
+  
+  return result
 }
 ```
+
+**Key Points:**
+- Use `items.{{id}}.property` naming convention in templates
+- Override `_processFormData` to extract item data before validation
+- Store item updates temporarily in `this._pendingItemUpdates`
+- Override `_processSubmitData` to apply item updates after actor update
+- Clean up temporary storage after updates complete
 
 ### Constructor Pattern Changes
 

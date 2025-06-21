@@ -4,24 +4,24 @@
   {{#* inline "armorRow"}}
     <li class="grid-col-span-8 armor grid-col-gap-5" data-item-id="{{id}}" data-item-index="{{index}}">
       <input type="checkbox"
-             name="itemUpdates.{{id}}.system.equipped"
+             name="items.{{id}}.system.equipped"
              data-dtype="Boolean" {{checked armor.system.equipped}}/>
       <img class="item-draggable icon-filter" src="{{armor.img}}" title="{{armor.name}}" alt="{{armor.name}}" width="22"
            height="22">
       <input type="text"
-             name="itemUpdates.{{id}}.name"
+             name="items.{{id}}.name"
              value="{{armor.name}}"/>
       <input type="text"
-             name="itemUpdates.{{id}}.system.acBonus"
+             name="items.{{id}}.system.acBonus"
              value="{{numberFormat armor.system.acBonus decimals=0 sign=true}}"/>
       <input type="text"
-             name="itemUpdates.{{id}}.system.checkPenalty"
+             name="items.{{id}}.system.checkPenalty"
              value="{{armor.system.checkPenalty}}"/>
       <input type="text"
-             name="itemUpdates.{{id}}.system.fumbleDie"
+             name="items.{{id}}.system.fumbleDie"
              value="{{armor.system.fumbleDie}}"/>
       <input type="text"
-             name="itemUpdates.{{id}}.system.description.summary"
+             name="items.{{id}}.system.description.summary"
              value="{{{armor.system.description.summary}}}"/>
       <div>
         <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
@@ -67,7 +67,7 @@
       <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22">
       <div>{{item.name}}</div>
       <div>{{{item.system.description.summary}}}</div>
-      <div><i class="fa-thin fa-up qty-increase"></i> {{item.system.quantity}} <i class="fa-thin fa-down qty-decrease"></i></div>
+      <div><i class="fa-thin fa-up" data-action="increaseQty"></i> {{item.system.quantity}} <i class="fa-thin fa-down" data-action="decreaseQty"></i></div>
       <div>
         <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
         <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>

@@ -188,12 +188,6 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     await FleetingLuck.toggleFilter()
   }
 
-  // /** @override */
-  // async _updateObject (event, formData) {
-  //   event.preventDefault()
-  //   this.render()
-  // }
-
   /** @override */
   async close (options = {}) {
     FleetingLuck.dialog = null

@@ -26,10 +26,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       height: 450
     },
     actions: {
+      applyDisapproval: this.#applyDisapproval,
       configureActor: this.#configureActor,
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
+      decreaseQty: this.#decreaseQty,
       editImage: this.#editImage,
+      increaseQty: this.#increaseQty,
       itemCreate: this.#itemCreate,
       itemEdit: this.#itemEdit,
       itemDelete: this.#itemDelete,
@@ -45,6 +48,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollWeaponAttack: this.#rollWeaponAttack
     },
     form: {
+      // handler: DCCActorSheet.#onSubmitForm,
       submitOnChange: true
     },
     actor: {
@@ -146,7 +150,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       this.options.classes.push(this.document.type === 'Player' ? 'pc' : 'npc')
     }
 
-    const items = await this.#prepareItems()
+    const preparedItems = await this.#prepareItems()
 
     foundry.utils.mergeObject(context, {
       actor: this.document,
@@ -158,11 +162,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       isNPC: this.document.type === 'NPC',
       isPC: this.document.type === 'Player',
       isZero: this.document.system.details.level.value === 0,
+      items: this.document.items,
       notesHTML: await this.#prepareNotes(),
       parts: {},
       source: this.document.toObject(),
       system: this.document.system,
-      ...items
+      ...preparedItems
     })
 
     return context
@@ -457,17 +462,31 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await item.sheet.render({ force: true })
   }
 
-  async #decreaseQty (event) {
-    const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-    const item = this.actor.items.get(itemId)
+  /**
+   * Increase quantity of an item
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #decreaseQty (event, target) {
+    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
+    const item = this.actor.items?.get(itemId)
     let qty = item.system?.quantity || 0
     qty -= 1
     item.update({ 'system.quantity': qty })
   }
 
-  async #increaseQty (event) {
-    const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-    const item = this.actor?.items.get(itemId)
+  /**
+   * Decrease quantity of an item
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #increaseQty (event, target) {
+    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
+    const item = this.actor?.items?.get(itemId)
     let qty = item.system?.quantity || 0
     qty += 1
     item.update({ 'system.quantity': qty })
@@ -494,20 +513,19 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const classes = event.target.classList
 
     switch (dragAction) {
-      case 'ability':
-        {
-          const abilityId = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
-          const labelFor = event.target.getAttribute('for') || ''
-          const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
-          dragData = {
-            type: 'Ability',
-            actorId,
-            data: {
-              abilityId,
-              rollUnder
-            }
+      case 'ability': {
+        const abilityId = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
+        const labelFor = event.target.getAttribute('for') || ''
+        const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
+        dragData = {
+          type: 'Ability',
+          actorId,
+          data: {
+            abilityId,
+            rollUnder
           }
         }
+      }
         break
 
       case 'initiative':
@@ -528,31 +546,29 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'save':
-        {
-          const saveId = DCCActorSheet.#findDataset(event.currentTarget, 'save')
-          dragData = {
-            type: 'Save',
-            actorId,
-            data: saveId
-          }
+      case 'save': {
+        const saveId = DCCActorSheet.#findDataset(event.currentTarget, 'save')
+        dragData = {
+          type: 'Save',
+          actorId,
+          data: saveId
         }
+      }
         break
 
-      case 'skill':
-        {
-          const skillId = DCCActorSheet.#findDataset(event.currentTarget, 'skill')
-          const actorSkill = this.actor.system.skills[skillId]
-          const skillName = actorSkill ? actorSkill.label : skillId
-          dragData = {
-            type: 'Skill',
-            actorId,
-            data: {
-              skillId,
-              skillName
-            }
+      case 'skill': {
+        const skillId = DCCActorSheet.#findDataset(event.currentTarget, 'skill')
+        const actorSkill = this.actor.system.skills[skillId]
+        const skillName = actorSkill ? actorSkill.label : skillId
+        dragData = {
+          type: 'Skill',
+          actorId,
+          data: {
+            skillId,
+            skillName
           }
         }
+      }
         break
 
       case 'luckDie':
@@ -565,33 +581,32 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'spellCheck':
-        {
-          const ability = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
-          const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-          const spell = DCCActorSheet.#findDataset(event.currentTarget, 'spell')
+      case 'spellCheck': {
+        const ability = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
+        const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
+        const spell = DCCActorSheet.#findDataset(event.currentTarget, 'spell')
 
-          const dragDataContent = { ability }
+        const dragDataContent = { ability }
 
-          // If we have an itemId, include spell details for item-based macros
-          if (itemId) {
-            const item = this.actor.items.get(itemId)
-            if (item) {
-              dragDataContent.itemId = itemId
-              dragDataContent.name = item.name
-              dragDataContent.img = item.img
-            }
-          } else if (spell) {
-            // Fallback to spell name from data attribute
-            dragDataContent.name = spell
+        // If we have an itemId, include spell details for item-based macros
+        if (itemId) {
+          const item = this.actor.items.get(itemId)
+          if (item) {
+            dragDataContent.itemId = itemId
+            dragDataContent.name = item.name
+            dragDataContent.img = item.img
           }
-
-          dragData = {
-            type: 'Spell Check',
-            actorId,
-            data: dragDataContent
-          }
+        } else if (spell) {
+          // Fallback to spell name from data attribute
+          dragDataContent.name = spell
         }
+
+        dragData = {
+          type: 'Spell Check',
+          actorId,
+          data: dragDataContent
+        }
+      }
         break
 
       case 'attackBonus':
@@ -630,46 +645,44 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }
         break
 
-      case 'weapon':
-        {
-          const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-          const weapon = this.actor.items.get(itemId)
-          if (weapon) {
-            dragData = Object.assign(
-              weapon.toDragData(),
-              {
-                dccType: 'Weapon',
-                actorId,
-                data: weapon,
-                dccData: {
-                  weapon,
-                  backstab: classes.contains('backstab-button')
-                }
+      case 'weapon': {
+        const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
+        const weapon = this.actor.items.get(itemId)
+        if (weapon) {
+          dragData = Object.assign(
+            weapon.toDragData(),
+            {
+              dccType: 'Weapon',
+              actorId,
+              data: weapon,
+              dccData: {
+                weapon,
+                backstab: classes.contains('backstab-button')
               }
-            )
-          }
+            }
+          )
         }
+      }
         break
 
-      case 'item':
-        {
-          const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-          const item = this.actor.items.get(itemId)
-          if (item) {
-            // Use 'DCC Item' for spells to prevent Foundry's default macro creation
-            // Use 'Item' for other items to maintain normal drag/drop functionality
-            const dragType = item.type === 'spell' ? 'DCC Item' : 'Item'
+      case 'item': {
+        const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
+        const item = this.actor.items.get(itemId)
+        if (item) {
+          // Use 'DCC Item' for spells to prevent Foundry's default macro creation
+          // Use 'Item' for other items to maintain normal drag/drop functionality
+          const dragType = item.type === 'spell' ? 'DCC Item' : 'Item'
 
-            dragData = {
-              type: dragType,
-              actorId,
-              data: item,
-              system: {
-                item
-              }
+          dragData = {
+            type: dragType,
+            actorId,
+            data: item,
+            system: {
+              item
             }
           }
         }
+      }
         break
     }
 
@@ -934,19 +947,25 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
-   * Handle applying disapproval
-   * @private
-   */
-  _onApplyDisapproval (event) {
+   * Handle rolling a spell check
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #applyDisapproval (event, target) {
     event.preventDefault()
     this.actor.applyDisapproval()
   }
 
   /**
-   * Prompt and roll for disapproval
-   * @private
-   */
-  _onRollDisapproval (event) {
+   * Handle rolling a spell check
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #rollDisapproval (event) {
     event.preventDefault()
     const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollDisapproval(undefined, options)
@@ -1003,39 +1022,47 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /* -------------------------------------------- */
 
   /** @override */
-  async _updateObject (event, target, formData) {
-    // Handle owned item updates separately
-    if (event.currentTarget) {
-      let parentElement = target.parentElement
-      const expanded = foundry.utils.expandObject(formData)
-      if (expanded.itemUpdates) {
-        if (parentElement.classList.contains('weapon') ||
-          parentElement.classList.contains('armor') ||
-          parentElement.classList.contains('spell-item') ||
-          parentElement.classList.contains('skill-field')) {
-          // Handle extra nesting in skill lists
-          if (parentElement.classList.contains('skill-field')) {
-            parentElement = parentElement.parentElement
-          }
-          const itemId = parentElement.dataset.itemId
-          const item = this.actor.items.get(itemId)
-          if (item) {
-            const updateData = expanded.itemUpdates[itemId]
-            await item.update(updateData)
-          }
-        }
-      }
+  _processFormData (event, form, formData) {
+    // Extract the raw form data object BEFORE validation strips out items
+    const expanded = foundry.utils.expandObject(formData.object)
 
-      if (expanded.img) {
-        const tokenImg = this.actor.prototypeToken.texture.src
-        if (!tokenImg || tokenImg === 'icons/svg/mystery-man.svg' || tokenImg === 'systems/dcc/styles/images/actor.webp') {
-          foundry.utils.mergeObject(formData, { prototypeToken: { texture: { src: expanded.img } } })
-        }
+    // Handle items separately if they exist
+    if (expanded.items) {
+      // Store for later processing
+      this._pendingItemUpdates = Object.entries(expanded.items).map(([id, itemData]) => ({
+        _id: id,
+        ...itemData
+      }))
+
+      // Remove from the expanded object
+      delete expanded.items
+
+      // Flatten and replace the existing formData.object properties
+      const flattened = foundry.utils.flattenObject(expanded)
+
+      // Clear existing object and repopulate (since we can't reassign)
+      for (const key in formData.object) {
+        delete formData.object[key]
       }
+      Object.assign(formData.object, flattened)
     }
 
-    // Update the Actor
-    return this.object.update(formData)
+    // Call parent with modified formData
+    return super._processFormData(event, form, formData)
+  }
+
+  /** @override */
+  async _processSubmitData (event, form, formData) {
+    // Process the actor data normally
+    const result = await super._processSubmitData(event, form, formData)
+
+    // Now handle any pending item updates
+    if (this._pendingItemUpdates?.length > 0) {
+      await this.document.updateEmbeddedDocuments('Item', this._pendingItemUpdates)
+      delete this._pendingItemUpdates // Clean up
+    }
+
+    return result
   }
 
   /**

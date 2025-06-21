@@ -1,43 +1,45 @@
 {{!-- Equipment Tab --}}
 <section class="tab equipment-bg {{tabs.equipment.id}} {{tabs.equipment.cssClass}}" data-tab="{{tabs.equipment.id}}" data-group="{{tabs.equipment.group}}">
+  {{items}}
+
   {{!-- Melee Weapons --}}
   {{#* inline "weaponRow"}}
     <li class="grid-col-span-9 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
       <input type="checkbox"
-             name="itemUpdates.{{id}}.system.equipped"
+             name="items.{{id}}.system.equipped"
              data-dtype="Boolean" {{checked weapon.system.equipped}}/>
-      <img class="weapon-draggable icon-filter" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}"
+      <img class="icon-filter" src="{{weapon.img}}" title="{{weapon.name}}" alt="{{weapon.name}}"
            width="22" height="22">
       <div class="attack-buttons">
-        <div class="rollable weapon-button weapon-draggable icon-filter" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
+        <div class="rollable weapon-button icon-filter" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon" title="{{localize 'DCC.Roll'}}">&nbsp;</div>
         {{#if canBackstab}}
-          <div class="rollable backstab-button weapon-draggable" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon">&nbsp;</div>
+          <div class="rollable backstab-button" data-action="rollWeaponAttack" data-drag="true" data-drag-action="weapon">&nbsp;</div>
         {{/if}}
       </div>
       <input class="weapon-name" type="text"
-             name="itemUpdates.{{id}}.name"
+             name="items.{{id}}.name"
              value="{{weapon.name}}"/>
       <input class="disabled" type="text"
-             name="itemUpdates.{{id}}.system.toHit"
+             name="items.{{id}}.system.toHit"
              value="{{weapon.system.toHit}}"
              readonly
       />
       <input class="weapon-damage disabled" type="text"
-             name="itemUpdates.{{id}}.system.damage"
+             name="items.{{id}}.system.damage"
              value="{{weapon.system.damage}}"
              readonly
       />
       {{#if melee}}
         <input class="weapon-notes" type="text"
-               name="itemUpdates.{{id}}.system.description.summary"
+               name="items.{{id}}.system.description.summary"
                value="{{{weapon.system.description.summary}}}"/>
       {{else}}
         <input class="weapon-notes" type="text"
-               name="itemUpdates.{{id}}.system.range"
+               name="items.{{id}}.system.range"
                value="{{weapon.system.range}}"/>
       {{/if}}
       <input type="checkbox"
-             name="itemUpdates.{{id}}.system.trained"
+             name="items.{{id}}.system.trained"
              style="margin-left: 5px;"
              data-dtype="Boolean" {{checked weapon.system.trained}}/>
       <div>
