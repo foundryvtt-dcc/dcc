@@ -176,13 +176,6 @@
             "label": "DCC.DetectSecretDoors",
             "value": "+0"
           }
-        },
-        "inventory": {
-          "weapons": [],
-          "ammunition": [],
-          "armor": [],
-          "equipment": [],
-          "mount": []
         }
       },
       "cleric": {
@@ -313,7 +306,7 @@
           "spellCheckOverride": null,
           "patron": null,
           "familiar": null,
-          "corruption": []
+          "corruption": ""
         }
       },
       "dwarf": {

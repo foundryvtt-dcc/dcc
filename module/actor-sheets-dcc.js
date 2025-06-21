@@ -1,4 +1,4 @@
-/* global TextEditor, game */
+/* global game, foundry */
 // noinspection JSClosureCompilerSyntax
 
 /**
@@ -7,24 +7,64 @@
 
 import DCCActorSheet from './actor-sheet.js'
 
+const { TextEditor } = foundry.applications.ux
+
 /**
  * Extend the zero-level/NPC sheet for a Cleric
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetCleric extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
 
-  /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-cleric.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Cleric')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
+  /** @inheritDoc */
+  static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    clericSpells: {
+      id: 'clericSpells',
+      template: 'systems/dcc/templates/actor-partial-cleric-spells.html'
+    },
+    cleric: {
+      id: 'cleric',
+      template: 'systems/dcc/templates/actor-partial-cleric.html'
+    }
+  }
 
-    if (data.system.details.sheetClass !== 'Cleric') {
-      this.actor.update({
+  /** @inheritDoc */
+  static CLASS_TABS = {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'cleric', group: 'sheet', label: 'DCC.Cleric' },
+        { id: 'clericSpells', group: 'sheet', label: 'DCC.ClericSpells' }
+      ]
+    }
+  }
+
+  /** @inheritDoc */
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+
+    await this.actor.update({
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
+    })
+
+    if (this.actor.system.details.sheetClass !== 'Cleric') {
+      await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Cleric'),
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink')),
         'system.details.sheetClass': 'Cleric',
         'system.class.spellCheckAbility': 'per',
         'system.details.critRange': 20,
@@ -33,7 +73,7 @@ class DCCActorSheetCleric extends DCCActorSheet {
       })
     }
 
-    return data
+    return context
   }
 }
 
@@ -42,19 +82,52 @@ class DCCActorSheetCleric extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetThief extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
+
+  /** @inheritDoc */
+  static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    thief: {
+      id: 'thief',
+      template: 'systems/dcc/templates/actor-partial-thief.html'
+    }
+  }
+
+  /** @inheritDoc */
+  static CLASS_TABS = {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'thief', group: 'sheet', label: 'DCC.Thief' }
+      ]
+    }
+  }
 
   /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-thief.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Thief')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
 
-    if (data.system.details.sheetClass !== 'Thief') {
-      this.actor.update({
+    await this.actor.update({
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
+    })
+
+    if (this.actor.system.details.sheetClass !== 'Thief') {
+      await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Thief'),
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink')),
         'system.details.sheetClass': 'Thief',
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
@@ -64,7 +137,7 @@ class DCCActorSheetThief extends DCCActorSheet {
       })
     }
 
-    return data
+    return context
   }
 }
 
@@ -73,18 +146,54 @@ class DCCActorSheetThief extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetHalfling extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
+
+  /**
+   * Parts specific to this class
+   **/
+  static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    halfling: {
+      id: 'halfling',
+      template: 'systems/dcc/templates/actor-partial-halfling.html'
+    }
+  }
+
+  /**
+   * Tabs specific to this class
+   **/
+  static CLASS_TABS = {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'halfling', group: 'sheet', label: 'DCC.Halfling' }
+      ]
+    }
+  }
 
   /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-halfling.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Halfling')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
 
-    if (data.system.details.sheetClass !== 'Halfling') {
-      this.actor.update({
+    await this.actor.update({
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
+    })
+
+    if (this.actor.system.details.sheetClass !== 'Halfling') {
+      await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Halfling'),
         'system.details.sheetClass': 'Halfling',
         'system.details.critRange': 20,
@@ -94,7 +203,7 @@ class DCCActorSheetHalfling extends DCCActorSheet {
       })
     }
 
-    return data
+    return context
   }
 }
 
@@ -103,19 +212,51 @@ class DCCActorSheetHalfling extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetWarrior extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
 
-  /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-warrior.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Warrior')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink'))
-    data.system.class.mightyDeedsLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
+  /** @inheritDoc */
+  static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    warrior: {
+      id: 'warrior',
+      template: 'systems/dcc/templates/actor-partial-warrior.html'
+    }
+  }
 
-    if (data.system.details.sheetClass !== 'Warrior') {
-      this.actor.update({
+  /** @inheritDoc */
+  static CLASS_TABS = {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'warrior', group: 'sheet', label: 'DCC.Warrior' }
+      ]
+    }
+  }
+
+  /** @inheritDoc */
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+
+    await this.actor.update({
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
+      'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
+    })
+
+    if (this.actor.system.details.sheetClass !== 'Warrior') {
+      await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Warrior'),
         'system.details.sheetClass': 'Warrior',
         'system.class.disapproval': 1,
@@ -124,7 +265,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
       })
     }
 
-    return data
+    return context
   }
 }
 
@@ -133,29 +274,67 @@ class DCCActorSheetWarrior extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetWizard extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
 
-  /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-wizard.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Wizard')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink'))
+  /** @inheritDoc */
+  static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    wizard: {
+      id: 'wizard',
+      template: 'systems/dcc/templates/actor-partial-wizard.html'
+    },
+    wizardSpells: {
+      id: 'wizardSpells',
+      template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
+    }
+  }
 
-    if (data.system.details.sheetClass !== 'Wizard') {
-      this.actor.update({
+  /** @inheritDoc */
+  static CLASS_TABS = {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'wizard', group: 'sheet', label: 'DCC.Wizard' },
+        { id: 'wizardSpells', group: 'sheet', label: 'DCC.WizardSpells' }
+      ]
+    }
+  }
+
+  /** @inheritDoc */
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+
+    await this.actor.update({
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink'))
+    })
+
+    if (this.actor.system.details.sheetClass !== 'Wizard') {
+      await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Wizard'),
         'system.details.sheetClass': 'Wizard',
         'system.class.spellCheckAbility': 'int',
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false
+        'system.config.addClassLevelToInitiative': false,
+        'system.config.showSpells': true
       })
     }
 
-    return data
+    return context
   }
 }
 
@@ -164,19 +343,51 @@ class DCCActorSheetWizard extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetDwarf extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
 
-  /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-dwarf.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Dwarf')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink'))
-    data.system.class.mightyDeedsLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
+  /** @inheritDoc */
+  static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    dwarf: {
+      id: 'dwarf',
+      template: 'systems/dcc/templates/actor-partial-dwarf.html'
+    }
+  }
 
-    if (data.system.details.sheetClass !== 'Dwarf') {
-      this.actor.update({
+  /** @inheritDoc */
+  static CLASS_TABS = {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'dwarf', group: 'sheet', label: 'DCC.Dwarf' }
+      ]
+    }
+  }
+
+  /** @inheritDoc */
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+
+    await this.actor.update({
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
+      'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
+    })
+
+    if (this.actor.system.details.sheetClass !== 'Dwarf') {
+      await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Dwarf'),
         'system.details.sheetClass': 'Dwarf',
         'system.class.disapproval': 1,
@@ -186,7 +397,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
       })
     }
 
-    return data
+    return context
   }
 }
 
@@ -195,53 +406,131 @@ class DCCActorSheetDwarf extends DCCActorSheet {
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetElf extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
 
-  /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-elf.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Elf')
-    data.system.class.classLink = await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
+  /** @inheritDoc */
+  static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    elf: {
+      id: 'elf',
+      template: 'systems/dcc/templates/actor-partial-elf.html'
+    },
+    wizardSpells: {
+      id: 'wizardSpells',
+      template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
+    }
+  }
 
-    if (data.system.details.sheetClass !== 'Elf') {
-      this.actor.update({
+  /** @inheritDoc */
+  static CLASS_TABS = {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'elf', group: 'sheet', label: 'DCC.Elf' },
+        { id: 'wizardSpells', group: 'sheet', label: 'DCC.WizardSpells' }
+      ]
+    }
+  }
+
+  /** @inheritDoc */
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+
+    await this.actor.update({
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
+    })
+
+    if (this.actor.system.details.sheetClass !== 'Elf') {
+      await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Elf'),
         'system.details.sheetClass': 'Elf',
         'system.class.spellCheckAbility': 'int',
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false
+        'system.config.addClassLevelToInitiative': false,
+        'system.config.showSpells': true
       })
     }
 
-    return data
+    return context
   }
 }
 
 /**
- * Extend the zero-level/NPC sheet for a generic upper level character
+ * Extend the sheet for a generic upper level character
  * @extends {DCCActorSheet}
  */
 class DCCActorSheetGeneric extends DCCActorSheet {
-  static height = 635
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    position: {
+      height: 640
+    }
+  }
+
+  /** @inheritDoc */
+  static PARTS = {
+    tabs: {
+      id: 'tabs',
+      template: 'systems/dcc/templates/actor-partial-tabs.html'
+    },
+    body: {
+      id: 'body',
+      template: 'systems/dcc/templates/actor-sheet-body.html'
+    },
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    skills: {
+      id: 'skills',
+      template: 'systems/dcc/templates/actor-partial-skills.html'
+    },
+    wizardSpells: {
+      id: 'wizardSpells',
+      template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
+    },
+    notes: {
+      id: 'notes',
+      template: 'systems/dcc/templates/actor-partial-pc-notes.html'
+    }
+  }
+
+  /** @inheritDoc */
+  static CLASS_TABS = {}
 
   /** @override */
-  async getData (options) {
-    const data = await super.getData(options)
-    this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
-    this.options.classes = ['dcc', 'sheet', 'actor', 'pc']
-    data.system.class.className = game.i18n.localize('DCC.Generic')
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
 
-    this.actor.update({
-      'system.class.className': game.i18n.localize('DCC.Generic'),
-      'system.config.attackBonusMode': 'flat',
-      'system.config.addClassLevelToInitiative': false
-    })
+    if (this.actor.system.details.sheetClass !== 'Generic') {
+      await this.actor.update({
+        'system.class.className': game.i18n.localize('DCC.Generic'),
+        'system.details.sheetClass': 'Generic',
+        'system.config.attackBonusMode': 'flat',
+        'system.config.addClassLevelToInitiative': false
+      })
+    }
 
-    return data
+    return context
   }
 }
 

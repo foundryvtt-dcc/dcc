@@ -1,0 +1,43 @@
+/* System Theme Variables */
+:root {
+  --system-accent-color: var(--system-primary-color);
+  --system-background-art-filter: sepia(1) hue-rotate(20deg) saturate(90);
+  --system-background: url('/ui/parchment.jpg');
+  --system-border-color: rgba(0, 0, 0, 0.77);
+  --system-d20-icon: url('../../../icons/svg/d20-black.svg');
+  --system-data-font: 'Book Antiqua', serif;
+  --system-frame-background: url('images/denim.png');
+  --system-frame-border: 4px solid var(--system-border-color);
+  --system-frame-title-color: rgba(226, 243, 213, 0.85);
+  --system-heading-font: 'Duvall', serif;
+  --system-icon-filter: none;
+  --system-icon-font: 'Font Awesome 6 Pro';
+  --system-input-background: var(--system-input-background-color);
+  --system-input-background-color: rgba(128, 128, 128, 0.25);
+  --system-label-font: 'Cooper Black', serif;
+  --system-party-sheet-border: 2px solid var(--system-border-color);
+  --system-primary-color: rgba(0, 0, 0, 0.75);
+  --system-secondary-color: rgba(0, 0, 0, 0.3);
+  --system-value-display-background-color: rgba(0, 0, 0, 0.05);
+}
+
+
+/*Override for dark theme */
+.theme-dark {
+  --system-accent-color: #ef4444;
+  --system-background: rgba(0, 0, 0, 0.75);
+  --system-border-color: #525252;
+  --system-d20-icon: url('../../../icons/svg/d20-grey.svg');
+  --system-frame-background: url('images/denim-light.jpg');
+  --system-frame-border: 4px solid var(--system-border-color);
+  --system-frame-title-color: rgba(0, 0, 0, 0.85);
+  --system-icon-filter: sepia(1) brightness(0.7);
+  --system-input-background: var(--system-input-background-color);
+  --system-input-background-color: rgba(50, 49, 56, .75);
+  --system-input-border: 1px solid var(--system-border-color);
+  --system-input-text-color: rgba(231, 209, 177, 1);
+  --system-party-sheet-border: 2px solid var(--system-border-color);
+  --system-primary-color: rgba(231, 209, 177, 0.65);
+  --system-secondary-color: rgba(128, 128, 128, 0.35);
+  --system-value-display-background-color: rgba(128, 128, 128, 0.1);
+}

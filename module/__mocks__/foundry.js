@@ -150,9 +150,9 @@ class ActorMock {
             }
           },
           saves: {
-            frt: { value: -1 },
-            ref: { value: 0 },
-            wil: { value: +2 }
+            frt: { value: '-1' },
+            ref: { value: '0' },
+            wil: { value: '+2' }
           },
           details: {
             attackBonus: '+0',
@@ -182,6 +182,7 @@ class ActorMock {
             }
           },
           class: {
+            corruption: '',
             luckDie: '1d3',
             spellCheck: 3,
             spellCheckAbility: 'int',
@@ -380,6 +381,8 @@ class Game {
     this.i18n = new Localization()
   }
 
+  user = {} // Set up below
+
   dcc = {} // Set up below
 }
 
@@ -489,7 +492,17 @@ global.ui = {
 
 // Namespace for Foundry helper functions
 global.foundry = {
-  utils: {}
+  utils: {},
+  applications: {
+    handlebars: {
+      renderTemplate: vi.fn((template, data) => { return '' }).mockName('renderTemplate')
+    },
+    ux: {
+      TextEditor: {
+        enrichHTML: vi.fn(async (content, options = {}) => content).mockName('TextEditor.enrichHTML')
+      }
+    }
+  }
 }
 
 // Foundry's implementation of getType
@@ -515,7 +528,7 @@ global.setProperty = function (object, key, value) {
     const parts = key.split('.')
     key = parts.pop()
     target = parts.reduce((o, i) => {
-      if (!Object.prototype.hasOwnProperty.call(o, i)) o[i] = {}
+      if (!Object.hasOwn(o, i)) o[i] = {}
       return o[i]
     }, object)
   }
@@ -581,7 +594,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
 
     // Get the existing object
     let x = original[k]
-    let has = Object.prototype.hasOwnProperty.call(original, k)
+    let has = Object.hasOwn(original, k)
     let tx = global.getType(x)
 
     // Ensure that inner objects exist
@@ -632,6 +645,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
 
 /**
  * Handlebars
+ * @templateList {Array<string>} A list of template paths to load
  */
 global.loadTemplates = vi.fn((templateList) => {}).mockName('loadTemplates')
 

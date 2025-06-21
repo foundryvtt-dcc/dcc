@@ -1,12 +1,12 @@
-<form autocomplete="off" class="dcc-roll-modifier">
+<section class="dcc-roll-modifier">
   <div class="formula-row">
     {{#each terms}}
       {{> (lookup . 'partial') }}
     {{/each}}
   </div>
-  <footer class="button-row dialog-buttons">
-    <button type="submit" class="roll flat-button">
+  <footer class="grid-col-span-2" style="width: 100%;">
+    <button type="submit" class="roll flat-button" style="width: 100%;">
       <i class="fas fa-dice-d20"></i>&nbsp;{{rollLabel}}
     </button>
   </footer>
-</form>
+</section>

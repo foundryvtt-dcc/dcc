@@ -1,74 +1,75 @@
-<form class="actor config-dialog" autocomplete="off">
-  <div class="grid-container">
-    <p class="grid-col-span-12"><i>{{localize "DCC.SavingThrowAdjustmentsConfigHint"}}</i></p>
-    <h3 class="grid-col-span-12 mb-8">{{localize "DCC.SavesReflex"}}</h3>
-    <div class="grid-col-span-12 grid-tpl-max-10 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
-      <label for="system.saves.ref.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
-      <input type="text" name="system.saves.ref.classBonus"
-             id="system.saves.ref.classBonus"
-             value="{{system.saves.ref.classBonus}}"
-             placeholder="+0"
-      >
-      <label for="system.saves.ref.otherBonus" title="{{localize 'DCC.SavingThrowOtherBonusHint'}}">{{localize "DCC.SavingThrowOtherBonus"}}</label>
-      <input type="text" name="system.saves.ref.otherBonus"
-             id="system.saves.ref.otherBonus"
-             value="{{system.saves.ref.otherBonus}}"
-             placeholder="+0"
-      >
-      <label for="system.saves.ref.override" title="{{localize 'DCC.SavingThrowOverrideHint'}}">{{localize "DCC.SavingThrowOverride"}}</label>
-      <input type="text" name="system.saves.ref.override"
-             id="system.saves.ref.override"
-             value="{{system.saves.ref.override}}"
-             placeholder="+0"
-      >
-    </div>
-    <h3 class="grid-col-span-12 mb-8">{{localize "DCC.SavesFortitude"}}</h3>
-    <div class="grid-col-span-12 grid-tpl-max-10 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
-      <label for="system.saves.frt.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
-      <input type="text" name="system.saves.frt.classBonus"
-             id="system.saves.frt.classBonus"
-             value="{{system.saves.frt.classBonus}}"
-             placeholder="+0"
-      >
-      <label for="system.saves.frt.otherBonus" title="{{localize 'DCC.SavingThrowOtherBonusHint'}}">{{localize "DCC.SavingThrowOtherBonus"}}</label>
-      <input type="text" name="system.saves.frt.otherBonus"
-             id="system.saves.frt.otherBonus"
-             value="{{system.saves.frt.otherBonus}}"
-             placeholder="+0"
-      >
-      <label for="system.saves.frt.override" title="{{localize 'DCC.SavingThrowOverrideHint'}}">{{localize "DCC.SavingThrowOverride"}}</label>
-      <input type="text" name="system.saves.frt.override"
-             id="system.saves.frt.override"
-             value="{{system.saves.frt.override}}"
-             placeholder="+0"
-      >
-    </div>
-    <h3 class="grid-col-span-12 mb-8">{{localize "DCC.SavesWill"}}</h3>
-    <div class="grid-col-span-12 grid-tpl-max-10 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
-      <label for="system.saves.ref.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
-      <input type="text" name="system.saves.wil.classBonus"
-             id="system.saves.wil.classBonus"
-             value="{{system.saves.wil.classBonus}}"
-             placeholder="+0"
-      >
-      <label for="system.saves.wil.otherBonus" title="{{localize 'DCC.SavingThrowOtherBonusHint'}}">{{localize "DCC.SavingThrowOtherBonus"}}</label>
-      <input type="text" name="system.saves.wil.otherBonus"
-             id="system.saves.wil.otherBonus"
-             value="{{system.saves.wil.otherBonus}}"
-             placeholder="+0"
-      >
-      <label for="system.saves.wil.override" title="{{localize 'DCC.SavingThrowOverrideHint'}}">{{localize "DCC.SavingThrowOverride"}}</label>
-      <input type="text" name="system.saves.wil.override"
-             id="system.saves.wil.override"
-             value="{{system.saves.wil.override}}"
-             placeholder="+0"
-      >
-    </div>
-    <div class="mb-8"></div>
-    <footer class="grid-col-span-12 sheet-footer">
-      <button type="submit">
-        <i class="fas fa-save"></i>{{localize "DCC.SaveSheetConfig"}}
-      </button>
-    </footer>
+<section class="actor grid-container">
+  <p class="grid-col-span-12 data-font"><i>{{localize "DCC.SavingThrowAdjustmentsConfigHint"}}</i></p>
+
+  <div class="group-separator grid-col-span-12"></div>
+  <p class="grid-col-span-12 mb-8 group-heading">{{localize "DCC.SavesReflex"}}</p>
+  <div class="group-indent grid-col-span-12 grid-tpl-max-15 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
+    <label for="system.saves.ref.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
+    <input name="system.saves.ref.classBonus"
+           id="system.saves.ref.classBonus"
+           value="{{actor.system.saves.ref.classBonus}}"
+           placeholder="+0"
+    >
+    <label for="system.saves.ref.otherBonus" title="{{localize 'DCC.SavingThrowOtherBonusHint'}}">{{localize "DCC.SavingThrowOtherBonus"}}</label>
+    <input name="system.saves.ref.otherBonus"
+           id="system.saves.ref.otherBonus"
+           value="{{actor.system.saves.ref.otherBonus}}"
+           placeholder="+0"
+    >
+    <label for="system.saves.ref.override" title="{{localize 'DCC.SavingThrowOverrideHint'}}">{{localize "DCC.SavingThrowOverride"}}</label>
+    <input name="system.saves.ref.override"
+           id="system.saves.ref.override"
+           value="{{actor.system.saves.ref.override}}"
+           placeholder="+0"
+    >
   </div>
-</form>
+  <div class="group-separator  grid-col-span-12"></div>
+  <p class="grid-col-span-12 mb-8 group-heading">{{localize "DCC.SavesFortitude"}}</p>
+  <div class="group-indent grid-col-span-12 grid-tpl-max-15 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
+    <label for="system.saves.frt.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
+    <input name="system.saves.frt.classBonus"
+           id="system.saves.frt.classBonus"
+           value="{{actor.system.saves.frt.classBonus}}"
+           placeholder="+0"
+    >
+    <label for="system.saves.frt.otherBonus" title="{{localize 'DCC.SavingThrowOtherBonusHint'}}">{{localize "DCC.SavingThrowOtherBonus"}}</label>
+    <input name="system.saves.frt.otherBonus"
+           id="system.saves.frt.otherBonus"
+           value="{{actor.system.saves.frt.otherBonus}}"
+           placeholder="+0"
+    >
+    <label for="system.saves.frt.override" title="{{localize 'DCC.SavingThrowOverrideHint'}}">{{localize "DCC.SavingThrowOverride"}}</label>
+    <input name="system.saves.frt.override"
+           id="system.saves.frt.override"
+           value="{{actor.system.saves.frt.override}}"
+           placeholder="+0"
+    >
+  </div>
+  <div class="group-separator  grid-col-span-12"></div>
+  <p class="grid-col-span-12 mb-8 group-heading">{{localize "DCC.SavesWill"}}</p>
+  <div class="group-indent grid-col-span-12 grid-tpl-max-15 grid-row-gap-5 grid-col-gap-8 grid-align-center mb-8">
+    <label for="system.saves.wil.classBonus" title="{{localize 'DCC.SavingThrowClassBonusHint'}}">{{localize "DCC.SavingThrowClassBonus"}}</label>
+    <input name="system.saves.wil.classBonus"
+           id="system.saves.wil.classBonus"
+           value="{{actor.system.saves.wil.classBonus}}"
+           placeholder="+0"
+    >
+    <label for="system.saves.wil.otherBonus" title="{{localize 'DCC.SavingThrowOtherBonusHint'}}">{{localize "DCC.SavingThrowOtherBonus"}}</label>
+    <input name="system.saves.wil.otherBonus"
+           id="system.saves.wil.otherBonus"
+           value="{{actor.system.saves.wil.otherBonus}}"
+           placeholder="+0"
+    >
+    <label for="system.saves.wil.override" title="{{localize 'DCC.SavingThrowOverrideHint'}}">{{localize "DCC.SavingThrowOverride"}}</label>
+    <input name="system.saves.wil.override"
+           id="system.saves.wil.override"
+           value="{{actor.system.saves.wil.override}}"
+           placeholder="+0"
+    >
+  </div>
+  <footer class="mt-8 grid-col-span-12 grid-align-just-center">
+    <button type="submit" class=" grid-col-span-12">
+      <i class="fas fa-save"></i>{{localize "DCC.SaveSheetConfig"}}
+    </button>
+  </footer>
+</section>

@@ -1,4 +1,6 @@
-/* global game, renderTemplate, ChatMessage */
+/* global game, ChatMessage, foundry */
+
+const { renderTemplate } = foundry.applications.handlebars
 
 class ReleaseNotes {
   static async addChatCard () {

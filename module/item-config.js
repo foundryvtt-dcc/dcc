@@ -1,44 +1,74 @@
-/* global FormApplication, game, CONFIG */
+/* global game, CONFIG, foundry */
 
-class DCCItemConfig extends FormApplication {
-  static get defaultOptions () {
-    const options = super.defaultOptions
-    options.width = 380
-    return options
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
+class DCCItemConfig extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'item-config', 'themed'],
+    tag: 'form',
+    position: {
+      width: 400,
+      height: 'auto'
+    },
+    window: {
+      title: 'DCC.ItemConfig',
+      resizable: false
+    },
+    form: {
+      handler: DCCItemConfig.#onSubmitForm,
+      submitOnChange: false,
+      closeOnSubmit: true
+    }
   }
 
-  /** @override */
-  get template () {
-    switch (this.object.type) {
+  /** @inheritDoc */
+  static PARTS = {
+    form: {
+      template: null // Will be set dynamically
+    }
+  }
+
+  /**
+   * Get the appropriate template based on item type
+   * @returns {string} Template path
+   */
+  _getTemplate () {
+    switch (this.options.document.type) {
       case 'spell':
         return 'systems/dcc/templates/dialog-item-config-spell.html'
       case 'skill':
         return 'systems/dcc/templates/dialog-item-config-skill.html'
       default:
+        return 'systems/dcc/templates/dialog-item-config-spell.html'
     }
   }
 
-  /* -------------------------------------------- */
-
-  /**
-   * Add the Entity name into the window title
-   * @type {String}
-   */
-  get title () {
-    return `${this.object.name}: ${game.i18n.localize('DCC.ItemConfig')}`
+  /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
+    parts.form.template = this._getTemplate()
+    return parts
   }
 
   /* -------------------------------------------- */
 
   /**
-   * Construct and return the data object used to render the HTML template for this form application.
-   * @return {Object}
+   * Prepare context data for rendering the HTML template
+   * @param {Object} options - Rendering options
+   * @return {Object} The context data
    */
-  getData (options = {}) {
-    const data = this.object
-    data.user = game.user
-    data.config = CONFIG.DCC
-    return data
+  async _prepareContext (options = {}) {
+    const context = await super._prepareContext(options)
+    const item = this.options.document
+
+    // Copy item data to context
+    Object.assign(context, item)
+    context.user = game.user
+    context.config = CONFIG.DCC
+    context.item = item
+
+    return context
   }
 
   /* -------------------------------------------- */
@@ -49,17 +79,19 @@ class DCCItemConfig extends FormApplication {
   }
 
   /**
-   * This method is called upon form submission after form data is validated
-   * @param event {Event}       The initial triggering submission event
-   * @param formData {Object}   The object of validated form data with which to update the object
+   * Handle form submission
+   * @this {DCCItemConfig}
+   * @param {SubmitEvent} event - The form submission event
+   * @param {HTMLFormElement} form - The form element
+   * @param {FormDataExtended} formData - The processed form data
    * @private
    */
-  async _updateObject (event, formData) {
+  static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
-    // Update the actor
-    this.object.update(formData)
+    // Update the item with the form data
+    await this.options.document.update(formData.object)
     // Re-draw the updated sheet
-    await this.object.sheet.render(true)
+    await this.options.document.sheet.render(true)
   }
 }
 
