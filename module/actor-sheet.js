@@ -687,48 +687,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         break
     }
 
-    // Handle legacy drag classes for party draggable and other elements that haven't been updated yet
-    if (!dragData && classes.contains('party-draggable')) {
-      const actorId = DCCActorSheet.#findDataset(event.currentTarget, 'actorId')
-      const partyActor = game.actors.get(actorId)
-      if (partyActor) {
-        if (classes.contains('ability-label')) {
-          const abilityId = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
-          const rollUnder = (abilityId === 'lck')
-          dragData = {
-            type: 'Ability',
-            actorId,
-            data: {
-              abilityId,
-              rollUnder
-            }
-          }
-        } else if (classes.contains('save-label')) {
-          const saveId = DCCActorSheet.#findDataset(event.currentTarget, 'save')
-          dragData = {
-            type: 'Save',
-            actorId,
-            data: saveId
-          }
-        } else if (classes.contains('weapon')) {
-          const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-          const weapon = partyActor.items.get(itemId)
-          dragData = Object.assign(
-            weapon.toDragData(),
-            {
-              dccType: 'Weapon',
-              actorId,
-              data: weapon,
-              dccData: {
-                weapon,
-                backstab: false
-              }
-            }
-          )
-        }
-      }
-    }
-
     if (dragData) {
       if (this.actor.isToken) dragData.tokenId = this.actor.token.id
       event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
@@ -1035,17 +993,17 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         ...itemData
       }))
 
-      // Remove from the expanded object
-      delete expanded.items
-
-      // Flatten and replace the existing formData.object properties
-      const flattened = foundry.utils.flattenObject(expanded)
-
-      // Clear existing object and repopulate (since we can't reassign)
-      for (const key in formData.object) {
-        delete formData.object[key]
-      }
-      Object.assign(formData.object, flattened)
+      // // Remove from the expanded object
+      // delete expanded.items
+      //
+      // // Flatten and replace the existing formData.object properties
+      // const flattened = foundry.utils.flattenObject(expanded)
+      //
+      // // Clear existing object and repopulate (since we can't reassign)
+      // for (const key in formData.object) {
+      //   delete formData.object[key]
+      // }
+      // Object.assign(formData.object, flattened)
     }
 
     // Call parent with modified formData
@@ -1129,9 +1087,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // Handle different drop types - delegate to base class
     return super._onDrop?.(event)
   }
-
-  // Need to Make the Party Draggable Draggable
-  // html.find('.party-draggable').each(makeDraggable)
 }
 
 export default DCCActorSheet

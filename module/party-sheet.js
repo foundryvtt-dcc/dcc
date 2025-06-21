@@ -426,26 +426,6 @@ class DCCPartySheet extends DCCActorSheet {
   }
 
   /**
-   * Create drag-and-drop workflow handlers for this Application
-   * @returns {DragDrop[]} An array of DragDrop handlers
-   * @private
-   */
-  static #createDragDropHandlers () {
-    return [{
-      dragSelector: '.party-draggable',
-      dropSelector: '.party',
-      permissions: {
-        dragstart: this.prototype._canDragStart.bind(this),
-        drop: this.prototype._canDragDrop.bind(this)
-      },
-      callbacks: {
-        dragstart: this.prototype._onDragStart.bind(this),
-        drop: this.prototype._onDrop.bind(this)
-      }
-    }]
-  }
-
-  /**
    * Check if drag start is allowed
    * @param {string} selector
    * @returns {boolean}
