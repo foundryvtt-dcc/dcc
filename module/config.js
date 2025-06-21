@@ -520,11 +520,6 @@ DCC.languages = {
   cant: 'DCC.LanguagesThievesCant'
 }
 
-// Character Level XP Requirements
-DCC.CHARACTER_EXP_LEVELS = [
-  0, 10, 50, 110, 190, 290, 410, 550, 710, 890, 1090
-]
-
 // The dice chain
 DCC.DICE_CHAIN = [
   3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30
