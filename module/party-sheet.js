@@ -343,7 +343,7 @@ class DCCPartySheet extends DCCActorSheet {
     const actorId = target.closest('[data-actor-id]')?.dataset.actorId
     const abilityId = target.dataset.ability
     if (actorId && abilityId) {
-      const options = this._fillRollOptions?.(event) || {}
+      const options = DCCActorSheet.fillRollOptions?.(event) || {}
       const actor = game.actors.get(actorId)
       if (actor) {
         actor.rollAbilityCheck(abilityId, options)
@@ -363,7 +363,7 @@ class DCCPartySheet extends DCCActorSheet {
     const actorId = target.closest('[data-actor-id]')?.dataset.actorId
     const saveId = target.dataset.save
     if (actorId && saveId) {
-      const options = this._fillRollOptions?.(event) || {}
+      const options = DCCActorSheet.fillRollOptions?.(event) || {}
       const actor = game.actors.get(actorId)
       if (actor) {
         actor.rollSavingThrow(saveId, options)
@@ -383,7 +383,7 @@ class DCCPartySheet extends DCCActorSheet {
     const actorId = target.closest('[data-actor-id]')?.dataset.actorId
     const weaponId = target.nextElementSibling?.value
     if (actorId && weaponId) {
-      const options = this._fillRollOptions?.(event) || {}
+      const options = DCCActorSheet.fillRollOptions?.(event) || {}
       const actor = game.actors.get(actorId)
       if (actor) {
         actor.rollWeaponAttack(weaponId, options)
@@ -411,18 +411,6 @@ class DCCPartySheet extends DCCActorSheet {
     })
 
     fp.render(true)
-  }
-
-  /**
-   * Fill options for a roll based on event
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _fillRollOptions (event) {
-    const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
-    return {
-      showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey)
-    }
   }
 
   /**
