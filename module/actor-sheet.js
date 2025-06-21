@@ -948,7 +948,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
-   * Handle rolling a spell check
+   * Handle increasing disapproval
    @this {DCCActorSheet}
    @param {PointerEvent} event   The originating click event
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
@@ -960,7 +960,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
-   * Handle rolling a spell check
+   * Handle rolling on disapproval table
    @this {DCCActorSheet}
    @param {PointerEvent} event   The originating click event
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
