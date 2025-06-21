@@ -58,7 +58,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
    * Runs when the dialog is closed without submitting
    */
   async close (options = {}) {
-    this.document.currentLevel = this.document.system.details.level.value || 0
+    this.currentLevel = this.document.system.details.level.value || 0
     await super.close(options)
   }
 
@@ -78,14 +78,16 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     context.isZero = (actor.system.details.level.value === 0)
     context.user = game.user
     context.config = CONFIG.DCC
-    context.currentLevel = actor.system.details.level.value || 0
-    context.classNameLower = actor.system.class.className.toLowerCase()
     context.system = actor.system
     context.actor = actor
 
-    if (!context.classNameLower || context.classNameLower === 'generic') {
+    this.currentLevel = actor.system.details.level.value || 0
+
+    // Check that we have a class name
+    this.classNameLower = actor.system.class.className.toLowerCase()
+    if (!this.classNameLower || this.classNameLower === 'generic') {
       ui.notifications.error(game.i18n.localize('DCC.ChooseAClass'))
-      this.close({ force: true })
+      await this.close({ force: true })
       return context
     }
 
@@ -136,6 +138,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     // Lookup the level item
     const pack = game.packs.get(CONFIG.DCC.levelData)
     if (pack) {
+      await pack.getIndex() // Load the compendium index
       const entry = pack.index.find(item => item.name === `${className}-${level}`)
       if (entry) {
         const item = await pack.getDocument(entry._id)
@@ -154,7 +157,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #decreaseLevel (event, target) {
     event.preventDefault()
-    this.document.currentLevel = parseInt(this.document.currentLevel) - 1
+    this.currentLevel = parseInt(this.currentLevel) - 1
     return this._updateLevelUpDisplay()
   }
 
@@ -166,12 +169,12 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #increaseLevel (event, target) {
     event.preventDefault()
-    this.document.currentLevel = parseInt(this.document.currentLevel) + 1
+    this.currentLevel = parseInt(this.currentLevel) + 1
     return this._updateLevelUpDisplay()
   }
 
   async _updateLevelUpDisplay () {
-    const levelItem = await this._lookupLevelItem(this.document.classNameLower, this.document.currentLevel)
+    const levelItem = await this._lookupLevelItem(this.classNameLower, this.currentLevel)
     if (Object.hasOwn(levelItem, 'system')) {
       // Level Data
       const levelData = await this._getLevelDataFromItem(levelItem)
@@ -182,7 +185,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       // Update level display using vanilla DOM
       const levelElement = this.element.querySelector('#system\\.details\\.level\\.value')
       if (levelElement) {
-        levelElement.innerHTML = this.document.currentLevel
+        levelElement.innerHTML = this.currentLevel
       }
 
       const levelDataHeader = game.i18n.localize('DCC.UpdatesAtLevel')
@@ -194,7 +197,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       // Hit Points
       const hitDie = levelData['system.attributes.hitDice.value'] || '1d6'
       let hpExpression = `+(${hitDie}${ensurePlus(this.document.system?.abilities?.sta?.mod)})`
-      let levelDifference = parseInt(this.document.currentLevel) - parseInt(this.document.system.details.level.value)
+      let levelDifference = parseInt(this.currentLevel) - parseInt(this.document.system.details.level.value)
       if (levelDifference !== 1) {
         if (parseInt(this.document.system.details.level.value) === 0) {
           levelDifference -= 1
@@ -211,7 +214,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
           hpExpression = ''
         }
       }
-      this.document.newHitPointsExpression = hpExpression
+      this.newHitPointsExpression = hpExpression
       const hitPointsString = `Hit Points = ${hpExpression}`
       const hitPointsElement = this.element.querySelector('#hitPoints')
       if (hitPointsElement) {
@@ -240,8 +243,8 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.document.update(formData.object)
 
     // Try and get data for the new level from the compendium
-    const newLevel = this.document.currentLevel
-    const levelItem = await this._lookupLevelItem(this.document.classNameLower, newLevel)
+    const newLevel = this.currentLevel
+    const levelItem = await this._lookupLevelItem(this.classNameLower, newLevel)
 
     if (levelItem) {
       // Get Level Data for new level and update this actor
@@ -256,16 +259,14 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       // Roll new Hit Points
-      if (this.document.newHitPointsExpression) {
-        const hpRoll = new Roll(this.document.newHitPointsExpression)
+      if (this.newHitPointsExpression) {
+        const hpRoll = new Roll(this.newHitPointsExpression)
         await hpRoll.toMessage({ flavor: game.i18n.localize('DCC.HitDiceRoll'), speaker: ChatMessage.getSpeaker({ actor: this.document }) })
         const newHp = this.document.system.attributes.hp.value + hpRoll.total
         const newMaxHp = parseInt(this.document.system.attributes.hp.max) + hpRoll.total
         levelData['system.attributes.hp.value'] = newHp
         levelData['system.attributes.hp.max'] = newMaxHp
       }
-
-      await this.document.update(levelData)
 
       // Create chat message with levelUp data
       delete levelData._id
@@ -283,6 +284,8 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
         content: levelDataString
       }
       ChatMessage.create(messageData)
+
+      await this.document.update(levelData)
     }
 
     // Re-draw the updated sheet
