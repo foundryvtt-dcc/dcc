@@ -42,6 +42,11 @@
     "tojson": "node module/extractPacks.js",
     "prepare": "husky"
   },
+  "standard": {
+    "ignore": [
+      "docs/**"
+    ]
+  },
   "type": "module",
   "version": "0.50.0",
   "vitest": {

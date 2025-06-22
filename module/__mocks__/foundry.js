@@ -10,10 +10,908 @@ import fs from 'fs'
 // console.log('Loading Foundry Mocks')
 
 /**
- * FormApplication
+ * FormApplication - Legacy v1 form application base class
  */
 class FormApplicationMock {}
 global.FormApplication = FormApplicationMock
+
+/**
+ * ApplicationV2 - Base class for all v2 applications in Foundry
+ * The Application class is responsible for rendering an HTMLElement into the Foundry VTT user interface.
+ * Provides core functionality including:
+ * - Render state management (NONE, RENDERING, RENDERED, CLOSING, CLOSED, ERROR)
+ * - Window framing and positioning
+ * - Event handling and lifecycle management
+ * - Tab system for multi-panel interfaces
+ * - Action system for declarative event handling
+ * - Form handling with validation
+ */
+class ApplicationV2Mock {
+  constructor (options = {}) {
+    this.options = {
+      id: 'app-{id}',
+      classes: [],
+      tag: 'div',
+      window: {
+        frame: true,
+        positioned: true,
+        title: '',
+        icon: '',
+        controls: [],
+        minimizable: true,
+        resizable: false,
+        contentTag: 'section',
+        contentClasses: []
+      },
+      actions: {},
+      form: {
+        handler: undefined,
+        submitOnChange: false,
+        closeOnSubmit: false
+      },
+      position: {
+        width: 'auto',
+        height: 'auto'
+      },
+      ...options
+    }
+
+    this.position = { ...this.options.position }
+    this.rendered = false
+    this.element = null
+    this.window = null // Window controls and frame elements
+  }
+
+  // Render states enum - describes application lifecycle
+  static RENDER_STATES = {
+    ERROR: -3,
+    CLOSING: -2,
+    CLOSED: -1,
+    NONE: 0,
+    RENDERING: 1,
+    RENDERED: 2
+  }
+
+  // Default configuration options for all ApplicationV2 instances
+  static DEFAULT_OPTIONS = {
+    id: 'app-{id}',
+    classes: [],
+    tag: 'div',
+    window: {
+      frame: true,
+      positioned: true,
+      title: '',
+      controls: [],
+      minimizable: true,
+      resizable: false
+    },
+    actions: {},
+    form: {},
+    position: { width: 'auto', height: 'auto' }
+  }
+
+  // Tab configuration - defines multi-panel interfaces
+  static TABS = {}
+
+  // Core render method - displays the application
+  async render (options = {}) {
+    // In real Foundry: manages render states, calls lifecycle methods
+    // _canRender -> _prepareContext -> _renderHTML -> _onRender
+    this.rendered = true
+    return this
+  }
+
+  // Render permission check - determines if application can be displayed
+  _canRender (options) {
+    // Override to add custom render restrictions
+    return true
+  }
+
+  // Context preparation - prepares data for template rendering
+  async _prepareContext (options) {
+    // Override to provide template data
+    return {}
+  }
+
+  // HTML rendering - generates application markup
+  async _renderHTML (context, options) {
+    // Override to provide custom HTML generation
+    return '<div>Mock Application</div>'
+  }
+
+  // First render lifecycle - called only on initial render
+  async _onFirstRender (context, options) {
+    // Override for one-time setup after first render
+  }
+
+  // Render lifecycle - called after every render
+  async _onRender (context, options) {
+    // Override for post-render setup (event listeners, etc.)
+  }
+
+  // Close application
+  async close (options = {}) {
+    this.rendered = false
+    this._onClose(options)
+    return this
+  }
+
+  // Close lifecycle - cleanup when application closes
+  _onClose (options) {
+    // Override for cleanup
+  }
+
+  // Header controls generation - returns array of control buttons
+  _getHeaderControls () {
+    return this.options.window.controls || []
+  }
+
+  // Tab configuration retrieval - returns tab setup for a group
+  _getTabsConfig (group) {
+    return this.constructor.TABS[group] || { tabs: [], initial: null }
+  }
+
+  // Position management
+  setPosition (position = {}) {
+    Object.assign(this.position, position)
+    return this.position
+  }
+}
+
+global.ApplicationV2 = ApplicationV2Mock
+
+/**
+ * DialogV2 - Modal dialog application extending ApplicationV2
+ * Provides a standardized modal dialog system with:
+ * - Button-based user interaction with callbacks
+ * - Form submission handling
+ * - Modal/non-modal display modes
+ * - Keyboard navigation (Enter/Escape handling)
+ * - Factory methods for common dialog types (confirm, prompt, input)
+ * - Promise-based async interaction patterns
+ * - User query system for cross-user dialog requests
+ */
+class DialogV2Mock extends ApplicationV2Mock {
+  constructor (options = {}) {
+    super({
+      id: 'dialog-{id}',
+      classes: ['dialog'],
+      tag: 'dialog', // Uses HTML <dialog> element
+      form: {
+        closeOnSubmit: true // Dialogs typically close after submission
+      },
+      window: {
+        frame: true,
+        positioned: true,
+        minimizable: false // Dialogs are not minimizable
+      },
+      ...options
+    })
+
+    // Validate required configuration
+    if (!this.options.buttons?.length) {
+      throw new Error('You must define at least one entry in config.buttons')
+    }
+
+    // Process button configuration and set up actions
+    this.options.buttons = this._processButtons(this.options.buttons)
+  }
+
+  // Default configuration for DialogV2 instances
+  static DEFAULT_OPTIONS = {
+    id: 'dialog-{id}',
+    classes: ['dialog'],
+    tag: 'dialog',
+    form: { closeOnSubmit: true },
+    window: { frame: true, positioned: true, minimizable: false }
+  }
+
+  // Process button array into button object with action mapping
+  _processButtons (buttons) {
+    const processedButtons = {}
+
+    for (const button of buttons) {
+      // Register button action handler
+      this.options.actions[button.action] = this.constructor._onClickButton
+      processedButtons[button.action] = button
+    }
+
+    return processedButtons
+  }
+
+  // HTML rendering - creates dialog form with content and buttons
+  async _renderHTML (context, options) {
+    // In real Foundry: creates form element with dialog-content and form-footer
+    const content = this.options.content || ''
+    const buttons = this._renderButtons()
+
+    return `
+      <form class="dialog-form standard-form" autocomplete="off">
+        ${content ? `<div class="dialog-content standard-form">${content}</div>` : ''}
+        <footer class="form-footer">${buttons}</footer>
+      </form>
+    `
+  }
+
+  // Button rendering - generates HTML for all configured buttons
+  _renderButtons () {
+    const buttons = Object.values(this.options.buttons)
+
+    return buttons.map((buttonOptions, i) => {
+      const {
+        action,
+        label,
+        icon,
+        class: cls = '',
+        style = {},
+        type = 'submit',
+        disabled
+      } = buttonOptions
+
+      // Determine default button (first button or explicitly marked)
+      const isDefault = !!buttonOptions.default || ((i === 0) && !buttons.some(b => b.default))
+
+      // Build button HTML with proper attributes
+      let buttonHtml = `<button type="${type}" data-action="${action}" class="${cls}"`
+
+      // Add styling
+      const styleEntries = Object.entries(style)
+      if (styleEntries.length) {
+        const styleString = styleEntries.map(([key, value]) => `${key}: ${value}`).join('; ')
+        buttonHtml += ` style="${styleString}"`
+      }
+
+      // Add attributes
+      if (disabled) buttonHtml += ' disabled'
+      if (isDefault) buttonHtml += ' autofocus'
+
+      buttonHtml += '>'
+
+      // Add icon if specified
+      if (icon) {
+        buttonHtml += `<i class="${icon}"></i>`
+      }
+
+      // Add label
+      buttonHtml += `<span>${label}</span></button>`
+
+      return buttonHtml
+    }).join('')
+  }
+
+  // First render lifecycle - shows dialog as modal or non-modal
+  async _onFirstRender (context, options) {
+    // In real Foundry: calls this.element.showModal() or this.element.show()
+    if (this.options.modal) {
+      // Modal dialog - blocks interaction with other elements
+      console.log('Dialog shown as modal')
+    } else {
+      // Non-modal dialog - allows interaction with other elements
+      console.log('Dialog shown as non-modal')
+    }
+  }
+
+  // Form submission handler - processes button clicks and callbacks
+  async _onSubmit (target, event) {
+    event?.preventDefault()
+
+    // Temporarily disable all buttons to prevent double-submission
+    const priorDisabledStates = []
+    for (const action of Object.keys(this.options.buttons)) {
+      // In real Foundry: finds actual button elements and disables them
+      priorDisabledStates.push([action, false]) // Mock disabled state
+    }
+
+    // Execute button callback
+    const button = this.options.buttons[target?.dataset?.action]
+    let result
+
+    if (button?.callback) {
+      result = await button.callback(event, target, this)
+    } else {
+      result = button?.action
+    }
+
+    // Call overall submit handler if provided
+    if (this.options.submit) {
+      await this.options.submit(result, this)
+    }
+
+    // Restore button states
+    // In real Foundry: restores actual button disabled states
+
+    // Close dialog if configured to do so
+    if (this.options.form.closeOnSubmit) {
+      return this.close({ submitted: true })
+    }
+
+    return this
+  }
+
+  // Keyboard event handling - processes Enter/Escape keys
+  _onKeyDown (event) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      this.close()
+    }
+    // In real Foundry: also handles Enter key for default button activation
+  }
+
+  // Static button click handler - redirects to submit handler
+  static _onClickButton (event, target) {
+    this._onSubmit(target, event)
+  }
+
+  // FACTORY METHODS - Static methods for common dialog patterns
+
+  // Confirm dialog - Yes/No buttons with boolean result
+  static async confirm ({ yes = {}, no = {}, ...config } = {}) {
+    config.buttons = config.buttons || []
+
+    // Add default Yes button
+    config.buttons.unshift({
+      action: 'yes',
+      label: 'Yes',
+      icon: 'fa-solid fa-check',
+      callback: () => true,
+      ...yes
+    })
+
+    // Add default No button (default focus)
+    config.buttons.push({
+      action: 'no',
+      label: 'No',
+      icon: 'fa-solid fa-xmark',
+      default: true,
+      callback: () => false,
+      ...no
+    })
+
+    return this.wait({ position: { width: 400 }, ...config })
+  }
+
+  // Prompt dialog - Single OK button for acknowledgment
+  static async prompt ({ ok = {}, ...config } = {}) {
+    config.buttons = config.buttons || []
+
+    // Add default OK button
+    config.buttons.unshift({
+      action: 'ok',
+      label: 'Confirm',
+      icon: 'fa-solid fa-check',
+      default: true,
+      ...ok
+    })
+
+    return this.wait({ position: { width: 400 }, ...config })
+  }
+
+  // Input dialog - Form data collection with OK button
+  static async input ({ ok, ...config } = {}) {
+    // Default callback extracts form data
+    const callback = (event, button) => {
+      // In real Foundry: return new FormDataExtended(button.form).object
+      return {} // Mock form data
+    }
+
+    return this.prompt({ ok: { callback, ...ok }, ...config })
+  }
+
+  // Wait method - Promise-based dialog interaction
+  static async wait ({ rejectClose = false, close, render, ...config } = {}) {
+    return new Promise((resolve, reject) => {
+      // Wrap submission handler with Promise resolution
+      const originalSubmit = config.submit
+      config.submit = async (result, dialog) => {
+        if (originalSubmit) await originalSubmit(result, dialog)
+        resolve(result)
+      }
+
+      // Create and show dialog
+      const dialog = new this(config)
+
+      // Handle dialog close events
+      const handleClose = (event) => {
+        const result = close instanceof Function ? close(event, dialog) : undefined
+        if (rejectClose) {
+          reject(new Error('Dialog was dismissed without pressing a button.'))
+        } else {
+          resolve(result ?? null)
+        }
+      }
+
+      // Handle render events if callback provided
+      if (render instanceof Function) {
+        // In real Foundry: dialog.addEventListener('render', event => render(event, dialog))
+      }
+
+      // Simulate dialog rendering and interaction
+      setTimeout(() => {
+        if (Math.random() > 0.5) {
+          // Simulate button click
+          if (config.submit) config.submit('mock-result', dialog)
+        } else {
+          // Simulate dialog close
+          handleClose({})
+        }
+      }, 100)
+    })
+  }
+
+  // User query system - cross-user dialog requests
+  static async query (user, type, config = {}) {
+    if (typeof user === 'string') {
+      // In real Foundry: user = game.users.get(userId)
+      if (!user) throw new Error(`User [${user}] does not exist`)
+    }
+
+    // If querying self, execute directly
+    // eslint-disable-next-line no-constant-condition
+    if (user.isSelf || true) { // Mock always treats as self
+      return this[type](config)
+    }
+
+    // In real Foundry: return user.query('dialog', {type, config})
+    return this[type](config)
+  }
+
+  // Query handler for incoming user requests
+  static _handleQuery = ({ type, config }) => {
+    switch (type) {
+      case 'confirm': return this.confirm(config)
+      case 'input': return this.input(config)
+      case 'prompt': return this.prompt(config)
+      case 'wait': return this.wait(config)
+      default: throw new Error(`Unknown dialog type: ${type}`)
+    }
+  }
+}
+
+global.DialogV2 = DialogV2Mock
+
+/**
+ * DocumentSheetV2 - Base class for v2 document sheets
+ * Extends ApplicationV2 to provide document-specific functionality including:
+ * - Document permissions and ownership checks
+ * - Form handling with validation and submission
+ * - Header controls for configuration, UUID copying, image editing
+ * - Sheet theming and styling
+ * - Compendium import functionality
+ */
+class DocumentSheetV2Mock {
+  constructor (options = {}) {
+    // In real Foundry: options = new.target._migrateConstructorParams(options, args) for v1 compatibility
+    this.document = options.document || null
+    this.position = options.position || {}
+    this.options = {
+      viewPermission: 1, // DOCUMENT_OWNERSHIP_LEVELS.LIMITED
+      editPermission: 3, // DOCUMENT_OWNERSHIP_LEVELS.OWNER
+      canCreate: false,
+      sheetConfig: true,
+      tag: 'form', // Document sheets are forms by default
+      form: {
+        submitOnChange: false,
+        closeOnSubmit: false
+      },
+      ...options
+    }
+    this.element = null // Would be the DOM element in real Foundry
+    this.id = `${this.constructor.name}-${this.document?.uuid || 'mock'}`
+  }
+
+  // Document getter - returns the document this sheet manages
+  get document () {
+    return this._document
+  }
+
+  set document (doc) {
+    this._document = doc
+  }
+
+  // Dynamic title generation based on document type and name
+  // Format: "{DocumentType}: {DocumentName}"
+  get title () {
+    if (!this.document) return 'Unknown Document'
+    const type = this.document.constructor?.metadata?.label || this.document.documentName || 'Document'
+    const name = this.document.name || this.document.id || 'Unnamed'
+    return `${type}: ${name}`
+  }
+
+  // Visibility check - determines if user can view this sheet
+  // Governed by viewPermission threshold (default: LIMITED)
+  get isVisible () {
+    if (!this.document) return false
+    // In real Foundry: return this.document.testUserPermission(game.user, this.options.viewPermission)
+    return true // Mock always visible
+  }
+
+  // Editability check - determines if user can edit this document
+  // Considers: edit permissions, compendium lock status
+  get isEditable () {
+    if (!this.document) return false
+
+    // Check if document is in a locked compendium pack
+    if (this.document.pack) {
+      // In real Foundry: const pack = game.packs.get(this.document.pack); if (pack.locked) return false
+    }
+
+    // In real Foundry: return this.document.testUserPermission(game.user, this.options.editPermission)
+    return true // Mock always editable
+  }
+
+  // Core render method - called when sheet needs to be displayed/updated
+  async render (options = {}) {
+    // In real Foundry: calls _canRender, _prepareContext, template rendering, _onRender
+    return this
+  }
+
+  // Render permission check - throws error if user cannot view sheet
+  _canRender (options) {
+    if (!this.isVisible) {
+      throw new Error('Document sheet is private and not visible to current user')
+    }
+  }
+
+  // First render lifecycle - registers sheet with document.apps
+  async _onFirstRender (context, options) {
+    // In real Foundry: this.document.apps[this.id] = this
+  }
+
+  // Render lifecycle - disables form fields if not editable
+  async _onRender (context, options) {
+    if (!this.isEditable) {
+      this._toggleDisabled(true)
+    }
+  }
+
+  // Close lifecycle - unregisters sheet from document.apps
+  _onClose (options) {
+    // In real Foundry: delete this.document.apps[this.id]
+  }
+
+  // Form field disable/enable - controls form interactivity based on edit permissions
+  _toggleDisabled (disabled) {
+    // In real Foundry: disables all form elements, image inputs, and editable images
+    // Also toggles 'disabled' class on img[data-edit] elements
+  }
+
+  // Form change handler - processes form field changes
+  _onChangeForm (formConfig, event) {
+    // Special handling for HTMLSecretBlockElement (ProseMirror secrets)
+    if (event.target.constructor.name === 'HTMLSecretBlockElement') {
+      return this._onRevealSecret(event)
+    }
+    // In real Foundry: calls parent form change handling
+  }
+
+  // Secret reveal handler - toggles revealed state of secrets in rich text content
+  _onRevealSecret (event) {
+    // Handles toggling secrets in ProseMirror editors
+    // Updates document with modified content
+  }
+
+  // Form data processing - expands form data object from flat structure
+  // Override this to customize form data extraction and validation
+  _processFormData (event, form, formData) {
+    // In real Foundry: return foundry.utils.expandObject(formData.object)
+    return formData.object || {}
+  }
+
+  // Submit data preparation - cleans and validates form data before submission
+  _prepareSubmitData (event, form, formData, updateData) {
+    const submitData = this._processFormData(event, form, formData)
+
+    // Merge additional update data if provided
+    if (updateData) {
+      // In real Foundry: foundry.utils.mergeObject with performDeletions
+      Object.assign(submitData, updateData)
+    }
+
+    // In real Foundry: this.document.validate({changes: submitData, clean: true, fallback: false})
+    return submitData
+  }
+
+  // Submit processing - handles document update or creation
+  async _processSubmitData (event, form, submitData, options = {}) {
+    const document = this.document
+
+    // Update existing document if it exists in a collection
+    if (document.collection?.has(document.id)) {
+      return await document.update(submitData, options)
+    } else if (this.options.canCreate) {
+      // In real Foundry: handles parent, pack, keepId options for creation
+      const created = await document.constructor.create(submitData, options)
+      if (created) {
+        this.document = created
+      }
+      return created
+    } else {
+      throw new Error(`Document creation from ${this.constructor.name} is not supported.`)
+    }
+  }
+
+  // Header controls - returns array of control buttons for sheet header
+  // Default controls: sheet configuration, UUID copy, image editing, compendium import
+  _getHeaderControls () {
+    const controls = []
+
+    // Sheet configuration control (gear icon)
+    if (this.options.sheetConfig && this.isEditable) {
+      controls.push({
+        icon: 'fa-solid fa-gear',
+        label: 'SHEETS.ConfigureSheet',
+        action: 'configureSheet'
+      })
+    }
+
+    return controls
+  }
+
+  // Context preparation - prepares data for template rendering
+  // Provides: document, source, fields, editable, user, rootId
+  async _prepareContext (options) {
+    return {
+      document: this.document,
+      source: this.document._source || this.document,
+      fields: this.document.schema?.fields || {},
+      editable: this.isEditable,
+      user: global.game?.user || { _id: 1 },
+      rootId: this.document.collection?.has(this.document.id) ? this.id : 'mock-root-id'
+    }
+  }
+
+  // Default action handlers - static methods bound to sheet instance
+
+  // Configure sheet handler - opens DocumentSheetConfig dialog
+  static configureSheet (event) {
+    // In real Foundry: new foundry.applications.apps.DocumentSheetConfig({document: this.document}).render()
+  }
+
+  // Copy UUID handler - copies document UUID or ID to clipboard
+  static copyUuid (event) {
+    // Left click: copies UUID, Right click: copies ID
+    const id = event.button === 2 ? this.document.id : this.document.uuid // eslint-disable-line no-unused-vars
+    // In real Foundry: game.clipboard.copyPlainText(id)
+  }
+
+  // Edit image handler - opens FilePicker for image selection
+  static editImage (event, target) {
+    if (target.nodeName !== 'IMG') {
+      throw new Error('The editImage action is available only for IMG elements.')
+    }
+    // In real Foundry: opens FilePicker with current image, default artwork support
+  }
+
+  // Import document handler - imports from compendium to world
+  static importDocument () {
+    // In real Foundry: game.collections.get(documentName).importFromCompendium(collection, id)
+  }
+}
+
+/**
+ * ActorSheetV2 - Enhanced mock matching the real Foundry ActorSheetV2
+ * Extends DocumentSheetV2 to provide actor-specific functionality:
+ * - Automatic drag/drop setup with '.draggable' selector
+ * - Actor and token getters for convenient access
+ * - Default drag/drop handlers for items and active effects
+ * - Item sorting within same actor
+ * - Additional header controls for token/portrait management
+ * - Document drop delegation to specific handlers
+ */
+class ActorSheetV2Mock extends DocumentSheetV2Mock {
+  constructor (options = {}) {
+    super(options)
+  }
+
+  // Actor getter - convenience getter for the managed actor document
+  get actor () {
+    return this.document
+  }
+
+  // Token getter - returns associated token if this is an unlinked token actor
+  get token () {
+    return this.document?.token || null
+  }
+
+  // Render lifecycle - called after sheet is rendered to DOM
+  // ActorSheetV2 automatically sets up drag/drop functionality
+  async _onRender (context, options) {
+    await super._onRender(context, options)
+
+    // In real Foundry, this sets up DragDrop automatically:
+    // new DragDrop.implementation({
+    //   dragSelector: '.draggable',
+    //   permissions: {
+    //     dragstart: this._canDragStart.bind(this),
+    //     drop: this._canDragDrop.bind(this)
+    //   },
+    //   callbacks: {
+    //     dragstart: this._onDragStart.bind(this),
+    //     dragover: this._onDragOver.bind(this),
+    //     drop: this._onDrop.bind(this)
+    //   }
+    // }).bind(this.element)
+    //
+    // This provides automatic drag/drop for any element with class 'draggable'
+    // No manual setup required - just add the class to make elements draggable
+  }
+
+  // Drag permission check - determines if user can start dragging an element
+  // Default: checks if sheet is editable
+  _canDragStart (selector) {
+    return this.isEditable
+  }
+
+  // Drop permission check - determines if user can drop on an element
+  // Default: checks if sheet is editable
+  _canDragDrop (selector) {
+    return this.isEditable
+  }
+
+  // Drag start handler - called when dragging begins
+  // Default: handles items (data-item-id) and effects (data-effect-id)
+  async _onDragStart (event) {
+    const target = event.currentTarget
+    if ('link' in event.target.dataset) return
+    let dragData
+
+    // Handle owned items - creates drag data from item with data-item-id
+    if (target.dataset.itemId) {
+      const item = this.actor.items.get(target.dataset.itemId)
+      dragData = item?.toDragData?.()
+    }
+
+    // Handle active effects - creates drag data from effect with data-effect-id
+    if (target.dataset.effectId) {
+      const effect = this.actor.effects.get(target.dataset.effectId)
+      dragData = effect?.toDragData?.()
+    }
+
+    // Set drag data for transfer
+    if (dragData) {
+      event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+    }
+  }
+
+  // Drag over handler - called when dragging over a drop target
+  // Default: empty implementation, can be overridden for visual feedback
+  _onDragOver (event) {}
+
+  // Drop handler - called when something is dropped on the sheet
+  // Default: processes drop data and delegates to specific document handlers
+  async _onDrop (event) {
+    // Extract drag data from the drop event
+    // In real Foundry: const data = TextEditor.getDragEventData(event)
+    // const data = {} // Mock data - not used in mock
+    const actor = this.actor // eslint-disable-line no-unused-vars
+
+    // Call hook for third-party modules to intercept drops
+    // In real Foundry: const allowed = Hooks.call('dropActorSheetData', actor, this, data)
+    // if (allowed === false) return
+
+    // Resolve the dropped document and delegate to specific handler
+    // In real Foundry:
+    // const documentClass = foundry.utils.getDocumentClass(data.type)
+    // if (documentClass) {
+    //   const document = await documentClass.fromDropData(data)
+    //   await this._onDropDocument(event, document)
+    // }
+
+    return true
+  }
+
+  // Document drop dispatcher - routes drops to specific document type handlers
+  async _onDropDocument (event, document) {
+    switch (document.documentName) {
+      case 'ActiveEffect':
+        return this._onDropActiveEffect(event, document)
+      case 'Actor':
+        return this._onDropActor(event, document)
+      case 'Item':
+        return this._onDropItem(event, document)
+      case 'Folder':
+        return this._onDropFolder(event, document)
+    }
+  }
+
+  // Active Effect drop handler - creates effect on actor
+  // Default: creates embedded ActiveEffect with keepId logic
+  async _onDropActiveEffect (event, effect) {
+    if (!this.actor.isOwner || !effect || effect.target === this.actor) return
+    const keepId = !this.actor.effects.has(effect.id) // eslint-disable-line no-unused-vars
+    // In real Foundry: await ActiveEffect.implementation.create(effect.toObject(), { parent: this.actor, keepId })
+  }
+
+  // Actor drop handler - handles dropping actors on sheet
+  // Default: empty implementation, override for specific behavior
+  async _onDropActor (event, actor) {}
+
+  // Item drop handler - creates item on actor or handles sorting
+  // Default: creates embedded Item or calls _onSortItem for same-actor drops
+  async _onDropItem (event, item) {
+    if (!this.actor.isOwner) return
+
+    // If dropping item from same actor, handle as sort operation
+    if (this.actor.uuid === item.parent?.uuid) {
+      return this._onSortItem(event, item)
+    }
+
+    // Create new embedded item with keepId logic
+    const keepId = !this.actor.items.has(item.id) // eslint-disable-line no-unused-vars
+    // In real Foundry: await Item.implementation.create(item.toObject(), { parent: this.actor, keepId })
+  }
+
+  // Folder drop handler - handles dropping folders on sheet
+  // Default: empty implementation, override for specific behavior
+  async _onDropFolder (event, folder) {}
+
+  // Item sorting handler - reorders items within the same actor
+  // Default: uses Foundry's integer sort algorithm to reorder items
+  _onSortItem (event, item) {
+    const items = this.actor.items
+    const source = items.get(item.id)
+
+    // Find drop target element with data-item-id
+    const dropTarget = event.target.closest('[data-item-id]')
+    if (!dropTarget) return
+
+    const target = items.get(dropTarget.dataset.itemId)
+    if (source.id === target.id) return
+
+    // Build siblings list from DOM elements (excludes the source item)
+    const siblings = []
+    for (const element of dropTarget.parentElement.children) {
+      const siblingId = element.dataset.itemId
+      if (siblingId && siblingId !== source.id) {
+        siblings.push(items.get(siblingId))
+      }
+    }
+
+    // Calculate sort updates using Foundry's integer sort
+    // In real Foundry: const sortUpdates = foundry.utils.performIntegerSort(source, { target, siblings })
+    // return this.actor.updateEmbeddedDocuments('Item', updateData)
+  }
+
+  // Header controls - returns default actor sheet header controls
+  // ActorSheetV2 adds token and artwork controls to base DocumentSheetV2 controls
+  _getHeaderControls () {
+    const controls = super._getHeaderControls()
+    const actor = this.actor // eslint-disable-line no-unused-vars
+
+    // Default ActorSheetV2 controls (added automatically):
+    // 1. Configure Token - opens token configuration for current token (if actor.isToken)
+    // 2. Configure Prototype Token - opens prototype token config (if not token actor and editable)
+    // 3. Show Portrait Artwork - displays actor portrait in ImagePopout (if custom portrait exists)
+    // 4. Show Token Artwork - displays token artwork in ImagePopout (if custom token art exists)
+    //
+    // Controls are filtered based on:
+    // - actor.img !== CONST.DEFAULT_TOKEN (for portrait)
+    // - prototypeToken settings and randomImg status (for token art)
+    // - actor.isToken status and edit permissions
+
+    // In real Foundry, these are added automatically via DEFAULT_OPTIONS.window.controls
+    // and filtered in _getHeaderControls() based on current state
+
+    return controls
+  }
+}
+
+// Export mocks to global scope for test access
+global.DocumentSheetV2 = DocumentSheetV2Mock
+global.ActorSheetV2 = ActorSheetV2Mock
+
+// Additional Foundry constants used by DocumentSheetV2
+global.CONST = {
+  ...global.CONST,
+  DOCUMENT_OWNERSHIP_LEVELS: {
+    NONE: 0,
+    LIMITED: 1,
+    OBSERVER: 2,
+    OWNER: 3
+  },
+  DEFAULT_TOKEN: 'icons/svg/mystery-man.svg'
+}
 
 /**
  * Item - Enhanced to better simulate real item behavior
@@ -84,6 +982,15 @@ class MockItem {
     if (!this.system.fumbleDie) {
       this.system.fumbleDie = '1d4'
     }
+  }
+}
+
+// Enhanced MockItem with drag data support
+MockItem.prototype.toDragData = function () {
+  return {
+    type: 'Item',
+    uuid: `Item.${this._id}`,
+    data: this
   }
 }
 
@@ -236,10 +1143,17 @@ class ActorMock {
       })
     }
     this.items = new global.Collection()
+    this.effects = new global.Collection() // ActiveEffect collection
     this.prepareData()
     Object.defineProperty(this, 'itemTypes', {
       get: global.itemTypesMock
     })
+
+    // Actor sheet properties
+    this.isOwner = true
+    this.isToken = false
+    this.token = null
+    this.uuid = `Actor.${this._id}`
   }
 
   prepareData () {
@@ -490,20 +1404,103 @@ global.ui = {
  * Global helper functions
  */
 
+// DragDrop mock - simulates Foundry's drag and drop system
+class DragDropMock {
+  constructor (options = {}) {
+    this.dragSelector = options.dragSelector || '.draggable'
+    this.dropSelector = options.dropSelector || null
+    this.permissions = options.permissions || {}
+    this.callbacks = options.callbacks || {}
+  }
+
+  // Bind drag/drop handlers to an element - in real Foundry this sets up event listeners
+  bind (element) {
+    this.element = element
+    return this
+  }
+
+  // Static implementation property - points to the DragDrop class itself
+  static implementation = DragDropMock
+}
+
 // Namespace for Foundry helper functions
 global.foundry = {
   utils: {},
   applications: {
+    api: {
+      // HandlebarsApplicationMixin - provides Handlebars template rendering capabilities
+      // Adds template-based rendering to ApplicationV2 classes
+      HandlebarsApplicationMixin: (BaseClass) => {
+        return class extends BaseClass {
+          // Render with handlebars template support
+          async render (options = {}) {
+            return super.render(options)
+          }
+
+          // Template rendering - compiles and renders Handlebars templates
+          async _renderHTML (context, options) {
+            // In real Foundry: compiles templates from PARTS configuration
+            // Supports partial templates and automatic template loading
+            return '<div>Handlebars Template Rendered</div>'
+          }
+        }
+      },
+
+      // ApplicationV2 base class export
+      ApplicationV2: global.ApplicationV2
+    },
     handlebars: {
       renderTemplate: vi.fn((template, data) => { return '' }).mockName('renderTemplate')
     },
+    sheets: {
+      // ActorSheetV2 - export the mock for import statements
+      ActorSheetV2: global.ActorSheetV2,
+      // DocumentSheetV2 - export the mock for import statements
+      DocumentSheetV2: global.DocumentSheetV2
+    },
+    apps: {
+      // DialogV2 - modal dialog application for user interaction
+      DialogV2: global.DialogV2,
+      // DocumentSheetConfig - configuration dialog for document sheets
+      DocumentSheetConfig: class DocumentSheetConfigMock {
+        static DEFAULT_OPTIONS = { position: { width: 400 } }
+        constructor (options = {}) { this.options = options }
+        render () { return this }
+      },
+      // FilePicker - file browser dialog for asset selection
+      FilePicker: class FilePickerMock {
+        constructor (options = {}) { this.options = options }
+        async browse () { return this }
+      },
+      // ImagePopout - image viewer dialog
+      ImagePopout: class ImagePopoutMock {
+        constructor (options = {}) { this.options = options }
+        render () { return this }
+      }
+    },
     ux: {
       TextEditor: {
-        enrichHTML: vi.fn(async (content, options = {}) => content).mockName('TextEditor.enrichHTML')
-      }
+        enrichHTML: vi.fn(async (content, options = {}) => content).mockName('TextEditor.enrichHTML'),
+        // getDragEventData - extracts drag data from drop events
+        getDragEventData: vi.fn((event) => {
+          try {
+            return JSON.parse(event.dataTransfer?.getData('text/plain') || '{}')
+          } catch {
+            return {}
+          }
+        }).mockName('TextEditor.getDragEventData')
+      },
+      DragDrop: DragDropMock
+    },
+    types: {
+      // ApplicationTabsConfiguration - type for tab configuration
+      ApplicationTabsConfiguration: class {}
     }
   }
 }
+
+// Set up the global DragDrop reference
+global.DragDrop = DragDropMock
 
 // Foundry's implementation of getType
 global.getType = function (token) {

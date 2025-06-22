@@ -15,6 +15,8 @@ const { TextEditor, DragDrop } = foundry.applications.ux
  * Extend the basic ItemSheet for DCC RPG
  */
 class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
+  #dragDrop
+
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     classes: ['dcc', 'sheet', 'item'],
@@ -46,7 +48,9 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       convertDownward: this.#convertDownward,
       configureItem: this.#configureItem
     },
-    dragDrop: this.#createDragDropHandlers
+    dragDrop: [{
+      dropSelector: '.sheet-body'
+    }]
   }
 
   /** @inheritDoc */
@@ -104,6 +108,16 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         ],
       initial: 'item' // This gets set dynamically in _getTabsConfig
     }
+  }
+
+  constructor (options = {}) {
+    super(options)
+    this.#dragDrop = this.#createDragDropHandlers()
+  }
+
+  /** @inheritDoc */
+  _onRender (context, options) {
+    this.#dragDrop.forEach((d) => d.bind(this.element))
   }
 
   /** @inheritdoc */
@@ -226,16 +240,17 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @returns {DragDrop[]} An array of DragDrop handlers
    * @private
    */
-  static #createDragDropHandlers () {
-    return [{
-      dropSelector: '.sheet-body',
-      permissions: {
+  #createDragDropHandlers () {
+    return this.options.dragDrop.map((d) => {
+      d.permissions = {
         drop: this._canDragDrop.bind(this)
-      },
-      callbacks: {
+      }
+      d.callbacks = {
+        dragover: this._onDragOver.bind(this),
         drop: this._onDrop.bind(this)
       }
-    }]
+      return new DragDrop(d)
+    })
   }
 
   /**
@@ -375,16 +390,22 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     fp.render(true)
   }
 
-  async _onDrop (event) {
-    event.preventDefault()
-    event.stopPropagation()
+  /**
+   * Handle drag over events
+   * @param {DragEvent} event
+   */
+  _onDragOver (event) {
+    // Optional: handle dragover events if needed
+  }
 
-    let data
-    try {
-      data = JSON.parse(event.dataTransfer.getData('text/plain'))
-    } catch (err) {
-      return false
-    }
+  /**
+   * Handle drop events
+   * @param {DragEvent} event
+   * @returns {Promise<boolean|void>}
+   */
+  async _onDrop (event) {
+    const data = foundry.applications.ux.TextEditor.getDragEventData(event)
+    if (!data) return false
 
     if (this.document.type === 'spell') {
       // Handle dropping a roll table to set the spells table
@@ -400,16 +421,14 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         if (data.pack) {
           results.collection = data.pack
         }
-        this.object.update({
+        this.document.update({
           system: { results }
         })
       }
     }
-  }
 
-  _onDragOver (event) {
-    event.preventDefault()
-    return false
+    // Handle different drop types - delegate to base class if needed
+    return super._onDrop?.(event)
   }
 
   /** @inheritdoc */
@@ -484,16 +503,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     console.log('rollMercurialMagic')
     this.document.rollMercurialMagic(undefined, options)
     // No need to render - the document update will trigger re-render automatically
-  }
-
-  /**
-   * Roll a new Mercurial Magic effect
-   * @param {Event}  event   The originating click event
-   * @param options
-   * @private
-   */
-  _fooBar (event, options) {
-    console.log('fooBar')
   }
 
   /**

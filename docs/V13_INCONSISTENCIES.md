@@ -32,7 +32,7 @@ This document presents a detailed audit of all Application classes in the DCC sy
 
 **Critical Issues:**
 - Form processing logic manually manages embedded document updates outside FoundryVTT's normal flow
-- ~~Drag/drop handlers created in constructor rather than using declarative configuration~~ **PARTIALLY FIXED**: ApplicationV2 in v13 doesn't automatically create drag/drop handlers like the older Application class did. The current implementation follows the proper v13 pattern but uses manual setup because that's the only way ApplicationV2 supports drag/drop. The `#findDataset` method was changed from private to public static to be accessible from instance methods.
+- ~~Drag/drop handlers created in constructor rather than using declarative configuration~~ **FIXED**: ApplicationV2 in v13 doesn't automatically create drag/drop handlers like the older Application class did. The current implementation follows the proper v13 pattern but uses manual setup because that's the only way ApplicationV2 supports drag/drop. The `#findDataset` method was changed from private to public static to be accessible from instance methods.
 
 #### 2. DCCPartySheet (`party-sheet.js`)
 **Parent**: `DCCActorSheet`
@@ -204,26 +204,40 @@ This document presents a detailed audit of all Application classes in the DCC sy
 
 **Risk**: Race conditions, performance issues, or incomplete data rendering.
 
+### 6. TextEditor.enrichHTML Usage Issues
+
+**Issue**: Inconsistent usage patterns for `TextEditor.enrichHTML`:
+- **Missing `await`**: `actor-sheet.js` line 367 - `return TextEditor.enrichHTML(this.actor.system.details.notes.value, context)` should be `return await TextEditor.enrichHTML(...)`
+- **Namespace Inconsistency**: Mix of `TextEditor.enrichHTML` vs `foundry.applications.ux.TextEditor.enrichHTML` (particularly in `chat.js`)
+- **Async Function Compatibility**: Some functions calling `TextEditor.enrichHTML` may not be properly marked as `async`
+
+**Risk**: Missing `await` could cause functions to return Promise objects instead of enriched HTML strings, leading to "[object Promise]" being displayed instead of formatted content.
+
 ---
 
 ## Recommendations for Resolution
 
 ### High Priority Fixes
 
-1. **Standardize Form Submission**
+1. **Fix TextEditor.enrichHTML Issues** ⚠️ **CRITICAL**
+   - **IMMEDIATE**: Add missing `await` in `actor-sheet.js` line 367: `return await TextEditor.enrichHTML(...)`
+   - Standardize namespace usage (choose either `TextEditor.enrichHTML` or `foundry.applications.ux.TextEditor.enrichHTML`)
+   - Ensure all functions calling `TextEditor.enrichHTML` are marked as `async`
+
+2. **Standardize Form Submission**
    - Convert `RollModifierDialog` to use standard form submission pattern
    - Remove custom form processing from `DCCActorSheet` if possible
    - Ensure all config dialogs use consistent document access patterns
 
-2. **Fix Static Method Binding**
+3. **Fix Static Method Binding**
    - Review all action configurations for proper method binding
-   - Ensure drag/drop handlers use consistent patterns
+   - ~~Ensure drag/drop handlers use consistent patterns~~ **FIXED**
 
-3. **Standardize Document Access**
+4. **Standardize Document Access**
    - Implement consistent document getter pattern across all classes
    - Remove direct options.document access
 
-4. **Template Configuration Consistency**
+5. **Template Configuration Consistency**
    - Standardize on one approach for dynamic template selection
    - Document the CLASS_PARTS extension pattern properly
 
@@ -252,6 +266,38 @@ This document presents a detailed audit of all Application classes in the DCC sy
    - Document the CLASS_PARTS/CLASS_TABS extension pattern
    - Add JSDoc comments for complex methods
    - Create migration guide for v13 patterns
+
+---
+
+## Recent Updates and Fixes
+
+### Fixes Implemented (June 21, 2025)
+
+1. **Drag/Drop Pattern Fixed** ✅
+   - **Issue**: DCCActorSheet drag/drop handlers were using non-standard constructor setup
+   - **Resolution**: Clarified that ApplicationV2 in v13 requires manual drag/drop setup, this is the proper pattern
+   - **Changed**: `#findDataset` method from private to public static to be accessible from instance methods
+   - **Files**: `actor-sheet.js`, `party-sheet.js`
+
+2. **Multi-line Textarea Hack Removed** ✅  
+   - **Issue**: System included workaround for multi-line textareas that is no longer needed in v13
+   - **Resolution**: Removed unnecessary hack code from `dcc.js`
+   - **Benefit**: Cleaner code, relies on native v13 functionality
+
+### Still Outstanding Issues
+
+1. **TextEditor.enrichHTML Missing Await** ❌ **CRITICAL**
+   - **File**: `actor-sheet.js` line 367
+   - **Issue**: `return TextEditor.enrichHTML(...)` should be `return await TextEditor.enrichHTML(...)`
+   - **Impact**: Could cause "[object Promise]" to be displayed instead of enriched HTML
+
+2. **RollModifierDialog Complex Pattern** ❌
+   - **Status**: No changes made to the complex promise-based form handling
+   - **Impact**: Continues to use non-standard submission patterns
+
+3. **Document Access Inconsistencies** ❌
+   - **Status**: Mixed patterns between `this.document` getter and `this.options.document` still exist
+   - **Impact**: Potential for null reference errors or stale data access
 
 ---
 

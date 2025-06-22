@@ -37,7 +37,7 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  _prepareContext (options = {}) {
+  async _prepareContext (options = {}) {
     const data = {}
     data.cssClass = 'dcc'
     data.user = game.user

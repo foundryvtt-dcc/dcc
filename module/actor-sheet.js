@@ -364,7 +364,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   async #prepareNotes () {
     const context = { relativeTo: this.document, secrets: this.document.isOwner }
-    return TextEditor.enrichHTML(this.actor.system.details.notes.value, context)
+    return await TextEditor.enrichHTML(this.actor.system.details.notes.value, context)
   }
 
   /**

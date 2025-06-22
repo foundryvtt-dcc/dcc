@@ -280,14 +280,14 @@ When you need to edit items inline on an actor sheet (e.g., weapons, equipment, 
 ```html
 {{!-- Use "items" prefix for inline item edits --}}
 <li class="weapon" data-item-id="{{weapon._id}}">
-  <input type="text" 
-         name="items.{{weapon._id}}.name" 
+  <input type="text"
+         name="items.{{weapon._id}}.name"
          value="{{weapon.name}}"/>
-  <input type="checkbox" 
-         name="items.{{weapon._id}}.system.equipped" 
+  <input type="checkbox"
+         name="items.{{weapon._id}}.system.equipped"
          {{checked weapon.system.equipped}}/>
-  <input type="text" 
-         name="items.{{weapon._id}}.system.damage" 
+  <input type="text"
+         name="items.{{weapon._id}}.system.damage"
          value="{{weapon.system.damage}}"/>
 </li>
 ```
@@ -298,7 +298,7 @@ When you need to edit items inline on an actor sheet (e.g., weapons, equipment, 
 _processFormData(event, form, formData) {
   // Extract the raw form data object BEFORE validation strips out items
   const expanded = foundry.utils.expandObject(formData.object)
-  
+
   // Handle items separately if they exist
   if (expanded.items) {
     // Store for later processing
@@ -306,20 +306,20 @@ _processFormData(event, form, formData) {
       _id: id,
       ...itemData
     }))
-    
+
     // Remove from the expanded object
     delete expanded.items
-    
+
     // Flatten and replace the existing formData.object properties
     const flattened = foundry.utils.flattenObject(expanded)
-    
+
     // Clear existing object and repopulate (since we can't reassign)
     for (const key in formData.object) {
       delete formData.object[key]
     }
     Object.assign(formData.object, flattened)
   }
-  
+
   // Call parent with modified formData
   return super._processFormData(event, form, formData)
 }
@@ -328,13 +328,13 @@ _processFormData(event, form, formData) {
 async _processSubmitData(event, form, formData) {
   // Process the actor data normally
   const result = await super._processSubmitData(event, form, formData)
-  
+
   // Now handle any pending item updates
   if (this._pendingItemUpdates?.length > 0) {
     await this.document.updateEmbeddedDocuments('Item', this._pendingItemUpdates)
     delete this._pendingItemUpdates // Clean up
   }
-  
+
   return result
 }
 ```
@@ -581,16 +581,48 @@ _getTabsConfig(group) {
 
 ## Drag and Drop Migration
 
-**CRITICAL**: ApplicationV2 does NOT automatically create drag/drop handlers like the older Application class did. The `dragDrop` configuration in `DEFAULT_OPTIONS` is just stored as options data - it doesn't make elements draggable automatically.
+### Understanding the V13 Drag/Drop Architecture
 
-### Why Manual Setup is Required
+**CRITICAL INSIGHT**: FoundryVTT V13 has a two-tier drag/drop system:
 
-FoundryVTT v13's ApplicationV2 intentionally removed automatic drag/drop handling. According to the official documentation:
-- ApplicationV2 does not include an implementation of drag/drop handling
-- The helper DragDrop class still works - you just have to implement it yourself
-- This is the "preferred" pattern for ApplicationV2
+1. **ApplicationV2 (Generic)**: Manual setup required, no automatic handlers
+2. **ActorSheetV2 (Actor-specific)**: Automatic `.draggable` setup with basic item/effect support
 
-### V1 vs V2 Comparison
+#### ActorSheetV2 Automatic Features
+
+If you're extending `ActorSheetV2`, you get these features automatically:
+
+```javascript
+const { ActorSheetV2 } = foundry.applications.sheets
+
+class MyActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+  // ActorSheetV2 automatically provides:
+  // - DragDrop setup with '.draggable' selector in _onRender()
+  // - Permission checks via _canDragStart/_canDragDrop (checks isEditable)
+  // - Basic item dragging for elements with data-item-id
+  // - Active effect dragging for elements with data-effect-id
+  // - Item sorting within the same actor via _onSortItem
+  // - Document drop handling with delegation to _onDropItem, _onDropActiveEffect, etc.
+}
+```
+
+**What ActorSheetV2 gives you for free:**
+- Elements with class `draggable` are automatically draggable
+- Items with `data-item-id` create proper item drag data
+- Active effects with `data-effect-id` create proper effect drag data
+- Dropping items on the sheet automatically adds them to the actor
+- Dropping items from the same actor triggers sorting via `_onSortItem`
+- Permission checks based on `isEditable` property
+
+#### When You Need Manual Setup
+
+You need manual drag/drop setup when:
+1. Using base `ApplicationV2` (not ActorSheetV2)
+2. Creating custom drag types beyond basic items/effects
+3. Need different selectors than `.draggable`
+4. Need custom permission logic
+
+### ApplicationV2 vs ActorSheetV2 Comparison
 
 **V1 Pattern (Old - Automatic):**
 ```javascript
@@ -602,13 +634,36 @@ static get defaultOptions() {
 // Framework automatically created and bound DragDrop handlers
 ```
 
-**V2 Pattern (New - Manual Setup Required):**
+**V2 ActorSheetV2 Pattern (Automatic for Basic Items):**
+```javascript
+const { ActorSheetV2 } = foundry.applications.sheets
+
+class MyActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+  // No drag/drop setup needed for basic items!
+  // Just add class="draggable" and data-item-id to your templates
+}
+```
+
+**Template for ActorSheetV2 Auto Drag/Drop:**
+```html
+<!-- ActorSheetV2 handles this automatically -->
+<li class="item draggable" data-item-id="{{item._id}}">
+  {{item.name}}
+</li>
+
+<!-- Active effects work automatically too -->
+<li class="effect draggable" data-effect-id="{{effect._id}}">
+  {{effect.name}}
+</li>
+```
+
+**V2 ApplicationV2 Pattern (Manual Setup Required):**
 ```javascript
 const { DragDrop } = foundry.applications.ux
 
 class MyAppV2 extends HandlebarsApplicationMixin(ApplicationV2) {
   #dragDrop
-  
+
   static DEFAULT_OPTIONS = {
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
@@ -647,7 +702,7 @@ class MyAppV2 extends HandlebarsApplicationMixin(ApplicationV2) {
   _canDragDrop(selector) {
     return this.document.isOwner && this.isEditable
   }
-  
+
   _onDragOver(event) {
     // Optional: handle dragover events if needed
   }
@@ -709,17 +764,18 @@ Add `data-drag="true"` to draggable elements:
 </ol>
 ```
 
-### Complete Working Example
+### DCC System Example: Hybrid Approach
 
-This is the pattern used in the DCC system's `DCCActorSheet`:
+The DCC system uses a hybrid approach that extends ActorSheetV2's automatic features with custom drag types:
 
 ```javascript
 class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   #dragDrop
-  
+
   static DEFAULT_OPTIONS = {
+    // Custom selectors override ActorSheetV2 defaults
     dragDrop: [{
-      dragSelector: '[data-drag="true"]',
+      dragSelector: '[data-drag="true"]',  // Custom selector
       dropSelector: '.item-list, .weapon-list, .armor-list, .skill-list'
     }]
   }
@@ -730,60 +786,51 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   _onRender(context, options) {
+    // Manual setup replaces ActorSheetV2's automatic setup
     this.#dragDrop.forEach((d) => d.bind(this.element))
   }
 
-  #createDragDropHandlers() {
-    return this.options.dragDrop.map((d) => {
-      d.permissions = {
-        dragstart: this._canDragStart.bind(this),
-        drop: this._canDragDrop.bind(this)
-      }
-      d.callbacks = {
-        dragstart: this._onDragStart.bind(this),
-        dragover: this._onDragOver.bind(this),
-        drop: this._onDrop.bind(this)
-      }
-      return new DragDrop(d)
-    })
-  }
-
-  _canDragStart(selector) {
-    return this.document.isOwner && this.isEditable
-  }
-
-  _canDragDrop(selector) {
-    return this.document.isOwner && this.isEditable
-  }
-
-  _onDragOver(event) {
-    // Optional: handle dragover events if needed
-  }
-
+  // Custom drag handler for DCC-specific drag types
   _onDragStart(event) {
     const li = event.currentTarget
-    
-    // Check if element is draggable
     if (!li.dataset.drag) return
-    
+
     const dragAction = li.dataset.dragAction
-    const actorId = this.actor.id
     let dragData = null
 
     switch (dragAction) {
+      case 'ability': {
+        // Custom DCC ability check macro creation
+        const abilityId = DCCActorSheet.findDataset(event.currentTarget, 'ability')
+        dragData = {
+          type: 'Ability',
+          actorId: this.actor.id,
+          data: { abilityId }
+        }
+        break
+      }
+      case 'spellCheck': {
+        // Custom DCC spell check macro creation
+        const ability = DCCActorSheet.findDataset(event.currentTarget, 'ability')
+        dragData = {
+          type: 'Spell Check',
+          actorId: this.actor.id,
+          data: { ability }
+        }
+        break
+      }
       case 'weapon': {
+        // Falls back to ActorSheetV2 item handling if needed
         const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
         const weapon = this.actor.items.get(itemId)
         if (weapon) {
           dragData = Object.assign(weapon.toDragData(), {
             dccType: 'Weapon',
-            actorId,
-            data: weapon
+            actorId: this.actor.id
           })
         }
         break
       }
-      // ... other drag types
     }
 
     if (dragData) {
@@ -795,22 +842,123 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _onDrop(event) {
     const data = foundry.applications.ux.TextEditor.getDragEventData(event)
     if (!data) return false
-    
-    // Handle drop logic
-    return super._onDrop?.(event)
-  }
 
-  // Public static helper method
-  static findDataset(element, attribute) {
-    while (element && !(attribute in element.dataset)) {
-      element = element.parentElement
+    // Convert DCC-specific drops back to standard Item drops
+    if (data.type === 'DCC Item') {
+      data.type = 'Item'
     }
-    return element?.dataset[attribute] || null
+
+    // Delegate to ActorSheetV2's built-in drop handling
+    return super._onDrop?.(event)
   }
 }
 ```
 
-This manual setup is the correct and "preferred" way to implement drag/drop in ApplicationV2.
+### Key Insight: Choose Your Approach
+
+1. **For simple actor sheets**: Use ActorSheetV2 with `.draggable` class - no setup needed
+2. **For custom drag types**: Override with manual setup (like DCC system)
+3. **For non-actor applications**: Use full manual ApplicationV2 setup
+
+### ActorSheetV2 Built-in Methods You Can Override
+
+ActorSheetV2 provides these methods you can customize:
+
+```javascript
+// Permission checks (default: checks this.isEditable)
+_canDragStart(selector) { return this.isEditable }
+_canDragDrop(selector) { return this.isEditable }
+
+// Drag start (default: handles items with data-item-id, effects with data-effect-id)
+_onDragStart(event) { /* creates item/effect drag data */ }
+
+// Drop handling (default: delegates to _onDropDocument)
+_onDrop(event) { /* processes drop data, calls hooks */ }
+
+// Document drop routing (default: routes to specific handlers)
+_onDropDocument(event, document) { /* routes by document type */ }
+
+// Item drops (default: creates item on actor or sorts within actor)
+_onDropItem(event, item) { /* handles item creation/sorting */ }
+
+// Item sorting (default: uses Foundry's integer sort algorithm)
+_onSortItem(event, item) { /* reorders items within actor */ }
+```
+
+This hybrid approach allows you to leverage ActorSheetV2's built-in functionality while adding system-specific features.
+
+### Understanding ActorSheetV2 vs DocumentSheetV2 vs ApplicationV2
+
+FoundryVTT V13 provides a hierarchy of v2 application classes:
+
+```
+ApplicationV2 (Base)
+├── DocumentSheetV2 (Document-specific)
+│   └── ActorSheetV2 (Actor-specific)
+└── DialogV2 (Modal dialogs)
+```
+
+#### ApplicationV2 (Base Class)
+**Use for**: Custom applications, configuration dialogs, tools
+**Provides**:
+- Render state management (NONE, RENDERING, RENDERED, CLOSING, CLOSED, ERROR)
+- Window framing and positioning
+- Event handling and lifecycle management
+- Tab system for multi-panel interfaces
+- Action system for declarative event handling
+- Form handling with validation
+
+#### DocumentSheetV2 (Document Sheets)
+**Use for**: Item sheets, journal entry sheets, other document types
+**Extends ApplicationV2 with**:
+- Document permissions and ownership checks (`isVisible`, `isEditable`)
+- Form submission pipeline with validation
+- Header controls (configure sheet, copy UUID, edit image, import from compendium)
+- Sheet theming and styling support
+- Document update/creation handling
+
+#### ActorSheetV2 (Actor Sheets)
+**Use for**: Actor character sheets
+**Extends DocumentSheetV2 with**:
+- **Automatic drag/drop setup** with `.draggable` selector
+- Default handlers for items (`data-item-id`) and effects (`data-effect-id`)
+- Item sorting within same actor using integer sort algorithm
+- Document drop delegation system
+- Additional header controls for token/portrait management
+- Actor and token getters for convenient access
+
+#### DialogV2 (Modal Dialogs)
+**Use for**: User prompts, confirmations, input collection
+**Extends ApplicationV2 with**:
+- Button-based user interaction with callbacks
+- Modal/non-modal display modes
+- Keyboard navigation (Enter/Escape handling)
+- Factory methods (`confirm()`, `prompt()`, `input()`, `wait()`)
+- Promise-based async interaction patterns
+
+### Choosing the Right Base Class
+
+```javascript
+// For actor sheets - use ActorSheetV2
+class MyActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+  // Gets automatic drag/drop, actor-specific features
+}
+
+// For item sheets - use DocumentSheetV2
+class MyItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
+  // Gets document handling, no automatic drag/drop
+}
+
+// For configuration dialogs - use ApplicationV2
+class MyConfigDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  // Gets basic application features only
+}
+
+// For user prompts - use DialogV2
+class MyPrompt extends DialogV2 {
+  // Gets modal behavior, button handling
+}
+```
 
 ---
 
@@ -1146,7 +1294,12 @@ static DEFAULT_OPTIONS = {
 
 ### Core Migration Steps
 - [ ] **CRITICAL: Register all actor and item sheets explicitly**
-- [ ] Update class inheritance (FormApplication → ApplicationV2)
+- [ ] **Choose correct base class**:
+  - [ ] ActorSheetV2 for actor sheets (automatic drag/drop)
+  - [ ] DocumentSheetV2 for item/journal sheets (document features)
+  - [ ] ApplicationV2 for configuration dialogs (basic features)
+  - [ ] DialogV2 for user prompts (modal behavior)
+- [ ] Update class inheritance (FormApplication → chosen V2 class)
 - [ ] Convert `defaultOptions` to `DEFAULT_OPTIONS`
 - [ ] Add `tag: 'form'` to DEFAULT_OPTIONS for dialogs
 - [ ] Move dimensions to `position` object
@@ -1167,10 +1320,15 @@ static DEFAULT_OPTIONS = {
 - [ ] Test tab switching functionality
 
 ### Advanced Features
-- [ ] Convert drag/drop to manual initialization pattern
+- [ ] **Implement drag/drop appropriately**:
+  - [ ] ActorSheetV2: Use `.draggable` class for automatic item/effect dragging
+  - [ ] ActorSheetV2: Add custom drag types if needed (like DCC system)
+  - [ ] ApplicationV2: Manual DragDrop setup required
+  - [ ] DocumentSheetV2: Usually no drag/drop needed
 - [ ] Migrate `{{editor}}` helpers to `<prose-mirror>` elements
 - [ ] Update image editing to use actions
 - [ ] Replace jQuery with vanilla JS in hooks
+- [ ] **Consider using DialogV2 factory methods** for simple prompts
 
 ### Theme Implementation
 - [ ] Create variables.css file with CSS custom properties
@@ -1191,6 +1349,8 @@ static DEFAULT_OPTIONS = {
 ### Final Validation
 - [ ] Run visual regression tests
 - [ ] Test all functionality end-to-end
+- [ ] **Test drag/drop operations specifically** (ActorSheetV2 auto-features)
+- [ ] **Test dialog interactions** (DialogV2 factory methods)
 - [ ] Verify performance is acceptable
 - [ ] Test in multiple browsers
 - [ ] Test theme switching in multiple browsers
