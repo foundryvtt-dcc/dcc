@@ -17,6 +17,7 @@ const { ApplicationTabsConfiguration } = foundry.applications.types
  */
 class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   #dragDrop
+
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     classes: ['dcc', 'sheet', 'actor'],
@@ -57,7 +58,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     },
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
-      dropSelector: '.item-list, .weapon-list, .armor-list, .skill-list'
+      dropSelector: '.item-list, .weapon-list, .armor-list, .skill-list, .equipment-list, .spell-list'
     }],
     window: {
       resizable: true,
@@ -391,11 +392,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   /**
    * Search the object and then its parent elements for a dataset attribute
-   @this {DCCActorSheet}
    @param {Object} element    The starting element
    @param {String} attribute  The name of the dataset attribute
    */
-  static #findDataset (element, attribute) {
+  static findDataset (element, attribute) {
     while (element && !(attribute in element.dataset)) {
       element = element.parentElement
     }
@@ -445,7 +445,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @returns {Promise<void>}
    **/
   static async #itemDelete (event, target) {
-    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.actor.items.get(itemId)
     await item.deleteDialog()
   }
@@ -458,7 +458,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @returns {Promise<void>}
    **/
   static async #itemEdit (event, target) {
-    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.document.items.get(itemId)
     await item.sheet.render({ force: true })
   }
@@ -471,7 +471,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @returns {Promise<void>}
    **/
   static async #decreaseQty (event, target) {
-    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.actor.items?.get(itemId)
     let qty = item.system?.quantity || 0
     qty -= 1
@@ -486,7 +486,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @returns {Promise<void>}
    **/
   static async #increaseQty (event, target) {
-    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.actor?.items?.get(itemId)
     let qty = item.system?.quantity || 0
     qty += 1
@@ -496,9 +496,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   /**
    * Create a macro when a rollable element is dragged
    * @param {Event} event
-   * @param {HTMLElement} target element
    * @override */
-  _onDragStart (event, target) {
+  _onDragStart (event) {
     const li = event.currentTarget
 
     // Check if element is draggable
@@ -515,7 +514,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     switch (dragAction) {
       case 'ability': {
-        const abilityId = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
+        const abilityId = DCCActorSheet.findDataset(event.currentTarget, 'ability')
         const labelFor = event.target.getAttribute('for') || ''
         const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
         dragData = {
@@ -548,7 +547,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         break
 
       case 'save': {
-        const saveId = DCCActorSheet.#findDataset(event.currentTarget, 'save')
+        const saveId = DCCActorSheet.findDataset(event.currentTarget, 'save')
         dragData = {
           type: 'Save',
           actorId,
@@ -558,7 +557,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         break
 
       case 'skill': {
-        const skillId = DCCActorSheet.#findDataset(event.currentTarget, 'skill')
+        const skillId = DCCActorSheet.findDataset(event.currentTarget, 'skill')
         const actorSkill = this.actor.system.skills[skillId]
         const skillName = actorSkill ? actorSkill.label : skillId
         dragData = {
@@ -583,9 +582,9 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         break
 
       case 'spellCheck': {
-        const ability = DCCActorSheet.#findDataset(event.currentTarget, 'ability')
-        const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
-        const spell = DCCActorSheet.#findDataset(event.currentTarget, 'spell')
+        const ability = DCCActorSheet.findDataset(event.currentTarget, 'ability')
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
+        const spell = DCCActorSheet.findDataset(event.currentTarget, 'spell')
 
         const dragDataContent = { ability }
 
@@ -647,7 +646,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         break
 
       case 'weapon': {
-        const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
         const weapon = this.actor.items.get(itemId)
         if (weapon) {
           dragData = Object.assign(
@@ -667,7 +666,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         break
 
       case 'item': {
-        const itemId = DCCActorSheet.#findDataset(event.currentTarget, 'itemId')
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
         const item = this.actor.items.get(itemId)
         if (item) {
           // Use 'DCC Item' for spells to prevent Foundry's default macro creation
@@ -939,7 +938,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #rollWeaponAttack (event, target) {
     event.preventDefault()
-    const itemId = DCCActorSheet.#findDataset(target, 'itemId')
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const options = DCCActorSheet.fillRollOptions(event)
     Object.assign(options, {
       backstab: target.classList.contains('backstab-button')

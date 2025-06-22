@@ -22,7 +22,7 @@ This document presents a detailed audit of all Application classes in the DCC sy
 
 #### 1. DCCActorSheet (`actor-sheet.js`)
 **Parent**: `HandlebarsApplicationMixin(ActorSheetV2)`
-**Status**: ⚠️ **Multiple inconsistencies**
+**Status**: ⚠️ **Multiple inconsistencies** *(drag/drop issue fixed)*
 
 **Issues:**
 - **Form Data Processing**: Uses custom `_processFormData()` and `_processSubmitData()` methods with pending item updates mechanism (lines 984-1025). This is a unique pattern not used elsewhere.
@@ -32,7 +32,7 @@ This document presents a detailed audit of all Application classes in the DCC sy
 
 **Critical Issues:**
 - Form processing logic manually manages embedded document updates outside FoundryVTT's normal flow
-- Drag/drop handlers created in constructor rather than using declarative configuration
+- ~~Drag/drop handlers created in constructor rather than using declarative configuration~~ **PARTIALLY FIXED**: ApplicationV2 in v13 doesn't automatically create drag/drop handlers like the older Application class did. The current implementation follows the proper v13 pattern but uses manual setup because that's the only way ApplicationV2 supports drag/drop. The `#findDataset` method was changed from private to public static to be accessible from instance methods.
 
 #### 2. DCCPartySheet (`party-sheet.js`)
 **Parent**: `DCCActorSheet`

@@ -35,7 +35,7 @@ class DCCPartySheet extends DCCActorSheet {
       editImage: this.#editImage
     },
     dragDrop: [{
-      dragSelector: '.party-draggable',
+      dragSelector: '[data-drag="true"]',
       dropSelector: '.party',
       permissions: {
         dragstart: '_canDragStart',
@@ -311,21 +311,19 @@ class DCCPartySheet extends DCCActorSheet {
     }
 
     if (game.settings.get('dcc', 'promptForItemDeletion')) {
-      await new foundry.applications.api.DialogV2({
+      await foundry.applications.api.DialogV2.confirm({
         window: { title: 'DCC.PartyDeletePrompt' },
         content: `<p>${game.i18n.localize('DCC.PartyDeleteExplain')}</p>`,
-        buttons: {
-          yes: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.Yes'),
-            callback: () => removeMemberFn(this)
-          },
-          no: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.No')
-          }
+        yes: {
+          icon: 'fas fa-check',
+          label: game.i18n.localize('DCC.Yes'),
+          callback: () => removeMemberFn(this)
+        },
+        no: {
+          icon: 'fas fa-times',
+          label: game.i18n.localize('DCC.No')
         }
-      }).render(true)
+      })
     } else {
       removeMemberFn(this)
     }
@@ -432,6 +430,79 @@ class DCCPartySheet extends DCCActorSheet {
   }
 
   /** @override */
+  _onDragStart (event) {
+    const li = event.currentTarget
+
+    // Check if element is draggable
+    if (!li.dataset.drag) return
+
+    let dragData = null
+
+    // Use data-drag-action for specific drag types
+    const dragAction = li.dataset.dragAction
+
+    // Get actor ID from the element data
+    const actorId = li.closest('[data-actor-id]')?.dataset.actorId || this.actor.id
+    const classes = event.target.classList
+
+    switch (dragAction) {
+      case 'ability': {
+        const abilityId = DCCActorSheet.findDataset(event.currentTarget, 'ability')
+        const labelFor = event.target.getAttribute('for') || ''
+        const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
+        dragData = {
+          type: 'Ability',
+          actorId,
+          data: {
+            abilityId,
+            rollUnder
+          }
+        }
+      }
+        break
+
+      case 'save': {
+        const saveId = DCCActorSheet.findDataset(event.currentTarget, 'save')
+        dragData = {
+          type: 'Save',
+          actorId,
+          data: saveId
+        }
+      }
+        break
+
+      case 'weapon': {
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
+        const actor = game.actors.get(actorId)
+        if (actor) {
+          const weapon = actor.items.get(itemId)
+          if (weapon) {
+            dragData = Object.assign(
+              weapon.toDragData(),
+              {
+                dccType: 'Weapon',
+                actorId,
+                data: weapon,
+                dccData: {
+                  weapon,
+                  backstab: classes.contains('backstab-button')
+                }
+              }
+            )
+          }
+        }
+      }
+        break
+    }
+
+    if (dragData) {
+      const actor = game.actors.get(actorId)
+      if (actor && actor.isToken) dragData.tokenId = actor.token.id
+      event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+    }
+  }
+
+  /** @override */
   async _onDropActor (event, data) {
     super._onDropActor(event, data)
 
@@ -445,16 +516,17 @@ class DCCPartySheet extends DCCActorSheet {
   }
 
   /** @override */
-  async _updateObject (event, formData) {
-    const expanded = foundry.utils.expandObject(formData)
+  _processFormData (event, form, formData) {
+    // Extract the raw form data object BEFORE validation strips out items
+    const expanded = foundry.utils.expandObject(formData.object)
 
-    if (event?.currentTarget) {
-      const actorId = event.currentTarget.closest('[data-actor-id]')?.dataset.actorId
+    // Handle weapon updates for party members
+    if (expanded.weaponUpdates) {
+      // Store for later processing
+      this._pendingMemberUpdates = {}
 
-      if (actorId && expanded.weaponUpdates?.[actorId]) {
+      for (const [actorId, weaponUpdates] of Object.entries(expanded.weaponUpdates)) {
         const memberUpdates = {}
-
-        const weaponUpdates = expanded.weaponUpdates[actorId]
         if (weaponUpdates.melee) {
           memberUpdates.activeMelee = weaponUpdates.melee
         }
@@ -462,19 +534,30 @@ class DCCPartySheet extends DCCActorSheet {
           memberUpdates.activeRanged = weaponUpdates.ranged
         }
 
+        if (Object.keys(memberUpdates).length > 0) {
+          this._pendingMemberUpdates[actorId] = memberUpdates
+        }
+      }
+    }
+
+    // Call parent with modified formData
+    return super._processFormData(event, form, formData)
+  }
+
+  /** @override */
+  async _processSubmitData (event, form, formData) {
+    // Process the actor data normally
+    const result = await super._processSubmitData(event, form, formData)
+
+    // Now handle any pending member updates
+    if (this._pendingMemberUpdates) {
+      for (const [actorId, memberUpdates] of Object.entries(this._pendingMemberUpdates)) {
         this._updateMember(actorId, memberUpdates)
       }
+      delete this._pendingMemberUpdates // Clean up
     }
 
-    if (expanded.img) {
-      const tokenImg = this.document.prototypeToken.texture.src
-      if (!tokenImg || tokenImg === 'icons/svg/mystery-man.svg' || tokenImg === 'systems/dcc/styles/images/actor.webp') {
-        foundry.utils.mergeObject(formData, { prototypeToken: { texture: { src: expanded.img } } })
-      }
-    }
-
-    // Update the Actor
-    return this.document.update(formData)
+    return result
   }
 }
 

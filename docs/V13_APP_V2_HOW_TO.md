@@ -581,25 +581,34 @@ _getTabsConfig(group) {
 
 ## Drag and Drop Migration
 
-V2 requires manual initialization and binding of drag/drop handlers.
+**CRITICAL**: ApplicationV2 does NOT automatically create drag/drop handlers like the older Application class did. The `dragDrop` configuration in `DEFAULT_OPTIONS` is just stored as options data - it doesn't make elements draggable automatically.
+
+### Why Manual Setup is Required
+
+FoundryVTT v13's ApplicationV2 intentionally removed automatic drag/drop handling. According to the official documentation:
+- ApplicationV2 does not include an implementation of drag/drop handling
+- The helper DragDrop class still works - you just have to implement it yourself
+- This is the "preferred" pattern for ApplicationV2
 
 ### V1 vs V2 Comparison
 
-**V1 Pattern (Old):**
+**V1 Pattern (Old - Automatic):**
 ```javascript
 static get defaultOptions() {
   return foundry.utils.mergeObject(super.defaultOptions, {
     dragDrop: [{ dragSelector: '.item', dropSelector: '.item-list' }]
   })
 }
-// Handlers were bound automatically
+// Framework automatically created and bound DragDrop handlers
 ```
 
-**V2 Pattern (New):**
+**V2 Pattern (New - Manual Setup Required):**
 ```javascript
 const { DragDrop } = foundry.applications.ux
 
 class MyAppV2 extends HandlebarsApplicationMixin(ApplicationV2) {
+  #dragDrop
+  
   static DEFAULT_OPTIONS = {
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
@@ -620,6 +629,7 @@ class MyAppV2 extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       d.callbacks = {
         dragstart: this._onDragStart.bind(this),
+        dragover: this._onDragOver.bind(this),
         drop: this._onDrop.bind(this)
       }
       return new DragDrop(d)
@@ -637,6 +647,51 @@ class MyAppV2 extends HandlebarsApplicationMixin(ApplicationV2) {
   _canDragDrop(selector) {
     return this.document.isOwner && this.isEditable
   }
+  
+  _onDragOver(event) {
+    // Optional: handle dragover events if needed
+  }
+}
+```
+
+### Important Implementation Notes
+
+#### Event Handler Signatures
+ApplicationV2 calls drag handlers with different signatures than v1:
+
+```javascript
+// ✅ Correct V2 signature - single event parameter
+_onDragStart(event) {
+  const element = event.currentTarget
+  // Implementation
+}
+
+// ❌ Old v1 signature - two parameters (not used by ApplicationV2)
+_onDragStart(event, target) {
+  // This signature is not used by the framework
+}
+```
+
+#### Static Method Access
+If your drag handlers need to call static helper methods, make sure they're public:
+
+```javascript
+// ✅ Good - Public static method accessible from instance methods
+static findDataset(element, attribute) {
+  while (element && !(attribute in element.dataset)) {
+    element = element.parentElement
+  }
+  return element?.dataset[attribute] || null
+}
+
+// ❌ Bad - Private static method not accessible from instances
+static #findDataset(element, attribute) {
+  // Can't call this from _onDragStart instance method
+}
+
+// Usage in drag handler
+_onDragStart(event) {
+  const itemId = MyClass.findDataset(event.currentTarget, 'itemId')
 }
 ```
 
@@ -647,10 +702,115 @@ Add `data-drag="true"` to draggable elements:
 ```html
 <ol class="items">
   {{#each items}}
-  <li data-drag="true" data-item-id="{{this.id}}">{{this.name}}</li>
+  <li data-drag="true" data-item-id="{{this.id}}" data-drag-action="weapon">
+    {{this.name}}
+  </li>
   {{/each}}
 </ol>
 ```
+
+### Complete Working Example
+
+This is the pattern used in the DCC system's `DCCActorSheet`:
+
+```javascript
+class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+  #dragDrop
+  
+  static DEFAULT_OPTIONS = {
+    dragDrop: [{
+      dragSelector: '[data-drag="true"]',
+      dropSelector: '.item-list, .weapon-list, .armor-list, .skill-list'
+    }]
+  }
+
+  constructor(options = {}) {
+    super(options)
+    this.#dragDrop = this.#createDragDropHandlers()
+  }
+
+  _onRender(context, options) {
+    this.#dragDrop.forEach((d) => d.bind(this.element))
+  }
+
+  #createDragDropHandlers() {
+    return this.options.dragDrop.map((d) => {
+      d.permissions = {
+        dragstart: this._canDragStart.bind(this),
+        drop: this._canDragDrop.bind(this)
+      }
+      d.callbacks = {
+        dragstart: this._onDragStart.bind(this),
+        dragover: this._onDragOver.bind(this),
+        drop: this._onDrop.bind(this)
+      }
+      return new DragDrop(d)
+    })
+  }
+
+  _canDragStart(selector) {
+    return this.document.isOwner && this.isEditable
+  }
+
+  _canDragDrop(selector) {
+    return this.document.isOwner && this.isEditable
+  }
+
+  _onDragOver(event) {
+    // Optional: handle dragover events if needed
+  }
+
+  _onDragStart(event) {
+    const li = event.currentTarget
+    
+    // Check if element is draggable
+    if (!li.dataset.drag) return
+    
+    const dragAction = li.dataset.dragAction
+    const actorId = this.actor.id
+    let dragData = null
+
+    switch (dragAction) {
+      case 'weapon': {
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
+        const weapon = this.actor.items.get(itemId)
+        if (weapon) {
+          dragData = Object.assign(weapon.toDragData(), {
+            dccType: 'Weapon',
+            actorId,
+            data: weapon
+          })
+        }
+        break
+      }
+      // ... other drag types
+    }
+
+    if (dragData) {
+      if (this.actor.isToken) dragData.tokenId = this.actor.token.id
+      event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+    }
+  }
+
+  _onDrop(event) {
+    const data = foundry.applications.ux.TextEditor.getDragEventData(event)
+    if (!data) return false
+    
+    // Handle drop logic
+    return super._onDrop?.(event)
+  }
+
+  // Public static helper method
+  static findDataset(element, attribute) {
+    while (element && !(attribute in element.dataset)) {
+      element = element.parentElement
+    }
+    return element?.dataset[attribute] || null
+  }
+}
+```
+
+This manual setup is the correct and "preferred" way to implement drag/drop in ApplicationV2.
 
 ---
 
