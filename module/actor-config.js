@@ -32,31 +32,13 @@ class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   /**
-   * Get the document being configured
-   * @type {Actor}
-   */
-  get document () {
-    return this.options.document
-  }
-
-  /**
-   * Get the window title including the actor name
-   * @type {String}
-   */
-  get title () {
-    return `${this.document.name}: ${game.i18n.localize('DCC.SheetConfig')}`
-  }
-
-  /* -------------------------------------------- */
-
-  /**
    * Prepare context data for rendering the HTML template
    * @param {Object} options - Rendering options
    * @return {Object} The context data
    */
   async _prepareContext (options = {}) {
     const context = await super._prepareContext(options)
-    const actor = this.document
+    const actor = this.options.document
 
     context.isNPC = (actor.type === 'NPC')
     context.isPC = (actor.type === 'Player')
@@ -87,9 +69,9 @@ class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
     // Update the actor with the form data
-    await this.document.update(formData.object)
+    await this.options.document.update(formData.object)
     // Re-draw the updated sheet
-    await this.document.sheet.render(true)
+    await this.options.document.sheet.render(true)
   }
 }
 

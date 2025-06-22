@@ -38,7 +38,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
 
   constructor (options = {}) {
     super(options)
-    this.currentLevel = this.document.system.details.level.value
+    this.currentLevel = this.options.document.system.details.level.value
     this.levelData = null
     this.newHitPointsExpression = ''
   }
@@ -46,26 +46,10 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   /**
-   * Get the document being configured
-   * @type {Actor}
-   */
-  get document () {
-    return this.options.document
-  }
-
-  /**
-   * Get the window title including the actor name
-   * @type {String}
-   */
-  get title () {
-    return `${this.document.name}: ${game.i18n.localize('DCC.ChangeLevel')}`
-  }
-
-  /**
    * Runs when the dialog is closed without submitting
    */
   async close (options = {}) {
-    this.currentLevel = this.document.system.details.level.value || 0
+    this.currentLevel = this.options.document.system.details.level.value || 0
     await super.close(options)
   }
 
@@ -78,22 +62,21 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _prepareContext (options = {}) {
     const context = await super._prepareContext(options)
-    const actor = this.document
 
-    context.isNPC = (actor.type === 'NPC')
-    context.isPC = (actor.type === 'Player')
-    context.isZero = (actor.system.details.level.value === 0)
+    context.isNPC = (this.options.document.type === 'NPC')
+    context.isPC = (this.options.document.type === 'Player')
+    context.isZero = (this.options.document.system.details.level.value === 0)
     context.user = game.user
     context.config = CONFIG.DCC
-    context.system = actor.system
-    context.actor = actor
+    context.system = this.options.document.system
+    context.actor = this.options.document
 
     // Add dynamic level data
     context.currentLevel = this.currentLevel
-    context.originalLevel = actor.system.details.level.value
+    context.originalLevel = this.options.document.system.details.level.value
 
     // Check that we have a class name
-    this.classNameLower = actor.system.class.className.toLowerCase()
+    this.classNameLower = this.options.document.system.class.className.toLowerCase()
     if (!this.classNameLower || this.classNameLower === 'generic') {
       ui.notifications.error(game.i18n.localize('DCC.ChooseAClass'))
       await this.close({ force: true })
@@ -108,7 +91,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
           value
         }))
       context.levelDataHeader = game.i18n.localize('DCC.UpdatesAtLevel')
-    } else if (this.currentLevel !== actor.system.details.level.value) {
+    } else if (this.currentLevel !== this.options.document.system.details.level.value) {
       context.levelDataNotFound = game.i18n.localize('DCC.LevelDataNotFound')
     }
 
@@ -131,13 +114,13 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
   async _getLevelDataFromItem (levelItem) {
     if (Object.hasOwn(levelItem, 'system')) {
       let levelData = levelItem.system.levelData
-      if (this.document.system.details.alignment === 'l') {
+      if (this.options.document.system.details.alignment === 'l') {
         levelData += levelItem.system.levelDataLawful
       }
-      if (this.document.system.details.alignment === 'n') {
+      if (this.options.document.system.details.alignment === 'n') {
         levelData += levelItem.system.levelDataNeutral
       }
-      if (this.document.system.details.alignment === 'c') {
+      if (this.options.document.system.details.alignment === 'c') {
         levelData += levelItem.system.levelDataChaotic
       }
       // console.log(levelData)
@@ -209,16 +192,16 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Calculate hit points expression
       const hitDie = this.levelData['system.attributes.hitDice.value'] || '1d6'
-      let hpExpression = `+(${hitDie}${ensurePlus(this.document.system?.abilities?.sta?.mod)})`
-      let levelDifference = parseInt(this.currentLevel) - parseInt(this.document.system.details.level.value)
+      let hpExpression = `+(${hitDie}${ensurePlus(this.options.document.system?.abilities?.sta?.mod)})`
+      let levelDifference = parseInt(this.currentLevel) - parseInt(this.options.document.system.details.level.value)
 
       if (levelDifference !== 1) {
-        if (parseInt(this.document.system.details.level.value) === 0) {
+        if (parseInt(this.options.document.system.details.level.value) === 0) {
           levelDifference -= 1
         }
         hpExpression = DiceChain.bumpDieCount(hitDie, levelDifference)
 
-        const staModTotal = levelDifference * this.document.system?.abilities?.sta?.mod
+        const staModTotal = levelDifference * this.options.document.system?.abilities?.sta?.mod
         hpExpression = `+(${hpExpression}${ensurePlus(staModTotal)})`
 
         if (levelDifference < 0) {
@@ -250,7 +233,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault()
 
     // Do any basic updates from this dialog
-    await this.document.update(formData.object)
+    await this.options.document.update(formData.object)
 
     // Try and get data for the new level from the compendium
     const newLevel = this.currentLevel
@@ -271,9 +254,9 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       // Roll new Hit Points
       if (this.newHitPointsExpression) {
         const hpRoll = new Roll(this.newHitPointsExpression)
-        await hpRoll.toMessage({ flavor: game.i18n.localize('DCC.HitDiceRoll'), speaker: ChatMessage.getSpeaker({ actor: this.document }) })
-        const newHp = this.document.system.attributes.hp.value + hpRoll.total
-        const newMaxHp = parseInt(this.document.system.attributes.hp.max) + hpRoll.total
+        await hpRoll.toMessage({ flavor: game.i18n.localize('DCC.HitDiceRoll'), speaker: ChatMessage.getSpeaker({ actor: this.options.document }) })
+        const newHp = this.options.document.system.attributes.hp.value + hpRoll.total
+        const newMaxHp = parseInt(this.options.document.system.attributes.hp.max) + hpRoll.total
         levelData['system.attributes.hp.value'] = newHp
         levelData['system.attributes.hp.max'] = newMaxHp
       }
@@ -287,7 +270,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       const messageData = {
         user: game.user.id,
         flavor: game.i18n.format('DCC.LevelChanged', { level: newLevel }),
-        speaker: ChatMessage.getSpeaker({ actor: this.document }),
+        speaker: ChatMessage.getSpeaker({ actor: this.options.document }),
         flags: {
           'dcc.isLevelChange': true
         },
@@ -295,11 +278,11 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       ChatMessage.create(messageData)
 
-      await this.document.update(levelData)
+      await this.options.document.update(levelData)
     }
 
     // Re-draw the updated sheet
-    await this.document.sheet.render(true)
+    await this.options.document.sheet.render(true)
   }
 }
 

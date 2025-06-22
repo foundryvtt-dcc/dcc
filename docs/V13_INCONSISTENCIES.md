@@ -163,7 +163,7 @@ This document presents a detailed audit of all Application classes in the DCC sy
 
 **Risk**: Different error handling, validation, and data flow patterns could cause unexpected behavior.
 
-### 2. Document Access Patterns
+### 2. Document Access Patterns ✅ RESOLVED
 
 **Issue**: Inconsistent ways to access the document being edited:
 - **Getter Pattern**: `DCCActorConfig.document` (lines 38-40)
@@ -171,6 +171,10 @@ This document presents a detailed audit of all Application classes in the DCC sy
 - **Direct Pattern**: Some classes access document directly
 
 **Risk**: Could lead to null reference errors or accessing stale data.
+
+**Resolution**: All configuration classes now consistently use `this.options.document` pattern:
+- DCCActorConfig, DCCActorLevelChange, MeleeMissileBonusConfig, SavingThrowConfig, DCCItemConfig
+- Removed getter methods and standardized on direct `this.options.document` access
 
 ### 3. Static Method Binding
 
