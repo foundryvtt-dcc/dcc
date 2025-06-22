@@ -57,6 +57,7 @@
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
   "DCC.ApplyDisapprovalMacroName": "Increase Disapproval Range",
   "DCC.ApplyLevelChanges": "Apply Level Changes",
+  "DCC.AdjustHitPoints": "Adjust Hit Points",
   "DCC.Armor": "Armor",
   "DCC.ArmorClass": "Armor<br>Class",
   "DCC.ArmorPropertiesACBonus": "AC Bonus",

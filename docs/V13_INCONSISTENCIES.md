@@ -48,8 +48,6 @@ This document presents a detailed audit of all Application classes in the DCC sy
 **Issues:**
 - **Template Configuration**: Dynamic template selection in `_configureRenderParts()` (lines 69-92) differs from other classes
 - **Tab Configuration**: Complex dynamic tab logic in `_getTabsConfig()` (lines 110-140) not consistent with other sheets
-- **Dead Code**: Contains unused `_fooBar()` method (lines 495-497)
-- **Drag Drop Configuration**: Uses static method for handler creation (line 229) vs instance methods elsewhere
 
 ### Configuration Dialog Classes
 
@@ -103,7 +101,7 @@ This document presents a detailed audit of all Application classes in the DCC sy
 
 **Issues:**
 - **State Management**: Manages `currentLevel` as instance property with manual state tracking
-- **DOM Manipulation**: Direct DOM manipulation in `_updateLevelUpDisplay()` (lines 176-229) instead of re-rendering
+- ~~**DOM Manipulation**: Direct DOM manipulation in `_updateLevelUpDisplay()` (lines 176-229) instead of re-rendering~~ **FIXED**: Now uses proper ApplicationV2 re-rendering pattern with context data instead of direct DOM manipulation
 - **Error Handling**: Early returns with UI notifications in context preparation (lines 89-91)
 - **Form Processing**: Unique form submission pattern with complex level data processing
 
@@ -269,7 +267,7 @@ This document presents a detailed audit of all Application classes in the DCC sy
 
 ## Recent Updates and Fixes
 
-### Fixes Implemented (June 21, 2025)
+### Fixes Implemented (June 21-22, 2025)
 
 1. **Drag/Drop Pattern Fixed** ✅
    - **Issue**: DCCActorSheet drag/drop handlers were using non-standard constructor setup
@@ -282,18 +280,25 @@ This document presents a detailed audit of all Application classes in the DCC sy
    - **Resolution**: Removed unnecessary hack code from `dcc.js`
    - **Benefit**: Cleaner code, relies on native v13 functionality
 
+3. **TextEditor.enrichHTML Standardization** ✅
+   - **Issue**: Mixed usage patterns between `TextEditor.enrichHTML` and `foundry.applications.ux.TextEditor.enrichHTML`
+   - **Resolution**: Standardized all files to use `const { TextEditor } = foundry.applications.ux` import pattern
+   - **Fixed**: Missing `await` in `actor-sheet.js` line 367 that could cause "[object Promise]" display
+   - **Files**: `spell-result.js`, `chat.js`, `actor.js`, plus updated existing imports
+
+4. **DOM Manipulation in DCCActorLevelChange** ✅
+   - **Issue**: `_updateLevelUpDisplay()` directly manipulated DOM elements instead of using ApplicationV2 re-rendering
+   - **Resolution**: Refactored to use proper state management and context-driven template rendering
+   - **Benefits**: Follows ApplicationV2 patterns, more maintainable, better performance, reactive UI updates
+   - **Files**: `actor-level-change.js`, `dialog-actor-level-change.html`
+
 ### Still Outstanding Issues
 
-1. **TextEditor.enrichHTML Missing Await** ❌ **CRITICAL**
-   - **File**: `actor-sheet.js` line 367
-   - **Issue**: `return TextEditor.enrichHTML(...)` should be `return await TextEditor.enrichHTML(...)`
-   - **Impact**: Could cause "[object Promise]" to be displayed instead of enriched HTML
-
-2. **RollModifierDialog Complex Pattern** ❌
+1. **RollModifierDialog Complex Pattern** ❌
    - **Status**: No changes made to the complex promise-based form handling
    - **Impact**: Continues to use non-standard submission patterns
 
-3. **Document Access Inconsistencies** ❌
+2. **Document Access Inconsistencies** ❌
    - **Status**: Mixed patterns between `this.document` getter and `this.options.document` still exist
    - **Impact**: Potential for null reference errors or stale data access
 

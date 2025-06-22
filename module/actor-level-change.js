@@ -36,6 +36,13 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  constructor (options = {}) {
+    super(options)
+    this.currentLevel = this.document.system.details.level.value
+    this.levelData = null
+    this.newHitPointsExpression = ''
+  }
+
   /* -------------------------------------------- */
 
   /**
@@ -81,7 +88,9 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     context.system = actor.system
     context.actor = actor
 
-    this.currentLevel = actor.system.details.level.value || 0
+    // Add dynamic level data
+    context.currentLevel = this.currentLevel
+    context.originalLevel = actor.system.details.level.value
 
     // Check that we have a class name
     this.classNameLower = actor.system.class.className.toLowerCase()
@@ -89,6 +98,24 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       ui.notifications.error(game.i18n.localize('DCC.ChooseAClass'))
       await this.close({ force: true })
       return context
+    }
+
+    // Add level data if available
+    if (this.levelData) {
+      context.levelDataEntries = Object.entries(this.levelData)
+        .map(([key, value]) => ({
+          label: game.i18n.localize(`DCC.${key}`),
+          value
+        }))
+      context.levelDataHeader = game.i18n.localize('DCC.UpdatesAtLevel')
+    } else if (this.currentLevel !== actor.system.details.level.value) {
+      context.levelDataNotFound = game.i18n.localize('DCC.LevelDataNotFound')
+    }
+
+    // Add hit points data
+    if (this.newHitPointsExpression) {
+      context.hitPointsExpression = this.newHitPointsExpression
+      context.hitPointsHeader = game.i18n.localize('DCC.AdjustHitPoints')
     }
 
     return context
@@ -175,29 +202,16 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _updateLevelUpDisplay () {
     const levelItem = await this._lookupLevelItem(this.classNameLower, this.currentLevel)
+
     if (Object.hasOwn(levelItem, 'system')) {
-      // Level Data
-      const levelData = await this._getLevelDataFromItem(levelItem)
-      const levelDataString = Object.entries(levelData)
-        .map(([key, value]) => `<div>${game.i18n.localize(`DCC.${key}`)} = ${value}</div>`)
-        .join('\n')
+      // Calculate level data
+      this.levelData = await this._getLevelDataFromItem(levelItem)
 
-      // Update level display using vanilla DOM
-      const levelElement = this.element.querySelector('#system\\.details\\.level\\.value')
-      if (levelElement) {
-        levelElement.innerHTML = this.currentLevel
-      }
-
-      const levelDataHeader = game.i18n.localize('DCC.UpdatesAtLevel')
-      const levelDataDisplay = this.element.querySelector('#levelDataDisplay')
-      if (levelDataDisplay) {
-        levelDataDisplay.innerHTML = `<h3>${levelDataHeader}</h3> ${levelDataString}`
-      }
-
-      // Hit Points
-      const hitDie = levelData['system.attributes.hitDice.value'] || '1d6'
+      // Calculate hit points expression
+      const hitDie = this.levelData['system.attributes.hitDice.value'] || '1d6'
       let hpExpression = `+(${hitDie}${ensurePlus(this.document.system?.abilities?.sta?.mod)})`
       let levelDifference = parseInt(this.currentLevel) - parseInt(this.document.system.details.level.value)
+
       if (levelDifference !== 1) {
         if (parseInt(this.document.system.details.level.value) === 0) {
           levelDifference -= 1
@@ -215,17 +229,13 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
       this.newHitPointsExpression = hpExpression
-      const hitPointsString = `Hit Points = ${hpExpression}`
-      const hitPointsElement = this.element.querySelector('#hitPoints')
-      if (hitPointsElement) {
-        hitPointsElement.innerHTML = `<h3>Adjust Hit Points</h3> ${hitPointsString}`
-      }
     } else {
-      const levelDataDisplay = this.element.querySelector('#levelDataDisplay')
-      if (levelDataDisplay) {
-        levelDataDisplay.innerHTML = game.i18n.localize('DCC.LevelDataNotFound')
-      }
+      this.levelData = null
+      this.newHitPointsExpression = ''
     }
+
+    // Re-render the application with updated data
+    this.render({ force: false })
   }
 
   /**
