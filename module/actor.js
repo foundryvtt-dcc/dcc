@@ -1,8 +1,10 @@
-/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry */
+/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
+
+const { TextEditor } = foundry.applications.ux
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -1095,7 +1097,7 @@ class DCCActor extends Actor {
       if (damageRollFormula.includes('-')) {
         damageRollFormula = `max(${damageRollFormula}, 1)`
       }
-      damageInlineRoll = await foundry.applications.ux.TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
+      damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
       damagePrompt = game.i18n.localize('DCC.RollDamage')
     }
 
@@ -1117,7 +1119,7 @@ class DCCActor extends Actor {
       critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'}${luckMod}`
       const criticalText = game.i18n.localize('DCC.Critical')
       const critTableText = game.i18n.localize('DCC.CritTable')
-      critInlineRoll = await foundry.applications.ux.TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
+      critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
       if (automateDamageFumblesCrits) {
         critPrompt = game.i18n.localize('DCC.Critical')
         critRoll = game.dcc.DCCRoll.createRoll([
@@ -1133,7 +1135,7 @@ class DCCActor extends Actor {
         const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
           critTableName = critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
-          critText = await foundry.applications.ux.TextEditor.enrichHTML(critResult.description)
+          critText = await TextEditor.enrichHTML(critResult.description)
           critText = `: <br>${critText}`
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')

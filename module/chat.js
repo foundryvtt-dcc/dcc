@@ -3,6 +3,8 @@
 
 import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
 
+const { TextEditor } = foundry.applications.ux
+
 /**
  * Highlight critical success or failure on d20 rolls
  * @param message
@@ -314,7 +316,7 @@ export const emoteFumbleRoll = async function (message, html, data) {
 
   let fumbleText
   if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.description) {
-    fumbleText = await foundry.applications.ux.TextEditor.enrichHTML(fumbleResult.description)
+    fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
   } else {
@@ -438,7 +440,7 @@ export const lookupCriticalRoll = async function (message, html) {
     return
   }
 
-  const critText = await foundry.applications.ux.TextEditor.enrichHTML(critResult.description)
+  const critText = await TextEditor.enrichHTML(critResult.description)
   const rollHTML = await message.rolls[0].render()
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
@@ -477,7 +479,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
 
   let fumbleText
   if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.description) {
-    fumbleText = await foundry.applications.ux.TextEditor.enrichHTML(fumbleResult.description)
+    fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
   } else {

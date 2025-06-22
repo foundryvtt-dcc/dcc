@@ -1,5 +1,7 @@
 /* global ChatMessage, CONFIG, game, foundry */
 
+const { TextEditor } = foundry.applications.ux
+
 class SpellResult {
   /**
    * Create a chat message for a Spell Check result
@@ -57,7 +59,7 @@ class SpellResult {
 
     // Render the chat card which combines the dice roll with the drawn results
     messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
-      description: await foundry.applications.ux.TextEditor.enrichHTML(rollTable.description),
+      description: await TextEditor.enrichHTML(rollTable.description),
       manifestation,
       mercurial,
       results: result.map(r => {
@@ -148,7 +150,7 @@ class SpellResult {
       const newResultRoll = (direction > 0) ? (entry.range[1]) + 1 : (entry.range[0] - 1)
       const newResult = rollTable.getResultsForRoll(newResultRoll)[0]
       const newContent = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
-        description: await foundry.applications.ux.TextEditor.enrichHTML(rollTable.description),
+        description: await TextEditor.enrichHTML(rollTable.description),
         results: [newResult].map(r => {
           return foundry.utils.duplicate(r)
         }),

@@ -39,8 +39,6 @@ This document presents a detailed audit of all Application classes in the DCC sy
 **Status**: ✅ **Mostly consistent**
 
 **Issues:**
-- **Method Inconsistency**: Uses private `_fillRollOptions()` method (line 421) but parent class has static `fillRollOptions()`
-- **Error Handling**: Missing error handling in drag/drop operations
 - **Form Update Pattern**: Uses different update pattern than parent class (lines 460-490)
 
 #### 3. DCCItemSheet (`item-sheet.js`)
@@ -279,7 +277,7 @@ This document presents a detailed audit of all Application classes in the DCC sy
    - **Changed**: `#findDataset` method from private to public static to be accessible from instance methods
    - **Files**: `actor-sheet.js`, `party-sheet.js`
 
-2. **Multi-line Textarea Hack Removed** ✅  
+2. **Multi-line Textarea Hack Removed** ✅
    - **Issue**: System included workaround for multi-line textareas that is no longer needed in v13
    - **Resolution**: Removed unnecessary hack code from `dcc.js`
    - **Benefit**: Cleaner code, relies on native v13 functionality
