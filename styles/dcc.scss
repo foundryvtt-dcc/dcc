@@ -1750,3 +1750,46 @@ a.inline-roll {
     margin: 0;
   }
 }
+
+// Release Notes Chat Card
+.dcc-release-notes-card {
+  p {
+    font-family: var(--system-heading-font), serif;
+  }
+
+  button {
+    background: var(--system-input-background-color);
+    border: 1px solid var(--system-border-color);
+    border-radius: 3px;
+    color: var(--system-primary-color);
+    cursor: pointer;
+    font-family: var(--system-data-font), serif;
+    font-size: 14px;
+    padding: 8px 12px;
+    text-align: left;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 8px;
+
+    &:hover {
+      background: var(--system-secondary-color);
+      border-color: var(--system-accent-color);
+    }
+
+    &:active {
+      background: var(--system-value-display-background-color);
+    }
+
+    i {
+      margin-right: 6px;
+      width: 16px;
+    }
+  }
+
+  .dcc-release-message {
+    color: var(--system-primary-color);
+    font-family: var(--system-data-font), serif;
+    margin-top: 8px;
+    padding: 8px;
+  }
+}

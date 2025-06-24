@@ -252,11 +252,12 @@ function checkReleaseNotes () {
 
   // Register listeners for the buttons
   document.addEventListener('click', (event) => {
-    if (event.target.classList.contains('dcc-release-notes')) {
-      _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog')
-    } else if (event.target.classList.contains('dcc-credits')) {
+    const action = event.target.dataset.action
+    if (action === 'dcc-release-notes') {
+      _onShowURI('https://github.com/foundryvtt-dcc/dcc/releases')
+    } else if (action === 'dcc-credits') {
       _onShowJournal('dcc.dcc-userguide', 'Credits')
-    } else if (event.target.classList.contains('dcc-user-guide')) {
+    } else if (action === 'dcc-user-guide') {
       _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide')
     }
   })
