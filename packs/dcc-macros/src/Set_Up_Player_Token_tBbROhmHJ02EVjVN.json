@@ -8,23 +8,22 @@
   "folder": null,
   "sort": 0,
   "flags": {
-    "core": {
-      "sourceId": "Macro.t5crrNVau7wgKpIT"
-    },
+    "core": {},
     "combat-utility-belt": {
       "macroTrigger": ""
     }
   },
   "_id": "tBbROhmHJ02EVjVN",
   "_stats": {
-    "coreVersion": "12.331",
+    "coreVersion": "13.342",
     "systemId": null,
     "systemVersion": null,
     "createdTime": null,
     "modifiedTime": 1730562457071,
     "lastModifiedBy": "Z5sF20aqpqiMr5lV",
-    "compendiumSource": null,
-    "duplicateSource": null
+    "compendiumSource": "Macro.t5crrNVau7wgKpIT",
+    "duplicateSource": null,
+    "exportSource": null
   },
   "ownership": {
     "default": 0,
