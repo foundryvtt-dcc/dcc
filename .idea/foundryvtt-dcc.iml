@@ -5,7 +5,5 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="@types/jest" level="application" />
-    <orderEntry type="library" name="Foundry v13" level="project" />
-    <orderEntry type="library" name="foundry.mjs" level="project" />
   </component>
 </module>
