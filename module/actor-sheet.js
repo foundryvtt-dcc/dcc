@@ -16,7 +16,7 @@ const { ApplicationTabsConfiguration } = foundry.applications.types
  * Extend the basic ActorSheet
  */
 class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
-  #dragDrop
+  #dragDrop // Private field to hold dragDrop handlers
 
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
@@ -700,7 +700,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #configureActor (event) {
     event.preventDefault()
-    new DCCActorConfig({
+    await new DCCActorConfig({
       document: this.actor,
       position: {
         top: this.position.top + 40,
@@ -717,7 +717,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    **/
   static async #configureMeleeMissileBonus (event, target) {
-    new MeleeMissileBonusConfig({
+    await new MeleeMissileBonusConfig({
       document: this.actor,
       position: {
         top: this.position.top + 40,
@@ -734,7 +734,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    **/
   static async #configureSavingThrows (event, target) {
-    new SavingThrowConfig({
+    await new SavingThrowConfig({
       document: this.document,
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
