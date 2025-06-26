@@ -91,6 +91,39 @@ Hooks.on('renderChatMessageHTML', (message, html, data) => {
 })
 ```
 
+### Rollable Table Property Deprecations
+
+Several properties on Rollable Tables have been deprecated in V13:
+
+**TableResult Changes:**
+```javascript
+// V12 (deprecated)
+result.text  // The text content of the result
+
+// V13 (required)
+result.description  // Replaces result.text
+```
+
+**TableResult Compendium Changes:**
+```javascript
+// V12 (deprecated)
+table.compendium  // Reference to compendium collection
+
+// V13 (required)
+table.collection  // Replaces table.compendium
+```
+
+**Migration Example:**
+```javascript
+// V12 Code
+const resultText = result.text
+const compendiumId = table.compendium
+
+// V13 Code
+const resultText = result.description
+const compendiumId = table.collection
+```
+
 ### Sheet Registration Requirement (V13.341)
 
 **CRITICAL**: All systems must explicitly register their sheets:

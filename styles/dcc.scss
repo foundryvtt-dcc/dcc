@@ -118,24 +118,45 @@
     border-radius: 0;
     border-color: var(--system-input-background-color);
 
-    &[type='checkbox'] {
-      aspect-ratio: 1 / 1;
+    &[type='checkbox']::before,
+    &[type='radio']::before,
+    &[type='checkbox']::after,
+    &[type='radio']::after {
+      width: var(--system-checkbox-size);
+      height: var(--system-checkbox-size);
+      font-size: var(--system-checkbox-size);
+      line-height: var(--system-checkbox-size);
+      border-radius: 3px;
+    }
 
-      &::before {
-        color: var(--system-input-background-color);
-        background: var(--system-input-background);
-      }
+    &[type='checkbox']::before,
+    &[type='radio']::before {
+      font-family: var(--font-awesome);
+      font-weight: var(--system-checkbox-font-weight);
+      color: var(--system-checkbox-background-color);
+      //outline: 1px solid transparent;
+      transition: outline-color 0.5s;
+    }
 
-      &:checked::after {
-        background: var(--system-input-background);
-        color: var(--system-input-background-color);
-      }
+    &[type='checkbox']:checked::after,
+    &[type='radio']:checked::after {
+      color: var(--system-checkbox-checked-color);
+    }
 
-      &:checked::before {
-        background: var(--system-input-background);
-        color: var(--system-input-text-color);
-        outline: 0;
-      }
+    &[type='checkbox']:checked::before,
+    &[type='radio']:checked::before {
+      color: var(--system-checkbox-checkmark-color);
+      position: absolute;
+      left: 0;
+    }
+
+    &[type='checkbox']:disabled,
+    &[type='radio']:disabled,
+    &[type='checkbox'][readonly],
+    &[type='radio'][readonly] {
+      --checkbox-background-color: var(--system-checkbox-disabled-color);
+      --checkbox-checked-color: var(--system-checkbox-disabled-color);
+      cursor: inherit;
     }
 
     &:focus {
@@ -344,7 +365,7 @@
     margin-bottom: 5px;
     grid-template-columns: subgrid;
 
-    input {
+    input:not([type='checkbox']) {
       background: var(--system-input-background);
       border-radius: 3px;
       height: 22px;
@@ -553,7 +574,7 @@ a.inline-roll {
     justify-items: center;
     margin-bottom: 5px;
 
-    input {
+    input:not([type='checkbox']) {
       background: var(--system-input-background);
       border-radius: 3px;
       height: 22px;

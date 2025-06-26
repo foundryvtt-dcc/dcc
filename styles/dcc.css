@@ -323,21 +323,31 @@
   border-radius: 0;
   border-color: var(--system-input-background-color);
 }
-.dcc input[type=checkbox] {
-  aspect-ratio: 1/1;
+.dcc input[type=checkbox]::before, .dcc input[type=radio]::before, .dcc input[type=checkbox]::after, .dcc input[type=radio]::after {
+  width: var(--system-checkbox-size);
+  height: var(--system-checkbox-size);
+  font-size: var(--system-checkbox-size);
+  line-height: var(--system-checkbox-size);
+  border-radius: 3px;
 }
-.dcc input[type=checkbox]::before {
-  color: var(--system-input-background-color);
-  background: var(--system-input-background);
+.dcc input[type=checkbox]::before, .dcc input[type=radio]::before {
+  font-family: var(--font-awesome);
+  font-weight: var(--system-checkbox-font-weight);
+  color: var(--system-checkbox-background-color);
+  transition: outline-color 0.5s;
 }
-.dcc input[type=checkbox]:checked::after {
-  background: var(--system-input-background);
-  color: var(--system-input-background-color);
+.dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after {
+  color: var(--system-checkbox-checked-color);
 }
-.dcc input[type=checkbox]:checked::before {
-  background: var(--system-input-background);
-  color: var(--system-input-text-color);
-  outline: 0;
+.dcc input[type=checkbox]:checked::before, .dcc input[type=radio]:checked::before {
+  color: var(--system-checkbox-checkmark-color);
+  position: absolute;
+  left: 0;
+}
+.dcc input[type=checkbox]:disabled, .dcc input[type=radio]:disabled, .dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
+  --checkbox-background-color: var(--system-checkbox-disabled-color);
+  --checkbox-checked-color: var(--system-checkbox-disabled-color);
+  cursor: inherit;
 }
 .dcc input:focus {
   box-shadow: none;
@@ -514,7 +524,7 @@
   margin-bottom: 5px;
   grid-template-columns: subgrid;
 }
-.dcc .armor-list .armor input {
+.dcc .armor-list .armor input:not([type=checkbox]) {
   background: var(--system-input-background);
   border-radius: 3px;
   height: 22px;
@@ -700,7 +710,7 @@ a.inline-roll {
   justify-items: center;
   margin-bottom: 5px;
 }
-.dcc .weapon-list .weapon input {
+.dcc .weapon-list .weapon input:not([type=checkbox]) {
   background: var(--system-input-background);
   border-radius: 3px;
   height: 22px;
