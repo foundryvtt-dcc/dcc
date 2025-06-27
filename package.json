@@ -54,8 +54,5 @@
       "**/node_modules/**",
       "**/browser-tests/**"
     ]
-  },
-  "dependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.44.0"
   }
 }
