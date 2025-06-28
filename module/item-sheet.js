@@ -92,6 +92,22 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
     }
 
+    // Add level-specific tabs
+    if (this.document.type === 'level') {
+      parts.levelLawful = {
+        id: 'levelLawful',
+        template: 'systems/dcc/templates/item-sheet-level-lawful.html'
+      }
+      parts.levelNeutral = {
+        id: 'levelNeutral',
+        template: 'systems/dcc/templates/item-sheet-level-neutral.html'
+      }
+      parts.levelChaotic = {
+        id: 'levelChaotic',
+        template: 'systems/dcc/templates/item-sheet-level-chaotic.html'
+      }
+    }
+
     return parts
   }
 
@@ -143,6 +159,16 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
 
       tabs.initial = 'spell'
+    } else if (this.document.type === 'level') {
+      // Level items have multiple tabs for alignment data
+      tabs.tabs = [
+        { id: 'level', group: 'sheet', label: 'DCC.Level' },
+        { id: 'levelLawful', group: 'sheet', label: 'DCC.LevelLawful' },
+        { id: 'levelNeutral', group: 'sheet', label: 'DCC.LevelNeutral' },
+        { id: 'levelChaotic', group: 'sheet', label: 'DCC.LevelChaotic' },
+        { id: 'description', group: 'sheet', label: 'DCC.Description' }
+      ]
+      tabs.initial = 'level'
     } else {
       // Other item types use the standard configuration
       tabs.tabs[0] = { id: this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
@@ -308,7 +334,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const options = this._fillRollOptions(event)
     // Prompt if there's an existing effect, or we're using the roll modifier dialog
     if (!options.showModifierDialog && this.document.hasExistingMercurialMagic()) {
-      foundry.applications.api.DialogV2.confirm({
+      await foundry.applications.api.DialogV2.confirm({
         window: { title: game.i18n.localize('DCC.MercurialMagicRerollPrompt') },
         content: `<p>${game.i18n.localize('DCC.MercurialMagicRerollExplain')}</p>`,
         yes: {
@@ -461,7 +487,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    */
   static async #configureItem (event, target) {
     event.preventDefault()
-    new DCCItemConfig({
+    await new DCCItemConfig({
       document: this.document,
       position: {
         top: this.position.top + 40,

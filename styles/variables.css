@@ -9,7 +9,7 @@
   --system-checkbox-checked-color: var(--system-input-background-color);
   --system-checkbox-checkmark-color: var(--system-primary-color);
   --system-checkbox-disabled-color: #000;
-  --system-checkbox-size: 18px;
+  --system-checkbox-size: 1.3rem;
   --system-d20-icon: url('../../../icons/svg/d20-black.svg');
   --system-data-font: 'Book Antiqua', serif;
   --system-frame-background: url('images/denim.png');
@@ -33,10 +33,10 @@
   --system-accent-color: #ef4444;
   --system-background: #0b0a13;
   --system-border-color: #525252;
-  --system-checkbox-background-color: var(--system-input-background-color);
+  --system-checkbox-background-color: var(--system-input-background);
   --system-checkbox-checked-color: var(--system-primary-color);
   --system-checkbox-disabled-color: #000;
-  --system-checkbox-checkmark-color: var(--system-primary-color);
+  --system-checkbox-checkmark-color: transparent;
   --system-d20-icon: url('../../../icons/svg/d20-grey.svg');
   --system-frame-background: url('images/denim-light.jpg');
   --system-frame-border: 4px solid var(--system-border-color);

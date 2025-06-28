@@ -118,6 +118,10 @@
     border-radius: 0;
     border-color: var(--system-input-background-color);
 
+    &[type='checkbox'] {
+      color: var(--system-input-background-color);
+    }
+
     &[type='checkbox']::before,
     &[type='radio']::before,
     &[type='checkbox']::after,
@@ -127,6 +131,8 @@
       font-size: var(--system-checkbox-size);
       line-height: var(--system-checkbox-size);
       border-radius: 3px;
+      text-align: left;
+      color: var(--system-checkbox-background-color);
     }
 
     &[type='checkbox']::before,
@@ -134,7 +140,7 @@
       font-family: var(--font-awesome);
       font-weight: var(--system-checkbox-font-weight);
       color: var(--system-checkbox-background-color);
-      //outline: 1px solid transparent;
+      outline: 1px solid transparent;
       transition: outline-color 0.5s;
     }
 
@@ -974,6 +980,39 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Level Item Sheet                         */
+/* ----------------------------------------- */
+
+.dcc.item {
+  .level-main-tab,
+  .level-alignment-tab {
+    height: calc(100% - 34px);
+  }
+
+  .level-data-section {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 300px;
+
+    .box-title {
+      margin: 0;
+    }
+
+    .level-data-textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 200px;
+      resize: vertical;
+      font-family: var(--system-data-font), serif;
+      font-size: 12px;
+      padding: 5px;
+      border: 0;
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+/* ----------------------------------------- */
 /*  Config Dialogs                           */
 /* ----------------------------------------- */
 
@@ -1169,15 +1208,15 @@ a.inline-roll {
     content: '\f3bf';
   }
 
-  a[data-tab='level-lawful']::before {
+  a[data-tab='levelLawful']::before {
     content: '\f24e';
   }
 
-  a[data-tab='level-neutral']::before {
+  a[data-tab='levelNeutral']::before {
     content: '\3d';
   }
 
-  a[data-tab='level-chaotic']::before {
+  a[data-tab='levelChaotic']::before {
     content: '\f7d4';
   }
 

@@ -218,6 +218,10 @@
   padding: 8px;
 }
 
+.pt-2 {
+  padding-top: 2px;
+}
+
 .pt-5 {
   padding-top: 5px;
 }
@@ -323,17 +327,23 @@
   border-radius: 0;
   border-color: var(--system-input-background-color);
 }
+.dcc input[type=checkbox] {
+  color: var(--system-input-background-color);
+}
 .dcc input[type=checkbox]::before, .dcc input[type=radio]::before, .dcc input[type=checkbox]::after, .dcc input[type=radio]::after {
   width: var(--system-checkbox-size);
   height: var(--system-checkbox-size);
   font-size: var(--system-checkbox-size);
   line-height: var(--system-checkbox-size);
   border-radius: 3px;
+  text-align: left;
+  color: var(--system-checkbox-background-color);
 }
 .dcc input[type=checkbox]::before, .dcc input[type=radio]::before {
   font-family: var(--font-awesome);
   font-weight: var(--system-checkbox-font-weight);
   color: var(--system-checkbox-background-color);
+  outline: 1px solid transparent;
   transition: outline-color 0.5s;
 }
 .dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after {
@@ -1062,6 +1072,33 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Level Item Sheet                         */
+/* ----------------------------------------- */
+.dcc.item .level-main-tab,
+.dcc.item .level-alignment-tab {
+  height: calc(100% - 34px);
+}
+.dcc.item .level-data-section {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 300px;
+}
+.dcc.item .level-data-section .box-title {
+  margin: 0;
+}
+.dcc.item .level-data-section .level-data-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  resize: vertical;
+  font-family: var(--system-data-font), serif;
+  font-size: 12px;
+  padding: 5px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ----------------------------------------- */
 /*  Config Dialogs                           */
 /* ----------------------------------------- */
 .config-dialog {
@@ -1225,13 +1262,13 @@ a.inline-roll {
 .dcc.sheet a[data-tab=level]::before {
   content: "\f3bf";
 }
-.dcc.sheet a[data-tab=level-lawful]::before {
+.dcc.sheet a[data-tab=levelLawful]::before {
   content: "\f24e";
 }
-.dcc.sheet a[data-tab=level-neutral]::before {
+.dcc.sheet a[data-tab=levelNeutral]::before {
   content: "=";
 }
-.dcc.sheet a[data-tab=level-chaotic]::before {
+.dcc.sheet a[data-tab=levelChaotic]::before {
   content: "\f7d4";
 }
 .dcc.sheet a[data-tab=manifestation]::before {
