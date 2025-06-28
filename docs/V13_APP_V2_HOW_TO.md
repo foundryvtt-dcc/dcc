@@ -577,6 +577,7 @@ static PARTS = {
 - Must include `data-tab="{{tabs.tabId.id}}"` and `data-group="{{tabs.tabId.group}}"`
 - Must include `{{tabs.tabId.cssClass}}` for dynamic CSS classes
 - Use `<section>` or `<div>` (never `<form>` inside a form)
+- **CRITICAL**: Each tab template MUST have exactly one root element (single root node). Multiple root elements will cause Foundry's tab system to error out.
 
 ### Dynamic Tab Configuration
 

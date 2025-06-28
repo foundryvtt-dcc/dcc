@@ -123,7 +123,7 @@ Hooks.once('init', async function () {
     makeDefault: true
   })
 
-  // Register shared template for upper level characters
+  // Register template paths
   const templatePaths = [
     'systems/dcc/templates/actor-partial-pc-common.html',
     'systems/dcc/templates/actor-partial-npc-common.html',

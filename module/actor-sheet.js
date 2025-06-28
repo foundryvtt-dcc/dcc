@@ -58,7 +58,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     },
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
-      dropSelector: '.item-list, .weapon-list, .armor-list, .skill-list, .equipment-list, .spell-list'
+      dropSelector: '.dcc.actor'
     }],
     window: {
       resizable: true,
