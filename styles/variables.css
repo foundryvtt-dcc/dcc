@@ -5,9 +5,9 @@
   --system-background: url('/ui/parchment.jpg');
   --system-border-color: #333230;
   --system-checkbox-font-weight: bold;
-  --system-checkbox-background-color: var(--system-input-background-color);
-  --system-checkbox-checked-color: var(--system-input-background-color);
-  --system-checkbox-checkmark-color: var(--system-primary-color);
+  --system-checkbox-background-color: var(--system-input-background);
+  --system-checkbox-checked-color: var(--system-primary-color);
+  --system-checkbox-checkmark-color: transparent;
   --system-checkbox-disabled-color: #000;
   --system-checkbox-size: 1.3rem;
   --system-d20-icon: url('../../../icons/svg/d20-black.svg');
@@ -35,8 +35,8 @@
   --system-border-color: #525252;
   --system-checkbox-background-color: var(--system-input-background);
   --system-checkbox-checked-color: var(--system-primary-color);
-  --system-checkbox-disabled-color: #000;
   --system-checkbox-checkmark-color: transparent;
+  --system-checkbox-disabled-color: #000;
   --system-d20-icon: url('../../../icons/svg/d20-grey.svg');
   --system-frame-background: url('images/denim-light.jpg');
   --system-frame-border: 4px solid var(--system-border-color);
@@ -48,7 +48,7 @@
   --system-input-focus-outline-color: var(--system-border-color);
   --system-input-text-color: #e7d1b1;
   --system-party-sheet-border: 2px solid var(--system-border-color);
-  --system-primary-color: #9a8b7a;
+  --system-primary-color: #d0beaa;
   --system-secondary-color: #343339;
   --system-value-display-background-color: #17161e;
 }
