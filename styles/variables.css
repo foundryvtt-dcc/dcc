@@ -7,7 +7,7 @@
   --system-checkbox-font-weight: 400;
   --system-checkbox-background-color: var(--system-input-background);
   --system-checkbox-checked-color: var(--system-primary-color);
-  --system-checkbox-checkmark-color: transparent;
+  --system-checkbox-checkmark-color: var(--system-border-color);
   --system-checkbox-disabled-color: #000;
   --system-checkbox-size: 1.3rem;
   --system-d20-icon: url('../../../icons/svg/d20-black.svg');

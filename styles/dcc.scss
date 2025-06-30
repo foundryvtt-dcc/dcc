@@ -108,7 +108,7 @@
   }
 
   input {
-    background: 0;
+    background: none;
     color: var(--input-text-color);
     font-family: var(--system-data-font), serif;
     height: 17px;
@@ -117,6 +117,11 @@
     border-width: 0 0 1px 0;
     border-radius: 0;
     border-color: var(--system-input-background-color);
+
+    &[type='checkbox'],
+    &[type='radio'] {
+      background: none;
+    }
 
     &[type='checkbox']:focus,
     &[type='radio']:focus {
@@ -151,7 +156,8 @@
     &[type='radio']::before {
       font-family: var(--font-awesome-duotone);
       font-weight: var(--system-checkbox-font-weight);
-      //color: var(--system-checkbox-background-color);
+      background: none;
+      color: var(--system-checkbox-background-color);
       outline: 1px solid transparent;
       transition: outline-color 0.5s;
       --fa-primary-color: var(--system-checkbox-checked-color);
@@ -179,6 +185,7 @@
     &[type='radio']:checked::before {
       color: var(--system-checkbox-checkmark-color);
       position: absolute;
+      left: 0;
     }
 
     &[type='checkbox']:disabled,
@@ -200,12 +207,11 @@
     }
 
     &[type='checkbox']:checked::before {
-      content: '\f0c8';
+      content: '';
     }
 
     &[type='checkbox']:checked::after {
-      content: '\f00c';
-      font-size: 12px;
+      content: '\f14a';
     }
 
     &:focus {
@@ -685,7 +691,6 @@ a.inline-roll {
   background-position: center;
   background-size: contain;
   height: 565px;
-  filter: sepia(1);
 }
 
 /* ----------------------------------------- */
