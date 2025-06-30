@@ -97,7 +97,7 @@
           }
         },
         "details": {
-          "alignment": "",
+          "alignment": "l",
           "attackBonus": "+0",
           "attackHitBonus": {
             "melee": {
