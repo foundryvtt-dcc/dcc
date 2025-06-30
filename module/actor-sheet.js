@@ -91,14 +91,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       id: 'equipment',
       template: 'systems/dcc/templates/actor-partial-npc-equipment.html'
     },
-    skills: {
-      id: 'skills',
-      template: 'systems/dcc/templates/actor-partial-skills.html'
-    },
-    wizardSpells: {
-      id: 'wizardSpells',
-      template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
-    },
     notes: {
       id: 'notes',
       template: 'systems/dcc/templates/actor-partial-pc-notes.html'
@@ -184,14 +176,20 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _configureRenderParts (options) {
     const parts = super._configureRenderParts(options)
 
-    // Remove skills part if skills tab is disabled
-    if (!this.document?.system?.config?.showSkills) {
-      delete parts.skills
+    // Add skills part if skills tab is enabled
+    if (this.document?.system?.config?.showSkills && !this.constructor.CLASS_PARTS?.skills) {
+      parts.skills = {
+        id: 'skills',
+        template: 'systems/dcc/templates/actor-partial-skills.html'
+      }
     }
 
-    // Remove wizard spells part if spells are disabled
-    if (!this.document?.system?.config?.showSpells && !this.constructor?.CLASS_PARTS?.wizardSpells) {
-      delete parts.wizardSpells
+    // Add wizard spells part if spells are enabled
+    if (this.document?.system?.config?.showSpells && !this.constructor.CLASS_PARTS?.wizardSpells) {
+      parts.wizardSpells = {
+        id: 'wizardSpells',
+        template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
+      }
     }
 
     // Allow subclasses to define additional parts
