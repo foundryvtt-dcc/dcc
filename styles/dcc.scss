@@ -118,8 +118,22 @@
     border-radius: 0;
     border-color: var(--system-input-background-color);
 
-    &[type='checkbox'] {
-      color: var(--system-input-background-color);
+    &[type='checkbox']:focus,
+    &[type='radio']:focus {
+      color: inherit;
+      outline: none;
+    }
+
+    &[type='checkbox']:focus-visible::before,
+    &[type='radio']:focus-visible::before {
+      outline: 2px solid var(--system-input-focus-outline-color);
+      outline-offset: -2px;
+    }
+
+    &[type='checkbox']:checked:focus-visible::before,
+    &[type='radio']:checked:focus-visible::before {
+      outline: 2px solid var(--system-intpu-focus-outline-color);
+      outline-offset: -2px;
     }
 
     &[type='checkbox']::before,
@@ -131,17 +145,29 @@
       font-size: var(--system-checkbox-size);
       line-height: var(--system-checkbox-size);
       border-radius: 3px;
-      text-align: left;
-      color: var(--system-checkbox-background-color);
     }
 
     &[type='checkbox']::before,
     &[type='radio']::before {
-      font-family: var(--font-awesome);
+      font-family: var(--font-awesome-duotone);
       font-weight: var(--system-checkbox-font-weight);
-      color: var(--system-checkbox-background-color);
+      //color: var(--system-checkbox-background-color);
       outline: 1px solid transparent;
       transition: outline-color 0.5s;
+      --fa-primary-color: var(--system-checkbox-checked-color);
+      --fa-secondary-color: var(--system-checkbox-background-color);
+    }
+
+    &[type='checkbox']:checked,
+    &[type='radio']:checked {
+      position: relative;
+    }
+
+    &[type='checkbox']:checked::before,
+    &[type='radio']:checked::before,
+    &[type='checkbox']:checked::after,
+    &[type='radio']:checked::after {
+      font-family: var(--font-awesome-duotone);
     }
 
     &[type='checkbox']:checked::after,
@@ -153,7 +179,6 @@
     &[type='radio']:checked::before {
       color: var(--system-checkbox-checkmark-color);
       position: absolute;
-      left: 0;
     }
 
     &[type='checkbox']:disabled,
@@ -163,6 +188,24 @@
       --checkbox-background-color: var(--system-checkbox-disabled-color);
       --checkbox-checked-color: var(--system-checkbox-disabled-color);
       cursor: inherit;
+    }
+
+    &[type='checkbox'][readonly],
+    &[type='radio'][readonly] {
+      pointer-events: none;
+    }
+
+    &[type='checkbox']::before {
+      content: '\f0c8';
+    }
+
+    &[type='checkbox']:checked::before {
+      content: '\f0c8';
+    }
+
+    &[type='checkbox']:checked::after {
+      content: '\f00c';
+      font-size: 12px;
     }
 
     &:focus {

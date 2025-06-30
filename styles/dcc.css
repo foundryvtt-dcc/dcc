@@ -327,8 +327,17 @@
   border-radius: 0;
   border-color: var(--system-input-background-color);
 }
-.dcc input[type=checkbox] {
-  color: var(--system-input-background-color);
+.dcc input[type=checkbox]:focus, .dcc input[type=radio]:focus {
+  color: inherit;
+  outline: none;
+}
+.dcc input[type=checkbox]:focus-visible::before, .dcc input[type=radio]:focus-visible::before {
+  outline: 2px solid var(--system-input-focus-outline-color);
+  outline-offset: -2px;
+}
+.dcc input[type=checkbox]:checked:focus-visible::before, .dcc input[type=radio]:checked:focus-visible::before {
+  outline: 2px solid var(--system-intpu-focus-outline-color);
+  outline-offset: -2px;
 }
 .dcc input[type=checkbox]::before, .dcc input[type=radio]::before, .dcc input[type=checkbox]::after, .dcc input[type=radio]::after {
   width: var(--system-checkbox-size);
@@ -336,15 +345,20 @@
   font-size: var(--system-checkbox-size);
   line-height: var(--system-checkbox-size);
   border-radius: 3px;
-  text-align: left;
-  color: var(--system-checkbox-background-color);
 }
 .dcc input[type=checkbox]::before, .dcc input[type=radio]::before {
-  font-family: var(--font-awesome);
+  font-family: var(--font-awesome-duotone);
   font-weight: var(--system-checkbox-font-weight);
-  color: var(--system-checkbox-background-color);
   outline: 1px solid transparent;
   transition: outline-color 0.5s;
+  --fa-primary-color: var(--system-checkbox-checked-color);
+  --fa-secondary-color: var(--system-checkbox-background-color);
+}
+.dcc input[type=checkbox]:checked, .dcc input[type=radio]:checked {
+  position: relative;
+}
+.dcc input[type=checkbox]:checked::before, .dcc input[type=radio]:checked::before, .dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after {
+  font-family: var(--font-awesome-duotone);
 }
 .dcc input[type=checkbox]:checked::after, .dcc input[type=radio]:checked::after {
   color: var(--system-checkbox-checked-color);
@@ -352,12 +366,24 @@
 .dcc input[type=checkbox]:checked::before, .dcc input[type=radio]:checked::before {
   color: var(--system-checkbox-checkmark-color);
   position: absolute;
-  left: 0;
 }
 .dcc input[type=checkbox]:disabled, .dcc input[type=radio]:disabled, .dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
   --checkbox-background-color: var(--system-checkbox-disabled-color);
   --checkbox-checked-color: var(--system-checkbox-disabled-color);
   cursor: inherit;
+}
+.dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
+  pointer-events: none;
+}
+.dcc input[type=checkbox]::before {
+  content: "\f0c8";
+}
+.dcc input[type=checkbox]:checked::before {
+  content: "\f0c8";
+}
+.dcc input[type=checkbox]:checked::after {
+  content: "\f00c";
+  font-size: 12px;
 }
 .dcc input:focus {
   box-shadow: none;
