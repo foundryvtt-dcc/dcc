@@ -1813,14 +1813,13 @@ a.inline-roll {
       .saving-throw-box {
         align-items: center;
         background: var(--system-frame-background);
-        color: var(--system-frame-border);
         display: grid;
         grid-template-columns: 24px 40px;
         text-align: left;
 
         input {
           align-self: center;
-          background: var(--system-input-background);
+          background: var(--system-background);
           border-radius: 10px;
           font-size: 12px;
           height: 20px;
@@ -1831,6 +1830,7 @@ a.inline-roll {
         label {
           font-size: 11px;
           letter-spacing: 1px;
+          color: var(--system-frame-title-color);
         }
       }
     }
