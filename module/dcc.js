@@ -623,11 +623,13 @@ Hooks.on('dcc.setLayOnHandsTable', (value, fromSystemSetting = false) => {
   }
 })
 
-// Level Data
-Hooks.on('dcc.setLevelData', (value, fromSystemSetting = false) => {
-  if (fromSystemSetting || !CONFIG.DCC.levelData) {
-    CONFIG.DCC.levelData = value
+// Level Data packs
+Hooks.on('dcc.registerLevelDataPack', (value, fromSystemSetting = false) => {
+  if (!CONFIG.DCC.levelDataPacks) {
+    // Create manager for level data packs
+    CONFIG.DCC.levelDataPacks = new TablePackManager()
   }
+  CONFIG.DCC.levelDataPacks.addPack(value, fromSystemSetting)
 })
 
 // Mercurial Magic table

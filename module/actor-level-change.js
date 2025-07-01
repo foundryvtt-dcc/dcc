@@ -145,15 +145,24 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _lookupLevelItem (className, level) {
-    // Lookup the level item
-    const pack = game.packs.get(CONFIG.DCC.levelData)
-    if (pack) {
-      await pack.getIndex() // Load the compendium index
-      const entry = pack.index.find(item => item.name === `${className}-${level}`)
-      if (entry) {
-        const item = await pack.getDocument(entry._id)
-        // console.log(item)
-        return item
+    // Normalize class name by replacing spaces with hyphens
+    const normalizedClassName = className.replace(/\s+/g, '-')
+    const itemName = `${normalizedClassName}-${level}`
+
+    // Iterate over all registered level data packs
+    const levelDataPacks = CONFIG.DCC.levelDataPacks
+    if (levelDataPacks) {
+      for (const packName of levelDataPacks.packs) {
+        const pack = game.packs.get(packName)
+        if (pack) {
+          await pack.getIndex() // Load the compendium index
+          const entry = pack.index.find(item => item.name === itemName)
+          if (entry) {
+            const item = await pack.getDocument(entry._id)
+            // console.log(item)
+            return item
+          }
+        }
       }
     }
     return {}
