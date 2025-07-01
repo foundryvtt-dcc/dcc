@@ -153,6 +153,12 @@ const migrateActorData = function (actor) {
     })
   }
 
+  if (!actor.system?.details?.alignment) {
+    updateData.update({
+      'system.details.alignment': 'l'
+    })
+  }
+
   // Migrate Owned Items
   let hasItemUpdates = false
   let items = []
