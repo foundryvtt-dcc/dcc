@@ -141,26 +141,26 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const context = await super._prepareContext(options)
 
     if (!this.options.classes.includes(' pc') && !this.options.classes.includes(' npc')) {
-      this.options.classes.push(this.document.type === 'Player' ? 'pc' : 'npc')
+      this.options.classes.push(this.options.document.type === 'Player' ? 'pc' : 'npc')
     }
 
     const preparedItems = await this.#prepareItems()
 
     foundry.utils.mergeObject(context, {
-      actor: this.document,
+      actor: this.options.document,
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
       incomplete: {},
       img: this.#prepareImage(),
-      isOwner: this.document.isOwner,
-      isNPC: this.document.type === 'NPC',
-      isPC: this.document.type === 'Player',
-      isZero: this.document.system.details.level.value === 0,
-      items: this.document.items,
+      isOwner: this.options.document.isOwner,
+      isNPC: this.options.document.type === 'NPC',
+      isPC: this.options.document.type === 'Player',
+      isZero: this.options.document.system.details.level.value === 0,
+      items: this.options.document.items,
       notesHTML: await this.#prepareNotes(),
       parts: {},
-      source: this.document.toObject(),
-      system: this.document.system,
+      source: this.options.document.toObject(),
+      system: this.options.document.system,
       ...preparedItems
     })
 
@@ -177,7 +177,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const parts = super._configureRenderParts(options)
 
     // Add skills part if skills tab is enabled
-    if (this.document?.system?.config?.showSkills && !this.constructor.CLASS_PARTS?.skills) {
+    if (this.options.document?.system?.config?.showSkills && !this.constructor.CLASS_PARTS?.skills) {
       parts.skills = {
         id: 'skills',
         template: 'systems/dcc/templates/actor-partial-skills.html'
@@ -185,7 +185,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     // Add wizard spells part if spells are enabled
-    if (this.document?.system?.config?.showSpells && !this.constructor.CLASS_PARTS?.wizardSpells) {
+    if (this.options.document?.system?.config?.showSpells && !this.constructor.CLASS_PARTS?.wizardSpells) {
       parts.wizardSpells = {
         id: 'wizardSpells',
         template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
@@ -213,10 +213,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     // Add in optional tabs
-    if (this.document?.system?.config?.showSkills && !tabs.skills) {
+    if (this.options.document?.system?.config?.showSkills && !tabs.skills) {
       tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills' })
     }
-    if (this.document?.system?.config?.showSpells && !tabs.wizardSpells) {
+    if (this.options.document?.system?.config?.showSpells && !tabs.wizardSpells) {
       tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' })
     }
 
@@ -301,7 +301,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
         if (i.system.isCoins) {
           // Safe to treat as coins if the item's value is resolved
-          const item = this.document.items.get(i._id)
+          const item = this.options.document.items.get(i._id)
           if (!item.needsValueRoll()) {
             treatAsCoins = true
           }
@@ -361,7 +361,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {notes: string}
    */
   async #prepareNotes () {
-    const context = { relativeTo: this.document, secrets: this.document.isOwner }
+    const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
     return await TextEditor.enrichHTML(this.actor.system.details.notes.value, context)
   }
 
@@ -371,7 +371,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   async #prepareCorruption () {
     if (this.actor.system.class) {
-      const context = { relativeTo: this.document, secrets: this.document.isOwner }
+      const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
       const corruption = this.actor.system.class.corruption || ''
       return await TextEditor.enrichHTML(corruption, context)
     }
@@ -379,13 +379,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   #prepareImage () {
-    if (!this.document.img || this.document.img === 'icons/svg/mystery-man.svg') {
-      this.document.img = EntityImages.imageForActor(this.document.type)
-      if (!this.document.prototypeToken.texture.src || this.document.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
-        this.document.prototypeToken.texture.src = EntityImages.imageForActor(this.document.type)
+    if (!this.options.document.img || this.options.document.img === 'icons/svg/mystery-man.svg') {
+      this.options.document.img = EntityImages.imageForActor(this.options.document.type)
+      if (!this.options.document.prototypeToken.texture.src || this.options.document.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
+        this.options.document.prototypeToken.texture.src = EntityImages.imageForActor(this.options.document.type)
       }
     }
-    return this.document.img
+    return this.options.document.img
   }
 
   /**
@@ -457,7 +457,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    **/
   static async #itemEdit (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
-    const item = this.document.items.get(itemId)
+    const item = this.options.document.items.get(itemId)
     await item.sheet.render({ force: true })
   }
 
@@ -733,7 +733,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    **/
   static async #configureSavingThrows (event, target) {
     await new SavingThrowConfig({
-      document: this.document,
+      document: this.options.document,
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
     }).render(true)
@@ -748,13 +748,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #editImage (event, target) {
     const field = target.dataset.field || 'img'
-    const current = foundry.utils.getProperty(this.document, field)
+    const current = foundry.utils.getProperty(this.options.document, field)
 
     const fp = new foundry.applications.apps.FilePicker({
       type: 'image',
       current,
       callback: (path) => {
-        this.document.update({ [field]: path })
+        this.options.document.update({ [field]: path })
       }
     })
 
@@ -1014,7 +1014,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     // Now handle any pending item updates
     if (this._pendingItemUpdates?.length > 0) {
-      await this.document.updateEmbeddedDocuments('Item', this._pendingItemUpdates)
+      await this.options.document.updateEmbeddedDocuments('Item', this._pendingItemUpdates)
       delete this._pendingItemUpdates // Clean up
     }
 
@@ -1047,7 +1047,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {boolean}
    */
   _canDragStart (selector) {
-    return this.document.isOwner && this.isEditable
+    return this.options.document.isOwner && this.isEditable
   }
 
   /**
@@ -1056,7 +1056,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {boolean}
    */
   _canDragDrop (selector) {
-    return this.document.isOwner && this.isEditable
+    return this.options.document.isOwner && this.isEditable
   }
 
   /**
