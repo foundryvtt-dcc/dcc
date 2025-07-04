@@ -151,7 +151,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
       incomplete: {},
-      img: this.#prepareImage(),
+      img: await this.#prepareImage(),
       isOwner: this.options.document.isOwner,
       isNPC: this.options.document.type === 'NPC',
       isPC: this.options.document.type === 'Player',
@@ -381,8 +381,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   #prepareImage () {
     if (!this.options.document.img || this.options.document.img === 'icons/svg/mystery-man.svg') {
       this.options.document.img = EntityImages.imageForActor(this.options.document.type)
+      this.options.document.update('img', this.options.document.img)
       if (!this.options.document.prototypeToken.texture.src || this.options.document.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
         this.options.document.prototypeToken.texture.src = EntityImages.imageForActor(this.options.document.type)
+        this.options.document.update('prototypeToken.texture.src', this.options.document.prototypeToken.texture.src)
       }
     }
     return this.options.document.img
