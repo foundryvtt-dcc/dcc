@@ -20,6 +20,7 @@
   --system-icon-font: 'Font Awesome 6 Pro';
   --system-input-background: var(--system-input-background-color);
   --system-input-background-color: #c3c2b9;
+  --system-input-focus-outline-color: var(--system-border-color);
   --system-label-font: 'Cooper Black', serif;
   --system-party-sheet-border: 2px solid var(--system-border-color);
   --system-primary-color: #222;

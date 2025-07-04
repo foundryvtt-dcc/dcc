@@ -332,15 +332,16 @@
 }
 .dcc input[type=checkbox]:focus, .dcc input[type=radio]:focus {
   color: inherit;
-  outline: none;
+  outline: 1px solid var(--system-input-outline-focus-color);
+  outline-offset: 2px;
 }
 .dcc input[type=checkbox]:focus-visible::before, .dcc input[type=radio]:focus-visible::before {
   outline: 2px solid var(--system-input-focus-outline-color);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
-.dcc input[type=checkbox]:checked:focus-visible::before, .dcc input[type=radio]:checked:focus-visible::before {
-  outline: 2px solid var(--system-intpu-focus-outline-color);
-  outline-offset: -2px;
+.dcc input[type=checkbox]:checked:focus-visible::after, .dcc input[type=radio]:checked:focus-visible::after {
+  outline: 2px solid var(--system-input-focus-outline-color);
+  outline-offset: 2px;
 }
 .dcc input[type=checkbox]::before, .dcc input[type=radio]::before, .dcc input[type=checkbox]::after, .dcc input[type=radio]::after {
   width: var(--system-checkbox-size);
@@ -348,6 +349,7 @@
   font-size: var(--system-checkbox-size);
   line-height: var(--system-checkbox-size);
   border-radius: 3px;
+  outline: none;
 }
 .dcc input[type=checkbox]::before, .dcc input[type=radio]::before {
   font-family: var(--font-awesome-duotone);
@@ -372,6 +374,7 @@
   color: var(--system-checkbox-checkmark-color);
   position: absolute;
   left: 0;
+  outline: none;
 }
 .dcc input[type=checkbox]:disabled, .dcc input[type=radio]:disabled, .dcc input[type=checkbox][readonly], .dcc input[type=radio][readonly] {
   --checkbox-background-color: var(--system-checkbox-disabled-color);
@@ -395,7 +398,8 @@
 }
 .dcc input:focus-visible {
   box-shadow: none;
-  outline: 1px solid orange;
+  outline: 2px solid var(--system-input-outline-focus);
+  outline-offset: 2px;
   border-radius: unset;
 }
 .dcc input.full-width {
@@ -1167,7 +1171,7 @@ a.inline-roll {
 .config-dialog input:focus-visible {
   box-shadow: none;
   border-radius: unset;
-  outline: 1px solid orange;
+  outline: 1px solid var(--system-input-focus-outline-color);
 }
 .config-dialog select {
   height: 24px;
@@ -1182,9 +1186,10 @@ a.inline-roll {
   font-size: 12px;
   justify-self: stretch;
 }
-.config-dialog select:focus {
-  outline: none;
+.config-dialog select:focus-visible {
   box-shadow: none;
+  border-radius: unset;
+  outline: 1px solid var(--system-input-focus-outline-color);
 }
 .config-dialog .group-separator {
   border-bottom: 2px dotted var(--system-secondary-color);

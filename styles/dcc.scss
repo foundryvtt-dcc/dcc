@@ -126,19 +126,20 @@
     &[type='checkbox']:focus,
     &[type='radio']:focus {
       color: inherit;
-      outline: none;
+      outline: 1px solid var(--system-input-outline-focus-color);
+      outline-offset: 2px;
     }
 
     &[type='checkbox']:focus-visible::before,
     &[type='radio']:focus-visible::before {
       outline: 2px solid var(--system-input-focus-outline-color);
-      outline-offset: -2px;
+      outline-offset: 2px;
     }
 
-    &[type='checkbox']:checked:focus-visible::before,
-    &[type='radio']:checked:focus-visible::before {
-      outline: 2px solid var(--system-intpu-focus-outline-color);
-      outline-offset: -2px;
+    &[type='checkbox']:checked:focus-visible::after,
+    &[type='radio']:checked:focus-visible::after {
+      outline: 2px solid var(--system-input-focus-outline-color);
+      outline-offset: 2px;
     }
 
     &[type='checkbox']::before,
@@ -150,6 +151,7 @@
       font-size: var(--system-checkbox-size);
       line-height: var(--system-checkbox-size);
       border-radius: 3px;
+      outline: none;
     }
 
     &[type='checkbox']::before,
@@ -186,6 +188,7 @@
       color: var(--system-checkbox-checkmark-color);
       position: absolute;
       left: 0;
+      outline: none;
     }
 
     &[type='checkbox']:disabled,
@@ -220,7 +223,8 @@
 
     &:focus-visible {
       box-shadow: none;
-      outline: 1px solid orange;
+      outline: 2px solid var(--system-input-outline-focus);
+      outline-offset: 2px;
       border-radius: unset;
     }
 
@@ -1102,7 +1106,7 @@ a.inline-roll {
     &:focus-visible {
       box-shadow: none;
       border-radius: unset;
-      outline: 1px solid orange;
+      outline: 1px solid var(--system-input-focus-outline-color);
     }
   }
 
@@ -1119,9 +1123,10 @@ a.inline-roll {
     font-size: 12px;
     justify-self: stretch;
 
-    &:focus {
-      outline: none;
+    &:focus-visible {
       box-shadow: none;
+      border-radius: unset;
+      outline: 1px solid var(--system-input-focus-outline-color);
     }
   }
 
