@@ -1154,6 +1154,13 @@ class ActorMock {
     this.isToken = false
     this.token = null
     this.uuid = `Actor.${this._id}`
+
+    // Prototype token properties
+    this.prototypeToken = {
+      texture: {
+        src: 'icons/svg/mystery-man.svg'
+      }
+    }
   }
 
   prepareData () {
