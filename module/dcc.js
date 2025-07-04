@@ -112,12 +112,14 @@ Hooks.once('init', async function () {
     types: ['Player'],
     label: 'DCC.DCCActorSheetGeneric'
   })
+
   Items.unregisterSheet('core', ItemSheetV2)
   Actors.registerSheet('dcc', DCCPartySheet, {
     makeDefault: true,
     types: ['Party'],
     label: 'DCC.DCCPartySheet'
   })
+
   Items.registerSheet('dcc', DCCItemSheet, {
     label: 'DCC.DCCItemSheet',
     makeDefault: true

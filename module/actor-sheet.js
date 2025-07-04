@@ -250,14 +250,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ranged: []
     }
 
-    let inventory = this.document.items
-    if (this.document.system.config.sortInventory) {
+    let inventory = this.options.document.items
+    if (this.options.document.system.config.sortInventory) {
       // Shallow copy and lexical sort
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
     }
 
     // Iterate through items, allocating to containers
-    const removeEmptyItems = this.document.system.config.removeEmptyItems
+    const removeEmptyItems = this.options.document.system.config.removeEmptyItems
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
@@ -335,7 +335,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         needsUpdate = true
       }
       if (needsUpdate) {
-        await this.actor.update({
+        await this.options.document.update({
           'system.currency': funds
         }, { diff: true })
       }
