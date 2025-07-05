@@ -12,7 +12,7 @@
              value="{{system.manifestation.value}}" data-dtype="Number"/>
     </div>
     <div class="grid-col-span-3">&nbsp;</div>
-    <div class="grid-col-span-3 grid-tpl-max-auto">
+    <div class="grid-col-span-3 grid-tpl-max-auto grid-align-center">
       <label class="grid-tpl-max-auto" for="system.manifestation.displayInChat">
         {{localize "DCC.DisplayInChat"}}
       </label>
@@ -27,6 +27,7 @@
         {{#if editable}}
           <prose-mirror
             name="system.manifestation.description"
+            id="system.manifestation.description"
             button="true"
             editable="{{editable}}"
             toggled="false"
