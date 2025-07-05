@@ -579,6 +579,49 @@ static PARTS = {
 - Use `<section>` or `<div>` (never `<form>` inside a form)
 - **CRITICAL**: Each tab template MUST have exactly one root element (single root node). Multiple root elements will cause Foundry's tab system to error out.
 
+### ⚠️ INCORRECT: Container with Template Placeholders
+
+**DO NOT** use a container template that loops over tabs and creates empty template placeholders:
+
+```html
+{{!-- WRONG: This causes focus and state preservation issues --}}
+<section class="sheet-body">
+  {{#each tabs as |tab|}}
+    <template id="{{tab.id}}" data-application-part="{{tab.id}}"></template>
+  {{/each}}
+</section>
+```
+
+**Why this fails:**
+- Template placeholders don't contain actual content during state preservation
+- Focus restoration fails because form fields aren't where HandlebarsApplicationMixin expects them
+- Tab state preservation becomes unreliable due to timing issues
+
+### ✅ CORRECT: Direct Tab Parts
+
+Instead, define each tab as a direct application part:
+
+```javascript
+// CORRECT: Each tab is a direct part
+static PARTS = {
+  tabs: {
+    template: 'systems/dcc/templates/item-sheet-partial-tabs.html'
+  },
+  weapon: {
+    template: 'systems/dcc/templates/item-sheet-weapon.html'
+  },
+  description: {
+    template: 'systems/dcc/templates/item-sheet-partial-description.html'
+  }
+}
+```
+
+**Benefits of direct parts:**
+- Natural focus preservation within each part
+- Reliable tab state preservation
+- Simpler architecture without intermediate containers
+- Better performance due to fewer DOM manipulations
+
 ### Dynamic Tab Configuration
 
 For applications where tabs vary based on document type:

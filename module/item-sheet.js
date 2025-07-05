@@ -59,10 +59,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       id: 'tabs',
       template: 'systems/dcc/templates/item-sheet-partial-tabs.html'
     },
-    body: {
-      id: 'body',
-      template: 'systems/dcc/templates/item-sheet-body.html'
-    },
     description: {
       id: 'description',
       template: 'systems/dcc/templates/item-sheet-partial-description.html'
@@ -73,6 +69,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   _configureRenderParts (options) {
     const parts = super._configureRenderParts(options)
 
+    // Add the main item type part
     if (this.document.type) {
       parts[this.document.type] = {
         id: this.document.type,
