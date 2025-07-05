@@ -54,10 +54,6 @@ class DCCPartySheet extends DCCActorSheet {
       id: 'tabs',
       template: 'systems/dcc/templates/party-sheet-partial-tabs.html'
     },
-    body: {
-      id: 'body',
-      template: 'systems/dcc/templates/party-sheet-body.html'
-    },
     party: {
       id: 'party',
       template: 'systems/dcc/templates/party-sheet-partial-party.html'
