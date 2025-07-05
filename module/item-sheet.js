@@ -175,7 +175,14 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       tabs.initial = this.document.type
     }
 
-    this.tabGroups[group] = tabs.initial
+    // Make sure the current tab is valid for the current tabs array
+    const tabIds = tabs.tabs.map(tab => tab.id)
+    const validInitial = tabIds.includes(tabs.initial) ? tabs.initial : tabIds[0]
+
+    // Set to valid initial if no current tab or current tab is invalid
+    if (!this.tabGroups[group] || !tabIds.includes(this.tabGroups[group])) {
+      this.tabGroups[group] = validInitial
+    }
     return tabs
   }
 
