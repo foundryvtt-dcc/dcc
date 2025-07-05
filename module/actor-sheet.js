@@ -79,10 +79,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       id: 'tabs',
       template: 'systems/dcc/templates/actor-partial-tabs.html'
     },
-    body: {
-      id: 'body',
-      template: 'systems/dcc/templates/actor-sheet-body.html'
-    },
     character: {
       id: 'character',
       template: 'systems/dcc/templates/actor-partial-npc-common.html'
@@ -225,6 +221,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       for (const tab of this.constructor.END_TABS[group].tabs) {
         tabs.tabs.push(tab)
       }
+    }
+
+    // Validate current tab state - prevent reset to initial if current tab is valid
+    const tabIds = tabs.tabs.map(tab => tab.id)
+    const validInitial = tabIds.includes(tabs.initial) ? tabs.initial : tabIds[0]
+
+    if (!this.tabGroups[group] || !tabIds.includes(this.tabGroups[group])) {
+      this.tabGroups[group] = validInitial
     }
 
     return tabs

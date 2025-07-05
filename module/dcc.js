@@ -146,7 +146,6 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/item-sheet-partial-tabs.html',
     'systems/dcc/templates/item-sheet-partial-values.html',
     'systems/dcc/templates/item-sheet-armor.html',
-    'systems/dcc/templates/item-sheet-body.html',
     'systems/dcc/templates/item-sheet-ammunition.html',
     'systems/dcc/templates/item-sheet-level.html',
     'systems/dcc/templates/item-sheet-mount.html',
