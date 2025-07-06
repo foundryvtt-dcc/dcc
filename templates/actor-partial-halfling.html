@@ -1,0 +1,39 @@
+{{!-- Class Tab --}}
+<section class="tab {{tabs.halfling.id}} {{tabs.halfling.cssClass}}" data-tab="{{tabs.halfling.id}}" data-group="{{tabs.halfling.group}}" id="halfling">
+  <div class="grid-container box-border">
+    <div class="grid-col-span-12 box-title">{{localize "DCC.HalflingAbilities"}}</div>
+    <div class="grid-col-span-12 grid-tpl-max label-font p-5 grid-row-gap-8">
+      <div class="grid-tpl-max-25 grid-col-gap-8" data-skill="sneakAndHide">
+        <label class="skill-check rollable" for="system.skills.sneakAndHide.value" data-action="rollSkillCheck">
+          {{localize "DCC.Stealth"}}
+        </label>
+        <input id="system.skills.sneakAndHide.value" name="system.skills.sneakAndHide.value"
+               value="{{system.skills.sneakAndHide.value}}" data-dtype="String"/>
+      </div>
+      <div></div>
+      <div>
+        {{localize "DCC.InfravisionHalfling"}}
+      </div>
+      <div class="full-width">
+        {{localize "DCC.Lucky"}}
+      </div>
+      <div class="grid-tpl-max">
+        <div>{{localize "DCC.TwoWeaponFighting"}}</div>
+        <ul style="font-size:14px">
+          <li>{{localize "DCC.HalflingTwoWeaponActionDie"}}</li>
+          <li>{{localize "DCC.HalflingTwoWeaponCrit"}}</li>
+          <li>{{localize "DCC.HalflingTwoWeaponFumble"}}</li>
+          <li>{{localize "DCC.HalflingTwoWeaponHighAg"}}</li>
+        </ul>
+      </div>
+      {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+        <div>{{{system.class.classLink}}}</div>
+      {{/dccPackExists}}
+    </div>
+  </div>
+  <img class="grid-col-span-12 background-art-filter"
+       src="systems/dcc/styles/images/SA-4-6-FCI-spots-4-crossed-sabers.webp"
+       alt=""
+       height="310px" width="420px"
+       style="margin: 10px 0 0 15px;">
+</section>

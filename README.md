@@ -27,6 +27,12 @@ Work Process (for developers): https://github.com/foundryvtt-dcc/dcc/wiki/GitHub
 
 Contains some icon art from game-icons.net.
 
+###### Documentation
+* [Test Coverage Improvement Plan](docs/IMPROVE_TEST_COVERAGE.md) - Strategy for expanding unit test coverage
+* [Release Process](docs/README_RELEASE_PROCESS.md) - Guidelines for creating releases and managing versions
+* [V13 Upgrade Project](docs/V13_UPGRADE_PROJECT.md) - Migration plan for Foundry VTT V13 compatibility
+* [V13 ApplicationV2 Conversion Guide](docs/V13_APP_V2_HOW_TO.md) - Step-by-step guide for converting to ApplicationV2
+
 ###### Contributing
 * Thanks for considering helping out!
 * All PRs must pass the automated unit tests in this project to be considered for merging.

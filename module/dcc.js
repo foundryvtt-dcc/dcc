@@ -1,4 +1,4 @@
-/* global $, Actors, ActorSheet, Items, ItemSheet, ChatMessage, CONFIG, foundry, game, Hooks, Macro, NotesLayer, ui, loadTemplates, Handlebars */
+/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, ui, Handlebars */
 
 /**
  * DCC
@@ -6,6 +6,7 @@
 
 // Import Modules
 import DCCActor from './actor.js'
+import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
 import DCCCombatant from './combatant.js'
 import DCCItem from './item.js'
@@ -26,8 +27,13 @@ import { defineStatusIcons } from './status-icons.js'
 
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
-import DCCActorSheet from './actor-sheet.js'
 import DCCPartySheet from './party-sheet.js'
+
+const { Actors } = foundry.documents.collections
+const { ActorSheetV2 } = foundry.applications.sheets
+const { loadTemplates } = foundry.applications.handlebars
+const { Items } = foundry.documents.collections
+const { ItemSheetV2 } = foundry.applications.sheets
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -60,12 +66,20 @@ Hooks.once('init', async function () {
   CONFIG.Combatant.documentClass = DCCCombatant
 
   // Register sheet application classes
-  Actors.unregisterSheet('core', ActorSheet)
+  Actors.unregisterSheet('core', ActorSheetV2)
+
+  // NPC sheets - DCCActorSheet as default, with Generic as option
   Actors.registerSheet('dcc', DCCActorSheet, {
     types: ['NPC'],
     label: 'DCC.DCCActorSheet',
     makeDefault: true
   })
+  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
+    types: ['NPC'],
+    label: 'DCC.DCCActorSheetGeneric'
+  })
+
+  // PC sheets - class-specific sheets only
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
     types: ['Player'],
     label: 'DCC.DCCActorSheetCleric'
@@ -95,21 +109,23 @@ Hooks.once('init', async function () {
     label: 'DCC.DCCActorSheetElf'
   })
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
-    types: ['NPC', 'Player'],
+    types: ['Player'],
     label: 'DCC.DCCActorSheetGeneric'
   })
+
+  Items.unregisterSheet('core', ItemSheetV2)
   Actors.registerSheet('dcc', DCCPartySheet, {
     makeDefault: true,
     types: ['Party'],
     label: 'DCC.DCCPartySheet'
   })
-  Items.unregisterSheet('core', ItemSheet)
+
   Items.registerSheet('dcc', DCCItemSheet, {
     label: 'DCC.DCCItemSheet',
     makeDefault: true
   })
 
-  // Register shared template for upper level characters
+  // Register template paths
   const templatePaths = [
     'systems/dcc/templates/actor-partial-pc-common.html',
     'systems/dcc/templates/actor-partial-npc-common.html',
@@ -119,11 +135,20 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/actor-partial-skills.html',
     'systems/dcc/templates/actor-partial-wizard-spells.html',
     'systems/dcc/templates/actor-partial-cleric-spells.html',
+    'systems/dcc/templates/actor-partial-dwarf.html',
+    'systems/dcc/templates/actor-partial-elf.html',
+    'systems/dcc/templates/actor-partial-halfling.html',
+    'systems/dcc/templates/actor-partial-thief.html',
+    'systems/dcc/templates/actor-partial-warrior.html',
+    'systems/dcc/templates/actor-partial-wizard.html',
     'systems/dcc/templates/item-sheet-partial-description.html',
     'systems/dcc/templates/item-sheet-partial-judge-description.html',
+    'systems/dcc/templates/item-sheet-partial-tabs.html',
     'systems/dcc/templates/item-sheet-partial-values.html',
     'systems/dcc/templates/item-sheet-armor.html',
+    'systems/dcc/templates/item-sheet-ammunition.html',
     'systems/dcc/templates/item-sheet-level.html',
+    'systems/dcc/templates/item-sheet-mount.html',
     'systems/dcc/templates/item-sheet-treasure.html',
     'systems/dcc/templates/item-sheet-weapon.html',
     'systems/dcc/templates/item-sheet-weapon-npc.html',
@@ -133,7 +158,9 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/roll-modifier-partial-modifiers.html',
     'systems/dcc/templates/roll-modifier-partial-none.html',
     'systems/dcc/templates/roll-modifier-partial-check-penalty.html',
-    'systems/dcc/templates/roll-modifier-partial-spellburn.html'
+    'systems/dcc/templates/roll-modifier-partial-spellburn.html',
+    'systems/dcc/templates/party-sheet-partial-party.html',
+    'systems/dcc/templates/party-sheet-partial-tabs.html'
   ]
   await loadTemplates(templatePaths)
 
@@ -161,29 +188,25 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('dccPackExists', function (pack, options) {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
   })
+})
 
-  /**
-   * Get a template from the server by fetch request and caching the retrieved result
-   * Duplicated from Foundry since there is no way to pass preventIndent to the whole template otherwise
-   * @param {string} path           The web-accessible HTML template URL
-   * @param {string} [id]           An ID to register the partial with.
-   * @returns {Promise<Function>}   A Promise which resolves to the compiled Handlebars template
-   */
-  async function getTemplate (path, id) {
-    if (path in Handlebars.partials) return Handlebars.partials[path]
-    const htmlString = await new Promise((resolve, reject) => {
-      game.socket.emit('template', path, resp => {
-        if (resp.error) return reject(new Error(resp.error))
-        return resolve(resp.html)
-      })
-    })
-    const compiled = Handlebars.compile(htmlString, { preventIndent: true })
-    Handlebars.registerPartial(id ?? path, compiled)
-    console.log(`Foundry VTT | Retrieved and compiled template ${path}`)
-    return compiled
+/* --------------------------------------------- */
+/*  Initialize Fleeting Luck Button              */
+/*  In v13, has to happen before ready hook      */
+/*  The button is removed in FleetingLuck.init() */
+/*  If Fleeting Luck is disabled                 */
+/* --------------------------------------------- */
+Hooks.on('getSceneControlButtons', (controls) => {
+  controls.tokens.tools.fleetingLuck = {
+    name: 'fleetingLuck',
+    title: game.i18n.localize('DCC.FleetingLuck'),
+    icon: 'fas fa-balance-scale-left',
+    onChange: (event, active) => {
+      game.dcc.FleetingLuck.show()
+    },
+    button: true,
+    active: true
   }
-
-  window.getTemplate = getTemplate
 })
 
 /* -------------------------------------------- */
@@ -229,15 +252,21 @@ function checkReleaseNotes () {
   }
 
   // Register listeners for the buttons
-  $(document).on('click', '.dcc-release-notes', () => _onShowJournal('dcc.dcc-userguide', 'DCC System Changelog'))
-  $(document).on('click', '.dcc-credits', () => _onShowJournal('dcc.dcc-userguide', 'Credits'))
-  $(document).on('click', '.dcc-user-guide', () => _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide'))
+  document.addEventListener('click', (event) => {
+    const action = event.target.dataset.action
+    if (action === 'dcc-release-notes') {
+      _onShowURI('https://github.com/foundryvtt-dcc/dcc/releases')
+    } else if (action === 'dcc-credits') {
+      _onShowJournal('dcc.dcc-userguide', 'Credits')
+    } else if (action === 'dcc-user-guide') {
+      _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide')
+    }
+  })
 }
 
 async function _onShowJournal (packName, journalName) {
   const pack = game.packs.get(packName)
-  const index = await pack.getIndex()
-  const metadata = await index.getName(journalName)
+  const metadata = await pack.index.getName(journalName)
   const doc = await pack.getDocument(metadata._id)
   await doc.sheet.render(true)
 }
@@ -269,7 +298,6 @@ function registerTables () {
       for (const packName of manager.packs) {
         const pack = game.packs.get(packName)
         if (pack) {
-          await pack.getIndex()
           for (const [key, value] of pack.index.entries()) {
             CONFIG.DCC.disapprovalTables[key] = {
               name: value.name,
@@ -342,7 +370,6 @@ async function getSkillTable (skillName) {
       pack = game.packs.get(tablePath[0] + '.' + tablePath[1])
     }
     if (pack) {
-      await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name === tablePath[2])
       if (entry) {
         return pack.getDocument(entry._id)
@@ -355,7 +382,7 @@ async function getSkillTable (skillName) {
 
 Hooks.once('importAdventure', async function () {
   // This is a client side setting so only the GM user is affected
-  game.settings.set('core', NotesLayer.TOGGLE_SETTING, true)
+  game.settings.set('core', foundry.canvas.layers.NotesLayer.TOGGLE_SETTING, true)
 
   // Regenerate all the scene thumbnails, since the adventure packer doesn't do that
   for (const scene of game.scenes) {
@@ -502,7 +529,7 @@ Hooks.on('hotbarDrop', (bar, data, slot) => {
 })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
-Hooks.on('renderChatMessage', (message, html, data) => {
+Hooks.on('renderChatMessageHTML', (message, html, data) => {
   if (!message.isRoll || !message.isContentVisible || !message.rolls.length) return
 
   if (game.user.isGM) {
@@ -514,7 +541,10 @@ Hooks.on('renderChatMessage', (message, html, data) => {
   // Add data-item-id for modules that want to use it
   const itemId = message.getFlag('dcc', 'ItemId')
   if (itemId !== undefined) {
-    html.find('.message-content').attr('data-item-id', itemId)
+    const messageContent = html.querySelector('.message-content')
+    if (messageContent) {
+      messageContent.setAttribute('data-item-id', itemId)
+    }
   }
 
   let emoteRolls = false
@@ -594,11 +624,13 @@ Hooks.on('dcc.setLayOnHandsTable', (value, fromSystemSetting = false) => {
   }
 })
 
-// Level Data
-Hooks.on('dcc.setLevelData', (value, fromSystemSetting = false) => {
-  if (fromSystemSetting || !CONFIG.DCC.levelData) {
-    CONFIG.DCC.levelData = value
+// Level Data packs
+Hooks.on('dcc.registerLevelDataPack', (value, fromSystemSetting = false) => {
+  if (!CONFIG.DCC.levelDataPacks) {
+    // Create manager for level data packs
+    CONFIG.DCC.levelDataPacks = new TablePackManager()
   }
+  CONFIG.DCC.levelDataPacks.addPack(value, fromSystemSetting)
 })
 
 // Mercurial Magic table
@@ -697,6 +729,8 @@ async function createDCCMacro (data, slot) {
     'Attack Bonus': _createDCCAttackBonusMacro,
     'Action Dice': _createDCCActionDiceMacro,
     Weapon: _createDCCWeaponMacro,
+    Item: _createDCCItemMacro,
+    'DCC Item': _createDCCItemMacro,
     'Apply Disapproval': _createDCCApplyDisapprovalMacro,
     'Roll Disapproval': _createDCCRollDisapprovalMacro
   }
@@ -720,20 +754,17 @@ async function createDCCMacro (data, slot) {
     let macro = game.macros.contents.find(m => (m.name === macroData.name) && (m.command === macroData.command))
     if (!macro) {
       macro = await Macro.create({
-        name: macroData.name,
+        name: `${macroData.name}-${data.actorId}`,
         type: 'script',
         img: macroData.img,
         command: macroData.command,
         flags: { 'dcc.itemMacro': true }
       })
     }
-    // Set permissions so all players can execute the macro
-    const permissions = macro.ownership
-    permissions.default = 2 // 2 = Observer, allows execution
-    macro.update({ ownership: permissions })
 
     // Assign the macro to the hotbar slot
     await game.user.assignHotbarMacro(macro, slot)
+    return false // Prevent Foundry's default behavior
   }
   return true
 }
@@ -858,14 +889,23 @@ function _createDCCSpellCheckMacro (data) {
   // Create the macro command
   const spell = data.data.name || null
   const img = data.data.img || null
+  const itemId = data.data.itemId || null
+
   const macroData = {
     name: spell || game.i18n.localize('DCC.SpellCheck'),
-    command: `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck() }`,
     img: img || EntityImages.imageForMacro('spellCheck')
   }
 
-  if (spell) {
+  // If we have an itemId, create an item-based macro
+  if (itemId) {
+    const uuid = `Actor.${data.actorId}.Item.${itemId}`
+    macroData.command = `const _item = await fromUuid("${uuid}"); if (_item) { _item.rollSpellCheck() }`
+  } else if (spell) {
+    // Fallback to actor-based spell check with spell name
     macroData.command = `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck(Object.assign({ spell: "${spell}" }, game.dcc.getMacroOptions())) }`
+  } else {
+    // Generic spell check
+    macroData.command = `const _actor = game.dcc.getMacroActor('${data.actorId}'); if (_actor) { _actor.rollSpellCheck() }`
   }
 
   return macroData
@@ -914,7 +954,7 @@ function _createDCCActionDiceMacro (data) {
 function _createDCCWeaponMacro (data) {
   if (data.type !== 'Weapon') return
   const weapon = data.system.weapon
-  const backstab = data.data.backstab
+  const backstab = data.system?.backstab
   const options = {
     backstab
   }
@@ -936,6 +976,37 @@ function _createDCCWeaponMacro (data) {
   }
 
   return macroData
+}
+
+/**
+ * Create a macro from an item drop.
+ * @param {Object} data     The dropped data
+ * @returns {Object}
+ */
+function _createDCCItemMacro (data) {
+  if (data.type !== 'Item' && data.type !== 'DCC Item') return
+
+  const item = data.system.item || data.data
+  if (!item) return
+
+  // Generate the UUID for the item
+  const uuid = `Actor.${data.actorId}.Item.${item._id}`
+
+  // Handle spell items
+  if (item.type === 'spell') {
+    return {
+      name: item.name,
+      command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.rollSpellCheck() }`,
+      img: item.img
+    }
+  }
+
+  // For other item types, create a generic macro
+  return {
+    name: item.name,
+    command: `const _item = await fromUuid("${uuid}"); if (_item) { _item.roll() }`,
+    img: item.img || EntityImages.imageForItem(item.type)
+  }
 }
 
 /**

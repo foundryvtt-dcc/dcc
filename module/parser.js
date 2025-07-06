@@ -1,38 +1,59 @@
-/* global CONFIG, Dialog, foundry, fromUuid, FormApplication, game, Hooks, ui, $ */
+/* global CONFIG, foundry, fromUuid, game, Hooks, ui */
 
 import DCCActor from './actor.js'
 import parsePCs from './pc-parser.js'
 import parseNPCs from './npc-parser.js'
 import EntityImages from './entity-images.js'
 
-class DCCActorParser extends FormApplication {
-  /**
-   * Specify the default options for this class
-   * @return {Object}
-   */
-  static get defaultOptions () {
-    const options = super.defaultOptions
-    options.id = 'actor-parser'
-    options.width = 600
-    options.height = 800
-    options.template = 'systems/dcc/templates/dialog-actor-import.html'
-    return options
+const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api
+
+class DCCActorParser extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'actor-parser'],
+    tag: 'form',
+    position: {
+      width: 600,
+      height: 800
+    },
+    window: {
+      title: 'DCC.ActorImport',
+      resizable: true
+    },
+    form: {
+      handler: DCCActorParser.#onSubmitForm,
+      submitOnChange: false,
+      closeOnSubmit: true
+    }
   }
 
+  /** @inheritDoc */
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-actor-import.html'
+    }
+  }
+
+  /* -------------------------------------------- */
+
   /**
-   * Title
+   * Get the window title
    * @type {String}
    */
   get title () {
-    return 'Import Actors'
+    return game.i18n.localize('DCC.ActorImport')
   }
 
+  /* -------------------------------------------- */
+
   /**
-   * Construct and return the data object used to render the HTML template for this form application.
-   * @return {Object}
+   * Prepare context data for rendering the HTML template
+   * @param {Object} options - Rendering options
+   * @return {Object} The context data
    */
-  getData (options = {}) {
-    const context = {}
+  async _prepareContext (options = {}) {
+    const context = await super._prepareContext(options)
+
     context.user = game.user
     context.config = CONFIG.DCC
     context.folders = {}
@@ -41,7 +62,7 @@ class DCCActorParser extends FormApplication {
     context.importFolderId = game.settings.get('dcc', 'lastImporterFolderId')
 
     // Gather the list of actor folders
-    for (const folder of game.actors.directory.folders) {
+    for (const folder of game.folders.filter(folder => folder.type === 'Actor')) {
       context.folders[folder.id] = folder.name
     }
 
@@ -50,17 +71,19 @@ class DCCActorParser extends FormApplication {
 
   /**
    * Handle form submission
-   * @param {Event} event     Submission event
-   * @param {Object} formData  Data from the form
-   * @return {Object}
+   * @this {DCCActorParser}
+   * @param {SubmitEvent} event - The form submission event
+   * @param {HTMLFormElement} form - The form element
+   * @param {FormDataExtended} formData - The processed form data
+   * @private
    */
-  async _updateObject (event, formData) {
+  static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
 
-    game.settings.set('dcc', 'lastImporterType', formData.type)
-    game.settings.set('dcc', 'lastImporterFolderId', formData.folderId)
+    game.settings.set('dcc', 'lastImporterType', formData.object.type)
+    game.settings.set('dcc', 'lastImporterFolderId', formData.object.folderId)
 
-    await createActors(formData.type, formData.folderId, formData.statblocks)
+    await createActors(formData.object.type, formData.object.folderId, formData.object.statblocks)
   }
 }
 
@@ -96,34 +119,23 @@ async function createActors (type, folderId, actorData) {
 
   // Prompt if we're importing a lot of actors
   if (parsedCharacters.length > CONFIG.DCC.actorImporterPromptThreshold) {
-    let importConfirmed = false
-
     const context = {
       number: parsedCharacters.length
     }
-    await new Promise((resolve, reject) => {
-      new Dialog({
-        title: game.i18n.format('DCC.ActorImportConfirmationPrompt', context),
-        content: `<p>${game.i18n.format('DCC.ActorImportConfirmationMessage', context)}</p>`,
-        buttons: {
-          yes: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.Yes'),
-            callback: () => {
-              importConfirmed = true
-              resolve()
-            }
-          },
-          no: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.No'),
-            callback: () => {
-              importConfirmed = false
-              resolve()
-            }
-          }
-        }
-      }).render(true)
+
+    const importConfirmed = await DialogV2.confirm({
+      window: {
+        title: game.i18n.format('DCC.ActorImportConfirmationPrompt', context)
+      },
+      content: `<p>${game.i18n.format('DCC.ActorImportConfirmationMessage', context)}</p>`,
+      yes: {
+        icon: 'fas fa-check',
+        label: game.i18n.localize('DCC.Yes')
+      },
+      no: {
+        icon: 'fas fa-times',
+        label: game.i18n.localize('DCC.No')
+      }
     })
 
     // Abort the import
@@ -140,8 +152,7 @@ async function createActors (type, folderId, actorData) {
       const pack = game.packs.get(packPath)
       if (!pack) continue
 
-      const index = await pack.getIndex()
-      for (const entry of index) {
+      for (const entry of pack.index) {
         itemMap[entry.name] = entry
       }
     }
@@ -270,16 +281,30 @@ function onRenderActorDirectory (app, html) {
   if (!game.user.hasPermission('ACTOR_CREATE')) {
     return Promise.resolve()
   }
-  const button = $(`<button class="import-actors"><i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImport')}</button>`)
-  button.on('click', () => {
+
+  // Create a new button element using vanilla JavaScript
+  const button = document.createElement('button')
+  button.classList.add('import-actors')
+  button.classList.add('p-8')
+  button.innerHTML = `<i class="fas fa-user"></i> ${game.i18n.localize('DCC.ActorImport')}`
+
+  // Add the click event listener
+  button.addEventListener('click', () => {
     new DCCActorParser().render(true)
   })
-  let footer = html.find('.directory-footer')
-  if (footer.length === 0) {
-    footer = $('<footer class="directory-footer"></footer>')
-    html.append(footer)
+
+  // Find the footer element in the html (DocumentElement)
+  let footer = html.querySelector('.directory-footer')
+
+  // If no footer exists, create one and append it to the html
+  if (!footer) {
+    footer = document.createElement('footer')
+    footer.classList.add('directory-footer')
+    html.appendChild(footer) // Append the new footer
   }
-  footer.append(button)
+
+  // Append the button to the footer
+  footer.appendChild(button)
 }
 
 export default { onRenderActorDirectory, createActors }

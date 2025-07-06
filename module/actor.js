@@ -1,8 +1,10 @@
-/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, TextEditor, game, ui, foundry, renderTemplate */
+/* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
+
+const { TextEditor } = foundry.applications.ux
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -226,7 +228,7 @@ class DCCActor extends Actor {
   /**
    * Get Attack Bonus Mode
    * Translate the Attack Bonus Mode into a valid value
-   * Invalid values default to 'flat''
+   * Invalid values default to 'flat'
    * @return {String}  A valid Attack Bonus Mode name
    */
   getAttackBonusMode () {
@@ -333,15 +335,15 @@ class DCCActor extends Actor {
     const wilSaveOtherBonus = parseInt(this.system.saves.wil.otherBonus || 0)
     const wilSaveOverride = this.system.saves.wil.override
 
-    this.system.saves.ref.value = ensurePlus(aglMod + refSaveClassBonus + refSaveOtherBonus)
+    this.system.saves.ref.value = ensurePlus(`${aglMod + refSaveClassBonus + refSaveOtherBonus}`)
     if (refSaveOverride !== null && refSaveOverride !== undefined && refSaveOverride !== '') {
       this.system.saves.ref.value = ensurePlus(parseInt(refSaveOverride))
     }
-    this.system.saves.frt.value = ensurePlus(staMod + frtSaveClassBonus + frtSaveOtherBonus)
+    this.system.saves.frt.value = ensurePlus(`${staMod + frtSaveClassBonus + frtSaveOtherBonus}`)
     if (frtSaveOverride !== null && frtSaveOverride !== undefined && frtSaveOverride !== '') {
       this.system.saves.frt.value = ensurePlus(parseInt(frtSaveOverride))
     }
-    this.system.saves.wil.value = ensurePlus(perMod + wilSaveClassBonus + wilSaveOtherBonus)
+    this.system.saves.wil.value = ensurePlus(`${perMod + wilSaveClassBonus + wilSaveOtherBonus}`)
     if (wilSaveOverride !== null && wilSaveOverride !== undefined && wilSaveOverride !== '') {
       this.system.saves.wil.value = ensurePlus(parseInt(wilSaveOverride))
     }
@@ -384,7 +386,7 @@ class DCCActor extends Actor {
    * Level Change
    */
   levelChange () {
-    new DCCActorLevelChange(this).render(true)
+    new DCCActorLevelChange({ document: this }).render(true)
   }
 
   /**
@@ -520,19 +522,25 @@ class DCCActor extends Actor {
     return game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
   }
 
-  async rollInit (event, token) {
+  /**
+   * Optionally show modifier dialog, then pass off to Foundry's actor rollInitiative
+   * @param event
+   * @param options
+   * @param token
+   * @returns {Promise<void>}
+   */
+  async rollInit (event, options, token) {
     if (token?.combatant?.initiative || this.inCombat) {
       ui.notifications.warn(game.i18n.localize('DCC.AlreadyHasInitiative'))
       return
     }
 
-    const rollOptions = this.sheet._fillRollOptions(event)
     let formula = null
-    if (rollOptions.showModifierDialog) {
+    if (options?.showModifierDialog) {
       formula = await this.getInitiativeRoll(formula, { showModifierDialog: true })
     }
 
-    const options = {
+    const initOptions = {
       createCombatants: true,
       initiativeOptions: {
         formula
@@ -540,9 +548,9 @@ class DCCActor extends Actor {
     }
 
     if (token) {
-      token.actor.rollInitiative(options)
+      token.actor.rollInitiative(initOptions)
     } else {
-      await this.rollInitiative(options)
+      await this.rollInitiative(initOptions)
     }
   }
 
@@ -1127,7 +1135,7 @@ class DCCActor extends Actor {
         const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
           critTableName = critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
-          critText = await TextEditor.enrichHTML(critResult.text)
+          critText = await TextEditor.enrichHTML(critResult.description)
           critText = `: <br>${critText}`
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
@@ -1180,7 +1188,7 @@ class DCCActor extends Actor {
         }
         if (fumbleResult) {
           fumbleTableName = `${fumbleResult?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
-          fumbleText = await TextEditor.enrichHTML(fumbleResult.text)
+          fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
         }
         const onPrep = game.i18n.localize('DCC.on')
         const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
@@ -1245,9 +1253,9 @@ class DCCActor extends Actor {
      * @param {object} messageData                     Data to send to the chat card
      * @param {object} data
      */
-    Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
+    await Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
 
-    messageData.content = await renderTemplate(CONFIG.DCC.templates.attackResult, { message: messageData })
+    messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
 
     // Output the results
     ChatMessage.applyRollMode(messageData, rollMode)
@@ -1393,7 +1401,7 @@ class DCCActor extends Actor {
     const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {
-      critText = await TextEditor.enrichHTML(critResult.text)
+      critText = await TextEditor.enrichHTML(critResult.description)
       critTableName = await TextEditor.enrichHTML(critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`))
     }
 
@@ -1459,7 +1467,6 @@ class DCCActor extends Actor {
       const messageData = {
         user: game.user.id,
         speaker,
-        // flavor: game.i18n.format(locString, { damage: Math.abs(deltaHp) }),
         flags: {
           'dcc.isApplyDamage': true
         },
@@ -1582,7 +1589,6 @@ class DCCActor extends Actor {
         if (disapprovalPackName && disapprovalTableName) {
           const pack = game.packs.get(disapprovalPackName)
           if (pack) {
-            await pack.getIndex() // Load the compendium index
             const entry = pack.index.find((entity) => `${disapprovalPackName}.${entity.name}` === disapprovalTableName)
             if (entry) {
               disapprovalTable = await pack.getDocument(entry._id)

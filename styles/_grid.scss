@@ -110,6 +110,12 @@
   grid-template-columns: max-content 10%;
 }
 
+.grid-tpl-max-15 {
+  display: grid;
+  grid-row-gap: 5px;
+  grid-template-columns: max-content 15%;
+}
+
 .grid-tpl-max-25 {
   display: grid;
   grid-row-gap: 5px;
@@ -131,6 +137,12 @@
 .grid-tpl-max-auto-tight {
   display: grid;
   grid-row-gap: 3px;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.grid-tpl-max-auto-loose {
+  display: grid;
+  grid-row-gap: 8px;
   grid-template-columns: max-content minmax(0, 1fr);
 }
 
@@ -174,8 +186,11 @@
   margin-bottom: 11px;
 }
 
-
 .mr-3 {
+  margin-right: 3px;
+}
+
+.mr-8 {
   margin-right: 3px;
 }
 
@@ -201,6 +216,10 @@
 
 .p-8 {
   padding: 8px;
+}
+
+.pt-2 {
+  padding-top: 2px;
 }
 
 .pt-5 {

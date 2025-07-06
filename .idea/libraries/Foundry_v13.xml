@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="Foundry v13" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/../../../../../../Program Files/Foundry Virtual Tabletop 13/foundryvtt" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../../../../../Program Files/Foundry Virtual Tabletop 13/foundryvtt" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

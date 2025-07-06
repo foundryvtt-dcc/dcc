@@ -520,11 +520,6 @@ DCC.languages = {
   cant: 'DCC.LanguagesThievesCant'
 }
 
-// Character Level XP Requirements
-DCC.CHARACTER_EXP_LEVELS = [
-  0, 10, 50, 110, 190, 290, 410, 550, 710, 890, 1090
-]
-
 // The dice chain
 DCC.DICE_CHAIN = [
   3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30
@@ -535,7 +530,7 @@ DCC.DICE_CHAIN = [
 DCC.criticalHitPacks = null
 DCC.disapprovalPacks = null
 DCC.divineAidTable = null
-DCC.levelData = null
+DCC.levelDataPacks = null
 DCC.fumbleTable = null
 DCC.layOnHandsTable = null
 DCC.mercurialMagicTable = null
@@ -626,13 +621,6 @@ DCC.macroImages = {
   d10: 'systems/dcc/styles/images/game-icons-net/d10.svg',
   d12: 'systems/dcc/styles/images/game-icons-net/d12.svg',
   d20: 'systems/dcc/styles/images/game-icons-net/dice-twenty-faces-twenty.svg'
-}
-
-// Templates
-DCC.templates = {
-  attackResult: 'systems/dcc/templates/chat-card-attack-result.html',
-  rollModifierDialog: 'systems/dcc/templates/dialog-roll-modifiers.html',
-  spellResult: 'systems/dcc/templates/chat-card-spell-result.html'
 }
 
 // Actor importer warning threshold

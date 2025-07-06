@@ -269,7 +269,6 @@ class DCCItem extends Item {
     if (resultsRef.collection) {
       const pack = game.packs.get(resultsRef.collection)
       if (pack) {
-        await pack.getIndex()
         const entry = pack.index.find(predicate)
         resultsTable = await pack.getDocument(entry._id)
       }
@@ -348,7 +347,6 @@ class DCCItem extends Item {
     const manifestationTableName = `${this.name} Manifestation`
     const pack = game.packs.get(manifestationPackName)
     if (pack) {
-      await pack.getIndex() // Load the compendium index
       const entry = pack.index.find((entity) => entity.name === manifestationTableName)
       if (entry) {
         const table = await pack.getDocument(entry._id)
@@ -388,7 +386,7 @@ class DCCItem extends Item {
 
     if (manifestationResult) {
       try {
-        let result = manifestationResult.results[0].text.replace(';', '')
+        let result = manifestationResult.results[0].description.replace(';', '')
         result = result.charAt(0).toUpperCase() + result.slice(1)
         updates['system.manifestation.description'] = `<p>${result}</p>`
       } catch (err) {
@@ -450,7 +448,6 @@ class DCCItem extends Item {
         pack = game.packs.get(mercurialMagicTablePath[0] + '.' + mercurialMagicTablePath[1])
       }
       if (pack) {
-        await pack.getIndex() // Load the compendium index
         const entry = pack.index.find((entity) => entity.name === mercurialMagicTablePath[2])
         if (entry) {
           const table = await pack.getDocument(entry._id)
@@ -482,7 +479,7 @@ class DCCItem extends Item {
 
     if (mercurialMagicResult) {
       try {
-        const result = mercurialMagicResult.results[0].text
+        const result = mercurialMagicResult.results[0].description
         const split = result.split('.')
         updates['system.mercurialEffect.summary'] = split[0]
         updates['system.mercurialEffect.description'] = `<p>${result}</p>`

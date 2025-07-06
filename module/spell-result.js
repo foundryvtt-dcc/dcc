@@ -1,4 +1,6 @@
-/* global ChatMessage, CONFIG, game, foundry, renderTemplate, TextEditor */
+/* global ChatMessage, CONFIG, game, foundry */
+
+const { TextEditor } = foundry.applications.ux
 
 class SpellResult {
   /**
@@ -56,7 +58,7 @@ class SpellResult {
     }
 
     // Render the chat card which combines the dice roll with the drawn results
-    messageData.content = await renderTemplate(CONFIG.DCC.templates.spellResult, {
+    messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
       description: await TextEditor.enrichHTML(rollTable.description),
       manifestation,
       mercurial,
@@ -89,8 +91,12 @@ class SpellResult {
 
     // Check it's a DCC spellcheck, otherwise leave it alone
     if (message.getFlag('dcc', 'SpellCheck')) {
-      html.find('.spell-shift-up').click(SpellResult._onNextResult.bind(message))
-      html.find('.spell-shift-down').click(SpellResult._onPreviousResult.bind(message))
+      html.querySelectorAll('.spell-shift-up').forEach(el => {
+        el.addEventListener('click', SpellResult._onNextResult.bind(message))
+      })
+      html.querySelectorAll('.spell-shift-down').forEach(el => {
+        el.addEventListener('click', SpellResult._onPreviousResult.bind(message))
+      })
     }
   }
 
@@ -129,7 +135,6 @@ class SpellResult {
     if (tableCompendium) {
       const pack = game.packs.get(tableCompendium)
       if (pack) {
-        await pack.getIndex()
         const entry = pack.index.get(tableId)
         rollTable = await pack.getDocument(entry._id)
       }
@@ -144,7 +149,7 @@ class SpellResult {
       const entry = rollTable.results.get(resultId)
       const newResultRoll = (direction > 0) ? (entry.range[1]) + 1 : (entry.range[0] - 1)
       const newResult = rollTable.getResultsForRoll(newResultRoll)[0]
-      const newContent = await renderTemplate(CONFIG.DCC.templates.spellResult, {
+      const newContent = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
         description: await TextEditor.enrichHTML(rollTable.description),
         results: [newResult].map(r => {
           return foundry.utils.duplicate(r)

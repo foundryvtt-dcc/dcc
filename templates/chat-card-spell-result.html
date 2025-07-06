@@ -1,4 +1,4 @@
-<div class="table-draw" data-table-id="{{ table.id }}" data-table-compendium="{{ table.compendium.metadata.id }}">
+<div class="table-draw" data-table-id="{{ table.id }}" data-table-compendium="{{ table.collection.metadata.id }}">
   {{#if description}}
     <div class="table-description">{{{description}}}</div>
   {{/if}}
@@ -27,15 +27,15 @@
       <li class="table-result" data-result-id="{{ this._id }}" data-crit="{{ ../crit }}" data-fumble="{{ ../fumble }}">
         <div class="result-range">
           {{#if (gt this.range.[0] 0)}}
-            <i class="fas fa-sort-up spell-shift-down"></i>
+            <i class="fas fa-sort-up spell-shift-down" data-tooltip="{{localize 'DCC.SpellShiftDown'}}"></i>
             <p class="spell-shift-down">{{this.range.[0]}}</p>
           {{/if}}
           {{#if (lt this.range.[1] 99)}}
             <p class="spell-shift-up">{{this.range.[1]}}</p>
-            <i class="fas fa-sort-down spell-shift-up"></i>
+            <i class="fas fa-sort-down spell-shift-up" data-tooltip="{{localize 'DCC.SpellShiftUp'}}"></i>
           {{/if}}
         </div>
-        <div class="result-text">{{{this.text}}}</div>
+        <div class="result-text">{{{this.description}}}</div>
       </li>
     {{/each}}
   </ol>

@@ -1,0 +1,123 @@
+{{!-- Class Tab --}}
+<section class="tab elf-bg {{tabs.elf.id}} {{tabs.elf.cssClass}}" data-tab="{{tabs.elf.id}}" data-group="{{tabs.elf.group}}" id="elf">
+  <div class="grid-container">
+    <div class="grid-col-span-12 grid-container grid-row-gap-5 grid-col-gap-5 mb-8">
+      <div class="grid-col-span-5 grid-row-span-2 box-border" data-ability="int">
+        <div class="box-title">{{localize "DCC.SpellCheck"}}</div>
+        <div class="grid-align-center p-5">
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
+            {{ifThen system.class.spellCheckOverrideDie
+                     system.class.spellCheckOverrideDie
+                     system.attributes.actionDice.value}}{{system.class.spellCheck}}
+          </div>
+
+          <div class="group-separator"></div>
+
+          <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+            <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Die"}}</div>
+            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attributes.actionDice.value}}</div>
+            <label class="group-indent" for="system.class.spellCheckOverrideDie" title="{{localize 'DCC.OverrideHint'}}">
+              {{localize "DCC.Override"}}
+            </label>
+            <input id="system.class.spellCheckOverrideDie" name="system.class.spellCheckOverrideDie"
+                   value="{{system.class.spellCheckOverrideDie}}"
+                   data-dtype="String"/>
+          </div>
+
+          <div class="group-separator"></div>
+
+          <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+            <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Bonus"}}</div>
+            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.class.spellCheck}}</div>
+            <div class="group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.Level"}}</div>
+            <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.details.level.value}}</div>
+            <div class="mr-3 group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">
+              {{localize "DCC.AbilityIntShort"}} {{localize "DCC.Modifier"}}
+            </div>
+            <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.abilities.int.mod}}</div>
+            <label class="group-indent" for="system.class.spellCheckOtherMod" title="{{localize 'DCC.OtherModHint'}}">
+              {{localize "DCC.SpellCheckOtherMod"}}
+            </label>
+            <input id="system.class.spellCheckOtherMod" name="system.class.spellCheckOtherMod"
+                   value="{{system.class.spellCheckOtherMod}}"
+                   data-dtype="String"/>
+            <label class="group-indent" for="system.class.spellCheckOverride" title="{{localize 'DCC.OverrideHint'}}">
+              {{localize "DCC.Override"}}
+            </label>
+            <input id="system.class.spellCheckOverride" name="system.class.spellCheckOverride"
+                   value="{{system.class.spellCheckOverride}}"
+                   data-dtype="String"/>
+
+            <div class="group-separator"></div>
+
+            <div class="label-font spell-check rollable mr-3 grid-col-span-2 center" data-action="rollSpellCheck">
+              <div><i class="fas fa-dice-d20"></i> {{localize "DCC.Roll"}} {{localize "DCC.SpellCheck"}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="familiar grid-col-span-7 box-border">
+        <label for="system.class.familiar" class="box-title">{{localize "DCC.Familiar"}}</label>
+        <textarea id="system.class.familiar" name="system.class.familiar" rows="5" class="data-font"
+                  style="background: none; border: none"
+                  data-dtype="String">{{system.class.familiar}}</textarea>
+      </div>
+      <div class="patron grid-col-span-7 box-border">
+        <label for="system.class.patron" class="box-title">{{localize "DCC.Patron"}}</label>
+        <textarea id="system.class.patron" name="system.class.patron" rows="5" class="data-font"
+                  style="background: none; border: none"
+                  data-dtype="String">{{system.class.patron}}</textarea>
+      </div>
+    </div>
+
+    <div class="grid-col-span-12">
+      <div class="box-border">
+        <div class="box-title">Elf Abilities</div>
+        <div class="p-5">
+          <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
+            <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
+                   title="{{localize 'DCC.HeightenedSensesDescription'}}" data-action="rollSkillCheck">
+              {{localize "DCC.HeightenedSenses"}}
+            </label>
+            <input type="text" id="system.skills.detectSecretDoors.value" name="system.skills.detectSecretDoors.value"
+                   title="{{localize 'DCC.HeightenedSensesDescription'}}"
+                   value="{{system.skills.detectSecretDoors.value}}" data-dtype="String"/>
+          </div>
+          <div class="label-font">
+            {{localize "DCC.Infravision"}}
+          </div>
+          <div class="label-font">
+            {{localize "DCC.IronVulnerability"}}
+          </div>
+          <div class="label-font">
+            {{localize "DCC.ElfLuckMod"}}
+          </div>
+          <div class="label-font">
+            {{localize "DCC.ElfImmunities"}}
+          </div>
+
+          {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+            <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
+          {{/dccPackExists}}
+        </div>
+      </div>
+    </div>
+    <div class="grid-col-span-12 grid-tpl-max corruption mt-8">
+      <div class="grid-col-span-12 box-title">{{localize "DCC.Corruptions"}}</div>
+      {{#if editable}}
+        <prose-mirror
+          name="system.class.corruption"
+          button="true"
+          editable="{{editable}}"
+          toggled="false"
+          value="{{system.class.corruption}}">
+          {{{corruptionHTML}}}
+        </prose-mirror>
+      {{else}}
+        {{{corruptionHTML}}}
+      {{/if}}
+    </div>
+  </div>
+</section>
+

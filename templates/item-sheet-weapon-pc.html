@@ -1,273 +1,260 @@
-<form class="{{cssClass}}" autocomplete="off">
-  <!-- Nav -->
-  <nav class="sheet-tabs tabs" data-group="item">
-    <a data-tab="weapon">{{localize "DCC.Weapon"}}</a>
-    <a data-tab="description">{{localize "DCC.Description"}}</a>
-  </nav>
+<section class="tab {{tabs.weapon.cssClass}}" id="weapon" data-tab="weapon" data-group="sheet">
+  <div class="tab-body grid-align-center">
+    <!-- Name and Notes -->
+    <div class="grid-col-span-6 grid-tpl-max-auto-tight mb-5">
+      <label for="name">{{localize "DCC.Name"}}</label>
+      <input id="name" name="name" value="{{document.name}}" placeholder="Name" autocomplete="off" size="25">
+    </div>
+    <div class="grid-col-span-6 grid-tpl-max-auto-tight mb-5">
+      <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
+      <input id="system.description.summary" name="system.description.summary"
+             value="{{system.description.summary}}" size="25">
+    </div>
 
-  <!-- Body -->
-  <section class="sheet-body">
-    <div class="tab" data-group="item" data-tab="weapon">
-      <div class="tab-body grid-align-center">
-        <!-- Name and Notes -->
-        <div class="grid-col-span-6 grid-tpl-max-auto-tight mb-5">
-          <label for="name">{{localize "DCC.Name"}}</label>
-          <input id="name" name="name" value="{{item.name}}" placeholder="Name" autocomplete="off" size="25">
-        </div>
-        <div class="grid-col-span-6 grid-tpl-max-auto-tight mb-5">
-          <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
-          <input id="system.description.summary" name="system.description.summary"
-                 value="{{system.description.summary}}" size="25">
-        </div>
+    <!-- To Hit -->
+    <div class="box-border grid-col-span-6">
+      <div class="box-title">{{localize "DCC.ToHit"}}</div>
+      <div class="grid-align-center p-5">
+        <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}{{system.toHit}}</div>
 
-        <!-- To Hit -->
-        <div class="dark-border grid-col-span-6">
-          <div class="dark-title">{{localize "DCC.ToHit"}}</div>
-          <div class="grid-align-center p-5">
-            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}{{system.toHit}}</div>
+        <div class="group-separator"></div>
 
-            <div class="group-separator"></div>
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+          <div class="group-heading"> {{localize "DCC.ActionDie"}}</div>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}</div>
 
-            <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
-              <div class="group-heading"> {{localize "DCC.ActionDie"}} </div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}</div>
+          <label class="group-indent {{#if system.config.actionDieOverride}}disabled{{/if}}" for="system.trained">
+            {{localize "DCC.WeaponPropertiesTrained"}}
+          </label>
+          <input type="checkbox" id="system.trained" name="system.trained" data-dtype="Boolean" {{checked system.trained}}
+                 class="{{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 {{#if system.config.actionDieOverride}}disabled{{/if}}
+          />
 
-              <label class="group-indent {{#if system.config.actionDieOverride}}disabled{{/if}}" for="system.trained">
-                {{localize "DCC.WeaponPropertiesTrained"}}
-              </label>
-              <input type="checkbox" id="system.trained" name="system.trained" data-dtype="Boolean" {{checked system.trained}}
-                     class="{{#if system.config.actionDieOverride}}disabled{{/if}}"
-                     {{#if system.config.actionDieOverride}}disabled{{/if}}
-              />
-
-              <label class="group-indent" for="system.config.actionDieOverride" title="{{localize 'DCC.OverrideHint'}}">
-                {{localize "DCC.Override"}}
-              </label>
-              <input name="system.config.actionDieOverride" id="system.config.actionDieOverride"
-                     value="{{system.config.actionDieOverride}}" title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
-            </div>
-
-            <div class="group-separator"></div>
-
-            <div class="grid-tpl-max-auto-tight grid-col-gap-8">
-              <div class="group-heading">{{localize "DCC.AttackBonus"}}</div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attackBonus}}</div>
-
-              <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}"
-                     for="system.attackBonusWeapon" title="{{localize 'DCC.OverrideHint'}}">
-                {{localize "DCC.WeaponBonus"}}
-              </label>
-              <input name="system.attackBonusWeapon" id="system.attackBonusWeapon"
-                     value="{{system.attackBonusWeapon}}" data-dtype="string"
-                     class="{{#if system.config.attackBonusOverride}}disabled{{/if}}"
-                     {{#if system.config.attackBonusOverride}}readonly{{/if}}
-              />
-
-              <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}"
-                     for="system.attackBonusLucky" title="{{localize 'DCC.LuckyBonusHint'}}">
-                {{localize "DCC.LuckyBonus"}}
-              </label>
-              <input name="system.attackBonusLucky" id="system.attackBonusLucky"
-                     value="{{system.attackBonusLucky}}" data-dtype="string"
-                     class="{{#if system.config.attackBonusOverride}}disabled{{/if}}"
-                     {{#if system.config.attackBonusOverride}}readonly{{/if}}
-              />
-
-              <label class="group-indent" for="system.config.attackBonusOverride" title="{{localize 'DCC.OverrideHint'}}">
-                {{localize "DCC.Override"}}
-              </label>
-              <input name="system.config.attackBonusOverride" id="system.config.attackBonusOverride"
-                     value="{{system.config.attackBonusOverride}}" title="{{localize 'DCC.OverrideHint'}}"
-                     data-dtype="string"/>
-            </div>
-          </div>
+          <label class="group-indent" for="system.config.actionDieOverride" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.Override"}}
+          </label>
+          <input name="system.config.actionDieOverride" id="system.config.actionDieOverride"
+                 value="{{system.config.actionDieOverride}}" title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
         </div>
 
-        <!-- Damage -->
-        <div class="dark-border grid-col-span-6">
-          <div class="dark-title">{{localize "DCC.Damage"}}</div>
-          <div class="grid-align-center p-5">
-            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.damage}}</div>
+        <div class="group-separator"></div>
 
-            <div class="group-separator"></div>
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8">
+          <div class="group-heading">{{localize "DCC.AttackBonus"}}</div>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attackBonus}}</div>
 
-            <div class="grid-tpl-max-auto-tight grid-col-gap-8">
-              <label class="group-heading" for="system.damageWeapon" title="{{localize 'DCC.WeaponDamageHint'}}">
-                {{localize "DCC.WeaponDamage"}}
-              </label>
-              <input id="system.damageWeapon" name="system.damageWeapon" value="{{system.damageWeapon}}"
-                     size="4" data-dtype="String"/>
-            </div>
+          <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}"
+                 for="system.attackBonusWeapon" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.WeaponBonus"}}
+          </label>
+          <input name="system.attackBonusWeapon" id="system.attackBonusWeapon"
+                 value="{{system.attackBonusWeapon}}" data-dtype="string"
+                 class="{{#if system.config.attackBonusOverride}}disabled{{/if}}"
+                 {{#if system.config.attackBonusOverride}}readonly{{/if}}
+          />
 
-            <div class="group-separator"></div>
+          <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}"
+                 for="system.attackBonusLucky" title="{{localize 'DCC.LuckyBonusHint'}}">
+            {{localize "DCC.LuckyBonus"}}
+          </label>
+          <input name="system.attackBonusLucky" id="system.attackBonusLucky"
+                 value="{{system.attackBonusLucky}}" data-dtype="string"
+                 class="{{#if system.config.attackBonusOverride}}disabled{{/if}}"
+                 {{#if system.config.attackBonusOverride}}readonly{{/if}}
+          />
 
-            <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
-              <div class="group-heading">{{localize "DCC.DamageBonus"}}</div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.damageBonus}}</div>
-
-              <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}" for="system.damageWeaponBonus"
-                     title="{{localize 'DCC.WeaponDamageBonusHint'}}">{{localize "DCC.WeaponBonus"}}</label>
-              <input id="system.damageWeaponBonus" name="system.damageWeaponBonus"
-                     value="{{system.damageWeaponBonus}}"
-                     class="{{#if system.config.damageOverride}}disabled{{/if}}"
-                     {{#if system.config.damageOverride}}readonly{{/if}}
-                     data-dtype="String"
-              />
-
-              <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}"
-                     for="system.doubleIfMounted">{{localize "DCC.WeaponPropertiesDoubleIfMounted"}}
-              </label>
-              <input type="checkbox" id="system.doubleIfMounted" name="system.doubleIfMounted"
-                     class="{{#if system.config.damageOverride}}disabled{{/if}}"
-                     {{#if system.config.damageOverride}}disabled{{/if}}
-                     data-dtype="Boolean" {{checked system.doubleIfMounted}}
-              />
-
-              <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}" for="system.subdual">{{localize
-                "DCC.SubdualDamage"}}</label>
-              <input type="checkbox" id="system.subdual" name="system.subdual"
-                     class="{{#if system.config.damageOverride}}disabled{{/if}}"
-                     {{#if system.config.damageOverride}}disabled{{/if}}
-                     data-dtype="Boolean" {{checked system.subdual}}/>
-
-              <label class="group-indent" for="system.backstabDamage"
-                     title="{{localize 'DCC.WeaponPropertiesBackstabDamageHint'}}">{{localize "DCC.BackstabDamage"}}</label>
-              <input id="system.backstabDamage" name="system.backstabDamage"
-                     value="{{system.backstabDamage}}"
-                     title="{{localize 'DCC.WeaponPropertiesBackstabDamageHint'}}"
-                     data-dtype="String"/>
-
-              <label for="system.config.damageOverride" title="{{localize 'DCC.OverrideHint'}}">
-                {{localize "DCC.Override"}} {{localize "DCC.Damage"}}
-              </label>
-              <input name="system.config.damageOverride" id="system.config.damageOverride"
-                     value="{{system.config.damageOverride}}" title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
-            </div>
-          </div>
-        </div>
-
-        <!-- Initiative -->
-        <div class="dark-border grid-col-span-6 grid-row-span-2">
-          <div class="dark-title">{{localize "DCC.Initiative"}}</div>
-          <div class="p-5 grid-align-center">
-            <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
-              {{system.initiativeDie}}{{#if system.initiativeBonus}}{{system.initiativeBonus}}{{/if}}
-            </div>
-
-            <div class="group-separator"></div>
-
-            <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
-              <div class="group-heading"> {{localize "DCC.InitiativeDie"}} </div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.initiativeDie}}</div>
-
-              <label class="group-indent {{#if system.config.initiativeDieOverride}}disabled{{/if}}"
-                     for="system.twoHanded">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
-              <input type="checkbox" id="system.twoHanded" name="system.twoHanded"
-                     class="{{#if system.config.initiativeDieOverride}}disabled{{/if}}"
-                     {{#if system.config.initiativeDieOverride}}disabled{{/if}}
-                     data-dtype="Boolean" {{checked system.twoHanded}}
-              />
-
-              <label class="group-indent" for="system.config.initiativeDieOverride" title="{{localize 'DCC.OverrideHint'}}">
-                {{localize "DCC.Override"}}
-              </label>
-              <input name="system.config.initiativeDieOverride" id="system.config.initiativeDieOverride"
-                     value="{{system.config.initiativeDieOverride}}"
-                     title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"
-              />
-            </div>
-
-            <div class="group-separator"></div>
-
-            <div class="grid-tpl-max-auto-tight grid-col-gap-8">
-              <div class="group-heading">{{localize "DCC.InitiativeBonus"}}</div>
-              <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.initiativeBonus}}</div>
-
-              <label class="group-indent {{#if system.config.initiativeBonusOverride}}disabled{{/if}}"
-                     for="system.initiativeWeaponBonus" title="{{localize 'DCC.OverrideHint'}}">
-                {{localize "DCC.WeaponBonus"}}
-              </label>
-              <input name="system.initiativeWeaponBonus" id="system.initiativeWeaponBonus"
-                     value="{{system.initiativeWeaponBonus}}" data-dtype="string"
-                     class="{{#if system.config.initiativeBonusOverride}}disabled{{/if}}"
-                     {{#if system.config.initiativeBonusOverride}}readonly{{/if}}
-              />
-
-              <label class="group-indent" for="system.config.initiativeBonusOverride" title="{{localize 'DCC.OverrideHint'}}">
-                {{localize "DCC.Override"}}
-              </label>
-              <input name="system.config.initiativeBonusOverride" id="system.config.initiativeBonusOverride"
-                     value="{{system.config.initiativeBonusOverride}}"
-                     title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
-            </div>
-          </div>
-        </div>
-
-        <!-- Critical Hits -->
-        <div class="dark-border grid-col-span-6">
-          <div class="dark-title">{{localize "DCC.Critical"}}</div>
-          <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
-            <div class="value-display grid-col-span-2" title="{{localize 'DCC.DisplayValueHint'}}">
-              {{localize "DCC.Crit"}} {{localize "DCC.on"}} {{system.critRange}}, {{localize "DCC.Roll"}}
-              {{system.critDie}}{{system.lck.mod}} {{localize "DCC.on"}} {{localize "DCC.Table"}} {{system.critTable}}
-            </div>
-
-            <label for="system.config.critRangeOverride">{{localize "DCC.OverrideRange"}}</label>
-            <select class="data-font" name="system.config.critRangeOverride" id="system.config.critRangeOverride">
-              <option value=""></option>
-              {{selectOptions config.critRanges selected=system.config.critRangeOverride}}
-            </select>
-
-            <label for="system.config.critDieOverride">{{localize "DCC.OverrideDie"}}</label>
-            <input id="system.config.critDieOverride" name="system.config.critDieOverride" size="3"
-                   value="{{system.config.critDieOverride}}" data-dtype="String"/>
-
-            <label for="system.config.critTableOverride">{{localize "DCC.OverrideTable"}}</label>
-            <input id="system.config.critTableOverride" name="system.config.critTableOverride" size="3"
-                   value="{{system.config.critTableOverride}}" data-dtype="String"/>
-          </div>
-        </div>
-
-        <!-- Attack Distance -->
-        <div class="dark-border grid-col-span-6 grid-align-center">
-          <div class="dark-title">{{localize "DCC.AttackDistance"}}</div>
-          <div class="p-5 grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
-            <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
-              <input type="checkbox" id="system.melee" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
-              <label for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
-            </div>
-
-            <div class="grid-tpl-max-auto-tight  grid-col-gap-8  grid-align-center {{#if system.melee}}disabled{{/if}}">
-              <label for="system.range" title="{{localize 'DCC.WeaponPropertiesRangeTooltip'}}">
-                {{localize "DCC.WeaponPropertiesRange"}}</label>
-              <input id="system.range" name="system.range" value="{{system.range}}" size="10"
-                     title="{{localize 'DCC.WeaponPropertiesRangeTooltip'}}"
-                     placeholder="" data-dtype="String" {{#if system.melee}}readonly{{/if}}/>
-            </div>
-          </div>
-        </div>
-
-
-        {{> systems/dcc/templates/item-sheet-partial-values.html }}
-
-        <div class="dark-border grid-col-span-10" title="{{localize 'DCC.DescriptionTooltip'}}">
-          <div class="dark-title">{{localize "DCC.DescriptionPreview"}}</div>
-          <div class="p-5 grid-align-center">
-            <div class="description">
-              {{{descriptionHTML}}}
-            </div>
-          </div>
-        </div>
-
-        <div class="dark-border grid-col-span-2" style="max-height: 81px;">
-          <div class="dark-title">{{localize "DCC.Image"}}</div>
-          <div class="p-5 grid-align-just-center">
-            <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="48px" width="48px"/>
-          </div>
+          <label class="group-indent" for="system.config.attackBonusOverride" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.Override"}}
+          </label>
+          <input name="system.config.attackBonusOverride" id="system.config.attackBonusOverride"
+                 value="{{system.config.attackBonusOverride}}" title="{{localize 'DCC.OverrideHint'}}"
+                 data-dtype="string"/>
         </div>
       </div>
     </div>
 
-    {{> systems/dcc/templates/item-sheet-partial-description.html }}
-  </section>
-</form>
+    <!-- Damage -->
+    <div class="box-border grid-col-span-6">
+      <div class="box-title">{{localize "DCC.Damage"}}</div>
+      <div class="grid-align-center p-5">
+        <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.damage}}</div>
+
+        <div class="group-separator"></div>
+
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8">
+          <label class="group-heading" for="system.damageWeapon" title="{{localize 'DCC.WeaponDamageHint'}}">
+            {{localize "DCC.WeaponDamage"}}
+          </label>
+          <input id="system.damageWeapon" name="system.damageWeapon" value="{{system.damageWeapon}}"
+                 size="4" data-dtype="String"/>
+        </div>
+
+        <div class="group-separator"></div>
+
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+          <div class="group-heading">{{localize "DCC.DamageBonus"}}</div>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.damageBonus}}</div>
+
+          <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}" for="system.damageWeaponBonus"
+                 title="{{localize 'DCC.WeaponDamageBonusHint'}}">{{localize "DCC.WeaponBonus"}}</label>
+          <input id="system.damageWeaponBonus" name="system.damageWeaponBonus"
+                 value="{{system.damageWeaponBonus}}"
+                 class="{{#if system.config.damageOverride}}disabled{{/if}}"
+                 {{#if system.config.damageOverride}}readonly{{/if}}
+          data-dtype="String"
+          />
+
+          <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}"
+                 for="system.doubleIfMounted">{{localize "DCC.WeaponPropertiesDoubleIfMounted"}}
+          </label>
+          <input type="checkbox" id="system.doubleIfMounted" name="system.doubleIfMounted"
+                 class="{{#if system.config.damageOverride}}disabled{{/if}}"
+                 {{#if system.config.damageOverride}}disabled{{/if}}
+          data-dtype="Boolean" {{checked system.doubleIfMounted}}
+          />
+
+          <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}" for="system.subdual">{{localize
+            "DCC.SubdualDamage"}}</label>
+          <input type="checkbox" id="system.subdual" name="system.subdual"
+                 class="{{#if system.config.damageOverride}}disabled{{/if}}"
+                 {{#if system.config.damageOverride}}disabled{{/if}}
+          data-dtype="Boolean" {{checked system.subdual}}/>
+
+          <label class="group-indent" for="system.backstabDamage"
+                 title="{{localize 'DCC.WeaponPropertiesBackstabDamageHint'}}">{{localize "DCC.BackstabDamage"}}</label>
+          <input id="system.backstabDamage" name="system.backstabDamage"
+                 value="{{system.backstabDamage}}"
+                 title="{{localize 'DCC.WeaponPropertiesBackstabDamageHint'}}"
+                 data-dtype="String"/>
+
+          <label for="system.config.damageOverride" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.Override"}} {{localize "DCC.Damage"}}
+          </label>
+          <input name="system.config.damageOverride" id="system.config.damageOverride"
+                 value="{{system.config.damageOverride}}" title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Initiative -->
+    <div class="box-border grid-col-span-6 grid-row-span-2">
+      <div class="box-title">{{localize "DCC.Initiative"}}</div>
+      <div class="p-5 grid-align-center">
+        <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
+          {{system.initiativeDie}}{{#if system.initiativeBonus}}{{system.initiativeBonus}}{{/if}}
+        </div>
+
+        <div class="group-separator"></div>
+
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+          <div class="group-heading"> {{localize "DCC.InitiativeDie"}}</div>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.initiativeDie}}</div>
+
+          <label class="group-indent {{#if system.config.initiativeDieOverride}}disabled{{/if}}"
+                 for="system.twoHanded">{{localize "DCC.WeaponPropertiesTwoHanded"}}</label>
+          <input type="checkbox" id="system.twoHanded" name="system.twoHanded"
+                 class="{{#if system.config.initiativeDieOverride}}disabled{{/if}}"
+                 {{#if system.config.initiativeDieOverride}}disabled{{/if}}
+          data-dtype="Boolean" {{checked system.twoHanded}}
+          />
+
+          <label class="group-indent" for="system.config.initiativeDieOverride" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.Override"}}
+          </label>
+          <input name="system.config.initiativeDieOverride" id="system.config.initiativeDieOverride"
+                 value="{{system.config.initiativeDieOverride}}"
+                 title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"
+          />
+        </div>
+
+        <div class="group-separator"></div>
+
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8">
+          <div class="group-heading">{{localize "DCC.InitiativeBonus"}}</div>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.initiativeBonus}}</div>
+
+          <label class="group-indent {{#if system.config.initiativeBonusOverride}}disabled{{/if}}"
+                 for="system.initiativeWeaponBonus" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.WeaponBonus"}}
+          </label>
+          <input name="system.initiativeWeaponBonus" id="system.initiativeWeaponBonus"
+                 value="{{system.initiativeWeaponBonus}}" data-dtype="string"
+                 class="{{#if system.config.initiativeBonusOverride}}disabled{{/if}}"
+                 {{#if system.config.initiativeBonusOverride}}readonly{{/if}}
+          />
+
+          <label class="group-indent" for="system.config.initiativeBonusOverride" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.Override"}}
+          </label>
+          <input name="system.config.initiativeBonusOverride" id="system.config.initiativeBonusOverride"
+                 value="{{system.config.initiativeBonusOverride}}"
+                 title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Critical Hits -->
+    <div class="box-border grid-col-span-6">
+      <div class="box-title">{{localize "DCC.Critical"}}</div>
+      <div class="p-5 grid-tpl-max-auto grid-col-gap-8 grid-align-center">
+        <div class="value-display grid-col-span-2" title="{{localize 'DCC.DisplayValueHint'}}">
+          {{localize "DCC.Crit"}} {{localize "DCC.on"}} {{system.critRange}}, {{localize "DCC.Roll"}}
+          {{system.critDie}}{{system.lck.mod}} {{localize "DCC.on"}} {{localize "DCC.Table"}} {{system.critTable}}
+        </div>
+
+        <label for="system.config.critRangeOverride">{{localize "DCC.OverrideRange"}}</label>
+        <select class="data-font" name="system.config.critRangeOverride" id="system.config.critRangeOverride">
+          <option value=""></option>
+          {{selectOptions config.critRanges selected=system.config.critRangeOverride}}
+        </select>
+
+        <label for="system.config.critDieOverride">{{localize "DCC.OverrideDie"}}</label>
+        <input id="system.config.critDieOverride" name="system.config.critDieOverride" size="3"
+               value="{{system.config.critDieOverride}}" data-dtype="String"/>
+
+        <label for="system.config.critTableOverride">{{localize "DCC.OverrideTable"}}</label>
+        <input id="system.config.critTableOverride" name="system.config.critTableOverride" size="3"
+               value="{{system.config.critTableOverride}}" data-dtype="String"/>
+      </div>
+    </div>
+
+    <!-- Attack Distance -->
+    <div class="box-border grid-col-span-6 grid-align-center">
+      <div class="box-title">{{localize "DCC.AttackDistance"}}</div>
+      <div class="p-5 grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+          <label for="system.melee">{{localize "DCC.WeaponPropertiesMelee"}}</label>
+          <input type="checkbox" id="system.melee" name="system.melee" data-dtype="Boolean" {{checked system.melee}}/>
+        </div>
+
+        <div class="grid-tpl-max-auto-tight  grid-col-gap-8  grid-align-center {{#if system.melee}}disabled{{/if}}">
+          <label for="system.range" title="{{localize 'DCC.WeaponPropertiesRangeTooltip'}}">
+            {{localize "DCC.WeaponPropertiesRange"}}</label>
+          <input id="system.range" name="system.range" value="{{system.range}}" size="10"
+                 title="{{localize 'DCC.WeaponPropertiesRangeTooltip'}}"
+                 placeholder="" data-dtype="String" {{#if system.melee}}readonly{{/if}}/>
+        </div>
+      </div>
+    </div>
+
+
+    {{> systems/dcc/templates/item-sheet-partial-values.html }}
+
+    <div class="box-border grid-col-span-10" title="{{localize 'DCC.DescriptionTooltip'}}">
+      <div class="box-title">{{localize "DCC.DescriptionPreview"}}</div>
+      <div class="p-5 grid-align-center">
+        <div class="description">
+          {{{descriptionHTML}}}
+        </div>
+      </div>
+    </div>
+
+    <div class="box-border grid-col-span-2" style="max-height: 81px;">
+      <div class="box-title">{{localize "DCC.Image"}}</div>
+      <div class="p-5 grid-align-just-center">
+        <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}" alt="{{document.name}}" height="48px" width="48px"/>
+      </div>
+    </div>
+  </div>
+</section>

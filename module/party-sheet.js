@@ -1,26 +1,78 @@
-/* global $, CONFIG, Dialog, game, foundry, TextEditor */
+/* global game, foundry */
 
 import DCCActorSheet from './actor-sheet.js'
-import EntityImages from './entity-images.js'
+
+const { TextEditor } = foundry.applications.ux
 
 /**
  * Extend the basic ActorSheet to represent a party
  * @extends {DCCActorSheet}
  */
 class DCCPartySheet extends DCCActorSheet {
-  /** @override */
-  static get defaultOptions () {
-    const options = {
-      classes: ['dcc', 'sheet', 'actor', 'party'],
-      height: 635,
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
-      dragDrop: [{ dragSelector: null, dropSelector: null }],
-      scrollY: [
-        '.tab.party'
-      ],
-      template: 'systems/dcc/templates/actor-sheet-party.html'
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'actor', 'party'],
+    tag: 'form',
+    position: {
+      width: 800,
+      height: 635
+    },
+    window: {
+      resizable: true
+    },
+    form: {
+      submitOnChange: true
+    },
+    actor: {
+      type: 'Party'
+    },
+    actions: {
+      editMember: this.#editMember,
+      removeMember: this.#removeMember,
+      rollAbility: this.#rollAbility,
+      rollSave: this.#rollSave,
+      rollAttack: this.#rollAttack,
+      editImage: this.#editImage
+    },
+    dragDrop: [{
+      dragSelector: '[data-drag="true"]',
+      dropSelector: '.party',
+      permissions: {
+        dragstart: '_canDragStart',
+        drop: '_canDragDrop'
+      },
+      callbacks: {
+        dragstart: '_onDragStart',
+        drop: '_onDrop'
+      }
+    }]
+  }
+
+  /** @inheritDoc */
+  static PARTS = {
+    tabs: {
+      id: 'tabs',
+      template: 'systems/dcc/templates/party-sheet-partial-tabs.html'
+    },
+    party: {
+      id: 'party',
+      template: 'systems/dcc/templates/party-sheet-partial-party.html'
+    },
+    notes: {
+      id: 'notes',
+      template: 'systems/dcc/templates/actor-partial-pc-notes.html'
     }
-    return foundry.utils.mergeObject(super.defaultOptions, options)
+  }
+
+  /** @inheritDoc */
+  static TABS = {
+    sheet: {
+      tabs: [
+        { id: 'party', group: 'sheet', label: 'DCC.Party' },
+        { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
+      ],
+      initial: 'party'
+    }
   }
 
   /** @inheritdoc */
@@ -33,69 +85,47 @@ class DCCPartySheet extends DCCActorSheet {
 
   /* -------------------------------------------- */
 
-  /** @override */
-  async getData (options) {
-    // Basic data
-    const isOwner = this.document.isOwner
-    const data = {
-      isOwner,
-      limited: this.document.limited,
-      options: this.options,
-      editable: this.isEditable,
-      cssClass: isOwner ? 'editable' : 'locked',
-      type: this.document.type,
-      config: CONFIG.DCC
-    }
+  /** @inheritDoc */
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
 
-    data.actor = foundry.utils.duplicate(this.document)
-    data.actor.name = this.document.name
-    data.system = foundry.utils.duplicate(this.document.system)
-    data.labels = this.document.labels || {}
-    data.filters = this._filters
-
-    if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-      data.actor.img = EntityImages.imageForActor(data.type)
-      if (!data.actor.prototypeToken.texture.src || data.actor.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
-        data.actor.prototypeToken.texture.src = EntityImages.imageForActor(data.type)
-      }
-    }
-
-    // Prepare item lists by type
-    this._prepareParty(data)
+    // Prepare party-specific data
+    this.#preparePartyMembers(context)
 
     // Format Notes HTML
-    data.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
-      relativeTo: this.actor,
-      secrets: this.actor.isOwner
+    context.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
+      relativeTo: this.document,
+      secrets: this.document.isOwner
     })
 
-    return data
+    return context
   }
 
   /**
    * Organize and classify the actors in the party
    *
-   * @param {Object} actorData   The party Actor data
+   * @param {Object} context   The context data
    * @return {undefined}
+   * @private
    */
-  _prepareParty (actorData) {
-    actorData.partyMembers = []
+  #preparePartyMembers (context) {
+    context.partyMembers = []
     for (const member of this.members) {
       const actor = game.actors.get(member.id)
 
-      const melee = []
-      const ranged = []
-      for (const i of actor.items) {
-        if (i.type === 'weapon') {
-          if (i.system.melee) {
-            melee.push(i)
-          } else {
-            ranged.push(i)
+      if (actor) {
+        const melee = []
+        const ranged = []
+        for (const i of actor.items) {
+          if (i.type === 'weapon') {
+            if (i.system.melee) {
+              melee.push(i)
+            } else {
+              ranged.push(i)
+            }
           }
         }
-      }
 
-      if (actor) {
         const memberData = foundry.utils.mergeObject(
           foundry.utils.duplicate(member),
           {
@@ -118,7 +148,7 @@ class DCCPartySheet extends DCCActorSheet {
         memberData.hasMelee = !!memberData.hasMelee
         memberData.hasRanged = !!memberData.hasRanged
 
-        actorData.partyMembers.push(memberData)
+        context.partyMembers.push(memberData)
       }
     }
   }
@@ -140,7 +170,6 @@ class DCCPartySheet extends DCCActorSheet {
    * Setter for the members of the party
    *
    * @param members {Array} List of party members
-   * @return {Array}
    */
   set members (members) {
     if (members instanceof Array) {
@@ -158,7 +187,7 @@ class DCCPartySheet extends DCCActorSheet {
   }
 
   /**
-   * Check a member is elegible to join the party
+   * Check a member is eligible to join the party
    *
    * @param {string} actorId   Uuid of the actor to add
    * @return {undefined}
@@ -231,133 +260,241 @@ class DCCPartySheet extends DCCActorSheet {
     this.render(false)
   }
 
-  /**
-   * Open the sheet for a member from the party
-   *
-   * @param {string} actorId   Id of the actor to edit
-   * @return {undefined}
-   */
-  _editMember (actorId) {
-    const actor = game.actors.get(actorId)
-    if (actor) {
-      actor.sheet.render(true)
-    }
-  }
-
   /* -------------------------------------------- */
 
-  /** Prompt to remove a member
-   * @param {Event}  event   The originating click event
+  /**
+   * Open the party member's sheet for editing
+   * @this {DCCPartySheet}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
    * @private
    */
-  _onRemoveMember (event) {
+  static async #editMember (event, target) {
     event.preventDefault()
-    const actorId = event.currentTarget.parentElement.dataset.actorId
-    const removeMember = function (context) {
-      context._removeMember(actorId)
-      $(event.currentTarget).parents('.item').slideUp(200, () => context.render(false))
-    }
-    if (game.settings.get('dcc', 'promptForItemDeletion')) {
-      new Dialog({
-        title: game.i18n.localize('DCC.PartyDeletePrompt'),
-        content: `<p>${game.i18n.localize('DCC.PartyDeleteExplain')}</p>`,
-        buttons: {
-          yes: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.Yes'),
-            callback: () => removeMember(this)
-          },
-          no: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.No')
-          }
-        }
-      }).render(true)
-    } else {
-      removeMember(this)
-    }
-  }
-
-  _onRollAbility (event) {
-    event.preventDefault()
-    const actorId = event.currentTarget.parentElement.dataset.actorId
-    const abilityId = event.currentTarget.dataset.ability
-    const options = this._fillRollOptions(event)
-    const actor = game.actors.get(actorId)
-    if (actor) {
-      actor.rollAbilityCheck(abilityId, options)
-    }
-  }
-
-  _onRollSave (event) {
-    event.preventDefault()
-    const actorId = event.currentTarget.parentElement.dataset.actorId
-    const saveId = event.currentTarget.dataset.save
-    const options = this._fillRollOptions(event)
-    const actor = game.actors.get(actorId)
-    if (actor) {
-      actor.rollSavingThrow(saveId, options)
-    }
-  }
-
-  _onRollAttack (event) {
-    event.preventDefault()
-    const actorId = event.currentTarget.parentElement.dataset.actorId
-    const weaponId = event.currentTarget.nextElementSibling.value
-    const options = this._fillRollOptions(event)
-    const actor = game.actors.get(actorId)
-    if (actor) {
-      actor.rollWeaponAttack(weaponId, options)
+    const actorId = target.closest('[data-actor-id]')?.dataset.actorId
+    if (actorId) {
+      const actor = game.actors.get(actorId)
+      if (actor) {
+        actor.sheet.render(true)
+      }
     }
   }
 
   /**
-   * Delete an item
-   * @param {Event}  event   The originating click event
+   * Prompt to remove a member
+   * @this {DCCPartySheet}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
    * @private
    */
-  _deleteItem (event) {
-    const li = $(event.currentTarget).parents('.item')
-    this.actor.deleteOwnedItem(li.data('itemId'))
-    li.slideUp(200, () => this.render(false))
+  static async #removeMember (event, target) {
+    event.preventDefault()
+    const actorId = target.closest('[data-actor-id]')?.dataset.actorId
+    if (!actorId) return
+
+    const removeMemberFn = (context) => {
+      context._removeMember(actorId)
+      const item = target.closest('.character-row')
+      if (item) {
+        item.style.transition = 'height 0.2s ease-out'
+        item.style.height = '0px'
+        item.style.overflow = 'hidden'
+        setTimeout(() => {
+          item.remove()
+          context.render(false)
+        }, 200)
+      }
+    }
+
+    if (game.settings.get('dcc', 'promptForItemDeletion')) {
+      await foundry.applications.api.DialogV2.confirm({
+        window: { title: 'DCC.PartyDeletePrompt' },
+        content: `<p>${game.i18n.localize('DCC.PartyDeleteExplain')}</p>`,
+        yes: {
+          icon: 'fas fa-check',
+          label: game.i18n.localize('DCC.Yes'),
+          callback: () => removeMemberFn(this)
+        },
+        no: {
+          icon: 'fas fa-times',
+          label: game.i18n.localize('DCC.No')
+        }
+      })
+    } else {
+      removeMemberFn(this)
+    }
+  }
+
+  /**
+   * Roll an ability check for a party member
+   * @this {DCCPartySheet}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   * @private
+   */
+  static async #rollAbility (event, target) {
+    event.preventDefault()
+    const actorId = target.closest('[data-actor-id]')?.dataset.actorId
+    const abilityId = target.dataset.ability
+    if (actorId && abilityId) {
+      const options = DCCActorSheet.fillRollOptions?.(event) || {}
+      const actor = game.actors.get(actorId)
+      if (actor) {
+        actor.rollAbilityCheck(abilityId, options)
+      }
+    }
+  }
+
+  /**
+   * Roll a saving throw for a party member
+   * @this {DCCPartySheet}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   * @private
+   */
+  static async #rollSave (event, target) {
+    event.preventDefault()
+    const actorId = target.closest('[data-actor-id]')?.dataset.actorId
+    const saveId = target.dataset.save
+    if (actorId && saveId) {
+      const options = DCCActorSheet.fillRollOptions?.(event) || {}
+      const actor = game.actors.get(actorId)
+      if (actor) {
+        actor.rollSavingThrow(saveId, options)
+      }
+    }
+  }
+
+  /**
+   * Roll an attack for a party member
+   * @this {DCCPartySheet}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   * @private
+   */
+  static async #rollAttack (event, target) {
+    event.preventDefault()
+    const actorId = target.closest('[data-actor-id]')?.dataset.actorId
+    const weaponId = target.nextElementSibling?.value
+    if (actorId && weaponId) {
+      const options = DCCActorSheet.fillRollOptions?.(event) || {}
+      const actor = game.actors.get(actorId)
+      if (actor) {
+        actor.rollWeaponAttack(weaponId, options)
+      }
+    }
+  }
+
+  /**
+   * Handle image editing
+   * @this {DCCPartySheet}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
+   * @private
+   */
+  static async #editImage (event, target) {
+    const field = target.dataset.field || 'img'
+    const current = foundry.utils.getProperty(this.document, field)
+
+    const fp = new foundry.applications.apps.FilePicker({
+      type: 'image',
+      current,
+      callback: (path) => {
+        this.document.update({ [field]: path })
+      }
+    })
+
+    fp.render(true)
+  }
+
+  /**
+   * Check if drag start is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragStart (selector) {
+    return this.document.isOwner && this.isEditable
+  }
+
+  /**
+   * Check if drag/drop is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragDrop (selector) {
+    return this.document.isOwner && this.isEditable
   }
 
   /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
+  _onDragStart (event) {
+    const li = event.currentTarget
 
-    // Everything below here is only needed if the sheet is editable
-    if (!this.options.editable) return
+    // Check if element is draggable
+    if (!li.dataset.drag) return
 
-    // Owner Only Listeners
-    if (this.actor.isOwner) {
-      // Update party member
-      html.find('.party-edit').click(ev => {
-        this._editMember(ev.currentTarget.parentElement.dataset.actorId)
-      })
+    let dragData = null
 
-      // Remove party member
-      html.find('.party-delete').click(ev => {
-        this._onRemoveMember(ev)
-      })
+    // Use data-drag-action for specific drag types
+    const dragAction = li.dataset.dragAction
 
-      // Ability rolls
-      html.find('.ability-label').click(ev => {
-        this._onRollAbility(ev)
-      })
+    // Get actor ID from the element data
+    const actorId = li.closest('[data-actor-id]')?.dataset.actorId || this.actor.id
+    const classes = event.target.classList
 
-      // Saving throws
-      html.find('.save-label').click(ev => {
-        this._onRollSave(ev)
-      })
+    switch (dragAction) {
+      case 'ability': {
+        const abilityId = DCCActorSheet.findDataset(event.currentTarget, 'ability')
+        const labelFor = event.target.getAttribute('for') || ''
+        const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
+        dragData = {
+          type: 'Ability',
+          actorId,
+          data: {
+            abilityId,
+            rollUnder
+          }
+        }
+      }
+        break
 
-      // Melee and ranged attacks
-      html.find('.weapon').click(ev => {
-        this._onRollAttack(ev)
-      })
-    } else {
-      // Otherwise remove rollable classes
-      html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
+      case 'save': {
+        const saveId = DCCActorSheet.findDataset(event.currentTarget, 'save')
+        dragData = {
+          type: 'Save',
+          actorId,
+          data: saveId
+        }
+      }
+        break
+
+      case 'weapon': {
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
+        const actor = game.actors.get(actorId)
+        if (actor) {
+          const weapon = actor.items.get(itemId)
+          if (weapon) {
+            dragData = Object.assign(
+              weapon.toDragData(),
+              {
+                dccType: 'Weapon',
+                actorId,
+                data: weapon,
+                dccData: {
+                  weapon,
+                  backstab: classes.contains('backstab-button')
+                }
+              }
+            )
+          }
+        }
+      }
+        break
+    }
+
+    if (dragData) {
+      const actor = game.actors.get(actorId)
+      if (actor && actor.isToken) dragData.tokenId = actor.token.id
+      event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
     }
   }
 
@@ -375,16 +512,17 @@ class DCCPartySheet extends DCCActorSheet {
   }
 
   /** @override */
-  async _updateObject (event, formData) {
-    const expanded = foundry.utils.expandObject(formData)
+  _processFormData (event, form, formData) {
+    // Extract the raw form data object BEFORE validation strips out items
+    const expanded = foundry.utils.expandObject(formData.object)
 
-    if (event.currentTarget) {
-      const actorId = event.currentTarget.parentElement.dataset.actorId
+    // Handle weapon updates for party members
+    if (expanded.weaponUpdates) {
+      // Store for later processing
+      this._pendingMemberUpdates = {}
 
-      if (expanded.weaponUpdates[actorId]) {
+      for (const [actorId, weaponUpdates] of Object.entries(expanded.weaponUpdates)) {
         const memberUpdates = {}
-
-        const weaponUpdates = expanded.weaponUpdates[actorId]
         if (weaponUpdates.melee) {
           memberUpdates.activeMelee = weaponUpdates.melee
         }
@@ -392,19 +530,30 @@ class DCCPartySheet extends DCCActorSheet {
           memberUpdates.activeRanged = weaponUpdates.ranged
         }
 
+        if (Object.keys(memberUpdates).length > 0) {
+          this._pendingMemberUpdates[actorId] = memberUpdates
+        }
+      }
+    }
+
+    // Call parent with modified formData
+    return super._processFormData(event, form, formData)
+  }
+
+  /** @override */
+  async _processSubmitData (event, form, formData) {
+    // Process the actor data normally
+    const result = await super._processSubmitData(event, form, formData)
+
+    // Now handle any pending member updates
+    if (this._pendingMemberUpdates) {
+      for (const [actorId, memberUpdates] of Object.entries(this._pendingMemberUpdates)) {
         this._updateMember(actorId, memberUpdates)
       }
+      delete this._pendingMemberUpdates // Clean up
     }
 
-    if (expanded.img) {
-      const tokenImg = this.actor.prototypeToken.texture.src
-      if (!tokenImg || tokenImg === 'icons/svg/mystery-man.svg' || tokenImg === 'systems/dcc/styles/images/actor.webp') {
-        foundry.utils.mergeObject(formData, { prototypeToken: { texture: { src: expanded.img } } })
-      }
-    }
-
-    // Update the Actor
-    return this.object.update(formData)
+    return result
   }
 }
 

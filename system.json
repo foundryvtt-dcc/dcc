@@ -2,11 +2,11 @@
   "id": "dcc",
   "title": "Dungeon Crawl Classics",
   "description": "Dungeon Crawl Classics from Goodman Games",
-  "version": "0.52.0",
+  "version": "0.60.0",
   "compatibility": {
-    "maximum": "12",
-    "minimum": "12",
-    "verified": "12"
+    "maximum": "13",
+    "minimum": "13",
+    "verified": "13"
   },
   "authors": [
     {
@@ -28,14 +28,30 @@
   "esmodules": [
     "module/dcc.js"
   ],
- "flags": {
-   "hotReload": {
-     "extensions": ["js", "css", "html", "json"],
-     "paths": ["lang", "templates", "styles"]
-   }
- },
+  "flags": {
+    "hotReload": {
+      "extensions": [
+        "js",
+        "css",
+        "html",
+        "json"
+      ],
+      "paths": [
+        "lang",
+        "templates",
+        "styles"
+      ]
+    }
+  },
   "styles": [
-    "styles/dcc.css"
+    {
+      "src": "styles/variables.css",
+      "layer": "variables"
+    },
+    {
+      "src": "styles/dcc.css",
+      "layer": "system"
+    }
   ],
   "languages": [
     {

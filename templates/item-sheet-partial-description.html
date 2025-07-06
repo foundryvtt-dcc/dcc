@@ -1,12 +1,22 @@
 <!-- Description Tab -->
-<div class="tab" data-group="item" data-tab="description">
+<section class="tab {{tabs.description.cssClass}}" id="description" data-group="sheet" data-tab="description">
   <div class="tab-body">
     <div class="grid-col-span-12">
-      <div class="dark-title">{{localize "DCC.Description"}}</div>
+      <div class="box-title">{{localize "DCC.Description"}}</div>
       <div class="description">
-        {{editor descriptionHTML target="system.description.value" engine="prosemirror" button=true
-                 editable=editable}}
+        {{#if editable}}
+          <prose-mirror
+            name="system.description.value"
+            button="true"
+            editable="{{editable}}"
+            toggled="false"
+            value="{{system.description.value}}">
+            {{{descriptionHTML}}}
+          </prose-mirror>
+        {{else}}
+          {{{descriptionHTML}}}
+        {{/if}}
       </div>
     </div>
   </div>
-</div>
+</section>

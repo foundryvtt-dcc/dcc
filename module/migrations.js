@@ -143,13 +143,19 @@ const migrateActorData = function (actor) {
     })
     if (this.options.template === 'systems/dcc/templates/actor-sheet-npc.html' ||
             this.options.template === 'systems/dcc/templates/actor-sheet-zero-level.html') {
-      this.options.template = 'systems/dcc/templates/actor-sheet-generic.html'
+      this.options.template = 'systems/dcc/templates/actor-partial-generic.html'
     }
   }
 
   if (actor.system.details.luckyRoll) {
     updateData.update({
       'system.details.birthAugur': actor.system.details.luckyRoll
+    })
+  }
+
+  if (!actor.system?.details?.alignment) {
+    updateData.update({
+      'system.details.alignment': 'l'
     })
   }
 

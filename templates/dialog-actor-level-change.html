@@ -1,16 +1,38 @@
-<form class="actor level-change-dialog" autocomplete="off">
+<section class="actor level-change-dialog">
   <div class="grid-tpl-two grid-row-gap-8 grid-col-gap-8">
-    <div class="grid-col-span-2">
-      <h3>Change Character Level</h3>
+    <div class="grid-col-span-2 data-font">
       <p>Do you want to increase or decrease your level?</p>
-      <div class="grid-just-center"><div><i class="fa-thin fa-up level-increase"></i> <span id="system.details.level.value">{{system.details.level.value}}</span> <i class="fa-thin fa-down level-decrease"></i></div></div>
+      <div class="grid-just-center">
+        <div>
+          <i class="fa-thin fa-up" data-action="increaseLevel"></i> 
+          <span>{{currentLevel}}</span> 
+          <i class="fa-thin fa-down" data-action="decreaseLevel"></i>
+        </div>
+      </div>
     </div>
-    <div id="levelDataDisplay" class="grid-col-span-2"></div>
-    <div id="hitPoints" class="grid-col-span-2"></div>
-    <footer class="grid-col-span-2">
+    
+    <div class="grid-col-span-2">
+      {{#if levelDataEntries}}
+        <h3>{{levelDataHeader}}</h3>
+        {{#each levelDataEntries}}
+          <div>{{label}} = {{value}}</div>
+        {{/each}}
+      {{else if levelDataNotFound}}
+        {{levelDataNotFound}}
+      {{/if}}
+    </div>
+    
+    <div class="grid-col-span-2">
+      {{#if hitPointsExpression}}
+        <h3>{{hitPointsHeader}}</h3>
+        Hit Points = {{hitPointsExpression}}
+      {{/if}}
+    </div>
+    
+    <footer class="grid-col-span-2 grid-align-just-center">
       <button type="submit">
         <i class="fas fa-user"></i>{{localize 'DCC.ApplyLevelChanges'}}
       </button>
     </footer>
   </div>
-</form>
+</section>

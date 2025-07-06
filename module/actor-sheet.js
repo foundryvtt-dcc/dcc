@@ -1,154 +1,271 @@
-/* global ActorSheet, CONFIG, Dialog, TextEditor, game, foundry, CONST */
-// noinspection JSClosureCompilerSyntax
+/* global CONFIG, game, foundry */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
 import EntityImages from './entity-images.js'
 
+const { HandlebarsApplicationMixin } = foundry.applications.api
+// eslint-disable-next-line no-unused-vars
+const { TextEditor, DragDrop } = foundry.applications.ux
+const { ActorSheetV2 } = foundry.applications.sheets
+// eslint-disable-next-line no-unused-vars
+const { ApplicationTabsConfiguration } = foundry.applications.types
+
 /**
  * Extend the basic ActorSheet
- * @extends {ActorSheet}
  */
-class DCCActorSheet extends ActorSheet {
-  static height = 450
+class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+  #dragDrop // Private field to hold dragDrop handlers
 
-  /** @override */
-  static get defaultOptions () {
-    const options = {
-      classes: ['dcc', 'sheet', 'actor', 'npc'],
-      width: 520,
-      height: this.height,
-      tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'description' }],
-      dragDrop: [{ dragSelector: null, dropSelector: null }],
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'actor'],
+    tag: 'form',
+    position: {
+      width: 555,
+      height: 450
+    },
+    actions: {
+      applyDisapproval: this.#applyDisapproval,
+      configureActor: this.#configureActor,
+      configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
+      configureSavingThrows: this.#configureSavingThrows,
+      decreaseQty: this.#decreaseQty,
+      editImage: this.#editImage,
+      increaseQty: this.#increaseQty,
+      itemCreate: this.#itemCreate,
+      itemEdit: this.#itemEdit,
+      itemDelete: this.#itemDelete,
+      levelChange: this.#levelChange,
+      rollAbilityCheck: this.#rollAbilityCheck,
+      rollCritDie: this.#rollCritDie,
+      rollDisapproval: this.#rollDisapproval,
+      rollHitDice: this.#rollHitDice,
+      rollInitiative: this.#rollInitiative,
+      rollLuckDie: this.#rollLuckDie,
+      rollSavingThrow: this.#rollSavingThrow,
+      rollSkillCheck: this.#rollSkillCheck,
+      rollSpellCheck: this.#rollSpellCheck,
+      rollWeaponAttack: this.#rollWeaponAttack
+    },
+    form: {
+      // handler: DCCActorSheet.#onSubmitForm,
+      submitOnChange: true
+    },
+    actor: {
+      type: 'Player'
+    },
+    dragDrop: [{
+      dragSelector: '[data-drag="true"]',
+      dropSelector: '.dcc.actor'
+    }],
+    window: {
       resizable: true,
-      scrollY: [
-        '.tab.character',
-        '.tab.equipment .equipment-container',
-        '.tab.skills',
-        '.tab.spells'
-      ],
-      template: 'systems/dcc/templates/actor-sheet-npc.html'
-    }
-    return foundry.utils.mergeObject(super.defaultOptions, options)
-  }
-
-  /** @inheritdoc */
-  _getHeaderButtons () {
-    const buttons = super._getHeaderButtons()
-
-    // Header buttons shown only with Owner permission
-    if (this.actor.permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
-      buttons.unshift(
+      controls: [
         {
-          label: 'DCC.ConfigureSheet',
-          class: 'configure-actor',
+          action: 'configureActor',
           icon: 'fas fa-code',
-          onclick: ev => this._onConfigureActor(ev),
-          tooltip: 'DCC.ConfigureSheetHint'
+          label: 'DCC.ConfigureSheet',
+          ownership: 'OWNER'
         }
-      )
+      ]
     }
-
-    if (buttons[1]) {
-      buttons[1].tooltip = 'DCC.SheetHint'
-    }
-    if (buttons[2]) {
-      buttons[2].tooltip = 'DCC.TokenHint'
-    }
-
-    return buttons
   }
 
-  /* -------------------------------------------- */
+  /** @inheritDoc */
+  static PARTS = {
+    tabs: {
+      id: 'tabs',
+      template: 'systems/dcc/templates/actor-partial-tabs.html'
+    },
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-npc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-npc-equipment.html'
+    },
+    notes: {
+      id: 'notes',
+      template: 'systems/dcc/templates/actor-partial-pc-notes.html'
+    }
+  }
 
-  /** @override */
-  async getData (options) {
-    // Basic data
-    const isOwner = this.document.isOwner
-    const data = {
-      isOwner,
-      limited: this.document.limited,
-      options: this.options,
-      editable: this.isEditable,
-      cssClass: isOwner ? 'editable' : 'locked',
-      isNPC: this.document.type === 'NPC',
-      isPC: this.document.type === 'Player',
-      isZero: this.document.system.details.level.value === 0,
-      type: this.document.type,
-      config: CONFIG.DCC
+  /**
+   * Define the structure of tabs used by this sheet.
+   * @type {Record<string, ApplicationTabsConfiguration>}
+   */
+  static TABS = {
+    sheet: { // this is the group name
+      tabs:
+        [
+          { id: 'character', group: 'sheet', label: 'DCC.Character' },
+          { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' }
+        ],
+      initial: 'character'
+    }
+  }
+
+  /**
+   * Define the structure of tabs specific to a character class (should be overridden in class specific sheets).
+   * @type {Record<string, ApplicationTabsConfiguration>}
+   */
+  static CLASS_TABS = {}
+
+  /**
+   * Define the structure of tabs to appear after the class tabs (if any). This allows for additional tabs to be added to the end of the tab list.
+   * @type {Record<string, ApplicationTabsConfiguration>}
+   */
+  static END_TABS = {
+    sheet: { // this is the group name
+      tabs:
+        [
+          { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
+        ]
+    }
+  }
+
+  constructor (options = {}) {
+    super(options)
+    this.#dragDrop = this.#createDragDropHandlers()
+  }
+
+  /* @inheritDoc */
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+
+    if (!this.options.classes.includes(' pc') && !this.options.classes.includes(' npc')) {
+      this.options.classes.push(this.options.document.type === 'Player' ? 'pc' : 'npc')
     }
 
-    /** @type {DCCActor} */
-    data.actor = foundry.utils.duplicate(this.document)
-    data.actor.name = this.document.name
+    const preparedItems = await this.#prepareItems()
 
-    data.system = foundry.utils.duplicate(this.document.system)
-    data.labels = this.document.labels || {}
-    data.filters = this._filters
+    foundry.utils.mergeObject(context, {
+      actor: this.options.document,
+      config: CONFIG.DCC,
+      corruptionHTML: await this.#prepareCorruption(),
+      incomplete: {},
+      img: await this.#prepareImage(),
+      isOwner: this.options.document.isOwner,
+      isNPC: this.options.document.type === 'NPC',
+      isPC: this.options.document.type === 'Player',
+      isZero: this.options.document.system.details.level.value === 0,
+      items: this.options.document.items,
+      notesHTML: await this.#prepareNotes(),
+      parts: {},
+      source: this.options.document.toObject(),
+      system: this.options.document.system,
+      ...preparedItems
+    })
 
-    if (!data.actor.img || data.actor.img === 'icons/svg/mystery-man.svg') {
-      data.actor.img = EntityImages.imageForActor(data.type)
-      if (!data.actor.prototypeToken.texture.src || data.actor.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
-        data.actor.prototypeToken.texture.src = EntityImages.imageForActor(data.type)
+    return context
+  }
+
+  /** @inheritDoc */
+  _onRender (context, options) {
+    this.#dragDrop.forEach((d) => d.bind(this.element))
+  }
+
+  /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
+
+    // Add skills part if skills tab is enabled
+    if (this.options.document?.system?.config?.showSkills && !this.constructor.CLASS_PARTS?.skills) {
+      parts.skills = {
+        id: 'skills',
+        template: 'systems/dcc/templates/actor-partial-skills.html'
       }
     }
 
-    // Prepare item lists by type
-    this._prepareItems(data)
-
-    // Format Notes HTML
-    data.notesHTML = await TextEditor.enrichHTML(this.actor.system.details.notes.value, {
-      relativeTo: this.actor,
-      secrets: this.actor.isOwner
-    })
-
-    // Format Corruption HTML if present
-    if (this.actor.system.class?.corruption) {
-      data.corruptionHTML = await TextEditor.enrichHTML(this.actor.system.class.corruption, {
-        relativeTo: this.actor,
-        secrets: this.actor.isOwner
-      })
+    // Add wizard spells part if spells are enabled
+    if (this.options.document?.system?.config?.showSpells && !this.constructor.CLASS_PARTS?.wizardSpells) {
+      parts.wizardSpells = {
+        id: 'wizardSpells',
+        template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
+      }
     }
 
-    return data
+    // Allow subclasses to define additional parts
+    for (const [key, part] of Object.entries(this.constructor.CLASS_PARTS || [])) {
+      if (!part || !part.template) continue
+      parts[key] = part
+    }
+
+    return parts
+  }
+
+  /** @inheritdoc */
+  _getTabsConfig (group) {
+    const tabs = foundry.utils.deepClone(super._getTabsConfig(group))
+
+    // Allow subclasses to define additional tabs (they also need to define CLASS_PARTS)
+    if (this.constructor.CLASS_TABS && this.constructor.CLASS_TABS[group]?.tabs) {
+      for (const tab of this.constructor.CLASS_TABS[group].tabs) {
+        tabs.tabs.push(tab)
+      }
+    }
+
+    // Add in optional tabs
+    if (this.options.document?.system?.config?.showSkills && !tabs.skills) {
+      tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills' })
+    }
+    if (this.options.document?.system?.config?.showSpells && !tabs.wizardSpells) {
+      tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' })
+    }
+
+    // Add end tabs (e.g. notes)
+    if (this.constructor.END_TABS && this.constructor.END_TABS[group].tabs) {
+      for (const tab of this.constructor.END_TABS[group].tabs) {
+        tabs.tabs.push(tab)
+      }
+    }
+
+    // Validate current tab state - prevent reset to initial if current tab is valid
+    const tabIds = tabs.tabs.map(tab => tab.id)
+    const validInitial = tabIds.includes(tabs.initial) ? tabs.initial : tabIds[0]
+
+    if (!this.tabGroups[group] || !tabIds.includes(this.tabGroups[group])) {
+      this.tabGroups[group] = validInitial
+    }
+
+    return tabs
   }
 
   /**
    * Organize and classify Items for Character sheets.
    *
    * @return {undefined}
-   * @param sheetData
    */
-  async _prepareItems (sheetData) {
-    const actorData = sheetData.actor
-
+  async #prepareItems () {
     // Initialize containers.
-    const equipment = []
-    const weapons = {
-      melee: [],
-      ranged: []
-    }
-    const armor = []
     const ammunition = []
+    const armor = []
+    const coins = []
+    const equipment = []
     const mounts = []
     const spells = {}
     const skills = []
     const treasure = []
-    const coins = []
+    const weapons = {
+      melee: [],
+      ranged: []
+    }
 
-    let inventory = this.actor.items
-    if (sheetData.system.config.sortInventory) {
+    let inventory = this.options.document.items
+    if (this.options.document.system.config.sortInventory) {
       // Shallow copy and lexical sort
       inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
     }
 
     // Iterate through items, allocating to containers
-    const removeEmptyItems = sheetData.system.config.removeEmptyItems
+    const removeEmptyItems = this.options.document.system.config.removeEmptyItems
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
-        this.actor.deleteEmbeddedDocuments('Item', [i._id])
+        await this.actor.deleteEmbeddedDocuments('Item', [i._id])
         continue
       }
 
@@ -188,7 +305,7 @@ class DCCActorSheet extends ActorSheet {
 
         if (i.system.isCoins) {
           // Safe to treat as coins if the item's value is resolved
-          const item = this.actor.items.get(i._id)
+          const item = this.options.document.items.get(i._id)
           if (!item.needsValueRoll()) {
             treatAsCoins = true
           }
@@ -222,248 +339,67 @@ class DCCActorSheet extends ActorSheet {
         needsUpdate = true
       }
       if (needsUpdate) {
-        await this.actor.update({
+        await this.options.document.update({
           'system.currency': funds
         }, { diff: true })
       }
     }
 
-    // Assign and return
-    actorData.equipment = equipment
-    actorData.weapons = weapons
-    actorData.armor = armor
-    actorData.ammunition = ammunition
-    actorData.mounts = mounts
-    actorData.spells = spells
-    actorData.skills = skills
-    actorData.treasure = treasure
+    // Return the inventory object
+    return {
+      'equipment.ammunition': ammunition,
+      'equipment.armor': armor,
+      'equipment.equipment': equipment,
+      'equipment.mounts': mounts,
+      'equipment.treasure': treasure,
+      'equipment.weapons': weapons,
+      skills,
+      spells
+    }
   }
 
   /* -------------------------------------------- */
 
-  /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
+  /**
+   * Prepare enriched notes HTML for the actor.
+   * @returns {notes: string}
+   */
+  async #prepareNotes () {
+    const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
+    return await TextEditor.enrichHTML(this.actor.system.details.notes.value, context)
+  }
 
-    // Everything below here is only needed if the sheet is editable
-    if (!this.options.editable) return
-
-    // Drag event handler
-    const dragHandler = ev => this._onDragStart(ev)
-
-    // Helper function to make things draggable
-    const makeDraggable = function (index, element) {
-      // Add draggable attribute and dragstart listener.
-      element.setAttribute('draggable', true)
-      element.addEventListener('dragstart', dragHandler, false)
+  /**
+   * Prepare enriched corruption HTML for the actor.
+   * @returns {corruption: string}
+   */
+  async #prepareCorruption () {
+    if (this.actor.system.class) {
+      const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
+      const corruption = this.actor.system.class.corruption || ''
+      return await TextEditor.enrichHTML(corruption, context)
     }
+    return ''
+  }
 
-    // Owner Only Listeners
-    if (this.actor.isOwner) {
-      // Ability Checks
-      html.find('.ability-box label[for*=".value"]').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-box label[for="system.abilities.lck.mod"]').click(this._onRollAbilityCheck.bind(this))
-      html.find('.ability-box label[for*=".value"]').each(makeDraggable)
-      html.find('[data-ability="lck"] label[data-modifier="true"]').each(makeDraggable)
-
-      // Initiative
-      html.find('label[for="system.attributes.init.value"]').click(this._onRollInitiative.bind(this))
-      html.find('label[for="system.attributes.init.value"]').each(makeDraggable)
-
-      // Hit Dice
-      html.find('label[for="system.attributes.hitDice.value"]').click(this._onRollHitDice.bind(this))
-
-      // Saving Throws
-      html.find('label[for*="system.saves"]').click(this._onRollSavingThrow.bind(this))
-      html.find('label[for*="system.saves"]').each(makeDraggable)
-      if (this.object.system.config.computeSavingThrows && this.object.isPC) {
-        html.find('input[id*="system.saves"]').click(this._onConfigureSavingThrows.bind(this))
+  #prepareImage () {
+    if (!this.options.document.img || this.options.document.img === 'icons/svg/mystery-man.svg') {
+      this.options.document.img = EntityImages.imageForActor(this.options.document.type)
+      this.options.document.update('img', this.options.document.img)
+      if (!this.options.document.prototypeToken.texture.src || this.options.document.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
+        this.options.document.prototypeToken.texture.src = EntityImages.imageForActor(this.options.document.type)
+        this.options.document.update('prototypeToken.texture.src', this.options.document.prototypeToken.texture.src)
       }
-
-      // Skills
-      html.find('.skill-check.rollable').click(this._onRollSkillCheck.bind(this))
-      html.find('label.skill-check').each(makeDraggable)
-
-      // Level Change
-      html.find('label[for*="system.details.level.value"]').click(this._onLevelChange.bind(this))
-
-      // Luck Die
-      html.find('label[for*="system.class.luckDie"]').click(this._onRollLuckDie.bind(this))
-      html.find('label[for*="system.class.luckDie"]').each(makeDraggable)
-
-      // Spell Checks
-      html.find('.spell-check').click(this._onRollSpellCheck.bind(this))
-      html.find('.spell-item-button').click(this._onRollSpellCheck.bind(this))
-      html.find('label.spell-check').each(makeDraggable)
-      html.find('.spell-draggable').each(makeDraggable)
-
-      // Disapproval
-      html.find('label[for="system.class.disapproval"]').click(this._onApplyDisapproval.bind(this))
-      html.find('label[for="system.class.disapprovalTable"]').click(this._onRollDisapproval.bind(this))
-      html.find('label[for="system.class.disapprovalTable"]').each(makeDraggable)
-      html.find('label[for="system.class.disapproval"]').each(makeDraggable)
-
-      // Action Dice
-      html.find('label[for="system.attributes.actionDice.value"]').each(makeDraggable)
-
-      // Crit Die
-      html.find('label[for="system.attributes.critical.die"]').click(this._onRollCritDie.bind(this))
-
-      // Quantity increase / decrease
-      html.find('.qty-decrease').click(this._onDecreaseQty.bind(this))
-      html.find('.qty-increase').click(this._onIncreaseQty.bind(this))
-
-      // Weapons
-      html.find('.weapon-button').click(this._onRollWeaponAttack.bind(this))
-      html.find('.backstab-button').click(this._onRollWeaponAttack.bind(this))
-      html.find('.weapon-draggable').each(makeDraggable)
-
-      // Draggable items, including armor
-      html.find('.item-draggable').each(makeDraggable)
-
-      // Melee/Missile Attack/Damage Bonus Config
-      if (this.object.system.config.computeMeleeAndMissileAttackAndDamage) {
-        html.find('input[id*="system.details.attackHitBonus"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-        html.find('input[id*="system.details.attackDamageBonus"]').click(this._onConfigureMeleeMissileBonus.bind(this))
-        html.find('label[for*="system.details.attackHitBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
-        html.find('label[for*="system.details.attackDamageBonus"]').click(this._onRollMeleeMissileBonus.bind(this))
-      }
-
-      // Party Sheet
-      html.find('.party-draggable').each(makeDraggable)
-
-      // Only for editable sheets
-      if (this.options.editable) {
-        // Add Inventory Item
-        html.find('.item-create').click(this._onItemCreate.bind(this))
-
-        // Update Inventory Item
-        html.find('.item-edit').click(ev => {
-          const itemId = this._findDataset(ev.currentTarget, 'itemId')
-          const item = this.actor.items.get(itemId)
-          item.sheet.render(true)
-        })
-
-        // Delete Inventory Item
-        html.find('.item-delete').click(ev => {
-          this._onDeleteItem(ev)
-        })
-      }
-    } else {
-      // Otherwise remove rollable classes
-      html.find('.rollable').each((i, el) => el.classList.remove('rollable'))
     }
-  }
-
-  /**
-   * Display sheet specific configuration settings
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onConfigureActor (event) {
-    event.preventDefault()
-    new DCCActorConfig(this.actor, {
-      top: this.position.top + 40,
-      left: this.position.left + (this.position.width - 400) / 2
-    }).render(true)
-  }
-
-  /**
-   * Display melee/missile bonus configuration settings
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onConfigureMeleeMissileBonus (event) {
-    event.preventDefault()
-    new MeleeMissileBonusConfig(this.actor, {
-      top: this.position.top + 40,
-      left: this.position.left + (this.position.width - 400) / 2
-    }).render(true)
-  }
-
-  /**
-   * Display saving throw configuration settings
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onConfigureSavingThrows (event) {
-    console.log('configure saving throws')
-    event.preventDefault()
-    new SavingThrowConfig(this.actor, {
-      top: this.position.top + 40,
-      left: this.position.left + (this.position.width - 250) / 2
-    }).render(true)
-  }
-
-  /**
-   * Display melee/missile bonus configuration settings
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onRollMeleeMissileBonus (event) {
-    event.preventDefault()
-    console.log('on melee missile bonus')
-  }
-
-  /** Prompt to delete an item
-   * @param {Event}  event   The originating click event
-   * @private
-   */
-  _onDeleteItem (event) {
-    event.preventDefault()
-    if (game.settings.get('dcc', 'promptForItemDeletion')) {
-      new Dialog({
-        title: game.i18n.localize('DCC.DeleteItem'),
-        content: `<p>${game.i18n.localize('DCC.DeleteItemExplain')}</p>`,
-        buttons: {
-          yes: {
-            icon: '<i class="fas fa-check"></i>',
-            label: game.i18n.localize('DCC.Yes'),
-            callback: () => this._deleteItem(event)
-          },
-          no: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('DCC.No')
-          }
-        }
-      }).render(true)
-    } else {
-      this._deleteItem(event)
-    }
-  }
-
-  _onDecreaseQty (event) {
-    const itemId = this._findDataset(event.currentTarget, 'itemId')
-    const item = this.actor.items.get(itemId)
-    let qty = item.system?.quantity || 0
-    qty -= 1
-    item.update({ 'system.quantity': qty })
-  }
-
-  _onIncreaseQty (event) {
-    const itemId = this._findDataset(event.currentTarget, 'itemId')
-    const item = this.actor?.items.get(itemId)
-    let qty = item.system?.quantity || 0
-    qty += 1
-    item.update({ 'system.quantity': qty })
-  }
-
-  /**
-   * Delete an item
-   * @param {Event}  event   The originating click event
-   * @private
-   */
-  _deleteItem (event) {
-    const itemId = this._findDataset(event.currentTarget, 'itemId')
-    this.actor.deleteEmbeddedDocuments('Item', [itemId])
+    return this.options.document.img
   }
 
   /**
    * Search the object and then its parent elements for a dataset attribute
-   * @param {Object} element    The starting element
-   * @param {String} attribute  The name of the dataset attribute
+   @param {Object} element    The starting element
+   @param {String} attribute  The name of the dataset attribute
    */
-  _findDataset (element, attribute) {
+  static findDataset (element, attribute) {
     while (element && !(attribute in element.dataset)) {
       element = element.parentElement
     }
@@ -474,94 +410,249 @@ class DCCActorSheet extends ActorSheet {
   }
 
   /**
+   * Create an inline item
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<Document[]>}
+   **/
+  static async #itemCreate (event, target) {
+    // Get the type of item to create.
+    const type = target.dataset.type
+    // Grab any data associated with this control.
+    const system = foundry.utils.duplicate(target.dataset)
+    // Initialize a default name.
+    let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
+    if (this.actor.type === 'NPC' && type === 'weapon') {
+      name = game.i18n.localize('DCC.NewAttack')
+    }
+    console.log(target.dataset.type)
+    // Prepare the item object.
+    const itemData = {
+      name,
+      img: EntityImages.imageForItem(type),
+      type,
+      system
+    }
+    // Remove the type from the dataset since it's in the itemData.type prop.
+    delete itemData.system.type
+
+    // Finally, create the item!
+    return this.actor.createEmbeddedDocuments('Item', [itemData])
+  }
+
+  /**
+   * Open the item Delete dialog
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #itemDelete (event, target) {
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
+    const item = this.actor.items.get(itemId)
+    await item.deleteDialog()
+  }
+
+  /**
+   * Open the item edit dialog
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #itemEdit (event, target) {
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
+    const item = this.options.document.items.get(itemId)
+    await item.sheet.render({ force: true })
+  }
+
+  /**
+   * Increase quantity of an item
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #decreaseQty (event, target) {
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
+    const item = this.actor.items?.get(itemId)
+    let qty = item.system?.quantity || 0
+    qty -= 1
+    item.update({ 'system.quantity': qty })
+  }
+
+  /**
+   * Decrease quantity of an item
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #increaseQty (event, target) {
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
+    const item = this.actor?.items?.get(itemId)
+    let qty = item.system?.quantity || 0
+    qty += 1
+    item.update({ 'system.quantity': qty })
+  }
+
+  /**
    * Create a macro when a rollable element is dragged
    * @param {Event} event
    * @override */
   _onDragStart (event) {
+    const li = event.currentTarget
+
+    // Check if element is draggable
+    if (!li.dataset.drag) return
+
     let dragData = null
 
-    // Handle the various draggable elements on the sheet
+    // Use data-drag-action for specific drag types
+    const dragAction = li.dataset.dragAction
+
+    // Get common data
+    const actorId = this.actor.id
     const classes = event.target.classList
-    const labelFor = event.currentTarget.getAttribute('for') || ''
 
-    if (classes.contains('ability-name') || (event.target.tagName === 'LABEL' && labelFor.includes('.value'))) {
-      // Normal ability rolls and DCC d20 roll under luck rolls
-      const rollUnder = (event.currentTarget.htmlFor === 'system.abilities.lck.value')
-      const abilityId = this._findDataset(event.currentTarget, 'ability')
-      dragData = {
-        type: 'Ability',
-        actorId: this.actor.id,
-        data: {
-          abilityId,
-          rollUnder
-        }
-      }
-    }
-
-    if (event.currentTarget.htmlFor === 'system.abilities.lck.mod') {
-      // Force d20 + Mod roll over (for non-standard luck rolls) by dragging the modifier
-      dragData = {
-        type: 'Ability',
-        actorId: this.actor.id,
-        data: {
-          abilityId: 'lck',
-          rollUnder: false
-        }
-      }
-    }
-
-    if (classes.contains('init') || labelFor === 'system.attributes.init.value') {
-      dragData = {
-        type: 'Initiative',
-        actorId: this.actor.id,
-        data: {}
-      }
-    }
-
-    if (classes.contains('hd') || labelFor === 'system.attributes.hd.value') {
-      dragData = {
-        type: 'Hit Dice',
-        actorId: this.actor.id,
-        data: {
-          dice: this.actor.system.attributes.hitDice.value
-        }
-      }
-    }
-
-    if (classes.contains('save') || labelFor.includes('system.saves')) {
-      dragData = {
-        type: 'Save',
-        actorId: this.actor.id,
-        data: this._findDataset(event.currentTarget, 'save')
-      }
-    }
-
-    if (classes.contains('party-draggable')) {
-      const actorId = this._findDataset(event.currentTarget, 'actorId')
-      const partyActor = game.actors.get(actorId)
-      if (partyActor) {
-        if (classes.contains('ability-label')) {
-          // Normal ability rolls and DCC d20 roll under luck rolls
-          const abilityId = this._findDataset(event.currentTarget, 'ability')
-          const rollUnder = (abilityId === 'lck')
-          dragData = {
-            type: 'Ability',
-            actorId,
-            data: {
-              abilityId,
-              rollUnder
-            }
+    switch (dragAction) {
+      case 'ability': {
+        const abilityId = DCCActorSheet.findDataset(event.currentTarget, 'ability')
+        const labelFor = event.target.getAttribute('for') || ''
+        const rollUnder = (labelFor === 'system.abilities.lck.value') || classes.contains('luck-roll-under')
+        dragData = {
+          type: 'Ability',
+          actorId,
+          data: {
+            abilityId,
+            rollUnder
           }
-        } else if (classes.contains('save-label')) {
-          const saveId = this._findDataset(event.currentTarget, 'save')
-          dragData = {
-            type: 'Save',
-            actorId,
-            data: saveId
+        }
+      }
+        break
+
+      case 'initiative':
+        dragData = {
+          type: 'Initiative',
+          actorId,
+          data: {}
+        }
+        break
+
+      case 'hitDice':
+        dragData = {
+          type: 'Hit Dice',
+          actorId,
+          data: {
+            dice: this.actor.system.attributes.hitDice.value
           }
-        } else if (classes.contains('weapon')) {
-          const itemId = this._findDataset(event.currentTarget, 'itemId')
-          const weapon = partyActor.items.get(itemId)
+        }
+        break
+
+      case 'save': {
+        const saveId = DCCActorSheet.findDataset(event.currentTarget, 'save')
+        dragData = {
+          type: 'Save',
+          actorId,
+          data: saveId
+        }
+      }
+        break
+
+      case 'skill': {
+        const skillId = DCCActorSheet.findDataset(event.currentTarget, 'skill')
+        const actorSkill = this.actor.system.skills[skillId]
+        const skillName = actorSkill ? actorSkill.label : skillId
+        dragData = {
+          type: 'Skill',
+          actorId,
+          data: {
+            skillId,
+            skillName
+          }
+        }
+      }
+        break
+
+      case 'luckDie':
+        dragData = {
+          type: 'Luck Die',
+          actorId,
+          data: {
+            die: this.actor.system.class.luckDie
+          }
+        }
+        break
+
+      case 'spellCheck': {
+        const ability = DCCActorSheet.findDataset(event.currentTarget, 'ability')
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
+        const spell = DCCActorSheet.findDataset(event.currentTarget, 'spell')
+
+        const dragDataContent = { ability }
+
+        // If we have an itemId, include spell details for item-based macros
+        if (itemId) {
+          const item = this.actor.items.get(itemId)
+          if (item) {
+            dragDataContent.itemId = itemId
+            dragDataContent.name = item.name
+            dragDataContent.img = item.img
+          }
+        } else if (spell) {
+          // Fallback to spell name from data attribute
+          dragDataContent.name = spell
+        }
+
+        dragData = {
+          type: 'Spell Check',
+          actorId,
+          data: dragDataContent
+        }
+      }
+        break
+
+      case 'attackBonus':
+        dragData = {
+          type: 'Attack Bonus',
+          actorId,
+          data: {
+            die: this.actor.system.details.attackBonus
+          }
+        }
+        break
+
+      case 'actionDice':
+        dragData = {
+          type: 'Action Dice',
+          actorId,
+          data: {
+            die: this.actor.system.attributes.actionDice.value || '1d20'
+          }
+        }
+        break
+
+      case 'disapprovalRange':
+        dragData = {
+          type: 'Apply Disapproval',
+          actorId,
+          data: {}
+        }
+        break
+
+      case 'disapprovalTable':
+        dragData = {
+          type: 'Roll Disapproval',
+          actorId,
+          data: {}
+        }
+        break
+
+      case 'weapon': {
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
+        const weapon = this.actor.items.get(itemId)
+        if (weapon) {
           dragData = Object.assign(
             weapon.toDragData(),
             {
@@ -570,135 +661,33 @@ class DCCActorSheet extends ActorSheet {
               data: weapon,
               dccData: {
                 weapon,
-                backstab: false
+                backstab: classes.contains('backstab-button')
               }
             }
           )
         }
       }
-    }
+        break
 
-    if (classes.contains('skill-check')) {
-      const skillId = this._findDataset(event.currentTarget, 'skill')
-      const actorSkill = this.actor.system.skills[skillId]
-      const skillName = actorSkill ? actorSkill.label : skillId
-      dragData = {
-        type: 'Skill',
-        actorId: this.actor.id,
-        data: {
-          skillId,
-          skillName
-        }
-      }
-    }
+      case 'item': {
+        const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
+        const item = this.actor.items.get(itemId)
+        if (item) {
+          // Use 'DCC Item' for spells to prevent Foundry's default macro creation
+          // Use 'Item' for other items to maintain normal drag/drop functionality
+          const dragType = item.type === 'spell' ? 'DCC Item' : 'Item'
 
-    if (classes.contains('luck-die')) {
-      dragData = {
-        type: 'Luck Die',
-        actorId: this.actor.id,
-        data: {
-          die: this.actor.system.class.luckDie
-        }
-      }
-    }
-
-    if (classes.contains('spell-check')) {
-      dragData = {
-        type: 'Spell Check',
-        actorId: this.actor.id,
-        data: {
-          ability: this._findDataset(event.currentTarget, 'ability')
-        }
-      }
-    }
-
-    if (classes.contains('spell-draggable')) {
-      const spell = this._findDataset(event.currentTarget, 'spell')
-      const spellItem = this.actor.items.find(i => i.name === spell)
-      let img
-      if (spellItem) {
-        img = spellItem.img
-      }
-      dragData = {
-        type: 'Item',
-        dccType: 'Spell Check',
-        actorId: this.actor.id,
-        data: spellItem,
-        dccData: {
-          ability: this._findDataset(event.currentTarget, 'ability'),
-          spell,
-          img
-        }
-      }
-    }
-
-    if (classes.contains('attack-bonus')) {
-      dragData = {
-        type: 'Attack Bonus',
-        actorId: this.actor.id,
-        data: {
-          die: this.actor.system.details.attackBonus
-        }
-      }
-    }
-
-    if (classes.contains('action-dice')) {
-      dragData = {
-        type: 'Action Dice',
-        actorId: this.actor.id,
-        data: {
-          die: this.actor.system.attributes.actionDice.value || '1d20'
-        }
-      }
-    }
-
-    if (classes.contains('weapon-draggable')) {
-      const itemId = this._findDataset(event.currentTarget, 'itemId')
-      const weapon = this.actor.items.get(itemId)
-      dragData = Object.assign(
-        weapon.toDragData(),
-        {
-          dccType: 'Weapon',
-          actorId: this.actor.id,
-          data: weapon,
-          dccData: {
-            weapon,
-            backstab: classes.contains('backstab-button')
+          dragData = {
+            type: dragType,
+            actorId,
+            data: item,
+            system: {
+              item
+            }
           }
         }
-      )
-    }
-
-    if (classes.contains('item-draggable')) {
-      const itemId = this._findDataset(event.currentTarget, 'itemId')
-      const item = this.actor.items.get(itemId)
-      dragData = Object.assign(
-        item.toDragData(),
-        {
-          dccType: 'Item',
-          actorId: this.actor.id,
-          data: item,
-          dccData: {
-            item
-          }
-        }
-      )
-    }
-
-    if (classes.contains('disapproval-range')) {
-      dragData = {
-        type: 'Apply Disapproval',
-        actorId: this.actor.id,
-        data: {}
       }
-    }
-
-    if (classes.contains('disapproval-table')) {
-      dragData = {
-        type: 'Roll Disapproval',
-        actorId: this.actor.id,
-        data: {}
-      }
+        break
     }
 
     if (dragData) {
@@ -707,24 +696,93 @@ class DCCActorSheet extends ActorSheet {
     }
   }
 
-  /* -------------------------------------------- */
+  /**
+   * Display sheet specific configuration settings
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event
+   * @returns {Promise<void>}
+   */
+  static async #configureActor (event) {
+    event.preventDefault()
+    await new DCCActorConfig({
+      document: this.actor,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + (this.position.width - 400) / 2
+      }
+    }).render(true)
+  }
 
   /**
-   * Handle changing Level
-   * @param {Event} event   The originating click event
+   * Display melee/missile bonus configuration settings
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #configureMeleeMissileBonus (event, target) {
+    await new MeleeMissileBonusConfig({
+      document: this.actor,
+      position: {
+        top: this.position.top + 40,
+        left: this.position.left + (this.position.width - 400) / 2
+      }
+    }).render(true)
+  }
+
+  /**
+   * Display saving throw configuration settings
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   **/
+  static async #configureSavingThrows (event, target) {
+    await new SavingThrowConfig({
+      document: this.options.document,
+      top: this.position.top + 40,
+      left: this.position.left + (this.position.width - 250) / 2
+    }).render(true)
+  }
+
+  /**
+   * Handle image editing
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  _onLevelChange (event) {
-    event.preventDefault()
+  static async #editImage (event, target) {
+    const field = target.dataset.field || 'img'
+    const current = foundry.utils.getProperty(this.options.document, field)
+
+    const fp = new foundry.applications.apps.FilePicker({
+      type: 'image',
+      current,
+      callback: (path) => {
+        this.options.document.update({ [field]: path })
+      }
+    })
+
+    fp.render(true)
+  }
+
+  /**
+   * Open level change dialog
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   */
+  static async #levelChange (event, target) {
     this.actor.levelChange()
   }
 
   /**
    * Fill options for a roll based on event
    * @param {Event} event   The originating click event
-   * @private
    */
-  _fillRollOptions (event) {
+  static fillRollOptions (event) {
     const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
     return {
       showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey)
@@ -733,17 +791,18 @@ class DCCActorSheet extends ActorSheet {
 
   /**
    * Handle rolling an Ability check
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollAbilityCheck (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
+  static async #rollAbilityCheck (event, target) {
+    const options = DCCActorSheet.fillRollOptions(event)
 
-    const ability = event.currentTarget.parentElement.dataset.ability
+    const ability = target.parentElement.dataset.ability
 
     // Luck checks are roll under unless the user explicitly clicks the modifier
-    const rollUnder = (ability === 'lck') && (event.currentTarget.htmlFor !== 'system.abilities.lck.mod')
+    const rollUnder = (ability === 'lck') && (target.htmlFor !== 'system.abilities.lck.mod')
 
     Object.assign(options, {
       rollUnder
@@ -754,122 +813,139 @@ class DCCActorSheet extends ActorSheet {
 
   /**
    * Handle rolling Crit Die on its own
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollCritDie (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
+  static async #rollCritDie (event, target) {
+    const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollCritical(options)
   }
 
   /**
    * Handle rolling Hit Dice
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollHitDice (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
+  static async #rollHitDice (event, target) {
+    const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollHitDice(options)
   }
 
   /**
    * Handle rolling Initiative
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  async _onRollInitiative (event) {
-    event.preventDefault()
-    this.actor.rollInit(event)
+  static async #rollInitiative (event, target) {
+    const options = DCCActorSheet.fillRollOptions(event)
+    await this.actor.rollInit(event, options)
   }
 
   /**
    * Handle rolling a saving throw
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollSavingThrow (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
-    const save = event.currentTarget.parentElement.dataset.save
-    this.actor.rollSavingThrow(save, options)
+  static async #rollSavingThrow (event, target) {
+    event.preventDefault() // Stops the Save Config from opening because clicking label elements focus their input
+    const options = DCCActorSheet.fillRollOptions(event)
+    const save = target.parentElement.dataset.save
+    await this.actor.rollSavingThrow(save, options)
   }
 
   /**
    * Handle rolling a skill check
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollSkillCheck (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
-    const skill = event.currentTarget.parentElement.dataset.skill
-    this.actor.rollSkillCheck(skill, options)
-    this.render(false)
+  static async #rollSkillCheck (event, target) {
+    const options = DCCActorSheet.fillRollOptions(event)
+    const skill = target.parentElement.dataset.skill
+    await this.actor.rollSkillCheck(skill, options)
+    // this.render(false)
   }
 
   /**
-   * Handle rolling the luck die
-   * @param {Event} event   The originating click event
-   * @private
+   * Handle rolling the luck die (for Thieves)
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollLuckDie (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
+  static async #rollLuckDie (event, target) {
+    const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollLuckDie(options)
   }
 
   /**
    * Handle rolling a spell check
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onRollSpellCheck (event) {
-    event.preventDefault()
-    const options = this._fillRollOptions(event)
-    const dataset = event.currentTarget.parentElement.dataset
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #rollSpellCheck (event, target) {
+    const options = DCCActorSheet.fillRollOptions(event)
+    const dataset = target.parentElement.dataset
     if (dataset.itemId) {
       // Roll through a spell item
       const item = this.actor.items.find(i => i.id === dataset.itemId)
       const ability = dataset.ability || ''
-      item.rollSpellCheck(ability, options)
+      await item.rollSpellCheck(ability, options)
     } else {
       // Roll a raw spell check for the actor
-      this.actor.rollSpellCheck(options)
+      await this.actor.rollSpellCheck(options)
     }
   }
 
   /**
-   * Handle applying disapproval
-   * @private
-   */
-  _onApplyDisapproval (event) {
+   * Handle increasing disapproval
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #applyDisapproval (event, target) {
     event.preventDefault()
     this.actor.applyDisapproval()
   }
 
   /**
-   * Prompt and roll for disapproval
-   * @private
-   */
-  _onRollDisapproval (event) {
+   * Handle rolling on disapproval table
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #rollDisapproval (event, target) {
     event.preventDefault()
-    const options = this._fillRollOptions(event)
+    const options = DCCActorSheet.fillRollOptions(event)
     this.actor.rollDisapproval(undefined, options)
   }
 
   /**
    * Handle rolling a weapon attack
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
    */
-  _onRollWeaponAttack (event) {
+  static async #rollWeaponAttack (event, target) {
     event.preventDefault()
-    const itemId = this._findDataset(event.currentTarget, 'itemId')
-    const options = this._fillRollOptions(event)
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
+    const options = DCCActorSheet.fillRollOptions(event)
     Object.assign(options, {
-      backstab: event.currentTarget.classList.contains('backstab-button')
+      backstab: target.classList.contains('backstab-button')
     })
     this.actor.rollWeaponAttack(itemId, options)
   }
@@ -908,39 +984,111 @@ class DCCActorSheet extends ActorSheet {
   /* -------------------------------------------- */
 
   /** @override */
-  async _updateObject (event, formData) {
-    // Handle owned item updates separately
-    if (event.currentTarget) {
-      let parentElement = event.currentTarget.parentElement
-      const expanded = foundry.utils.expandObject(formData)
-      if (expanded.itemUpdates) {
-        if (parentElement.classList.contains('weapon') ||
-          parentElement.classList.contains('armor') ||
-          parentElement.classList.contains('spell-item') ||
-          parentElement.classList.contains('skill-field')) {
-          // Handle extra nesting in skill lists
-          if (parentElement.classList.contains('skill-field')) {
-            parentElement = parentElement.parentElement
-          }
-          const itemId = parentElement.dataset.itemId
-          const item = this.actor.items.get(itemId)
-          if (item) {
-            const updateData = expanded.itemUpdates[itemId]
-            await item.update(updateData)
-          }
-        }
-      }
+  _processFormData (event, form, formData) {
+    // Extract the raw form data object BEFORE validation strips out items
+    const expanded = foundry.utils.expandObject(formData.object)
 
-      if (expanded.img) {
-        const tokenImg = this.actor.prototypeToken.texture.src
-        if (!tokenImg || tokenImg === 'icons/svg/mystery-man.svg' || tokenImg === 'systems/dcc/styles/images/actor.webp') {
-          foundry.utils.mergeObject(formData, { prototypeToken: { texture: { src: expanded.img } } })
-        }
-      }
+    // Handle items separately if they exist
+    if (expanded.items) {
+      // Store for later processing
+      this._pendingItemUpdates = Object.entries(expanded.items).map(([id, itemData]) => ({
+        _id: id,
+        ...itemData
+      }))
+
+      // // Remove from the expanded object
+      // delete expanded.items
+      //
+      // // Flatten and replace the existing formData.object properties
+      // const flattened = foundry.utils.flattenObject(expanded)
+      //
+      // // Clear existing object and repopulate (since we can't reassign)
+      // for (const key in formData.object) {
+      //   delete formData.object[key]
+      // }
+      // Object.assign(formData.object, flattened)
     }
 
-    // Update the Actor
-    return this.object.update(formData)
+    // Call parent with modified formData
+    return super._processFormData(event, form, formData)
+  }
+
+  /** @override */
+  async _processSubmitData (event, form, formData) {
+    // Process the actor data normally
+    const result = await super._processSubmitData(event, form, formData)
+
+    // Now handle any pending item updates
+    if (this._pendingItemUpdates?.length > 0) {
+      await this.options.document.updateEmbeddedDocuments('Item', this._pendingItemUpdates)
+      delete this._pendingItemUpdates // Clean up
+    }
+
+    return result
+  }
+
+  /**
+   * Create drag-and-drop workflow handlers for this Application
+   * @returns {DragDrop[]} An array of DragDrop handlers
+   * @private
+   */
+  #createDragDropHandlers () {
+    return this.options.dragDrop.map((d) => {
+      d.permissions = {
+        dragstart: this._canDragStart.bind(this),
+        drop: this._canDragDrop.bind(this)
+      }
+      d.callbacks = {
+        dragstart: this._onDragStart.bind(this),
+        dragover: this._onDragOver.bind(this),
+        drop: this._onDrop.bind(this)
+      }
+      return new DragDrop(d)
+    })
+  }
+
+  /**
+   * Check if drag start is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragStart (selector) {
+    return this.options.document.isOwner && this.isEditable
+  }
+
+  /**
+   * Check if drag/drop is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragDrop (selector) {
+    return this.options.document.isOwner && this.isEditable
+  }
+
+  /**
+   * Handle drag over events
+   * @param {DragEvent} event
+   */
+  _onDragOver (event) {
+    // Optional: handle dragover events if needed
+  }
+
+  /**
+   * Handle drop events
+   * @param {DragEvent} event
+   * @returns {Promise<boolean|void>}
+   */
+  async _onDrop (event) {
+    const data = foundry.applications.ux.TextEditor.getDragEventData(event)
+    if (!data) return false
+
+    // Convert 'DCC Item' back to 'Item' for inventory drops
+    if (data.type === 'DCC Item') {
+      data.type = 'Item'
+    }
+
+    // Handle different drop types - delegate to base class
+    return super._onDrop?.(event)
   }
 }
 

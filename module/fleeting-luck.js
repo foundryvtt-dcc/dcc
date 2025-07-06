@@ -1,26 +1,43 @@
-/* global CONFIG, CONST, FormApplication, game, Hooks, foundry, ui */
+/* global CONFIG, CONST, game, Hooks, foundry, ui */
 
-class FleetingLuckDialog extends FormApplication {
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
+class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
-  static get defaultOptions () {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'fleeting-luck',
-      template: 'systems/dcc/templates/dialog-fleeting-luck.html',
-      height: 'fit-content',
-      width: 400
-    })
+  static DEFAULT_OPTIONS = {
+    id: 'fleeting-luck',
+    classes: ['dcc', 'sheet', 'fleeting-luck', 'themed'],
+    position: {
+      width: 400,
+      height: 'fit-content'
+    },
+    actions: {
+      openUserConfiguration: this.#onOpenUserConfiguration,
+      takeLuck: this.#onTakeLuck,
+      giveLuck: this.#onGiveLuck,
+      clearLuck: this.#onClearLuck,
+      toggleFilter: this.#onToggleFilter,
+      spendLuck: this.#onSpendLuck,
+      clearAllLuck: this.#onClearAllLuck,
+      resetAllLuck: this.#onResetAllLuck
+    },
+    window: {
+      resizable: true,
+      title: 'DCC.FleetingLuck'
+    }
   }
 
-  /** @override */
-  get title () {
-    return game.i18n.localize('DCC.FleetingLuck')
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-fleeting-luck.html'
+    }
   }
 
   /**
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData (options = {}) {
+  async _prepareContext (options = {}) {
     const data = {}
     data.cssClass = 'dcc'
     data.user = game.user
@@ -51,28 +68,15 @@ class FleetingLuckDialog extends FormApplication {
     return position
   }
 
-  /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
-
-    html.find('.avatar').click(this._onOpenUserConfiguration.bind(this))
-    html.find('.minus').click(this._onTakeLuck.bind(this))
-    html.find('.plus').click(this._onGiveLuck.bind(this))
-    html.find('.clear').click(this._onClearLuck.bind(this))
-    html.find('.filter').click(this._onToggleFilter.bind(this))
-    html.find('.spend').click(this._onSpendLuck.bind(this))
-    html.find('.clear-all').click(this._onClearAllLuck.bind(this))
-    html.find('.reset-all').click(this._onResetAllLuck.bind(this))
-  }
-
   /**
    * Open the User Configuration if permissions allow
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  async _onOpenUserConfiguration (event) {
-    event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
+  static async #onOpenUserConfiguration (event, target) {
+    const userId = target.dataset.userId
     const user = game.users.get(userId)
     if (game.user.isGM || userId === game.user.id) {
       await user.sheet.render(true)
@@ -81,41 +85,43 @@ class FleetingLuckDialog extends FormApplication {
 
   /**
    * Handle removing fleeting luck from a player
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  async _onTakeLuck (event) {
-    event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
+  static async #onTakeLuck (event, target) {
+    const userId = target.dataset.userId
     await FleetingLuck.take(userId, 1)
   }
 
   /**
    * Handle giving fleeting luck to a player
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  async _onGiveLuck (event) {
-    event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
+  static async #onGiveLuck (event, target) {
+    const userId = target.dataset.userId
     await FleetingLuck.give(userId, 1)
   }
 
   /**
    * Handle spending fleeting luck
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  async _onSpendLuck (event) {
-    event.preventDefault()
-
-    const userId = event.currentTarget.dataset.userId
+  static async #onSpendLuck (event, target) {
+    const userId = target.dataset.userId
     const fleetingLuckValue = FleetingLuck.getValue(userId)
 
     if (fleetingLuckValue <= 0) {
       const user = game.users.get(userId)
       ui.notifications.warn(game.i18n.format('DCC.FleetingLuckSpendNoLuckWarning', { user: user.name }))
-      return
+      return Promise.reject(new Error(game.i18n.localize('DCC.FleetingLuckSpendNoLuckWarning')))
     }
 
     const terms = [
@@ -139,49 +145,47 @@ class FleetingLuckDialog extends FormApplication {
 
   /**
    * Handle removing all fleeting luck from a player
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  async _onClearLuck (event) {
-    event.preventDefault()
-    const userId = event.currentTarget.dataset.userId
+  static async #onClearLuck (event, target) {
+    const userId = target.dataset.userId
     await FleetingLuck.clear(userId)
   }
 
   /**
    * Handle removing all fleeting luck from all players
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  async _onClearAllLuck (event) {
-    event.preventDefault()
+  static async #onClearAllLuck (event, target) {
     await FleetingLuck.clearAll()
   }
 
   /**
    * Handle resetting fleeting luck for all players
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  async _onResetAllLuck (event) {
-    event.preventDefault()
+  static async #onResetAllLuck (event, target) {
     await FleetingLuck.resetAll()
   }
 
   /**
    * Handle filter toggle
-   * @param {Event} event   The originating click event
-   * @private
+   * @this {FleetingLuckDialog}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<Document[]>}
    */
-  async _onToggleFilter (event) {
-    event.preventDefault()
+  static async #onToggleFilter (event, target) {
     await FleetingLuck.toggleFilter()
-  }
-
-  /** @override */
-  async _updateObject (event, formData) {
-    event.preventDefault()
-    this.render()
   }
 
   /** @override */
@@ -197,6 +201,13 @@ class FleetingLuck {
    */
   static init () {
     if (game.user.isGM) {
+      if (!FleetingLuck.enabled) {
+        const element = document.querySelector('[data-tool="fleetingLuck"]')
+        if (element) {
+          element.remove()
+        }
+      }
+
       // For GM, register hooks to manage fleeting luck
       Hooks.on('createChatMessage', (message) => {
         // Early out if automation is not enabled
@@ -240,26 +251,6 @@ class FleetingLuck {
         FleetingLuck.refresh()
       }
     })
-
-    // Add the toolbar button for all users
-    Hooks.on('getSceneControlButtons', (controls) => {
-      const tokenTools = controls.find(t => t.name === 'token')
-      if (FleetingLuck.enabled && tokenTools) {
-        tokenTools.tools.push({
-          name: 'fleetingluck',
-          title: game.i18n.localize('DCC.FleetingLuck'),
-          icon: 'fas fa-balance-scale-left',
-          onClick: () => {
-            FleetingLuck.show()
-          },
-          active: FleetingLuck?.visible,
-          toggle: true
-        })
-      }
-    })
-
-    // Refresh the scene controls
-    ui.controls.initialize()
   }
 
   /**

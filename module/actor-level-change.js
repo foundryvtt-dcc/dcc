@@ -1,17 +1,46 @@
-/* global ChatMessage, FormApplication, game, CONFIG, Roll, ui */
+/* global ChatMessage, game, CONFIG, Roll, ui, foundry */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus } from './utilities.js'
 
-class DCCActorLevelChange extends FormApplication {
-  static get defaultOptions () {
-    const options = super.defaultOptions
-    options.template =
-      'systems/dcc/templates/dialog-actor-level-change.html'
-    options.width = 380
-    options.height = 580
-    options.resizable = true
-    return options
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
+
+class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'actor-level-change', 'themed'],
+    tag: 'form',
+    position: {
+      width: 380,
+      height: 580
+    },
+    window: {
+      title: 'DCC.ChangeLevel',
+      resizable: true
+    },
+    form: {
+      handler: DCCActorLevelChange.#onSubmitForm,
+      submitOnChange: false,
+      closeOnSubmit: true
+    },
+    actions: {
+      increaseLevel: this.#increaseLevel,
+      decreaseLevel: this.#decreaseLevel
+    }
+  }
+
+  /** @inheritDoc */
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-actor-level-change.html'
+    }
+  }
+
+  constructor (options = {}) {
+    super(options)
+    this.currentLevel = this.options.document.system.details.level.value
+    this.levelData = null
+    this.newHitPointsExpression = ''
   }
 
   /* -------------------------------------------- */
@@ -20,50 +49,59 @@ class DCCActorLevelChange extends FormApplication {
    * Runs when the dialog is closed without submitting
    */
   async close (options = {}) {
-    this.object.currentLevel = this.object.system.details.level.value || 0
+    this.currentLevel = this.options.document.system.details.level.value || 0
     await super.close(options)
   }
 
   /* -------------------------------------------- */
 
   /**
-   * Add the Entity name into the window title
-   * @type {String}
+   * Prepare context data for rendering the HTML template
+   * @param {Object} options - Rendering options
+   * @return {Object} The context data
    */
-  get title () {
-    return `${this.object.name}: ${game.i18n.localize('DCC.ChangeLevel')}`
-  }
+  async _prepareContext (options = {}) {
+    const context = await super._prepareContext(options)
 
-  /* -------------------------------------------- */
+    context.isNPC = (this.options.document.type === 'NPC')
+    context.isPC = (this.options.document.type === 'Player')
+    context.isZero = (this.options.document.system.details.level.value === 0)
+    context.user = game.user
+    context.config = CONFIG.DCC
+    context.system = this.options.document.system
+    context.actor = this.options.document
 
-  /**
-   * Construct and return the data object used to render the HTML template for this form application.
-   * @return {Object}
-   */
-  getData (options = {}) {
-    const data = this.object
-    data.isNPC = (this.object.type === 'NPC')
-    data.isPC = (this.object.type === 'Player')
-    data.isZero = (this.object.system.details.level.value === 0)
-    data.user = game.user
-    data.config = CONFIG.DCC
-    data.currentLevel = this.object.system.details.level.value || 0
-    data.classNameLower = this.object.system.class.className.toLowerCase()
-    if (!data.classNameLower || data.classNameLower === 'generic') {
+    // Add dynamic level data
+    context.currentLevel = this.currentLevel
+    context.originalLevel = this.options.document.system.details.level.value
+
+    // Check that we have a class name
+    this.classNameLower = this.options.document.system.class.className.toLowerCase()
+    if (!this.classNameLower || this.classNameLower === 'generic') {
       ui.notifications.error(game.i18n.localize('DCC.ChooseAClass'))
-      return this.close({ force: true })
+      await this.close({ force: true })
+      return context
     }
-    return data
-  }
 
-  /* -------------------------------------------- */
+    // Add level data if available
+    if (this.levelData) {
+      context.levelDataEntries = Object.entries(this.levelData)
+        .map(([key, value]) => ({
+          label: game.i18n.localize(`DCC.${key}`),
+          value
+        }))
+      context.levelDataHeader = game.i18n.localize('DCC.UpdatesAtLevel')
+    } else if (this.currentLevel !== this.options.document.system.details.level.value) {
+      context.levelDataNotFound = game.i18n.localize('DCC.LevelDataNotFound')
+    }
 
-  /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
+    // Add hit points data
+    if (this.newHitPointsExpression) {
+      context.hitPointsExpression = this.newHitPointsExpression
+      context.hitPointsHeader = game.i18n.localize('DCC.AdjustHitPoints')
+    }
 
-    html.find('.level-increase').click(this._increaseLevel.bind(this))
-    html.find('.level-decrease').click(this._decreaseLevel.bind(this))
+    return context
   }
 
   /**
@@ -74,15 +112,15 @@ class DCCActorLevelChange extends FormApplication {
    * @return levelData <object>
    */
   async _getLevelDataFromItem (levelItem) {
-    if (Object.prototype.hasOwnProperty.call(levelItem, 'system')) {
+    if (Object.hasOwn(levelItem, 'system')) {
       let levelData = levelItem.system.levelData
-      if (this.object.system.details.alignment === 'l') {
+      if (this.options.document.system.details.alignment === 'l') {
         levelData += levelItem.system.levelDataLawful
       }
-      if (this.object.system.details.alignment === 'n') {
+      if (this.options.document.system.details.alignment === 'n') {
         levelData += levelItem.system.levelDataNeutral
       }
-      if (this.object.system.details.alignment === 'c') {
+      if (this.options.document.system.details.alignment === 'c') {
         levelData += levelItem.system.levelDataChaotic
       }
       // console.log(levelData)
@@ -107,63 +145,72 @@ class DCCActorLevelChange extends FormApplication {
    * @private
    */
   async _lookupLevelItem (className, level) {
-    // Lookup the level item
-    const pack = game.packs.get(CONFIG.DCC.levelData)
-    if (pack) {
-      await pack.getIndex() // Load the compendium index
-      const entry = pack.index.find(item => item.name === `${className}-${level}`)
-      if (entry) {
-        const item = await pack.getDocument(entry._id)
-        // console.log(item)
-        return item
+    // Normalize class name by replacing spaces with hyphens
+    const normalizedClassName = className.replace(/\s+/g, '-')
+    const itemName = `${normalizedClassName}-${level}`
+
+    // Iterate over all registered level data packs
+    const levelDataPacks = CONFIG.DCC.levelDataPacks
+    if (levelDataPacks) {
+      for (const packName of levelDataPacks.packs) {
+        const pack = game.packs.get(packName)
+        if (pack) {
+          await pack.getIndex() // Load the compendium index
+          const entry = pack.index.find(item => item.name === itemName)
+          if (entry) {
+            const item = await pack.getDocument(entry._id)
+            // console.log(item)
+            return item
+          }
+        }
       }
     }
     return {}
   }
 
   /**
-   * _decreaseLevel
-   * Fetches the level data for the next lower level from current
-   * @private
+   * Decrease level action handler
+   * @this {DCCActorLevelChange}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    */
-  async _decreaseLevel () {
-    this.object.currentLevel = parseInt(this.object.currentLevel) - 1
+  static async #decreaseLevel (event, target) {
+    event.preventDefault()
+    this.currentLevel = parseInt(this.currentLevel) - 1
     return this._updateLevelUpDisplay()
   }
 
   /**
-   * _increaseLevel
-   * Fetches the level data for the next upper level from current
-   * @private
+   * Increase level action handler
+   * @this {DCCActorLevelChange}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    */
-  async _increaseLevel () {
-    this.object.currentLevel = parseInt(this.object.currentLevel) + 1
+  static async #increaseLevel (event, target) {
+    event.preventDefault()
+    this.currentLevel = parseInt(this.currentLevel) + 1
     return this._updateLevelUpDisplay()
   }
 
   async _updateLevelUpDisplay () {
-    const levelItem = await this._lookupLevelItem(this.object.classNameLower, this.object.currentLevel)
-    if (Object.prototype.hasOwnProperty.call(levelItem, 'system')) {
-      // Level Data
-      const levelData = await this._getLevelDataFromItem(levelItem)
-      const levelDataString = Object.entries(levelData)
-        .map(([key, value]) => `<div>${game.i18n.localize(`DCC.${key}`)} = ${value}</div>`)
-        .join('\n')
-      this.element.find('#system\\.details\\.level\\.value').html(this.object.currentLevel)
-      const levelDataHeader = game.i18n.localize('DCC.UpdatesAtLevel')
-      this.element.find('#levelDataDisplay').html(`<h3>${levelDataHeader}</h3> ${levelDataString}`)
+    const levelItem = await this._lookupLevelItem(this.classNameLower, this.currentLevel)
 
-      // Hit Points
-      const hitDie = levelData['system.attributes.hitDice.value'] || '1d6'
-      let hpExpression = `+(${hitDie}${ensurePlus(this.object.system?.abilities?.sta?.mod)})`
-      let levelDifference = parseInt(this.object.currentLevel) - parseInt(this.object.system.details.level.value)
+    if (Object.hasOwn(levelItem, 'system')) {
+      // Calculate level data
+      this.levelData = await this._getLevelDataFromItem(levelItem)
+
+      // Calculate hit points expression
+      const hitDie = this.levelData['system.attributes.hitDice.value'] || '1d6'
+      let hpExpression = `+(${hitDie}${ensurePlus(this.options.document.system?.abilities?.sta?.mod)})`
+      let levelDifference = parseInt(this.currentLevel) - parseInt(this.options.document.system.details.level.value)
+
       if (levelDifference !== 1) {
-        if (parseInt(this.object.system.details.level.value) === 0) {
+        if (parseInt(this.options.document.system.details.level.value) === 0) {
           levelDifference -= 1
         }
         hpExpression = DiceChain.bumpDieCount(hitDie, levelDifference)
 
-        const staModTotal = levelDifference * this.object.system?.abilities?.sta?.mod
+        const staModTotal = levelDifference * this.options.document.system?.abilities?.sta?.mod
         hpExpression = `+(${hpExpression}${ensurePlus(staModTotal)})`
 
         if (levelDifference < 0) {
@@ -173,29 +220,33 @@ class DCCActorLevelChange extends FormApplication {
           hpExpression = ''
         }
       }
-      this.object.newHitPointsExpression = hpExpression
-      const hitPointsString = `Hit Points = ${hpExpression}`
-      this.element.find('#hitPoints').html(`<h3>Adjust Hit Points</h3> ${hitPointsString}`)
+      this.newHitPointsExpression = hpExpression
     } else {
-      this.element.find('#levelDataDisplay').html(game.i18n.localize('DCC.LevelDataNotFound'))
+      this.levelData = null
+      this.newHitPointsExpression = ''
     }
+
+    // Re-render the application with updated data
+    this.render({ force: false })
   }
 
   /**
-   * This method is called upon form submission after form data is validated
-   * @param event {Event}       The initial triggering submission event
-   * @param formData {Object}   The object of validated form data with which to update the object
+   * Handle form submission
+   * @this {DCCActorLevelChange}
+   * @param {SubmitEvent} event - The form submission event
+   * @param {HTMLFormElement} form - The form element
+   * @param {FormDataExtended} formData - The processed form data
    * @private
    */
-  async _updateObject (event, formData) {
+  static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
 
     // Do any basic updates from this dialog
-    await this.object.update(formData)
+    await this.options.document.update(formData.object)
 
     // Try and get data for the new level from the compendium
-    const newLevel = this.object.currentLevel
-    const levelItem = await this._lookupLevelItem(this.object.classNameLower, newLevel)
+    const newLevel = this.currentLevel
+    const levelItem = await this._lookupLevelItem(this.classNameLower, newLevel)
 
     if (levelItem) {
       // Get Level Data for new level and update this actor
@@ -210,16 +261,14 @@ class DCCActorLevelChange extends FormApplication {
       }
 
       // Roll new Hit Points
-      if (this.object.newHitPointsExpression) {
-        const hpRoll = new Roll(this.object.newHitPointsExpression)
-        await hpRoll.toMessage({ flavor: game.i18n.localize('DCC.HitDiceRoll'), speaker: ChatMessage.getSpeaker({ actor: this.object }) })
-        const newHp = this.object.system.attributes.hp.value + hpRoll.total
-        const newMaxHp = parseInt(this.object.system.attributes.hp.max) + hpRoll.total
+      if (this.newHitPointsExpression) {
+        const hpRoll = new Roll(this.newHitPointsExpression)
+        await hpRoll.toMessage({ flavor: game.i18n.localize('DCC.HitDiceRoll'), speaker: ChatMessage.getSpeaker({ actor: this.options.document }) })
+        const newHp = this.options.document.system.attributes.hp.value + hpRoll.total
+        const newMaxHp = parseInt(this.options.document.system.attributes.hp.max) + hpRoll.total
         levelData['system.attributes.hp.value'] = newHp
         levelData['system.attributes.hp.max'] = newMaxHp
       }
-
-      await this.object.update(levelData)
 
       // Create chat message with levelUp data
       delete levelData._id
@@ -230,17 +279,19 @@ class DCCActorLevelChange extends FormApplication {
       const messageData = {
         user: game.user.id,
         flavor: game.i18n.format('DCC.LevelChanged', { level: newLevel }),
-        speaker: ChatMessage.getSpeaker({ actor: this.object }),
+        speaker: ChatMessage.getSpeaker({ actor: this.options.document }),
         flags: {
           'dcc.isLevelChange': true
         },
         content: levelDataString
       }
       ChatMessage.create(messageData)
+
+      await this.options.document.update(levelData)
     }
 
     // Re-draw the updated sheet
-    await this.object.sheet.render(true)
+    await this.options.document.sheet.render(true)
   }
 }
 

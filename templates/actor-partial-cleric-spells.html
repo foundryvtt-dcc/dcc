@@ -1,48 +1,45 @@
 {{!-- Spells Tab --}}
-<div class="tab spells" data-group="primary" data-tab="spells">
-  <div class="cleric-spells-bg">
-    <div class="dark-title" style="">{{localize "DCC.Spells"}}</div>
-    <ol class="item-list item-list-spells">
-      <li class="item item-list-header grid-col-span-7">
-        <div></div>
-        <div></div>
-        <div>{{localize "DCC.SpellLevelShort"}}</div>
-        <div>{{localize "DCC.SpellName"}}</div>
-        <div></div>
-        <div>{{localize "DCC.SpellLost"}}</div>
-        <div>
-          <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-type="spell"><i class="fas fa-plus"></i> {{localize
-            "DCC.Add"}}</a>
-        </div>
-      </li>
-      {{#each actor.spells as |spells spelllevel|}}
-        {{#each spells as |item id|}}
-          <li class="item spell-item spell-draggable grid-col-span-7" data-item-id="{{item._id}}"
-              data-ability="per" data-die="{{item.spellCheck.die}}"
-              data-bonus="{{item.spellCheck.value}}"
-              data-spell="{{item.name}}">
-            <div class="item-image">
-              <img src="{{item.img}}" title="{{item.name}}"
-                   width="24" height="24"/>
-            </div>
-            <div class="rollable spell-item-button" title="Cast spell">&nbsp;</div>
-            <div class="item-level">{{item.system.level}}</div>
-            <div class="item-name">{{item.name}}</div>
-            <div></div>
-            <input class="item-lost" type="checkbox"
-                   name="itemUpdates.{{item._id}}.system.lost"
-                   data-dtype="Boolean" {{checked item.system.lost}}/>
-            <div class="item-controls">
-              <a class="item-control item-edit" title="{{localize 'DCC.ItemEdit'}}"><i class="fas fa-edit"></i></a>
-              <a class="item-control item-delete" title="{{localize 'DCC.ItemDelete'}}"><i class="fas fa-trash"></i></a>
-            </div>
-          </li>
-        {{/each}}
-      {{else}}
-        <li class="item">
-          <div style="grid-column-end: span 8; height: 50px; padding-top: 14px;">{{localize "DCC.SpellTabHelp"}}</div>
+<section class="tab cleric-spells-bg {{tabs.clericSpells.id}} {{tabs.clericSpells.cssClass}}" data-tab="{{tabs.clericSpells.id}}" data-group="{{tabs.clericSpells.group}}" id="clericSpells">
+  <div class="box-title">{{localize "DCC.Spells"}}</div>
+  <ol class="item-list item-list-spells">
+    <li class="item item-list-header grid-col-span-7">
+      <div></div>
+      <div></div>
+      <div>{{localize "DCC.SpellLevelShort"}}</div>
+      <div>{{localize "DCC.SpellName"}}</div>
+      <div></div>
+      <div>{{localize "DCC.SpellLost"}}</div>
+      <div>
+        <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-action="itemCreate" data-type="spell"><i class="fas fa-plus"></i> {{localize "DCC.Add"}}</a>
+      </div>
+    </li>
+    {{#each spells as |spells spelllevel|}}
+      {{#each spells as |item id|}}
+        <li class="item spell-item spell-draggable grid-col-span-7" data-item-id="{{item._id}}"
+            data-ability="per" data-die="{{item.spellCheck.die}}"
+            data-bonus="{{item.spellCheck.value}}"
+            data-spell="{{item.name}}" data-drag="true" data-drag-action="item">
+          <div class="item-img">
+            <img src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}"
+                 width="24" height="24" data-drag="true" data-drag-action="item"/>
+          </div>
+          <div class="rollable spell-item-button" title="Cast spell" data-action="rollSpellCheck" data-drag="true" data-drag-action="spellCheck">&nbsp;</div>
+          <div>{{item.system.level}}</div>
+          <div>{{item.name}}</div>
+          <div></div>
+          <input type="checkbox"
+                 name="items.{{item._id}}.system.lost"
+                 data-dtype="Boolean" {{checked item.system.lost}}/>
+          <div>
+            <a title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit" data-item-id="{{item._id}}"><i class="fas fa-edit"></i></a>
+            <a title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete" data-item-id="{{item._id}}"><i class="fas fa-trash"></i></a>
+          </div>
         </li>
       {{/each}}
-    </ol>
-  </div>
-</div>
+    {{else}}
+      <li class="item grid-col-span-8 mt-8">
+        <div class="grid-col-span-8">{{localize "DCC.SpellTabHelp"}}</div>
+      </li>
+    {{/each}}
+  </ol>
+</section>

@@ -1,0 +1,61 @@
+/* System Theme Variables */
+:root {
+  --system-accent-color: var(--system-primary-color);
+  --system-background-art-filter: sepia(1) hue-rotate(20deg) saturate(90);
+  --system-background: url('/ui/parchment.jpg');
+  --system-backstab-button-image: url('./images/backstab.png');
+  --system-border-color: #333230;
+  --system-checkbox-font-weight: 400;
+  --system-checkbox-background-color: var(--system-input-background);
+  --system-checkbox-checked-color: var(--system-primary-color);
+  --system-checkbox-checkmark-color: var(--system-border-color);
+  --system-checkbox-disabled-color: #000;
+  --system-checkbox-size: 1.3rem;
+  --system-d20-icon: url('../../../icons/svg/d20-black.svg');
+  --system-data-font: 'Book Antiqua', serif;
+  --system-frame-background: url('images/denim.png');
+  --system-frame-border: 4px solid var(--system-border-color);
+  --system-frame-title-color: #c8d7bd;
+  --system-heading-font: 'Duvall', serif;
+  --system-icon-filter: none;
+  --system-icon-font: 'Font Awesome 6 Pro';
+  --system-input-background: var(--system-input-background-color);
+  --system-input-background-color: #c3c2b9;
+  --system-input-focus-outline-color: var(--system-border-color);
+  --system-label-font: 'Cooper Black', serif;
+  --system-left-arrow-button-image: url('./images/left-arrow.svg');
+  --system-party-sheet-border: 2px solid var(--system-border-color);
+  --system-primary-color: #222;
+  --system-right-arrow-button-image: url('./images/right-arrow.svg');
+  --system-secondary-color: #97958e;
+  --system-value-display-background-color: #d0cec3;
+}
+
+
+/*Override for dark theme */
+.theme-dark {
+  --system-accent-color: #ef4444;
+  --system-background: #0b0a13;
+  --system-backstab-button-image: url('./images/backstab-grey.svg');
+  --system-border-color: #525252;
+  --system-checkbox-background-color: var(--system-input-background);
+  --system-checkbox-checked-color: var(--system-primary-color);
+  --system-checkbox-checkmark-color: transparent;
+  --system-checkbox-disabled-color: #000;
+  --system-d20-icon: url('../../../icons/svg/d20-grey.svg');
+  --system-frame-background: url('images/denim-light.jpg');
+  --system-frame-border: 4px solid var(--system-border-color);
+  --system-frame-title-color: #0c0c0c;
+  --system-icon-filter: sepia(1) brightness(0.7);
+  --system-input-background: solid var(--system-input-background-color);
+  --system-input-background-color: #323138;
+  --system-input-border: 1px solid var(--system-border-color);
+  --system-input-focus-outline-color: var(--system-border-color);
+  --system-input-text-color: #e7d1b1;
+  --system-left-arrow-button-image: url('./images/left-arrow-grey.svg');
+  --system-party-sheet-border: 2px solid var(--system-border-color);
+  --system-primary-color: #d0beaa;
+  --system-right-arrow-button-image: url('./images/right-arrow-grey.svg');
+  --system-secondary-color: #343339;
+  --system-value-display-background-color: #17161e;
+}

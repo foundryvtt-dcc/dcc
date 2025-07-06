@@ -19,17 +19,9 @@
 }
 
 /* Common style elements */
-$border-style: 2px groove #eeede0;
-
-$book-antiqua: 'Book Antiqua', 'Palatino Linotype', serif;
-$duvall: 'DuvallSmallCaps', 'Palatino Linotype', serif;
-$cooper-black: 'Cooper Black', 'Palatino Linotype', serif;
-$font-awesome: 'Font Awesome 6 Pro';
-
 .dcc {
-  img {
-    border: 0;
-  }
+
+  color: var(--system-primary-color);
 
   .box-inner {
     padding: 0 5px 4px 5px;
@@ -39,23 +31,34 @@ $font-awesome: 'Font Awesome 6 Pro';
     text-align: center;
   }
 
-  .data-font {
-    font-family: $book-antiqua;
+  .content-link {
+    background: transparent;
+    color: var(--system-primary-color);
+    font-family: var(--system-label-font), serif;
+    padding: 2px;
   }
 
-  .dark-border {
-    border: var(--dark-border);
+  .data-font {
+    font-family: var(--system-data-font), serif;
+  }
+
+  .background-art-filter {
+    filter: var(--system-background-art-filter);
+  }
+
+  .box-border {
+    border: var(--system-frame-border);
     border-top: 0;
   }
 
-  .dark-title {
+  .box-title {
     align-self: stretch;
-    background: var(--dark-bg);
-    color: var(--light-color);
-    font-family: $cooper-black;
+    background: var(--system-frame-background);
+    color: var(--system-frame-title-color);
+    font-family: var(--system-label-font), serif;
+    font-size: 14px;
     height: 19px;
-    letter-spacing: 1px;
-    padding-top: 1px;
+    letter-spacing: 0.5px;
     text-align: center;
   }
 
@@ -66,16 +69,24 @@ $font-awesome: 'Font Awesome 6 Pro';
   // Prosemirror richtext editor
   .editor {
     background: rgba(0, 0, 0, 0.05);
-    border: var(--dark-border);
+    border: var(--system-frame-border);
     border-top: 0;
-    font-family: $book-antiqua;
+    font-family: var(--system-data-font), serif;
     min-height: 285px;
     padding: 0 8px;
+
+    .editor-content {
+      padding: 5px;
+    }
+
+    .toggle {
+      margin: 5px 5px 0 0;
+    }
   }
 
   .group-heading {
     font-size: 13px;
-    font-family: $cooper-black;
+    font-family: var(--system-label-font), serif;
   }
 
   .group-indent {
@@ -83,33 +94,138 @@ $font-awesome: 'Font Awesome 6 Pro';
   }
 
   .group-separator {
-    border-bottom: 2px dotted var(--medium-color);
+    border-bottom: 2px dotted var(--system-secondary-color);
     grid-column-end: span 2;
     margin: 5px 0 5px 0;
   }
 
-  label {
-    display: grid;
-    font-family: $cooper-black;
+  .heading-font {
+    font-family: var(--system-heading-font), serif;
+  }
+
+  .icon-filter {
+    filter: var(--system-icon-filter);
   }
 
   input {
     background: none;
-    font-family: $book-antiqua;
+    color: var(--input-text-color);
+    font-family: var(--system-data-font), serif;
     height: 17px;
     line-height: 1;
     text-align: center;
     border-width: 0 0 1px 0;
     border-radius: 0;
+    border-color: var(--system-input-background-color);
 
-    &[type='checkbox'] {
-      height: 20px;
-      width: 20px;
-      margin: 0;
+    &[type='checkbox'],
+    &[type='radio'] {
+      background: none;
+    }
+
+    &[type='checkbox']:focus,
+    &[type='radio']:focus {
+      color: inherit;
+      outline: 1px solid var(--system-input-outline-focus-color);
+      outline-offset: 2px;
+    }
+
+    &[type='checkbox']:focus-visible::before,
+    &[type='radio']:focus-visible::before {
+      outline: 2px solid var(--system-input-focus-outline-color);
+      outline-offset: 2px;
+    }
+
+    &[type='checkbox']:checked:focus-visible::after,
+    &[type='radio']:checked:focus-visible::after {
+      outline: 2px solid var(--system-input-focus-outline-color);
+      outline-offset: 2px;
+    }
+
+    &[type='checkbox']::before,
+    &[type='radio']::before,
+    &[type='checkbox']::after,
+    &[type='radio']::after {
+      width: var(--system-checkbox-size);
+      height: var(--system-checkbox-size);
+      font-size: var(--system-checkbox-size);
+      line-height: var(--system-checkbox-size);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    &[type='checkbox']::before,
+    &[type='radio']::before {
+      font-family: var(--font-awesome-duotone);
+      font-weight: var(--system-checkbox-font-weight);
+      background: none;
+      color: var(--system-checkbox-background-color);
+      outline: 1px solid transparent;
+      transition: outline-color 0.5s;
+      --fa-primary-color: var(--system-checkbox-checked-color);
+      --fa-secondary-color: var(--system-checkbox-background-color);
+    }
+
+    &[type='checkbox']:checked,
+    &[type='radio']:checked {
+      position: relative;
+    }
+
+    &[type='checkbox']:checked::before,
+    &[type='radio']:checked::before,
+    &[type='checkbox']:checked::after,
+    &[type='radio']:checked::after {
+      font-family: var(--font-awesome-duotone);
+    }
+
+    &[type='checkbox']:checked::after,
+    &[type='radio']:checked::after {
+      color: var(--system-checkbox-checked-color);
+    }
+
+    &[type='checkbox']:checked::before,
+    &[type='radio']:checked::before {
+      color: var(--system-checkbox-checkmark-color);
+      position: absolute;
+      left: 0;
+      outline: none;
+    }
+
+    &[type='checkbox']:disabled,
+    &[type='radio']:disabled,
+    &[type='checkbox'][readonly],
+    &[type='radio'][readonly] {
+      --checkbox-background-color: var(--system-checkbox-disabled-color);
+      --checkbox-checked-color: var(--system-checkbox-disabled-color);
+      cursor: inherit;
+    }
+
+    &[type='checkbox'][readonly],
+    &[type='radio'][readonly] {
+      pointer-events: none;
+    }
+
+    &[type='checkbox']::before {
+      content: '\f0c8';
+    }
+
+    &[type='checkbox']:checked::before {
+      content: '';
+    }
+
+    &[type='checkbox']:checked::after {
+      content: '\f14a';
     }
 
     &:focus {
       box-shadow: none;
+    }
+
+    &:focus-visible {
+      box-shadow: none;
+      outline: 2px solid var(--system-input-outline-focus);
+      outline-offset: 2px;
+      border-radius: unset;
     }
 
     &.full-width {
@@ -117,11 +233,17 @@ $font-awesome: 'Font Awesome 6 Pro';
     }
   }
 
+  label {
+    display: grid;
+    font-family: var(--system-label-font), serif;
+    letter-spacing: 0.5px;
+  }
+
   select {
-    background: none;
+    background: var(--system-input-background);
     border-width: 0 0 1px 0;
     border-radius: 0;
-    font-family: $book-antiqua;
+    font-family: var(--system-data-font), serif;
     font-size: 12px;
     height: 17px;
     text-align: center;
@@ -131,8 +253,17 @@ $font-awesome: 'Font Awesome 6 Pro';
     }
   }
 
+  img {
+    border: 0;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 50px;
+  }
+
   .label-font {
-    font-family: $cooper-black;
+    font-family: var(--system-label-font), serif;
   }
 
   .rollable:hover {
@@ -141,82 +272,61 @@ $font-awesome: 'Font Awesome 6 Pro';
     text-shadow: 0 0 10px red;
   }
 
-  &.sheet.actor.pc {
-    min-height: 639px;
-    min-width: 520px;
-  }
-
-  &.sheet.actor {
-    min-height: 339px;
-    min-width: 525px;
-  }
-
   .value-display {
-    background: rgba(0, 0, 0, 0.05);
-    font-family: $book-antiqua;
+    background: var(--system-value-display-background-color);
+    font-family: var(--system-data-font), serif;
     font-size: 13px;
     font-weight: bold;
-    margin: 0;
+    margin: 0 0 0 1px;
     text-align: center;
   }
 
   .window-content {
     padding: 1px 8px 8px 8px;
+    overflow: scroll;
 
-    form {
-      height: 100%;
-
-      .sheet-body {
-        display: grid;
-        height: calc(100% - 34px);
-      }
+    .sheet-body {
+      display: grid;
+      height: calc(100% - 34px);
     }
   }
-}
-
-:root {
-  --dark-bg: url('images/denim.png');
-  --dark-border: 4px solid var(--dark-color);
-  --dark-color: rgba(0, 0, 0, 0.75);
-  --light-color: rgba(255, 255, 255, 0.77);
-  --medium-color: rgba(0, 0, 0, 0.3);
-  --data-font: 'Book Antiqua', serif;
-  --label-font: 'Cooper Black', serif;
 }
 
 /* ----------------------------------------- */
 /*  Journal Styles
 /* ----------------------------------------- */
-.journal-sheet h1 {
-  font-family: $duvall;
+.journal-sheet h1:not(.window-title) {
+  font-family: var(--system-heading-font), serif;
   line-height: 1.3em;
+  color: var(--system-secondary-text);
 }
 
 .journal-sheet h2 {
-  font-family: $duvall;
+  font-family: var(--system-heading-font), serif;
   line-height: 1.5em;
+  color: var(--system-secondary-text);
 }
 
 .journal-sheet h3 {
-  font-family: $duvall;
+  font-family: var(--system-heading-font), serif;
   line-height: 1.2em;
 }
 
 .journal-sheet h4:not(.window-title) {
-  font-family: $duvall;
+  font-family: var(--system-heading-font), serif;
   line-height: 1.1em;
 }
 
-.journal-sheet form input[name='name'] {
-  font-family: $duvall;
+.journal-sheet input[name='name'] {
+  font-family: var(--system-heading-font), serif;
 }
 
 .journal-sheet div.editor-content {
-  font-family: $book-antiqua;
+  font-family: var(--system-data-font), serif;
 }
 
 .journal-sheet .journal-page-content {
-  font-family: $book-antiqua;
+  font-family: var(--system-data-font), serif;
 }
 
 .journal-entry {
@@ -227,6 +337,23 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   table tr td:first-child {
     padding-left: 8px;
+  }
+
+  .journal-entry-content {
+    background-image: var(--system-background);
+    color: var(--system-primary-color);
+
+    .content-link {
+      background: var(--system-light-bg);
+      color: var(--system-primary-color);
+      padding: 2px;
+      margin-right: 2px;
+      line-height: 30px;
+
+      > i {
+        color: var(--system-primary-color);
+      }
+    }
   }
 
   .journal-entry-page {
@@ -252,17 +379,17 @@ $font-awesome: 'Font Awesome 6 Pro';
   .journal-entry-page,
   .editor-content {
     .sidebar {
-      border: var(--dark-border);
+      border: var(--system-frame-border);
       padding: 0.5em;
       margin: 0.5em 0;
-      background: var(--light-color);
+      background: var(--system-frame-background);
       overflow: hidden;
 
       h4 {
-        font-family: $duvall;
+        font-family: var(--system-heading-font), serif;
         font-size: 1.3em;
         text-align: center;
-        color: var(--dark-color);
+        color: var(--system-primary-color);
         margin: 0.3em 0;
       }
     }
@@ -282,7 +409,7 @@ $font-awesome: 'Font Awesome 6 Pro';
 
   .armor-list-header {
     display: grid;
-    font-family: $cooper-black;
+    font-family: var(--system-label-font), serif;
     font-size: 12px;
     grid-template-columns: subgrid;
     margin: 0 0 3px 0;
@@ -297,9 +424,8 @@ $font-awesome: 'Font Awesome 6 Pro';
     margin-bottom: 5px;
     grid-template-columns: subgrid;
 
-    input {
-      background: rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--color-border-light-tertiary);
+    input:not([type='checkbox']) {
+      background: var(--system-input-background);
       border-radius: 3px;
       height: 22px;
     }
@@ -311,6 +437,8 @@ $font-awesome: 'Font Awesome 6 Pro';
 /* ----------------------------------------- */
 a.inline-roll {
   line-height: 25px;
+  color: var(--system-primrary-text);
+  background: transparent;
 }
 
 .deed-result.critical,
@@ -328,15 +456,37 @@ a.inline-roll {
 }
 
 .flavor-text {
-  font-family: $cooper-black;
+  font-family: var(--system-label-font), serif;
 }
 
 .message-content {
-  font-family: $book-antiqua;
+  font-family: var(--system-data-font), serif;
 }
 
 .message-sender {
-  font-family: $cooper-black;
+  font-family: var(--system-label-font), serif;
+}
+
+.chat-message {
+  background: var(--system-background);
+  color: var(--system-primary-color);
+
+  .message-header {
+    color: var(--system-primary-color);
+  }
+
+  .table-draw {
+    color: var(--system-primary-color);
+
+    .table-description {
+      color: var(--system-primary-color);
+
+      .content-link {
+        background: transparent;
+        color: var(--system-primary-color);
+      }
+    }
+  }
 }
 
 .chat-message .table-draw .table-results .table-result .result-text {
@@ -361,33 +511,45 @@ a.inline-roll {
 /*  Spell Check Chat Card                    */
 /* ----------------------------------------- */
 .table-draw {
+  h1 {
+    font-family: var(--system-heading-font), serif;
+    font-size: 18px;
+    margin-top: 8px;
+    color: var(--system-heading-color);
+  }
+
   .table-results {
+    list-style: none;
+    margin-top: 12px;
+    padding: 0;
+    color: var(--system-primary-color);
+
     .table-result {
+      display: grid;
+      grid-template-columns: 20px auto;
+      column-gap: 5px;
+      padding: 0;
+
       .result-range {
-        align-items: center;
-        display: flex;
-        flex: 0 0 20px;
-        flex-direction: column;
-        justify-content: space-between;
+        padding-top: 5px;
+        justify-items: center;
         margin-right: 3px;
+
+        .spell-shift-down,
+        .spell-shift-up {
+          cursor: pointer;
+        }
       }
     }
   }
 
   .spell-check-mod {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid #999;
-    border-radius: 3px;
-    box-shadow: 0 0 2px #fff inset;
-    height: 24px;
-    line-height: 24px;
-    margin-top: 5px;
-    position: relative;
+    background: transparent;
+    margin-top: 8px;
     text-align: center;
     word-break: break-all;
 
     h4 {
-      flex: 0;
       font-size: 20px;
     }
 
@@ -408,17 +570,22 @@ a.inline-roll {
 /* ----------------------------------------- */
 
 .dcc .notes {
+  font-size: 16px;
+  margin: 0;
+
+  .editor {
+    line-height: 24px;
+    min-height: 547px;
+  }
+}
+
+.dcc .notes-bg {
   background-image: url('./images/FCI-spots-2-scroll-with-ink-and-candle.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   font-size: 16px;
-  line-height: 24px;
   margin: 0;
-
-  .editor {
-    min-height: 547px;
-  }
 }
 
 /* ----------------------------------------- */
@@ -427,8 +594,9 @@ a.inline-roll {
 
 .dcc .weapon-list {
   display: grid;
-  font-family: $book-antiqua;
+  font-family: var(--system-data-font), serif;
   grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
+  grid-column-gap: 5px;
   justify-items: center;
   margin: 0 0 8px 0;
   padding: 5px 5px 0 5px;
@@ -444,13 +612,13 @@ a.inline-roll {
 
   &.npc-weapon-list {
     display: grid;
-    font-family: $book-antiqua;
+    font-family: var(--system-data-font), serif;
     grid-template-columns: 25px minmax(110px, 1fr) 55px 60px minmax(100px, 2fr) 39px;
   }
 
   .weapon-list-header {
     display: grid;
-    font-family: $cooper-black;
+    font-family: var(--system-label-font), serif;
     font-size: 12px;
     grid-template-columns: subgrid;
     margin: 0 0 3px 0;
@@ -465,9 +633,8 @@ a.inline-roll {
     justify-items: center;
     margin-bottom: 5px;
 
-    input {
-      background: rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--color-border-light-tertiary);
+    input:not([type='checkbox']) {
+      background: var(--system-input-background);
       border-radius: 3px;
       height: 22px;
     }
@@ -478,7 +645,7 @@ a.inline-roll {
     }
 
     .backstab-button {
-      background-image: url('./images/backstab.png');
+      background-image: var(--system-backstab-button-image);
       background-repeat: no-repeat;
       background-size: 22px 22px;
       grid-row: 1;
@@ -488,7 +655,7 @@ a.inline-roll {
     }
 
     .weapon-button {
-      background-image: url('../../../icons/svg/d20-black.svg');
+      background-image: var(--system-d20-icon);
       background-repeat: no-repeat;
       background-size: 22px 22px;
       grid-row: 1;
@@ -503,14 +670,21 @@ a.inline-roll {
 /*  Cleric Class                             */
 /* ----------------------------------------- */
 
-.dcc div.cleric-table {
+.dcc .cleric-table {
   table {
-    text-align: center;
-    font-family: $book-antiqua;
-    margin-top: 10px;
+    font-family: var(--system-data-font), serif;
+    margin: 10px 0 0 0;
 
     td {
-      padding: 4px 12px 4px 0;
+      padding: 4px 12px 4px 4px;
+    }
+
+    th {
+      padding: 0 3px 3px 3px;
+    }
+
+    &.box-border {
+      border-top: var(--system-frame-border);
     }
   }
 }
@@ -552,27 +726,40 @@ a.inline-roll {
   min-height: 565px;
 }
 
+.dcc .corruption .editor {
+  min-height: 128px;
+  padding-top: 5px;
+}
+
+.dcc .corruption-wizard .editor {
+  min-height: 260px;
+  padding-top: 5px;
+}
+
 /* ----------------------------------------- */
 /*  Party Sheet                              */
 /* ----------------------------------------- */
 
-.dcc .party {
-  border: $border-style;
-
+.dcc .party-body {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: repeat(auto-fill, minmax(100px, auto));
+  grid-gap: 10px;
 
   .character-row {
-    border: $border-style;
+    border: var(--system-party-sheet-border);
     display: grid;
     grid-gap: 2px 3px;
     grid-template-columns: 96px repeat(12, 1fr);
-    grid-template-rows: 1fr 1fr 1fr 1fr minmax(1fr, auto) minmax(1fr, auto);
+
+    .ac-summary {
+      margin-top: 3px;
+    }
 
     .name {
       grid-column: 1 / span 13;
       grid-row: 1;
+      padding-top: 0;
     }
 
     .portrait {
@@ -580,13 +767,15 @@ a.inline-roll {
       grid-row: 2 / span 4;
 
       img {
-        height: 96px;
-        width: 96px;
+        height: 90px;
+        width: 90px;
+        padding: 6px;
       }
     }
 
     .occupation {
       grid-column: span 7;
+      margin-top: 3px;
     }
 
     .special {
@@ -595,18 +784,45 @@ a.inline-roll {
 
     .hp-summary {
       grid-column: span 2;
+      margin-top: 3px;
     }
 
     .weapon {
       grid-column: span 1;
+      justify-self: end;
+      margin-right: 5px;
     }
 
     .weapon-dropdown {
       grid-column: span 4;
+      margin-bottom: 5px;
     }
 
     .filler {
       grid-column: span 2;
+    }
+
+    .party-control {
+      justify-self: end;
+      margin-left: 10px;
+    }
+
+    .fa-shield-alt,
+    .fa-heart {
+      justify-self: end;
+      margin-top: 5px;
+    }
+  }
+
+  .empty-party {
+    text-align: center;
+    padding: 2rem;
+
+    p {
+      font-family: var(--system-data-font), serif;
+      font-style: italic;
+      color: #666;
+      margin: 0;
     }
   }
 }
@@ -648,9 +864,8 @@ a.inline-roll {
 }
 
 .dcc .item-heading {
-  border-bottom: $border-style;
-  flex: 0 0 10px;
-  font-family: $cooper-black;
+  border-bottom: var(--system-party-sheet-border);
+  font-family: var(--system-label-font), serif;
   letter-spacing: 1px;
   font-size: 1.1rem;
   line-height: 1.2rem;
@@ -658,9 +873,9 @@ a.inline-roll {
 }
 
 .dcc .item-list-header {
-  border-bottom: 2px dotted var(--medium-color);
+  border-bottom: 2px dotted var(--system-secondary-color);
   display: grid;
-  font-family: $cooper-black;
+  font-family: var(--system-label-font), serif;
   font-size: 12px;
   grid-template-columns: subgrid;
   margin: 0 0 5px 0;
@@ -669,7 +884,7 @@ a.inline-roll {
 
 .dcc .item-list {
   display: grid;
-  font-family: $book-antiqua;
+  font-family: var(--system-data-font), serif;
   font-size: 12px;
   grid-template-columns: 22px minmax(20px, 1fr) minmax(20px, 1fr) 65px 39px;
   margin: 0 0 8px 0;
@@ -681,7 +896,7 @@ a.inline-roll {
   grid-template-columns: 30px 22px 33px 1fr 1fr 40px 39px;
 
   .spell-item-button {
-    background-image: url('../../../icons/svg/d20-black.svg');
+    background-image: var(--system-d20-icon);
     background-position: center;
     background-repeat: no-repeat;
     background-size: 22px 22px;
@@ -697,7 +912,7 @@ a.inline-roll {
 
 .dcc .left-arrow-button {
   justify-self: center;
-  background-image: url('./images/left-arrow.png');
+  background-image: var(--system-left-arrow-button-image);
   background-repeat: no-repeat;
   background-size: 22px 22px;
   height: 22px;
@@ -705,7 +920,7 @@ a.inline-roll {
 }
 
 .dcc .right-arrow-button {
-  background-image: url('./images/right-arrow.png');
+  background-image: var(--system-right-arrow-button-image);
   background-repeat: no-repeat;
   background-size: 22px 22px;
   height: 22px;
@@ -713,7 +928,7 @@ a.inline-roll {
 }
 
 .dcc .roll-value-button {
-  background-image: url('/icons/svg/d20-black.svg');
+  background-image: var(--system-d20-icon);
   background-repeat: no-repeat;
   background-size: 22px 22px;
   height: 22px;
@@ -734,10 +949,26 @@ a.inline-roll {
   row-gap: 5px;
 
   .description {
-    font-family: $book-antiqua;
+    font-family: var(--system-data-font), serif;
 
     .editor {
       min-height: 354px;
+    }
+  }
+
+  .manifestation {
+    font-family: var(--system-data-font), serif;
+
+    .editor {
+      min-height: 332px;
+    }
+  }
+
+  .mercurial {
+    font-family: var(--system-data-font), serif;
+
+    .editor {
+      min-height: 315px;
     }
   }
 
@@ -745,7 +976,7 @@ a.inline-roll {
     background: none;
     border-width: 0 0 1px 0;
     border-radius: 0;
-    font-family: $book-antiqua;
+    font-family: var(--system-data-font), serif;
     font-size: 12px;
     height: 18px;
     line-height: 15px;
@@ -757,13 +988,6 @@ a.inline-roll {
     }
   }
 
-  input[type='checkbox'] {
-    background: none;
-    border: 0;
-    height: 12px;
-    margin: 0;
-    width: 12px;
-  }
 
   .item-img {
     max-height: 64px;
@@ -790,12 +1014,6 @@ a.inline-roll {
     margin: 1px 0 0 0;
   }
 
-  .mercurial {
-    .editor {
-      min-height: 288px;
-    }
-  }
-
   textarea {
     background: none;
     border: 0;
@@ -814,6 +1032,39 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Level Item Sheet                         */
+/* ----------------------------------------- */
+
+.dcc.item {
+  .level-main-tab,
+  .level-alignment-tab {
+    height: calc(100% - 34px);
+  }
+
+  .level-data-section {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 300px;
+
+    .box-title {
+      margin: 0;
+    }
+
+    .level-data-textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 200px;
+      resize: vertical;
+      font-family: var(--system-data-font), serif;
+      font-size: 12px;
+      padding: 5px;
+      border: 0;
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+/* ----------------------------------------- */
 /*  Config Dialogs                           */
 /* ----------------------------------------- */
 
@@ -821,25 +1072,77 @@ a.inline-roll {
   align-items: center;
   column-gap: 8px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
+  row-gap: 4px;
+  padding: 5px 0 0 0;
 
   label {
     font-weight: bold;
+    font-family: var(--system-label-font), serif;
+    font-size: 13px;
+    margin: 0;
+    line-height: normal;
+    text-align: left;
+    justify-self: start;
   }
 
   input {
-    margin: 2px 0 2px 0;
+    height: 22px;
+    line-height: 1;
+    background: rgba(0, 0, 0, 0.1);
+    border: 0;
+    border-radius: 3px;
+    box-shadow: none;
+    margin: 0;
+    outline: none;
     text-align: center;
+    justify-self: stretch;
+
+    &:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
+    &:focus-visible {
+      box-shadow: none;
+      border-radius: unset;
+      outline: 1px solid var(--system-input-focus-outline-color);
+    }
   }
 
   select {
+    height: 24px;
+    line-height: 1;
+    background: var(--system-input-background);
+    border: 0;
+    border-radius: 3px;
+    box-shadow: none;
+    outline: none;
     text-align: center;
+    font-family: var(--system-data-font), serif;
+    font-size: 12px;
+    justify-self: stretch;
+
+    &:focus-visible {
+      box-shadow: none;
+      border-radius: unset;
+      outline: 1px solid var(--system-input-focus-outline-color);
+    }
   }
 
   .group-separator {
-    border-bottom: 2px dotted var(--medium-color);
+    border-bottom: 2px dotted var(--system-secondary-color);
     margin: 2px 0 2px 0;
     grid-column-end: span 2;
+  }
+
+  footer {
+    grid-column-end: span 2;
+    margin-top: 8px;
+
+    button {
+      width: 100%;
+    }
   }
 }
 
@@ -850,7 +1153,7 @@ a.inline-roll {
 .dcc .skill-list {
   column-gap: 5px;
   display: grid;
-  font-family: $book-antiqua;
+  font-family: var(--system-data-font), serif;
   grid-template-columns: 28px minmax(100px, auto) 55px 60px 97px 50px;
   margin: 0 0 8px 0;
   padding: 5px 5px 2px 5px;
@@ -898,15 +1201,17 @@ a.inline-roll {
 
 .dcc.sheet {
   .sheet-tabs.tabs {
-    font-family: $duvall;
-    max-height: 30px;
+    font-family: var(--system-heading-font), serif;
+    max-height: 25px;
+    border-top: 0;
+    margin-bottom: 8px;
   }
 
   a[data-tab] {
     padding: 4px 0 4px 0;
 
     &::before {
-      font-family: $font-awesome;
+      font-family: var(--system-icon-font), serif;
       padding-right: 5px;
     }
   }
@@ -956,15 +1261,15 @@ a.inline-roll {
     content: '\f3bf';
   }
 
-  a[data-tab='level-lawful']::before {
+  a[data-tab='levelLawful']::before {
     content: '\f24e';
   }
 
-  a[data-tab='level-neutral']::before {
+  a[data-tab='levelNeutral']::before {
     content: '\3d';
   }
 
-  a[data-tab='level-chaotic']::before {
+  a[data-tab='levelChaotic']::before {
     content: '\f7d4';
   }
 
@@ -984,11 +1289,9 @@ a.inline-roll {
     content: '\f5dc';
   }
 
-  a[data-tab='spell']::before {
-    content: '\f6b8';
-  }
-
+  a[data-tab='clericSpells']::before,
   a[data-tab='spells']::before,
+  a[data-tab='wizardSpells']::before,
   a[data-tab='spell']::before, {
     content: '\f6b8';
   }
@@ -1018,7 +1321,7 @@ a.inline-roll {
     background: none;
     border: 0;
     border-radius: 0;
-    color: var(--dark-color);
+    color: var(--system-primary-color);
     text-decoration: none;
     white-space: nowrap;
     word-break: break-all;
@@ -1029,10 +1332,10 @@ a.inline-roll {
 /*  Roll Modifier Dialog                     */
 /* ----------------------------------------- */
 
-form.dcc-roll-modifier {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+.dcc-roll-modifier {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  row-gap: 15px;
 
   min-width: 400px;
 
@@ -1041,12 +1344,12 @@ form.dcc-roll-modifier {
     grid-auto-flow: column;
     grid-column-gap: 20px;
     grid-row-gap: 0;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
     grid-template-rows: auto auto minmax(60px, auto);
     margin-left: 2px;
 
     .term-label {
-      font-family: $cooper-black;
+      font-family: var(--system-label-font), serif;
       text-align: center;
       margin-bottom: 2px;
     }
@@ -1057,73 +1360,47 @@ form.dcc-roll-modifier {
 
     .term-controls {
       margin: 8px 1px 0 0;
-      height: 90px;
     }
   }
 
   .button-row {
-    display: flex;
-    flex: 1;
-    flex-direction: row;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 8px;
     margin-left: 2px;
 
     button {
-      flex: 1;
+      justify-self: stretch;
     }
   }
 
   .button-stack {
-    align-items: center;
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    margin-right: 4px;
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    gap: 4px;
+    justify-items: center;
 
     &:last-child {
       margin: 0;
     }
 
     button.flat-button {
-      line-height: 13px;
-      margin: 2px 0 0 0;
+      width: 100%;
+      padding: 1px 2px;
+    }
 
-      &:last-child {
-        margin-top: 4px;
-      }
+    input {
+      width: 100%;
     }
 
     label {
-      font-family: $cooper-black;
+      font-family: var(--system-label-font), serif;
     }
-  }
-
-  .dialog-buttons {
-    margin-top: 8px;
   }
 
   button.flat-button {
     background: rgba(0, 0, 0, 0.05);
     border: 2px groove #c9c7b8;
-    margin: 0 5px 0 0;
-  }
-
-  button.flat-button:last-child {
-    margin-right: 0;
-  }
-
-  label.checkbox-label {
-    line-height: 26px;
-    padding-left: 8px;
-  }
-
-  input.checkbox {
-    text-align: right;
-  }
-
-  input.stat {
-    margin-top: 3px;
-    text-align: center;
   }
 }
 
@@ -1246,10 +1523,6 @@ form.dcc-roll-modifier {
       input {
         border-width: 0 0 1px 0;
         font-size: 14px;
-      }
-
-      input[id$='max'] {
-        height: 17px;
         margin-right: 3px;
       }
 
@@ -1265,16 +1538,17 @@ form.dcc-roll-modifier {
 
     .ability-score {
       align-self: stretch;
-      border: 5px solid var(--dark-color);
+      border: 5px solid var(--system-border-color);
       display: grid;
       grid-row-end: span 3;
 
       input {
         align-self: center;
+        justify-self: center;
         border: 0;
         font-size: 30px;
-        height: unset;
-        width: 50px;
+        height: 46px;
+        width: 47px;
       }
     }
   }
@@ -1289,17 +1563,19 @@ form.dcc-roll-modifier {
       border: 0;
       font-size: 24px;
       height: 17px;
+      justify-self: center;
       margin-bottom: 5px;
+      width: 37px;
     }
   }
 
   .combat-basics {
     align-items: center;
-    border: var(--dark-border);
+    border: var(--system-frame-border);
     border-top: 0;
     column-gap: 5px;
     display: grid;
-    font-size: 14px;
+    font-size: 13px;
     grid-column-end: span 3;
     grid-template-columns: minmax(102px, 1fr) minmax(60px, 1fr) minmax(79px, 1fr) minmax(55px, 1fr);
     grid-template-rows: 19px repeat(4, minmax(20px, 1fr));
@@ -1314,16 +1590,18 @@ form.dcc-roll-modifier {
 
     input,
     select {
+      background: var(--system-input-background);
       font-size: 14px;
       height: 17px;
       vertical-align: middle;
       margin-right: 8px;
+      border: 0;
     }
   }
 
   .languages,
   .lucky-roll {
-    border: var(--dark-border);
+    border: var(--system-frame-border);
     border-top: 0;
     display: grid;
     font-size: 12px;
@@ -1343,13 +1621,13 @@ form.dcc-roll-modifier {
   .lucky-roll textarea, {
     background: none;
     border: 0;
-    font-family: $book-antiqua;
+    font-family: var(--system-data-font), serif;
     font-size: 12px;
     grid-row: 2;
     height: 17px;
     min-height: 38px;
     overflow: hidden;
-    padding: 0 5px 2px 5px;
+    padding: 2px 5px 2px 5px;
     resize: none;
     text-align: left;
 
@@ -1378,6 +1656,7 @@ form.dcc-roll-modifier {
       font-size: 12px;
       padding-bottom: 2px;
       height: 32px;
+      padding-top: 1px;
     }
   }
 
@@ -1391,11 +1670,12 @@ form.dcc-roll-modifier {
 
     label {
       font-size: 13px;
+      margin-right: 3px;
     }
   }
 
   .portrait {
-    border: var(--dark-border);
+    border: var(--system-frame-border);
     border-top: 0;
     display: grid;
     grid-row: 7;
@@ -1413,7 +1693,7 @@ form.dcc-roll-modifier {
   }
 
   .row-separator {
-    border-bottom: 2px dotted var(--medium-color);
+    border-bottom: 2px dotted var(--system-secondary-color);
     margin-bottom: 3px;
   }
 
@@ -1430,8 +1710,7 @@ form.dcc-roll-modifier {
 
   .saving-throw-box {
     align-items: center;
-    background: var(--dark-bg);
-    color: var(--light-color);
+    background: var(--system-frame-background);
     column-gap: 7px;
     display: grid;
     grid-template-columns: 54px 55px;
@@ -1440,7 +1719,7 @@ form.dcc-roll-modifier {
 
     input {
       align-self: center;
-      background: #dbd9cd;
+      background: var(--system-background);
       border-radius: 100px;
       font-size: 18px;
       height: 50px;
@@ -1451,6 +1730,7 @@ form.dcc-roll-modifier {
     label {
       font-size: 14px;
       letter-spacing: 1px;
+      color: var(--system-frame-title-color);
     }
   }
 }
@@ -1463,7 +1743,7 @@ form.dcc-roll-modifier {
     textarea {
       background: none;
       border: 0;
-      font-family: $book-antiqua;
+      font-family: var(--system-data-font), serif;
       font-size: 12px;
       line-height: 15px;
       padding: 0;
@@ -1472,6 +1752,11 @@ form.dcc-roll-modifier {
 
       &:focus {
         box-shadow: none;
+      }
+
+      &:focus-visible {
+        box-shadow: none;
+        outline: none;
       }
     }
 
@@ -1491,9 +1776,9 @@ form.dcc-roll-modifier {
     .combat-basics {
       column-gap: min(5px);
       display: grid;
-      grid-template-columns: 72px minmax(75px, 1fr) 61px minmax(15px, 1fr);
+      grid-template-columns: 77px minmax(75px, 1fr) 69px minmax(15px, 1fr);
       grid-template-rows: minmax(17px, auto) minmax(18px, auto) minmax(18px, auto);
-      padding: 0 5px 2px 3px;
+      padding: 1px 5px 2px 3px;
 
       label {
         font-size: 12px;
@@ -1532,15 +1817,14 @@ form.dcc-roll-modifier {
 
       .saving-throw-box {
         align-items: center;
-        background: var(--dark-bg);
-        color: var(--light-color);
+        background: var(--system-frame-background);
         display: grid;
         grid-template-columns: 24px 40px;
         text-align: left;
 
         input {
           align-self: center;
-          background: #dbd9cd;
+          background: var(--system-background);
           border-radius: 10px;
           font-size: 12px;
           height: 20px;
@@ -1551,6 +1835,7 @@ form.dcc-roll-modifier {
         label {
           font-size: 11px;
           letter-spacing: 1px;
+          color: var(--system-frame-title-color);
         }
       }
     }
@@ -1559,37 +1844,65 @@ form.dcc-roll-modifier {
 
 
 // Welcome Dialog
-#dcc-welcome-dialog {
-  h1 {
-    font-family: $duvall;
+.welcome-dialog {
+  aside {
+    display: grid;
+    grid-template-columns: 100%;
+    padding: 8px;
   }
 
-  form {
-    display: flex;
-    font-family: $book-antiqua;
-    justify-content: space-between;
-    flex-direction: column;
+  h2 {
+    font-family: var(--system-heading-font), serif;
+    font-size: 24px;
+    margin: 20px 0 0 0;
   }
 
-  div.credits {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
+  h3 {
+    font-family: var(--system-heading-font), serif;
+    font-size: 20px;
+    margin: 0;
+  }
+}
+
+// Release Notes Chat Card
+.dcc-release-notes-card {
+  p {
+    font-family: var(--system-heading-font), serif;
   }
 
-  div.logo-container {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
+  button {
+    background: var(--system-input-background-color);
+    border: 1px solid var(--system-border-color);
+    border-radius: 3px;
+    color: var(--system-primary-color);
+    cursor: pointer;
+    font-family: var(--system-data-font), serif;
+    font-size: 14px;
+    padding: 8px 12px;
+    text-align: left;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 8px;
 
-    img.dcc-logo {
-      border: 0;
+    &:hover {
+      background: var(--system-secondary-color);
+      border-color: var(--system-accent-color);
+    }
+
+    &:active {
+      background: var(--system-value-display-background-color);
+    }
+
+    i {
+      margin-right: 6px;
+      width: 16px;
     }
   }
 
-  div.dcc-copyright {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
+  .dcc-release-message {
+    color: var(--system-primary-color);
+    font-family: var(--system-data-font), serif;
+    margin-top: 8px;
+    padding: 8px;
   }
 }

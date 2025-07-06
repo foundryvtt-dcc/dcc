@@ -1,0 +1,180 @@
+{{!-- Class Tab --}}
+<section class="tab {{tabs.cleric.id}} {{tabs.cleric.cssClass}}" data-tab="{{tabs.cleric.id}}" data-group="{{tabs.cleric.group}}" id="cleric">
+  <div class="grid-col-span-12 grid-container grid-row-gap-5 grid-col-gap-5 mb-8">
+    <div class="grid-col-span-5 grid-row-span-2 box-border" data-ability="per">
+      <div class="box-title">{{localize "DCC.SpellCheck"}}</div>
+      <div class="grid-align-center p-5">
+        <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">
+          {{ifThen system.class.spellCheckOverrideDie system.class.spellCheckOverrideDie
+                   system.attributes.actionDice.value}}{{system.class.spellCheck}}
+        </div>
+
+        <div class="group-separator"></div>
+
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+          <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Die"}}</div>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attributes.actionDice.value}}</div>
+          <label class="group-indent" for="system.class.spellCheckOverrideDie" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.Override"}}
+          </label>
+          <input id="system.class.spellCheckOverrideDie" name="system.class.spellCheckOverrideDie"
+                 value="{{system.class.spellCheckOverrideDie}}"
+                 data-dtype="String"/>
+        </div>
+
+        <div class="group-separator"></div>
+
+        <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
+          <div class="group-heading" style="font-size: 15px;">{{localize "DCC.Bonus"}}</div>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.class.spellCheck}}</div>
+          <div class="group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.Level"}}</div>
+          <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.details.level.value}}</div>
+          <div class="mr-3 group-indent label-font" title="{{localize 'DCC.DisplayValueHint'}}">{{localize "DCC.AbilityPerShort"}} {{localize
+            "DCC.Modifier"}}</div>
+          <div class="value-display center" title="{{localize 'DCC.DisplayValueHint'}}">{{system.abilities.per.mod}}</div>
+          <label class="group-indent" for="system.class.spellCheckOverride" title="{{localize 'DCC.OverrideHint'}}">
+            {{localize "DCC.Override"}}
+          </label>
+          <input id="system.class.spellCheckOverride"
+                 name="system.class.spellCheckOverride"
+                 value="{{system.class.spellCheckOverride}}"
+                 data-dtype="String"/>
+
+          <div class="group-separator"></div>
+
+          <div class="label-font spell-check rollable mr-3 grid-col-span-2 center" data-action="rollSpellCheck" data-drag="true" data-drag-action="spellCheck">
+            <div title="{{localize 'DCC.RollSpellCheckHint'}}"><i class="fas fa-dice-d20"></i> {{localize "DCC.RollSpellCheck"}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-col-span-7 box-border">
+      <div class="box-title" style="">{{localize "DCC.ClericAbilities"}}</div>
+      <div class="grid-tpl-two label-font p-5 grid-row-gap-8 grid-col-gap-8">
+        <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="divineAid">
+          <label class="skill-check rollable" for="system.skills.divineAid.value" title="{{localize 'DCC.DivineAidHint'}}"
+                 data-action="rollSkillCheck" data-drag="true" data-drag-action="skill">
+            {{localize "DCC.DivineAid"}}
+          </label>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.divineAid.value}}</div>
+        </div>
+        <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="turnUnholy">
+          <label class="skill-check rollable" data-action="rollSkillCheck" data-drag="true" data-drag-action="skill" title="{{localize 'DCC.TurnUnholyHint'}}">
+            {{localize "DCC.TurnUnholy"}}
+          </label>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.turnUnholy.value}}</div>
+        </div>
+        <div class="grid-col-span-2 grid-tpl-max-25 grid-col-gap-5" data-skill="layOnHands">
+          <label class="skill-check rollable" data-action="rollSkillCheck" data-drag="true" data-drag-action="skill" title="{{localize 'DCC.LayOnHandsHint'}}">
+            {{localize "DCC.LayOnHands"}}
+          </label>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.skills.layOnHands.value}}</div>
+        </div>
+        <div class="group-separator"></div>
+        <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
+          <label class="disapproval-range rollable" for="system.class.disapproval" title="{{localize 'DCC.DisapprovalRangeHint'}}" data-drag="true" data-action="applyDisapproval" data-drag-action="applyDisapproval">
+            {{localize "DCC.DisapprovalRange"}}
+          </label>
+          <select class="number" name="system.class.disapproval" id="system.class.disapproval">
+            {{selectOptions config.disapprovalRanges selected=system.class.disapproval localize=true}}
+          </select>
+        </div>
+        <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
+          <label class="disapproval-table rollable" for="system.class.disapprovalTable" title="{{localize 'DCC.DisapprovalTableHint'}}" data-action="rollDisapproval" data-drag="true" data-drag-action="disapprovalTable">
+            {{localize "DCC.DisapprovalTable"}}
+          </label>
+          <select id="system.class.disapprovalTable" name="system.class.disapprovalTable">
+            {{selectOptions config.disapprovalTables selected=system.class.disapprovalTable
+                            localize=true
+                            labelAttr="name"
+                            valueAttr="path"}}
+          </select>
+        </div>
+        <div class="grid-col-span-2 grid-tpl-max-auto grid-col-gap-5">
+          <label for="system.class.deity" title="{{localize 'DCC.DeityHint'}}">{{localize "DCC.Deity"}}</label>
+          <input class="full-width" type="text" id="system.class.deity" name="system.class.deity"
+                 value="{{system.class.deity}}" data-dtype="String"/>
+        </div>
+      </div>
+    </div>
+
+    {{#dccPackExists "dcc-core-book.dcc-core-journals"}}
+      <div class="label-font" style="margin-top: 2px;">{{{system.class.classLink}}}</div>
+    {{/dccPackExists}}
+  </div>
+  <div class="grid-container">
+    <div class="grid-col-span-12 cleric-table">
+      <table class="box-border">
+        <thead class="box-title">
+        <tr>
+          <th>Lay On Hands (alignment step)</th>
+          <th>12</th>
+          <th>14</th>
+          <th>20</th>
+          <th>22+</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>(same)</td>
+          <td>2 dice</td>
+          <td>3 dice</td>
+          <td>4 dice</td>
+          <td>5 dice</td>
+        </tr>
+        <tr>
+          <td>(adjacent)</td>
+          <td>1 die</td>
+          <td>2 dice</td>
+          <td>3 dice</td>
+          <td>4 dice</td>
+        </tr>
+        <tr>
+          <td>(opposed)</td>
+          <td>1 die</td>
+          <td>1 die</td>
+          <td>2 dice</td>
+          <td>3 dice</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid-col-span-12 cleric-table">
+      <table class="box-border">
+        <thead class="box-title">
+        <tr>
+          <th>Condition</th>
+          <th>Dice</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>Broken limbs</td>
+          <td>1 die</td>
+        </tr>
+        <tr>
+          <td>Organ damage</td>
+          <td>2 dice</td>
+        </tr>
+        <tr>
+          <td>Disease</td>
+          <td>2 dice</td>
+        </tr>
+        <tr>
+          <td>Paralysis</td>
+          <td>3 dice</td>
+        </tr>
+        <tr>
+          <td>Poison</td>
+          <td>4 dice</td>
+        </tr>
+        <tr>
+          <td>Blindness/Deafness</td>
+          <td>5 dice</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

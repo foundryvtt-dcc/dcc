@@ -1,7 +1,18 @@
 {{!-- Notes Tab --}}
-<div class="tab" data-group="primary" data-tab="notes">
-  <div class="dark-title">{{localize "DCC.Notes"}}</div>
-  <div class="notes">
-    {{editor notesHTML target="system.details.notes.value" engine="prosemirror" button=true editable=editable}}
+<section class="tab notes-bg {{tabs.notes.id}} {{tabs.notes.cssClass}}" id="notes" data-tab="{{tabs.notes.id}}" data-group="{{tabs.notes.group}}">
+  <div class="grid-col-span-12" style="height: 100%;">
+    <div class="box-title">{{localize "DCC.Notes"}}</div>
+    {{#if editable}}
+      <prose-mirror
+        name="system.details.notes.value"
+        button="true"
+        editable="{{editable}}"
+        toggled="false"
+        value="{{system.details.notes.value}}">
+        {{{notesHTML}}}
+      </prose-mirror>
+    {{else}}
+      {{{notesHTML}}}
+    {{/if}}
   </div>
-</div>
+</section>

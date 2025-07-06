@@ -1,0 +1,89 @@
+{{!-- Party Tab --}}
+<section class="tab {{tabs.party.id}} {{tabs.party.cssClass}}" id="party"
+         data-tab="{{tabs.party.id}}"
+         data-group="{{tabs.party.group}}">
+  <div class="party-body">
+    {{#each partyMembers}}
+      <div class="character-row data-font" data-actor-id="{{id}}">
+        <div class="box-title name">{{actor.name}}</div>
+        <div class="portrait">
+          <img class="profile-img" src="{{actor.img}}" data-action="editImage" data-field="img" title="{{actor.name}}"
+               alt="{{localize 'DCC.CharacterPortrait'}}'"/>
+        </div>
+        {{#if isNPC}}
+          <i class="fas fa-shield-alt"></i>
+          <div class="ac-summary">{{actor.system.attributes.ac.value}}</div>
+          <i class="fas fa-heart"></i>
+          <div class="hp-summary">{{actor.system.attributes.hp.value}} / {{actor.system.attributes.hp.max}}</div>
+          <div></div>
+          <label class="save-label rollable" data-drag="true" data-drag-action="save" data-action="rollSave" data-save="ref">{{localize "DCC.SavesReflexAbbr"}}</label>
+          <div>{{numberFormat actor.system.saves.ref.value decimals=0 sign=true}}</div>
+          <label class="save-label rollable" data-drag="true" data-drag-action="save" data-action="rollSave" data-save="frt">{{localize "DCC.SavesFortitudeAbbr"}}</label>
+          <div>{{numberFormat actor.system.saves.frt.value decimals=0 sign=true}}</div>
+          <label class="save-label rollable" data-drag="true" data-drag-action="save" data-action="rollSave" data-save="wil">{{localize "DCC.SavesWillAbbr"}}</label>
+          <div>{{numberFormat actor.system.saves.wil.value decimals=0 sign=true}}</div>
+          <i class="weapon rollable fas fa-sword" data-drag="true" data-drag-action="weapon" data-action="rollAttack" data-item-id="{{activeMelee}}"></i>
+          <select class="weapon-dropdown" id="activeMelee" name="weaponUpdates.{{id}}.melee">
+            {{selectOptions melee selected=activeMelee labelAttr="name" valueAttr="id"}}
+          </select>
+          <i class="weapon rollable fas fa-bow-arrow" data-drag="true" data-drag-action="weapon" data-action="rollAttack" data-item-id="{{activeRanged}}"></i>
+          <select class="weapon-dropdown grid-col-span-3" id="activeRanged" name="weaponUpdates.{{id}}.ranged">
+            {{selectOptions ranged selected=activeRanged labelAttr="name" valueAttr="id"}}
+          </select>
+          <a class="party-control party-edit" data-action="editMember" title="{{localize 'DCC.PartyEdit'}}"><i class="fas fa-user-cog"></i></a>
+          <a class="party-control party-delete" style="margin-right: 13px" data-action="removeMember" title="{{localize 'DCC.PartyDelete'}}"><i
+            class="fas fa-user-times"></i></a>
+          <div class="special">{{actor.system.attributes.special.value}}</div>
+        {{else}}
+          <div class="occupation">{{actor.system.details.occupation.value}}</div>
+          <i class="fas fa-shield-alt"></i>
+          <div class="ac-summary">{{actor.system.attributes.ac.value}}</div>
+          <i class="fas fa-heart"></i>
+          <div class="hp-summary">{{actor.system.attributes.hp.value}} / {{actor.system.attributes.hp.max}}</div>
+          <label class="ability-label rollable" data-drag="true" data-drag-action="ability" data-action="rollAbility" data-ability="str">{{localize
+            "DCC.AbilityStrShort"}}</label>
+          <div>{{numberFormat actor.system.abilities.str.mod decimals=0 sign=true}}</div>
+          <label class="ability-label rollable" data-drag="true" data-drag-action="ability" data-action="rollAbility" data-ability="agl">{{localize
+            "DCC.AbilityAglShort"}}</label>
+          <div>{{numberFormat actor.system.abilities.agl.mod decimals=0 sign=true}}</div>
+          <label class="ability-label rollable" data-drag="true" data-drag-action="ability" data-action="rollAbility" data-ability="sta">{{localize
+            "DCC.AbilityStaShort"}}</label>
+          <div>{{numberFormat actor.system.abilities.sta.mod decimals=0 sign=true}}</div>
+          <label class="ability-label rollable" data-drag="true" data-drag-action="ability" data-action="rollAbility" data-ability="per">{{localize
+            "DCC.AbilityPerShort"}}</label>
+          <div>{{numberFormat actor.system.abilities.per.mod decimals=0 sign=true}}</div>
+          <label class="ability-label rollable" data-drag="true" data-drag-action="ability" data-action="rollAbility" data-ability="int">{{localize
+            "DCC.AbilityIntShort"}}</label>
+          <div>{{numberFormat actor.system.abilities.int.mod decimals=0 sign=true}}</div>
+          <label class="ability-label rollable" data-drag="true" data-drag-action="ability" data-action="rollAbility" data-ability="lck">{{localize
+            "DCC.AbilityLckShort"}}</label>
+          <div>{{numberFormat actor.system.abilities.lck.mod decimals=0 sign=true}}</div>
+          <div class="filler"></div>
+          <label class="save-label rollable" data-drag="true" data-drag-action="save" data-action="rollSave" data-save="ref">{{localize "DCC.SavesReflexAbbr"}}</label>
+          <div>{{numberFormat actor.system.saves.ref.value decimals=0 sign=true}}</div>
+          <label class="save-label rollable" data-drag="true" data-drag-action="save" data-action="rollSave" data-save="frt">{{localize "DCC.SavesFortitudeAbbr"}}</label>
+          <div>{{numberFormat actor.system.saves.frt.value decimals=0 sign=true}}</div>
+          <label class="save-label rollable" data-drag="true" data-drag-action="save" data-action="rollSave" data-save="wil">{{localize "DCC.SavesWillAbbr"}}</label>
+          <div>{{numberFormat actor.system.saves.wil.value decimals=0 sign=true}}</div>
+          <div class="filler"></div>
+          <div class="filler"></div>
+          <i class="weapon rollable fas fa-sword" data-drag="true" data-drag-action="weapon" data-action="rollAttack" data-item-id="{{activeMelee}}"></i>
+          <select class="weapon-dropdown" id="activeMelee" name="weaponUpdates.{{id}}.melee">
+            {{selectOptions melee selected=activeMelee labelAttr="name" valueAttr="id"}}
+          </select>
+          <i class="weapon rollable fas fa-bow-arrow" data-drag="true" data-drag-action="weapon" data-action="rollAttack" data-item-id="{{activeRanged}}"></i>
+          <select class="weapon-dropdowns grid-col-span-3" id="activeRanged" name="weaponUpdates.{{id}}.ranged">
+            {{selectOptions ranged selected=activeRanged labelAttr="name" valueAttr="id"}}
+          </select>
+          <a class="party-control party-edit" data-action="editMember" title="{{localize 'DCC.PartyEdit'}}"><i class="fas fa-user-cog"></i></a>
+          <a class="party-control party-delete" data-action="removeMember" title="{{localize 'DCC.PartyDelete'}}"><i
+            class="fas fa-user-times"></i></a>
+        {{/if}}
+      </div>
+    {{else}}
+      <div class="empty-party">
+        <p>{{localize "DCC.PartyEmpty"}}</p>
+      </div>
+    {{/each}}
+  </div>
+</section>

@@ -1,4 +1,6 @@
-/* global Application, CONFIG, Die, FormApplication, OperatorTerm, Roll, game */
+/* global Die, OperatorTerm, Roll, game, foundry */
+
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 /**
  * Clean a formula by stripping any spaces and duplicate signs
@@ -238,7 +240,7 @@ function constructDCCTerm (type, data = {}, options = {}) {
   return []
 }
 
-class RollModifierDialog extends FormApplication {
+class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Construct a Roll Modifier Dialog
    * @params resolve {Function}     Function to resolve the promise
@@ -248,10 +250,9 @@ class RollModifierDialog extends FormApplication {
    * @return {Object}
    */
   constructor (resolve, reject, terms, options = {}) {
-    super()
+    super(options)
     this._resolve = resolve
     this._reject = reject
-    Object.assign(this.options, options)
     if (terms instanceof Array) {
       this._terms = this._constructTermsFromArray(terms)
     } else {
@@ -260,12 +261,40 @@ class RollModifierDialog extends FormApplication {
     this._roll = this._constructRoll()
   }
 
-  /** @override */
-  static get defaultOptions () {
-    const options = super.defaultOptions
-    options.template = CONFIG.DCC.templates.rollModifierDialog
-    options.resizable = true
-    return options
+  /** @inheritDoc */
+  static DEFAULT_OPTIONS = {
+    classes: ['dcc', 'sheet', 'roll-modifier'],
+    tag: 'form',
+    position: {
+      width: 'auto',
+      height: 'auto'
+    },
+    window: {
+      resizable: true,
+      title: 'DCC.RollModifierTitle'
+    },
+    form: {
+      handler: RollModifierDialog.#onSubmitForm,
+      submitOnChange: false,
+      closeOnSubmit: false
+    },
+    actions: {
+      cancel: RollModifierDialog.#onCancel,
+      modifyDie: RollModifierDialog.#modifyDie,
+      modifyDieCount: RollModifierDialog.#modifyDieCount,
+      modifyBonus: RollModifierDialog.#modifyBonus,
+      applyPreset: RollModifierDialog.#applyPreset,
+      modifySpellburn: RollModifierDialog.#modifySpellburn,
+      resetTerm: RollModifierDialog.#resetTerm,
+      checkboxChange: RollModifierDialog.#checkboxChange
+    }
+  }
+
+  /** @inheritDoc */
+  static PARTS = {
+    form: {
+      template: 'systems/dcc/templates/dialog-roll-modifiers.html'
+    }
   }
 
   /*
@@ -298,7 +327,7 @@ class RollModifierDialog extends FormApplication {
    * Construct and return the data object used to render the HTML template for this form application.
    * @return {Object}
    */
-  getData (options) {
+  _prepareContext (options) {
     const data = {}
     data.user = game.user
     data.options = this.options
@@ -310,35 +339,22 @@ class RollModifierDialog extends FormApplication {
 
   /* -------------------------------------------- */
 
-  /** @override */
-  activateListeners (html) {
-    super.activateListeners(html)
-
-    html.find('button.cancel').click(this._onCancel.bind(this))
-
-    html.find('button.dice-chain').click(this._modifyDie.bind(this))
-    html.find('button.dice-count').click(this._modifyDieCount.bind(this))
-    html.find('button.bonus').click(this._modifyBonus.bind(this))
-    html.find('button.term-preset').click(this._applyPreset.bind(this))
-    html.find('button.spellburn').click(this._modifySpellburn.bind(this))
-
-    html.find('button.reset').click(this._resetTerm.bind(this))
-
-    html.find('input.checkbox').change(this._checkboxChange.bind(this))
-  }
+  // activateListeners replaced by actions system in V2
 
   /**
-   * This method is called upon form submission after form data is validated
-   * @param event {Event}       The initial triggering submission event
-   * @param formData {Object}   The object of validated form data with which to update the object
+   * Handle form submission
+   * @this {RollModifierDialog}
+   * @param {SubmitEvent} event - The form submission event
+   * @param {HTMLFormElement} form - The form element
+   * @param {FormDataExtended} formData - The processed form data
    * @private
    */
-  async _updateObject (event, formData) {
+  static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
 
     this._roll = this._constructRoll()
     this._resolve(this.roll)
-    await super.close()
+    await this.close()
   }
 
   /**
@@ -355,15 +371,16 @@ class RollModifierDialog extends FormApplication {
     }
     // Build a new Roll object from the collected terms
     let formula = ''
-    if (this._state !== Application.RENDER_STATES.NONE) {
+    if (this._state !== ApplicationV2.RENDER_STATES.NONE && this.element) {
       // Once the form is constructed extract data from the form fields
-      this.element.find('input.term-field').each((index, element) => {
-        if (index > 0) {
-          formula += '+'
-        }
-        formula += element.value
-        resolveTerm(element.value, this.terms[index])
-      })
+      this.element.querySelectorAll('input.term-field').forEach(
+        (element, index) => {
+          if (index > 0) {
+            formula += '+'
+          }
+          formula += element.value
+          resolveTerm(element.value, this.terms[index])
+        })
     } else {
       // Otherwise extract data straight from the terms array
       for (const term of this.terms) {
@@ -380,65 +397,73 @@ class RollModifierDialog extends FormApplication {
 
   /**
    * Handle the Cancel button
-   * @param event {Event}       The originating click event
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  async _onCancel (event) {
+  static async #onCancel (event, target) {
     event.preventDefault()
     this._reject(null)
-    await super.close()
+    await this.close()
   }
 
   /**
    * Modify a Die term (via dice chain)
-   * @param event {Event}  The originating click event
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  async _modifyDie (event) {
+  static async #modifyDie (event, target) {
     event.preventDefault()
-    const index = event.currentTarget.dataset.term
-    const mod = event.currentTarget.dataset.mod
-    const formField = this.element.find('#term-' + index)
-    let termFormula = game.dcc.DiceChain.bumpDie(formField.val(), parseInt(mod))
+    const index = target.dataset.term
+    const mod = target.dataset.mod
+    const formField = this.element.querySelector('#term-' + index)
+    let termFormula = game.dcc.DiceChain.bumpDie(formField.value, parseInt(mod))
     if (index > 0) {
       // Add a sign if this isn't the first term in the expression
       termFormula = '+' + termFormula
     }
-    formField.val(termFormula)
+    formField.value = termFormula
   }
 
   /**
    * Modify a Die term (number of dice)
-   * @param event {Event}  The originating click event
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  async _modifyDieCount (event) {
+  static async #modifyDieCount (event, target) {
     event.preventDefault()
-    const index = event.currentTarget.dataset.term
-    const mod = event.currentTarget.dataset.mod
+    const index = target.dataset.term
+    const mod = target.dataset.mod
     const term = this.terms[index]
-    const formField = this.element.find('#term-' + index)
-    let termFormula = game.dcc.DiceChain.bumpDieCount(formField.val(), parseInt(mod), term.maxCount)
+    const formField = this.element.querySelector('#term-' + index)
+    let termFormula = game.dcc.DiceChain.bumpDieCount(formField.value, parseInt(mod), term.maxCount)
     if (index > 0) {
       // Add a sign if this isn't the first term in the expression
       termFormula = '+' + termFormula
     }
 
-    formField.val(termFormula)
+    formField.value = termFormula
   }
 
   /**
    * Modify a non-Die term
-   * @param event {Event}  The originating click event
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  async _modifyBonus (event) {
+  static async #modifyBonus (event, target) {
     event.preventDefault()
-    const index = event.currentTarget.dataset.term
-    const mod = event.currentTarget.dataset.mod
+    const index = target.dataset.term
+    const mod = target.dataset.mod
     const term = this.terms[index]
-    const formField = this.element.find('#term-' + index)
-    let termFormula = parseInt(formField.val()) + parseInt(mod)
+    const formField = this.element.querySelector('#term-' + index)
+    let termFormula = parseInt(formField.value) + parseInt(mod)
     if (term.minAmount) {
       termFormula = Math.max(termFormula, parseInt(term.minAmount))
     }
@@ -450,37 +475,41 @@ class RollModifierDialog extends FormApplication {
       // Always add a sign
       termFormula = '+' + termFormula
     }
-    formField.val(termFormula)
+    formField.value = termFormula
   }
 
   /**
    * Apply a preset
-   * @param event {Event}  The originating click event
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  async _applyPreset (event) {
+  static async #applyPreset (event, target) {
     event.preventDefault()
-    const index = event.currentTarget.dataset.term
-    const formula = event.currentTarget.dataset.formula
-    const formField = this.element.find('#term-' + index)
-    formField.val(formula)
+    const index = target.dataset.term
+    const formula = target.dataset.formula
+    const formField = this.element.querySelector('#term-' + index)
+    formField.value = formula
   }
 
   /**
    * Modify a spellburn term
-   * @param event {Event}  The originating click event
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  async _modifySpellburn (event) {
+  static async #modifySpellburn (event, target) {
     event.preventDefault()
-    const index = event.currentTarget.dataset.term
-    const mod = parseInt(event.currentTarget.dataset.mod)
-    const stat = event.currentTarget.dataset.stat
-    const formField = this.element.find('#term-' + index)
-    const statField = this.element.find('#' + stat)
-    const statMax = parseInt(statField.data('max'))
-    const statValue = parseInt(statField.val())
-    const newValue = parseInt(formField.val()) + mod
+    const index = target.dataset.term
+    const mod = parseInt(target.dataset.mod)
+    const stat = target.dataset.stat
+    const formField = this.element.querySelector('#term-' + index)
+    const statField = this.element.querySelector('#' + stat)
+    const statMax = parseInt(statField.dataset.max)
+    const statValue = parseInt(statField.value)
+    const newValue = parseInt(formField.value) + mod
     const newStat = statValue - mod
     if (newStat >= 0 && newStat <= statMax) {
       let termFormula = newValue.toString()
@@ -488,36 +517,40 @@ class RollModifierDialog extends FormApplication {
         // Always add a sign
         termFormula = '+' + termFormula
       }
-      formField.val(termFormula)
-      statField.val(newStat)
+      formField.value = termFormula
+      statField.value = newStat
       this.terms[index][stat] = newStat
     }
   }
 
   /**
    * Handle a checkbox change event
-   * @param event {Event}  The originating click event
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating change event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  async _checkboxChange (event) {
+  static async #checkboxChange (event, target) {
     event.preventDefault()
-    const index = event.currentTarget.dataset.term
+    const index = target.dataset.term
     const term = this.terms[index]
-    const formField = this.element.find('#term-' + index)
-    const checked = event.currentTarget.checked
-    formField.val(checked ? term.checkedFormula : '+0')
+    const formField = this.element.querySelector('#term-' + index)
+    const checked = target.checked
+    formField.value = checked ? term.checkedFormula : '+0'
   }
 
   /**
    * Reset a term
-   * @param event {Event}  The originating click event
+   * @this {RollModifierDialog}
+   * @param {PointerEvent} event - The originating click event
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
    * @private
    */
-  async _resetTerm (event) {
+  static async #resetTerm (event, target) {
     event.preventDefault()
-    const index = event.currentTarget.dataset.term
-    const formField = this.element.find('#term-' + index)
-    formField.val(this.terms[index].formula)
+    const index = target.dataset.term
+    const formField = this.element.querySelector('#term-' + index)
+    formField.value = this.terms[index].formula
   }
 
   /** @override */
