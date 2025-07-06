@@ -488,10 +488,6 @@ class DCCActorSheetGeneric extends DCCActorSheet {
       id: 'tabs',
       template: 'systems/dcc/templates/actor-partial-tabs.html'
     },
-    body: {
-      id: 'body',
-      template: 'systems/dcc/templates/actor-sheet-body.html'
-    },
     character: {
       id: 'character',
       template: 'systems/dcc/templates/actor-partial-pc-common.html'
