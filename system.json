@@ -28,14 +28,30 @@
   "esmodules": [
     "module/dcc.js"
   ],
- "flags": {
-   "hotReload": {
-     "extensions": ["js", "css", "html", "json"],
-     "paths": ["lang", "templates", "styles"]
-   }
- },
+  "flags": {
+    "hotReload": {
+      "extensions": [
+        "js",
+        "css",
+        "html",
+        "json"
+      ],
+      "paths": [
+        "lang",
+        "templates",
+        "styles"
+      ]
+    }
+  },
   "styles": [
-    "styles/dcc.css"
+    {
+      "src": "styles/variables.css",
+      "layer": "variables"
+    },
+    {
+      "src": "styles/dcc.css",
+      "layer": "system"
+    }
   ],
   "languages": [
     {
@@ -76,8 +92,8 @@
   "socket": true,
   "initiative": "@attributes.init.die + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
-  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.60.0/system.json",
-  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.60.0/dcc.zip",
+  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.52.0/system.json",
+  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.52.0/dcc.zip",
   "protected": false,
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "license": "LICENSE.txt"
