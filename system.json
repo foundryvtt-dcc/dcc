@@ -4,9 +4,9 @@
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": "0.60.0",
   "compatibility": {
-    "maximum": "13",
-    "minimum": "13",
-    "verified": "13"
+    "maximum": "12",
+    "minimum": "12",
+    "verified": "12"
   },
   "authors": [
     {
@@ -28,30 +28,14 @@
   "esmodules": [
     "module/dcc.js"
   ],
-  "flags": {
-    "hotReload": {
-      "extensions": [
-        "js",
-        "css",
-        "html",
-        "json"
-      ],
-      "paths": [
-        "lang",
-        "templates",
-        "styles"
-      ]
-    }
-  },
+ "flags": {
+   "hotReload": {
+     "extensions": ["js", "css", "html", "json"],
+     "paths": ["lang", "templates", "styles"]
+   }
+ },
   "styles": [
-    {
-      "src": "styles/variables.css",
-      "layer": "variables"
-    },
-    {
-      "src": "styles/dcc.css",
-      "layer": "system"
-    }
+    "styles/dcc.css"
   ],
   "languages": [
     {
@@ -92,8 +76,8 @@
   "socket": true,
   "initiative": "@attributes.init.die + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
-  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.52.0/system.json",
-  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.52.0/dcc.zip",
+  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.60.0/system.json",
+  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.60.0/dcc.zip",
   "protected": false,
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "license": "LICENSE.txt"
