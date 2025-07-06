@@ -385,10 +385,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   #prepareImage () {
     if (!this.options.document.img || this.options.document.img === 'icons/svg/mystery-man.svg') {
       this.options.document.img = EntityImages.imageForActor(this.options.document.type)
-      this.options.document.update('img', this.options.document.img)
+      this.options.document.update({ img: this.options.document.img })
       if (!this.options.document.prototypeToken.texture.src || this.options.document.prototypeToken.texture.src === 'icons/svg/mystery-man.svg') {
         this.options.document.prototypeToken.texture.src = EntityImages.imageForActor(this.options.document.type)
-        this.options.document.update('prototypeToken.texture.src', this.options.document.prototypeToken.texture.src)
+        this.options.document.update({ 'prototypeToken.texture.src': this.options.document.prototypeToken.texture.src })
       }
     }
     return this.options.document.img
