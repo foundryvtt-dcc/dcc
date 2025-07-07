@@ -6,10 +6,11 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   static DEFAULT_OPTIONS = {
     id: 'fleeting-luck',
-    classes: ['dcc', 'sheet', 'fleeting-luck', 'themed'],
+    classes: ['dcc', 'sheet', 'fleeting-luck'],
+    tag: 'form',
     position: {
       width: 400,
-      height: 'fit-content'
+      height: 'auto'
     },
     actions: {
       openUserConfiguration: this.#onOpenUserConfiguration,
@@ -28,7 +29,7 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static PARTS = {
-    form: {
+    element: {
       template: 'systems/dcc/templates/dialog-fleeting-luck.html'
     }
   }
@@ -59,13 +60,6 @@ class FleetingLuckDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
     return data
-  }
-
-  /** @override */
-  setPosition ({ left, top, width, height, scale } = {}) {
-    const position = super.setPosition({ left, top, width, height, scale })
-    position.height = 'fit-content'
-    return position
   }
 
   /**
