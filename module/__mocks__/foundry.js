@@ -1278,6 +1278,10 @@ class Localization {
     }
   }
 
+  /**
+   * @param {string} stringId - The localization key to translate
+   * @returns {string} The translated string
+   */
   localize (stringId) {
     // Return actual translation if available, otherwise strip DCC prefix
     return this.translations[stringId] || stringId.replace('DCC.', '')
@@ -1299,6 +1303,7 @@ global.Localization = Localization
  */
 class Game {
   constructor (worldData, sessionId, socket) {
+    /** @type {Localization} */
     this.i18n = new Localization()
   }
 

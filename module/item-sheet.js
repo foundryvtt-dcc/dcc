@@ -186,6 +186,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @override */
   async _prepareContext (options) {
     const data = await super._prepareContext(options)
+    data.actor = this.actor
 
     if (data.document.type === 'weapon') {
       this.position.height = 685
@@ -233,7 +234,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
 
     // Format Description HTML
-    if (this.document.system.description) {
+    if (data.document.system.description) {
       data.descriptionHTML = await TextEditor.enrichHTML(this.document.system.description.value, {
         relativeTo: this.document,
         secrets: this.document.isOwner
@@ -241,7 +242,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
 
     // Format Judge Description HTML
-    if (this.document.system?.description?.judge) {
+    if (data.document.system?.description?.judge) {
       data.judgeDescriptionHTML = await TextEditor.enrichHTML(this.document.system.description.judge.value, {
         relativeTo: this.document,
         secrets: this.document.isOwner
@@ -254,15 +255,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     data.editable = this.isEditable
 
     return data
-  }
-
-  /** @override */
-  setPosition (options = {}) {
-    const position = super.setPosition(options)
-    const sheetBody = this.element.querySelector('.sheet-body')
-    const bodyHeight = position.height - 160
-    sheetBody.style.height = bodyHeight + 'px'
-    return position
   }
 
   /**

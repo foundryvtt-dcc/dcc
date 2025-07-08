@@ -27,6 +27,10 @@
           <input type="text" name="system.die" value="{{system.die}}" title="{{localize 'DCC.SkillDieHint'}}"
                  data-dtype="String"/>
         {{/if}}
+        {{#if system.config.useLevel}}
+          <label title="{{localize 'DCC.SkillLevelHint'}}">{{localize "DCC.Level"}}</label>
+          <div class="value-display" title="{{localize 'DCC.SkillUseLevelHint'}}" data-dtype="String">{{actor.system.level}}</div>
+        {{/if}}
         {{#if system.config.useValue}}
           <label>{{localize "DCC.SkillValue"}}</label>
           <input type="text" name="system.value"

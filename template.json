@@ -575,6 +575,7 @@
         "useSummary": true,
         "useAbility": true,
         "useDie": true,
+        "useLevel": false,
         "useValue": true,
         "showLastResult": true
       },

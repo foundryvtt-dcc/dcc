@@ -529,6 +529,8 @@
   "DCC.SkillSummary": "Summary",
   "DCC.SkillUseAbility": "Include Ability Modifier",
   "DCC.SkillUseDie": "Include Die for Skill Check",
+  "DCC.SkillUseLevel": "Include Character Level",
+  "DCC.SkillUseLevelHint": "Adds character level to the skill check, useful for third-party skills that scale with level",
   "DCC.SkillUseValue": "Include Fixed Modifier",
   "DCC.SkillUseAbilityHint": "Use </> Config in title bar to enable this",
   "DCC.SkillValue": "Modifier",

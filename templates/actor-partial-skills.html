@@ -54,6 +54,9 @@
           {{else}}
             --
           {{/if}}
+          {{#if skill.system.config.useLevel}}
+            <span title="{{localize 'DCC.SkillUseLevelHint'}}">+ {{actor.system.level}}</span>
+          {{/if}}
         </div>
         <div>
           {{#if skill.system.config.showLastResult}}

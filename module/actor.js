@@ -679,6 +679,9 @@ class DCCActor extends Actor {
         if (skillItem.system.config.useDie) {
           skill.die = skillItem.system.die || null
         }
+        if (skillItem.system.config.useLevel) {
+          skill.level = this.system.level ?? 0
+        }
         if (skillItem.system.config.useValue) {
           skill.value = skillItem.system.value ?? undefined
         }
@@ -731,6 +734,16 @@ class DCCActor extends Actor {
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
         modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
+        formula
+      })
+    }
+
+    if (skill.level && skill.level !== 0) {
+      const formula = `${skill.level}`
+      terms.push({
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize('DCC.Level'),
         formula
       })
     }
@@ -791,7 +804,8 @@ class DCCActor extends Actor {
     // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
     if (skillTable) {
-      await game.dcc.processSpellCheck(this, {
+      await game.dcc.processSpellCheck({
+        document: this,
         rollTable: skillTable,
         roll,
         item: skillItem,

@@ -1541,3 +1541,143 @@ test('levelChange creates dialog', () => {
   // The method should execute without errors
   expect(true).toBe(true)
 })
+
+test('roll skill check with useLevel config', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockClear()
+
+  // Create a skill item with useLevel configuration
+  const skillItem = new DCCItem({
+    name: 'levelBasedSkill',
+    type: 'skill',
+    system: {
+      config: {
+        useAbility: true,
+        useDie: true,
+        useLevel: true,
+        useValue: true
+      },
+      ability: 'int',
+      die: '1d20',
+      value: '+2',
+      description: {
+        value: 'A level-based skill description'
+      }
+    }
+  })
+
+  // Mock the itemTypes to return our skill
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+
+  // Set actor level
+  actor.system.level = 5
+
+  await actor.rollSkillCheck('levelBasedSkill')
+
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
+    [
+      {
+        type: 'Die',
+        label: null,
+        formula: '1d20',
+        presets: [
+          {
+            formula: 'invalid',
+            label: 'invalid'
+          },
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
+      },
+      {
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'levelBasedSkill (Intelligence)',
+        formula: '+2 + 1' // value 2 + int mod 1
+      },
+      {
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'Level',
+        formula: '5' // level 5 as separate term
+      }
+    ],
+    actor.getRollData(),
+    {
+      title: 'levelBasedSkill'
+    }
+  )
+})
+
+test('roll skill check without useLevel config', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockClear()
+
+  // Create a skill item without useLevel configuration
+  const skillItem = new DCCItem({
+    name: 'nonLevelSkill',
+    type: 'skill',
+    system: {
+      config: {
+        useAbility: true,
+        useDie: true,
+        useLevel: false, // Explicitly set to false
+        useValue: true
+      },
+      ability: 'per',
+      die: '1d24',
+      value: '+3',
+      description: {
+        value: 'A non-level skill description'
+      }
+    }
+  })
+
+  // Mock the itemTypes to return our skill
+  global.itemTypesMock.mockReturnValue({
+    skill: {
+      find: vi.fn().mockReturnValue(skillItem)
+    }
+  })
+
+  // Set actor level to ensure it's not used
+  actor.system.level = 10
+
+  await actor.rollSkillCheck('nonLevelSkill')
+
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
+    [
+      {
+        type: 'Die',
+        label: null,
+        formula: '1d24',
+        presets: [
+          {
+            formula: 'invalid',
+            label: 'invalid'
+          },
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
+      },
+      {
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        modifierLabel: 'nonLevelSkill (Personality)',
+        formula: '+3 + 2' // value 3 + per mod 2, NO level
+      }
+    ],
+    actor.getRollData(),
+    {
+      title: 'nonLevelSkill'
+    }
+  )
+})
