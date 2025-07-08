@@ -77,6 +77,7 @@ export const highlightCriticalSuccessFailure = function (message, html) {
  * @return {Array}              The extended options Array including new context choices
  */
 export const addChatMessageContextOptions = function (html, options) {
+  console.log('APPLY CHAT OPTIONS')
   const canApply = function (li) {
     if (canvas.tokens.controlled.length === 0) return false
     if (li.querySelector('.damage-applyable')) return true
@@ -85,7 +86,7 @@ export const addChatMessageContextOptions = function (html, options) {
 
   options.push(
     {
-      name: game.i18n.localize('DCC.ChatContextDamage'),
+      name: 'DCC.ChatContextDamage',
       icon: '<i class="fas fa-user-minus"></i>',
       condition: canApply,
       callback: li => applyChatCardDamage(li, 1)
@@ -93,7 +94,7 @@ export const addChatMessageContextOptions = function (html, options) {
   )
   options.push(
     {
-      name: game.i18n.localize('DCC.ChatContextHealing'),
+      name: 'DCC.ChatContextHealing',
       icon: '<i class="fas fa-user-plus"></i>',
       condition: canApply,
       callback: li => applyChatCardDamage(li, -1)

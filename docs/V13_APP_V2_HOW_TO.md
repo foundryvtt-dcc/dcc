@@ -78,6 +78,8 @@ foundry.canvas.layers.NotesLayer.TOGGLE_SETTING
 
 ### Hook Name Changes
 
+#### Render Hook Changes
+
 ```javascript
 // V12 (deprecated in V13)
 Hooks.on('renderChatMessage', (message, html, data) => {
@@ -90,6 +92,92 @@ Hooks.on('renderChatMessageHTML', (message, html, data) => {
   const messageContent = html.querySelector('.message-content')
 })
 ```
+
+#### Context Menu Hook Changes (CRITICAL)
+
+All V12 context menu hook names were replaced with a new paradigm `get{DocumentName}ContextOptions`. These hooks also have completely different signatures:
+
+**V12 to V13 Hook Mappings:**
+```javascript
+// Chat Messages
+getChatLogEntryContext           → getChatMessageContextOptions
+
+// Actor Directory
+getActorDirectoryEntryContext    → getActorContextOptions
+
+// Scene Navigation
+getSceneNavigationContext        → getSceneContextOptions
+
+// Combat Tracker
+getCombatTrackerEntryContext     → getCombatContextOptions
+getCombatantEntryContext         → getCombatantContextOptions
+
+// Other Directories
+getMacroDirectoryEntryContext    → getMacroContextOptions
+getPlaylistDirectoryEntryContext → getPlaylistContextOptions
+getPlaylistSoundContext          → getPlaylistSoundContextOptions
+
+// Folders
+getFolderContext                 → getFolderContextOptions
+
+// Users (unchanged)
+getUserContextOptions            → getUserContextOptions
+```
+
+**New Hook Signature:**
+```javascript
+// V12 Pattern (Old)
+Hooks.on("getChatLogEntryContext", (html, options) => {
+  // html is jQuery object
+  // options is array to push to
+  options.push({
+    name: "Custom Option",
+    icon: '<i class="fas fa-star"></i>',
+    condition: li => {
+      // li is jQuery object
+      const messageId = li.data("message-id")
+      return game.messages.get(messageId)?.isAuthor
+    },
+    callback: li => {
+      // li is jQuery object
+      const messageId = li.data("message-id")
+      // ... handle action
+    }
+  })
+})
+
+// V13 Pattern (New)
+Hooks.on("getChatMessageContextOptions", (application, menuItems) => {
+  // application is the ApplicationV2 instance
+  const canApply = function (li) {
+    if (canvas.tokens.controlled.length === 0) return false
+    if (li.querySelector('.damage-applyable')) return true
+    if (li.querySelector('.dice-total')) return true
+  }
+  // menuItems is array to mutate
+  // 'element' is an DOM element, not a jQuery object
+  menuItems.push({
+    name: "Custom Option",
+    icon: '<i class="fas fa-star"></i>',
+    condition: element => {
+      // element is HTMLElement
+      const messageId = element.dataset.messageId
+      return game.messages.get(messageId)?.isAuthor
+    },
+    callback: element => {
+      // element is HTMLElement
+      const messageId = element.dataset.messageId
+      // ... handle action
+    }
+  })
+})
+```
+
+**Important Notes:**
+- **jQuery Removal**: Callback handlers receive HTMLElement instances instead of jQuery objects
+- **ContextMenu.create Deprecated**: Use `new ContextMenu` directly or `ApplicationV2#_createContextMenu` helper
+- **Early v13 Names Removed**: Temporary names like `getEntryContextChatLog` are no longer supported
+- **Hook Parameters Changed**: First parameter is now the ApplicationV2 instance, not jQuery HTML
 
 ### Rollable Table Property Deprecations
 

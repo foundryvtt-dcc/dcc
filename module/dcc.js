@@ -575,7 +575,7 @@ Hooks.on('renderChatMessageHTML', (message, html, data) => {
 })
 
 // Support context menu on chat cards
-Hooks.on('getChatLogEntryContext', chat.addChatMessageContextOptions)
+Hooks.on('getChatMessageContextOptions', chat.addChatMessageContextOptions)
 
 // Quick import for actors
 Hooks.on('renderActorDirectory', (app, html) => {
