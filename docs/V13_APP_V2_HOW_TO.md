@@ -1251,10 +1251,6 @@ class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     return this.options.document
   }
 
-  get title() {
-    return `${this.document.name}: ${game.i18n.localize('DCC.SheetConfig')}`
-  }
-
   async _prepareContext(options) {
     const context = await super._prepareContext(options)
     context.config = CONFIG.DCC

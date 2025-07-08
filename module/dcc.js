@@ -29,6 +29,8 @@ import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
 
+import { setupItemPilesForDCC } from './item-piles-support.js'
+
 const { Actors } = foundry.documents.collections
 const { ActorSheetV2 } = foundry.applications.sheets
 const { loadTemplates } = foundry.applications.handlebars
@@ -705,9 +707,11 @@ Hooks.on('createActor', async (actor, options, userId) => {
   }
 })
 
+// Set up Item Piles module compatibility
+Hooks.once('item-piles-ready', setupItemPilesForDCC)
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
-
 /* -------------------------------------------- */
 
 /**
