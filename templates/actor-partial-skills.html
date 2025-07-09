@@ -1,5 +1,6 @@
 {{!-- Spells Tab --}}
-<section class="tab skills-bg {{tabs.skills.id}} {{tabs.skills.cssClass}}" id="skills" data-tab="{{tabs.skills.id}}" data-group="{{tabs.skills.group}}">
+<section class="tab skills-bg {{tabs.skills.id}} {{tabs.skills.cssClass}}" id="skills" data-tab="{{tabs.skills.id}}"
+         data-group="{{tabs.skills.group}}">
   <div class="box-title">{{localize "DCC.Skills"}}</div>
   <ol class="skill-list box-border">
     <li class="item-list-header grid-col-span-6">
@@ -48,14 +49,14 @@
                 "DCC.AbilityIntShort"}}{{else if (eq skill.system.ability "lck")}}{{localize "DCC.AbilityLckShort"}}{{/if}}
             {{else if skill.system.value}}
               {{numberFormat skill.system.value decimals=0 sign=true}}
-            {{else}}
+            {{else unless skill.system.config.useLevel}}
               --
             {{/if}}
           {{else}}
             --
           {{/if}}
           {{#if skill.system.config.useLevel}}
-            <span title="{{localize 'DCC.SkillUseLevelHint'}}">+ {{actor.system.level}}</span>
+            <span title="{{localize 'DCC.SkillUseLevelHint'}}">+{{actor.system.details.level.value}}</span>
           {{/if}}
         </div>
         <div>

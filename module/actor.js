@@ -679,14 +679,20 @@ class DCCActor extends Actor {
         if (skillItem.system.config.useDie) {
           skill.die = skillItem.system.die || null
         }
-        if (skillItem.system.config.useLevel) {
-          skill.level = this.system.level ?? 0
-        }
         if (skillItem.system.config.useValue) {
           skill.value = skillItem.system.value ?? undefined
         }
+        if (skillItem.system.config.useLevel) {
+          skill.level = `+${this.system.details.level.value ?? 0}`
+        }
       }
     }
+
+    // Check if skill should use level (for built-in skills)
+    if (skill?.config?.useLevel) {
+      skill.level = `+${this.system.details.level.value ?? 0}`
+    }
+
     let die = (skill.die && skill.die.trim()) ? skill.die : null
     let hasDie = !!die
 
@@ -698,7 +704,7 @@ class DCCActor extends Actor {
 
     // If no die is specified and no override, fall back to action dice for backward compatibility with built-in skills
     if (!hasDie && !skillItem) {
-      die = this.system.attributes.actionDice.value || '1d20'
+      die = this.getActionDice()[0].formula || '1d20'
       hasDie = true
     }
 
@@ -756,12 +762,15 @@ class DCCActor extends Actor {
       })
     }
 
+    let checkPenaltyCouldApply = false
+    if (['sneakSilently', 'climbSheerSurfaces'].includes(skillId)) {
+      checkPenaltyCouldApply = true
+    }
+    if (skill.config?.applyCheckPenalty) {
+      checkPenaltyCouldApply = true
+    }
     const checkPenalty = ensurePlus(this.system.attributes.ac.checkPenalty || '0')
-    if (checkPenalty !== '+0') {
-      let checkPenaltyCouldApply = false
-      if (['sneakSilently', 'climbSheerSurfaces'].includes(skillId)) {
-        checkPenaltyCouldApply = true
-      }
+    if (checkPenaltyCouldApply && checkPenalty !== '+0') {
       terms.push({
         type: 'CheckPenalty',
         formula: checkPenalty,

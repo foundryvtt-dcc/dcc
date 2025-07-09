@@ -1574,7 +1574,7 @@ test('roll skill check with useLevel config', async () => {
   })
 
   // Set actor level
-  actor.system.level = 5
+  actor.system.details.level.value = 5
 
   await actor.rollSkillCheck('levelBasedSkill')
 
@@ -1605,7 +1605,7 @@ test('roll skill check with useLevel config', async () => {
         type: 'Compound',
         dieLabel: 'RollModifierDieTerm',
         modifierLabel: 'Level',
-        formula: '5' // level 5 as separate term
+        formula: '+5' // level 5 as separate term
       }
     ],
     actor.getRollData(),
