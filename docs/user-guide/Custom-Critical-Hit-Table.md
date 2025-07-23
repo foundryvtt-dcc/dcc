@@ -9,9 +9,9 @@ You can create a custom Critical Hit Table in your world.
 
 ###Creating the Critical Hit table in your world:
 
-![image](https://github.com/user-attachments/assets/9f429443-5299-4d8a-8d04-817971c44050)
+![Critical Hit Table Creation](images/crit_table_creation.png)
 
-![image](https://github.com/user-attachments/assets/3aa06b57-c2f3-45dd-91a2-b9cd45ab5278)
+![Critical Hit Table Rollable](images/crit_table_rollable.png)
 
 Referring to this crit table from a weapon Override Table:
-![image](https://github.com/user-attachments/assets/b3ff1fb1-7086-4416-9652-daea51159f3a)
+![Critical Hit Table Weapon Override](images/crit_table_weapon_override.png)

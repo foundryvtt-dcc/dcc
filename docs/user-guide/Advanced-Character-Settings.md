@@ -2,7 +2,7 @@
 
 Clicking **Config** on the top bar of a character sheet will allow you to configure some advanced settings:
 
-<img width="383" alt="image" src="https://github.com/user-attachments/assets/15792c31-6d76-4a4c-bdba-2fb3295e0922">
+![Advanced Character Settings Config](images/advanced_character_settings_config.png)
 
 **Attack Bonus Mode** allows for Mighty Deeds.
 * Flat Bonus is the default mode used by classes without access to Mighty Deeds.

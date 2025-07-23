@@ -2,7 +2,7 @@
 
 To change System Settings, you can click the 3 gears (**Game Settings**) in the top right corner, then click the **System Settings** tab. Note that **none of these table settings need to be changed out of the box if you have purchased the Core Book module**.
 
-![System Settings](docs/user-guide/images/system_settings.png)
+![System Settings](images/system_settings.png)
 
 **Critical Hits Compendium** is the compendium where you store your Critical Hits tables. This is a drop down.
 

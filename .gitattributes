@@ -7,10 +7,10 @@ package.json export-ignore
 package-lock.json export-ignore
 
 # Scripts
-scripts export-ignore
-.stylelintrc.json export-ignore
-README_RELEASE_PROCESS.md export-ignore
+.claude export-ignore
 .github export-ignore
+.husky export-ignore
+scripts export-ignore
 
 # Entity Metadata
 metadata export-ignore
@@ -19,6 +19,7 @@ metadata export-ignore
 .idea export-ignore
 
 # Tests
+browser-tests export-ignore
 tests export-ignore
 module/__mocks__/ export-ignore
 module/__tests__/ export-ignore
@@ -31,7 +32,9 @@ packs/**/src/*.json export-ignore
 
 # Other ignores
 .editorconfig export-ignore
+.readthedocs.yaml export-ignore
 .stylelintrc export-ignore
+CLAUDE.md export-ignore
 
 # Auto-generated CSS File line-endings
 styles/dcc.css text eol=lf
@@ -41,3 +44,6 @@ styles/dcc.css text eol=lf
 
 # Special Scripts
 module/sync-v13-updates.js export-ignore
+
+# docs
+docs export-ignore

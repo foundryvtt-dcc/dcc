@@ -6,4 +6,4 @@ You override the action die to d14 for the shield bash, and set the weapon damag
 
 Something like this:
 
-<img width="479" alt="image" src="https://github.com/user-attachments/assets/78bfa108-349e-4c1f-8f6a-a2fdbfca887b" />
+![Dwarf Shield Bash Config](images/dwarf_shield_bash_config.png)
