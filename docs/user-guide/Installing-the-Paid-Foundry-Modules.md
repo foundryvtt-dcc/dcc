@@ -11,6 +11,8 @@ Head to [Foundry VTT's website](https://www.foundryvtt.com) to activate your pro
 
 Enter your key and click Activate Content. The Paid Foundry module is now linked to your account.
 
+For this to work, you must activate the modules in the same Foundry account as you used for your FoundryVTT server activation.
+
 ## For All Users - Installing the Module in Your Foundry Server
 Go to your Foundry server in your browser and click Install Module from the Add-on Modules tab in Setup.
 
@@ -29,5 +31,5 @@ Go into your world, click the "Settings" tab, and then choose "Manage Modules". 
 
 
 ## For All Users - Read the User Guide
-Make sure you look over the [User guide for the DCC System](https://foundryvtt-dungeon-crawl-classics-user-guide.readthedocs.io/)
+Make sure you look over the [User guide for the DCC System](https://foundryvtt-dungeon-crawl-classics-user-guide.readthedocs.io/).
 
