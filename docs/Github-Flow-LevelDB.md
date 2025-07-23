@@ -1,4 +1,4 @@
-## Work process
+## Work process with LevelDB JSON Files
 
 1) Clone module GitHub Repo into your FoundryVTT modules folder
 2) Run `npm install` from this module folder
