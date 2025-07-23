@@ -11,7 +11,7 @@ build:
     python: "3.12"
 
 mkdocs:
-  configuration: docs/user-guide/mkdocs.yml
+  configuration: docs/user-guide/mkdocs.yaml
 
 # Optionally declare the Python requirements required to build your docs
 python:
