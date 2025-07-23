@@ -2,7 +2,7 @@
 
 Goodman Games' Dungeon Crawl Classics RPG system for the [Foundry Virtual Tabletop](https://foundryvtt.com).
 
-Please check out the [User Guide](https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide). Thanks to Christian Ovsenik (@algnc) for putthing that together.
+Please check out the [User Guide](https://foundryvtt-dungeon-crawl-classics-user-guide.readthedocs.io/en/latest/). Thanks to Christian Ovsenik (@algnc) for putthing that together.
 
 Join us on the [virtual-tabletop channel](https://discord.gg/2PR9YH9) on the Goodman Games discord for help and discussion.
 
@@ -10,7 +10,7 @@ Join us on the [virtual-tabletop channel](https://discord.gg/2PR9YH9) on the Goo
 
 You can purchase a module containing copyrighted Goodman Games content ready for out-of-the-box use in Foundry VTT from the [Goodman Games Web Store](https://goodman-games.com/store/product/foundryvtt-dcc-compendium-license-key/) .
 
-Work Process (for developers): https://github.com/foundryvtt-dcc/dcc/wiki/GitHub-Flow-Process-with-JSON-LevelDB
+Work Process (for developers): [GitHub Process for JSON/LevelDB](docs/GITHUB-JSON-LEVELDB-FLOW.md)
 
 ###### Maintainers
 * Steve Barnett (@mooped)
@@ -24,13 +24,13 @@ Work Process (for developers): https://github.com/foundryvtt-dcc/dcc/wiki/GitHub
 * Radoslaw Grzanka (@radoslawg)
 * Tyler Kostuch (@TylerKostuch)
 * @sasquach45932
+* Tony Zito (@tonyrobots)
 
 Contains some icon art from game-icons.net.
 
 ###### Documentation
-* [Test Coverage Improvement Plan](docs/IMPROVE_TEST_COVERAGE.md) - Strategy for expanding unit test coverage
 * [Release Process](docs/README_RELEASE_PROCESS.md) - Guidelines for creating releases and managing versions
-* [V13 ApplicationV2 Conversion Guide](docs/V13_APP_V2_HOW_TO.md) - Step-by-step guide for converting to ApplicationV2
+* [V13 ApplicationV2 Conversion Guide](docs/V13_APP_V2_HOW_TO.md) - Step-by-step guide for converting to FoundryVTT v13/ApplicationV2
 
 ###### Contributing
 * Thanks for considering helping out!
