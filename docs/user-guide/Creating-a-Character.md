@@ -10,7 +10,7 @@ Name your character, make sure **Player** is selected as **Type**, and click **C
 
 ![Create New Actor](images/create_actor_dialog.png)
 
-Click **Sheet**. Choose your class from the drop down. I chose Wizard.
+Click **Sheet**. Choose your class from the dropdown. I chose Wizard.
 
 
 ![Character Class Selection](images/character_class_selection.png)
@@ -34,19 +34,17 @@ Click **Add** to add a Melee Weapon. You can quick-edit it on the Equipment tab,
 
 This dialog looks intimidating, as it provides a lot of options to let you override regular values for specific weapons and custom character classes. But for most basic weapons and characters, you will not need to use this dialog, especially if you are dragging in items from the Compendium.
 
-The system currently has no ability to work with the level-up for characters, so as your character levels up, you will need to apply those bonuses manually.
-
 Thieves (or character sheets with Backstab enabled) are given an extra button next to their weapons for backstabs, which use the extra backstab damage if enabled and automatically roll a crit.
 
 Unchecking the **Melee** checkbox indicates **Ranged** weapon which will be sorted sorted into its own section of the inventory, and range field will be shown instead of the notes summary.
 
 Fields are provided to set the value of the weapon in Platinum, Electrum, Gold, Silver, and Copper pieces.
 
-The `</> Config` option at the top of the sheet provides access to further customization, including disabling auto-calculations.
+The **'&lt;/&gt; Config**' option in the title bar menu of the sheet provides access to further customization, including disabling auto-calculations.
 
 For a Warrior you can also set some options in the class tab. **Critical Threat Range** will make you crit on 19s, or 18s, or whatever you set it to.
 
-**Lucky Weapon** is not automated, it’s just a notes field.
+**Lucky Weapon** is not automated, it's just a notes field.
 
 
 ## Armor
