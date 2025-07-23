@@ -13,7 +13,7 @@ Note that in versions pre v0.50.12, you'll need to edit the pasted-in-UUID to be
 
 If you want it to show the Spell data in the chat when rolled, add that to the description at the top of the Rollable Table.
 
-If you want that format to match the Core Book Spells, the HTML for that is in the [Creating Spell Tables](Creating-Spell-Tables.md) wiki entry.
+If you want that format to match the Core Book Spells, the HTML for that is in [Creating Spell Tables](Creating-Spell-Tables.md).
 
 ## Creating the Spell Item:
 ![Spell Item Creation](images/spell_item_creation.png)
@@ -31,4 +31,4 @@ If you want that format to match the Core Book Spells, the HTML for that is in t
 
 ## Spell data in the description of the Rollable Table that will appear in chat when spell is cast:
 ![Spell Rollable Table Description](images/spell_rollable_table_description.png)
- 
+
