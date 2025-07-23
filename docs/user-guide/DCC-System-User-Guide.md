@@ -1,0 +1,1 @@
+This guide has moved here: https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide
