@@ -755,8 +755,9 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #editImage (event, target) {
     const field = target.dataset.field || 'img'
     const current = foundry.utils.getProperty(this.options.document, field)
+    const FilePicker = foundry.applications.apps.FilePicker.implementation
 
-    const fp = new foundry.applications.apps.FilePicker({
+    const fp = new FilePicker({
       type: 'image',
       current,
       callback: (path) => {

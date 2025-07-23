@@ -61,7 +61,7 @@ renderTemplate('template.html', data)
 
 // V13 Pattern (Required)
 foundry.applications.ux.TextEditor.implementation.enrichHTML(content)
-foundry.applications.apps.FilePicker.browse()
+foundry.applications.apps.FilePicker.implementation.browse()
 foundry.applications.handlebars.renderTemplate('template.html', data)
 ```
 
@@ -586,7 +586,7 @@ static async #onEditImage(event, target) {
   const field = target.dataset.field || "img"
   const current = foundry.utils.getProperty(this.document, field)
 
-  const fp = new foundry.applications.apps.FilePicker({
+  const fp = new foundry.applications.apps.FilePicker.implementation({
     type: "image",
     current: current,
     callback: (path) => this.document.update({ [field]: path })

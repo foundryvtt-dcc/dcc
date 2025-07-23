@@ -1483,6 +1483,9 @@ global.foundry = {
       FilePicker: class FilePickerMock {
         constructor (options = {}) { this.options = options }
         async browse () { return this }
+        static implementation (...args) {
+          return new global.foundry.applications.apps.FilePicker(...args)
+        }
       },
       // ImagePopout - image viewer dialog
       ImagePopout: class ImagePopoutMock {
