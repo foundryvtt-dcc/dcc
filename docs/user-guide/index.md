@@ -25,18 +25,22 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Creating a Spell](Creating-a-Spell.md)
 * [Creating Spell Tables](Creating-Spell-Tables.md)
 * [Spells - Putting it All Together](Spells---Putting-it-All-Together.md)
+
 ## Sheet Options
 * [Action Dice](Action-Dice.md)
 * [Critical Hits](Critical-Hits.md)
+
 ## Imports
 * [Creating/Importing an NPC](Creating-Importing-an-NPC.md)
 * [Importing a Character](Importing-a-Character.md)
 * [Importing a DCC Table](Importing-a-DCC-Table.md)
+
 ## Combat
 * [Applying Damage](Applying-Damage.md)
 * [Modifying Rolls or using Spellburn with Ctrl/Command Click](Modifying-Rolls-or-using-Spellburn-with-Ctrl-Command-Click.md)
 * [Custom Critical Hit Table](Custom-Critical-Hit-Table.md)
 * [NPC and Monster Fumbles](NPC-and-Monster-Fumbles.md)
+
 ## Usage
 * [System Settings](System-Settings.md)
 * [Save Time - Get the Core Book Module](Save-Time---Get-the-Core-Book-Module.md)
@@ -44,10 +48,4 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Using aliases for rolls](Using-aliases-for-rolls.md)
 * [Dragging rollable items to the macro bar](Dragging-rollable-items-to-the-macro-bar.md)
 * [Fleeting Luck](Fleeting-Luck.md)
-## Adventure Import
-<!-- The following links are for pages that don't exist yet:
-* [Exporting the maps from a PDF](Exporting-the-maps-from-a-PDF.md)
-* [Creating tokens](Creating-tokens.md)
-* [Creating scenes](Creating-scenes.md)
--->
-* [Creating/Importing an NPC](Creating-Importing-an-NPC.md)
+
