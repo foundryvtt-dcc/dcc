@@ -1,8 +1,9 @@
 # FoundryVTT DCC System User Guide
 
-This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System. It has how-to information for using the system.
+This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System.
 
 ## General
+* [System Vs Module](System-Vs-Module.md)
 * [How To Install Purchased DCC Content](https://github.com/foundryvtt-dcc/dcc-content/wiki/Installing-the-Paid-Foundry-Modules)
 * [FoundryVTT Modules that support DCC](FoundryVTT-Modules-that-Support-DCC.md)
 * [Reporting Bugs and Submitting Feature Requests](Reporting-Bugs.md)
