@@ -1,6 +1,6 @@
 - Added a link from the Welcome Chat Card to the User Guide's table of contents
 
-![Spell](images/spell.gif) ![Weapon](images/weapon.gif)
+![Spell](docs/user-guide/images/spell.gif) ![Weapon](docs/user-guide/images/weapon.gif)
 
 - Added a Roll Modifier dialog to allow adjustments to rolls
   - Accessed by Ctrl+Clicking any appropriate rollable (this behaviour can be inverted in the Settings to enable it by default)

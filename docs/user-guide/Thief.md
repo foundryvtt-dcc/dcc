@@ -1,3 +1,5 @@
+# Thief
+
 First, you need to select the "Thief" sheet via the "Sheet" selector in the upper right of the character sheet titlebar:
 
 <img width="321" alt="image" src="https://github.com/foundryvtt-dcc/dcc/assets/49695/a2bb6371-bd02-4730-a4bc-7a8688395d9a">

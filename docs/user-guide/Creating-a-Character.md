@@ -8,12 +8,12 @@ Click **Create Actor**.
 
 Name your character, make sure **Player** is selected as **Type**, and click **Create New Actor**.
 
-<img width="351" alt="image" src="https://github.com/user-attachments/assets/1e216dba-15d5-441f-954b-7c506eb4d492">
+![Create New Actor](docs/user-guide/images/create_actor_dialog.png)
 
 Click **Sheet**. Choose your class from the drop down. I chose Wizard.
 
 
-<img width="532" alt="image" src="https://github.com/user-attachments/assets/d868db73-af24-4125-bc44-5735a25643a7">
+![Character Class Selection](docs/user-guide/images/character_class_selection.png)
 
 Now you can start entering stats into the boxes. The **Character** tab is fairly straightforward. Each stat has a box for the current and maximum (or initial) value to allow tracking stat loss, spellburn, luck spend, etc.
 
@@ -25,12 +25,12 @@ You can use the tabs along the top to add equipment, spells, or to adjust class-
 
 In **Equipment**, you can create weapons, armor, etc., or you can drag them from the Core Book compendium if you own that and have it insalled:
 
-<img width="305" alt="image" src="https://github.com/user-attachments/assets/df1ea489-d822-41ef-9864-195dbbb857bb">
+![Core Book Compendium](docs/user-guide/images/core_book_compendium.png)
 
 ## Weapons
 Click **Add** to add a Melee Weapon. You can quick-edit it on the Equipment tab, but most options are available when you click the pencil to edit it.
 
-<img width="482" alt="image" src="https://github.com/user-attachments/assets/0e274a13-8d40-442d-88f0-df692c17af89">
+![Weapon Edit Dialog](docs/user-guide/images/weapon_edit_dialog.png)
 
 This dialog looks intimidating, as it provides a lot of options to let you override regular values for specific weapons and custom character classes. But for most basic weapons and characters, you will not need to use this dialog, especially if you are dragging in items from the Compendium.
 
@@ -50,7 +50,7 @@ For a Warrior you can also set some options in the class tab. **Critical Threat 
 
 
 ## Armor
-<img width="474" alt="image" src="https://github.com/user-attachments/assets/929eb417-dd42-4019-be55-d66af264a3fe">
+![Armor Edit Dialog](docs/user-guide/images/armor_edit_dialog.png)
 
 **Armor** can be entered the same way. You can click the pencil next to it to enter the details. 
 

@@ -1,3 +1,5 @@
+# Creating a Spell
+
 You need to create two things for a rollable spell to work.
 
 1) You need to create an "Item" of type "Spell".
@@ -11,7 +13,7 @@ Note that in versions pre v0.50.12, you'll need to edit the pasted-in-UUID to be
 
 If you want it to show the Spell data in the chat when rolled, add that to the description at the top of the Rollable Table.
 
-If you want that format to match the Core Book Spells, the HTML for that is in the [[Creating Spell Tables]] wiki entry.
+If you want that format to match the Core Book Spells, the HTML for that is in the [Creating Spell Tables](Creating-Spell-Tables.md) wiki entry.
 
 ## Creating the Spell Item:
 <img width="348" alt="image" src="https://github.com/user-attachments/assets/a9a0a821-acfb-4722-a366-74c5738472a1">

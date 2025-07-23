@@ -1,3 +1,5 @@
+# Creating Re-useable Items
+
 You can create a weapon (mundane or magic) that can be stored in a compendium for other uses, or dragged onto a character if they have that item. 
 
 

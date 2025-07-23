@@ -1,46 +1,50 @@
+# FoundryVTT DCC System User Guide
+
 This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System. It has how-to information for using the system.
 
 ## Reporting Bugs and Feature Requests
-[[Reporting Bugs]]
+[Reporting Bugs](Reporting-Bugs.md)
 
 ## Characters
-* [[Creating a Character]]
-* [[Saving Throws]]
-* [[Importing a Character]]
-* [[Advanced Character Settings]]
-* [[Mighty Deeds]]
-* [[Cleric]]
-* [[Dwarf]]
-* [[Halfling]]
-* [[Thief]]
-* [[Wizard]]
-* [[Level Up]]
+* [Creating a Character](Creating-a-Character.md)
+* [Saving Throws](Saving-Throws.md)
+* [Importing a Character](Importing-a-Character.md)
+* [Advanced Character Settings](Advanced-Character-Settings.md)
+* [Mighty Deeds](Mighty-Deeds.md)
+* [Cleric](Cleric.md)
+* [Dwarf](Dwarf.md)
+* [Halfling](Halfling.md)
+* [Thief](Thief.md)
+* [Wizard](Wizard.md)
+* [Level Up](Level-Up.md)
 
 ## Spells
-* [[Creating a Spell]]
-* [[Creating Spell Tables]]
-* [[Spells - Putting it All Together]]
+* [Creating a Spell](Creating-a-Spell.md)
+* [Creating Spell Tables](Creating-Spell-Tables.md)
+* [Spells - Putting it All Together](Spells---Putting-it-All-Together.md)
 ## Sheet Options
-* [[Action Dice]]
-* [[Critical Hits]]
+* [Action Dice](Action-Dice.md)
+* [Critical Hits](Critical-Hits.md)
 ## Imports
-* [[Creating/Importing an NPC]]
-* [[Importing-a-Character]]
-* [[Importing a DCC Table]]
+* [Creating/Importing an NPC](Creating-Importing-an-NPC.md)
+* [Importing a Character](Importing-a-Character.md)
+* [Importing a DCC Table](Importing-a-DCC-Table.md)
 ## Combat
-* [[Applying Damage]]
-* [[Modifying Rolls or using Spellburn with Ctrl/Command Click]]
-* [[Custom Critical Hit Table]]
-* [[NPC and Monster Fumbles]]
+* [Applying Damage](Applying-Damage.md)
+* [Modifying Rolls or using Spellburn with Ctrl/Command Click](Modifying-Rolls-or-using-Spellburn-with-Ctrl-Command-Click.md)
+* [Custom Critical Hit Table](Custom-Critical-Hit-Table.md)
+* [NPC and Monster Fumbles](NPC-and-Monster-Fumbles.md)
 ## Usage
-* [[System Settings]]
-* [[Save Time - Get the Core Book Module]]
-* [[Using a Published Adventure Module]]
-* [[Using aliases for rolls]]
-* [[Dragging rollable items to the macro bar]]
-* [[Fleeting Luck]]
+* [System Settings](System-Settings.md)
+* [Save Time - Get the Core Book Module](Save-Time---Get-the-Core-Book-Module.md)
+* [Using a Published Adventure Module](Using-a-Published-Adventure-Module.md)
+* [Using aliases for rolls](Using-aliases-for-rolls.md)
+* [Dragging rollable items to the macro bar](Dragging-rollable-items-to-the-macro-bar.md)
+* [Fleeting Luck](Fleeting-Luck.md)
 ## Adventure Import
-* [[Exporting the maps from a PDF]]
-* [[Creating tokens]]
-* [[Creating scenes]]
-* [[Importing monsters]]
+<!-- The following links are for pages that don't exist yet:
+* [Exporting the maps from a PDF](Exporting-the-maps-from-a-PDF.md)
+* [Creating tokens](Creating-tokens.md)
+* [Creating scenes](Creating-scenes.md)
+-->
+* [Creating/Importing an NPC](Creating-Importing-an-NPC.md)

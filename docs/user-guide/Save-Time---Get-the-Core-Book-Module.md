@@ -12,13 +12,13 @@ Link to the rules for your character class right from your character sheet! Read
 
 To activate your module, go to your dashboard on the Goodman Games online store. Hit the **Downloads** button and you will see a PDF link:
 
-[[images/foundry_key.png|Foundry Key]]
+![Foundry Key](docs/user-guide/images/foundry_key.png)
 
 Download this PDF, which has your key in it.
 
 Head to [Foundry VTT](https://foundryvtt.com)'s website where you can enter it in. In the top right, log in, then click your username. In the bottom left, you will see a **Premium Content** button. Click this, and you will see a page to enter your key:
 
-[[images/foundry_enter_key.png|Foundry Enter Key]]
+![Foundry Enter Key](docs/user-guide/images/foundry_enter_key.png)
 
 Enter your key and click **Activate Content**. The Core Book module is now linked to your account.
 
@@ -26,4 +26,4 @@ Now go to your Foundry server in your browser and click Install Module from Setu
 
 Click **Premium Content** on the left, and you can install your new module:
 
-[[images/premium_content.png|Premium Content]]
+![Premium Content](docs/user-guide/images/premium_content.png)

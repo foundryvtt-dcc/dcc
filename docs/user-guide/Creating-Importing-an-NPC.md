@@ -1,9 +1,11 @@
+# Creating/Importing an NPC
+
 To import an NPC from a PDF, you can use the importer. Click **Import Actor(s)** at the bottom of the actors tab.
 
 
 Copy it out of the PDF just like this (**the period has to be included, it is a delimiter**): 
 
-[[images/import_monster.png|Import Monster]]
+![Import Monster](docs/user-guide/images/import_monster.png)
 
 Paste into the Import Actors window and hit Import Actor(s).
 

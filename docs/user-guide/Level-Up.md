@@ -1,3 +1,5 @@
+# Level Up
+
 You can level up and down your character if you have the DCC Core Book module installed in your world.
 
 Just click on the "Level" label next to the level of your PC:

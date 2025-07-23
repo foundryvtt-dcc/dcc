@@ -1,6 +1,8 @@
+# Saving Throws
+
 Saving throws are auto-calculated by default.
 
-You can disabled this in the </>Config menu for a character with this checkbox:
+You can disable this in the </>Config menu for a character with this checkbox:
 
 <img width="279" alt="image" src="https://github.com/user-attachments/assets/10315b71-552b-4a1e-835e-a4389084012f" />
 

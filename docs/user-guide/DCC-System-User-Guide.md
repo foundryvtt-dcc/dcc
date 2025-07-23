@@ -1,1 +1,3 @@
-This guide has moved here: https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide
+# DCC System User Guide
+
+This guide has moved here: [FoundryVTT DCC System User Guide](FoundryVTT-DCC-System-User-Guide.md)

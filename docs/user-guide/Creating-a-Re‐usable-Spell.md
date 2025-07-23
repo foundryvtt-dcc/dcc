@@ -1,3 +1,5 @@
+# Creating a Re-usable Spell
+
 Spells are Items in FoundryVTT.
 
 To create a Spell, click **Items Directory** (the suitcase) and click **Create Item**. In the **Type** dropdown, select **Spell**.

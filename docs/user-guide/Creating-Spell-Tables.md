@@ -1,6 +1,8 @@
+# Creating Spell Tables
+
 You can create **Rollable Tables** for Spells, Spell Manifestations, Spell Corruption, and Spell Misfires  so that you can roll Spell results from your character sheet. Click **Create Rollable Table** from the **Rollable Tables** tab.
 
-[[images/spell_table.png|Spell Table]]
+![Spell Table](docs/user-guide/images/spell_table.png)
 
 Under **Title**, name the table the name of the Spell. In **Table Description**, you can copy/paste this code if you want to have a nice display in the chat window when you cast a spell:
 
