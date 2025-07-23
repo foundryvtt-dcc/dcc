@@ -2,8 +2,8 @@ site_name: FoundryVTT DCC User Guide
 
 docs_dir: docs/user-guide
 
-exclude_docs:
-  - mkdocs.yaml
+exclude_docs: |
+  mkdocs.yaml
 
 theme:
   name: readthedocs
