@@ -3,7 +3,9 @@
     "allow": [
       "WebFetch(domain:foundryvtt.com)",
       "Bash(rg:*)",
-      "WebFetch(domain:forums.forge-vtt.com)"
+      "WebFetch(domain:forums.forge-vtt.com)",
+      "Bash(npm test)",
+      "Bash(npm run format:*)"
     ],
     "deny": []
   }
