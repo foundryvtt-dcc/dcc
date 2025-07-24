@@ -32,7 +32,7 @@ class DCCPartySheet extends DCCActorSheet {
       rollAbility: this.#rollAbility,
       rollSave: this.#rollSave,
       rollAttack: this.#rollAttack,
-      editImage: this.#editImage
+      editImage: DCCPartySheet.editImage
     },
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
@@ -383,28 +383,6 @@ class DCCPartySheet extends DCCActorSheet {
         actor.rollWeaponAttack(weaponId, options)
       }
     }
-  }
-
-  /**
-   * Handle image editing
-   * @this {DCCPartySheet}
-   * @param {PointerEvent} event - The originating click event
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
-   * @private
-   */
-  static async #editImage (event, target) {
-    const field = target.dataset.field || 'img'
-    const current = foundry.utils.getProperty(this.document, field)
-
-    const fp = new foundry.applications.apps.FilePicker({
-      type: 'image',
-      current,
-      callback: (path) => {
-        this.document.update({ [field]: path })
-      }
-    })
-
-    fp.render(true)
   }
 
   /**

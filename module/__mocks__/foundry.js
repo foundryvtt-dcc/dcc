@@ -13,6 +13,7 @@ import fs from 'fs'
  * FormApplication - Legacy v1 form application base class
  */
 class FormApplicationMock {}
+
 global.FormApplication = FormApplicationMock
 
 /**
@@ -459,11 +460,16 @@ class DialogV2Mock extends ApplicationV2Mock {
   // Query handler for incoming user requests
   static _handleQuery = ({ type, config }) => {
     switch (type) {
-      case 'confirm': return this.confirm(config)
-      case 'input': return this.input(config)
-      case 'prompt': return this.prompt(config)
-      case 'wait': return this.wait(config)
-      default: throw new Error(`Unknown dialog type: ${type}`)
+      case 'confirm':
+        return this.confirm(config)
+      case 'input':
+        return this.input(config)
+      case 'prompt':
+        return this.prompt(config)
+      case 'wait':
+        return this.wait(config)
+      default:
+        throw new Error(`Unknown dialog type: ${type}`)
     }
   }
 }
@@ -1476,17 +1482,21 @@ global.foundry = {
       // DocumentSheetConfig - configuration dialog for document sheets
       DocumentSheetConfig: class DocumentSheetConfigMock {
         static DEFAULT_OPTIONS = { position: { width: 400 } }
+
         constructor (options = {}) { this.options = options }
+
         render () { return this }
       },
       // FilePicker - file browser dialog for asset selection
       FilePicker: class FilePickerMock {
         constructor (options = {}) { this.options = options }
+
         async browse () { return this }
       },
       // ImagePopout - image viewer dialog
       ImagePopout: class ImagePopoutMock {
         constructor (options = {}) { this.options = options }
+
         render () { return this }
       }
     },
@@ -1566,6 +1576,29 @@ global.foundry.utils.expandObject = function (obj, _d = 0) {
 // Foundry's implementation of duplicate
 global.foundry.utils.duplicate = function (original) {
   return JSON.parse(JSON.stringify(original))
+}
+
+// Foundry's implementation of getProperty
+global.foundry.utils.getProperty = function (object, key) {
+  if (!object || !key) return undefined
+
+  // Split the key on dots and array notation
+  const parts = key.split(/\.|\[(\d+)\]/).filter(p => p)
+
+  // Traverse the object
+  let result = object
+  for (const part of parts) {
+    if (result == null) return undefined
+
+    // Handle array index
+    if (/^\d+$/.test(part)) {
+      result = result[parseInt(part)]
+    } else {
+      result = result[part]
+    }
+  }
+
+  return result
 }
 
 // Foundry's implementation of mergeObject

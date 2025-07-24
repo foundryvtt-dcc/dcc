@@ -32,7 +32,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
       decreaseQty: this.#decreaseQty,
-      editImage: this.#editImage,
+      editImage: DCCActorSheet.editImage, // Provided by DocumentSheetV2
       increaseQty: this.#increaseQty,
       itemCreate: this.#itemCreate,
       itemEdit: this.#itemEdit,
@@ -743,28 +743,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       top: this.position.top + 40,
       left: this.position.left + (this.position.width - 250) / 2
     }).render(true)
-  }
-
-  /**
-   * Handle image editing
-   * @this {DCCActorSheet}
-   * @param {PointerEvent} event - The originating click event
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action]
-   * @private
-   */
-  static async #editImage (event, target) {
-    const field = target.dataset.field || 'img'
-    const current = foundry.utils.getProperty(this.options.document, field)
-
-    const fp = new foundry.applications.apps.FilePicker({
-      type: 'image',
-      current,
-      callback: (path) => {
-        this.options.document.update({ [field]: path })
-      }
-    })
-
-    fp.render(true)
   }
 
   /**

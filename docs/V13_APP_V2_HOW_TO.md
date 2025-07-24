@@ -565,16 +565,37 @@ static async #rollAbilityCheck(event, target) {
 
 ### Image Editing Migration
 
-**V1 Pattern (Old):**
-```html
-<img src="{{img}}" data-edit="img" alt="Portrait">
-```
+#### Recommended Approach: Use Inherited editImage
 
-**V2 Pattern (New):**
+**RECOMMENDED**: Use DocumentSheetV2's built-in `editImage` method instead of implementing your own. This provides better compatibility with hosting platforms like Forge VTT.
+
+**Template (Same for both approaches):**
 ```html
 <img src="{{img}}" data-action="editImage" data-field="img" alt="Portrait">
 ```
 
+**V2 Pattern (Recommended - Use Inherited Method):**
+```javascript
+static DEFAULT_OPTIONS = {
+  actions: {
+    editImage: YourSheetClass.editImage  // Reference inherited static method
+  }
+}
+
+// No custom implementation needed - DocumentSheetV2 handles it automatically
+```
+
+**Benefits of using inherited editImage:**
+- Automatic compatibility with Forge VTT file storage
+- Handles edge cases and URL formats correctly  
+- Future-proof against hosting platform changes
+- Less code to maintain
+
+#### Custom Implementation (Legacy/Special Cases)
+
+Only implement custom editImage if you need special behavior not provided by the built-in method:
+
+**V2 Pattern (Custom Implementation):**
 ```javascript
 static DEFAULT_OPTIONS = {
   actions: {
@@ -595,6 +616,11 @@ static async #onEditImage(event, target) {
   fp.render(true)
 }
 ```
+
+**Migration Notes:**
+- ActorSheetV2, ItemSheetV2, and DocumentSheetV2 all inherit editImage from DocumentSheetV2
+- Remove any custom `#editImage` methods when switching to inherited approach
+- Update action references from `this.#editImage` to `YourSheetClass.editImage`
 
 ---
 
@@ -1487,7 +1513,10 @@ static DEFAULT_OPTIONS = {
   - [ ] ApplicationV2: Manual DragDrop setup required
   - [ ] DocumentSheetV2: Usually no drag/drop needed
 - [ ] Migrate `{{editor}}` helpers to `<prose-mirror>` elements
-- [ ] Update image editing to use actions
+- [ ] **Update image editing to use inherited editImage** (RECOMMENDED):
+  - [ ] Remove custom `#editImage` methods
+  - [ ] Update actions to reference `YourSheetClass.editImage` instead of `this.#editImage`
+  - [ ] Update templates to use `data-action="editImage"` and `data-field="img"`
 - [ ] Replace jQuery with vanilla JS in hooks
 - [ ] **Consider using DialogV2 factory methods** for simple prompts
 

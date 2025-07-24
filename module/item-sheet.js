@@ -40,7 +40,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ]
     },
     actions: {
-      editImage: this.#editImage,
+      editImage: DCCItemSheet.editImage,
       rollManifestation: this.#rollManifestation,
       rollMercurialMagic: this.#rollMercurialMagic,
       rollValue: this.#rollValue,
@@ -389,27 +389,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     await this.document.convertCurrencyDownward(target.dataset.currency)
     this.render(false)
-  }
-
-  /**
-   * Handle editing an image
-   * @this {DCCItemSheet}
-   * @param {PointerEvent} event   The originating click event
-   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
-   */
-  static async #editImage (event, target) {
-    const field = target.dataset.field || 'img'
-    const current = foundry.utils.getProperty(this.document, field)
-
-    const fp = new foundry.applications.apps.FilePicker({
-      type: 'image',
-      current,
-      callback: (path) => {
-        this.document.update({ [field]: path })
-      }
-    })
-
-    fp.render(true)
   }
 
   /**
