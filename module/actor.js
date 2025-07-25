@@ -813,8 +813,7 @@ class DCCActor extends Actor {
     // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
     if (skillTable) {
-      await game.dcc.processSpellCheck({
-        document: this,
+      await game.dcc.processSpellCheck(this, {
         rollTable: skillTable,
         roll,
         item: skillItem,
