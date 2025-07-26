@@ -1086,7 +1086,13 @@ class DCCActor extends Actor {
       }
     }
     if (options.backstab && weapon.system?.backstabDamage) {
-      damageRollFormula = damageRollFormula.replace(weapon.system?.damageWeapon, weapon.system?.backstabDamage)
+      if (!weapon.system?.damageWeapon || weapon.system.damageWeapon.trim() === '') {
+        // No weapon damage component to replace, use backstab damage directly
+        damageRollFormula = weapon.system.backstabDamage
+      } else {
+        // Replace the weapon damage component with backstab damage
+        damageRollFormula = damageRollFormula.replace(weapon.system.damageWeapon, weapon.system.backstabDamage)
+      }
     }
     let damageRoll, damageInlineRoll, damagePrompt
     if (automateDamageFumblesCrits) {
