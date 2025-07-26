@@ -32,7 +32,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
       decreaseQty: this.#decreaseQty,
-      editImage: DCCActorSheet.editImage, // Provided by DocumentSheetV2
       increaseQty: this.#increaseQty,
       itemCreate: this.#itemCreate,
       itemEdit: this.#itemEdit,

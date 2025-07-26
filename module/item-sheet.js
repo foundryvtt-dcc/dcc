@@ -40,7 +40,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       ]
     },
     actions: {
-      editImage: DCCItemSheet.editImage,
       rollManifestation: this.#rollManifestation,
       rollMercurialMagic: this.#rollMercurialMagic,
       rollValue: this.#rollValue,
