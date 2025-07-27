@@ -7,7 +7,7 @@
              name="items.{{id}}.system.equipped"
              data-dtype="Boolean" {{checked armor.system.equipped}}/>
       <img class="item-draggable icon-filter" src="{{armor.img}}" title="{{armor.name}}" alt="{{armor.name}}" width="22"
-           height="22">
+           height="22" data-drag="true" data-drag-action="item">
       <input type="text"
              name="items.{{id}}.name"
              value="{{armor.name}}"/>
@@ -64,7 +64,7 @@
   {{/inline}}
   {{#* inline "ItemRow"}}
     <li class="grid-col-span-5 item item-draggable" data-item-id="{{item._id}}">
-      <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22">
+      <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22" data-drag="true" data-drag-action="item">
       <div>{{item.name}}</div>
       <div>{{{item.system.description.summary}}}</div>
       <div><i class="fa-thin fa-up" data-action="increaseQty"></i> {{item.system.quantity}} <i class="fa-thin fa-down" data-action="decreaseQty"></i></div>
