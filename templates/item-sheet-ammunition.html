@@ -24,14 +24,14 @@
     <div class="box-border grid-col-span-3" style="max-height: 127px;">
       <div class="box-title">{{localize "DCC.Image"}}</div>
       <div class="p-5">
-        <img src="{{document.img}}" data-action="editImage" data-field="img" title="{{document.name}}" alt="{{document.name}}"/>
+        <img src="{{document.img}}" data-action="editImage" data-edit="img" title="{{document.name}}" alt="{{document.name}}"/>
       </div>
     </div>
 
     {{> systems/dcc/templates/item-sheet-partial-values.html }}
 
     <img src="systems/dcc/styles/images/SA-4-31-FCI-spots-4-Treasure-skull-magic-sword.webp"
-         data-action="editImage" data-field="img"
+         data-action="editImage" data-edit="img"
          style="justify-self: center;"
          class="grid-col-span-12 background-art-filter"
          alt=""

@@ -571,7 +571,7 @@ static async #rollAbilityCheck(event, target) {
 
 **Template (Same for both approaches):**
 ```html
-<img src="{{img}}" data-action="editImage" data-field="img" alt="Portrait">
+<img src="{{img}}" data-action="editImage" data-edit="img" alt="Portrait">
 ```
 
 **V2 Pattern (Recommended - Use Inherited Method):**
@@ -587,7 +587,7 @@ static DEFAULT_OPTIONS = {
 
 **Benefits of using inherited editImage:**
 - Automatic compatibility with Forge VTT file storage
-- Handles edge cases and URL formats correctly  
+- Handles edge cases and URL formats correctly
 - Future-proof against hosting platform changes
 - Less code to maintain
 
@@ -1516,7 +1516,7 @@ static DEFAULT_OPTIONS = {
 - [ ] **Update image editing to use inherited editImage** (RECOMMENDED):
   - [ ] Remove custom `#editImage` methods
   - [ ] Update actions to reference `YourSheetClass.editImage` instead of `this.#editImage`
-  - [ ] Update templates to use `data-action="editImage"` and `data-field="img"`
+  - [ ] Update templates to use `data-action="editImage"` and `data-edit="img"`
 - [ ] Replace jQuery with vanilla JS in hooks
 - [ ] **Consider using DialogV2 factory methods** for simple prompts
 
