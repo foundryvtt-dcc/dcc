@@ -5,7 +5,9 @@
       "Bash(rg:*)",
       "WebFetch(domain:forums.forge-vtt.com)",
       "Bash(npm test)",
-      "Bash(npm run format:*)"
+      "Bash(npm run format:*)",
+      "Bash(sed:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

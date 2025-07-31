@@ -19,6 +19,16 @@ class DCCActor extends Actor {
     this.isNPC = (this.type === 'NPC')
     this.isPC = (this.type === 'Player')
 
+    // Ensure HP values are numbers
+    if (this.system.attributes?.hp) {
+      if (this.system.attributes.hp.max !== undefined) {
+        this.system.attributes.hp.max = Number(this.system.attributes.hp.max) || 0
+      }
+      if (this.system.attributes.hp.value !== undefined) {
+        this.system.attributes.hp.value = Number(this.system.attributes.hp.value) || 0
+      }
+    }
+
     // Ability modifiers
     const abilities = this.system.abilities
     for (const abilityId in abilities) {
@@ -598,8 +608,8 @@ class DCCActor extends Actor {
       await roll.evaluate()
 
       await this.update({
-        'system.attributes.hp.max': roll.total,
-        'system.attributes.hp.value': roll.total
+        'system.attributes.hp.max': Number(roll.total),
+        'system.attributes.hp.value': Number(roll.total)
       })
     }
 

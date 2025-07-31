@@ -51,7 +51,7 @@ function _parseJSONPCs (pcObject) {
     pc['abilities.lck.max'] = pc['abilities.lck.value']
     pc['attributes.ac.value'] = pcObject.armorClass || 10
     if (pcObject.hitPoints) {
-      pc['attributes.hp.value'] = pc['attributes.hp.max'] = pcObject.hitPoints
+      pc['attributes.hp.value'] = pc['attributes.hp.max'] = Number(pcObject.hitPoints) || 0
     }
     let hitDice = '1d4'
     if (pcObject.className) {

@@ -67,7 +67,7 @@ async function parseNPC (npcString) {
   const hp = hpRoll.total
   npc['attributes.init.value'] = _firstMatch(/.*Init ?(.+?)[;.].*/, npcString) || '+0'
   npc['attributes.ac.value'] = _firstMatch(/.*AC ?(\d+?)[;,. ].*/, npcString) || '10'
-  npc['attributes.hp.max'] = npc['attributes.hp.value'] = _firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp
+  npc['attributes.hp.max'] = npc['attributes.hp.value'] = Number(_firstMatch(/.*(?:HP|hp) ?(\d+).*?[;.].*/, npcString) || hp) || 0
   npc['attributes.speed.value'] = _firstMatch(/.*MV ?(.+?)[;.].*/, npcString) || '30'
   npc['config.actionDice'] = _firstMatch(/.*Act ?(.+?)[;.].*/, npcString) || '1d20'
   // Parse special abilities without truncating at semicolons within parentheses
@@ -98,10 +98,9 @@ async function parseNPC (npcString) {
   // Guess Crit based on HD and name string
   if (!npc['attributes.critical.die']) {
     let hdCount = 1
-    try {
-      hdCount = parseInt(hd.match(/(\d*)d/)[0] || 1) || 0
-    } catch (error) {
-      hdCount = 0
+    const hdMatch = hd.match(/(\d+)d/)
+    if (hdMatch) {
+      hdCount = parseInt(hdMatch[1]) || 1
     }
     if (hdCount > 21) {
       hdCount = 21
