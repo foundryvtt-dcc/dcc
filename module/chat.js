@@ -201,7 +201,15 @@ export const emoteAttackRoll = function (message, html) {
     if (message.system?.deedDieFormula.includes('d10')) {
       iconClass = 'fa-dice-d10'
     }
-    const deedDieHTML = `<a class="inline-roll${critical}" data-tooltip="${message.system?.deedDieFormula}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</a>`
+    // Create a proper Roll object for the deed die if we have the roll data
+    let deedDieHTML
+    if (message.system.deedDieRoll) {
+      // If we have the full roll object, create a proper inline roll
+      deedDieHTML = `<a class="inline-roll inline-result${critical}" data-roll="${encodeURIComponent(JSON.stringify(message.system.deedDieRoll))}" title="${message.system?.deedDieFormula}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</a>`
+    } else {
+      // Fallback to non-clickable display if roll data is missing
+      deedDieHTML = `<span class="inline-roll${critical}" title="${message.system?.deedDieFormula}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</span>`
+    }
     deedRollHTML = game.i18n.format('DCC.AttackRollDeedEmoteSegment', { deed: deedDieHTML })
   }
 

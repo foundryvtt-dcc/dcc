@@ -1384,7 +1384,10 @@ class DCCActor extends Actor {
       if (!this.system.details.attackBonus.startsWith('+1')) {
         deedDieFormula = deedDieFormula.replace(/^1/, '')
       }
-      deedDieRoll = attackRoll.dice[1]
+      // Create a proper Roll object for the deed die
+      deedDieRoll = Roll.fromTerms([attackRoll.dice[1]])
+      deedDieRoll._total = attackRoll.dice[1].total
+      deedDieRoll._evaluated = true
       deedDieRollResult = attackRoll.dice[1].total
       deedSucceed = deedDieRollResult > 2
     }
