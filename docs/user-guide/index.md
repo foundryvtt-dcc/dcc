@@ -20,6 +20,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Thief](Thief.md)
 * [Wizard](Wizard.md)
 * [Level Up](Level-Up.md)
+* [Party Sheet](Party-Sheet.md)
 
 ## Spells
 * [Creating a Spell](Creating-a-Spell.md)
