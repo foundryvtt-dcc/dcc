@@ -165,6 +165,25 @@
              disabled
         {{/if}}
       >
+      
+      {{!-- Swim and Fly Speeds --}}
+      {{#if system.config.showSwimFlySpeed}}
+        {{!-- Swim Speed --}}
+        <label for="system.attributes.speed.swim">{{localize "DCC.SwimSpeed"}}</label>
+        <input id="system.attributes.speed.swim" name="system.attributes.speed.swim"
+               value="{{distanceFormat system.attributes.speed.swim}}"
+               size="3"
+               data-dtype="String"
+        >
+        
+        {{!-- Fly Speed --}}
+        <label for="system.attributes.speed.fly">{{localize "DCC.FlySpeed"}}</label>
+        <input id="system.attributes.speed.fly" name="system.attributes.speed.fly"
+               value="{{distanceFormat system.attributes.speed.fly}}"
+               size="3"
+               data-dtype="String"
+        >
+      {{/if}}
     </div>
 
     {{!-- Ability Scores --}}
