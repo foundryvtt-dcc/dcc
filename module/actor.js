@@ -1365,7 +1365,23 @@ class DCCActor extends Actor {
     await attackRoll.evaluate()
 
     // Adjust crit range if the die size was adjusted
-    critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
+    const strictCrits = game.settings.get('dcc', 'strictCriticalHits')
+    if (strictCrits) {
+      // Extract die sizes from the original and adjusted formulas
+      const originalDieMatch = die.match(/(\d+)d(\d+)/)
+      const adjustedDieMatch = attackRoll.formula.match(/(\d+)d(\d+)/)
+      if (originalDieMatch && adjustedDieMatch) {
+        const originalDieSize = parseInt(originalDieMatch[2])
+        const adjustedDieSize = parseInt(adjustedDieMatch[2])
+        if (originalDieSize !== adjustedDieSize) {
+          // Use proportional crit range calculation
+          critRange = game.dcc.DiceChain.calculateProportionalCritRange(critRange, originalDieSize, adjustedDieSize)
+        }
+      }
+    } else {
+      // Use the original logic (expand crit range)
+      critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
+    }
 
     const d20RollResult = attackRoll.dice[0].total
     attackRoll.dice[0].options.dcc = {
