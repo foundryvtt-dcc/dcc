@@ -8,6 +8,11 @@
       "Bash(npm run format:*)",
       "Bash(sed:*)",
       "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
       "Bash(npm run scss:*)"
     ],
     "deny": []

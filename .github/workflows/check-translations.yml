@@ -1,0 +1,26 @@
+permissions:
+  contents: read
+name: Check Translations
+
+on:
+  pull_request:
+    paths:
+      - 'lang/**'
+
+jobs:
+  check-translations:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Check translation completeness
+        run: node .github/workflows/check-translations.js
