@@ -25,7 +25,7 @@
           </div>
           <div class="rollable spell-item-button" title="Cast spell" data-action="rollSpellCheck" data-drag="true" data-drag-action="spellCheck">&nbsp;</div>
           <div>{{item.system.level}}</div>
-          <div>{{item.name}}</div>
+          <div data-tooltip="{{item.descriptionHTML}}">{{item.name}}</div>
           <div></div>
           <input type="checkbox"
                  name="items.{{item._id}}.system.lost"
