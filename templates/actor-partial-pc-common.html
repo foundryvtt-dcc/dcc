@@ -51,8 +51,8 @@
 
     <div class="ac-and-hp grid-tpl-two">
       {{!-- AC --}}
-      <svg style="grid-area: 1/1; justify-self: center;" width="68" height="65" viewBox="0 0 68 64"
-           fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg style="grid-area: 1/1; justify-self: center; fill: none;" width="68" height="65" viewBox="0 0 68 64"
+           xmlns="http://www.w3.org/2000/svg">
         <path d="M65 3H3C2.99995 22.5946 7.3056 61 35.2917 61C63.2778 61 65 11.6216 65 3Z" stroke="var(--system-border-color)"
               stroke-opacity="0.75" stroke-width="5"></path>
       </svg>
@@ -68,8 +68,8 @@
       <label for="system.attributes.ac.value" style="grid-area: 2/1/4/1; line-height: 18px;">
         {{{localize "DCC.ArmorClass"}}}
       </label>
-      <svg style="grid-area: 1/2; justify-self: center" width="70" height="65" viewBox="0 0 70 64"
-           fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg style="grid-area: 1/2; justify-self: center; fill: none" width="70" height="65" viewBox="0 0 70 64"
+           xmlns="http://www.w3.org/2000/svg">
         <path d="M66 3H4L16.5734 61H52.993L66 3Z" stroke="var(--system-border-color)" stroke-opacity="0.75" stroke-width="5"></path>
       </svg>
       {{!-- HP --}}
@@ -165,17 +165,17 @@
              disabled
         {{/if}}
       >
-      
+
       {{!-- Swim and Fly Speeds --}}
       {{#if system.config.showSwimFlySpeed}}
-        {{!-- Swim Speed --}}
+      {{!-- Swim Speed --}}
         <label for="system.attributes.speed.swim">{{localize "DCC.SwimSpeed"}}</label>
         <input id="system.attributes.speed.swim" name="system.attributes.speed.swim"
                value="{{distanceFormat system.attributes.speed.swim}}"
                size="3"
                data-dtype="String"
         >
-        
+
         {{!-- Fly Speed --}}
         <label for="system.attributes.speed.fly">{{localize "DCC.FlySpeed"}}</label>
         <input id="system.attributes.speed.fly" name="system.attributes.speed.fly"
