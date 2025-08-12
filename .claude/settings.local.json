@@ -7,7 +7,8 @@
       "Bash(npm test)",
       "Bash(npm run format:*)",
       "Bash(sed:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npm run scss:*)"
     ],
     "deny": []
   }
