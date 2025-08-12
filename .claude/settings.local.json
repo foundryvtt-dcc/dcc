@@ -7,7 +7,11 @@
       "Bash(npm test)",
       "Bash(npm run format:*)",
       "Bash(sed:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }
