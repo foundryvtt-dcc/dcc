@@ -292,6 +292,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         if (!i.system.level) {
           i.system.level = 0
         }
+        // Enrich HTML for spell description for tooltips
+        if (i.system.description?.value) {
+          i.descriptionHTML = await TextEditor.enrichHTML(i.system.description.value, {
+            relativeTo: i,
+            secrets: this.options.document.isOwner
+          })
+        }
         if (spells[i.system.level]) {
           spells[i.system.level].push(i)
         } else {
