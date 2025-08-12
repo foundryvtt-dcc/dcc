@@ -19,10 +19,11 @@ Work Process (for developers): [GitHub Process for JSON/LevelDB](docs/GITHUB-JSO
 
 ###### Contributors
 * Connor Stone (@ckwk)
-* Alexander Dotor-Mohring (@adotor)
+* Alexander Dotor-Mohring (@adotor) (Original German translation and other contributions)
 * Jonathan Dorety (@jdorety)
 * Radoslaw Grzanka (@radoslawg)
 * Tyler Kostuch (@TylerKostuch)
+* Frédéric (@theksi) (Original French translation)
 * @sasquach45932
 * Tony Zito (@tonyrobots)
 
