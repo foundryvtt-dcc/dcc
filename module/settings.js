@@ -300,6 +300,18 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Enable strict critical hit rules (proportional crit range for different die sizes)
+   */
+  game.settings.register('dcc', 'strictCriticalHits', {
+    name: 'DCC.SettingStrictCriticalHits',
+    hint: 'DCC.SettingStrictCriticalHitsHint',
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
+
+  /**
    * Last used Importer Type
    */
   game.settings.register('dcc', 'lastImporterType', {
