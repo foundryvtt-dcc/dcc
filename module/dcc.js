@@ -712,7 +712,7 @@ Hooks.once('item-piles-ready', setupItemPilesForDCC)
 
 // Add custom ProseMirror menu dropdown for sidebar style
 Hooks.on('getProseMirrorMenuDropDowns', (menu, items) => {
-  const wrapIn = foundry.prosemirror.commands.wrapIn
+  const setBlockType = foundry.prosemirror.commands.setBlockType
   if ('format' in items) {
     items.format.entries.push({
       action: 'dcc-custom',
@@ -721,13 +721,40 @@ Hooks.on('getProseMirrorMenuDropDowns', (menu, items) => {
         {
           action: 'sidebar',
           title: 'DCC.SidebarText',
-          node: menu.schema.nodes.paragraph,
-          attrs: { class: 'sidebar' },
           cmd: () => {
-            menu._toggleBlock(menu.schema.nodes.paragraph, wrapIn, {
-              attrs: { _preserve: { class: 'sidebar' } }
-            })
-            return true
+            const { state, dispatch } = menu.view
+            const { $from } = state.selection
+
+            // Check if we're in a paragraph with sidebar class
+            const currentNode = $from.parent
+
+            // Use the _preserve attribute where custom attributes are stored
+            const preserveAttrs = currentNode.attrs._preserve || {}
+            const hasSidebarClass = preserveAttrs.class?.includes('sidebar')
+
+            // Toggle the sidebar class using _preserve
+            if (hasSidebarClass) {
+              // Remove sidebar class
+              const newClass = preserveAttrs.class
+                .split(' ')
+                .filter(c => c !== 'sidebar')
+                .join(' ') || null
+              const newPreserve = { ...preserveAttrs, class: newClass }
+              if (!newClass) delete newPreserve.class
+              return setBlockType(menu.schema.nodes.paragraph, {
+                ...currentNode.attrs,
+                _preserve: newPreserve
+              })(state, dispatch)
+            } else {
+              // Add sidebar class
+              const existingClass = preserveAttrs.class || ''
+              const newClass = existingClass ? `${existingClass} sidebar` : 'sidebar'
+              const newPreserve = { ...preserveAttrs, class: newClass }
+              return setBlockType(menu.schema.nodes.paragraph, {
+                ...currentNode.attrs,
+                _preserve: newPreserve
+              })(state, dispatch)
+            }
           }
         }
       ]
