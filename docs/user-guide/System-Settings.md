@@ -42,3 +42,5 @@ To change System Settings, you can click the 3 gears (**Game Settings**) in the 
 **Check weapon is equipped** will check if the weapon is equipped before rolling an attack, and show an error if it is not equipped.
 
 **Show Welcome Dialog on Startup** will show the Welcome Dialog when you first open the game. If this is unchecked, it will not show the Welcome Dialog.
+
+**Strict Critical Hit Rules** when enabled, makes critical hit ranges scale proportionally with die size changes. For example, if you normally crit on 20 and roll a d24, you only crit on 24. If you normally crit on 18-20 and roll a d24, you crit on 22-24. This setting follows strict RAW interpretation of how critical hits work with the dice chain.
