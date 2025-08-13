@@ -1,3 +1,4 @@
+@charset "UTF-8";
 .grid-align-center {
   display: grid;
   align-items: center;
@@ -541,6 +542,25 @@
   text-align: center;
   color: var(--system-primary-color);
   margin: 0.3em 0;
+}
+.journal-entry .editor-content[contenteditable] .sidebar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid var(--system-primary-color);
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+.journal-entry .editor-content[contenteditable] .sidebar::before {
+  content: "📄";
+  position: absolute;
+  top: -2px;
+  right: 4px;
+  font-size: 0.8em;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.journal-entry .editor-content[contenteditable] .sidebar:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 /* ----------------------------------------- */

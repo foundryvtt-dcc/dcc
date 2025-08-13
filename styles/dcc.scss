@@ -394,6 +394,33 @@
       }
     }
   }
+
+  // Enhanced visual feedback in prosemirror editor
+  .editor-content[contenteditable] {
+    .sidebar {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      border-left: 4px solid var(--system-primary-color);
+      transition: all 0.2s ease-in-out;
+      position: relative;
+
+      // Add a subtle indicator that this is styled content
+      &::before {
+        content: '📄';
+        position: absolute;
+        top: -2px;
+        right: 4px;
+        font-size: 0.8em;
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      // Slight hover effect for better UX
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transform: translateY(-1px);
+      }
+    }
+  }
 }
 
 /* ----------------------------------------- */
