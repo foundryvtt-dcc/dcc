@@ -395,31 +395,79 @@
     }
   }
 
-  // Enhanced visual feedback in prosemirror editor
-  .editor-content[contenteditable] {
+  // Enhanced visual feedback in prosemirror editor - try multiple selectors
+  .editor-content {
     .sidebar {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      border-left: 4px solid var(--system-primary-color);
-      transition: all 0.2s ease-in-out;
-      position: relative;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+      border-left: 4px solid var(--system-primary-color) !important;
+      transition: all 0.2s ease-in-out !important;
+      position: relative !important;
 
       // Add a subtle indicator that this is styled content
       &::before {
-        content: '📄';
-        position: absolute;
-        top: -2px;
-        right: 4px;
-        font-size: 0.8em;
-        opacity: 0.6;
-        pointer-events: none;
+        content: '📄' !important;
+        position: absolute !important;
+        top: -2px !important;
+        right: 4px !important;
+        font-size: 0.8em !important;
+        opacity: 0.6 !important;
+        pointer-events: none !important;
       }
 
       // Slight hover effect for better UX
       &:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+        transform: translateY(-1px) !important;
       }
     }
+  }
+
+  // Also try targeting prosemirror specifically
+  .prose-mirror {
+    .sidebar {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+      border-left: 4px solid var(--system-primary-color) !important;
+      transition: all 0.2s ease-in-out !important;
+      position: relative !important;
+
+      &::before {
+        content: '📄' !important;
+        position: absolute !important;
+        top: -2px !important;
+        right: 4px !important;
+        font-size: 0.8em !important;
+        opacity: 0.6 !important;
+        pointer-events: none !important;
+      }
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+        transform: translateY(-1px) !important;
+      }
+    }
+  }
+}
+
+// Global sidebar styling for editor feedback (outside of .journal-entry scope)
+p.sidebar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  border-left: 4px solid #782e22 !important; // fallback color
+  transition: all 0.2s ease-in-out !important;
+  position: relative !important;
+
+  &::before {
+    content: '📄' !important;
+    position: absolute !important;
+    top: -2px !important;
+    right: 4px !important;
+    font-size: 0.8em !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+  }
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    transform: translateY(-1px) !important;
   }
 }
 
