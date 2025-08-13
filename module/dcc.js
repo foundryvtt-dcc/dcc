@@ -710,6 +710,31 @@ Hooks.on('createActor', async (actor, options, userId) => {
 // Set up Item Piles module compatibility
 Hooks.once('item-piles-ready', setupItemPilesForDCC)
 
+// Add custom ProseMirror menu dropdown for sidebar style
+Hooks.on('getProseMirrorMenuDropDowns', (menu, items) => {
+  const wrapIn = foundry.prosemirror.commands.wrapIn
+  if ('format' in items) {
+    items.format.entries.push({
+      action: 'dcc-custom',
+      title: 'DCC.CustomStyles',
+      children: [
+        {
+          action: 'sidebar',
+          title: 'DCC.SidebarText',
+          node: menu.schema.nodes.paragraph,
+          attrs: { class: 'sidebar' },
+          cmd: () => {
+            menu._toggleBlock(menu.schema.nodes.paragraph, wrapIn, {
+              attrs: { _preserve: { class: 'sidebar' } }
+            })
+            return true
+          }
+        }
+      ]
+    })
+  }
+})
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
 /* -------------------------------------------- */
