@@ -710,6 +710,58 @@ Hooks.on('createActor', async (actor, options, userId) => {
 // Set up Item Piles module compatibility
 Hooks.once('item-piles-ready', setupItemPilesForDCC)
 
+// Add custom ProseMirror menu dropdown for sidebar style
+Hooks.on('getProseMirrorMenuDropDowns', (menu, items) => {
+  if ('format' in items) {
+    items.format.entries.push({
+      action: 'dcc-custom',
+      title: 'DCC.CustomStyles',
+      active: (state) => {
+        const { $from } = state.selection
+        const preserveAttrs = $from.parent.attrs._preserve || {}
+        return preserveAttrs.class?.includes('sidebar') || false
+      },
+      children: [
+        {
+          action: 'sidebar',
+          title: 'DCC.SidebarText',
+          node: menu.schema.nodes.paragraph,
+          active: (state) => {
+            const { $from } = state.selection
+            const preserveAttrs = $from.parent.attrs._preserve || {}
+            return preserveAttrs.class?.includes('sidebar') || false
+          },
+          cmd: () => {
+            const { state, dispatch } = menu.view
+            const { $from } = state.selection
+            const currentNode = $from.parent
+            const preserveAttrs = currentNode.attrs._preserve || {}
+            const hasSidebarClass = preserveAttrs.class?.includes('sidebar')
+
+            let newClass
+            if (hasSidebarClass) {
+              // Remove sidebar class
+              newClass = preserveAttrs.class.split(' ').filter(c => c !== 'sidebar').join(' ') || null
+            } else {
+              // Add sidebar class
+              newClass = preserveAttrs.class ? `${preserveAttrs.class} sidebar` : 'sidebar'
+            }
+
+            const newPreserve = { ...preserveAttrs }
+            if (newClass) newPreserve.class = newClass
+            else delete newPreserve.class
+
+            return foundry.prosemirror.commands.setBlockType(menu.schema.nodes.paragraph, {
+              ...currentNode.attrs,
+              _preserve: newPreserve
+            })(state, dispatch)
+          }
+        }
+      ]
+    })
+  }
+})
+
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
 /* -------------------------------------------- */
