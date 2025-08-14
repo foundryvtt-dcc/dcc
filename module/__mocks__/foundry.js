@@ -686,7 +686,19 @@ class DocumentSheetV2Mock {
     if (target.nodeName !== 'IMG') {
       throw new Error('The editImage action is available only for IMG elements.')
     }
-    // In real Foundry: opens FilePicker with current image, default artwork support
+    const field = target.dataset.field || 'img'
+    const current = global.foundry.utils.getProperty(this.document, field)
+
+    // Mock FilePicker creation and rendering
+    const fp = new global.foundry.applications.apps.FilePicker({
+      type: 'image',
+      current,
+      callback: (path) => {
+        this.document.update({ [field]: path })
+      }
+    })
+
+    return fp.render(true)
   }
 
   // Import document handler - imports from compendium to world
@@ -1489,9 +1501,19 @@ global.foundry = {
       },
       // FilePicker - file browser dialog for asset selection
       FilePicker: class FilePickerMock {
-        constructor (options = {}) { this.options = options }
+        constructor (options = {}) {
+          this.options = options
+          this.type = options.type || 'any'
+          this.current = options.current || ''
+          this.callback = options.callback || (() => {})
+        }
 
         async browse () { return this }
+
+        render (force = false) {
+          // Mock rendering - in tests, just return this
+          return this
+        }
       },
       // ImagePopout - image viewer dialog
       ImagePopout: class ImagePopoutMock {

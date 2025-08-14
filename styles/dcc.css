@@ -722,7 +722,7 @@ a.inline-roll {
 .dcc .weapon-list {
   display: grid;
   font-family: var(--system-data-font), serif;
-  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
+  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 65px 90px 39px;
   grid-column-gap: 5px;
   justify-items: center;
   margin: 0 0 8px 0;

@@ -42,7 +42,7 @@
 
         <div class="grid-tpl-max-auto-tight grid-col-gap-8">
           <div class="group-heading">{{localize "DCC.AttackBonus"}}</div>
-          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.attackBonus}}</div>
+          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{#if system.config.attackBonusOverride}}{{system.config.attackBonusOverride}}{{else}}{{system.attackBonus}}{{/if}}</div>
 
           <label class="group-indent {{#if system.config.attackBonusOverride}}disabled{{/if}}"
                  for="system.attackBonusWeapon" title="{{localize 'DCC.OverrideHint'}}">
@@ -93,10 +93,7 @@
         <div class="group-separator"></div>
 
         <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
-          <div class="group-heading">{{localize "DCC.DamageBonus"}}</div>
-          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.damageBonus}}</div>
-
-          <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}" for="system.damageWeaponBonus"
+          <label class="group-heading {{#if system.config.damageOverride}}disabled{{/if}}" for="system.damageWeaponBonus"
                  title="{{localize 'DCC.WeaponDamageBonusHint'}}">{{localize "DCC.WeaponBonus"}}</label>
           <input id="system.damageWeaponBonus" name="system.damageWeaponBonus"
                  value="{{system.damageWeaponBonus}}"
