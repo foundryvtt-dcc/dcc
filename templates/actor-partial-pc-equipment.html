@@ -2,7 +2,7 @@
 <section class="tab equipment-bg {{tabs.equipment.id}} {{tabs.equipment.cssClass}}" data-tab="{{tabs.equipment.id}}" data-group="{{tabs.equipment.group}}" id="equipment">
   {{!-- Melee Weapons --}}
   {{#* inline "weaponRow"}}
-    <li class="grid-col-span-9 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
+    <li class="grid-col-span-8 weapon grid-col-gap-5" data-item-id="{{id}}" data-item-slot="{{type}}{{add index 1}}">
       <input type="checkbox"
              name="items.{{id}}.system.equipped"
              data-dtype="Boolean" {{checked weapon.system.equipped}}/>
@@ -36,10 +36,6 @@
                name="items.{{id}}.system.range"
                value="{{weapon.system.range}}"/>
       {{/if}}
-      <input type="checkbox"
-             name="items.{{id}}.system.trained"
-             style="margin-left: 5px;"
-             data-dtype="Boolean" {{checked weapon.system.trained}}/>
       <div>
         <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
         <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
@@ -48,7 +44,7 @@
   {{/inline}}
   <div class="box-title">{{localize "DCC.MeleeWeapons"}}</div>
   <ol class="weapon-list box-border">
-    <li class="grid-col-span-9 weapon-list-header">
+    <li class="grid-col-span-8 weapon-list-header">
       <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
       <div></div>
       <div title="{{localize 'DCC.Roll'}}"></div>
@@ -56,7 +52,6 @@
       <div>{{localize "DCC.ToHit"}}</div>
       <div>{{localize "DCC.Damage"}}</div>
       <div>{{localize "DCC.Notes"}}</div>
-      <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
       <div>
         <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon" data-action="itemCreate"
            data-melee=1>
@@ -73,7 +68,7 @@
   {{!-- Ranged Weapons --}}
   <div class="box-title">{{localize "DCC.RangedWeapons"}}</div>
   <ol class="weapon-list box-border">
-    <li class="grid-col-span-9 weapon-list-header">
+    <li class="grid-col-span-8 weapon-list-header">
       <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
       <div></div>
       <div title="{{localize 'DCC.Roll'}}"></div>
@@ -81,7 +76,6 @@
       <div>{{localize "DCC.ToHit"}}</div>
       <div>{{localize "DCC.Damage"}}</div>
       <div>{{localize "DCC.Range"}}</div>
-      <div title="{{localize 'DCC.WeaponPropertiesTrained'}}"><i class="fa-solid fa-user-graduate"></i></div>
       <div>
         <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="weapon" data-action="itemCreate">
           <i class="fas fa-plus" data-melee=0></i>
