@@ -6,11 +6,11 @@
   --system-backstab-button-image: url('./images/backstab.png');
   --system-border-color: #333230;
   --system-checkbox-font-weight: 400;
-  --system-checkbox-background-color: var(--system-input-background);
+  --system-checkbox-background-color: #8d8c85;
   --system-checkbox-checked-color: var(--system-primary-color);
   --system-checkbox-checkmark-color: var(--system-border-color);
   --system-checkbox-disabled-color: #000;
-  --system-checkbox-size: 1.3rem;
+  --system-checkbox-size: 18px;
   --system-d20-icon: url('../../../icons/svg/d20-black.svg');
   --system-data-font: 'Book Antiqua', serif;
   --system-frame-background: url('images/denim.png');

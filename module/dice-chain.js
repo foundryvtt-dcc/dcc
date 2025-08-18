@@ -119,6 +119,21 @@ class DiceChain {
     // Default - no adjustment
     return 0
   }
+
+  /* Calculate the proportional crit range for strict critical hit rules
+   * @param originalCritRange {Number}   Original crit range (e.g., 20 for normal, 18 for warrior)
+   * @param originalDieSize {Number}     Original die size (e.g., 20)
+   * @param newDieSize {Number}          New die size (e.g., 24)
+   */
+  static calculateProportionalCritRange (originalCritRange, originalDieSize, newDieSize) {
+    // Calculate how many numbers were in the original crit range
+    const originalCritCount = originalDieSize - originalCritRange + 1
+
+    // Calculate the proportional crit range for the new die size
+    const newCritRange = newDieSize - originalCritCount + 1
+
+    return newCritRange
+  }
 }
 
 export default DiceChain

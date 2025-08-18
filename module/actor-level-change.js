@@ -77,7 +77,8 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Check that we have a class name
     this.classNameLower = this.options.document.system.class.className.toLowerCase()
-    if (!this.classNameLower || this.classNameLower === 'generic') {
+    const genericClassNameLower = game.i18n.localize('DCC.Generic').toLowerCase()
+    if (!this.classNameLower || this.classNameLower === 'generic' || this.classNameLower === genericClassNameLower) {
       ui.notifications.error(game.i18n.localize('DCC.ChooseAClass'))
       await this.close({ force: true })
       return context
@@ -145,8 +146,14 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _lookupLevelItem (className, level) {
+    // If the current language is not English, translate the class name to English
+    let searchClassName = className
+    if (game.i18n.lang !== 'en') {
+      searchClassName = this._translateClassNameToEnglish(className)
+    }
+
     // Normalize class name by replacing spaces with hyphens
-    const normalizedClassName = className.replace(/\s+/g, '-')
+    const normalizedClassName = searchClassName.replace(/\s+/g, '-')
     const itemName = `${normalizedClassName}-${level}`
 
     // Iterate over all registered level data packs
@@ -166,6 +173,38 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
     return {}
+  }
+
+  /**
+   * _translateClassNameToEnglish
+   * Translates a localized class name back to English for compendium lookup
+   * @param localizedClassName <string>
+   * @return englishClassName <string>
+   * @private
+   */
+  _translateClassNameToEnglish (localizedClassName) {
+    // Map of English class names to their translation keys
+    const classTranslationKeys = [
+      'DCC.Cleric',
+      'DCC.Thief',
+      'DCC.Warrior',
+      'DCC.Wizard',
+      'DCC.Dwarf',
+      'DCC.Elf',
+      'DCC.Halfling'
+    ]
+
+    // Check each translation key to see if its localized value matches our input
+    for (const key of classTranslationKeys) {
+      const translatedValue = game.i18n.localize(key)
+      if (translatedValue.toLowerCase() === localizedClassName.toLowerCase()) {
+        // Extract the English class name from the key (everything after 'DCC.')
+        return key.substring(4).toLowerCase()
+      }
+    }
+
+    // If no translation match found, return the original className
+    return localizedClassName.toLowerCase()
   }
 
   /**
@@ -256,7 +295,7 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
       // Adjust ActionDice
       const actionDice = levelData['system.attributes.actionDice.value']
       levelData['system.config.actionDice'] = actionDice
-      if (actionDice.includes(',')) {
+      if (actionDice && actionDice.includes(',')) {
         levelData['system.attributes.actionDice.value'] = actionDice.split(',')[0].trim()
       }
 

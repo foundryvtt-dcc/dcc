@@ -10,7 +10,14 @@
       "Bash(rm:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(curl:*)",
-      "Bash(node:*)"
+      "Bash(cat:*)",
+      "Bash(python3:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+      "Bash(npm run scss:*)"
     ],
     "deny": []
   }

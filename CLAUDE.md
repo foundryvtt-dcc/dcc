@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run scss-watch` - Watch and auto-compile SASS styles during development
 - `npm run todb` - Compile JSON source files to LevelDB packs (run module/compilePacks.js)
 - `npm run tojson` - Extract LevelDB packs to JSON source files (run module/extractPacks.js)
+- `npm run compare-lang` - Compare all language files with English reference to find missing translation keys
 
 ## FoundryVTT System Architecture
 
@@ -56,9 +57,17 @@ The `template.json` defines the data structure for Actors and Items:
 - `npc-parser.js` - Parses NPC stat blocks
 - `pc-parser.js` - Parses player character data
 
+### Language Files and Internationalization
+
+- **Language Files**: Located in `lang/` directory (en.json, de.json, es.json, etc.)
+- **Reference File**: `lang/en.json` is the primary reference - all other language files should have matching keys
+- **Translation Utility**: Use `npm run compare-lang` to check all language files or `node module/compare-lang-files.js <reference> <target>` for custom comparisons
+- **Key Format**: Nested objects use dot notation (e.g., "DCC.Settings.SomeKey")
+- **Adding New Keys**: Always add to en.json first, then translate to other language files
+
 ### Important Notes
 
-- This system implements FoundryVTT v12-v13 compatibility
+- This system implements FoundryVTT v13 compatibility
 - Uses ES modules (`type: "module"` in package.json)
 - Hot reload configured for development (js, css, html, json files)
 - StandardJS for code formatting, StyleLint for SASS

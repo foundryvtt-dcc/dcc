@@ -46,6 +46,9 @@
     <label for="system.attributes.speed.base">{{localize "DCC.SpeedBase"}}</label>
     <input type="text" name="system.attributes.speed.base" id="system.attributes.speed.base"
            value="{{distanceFormat system.attributes.speed.base}}" data-dtype="number"/>
+    <label for="system.config.showSwimFlySpeed" title="{{localize 'DCC.ShowSwimFlySpeedConfigHint'}}">{{localize "DCC.ShowSwimFlySpeedConfig"}}</label>
+    <input type="checkbox" name="system.config.showSwimFlySpeed" id="system.config.showSwimFlySpeed" {{checked system.config.showSwimFlySpeed}}
+           data-dtype="boolean"/>
 
     <div class="group-separator"></div>
     <label for="system.config.computeMeleeAndMissileAttackAndDamage"

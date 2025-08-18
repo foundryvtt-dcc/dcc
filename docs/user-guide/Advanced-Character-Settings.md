@@ -14,6 +14,8 @@ The Deed Die itself is set via the **Attack Bonus** field on the Character tab o
 
 **Compute Speed** will auto-calculate the character's speed from a base speed and their equipped armor. The Speed field on the sheet will be greyed out and show the calculated value when this option is enabled. Hovering over it will show the calculations.
 
+**Show Swim/Fly Speeds** will add separate swim and fly speed fields to the character sheet. These are independent of the main speed calculation and allow you to track different movement speeds for characters with special abilities like swimming or flying.
+
 **Compute Check Penalty** will auto-calculate the character's armor check penalty from their armor. Alternatively a static check penalty can be provided in the field below. The check penalty will be applied to any spells cast that are marked as Wizard spells (it does not apply to Cleric spells) and to thief skills. The check penalty can be added or removed from relevant rolls if ctrl (or command) is held to display the Roll Modifier dialog when making the roll.
 
 **Show Backstab** adds the backstab function for Thieves, or custom classes/characters where backstabs are allowed.

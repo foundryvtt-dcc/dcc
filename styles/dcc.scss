@@ -376,22 +376,23 @@
     }
   }
 
-  .journal-entry-page,
-  .editor-content {
-    .sidebar {
-      border: var(--system-frame-border);
-      padding: 0.5em;
-      margin: 0.5em 0;
-      background: var(--system-frame-background);
-      overflow: hidden;
+}
 
-      h4 {
-        font-family: var(--system-heading-font), serif;
-        font-size: 1.3em;
-        text-align: center;
-        color: var(--system-primary-color);
-        margin: 0.3em 0;
-      }
+.journal-entry-page,
+.editor-content {
+  .sidebar {
+    border: var(--system-frame-border);
+    padding: 0.5em;
+    margin: 0.5em 0;
+    background: var(--system-value-display-background-color);
+    overflow: hidden;
+
+    h4 {
+      font-family: var(--system-heading-font), serif;
+      font-size: 1.3em;
+      text-align: center;
+      color: var(--system-primary-color);
+      margin: 0.3em 0;
     }
   }
 }
@@ -595,7 +596,7 @@ a.inline-roll {
 .dcc .weapon-list {
   display: grid;
   font-family: var(--system-data-font), serif;
-  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 60px 97px 20px 39px;
+  grid-template-columns: min-content 30px min-content minmax(90px, auto) 55px 65px 90px 39px;
   grid-column-gap: 5px;
   justify-items: center;
   margin: 0 0 8px 0;
@@ -699,7 +700,7 @@ a.inline-roll {
 
 /* ----------------------------------------- */
 /*  Wizard/Elf
-/* ----------------------------------------- */
+  /* ----------------------------------------- */
 
 .dcc .elf-bg {
   background-image: url('./images/FCI-magic-items-1-9-shamen-crystal.webp');
@@ -1148,7 +1149,7 @@ a.inline-roll {
 
 /* ----------------------------------------- */
 /*  Skills
-/* ----------------------------------------- */
+  /* ----------------------------------------- */
 
 .dcc .skill-list {
   column-gap: 5px;
@@ -1498,7 +1499,7 @@ a.inline-roll {
 
 /* ----------------------------------------- */
 /*  Actor Sheet
-/* ----------------------------------------- */
+  /* ----------------------------------------- */
 
 .dcc .character {
   .character-grid {

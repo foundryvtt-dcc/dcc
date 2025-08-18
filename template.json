@@ -93,7 +93,9 @@
           "speed": {
             "value": 30,
             "base": 30,
-            "special": ""
+            "special": "",
+            "swim": 0,
+            "fly": 0
           }
         },
         "details": {
@@ -357,7 +359,8 @@
           "removeEmptyItems": true,
           "showSpells": false,
           "showSkills": false,
-          "showBackstab": false
+          "showBackstab": false,
+          "showSwimFlySpeed": false
         }
       }
     },
