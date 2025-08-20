@@ -1,6 +1,7 @@
 When you are about to do a release, and not before:
 
 For automated release process:
+1. You need to have the foundry-cli installed (https://github.com/FoundryApp/foundry-cli)
 1. Ensure you run `npm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
 1. Merge all changes into main
 1. Commit `version.txt` File with new release version number in it (no 'v')
@@ -9,6 +10,7 @@ For automated release process:
 1. Publish the release
 
 For manual release process:
+1. You need to have the foundry-cli installed (https://github.com/FoundryApp/foundry-cli)
 1. Ensure you run `npm run tojson' to copy the data out of levelDB files and into JSON, since LevelDB files are not checked in
 1. Merge in all changes to main
 1. Update system.json to change the version number at the top
