@@ -18,9 +18,7 @@
       "Bash(git add:*)",
       "Bash(git checkout:*)",
       "Bash(git commit:*)",
-      "Bash(npm run scss:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(npm run scss:*)"
     ],
     "deny": []
   }
