@@ -69,7 +69,10 @@ class DCCActorSheetCleric extends DCCActorSheet {
         'system.class.spellCheckAbility': 'per',
         'system.details.critRange': 20,
         'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false
+        'system.config.addClassLevelToInitiative': false,
+        'system.config.showBackstab': false,
+        'system.config.showSpells': false,
+        'system.skills.shieldBash.useDeed': false
       })
     }
 
@@ -133,7 +136,10 @@ class DCCActorSheetThief extends DCCActorSheet {
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
         'system.config.showBackstab': true,
-        'system.config.addClassLevelToInitiative': false
+        'system.config.addClassLevelToInitiative': false,
+        'system.class.spellCheckAbility': null,
+        'system.config.showSpells': false,
+        'system.skills.shieldBash.useDeed': false
       })
     }
 
@@ -199,7 +205,11 @@ class DCCActorSheetHalfling extends DCCActorSheet {
         'system.details.critRange': 20,
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false
+        'system.config.addClassLevelToInitiative': false,
+        'system.class.spellCheckAbility': null,
+        'system.config.showBackstab': false,
+        'system.config.showSpells': false,
+        'system.skills.shieldBash.useDeed': false
       })
     }
 
@@ -259,9 +269,14 @@ class DCCActorSheetWarrior extends DCCActorSheet {
       await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Warrior'),
         'system.details.sheetClass': 'Warrior',
+        'system.details.critRange': 20,
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'autoPerAttack',
-        'system.config.addClassLevelToInitiative': true
+        'system.config.addClassLevelToInitiative': true,
+        'system.class.spellCheckAbility': null,
+        'system.config.showBackstab': false,
+        'system.config.showSpells': false,
+        'system.skills.shieldBash.useDeed': false
       })
     }
 
@@ -330,7 +345,9 @@ class DCCActorSheetWizard extends DCCActorSheet {
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
-        'system.config.showSpells': true
+        'system.config.showSpells': true,
+        'system.config.showBackstab': false,
+        'system.skills.shieldBash.useDeed': false
       })
     }
 
@@ -390,10 +407,14 @@ class DCCActorSheetDwarf extends DCCActorSheet {
       await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Dwarf'),
         'system.details.sheetClass': 'Dwarf',
+        'system.details.critRange': 20,
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'autoPerAttack',
         'system.skills.shieldBash.useDeed': true,
-        'system.config.addClassLevelToInitiative': false
+        'system.config.addClassLevelToInitiative': false,
+        'system.class.spellCheckAbility': null,
+        'system.config.showBackstab': false,
+        'system.config.showSpells': false
       })
     }
 
@@ -462,7 +483,9 @@ class DCCActorSheetElf extends DCCActorSheet {
         'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
-        'system.config.showSpells': true
+        'system.config.showSpells': true,
+        'system.config.showBackstab': false,
+        'system.skills.shieldBash.useDeed': false
       })
     }
 
@@ -521,8 +544,14 @@ class DCCActorSheetGeneric extends DCCActorSheet {
       await this.actor.update({
         'system.class.className': game.i18n.localize('DCC.Generic'),
         'system.details.sheetClass': 'Generic',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false
+        'system.config.addClassLevelToInitiative': false,
+        'system.class.spellCheckAbility': null,
+        'system.config.showBackstab': false,
+        'system.config.showSpells': false,
+        'system.skills.shieldBash.useDeed': false
       })
     }
 
