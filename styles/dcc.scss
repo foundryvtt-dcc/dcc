@@ -18,6 +18,23 @@
   src: url('fonts/DuvallSmallCaps.otf') format('opentype');
 }
 
+@font-face {
+  font-family: 'DuvallSmallCaps';
+  src: url('fonts/DuvallSmallCapsBold.otf') format('opentype');
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: 'Duvall';
+  src: url('fonts/Duvall.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Duvall';
+  src: url('fonts/DuvallBold.otf') format('opentype');
+  font-weight: bold;
+}
+
 /* Common style elements */
 .dcc {
 
