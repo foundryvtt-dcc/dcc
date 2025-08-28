@@ -181,7 +181,7 @@
   "DCC.DescriptionTooltip": "Edit on the Description tab",
   "DCC.Details": "Details",
   "DCC.Die": "Die",
-  "DCC.Dices": "Dices",
+  "DCC.Dice": "Dices",
   "DCC.DisableTrap": "Disable trap",
   "DCC.DisapprovalFormulaWarning": "Invalid roll formula for disapproval '{formula}'",
   "DCC.DisapprovalGained": "Disapproval Range increased to {range}",

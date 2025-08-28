@@ -181,7 +181,7 @@
   "DCC.DescriptionTooltip": "Editar en la pestaña de descripción",
   "DCC.Details": "Detalles",
   "DCC.Die": "Dado",
-  "DCC.Dices": "Dados",
+  "DCC.Dice": "Dados",
   "DCC.DisableTrap": "Desactivar trampa",
   "DCC.DisapprovalFormulaWarning": "Fórmula de tirada inválida para desaprobación '{formula}'",
   "DCC.DisapprovalGained": "Rango de desaprobación aumentado a {range}",

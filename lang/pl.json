@@ -181,7 +181,7 @@
   "DCC.DescriptionTooltip": "Edytuj na karcie Opis",
   "DCC.Details": "Szczegóły",
   "DCC.Die": "Kostka",
-  "DCC.Dices": "Kostki",
+  "DCC.Dice": "Kostki",
   "DCC.DisableTrap": "Rozbrój pułapkę",
   "DCC.DisapprovalFormulaWarning": "Nieprawidłowa formuła rzutu dla dezaprobaty '{formula}'",
   "DCC.DisapprovalGained": "Zakres Dezaprobaty zwiększony do {range}",

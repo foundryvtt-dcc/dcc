@@ -181,7 +181,7 @@
   "DCC.DescriptionTooltip": "Im Beschreibungsreiter bearbeiten",
   "DCC.Details": "Details",
   "DCC.Die": "Würfel",
-  "DCC.Dices": "Würfel",
+  "DCC.Dice": "Würfel",
   "DCC.DisableTrap": "Fallen entschärfen",
   "DCC.DisapprovalFormulaWarning": "Ungültige Würfelformel für Ungnade '{formula}'.",
   "DCC.DisapprovalGained": "Ungnadebereich erweitert auf {range}",

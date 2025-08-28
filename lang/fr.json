@@ -824,7 +824,7 @@
   "DCC.DescriptionTabHint": "Modifier la description",
   "DCC.DescriptionTooltip": "Modifier dans l'onglet Description",
   "DCC.Die": "Dé",
-  "DCC.Dices": "Dés",
+  "DCC.Dice": "Dés",
   "DCC.DisapprovalRangeHint": "Portée de défaveur actuelle - augmentez quand votre clerc gagne de la défaveur, diminuez quand vous la perdez",
   "DCC.DisapprovalTableHint": "Table à utiliser pour les résultats de défaveur - ne changez que si vous construisez une table personnalisée pour votre divinité",
   "DCC.Disease": "Maladie",
