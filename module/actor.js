@@ -108,7 +108,7 @@ class DCCActor extends Actor {
     }
 
     if (this.system.details.sheetClass === 'Thief') {
-      this.system.skills.castSpellFromScroll.value = '0'
+      this.system.skills.castSpellFromScroll.die = '0'
     }
 
     // Migrate base speed if not present based on current speed

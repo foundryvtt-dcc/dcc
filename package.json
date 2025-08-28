@@ -40,7 +40,7 @@
     "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css",
     "todb": "node module/compilePacks.js",
     "tojson": "node module/extractPacks.js",
-    "compare-lang": "node module/compare-lang-files.js lang/en.json lang/de.json lang/es.json",
+    "compare-lang": "node module/compare-lang-files.js lang/en.json lang/de.json lang/es.json lang/fr.json lang/it.json lang/pl.json",
     "prepare": "husky"
   },
   "standard": {

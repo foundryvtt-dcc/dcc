@@ -658,8 +658,9 @@
     "Credits": "<h2>Crediti</h2><p>Conversione Foundry VTT di Steve Barnett, Christian Ovsenik e Tim L. White.</p><p>Vedi Crediti per altri ringraziamenti.</p>",
     "Copyright": "<h2>Informazioni sulla licenza e sul copyright</h2><p>Questo modulo contiene materiale di Goodman Games, utilizzato con licenza.</p><p>DCC RPG è &copy; 2012 Goodman Games.</p><p>Dungeon Crawl Classics è un marchio di Goodman Games. Pubblicato su licenza in Italia da Kaizoku Press (kaizokupress.it). Traduzione Modulo: Emanuele Granatello e Marco Bertolini.</p><p>DCC GdR è pubblicato sotto la Open Game License, fare riferimento all'OGL per ulteriori informazioni.</p><p>Foundry Virtual Tabletop &copy; 2019, Foundry Gaming LLC.</p>",
     "ImportContentLabel": "",
-    "DoNotShow": "Non mostrare questo messaggio all'avvio",
-    "DoNotShowHint": "Non mostrate più questa finestra di benvenuto finché non viene riattivata nella finestra di dialogo Impostazioni Modulo.",
+    "ShowWelcomeDialogLabel": "Non mostrare questo messaggio all'avvio",
+    "ShowWelcomeDialogHint": "Non mostrate più questa finestra di benvenuto finché non viene riattivata nella finestra di dialogo Impostazioni Modulo.",
+    "CloseLabel": "Chiudi",
     "SubmitLabel": "Chiudi",
     "LogoAlt": "DCC RPG Logo"
   },
@@ -709,6 +710,5 @@
   "DCC.system.skills.pickPocket.value": "Svuotare tasche",
   "DCC.system.skills.readLanguages.value": "Leggere linguaggi",
   "DCC.system.skills.sneakAndHide.value": "Muoversi silenziosamente e nascondersi",
-  "DCC.system.skills.sneakSilently.value": "Muoversi silenziosamente",
-  "DCC.system.skills.castSpellFromScroll.value": "Lanciare incantesimi da Pergamena"
+  "DCC.system.skills.sneakSilently.value": "Muoversi silenziosamente"
 }
