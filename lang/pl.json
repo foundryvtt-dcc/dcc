@@ -707,7 +707,7 @@
   "DCC.system.skills.handlePoison.value": "Obchodzenie się z Trucizną",
   "DCC.system.skills.hideInShadows.value": "Ukrywanie w Cieniu",
   "DCC.system.skills.pickLock.value": "Otwieranie Zamków",
-  "DCC.system.skills.pickPocket.value": "Kieszonkowanie",
+  "DCC.system.skills.pickPockets.value": "Kieszonkowanie",
   "DCC.system.skills.readLanguages.value": "Czytanie Języków",
   "DCC.system.skills.sneakAndHide.value": "Skradanie i Ukrywanie",
   "DCC.system.skills.sneakSilently.value": "Ciche Skradanie"
