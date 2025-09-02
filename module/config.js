@@ -31,8 +31,8 @@ DCC.abilities = {
  * @type {Object}
  */
 DCC.abilityModifiers = {
-  0: -3,
-  1: -3,
+  0: -4,
+  1: -4,
   2: -3,
   3: -3,
   4: -2,
