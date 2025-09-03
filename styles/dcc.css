@@ -718,22 +718,28 @@ a.inline-roll {
 /* ----------------------------------------- */
 /*  Notes                              */
 /* ----------------------------------------- */
-.dcc .notes {
-  font-size: 16px;
-  margin: 0;
-}
-.dcc .notes .editor {
-  line-height: 24px;
-  min-height: 547px;
-}
-
-.dcc .notes-bg {
+.dcc .tab.notes-bg {
   background-image: url("./images/FCI-spots-2-scroll-with-ink-and-candle.webp");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   font-size: 16px;
   margin: 0;
+}
+.dcc .tab.notes-bg.active {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.dcc .tab.notes-bg.active > div {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+.dcc .tab.notes-bg.active .editor,
+.dcc .tab.notes-bg.active prose-mirror {
+  line-height: 24px;
+  min-height: 0;
 }
 
 /* ----------------------------------------- */
@@ -839,6 +845,33 @@ a.inline-roll {
   background-position-y: bottom;
   background-size: contain;
 }
+.dcc .elf-bg.active {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.dcc .elf-bg.active > .grid-container {
+  display: grid;
+  grid-template-rows: 1fr auto 0.6fr;
+  min-height: 0;
+  height: 100%;
+  grid-row-gap: 0;
+}
+.dcc .elf-bg.active > .grid-container > .grid-container:first-child {
+  min-height: 0;
+  overflow-y: auto;
+}
+.dcc .elf-bg.active > .grid-container > .corruption {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+  overflow: hidden;
+}
+.dcc .elf-bg.active > .grid-container > .corruption .editor,
+.dcc .elf-bg.active > .grid-container > .corruption prose-mirror {
+  min-height: 0;
+  height: 100%;
+}
 
 .dcc .wizard-bg {
   background-image: url("./images/FCI-spots-8-33-Spellcasters-hat.webp");
@@ -846,6 +879,26 @@ a.inline-roll {
   background-position-x: center;
   background-position-y: bottom;
   background-size: contain;
+}
+.dcc .wizard-bg.active {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr;
+}
+.dcc .wizard-bg.active > .grid-container {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  height: 100%;
+  grid-row-gap: 0;
+}
+.dcc .wizard-bg.active > .grid-container > .corruption-wizard {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+.dcc .wizard-bg.active > .grid-container > .corruption-wizard .editor,
+.dcc .wizard-bg.active > .grid-container > .corruption-wizard prose-mirror {
+  min-height: 0;
+  height: 100%;
 }
 
 .dcc .wizard-spells-bg {
@@ -863,7 +916,6 @@ a.inline-roll {
 }
 
 .dcc .corruption-wizard .editor {
-  min-height: 260px;
   padding-top: 5px;
 }
 

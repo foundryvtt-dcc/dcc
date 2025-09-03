@@ -596,23 +596,32 @@ a.inline-roll {
 /*  Notes                              */
 /* ----------------------------------------- */
 
-.dcc .notes {
-  font-size: 16px;
-  margin: 0;
-
-  .editor {
-    line-height: 24px;
-    min-height: 547px;
-  }
-}
-
-.dcc .notes-bg {
+// Notes tab specific styling - only when the tab is active
+.dcc .tab.notes-bg {
   background-image: url('./images/FCI-spots-2-scroll-with-ink-and-candle.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   font-size: 16px;
   margin: 0;
+
+  &.active {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 1fr;
+
+    > div {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .editor,
+    prose-mirror {
+      line-height: 24px;
+      min-height: 0;
+    }
+  }
 }
 
 /* ----------------------------------------- */
@@ -734,6 +743,45 @@ a.inline-roll {
   background-position-x: center;
   background-position-y: bottom;
   background-size: contain;
+
+  &.active {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 1fr;
+
+    > .grid-container {
+      display: grid;
+      grid-template-rows: 1fr auto 0.6fr;  // Top flexible, elf abilities fixed, corruption flexible
+      min-height: 0;
+      height: 100%;
+      grid-row-gap: 0;
+
+      // Top section with spell check, familiar, patron - flexible
+      > .grid-container:first-child {
+        min-height: 0;
+        overflow-y: auto;
+      }
+
+      // Elf Abilities section - stays at natural height
+      > div:nth-child(2) {
+        // This will take its natural height (auto in grid)
+      }
+
+      // Corruption section - flexible
+      > .corruption {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 0;
+        overflow: hidden;
+
+        .editor,
+        prose-mirror {
+          min-height: 0;
+          height: 100%;
+        }
+      }
+    }
+  }
 }
 
 .dcc .wizard-bg {
@@ -742,6 +790,31 @@ a.inline-roll {
   background-position-x: center;
   background-position-y: bottom;
   background-size: contain;
+
+  &.active {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 1fr;
+
+    > .grid-container {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      height: 100%;
+      grid-row-gap: 0;
+
+      // Corruption section
+      > .corruption-wizard {
+        display: grid;
+        grid-template-rows: auto 1fr;
+
+        .editor,
+        prose-mirror {
+          min-height: 0;
+          height: 100%;
+        }
+      }
+    }
+  }
 }
 
 .dcc .wizard-spells-bg {
@@ -759,7 +832,6 @@ a.inline-roll {
 }
 
 .dcc .corruption-wizard .editor {
-  min-height: 260px;
   padding-top: 5px;
 }
 
