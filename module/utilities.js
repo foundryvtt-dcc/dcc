@@ -58,9 +58,21 @@ export async function getCritTableResult (roll, critTableName) {
     await roll.evaluate()
   }
 
-  // Extract the crit table suffix (e.g. "III" from "Crit Table III")
-  const critTableText = game.i18n.localize('DCC.CritTable')
-  const critTableSuffix = critTableName.replace(critTableText, '').trim()
+  // Extract the crit table suffix (e.g. "III" from "Crit Table III" or "T. dei Critici III")
+  // The table name might be passed as either "Crit Table III" (English) or localized
+  let critTableSuffix = critTableName
+
+  // First try to remove the English "Crit Table " prefix (with space)
+  if (critTableName.startsWith('Crit Table ')) {
+    critTableSuffix = critTableName.substring('Crit Table '.length).trim()
+  } else {
+    // If not English, try with the localized text
+    const critTableText = game.i18n.localize('DCC.CritTable')
+    if (critTableName.startsWith(critTableText)) {
+      critTableSuffix = critTableName.substring(critTableText.length).trim()
+    }
+  }
+
   let critTableCanonical = 'Crit Table ' + critTableSuffix
 
   // Check to see if this is the Elemental Crit/Fumble table
@@ -130,8 +142,8 @@ export function getFumbleTableNameFromCritTableName (critTableName) {
   if (humanoidCritTables.some(ctn => critTableName.includes(ctn))) {
     return 'Fumble Table H'
   }
-  const critTableText = game.i18n.localize('DCC.CritTable')
-  if (critTableName === `${critTableText} EL`) {
+  // Check for EL suffix (works with both English and localized)
+  if (critTableName === 'EL' || critTableName.endsWith(' EL')) {
     return 'Crit/Fumble Table EL'
   }
   return `Fumble Table ${critTableName}`

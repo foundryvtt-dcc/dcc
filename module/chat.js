@@ -432,11 +432,27 @@ export const emoteSkillCheckRoll = function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const lookupCriticalRoll = async function (message, html) {
-  if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Critical'))) return
-  const criticalText = game.i18n.localize('DCC.Critical')
-  const tableName = message.flavor.replace(`${criticalText} (`, '').replace(')', '')
+  if (!message.rolls || !message.isContentVisible) return
 
-  const critResult = await getCritTableResult(message.rolls[0], tableName)
+  // Check if this message is a critical roll - it should either have the critical text in flavor
+  // or have a critTableName in the system data
+  const hasCriticalInFlavor = message.flavor.includes(game.i18n.localize('DCC.Critical')) ||
+                              message.flavor.includes(game.i18n.localize('DCC.CritDie'))
+  const hasCritTableInSystem = message.system?.critTableName
+
+  if (!hasCriticalInFlavor && !hasCritTableInSystem) return
+
+  // Try to get the table name from system data first (more reliable),
+  // then fall back to parsing from flavor
+  let tableName
+  if (message.system?.critTableName) {
+    tableName = message.system.critTableName
+  } else {
+    const criticalText = game.i18n.localize('DCC.Critical')
+    tableName = message.flavor.replace(`${criticalText} (`, '').replace(')', '')
+  }
+
+  const critResult = await getCritTableResult(message.rolls[0], `Crit Table ${tableName}`)
 
   // Check if we got a result from the table lookup
   if (!critResult || !critResult.description) {

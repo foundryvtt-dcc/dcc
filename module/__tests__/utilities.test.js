@@ -260,9 +260,22 @@ describe('Utilities', () => {
       expect(mockTable.getResultsForRoll).toHaveBeenCalledWith(15)
     })
 
-    it('handles localized crit table names', async () => {
+    it('handles localized crit table names (French)', async () => {
       global.game.i18n.localize.mockReturnValue('Table de Critique')
       const result = await getCritTableResult(mockRoll, 'Table de Critique III')
+      expect(result).toEqual({ text: 'Critical hit result' })
+    })
+
+    it('handles localized crit table names (Italian)', async () => {
+      global.game.i18n.localize.mockReturnValue('T. dei Critici')
+      const result = await getCritTableResult(mockRoll, 'T. dei Critici III')
+      expect(result).toEqual({ text: 'Critical hit result' })
+    })
+
+    it('handles English table name even when locale is not English', async () => {
+      // This test verifies the fix for the reported bug
+      global.game.i18n.localize.mockReturnValue('T. dei Critici')
+      const result = await getCritTableResult(mockRoll, 'Crit Table III')
       expect(result).toEqual({ text: 'Critical hit result' })
     })
 
