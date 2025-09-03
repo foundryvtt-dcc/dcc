@@ -20,7 +20,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     classes: ['dcc', 'sheet', 'item'],
-    tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.sheet-body', initial: 'main' }],
+    tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.tab-body', initial: 'main' }],
     position: {
       width: 475,
       height: 442
@@ -48,7 +48,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       configureItem: this.#configureItem
     },
     dragDrop: [{
-      dropSelector: '.sheet-body'
+      dropSelector: '.tab-body'
     }]
   }
 
