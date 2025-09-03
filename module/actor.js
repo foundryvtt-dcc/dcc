@@ -1150,7 +1150,7 @@ class DCCActor extends Actor {
     let critInlineRoll = ''
     let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critRoll
-    let critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || ''
+    const critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || ''
     let critText = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
@@ -1172,7 +1172,6 @@ class DCCActor extends Actor {
         rolls.push(critRoll)
         const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
-          critTableName = critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`)
           critText = await TextEditor.enrichHTML(critResult.description)
           critText = `: <br>${critText}`
         }
@@ -1454,12 +1453,11 @@ class DCCActor extends Actor {
     const critRollFormula = critRoll.formula
     const critPrompt = game.i18n.localize('DCC.Critical')
 
-    let critTableName = this.system.attributes.critical?.table
+    const critTableName = this.system.attributes.critical?.table
     const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critText = ''
     if (critResult) {
       critText = await TextEditor.enrichHTML(critResult.description)
-      critTableName = await TextEditor.enrichHTML(critResult?.parent?.link.replace(/\{.*}/, `{${critTableName}}`))
     }
 
     foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
