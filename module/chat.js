@@ -436,8 +436,7 @@ export const lookupCriticalRoll = async function (message, html) {
 
   // Check if this message is a critical roll - it should either have the critical text in flavor
   // or have a critTableName in the system data
-  const hasCriticalInFlavor = message.flavor.includes(game.i18n.localize('DCC.Critical')) ||
-                              message.flavor.includes(game.i18n.localize('DCC.CritDie'))
+  const hasCriticalInFlavor = message.flavor.includes(game.i18n.localize('DCC.Critical'))
   const hasCritTableInSystem = message.system?.critTableName
 
   if (!hasCriticalInFlavor && !hasCritTableInSystem) return
