@@ -1263,7 +1263,7 @@ class DCCActor extends Actor {
         critPrompt,
         critRoll,
         critRollFormula,
-        critTableName,
+        ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
         deedDieFormula,
