@@ -45,7 +45,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       rollValue: this.#rollValue,
       convertUpward: this.#convertUpward,
       convertDownward: this.#convertDownward,
-      configureItem: this.#configureItem
+      configureItem: this.#configureItem,
+      twoWeaponChange: this.#twoWeaponChange
     },
     dragDrop: [{
       dropSelector: '.tab-body'
@@ -188,7 +189,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     data.actor = this.actor
 
     if (data.document.type === 'weapon') {
-      this.position.height = 685
+      this.position.height = 730
     }
 
     // Lookup the localizable string for the item's type
@@ -522,6 +523,33 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     console.log('lookupMercurialMagic')
     this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
     // No need to render - the document update will trigger re-render automatically
+  }
+
+  /**
+   * Handle two-weapon checkbox changes
+   * @this {DCCItemSheet}
+   * @param {Event} event   The originating change event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #twoWeaponChange (event, target) {
+    if (!this.document.isOwner) return
+
+    const fieldName = target.name
+    const isChecked = target.checked
+
+    // If checkbox was just checked, uncheck the other one
+    if (isChecked) {
+      const updates = {}
+      if (fieldName === 'system.twoWeaponPrimary') {
+        updates['system.twoWeaponSecondary'] = false
+      } else if (fieldName === 'system.twoWeaponSecondary') {
+        updates['system.twoWeaponPrimary'] = false
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await this.document.update(updates)
+      }
+    }
   }
 }
 

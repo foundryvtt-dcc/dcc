@@ -317,7 +317,7 @@
   font-family: var(--system-label-font), serif;
 }
 .dcc .group-indent {
-  margin-left: 16px;
+  margin-left: 8px;
 }
 .dcc .group-separator {
   border-bottom: 2px dotted var(--system-secondary-color);
@@ -460,10 +460,6 @@
   text-align: center;
 }
 .dcc .value-display.action-die-display {
-  min-width: 113px;
-  max-width: 113px;
-  text-align: left;
-  padding-left: 6px;
   padding-right: 6px;
 }
 .dcc .window-content {
@@ -1134,6 +1130,9 @@ a.inline-roll {
 }
 .dcc.item .tab-body .mercurial .editor {
   min-height: 315px;
+}
+.dcc.item .tab-body .group-indent {
+  margin-left: 8px;
 }
 .dcc.item .tab-body input {
   background: none;

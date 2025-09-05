@@ -107,7 +107,7 @@
   }
 
   .group-indent {
-    margin-left: 16px;
+    margin-left: 8px;
   }
 
   .group-separator {
@@ -298,10 +298,6 @@
     text-align: center;
 
     &.action-die-display {
-      min-width: 113px;
-      max-width: 113px;
-      text-align: left;
-      padding-left: 6px;
       padding-right: 6px;
     }
   }
@@ -1077,6 +1073,10 @@ a.inline-roll {
     .editor {
       min-height: 315px;
     }
+  }
+
+  .group-indent {
+    margin-left: 8px;
   }
 
   input {

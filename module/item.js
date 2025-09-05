@@ -92,7 +92,7 @@ class DCCItem extends Item {
 
         // Apply the dice penalty
         if (dicePenalty !== 0) {
-          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, dicePenalty)}[2-weapon]`
+          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, dicePenalty)}[2-wpn]`
         }
 
         // Two-Weapon Fighting Critical Hit Adjustments (after dice modifications)

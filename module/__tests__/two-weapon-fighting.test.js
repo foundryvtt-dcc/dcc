@@ -87,14 +87,14 @@ describe('Two-Weapon Fighting', () => {
       const weapon = createWeapon(actor, { twoWeaponPrimary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.actionDie).toMatch(/d16.*\[2-weapon]/) // -1 penalty for agility 14
+      expect(weapon.system.actionDie).toMatch(/d16.*\[2-wpn]/) // -1 penalty for agility 14
     })
 
     it('should apply dice penalty for two-weapon secondary with low agility', () => {
       const weapon = createWeapon(actor, { twoWeaponSecondary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.actionDie).toMatch(/d14.*\[2-weapon]/) // -2 penalty for agility 14
+      expect(weapon.system.actionDie).toMatch(/d14.*\[2-wpn]/) // -2 penalty for agility 14
     })
   })
 
@@ -121,14 +121,14 @@ describe('Two-Weapon Fighting', () => {
       const weapon = createWeapon(actor, { twoWeaponPrimary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.actionDie).toMatch(/d16.*\[2-weapon]/) // -1 penalty for agility 16
+      expect(weapon.system.actionDie).toMatch(/d16.*\[2-wpn]/) // -1 penalty for agility 16
     })
 
     it('should apply -1 penalty to two-weapon secondary with medium agility', () => {
       const weapon = createWeapon(actor, { twoWeaponSecondary: true })
 
       weapon.prepareBaseData()
-      expect(weapon.system.actionDie).toMatch(/d16.*\[2-weapon]/) // -1 penalty
+      expect(weapon.system.actionDie).toMatch(/d16.*\[2-wpn]/) // -1 penalty
     })
   })
 
@@ -174,8 +174,8 @@ describe('Two-Weapon Fighting', () => {
       secondary.prepareBaseData()
 
       // Should behave as if agility is 16 (-1 penalty for both hands)
-      expect(primary.system.actionDie).toMatch(/d16.*\[2-weapon]/)
-      expect(secondary.system.actionDie).toMatch(/d16.*\[2-weapon]/)
+      expect(primary.system.actionDie).toMatch(/d16.*\[2-wpn]/)
+      expect(secondary.system.actionDie).toMatch(/d16.*\[2-wpn]/)
     })
 
     it('should use normal two-weapon rules for halflings with high agility (18+)', () => {
@@ -189,7 +189,7 @@ describe('Two-Weapon Fighting', () => {
 
       // Should follow normal agility 18+ rules, not special halfling rules
       expect(primary.system.actionDie).toBe('1d20') // No penalty for primary at 18+
-      expect(secondary.system.actionDie).toMatch(/d16.*\[2-weapon]/) // -1 penalty for secondary
+      expect(secondary.system.actionDie).toMatch(/d16.*\[2-wpn]/) // -1 penalty for secondary
       expect(primary.system.critRange).toBe(20) // Normal crit range, not 16
       expect(secondary.system.critRange).toBe(51) // Secondary can't crit
     })
@@ -232,13 +232,13 @@ describe('Two-Weapon Fighting', () => {
         if (primaryPenalty === 0) {
           expect(primary.system.actionDie).toBe('1d20')
         } else {
-          expect(primary.system.actionDie).toMatch(new RegExp(`${expectedPrimaryDie}.*\\[2-weapon\\]`))
+          expect(primary.system.actionDie).toMatch(new RegExp(`${expectedPrimaryDie}.*\\[2-wpn\\]`))
         }
 
         if (secondaryPenalty === 0) {
           expect(secondary.system.actionDie).toBe('1d20')
         } else {
-          expect(secondary.system.actionDie).toMatch(new RegExp(`${expectedSecondaryDie}.*\\[2-weapon\\]`))
+          expect(secondary.system.actionDie).toMatch(new RegExp(`${expectedSecondaryDie}.*\\[2-wpn\\]`))
         }
       })
     })
