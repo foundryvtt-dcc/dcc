@@ -137,6 +137,13 @@ function _parseJSONPCs (pcObject) {
     // Class
     if (pcObject.className) {
       pc['class.className'] = pcObject.className
+      // Set class-specific default critical hit ranges
+      if (pcObject.className === 'Warrior' && pcObject.level) {
+        const level = parseInt(pcObject.level) || 1
+        const critRange = CONFIG.DCC.warriorCritRangeByLevel[level] || CONFIG.DCC.warriorCritRangeByLevel[1]
+        pc['details.critRange'] = critRange.toString()
+      }
+      // Other classes use default 20 (set by template)
     }
     // Level
     if (pcObject.level) {
@@ -479,7 +486,7 @@ function _parseWeapon (weaponString) {
 
     // Extract dice notation from damage, handling deed replacement and additional text
     const damageText = weaponData[3].replace('deed', '@ab')
-    let damage = damageText
+    let damage
     let specialNotes = ''
 
     // Match dice notation including @ab, but preserve descriptive text
