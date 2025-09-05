@@ -21,7 +21,7 @@
 
         <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
           <div class="group-heading"> {{localize "DCC.ActionDie"}}</div>
-          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}</div>
+          <div class="value-display action-die-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}</div>
 
           <label class="group-indent {{#if system.config.actionDieOverride}}disabled{{/if}}" for="system.trained">
             {{localize "DCC.WeaponPropertiesTrained"}}
@@ -31,8 +31,24 @@
                  {{#if system.config.actionDieOverride}}disabled{{/if}}
           />
 
+          <label class="group-heading {{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 for="system.twoWeaponPrimary" title="{{localize 'DCC.TwoWeaponPrimaryHint'}}">{{localize "DCC.TwoWeaponPrimary"}}</label>
+          <input type="checkbox" id="system.twoWeaponPrimary" name="system.twoWeaponPrimary"
+                 class="{{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 {{#if system.config.actionDieOverride}}disabled{{/if}}
+          data-dtype="Boolean" {{checked system.twoWeaponPrimary}}
+          />
+
+          <label class="group-heading {{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 for="system.twoWeaponSecondary" title="{{localize 'DCC.TwoWeaponSecondaryHint'}}">{{localize "DCC.TwoWeaponSecondary"}}</label>
+          <input type="checkbox" id="system.twoWeaponSecondary" name="system.twoWeaponSecondary"
+                 class="{{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 {{#if system.config.actionDieOverride}}disabled{{/if}}
+          data-dtype="Boolean" {{checked system.twoWeaponSecondary}}
+          />
+
           <label class="group-indent" for="system.config.actionDieOverride" title="{{localize 'DCC.OverrideHint'}}">
-            {{localize "DCC.Override"}}
+            {{localize "DCC.Override"}} {{localize "DCC.Die"}}
           </label>
           <input name="system.config.actionDieOverride" id="system.config.actionDieOverride"
                  value="{{system.config.actionDieOverride}}" title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
@@ -65,7 +81,7 @@
           />
 
           <label class="group-indent" for="system.config.attackBonusOverride" title="{{localize 'DCC.OverrideHint'}}">
-            {{localize "DCC.Override"}}
+            {{localize "DCC.Override"}} {{localize "DCC.Bonus"}}
           </label>
           <input name="system.config.attackBonusOverride" id="system.config.attackBonusOverride"
                  value="{{system.config.attackBonusOverride}}" title="{{localize 'DCC.OverrideHint'}}"
@@ -157,7 +173,7 @@
           />
 
           <label class="group-indent" for="system.config.initiativeDieOverride" title="{{localize 'DCC.OverrideHint'}}">
-            {{localize "DCC.Override"}}
+            {{localize "DCC.Override"}} {{localize "DCC.Die"}}
           </label>
           <input name="system.config.initiativeDieOverride" id="system.config.initiativeDieOverride"
                  value="{{system.config.initiativeDieOverride}}"
@@ -182,7 +198,7 @@
           />
 
           <label class="group-indent" for="system.config.initiativeBonusOverride" title="{{localize 'DCC.OverrideHint'}}">
-            {{localize "DCC.Override"}}
+            {{localize "DCC.Override"}} {{localize "DCC.Bonus"}}
           </label>
           <input name="system.config.initiativeBonusOverride" id="system.config.initiativeBonusOverride"
                  value="{{system.config.initiativeBonusOverride}}"

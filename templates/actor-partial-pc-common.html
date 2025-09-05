@@ -11,11 +11,12 @@
       </div>
 
       <div class="grid-tpl-max-auto">
-        <label for="system.details.level.value" class="rollable" title="{{localize 'DCC.LevelUpHint'}}" data-action="levelChange">
+        <label for="system.details.level.value" class="rollable" title="{{localize 'DCC.LevelTooltip'}}" data-tooltip="{{localize 'DCC.LevelTooltip'}}" data-action="levelChange">
           {{localize "DCC.Level"}}
         </label>
         <input id="system.details.level.value" name="system.details.level.value"
-               value="{{system.details.level.value}}" maxlength="6" size="3" data-dtype="Number">
+               value="{{system.details.level.value}}" maxlength="6" size="3" data-dtype="Number"
+               title="{{localize 'DCC.LevelTooltip'}}">
       </div>
 
 

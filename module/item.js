@@ -61,6 +61,80 @@ class DCCItem extends Item {
       if (!this.system.trained) {
         this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[untrained]`
       }
+
+      // Two-Weapon Fighting Dice Modifications
+      if (this.system.twoWeaponPrimary || this.system.twoWeaponSecondary) {
+        const agilityScore = this.actor?.system?.abilities?.agl?.value || 0
+        const className = this.actor?.system?.class?.className || ''
+        const isHalfling = className === game.i18n.localize('DCC.Halfling')
+
+        // Calculate dice penalty based on agility and weapon hand
+        let dicePenalty = 0
+        let effectiveAgility = agilityScore
+
+        // Halflings have special rules - minimum effective agility of 16
+        if (isHalfling) {
+          effectiveAgility = Math.max(agilityScore, 16)
+        }
+
+        // Determine dice penalty based on agility and weapon type
+        if (effectiveAgility <= 8) {
+          dicePenalty = this.system.twoWeaponPrimary ? -3 : -4
+        } else if (effectiveAgility >= 9 && effectiveAgility <= 11) {
+          dicePenalty = this.system.twoWeaponPrimary ? -2 : -3
+        } else if (effectiveAgility >= 12 && effectiveAgility <= 15) {
+          dicePenalty = this.system.twoWeaponPrimary ? -1 : -2
+        } else if (effectiveAgility >= 16 && effectiveAgility <= 17) {
+          dicePenalty = -1 // Both hands get -1 die
+        } else if (effectiveAgility >= 18) {
+          dicePenalty = this.system.twoWeaponPrimary ? 0 : -1
+        }
+
+        // Apply the dice penalty
+        if (dicePenalty !== 0) {
+          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, dicePenalty)}[2-weapon]`
+        }
+
+        // Two-Weapon Fighting Critical Hit Adjustments (after dice modifications)
+        let twoWeaponCritSet = false
+        if (isHalfling && effectiveAgility <= 17) {
+          // Halflings score crit and automatic hit on natural 16 when fighting two-weapon
+          // BUT if agility is 18+, they use normal two-weapon fighting rules instead
+          this.system.critRange = 16
+          twoWeaponCritSet = true
+        } else {
+          // Non-halflings have restricted critical hit ability when fighting two-handed
+          if (effectiveAgility <= 15) {
+            // Cannot score critical hits
+            this.system.critRange = 21 // No critical hits possible (impossible to roll >= 21 on d20)
+            twoWeaponCritSet = true
+          } else if (effectiveAgility >= 16 && effectiveAgility <= 17) {
+            // Primary hand scores critical on max die roll that also beats AC
+            if (this.system.twoWeaponPrimary) {
+              // Get the current action die size to determine max roll (after penalties)
+              const actionDie = this.system.actionDie || '1d20'
+              const dieFaces = parseInt(actionDie.match(/d(\d+)/)?.[1] || '20')
+              this.system.critRange = dieFaces
+              twoWeaponCritSet = true
+            } else {
+              this.system.critRange = 51 // Secondary hand cannot crit
+              twoWeaponCritSet = true
+            }
+          } else if (effectiveAgility >= 18) {
+            // Primary hand scores crits as normal, secondary cannot
+            if (this.system.twoWeaponPrimary) {
+              // Keep original crit range (no change needed, let actor's value be used below)
+            } else {
+              this.system.critRange = 51 // Secondary hand cannot crit
+              twoWeaponCritSet = true
+            }
+          }
+        }
+
+        // Store flag to prevent later override
+        this.system._twoWeaponCritSet = twoWeaponCritSet
+      }
+
       if (this.system.config.actionDieOverride) {
         this.system.actionDie = this.system.config.actionDieOverride
       }
@@ -143,7 +217,10 @@ class DCCItem extends Item {
     }
 
     // Crit Calculation
-    this.system.critRange = this.system?.config?.critRangeOverride || this.actor?.system?.details?.critRange || 20
+    // Only set critRange if it hasn't already been set by two-weapon fighting logic
+    if (!this.system._twoWeaponCritSet) {
+      this.system.critRange = this.system?.config?.critRangeOverride || this.actor?.system?.details?.critRange || 20
+    }
     this.system.critDie = this.system?.config?.critDieOverride || this.actor?.system?.attributes?.critical?.die || '1d4'
     this.system.critTable = this.system?.config?.critTableOverride || this.actor?.system?.attributes?.critical?.table || 'I'
 

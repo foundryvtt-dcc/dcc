@@ -485,7 +485,9 @@
       "subdual": false,
       "toHit": "+0",
       "trained": true,
-      "twoHanded": false
+      "twoHanded": false,
+      "twoWeaponPrimary": false,
+      "twoWeaponSecondary": false
     },
     "ammunition": {
       "templates": [
