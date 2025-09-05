@@ -131,6 +131,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.#dragDrop = this.#createDragDropHandlers()
   }
 
+  /**
+   * Getter to ensure backward compatibility and correct actor reference for tokens
+   * @returns {DCCActor}
+   */
+  get actor () {
+    return this.options.document
+  }
+
   /* @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
@@ -264,7 +272,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     for (const i of inventory) {
       // Remove physical items with zero quantity
       if (removeEmptyItems && i.system.quantity !== undefined && i.system.quantity <= 0) {
-        await this.actor.deleteEmbeddedDocuments('Item', [i._id])
+        await this.options.document.deleteEmbeddedDocuments('Item', [i._id])
         continue
       }
 
@@ -328,11 +336,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // Combine any extra coins into a single item
     if (coins.length) {
       const funds = {
-        pp: parseInt(this.actor.system.currency.pp),
-        ep: parseInt(this.actor.system.currency.ep),
-        gp: parseInt(this.actor.system.currency.gp),
-        sp: parseInt(this.actor.system.currency.sp),
-        cp: parseInt(this.actor.system.currency.cp)
+        pp: parseInt(this.options.document.system.currency.pp),
+        ep: parseInt(this.options.document.system.currency.ep),
+        gp: parseInt(this.options.document.system.currency.gp),
+        sp: parseInt(this.options.document.system.currency.sp),
+        cp: parseInt(this.options.document.system.currency.cp)
       }
       let needsUpdate = false
       for (const c of coins) {
@@ -341,7 +349,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         funds.gp += parseInt(c.system.value.gp)
         funds.sp += parseInt(c.system.value.sp)
         funds.cp += parseInt(c.system.value.cp)
-        await this.actor.deleteEmbeddedDocuments('Item', [c._id])
+        await this.options.document.deleteEmbeddedDocuments('Item', [c._id])
         needsUpdate = true
       }
       if (needsUpdate) {
@@ -372,7 +380,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   async #prepareNotes () {
     const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
-    return await TextEditor.enrichHTML(this.actor.system.details.notes.value, context)
+    return await TextEditor.enrichHTML(this.options.document.system.details.notes.value, context)
   }
 
   /**
@@ -380,9 +388,9 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {corruption: string}
    */
   async #prepareCorruption () {
-    if (this.actor.system.class) {
+    if (this.options.document.system.class) {
       const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
-      const corruption = this.actor.system.class.corruption || ''
+      const corruption = this.options.document.system.class.corruption || ''
       return await TextEditor.enrichHTML(corruption, context)
     }
     return ''
@@ -429,10 +437,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const system = foundry.utils.duplicate(target.dataset)
     // Initialize a default name.
     let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
-    if (this.actor.type === 'NPC' && type === 'weapon') {
+    if (this.options.document.type === 'NPC' && type === 'weapon') {
       name = game.i18n.localize('DCC.NewAttack')
     }
-    console.log(target.dataset.type)
+
     // Prepare the item object.
     const itemData = {
       name,
@@ -444,7 +452,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     delete itemData.system.type
 
     // Finally, create the item!
-    return this.actor.createEmbeddedDocuments('Item', [itemData])
+    return this.options.document.createEmbeddedDocuments('Item', [itemData])
   }
 
   /**
@@ -456,7 +464,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    **/
   static async #itemDelete (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
-    const item = this.actor.items.get(itemId)
+    const item = this.options.document.items.get(itemId)
     await item.deleteDialog()
   }
 
@@ -482,7 +490,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    **/
   static async #decreaseQty (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
-    const item = this.actor.items?.get(itemId)
+    const item = this.options.document.items?.get(itemId)
     let qty = item.system?.quantity || 0
     qty -= 1
     item.update({ 'system.quantity': qty })
@@ -497,7 +505,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    **/
   static async #increaseQty (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
-    const item = this.actor?.items?.get(itemId)
+    const item = this.options.document?.items?.get(itemId)
     let qty = item.system?.quantity || 0
     qty += 1
     item.update({ 'system.quantity': qty })
@@ -519,7 +527,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const dragAction = li.dataset.dragAction
 
     // Get common data
-    const actorId = this.actor.id
+    const actorId = this.options.document.id
     const classes = event.target.classList
 
     switch (dragAction) {
@@ -551,7 +559,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           type: 'Hit Dice',
           actorId,
           data: {
-            dice: this.actor.system.attributes.hitDice.value
+            dice: this.options.document.system.attributes.hitDice.value
           }
         }
         break
@@ -568,7 +576,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
       case 'skill': {
         const skillId = DCCActorSheet.findDataset(event.currentTarget, 'skill')
-        const actorSkill = this.actor.system.skills[skillId]
+        const actorSkill = this.options.document.system.skills[skillId]
         const skillName = actorSkill ? actorSkill.label : skillId
         dragData = {
           type: 'Skill',
@@ -586,7 +594,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           type: 'Luck Die',
           actorId,
           data: {
-            die: this.actor.system.class.luckDie
+            die: this.options.document.system.class.luckDie
           }
         }
         break
@@ -600,7 +608,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
         // If we have an itemId, include spell details for item-based macros
         if (itemId) {
-          const item = this.actor.items.get(itemId)
+          const item = this.options.document.items.get(itemId)
           if (item) {
             dragDataContent.itemId = itemId
             dragDataContent.name = item.name
@@ -624,7 +632,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           type: 'Attack Bonus',
           actorId,
           data: {
-            die: this.actor.system.details.attackBonus
+            die: this.options.document.system.details.attackBonus
           }
         }
         break
@@ -634,7 +642,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           type: 'Action Dice',
           actorId,
           data: {
-            die: this.actor.system.attributes.actionDice.value || '1d20'
+            die: this.options.document.system.attributes.actionDice.value || '1d20'
           }
         }
         break
@@ -677,7 +685,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
       case 'item': {
         const itemId = DCCActorSheet.findDataset(event.currentTarget, 'itemId')
-        const item = this.actor.items.get(itemId)
+        const item = this.options.document.items.get(itemId)
         if (item) {
           // Use 'DCC Item' for spells to prevent Foundry's default macro creation
           // Use 'Item' for other items to maintain normal drag/drop functionality
@@ -697,7 +705,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     if (dragData) {
-      if (this.actor.isToken) dragData.tokenId = this.actor.token.id
+      if (this.options.document.isToken) dragData.tokenId = this.options.document.token.id
       event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
     }
   }
@@ -711,7 +719,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #configureActor (event) {
     event.preventDefault()
     await new DCCActorConfig({
-      document: this.actor,
+      document: this.options.document,
       position: {
         top: this.position.top + 40,
         left: this.position.left + (this.position.width - 400) / 2
@@ -728,7 +736,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    **/
   static async #configureMeleeMissileBonus (event, target) {
     await new MeleeMissileBonusConfig({
-      document: this.actor,
+      document: this.options.document,
       position: {
         top: this.position.top + 40,
         left: this.position.left + (this.position.width - 400) / 2
@@ -759,7 +767,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {Promise<void>}
    */
   static async #levelChange (event, target) {
-    this.actor.levelChange()
+    this.options.document.levelChange()
   }
 
   /**
@@ -792,7 +800,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollUnder
     })
 
-    this.actor.rollAbilityCheck(ability, options)
+    this.options.document.rollAbilityCheck(ability, options)
   }
 
   /**
@@ -804,7 +812,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #rollCritDie (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
-    this.actor.rollCritical(options)
+    this.options.document.rollCritical(options)
   }
 
   /**
@@ -816,7 +824,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #rollHitDice (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
-    this.actor.rollHitDice(options)
+    this.options.document.rollHitDice(options)
   }
 
   /**
@@ -828,7 +836,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #rollInitiative (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
-    await this.actor.rollInit(event, options)
+    await this.options.document.rollInit(event, options)
   }
 
   /**
@@ -842,7 +850,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     event.preventDefault() // Stops the Save Config from opening because clicking label elements focus their input
     const options = DCCActorSheet.fillRollOptions(event)
     const save = target.parentElement.dataset.save
-    await this.actor.rollSavingThrow(save, options)
+    await this.options.document.rollSavingThrow(save, options)
   }
 
   /**
@@ -855,7 +863,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #rollSkillCheck (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     const skill = target.parentElement.dataset.skill
-    await this.actor.rollSkillCheck(skill, options)
+    await this.options.document.rollSkillCheck(skill, options)
     // this.render(false)
   }
 
@@ -868,7 +876,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #rollLuckDie (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
-    this.actor.rollLuckDie(options)
+    this.options.document.rollLuckDie(options)
   }
 
   /**
@@ -888,7 +896,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       await item.rollSpellCheck(ability, options)
     } else {
       // Roll a raw spell check for the actor
-      await this.actor.rollSpellCheck(options)
+      await this.options.document.rollSpellCheck(options)
     }
   }
 
@@ -901,7 +909,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    **/
   static async #applyDisapproval (event, target) {
     event.preventDefault()
-    this.actor.applyDisapproval()
+    this.options.document.applyDisapproval()
   }
 
   /**
@@ -914,7 +922,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #rollDisapproval (event, target) {
     event.preventDefault()
     const options = DCCActorSheet.fillRollOptions(event)
-    this.actor.rollDisapproval(undefined, options)
+    this.options.document.rollDisapproval(undefined, options)
   }
 
   /**
@@ -931,7 +939,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     Object.assign(options, {
       backstab: target.classList.contains('backstab-button')
     })
-    this.actor.rollWeaponAttack(itemId, options)
+    this.options.document.rollWeaponAttack(itemId, options)
   }
 
   /**
@@ -948,7 +956,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const system = foundry.utils.duplicate(header.dataset)
     // Initialize a default name.
     let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
-    if (this.actor.type === 'NPC' && type === 'weapon') {
+    if (this.options.document.type === 'NPC' && type === 'weapon') {
       name = game.i18n.localize('DCC.NewAttack')
     }
     // Prepare the item object.
@@ -962,7 +970,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     delete itemData.system.type
 
     // Finally, create the item!
-    return this.actor.createEmbeddedDocuments('Item', [itemData])
+    return this.options.document.createEmbeddedDocuments('Item', [itemData])
   }
 
   /* -------------------------------------------- */
