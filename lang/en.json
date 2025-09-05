@@ -80,7 +80,7 @@
   "DCC.AttackDistance": "Attack Distance",
   "DCC.AttackRoll": "Attack Roll with {weapon}",
   "DCC.AttackRollDeedEmoteSegment": " with deed roll of {deed}",
-  "DCC.AttackRollEmote": "{actorName} {actionName} with their {weaponName} and hits AC {rollHTML}{deedRollHTML} for {damageRollHTML} points of damage!{crit}{fumble}",
+  "DCC.AttackRollEmote": "{actorName} {actionName} with their {weaponName} and hits AC {rollHTML}{deedRollHTML} for {damageRollHTML} points of damage!{crit}{fumble}{twoWeaponNote}",
   "DCC.AttackRollInvalidFormulaInline": "<b>Invalid To Hit formula '{formula}'</b>",
   "DCC.ArmorDetails": "Armor Details",
   "DCC.ArmorSettings": "Armor Settings",

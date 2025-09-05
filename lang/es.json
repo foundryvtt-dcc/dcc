@@ -80,7 +80,7 @@
   "DCC.AttackDistance": "Distancia de ataque",
   "DCC.AttackRoll": "Tirada de ataque con {weapon}",
   "DCC.AttackRollDeedEmoteSegment": " con tirada de acción de {deed}",
-  "DCC.AttackRollEmote": "{actorName} {actionName} con su {weaponName} y golpea CA {rollHTML}{deedRollHTML} causando {damageRollHTML} puntos de daño!{crit}{fumble}",
+  "DCC.AttackRollEmote": "{actorName} {actionName} con su {weaponName} y golpea CA {rollHTML}{deedRollHTML} causando {damageRollHTML} puntos de daño!{crit}{fumble}{twoWeaponNote}",
   "DCC.AttackRollInvalidFormulaInline": "<b>Fórmula inválida para acertar '{formula}'</b>",
   "DCC.ArmorDetails": "Detalles de la armadura",
   "DCC.ArmorSettings": "Configuración de armadura",

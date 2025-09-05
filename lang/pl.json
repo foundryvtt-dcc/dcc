@@ -80,7 +80,7 @@
   "DCC.AttackDistance": "Dystans Ataku",
   "DCC.AttackRoll": "Rzut na Atak z {weapon}",
   "DCC.AttackRollDeedEmoteSegment": " z rzutem czynu {deed}",
-  "DCC.AttackRollEmote": "{actorName} {actionName} swoim {weaponName} i trafia KP {rollHTML}{deedRollHTML} zadając {damageRollHTML} punktów obrażeń!{crit}{fumble}",
+  "DCC.AttackRollEmote": "{actorName} {actionName} swoim {weaponName} i trafia KP {rollHTML}{deedRollHTML} zadając {damageRollHTML} punktów obrażeń!{crit}{fumble}{twoWeaponNote}",
   "DCC.AttackRollInvalidFormulaInline": "<b>Nieprawidłowa formuła Trafienia '{formula}'</b>",
   "DCC.ArmorDetails": "Szczegóły Zbroi",
   "DCC.ArmorSettings": "Ustawienia Zbroi",

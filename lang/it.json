@@ -80,7 +80,7 @@
   "DCC.AttackDistance": "Distanza d'Attacco",
   "DCC.AttackRoll": "Attacca con {weapon}",
   "DCC.AttackRollDeedEmoteSegment": " con Dado Cimento di {deed}",
-  "DCC.AttackRollEmote": "{actorName} attacca con {weaponName}: {rollHTML}<br>{deedRollHTML}<br><i class='fa fa-sword'></i> {damageRollHTML} danni{crit}{fumble}",
+  "DCC.AttackRollEmote": "{actorName} attacca con {weaponName}: {rollHTML}<br>{deedRollHTML}<br><i class='fa fa-sword'></i> {damageRollHTML} danni{crit}{fumble}{twoWeaponNote}",
   "DCC.AttackRollInvalidFormulaInline": "<b>Errore: '{formula}' non è un tiro valido</b>",
   "DCC.ArmorDetails": "Dettagli",
   "DCC.ArmorSettings": "Impostazioni",

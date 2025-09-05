@@ -80,7 +80,7 @@
   "DCC.AttackDistance": "Angriffsreichweite",
   "DCC.AttackRoll": "Angriffswurf",
   "DCC.AttackRollDeedEmoteSegment": " mit Kriegerwürfel {deed}",
-  "DCC.AttackRollEmote": "Angriff mit {weaponName}. Trifft RK {rollHTML}{deedRollHTML} mit {damageRollHTML} Schaden!{crit}{fumble}",
+  "DCC.AttackRollEmote": "Angriff mit {weaponName}. Trifft RK {rollHTML}{deedRollHTML} mit {damageRollHTML} Schaden!{crit}{fumble}{twoWeaponNote}",
   "DCC.AttackRollInvalidFormulaInline": "<b>Ungültige Formel '{formula}' für Angriff</b>",
   "DCC.ArmorDetails": "Rüstungsdetails",
   "DCC.ArmorSettings": "Rüstungseinstellungen",
