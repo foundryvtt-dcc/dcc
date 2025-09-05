@@ -432,7 +432,7 @@ export const emoteSkillCheckRoll = function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const lookupCriticalRoll = async function (message, html) {
-  if (!message.rolls || !message.isContentVisible) return
+  if (!message.rolls || !message.isContentVisible || message.getFlag('dcc', 'isToHit')) return
 
   // Check if this message is a critical roll - it should either have the critical text in flavor
   // or have a critTableName in the system data
