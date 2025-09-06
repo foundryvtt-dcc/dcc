@@ -676,6 +676,8 @@
   "DCC.WizardClassLink": "@UUID[Compendium.dcc-core-book.dcc-core-text.JournalEntry.n5gqDCyFO09A3GAJ.JournalEntryPage.b6z6C71VnO8qW2gC#wizard]{Wizard}",
   "DCC.WizardSpells": "Spells",
   "DCC.Yes": "Yes",
+  "DCC.2w-off-hand": "2w-off-hand",
+  "DCC.2w-primary": "2w-primary",
   "DCC.available": "available",
   "DCC.of": "of",
   "DCC.on": "on",
@@ -716,5 +718,6 @@
   "DCC.system.skills.pickPockets.value": "Pick Pocket",
   "DCC.system.skills.readLanguages.value": "Read Languages",
   "DCC.system.skills.sneakAndHide.value": "Sneak and Hide",
-  "DCC.system.skills.sneakSilently.value": "Sneak Silently"
+  "DCC.system.skills.sneakSilently.value": "Sneak Silently",
+  "DCC.untrained": "untrained"
 }

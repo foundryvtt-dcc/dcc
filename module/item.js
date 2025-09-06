@@ -59,7 +59,7 @@ class DCCItem extends Item {
       // Action Die Calculation
       this.system.actionDie = this.actor?.system?.attributes?.actionDice?.value || ''
       if (!this.system.trained) {
-        this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[untrained]`
+        this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, -1)}[${game.i18n.localize('DCC.untrained')}]`
       }
 
       // Two-Weapon Fighting Dice Modifications
@@ -92,7 +92,8 @@ class DCCItem extends Item {
 
         // Apply the dice penalty
         if (dicePenalty !== 0) {
-          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, dicePenalty)}[2-wpn]`
+          const tag = this.system.twoWeaponPrimary ? game.i18n.localize('DCC.2w-primary') : game.i18n.localize('DCC.2w-off-hand')
+          this.system.actionDie = `${DiceChain.bumpDie(this.system.actionDie, dicePenalty)}[${tag}]`
         }
 
         // Two-Weapon Fighting Critical Hit Adjustments (after dice modifications)
