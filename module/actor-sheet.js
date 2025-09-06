@@ -261,10 +261,34 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ranged: []
     }
 
-    let inventory = this.options.document.items
+    // Convert items collection to array immediately to ensure proper initialization
+    let inventory = [...this.options.document.items]
+
+    // Workaround for unlinked tokens with uninitialized items collection
+    const isSyntheticActor = this.options.document.isToken && !this.options.document.token?.actorLink
+    if (isSyntheticActor && inventory.length === 0) {
+      const baseActor = this.options.document.token?.baseActor
+      if (baseActor?.items?.size > 0) {
+        console.log('DCC: Initializing synthetic actor collections using FoundryVTT method')
+        // Use FoundryVTT's native method to properly initialize collections
+        try {
+          const delta = this.options.document.token?.delta
+          if (delta?.collections?.items) {
+            delta.collections.items.initialize({ full: true })
+            // Re-get inventory after initialization
+            inventory = [...this.options.document.items]
+            console.log('DCC: Successfully initialized synthetic actor items collection')
+          }
+        } catch (error) {
+          console.warn('DCC: Failed to initialize collections, falling back to base actor items:', error)
+          inventory = [...baseActor.items]
+        }
+      }
+    }
+
     if (this.options.document.system.config.sortInventory) {
-      // Shallow copy and lexical sort
-      inventory = [...inventory].sort((a, b) => a.name.localeCompare(b.name))
+      // Lexical sort
+      inventory = inventory.sort((a, b) => a.name.localeCompare(b.name))
     }
 
     // Iterate through items, allocating to containers

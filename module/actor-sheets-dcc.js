@@ -57,12 +57,12 @@ class DCCActorSheetCleric extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.actor.update({
+    await this.options.document.update({
       'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
     })
 
-    if (this.actor.system.details.sheetClass !== 'Cleric') {
-      await this.actor.update({
+    if (this.options.document.system.details.sheetClass !== 'Cleric') {
+      await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Cleric'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink')),
         'system.details.sheetClass': 'Cleric',
@@ -123,12 +123,12 @@ class DCCActorSheetThief extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.actor.update({
+    await this.options.document.update({
       'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
     })
 
-    if (this.actor.system.details.sheetClass !== 'Thief') {
-      await this.actor.update({
+    if (this.options.document.system.details.sheetClass !== 'Thief') {
+      await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Thief'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink')),
         'system.details.sheetClass': 'Thief',
@@ -194,12 +194,12 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.actor.update({
+    await this.options.document.update({
       'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
     })
 
-    if (this.actor.system.details.sheetClass !== 'Halfling') {
-      await this.actor.update({
+    if (this.options.document.system.details.sheetClass !== 'Halfling') {
+      await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Halfling'),
         'system.details.sheetClass': 'Halfling',
         'system.details.critRange': 20,
@@ -260,13 +260,13 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.actor.update({
+    await this.options.document.update({
       'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
       'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
     })
 
-    if (this.actor.system.details.sheetClass !== 'Warrior') {
-      await this.actor.update({
+    if (this.options.document.system.details.sheetClass !== 'Warrior') {
+      await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Warrior'),
         'system.details.sheetClass': 'Warrior',
         'system.details.critRange': 20,
@@ -332,12 +332,12 @@ class DCCActorSheetWizard extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.actor.update({
+    await this.options.document.update({
       'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink'))
     })
 
-    if (this.actor.system.details.sheetClass !== 'Wizard') {
-      await this.actor.update({
+    if (this.options.document.system.details.sheetClass !== 'Wizard') {
+      await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Wizard'),
         'system.details.sheetClass': 'Wizard',
         'system.class.spellCheckAbility': 'int',
@@ -398,13 +398,13 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.actor.update({
+    await this.options.document.update({
       'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
       'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
     })
 
-    if (this.actor.system.details.sheetClass !== 'Dwarf') {
-      await this.actor.update({
+    if (this.options.document.system.details.sheetClass !== 'Dwarf') {
+      await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Dwarf'),
         'system.details.sheetClass': 'Dwarf',
         'system.details.critRange': 20,
@@ -470,12 +470,12 @@ class DCCActorSheetElf extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.actor.update({
+    await this.options.document.update({
       'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
     })
 
-    if (this.actor.system.details.sheetClass !== 'Elf') {
-      await this.actor.update({
+    if (this.options.document.system.details.sheetClass !== 'Elf') {
+      await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Elf'),
         'system.details.sheetClass': 'Elf',
         'system.class.spellCheckAbility': 'int',
@@ -540,8 +540,8 @@ class DCCActorSheetGeneric extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.actor.system.details.sheetClass !== 'Generic') {
-      await this.actor.update({
+    if (this.options.document.system.details.sheetClass !== 'Generic') {
+      await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Generic'),
         'system.details.sheetClass': 'Generic',
         'system.details.critRange': 20,
