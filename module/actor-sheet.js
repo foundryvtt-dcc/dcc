@@ -269,18 +269,20 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (isSyntheticActor && inventory.length === 0) {
       const baseActor = this.options.document.token?.baseActor
       if (baseActor?.items?.size > 0) {
-        console.log('DCC: Initializing synthetic actor collections using FoundryVTT method')
-        // Use FoundryVTT's native method to properly initialize collections
+        // Try FoundryVTT's native method first
         try {
           const delta = this.options.document.token?.delta
           if (delta?.collections?.items) {
             delta.collections.items.initialize({ full: true })
-            // Re-get inventory after initialization
             inventory = [...this.options.document.items]
-            console.log('DCC: Successfully initialized synthetic actor items collection')
+          }
+
+          // If native method didn't work, fall back to base actor items
+          if (inventory.length === 0) {
+            inventory = [...baseActor.items]
           }
         } catch (error) {
-          console.warn('DCC: Failed to initialize collections, falling back to base actor items:', error)
+          // If there was an error, fall back to base actor items
           inventory = [...baseActor.items]
         }
       }
