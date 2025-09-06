@@ -301,7 +301,7 @@
   "DCC.Level": "Level",
   "DCC.LevelChanged": "Level Changed to {level}",
   "DCC.LevelUpHint": "Change level",
-  "DCC.LevelTooltip": "Click 'Level' to change your characters level if the Core Book Module is installed",
+  "DCC.LevelTooltip": "Click 'Level' to change your character's level if the Core Book Module is installed",
   "DCC.LevelData": "Level Data",
   "DCC.LevelDataNotFound": "Level Data not found - is the DCC Core Book module installed?",
   "DCC.LevelIncreasePrompt": "Do you want to increase or decrease your level?",

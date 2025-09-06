@@ -695,13 +695,54 @@ a.inline-roll {
     }
 
     .weapon-button {
-      background-image: var(--system-d20-icon);
-      background-repeat: no-repeat;
-      background-size: 22px 22px;
       grid-row: 1;
       width: 22px;
       height: 22px;
       margin: 1px 2px 0 0;
+      position: relative;
+      
+      // Use pseudo-element for background so we can control opacity independently
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: var(--system-d20-icon);
+        background-repeat: no-repeat;
+        background-size: 22px 22px;
+        opacity: 1;
+        transition: opacity 0.2s ease;
+      }
+      
+      // Lower opacity of d20 background when two-weapon class is present
+      &.has-two-weapon::before {
+        opacity: 0.35;
+      }
+      
+      .two-weapon-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 15px;
+        font-weight: bold;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9), 
+          -1px -1px 3px rgba(0, 0, 0, 0.9),
+          1px -1px 3px rgba(0, 0, 0, 0.9),
+          -1px 1px 3px rgba(0, 0, 0, 0.9);
+        pointer-events: none;
+        z-index: 1;
+        
+        &.two-weapon-primary {
+          color: #4caf50; // Green for primary hand
+        }
+        
+        &.two-weapon-secondary {
+          color: #d32f2f; // Brighter red for better visibility
+        }
+      }
     }
   }
 }

@@ -804,13 +804,44 @@ a.inline-roll {
   margin: 1px 0 0 0;
 }
 .dcc .weapon-list .weapon .weapon-button {
-  background-image: var(--system-d20-icon);
-  background-repeat: no-repeat;
-  background-size: 22px 22px;
   grid-row: 1;
   width: 22px;
   height: 22px;
   margin: 1px 2px 0 0;
+  position: relative;
+}
+.dcc .weapon-list .weapon .weapon-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: var(--system-d20-icon);
+  background-repeat: no-repeat;
+  background-size: 22px 22px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+.dcc .weapon-list .weapon .weapon-button.has-two-weapon::before {
+  opacity: 0.35;
+}
+.dcc .weapon-list .weapon .weapon-button .two-weapon-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9), -1px -1px 3px rgba(0, 0, 0, 0.9), 1px -1px 3px rgba(0, 0, 0, 0.9), -1px 1px 3px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  z-index: 1;
+}
+.dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-primary {
+  color: #4CAF50;
+}
+.dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-secondary {
+  color: #D32F2F;
 }
 
 /* ----------------------------------------- */
