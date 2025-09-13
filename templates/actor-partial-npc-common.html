@@ -2,18 +2,22 @@
 <section class="tab {{tabs.character.cssClass}}" id="character" data-tab="{{tabs.character.id}}" data-group="{{tabs.character.group}}">
   <div class="grid-container grid-col-gap-5 grid-row-gap-5 npc-grid">
     {{!-- Name Section --}}
-    <div class="grid-tpl-max-auto grid-col-span-7">
-      <label for="name">{{localize "DCC.Name"}}</label>
-      <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.CharacterName'}}"
-             placeholder="{{localize 'DCC.CharacterName'}}" autocomplete="off">
+    <div class="grid-col-span-7">
+      <div class="grid-tpl-max-auto" style="column-gap: 12px;">
+        <label for="name">{{localize "DCC.Name"}}</label>
+        <input id="name" name="name" value="{{actor.name}}" title="{{localize 'DCC.CharacterName'}}"
+               placeholder="{{localize 'DCC.CharacterName'}}" autocomplete="off">
+      </div>
     </div>
 
-    <div class="grid-tpl-max-auto grid-col-span-5">
-      <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
-      <select id="system.details.alignment" name="system.details.alignment"
-              style="width: 118px; font-size: 12px; height: 17px; ">
-        {{selectOptions config.alignments selected=system.details.alignment localize=true}}
-      </select>
+    <div class="grid-col-span-5">
+      <div class="grid-tpl-max-auto" style="column-gap: 12px;">
+        <label for="system.details.alignment">{{localize "DCC.Alignment"}}</label>
+        <select id="system.details.alignment" name="system.details.alignment"
+                style="width: 118px; font-size: 12px; height: 17px; ">
+          {{selectOptions config.alignments selected=system.details.alignment localize=true}}
+        </select>
+      </div>
     </div>
 
     <div class="ac-and-hp grid-align-just-center grid-tpl-two grid-col-span-3">
