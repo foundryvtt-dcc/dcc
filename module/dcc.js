@@ -558,6 +558,13 @@ Hooks.on('renderChatMessageHTML', (message, html, data) => {
     }
   }
 
+  let automateDamageFumblesCrits
+  try {
+    automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
+  } catch {
+    automateDamageFumblesCrits = false
+  }
+
   if (emoteRolls === true) {
     if (game.user.isGM) {
       message.setFlag('dcc', 'emoteRoll', true)
@@ -571,7 +578,9 @@ Hooks.on('renderChatMessageHTML', (message, html, data) => {
     chat.emoteInitiativeRoll(message, html, data)
     chat.emoteSavingThrowRoll(message, html, data)
     chat.emoteSkillCheckRoll(message, html, data)
-  } else {
+  }
+
+  if (emoteRolls === false || (emoteRolls === true && automateDamageFumblesCrits === false)) {
     chat.lookupCriticalRoll(message, html)
     chat.lookupFumbleRoll(message, html, data)
   }
@@ -765,6 +774,7 @@ Hooks.on('getProseMirrorMenuDropDowns', (menu, items) => {
 
 /* -------------------------------------------- */
 /*  Hotbar Macros                               */
+
 /* -------------------------------------------- */
 
 /**
