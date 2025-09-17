@@ -1248,7 +1248,8 @@ class DCCActor extends Actor {
 
     // Check for halfling two-weapon fighting special note
     let twoWeaponNote = ''
-    if ((weapon.system?.twoWeaponPrimary || weapon.system?.twoWeaponSecondary) &&
+    if (attackRollResult.fumble &&
+        (weapon.system?.twoWeaponPrimary || weapon.system?.twoWeaponSecondary) &&
         this.system?.class?.className === game.i18n.localize('DCC.Halfling')) {
       twoWeaponNote = game.i18n.localize('DCC.HalflingTwoWeaponFumbleNote')
     }
