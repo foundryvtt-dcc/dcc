@@ -568,7 +568,8 @@
         "summary": "",
         "description": "",
         "displayInChat": true
-      }
+      },
+      "lastResult": ""
     },
     "skill": {
       "templates": [

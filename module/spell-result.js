@@ -161,6 +161,40 @@ class SpellResult {
       })
 
       this.update({ content: newContent })
+
+      // Update the spell item's lastResult if this message is for a specific spell
+      const spellId = this.getFlag('dcc', 'ItemId')
+      if (spellId && newResult) {
+        console.log('Updating spell lastResult:', { spellId, newResultRange: newResult.range[0] })
+
+        // Get the actor from the message speaker
+        const actorId = this.speaker?.actor
+        if (actorId) {
+          const actor = game.actors.get(actorId)
+          if (actor) {
+            const spellItem = actor.items.get(spellId)
+            if (spellItem) {
+              console.log('Found spell item, updating lastResult to:', newResult.range[0])
+              await spellItem.update({ 'system.lastResult': newResult.range[0] })
+            } else {
+              console.log('Spell item not found on actor:', actorId)
+            }
+          } else {
+            console.log('Actor not found:', actorId)
+          }
+        } else {
+          console.log('No actor ID in speaker')
+          // Fallback to searching all actors
+          for (const actor of game.actors) {
+            const spellItem = actor.items.get(spellId)
+            if (spellItem) {
+              console.log('Found spell item via fallback, updating lastResult to:', newResult.range[0])
+              await spellItem.update({ 'system.lastResult': newResult.range[0] })
+              break
+            }
+          }
+        }
+      }
     }
   }
 }

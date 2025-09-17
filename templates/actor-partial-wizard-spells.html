@@ -3,12 +3,13 @@
          data-group="{{tabs.wizardSpells.group}}">
   <div class="box-title" style="">{{localize "DCC.Spells"}}</div>
   <ol class="item-list item-list-spells">
-    <li class="item item-list-header grid-col-span-7">
+    <li class="item item-list-header grid-col-span-8">
       <div></div>
       <div></div>
       <div>{{localize "DCC.SpellLevelShort"}}</div>
       <div>{{localize "DCC.SpellName"}}</div>
       <div>{{localize "DCC.MercurialEffect"}}</div>
+      <div>{{localize "DCC.SkillResult"}}</div>
       <div>{{localize "DCC.SpellLost"}}</div>
       <div>
         <a class="item-create" title="{{localize 'DCC.ItemCreate'}}" data-action="itemCreate" data-type="spell">
@@ -18,7 +19,7 @@
     </li>
     {{#each spells as |spells spelllevel|}}
       {{#each spells as |item id|}}
-        <li class="item spell-item spell-draggable grid-col-span-7" data-item-id="{{item._id}}"
+        <li class="item spell-item spell-draggable grid-col-span-8" data-item-id="{{item._id}}"
             data-ability="int" data-die="{{item.spellCheck.die}}"
             data-bonus="{{item.spellCheck.value}}"
             data-spell="{{item.name}}" data-drag="true" data-drag-action="item">
@@ -30,6 +31,13 @@
           <div class="item-name" data-tooltip="{{item.descriptionHTML}}">{{item.name}}</div>
           <div class="item-notes">
             {{item.system.mercurialEffect.summary}}
+          </div>
+          <div>
+            {{#if (and item.system.lastResult (ne item.system.lastResult "0"))}}
+              <label>{{item.system.lastResult}}</label>
+            {{else}}
+              --
+            {{/if}}
           </div>
           <input class="item-lost" type="checkbox"
                  name="items.{{item._id}}.system.lost"
@@ -43,7 +51,7 @@
         </li>
       {{/each}}
     {{else}}
-      <li class="grid-col-span-7 grid-tpl-max">
+      <li class="grid-col-span-8 grid-tpl-max">
         <div style="height: 50px; padding-top: 14px;">{{localize "DCC.SpellTabHelp"}}</div>
       </li>
     {{/each}}
