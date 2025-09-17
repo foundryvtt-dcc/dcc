@@ -440,11 +440,14 @@ export const emoteSkillCheckRoll = function (message, html, data) {
 export const lookupCriticalRoll = async function (message, html) {
   if (!message.rolls || !message.isContentVisible || message.getFlag('dcc', 'isToHit')) return
 
-  // Check if this message is a critical roll - it should either have the critical text in flavor
-  // or have a critTableName in the system data
-  const hasCriticalInFlavor = message.flavor.includes(game.i18n.localize('DCC.Critical'))
+  // Only process messages that are specifically critical table rolls, not attack rolls with crits
+  const hasCriticalInFlavor = message.flavor && message.flavor.includes(game.i18n.localize('DCC.Critical'))
   const hasCritTableInSystem = message.system?.critTableName
 
+  // Don't process attack rolls - those are handled by emoteAttackRoll
+  if (message.getFlag('dcc', 'isToHit')) return
+
+  // Only process if this is specifically a critical table roll
   if (!hasCriticalInFlavor && !hasCritTableInSystem) return
 
   // Try to get the table name from system data first (more reliable),
@@ -454,28 +457,35 @@ export const lookupCriticalRoll = async function (message, html) {
     tableName = message.system.critTableName
   } else {
     const criticalText = game.i18n.localize('DCC.Critical')
-    tableName = message.flavor.replace(`${criticalText} (`, '').replace(')', '')
+    // Parse "Critical (Crit Table II)" to get "Crit Table II"
+    const match = message.flavor.match(/\(([^)]+)\)/)
+    if (match && match[1]) {
+      tableName = match[1]
+    } else {
+      tableName = message.flavor.replace(`${criticalText} (`, '').replace(')', '')
+    }
   }
 
-  const critResult = await getCritTableResult(message.rolls[0], `Crit Table ${tableName}`)
+  // Get the localized "Crit Table" prefix
+  const critTablePrefix = game.i18n.localize('DCC.CritTable')
+
+  // If tableName already starts with the localized prefix, use it as-is, otherwise prepend it
+  const fullTableName = tableName.startsWith(critTablePrefix) ? tableName : `${critTablePrefix} ${tableName}`
+  const critResult = await getCritTableResult(message.rolls[0], fullTableName)
+
+  const messageContent = html.querySelector('.message-content')
+  if (!messageContent) return
 
   // Check if we got a result from the table lookup
   if (!critResult || !critResult.description) {
-    // No table available or no result found - just show the roll
-    const rollHTML = await message.rolls[0].render()
-    const messageContent = html.querySelector('.message-content')
-    if (messageContent) {
-      messageContent.innerHTML = `${rollHTML} ${game.i18n.localize('DCC.CritTableUnavailable')}`
-    }
+    // No table available or no result found - just append the unavailable message
+    messageContent.innerHTML += `<br>${game.i18n.localize('DCC.CritTableUnavailable')}`
     return
   }
 
   const critText = await TextEditor.enrichHTML(critResult.description)
-  const rollHTML = await message.rolls[0].render()
-  const messageContent = html.querySelector('.message-content')
-  if (messageContent) {
-    messageContent.innerHTML = `${rollHTML}<br>${critText}`
-  }
+  // Just append the critical result to the existing content
+  messageContent.innerHTML += `<br>${critText}`
 }
 
 /**
