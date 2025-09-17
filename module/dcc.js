@@ -517,6 +517,11 @@ async function processSpellCheck (actor, spellData) {
         await actor.applyDisapproval()
       }
     }
+
+    // Store the roll result in the item for display on the spells tab
+    if (item) {
+      await item.update({ 'system.lastResult': roll.total })
+    }
   } catch (ex) {
     console.error(ex)
   }
