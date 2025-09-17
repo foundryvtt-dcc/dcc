@@ -21,7 +21,7 @@
 
         <div class="grid-tpl-max-auto-tight grid-col-gap-8 grid-align-center">
           <div class="group-heading"> {{localize "DCC.ActionDie"}}</div>
-          <div class="value-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}</div>
+          <div class="value-display action-die-display" title="{{localize 'DCC.DisplayValueHint'}}">{{system.actionDie}}</div>
 
           <label class="group-indent {{#if system.config.actionDieOverride}}disabled{{/if}}" for="system.trained">
             {{localize "DCC.WeaponPropertiesTrained"}}
@@ -29,6 +29,24 @@
           <input type="checkbox" id="system.trained" name="system.trained" data-dtype="Boolean" {{checked system.trained}}
                  class="{{#if system.config.actionDieOverride}}disabled{{/if}}"
                  {{#if system.config.actionDieOverride}}disabled{{/if}}
+          />
+
+          <label class="group-indent {{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 for="system.twoWeaponPrimary" title="{{localize 'DCC.TwoWeaponPrimaryHint'}}">{{localize "DCC.TwoWeaponPrimary"}}</label>
+          <input type="checkbox" id="system.twoWeaponPrimary" name="system.twoWeaponPrimary"
+                 class="{{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 {{#if system.config.actionDieOverride}}disabled{{/if}}
+          data-dtype="Boolean" {{checked system.twoWeaponPrimary}}
+          data-action="twoWeaponChange"
+          />
+
+          <label class="group-indent {{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 for="system.twoWeaponSecondary" title="{{localize 'DCC.TwoWeaponSecondaryHint'}}">{{localize "DCC.TwoWeaponSecondary"}}</label>
+          <input type="checkbox" id="system.twoWeaponSecondary" name="system.twoWeaponSecondary"
+                 class="{{#if system.config.actionDieOverride}}disabled{{/if}}"
+                 {{#if system.config.actionDieOverride}}disabled{{/if}}
+          data-dtype="Boolean" {{checked system.twoWeaponSecondary}}
+          data-action="twoWeaponChange"
           />
 
           <label class="group-indent" for="system.config.actionDieOverride" title="{{localize 'DCC.OverrideHint'}}">
@@ -102,7 +120,7 @@
           data-dtype="String"
           />
 
-          <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}"
+          <label class="{{#if system.config.damageOverride}}disabled{{/if}}"
                  for="system.doubleIfMounted">{{localize "DCC.WeaponPropertiesDoubleIfMounted"}}
           </label>
           <input type="checkbox" id="system.doubleIfMounted" name="system.doubleIfMounted"
@@ -111,14 +129,14 @@
           data-dtype="Boolean" {{checked system.doubleIfMounted}}
           />
 
-          <label class="group-indent {{#if system.config.damageOverride}}disabled{{/if}}" for="system.subdual">{{localize
+          <label class="{{#if system.config.damageOverride}}disabled{{/if}}" for="system.subdual">{{localize
             "DCC.SubdualDamage"}}</label>
           <input type="checkbox" id="system.subdual" name="system.subdual"
                  class="{{#if system.config.damageOverride}}disabled{{/if}}"
                  {{#if system.config.damageOverride}}disabled{{/if}}
           data-dtype="Boolean" {{checked system.subdual}}/>
 
-          <label class="group-indent" for="system.backstabDamage"
+          <label for="system.backstabDamage"
                  title="{{localize 'DCC.WeaponPropertiesBackstabDamageHint'}}">{{localize "DCC.BackstabDamage"}}</label>
           <input id="system.backstabDamage" name="system.backstabDamage"
                  value="{{system.backstabDamage}}"
@@ -126,7 +144,7 @@
                  data-dtype="String"/>
 
           <label for="system.config.damageOverride" title="{{localize 'DCC.OverrideHint'}}">
-            {{localize "DCC.Override"}} {{localize "DCC.Damage"}}
+            {{localize "DCC.Override"}}
           </label>
           <input name="system.config.damageOverride" id="system.config.damageOverride"
                  value="{{system.config.damageOverride}}" title="{{localize 'DCC.OverrideHint'}}" data-dtype="string"/>
@@ -210,7 +228,7 @@
         <input id="system.config.critDieOverride" name="system.config.critDieOverride" size="3"
                value="{{system.config.critDieOverride}}" data-dtype="String"/>
 
-        <label for="system.config.critTableOverride">{{localize "DCC.OverrideTable"}}</label>
+        <label for="system.config.critTableOverride">{{localize "DCC.Override"}}</label>
         <input id="system.config.critTableOverride" name="system.config.critTableOverride" size="3"
                value="{{system.config.critTableOverride}}" data-dtype="String"/>
       </div>

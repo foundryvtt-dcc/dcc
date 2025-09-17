@@ -80,7 +80,7 @@
   "DCC.AttackDistance": "Angriffsreichweite",
   "DCC.AttackRoll": "Angriffswurf",
   "DCC.AttackRollDeedEmoteSegment": " mit Kriegerwürfel {deed}",
-  "DCC.AttackRollEmote": "Angriff mit {weaponName}. Trifft RK {rollHTML}{deedRollHTML} mit {damageRollHTML} Schaden!{crit}{fumble}",
+  "DCC.AttackRollEmote": "Angriff mit {weaponName}. Trifft RK {rollHTML}{deedRollHTML} mit {damageRollHTML} Schaden!{crit}{fumble}{twoWeaponNote}",
   "DCC.AttackRollInvalidFormulaInline": "<b>Ungültige Formel '{formula}' für Angriff</b>",
   "DCC.ArmorDetails": "Rüstungsdetails",
   "DCC.ArmorSettings": "Rüstungseinstellungen",
@@ -301,6 +301,7 @@
   "DCC.Level": "Stufe",
   "DCC.LevelChanged": "Stufe geändert auf {level}",
   "DCC.LevelUpHint": "Stufe ändern",
+  "DCC.LevelTooltip": "Klicke auf 'Stufe' um die Stufe deines Charakters zu ändern, wenn das Core Book Modul installiert ist",
   "DCC.LevelData": "Stufendaten",
   "DCC.LevelDataNotFound": "Stufendaten nicht gefunden - ist das DCC-Grundregelbuch-Modul installiert?",
   "DCC.LevelIncreasePrompt": "Möchten Sie Ihr Niveau erhöhen oder verringern?",
@@ -650,6 +651,11 @@
   "DCC.WeaponPropertiesRangeTooltip": "Nicht auf Nahkampfwaffen anwendbar.",
   "DCC.WeaponPropertiesTrained": "Geübt",
   "DCC.WeaponPropertiesTwoHanded": "Zweihändig",
+  "DCC.TwoWeaponPrimary": "2-Waff. Primär",
+  "DCC.TwoWeaponPrimaryHint": "Diese Waffe wird für den Kampf mit zwei Waffen verwendet und befindet sich in der primären Hand.",
+  "DCC.TwoWeaponSecondary": "2-Waff. Neben",
+  "DCC.TwoWeaponSecondaryHint": "Diese Waffe wird für den Kampf mit zwei Waffen verwendet und befindet sich in der Nebenhand.",
+  "DCC.HalflingTwoWeaponFumbleNote": "Patzer tritt nur ein, wenn beide Angriffswürfe eine natürliche 1 waren.",
   "DCC.WeaponWarningUnequipped": "Kein Angriff möglich; Waffe nicht angelegt.",
   "DCC.Welcome": {
     "Title": "Dungeon Crawl Classics",
@@ -671,6 +677,8 @@
   "DCC.WizardSpells": "Zauber",
   "DCC.Yes": "Ja",
   "DCC.available": "verfügbar",
+  "DCC.2w-off-hand": "2w-nebenhand",
+  "DCC.2w-primary": "2w-haupthand",
   "DCC.of": "von",
   "DCC.on": "am",
   "DCC.subdual": " Betäubungs- ",
@@ -710,5 +718,6 @@
   "DCC.system.skills.pickPockets.value": "Taschendiebstahl",
   "DCC.system.skills.readLanguages.value": "Sprachen lesen",
   "DCC.system.skills.sneakAndHide.value": "Schleichen und Verstecken",
-  "DCC.system.skills.sneakSilently.value": "Lautlos schleichen"
+  "DCC.system.skills.sneakSilently.value": "Lautlos schleichen",
+  "DCC.untrained": "untrainiert"
 }

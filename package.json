@@ -5,7 +5,7 @@
   },
   "description": "Dungeon Crawl Classics RPG Support for Foundry VTT",
   "devDependencies": {
-    "@foundryvtt/foundryvtt-cli": "^2.0.0",
+    "@foundryvtt/foundryvtt-cli": "^3.0.0",
     "husky": "^9.1.7",
     "sass": "^1.69.3",
     "standard": "^17.1.2",

@@ -223,6 +223,11 @@ export const emoteAttackRoll = function (message, html) {
     fumble = `<p class="emote-alert fumble">${message.system.fumblePrompt}!<p>${message.system.fumbleInlineRoll}`
   }
 
+  let twoWeaponNote = ''
+  if (message.system.twoWeaponNote) {
+    twoWeaponNote = `<p class="emote-note"><em>${message.system.twoWeaponNote}</em></p>`
+  }
+
   const damageInlineRoll = message.system.damageInlineRoll.replaceAll('@ab', message.system.deedDieRollResult)
 
   const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
@@ -233,7 +238,8 @@ export const emoteAttackRoll = function (message, html) {
     deedRollHTML,
     damageRollHTML: damageInlineRoll,
     crit,
-    fumble
+    fumble,
+    twoWeaponNote
   })
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
@@ -432,7 +438,7 @@ export const emoteSkillCheckRoll = function (message, html, data) {
  * @returns {Promise<void>}
  */
 export const lookupCriticalRoll = async function (message, html) {
-  if (!message.rolls || !message.isContentVisible) return
+  if (!message.rolls || !message.isContentVisible || message.getFlag('dcc', 'isToHit')) return
 
   // Only process messages that are specifically critical table rolls, not attack rolls with crits
   const hasCriticalInFlavor = message.flavor && message.flavor.includes(game.i18n.localize('DCC.Critical'))

@@ -108,6 +108,23 @@ DCC.critRanges = {
 }
 
 /**
+ * Warrior critical hit ranges by level
+ * @type {Object}
+ */
+DCC.warriorCritRangeByLevel = {
+  1: 19,
+  2: 19,
+  3: 19,
+  4: 19,
+  5: 18,
+  6: 18,
+  7: 18,
+  8: 18,
+  9: 17,
+  10: 17
+}
+
+/**
  * Character disapproval ranges
  * @type {Object}
  */

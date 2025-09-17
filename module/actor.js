@@ -1246,6 +1246,14 @@ class DCCActor extends Actor {
     // Speaker object for the chat cards
     const speaker = ChatMessage.getSpeaker({ actor: this })
 
+    // Check for halfling two-weapon fighting special note
+    let twoWeaponNote = ''
+    if (attackRollResult.fumble &&
+        (weapon.system?.twoWeaponPrimary || weapon.system?.twoWeaponSecondary) &&
+        this.system?.class?.className === game.i18n.localize('DCC.Halfling')) {
+      twoWeaponNote = game.i18n.localize('DCC.HalflingTwoWeaponFumbleNote')
+    }
+
     const messageData = {
       user: game.user.id,
       speaker,
@@ -1278,7 +1286,8 @@ class DCCActor extends Actor {
         hitsAc: attackRollResult.hitsAc,
         targets: game.user.targets,
         weaponId,
-        weaponName: weapon.name
+        weaponName: weapon.name,
+        twoWeaponNote
       }
     }
 
