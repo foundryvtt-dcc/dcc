@@ -718,5 +718,6 @@
   "DCC.system.skills.pickPockets.value": "Kieszonkowanie",
   "DCC.system.skills.readLanguages.value": "Czytanie Języków",
   "DCC.system.skills.sneakAndHide.value": "Skradanie i Ukrywanie",
-  "DCC.system.skills.sneakSilently.value": "Ciche Skradanie"
+  "DCC.system.skills.sneakSilently.value": "Ciche Skradanie",
+  "DCC.untrained": "niewyszkolony"
 }

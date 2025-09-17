@@ -718,5 +718,6 @@
   "DCC.system.skills.pickPockets.value": "Vaciar bolsillos",
   "DCC.system.skills.readLanguages.value": "Leer idiomas",
   "DCC.system.skills.sneakAndHide.value": "Escab. y esconderse",
-  "DCC.system.skills.sneakSilently.value": "Moverse en silencio"
+  "DCC.system.skills.sneakSilently.value": "Moverse en silencio",
+  "DCC.untrained": "sin entrenar"
 }

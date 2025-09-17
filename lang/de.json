@@ -718,5 +718,6 @@
   "DCC.system.skills.pickPockets.value": "Taschendiebstahl",
   "DCC.system.skills.readLanguages.value": "Sprachen lesen",
   "DCC.system.skills.sneakAndHide.value": "Schleichen und Verstecken",
-  "DCC.system.skills.sneakSilently.value": "Lautlos schleichen"
+  "DCC.system.skills.sneakSilently.value": "Lautlos schleichen",
+  "DCC.untrained": "untrainiert"
 }

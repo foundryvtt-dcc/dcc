@@ -718,5 +718,6 @@
   "TYPES.Item.skill": "Compétence",
   "TYPES.Item.spell": "Sort",
   "TYPES.Item.treasure": "Trésor",
-  "TYPES.Item.weapon": "Arme"
+  "TYPES.Item.weapon": "Arme",
+  "DCC.untrained": "non entraîné"
 }
