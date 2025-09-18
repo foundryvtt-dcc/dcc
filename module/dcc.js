@@ -45,6 +45,9 @@ Hooks.once('init', async function () {
 
   CONFIG.DCC = DCC
 
+  // Enable Active Effects
+  CONFIG.ActiveEffect.legacyTransferral = false
+
   // noinspection JSUndefinedPropertyAssignment,JSUnusedGlobalSymbols
   game.dcc = {
     DCCActor,
@@ -706,6 +709,64 @@ Hooks.on('applyActiveEffect', (actor, change) => {
     }
   }
   return update
+})
+
+// Handle Active Effect duration automation
+Hooks.on('updateCombat', async (combat, changed, options, userId) => {
+  // Only process on the GM's client to avoid duplicates
+  if (!game.user.isGM) return
+
+  // Only process when round changes
+  if (!('round' in changed)) return
+
+  console.log(`DCC | Combat advanced to round ${combat.round}, checking for expired Active Effects...`)
+
+  // Check all actors for expired effects
+  for (const actor of game.actors) {
+    if (actor.effects.size === 0) continue
+
+    const expiredEffects = []
+
+    for (const effect of actor.effects) {
+      // Skip effects with no duration
+      if (!effect.duration) continue
+
+      // For round-based effects
+      if (effect.duration.rounds && effect.duration.startRound !== undefined) {
+        const startRound = effect.duration.startRound
+        const durationRounds = effect.duration.rounds
+        const endRound = startRound + durationRounds
+
+        console.log(`DCC | Effect "${effect.name}": start=${startRound}, duration=${durationRounds}, end=${endRound}, current=${combat.round}`)
+
+        if (combat.round >= endRound) {
+          expiredEffects.push(effect.id)
+          console.log(`DCC | Effect "${effect.name}" on ${actor.name} has expired (round ${combat.round} >= ${endRound})`)
+        }
+      } else if (effect.duration.seconds && effect.isExpired) {
+        // For time-based effects, use Foundry's built-in expiration check
+        expiredEffects.push(effect.id)
+        console.log(`DCC | Time-based effect "${effect.name}" on ${actor.name} has expired`)
+      }
+    }
+
+    // Remove expired effects
+    if (expiredEffects.length > 0) {
+      // Get effect names before deletion
+      const effectNames = expiredEffects.map(id => {
+        const effect = actor.effects.get(id)
+        return effect?.name || 'Unknown'
+      }).join(', ')
+
+      await actor.deleteEmbeddedDocuments('ActiveEffect', expiredEffects)
+
+      // Notify about expired effects
+      ui.notifications.info(game.i18n.format('DCC.EffectsExpired', {
+        actor: actor.name,
+        effects: effectNames
+      }))
+    }
+  }
 })
 
 // Set Player actor prototype tokens to Link Actor Data by default

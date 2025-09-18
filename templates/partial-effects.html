@@ -1,0 +1,104 @@
+{{!-- Unified Effects Tab for both Actors and Items --}}
+<section class="tab {{tabs.effects.cssClass}}" id="effects" data-tab="effects" data-group="{{tabs.effects.group}}">
+  <div class="box-title">{{localize "DCC.Effects"}}</div>
+
+
+  <ol class="item-list item-list-effects box-border">
+    <li class="item item-list-header {{#if (eq documentType "Item")}}grid-col-span-6{{else}}grid-col-span-5{{/if}}">
+      <div></div>
+      <div>{{localize "DCC.Name"}}</div>
+      {{#if (eq documentType "Item")}}
+        <div>{{localize "DCC.Transfer"}}</div>
+      {{/if}}
+      <div>{{localize "DCC.Duration"}}</div>
+      <div>{{localize "DCC.EffectChanges"}}</div>
+      <div>
+        <a class="effect-create" title="{{localize 'DCC.EffectCreate'}}" data-action="effectCreate">
+          <i class="fas fa-plus"></i> {{localize "DCC.Add"}}
+        </a>
+      </div>
+    </li>
+    {{#each effects as |effect id|}}
+      <li class="item effect-item {{#if (eq ../documentType "Item")}}grid-col-span-6{{else}}grid-col-span-5{{/if}}" data-effect-id="{{effect.id}}">
+        <div class="effect-icon-cell">
+          <img class="effect-icon" src="{{effect.img}}" alt="{{effect.name}}" data-action="effectEdit" data-effect-id="{{effect.id}}"
+               data-tooltip="DCC.EffectEdit">
+        </div>
+        <div class="effect-name">{{effect.name}}</div>
+        {{#if (eq ../documentType "Item")}}
+          <div class="effect-transfer">
+            {{#if effect.transfer}}
+              {{localize "DCC.Yes"}}
+            {{else}}
+              {{localize "DCC.No"}}
+            {{/if}}
+          </div>
+        {{/if}}
+        <div class="effect-duration">
+          {{#if effect.duration.label}}
+            {{effect.duration.label}}
+          {{else}}
+            —
+          {{/if}}
+        </div>
+        <div class="effect-changes">
+          {{#if effect.changes.length}}
+            {{effect.changes.length}}
+          {{else}}
+            —
+          {{/if}}
+        </div>
+        <div class="effect-controls">
+          <button type="button" class="effect-toggle {{#if effect.disabled}}effect-disabled{{/if}}"
+                  data-action="effectToggle" data-effect-id="{{effect.id}}"
+                  data-tooltip="{{#if effect.disabled}}DCC.EffectEnable{{else}}DCC.EffectDisable{{/if}}">
+            <i class="fas {{#if effect.disabled}}fa-eye-slash{{else}}fa-eye{{/if}}"></i>
+          </button>
+          <button type="button" class="effect-edit" data-action="effectEdit" data-effect-id="{{effect.id}}" data-tooltip="DCC.EffectEdit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button type="button" class="effect-delete" data-action="effectDelete" data-effect-id="{{effect.id}}" data-tooltip="DCC.EffectDelete">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </li>
+    {{else}}
+      <li class="effects-empty {{#if (eq documentType "Item")}}grid-col-span-6{{else}}grid-col-span-5{{/if}}">
+        <div class="empty-message">
+          <p>{{localize "DCC.EffectsNone"}}</p>
+          <p class="help-text">{{#if (eq documentType "Item")}}{{localize "DCC.EffectsItemHelpText"}}{{else}}{{localize
+            "DCC.EffectsHelpText"}}{{/if}}</p>
+        </div>
+      </li>
+    {{/each}}
+  </ol>
+
+  {{#if effects.size}}
+    <div class="effects-summary">
+      <h4>{{localize "DCC.EffectsSummary"}}</h4>
+      <div class="effects-overview">
+        {{#each effects as |effect id|}}
+          {{#unless effect.disabled}}
+            {{#if effect.changes.length}}
+              <div class="effect-summary">
+                <strong>{{effect.name}}:</strong>
+                {{#if (eq ../documentType "Item")}}
+                  {{#if effect.transfer}}
+                    <span class="transfer-note">({{localize "DCC.TransfersToActor"}})</span>
+                  {{/if}}
+                {{/if}}
+                {{#each effect.changes as |change|}}
+                  <span class="change-summary">
+                      {{change.key}}
+                    {{#if (eq change.mode 2)}} +{{else if (eq change.mode 1)}} ×{{else if (eq change.mode 5)}} ={{/if}} {{change.value}}{{#unless
+                    @last}}, {{/unless}}
+                    </span>
+                {{/each}}
+              </div>
+            {{/if}}
+          {{/unless}}
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+</section>

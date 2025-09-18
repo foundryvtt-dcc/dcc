@@ -23,7 +23,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     classes: ['dcc', 'sheet', 'actor'],
     tag: 'form',
     position: {
-      width: 555,
+      width: 560,
       height: 450
     },
     actions: {
@@ -32,6 +32,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
       decreaseQty: this.#decreaseQty,
+      effectCreate: this.#effectCreate,
+      effectEdit: this.#effectEdit,
+      effectDelete: this.#effectDelete,
+      effectToggle: this.#effectToggle,
       increaseQty: this.#increaseQty,
       itemCreate: this.#itemCreate,
       itemEdit: this.#itemEdit,
@@ -86,6 +90,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       id: 'equipment',
       template: 'systems/dcc/templates/actor-partial-npc-equipment.html'
     },
+    effects: {
+      id: 'effects',
+      template: 'systems/dcc/templates/partial-effects.html'
+    },
     notes: {
       id: 'notes',
       template: 'systems/dcc/templates/actor-partial-pc-notes.html'
@@ -121,6 +129,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     sheet: { // this is the group name
       tabs:
         [
+          { id: 'effects', group: 'sheet', label: 'DCC.Effects' },
           { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
         ]
     }
@@ -153,6 +162,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       actor: this.options.document,
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
+      documentType: 'Actor',
+      effects: this.options.document.effects,
       incomplete: {},
       img: await this.#prepareImage(),
       isOwner: this.options.document.isOwner,
@@ -535,6 +546,68 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let qty = item.system?.quantity || 0
     qty += 1
     item.update({ 'system.quantity': qty })
+  }
+
+  /**
+   * Create a new active effect
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<Document[]>}
+   **/
+  static async #effectCreate (event, target) {
+    const effectData = {
+      name: game.i18n.localize('DCC.EffectNew'),
+      label: game.i18n.localize('DCC.EffectNew'),
+      img: 'icons/svg/aura.svg',
+      origin: this.options.document.uuid,
+      changes: [],
+      disabled: false,
+      duration: {},
+      flags: {}
+    }
+    return this.options.document.createEmbeddedDocuments('ActiveEffect', [effectData])
+  }
+
+  /**
+   * Edit an active effect
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectEdit (event, target) {
+    const effectId = DCCActorSheet.findDataset(target, 'effectId')
+    const effect = this.options.document.effects.get(effectId)
+    await effect.sheet.render({ force: true })
+  }
+
+  /**
+   * Delete an active effect
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectDelete (event, target) {
+    const effectId = DCCActorSheet.findDataset(target, 'effectId')
+    const effect = this.options.document.effects.get(effectId)
+    await effect.deleteDialog()
+  }
+
+  /**
+   * Toggle an active effect on/off
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectToggle (event, target) {
+    const effectId = DCCActorSheet.findDataset(target, 'effectId')
+    const effect = this.options.document.effects.get(effectId)
+    await effect.update({ disabled: !effect.disabled })
+    // Force a re-render to update the UI immediately
+    this.render(false)
   }
 
   /**

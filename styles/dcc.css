@@ -838,10 +838,10 @@ a.inline-roll {
   z-index: 1;
 }
 .dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-primary {
-  color: #4CAF50;
+  color: #4caf50;
 }
 .dcc .weapon-list .weapon .weapon-button .two-weapon-overlay.two-weapon-secondary {
-  color: #D32F2F;
+  color: #d32f2f;
 }
 
 /* ----------------------------------------- */
@@ -1388,6 +1388,9 @@ a.inline-roll {
 }
 .dcc.sheet a[data-tab=dwarf]::before {
   content: "\f6eb";
+}
+.dcc.sheet a[data-tab=effects]::before {
+  content: "\e59f";
 }
 .dcc.sheet a[data-tab=elf]::before {
   content: "\f56b";
@@ -1946,6 +1949,136 @@ a.inline-roll {
   font-family: var(--system-data-font), serif;
   margin-top: 8px;
   padding: 8px;
+}
+
+/* Effects styling */
+.dcc .item-list-effects {
+  grid-template-columns: 30px 1fr 80px 70px 120px;
+}
+.dcc .item-list-effects .effect-item {
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  justify-items: center;
+  margin-bottom: 5px;
+  text-align: center;
+}
+.dcc .effect-icon {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.dcc .effect-name {
+  text-align: left;
+  justify-self: start;
+}
+.dcc .effect-controls {
+  display: flex;
+  gap: 2px;
+}
+.dcc .effect-controls button {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--system-border-color);
+  border-radius: 3px;
+  background: var(--system-input-background);
+  color: var(--system-primary-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+.dcc .effect-controls button:hover {
+  background: var(--system-secondary-color);
+  border-color: var(--system-accent-color);
+}
+.dcc .effect-controls .effect-disabled {
+  opacity: 0.5;
+}
+.dcc .effects-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 20px;
+  color: var(--system-secondary-color);
+  font-style: italic;
+}
+.dcc .effects-empty .empty-message p {
+  margin: 5px 0;
+}
+.dcc .effects-summary {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid var(--system-border-color);
+}
+.dcc .effects-summary h4 {
+  margin: 0 0 10px 0;
+  font-family: var(--system-label-font), serif;
+  font-size: 16px;
+}
+.dcc .effects-overview {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.dcc .effect-summary {
+  margin-bottom: 5px;
+}
+.dcc .effect-summary strong {
+  font-family: var(--system-label-font), serif;
+  font-size: 14px;
+}
+.dcc .transfer-note {
+  font-style: italic;
+  color: var(--system-accent-color);
+}
+.dcc .change-summary {
+  font-family: monospace;
+}
+.dcc .transfer-info {
+  background: var(--system-value-display-background-color);
+  border: 1px solid var(--system-border-color);
+  border-radius: 3px;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+.dcc .transfer-info .help-text {
+  margin: 0;
+  font-size: 12px;
+  color: var(--system-secondary-color);
+}
+
+/* Item effects - different grid for items with Transfer column */
+.dcc.sheet.item #effects .box-title {
+  grid-column: 1/-1;
+  width: 100%;
+}
+.dcc.sheet.item #effects .transfer-info {
+  grid-column: 1/-1;
+}
+.dcc.sheet.item #effects .item-list-effects {
+  grid-column: 1/-1;
+  grid-template-columns: 30px 1fr 60px 80px 70px 120px;
+}
+.dcc.sheet.item #effects .item-list-effects .item-list-header {
+  display: grid;
+  grid-template-columns: subgrid;
+}
+.dcc.sheet.item #effects .item-list-effects .effect-item {
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  justify-items: center;
+  margin-bottom: 5px;
+  text-align: center;
+}
+.dcc.sheet.item #effects .item-list-effects .effects-empty {
+  display: grid;
+  grid-template-columns: subgrid;
+}
+.dcc.sheet.item #effects .effects-summary {
+  grid-column: 1/-1;
 }
 
 /*# sourceMappingURL=dcc.css.map */

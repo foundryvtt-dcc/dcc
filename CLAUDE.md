@@ -70,5 +70,6 @@ The `template.json` defines the data structure for Actors and Items:
 - This system implements FoundryVTT v13 compatibility
 - Uses ES modules (`type: "module"` in package.json)
 - Hot reload configured for development (js, css, html, json files)
-- StandardJS for code formatting, StyleLint for SASS
+- StandardJS for code formatting, StyleLint for SCSS
 - All PRs must pass automated tests and implement i18n support
+- This project uses SCSS - the main styles are in styles/dcc.scss - do not edit dcc.css directly!
