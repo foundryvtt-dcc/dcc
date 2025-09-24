@@ -708,6 +708,31 @@ Hooks.on('applyActiveEffect', (actor, change) => {
   return update
 })
 
+// Sync prototype token image with actor image when actor image is changed
+Hooks.on('preUpdateActor', async (actor, changes, options, userId) => {
+  // Only process if this client initiated the change
+  if (userId !== game.user.id) return
+
+  // Check if the actor image is being changed
+  if (!changes.img) return
+
+  // Get the current prototype token texture
+  const currentTokenImg = actor.prototypeToken?.texture?.src || ''
+
+  // Define default images that should be replaced
+  const defaultImages = [
+    'icons/svg/mystery-man.svg',
+    EntityImages.imageForActor(actor.type),
+    EntityImages.imageForActor('default')
+  ]
+
+  // Only update token if it's using a default image or is empty
+  if (!currentTokenImg || defaultImages.includes(currentTokenImg)) {
+    // Update the prototype token image to match the new actor image
+    changes['prototypeToken.texture.src'] = changes.img
+  }
+})
+
 // Set Player actor prototype tokens to Link Actor Data by default
 Hooks.on('createActor', async (actor, options, userId) => {
   // Only proceed if this is the user who triggered the creation
