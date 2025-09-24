@@ -516,6 +516,8 @@
   "DCC.SettingTurnUnholyTableHint": "Tabla para usar en Rechazo a lo Impío - debe estar en un paquete de compendio",
   "DCC.SettingWeaponEquipmentCheck": "Verificar que el arma esté equipada",
   "DCC.SettingWeaponEquipmentCheckHint": "Si se usa un arma no equipada, evitar la tirada y mostrar advertencia",
+  "DCC.SettingDisableDarkThemeIconFilter": "Desactivar filtro de iconos en tema oscuro",
+  "DCC.SettingDisableDarkThemeIconFilterHint": "Desactiva el filtro sepia aplicado a los iconos cuando se usa el tema oscuro",
   "DCC.SettingsLabel": "Configuración",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Mostrar diálogo de bienvenida al iniciar",

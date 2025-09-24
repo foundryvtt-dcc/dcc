@@ -516,6 +516,8 @@
   "DCC.SettingTurnUnholyTableHint": "Tabela Rzutów do użycia dla Odwracania Nieczystych - musi być w pakiecie kompendium",
   "DCC.SettingWeaponEquipmentCheck": "Sprawdzaj czy broń jest założona",
   "DCC.SettingWeaponEquipmentCheckHint": "Jeśli broń jest użyta ale nie założona, zapobiegaj rzutowi i pokazuj ostrzeżenie",
+  "DCC.SettingDisableDarkThemeIconFilter": "Wyłącz filtr ikon w ciemnym motywie",
+  "DCC.SettingDisableDarkThemeIconFilterHint": "Wyłącza filtr sepii stosowany na ikonach podczas używania ciemnego motywu",
   "DCC.SettingsLabel": "Ustawienia",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Pokazuj Okno Powitalne przy Uruchomieniu",

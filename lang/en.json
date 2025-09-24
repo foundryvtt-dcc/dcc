@@ -516,6 +516,8 @@
   "DCC.SettingTurnUnholyTableHint": "Roll Table to use for Turn Unholy - must be in a compendium pack",
   "DCC.SettingWeaponEquipmentCheck": "Check weapon is equipped",
   "DCC.SettingWeaponEquipmentCheckHint": "If weapon is used but not equipped, prevent the roll and show a warning",
+  "DCC.SettingDisableDarkThemeIconFilter": "Disable icon filter in dark theme",
+  "DCC.SettingDisableDarkThemeIconFilterHint": "Disables the sepia filter applied to icons when using the dark theme",
   "DCC.SettingsLabel": "Settings",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Show Welcome Dialog on Startup",

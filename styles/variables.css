@@ -47,7 +47,7 @@
   --system-frame-border: 4px solid var(--system-border-color);
   --system-frame-title-color: #0c0c0c;
   --system-icon-filter: sepia(1) brightness(0.7);
-  --system-input-background: solid var(--system-input-background-color);
+  --system-input-background: var(--system-input-background-color);
   --system-input-background-color: #323138;
   --system-input-border: 1px solid var(--system-border-color);
   --system-input-focus-outline-color: var(--system-border-color);
@@ -58,4 +58,9 @@
   --system-right-arrow-button-image: url('./images/right-arrow-grey.svg');
   --system-secondary-color: #343339;
   --system-value-display-background-color: #17161e;
+}
+
+/* When the setting to disable icon filter is enabled, remove the filter */
+.disable-dark-theme-icon-filter.theme-dark {
+  --system-icon-filter: none;
 }

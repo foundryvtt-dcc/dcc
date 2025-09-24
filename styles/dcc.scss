@@ -304,7 +304,7 @@
 
   .window-content {
     padding: 1px 8px 8px 8px;
-    overflow: scroll;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 
@@ -700,7 +700,7 @@ a.inline-roll {
       height: 22px;
       margin: 1px 2px 0 0;
       position: relative;
-      
+
       // Use pseudo-element for background so we can control opacity independently
       &::before {
         content: '';
@@ -715,12 +715,12 @@ a.inline-roll {
         opacity: 1;
         transition: opacity 0.2s ease;
       }
-      
+
       // Lower opacity of d20 background when two-weapon class is present
       &.has-two-weapon::before {
         opacity: 0.35;
       }
-      
+
       .two-weapon-overlay {
         position: absolute;
         top: 50%;
@@ -728,17 +728,17 @@ a.inline-roll {
         transform: translate(-50%, -50%);
         font-size: 15px;
         font-weight: bold;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9), 
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9),
           -1px -1px 3px rgba(0, 0, 0, 0.9),
           1px -1px 3px rgba(0, 0, 0, 0.9),
           -1px 1px 3px rgba(0, 0, 0, 0.9);
         pointer-events: none;
         z-index: 1;
-        
+
         &.two-weapon-primary {
           color: #4caf50; // Green for primary hand
         }
-        
+
         &.two-weapon-secondary {
           color: #d32f2f; // Brighter red for better visibility
         }

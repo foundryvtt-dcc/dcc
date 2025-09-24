@@ -300,6 +300,19 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Disable icon filter in dark theme
+   */
+  game.settings.register('dcc', 'disableDarkThemeIconFilter', {
+    name: 'DCC.SettingDisableDarkThemeIconFilter',
+    hint: 'DCC.SettingDisableDarkThemeIconFilterHint',
+    scope: 'client',
+    type: Boolean,
+    default: false,
+    config: true,
+    requiresReload: true
+  })
+
+  /**
    * Enable strict critical hit rules (proportional crit range for different die sizes)
    */
   game.settings.register('dcc', 'strictCriticalHits', {
