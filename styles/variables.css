@@ -59,3 +59,8 @@
   --system-secondary-color: #343339;
   --system-value-display-background-color: #17161e;
 }
+
+/* When the setting to disable icon filter is enabled, remove the filter */
+.disable-dark-theme-icon-filter.theme-dark {
+  --system-icon-filter: none;
+}

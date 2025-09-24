@@ -516,6 +516,8 @@
   "DCC.SettingTurnUnholyTableHint": "Tabella Scacciare l'Empio - deve trovarsi in un Compendio",
   "DCC.SettingWeaponEquipmentCheck": "Controllo Utilizzo Arma",
   "DCC.SettingWeaponEquipmentCheckHint": "Se l'arma viene usata ma non è equipaggiata, impedire il tiro e mostrare un avviso.",
+  "DCC.SettingDisableDarkThemeIconFilter": "Disabilita filtro icone nel tema scuro",
+  "DCC.SettingDisableDarkThemeIconFilterHint": "Disabilita il filtro seppia applicato alle icone quando si usa il tema scuro",
   "DCC.SettingsLabel": "Impostazioni",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Mostra la finestra di benvenuto all'avvio",

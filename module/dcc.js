@@ -234,6 +234,11 @@ Hooks.once('ready', async function () {
   // Add status icons
   defineStatusIcons()
 
+  // Apply dark theme icon filter settings
+  if (game.settings.get('dcc', 'disableDarkThemeIconFilter')) {
+    document.body.classList.add('disable-dark-theme-icon-filter')
+  }
+
   // Show welcome dialog if enabled
   if (game.user.isGM && game.settings.get(pubConstants.name, 'showWelcomeDialog')) {
     new WelcomeDialog().render(true)

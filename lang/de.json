@@ -516,6 +516,8 @@
   "DCC.SettingTurnUnholyTableHint": "Würfeltabelle für Unheiliges vertreiben - muss in einem Kompendium liegen",
   "DCC.SettingWeaponEquipmentCheck": "Angelegte Waffen prüfen",
   "DCC.SettingWeaponEquipmentCheckHint": "Verhindert Angriffe mit nicht angelegten Waffen und zeigt stattdessen eine Warnmeldung.",
+  "DCC.SettingDisableDarkThemeIconFilter": "Symbolfilter im dunklen Theme deaktivieren",
+  "DCC.SettingDisableDarkThemeIconFilterHint": "Deaktiviert den Sepia-Filter, der bei Verwendung des dunklen Themes auf Symbole angewendet wird",
   "DCC.SettingsLabel": "Einstellungen",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Willkommensdialog beim Start anzeigen",
