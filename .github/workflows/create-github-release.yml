@@ -11,14 +11,14 @@ on:
 
 jobs:
   create_github_release:
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     name: Foundry Release
+    permissions:
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: GitHub Release Release
+        uses: actions/checkout@v5
+      - name: GitHub Release
         id: github-release
         uses: foundryvtt-dcc/foundry-release-action@main
         with:
