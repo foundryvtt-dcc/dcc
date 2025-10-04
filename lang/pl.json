@@ -419,6 +419,7 @@
   "DCC.Roll": "Rzut",
   "DCC.RollCritical": "Rzuć Krytyk",
   "DCC.RolledAbilityEmote": "{actorName} rzucił {abilityInlineRollHTML} na swoją {abilityName}.",
+  "DCC.AbilityCheckPenaltyNote": "<p>Jeśli kara kontrolna ma zastosowanie, suma wynosi {total}.</p>",
   "DCC.RolledCritEmote": "{actorName} rzucił {critInlineRollHTML} na Tabeli Krytyka {critTableName}{critResult}",
   "DCC.RolledDamageEmote": "{actorName} rzucił {damageInlineRollHTML} na obrażenia.",
   "DCC.RolledFumbleEmote": "{actorName} się potknął i dostał {fumbleInlineRollHTML}{fumbleResult}",

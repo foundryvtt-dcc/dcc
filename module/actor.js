@@ -468,11 +468,14 @@ class DCCActor extends Actor {
         terms.push({
           type: 'CheckPenalty',
           formula: ensurePlus(this.system.attributes.ac.checkPenalty || '0'),
-          apply: true
+          apply: false
         })
       }
 
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+
+      // Evaluate the roll so we have a total
+      await roll.evaluate()
 
       // Generate flags for the roll
       Object.assign(flags, {
@@ -483,12 +486,42 @@ class DCCActor extends Actor {
       game.dcc.FleetingLuck.updateFlags(flags, roll)
     }
 
+    // Calculate what the total would be if check penalty applies
+    // Only show this if the check penalty was NOT already applied to the roll
+    let checkPenaltyRoll = null
+    if (flags.checkPenaltyCouldApply && this.system.config.computeCheckPenalty) {
+      const checkPenalty = parseInt(this.system.attributes.ac.checkPenalty || 0)
+      if (checkPenalty !== 0) {
+        // Check if the check penalty was already applied by examining the roll formula
+        // If it was applied, the formula will include the check penalty value
+        // If it wasn't applied, it will show as +0 or -0
+        const checkPenaltyApplied = roll.formula.includes(ensurePlus(checkPenalty))
+
+        if (!checkPenaltyApplied) {
+          const checkPenaltyTotal = roll.total + checkPenalty
+          // Create a Roll object for the check penalty total
+          checkPenaltyRoll = new Roll(checkPenaltyTotal.toString())
+          await checkPenaltyRoll.evaluate()
+        }
+      }
+    }
+
     // Convert the roll to a chat message
-    roll.toMessage({
+    const messageData = await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this }),
       flavor,
-      flags
-    })
+      flags,
+      system: {
+        checkPenaltyRollIndex: checkPenaltyRoll ? 1 : null
+      }
+    }, { create: false })
+
+    // Add the check penalty roll to the rolls array
+    if (checkPenaltyRoll) {
+      messageData.rolls.push(checkPenaltyRoll)
+    }
+
+    ChatMessage.create(messageData)
   }
 
   // noinspection JSUnusedGlobalSymbols

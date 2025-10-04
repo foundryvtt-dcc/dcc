@@ -419,6 +419,7 @@
   "DCC.Roll": "Wurf",
   "DCC.RollCritical": "Kritischen Treffer würfeln",
   "DCC.RolledAbilityEmote": "{actorName} würfelte {abilityInlineRollHTML} für {abilityName}.",
+  "DCC.AbilityCheckPenaltyNote": "<p>Wenn Kontrollabzug angewendet wird, beträgt die Summe {total}.</p>",
   "DCC.RolledCritEmote": "{actorName} würfelte {critInlineRollHTML} auf Krit-Tabelle {critTableName}{critResult}",
   "DCC.RolledDamageEmote": "{actorName} würfelte {damageInlineRollHTML} für Schaden.",
   "DCC.RolledFumbleEmote": "{actorName} patzte und erhielt {fumbleInlineRollHTML}{fumbleResult}",

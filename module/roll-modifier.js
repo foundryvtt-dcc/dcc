@@ -531,7 +531,6 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   static async #checkboxChange (event, target) {
-    event.preventDefault()
     const index = target.dataset.term
     const term = this.terms[index]
     const formField = this.element.querySelector('#term-' + index)

@@ -446,6 +446,7 @@
   "DCC.RollUnder": "{name} (Lancer en tant que)",
   "DCC.RollWisdomCheckHint": "Cliquez pour lancer un test de Sagesse, CMD/CTRL clic pour plus d'options",
   "DCC.RolledAbilityEmote": "{actorName} a lancé {abilityInlineRollHTML} pour sa {abilityName}.",
+  "DCC.AbilityCheckPenaltyNote": "<p>Si la pénalité de contrôle s'applique, le total est {total}.</p>",
   "DCC.RolledCritEmote": "{actorName} a lancé {critInlineRollHTML} sur Table Crit {critTableName}{critResult}",
   "DCC.RolledDamageEmote": "{actorName} a lancé {damageInlineRollHTML} pour les dégâts.",
   "DCC.RolledFumbleEmote": "{actorName} a fait une maladresse et a obtenu {fumbleInlineRollHTML}{fumbleResult}",
