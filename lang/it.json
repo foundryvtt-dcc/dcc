@@ -419,6 +419,7 @@
   "DCC.Roll": "Tiro",
   "DCC.RollCritical": "Tira Critico",
   "DCC.RolledAbilityEmote": "{actorName} tira {abilityInlineRollHTML} per {abilityName}",
+  "DCC.AbilityCheckPenaltyNote": "<p>Se si applica la penalità di controllo, il totale è {total}.</p>",
   "DCC.RolledCritEmote": "{actorName} tira {critInlineRollHTML} sulla Tabella dei Critici {critTableName}{critResult}",
   "DCC.RolledDamageEmote": "{actorName} tira {damageInlineRollHTML} per il danno",
   "DCC.RolledFumbleEmote": "{actorName} fallisce e subisce {fumbleInlineRollHTML}{fumbleResult}",
