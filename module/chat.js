@@ -77,7 +77,6 @@ export const highlightCriticalSuccessFailure = function (message, html) {
  * @return {Array}              The extended options Array including new context choices
  */
 export const addChatMessageContextOptions = function (html, options) {
-  console.log('APPLY CHAT OPTIONS')
   const canApply = function (li) {
     if (canvas.tokens.controlled.length === 0) return false
     if (li.querySelector('.damage-applyable')) return true
