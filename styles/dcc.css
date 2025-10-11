@@ -921,16 +921,18 @@ a.inline-roll {
 }
 .dcc .wizard-bg.active > .grid-container {
   display: grid;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: 1fr auto 0.75fr;
   height: 100%;
   grid-row-gap: 0;
 }
-.dcc .wizard-bg.active > .grid-container > .corruption-wizard {
+.dcc .wizard-bg.active > .grid-container > .corruption {
   display: grid;
   grid-template-rows: auto 1fr;
+  min-height: 0;
+  overflow: hidden;
 }
-.dcc .wizard-bg.active > .grid-container > .corruption-wizard .editor,
-.dcc .wizard-bg.active > .grid-container > .corruption-wizard prose-mirror {
+.dcc .wizard-bg.active > .grid-container > .corruption .editor,
+.dcc .wizard-bg.active > .grid-container > .corruption prose-mirror {
   min-height: 0;
   height: 100%;
 }

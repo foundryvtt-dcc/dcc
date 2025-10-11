@@ -333,7 +333,9 @@ class DCCActorSheetWizard extends DCCActorSheet {
     const context = await super._prepareContext(options)
 
     await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink'))
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
+      'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
+      'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink'))
     })
 
     if (this.options.document.system.details.sheetClass !== 'Wizard') {
