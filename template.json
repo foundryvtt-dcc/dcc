@@ -307,6 +307,7 @@
           "spellCheckDieOverride": null,
           "spellCheckOverride": null,
           "patron": null,
+          "patronTaintChance": "1%",
           "familiar": null,
           "corruption": ""
         }
@@ -331,7 +332,8 @@
         "class": {
           "spellCheck": 1,
           "knownSpells": 0,
-          "maxSpellLevel": 0
+          "maxSpellLevel": 0,
+          "patronTaintChance": "1%"
         },
         "skills": {
           "detectSecretDoors": {
@@ -548,6 +550,7 @@
         "showMercurialTab": false
       },
       "level": 1,
+      "associatedPatron": "",
       "lost": false,
       "range": "",
       "duration": "",

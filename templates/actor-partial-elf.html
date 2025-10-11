@@ -65,16 +65,22 @@
       </div>
       <div class="patron grid-col-span-7 box-border">
         <label for="system.class.patron" class="box-title">{{localize "DCC.Patron"}}</label>
-        <textarea id="system.class.patron" name="system.class.patron" rows="5" class="data-font"
+        <textarea id="system.class.patron" name="system.class.patron" rows="3" class="data-font"
                   style="background: none; border: none"
                   data-dtype="String">{{system.class.patron}}</textarea>
+        <div class="grid-tpl-max-auto grid-col-gap-5 grid-align-center" style="margin: 5px 5px 0 5px;">
+          <label for="system.class.patronTaintChance" class="label-font">{{localize "DCC.PatronTaintChance"}}</label>
+          <input id="system.class.patronTaintChance" name="system.class.patronTaintChance"
+                 value="{{system.class.patronTaintChance}}"
+                 placeholder="1%" data-dtype="String"/>
+        </div>
       </div>
     </div>
 
     <div class="grid-col-span-12">
       <div class="box-border">
         <div class="box-title">{{localize "DCC.ElfAbilities"}}</div>
-        <div class="p-5">
+        <div class="p-8">
           <div class="grid-tpl-max-25 grid-col-gap-5 mb-8" data-skill="detectSecretDoors">
             <label class="skill-check rollable" for="system.skills.detectSecretDoors.value"
                    title="{{localize 'DCC.HeightenedSensesDescription'}}" data-action="rollSkillCheck">

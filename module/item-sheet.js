@@ -23,7 +23,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.tab-body', initial: 'main' }],
     position: {
       width: 475,
-      height: 442
+      height: 465
     },
     form: {
       submitOnChange: true

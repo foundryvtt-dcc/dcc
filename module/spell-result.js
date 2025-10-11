@@ -13,13 +13,15 @@ class SpellResult {
    * @param {boolean} crit         The Spell Check was a nat 20
    * @param {boolean} fumble       The Spell Check was a nat 1
    * @param {Object} item          The spell item
+   * @param {Object} patronTaint  The patron taint data object containing chance and message
    */
   static async addChatMessage (roll, rollTable, result, {
     messageData = {},
     messageOptions = {},
     crit = false,
     fumble = false,
-    item = undefined
+    item = undefined,
+    patronTaint = undefined
   } = {}) {
     messageOptions = foundry.utils.mergeObject({
       rollMode: game.settings.get('core', 'rollMode')
@@ -62,6 +64,7 @@ class SpellResult {
       description: await TextEditor.enrichHTML(rollTable.description),
       manifestation,
       mercurial,
+      patronTaint,
       results: result.map(r => {
         return foundry.utils.duplicate(r)
       }),

@@ -843,14 +843,16 @@ a.inline-roll {
 
     > .grid-container {
       display: grid;
-      grid-template-rows: 1fr 1fr;
+      grid-template-rows: 1fr auto 0.75fr;
       height: 100%;
       grid-row-gap: 0;
 
       // Corruption section
-      > .corruption-wizard {
+      > .corruption {
         display: grid;
         grid-template-rows: auto 1fr;
+        min-height: 0;
+        overflow: hidden;
 
         .editor,
         prose-mirror {
