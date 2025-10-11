@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, ui, Handlebars */
+/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, ui, Handlebars, Roll */
 
 /**
  * DCC
@@ -430,6 +430,45 @@ async function processSpellCheck (actor, spellData) {
 
   const naturalRoll = roll.dice[0].total
 
+  // Check for Patron Taint
+  let patronTaint = null
+  if (item && actor) {
+    const patronField = actor.system.class?.patron
+    const spellName = item.name || ''
+    const associatedPatron = item.system?.associatedPatron || ''
+
+    // Check if actor has a patron and spell is patron-related
+    if (patronField && (spellName.includes('Patron') || associatedPatron)) {
+      // Roll d100 for patron taint
+      const patronTaintRoll = new Roll('1d100')
+      await patronTaintRoll.evaluate()
+
+      // Get current patron taint chance (parse percentage string like "1%")
+      const patronTaintChanceStr = actor.system.class?.patronTaintChance || '1%'
+      const currentChance = parseInt(patronTaintChanceStr) || 1
+
+      // Check if taint occurred (roll <= chance)
+      const tainted = patronTaintRoll.total <= currentChance
+
+      // Calculate new patron taint chance
+      const newChance = currentChance + 1
+
+      // Store patron taint data for display
+      patronTaint = {
+        roll: patronTaintRoll.total,
+        tainted,
+        oldChance: currentChance,
+        newChance,
+        description: tainted
+          ? `<strong>${game.i18n.localize('DCC.PatronTaintChance')}!</strong>`
+          : game.i18n.localize('DCC.NoPatronTaint')
+      }
+
+      // Update actor's patron taint chance
+      await actor.update({ 'system.class.patronTaintChance': `${newChance}%` })
+    }
+  }
+
   try {
     // Apply the roll to the table if present
     if (rollTable) {
@@ -457,7 +496,7 @@ async function processSpellCheck (actor, spellData) {
           }
         }
       }
-      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, { crit, fumble, item })
+      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, { crit, fumble, item, patronTaint })
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
