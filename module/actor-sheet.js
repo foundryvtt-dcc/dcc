@@ -1126,11 +1126,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let sourceItemId = null
     if (isItemTransfer) {
       sourceActor = game.actors.get(data.actorId)
-      // Get the item ID from the data - it should be in the uuid
-      if (data.uuid) {
-        const parts = data.uuid.split('.')
-        sourceItemId = parts[parts.length - 1]
-      }
+      sourceItemId = data.data._id
     }
 
     // Handle different drop types - delegate to base class
