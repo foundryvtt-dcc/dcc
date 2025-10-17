@@ -295,6 +295,12 @@ function checkMigrations () {
 }
 
 function registerTables () {
+  // Helper function to check if a table name contains "Disapproval" or the localized version
+  const isDisapprovalTable = (tableName) => {
+    const disapprovalText = game.i18n.localize('DCC.Disapproval')
+    return tableName.includes('Disapproval') || tableName.includes(disapprovalText)
+  }
+
   // Create manager for disapproval tables and register the system setting
   CONFIG.DCC.disapprovalPacks = new TablePackManager({
     updateHook: async (manager) => {
@@ -310,6 +316,17 @@ function registerTables () {
               name: value.name,
               path: `${packName}.${value.name}`
             }
+          }
+        }
+      }
+
+      // Also add world tables to the disapproval tables list if they contain "Disapproval" in their name
+      for (const table of game.tables) {
+        if (isDisapprovalTable(table.name)) {
+          const worldKey = `world-${table.id}`
+          CONFIG.DCC.disapprovalTables[worldKey] = {
+            name: table.name,
+            path: table.name
           }
         }
       }
@@ -732,6 +749,44 @@ Hooks.on('createItem', (entity) => {
     entity.update({
       img
     })
+  }
+})
+
+// Add newly created world RollTables to disapproval tables list if they contain "Disapproval"
+Hooks.on('createRollTable', (table) => {
+  const disapprovalText = game.i18n.localize('DCC.Disapproval')
+  if (table.name.includes('Disapproval') || table.name.includes(disapprovalText)) {
+    const worldKey = `world-${table.id}`
+    CONFIG.DCC.disapprovalTables[worldKey] = {
+      name: table.name,
+      path: table.name
+    }
+  }
+})
+
+// Remove deleted world RollTables from disapproval tables list
+Hooks.on('deleteRollTable', (table) => {
+  const worldKey = `world-${table.id}`
+  delete CONFIG.DCC.disapprovalTables[worldKey]
+})
+
+// Update world RollTable entries when name changes
+Hooks.on('updateRollTable', (table, changes) => {
+  if (changes.name) {
+    const worldKey = `world-${table.id}`
+    const disapprovalText = game.i18n.localize('DCC.Disapproval')
+    const isDisapprovalTable = table.name.includes('Disapproval') || table.name.includes(disapprovalText)
+
+    if (isDisapprovalTable) {
+      // Add or update the table
+      CONFIG.DCC.disapprovalTables[worldKey] = {
+        name: table.name,
+        path: table.name
+      }
+    } else {
+      // Remove it if it was previously a disapproval table but no longer is
+      delete CONFIG.DCC.disapprovalTables[worldKey]
+    }
   }
 })
 

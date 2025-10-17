@@ -170,6 +170,7 @@
   "DCC.Dice": "Dés",
   "DCC.Die": "Dé",
   "DCC.DisableTrap": "Désamorcer pièges",
+  "DCC.Disapproval": "Défaveur",
   "DCC.DisapprovalFormulaWarning": "Formule invalide pour les jet de défaveur '{formula}'.",
   "DCC.DisapprovalGained": "Le risque de défaveur augmente à {range}",
   "DCC.DisapprovalRange": "Risque de défaveur",

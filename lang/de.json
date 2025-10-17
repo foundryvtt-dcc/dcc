@@ -183,6 +183,7 @@
   "DCC.Die": "Würfel",
   "DCC.Dice": "Würfel",
   "DCC.DisableTrap": "Fallen entschärfen",
+  "DCC.Disapproval": "Ungnade",
   "DCC.DisapprovalFormulaWarning": "Ungültige Würfelformel für Ungnade '{formula}'.",
   "DCC.DisapprovalGained": "Ungnadebereich erweitert auf {range}",
   "DCC.DisapprovalRange": "Ungnadebereich",
