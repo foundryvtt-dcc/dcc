@@ -239,6 +239,11 @@ Hooks.once('ready', async function () {
     document.body.classList.add('disable-dark-theme-icon-filter')
   }
 
+  // Apply chat cards theme settings
+  if (!game.settings.get('dcc', 'chatCardsUseAppTheme')) {
+    document.body.classList.add('chat-cards-use-ui-theme')
+  }
+
   // Show welcome dialog if enabled
   if (game.user.isGM && game.settings.get(pubConstants.name, 'showWelcomeDialog')) {
     new WelcomeDialog().render(true)

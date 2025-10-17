@@ -524,6 +524,8 @@
   "DCC.SettingWeaponEquipmentCheckHint": "If weapon is used but not equipped, prevent the roll and show a warning",
   "DCC.SettingDisableDarkThemeIconFilter": "Disable icon filter in dark theme",
   "DCC.SettingDisableDarkThemeIconFilterHint": "Disables the sepia filter applied to icons when using the dark theme",
+  "DCC.SettingChatCardsUseAppTheme": "Chat Cards Use App Theme",
+  "DCC.SettingChatCardsUseAppThemeHint": "When enabled, chat cards follow the core application theme (light/dark) setting. When disabled, chat cards follow the interface theme setting instead.",
   "DCC.SettingsLabel": "Settings",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Show Welcome Dialog on Startup",

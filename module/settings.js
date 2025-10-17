@@ -313,6 +313,19 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Chat cards use app theme instead of UI theme
+   */
+  game.settings.register('dcc', 'chatCardsUseAppTheme', {
+    name: 'DCC.SettingChatCardsUseAppTheme',
+    hint: 'DCC.SettingChatCardsUseAppThemeHint',
+    scope: 'client',
+    type: Boolean,
+    default: true,
+    config: true,
+    requiresReload: true
+  })
+
+  /**
    * Enable strict critical hit rules (proportional crit range for different die sizes)
    */
   game.settings.register('dcc', 'strictCriticalHits', {
