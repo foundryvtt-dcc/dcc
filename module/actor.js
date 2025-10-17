@@ -1694,6 +1694,21 @@ class DCCActor extends Actor {
         }
       }
 
+      // If not found in compendium packs, try the local world tables
+      if (!disapprovalTable) {
+        const disapprovalTableName = this.system.class.disapprovalTable
+        if (disapprovalTableName) {
+          // Extract just the table name from the full path if needed
+          // e.g., "dcc-core-book.dcc-core-disapproval.Disapproval" -> "Disapproval"
+          const tableName = disapprovalTableName.includes('.')
+            ? disapprovalTableName.split('.').pop()
+            : disapprovalTableName
+
+          // Search for a table in the world with a matching name
+          disapprovalTable = game.tables.find((entity) => entity.name === tableName)
+        }
+      }
+
       // Draw from the table if found, otherwise display the roll
       if (disapprovalTable) {
         disapprovalTable.draw({ roll, displayChat: true })

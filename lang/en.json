@@ -500,7 +500,7 @@
   "DCC.SettingDeleteItem": "Prompt for Item Deletion",
   "DCC.SettingDeleteItemHint": "Ask for confirmation before deleting equipment, spells, or custom skills from character sheets",
   "DCC.SettingDisapprovalTablesCompendium": "Disapproval Tables Compendium",
-  "DCC.SettingDisapprovalTablesCompendiumHint": "Compendium to look in for critical hit tables. The specific table to use is selectable from the Cleric sheet",
+  "DCC.SettingDisapprovalTablesCompendiumHint": "Compendium to look in for disapproval tables. The specific table to use is selectable from the Cleric sheet",
   "DCC.SettingDivineAidTable": "Divine Aid Table",
   "DCC.SettingDivineAidTableHint": "Roll Table to use for Divine Aid - must be in a compendium pack",
   "DCC.SettingEmoteRolls": "Show rolls as emotes",

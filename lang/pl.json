@@ -500,7 +500,7 @@
   "DCC.SettingDeleteItem": "Potwierdź Usuwanie Przedmiotu",
   "DCC.SettingDeleteItemHint": "Pytaj o potwierdzenie przed usunięciem wyposażenia, czarów lub niestandardowych umiejętności z arkuszy postaci",
   "DCC.SettingDisapprovalTablesCompendium": "Kompendium Tabel Dezaprobaty",
-  "DCC.SettingDisapprovalTablesCompendiumHint": "Kompendium do szukania tabel trafień krytycznych. Konkretna tabela do użycia jest wybieralna z arkusza Kleryka",
+  "DCC.SettingDisapprovalTablesCompendiumHint": "Kompendium do szukania tabel dezaprobaty. Konkretna tabela do użycia jest wybieralna z arkusza Kleryka",
   "DCC.SettingDivineAidTable": "Tabela Boskiej Pomocy",
   "DCC.SettingDivineAidTableHint": "Tabela Rzutów do użycia dla Boskiej Pomocy - musi być w pakiecie kompendium",
   "DCC.SettingEmoteRolls": "Pokazuj rzuty jako emotikony",
