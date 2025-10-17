@@ -183,6 +183,7 @@
   "DCC.Die": "Kostka",
   "DCC.Dice": "Kostki",
   "DCC.DisableTrap": "Rozbrój pułapkę",
+  "DCC.Disapproval": "Dezaprobata",
   "DCC.DisapprovalFormulaWarning": "Nieprawidłowa formuła rzutu dla dezaprobaty '{formula}'",
   "DCC.DisapprovalGained": "Zakres Dezaprobaty zwiększony do {range}",
   "DCC.DisapprovalRange": "Zakres Dezaprobaty",

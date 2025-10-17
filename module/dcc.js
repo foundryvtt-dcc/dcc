@@ -295,6 +295,12 @@ function checkMigrations () {
 }
 
 function registerTables () {
+  // Helper function to check if a table name contains "Disapproval" or the localized version
+  const isDisapprovalTable = (tableName) => {
+    const disapprovalText = game.i18n.localize('DCC.Disapproval')
+    return tableName.includes('Disapproval') || tableName.includes(disapprovalText)
+  }
+
   // Create manager for disapproval tables and register the system setting
   CONFIG.DCC.disapprovalPacks = new TablePackManager({
     updateHook: async (manager) => {
@@ -302,14 +308,29 @@ function registerTables () {
       CONFIG.DCC.disapprovalTables = {}
 
       // For each valid pack, update the list of disapproval tables available to a cleric
+      // Using table name as key to enable de-duplication
       for (const packName of manager.packs) {
         const pack = game.packs.get(packName)
         if (pack) {
-          for (const [key, value] of pack.index.entries()) {
-            CONFIG.DCC.disapprovalTables[key] = {
+          for (const value of pack.index.values()) {
+            // Use table name as key for de-duplication
+            CONFIG.DCC.disapprovalTables[value.name] = {
               name: value.name,
               path: `${packName}.${value.name}`
             }
+          }
+        }
+      }
+
+      // Add world tables to the disapproval tables list if they contain "Disapproval" in their name
+      // World tables will overwrite compendium tables with the same name (preferred)
+      // If multiple world tables have the same name, the last one processed wins
+      for (const table of game.tables) {
+        if (isDisapprovalTable(table.name)) {
+          // Use table name as key - this overwrites compendium tables with same name
+          CONFIG.DCC.disapprovalTables[table.name] = {
+            name: table.name,
+            path: table.name
           }
         }
       }
@@ -732,6 +753,59 @@ Hooks.on('createItem', (entity) => {
     entity.update({
       img
     })
+  }
+})
+
+// Add newly created world RollTables to disapproval tables list if they contain "Disapproval"
+Hooks.on('createRollTable', (table) => {
+  const disapprovalText = game.i18n.localize('DCC.Disapproval')
+  if (table.name.includes('Disapproval') || table.name.includes(disapprovalText)) {
+    // Use table name as key for de-duplication with compendium tables
+    CONFIG.DCC.disapprovalTables[table.name] = {
+      name: table.name,
+      path: table.name
+    }
+  }
+})
+
+// Remove deleted world RollTables from disapproval tables list
+Hooks.on('deleteRollTable', (table) => {
+  // Use table name as key to find and delete
+  delete CONFIG.DCC.disapprovalTables[table.name]
+})
+
+// Update world RollTable entries when name changes
+Hooks.on('updateRollTable', (table, changes) => {
+  if (changes.name) {
+    const disapprovalText = game.i18n.localize('DCC.Disapproval')
+
+    // Helper function to check if a table name contains "Disapproval"
+    const isDisapprovalTable = (tableName) => {
+      return tableName.includes('Disapproval') || tableName.includes(disapprovalText)
+    }
+
+    // Rebuild world tables list to handle renames correctly
+    // First, remove all world table entries (we'll re-add the valid ones)
+    const compendiumTables = {}
+    for (const [key, value] of Object.entries(CONFIG.DCC.disapprovalTables)) {
+      // Keep compendium tables (they have paths with dots like "pack.table")
+      if (value.path.includes('.')) {
+        compendiumTables[key] = value
+      }
+    }
+
+    // Reset to only compendium tables
+    CONFIG.DCC.disapprovalTables = compendiumTables
+
+    // Re-add all world disapproval tables
+    for (const worldTable of game.tables) {
+      if (isDisapprovalTable(worldTable.name)) {
+        CONFIG.DCC.disapprovalTables[worldTable.name] = {
+          name: worldTable.name,
+          path: worldTable.name
+        }
+      }
+    }
   }
 })
 

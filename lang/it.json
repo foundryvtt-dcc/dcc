@@ -183,6 +183,7 @@
   "DCC.Die": "Dado",
   "DCC.Dice": "Dadi",
   "DCC.DisableTrap": "Disinnescare trappole",
+  "DCC.Disapproval": "Disapprovazione",
   "DCC.DisapprovalFormulaWarning": "Tiro o formula non valida per la Disapprovazione: '{formula}'",
   "DCC.DisapprovalGained": "Intervallo di Disapprovazione aumentato a {range}",
   "DCC.DisapprovalRange": "Intervallo di Disapprovazione",
