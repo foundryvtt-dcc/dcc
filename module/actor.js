@@ -107,10 +107,6 @@ class DCCActor extends Actor {
       this.system.skills.detectSecretDoors.value = '+4'
     }
 
-    if (this.system.details.sheetClass === 'Thief') {
-      this.system.skills.castSpellFromScroll.die = '0'
-    }
-
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
       this.update({
