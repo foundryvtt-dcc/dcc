@@ -524,6 +524,8 @@
   "DCC.SettingWeaponEquipmentCheckHint": "Si se usa un arma no equipada, evitar la tirada y mostrar advertencia",
   "DCC.SettingDisableDarkThemeIconFilter": "Desactivar filtro de iconos en tema oscuro",
   "DCC.SettingDisableDarkThemeIconFilterHint": "Desactiva el filtro sepia aplicado a los iconos cuando se usa el tema oscuro",
+  "DCC.SettingChatCardsUseAppTheme": "Las tarjetas de chat usan el tema de la aplicación",
+  "DCC.SettingChatCardsUseAppThemeHint": "Cuando está habilitado, las tarjetas de chat siguen el tema de la aplicación principal (claro/oscuro). Cuando está deshabilitado, las tarjetas de chat siguen el tema de la interfaz.",
   "DCC.SettingsLabel": "Configuración",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Mostrar diálogo de bienvenida al iniciar",

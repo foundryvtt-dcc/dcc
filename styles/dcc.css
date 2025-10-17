@@ -635,21 +635,21 @@ a.inline-roll {
 }
 
 .chat-message {
-  background: var(--system-background);
-  color: var(--system-primary-color);
+  background: var(--chat-background);
+  color: var(--chat-primary-color);
 }
 .chat-message .message-header {
-  color: var(--system-primary-color);
+  color: var(--chat-primary-color);
 }
 .chat-message .table-draw {
-  color: var(--system-primary-color);
+  color: var(--chat-primary-color);
 }
 .chat-message .table-draw .table-description {
-  color: var(--system-primary-color);
+  color: var(--chat-primary-color);
 }
 .chat-message .table-draw .table-description .content-link {
   background: transparent;
-  color: var(--system-primary-color);
+  color: var(--chat-primary-color);
 }
 
 .chat-message .table-draw .table-results .table-result .result-text {
@@ -683,7 +683,7 @@ a.inline-roll {
   list-style: none;
   margin-top: 12px;
   padding: 0;
-  color: var(--system-primary-color);
+  color: var(--chat-primary-color);
 }
 .table-draw .table-results .table-result {
   display: grid;

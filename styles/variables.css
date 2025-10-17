@@ -31,6 +31,17 @@
   --system-value-display-background-color: #d0cec3;
 }
 
+/* Chat card colors - scoped to body to follow app theme, not UI theme */
+body,
+body.theme-light {
+  --chat-background: url('/ui/parchment.jpg');
+  --chat-primary-color: #222;
+}
+
+body.theme-dark {
+  --chat-background: #0b0a13;
+  --chat-primary-color: #d0beaa;
+}
 
 /*Override for dark theme */
 .theme-dark {
@@ -63,4 +74,10 @@
 /* When the setting to disable icon filter is enabled, remove the filter */
 .disable-dark-theme-icon-filter.theme-dark {
   --system-icon-filter: none;
+}
+
+/* When chat cards should use UI theme instead of app theme */
+.chat-cards-use-ui-theme {
+  --chat-background: var(--system-background);
+  --chat-primary-color: var(--system-primary-color);
 }

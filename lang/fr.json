@@ -516,6 +516,8 @@
   "DCC.SettingWeaponEquipmentCheckHint": "Si l'arme est utilisée mais pas équipée, empêcher le jet et afficher un avertissement",
   "DCC.SettingDisableDarkThemeIconFilter": "Désactiver le filtre d'icônes en thème sombre",
   "DCC.SettingDisableDarkThemeIconFilterHint": "Désactive le filtre sépia appliqué aux icônes lors de l'utilisation du thème sombre",
+  "DCC.SettingChatCardsUseAppTheme": "Les cartes de discussion utilisent le thème de l'application",
+  "DCC.SettingChatCardsUseAppThemeHint": "Lorsque activé, les cartes de discussion suivent le thème de l'application principale (clair/sombre). Lorsque désactivé, les cartes de discussion suivent le paramètre de thème de l'interface.",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Afficher la Boîte de Dialogue de Bienvenue au Démarrage",
     "ShowWelcomeDialogHint": "Afficher la boîte de dialogue de bienvenue au démarrage du module"

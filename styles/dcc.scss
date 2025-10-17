@@ -498,23 +498,24 @@ a.inline-roll {
   font-family: var(--system-label-font), serif;
 }
 
+// Chat messages follow the core app theme (body's theme) regardless of parent application theme
 .chat-message {
-  background: var(--system-background);
-  color: var(--system-primary-color);
+  background: var(--chat-background);
+  color: var(--chat-primary-color);
 
   .message-header {
-    color: var(--system-primary-color);
+    color: var(--chat-primary-color);
   }
 
   .table-draw {
-    color: var(--system-primary-color);
+    color: var(--chat-primary-color);
 
     .table-description {
-      color: var(--system-primary-color);
+      color: var(--chat-primary-color);
 
       .content-link {
         background: transparent;
-        color: var(--system-primary-color);
+        color: var(--chat-primary-color);
       }
     }
   }
@@ -553,7 +554,7 @@ a.inline-roll {
     list-style: none;
     margin-top: 12px;
     padding: 0;
-    color: var(--system-primary-color);
+    color: var(--chat-primary-color);
 
     .table-result {
       display: grid;
