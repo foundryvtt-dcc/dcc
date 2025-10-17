@@ -25,11 +25,20 @@ You can create custom disapproval tables specific to your world or deity. The sy
 3. Fill in the table details:
    - **Name**: Must contain "Disapproval" in the name (e.g., "Cthulhu Disapproval", "Lord of All Smiths Disapproval", or just "Disapproval")
    - **Description**: Optional description of the deity or table
+   - **Roll Formula**: Leave blank or set to any formula - it is not used (the system automatically rolls based on the spell check result)
 4. Add table results in the **Results** section:
+   - **IMPORTANT**: Your first result should have a minimum range of **-500** (or lower) to catch all low rolls
+   - **IMPORTANT**: Your last result should have a maximum range of **500** (or higher) to catch all high rolls
    - For each row in the disapproval table, click **Add Result**
-   - Set the **Range** (e.g., 1-1, 2-3, 4-5, etc.)
+   - Set the **Range** to match the DCC disapproval table (e.g., 1-1, 2-3, 4-5, etc.)
    - Set the **Text** to the disapproval effect for that range
+   - Example ranges:
+     - First result: `-500 to 1` (catches all rolls of 1 or below)
+     - Middle results: `2-3`, `4-5`, `6-8`, etc.
+     - Last result: `16 to 500` (catches all rolls of 16 or above)
 5. Click **Create RollTable** to save
+
+**Why these ranges?** The disapproval roll formula is `(natural spell check roll)d4 - luck modifier`. For example, if you rolled a natural 3 on your spell check with -1 luck, the disapproval roll is `3d4 - (-1)` = `3d4 + 1`, which can range from 4 to 13. Using wide ranges like -500 to 500 ensures all possible results are covered.
 
 ### Step 2: Select the Table on Your Cleric
 
