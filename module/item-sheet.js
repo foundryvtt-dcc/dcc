@@ -62,6 +62,10 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     description: {
       id: 'description',
       template: 'systems/dcc/templates/item-sheet-partial-description.html'
+    },
+    judgeDescription: {
+      id: 'judge-description',
+      template: 'systems/dcc/templates/item-sheet-partial-judge-description.html'
     }
   }
 
@@ -143,7 +147,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       tabs.tabs = [
         { id: 'spell', group: 'sheet', label: 'DCC.Spell' },
         { id: 'manifestation', group: 'sheet', label: 'DCC.Manifestation' },
-        { id: 'description', group: 'sheet', label: 'DCC.Description' }
+        { id: 'description', group: 'sheet', label: 'DCC.Description' },
+        { id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' }
       ]
 
       // Add mercurial tab only if it should be shown
@@ -163,12 +168,14 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         { id: 'levelLawful', group: 'sheet', label: 'DCC.LevelLawful' },
         { id: 'levelNeutral', group: 'sheet', label: 'DCC.LevelNeutral' },
         { id: 'levelChaotic', group: 'sheet', label: 'DCC.LevelChaotic' },
-        { id: 'description', group: 'sheet', label: 'DCC.Description' }
+        { id: 'description', group: 'sheet', label: 'DCC.Description' },
+        { id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' }
       ]
       tabs.initial = 'level'
     } else {
       // Other item types use the standard configuration
       tabs.tabs[0] = { id: this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
+      tabs.tabs.push({ id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' })
       tabs.initial = this.document.type
     }
 
