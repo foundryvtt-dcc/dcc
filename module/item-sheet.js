@@ -147,8 +147,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       tabs.tabs = [
         { id: 'spell', group: 'sheet', label: 'DCC.Spell' },
         { id: 'manifestation', group: 'sheet', label: 'DCC.Manifestation' },
-        { id: 'description', group: 'sheet', label: 'DCC.Description' },
-        { id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' }
+        { id: 'description', group: 'sheet', label: 'DCC.Description' }
       ]
 
       // Add mercurial tab only if it should be shown
@@ -160,6 +159,11 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         tabs.tabs.splice(2, 0, { id: 'mercurial', group: 'sheet', label: 'DCC.Mercurial' })
       }
 
+      // Add judge-only tab for GMs
+      if (game.user.isGM) {
+        tabs.tabs.push({ id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' })
+      }
+
       tabs.initial = 'spell'
     } else if (this.document.type === 'level') {
       // Level items have multiple tabs for alignment data
@@ -168,14 +172,24 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         { id: 'levelLawful', group: 'sheet', label: 'DCC.LevelLawful' },
         { id: 'levelNeutral', group: 'sheet', label: 'DCC.LevelNeutral' },
         { id: 'levelChaotic', group: 'sheet', label: 'DCC.LevelChaotic' },
-        { id: 'description', group: 'sheet', label: 'DCC.Description' },
-        { id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' }
+        { id: 'description', group: 'sheet', label: 'DCC.Description' }
       ]
+
+      // Add judge-only tab for GMs
+      if (game.user.isGM) {
+        tabs.tabs.push({ id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' })
+      }
+
       tabs.initial = 'level'
     } else {
       // Other item types use the standard configuration
       tabs.tabs[0] = { id: this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
-      tabs.tabs.push({ id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' })
+
+      // Add judge-only tab for GMs
+      if (game.user.isGM) {
+        tabs.tabs.push({ id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' })
+      }
+
       tabs.initial = this.document.type
     }
 
