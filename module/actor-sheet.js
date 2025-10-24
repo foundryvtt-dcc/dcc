@@ -733,6 +733,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           dragData = {
             type: dragType,
             actorId,
+            uuid: item.uuid,
             data: item,
             system: {
               item
