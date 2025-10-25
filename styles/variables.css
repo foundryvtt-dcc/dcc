@@ -32,7 +32,6 @@
 }
 
 /* Chat card colors - scoped to body to follow app theme, not UI theme */
-body,
 body.theme-light {
   --chat-background: url('/ui/parchment.jpg');
   --chat-primary-color: #222;
@@ -77,7 +76,7 @@ body.theme-dark {
 }
 
 /* When chat cards should use UI theme instead of app theme */
-.chat-cards-use-ui-theme {
+.chat-cards-use-ui-theme #interface {
   --chat-background: var(--system-background);
   --chat-primary-color: var(--system-primary-color);
 }
