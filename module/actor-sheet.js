@@ -24,7 +24,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     tag: 'form',
     position: {
       width: 555,
-      height: 450
+      height: 455
     },
     actions: {
       applyDisapproval: this.#applyDisapproval,
