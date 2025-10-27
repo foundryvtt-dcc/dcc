@@ -797,7 +797,7 @@ a.inline-roll {
 
     > .grid-container {
       display: grid;
-      grid-template-rows: 1fr auto 0.6fr;  // Top flexible, elf abilities fixed, corruption flexible
+      grid-template-rows: 1fr auto 0.6fr; // Top flexible, elf abilities fixed, corruption flexible
       min-height: 0;
       height: 100%;
       grid-row-gap: 0;
@@ -1889,7 +1889,6 @@ a.inline-roll {
 .dcc {
   .npc-grid {
     display: grid;
-    height: 100%;
     grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
 
     textarea {
