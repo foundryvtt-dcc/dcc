@@ -8,6 +8,7 @@ Here is a list of FoundryVTT modules that support DCC!
 * [DCC Quality of Life Improvements](https://github.com/tonyrobots/dcc-qol)
 * [Roll New Character Stats](https://foundryvtt.com/packages/roll-new-character-stats) (Roll a new DCC character inside FoundryVTT)
 * [Token Mold](https://github.com/BeardedGnome/token-mold/) (Rolls Hit Points for NPCs when tokens placed on map)
+* [Token Note Hover](https://foundryvtt.com/packages/token-note-hover) (Shows note from a token when hovered)
 * [Always HP](https://foundryvtt.com/packages/always-hp) (Lets you quickly adjust the HP of selected token(s))
 * [Torch](https://github.com/League-of-Foundry-Developers/Torch) (Lets you have a switch on the token HUD to turn on/off light)
 * [REDY: Reactive Dynamic Token Rings](https://foundryvtt.com/packages/pf2e-reactive-token-ring) (Allows Dynamic Token Rings to Respond to Actions)
