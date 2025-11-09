@@ -1813,6 +1813,7 @@ a.inline-roll {
 .dcc .npc-grid {
   display: grid;
   grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
+  min-height: 100%;
 }
 .dcc .npc-grid textarea {
   background: none;
