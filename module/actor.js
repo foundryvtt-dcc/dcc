@@ -1068,7 +1068,8 @@ class DCCActor extends Actor {
       rollTable: null,
       roll,
       item: null,
-      flavor
+      flavor,
+      forceCrit: options.forceCrit
     })
   }
 

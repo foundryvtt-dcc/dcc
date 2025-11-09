@@ -817,7 +817,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static fillRollOptions (event) {
     const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
     return {
-      showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey)
+      showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey),
+      forceCrit: event.shiftKey
     }
   }
 

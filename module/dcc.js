@@ -444,6 +444,7 @@ async function processSpellCheck (actor, spellData) {
   const roll = spellData.roll
   const item = spellData.item
   const flavor = spellData.flavor
+  const forceCrit = spellData.forceCrit || false
 
   let crit = false
   let fumble = false
@@ -454,7 +455,16 @@ async function processSpellCheck (actor, spellData) {
     await roll.evaluate()
   }
 
-  const naturalRoll = roll.dice[0].total
+  let naturalRoll = roll.dice[0].total
+
+  // Force a critical for testing (shift-click)
+  if (forceCrit && naturalRoll !== 1) {
+    const originalDieRoll = naturalRoll
+    naturalRoll = 20
+    roll.terms[0].results[0].result = 20
+    roll.terms[0]._total = 20
+    roll._total += (20 - originalDieRoll)
+  }
 
   // Check for Patron Taint
   let patronTaint = null
@@ -501,23 +511,19 @@ async function processSpellCheck (actor, spellData) {
       result = rollTable.getResultsForRoll(roll.total)
 
       if (roll.dice.length > 0) {
-        // Next three lines are used to force crit for testing
-        // roll._total += (20-roll.terms[0].total)
-        // roll.terms[0].results[0].result = 20
-        // roll.terms[0]._total = 20
-
         if (naturalRoll === 1) {
           const fumbleResult = rollTable.getResultsForRoll(1)
           result.results = fumbleResult.results
           fumble = true
         } else if (naturalRoll === 20) {
           if (actor.type === 'Player') {
-            const critRoll = roll.total + actor.system.details.level.value
-            result.results = rollTable.getResultsForRoll(critRoll)
+            const levelValue = parseInt(actor.system.details.level.value)
+            const critRoll = roll.total + levelValue
+            result = rollTable.getResultsForRoll(critRoll)
             roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
-            roll.terms.push(new foundry.dice.terms.NumericTerm({ number: parseInt(actor.system.details.level.value) }))
-            roll._formula += ` + ${actor.system.details.level.value}`
-            roll._total += actor.system.details.level.value
+            roll.terms.push(new foundry.dice.terms.NumericTerm({ number: levelValue }))
+            roll._formula += ` + ${levelValue}`
+            roll._total += levelValue
             crit = true
           }
         }
