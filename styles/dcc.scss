@@ -9,7 +9,7 @@
 }
 
 @font-face {
-  font-family: 'Book Antiqua';
+  font-family: 'Book Antiqua', Palatino, 'Palatino Linotype', serif;
   src: url('fonts/Book-Antiqua.otf') format('opentype');
 }
 
@@ -35,9 +35,15 @@
   font-weight: bold;
 }
 
+.read-aloud {
+  font-family: var(--system-data-font), serif;
+  font-weight: bolder;
+  font-style: italic;
+  font-size: var(--system-data-font-size);
+}
+
 /* Common style elements */
 .dcc {
-
   color: var(--system-primary-color);
 
   .box-inner {
@@ -395,7 +401,6 @@
     p {
       margin-bottom: clamp(0.8em, 2vw, 1.4em);
       margin-top: 0;
-      font-weight: 550;
     }
 
 

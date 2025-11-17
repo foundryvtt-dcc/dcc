@@ -12,7 +12,8 @@
   --system-checkbox-disabled-color: #000;
   --system-checkbox-size: 18px;
   --system-d20-icon: url('../../../icons/svg/d20-black.svg');
-  --system-data-font: 'Book Antiqua', serif;
+  --system-data-font: 'Book Antiqua', Palatino, serif;
+  --system-data-font-size: 16px;
   --system-frame-background: url('images/denim.png');
   --system-frame-border: 4px solid var(--system-border-color);
   --system-frame-title-color: #c8d7bd;
