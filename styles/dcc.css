@@ -1824,7 +1824,10 @@ a.inline-roll {
   height: 59px;
   text-align: left;
 }
-.dcc .character .saving-throw-box input {
+.dcc .character .saving-throw-box .save-value {
+  position: relative;
+}
+.dcc .character .saving-throw-box .save-value input {
   align-self: center;
   background: var(--system-background);
   border-radius: 100px;
@@ -1832,6 +1835,25 @@ a.inline-roll {
   height: 50px;
   margin-left: 5px;
   width: 50px;
+}
+.dcc .character .saving-throw-box .save-value .save-effects {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dcc .character .saving-throw-box .save-value .save-effects .save-effect-icon {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 2px;
+  cursor: help;
+  opacity: 0.8;
+}
+.dcc .character .saving-throw-box .save-value .save-effects .save-effect-icon:hover {
+  opacity: 1;
 }
 .dcc .character .saving-throw-box label {
   font-size: 14px;
@@ -1910,7 +1932,7 @@ a.inline-roll {
   align-items: center;
   background: var(--system-frame-background);
   display: grid;
-  grid-template-columns: 24px 40px;
+  grid-template-columns: 24px auto;
   text-align: left;
 }
 .dcc .npc-grid .saving-throws .saving-throw-box input {
@@ -1922,10 +1944,30 @@ a.inline-roll {
   margin-left: 5px;
   width: 20px;
 }
-.dcc .npc-grid .saving-throws .saving-throw-box label {
+.dcc .npc-grid .saving-throws .saving-throw-box .save-label-effects {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dcc .npc-grid .saving-throws .saving-throw-box .save-label-effects label {
   font-size: 11px;
   letter-spacing: 1px;
   color: var(--system-frame-title-color);
+}
+.dcc .npc-grid .saving-throws .saving-throw-box .save-label-effects .save-effects {
+  display: flex;
+  gap: 2px;
+}
+.dcc .npc-grid .saving-throws .saving-throw-box .save-label-effects .save-effects .save-effect-icon {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 2px;
+  cursor: help;
+  opacity: 0.8;
+}
+.dcc .npc-grid .saving-throws .saving-throw-box .save-label-effects .save-effects .save-effect-icon:hover {
+  opacity: 1;
 }
 
 .welcome-dialog aside {

@@ -160,6 +160,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     foundry.utils.mergeObject(context, {
       abilityEffects: this.#prepareAbilityEffects(),
+      saveEffects: this.#prepareSaveEffects(),
       actor: this.options.document,
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
@@ -525,6 +526,71 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     return abilityEffects
+  }
+
+  /**
+   * Collect active effects that modify saving throws
+   * Returns an object keyed by save ID with arrays of effect info
+   */
+  #prepareSaveEffects () {
+    const saveEffects = {
+      ref: [],
+      frt: [],
+      wil: []
+    }
+
+    const actor = this.options.document
+
+    // Collect all active effects (from actor and transferred from items)
+    const allEffects = []
+
+    // Effects directly on actor
+    for (const effect of actor.effects) {
+      if (!effect.disabled && !effect.isSuppressed) {
+        allEffects.push(effect)
+      }
+    }
+
+    // Effects from equipped items that transfer
+    for (const item of actor.items) {
+      const isEquipped = item.system?.equipped ?? true
+      if (isEquipped) {
+        for (const effect of item.effects) {
+          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
+            allEffects.push(effect)
+          }
+        }
+      }
+    }
+
+    // Check each effect for save modifications
+    for (const effect of allEffects) {
+      if (!effect.changes) continue
+
+      for (const change of effect.changes) {
+        const key = change.key
+        // Match patterns like system.saves.ref.otherBonus or system.saves.ref.value
+        const match = key.match(/^system\.saves\.(\w+)\.(otherBonus|value)$/)
+        if (match) {
+          const saveId = match[1]
+          if (saveEffects[saveId]) {
+            // Check if this effect is already added for this save
+            const existing = saveEffects[saveId].find(e => e.id === effect.id)
+            if (!existing) {
+              saveEffects[saveId].push({
+                id: effect.id,
+                name: effect.name,
+                img: effect.img || 'icons/svg/aura.svg',
+                value: change.value,
+                mode: change.mode
+              })
+            }
+          }
+        }
+      }
+    }
+
+    return saveEffects
   }
 
   /**

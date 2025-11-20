@@ -107,6 +107,18 @@ class DCCActor extends Actor {
       this.system.skills.detectSecretDoors.value = '+4'
     }
 
+    // For NPCs, add otherBonus to displayed save values (after effects are applied)
+    if (this.isNPC) {
+      const saves = this.system.saves
+      for (const saveId of ['ref', 'frt', 'wil']) {
+        const otherBonus = parseInt(saves[saveId].otherBonus || 0)
+        if (otherBonus !== 0) {
+          const baseValue = parseInt(saves[saveId].value || 0)
+          saves[saveId].value = baseValue + otherBonus
+        }
+      }
+    }
+
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
       this.update({

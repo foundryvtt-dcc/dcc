@@ -1900,14 +1900,40 @@ a.inline-roll {
     height: 59px;
     text-align: left;
 
-    input {
-      align-self: center;
-      background: var(--system-background);
-      border-radius: 100px;
-      font-size: 18px;
-      height: 50px;
-      margin-left: 5px;
-      width: 50px;
+    .save-value {
+      position: relative;
+
+      input {
+        align-self: center;
+        background: var(--system-background);
+        border-radius: 100px;
+        font-size: 18px;
+        height: 50px;
+        margin-left: 5px;
+        width: 50px;
+      }
+
+      .save-effects {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .save-effect-icon {
+          width: 14px;
+          height: 14px;
+          border: 0;
+          border-radius: 2px;
+          cursor: help;
+          opacity: 0.8;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
+      }
     }
 
     label {
@@ -2003,7 +2029,7 @@ a.inline-roll {
         align-items: center;
         background: var(--system-frame-background);
         display: grid;
-        grid-template-columns: 24px 40px;
+        grid-template-columns: 24px auto;
         text-align: left;
 
         input {
@@ -2016,10 +2042,34 @@ a.inline-roll {
           width: 20px;
         }
 
-        label {
-          font-size: 11px;
-          letter-spacing: 1px;
-          color: var(--system-frame-title-color);
+        .save-label-effects {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          label {
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--system-frame-title-color);
+          }
+
+          .save-effects {
+            display: flex;
+            gap: 2px;
+
+            .save-effect-icon {
+              width: 12px;
+              height: 12px;
+              border: 0;
+              border-radius: 2px;
+              cursor: help;
+              opacity: 0.8;
+
+              &:hover {
+                opacity: 1;
+              }
+            }
+          }
         }
       }
     }
