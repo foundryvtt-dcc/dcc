@@ -1647,6 +1647,7 @@ a.inline-roll {
   border: 5px solid var(--system-border-color);
   display: grid;
   grid-row-end: span 3;
+  position: relative;
 }
 .dcc .character .ability-scores .ability-score input {
   align-self: center;
@@ -1655,6 +1656,25 @@ a.inline-roll {
   font-size: 30px;
   height: 46px;
   width: 47px;
+}
+.dcc .character .ability-scores .ability-score .ability-effects {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dcc .character .ability-scores .ability-score .ability-effects .ability-effect-icon {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 2px;
+  cursor: help;
+  opacity: 0.8;
+}
+.dcc .character .ability-scores .ability-score .ability-effects .ability-effect-icon:hover {
+  opacity: 1;
 }
 .dcc .character .ac-and-hp {
   display: grid;

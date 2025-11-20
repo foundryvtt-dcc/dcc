@@ -19,7 +19,8 @@
       </div>
     </li>
     {{#each effects as |effect id|}}
-      <li class="item effect-item {{#if (eq ../documentType "Item")}}grid-col-span-6{{else}}grid-col-span-5{{/if}}" data-effect-id="{{effect.id}}">
+      <li class="item effect-item {{#if (eq ../documentType "Item")}}grid-col-span-6{{else}}grid-col-span-5{{/if}}" data-effect-id="{{effect.id}}"
+          data-drag="true" data-drag-type="ActiveEffect" draggable="true">
         <div class="effect-icon-cell">
           <img class="effect-icon" src="{{effect.img}}" alt="{{effect.name}}" data-action="effectEdit" data-effect-id="{{effect.id}}"
                data-tooltip="DCC.EffectEdit">

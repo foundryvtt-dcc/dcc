@@ -198,6 +198,14 @@
         <div class="ability-score">
           <input id="system.abilities.{{id}}.value" value="{{ability.value}}" size="2"
                  name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10">
+          {{#if effects.length}}
+          <div class="ability-effects">
+            {{#each effects}}
+            <img src="{{this.img}}" class="ability-effect-icon"
+                 data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+            {{/each}}
+          </div>
+          {{/if}}
         </div>
         <label for="system.abilities.{{id}}.mod"
                style="grid-area: 2/1" data-modifier="true"
@@ -215,12 +223,12 @@
     {{/inline}}
 
     <div class="ability-scores">
-      {{> abilityScore id='str' ability=system.abilities.str }}
-      {{> abilityScore id='agl' ability=system.abilities.agl }}
-      {{> abilityScore id='sta' ability=system.abilities.sta }}
-      {{> abilityScore id='per' ability=system.abilities.per }}
-      {{> abilityScore id='int' ability=system.abilities.int }}
-      {{> abilityScore id='lck' ability=system.abilities.lck isLuck=true }}
+      {{> abilityScore id='str' ability=system.abilities.str effects=abilityEffects.str }}
+      {{> abilityScore id='agl' ability=system.abilities.agl effects=abilityEffects.agl }}
+      {{> abilityScore id='sta' ability=system.abilities.sta effects=abilityEffects.sta }}
+      {{> abilityScore id='per' ability=system.abilities.per effects=abilityEffects.per }}
+      {{> abilityScore id='int' ability=system.abilities.int effects=abilityEffects.int }}
+      {{> abilityScore id='lck' ability=system.abilities.lck effects=abilityEffects.lck isLuck=true }}
     </div>
 
     {{!-- Logo box --}}

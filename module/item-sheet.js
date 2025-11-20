@@ -53,6 +53,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       effectToggle: this.#effectToggle
     },
     dragDrop: [{
+      dragSelector: '[data-drag="true"]',
       dropSelector: '.tab-body'
     }]
   }
@@ -299,14 +300,48 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   #createDragDropHandlers () {
     return this.options.dragDrop.map((d) => {
       d.permissions = {
+        dragstart: this._canDragStart.bind(this),
         drop: this._canDragDrop.bind(this)
       }
       d.callbacks = {
+        dragstart: this._onDragStart.bind(this),
         dragover: this._onDragOver.bind(this),
         drop: this._onDrop.bind(this)
       }
       return new DragDrop(d)
     })
+  }
+
+  /**
+   * Check if drag start is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragStart (selector) {
+    return this.isEditable
+  }
+
+  /**
+   * Handle drag start for effects
+   * @param {DragEvent} event
+   */
+  _onDragStart (event) {
+    const target = event.currentTarget
+
+    // Only handle effect drags
+    if (target.dataset.dragType !== 'ActiveEffect') return
+
+    const effectId = target.dataset.effectId
+    const effect = this.document.effects.get(effectId)
+    if (!effect) return
+
+    const dragData = {
+      type: 'ActiveEffect',
+      uuid: effect.uuid,
+      data: effect.toObject()
+    }
+
+    event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
   }
 
   /**
@@ -442,6 +477,11 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const data = foundry.applications.ux.TextEditor.getDragEventData(event)
     if (!data) return false
 
+    // Handle ActiveEffect drops - create a copy on the item
+    if (data.type === 'ActiveEffect') {
+      return this._onDropActiveEffect(event, data)
+    }
+
     if (this.document.type === 'spell') {
       // Handle dropping a roll table to set the spells table
       if (data.type === 'RollTable') {
@@ -464,6 +504,36 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     // Handle different drop types - delegate to base class if needed
     return super._onDrop?.(event)
+  }
+
+  /**
+   * Handle dropping an ActiveEffect onto the item
+   * Creates a copy of the effect on the item (does not remove from source)
+   * @param {DragEvent} event - The drop event
+   * @param {Object} data - The drag data containing the effect
+   * @returns {Promise<ActiveEffect|boolean>}
+   */
+  async _onDropActiveEffect (event, data) {
+    if (!this.document.isOwner) return false
+
+    // Get the effect data
+    const effectData = data.data
+    if (!effectData) return false
+
+    // Prepare the effect data for creation on the item
+    const createData = {
+      name: effectData.name,
+      img: effectData.img || 'icons/svg/aura.svg',
+      origin: this.document.uuid, // Set origin to this item
+      changes: effectData.changes || [],
+      disabled: effectData.disabled || false,
+      duration: effectData.duration || {},
+      transfer: true, // Item effects should transfer to actors by default
+      flags: effectData.flags || {}
+    }
+
+    // Create the effect on the item
+    return this.document.createEmbeddedDocuments('ActiveEffect', [createData])
   }
 
   /** @inheritdoc */
