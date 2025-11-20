@@ -46,9 +46,14 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       convertUpward: this.#convertUpward,
       convertDownward: this.#convertDownward,
       configureItem: this.#configureItem,
-      twoWeaponChange: this.#twoWeaponChange
+      twoWeaponChange: this.#twoWeaponChange,
+      effectCreate: this.#effectCreate,
+      effectEdit: this.#effectEdit,
+      effectDelete: this.#effectDelete,
+      effectToggle: this.#effectToggle
     },
     dragDrop: [{
+      dragSelector: '[data-drag="true"]',
       dropSelector: '.tab-body'
     }]
   }
@@ -109,6 +114,12 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
     }
 
+    // Add effects tab for all items
+    parts.effects = {
+      id: 'effects',
+      template: 'systems/dcc/templates/partial-effects.html'
+    }
+
     return parts
   }
 
@@ -121,6 +132,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       tabs:
         [
           { id: 'item', group: 'sheet', label: 'DCC.Item' }, // This gets replaced dynamically
+          { id: 'effects', group: 'sheet', label: 'DCC.Effects' },
           { id: 'description', group: 'sheet', label: 'DCC.Description' }
         ],
       initial: 'item' // This gets set dynamically in _getTabsConfig
@@ -271,6 +283,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
 
     data.config = CONFIG.DCC
+    data.documentType = 'Item'
+    data.effects = this.document.effects
 
     data.isGM = game.user.isGM
     data.editable = this.isEditable
@@ -286,14 +300,48 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   #createDragDropHandlers () {
     return this.options.dragDrop.map((d) => {
       d.permissions = {
+        dragstart: this._canDragStart.bind(this),
         drop: this._canDragDrop.bind(this)
       }
       d.callbacks = {
+        dragstart: this._onDragStart.bind(this),
         dragover: this._onDragOver.bind(this),
         drop: this._onDrop.bind(this)
       }
       return new DragDrop(d)
     })
+  }
+
+  /**
+   * Check if drag start is allowed
+   * @param {string} selector
+   * @returns {boolean}
+   */
+  _canDragStart (selector) {
+    return this.isEditable
+  }
+
+  /**
+   * Handle drag start for effects
+   * @param {DragEvent} event
+   */
+  _onDragStart (event) {
+    const target = event.currentTarget
+
+    // Only handle effect drags
+    if (target.dataset.dragType !== 'ActiveEffect') return
+
+    const effectId = target.dataset.effectId
+    const effect = this.document.effects.get(effectId)
+    if (!effect) return
+
+    const dragData = {
+      type: 'ActiveEffect',
+      uuid: effect.uuid,
+      data: effect.toObject()
+    }
+
+    event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
   }
 
   /**
@@ -429,6 +477,11 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const data = foundry.applications.ux.TextEditor.getDragEventData(event)
     if (!data) return false
 
+    // Handle ActiveEffect drops - create a copy on the item
+    if (data.type === 'ActiveEffect') {
+      return this._onDropActiveEffect(event, data)
+    }
+
     if (this.document.type === 'spell') {
       // Handle dropping a roll table to set the spells table
       if (data.type === 'RollTable') {
@@ -451,6 +504,36 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
     // Handle different drop types - delegate to base class if needed
     return super._onDrop?.(event)
+  }
+
+  /**
+   * Handle dropping an ActiveEffect onto the item
+   * Creates a copy of the effect on the item (does not remove from source)
+   * @param {DragEvent} event - The drop event
+   * @param {Object} data - The drag data containing the effect
+   * @returns {Promise<ActiveEffect|boolean>}
+   */
+  async _onDropActiveEffect (event, data) {
+    if (!this.document.isOwner) return false
+
+    // Get the effect data
+    const effectData = data.data
+    if (!effectData) return false
+
+    // Prepare the effect data for creation on the item
+    const createData = {
+      name: effectData.name,
+      img: effectData.img || 'icons/svg/aura.svg',
+      origin: this.document.uuid, // Set origin to this item
+      changes: effectData.changes || [],
+      disabled: effectData.disabled || false,
+      duration: effectData.duration || {},
+      transfer: true, // Item effects should transfer to actors by default
+      flags: effectData.flags || {}
+    }
+
+    // Create the effect on the item
+    return this.document.createEmbeddedDocuments('ActiveEffect', [createData])
   }
 
   /** @inheritdoc */
@@ -571,6 +654,77 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         await this.document.update(updates)
       }
     }
+  }
+
+  /**
+   * Create a new active effect
+   @this {DCCItemSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<Document[]>}
+   **/
+  static async #effectCreate (event, target) {
+    if (!this.document.isOwner) return
+
+    const effectData = {
+      name: game.i18n.localize('DCC.EffectNew'),
+      label: game.i18n.localize('DCC.EffectNew'),
+      img: 'icons/svg/aura.svg',
+      origin: this.document.uuid,
+      changes: [],
+      disabled: false,
+      duration: {},
+      transfer: true, // Items should transfer their effects to actors by default
+      flags: {}
+    }
+    return this.document.createEmbeddedDocuments('ActiveEffect', [effectData])
+  }
+
+  /**
+   * Edit an active effect
+   @this {DCCItemSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectEdit (event, target) {
+    if (!this.document.isOwner) return
+
+    const effectId = target.dataset.effectId
+    const effect = this.document.effects.get(effectId)
+    await effect.sheet.render({ force: true })
+  }
+
+  /**
+   * Delete an active effect
+   @this {DCCItemSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectDelete (event, target) {
+    if (!this.document.isOwner) return
+
+    const effectId = target.dataset.effectId
+    const effect = this.document.effects.get(effectId)
+    await effect.deleteDialog()
+  }
+
+  /**
+   * Toggle an active effect on/off
+   @this {DCCItemSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectToggle (event, target) {
+    if (!this.document.isOwner) return
+
+    const effectId = target.dataset.effectId
+    const effect = this.document.effects.get(effectId)
+    await effect.update({ disabled: !effect.disabled })
+    // Force a re-render to update the UI immediately
+    this.render(false)
   }
 }
 

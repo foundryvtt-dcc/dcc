@@ -13,6 +13,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Saving Throws](Saving-Throws.md)
 * [Importing a Character](Importing-a-Character.md)
 * [Advanced Character Settings](Advanced-Character-Settings.md)
+* [Active Effects](Active-Effects.md)
 * [Mighty Deeds](Mighty-Deeds.md)
 * [Cleric](Cleric.md)
 * [Dwarf](Dwarf.md)

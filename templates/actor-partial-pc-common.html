@@ -198,6 +198,14 @@
         <div class="ability-score">
           <input id="system.abilities.{{id}}.value" value="{{ability.value}}" size="2"
                  name="system.abilities.{{id}}.value" data-dtype="Number" placeholder="10">
+          {{#if effects.length}}
+          <div class="ability-effects">
+            {{#each effects}}
+            <img src="{{this.img}}" class="ability-effect-icon"
+                 data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+            {{/each}}
+          </div>
+          {{/if}}
         </div>
         <label for="system.abilities.{{id}}.mod"
                style="grid-area: 2/1" data-modifier="true"
@@ -215,12 +223,12 @@
     {{/inline}}
 
     <div class="ability-scores">
-      {{> abilityScore id='str' ability=system.abilities.str }}
-      {{> abilityScore id='agl' ability=system.abilities.agl }}
-      {{> abilityScore id='sta' ability=system.abilities.sta }}
-      {{> abilityScore id='per' ability=system.abilities.per }}
-      {{> abilityScore id='int' ability=system.abilities.int }}
-      {{> abilityScore id='lck' ability=system.abilities.lck isLuck=true }}
+      {{> abilityScore id='str' ability=system.abilities.str effects=abilityEffects.str }}
+      {{> abilityScore id='agl' ability=system.abilities.agl effects=abilityEffects.agl }}
+      {{> abilityScore id='sta' ability=system.abilities.sta effects=abilityEffects.sta }}
+      {{> abilityScore id='per' ability=system.abilities.per effects=abilityEffects.per }}
+      {{> abilityScore id='int' ability=system.abilities.int effects=abilityEffects.int }}
+      {{> abilityScore id='lck' ability=system.abilities.lck effects=abilityEffects.lck isLuck=true }}
     </div>
 
     {{!-- Logo box --}}
@@ -275,10 +283,20 @@
     {{!-- Saving throws --}}
     {{#* inline "save"}}
       <div class="saving-throw-box" id="{{id}}" data-save="{{id}}">
-        <input id="system.saves.{{id}}.value" value="{{save.value}}"
-               name="system.saves.{{id}}.value" placeholder="+0"
-          {{#if system.config.computeSavingThrows}}readonly style="cursor: pointer" data-action="configureSavingThrows"{{/if}}
-        >
+        <div class="save-value">
+          <input id="system.saves.{{id}}.value" value="{{save.value}}"
+                 name="system.saves.{{id}}.value" placeholder="+0"
+            {{#if system.config.computeSavingThrows}}readonly style="cursor: pointer" data-action="configureSavingThrows"{{/if}}
+          >
+          {{#if effects.length}}
+          <div class="save-effects">
+            {{#each effects}}
+            <img src="{{this.img}}" class="save-effect-icon"
+                 data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+            {{/each}}
+          </div>
+          {{/if}}
+        </div>
         <label for="system.saves.{{id}}.value" class="rollable" title="{{localize 'DCC.RollSavingThrowHint'}}" data-action="rollSavingThrow"
                data-drag="true" data-drag-action="save">
           {{localize save.label}}
@@ -286,9 +304,9 @@
       </div>
     {{/inline}}
     <div class="saving-throws">
-      {{> save id='ref' save=system.saves.ref}}
-      {{> save id='frt' save=system.saves.frt isFortitude=true}}
-      {{> save id='wil' save=system.saves.wil }}
+      {{> save id='ref' save=system.saves.ref effects=saveEffects.ref}}
+      {{> save id='frt' save=system.saves.frt effects=saveEffects.frt}}
+      {{> save id='wil' save=system.saves.wil effects=saveEffects.wil}}
     </div>
 
     {{!-- Portrait --}}

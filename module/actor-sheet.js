@@ -23,7 +23,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     classes: ['dcc', 'sheet', 'actor'],
     tag: 'form',
     position: {
-      width: 555,
+      width: 560,
       height: 455
     },
     actions: {
@@ -46,7 +46,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollSavingThrow: this.#rollSavingThrow,
       rollSkillCheck: this.#rollSkillCheck,
       rollSpellCheck: this.#rollSpellCheck,
-      rollWeaponAttack: this.#rollWeaponAttack
+      rollWeaponAttack: this.#rollWeaponAttack,
+      effectCreate: this.#effectCreate,
+      effectEdit: this.#effectEdit,
+      effectDelete: this.#effectDelete,
+      effectToggle: this.#effectToggle
     },
     form: {
       // handler: DCCActorSheet.#onSubmitForm,
@@ -86,6 +90,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       id: 'equipment',
       template: 'systems/dcc/templates/actor-partial-npc-equipment.html'
     },
+    effects: {
+      id: 'effects',
+      template: 'systems/dcc/templates/partial-effects.html'
+    },
     notes: {
       id: 'notes',
       template: 'systems/dcc/templates/actor-partial-pc-notes.html'
@@ -121,6 +129,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     sheet: { // this is the group name
       tabs:
         [
+          { id: 'effects', group: 'sheet', label: 'DCC.Effects' },
           { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
         ]
     }
@@ -150,9 +159,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const preparedItems = await this.#prepareItems()
 
     foundry.utils.mergeObject(context, {
+      abilityEffects: this.#prepareAbilityEffects(),
+      saveEffects: this.#prepareSaveEffects(),
       actor: this.options.document,
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
+      documentType: 'Actor',
+      effects: this.options.document.effects,
       incomplete: {},
       img: await this.#prepareImage(),
       isOwner: this.options.document.isOwner,
@@ -448,6 +461,139 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
+   * Collect active effects that modify ability scores
+   * Returns an object keyed by ability ID with arrays of effect info
+   */
+  #prepareAbilityEffects () {
+    const abilityEffects = {
+      str: [],
+      agl: [],
+      sta: [],
+      per: [],
+      int: [],
+      lck: []
+    }
+
+    const actor = this.options.document
+
+    // Collect all active effects (from actor and transferred from items)
+    const allEffects = []
+
+    // Effects directly on actor
+    for (const effect of actor.effects) {
+      if (!effect.disabled && !effect.isSuppressed) {
+        allEffects.push(effect)
+      }
+    }
+
+    // Effects from equipped items that transfer
+    for (const item of actor.items) {
+      const isEquipped = item.system?.equipped ?? true
+      if (isEquipped) {
+        for (const effect of item.effects) {
+          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
+            allEffects.push(effect)
+          }
+        }
+      }
+    }
+
+    // Check each effect for ability modifications
+    for (const effect of allEffects) {
+      if (!effect.changes) continue
+
+      for (const change of effect.changes) {
+        const key = change.key
+        // Match patterns like system.abilities.str.value or system.abilities.str.mod
+        const match = key.match(/^system\.abilities\.(\w+)\.(value|mod|max)$/)
+        if (match) {
+          const abilityId = match[1]
+          if (abilityEffects[abilityId]) {
+            // Check if this effect is already added for this ability
+            const existing = abilityEffects[abilityId].find(e => e.id === effect.id)
+            if (!existing) {
+              abilityEffects[abilityId].push({
+                id: effect.id,
+                name: effect.name,
+                img: effect.img || 'icons/svg/aura.svg',
+                value: change.value,
+                mode: change.mode
+              })
+            }
+          }
+        }
+      }
+    }
+
+    return abilityEffects
+  }
+
+  /**
+   * Collect active effects that modify saving throws
+   * Returns an object keyed by save ID with arrays of effect info
+   */
+  #prepareSaveEffects () {
+    const saveEffects = {
+      ref: [],
+      frt: [],
+      wil: []
+    }
+
+    const actor = this.options.document
+
+    // Collect all active effects (from actor and transferred from items)
+    const allEffects = []
+
+    // Effects directly on actor
+    for (const effect of actor.effects) {
+      if (!effect.disabled && !effect.isSuppressed) {
+        allEffects.push(effect)
+      }
+    }
+
+    // Effects from equipped items that transfer
+    for (const item of actor.items) {
+      const isEquipped = item.system?.equipped ?? true
+      if (isEquipped) {
+        for (const effect of item.effects) {
+          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
+            allEffects.push(effect)
+          }
+        }
+      }
+    }
+
+    // Check each effect for save modifications
+    for (const effect of allEffects) {
+      if (!effect.changes) continue
+
+      for (const change of effect.changes) {
+        const key = change.key
+        // Match patterns like system.saves.ref.otherBonus or system.saves.ref.value
+        const match = key.match(/^system\.saves\.(\w+)\.(otherBonus|value)$/)
+        if (match) {
+          const saveId = match[1]
+          if (saveEffects[saveId]) {
+            // Check if this effect is already added for this save
+            const existing = saveEffects[saveId].find(e => e.id === effect.id)
+            if (!existing) {
+              saveEffects[saveId].push({
+                id: effect.id,
+                name: effect.name,
+                img: effect.img || 'icons/svg/aura.svg',
+                value: change.value,
+                mode: change.mode
+              })
+            }
+          }
+        }
+      }
+    }
+
+    return saveEffects
+  }
+
+  /**
    * Search the object and then its parent elements for a dataset attribute
    @param {Object} element    The starting element
    @param {String} attribute  The name of the dataset attribute
@@ -551,6 +697,68 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
+   * Create a new active effect
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<Document[]>}
+   **/
+  static async #effectCreate (event, target) {
+    const effectData = {
+      name: game.i18n.localize('DCC.EffectNew'),
+      label: game.i18n.localize('DCC.EffectNew'),
+      img: 'icons/svg/aura.svg',
+      origin: this.options.document.uuid,
+      changes: [],
+      disabled: false,
+      duration: {},
+      flags: {}
+    }
+    return this.options.document.createEmbeddedDocuments('ActiveEffect', [effectData])
+  }
+
+  /**
+   * Edit an active effect
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectEdit (event, target) {
+    const effectId = DCCActorSheet.findDataset(target, 'effectId')
+    const effect = this.options.document.effects.get(effectId)
+    await effect.sheet.render({ force: true })
+  }
+
+  /**
+   * Delete an active effect
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectDelete (event, target) {
+    const effectId = DCCActorSheet.findDataset(target, 'effectId')
+    const effect = this.options.document.effects.get(effectId)
+    await effect.deleteDialog()
+  }
+
+  /**
+   * Toggle an active effect on/off
+   @this {DCCActorSheet}
+   @param {PointerEvent} event   The originating click event
+   @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   @returns {Promise<void>}
+   **/
+  static async #effectToggle (event, target) {
+    const effectId = DCCActorSheet.findDataset(target, 'effectId')
+    const effect = this.options.document.effects.get(effectId)
+    await effect.update({ disabled: !effect.disabled })
+    // Force a re-render to update the UI immediately
+    this.render(false)
+  }
+
+  /**
    * Create a macro when a rollable element is dragged
    * @param {Event} event
    * @override */
@@ -561,6 +769,21 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!li.dataset.drag) return
 
     let dragData = null
+
+    // Handle ActiveEffect drags
+    if (li.dataset.dragType === 'ActiveEffect') {
+      const effectId = li.dataset.effectId
+      const effect = this.options.document.effects.get(effectId)
+      if (effect) {
+        dragData = {
+          type: 'ActiveEffect',
+          uuid: effect.uuid,
+          data: effect.toObject()
+        }
+        event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+      }
+      return
+    }
 
     // Use data-drag-action for specific drag types
     const dragAction = li.dataset.dragAction
@@ -1115,6 +1338,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const data = foundry.applications.ux.TextEditor.getDragEventData(event)
     if (!data) return false
 
+    // Handle ActiveEffect drops - create a copy on the actor
+    if (data.type === 'ActiveEffect') {
+      return this._onDropActiveEffect(event, data)
+    }
+
     // Convert 'DCC Item' back to 'Item' for inventory drops
     if (data.type === 'DCC Item') {
       data.type = 'Item'
@@ -1140,6 +1368,37 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     return result
+  }
+
+  /**
+   * Handle dropping an ActiveEffect onto the actor
+   * Creates a copy of the effect on the actor (does not remove from source)
+   * @param {DragEvent} event - The drop event
+   * @param {Object} data - The drag data containing the effect
+   * @returns {Promise<ActiveEffect|boolean>}
+   */
+  async _onDropActiveEffect (event, data) {
+    const actor = this.options.document
+    if (!actor.isOwner) return false
+
+    // Get the effect data
+    const effectData = data.data
+    if (!effectData) return false
+
+    // Prepare the effect data for creation on the actor
+    const createData = {
+      name: effectData.name,
+      img: effectData.img || 'icons/svg/aura.svg',
+      origin: actor.uuid, // Set origin to this actor
+      changes: effectData.changes || [],
+      disabled: effectData.disabled || false,
+      duration: effectData.duration || {},
+      transfer: false, // Effects directly on actors don't transfer
+      flags: effectData.flags || {}
+    }
+
+    // Create the effect on the actor
+    return actor.createEmbeddedDocuments('ActiveEffect', [createData])
   }
 }
 

@@ -107,6 +107,18 @@ class DCCActor extends Actor {
       this.system.skills.detectSecretDoors.value = '+4'
     }
 
+    // For NPCs, add otherBonus to displayed save values (after effects are applied)
+    if (this.isNPC) {
+      const saves = this.system.saves
+      for (const saveId of ['ref', 'frt', 'wil']) {
+        const otherBonus = parseInt(saves[saveId].otherBonus || 0)
+        if (otherBonus !== 0) {
+          const baseValue = parseInt(saves[saveId].value || 0)
+          saves[saveId].value = baseValue + otherBonus
+        }
+      }
+    }
+
     // Migrate base speed if not present based on current speed
     if (!this.system.attributes.speed.base) {
       this.update({
@@ -149,6 +161,197 @@ class DCCActor extends Actor {
         this.system.attributes.init.value += this.system.details.level.value
       }
     }
+  }
+
+  /**
+   * Apply active effects to the actor
+   * Collects effects from the actor and equipped items, then applies them
+   * Called automatically by core Foundry prepareData
+   */
+  applyActiveEffects () {
+    // Create a deep copy of the base system data to preserve the original
+    const overrides = {}
+
+    // Collect all active effects
+    const effects = []
+
+    // Add effects directly on the actor
+    for (const effect of this.effects) {
+      if (!effect.disabled && !effect.isSuppressed) {
+        effects.push(effect)
+      }
+    }
+
+    // Add effects from equipped items that transfer to the actor
+    for (const item of this.items) {
+      // Check if item is equipped (for equipment) or always apply (for conditions, etc)
+      const isEquipped = item.system?.equipped ?? true
+
+      if (isEquipped) {
+        for (const effect of item.effects) {
+          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
+            effects.push(effect)
+          }
+        }
+      }
+    }
+
+    // Sort effects by mode to apply them in the correct order
+    // Order: custom (0), multiply (1), add (2), upgrade (3), downgrade (4), override (5)
+    effects.sort((a, b) => {
+      const aChanges = Array.from(a.changes || [])
+      const bChanges = Array.from(b.changes || [])
+      const aMode = Math.min(...aChanges.map(c => c.mode), 5)
+      const bMode = Math.min(...bChanges.map(c => c.mode), 5)
+      return aMode - bMode
+    })
+
+    // Apply each effect
+    for (const effect of effects) {
+      if (!effect.changes) continue
+
+      for (const change of effect.changes) {
+        const key = change.key
+        const mode = change.mode || CONST.ACTIVE_EFFECT_MODES.ADD
+        const value = change.value
+
+        // Handle different change modes
+        try {
+          switch (mode) {
+            case CONST.ACTIVE_EFFECT_MODES.CUSTOM:
+              // Custom mode - let modules handle this
+              this._applyCustomEffect(key, value)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.ADD:
+              // Add numeric value
+              this._applyAddEffect(key, value, overrides)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
+              // Multiply by value
+              this._applyMultiplyEffect(key, value, overrides)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.OVERRIDE:
+              // Override the value completely
+              this._applyOverrideEffect(key, value, overrides)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
+              // Use the higher value
+              this._applyUpgradeEffect(key, value, overrides)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
+              // Use the lower value
+              this._applyDowngradeEffect(key, value, overrides)
+              break
+          }
+        } catch (err) {
+          console.warn(`DCC | Failed to apply active effect change to ${key}:`, err)
+        }
+      }
+    }
+  }
+
+  /**
+   * Apply a custom active effect
+   * @private
+   */
+  _applyCustomEffect (key, value) {
+    // Handle DCC-specific custom effects here
+    // For example, effects that modify dice chains or special class abilities
+
+    // This is where we'd handle special DCC mechanics that don't fit the standard modes
+    // Examples: modifying dice chains, adjusting spell check results, etc.
+  }
+
+  /**
+   * Apply an additive active effect
+   * @private
+   */
+  _applyAddEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const delta = Number(value)
+    if (isNaN(delta)) return
+
+    const newValue = current + delta
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
+   * Apply a multiplicative active effect
+   * @private
+   */
+  _applyMultiplyEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const multiplier = Number(value)
+    if (isNaN(multiplier)) return
+
+    const newValue = current * multiplier
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
+   * Apply an override active effect
+   * @private
+   */
+  _applyOverrideEffect (key, value, overrides) {
+    // For override, parse the value appropriately
+    let parsedValue = value
+
+    // Try to parse as number if it looks numeric
+    if (!isNaN(Number(value)) && value !== '') {
+      parsedValue = Number(value)
+    }
+
+    foundry.utils.setProperty(this, key, parsedValue)
+    overrides[key] = parsedValue
+  }
+
+  /**
+   * Apply an upgrade active effect
+   * @private
+   */
+  _applyUpgradeEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const compareValue = Number(value)
+    if (isNaN(compareValue)) return
+
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = Math.max(currentNumber, compareValue)
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
+   * Apply a downgrade active effect
+   * @private
+   */
+  _applyDowngradeEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const compareValue = Number(value)
+    if (isNaN(compareValue)) return
+
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = Math.min(currentNumber, compareValue)
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
   }
 
   /**

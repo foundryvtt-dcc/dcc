@@ -116,15 +116,25 @@
       <div class="saving-throw-box grid-col-gap-5" id="{{id}}" data-save="{{id}}">
         <input id="system.saves.{{id}}.value" value="{{numberFormat save.value decimals=0 sign=true}}"
                name="system.saves.{{id}}.value" data-dtype="Number" placeholder="0">
-        <label for="system.saves.{{id}}.value" class="rollable" title="{{localize 'DCC.RollSavingThrowHint'}}" data-action="rollSavingThrow" data-drag="true" data-drag-action="save">
-          {{#if isFortitude}}{{localize "DCC.SavesFortitudeAbbr"}}{{else}}{{localize save.label}}{{/if}}
-        </label>
+        <div class="save-label-effects">
+          <label for="system.saves.{{id}}.value" class="rollable" title="{{localize 'DCC.RollSavingThrowHint'}}" data-action="rollSavingThrow" data-drag="true" data-drag-action="save">
+            {{localize abbr}}
+          </label>
+          {{#if effects.length}}
+          <div class="save-effects">
+            {{#each effects}}
+            <img src="{{this.img}}" class="save-effect-icon"
+                 data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+            {{/each}}
+          </div>
+          {{/if}}
+        </div>
       </div>
     {{/inline}}
     <div class="saving-throws grid-col-span-2">
-      {{> save id='frt' save=system.saves.frt isFortitude=true}}
-      {{> save id='ref' save=system.saves.ref}}
-      {{> save id='wil' save=system.saves.wil }}
+      {{> save id='frt' save=system.saves.frt effects=saveEffects.frt abbr="DCC.SavesFortitudeAbbr"}}
+      {{> save id='ref' save=system.saves.ref effects=saveEffects.ref abbr="DCC.SavesReflexAbbr"}}
+      {{> save id='wil' save=system.saves.wil effects=saveEffects.wil abbr="DCC.SavesWillAbbr"}}
     </div>
 
     {{!-- Special --}}

@@ -1,0 +1,176 @@
+# Active Effects
+
+Active Effects allow you to create temporary or permanent modifications to character attributes. They can represent conditions, magic item bonuses, spell effects, or any other modifier that changes a character's statistics.
+
+## Overview
+
+Active Effects can modify any numeric value on an actor's data. They can come from:
+
+- **Conditions** (e.g., stunned, blessed, cursed)
+- **Magic items** (e.g., +1 Strength while equipped)
+- **Spell effects** (e.g., -2 to next attack)
+- **Class abilities** or other sources
+
+## Accessing Effects
+
+### On Actor Sheets
+
+1. Open any character sheet (player or NPC)
+2. Click the **Effects** tab
+3. Use the **Create Effect** button to add new effects
+
+### On Item Sheets
+
+1. Open any item (weapon, armor, equipment, etc.)
+2. Click the **Effects** tab
+3. Use the **Create Effect** button to add effects that will apply when the item is equipped
+
+## Creating an Effect
+
+When you create a new effect, you can configure:
+
+- **Name**: A descriptive name for the effect
+- **Icon**: An image to represent the effect
+- **Changes**: The actual modifications to apply (see Common Attribute Keys below)
+- **Duration**: How long the effect lasts
+- **Disabled**: Toggle the effect on/off without deleting it
+
+### Adding Changes
+
+Each change consists of:
+
+- **Attribute Key**: The path to the value you want to modify
+- **Change Mode**: How to apply the modification (Add, Multiply, Override, etc.)
+- **Effect Value**: The value to use for the modification
+
+## Common Use Cases
+
+### Example 1: "-2 to next attack" (Temporary Penalty)
+
+1. Go to the actor's **Effects** tab
+2. Click **Create Effect**
+3. In the effect editor:
+   - Name: "-2 Attack Penalty"
+   - Add two changes:
+     - Key: `system.details.attackHitBonus.melee.adjustment`, Mode: Add, Value: -2
+     - Key: `system.details.attackHitBonus.missile.adjustment`, Mode: Add, Value: -2
+   - Set duration as needed (e.g., 1 round)
+
+### Example 2: "+1 Str while equipped" (Magic Item Effect)
+
+1. Open the item and go to its **Effects** tab
+2. Click **Create Effect**
+3. In the effect editor:
+   - Name: "Strength Enhancement"
+   - Add change: Key: `system.abilities.str.value`, Mode: Add, Value: 1
+   - Enable **Transfer to Actor** (should be enabled by default for items)
+4. The effect will automatically apply when the item is equipped and remove when unequipped
+
+## Effect Icons on Ability Scores
+
+When an effect modifies an ability score, a small icon appears in the upper-right corner of that ability's box on the character sheet. Hovering over the icon shows the effect name and value, making it easy to see at a glance which abilities are being modified.
+
+## Dragging and Copying Effects
+
+Effects can be dragged between actors and items to create copies:
+
+- **From Item to Actor**: Drag an effect from an item's Effects tab onto an actor sheet
+- **From Actor to Actor**: Drag an effect from one actor's Effects tab onto another actor sheet
+- **From Actor to Item**: Drag an effect from an actor's Effects tab onto an item sheet
+- **From Item to Item**: Drag an effect from one item's Effects tab onto another item sheet
+
+When you drag an effect, a **copy** is created on the target - the original effect remains on the source. This is useful for:
+
+- Sharing standard effects between characters
+- Creating template effects on items that can be copied to actors
+- Quickly applying the same condition to multiple characters
+
+### Creating an Effect Library
+
+To create a reusable library of effects:
+
+1. Create one or more items (equipment type works well) to serve as "containers"
+2. Name them descriptively (e.g., "Combat Conditions", "Spell Effects", "Status Conditions")
+3. Add all your commonly-used effects to these items
+4. When you need an effect, drag it from the library item onto your actor
+
+You can organize your library items in a Compendium for easy access across worlds. In Foundry VTT v14, direct Compendiums of Active Effects will be supported, but until then this item-based approach works well.
+
+### Using DFreds Convenient Effects
+
+If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfreds-convenient-effects) module installed, you can create custom effects that work with DCC actors. This module provides a convenient UI for managing and applying effects, and any effects you create using DCC attribute keys will apply correctly to your characters.
+
+## Common Attribute Keys
+
+### Ability Scores
+- `system.abilities.str.value` - Current Strength
+- `system.abilities.str.max` - Maximum Strength
+- `system.abilities.agl.value` - Current Agility
+- `system.abilities.sta.value` - Current Stamina
+- `system.abilities.per.value` - Current Personality
+- `system.abilities.int.value` - Current Intelligence
+- `system.abilities.lck.value` - Current Luck
+
+### Combat Attributes
+- `system.attributes.ac.value` - Armor Class
+- `system.attributes.ac.otherMod` - AC Other Modifier
+- `system.attributes.hp.value` - Current HP
+- `system.attributes.hp.max` - Maximum HP
+- `system.attributes.hp.temp` - Temporary HP
+- `system.attributes.speed.value` - Movement Speed
+- `system.attributes.init.value` - Initiative Bonus
+- `system.attributes.init.otherMod` - Initiative Other Modifier
+
+### Attack & Damage Modifiers
+- `system.details.attackHitBonus.melee.adjustment` - Melee Attack Bonus
+- `system.details.attackDamageBonus.melee.adjustment` - Melee Damage Bonus
+- `system.details.attackHitBonus.missile.adjustment` - Missile Attack Bonus
+- `system.details.attackDamageBonus.missile.adjustment` - Missile Damage Bonus
+
+### Saving Throws
+- `system.saves.frt.otherBonus` - Fortitude Save Bonus
+- `system.saves.ref.otherBonus` - Reflex Save Bonus
+- `system.saves.wil.otherBonus` - Will Save Bonus
+
+### Class-Specific
+- `system.class.spellCheckOtherMod` - Spell Check Bonus
+- `system.class.luckDie` - Luck Die (for Thieves/Halflings)
+- `system.attributes.critical.die` - Critical Hit Die
+- `system.attributes.fumble.die` - Fumble Die
+
+## Effect Modes
+
+Active Effects support different modes of application:
+
+- **Add**: Adds the value to the current attribute (most common)
+- **Multiply**: Multiplies the attribute by the value
+- **Override**: Replaces the attribute with this value
+- **Upgrade**: Uses the higher of current value or effect value
+- **Downgrade**: Uses the lower of current value or effect value
+- **Custom**: For special DCC-specific effects (requires module support)
+
+## Duration
+
+Effects can have various durations:
+
+- **Permanent**: Always active (good for magic items)
+- **Temporary**: Active for a specific duration
+- **Until Rest**: Lasts until the character rests
+- **Special**: Custom duration tracking
+
+## Tips
+
+1. **Stacking**: Multiple effects with the same attribute key will stack if using "Add" mode
+2. **Equipment**: Effects on items only apply when the item is equipped (for armor/weapons)
+3. **Order of Operations**: Effects are applied in this order: Custom, Multiply, Add, Upgrade/Downgrade, Override
+4. **Testing**: Use the browser console to check `actor.system` to find the exact path for attributes
+
+## Troubleshooting
+
+If an effect isn't working:
+
+1. Check the attribute key is spelled correctly (case-sensitive)
+2. Ensure the effect is not disabled
+3. For item effects, verify the item is equipped
+4. Check the console for any error messages
+5. Verify the value is appropriate for the mode (numbers for Add/Multiply)

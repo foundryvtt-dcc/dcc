@@ -1393,6 +1393,10 @@ a.inline-roll {
     content: '\f6eb';
   }
 
+  a[data-tab='effects']::before {
+    content: '\e59f';
+  }
+
   a[data-tab='elf']::before {
     content: '\f56b';
   }
@@ -1697,6 +1701,7 @@ a.inline-roll {
       border: 5px solid var(--system-border-color);
       display: grid;
       grid-row-end: span 3;
+      position: relative;
 
       input {
         align-self: center;
@@ -1705,6 +1710,28 @@ a.inline-roll {
         font-size: 30px;
         height: 46px;
         width: 47px;
+      }
+
+      .ability-effects {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .ability-effect-icon {
+          width: 16px;
+          height: 16px;
+          border: 0;
+          border-radius: 2px;
+          cursor: help;
+          opacity: 0.8;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
       }
     }
   }
@@ -1873,14 +1900,40 @@ a.inline-roll {
     height: 59px;
     text-align: left;
 
-    input {
-      align-self: center;
-      background: var(--system-background);
-      border-radius: 100px;
-      font-size: 18px;
-      height: 50px;
-      margin-left: 5px;
-      width: 50px;
+    .save-value {
+      position: relative;
+
+      input {
+        align-self: center;
+        background: var(--system-background);
+        border-radius: 100px;
+        font-size: 18px;
+        height: 50px;
+        margin-left: 5px;
+        width: 50px;
+      }
+
+      .save-effects {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .save-effect-icon {
+          width: 14px;
+          height: 14px;
+          border: 0;
+          border-radius: 2px;
+          cursor: help;
+          opacity: 0.8;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
+      }
     }
 
     label {
@@ -1976,7 +2029,7 @@ a.inline-roll {
         align-items: center;
         background: var(--system-frame-background);
         display: grid;
-        grid-template-columns: 24px 40px;
+        grid-template-columns: 24px auto;
         text-align: left;
 
         input {
@@ -1989,10 +2042,34 @@ a.inline-roll {
           width: 20px;
         }
 
-        label {
-          font-size: 11px;
-          letter-spacing: 1px;
-          color: var(--system-frame-title-color);
+        .save-label-effects {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          label {
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--system-frame-title-color);
+          }
+
+          .save-effects {
+            display: flex;
+            gap: 2px;
+
+            .save-effect-icon {
+              width: 12px;
+              height: 12px;
+              border: 0;
+              border-radius: 2px;
+              cursor: help;
+              opacity: 0.8;
+
+              &:hover {
+                opacity: 1;
+              }
+            }
+          }
         }
       }
     }
@@ -2061,5 +2138,167 @@ a.inline-roll {
     font-family: var(--system-data-font), serif;
     margin-top: 8px;
     padding: 8px;
+  }
+}
+
+/* Effects styling */
+.dcc {
+  .item-list-effects {
+    grid-template-columns: 30px 1fr 80px 70px 120px;
+
+    .effect-item {
+      display: grid;
+      grid-template-columns: subgrid;
+      align-items: center;
+      justify-items: center;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+  }
+
+  .effect-icon {
+    width: 24px;
+    height: 24px;
+    border: 0;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+
+  .effect-name {
+    text-align: left;
+    justify-self: start;
+  }
+
+  .effect-controls {
+    display: flex;
+    gap: 2px;
+
+    button {
+      width: 20px;
+      height: 20px;
+      border: 1px solid var(--system-border-color);
+      border-radius: 3px;
+      background: var(--system-input-background);
+      color: var(--system-primary-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+
+      &:hover {
+        background: var(--system-secondary-color);
+        border-color: var(--system-accent-color);
+      }
+    }
+
+    .effect-disabled {
+      opacity: 0.5;
+    }
+  }
+
+  .effects-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 20px;
+    color: var(--system-secondary-color);
+    font-style: italic;
+
+    .empty-message {
+      p {
+        margin: 5px 0;
+      }
+    }
+  }
+
+  .effects-summary {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--system-border-color);
+
+    h4 {
+      margin: 0 0 10px 0;
+      font-family: var(--system-label-font), serif;
+      font-size: 16px;
+    }
+  }
+
+  .effects-overview {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .effect-summary {
+    margin-bottom: 5px;
+
+    strong {
+      font-family: var(--system-label-font), serif;
+      font-size: 14px;
+    }
+  }
+
+  .transfer-note {
+    font-style: italic;
+    color: var(--system-accent-color);
+  }
+
+  .change-summary {
+    font-family: monospace;
+  }
+
+  .transfer-info {
+    background: var(--system-value-display-background-color);
+    border: 1px solid var(--system-border-color);
+    border-radius: 3px;
+    padding: 10px;
+    margin-bottom: 15px;
+
+    .help-text {
+      margin: 0;
+      font-size: 12px;
+      color: var(--system-secondary-color);
+    }
+  }
+}
+
+/* Item effects - different grid for items with Transfer column */
+.dcc.sheet.item {
+  #effects {
+    .box-title {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+
+    .transfer-info {
+      grid-column: 1 / -1;
+    }
+
+    .item-list-effects {
+      grid-column: 1 / -1;
+      grid-template-columns: 30px 1fr 60px 80px 70px 120px;
+
+      .item-list-header {
+        display: grid;
+        grid-template-columns: subgrid;
+      }
+
+      .effect-item {
+        display: grid;
+        grid-template-columns: subgrid;
+        align-items: center;
+        justify-items: center;
+        margin-bottom: 5px;
+        text-align: center;
+      }
+
+      .effects-empty {
+        display: grid;
+        grid-template-columns: subgrid;
+      }
+    }
+
+    .effects-summary {
+      grid-column: 1 / -1;
+    }
   }
 }
