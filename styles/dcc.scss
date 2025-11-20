@@ -9,7 +9,7 @@
 }
 
 @font-face {
-  font-family: 'Book Antiqua';
+  font-family: 'Book Antiqua', Palatino, 'Palatino Linotype', serif;
   src: url('fonts/Book-Antiqua.otf') format('opentype');
 }
 
@@ -35,9 +35,15 @@
   font-weight: bold;
 }
 
+.read-aloud {
+  font-family: var(--system-data-font), serif;
+  font-weight: bolder;
+  font-style: italic;
+  font-size: var(--system-data-font-size);
+}
+
 /* Common style elements */
 .dcc {
-
   color: var(--system-primary-color);
 
   .box-inner {
@@ -304,7 +310,7 @@
 
   .window-content {
     padding: 1px 8px 8px 8px;
-    overflow: scroll;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 
@@ -395,7 +401,6 @@
     p {
       margin-bottom: clamp(0.8em, 2vw, 1.4em);
       margin-top: 0;
-      font-weight: 550;
     }
 
 
@@ -498,23 +503,24 @@ a.inline-roll {
   font-family: var(--system-label-font), serif;
 }
 
+// Chat messages follow the core app theme (body's theme) regardless of parent application theme
 .chat-message {
-  background: var(--system-background);
-  color: var(--system-primary-color);
+  background: var(--chat-background);
+  color: var(--chat-primary-color);
 
   .message-header {
-    color: var(--system-primary-color);
+    color: var(--chat-primary-color);
   }
 
   .table-draw {
-    color: var(--system-primary-color);
+    color: var(--chat-primary-color);
 
     .table-description {
-      color: var(--system-primary-color);
+      color: var(--chat-primary-color);
 
       .content-link {
         background: transparent;
-        color: var(--system-primary-color);
+        color: var(--chat-primary-color);
       }
     }
   }
@@ -553,7 +559,7 @@ a.inline-roll {
     list-style: none;
     margin-top: 12px;
     padding: 0;
-    color: var(--system-primary-color);
+    color: var(--chat-primary-color);
 
     .table-result {
       display: grid;
@@ -843,14 +849,16 @@ a.inline-roll {
 
     > .grid-container {
       display: grid;
-      grid-template-rows: 1fr 1fr;
+      grid-template-rows: 1fr auto 0.75fr;
       height: 100%;
       grid-row-gap: 0;
 
       // Corruption section
-      > .corruption-wizard {
+      > .corruption {
         display: grid;
         grid-template-rows: auto 1fr;
+        min-height: 0;
+        overflow: hidden;
 
         .editor,
         prose-mirror {
@@ -1037,7 +1045,7 @@ a.inline-roll {
 }
 
 .dcc .item-list-spells {
-  grid-template-columns: 30px 22px 33px 1fr 1fr 40px 39px;
+  grid-template-columns: 30px 22px 40px 1fr 1fr 40px 39px;
 
   .spell-item-button {
     background-image: var(--system-d20-icon);
@@ -1890,8 +1898,8 @@ a.inline-roll {
 .dcc {
   .npc-grid {
     display: grid;
-    height: 100%;
     grid-template-rows: 18px 81px 1fr minmax(40px, min-content) minmax(40px, min-content);
+    min-height: 100%;
 
     textarea {
       background: none;

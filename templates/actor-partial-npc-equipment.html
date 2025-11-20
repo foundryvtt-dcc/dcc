@@ -76,7 +76,10 @@
   {{/inline}}
 
   {{!-- Equipment --}}
-  <div class="box-title">{{localize "DCC.Equipment"}}</div>
+  <div class="box-title">
+    {{localize "DCC.Equipment"}}
+    <span class="data-font" style="float: right; margin-right: 5px;">{{numberFormat equipment.totalWeight decimals=2 sign=false}}</span>
+  </div>
   <ol class="item-list box-border">
     {{> ItemHeader type="equipment"}}
     {{#each equipment.equipment as |equipment id|}}

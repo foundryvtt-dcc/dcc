@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, ui, Handlebars */
+/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, ui, Handlebars, Roll */
 
 /**
  * DCC
@@ -237,6 +237,16 @@ Hooks.once('ready', async function () {
   // Add status icons
   defineStatusIcons()
 
+  // Apply dark theme icon filter settings
+  if (game.settings.get('dcc', 'disableDarkThemeIconFilter')) {
+    document.body.classList.add('disable-dark-theme-icon-filter')
+  }
+
+  // Apply chat cards theme settings
+  if (!game.settings.get('dcc', 'chatCardsUseAppTheme')) {
+    document.body.classList.add('chat-cards-use-ui-theme')
+  }
+
   // Show welcome dialog if enabled
   if (game.user.isGM && game.settings.get(pubConstants.name, 'showWelcomeDialog')) {
     new WelcomeDialog().render(true)
@@ -293,6 +303,12 @@ function checkMigrations () {
 }
 
 function registerTables () {
+  // Helper function to check if a table name contains "Disapproval" or the localized version
+  const isDisapprovalTable = (tableName) => {
+    const disapprovalText = game.i18n.localize('DCC.Disapproval')
+    return tableName.includes('Disapproval') || tableName.includes(disapprovalText)
+  }
+
   // Create manager for disapproval tables and register the system setting
   CONFIG.DCC.disapprovalPacks = new TablePackManager({
     updateHook: async (manager) => {
@@ -300,14 +316,29 @@ function registerTables () {
       CONFIG.DCC.disapprovalTables = {}
 
       // For each valid pack, update the list of disapproval tables available to a cleric
+      // Using table name as key to enable de-duplication
       for (const packName of manager.packs) {
         const pack = game.packs.get(packName)
         if (pack) {
-          for (const [key, value] of pack.index.entries()) {
-            CONFIG.DCC.disapprovalTables[key] = {
+          for (const value of pack.index.values()) {
+            // Use table name as key for de-duplication
+            CONFIG.DCC.disapprovalTables[value.name] = {
               name: value.name,
               path: `${packName}.${value.name}`
             }
+          }
+        }
+      }
+
+      // Add world tables to the disapproval tables list if they contain "Disapproval" in their name
+      // World tables will overwrite compendium tables with the same name (preferred)
+      // If multiple world tables have the same name, the last one processed wins
+      for (const table of game.tables) {
+        if (isDisapprovalTable(table.name)) {
+          // Use table name as key - this overwrites compendium tables with same name
+          CONFIG.DCC.disapprovalTables[table.name] = {
+            name: table.name,
+            path: table.name
           }
         }
       }
@@ -416,6 +447,7 @@ async function processSpellCheck (actor, spellData) {
   const roll = spellData.roll
   const item = spellData.item
   const flavor = spellData.flavor
+  const forceCrit = spellData.forceCrit || false
 
   let crit = false
   let fumble = false
@@ -426,7 +458,55 @@ async function processSpellCheck (actor, spellData) {
     await roll.evaluate()
   }
 
-  const naturalRoll = roll.dice[0].total
+  let naturalRoll = roll.dice[0].total
+
+  // Force a critical for testing (shift-click)
+  if (forceCrit && naturalRoll !== 1) {
+    const originalDieRoll = naturalRoll
+    naturalRoll = 20
+    roll.terms[0].results[0].result = 20
+    roll.terms[0]._total = 20
+    roll._total += (20 - originalDieRoll)
+  }
+
+  // Check for Patron Taint
+  let patronTaint = null
+  if (item && actor) {
+    const patronField = actor.system.class?.patron
+    const spellName = item.name || ''
+    const associatedPatron = item.system?.associatedPatron || ''
+
+    // Check if actor has a patron and spell is patron-related
+    if (patronField && (spellName.includes('Patron') || associatedPatron)) {
+      // Roll d100 for patron taint
+      const patronTaintRoll = new Roll('1d100')
+      await patronTaintRoll.evaluate()
+
+      // Get current patron taint chance (parse percentage string like "1%")
+      const patronTaintChanceStr = actor.system.class?.patronTaintChance || '1%'
+      const currentChance = parseInt(patronTaintChanceStr) || 1
+
+      // Check if taint occurred (roll <= chance)
+      const tainted = patronTaintRoll.total <= currentChance
+
+      // Calculate new patron taint chance
+      const newChance = currentChance + 1
+
+      // Store patron taint data for display
+      patronTaint = {
+        roll: patronTaintRoll.total,
+        tainted,
+        oldChance: currentChance,
+        newChance,
+        description: tainted
+          ? `<strong>${game.i18n.localize('DCC.PatronTaintChance')}!</strong>`
+          : game.i18n.localize('DCC.NoPatronTaint')
+      }
+
+      // Update actor's patron taint chance
+      await actor.update({ 'system.class.patronTaintChance': `${newChance}%` })
+    }
+  }
 
   try {
     // Apply the roll to the table if present
@@ -434,28 +514,24 @@ async function processSpellCheck (actor, spellData) {
       result = rollTable.getResultsForRoll(roll.total)
 
       if (roll.dice.length > 0) {
-        // Next three lines are used to force crit for testing
-        // roll._total += (20-roll.terms[0].total)
-        // roll.terms[0].results[0].result = 20
-        // roll.terms[0]._total = 20
-
         if (naturalRoll === 1) {
           const fumbleResult = rollTable.getResultsForRoll(1)
           result.results = fumbleResult.results
           fumble = true
         } else if (naturalRoll === 20) {
           if (actor.type === 'Player') {
-            const critRoll = roll.total + actor.system.details.level.value
-            result.results = rollTable.getResultsForRoll(critRoll)
+            const levelValue = parseInt(actor.system.details.level.value)
+            const critRoll = roll.total + levelValue
+            result = rollTable.getResultsForRoll(critRoll)
             roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
-            roll.terms.push(new foundry.dice.terms.NumericTerm({ number: parseInt(actor.system.details.level.value) }))
-            roll._formula += ` + ${actor.system.details.level.value}`
-            roll._total += actor.system.details.level.value
+            roll.terms.push(new foundry.dice.terms.NumericTerm({ number: levelValue }))
+            roll._formula += ` + ${levelValue}`
+            roll._total += levelValue
             crit = true
           }
         }
       }
-      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, { crit, fumble, item })
+      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, { crit, fumble, item, patronTaint })
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
@@ -694,6 +770,59 @@ Hooks.on('createItem', (entity) => {
   }
 })
 
+// Add newly created world RollTables to disapproval tables list if they contain "Disapproval"
+Hooks.on('createRollTable', (table) => {
+  const disapprovalText = game.i18n.localize('DCC.Disapproval')
+  if (table.name.includes('Disapproval') || table.name.includes(disapprovalText)) {
+    // Use table name as key for de-duplication with compendium tables
+    CONFIG.DCC.disapprovalTables[table.name] = {
+      name: table.name,
+      path: table.name
+    }
+  }
+})
+
+// Remove deleted world RollTables from disapproval tables list
+Hooks.on('deleteRollTable', (table) => {
+  // Use table name as key to find and delete
+  delete CONFIG.DCC.disapprovalTables[table.name]
+})
+
+// Update world RollTable entries when name changes
+Hooks.on('updateRollTable', (table, changes) => {
+  if (changes.name) {
+    const disapprovalText = game.i18n.localize('DCC.Disapproval')
+
+    // Helper function to check if a table name contains "Disapproval"
+    const isDisapprovalTable = (tableName) => {
+      return tableName.includes('Disapproval') || tableName.includes(disapprovalText)
+    }
+
+    // Rebuild world tables list to handle renames correctly
+    // First, remove all world table entries (we'll re-add the valid ones)
+    const compendiumTables = {}
+    for (const [key, value] of Object.entries(CONFIG.DCC.disapprovalTables)) {
+      // Keep compendium tables (they have paths with dots like "pack.table")
+      if (value.path.includes('.')) {
+        compendiumTables[key] = value
+      }
+    }
+
+    // Reset to only compendium tables
+    CONFIG.DCC.disapprovalTables = compendiumTables
+
+    // Re-add all world disapproval tables
+    for (const worldTable of game.tables) {
+      if (isDisapprovalTable(worldTable.name)) {
+        CONFIG.DCC.disapprovalTables[worldTable.name] = {
+          name: worldTable.name,
+          path: worldTable.name
+        }
+      }
+    }
+  }
+})
+
 Hooks.on('applyActiveEffect', (actor, change) => {
   const { key, value } = change
   let update = null
@@ -709,6 +838,31 @@ Hooks.on('applyActiveEffect', (actor, change) => {
     }
   }
   return update
+})
+
+// Sync prototype token image with actor image when actor image is changed
+Hooks.on('preUpdateActor', async (actor, changes, options, userId) => {
+  // Only process if this client initiated the change
+  if (userId !== game.user.id) return
+
+  // Check if the actor image is being changed
+  if (!changes.img) return
+
+  // Get the current prototype token texture
+  const currentTokenImg = actor.prototypeToken?.texture?.src || ''
+
+  // Define default images that should be replaced
+  const defaultImages = [
+    'icons/svg/mystery-man.svg',
+    EntityImages.imageForActor(actor.type),
+    EntityImages.imageForActor('default')
+  ]
+
+  // Only update token if it's using a default image or is empty
+  if (!currentTokenImg || defaultImages.includes(currentTokenImg)) {
+    // Update the prototype token image to match the new actor image
+    changes['prototypeToken.texture.src'] = changes.img
+  }
 })
 
 // Handle Active Effect duration automation

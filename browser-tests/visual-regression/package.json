@@ -12,6 +12,6 @@
     "test:debug": "DEBUG=pw:webserver playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.44.0"
+    "@playwright/test": "^1.56.1"
   }
 }

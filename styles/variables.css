@@ -12,7 +12,8 @@
   --system-checkbox-disabled-color: #000;
   --system-checkbox-size: 18px;
   --system-d20-icon: url('../../../icons/svg/d20-black.svg');
-  --system-data-font: 'Book Antiqua', serif;
+  --system-data-font: 'Book Antiqua', Palatino, serif;
+  --system-data-font-size: 16px;
   --system-frame-background: url('images/denim.png');
   --system-frame-border: 4px solid var(--system-border-color);
   --system-frame-title-color: #c8d7bd;
@@ -31,6 +32,16 @@
   --system-value-display-background-color: #d0cec3;
 }
 
+/* Chat card colors - scoped to body to follow app theme, not UI theme */
+body.theme-light {
+  --chat-background: url('/ui/parchment.jpg');
+  --chat-primary-color: #222;
+}
+
+body.theme-dark {
+  --chat-background: #0b0a13;
+  --chat-primary-color: #d0beaa;
+}
 
 /*Override for dark theme */
 .theme-dark {
@@ -47,7 +58,7 @@
   --system-frame-border: 4px solid var(--system-border-color);
   --system-frame-title-color: #0c0c0c;
   --system-icon-filter: sepia(1) brightness(0.7);
-  --system-input-background: solid var(--system-input-background-color);
+  --system-input-background: var(--system-input-background-color);
   --system-input-background-color: #323138;
   --system-input-border: 1px solid var(--system-border-color);
   --system-input-focus-outline-color: var(--system-border-color);
@@ -58,4 +69,15 @@
   --system-right-arrow-button-image: url('./images/right-arrow-grey.svg');
   --system-secondary-color: #343339;
   --system-value-display-background-color: #17161e;
+}
+
+/* When the setting to disable icon filter is enabled, remove the filter */
+.disable-dark-theme-icon-filter.theme-dark {
+  --system-icon-filter: none;
+}
+
+/* When chat cards should use UI theme instead of app theme */
+.chat-cards-use-ui-theme #interface {
+  --chat-background: var(--system-background);
+  --chat-primary-color: var(--system-primary-color);
 }

@@ -333,7 +333,9 @@ class DCCActorSheetWizard extends DCCActorSheet {
     const context = await super._prepareContext(options)
 
     await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink'))
+      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
+      'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
+      'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink'))
     })
 
     if (this.options.document.system.details.sheetClass !== 'Wizard') {
@@ -416,6 +418,32 @@ class DCCActorSheetDwarf extends DCCActorSheet {
         'system.config.showBackstab': false,
         'system.config.showSpells': false
       })
+
+      // Check if the dwarf has a shield bash weapon
+      const shieldBashName = game.i18n.localize('DCC.ShieldBash')
+      const hasBashWeapon = this.options.document.items.some(item =>
+        item.type === 'weapon' &&
+        item.name === shieldBashName
+      )
+
+      // If no shield bash weapon exists, create it
+      if (!hasBashWeapon) {
+        // Create the item after this render completes
+        await this.options.document.createEmbeddedDocuments('Item', [{
+          name: shieldBashName,
+          type: 'weapon',
+          img: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
+          system: {
+            melee: true,
+            damage: '1d3',
+            config: {
+              actionDieOverride: '1d14'
+            }
+          }
+        }])
+        // Explicitly trigger a re-render to show the new item
+        this.render(false)
+      }
     }
 
     return context

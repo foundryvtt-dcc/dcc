@@ -1,4 +1,4 @@
-/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game */
+/* global actorUpdateMock, rollToMessageMock, collectionFindMock, dccRollCreateRollMock, uiNotificationsWarnMock, game, ChatMessage */
 /**
  * Tests for Actor.js using Foundry Mocks.
  * Mocks for Foundry Classes/Functions are found in __mocks__/foundry.js
@@ -42,6 +42,7 @@ test('prepareData sets ability modifiers', () => {
 
 test('roll ability check', async () => {
   dccRollCreateRollMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
 
   await actor.rollAbilityCheck('str')
   expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
@@ -68,7 +69,7 @@ test('roll ability check', async () => {
         formula: '-1'
       },
       {
-        apply: true,
+        apply: false,
         formula: '+0',
         type: 'CheckPenalty'
       }
@@ -80,8 +81,14 @@ test('roll ability check', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith({
     flavor: 'Strength Check',
     speaker: actor,
-    flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck', checkPenaltyCouldApply: true, 'dcc.isAbilityCheck': true }
-  })
+    flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck', checkPenaltyCouldApply: true, 'dcc.isAbilityCheck': true },
+    system: {
+      checkPenaltyRollIndex: null
+    }
+  }, { create: false })
+  expect(chatMessageCreateSpy).toHaveBeenCalledTimes(1)
+
+  chatMessageCreateSpy.mockRestore()
 
   // Check that rollUnder option is interpreted correctly
   await actor.rollAbilityCheck('lck', { rollUnder: true })
@@ -102,8 +109,11 @@ test('roll ability check', async () => {
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
     flavor: 'Luck CheckRollUnder',
     speaker: actor,
-    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder', 'dcc.isAbilityCheck': true }
-  })
+    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheckRollUnder', 'dcc.isAbilityCheck': true },
+    system: {
+      checkPenaltyRollIndex: null
+    }
+  }, { create: false })
 
   // ...both ways
   await actor.rollAbilityCheck('lck', { rollUnder: false })
@@ -139,8 +149,11 @@ test('roll ability check', async () => {
   expect(rollToMessageMock).toHaveBeenLastCalledWith({
     flavor: 'Luck Check',
     speaker: actor,
-    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck', 'dcc.isAbilityCheck': true }
-  })
+    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck', 'dcc.isAbilityCheck': true },
+    system: {
+      checkPenaltyRollIndex: null
+    }
+  }, { create: false })
 })
 
 test('roll saving throw', async () => {

@@ -9,6 +9,14 @@
   {{#if mercurial.description }}
     <div class="mercurial"><strong>{{localize "DCC.MercurialEffect"}}:</strong> {{{ mercurial.description }}}</div>
   {{/if}}
+  {{#if patronTaint }}
+    <div class="mb-8">
+      <strong>{{localize "DCC.PatronTaint"}}:</strong>
+      {{{ patronTaint.description }}} ({{localize "DCC.Roll"}}: {{ patronTaint.roll }})
+      <br/>
+      {{localize "DCC.PatronTaintChanceIncreased" chance=(concat patronTaint.newChance "%")}}
+    </div>
+  {{/if}}
 
   {{{ rollHTML }}}
 

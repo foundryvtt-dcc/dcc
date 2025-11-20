@@ -24,7 +24,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     tag: 'form',
     position: {
       width: 560,
-      height: 450
+      height: 455
     },
     actions: {
       applyDisapproval: this.#applyDisapproval,
@@ -32,10 +32,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
       configureSavingThrows: this.#configureSavingThrows,
       decreaseQty: this.#decreaseQty,
-      effectCreate: this.#effectCreate,
-      effectEdit: this.#effectEdit,
-      effectDelete: this.#effectDelete,
-      effectToggle: this.#effectToggle,
       increaseQty: this.#increaseQty,
       itemCreate: this.#itemCreate,
       itemEdit: this.#itemEdit,
@@ -396,6 +392,18 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
     }
 
+    // Calculate total weight of equipment items
+    let totalWeight = 0
+    for (const item of equipment) {
+      const weight = parseFloat(item.system.weight) || 0
+      const quantity = parseInt(item.system.quantity) || 1
+      totalWeight += weight * quantity
+    }
+    // Ensure totalWeight is a valid number
+    if (!Number.isFinite(totalWeight)) {
+      totalWeight = 0
+    }
+
     // Return the inventory object
     return {
       'equipment.ammunition': ammunition,
@@ -404,6 +412,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       'equipment.mounts': mounts,
       'equipment.treasure': treasure,
       'equipment.weapons': weapons,
+      'equipment.totalWeight': totalWeight,
       skills,
       spells
     }
@@ -793,6 +802,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           dragData = {
             type: dragType,
             actorId,
+            uuid: item.uuid,
             data: item,
             system: {
               item
@@ -876,7 +886,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static fillRollOptions (event) {
     const rollModifierDefault = game.settings.get('dcc', 'showRollModifierByDefault')
     return {
-      showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey)
+      showModifierDialog: rollModifierDefault ^ (event.ctrlKey || event.metaKey),
+      forceCrit: event.shiftKey
     }
   }
 
@@ -1178,8 +1189,26 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       data.type = 'Item'
     }
 
+    // Check if this is an item being dragged from another actor
+    const isItemTransfer = (data.type === 'Item') && data.actorId && (data.actorId !== this.options.document.id)
+
+    // Store the source actor and item ID before delegating to parent
+    let sourceActor = null
+    let sourceItemId = null
+    if (isItemTransfer) {
+      sourceActor = game.actors.get(data.actorId)
+      sourceItemId = data.data._id
+    }
+
     // Handle different drop types - delegate to base class
-    return super._onDrop?.(event)
+    const result = await super._onDrop?.(event)
+
+    // If this was an item transfer from another actor, delete it from the source
+    if (isItemTransfer && sourceActor && sourceItemId && result !== false) {
+      await sourceActor.deleteEmbeddedDocuments('Item', [sourceItemId])
+    }
+
+    return result
   }
 }
 

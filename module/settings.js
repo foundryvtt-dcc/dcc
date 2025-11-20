@@ -300,6 +300,32 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Disable icon filter in dark theme
+   */
+  game.settings.register('dcc', 'disableDarkThemeIconFilter', {
+    name: 'DCC.SettingDisableDarkThemeIconFilter',
+    hint: 'DCC.SettingDisableDarkThemeIconFilterHint',
+    scope: 'client',
+    type: Boolean,
+    default: false,
+    config: true,
+    requiresReload: true
+  })
+
+  /**
+   * Chat cards use app theme instead of UI theme
+   */
+  game.settings.register('dcc', 'chatCardsUseAppTheme', {
+    name: 'DCC.SettingChatCardsUseAppTheme',
+    hint: 'DCC.SettingChatCardsUseAppThemeHint',
+    scope: 'client',
+    type: Boolean,
+    default: true,
+    config: true,
+    requiresReload: true
+  })
+
+  /**
    * Enable strict critical hit rules (proportional crit range for different die sizes)
    */
   game.settings.register('dcc', 'strictCriticalHits', {

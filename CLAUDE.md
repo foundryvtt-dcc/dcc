@@ -64,6 +64,7 @@ The `template.json` defines the data structure for Actors and Items:
 - **Translation Utility**: Use `npm run compare-lang` to check all language files or `node module/compare-lang-files.js <reference> <target>` for custom comparisons
 - **Key Format**: Nested objects use dot notation (e.g., "DCC.Settings.SomeKey")
 - **Adding New Keys**: Always add to en.json first, then translate to other language files
+- **Important**: When adding new keys to language files, always translate them to that language when adding them - never leave keys untranslated
 
 ### Important Notes
 

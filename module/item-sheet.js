@@ -22,8 +22,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     classes: ['dcc', 'sheet', 'item'],
     tabs: [{ navSelector: '.sheet-tabs', contentSelector: '.tab-body', initial: 'main' }],
     position: {
-      width: 475,
-      height: 442
+      width: 520,
+      height: 465
     },
     form: {
       submitOnChange: true
@@ -66,6 +66,10 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     description: {
       id: 'description',
       template: 'systems/dcc/templates/item-sheet-partial-description.html'
+    },
+    judgeDescription: {
+      id: 'judge-description',
+      template: 'systems/dcc/templates/item-sheet-partial-judge-description.html'
     }
   }
 
@@ -166,6 +170,11 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         tabs.tabs.splice(2, 0, { id: 'mercurial', group: 'sheet', label: 'DCC.Mercurial' })
       }
 
+      // Add judge-only tab for GMs
+      if (game.user.isGM) {
+        tabs.tabs.push({ id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' })
+      }
+
       tabs.initial = 'spell'
     } else if (this.document.type === 'level') {
       // Level items have multiple tabs for alignment data
@@ -176,10 +185,22 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         { id: 'levelChaotic', group: 'sheet', label: 'DCC.LevelChaotic' },
         { id: 'description', group: 'sheet', label: 'DCC.Description' }
       ]
+
+      // Add judge-only tab for GMs
+      if (game.user.isGM) {
+        tabs.tabs.push({ id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' })
+      }
+
       tabs.initial = 'level'
     } else {
       // Other item types use the standard configuration
       tabs.tabs[0] = { id: this.document.type, group: 'sheet', label: `DCC.${initCapTypeName}` }
+
+      // Add judge-only tab for GMs
+      if (game.user.isGM) {
+        tabs.tabs.push({ id: 'judge-description', group: 'sheet', label: 'DCC.JudgeOnlyDescription' })
+      }
+
       tabs.initial = this.document.type
     }
 

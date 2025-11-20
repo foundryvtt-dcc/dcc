@@ -77,7 +77,6 @@ export const highlightCriticalSuccessFailure = function (message, html) {
  * @return {Array}              The extended options Array including new context choices
  */
 export const addChatMessageContextOptions = function (html, options) {
-  console.log('APPLY CHAT OPTIONS')
   const canApply = function (li) {
     if (canvas.tokens.controlled.length === 0) return false
     if (li.querySelector('.damage-applyable')) return true
@@ -132,6 +131,18 @@ function applyChatCardDamage (roll, multiplier) {
 export const emoteAbilityRoll = function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isAbilityCheck')) return
 
+  let checkPenaltyNote = ''
+  if (message.system?.checkPenaltyRollIndex !== null && message.system?.checkPenaltyRollIndex !== undefined) {
+    const checkPenaltyRoll = message.rolls[message.system.checkPenaltyRollIndex]
+    if (checkPenaltyRoll) {
+      const checkPenaltyRollHTML = checkPenaltyRoll.toAnchor().outerHTML
+      const formattedNote = game.i18n.format('DCC.AbilityCheckPenaltyNote', { total: checkPenaltyRollHTML })
+      if (formattedNote) {
+        checkPenaltyNote = ' ' + formattedNote
+      }
+    }
+  }
+
   const abilityRollEmote = game.i18n.format(
     'DCC.RolledAbilityEmote',
     {
@@ -139,7 +150,7 @@ export const emoteAbilityRoll = function (message, html, data) {
       abilityInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
       abilityName: message.flavor
     }
-  )
+  ) + checkPenaltyNote
 
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {

@@ -34,8 +34,10 @@
     "url": "git+https://github.com/foundryvtt-dcc/dcc.git"
   },
   "scripts": {
+    "check": "npm run format && npm run scss && npm run test && npm run compare-lang",
     "format": "standard --fix && stylelint \"**/*.scss\" --fix",
-    "test": "vitest module/",
+    "test": "vitest run module/",
+    "test-watch": "vitest module/",
     "scss": "sass styles/dcc.scss styles/dcc.css",
     "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css",
     "todb": "node module/compilePacks.js",
