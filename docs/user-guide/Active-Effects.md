@@ -85,6 +85,21 @@ When you drag an effect, a **copy** is created on the target - the original effe
 - Creating template effects on items that can be copied to actors
 - Quickly applying the same condition to multiple characters
 
+### Creating an Effect Library
+
+To create a reusable library of effects:
+
+1. Create one or more items (equipment type works well) to serve as "containers"
+2. Name them descriptively (e.g., "Combat Conditions", "Spell Effects", "Status Conditions")
+3. Add all your commonly-used effects to these items
+4. When you need an effect, drag it from the library item onto your actor
+
+You can organize your library items in a Compendium for easy access across worlds. In Foundry VTT v14, direct Compendiums of Active Effects will be supported, but until then this item-based approach works well.
+
+### Using DFreds Convenient Effects
+
+If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfreds-convenient-effects) module installed, you can create custom effects that work with DCC actors. This module provides a convenient UI for managing and applying effects, and any effects you create using DCC attribute keys will apply correctly to your characters.
+
 ## Common Attribute Keys
 
 ### Ability Scores
