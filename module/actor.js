@@ -154,6 +154,7 @@ class DCCActor extends Actor {
   /**
    * Apply active effects to the actor
    * Collects effects from the actor and equipped items, then applies them
+   * Called automatically by core Foundry prepareData
    */
   applyActiveEffects () {
     // Create a deep copy of the base system data to preserve the original

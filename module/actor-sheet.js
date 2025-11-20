@@ -46,7 +46,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollSavingThrow: this.#rollSavingThrow,
       rollSkillCheck: this.#rollSkillCheck,
       rollSpellCheck: this.#rollSpellCheck,
-      rollWeaponAttack: this.#rollWeaponAttack
+      rollWeaponAttack: this.#rollWeaponAttack,
+      effectCreate: this.#effectCreate,
+      effectEdit: this.#effectEdit,
+      effectDelete: this.#effectDelete,
+      effectToggle: this.#effectToggle
     },
     form: {
       // handler: DCCActorSheet.#onSubmitForm,
