@@ -62,3 +62,6 @@ packs/**/MANIFEST*
 
 # Claude local settings
 .claude/settings.local.json
+
+# Playwright MCP temporary files
+.playwright-mcp/

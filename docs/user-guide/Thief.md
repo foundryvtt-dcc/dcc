@@ -1,17 +1,33 @@
 # Thief
 
-First, you need to select the "Thief" sheet via the "Sheet" selector in the upper right of the character sheet titlebar:
+## Setting Up a Thief
 
-<img width="321" alt="image" src="https://github.com/foundryvtt-dcc/dcc/assets/49695/a2bb6371-bd02-4730-a4bc-7a8688395d9a">
+First, select the "Thief" sheet type:
 
-Then, you need to choose "show backstab" for the sheet using the "Config" button in the upper right of the character sheet titlebar:
+1. Click the **Toggle Controls** button (three vertical dots) in the title bar
+2. Click **Configure Sheet**
+3. In the **This Sheet** dropdown, select **Thief**
+4. Click **Save Sheet Configuration**
 
-<img width="368" alt="image" src="https://github.com/foundryvtt-dcc/dcc/assets/49695/685221f6-0b79-47d7-8456-8a656c3fb424">
+## Enabling Backstab
 
-To enable backstab for a weapon, edit the weapon and check the "backstab" checkbox:
-<img width="481" alt="image" src="https://github.com/foundryvtt-dcc/dcc/assets/49695/b6bbd110-9af3-4d5e-8a2d-248fa14e1a71">
+To use the backstab feature:
 
+1. Click the **Toggle Controls** button in the title bar
+2. Click **Config**
+3. Check **Show Backstab**
+4. Click **Save Config**
 
-This should enable a new icon on the equipment tab for backstab.
+To enable backstab for a specific weapon:
 
-You can roll Thief skills from the Thief tab.
+1. Edit the weapon (click the pencil icon)
+2. Check the **Backstab** checkbox
+3. Enter the backstab damage dice
+
+This will add a backstab icon next to the weapon on the Equipment tab. Backstab attacks automatically roll as critical hits with the extra backstab damage.
+
+## Thief Skills
+
+You can roll Thief skills (Pick Lock, Sneak Silently, Hide in Shadows, etc.) from the **Thief** tab. Each skill shows the dice and modifier used for the roll.
+
+The Luck Die field in the Thief tab sets the die used for spending Luck on rolls (thieves can add their Luck die to any roll by spending 1 point of Luck).

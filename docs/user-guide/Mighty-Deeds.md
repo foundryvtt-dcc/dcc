@@ -1,20 +1,32 @@
 # Mighty Deeds
 
-To use **Mighty Deeds**, set **Roll Attack Bonus** to **Manual Roll** in the **Config** menu off your sheet. (see right)
+Warriors and Dwarves can perform Mighty Deeds of Arms. To use this feature, you need to configure your character's Attack Bonus Mode.
 
-![Mighty Deeds](images/mighty_deeds_setting.png)
+## Setting Up Mighty Deeds
 
-Make sure to have **Attack Bonus** on the Character tab set to the character's deed die.
+1. Click the **Toggle Controls** button (three vertical dots) in the title bar
+2. Click **Config**
+3. Set **Attack Bonus Mode** to **Roll Per Attack**
+4. Click **Save Config**
+
+This will automatically roll your deed die with every attack.
+
+## Attack Bonus Field
+
+Set the **Attack Bonus** field on the Character tab to your character's deed die (e.g., 1d3 for a level 1 Warrior).
 
 ![Attack Bonus](images/attackbonus.png)
 
-You can then use +@ab in your to hit and damage fields on your equipment - this will insert the value of whatever you last rolled for your Mighty Deed.  (see below)
+The deed die result is automatically added to your attack and damage rolls.
 
-![Weapon Mighty Deed](images/weapon_mighty_deed.png)
+## Using @ab in Weapons
 
-You then need to roll your Mighty Deed before each attack (by clicking Roll Deed Die), and the attack will then automatically include it as a bonus to hit and damage.
+You can use `+@ab` in your weapon's to hit and damage fields to include the deed die result. This is useful if you need to customize how the deed die is applied.
 
-![Mighty Deed Roll](images/mighty_deed_roll.png)
+## Automatic vs Manual Rolling
 
-To roll your Mighty Deed fresh with every attack roll, you can change **Attack Bonus Mode** to Roll Per Attack in your sheet config.
+- **Roll Per Attack** (recommended): The deed die is rolled automatically with each attack
+- **Flat Bonus**: Use this if you want to manually roll the deed die before attacking
+
+See [Advanced Character Settings](Advanced-Character-Settings.md) for more details on the Attack Bonus Mode setting.
 

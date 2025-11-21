@@ -1,5 +1,16 @@
 # Cleric
 
+## Setting Up a Cleric
+
+First, select the "Cleric" sheet type:
+
+1. Click the **Toggle Controls** button (three vertical dots) in the title bar
+2. Click **Configure Sheet**
+3. In the **This Sheet** dropdown, select **Cleric**
+4. Click **Save Sheet Configuration**
+
+## Cleric Tab
+
 The Cleric tab has the cleric-specific skills, such as Lay on Hands, Divine Aid, and Turn Unholy.
 
 ![Cleric Tab Skills](images/cleric_tab_skills.png)

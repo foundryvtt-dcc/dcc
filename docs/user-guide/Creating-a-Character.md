@@ -6,14 +6,19 @@ Click the **Actors** Directory icon in the top right, it looks like a person.
 
 Click **Create Actor**.
 
-Name your character, make sure **Player** is selected as **Type**, and click **Create New Actor**.
+Name your character, make sure **Player** is selected as **Type**, and click **Create Actor**.
 
 ![Create New Actor](images/create_actor_dialog.png)
 
-Click **Sheet**. Choose your class from the dropdown. I chose Wizard.
+## Choosing a Class
 
+To select your character's class, click the **Toggle Controls** button (three vertical dots) in the title bar of the character sheet, then click **Configure Sheet**.
+
+In the **This Sheet** dropdown, select your class (Cleric, Dwarf, Elf, Halfling, Thief, Warrior, or Wizard). Click **Save Sheet Configuration**.
 
 ![Character Class Selection](images/character_class_selection.png)
+
+The character sheet will update to show class-specific tabs and abilities.
 
 Now you can start entering stats into the boxes. The **Character** tab is fairly straightforward. Each stat has a box for the current and maximum (or initial) value to allow tracking stat loss, spellburn, luck spend, etc.
 
