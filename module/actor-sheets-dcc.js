@@ -555,6 +555,10 @@ class DCCActorSheetGeneric extends DCCActorSheet {
       id: 'wizardSpells',
       template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
     },
+    effects: {
+      id: 'effects',
+      template: 'systems/dcc/templates/partial-effects.html'
+    },
     notes: {
       id: 'notes',
       template: 'systems/dcc/templates/actor-partial-pc-notes.html'
