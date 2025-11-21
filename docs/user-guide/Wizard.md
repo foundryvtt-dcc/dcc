@@ -1,10 +1,29 @@
 # Wizard
 
-To add spells, first make sure you have a **Spell Check** value set in the **Wizard** tab of your character sheet, which will be used by spells when you roll them.
+## Setting Up a Wizard
 
-![Wizard Abilities](images/wizard_abilities.png)
+First, select the "Wizard" sheet type:
 
-To add a spell, click the **Wizard Spells** tab, then click **+ Add**. Click the pencil to fill in the details of your spell. You can click the d20 to roll a spell check for that spell.
+1. Click the **Toggle Controls** button (three vertical dots) in the title bar
+2. Click **Configure Sheet**
+3. In the **This Sheet** dropdown, select **Wizard**
+4. Click **Save Sheet Configuration**
 
-![Wizard Spell](images/wizard_spell.png)
+## Wizard Tab
+
+The **Wizard** tab shows your Spell Check calculation and Wizard-specific abilities:
+
+- **Spell Check**: Shows the die and bonuses used for spell checks (level + Intelligence modifier)
+- **Override** fields allow you to manually set values instead of using auto-calculation
+
+## Adding Spells
+
+To add a spell:
+
+1. Click the **Spells** tab
+2. Click **+ Add** in the Wizard Spells section
+3. Click the pencil icon to edit the spell details
+4. Click the d20 icon to roll a spell check for that spell
+
+Spells will use the Spell Check value from the Wizard tab when rolled.
 

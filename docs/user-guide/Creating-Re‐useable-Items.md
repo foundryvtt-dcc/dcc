@@ -1,11 +1,22 @@
 # Creating Re-useable Items
 
-You can create a weapon (mundane or magic) that can be stored in a compendium for other uses, or dragged onto a character if they have that item. 
+You can create a weapon (mundane or magic) that can be stored in a compendium for other uses, or dragged onto a character if they have that item.
 
+## Creating an Item
 
-Click the **Items Directory** tab in the top right (looks like a suitcase) and select **Create Item**. 
+1. Click the **Items Directory** tab in the sidebar (looks like a suitcase)
+2. Click **Create Item**
+3. Enter a name for the item
+4. Select the item **Type** (Weapon, Armor, Equipment, Spell, etc.)
+5. Optionally select a **Folder** to organize it
+6. Click **Create Item**
 
+![Create Item Dialog](images/create_item.png)
 
-Now you can create a weapon, just like we did earlier, but you can put it in a Compendium. You can drag it to any character sheet to give them the Weapon, Treasure, Equipment, etc. 
+## Using Re-useable Items
 
-![Reusable Item Creation](images/reusable_item_creation.png)
+Once created, you can:
+
+- **Drag to character**: Drag the item from the Items Directory onto any character sheet to give them the item
+- **Store in Compendium**: Right-click the item and export it to a compendium for use across worlds
+- **Share with players**: Items in the directory can be configured with permissions for players to use

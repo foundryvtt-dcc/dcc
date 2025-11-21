@@ -1,6 +1,12 @@
 # Advanced Character Settings
 
-Clicking **Config** on the top bar of a character sheet will allow you to configure some advanced settings:
+To access advanced character settings:
+
+1. Click the **Toggle Controls** button (three vertical dots) in the title bar
+2. Click **Config**
+
+This will open a dialog with advanced settings:
+
 
 ![Advanced Character Settings Config](images/advanced_character_settings_config.png)
 
