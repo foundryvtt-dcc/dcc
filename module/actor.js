@@ -1928,6 +1928,33 @@ class DCCActor extends Actor {
       }
     }
   }
+
+  /**
+   * Override fromImport to fix legacy item IDs that are not 16 characters
+   * Foundry v13 requires exactly 16-character alphanumeric IDs
+   * @param {object} json - The JSON data to import
+   * @returns {Promise<Document>} The created document
+   */
+  static async fromImport (json) {
+    // Fix any item IDs that are not exactly 16 characters
+    if (json.items && Array.isArray(json.items)) {
+      for (const item of json.items) {
+        if (item._id && (item._id.length !== 16 || !/^[a-zA-Z0-9]+$/.test(item._id))) {
+          // Truncate or pad the ID to 16 characters while keeping it alphanumeric
+          if (item._id.length > 16) {
+            item._id = item._id.substring(0, 16)
+          } else {
+            // Pad with random alphanumeric characters
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+            while (item._id.length < 16) {
+              item._id += chars.charAt(Math.floor(Math.random() * chars.length))
+            }
+          }
+        }
+      }
+    }
+    return super.fromImport(json)
+  }
 }
 
 export default DCCActor
