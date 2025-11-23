@@ -262,6 +262,23 @@ describe('NPC Parser Comprehensive Tests', () => {
       expect(result[0].items[1].system.damage).toBe('1d6+1')
     })
 
+    it('should parse multiple attacks with "and"', async () => {
+      const result = await parseNPCs('Test: Init +0; Atk claw +3 melee (1d4) and bite +5 melee (1d6+1); AC 10; HP 5; Act 1d20; SV Fort +0, Ref +0, Will +0; AL N.')
+      expect(result[0].items).toHaveLength(2)
+      expect(result[0].items[0].name).toBe('claw')
+      expect(result[0].items[0].system.damage).toBe('1d4')
+      expect(result[0].items[1].name).toBe('bite')
+      expect(result[0].items[1].system.damage).toBe('1d6+1')
+    })
+
+    it('should parse multiple attacks with mixed "and" and "or"', async () => {
+      const result = await parseNPCs('Test: Init +0; Atk claw +3 melee (1d4) and bite +5 melee (1d6+1) or tail +2 melee (1d8); AC 10; HP 5; Act 1d20; SV Fort +0, Ref +0, Will +0; AL N.')
+      expect(result[0].items).toHaveLength(3)
+      expect(result[0].items[0].name).toBe('claw')
+      expect(result[0].items[1].name).toBe('bite')
+      expect(result[0].items[2].name).toBe('tail')
+    })
+
     it('should parse ranged attacks', async () => {
       const result = await parseNPCs('Test: Init +0; Atk bow +4 ranged (1d6); AC 10; HP 5; Act 1d20; SV Fort +0, Ref +0, Will +0; AL N.')
       expect(result[0].items[0].system.melee).toBe(false)
