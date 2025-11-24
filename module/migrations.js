@@ -128,35 +128,30 @@ const migrateActorData = function (actor) {
 
   // If migrating from 0.17 or earlier add useDisapprovalRange to cleric skills
   if ((currentVersion <= 0.17) || (currentVersion == null)) {
-    updateData.update({
-      'system.skills.divineAid.useDisapprovalRange': true,
-      'system.skills.turnUnholy.useDisapprovalRange': true,
-      'system.skills.layOnHands.useDisapprovalRange': true
-    })
+    updateData['system.skills.divineAid.useDisapprovalRange'] = true
+    updateData['system.skills.turnUnholy.useDisapprovalRange'] = true
+    updateData['system.skills.layOnHands.useDisapprovalRange'] = true
   }
 
   // If migrating from earlier than 0.50.0 copy attackBonus to attackHitBonus
   if ((currentVersion <= 0.50) || (currentVersion == null)) {
-    updateData.update({
-      'system.details.attackHitBonus.melee.value': actor.system.details.attackBonus,
-      'system.details.attackHitBonus.missile.value': actor.system.details.attackBonus
-    })
-    if (this.options.template === 'systems/dcc/templates/actor-sheet-npc.html' ||
-            this.options.template === 'systems/dcc/templates/actor-sheet-zero-level.html') {
-      this.options.template = 'systems/dcc/templates/actor-partial-generic.html'
-    }
+    updateData['system.details.attackHitBonus.melee.value'] = actor.system.details.attackBonus
+    updateData['system.details.attackHitBonus.missile.value'] = actor.system.details.attackBonus
   }
 
   if (actor.system.details.luckyRoll) {
-    updateData.update({
-      'system.details.birthAugur': actor.system.details.luckyRoll
-    })
+    updateData['system.details.birthAugur'] = actor.system.details.luckyRoll
   }
 
   if (!actor.system?.details?.alignment) {
-    updateData.update({
-      'system.details.alignment': 'l'
-    })
+    updateData['system.details.alignment'] = 'l'
+  }
+
+  // If migrating from earlier than 0.65.0, set base speed from current speed if not present
+  if (currentVersion < 0.65) {
+    if (!actor.system?.attributes?.speed?.base && actor.system?.attributes?.speed?.value) {
+      updateData['system.attributes.speed.base'] = actor.system.attributes.speed.value
+    }
   }
 
   // Migrate Owned Items
