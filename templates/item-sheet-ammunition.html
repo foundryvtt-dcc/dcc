@@ -21,10 +21,10 @@
         {{{descriptionHTML}}}
       </div>
     </div>
-    <div class="box-border grid-col-span-3" style="max-height: 127px;">
+    <div class="box-border grid-col-span-3" style="max-height: 127px; overflow: hidden;">
       <div class="box-title">{{localize "DCC.Image"}}</div>
       <div class="p-5">
-        <img src="{{document.img}}" data-action="editImage" data-edit="img" title="{{document.name}}" alt="{{document.name}}"/>
+        <img class="item-img" src="{{document.img}}" data-action="editImage" data-edit="img" title="{{document.name}}" alt="{{document.name}}"/>
       </div>
     </div>
 

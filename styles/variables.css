@@ -1,7 +1,7 @@
 /* System Theme Variables */
 :root {
   --system-accent-color: var(--system-primary-color);
-  --system-background-art-filter: sepia(1) hue-rotate(20deg) saturate(90);
+  --system-background-art-filter: none;
   --system-background: url('/ui/parchment.jpg');
   --system-backstab-button-image: url('./images/backstab.png');
   --system-border-color: #333230;
@@ -47,6 +47,7 @@ body.theme-dark {
 .theme-dark {
   --system-accent-color: #ef4444;
   --system-background: #0b0a13;
+  --system-background-art-filter: sepia(1) hue-rotate(20deg) saturate(90);
   --system-backstab-button-image: url('./images/backstab-grey.svg');
   --system-border-color: #525252;
   --system-checkbox-background-color: var(--system-input-background);

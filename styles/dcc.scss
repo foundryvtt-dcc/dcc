@@ -1146,7 +1146,11 @@ a.inline-roll {
 
 
   .item-img {
+    display: block;
+    margin: 0 auto;
     max-height: 64px;
+    max-width: 100%;
+    object-fit: contain;
   }
 
   .item-values {
