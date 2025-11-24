@@ -1,0 +1,125 @@
+{
+  "id": "dcc",
+  "title": "Dungeon Crawl Classics",
+  "description": "Dungeon Crawl Classics from Goodman Games",
+  "version": "0.64.6",
+  "compatibility": {
+    "maximum": "13",
+    "minimum": "13",
+    "verified": "13"
+  },
+  "authors": [
+    {
+      "name": "DCC Foundry Volunteer Team (https://discord.com/channels/170995199584108546/826931749221040138)"
+    },
+    {
+      "name": "Tim L. White",
+      "email": "tim@cyface.com"
+    },
+    {
+      "name": "Steve Barnett",
+      "email": "mooped@gmail.com"
+    },
+    {
+      "name": "Christian Ovsenik",
+      "email": "ceovsenik@gmail.com"
+    }
+  ],
+  "esmodules": [
+    "module/dcc.js"
+  ],
+  "flags": {
+    "hotReload": {
+      "extensions": [
+        "js",
+        "css",
+        "html",
+        "json"
+      ],
+      "paths": [
+        "lang",
+        "templates",
+        "styles"
+      ]
+    }
+  },
+  "styles": [
+    {
+      "src": "styles/variables.css",
+      "layer": "variables"
+    },
+    {
+      "src": "styles/dcc.css",
+      "layer": "system"
+    }
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "de",
+      "name": "Deutsch",
+      "path": "lang/de.json"
+    },
+    {
+      "lang": "es",
+      "name": "Español",
+      "path": "lang/es.json"
+    },
+    {
+      "lang": "fr",
+      "name": "Français",
+      "path": "lang/fr.json"
+    },
+    {
+      "lang": "it",
+      "name": "Italiano",
+      "path": "lang/it.json"
+    },
+    {
+      "lang": "pl",
+      "name": "Polski",
+      "path": "lang/pl.json"
+    }
+  ],
+  "packs": [
+    {
+      "name": "dcc-userguide",
+      "label": "User Guide",
+      "path": "packs/dcc-userguide.db",
+      "system": "dcc",
+      "type": "JournalEntry"
+    },
+    {
+      "name": "dcc-macros",
+      "label": "DCC Macros",
+      "path": "packs/dcc-macros.db",
+      "system": "dcc",
+      "type": "Macro"
+    }
+  ],
+  "relationships": {
+    "systems": [],
+    "requires": [],
+    "conflicts": [],
+    "flags": {}
+  },
+  "grid": {
+    "distance": 5,
+    "units": "ft"
+  },
+  "background": "systems/dcc/styles/images/dcc-background.webp",
+  "primaryTokenAttribute": "attributes.hp",
+  "secondaryTokenAttribute": "abilities.lck.value",
+  "socket": true,
+  "initiative": "@attributes.init.die + @attributes.init.value",
+  "url": "https://github.com/foundryvtt-dcc/dcc",
+  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.64.6/system.json",
+  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.64.6/dcc.zip",
+  "protected": false,
+  "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
+  "license": "LICENSE.txt"
+}
