@@ -166,6 +166,9 @@ class DCCActor extends Actor {
    * Called automatically by core Foundry prepareData
    */
   applyActiveEffects () {
+    // Call parent to ensure proper document lifecycle
+    super.applyActiveEffects()
+
     // Create a deep copy of the base system data to preserve the original
     const overrides = {}
 
