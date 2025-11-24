@@ -746,7 +746,7 @@ Hooks.on('dcc.setTurnUnholyTable', (value, fromSystemSetting = false) => {
 })
 
 // Entity pre-creation hooks - set default images before creation to avoid race conditions
-Hooks.on('preCreateActor', (document, data, options, userId) => {
+Hooks.on('preCreateActor', (document, data, options) => {
   // Assign an appropriate DCC actor image if not set
   if (game.user.isGM && !data.img) {
     const img = EntityImages.imageForActor(document.type)
@@ -762,7 +762,7 @@ Hooks.on('preCreateActor', (document, data, options, userId) => {
   }
 })
 
-Hooks.on('preCreateItem', (document, data, options, userId) => {
+Hooks.on('preCreateItem', (document, data, options) => {
   if (!game.user.isGM || data.img) { return }
 
   // Assign an appropriate DCC item image
