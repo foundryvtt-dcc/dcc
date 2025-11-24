@@ -745,28 +745,30 @@ Hooks.on('dcc.setTurnUnholyTable', (value, fromSystemSetting = false) => {
   }
 })
 
-// Entity creation hook
-Hooks.on('createActor', (entity) => {
-  if (!game.user.isGM || entity.img) { return }
+// Entity pre-creation hooks - set default images before creation to avoid race conditions
+Hooks.on('preCreateActor', (document, data, options) => {
+  // Assign an appropriate DCC actor image if not set
+  if (game.user.isGM && !data.img) {
+    const img = EntityImages.imageForActor(document.type)
+    if (img) {
+      document.updateSource({ img })
+    }
+  }
 
-  // Assign an appropriate DCC actor image
-  const img = EntityImages.imageForActor(entity.type)
-  if (img) {
-    entity.update({
-      img
-    })
+  // Set Player actor prototype tokens to Link Actor Data by default
+  // Only for brand-new actors (not duplicates or imports)
+  if (!options.keepId && document.type === 'Player' && !document.name.includes('Item Pile')) {
+    document.updateSource({ 'prototypeToken.actorLink': true })
   }
 })
 
-Hooks.on('createItem', (entity) => {
-  if (!game.user.isGM || entity.img) { return }
+Hooks.on('preCreateItem', (document, data, options) => {
+  if (!game.user.isGM || data.img) { return }
 
   // Assign an appropriate DCC item image
-  const img = EntityImages.imageForItem(entity.type)
+  const img = EntityImages.imageForItem(document.type)
   if (img) {
-    entity.update({
-      img
-    })
+    document.updateSource({ img })
   }
 })
 
@@ -920,20 +922,6 @@ Hooks.on('updateCombat', async (combat, changed, options, userId) => {
         effects: effectNames
       }))
     }
-  }
-})
-
-// Set Player actor prototype tokens to Link Actor Data by default
-Hooks.on('createActor', async (actor, options, userId) => {
-  // Only proceed if this is the user who triggered the creation
-  // This prevents the code from running multiple times on different clients
-  if (userId !== game.user.id) return
-
-  // Check if this is a brand-new actor (not a duplicate or import)
-  // Ensure it's not the fake actor created by the Item Piles module
-  if (!options.temporary && !options.keepId && actor.type === 'Player' && !actor.name.includes(('Item Pile'))) {
-    // Update the prototypeToken to set actorLink to true
-    await actor.update({ 'prototypeToken.actorLink': true })
   }
 })
 

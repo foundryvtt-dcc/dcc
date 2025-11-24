@@ -119,12 +119,9 @@ class DCCActor extends Actor {
       }
     }
 
-    // Migrate base speed if not present based on current speed
+    // Set base speed from current speed if not present (for display purposes only)
     if (!this.system.attributes.speed.base) {
-      this.update({
-        'system.speed.base': this.system.attributes.speed.value
-      })
-      this.system.speed.base = this.system.attributes.speed.value
+      this.system.attributes.speed.base = this.system.attributes.speed.value
     }
 
     // Compute AC if required
@@ -169,6 +166,9 @@ class DCCActor extends Actor {
    * Called automatically by core Foundry prepareData
    */
   applyActiveEffects () {
+    // Call parent to ensure proper document lifecycle
+    super.applyActiveEffects()
+
     // Create a deep copy of the base system data to preserve the original
     const overrides = {}
 
@@ -1482,8 +1482,8 @@ class DCCActor extends Actor {
     // Check for halfling two-weapon fighting special note
     let twoWeaponNote = ''
     if (attackRollResult.fumble &&
-        (weapon.system?.twoWeaponPrimary || weapon.system?.twoWeaponSecondary) &&
-        this.system?.class?.className === game.i18n.localize('DCC.Halfling')) {
+      (weapon.system?.twoWeaponPrimary || weapon.system?.twoWeaponSecondary) &&
+      this.system?.class?.className === game.i18n.localize('DCC.Halfling')) {
       twoWeaponNote = game.i18n.localize('DCC.HalflingTwoWeaponFumbleNote')
     }
 

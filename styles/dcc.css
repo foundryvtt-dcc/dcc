@@ -1188,7 +1188,11 @@ a.inline-roll {
   box-shadow: none;
 }
 .dcc.item .tab-body .item-img {
+  display: block;
+  margin: 0 auto;
   max-height: 64px;
+  max-width: 100%;
+  object-fit: contain;
 }
 .dcc.item .tab-body .item-values {
   column-gap: 4px;
