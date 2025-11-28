@@ -561,7 +561,8 @@
       "spellCheck": {
         "die": "1d20",
         "value": "+0",
-        "penalty": "-0"
+        "penalty": "-0",
+        "otherBonus": ""
       },
       "manifestation": {
         "value": "",

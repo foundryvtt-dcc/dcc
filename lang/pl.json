@@ -623,6 +623,8 @@
   "DCC.SpellCheckNonSpellWarning": "Nie można rzucić testu czaru z przedmiotem nie będącym czarem",
   "DCC.SpellCheckOtherMod": "Inny Modyfikator",
   "DCC.SpellCheckOtherModHint": "Modyfikator do Rzutów na Czary niepochodzący z cechy lub poziomu, który powinien być uwzględniony w auto-obliczeniach",
+  "DCC.SpellOtherBonus": "Inny Bonus",
+  "DCC.SpellOtherBonusHint": "Bonus do rzutu na ten czar (np. bonus elfa 1. poziomu)",
   "DCC.SpellDetails": "Szczegóły Czaru",
   "DCC.SpellDuration": "Czas Trwania",
   "DCC.SpellLevelShort": "Poziom",
