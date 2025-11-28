@@ -1614,6 +1614,155 @@ a.inline-roll {
 }
 
 /* ----------------------------------------- */
+/*  Spell Duel Dialog                         */
+/* ----------------------------------------- */
+.dcc .spell-duel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dcc .spell-duel .spell-duel-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-light-tertiary);
+}
+.dcc .spell-duel .spell-duel-header button {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+.dcc .spell-duel .section-label {
+  display: block;
+  font-family: var(--system-label-font), serif;
+  font-size: 14px;
+  margin: 0 0 10px 0;
+  border-bottom: 1px solid var(--color-border-light-tertiary);
+  padding-bottom: 5px;
+}
+.dcc .spell-duel .spell-duel-participants .no-participants {
+  font-style: italic;
+  color: var(--color-text-dark-secondary);
+  text-align: center;
+}
+.dcc .spell-duel .spell-duel-participant {
+  align-items: center;
+  display: grid;
+  grid-gap: 5px;
+  grid-template-columns: 50px 1fr auto;
+  padding: 5px;
+  margin-bottom: 5px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+.dcc .spell-duel .spell-duel-participant .participant-avatar {
+  width: 50px;
+  height: 50px;
+}
+.dcc .spell-duel .spell-duel-participant .participant-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--color-border-light-tertiary);
+}
+.dcc .spell-duel .spell-duel-participant .participant-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+.dcc .spell-duel .spell-duel-participant .participant-momentum {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.dcc .spell-duel .spell-duel-participant .participant-momentum .momentum-label {
+  font-family: var(--system-label-font), serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-left: 7px;
+}
+.dcc .spell-duel .spell-duel-participant .participant-momentum .momentum-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dcc .spell-duel .spell-duel-participant .participant-momentum .momentum-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  min-width: 2em;
+  text-align: center;
+  background: var(--color-border-light-highlight);
+  padding: 2px 8px;
+  border-radius: 3px;
+  position: relative;
+}
+.dcc .spell-duel .spell-duel-participant .participant-momentum .momentum-adjust,
+.dcc .spell-duel .spell-duel-participant .participant-momentum .momentum-reset,
+.dcc .spell-duel .spell-duel-participant .participant-momentum .participant-remove {
+  cursor: pointer;
+  opacity: 0.7;
+}
+.dcc .spell-duel .spell-duel-participant .participant-momentum .momentum-adjust:hover,
+.dcc .spell-duel .spell-duel-participant .participant-momentum .momentum-reset:hover,
+.dcc .spell-duel .spell-duel-participant .participant-momentum .participant-remove:hover {
+  opacity: 1;
+}
+.dcc .spell-duel .spell-duel-participant .participant-momentum .participant-remove {
+  color: var(--color-text-negative);
+  margin-left: 5px;
+}
+.dcc .spell-duel .spell-duel-log {
+  border-top: 1px solid var(--color-border-light-tertiary);
+  padding-top: 10px;
+  font-family: var(--system-data-font), serif;
+}
+.dcc .spell-duel .spell-duel-log .log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.dcc .spell-duel .spell-duel-log .log-header .section-label {
+  margin: 0;
+  border-bottom-width: 0;
+  padding-bottom: 0;
+}
+.dcc .spell-duel .spell-duel-log .log-header .clear-log {
+  cursor: pointer;
+  opacity: 0.7;
+}
+.dcc .spell-duel .spell-duel-log .log-header .clear-log:hover {
+  opacity: 1;
+  color: var(--color-text-negative);
+}
+.dcc .spell-duel .spell-duel-log .log-entries {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 3px;
+  padding: 5px;
+}
+.dcc .spell-duel .spell-duel-log .log-entry {
+  padding: 3px 5px;
+  border-bottom: 1px solid var(--color-border-light-tertiary);
+}
+.dcc .spell-duel .spell-duel-log .log-entry:last-child {
+  border-bottom-width: 0;
+}
+.dcc .spell-duel .spell-duel-log .log-entry .log-timestamp {
+  font-size: 0.8rem;
+  color: var(--color-text-dark-secondary);
+  margin-right: 8px;
+}
+.dcc .spell-duel .spell-duel-log .log-entry .log-message {
+  color: var(--color-text-dark-primary);
+}
+
+/* ----------------------------------------- */
 /*  Actor Sheet
   /* ----------------------------------------- */
 .dcc .character .character-grid {
