@@ -613,6 +613,8 @@
   "DCC.SpellCheckNonSpellWarning": "Impossible de lancer un test d'incantation sur un objet qui n'est pas un sort.",
   "DCC.SpellCheckOtherMod": "Autre Modificateur",
   "DCC.SpellCheckOtherModHint": "Modificateur aux Tests d'Incantation qui ne provient pas de la caractéristique ou du niveau et qui devrait être inclus dans le calcul automatique",
+  "DCC.SpellOtherBonus": "Autre Bonus",
+  "DCC.SpellOtherBonusHint": "Bonus au test d'incantation de ce sort (ex. bonus d'elfe niveau 1)",
   "DCC.SpellDetails": "Détail du sort",
   "DCC.SpellDuration": "Durée",
   "DCC.SpellLevelShort": "Niveau",

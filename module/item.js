@@ -307,6 +307,16 @@ class DCCItem extends Item {
       }
     ]
 
+    // Add spell-specific other bonus if present
+    const otherBonus = this.system.spellCheck.otherBonus
+    if (otherBonus) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.SpellOtherBonus'),
+        formula: otherBonus
+      })
+    }
+
     // Clerics cannot spellburn
     if (castingMode !== 'cleric') {
       terms.push({

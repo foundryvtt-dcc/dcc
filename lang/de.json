@@ -623,6 +623,8 @@
   "DCC.SpellCheckNonSpellWarning": "Zauberwurf nicht möglich: Gegenstand ist nichtmagisch.",
   "DCC.SpellCheckOtherMod": "Sonstiger Modifikator",
   "DCC.SpellCheckOtherModHint": "Modifikator für Zauberwürfe, der nicht von Attributen oder Stufe stammt und in die automatische Berechnung einbezogen werden soll",
+  "DCC.SpellOtherBonus": "Sonstiger Bonus",
+  "DCC.SpellOtherBonusHint": "Bonus für den Zauberwurf dieses Zaubers (z.B. Elfen-Stufe-1-Bonus)",
   "DCC.SpellDetails": "Zauberdetails",
   "DCC.SpellDuration": "Dauer",
   "DCC.SpellLevelShort": "Grad",

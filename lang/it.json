@@ -623,6 +623,8 @@
   "DCC.SpellCheckNonSpellWarning": "Non è possibile effettuare un Tiro Incantesimo con un oggetto che non sia un Incantesimo.",
   "DCC.SpellCheckOtherMod": "Altro Modificatore",
   "DCC.SpellCheckOtherModHint": "Modificatore alle Prove d'Incantesimo che non proviene da abilità o livello e che dovrebbe essere incluso nel calcolo automatico",
+  "DCC.SpellOtherBonus": "Altro Bonus",
+  "DCC.SpellOtherBonusHint": "Bonus alla prova d'incantesimo di questo incantesimo (es. bonus elfo livello 1)",
   "DCC.SpellDetails": "Dettagli",
   "DCC.SpellDuration": "Durata",
   "DCC.SpellLevelShort": "Livello",
