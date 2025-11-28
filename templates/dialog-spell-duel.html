@@ -44,23 +44,5 @@
       {{/if}}
     </div>
 
-    {{#if log.length}}
-      <div class="spell-duel-log">
-        <div class="log-header">
-          <label class="section-label">{{localize 'DCC.SpellDuelLog'}}</label>
-          {{#if user.isGM}}
-            <i class="fas fa-trash-alt clear-log" data-action="clearLog" title="{{localize 'DCC.SpellDuelClearLog'}}"></i>
-          {{/if}}
-        </div>
-        <div class="log-entries">
-          {{#each log}}
-            <div class="log-entry">
-              <span class="log-timestamp">{{timestamp}}</span>
-              <span class="log-message">{{message}}</span>
-            </div>
-          {{/each}}
-        </div>
-      </div>
-    {{/if}}
   </div>
 </section>

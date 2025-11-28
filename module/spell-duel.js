@@ -3,380 +3,126 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 /**
- * Spell Duel Check Comparison Table (Table 4-5)
- * Cross-references attacker's spell check (columns) against defender's spell check (rows)
- * Returns the die type to roll on the Counterspell Power table
+ * Counterspell Power Table (Table 4-6)
+ * Full descriptions come from dcc-core-book RollTables; keys are fallback labels
  */
-const SPELL_DUEL_CHECK_COMPARISON = {
-  12: {
-    12: 'PD',
-    13: 'd3',
-    14: 'd3',
-    15: 'd4',
-    16: 'd5',
-    17: 'd5',
-    18: 'd6',
-    19: 'd6',
-    20: 'd7',
-    21: 'd7',
-    22: 'd8',
-    23: 'd8',
-    24: 'd10',
-    25: 'd10',
-    26: 'd12',
-    27: 'd12',
-    28: 'd14'
+const COUNTERSPELL_POWER_TABLE = {
+  defenderHigh: {
+    1: { key: 'DCC.SpellDuelEffectMitigate' },
+    2: { key: 'DCC.SpellDuelEffectMitigate' },
+    3: { key: 'DCC.SpellDuelEffectMitigate' },
+    4: { key: 'DCC.SpellDuelEffectMutualMitigation' },
+    5: { key: 'DCC.SpellDuelEffectMutualCancellation' },
+    6: { key: 'DCC.SpellDuelEffectPushThrough' },
+    7: { key: 'DCC.SpellDuelEffectPushThrough' },
+    8: { key: 'DCC.SpellDuelEffectOverwhelm' },
+    9: { key: 'DCC.SpellDuelEffectReflect' },
+    10: { key: 'DCC.SpellDuelEffectReflectAndOverwhelm' }
   },
-  13: {
-    12: 'd3',
-    13: 'PD',
-    14: 'd3',
-    15: 'd4',
-    16: 'd5',
-    17: 'd5',
-    18: 'd6',
-    19: 'd6',
-    20: 'd7',
-    21: 'd7',
-    22: 'd8',
-    23: 'd8',
-    24: 'd10',
-    25: 'd10',
-    26: 'd12',
-    27: 'd12',
-    28: 'd14'
-  },
-  14: {
-    12: 'd4',
-    13: 'd3',
-    14: 'PD',
-    15: 'd3',
-    16: 'd4',
-    17: 'd5',
-    18: 'd5',
-    19: 'd6',
-    20: 'd6',
-    21: 'd7',
-    22: 'd7',
-    23: 'd8',
-    24: 'd8',
-    25: 'd10',
-    26: 'd10',
-    27: 'd12',
-    28: 'd12'
-  },
-  15: {
-    12: 'd5',
-    13: 'd4',
-    14: 'd3',
-    15: 'PD',
-    16: 'd3',
-    17: 'd4',
-    18: 'd5',
-    19: 'd5',
-    20: 'd6',
-    21: 'd6',
-    22: 'd7',
-    23: 'd7',
-    24: 'd8',
-    25: 'd8',
-    26: 'd10',
-    27: 'd10',
-    28: 'd12'
-  },
-  16: {
-    12: 'd5',
-    13: 'd5',
-    14: 'd4',
-    15: 'd3',
-    16: 'PD',
-    17: 'd3',
-    18: 'd4',
-    19: 'd5',
-    20: 'd5',
-    21: 'd6',
-    22: 'd6',
-    23: 'd7',
-    24: 'd7',
-    25: 'd8',
-    26: 'd8',
-    27: 'd10',
-    28: 'd10'
-  },
-  17: {
-    12: 'd6',
-    13: 'd5',
-    14: 'd5',
-    15: 'd4',
-    16: 'd3',
-    17: 'PD',
-    18: 'd3',
-    19: 'd4',
-    20: 'd5',
-    21: 'd5',
-    22: 'd6',
-    23: 'd6',
-    24: 'd7',
-    25: 'd7',
-    26: 'd8',
-    27: 'd8',
-    28: 'd10'
-  },
-  18: {
-    12: 'd6',
-    13: 'd6',
-    14: 'd5',
-    15: 'd5',
-    16: 'd4',
-    17: 'd3',
-    18: 'PD',
-    19: 'd3',
-    20: 'd4',
-    21: 'd5',
-    22: 'd5',
-    23: 'd6',
-    24: 'd6',
-    25: 'd7',
-    26: 'd7',
-    27: 'd8',
-    28: 'd8'
-  },
-  19: {
-    12: 'd7',
-    13: 'd6',
-    14: 'd6',
-    15: 'd5',
-    16: 'd5',
-    17: 'd4',
-    18: 'd3',
-    19: 'PD',
-    20: 'd3',
-    21: 'd4',
-    22: 'd5',
-    23: 'd5',
-    24: 'd6',
-    25: 'd6',
-    26: 'd7',
-    27: 'd7',
-    28: 'd8'
-  },
-  20: {
-    12: 'd7',
-    13: 'd7',
-    14: 'd6',
-    15: 'd6',
-    16: 'd5',
-    17: 'd5',
-    18: 'd4',
-    19: 'd3',
-    20: 'PD',
-    21: 'd3',
-    22: 'd4',
-    23: 'd5',
-    24: 'd5',
-    25: 'd6',
-    26: 'd6',
-    27: 'd7',
-    28: 'd7'
-  },
-  21: {
-    12: 'd8',
-    13: 'd7',
-    14: 'd7',
-    15: 'd6',
-    16: 'd6',
-    17: 'd5',
-    18: 'd5',
-    19: 'd4',
-    20: 'd3',
-    21: 'PD',
-    22: 'd3',
-    23: 'd4',
-    24: 'd5',
-    25: 'd5',
-    26: 'd6',
-    27: 'd6',
-    28: 'd7'
-  },
-  22: {
-    12: 'd8',
-    13: 'd8',
-    14: 'd7',
-    15: 'd7',
-    16: 'd6',
-    17: 'd6',
-    18: 'd5',
-    19: 'd5',
-    20: 'd4',
-    21: 'd3',
-    22: 'PD',
-    23: 'd3',
-    24: 'd4',
-    25: 'd5',
-    26: 'd5',
-    27: 'd6',
-    28: 'd6'
-  },
-  23: {
-    12: 'd10',
-    13: 'd8',
-    14: 'd8',
-    15: 'd7',
-    16: 'd7',
-    17: 'd6',
-    18: 'd6',
-    19: 'd5',
-    20: 'd5',
-    21: 'd4',
-    22: 'd3',
-    23: 'PD',
-    24: 'd3',
-    25: 'd4',
-    26: 'd5',
-    27: 'd5',
-    28: 'd6'
-  },
-  24: {
-    12: 'd10',
-    13: 'd10',
-    14: 'd8',
-    15: 'd8',
-    16: 'd7',
-    17: 'd7',
-    18: 'd6',
-    19: 'd6',
-    20: 'd5',
-    21: 'd5',
-    22: 'd4',
-    23: 'd3',
-    24: 'PD',
-    25: 'd3',
-    26: 'd4',
-    27: 'd5',
-    28: 'd5'
-  },
-  25: {
-    12: 'd12',
-    13: 'd10',
-    14: 'd10',
-    15: 'd8',
-    16: 'd8',
-    17: 'd7',
-    18: 'd7',
-    19: 'd6',
-    20: 'd6',
-    21: 'd5',
-    22: 'd5',
-    23: 'd4',
-    24: 'd3',
-    25: 'PD',
-    26: 'd3',
-    27: 'd4',
-    28: 'd5'
-  },
-  26: {
-    12: 'd12',
-    13: 'd12',
-    14: 'd10',
-    15: 'd10',
-    16: 'd8',
-    17: 'd8',
-    18: 'd7',
-    19: 'd7',
-    20: 'd6',
-    21: 'd6',
-    22: 'd5',
-    23: 'd5',
-    24: 'd4',
-    25: 'd3',
-    26: 'PD',
-    27: 'd3',
-    28: 'd4'
-  },
-  27: {
-    12: 'd14',
-    13: 'd12',
-    14: 'd12',
-    15: 'd10',
-    16: 'd10',
-    17: 'd8',
-    18: 'd8',
-    19: 'd7',
-    20: 'd7',
-    21: 'd6',
-    22: 'd6',
-    23: 'd5',
-    24: 'd5',
-    25: 'd4',
-    26: 'd3',
-    27: 'PD',
-    28: 'd3'
-  },
-  28: {
-    12: 'd16',
-    13: 'd14',
-    14: 'd12',
-    15: 'd12',
-    16: 'd10',
-    17: 'd10',
-    18: 'd8',
-    19: 'd8',
-    20: 'd7',
-    21: 'd7',
-    22: 'd6',
-    23: 'd6',
-    24: 'd5',
-    25: 'd5',
-    26: 'd4',
-    27: 'd3',
-    28: 'PD'
+  attackerHigh: {
+    1: { key: 'DCC.SpellDuelEffectPushThrough' },
+    2: { key: 'DCC.SpellDuelEffectPushThrough' },
+    3: { key: 'DCC.SpellDuelEffectOverwhelm' },
+    4: { key: 'DCC.SpellDuelEffectOverwhelm' },
+    5: { key: 'DCC.SpellDuelEffectOverwhelm' },
+    6: { key: 'DCC.SpellDuelEffectOverwhelmAndReflect' },
+    7: { key: 'DCC.SpellDuelEffectOverwhelmAndReflect' },
+    8: { key: 'DCC.SpellDuelEffectOverwhelmAndReflect' },
+    9: { key: 'DCC.SpellDuelEffectOverwhelmAndReflect' },
+    10: { key: 'DCC.SpellDuelEffectReflectAndOverwhelm' }
   }
 }
 
 /**
- * Counterspell Power Table (Table 4-6)
+ * RollTable references for dcc-core-book integration
  */
-const COUNTERSPELL_POWER_TABLE = {
-  defenderHigh: {
-    1: { effect: 'mitigate', die: 'd4', key: 'DCC.SpellDuelMitigateD4' },
-    2: { effect: 'mitigate', die: 'd6', key: 'DCC.SpellDuelMitigateD6' },
-    3: { effect: 'mitigate', die: 'd8', key: 'DCC.SpellDuelMitigateD8' },
-    4: { effect: 'mutual_mitigation', die: 'd10', key: 'DCC.SpellDuelMutualMitigationD10' },
-    5: { effect: 'mutual_cancellation', key: 'DCC.SpellDuelMutualCancellation' },
-    6: { effect: 'push_through', die: 'd6', key: 'DCC.SpellDuelPushThroughD6' },
-    7: { effect: 'push_through', die: 'd4', key: 'DCC.SpellDuelPushThroughD4' },
-    8: { effect: 'overwhelm', key: 'DCC.SpellDuelOverwhelmDefender' },
-    9: { effect: 'reflect', key: 'DCC.SpellDuelReflect' },
-    10: { effect: 'reflect_and_overwhelm', key: 'DCC.SpellDuelReflectAndOverwhelmDefender' }
+const SPELL_DUEL_TABLES = {
+  spellDuelCheckComparison: {
+    pack: 'dcc-core-book.dcc-core-tables',
+    name: 'Table 4-5: Spell Duel Check Comparison',
+    page: 100
   },
-  attackerHigh: {
-    1: { effect: 'push_through', die: 'd4', key: 'DCC.SpellDuelPushThroughAttackerD4' },
-    2: { effect: 'push_through', die: 'd8', key: 'DCC.SpellDuelPushThroughAttackerD8' },
-    3: { effect: 'overwhelm', key: 'DCC.SpellDuelOverwhelmAttacker' },
-    4: { effect: 'overwhelm', key: 'DCC.SpellDuelOverwhelmAttacker' },
-    5: { effect: 'overwhelm', key: 'DCC.SpellDuelOverwhelmAttacker' },
-    6: { effect: 'overwhelm_and_reflect', die: 'd8', key: 'DCC.SpellDuelOverwhelmAndReflectD8' },
-    7: { effect: 'overwhelm_and_reflect', die: 'd8', key: 'DCC.SpellDuelOverwhelmAndReflectD8' },
-    8: { effect: 'overwhelm_and_reflect', die: 'd6', key: 'DCC.SpellDuelOverwhelmAndReflectD6' },
-    9: { effect: 'overwhelm_and_reflect', die: 'd4', key: 'DCC.SpellDuelOverwhelmAndReflectD4' },
-    10: { effect: 'reflect_and_overwhelm', key: 'DCC.SpellDuelReflectAndOverwhelmAttacker' }
+  counterspellDefenderHigh: {
+    pack: 'dcc-core-book.dcc-core-tables',
+    name: 'Table 4-6: Counterspell Power (Defender High)',
+    page: 101
+  },
+  counterspellAttackerHigh: {
+    pack: 'dcc-core-book.dcc-core-tables',
+    name: 'Table 4-6: Counterspell Power (Attacker High)',
+    page: 101
+  },
+  phlogistonDisturbance: {
+    pack: 'dcc-core-book.dcc-core-tables',
+    name: 'Table 4-7: Phologiston Disturbance',
+    page: 103
   }
 }
 
 /**
  * Phlogiston Disturbance Table (Table 4-7)
+ * Full descriptions come from dcc-core-book RollTables; keys are fallback labels
  */
 const PHLOGISTON_DISTURBANCE_TABLE = {
-  1: { effect: 'pocket_dimension', key: 'DCC.SpellDuelPhlogistonPocketDimension' },
-  2: { effect: 'alignment_rift', key: 'DCC.SpellDuelPhlogistonAlignmentRift' },
-  3: { effect: 'time_accelerates', key: 'DCC.SpellDuelPhlogistonTimeAccelerates' },
-  4: { effect: 'time_slows', key: 'DCC.SpellDuelPhlogistonTimeSlows' },
-  5: { effect: 'backward_loop', key: 'DCC.SpellDuelPhlogistonBackwardLoop' },
-  6: { effect: 'spells_merge', key: 'DCC.SpellDuelPhlogistonSpellsMerge' },
-  7: { effect: 'supernatural_influence', key: 'DCC.SpellDuelPhlogistonSupernaturalInfluence' },
-  8: { effect: 'supernatural_summoning', key: 'DCC.SpellDuelPhlogistonSupernaturalSummoning' },
-  9: { effect: 'demonic_invasion', key: 'DCC.SpellDuelPhlogistonDemonicInvasion' },
-  10: { effect: 'mutual_corruption', key: 'DCC.SpellDuelPhlogistonMutualCorruption' }
+  1: { key: 'DCC.SpellDuelPhlogistonEffectPocketDimension' },
+  2: { key: 'DCC.SpellDuelPhlogistonEffectAlignmentRift' },
+  3: { key: 'DCC.SpellDuelPhlogistonEffectTimeAccelerates' },
+  4: { key: 'DCC.SpellDuelPhlogistonEffectTimeSlows' },
+  5: { key: 'DCC.SpellDuelPhlogistonEffectBackwardLoop' },
+  6: { key: 'DCC.SpellDuelPhlogistonEffectSpellsMerge' },
+  7: { key: 'DCC.SpellDuelPhlogistonEffectSupernaturalInfluence' },
+  8: { key: 'DCC.SpellDuelPhlogistonEffectSupernaturalSummoning' },
+  9: { key: 'DCC.SpellDuelPhlogistonEffectDemonicInvasion' },
+  10: { key: 'DCC.SpellDuelPhlogistonEffectMutualCorruption' }
+}
+
+/**
+ * Check if dcc-core-book module is active
+ * @returns {boolean}
+ */
+function isDccCoreBookActive () {
+  return game.modules.get('dcc-core-book')?.active ?? false
+}
+
+/**
+ * Get a RollTable from dcc-core-book
+ * @param {string} tableKey - Key from SPELL_DUEL_TABLES
+ * @returns {Promise<RollTable|null>}
+ */
+async function getSpellDuelTable (tableKey) {
+  if (!isDccCoreBookActive()) return null
+
+  const tableInfo = SPELL_DUEL_TABLES[tableKey]
+  if (!tableInfo) return null
+
+  try {
+    const pack = game.packs.get(tableInfo.pack)
+    if (!pack) return null
+
+    const entry = pack.index.find(e => e.name === tableInfo.name)
+    if (!entry) return null
+
+    return await pack.getDocument(entry._id)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Get result text from a RollTable for a given roll value
+ * @param {RollTable} table - The RollTable to look up
+ * @param {number} rollValue - The roll result to look up
+ * @returns {string|null} - The result text or null if not found
+ */
+function getTableResultText (table, rollValue) {
+  if (!table) return null
+
+  const results = table.getResultsForRoll(rollValue)
+  if (results && results.length > 0) {
+    // Use description (v13+) with fallback to text for older versions
+    return results[0].description ?? results[0].text
+  }
+  return null
 }
 
 class SpellDuelDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -392,7 +138,6 @@ class SpellDuelDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       addParticipant: this.#onAddParticipant,
       adjustMomentum: this.#onAdjustMomentum,
-      clearLog: this.#onClearLog,
       endDuel: this.#onEndDuel,
       openRulesReference: this.#openRulesReference,
       removeParticipant: this.#onRemoveParticipant,
@@ -508,7 +253,6 @@ class SpellDuelDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     data.user = game.user
     data.config = CONFIG.DCC
     data.participants = SpellDuel.getParticipants()
-    data.log = SpellDuel.getLog()
     data.hasParticipants = data.participants.length > 0
     data.canResolve = data.participants.length >= 2
     return data
@@ -571,13 +315,6 @@ class SpellDuelDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     await SpellDuel.endDuel()
   }
 
-  /**
-   * Clear the duel log
-   */
-  static async #onClearLog (event, target) {
-    await SpellDuel.clearLog()
-  }
-
   /** @override */
   async close (options = {}) {
     SpellDuel.dialog = null
@@ -596,7 +333,7 @@ class SpellDuel {
       scope: 'world',
       config: false,
       type: String,
-      default: '{"participants":[],"log":[]}'
+      default: '{"participants":[]}'
     })
 
     // Load saved state
@@ -616,8 +353,7 @@ class SpellDuel {
   static async saveState () {
     if (game.user.isGM) {
       const state = JSON.stringify({
-        participants: SpellDuel.participants,
-        log: SpellDuel.log
+        participants: SpellDuel.participants
       })
       await game.settings.set('dcc', 'spellDuelState', state)
     }
@@ -632,10 +368,8 @@ class SpellDuel {
       // Handle both string (new format) and object (old format)
       const state = typeof stateStr === 'string' ? JSON.parse(stateStr) : stateStr
       SpellDuel.participants = state?.participants || []
-      SpellDuel.log = state?.log || []
     } catch {
       SpellDuel.participants = []
-      SpellDuel.log = []
     }
   }
 
@@ -758,35 +492,6 @@ class SpellDuel {
   }
 
   /**
-   * Get the duel log
-   * @returns {Array}
-   */
-  static getLog () {
-    return SpellDuel.log
-  }
-
-  /**
-   * Clear the duel log
-   * @returns {Promise}
-   */
-  static async clearLog () {
-    SpellDuel.log = []
-    await SpellDuel.saveState()
-    return await SpellDuel.refresh()
-  }
-
-  /**
-   * Add an entry to the duel log
-   * @param {String} message
-   */
-  static addLogEntry (message) {
-    SpellDuel.log.push({
-      timestamp: new Date().toLocaleTimeString(),
-      message
-    })
-  }
-
-  /**
    * Prompt to resolve a spell duel exchange
    */
   static async promptResolveExchange () {
@@ -883,24 +588,11 @@ class SpellDuel {
       return
     }
 
-    // Log the exchange start
-    SpellDuel.addLogEntry(game.i18n.format('DCC.SpellDuelExchangeStart', {
-      attacker: attacker.name,
-      attackerCheck,
-      defender: defender.name,
-      defenderCheck
-    }))
-
     // Determine winner and update momentum
     const attackerWins = attackerCheck > defenderCheck
     const winner = attackerWins ? attacker : defender
     winner.momentum += 1
     await SpellDuel.saveState()
-
-    SpellDuel.addLogEntry(game.i18n.format('DCC.SpellDuelMomentumGain', {
-      name: winner.name,
-      momentum: winner.momentum
-    }))
 
     // Handle identical spell checks (Phlogiston Disturbance)
     if (attackerCheck === defenderCheck) {
@@ -910,13 +602,24 @@ class SpellDuel {
         speaker: { alias: game.i18n.localize('DCC.SpellDuel') }
       })
 
-      const result = PHLOGISTON_DISTURBANCE_TABLE[roll.total]
-      const resultText = game.i18n.localize(result.key)
+      const tableEntry = PHLOGISTON_DISTURBANCE_TABLE[roll.total]
 
-      SpellDuel.addLogEntry(game.i18n.format('DCC.SpellDuelPhlogistonResult', {
-        roll: roll.total,
-        result: resultText
-      }))
+      // Try to get full result text from dcc-core-book RollTable
+      const phlogistonTable = await getSpellDuelTable('phlogistonDisturbance')
+      const tableResultText = getTableResultText(phlogistonTable, roll.total)
+
+      // Build result text - use RollTable text if available, otherwise effect type + page reference
+      let resultText
+      if (tableResultText) {
+        resultText = tableResultText
+      } else {
+        const effectType = game.i18n.localize(tableEntry.key)
+        const tableInfo = SPELL_DUEL_TABLES.phlogistonDisturbance
+        resultText = game.i18n.format('DCC.SpellDuelResultWithPageRef', {
+          effect: effectType,
+          page: tableInfo.page
+        })
+      }
 
       await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelPhlogistonMessage', {
         attacker: attacker.name,
@@ -928,12 +631,58 @@ class SpellDuel {
       return
     }
 
-    // Look up die type from comparison table
-    const dieType = SpellDuel.getSpellDuelDie(attackerCheck, defenderCheck)
+    // Look up die type from comparison table (requires dcc-core-book)
+    const dieType = await SpellDuel.getSpellDuelDie(attackerCheck, defenderCheck)
 
-    SpellDuel.addLogEntry(game.i18n.format('DCC.SpellDuelTableResult', {
-      die: dieType
-    }))
+    // If no dcc-core-book, show fallback message with page reference
+    if (!dieType) {
+      const tableInfo = SPELL_DUEL_TABLES.spellDuelCheckComparison
+      await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelManualLookup', {
+        attacker: attacker.name,
+        attackerCheck,
+        defender: defender.name,
+        defenderCheck,
+        winner: winner.name,
+        page: tableInfo.page
+      }))
+      await SpellDuel.refresh()
+      return
+    }
+
+    // Handle Phlogiston Disturbance (PD) - identical checks already handled above,
+    // but table can also return PD for very close results
+    if (dieType === 'PD') {
+      const roll = await new Roll('1d10').evaluate()
+      await roll.toMessage({
+        flavor: game.i18n.localize('DCC.SpellDuelPhlogistonRoll'),
+        speaker: { alias: game.i18n.localize('DCC.SpellDuel') }
+      })
+
+      const tableEntry = PHLOGISTON_DISTURBANCE_TABLE[roll.total]
+      const phlogistonTable = await getSpellDuelTable('phlogistonDisturbance')
+      const tableResultText = getTableResultText(phlogistonTable, roll.total)
+
+      let resultText
+      if (tableResultText) {
+        resultText = tableResultText
+      } else {
+        const effectType = game.i18n.localize(tableEntry.key)
+        const tableInfo = SPELL_DUEL_TABLES.phlogistonDisturbance
+        resultText = game.i18n.format('DCC.SpellDuelResultWithPageRef', {
+          effect: effectType,
+          page: tableInfo.page
+        })
+      }
+
+      await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelPhlogistonMessage', {
+        attacker: attacker.name,
+        defender: defender.name,
+        result: resultText
+      }))
+
+      await SpellDuel.refresh()
+      return
+    }
 
     // Roll the die
     const dieRoll = await new Roll(`1${dieType}`).evaluate()
@@ -948,20 +697,27 @@ class SpellDuel {
     // Apply momentum modifier to roll
     const modifiedRoll = Math.max(1, Math.min(10, dieRoll.total + momentumDiff))
 
-    SpellDuel.addLogEntry(game.i18n.format('DCC.SpellDuelModifiedRoll', {
-      roll: dieRoll.total,
-      modifier: momentumDiff >= 0 ? `+${momentumDiff}` : momentumDiff,
-      result: modifiedRoll
-    }))
-
     // Get result from counterspell power table
     const column = attackerWins ? 'attackerHigh' : 'defenderHigh'
-    const result = COUNTERSPELL_POWER_TABLE[column][modifiedRoll]
-    const resultText = game.i18n.localize(result.key)
+    const tableKey = attackerWins ? 'counterspellAttackerHigh' : 'counterspellDefenderHigh'
+    const tableEntry = COUNTERSPELL_POWER_TABLE[column][modifiedRoll]
 
-    SpellDuel.addLogEntry(game.i18n.format('DCC.SpellDuelResolution', {
-      result: resultText
-    }))
+    // Try to get full result text from dcc-core-book RollTable
+    const counterspellTable = await getSpellDuelTable(tableKey)
+    const tableResultText = getTableResultText(counterspellTable, modifiedRoll)
+
+    // Build result text - use RollTable text if available, otherwise effect type + page reference
+    let resultText
+    if (tableResultText) {
+      resultText = tableResultText
+    } else {
+      const effectType = game.i18n.localize(tableEntry.key)
+      const tableInfo = SPELL_DUEL_TABLES[tableKey]
+      resultText = game.i18n.format('DCC.SpellDuelResultWithPageRef', {
+        effect: effectType,
+        page: tableInfo.page
+      })
+    }
 
     // Send chat message with full result
     await SpellDuel.addChatMessage(game.i18n.format('DCC.SpellDuelExchangeResult', {
@@ -981,20 +737,33 @@ class SpellDuel {
   }
 
   /**
-   * Look up die type from spell duel check comparison table
+   * Look up die type from spell duel check comparison table (Table 4-5)
+   * Uses RollTable from dcc-core-book if available
    * @param {Number} attackerCheck
    * @param {Number} defenderCheck
-   * @returns {String}
+   * @returns {Promise<String|null>} Die type (e.g., 'd6') or null if table not available
    */
-  static getSpellDuelDie (attackerCheck, defenderCheck) {
+  static async getSpellDuelDie (attackerCheck, defenderCheck) {
     // Clamp values to table boundaries
     const attackerLookup = Math.max(12, Math.min(28, attackerCheck))
     const defenderLookup = Math.max(12, Math.min(28, defenderCheck))
 
-    const row = SPELL_DUEL_CHECK_COMPARISON[defenderLookup]
-    if (!row) return 'PD'
+    // Try to get the comparison table from dcc-core-book
+    const comparisonTable = await getSpellDuelTable('spellDuelCheckComparison')
+    if (!comparisonTable) return null
 
-    return row[attackerLookup] || 'PD'
+    // Look up the row by defender's check
+    const resultText = getTableResultText(comparisonTable, defenderLookup)
+    if (!resultText) return null
+
+    // Parse the result text to find the attacker's die
+    // Format: "<strong>Defender 12:</strong> 12: PD, 13: d3, 14: d3, ..."
+    const dieMatch = resultText.match(new RegExp(`\\b${attackerLookup}:\\s*(d\\d+|PD)`, 'i'))
+    if (dieMatch) {
+      return dieMatch[1]
+    }
+
+    return null
   }
 
   /**
@@ -1005,7 +774,6 @@ class SpellDuel {
       await SpellDuel.addChatMessage(game.i18n.localize('DCC.SpellDuelEnded'))
     }
     SpellDuel.participants = []
-    SpellDuel.log = []
     await SpellDuel.saveState()
     return await SpellDuel.refresh()
   }
@@ -1028,7 +796,6 @@ class SpellDuel {
 
 SpellDuel.dialog = null
 SpellDuel.participants = []
-SpellDuel.log = []
 SpellDuel._addingParticipant = false
 
 export default SpellDuel
