@@ -17,6 +17,7 @@ import * as chat from './chat.js'
 import * as migrations from './migrations.js'
 import DiceChain from './dice-chain.js'
 import FleetingLuck from './fleeting-luck.js'
+import SpellDuel from './spell-duel.js'
 import parser from './parser.js'
 import TablePackManager from './table-pack-manager.js'
 import EntityImages from './entity-images.js'
@@ -54,6 +55,7 @@ Hooks.once('init', async function () {
     DCCRoll,
     DiceChain,
     FleetingLuck,
+    SpellDuel,
     SpellResult,
     getSkillTable,
     processSpellCheck,
@@ -212,6 +214,16 @@ Hooks.on('getSceneControlButtons', (controls) => {
     button: true,
     active: true
   }
+  controls.tokens.tools.spellDuel = {
+    name: 'spellDuel',
+    title: game.i18n.localize('DCC.SpellDuel'),
+    icon: 'fas fa-hat-wizard',
+    onChange: (event, active) => {
+      game.dcc.SpellDuel.show()
+    },
+    button: true,
+    active: true
+  }
 })
 
 /* -------------------------------------------- */
@@ -233,6 +245,9 @@ Hooks.once('ready', async function () {
 
   // Initialise Fleeting Luck
   game.dcc.FleetingLuck.init()
+
+  // Initialise Spell Duel
+  game.dcc.SpellDuel.init()
 
   // Add status icons
   defineStatusIcons()

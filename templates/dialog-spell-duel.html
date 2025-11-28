@@ -1,0 +1,66 @@
+<section class="{{cssClass}}">
+  <div class="spell-duel">
+    <div class="spell-duel-header">
+      {{#if user.isGM}}
+        <button class="add-participant" data-action="addParticipant" type="button" title="{{localize 'DCC.SpellDuelAddParticipantTitle'}}">
+          <i class="fas fa-user-plus"></i> {{localize 'DCC.SpellDuelAddParticipant'}}
+        </button>
+        <button class="resolve-exchange" data-action="resolveExchange" type="button" title="{{localize 'DCC.SpellDuelResolveExchangeTitle'}}" {{#unless canResolve}}disabled{{/unless}}>
+          <i class="fas fa-bolt"></i> {{localize 'DCC.SpellDuelResolveExchange'}}
+        </button>
+        <button class="end-duel" data-action="endDuel" type="button" title="{{localize 'DCC.SpellDuelEndDuelTitle'}}">
+          <i class="fas fa-flag-checkered"></i> {{localize 'DCC.SpellDuelEndDuel'}}
+        </button>
+      {{/if}}
+    </div>
+
+    <div class="spell-duel-participants">
+      <label class="section-label">{{localize 'DCC.SpellDuelParticipants'}}</label>
+      {{#if hasParticipants}}
+        {{#each participants}}
+          <div class="spell-duel-participant">
+            <div class="participant-avatar">
+              <img src="{{img}}" title="{{name}}" alt="{{localize 'DCC.Avatar'}}"/>
+            </div>
+            <label class="participant-name">{{name}}</label>
+            <div class="participant-momentum">
+              <span class="momentum-label">{{localize 'DCC.SpellDuelMomentum'}}</span>
+              <div class="momentum-controls">
+                {{#if ../user.isGM}}
+                  <i class="fas fa-minus momentum-adjust" data-action="adjustMomentum" data-actor-id="{{actorId}}" data-adjustment="-1" title="{{localize 'DCC.SpellDuelDecreaseMomentum'}}"></i>
+                {{/if}}
+                <span class="momentum-value">{{momentum}}</span>
+                {{#if ../user.isGM}}
+                <i class="fas fa-plus momentum-adjust" data-action="adjustMomentum" data-actor-id="{{actorId}}" data-adjustment="1" title="{{localize 'DCC.SpellDuelIncreaseMomentum'}}"></i>
+                <i class="fas fa-undo momentum-reset" data-action="resetMomentum" data-actor-id="{{actorId}}" title="{{localize 'DCC.SpellDuelResetMomentum'}}"></i>
+                <i class="fas fa-times participant-remove" data-action="removeParticipant" data-actor-id="{{actorId}}" title="{{localize 'DCC.SpellDuelRemoveParticipant'}}"></i>
+              {{/if}}
+              </div>
+            </div>
+          </div>
+        {{/each}}
+      {{else}}
+        <p class="no-participants">{{localize 'DCC.SpellDuelNoParticipantsDropHint'}}</p>
+      {{/if}}
+    </div>
+
+    {{#if log.length}}
+      <div class="spell-duel-log">
+        <div class="log-header">
+          <label class="section-label">{{localize 'DCC.SpellDuelLog'}}</label>
+          {{#if user.isGM}}
+            <i class="fas fa-trash-alt clear-log" data-action="clearLog" title="{{localize 'DCC.SpellDuelClearLog'}}"></i>
+          {{/if}}
+        </div>
+        <div class="log-entries">
+          {{#each log}}
+            <div class="log-entry">
+              <span class="log-timestamp">{{timestamp}}</span>
+              <span class="log-message">{{message}}</span>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    {{/if}}
+  </div>
+</section>
