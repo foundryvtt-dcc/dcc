@@ -93,7 +93,7 @@ Related docs: [Testing - Parser Tests](TESTING.md#parser-tests)
 - `module/item-sheet.js` - Item editing interface
 - Type-specific templates for each item type
 
-For V13 ApplicationV2 migration details, see [V13 ApplicationV2](V13_APP_V2.md).
+For V13 ApplicationV2 migration details, see [V13 Migration Guide](v13/README.md).
 
 ## Active Effects
 

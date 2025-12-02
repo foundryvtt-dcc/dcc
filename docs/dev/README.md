@@ -17,11 +17,26 @@ This directory contains developer documentation for the DCC system for FoundryVT
 | [Pack Management](PACKS.md) | Compendium JSON/LevelDB workflow |
 | [Internationalization](I18N.md) | Translation system and guidelines |
 
+## V13 Migration
+
+The [v13/](v13/) directory contains comprehensive documentation for migrating to FoundryVTT V13:
+
+| Document | Description |
+|----------|-------------|
+| [v13/README](v13/README.md) | V13 migration overview and quick start |
+| [v13/Breaking Changes](v13/BREAKING_CHANGES.md) | Critical V13 changes |
+| [v13/Migration Basics](v13/MIGRATION_BASICS.md) | ApplicationV2 conversion basics |
+| [v13/Forms and Events](v13/FORMS_AND_EVENTS.md) | Form handling and actions |
+| [v13/Tabs](v13/TABS.md) | Tab system migration |
+| [v13/Drag and Drop](v13/DRAG_DROP.md) | Drag/drop patterns |
+| [v13/Templates](v13/TEMPLATES.md) | Template migration patterns |
+| [v13/Themes](v13/THEMES.md) | CSS variables and theming |
+| [v13/Checklist](v13/CHECKLIST.md) | Migration checklist |
+
 ## Additional Resources
 
 | Document | Description |
 |----------|-------------|
-| [V13 ApplicationV2](V13_APP_V2.md) | Migration patterns for FoundryVTT v13 |
 | [Test Coverage](TEST_COVERAGE.md) | Detailed testing strategy and coverage goals |
 | [Release Process](RELEASE_PROCESS.md) | How to create releases |
 | [LevelDB Workflow](LEVELDB_WORKFLOW.md) | Detailed pack workflow |
