@@ -33,6 +33,18 @@ The [v13/](v13/) directory contains comprehensive documentation for migrating to
 | [v13/Themes](v13/THEMES.md) | CSS variables and theming |
 | [v13/Checklist](v13/CHECKLIST.md) | Migration checklist |
 
+## V14 Preparation (Preview)
+
+The [v14/](v14/) directory contains documentation for preparing for FoundryVTT V14 (expected January 2026):
+
+| Document | Description |
+|----------|-------------|
+| [v14/README](v14/README.md) | V14 overview and timeline |
+| [v14/Breaking Changes](v14/BREAKING_CHANGES.md) | V14 breaking changes |
+| [v14/Data Models](v14/DATA_MODELS.md) | template.json → TypeDataModel migration |
+| [v14/Active Effects](v14/ACTIVE_EFFECTS.md) | Active Effects V2 changes |
+| [v14/Checklist](v14/CHECKLIST.md) | Preparation checklist |
+
 ## Additional Resources
 
 | Document | Description |
