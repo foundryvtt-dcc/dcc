@@ -26,6 +26,7 @@ V14 focuses on several key pillars:
 |----------|-------------|
 | [Breaking Changes](BREAKING_CHANGES.md) | V14 breaking changes and deprecation removals |
 | [Data Models](DATA_MODELS.md) | Migrating from template.json to TypeDataModel |
+| [Migration Plan](MIGRATION_PLAN.md) | Detailed DCC system migration plan with code examples |
 | [Active Effects](ACTIVE_EFFECTS.md) | Active Effects V2 changes |
 | [Checklist](CHECKLIST.md) | Migration preparation checklist |
 
