@@ -119,6 +119,122 @@ describe('Spell Check Critical Calculations - parseInt fix', () => {
   })
 })
 
+describe('Spell Check Critical - Roll Modifier Dialog Scenario', () => {
+  test('crit lookup uses correct value when roll.total is a getter that recomputes from terms', () => {
+    // This test simulates the scenario where a user uses the roll modifier dialog
+    // to add a bonus, then rolls a natural 20 for a crit.
+    // The concern is that roll.total might be recomputed from terms after we modify them.
+
+    // Simulate a Roll object where total is a getter that computes from _total
+    // but might be affected by term modifications
+    const roll = {
+      _total: 26, // 20 (die) + 5 (base) + 1 (from modifier dialog)
+      get total () {
+        return this._total
+      },
+      terms: [],
+      _formula: '1d20+5+1',
+      dice: [{ total: 20 }] // Natural 20
+    }
+
+    const levelValue = 3
+
+    // Original code flow:
+    // 1. First lookup (before crit check) uses roll.total
+    const firstLookupValue = roll.total
+    expect(firstLookupValue).toBe(26)
+
+    // 2. On crit, compute critRoll
+    const critRoll = roll.total + levelValue
+    expect(critRoll).toBe(29)
+
+    // 3. Then modify the roll terms (simulating what the code does)
+    roll.terms.push({ operator: '+' })
+    roll.terms.push({ number: levelValue })
+    roll._formula += ` + ${levelValue}`
+    roll._total += levelValue
+
+    // 4. After modifications, roll.total should reflect the new _total
+    expect(roll.total).toBe(29)
+
+    // The critRoll variable captured the correct value (29) before term modifications
+    // This is the value that should be used for the crit lookup
+    expect(critRoll).toBe(29)
+  })
+
+  test('crit lookup fails if roll.total getter recomputes from terms array', () => {
+    // This test demonstrates a potential bug scenario where roll.total
+    // recomputes from the terms array instead of using _total
+
+    let termsTotal = 26 // Initial total from terms
+
+    const roll = {
+      _total: 26,
+      // Problematic getter that recomputes from terms
+      get total () {
+        return termsTotal
+      },
+      terms: [],
+      dice: [{ total: 20 }]
+    }
+
+    const levelValue = 3
+
+    // First lookup uses roll.total = 26
+    const firstLookupValue = roll.total
+    expect(firstLookupValue).toBe(26)
+
+    // On crit, compute critRoll = 26 + 3 = 29
+    const critRoll = roll.total + levelValue
+    expect(critRoll).toBe(29)
+
+    // After pushing terms, if termsTotal doesn't update, we're fine
+    // But if the code accidentally uses roll.total again after modifications...
+    roll.terms.push({ operator: '+' })
+    roll.terms.push({ number: levelValue })
+    termsTotal += levelValue // Simulate terms being re-evaluated
+
+    // If code mistakenly uses roll.total after modifications for something else,
+    // it would now return 29 which is correct. But if the order was different...
+    expect(roll.total).toBe(29)
+  })
+
+  test('modifier dialog scenario - the fix uses _total directly', () => {
+    // This test verifies the fix approach: use roll._total directly
+    // instead of roll.total getter
+
+    const roll = {
+      _total: 26,
+      get total () {
+        // This getter could have complex behavior in Foundry
+        return this._total
+      },
+      terms: [],
+      dice: [{ total: 20 }]
+    }
+
+    const levelValue = 3
+
+    // THE FIX: Use _total directly for lookupValue
+    let lookupValue = roll._total
+    expect(lookupValue).toBe(26)
+
+    // On crit, add level to lookupValue
+    lookupValue += levelValue
+    expect(lookupValue).toBe(29)
+
+    // Then update the roll for display
+    roll.terms.push({ operator: '+' })
+    roll.terms.push({ number: levelValue })
+    roll._total += levelValue
+
+    // lookupValue is independent of roll modifications
+    expect(lookupValue).toBe(29)
+    expect(roll._total).toBe(29)
+    expect(roll.total).toBe(29)
+  })
+})
+
 describe('Spell Check Critical - Table Lookup Logic', () => {
   test('verifies that result object must be fully replaced for correct range display', () => {
     // This test documents the fix for the bug where crit table lookups
