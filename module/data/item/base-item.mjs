@@ -74,6 +74,19 @@ export class PhysicalItemData extends BaseItemData {
       source.value = {}
     }
 
+    // Convert currency values to integers if needed
+    if (source.value) {
+      for (const key of ['pp', 'ep', 'gp', 'sp', 'cp']) {
+        if (source.value[key] !== undefined) {
+          if (typeof source.value[key] === 'string') {
+            source.value[key] = parseInt(source.value[key]) || 0
+          } else if (typeof source.value[key] === 'number' && !Number.isInteger(source.value[key])) {
+            source.value[key] = Math.floor(source.value[key])
+          }
+        }
+      }
+    }
+
     return super.migrateData(source)
   }
 

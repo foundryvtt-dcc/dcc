@@ -35,7 +35,7 @@ export class NPCData extends BaseActorData {
       // Configuration (from config template)
       config: new SchemaField({
         attackBonusMode: new StringField({ initial: 'flat' }),
-        actionDice: new DiceField({ initial: '1d20' }),
+        actionDice: new StringField({ initial: '1d20' }), // Can be comma-separated like "1d20,1d14"
         addClassLevelToInitiative: new BooleanField({ initial: false }),
         maxLevel: new StringField({ initial: '' }),
         rollAttackBonus: new BooleanField({ initial: false }),

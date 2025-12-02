@@ -104,11 +104,11 @@
             ]
           },
           "speed": {
-            "value": 30,
-            "base": 30,
+            "value": "30",
+            "base": "30",
             "special": "",
-            "swim": 0,
-            "fly": 0
+            "swim": "",
+            "fly": ""
           }
         },
         "details": {

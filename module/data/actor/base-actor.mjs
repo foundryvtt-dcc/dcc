@@ -41,6 +41,49 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
       }
     }
 
+    // Fix invalid dice notation in attributes
+    // hitDice.value might be just a number like "1" for zero-level
+    if (source.attributes?.hitDice?.value) {
+      const die = source.attributes.hitDice.value
+      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+        // If it's just a number, convert to 1d4 (zero-level default)
+        source.attributes.hitDice.value = '1d4'
+      }
+    }
+
+    // Fix invalid critical die notation
+    if (source.attributes?.critical?.die) {
+      const die = source.attributes.critical.die
+      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+        source.attributes.critical.die = '1d4'
+      }
+    }
+
+    // Fix invalid fumble die notation
+    if (source.attributes?.fumble?.die) {
+      const die = source.attributes.fumble.die
+      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+        source.attributes.fumble.die = '1d4'
+      }
+    }
+
+    // Fix invalid init die notation
+    if (source.attributes?.init?.die) {
+      const die = source.attributes.init.die
+      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+        source.attributes.init.die = '1d20'
+      }
+    }
+
+    // Convert numeric speed values to strings if needed (speed can include units like "30'")
+    if (source.attributes?.speed) {
+      for (const key of ['value', 'base', 'swim', 'fly']) {
+        if (source.attributes.speed[key] !== undefined && typeof source.attributes.speed[key] === 'number') {
+          source.attributes.speed[key] = String(source.attributes.speed[key])
+        }
+      }
+    }
+
     // Convert string level value to number if needed
     if (source.details?.level && typeof source.details.level.value === 'string') {
       source.details.level.value = parseInt(source.details.level.value) || 0
@@ -142,11 +185,11 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
           })
         }),
         speed: new SchemaField({
-          value: new NumberField({ initial: 30, integer: true, min: 0 }),
-          base: new NumberField({ initial: 30, integer: true, min: 0 }),
+          value: new StringField({ initial: '30' }), // Can include units like "30'" or "25/50/100"
+          base: new StringField({ initial: '30' }), // Can include units
           special: new StringField({ initial: '' }),
-          swim: new NumberField({ initial: 0, integer: true, min: 0 }),
-          fly: new NumberField({ initial: 0, integer: true, min: 0 })
+          swim: new StringField({ initial: '' }), // Can include units
+          fly: new StringField({ initial: '' }) // Can include units
         })
       }),
 
