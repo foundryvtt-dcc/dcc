@@ -7,36 +7,49 @@
     ],
     "templates": {
       "common": {
+        "abilityLog": [],
         "abilities": {
           "str": {
             "label": "DCC.AbilityStr",
             "value": 10,
-            "max": 10
+            "max": 10,
+            "spent": 0,
+            "damage": 0
           },
           "agl": {
             "label": "DCC.AbilityAgl",
             "value": 10,
-            "max": 10
+            "max": 10,
+            "spent": 0,
+            "damage": 0
           },
           "sta": {
             "label": "DCC.AbilitySta",
             "value": 10,
-            "max": 10
+            "max": 10,
+            "spent": 0,
+            "damage": 0
           },
           "per": {
             "label": "DCC.AbilityPer",
             "value": 10,
-            "max": 10
+            "max": 10,
+            "spent": 0,
+            "damage": 0
           },
           "int": {
             "label": "DCC.AbilityInt",
             "value": 10,
-            "max": 10
+            "max": 10,
+            "spent": 0,
+            "damage": 0
           },
           "lck": {
             "label": "DCC.AbilityLck",
             "value": 10,
-            "max": 10
+            "max": 10,
+            "spent": 0,
+            "damage": 0
           }
         },
         "attributes": {
@@ -122,16 +135,21 @@
             }
           },
           "birthAugur": "",
+          "birthAugurLuckMod": 0,
           "critRange": "20",
           "languages": "",
           "level": {
             "value": 0
           },
-          "occupation": "",
+          "occupation": {
+            "value": ""
+          },
           "notes": {
             "value": ""
           },
-          "title": "",
+          "title": {
+            "value": ""
+          },
           "xp": {
             "value": 0,
             "min": 0,

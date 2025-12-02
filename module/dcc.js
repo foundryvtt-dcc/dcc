@@ -32,6 +32,24 @@ import DCCPartySheet from './party-sheet.js'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
+// Import data models
+import {
+  // Actor data models
+  PlayerData,
+  NPCData,
+  PartyData,
+  // Item data models
+  WeaponData,
+  AmmunitionData,
+  ArmorData,
+  EquipmentData,
+  LevelData,
+  MountData,
+  SpellData,
+  TreasureData,
+  SkillData
+} from './data/_module.mjs'
+
 const { Actors } = foundry.documents.collections
 const { ActorSheetV2 } = foundry.applications.sheets
 const { loadTemplates } = foundry.applications.handlebars
@@ -48,6 +66,26 @@ Hooks.once('init', async function () {
 
   // Enable Active Effects
   CONFIG.ActiveEffect.legacyTransferral = false
+
+  // Register Actor data models
+  CONFIG.Actor.dataModels = {
+    Player: PlayerData,
+    NPC: NPCData,
+    Party: PartyData
+  }
+
+  // Register Item data models
+  CONFIG.Item.dataModels = {
+    weapon: WeaponData,
+    ammunition: AmmunitionData,
+    armor: ArmorData,
+    equipment: EquipmentData,
+    level: LevelData,
+    mount: MountData,
+    spell: SpellData,
+    treasure: TreasureData,
+    skill: SkillData
+  }
 
   // noinspection JSUndefinedPropertyAssignment,JSUnusedGlobalSymbols
   game.dcc = {
