@@ -3,7 +3,7 @@
  * Base data model for all DCC actors
  * Contains the common template fields shared by all actor types
  */
-import { AbilityField, CurrencyField, DiceField, SaveField } from '../fields/_module.mjs'
+import { AbilityField, CurrencyField, DiceField, SaveField, isValidDiceNotation } from '../fields/_module.mjs'
 
 const { SchemaField, StringField, NumberField, ArrayField, HTMLField } = foundry.data.fields
 
@@ -44,8 +44,7 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
     // Fix invalid dice notation in attributes
     // hitDice.value might be just a number like "1" for zero-level
     if (source.attributes?.hitDice?.value) {
-      const die = source.attributes.hitDice.value
-      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+      if (!isValidDiceNotation(source.attributes.hitDice.value)) {
         // If it's just a number, convert to 1d4 (zero-level default)
         source.attributes.hitDice.value = '1d4'
       }
@@ -53,24 +52,21 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
 
     // Fix invalid critical die notation
     if (source.attributes?.critical?.die) {
-      const die = source.attributes.critical.die
-      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+      if (!isValidDiceNotation(source.attributes.critical.die)) {
         source.attributes.critical.die = '1d4'
       }
     }
 
     // Fix invalid fumble die notation
     if (source.attributes?.fumble?.die) {
-      const die = source.attributes.fumble.die
-      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+      if (!isValidDiceNotation(source.attributes.fumble.die)) {
         source.attributes.fumble.die = '1d4'
       }
     }
 
     // Fix invalid init die notation
     if (source.attributes?.init?.die) {
-      const die = source.attributes.init.die
-      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+      if (!isValidDiceNotation(source.attributes.init.die)) {
         source.attributes.init.die = '1d20'
       }
     }

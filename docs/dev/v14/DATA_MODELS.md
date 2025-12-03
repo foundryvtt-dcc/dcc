@@ -94,6 +94,54 @@ Hooks.once('init', () => {
 })
 ```
 
+### Declaring Document Types in system.json
+
+**Critical**: When removing `template.json`, you must declare valid document types in `system.json` using the `documentTypes` field. Without this, Foundry will reject documents with errors like `"weapon" is not a valid type for the Item Document class`.
+
+The `documentTypes` field tells Foundry what types are valid **before** the init hook runs where data models are registered.
+
+```json
+{
+  "id": "dcc",
+  "title": "Dungeon Crawl Classics",
+  "documentTypes": {
+    "Actor": {
+      "Player": {},
+      "NPC": {},
+      "Party": {}
+    },
+    "Item": {
+      "weapon": {},
+      "ammunition": {},
+      "armor": {},
+      "equipment": {},
+      "level": {},
+      "mount": {},
+      "spell": {},
+      "treasure": {},
+      "skill": {}
+    }
+  },
+  "description": "..."
+}
+```
+
+Each type can optionally specify additional configuration:
+
+```json
+{
+  "documentTypes": {
+    "Actor": {
+      "Player": {
+        "htmlFields": ["biography"]
+      }
+    }
+  }
+}
+```
+
+The type names in `documentTypes` must match the keys used in `CONFIG.Actor.dataModels` and `CONFIG.Item.dataModels`.
+
 ## Common Field Types
 
 ```javascript
@@ -218,6 +266,7 @@ When migrating the DCC system to TypeDataModel, consider:
 ### Actor Types
 - `Player` - Full character with class templates
 - `NPC` - Simplified monster/NPC structure
+- `Party` - Party sheet for tracking multiple characters
 
 ### Item Types
 - `weapon`, `ammunition`, `armor`, `equipment`

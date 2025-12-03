@@ -5,7 +5,7 @@
  * common, config, player, cleric, thief, halfling, warrior, wizard, dwarf, elf
  */
 import { BaseActorData } from './base-actor.mjs'
-import { DiceField } from '../fields/_module.mjs'
+import { DiceField, isValidDiceNotation } from '../fields/_module.mjs'
 
 const { SchemaField, StringField, NumberField, BooleanField, HTMLField } = foundry.data.fields
 
@@ -29,14 +29,12 @@ export class PlayerData extends BaseActorData {
     // Fix invalid dice notation in skills
     // "0" or other non-dice values should become empty or default
     if (source.skills?.castSpellFromScroll?.die) {
-      const die = source.skills.castSpellFromScroll.die
-      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+      if (!isValidDiceNotation(source.skills.castSpellFromScroll.die)) {
         source.skills.castSpellFromScroll.die = '1d10' // default value
       }
     }
     if (source.skills?.shieldBash?.die) {
-      const die = source.skills.shieldBash.die
-      if (!/^(\d*d\d+([+-]\d+)?)+$/i.test(die)) {
+      if (!isValidDiceNotation(source.skills.shieldBash.die)) {
         source.skills.shieldBash.die = '1d14' // default value
       }
     }
