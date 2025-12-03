@@ -4,6 +4,10 @@ This document covers breaking changes in FoundryVTT V14.
 
 **Note**: V14 is in development. This information is based on prototype releases and may change.
 
+## Resources
+
+- [V14 Breaking Changes GitHub Board](https://github.com/orgs/foundryvtt/projects/67/views/8)
+
 ## Deprecation Expirations
 
 ### Removed in V14
@@ -66,7 +70,39 @@ effect.change.value  // Now deserializes to JSON parse result or string value
 effect.change.mode   // Migrated from numeric mode to string #type
 ```
 
+### ActiveEffect Duration Time Units
+
+ActiveEffect duration now supports multiple time units beyond just seconds:
+
+```javascript
+// V14 supported duration units
+"years" | "months" | "days" | "hours" | "minutes" | "seconds" | "rounds" | "turns"
+
+// Combat-related expiry events
+"combatStart" | "roundStart" | "turnStart"
+```
+
+**DCC Impact**: The system uses `effect.duration.seconds` in `module/dcc.js`. Current code should continue to work, but may need updates to handle effects with other duration units.
+
 ## Applications and UI
+
+### Roll Mode Renamed to Message Mode
+
+The `rollMode` property is being renamed (likely to `mode` or `visibility`) since the modes affect more than just rolls. See [GitHub issue #8856](https://github.com/foundryvtt/foundryvtt/issues/8856).
+
+```javascript
+// V13
+const rollMode = game.settings.get('core', 'rollMode')
+ChatMessage.applyRollMode(messageData, rollMode)
+
+// V14 (TBD - check official docs when V14 releases)
+// Property name will change from 'rollMode' to 'mode' or 'visibility'
+```
+
+**DCC Impact**: The system uses `rollMode` in multiple places:
+- `module/actor.js` - `game.settings.get('core', 'rollMode')` and `ChatMessage.applyRollMode()`
+- `module/spell-result.js` - `rollMode` in message options
+- Translation keys: `DCC.RollMode` in language files
 
 ### Scene Controls
 

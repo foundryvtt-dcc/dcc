@@ -31,7 +31,8 @@ export class SkillData extends BaseItemData {
         useDie: new BooleanField({ initial: true }),
         useLevel: new BooleanField({ initial: false }),
         useValue: new BooleanField({ initial: true }),
-        showLastResult: new BooleanField({ initial: true })
+        showLastResult: new BooleanField({ initial: true }),
+        applyCheckPenalty: new BooleanField({ initial: false })
       }),
       ability: new StringField({ initial: '' }),
       die: new DiceField({ initial: '1d20' }),

@@ -605,7 +605,8 @@
         "useDie": true,
         "useLevel": false,
         "useValue": true,
-        "showLastResult": true
+        "showLastResult": true,
+        "applyCheckPenalty": false
       },
       "ability": "",
       "die": "1d20",
