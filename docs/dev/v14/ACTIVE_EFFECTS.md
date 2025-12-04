@@ -42,6 +42,8 @@ effect.origin  // DocumentUUIDField with validation
 
 ### Effect Change Data
 
+The `mode` property has been replaced with `type` and uses string values:
+
 ```javascript
 // V13
 effect.changes[0].mode   // Number (e.g., 2 for ADD)
@@ -51,6 +53,53 @@ effect.changes[0].value  // Always string
 effect.changes[0].type   // String (replaces numeric mode)
 effect.changes[0].value  // Deserializes to JSON or string
 ```
+
+**V14 String Type Values:**
+| V13 Mode | V13 Value | V14 Type |
+|----------|-----------|----------|
+| CUSTOM | 0 | `'custom'` |
+| MULTIPLY | 1 | `'multiply'` |
+| ADD | 2 | `'add'` |
+| DOWNGRADE | 3 | `'downgrade'` |
+| UPGRADE | 4 | `'upgrade'` |
+| OVERRIDE | 5 | `'override'` |
+
+**DCC System Implementation:**
+
+The DCC system's `applyActiveEffects` method has been updated to use string types:
+
+```javascript
+// module/actor.js - applyActiveEffects method
+for (const change of effect.changes) {
+  const key = change.key
+  // v14 uses string 'type' field, fallback to numeric 'mode' for backwards compatibility
+  const type = change.type || change.mode || 'add'
+  const value = change.value
+
+  switch (type) {
+    case 'custom':
+      this._applyCustomEffect(key, value)
+      break
+    case 'add':
+      this._applyAddEffect(key, value, overrides)
+      break
+    case 'multiply':
+      this._applyMultiplyEffect(key, value, overrides)
+      break
+    case 'override':
+      this._applyOverrideEffect(key, value, overrides)
+      break
+    case 'upgrade':
+      this._applyUpgradeEffect(key, value, overrides)
+      break
+    case 'downgrade':
+      this._applyDowngradeEffect(key, value, overrides)
+      break
+  }
+}
+```
+
+**Note:** Accessing `CONST.ACTIVE_EFFECT_MODES` in V14 will log a deprecation warning. Use the string type values directly instead.
 
 ## New Features
 
@@ -132,23 +181,23 @@ for (const actor of game.actors) {
 }
 ```
 
-### 3. Review Effect Change Modes
+### 3. Review Effect Change Modes ✅ COMPLETED
 
-Prepare for the mode → type migration:
+The mode → type migration has been implemented:
 
 ```javascript
-// V13 numeric modes
-const MODES = {
-  CUSTOM: 0,
-  MULTIPLY: 1,
-  ADD: 2,
-  DOWNGRADE: 3,
-  UPGRADE: 4,
-  OVERRIDE: 5
+// V13 numeric modes → V14 string types
+const MODE_TO_TYPE = {
+  0: 'custom',    // CUSTOM
+  1: 'multiply',  // MULTIPLY
+  2: 'add',       // ADD
+  3: 'downgrade', // DOWNGRADE
+  4: 'upgrade',   // UPGRADE
+  5: 'override'   // OVERRIDE
 }
 
-// V14 will use string types
-// Exact mapping TBD - check official docs when V14 releases
+// DCC system now uses string types directly
+// See module/actor.js applyActiveEffects method
 ```
 
 ### 4. Update Effect Value Handling
@@ -188,10 +237,10 @@ The DCC system uses Active Effects for:
 
 ### Migration Checklist
 
-- [ ] Verify `legacyTransferral = false` works correctly
+- [x] Verify `legacyTransferral = false` works correctly
 - [ ] Audit all effect origins for valid UUIDs
 - [ ] Test effect transfer behavior
-- [ ] Review effect change modes used
+- [x] Review effect change modes used (now uses string types)
 - [ ] Update any custom effect value parsing
 - [ ] Consider creating an effects compendium for common conditions
 

@@ -221,38 +221,39 @@ class DCCActor extends Actor {
 
       for (const change of effect.changes) {
         const key = change.key
-        const mode = change.mode || CONST.ACTIVE_EFFECT_MODES.ADD
+        // v14 uses string 'type' field, fallback to numeric 'mode' for backwards compatibility
+        const type = change.type || change.mode || 'add'
         const value = change.value
 
-        // Handle different change modes
+        // Handle different change types (v14 uses strings: 'custom', 'add', 'multiply', 'override', 'upgrade', 'downgrade')
         try {
-          switch (mode) {
-            case CONST.ACTIVE_EFFECT_MODES.CUSTOM:
+          switch (type) {
+            case 'custom':
               // Custom mode - let modules handle this
               this._applyCustomEffect(key, value)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.ADD:
+            case 'add':
               // Add numeric value
               this._applyAddEffect(key, value, overrides)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
+            case 'multiply':
               // Multiply by value
               this._applyMultiplyEffect(key, value, overrides)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.OVERRIDE:
+            case 'override':
               // Override the value completely
               this._applyOverrideEffect(key, value, overrides)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
+            case 'upgrade':
               // Use the higher value
               this._applyUpgradeEffect(key, value, overrides)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
+            case 'downgrade':
               // Use the lower value
               this._applyDowngradeEffect(key, value, overrides)
               break
@@ -1346,7 +1347,7 @@ class DCCActor extends Actor {
         damageRollFormula = damageRollFormula.replace(weapon.system.damageWeapon, weapon.system.backstabDamage)
       }
     }
-    let damageRoll, damageInlineRoll, damagePrompt
+    let damageRoll; let damageInlineRoll; let damagePrompt; let damageRollIndex = null
     if (automateDamageFumblesCrits) {
       const flavorMatch = damageRollFormula.match(/\[(.*)]/)
       let flavor = ''
@@ -1367,6 +1368,7 @@ class DCCActor extends Actor {
       if (damageRoll.total < 1) {
         damageRoll._total = 1
       }
+      damageRollIndex = rolls.length
       rolls.push(damageRoll)
       damageInlineRoll = damageRoll.toAnchor({
         classes: ['damage-applyable', 'inline-dsn-hidden'],
@@ -1395,7 +1397,7 @@ class DCCActor extends Actor {
     let critRollFormula = ''
     let critInlineRoll = ''
     let critPrompt = game.i18n.localize('DCC.RollCritical')
-    let critRoll
+    let critRoll; let critRollIndex = null
     const critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || ''
     let critText = ''
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
@@ -1415,6 +1417,7 @@ class DCCActor extends Actor {
         ])
         await critRoll.evaluate()
         foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
+        critRollIndex = rolls.length
         rolls.push(critRoll)
         const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResult) {
@@ -1435,13 +1438,12 @@ class DCCActor extends Actor {
     try {
       useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || true
     } catch {
-      // warn to console log
-      console.warn('DCC | Error reading "registerNPCFumbleTables" setting from "dcc-core-book" module. Defaulting useNPCFumbles to true.')
+      // Module not installed, use default (true)
     }
     let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName)
 
     let fumbleText = ''
-    let fumbleRoll
+    let fumbleRoll; let fumbleRollIndex = null
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
       fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
@@ -1461,6 +1463,7 @@ class DCCActor extends Actor {
         ])
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
+        fumbleRollIndex = rolls.length
         rolls.push(fumbleRoll)
         let fumbleResult
         if (this.isPC || !useNPCFumbles) {
@@ -1512,9 +1515,11 @@ class DCCActor extends Actor {
         damageInlineRoll,
         damagePrompt,
         damageRollFormula,
+        damageRollIndex,
         critInlineRoll,
         critPrompt,
         critRollFormula,
+        critRollIndex,
         ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
@@ -1525,6 +1530,7 @@ class DCCActor extends Actor {
         fumbleInlineRoll,
         fumblePrompt,
         fumbleRollFormula,
+        fumbleRollIndex,
         fumbleTableName,
         hitsAc: attackRollResult.hitsAc,
         weaponId,
@@ -1532,6 +1538,13 @@ class DCCActor extends Actor {
         twoWeaponNote
       }
     }
+
+    // Add Roll objects and targets to system for hook consumers (like dcc-qol)
+    // These will be removed before creating the ChatMessage to avoid v14 serialization issues
+    messageData.system.targets = game.user.targets
+    messageData.system.damageRoll = damageRoll
+    messageData.system.critRoll = critRoll
+    messageData.system.fumbleRoll = fumbleRoll
 
     // noinspection JSValidateJSDoc
     /**
@@ -1542,6 +1555,14 @@ class DCCActor extends Actor {
      * @param {object} data
      */
     await Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
+
+    // Remove non-serializable objects before creating the ChatMessage
+    // In Foundry v14, system data goes through TypeDataModel validation which can't handle
+    // Roll objects or Sets with circular references
+    delete messageData.system.targets
+    delete messageData.system.damageRoll
+    delete messageData.system.critRoll
+    delete messageData.system.fumbleRoll
 
     messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
 

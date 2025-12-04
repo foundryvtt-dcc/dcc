@@ -84,7 +84,7 @@ This document provides a checklist for preparing for FoundryVTT V14.
 ### Before V14
 
 - [ ] Audit effect origins for valid UUIDs
-- [ ] Review effect change modes used
+- [x] Review effect change modes used (migrated to string types in actor.js)
 - [ ] Update any custom effect value parsing
 - [ ] Consider creating effects compendium
 
