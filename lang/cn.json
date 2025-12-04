@@ -283,6 +283,8 @@
   "DCC.HitDie": "生命骰",
   "DCC.HitDieHint": "Enter the hit die you roll each level, like 1d6",
   "DCC.HitPoints": "生命值",
+  "DCC.HitPointsAdjustment": "伤害 / 治疗",
+  "DCC.HitPointsHint": "-3 = 伤害，+3 = 治疗，5 = 设置生命值为5",
   "DCC.Image": "图片",
   "DCC.Infravision": "红外视觉 60'",
   "DCC.InfravisionHalfling": "红外视觉 30'",

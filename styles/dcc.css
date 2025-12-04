@@ -1004,6 +1004,20 @@ a.inline-roll {
   grid-column: span 2;
   margin-top: 3px;
 }
+.dcc .party-body .character-row .hp-summary.clickable {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.dcc .party-body .character-row .hp-summary.clickable:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+.dcc .party-body .character-row .fa-heart.clickable {
+  cursor: pointer;
+}
+.dcc .party-body .character-row .fa-heart.clickable:hover {
+  color: #8b0000;
+}
 .dcc .party-body .character-row .weapon {
   grid-column: span 1;
   justify-self: end;
@@ -1033,6 +1047,38 @@ a.inline-roll {
   font-family: var(--system-data-font), serif;
   font-style: italic;
   color: #666;
+  margin: 0;
+}
+
+/* ----------------------------------------- */
+/*  Hit Points Config Dialog                 */
+/* ----------------------------------------- */
+.dcc.hit-points-config .hp-display {
+  text-align: center;
+  font-size: 1.8em;
+  font-family: var(--system-data-font), serif;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+.dcc.hit-points-config .hp-display .hp-current {
+  color: #8b0000;
+  font-weight: bold;
+}
+.dcc.hit-points-config .hp-display .hp-separator {
+  margin: 0 4px;
+  color: var(--system-primary-color);
+}
+.dcc.hit-points-config .hp-display .hp-max {
+  color: var(--system-primary-color);
+}
+.dcc.hit-points-config input[name=adjustment] {
+  text-align: center;
+}
+.dcc.hit-points-config .hint {
+  font-size: 0.85em;
+  color: #666;
+  font-style: italic;
   margin: 0;
 }
 

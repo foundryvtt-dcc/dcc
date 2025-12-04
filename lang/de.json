@@ -283,6 +283,8 @@
   "DCC.HitDie": "Trefferwürfel",
   "DCC.HitDieHint": "Gib den Trefferwürfel ein, den du jede Stufe würfelst, wie 1w6",
   "DCC.HitPoints": "Trefferpunkte",
+  "DCC.HitPointsAdjustment": "Schaden / Heilung",
+  "DCC.HitPointsHint": "-3 = Schaden, +3 = Heilung, 5 = TP auf 5 setzen",
   "DCC.Image": "Bild",
   "DCC.Infravision": "Dunkelsicht 12m",
   "DCC.InfravisionHalfling": "Dunkelsicht 6m",

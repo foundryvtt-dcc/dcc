@@ -283,6 +283,8 @@
   "DCC.HitDie": "Hit Die",
   "DCC.HitDieHint": "Enter the hit die you roll each level, like 1d6",
   "DCC.HitPoints": "Hit Points",
+  "DCC.HitPointsAdjustment": "Damage / Healing",
+  "DCC.HitPointsHint": "-3 = damage, +3 = healing, 5 = set HP to 5",
   "DCC.Image": "Image",
   "DCC.Infravision": "Infravision 60'",
   "DCC.InfravisionHalfling": "Infravision 30'",

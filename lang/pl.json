@@ -283,6 +283,8 @@
   "DCC.HitDie": "Kostka Wytrzymałości",
   "DCC.HitDieHint": "Wprowadź kostkę wytrzymałości którą rzucasz każdy poziom, jak 1k6",
   "DCC.HitPoints": "PW",
+  "DCC.HitPointsAdjustment": "Obrażenia / Leczenie",
+  "DCC.HitPointsHint": "-3 = obrażenia, +3 = leczenie, 5 = ustaw PW na 5",
   "DCC.Image": "Obraz",
   "DCC.Infravision": "Infrawizja 60'",
   "DCC.InfravisionHalfling": "Infrawizja 30'",

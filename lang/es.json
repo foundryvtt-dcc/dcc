@@ -283,6 +283,8 @@
   "DCC.HitDie": "D.Golpe",
   "DCC.HitDieHint": "Introduce el dado de golpe que lanzas en cada nivel, por ejemplo 1d6",
   "DCC.HitPoints": "P.Golpe",
+  "DCC.HitPointsAdjustment": "Daño / Curación",
+  "DCC.HitPointsHint": "-3 = daño, +3 = curación, 5 = fijar PG a 5",
   "DCC.Image": "Imagen",
   "DCC.Infravision": "Infravisón 60'",
   "DCC.InfravisionHalfling": "Infravisón 30'",
