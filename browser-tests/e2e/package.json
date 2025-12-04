@@ -1,0 +1,16 @@
+{
+  "name": "dcc-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests for DCC system TypeDataModels",
+  "private": true,
+  "scripts": {
+    "install:browsers": "npx playwright install chromium",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "DEBUG=pw:webserver playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}
