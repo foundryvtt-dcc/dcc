@@ -112,8 +112,8 @@ If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfre
 - `system.abilities.lck.value` - Current Luck
 
 ### Combat Attributes
-- `system.attributes.ac.value` - Armor Class
-- `system.attributes.ac.otherMod` - AC Other Modifier
+- `system.attributes.ac.value` - Armor Class (use this if auto-calculate AC is OFF)
+- `system.attributes.ac.otherMod` - AC Other Modifier (use this if auto-calculate AC is ON)
 - `system.attributes.hp.value` - Current HP
 - `system.attributes.hp.max` - Maximum HP
 - `system.attributes.hp.temp` - Temporary HP
@@ -135,8 +135,27 @@ If you have the [DFreds Convenient Effects](https://foundryvtt.com/packages/dfre
 ### Class-Specific
 - `system.class.spellCheckOtherMod` - Spell Check Bonus
 - `system.class.luckDie` - Luck Die (for Thieves/Halflings)
+- `system.class.backstab` - Backstab Bonus (for Thieves)
 - `system.attributes.critical.die` - Critical Hit Die
 - `system.attributes.fumble.die` - Fumble Die
+
+### Thief Skills
+- `system.skills.sneakSilently.value` - Sneak Silently
+- `system.skills.hideInShadows.value` - Hide In Shadows
+- `system.skills.pickPockets.value` - Pick Pockets
+- `system.skills.climbSheerSurfaces.value` - Climb Sheer Surfaces
+- `system.skills.pickLock.value` - Pick Lock
+- `system.skills.findTrap.value` - Find Trap
+- `system.skills.disableTrap.value` - Disable Trap
+- `system.skills.forgeDocument.value` - Forge Document
+- `system.skills.disguiseSelf.value` - Disguise Self
+- `system.skills.readLanguages.value` - Read Languages
+- `system.skills.handlePoison.value` - Handle Poison
+- `system.skills.castSpellFromScroll.value` - Cast Spell From Scroll
+
+### Other Skills
+- `system.skills.detectSecretDoors.value` - Detect Secret Doors (Elves)
+- `system.skills.sneakAndHide.value` - Sneak and Hide (Halflings)
 
 ## Effect Modes
 

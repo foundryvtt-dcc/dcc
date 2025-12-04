@@ -1918,6 +1918,7 @@ a.inline-roll {
   .ac-and-hp {
     display: grid;
     grid-template-rows: 65px 19px 20px;
+    position: relative;
     text-align: center;
 
     input {
@@ -1928,6 +1929,37 @@ a.inline-roll {
       justify-self: center;
       margin-bottom: 5px;
       width: 37px;
+    }
+
+    .ac-effects,
+    .hp-effects {
+      position: absolute;
+      top: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 10;
+    }
+
+    .ac-effects {
+      left: 2px;
+    }
+
+    .hp-effects {
+      right: 2px;
+    }
+
+    .attribute-effect-icon {
+      width: 16px;
+      height: 16px;
+      border: 0;
+      border-radius: 2px;
+      cursor: help;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+      }
     }
   }
 

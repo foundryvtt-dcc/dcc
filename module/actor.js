@@ -48,19 +48,6 @@ class DCCActor extends Actor {
       this.system.config.computeMeleeAndMissileAttackAndDamage = false
     }
 
-    // Compute Melee/Missile Attack/Damage
-    // Here as opposed to derived since items depend on these values
-    if (config.computeMeleeAndMissileAttackAndDamage) {
-      this.computeMeleeAndMissileAttackAndDamage()
-    }
-
-    if (this.isPC) {
-      this.computeSpellCheck()
-      if (config.computeSavingThrows) {
-        this.computeSavingThrows()
-      }
-    }
-
     // Cap level if required
     if (config.maxLevel) {
       data.details.level.value = Math.max(0, Math.min(data.details.level.value, parseInt(config.maxLevel)))
@@ -100,8 +87,29 @@ class DCCActor extends Actor {
   prepareDerivedData () {
     super.prepareDerivedData()
 
+    // Recalculate ability modifiers after Active Effects have been applied
+    // This ensures effects that modify ability values (e.g. +2 to str.value) are reflected in the modifiers
+    const abilities = this.system.abilities
+    for (const abilityId in abilities) {
+      abilities[abilityId].mod = CONFIG.DCC.abilityModifiers[abilities[abilityId].value] || 0
+      abilities[abilityId].maxMod = CONFIG.DCC.abilityModifiers[abilities[abilityId].max] || abilities[abilityId].mod
+    }
+
     // Get configuration data
     const config = this._getConfig()
+
+    // Compute melee/missile attack and damage bonuses (after effects have modified ability modifiers)
+    if (config.computeMeleeAndMissileAttackAndDamage) {
+      this.computeMeleeAndMissileAttackAndDamage()
+    }
+
+    // Compute spell check and saving throws for PCs (after effects have modified ability modifiers)
+    if (this.isPC) {
+      this.computeSpellCheck()
+      if (config.computeSavingThrows) {
+        this.computeSavingThrows()
+      }
+    }
 
     if (this.system.details.sheetClass === 'Elf') {
       this.system.skills.detectSecretDoors.value = '+4'
@@ -166,8 +174,9 @@ class DCCActor extends Actor {
    * Called automatically by core Foundry prepareData
    */
   applyActiveEffects () {
-    // Call parent to ensure proper document lifecycle
-    super.applyActiveEffects()
+    // Note: Do NOT call super.applyActiveEffects() here
+    // This custom implementation replaces the core behavior to handle equipped item effects
+    // Calling super would cause effects to be applied twice
 
     // Create a deep copy of the base system data to preserve the original
     const overrides = {}

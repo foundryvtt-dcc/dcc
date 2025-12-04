@@ -66,6 +66,14 @@
              disabled
         {{/if}}
              data-dtype="Number">
+      {{#if attributeEffects.ac.length}}
+      <div class="ac-effects">
+        {{#each attributeEffects.ac}}
+        <img src="{{this.img}}" class="attribute-effect-icon"
+             data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+        {{/each}}
+      </div>
+      {{/if}}
       <label for="system.attributes.ac.value" style="grid-area: 2/1/4/1; line-height: 18px;">
         {{{localize "DCC.ArmorClass"}}}
       </label>
@@ -77,6 +85,14 @@
       <input style="grid-area: 1/2" id="system.attributes.hp.value" name="system.attributes.hp.value"
              value="{{system.attributes.hp.value}}"
              data-dtype="Number">
+      {{#if attributeEffects.hp.length}}
+      <div class="hp-effects">
+        {{#each attributeEffects.hp}}
+        <img src="{{this.img}}" class="attribute-effect-icon"
+             data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+        {{/each}}
+      </div>
+      {{/if}}
       <label for="system.attributes.hp.value" style="grid-row: 2">{{localize "DCC.HitPoints"}}</label>
       <div class="grid-tpl-max-auto" style="grid-area: 3/2; font-size: 13px; margin-bottom: 0;">
         <label style="font-size: 14px; line-height: 16px;" for="system.attributes.hp.max">{{localize "DCC.Max"}}:</label>
