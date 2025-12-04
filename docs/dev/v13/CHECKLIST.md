@@ -116,76 +116,76 @@ class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 Monitor rendering performance and ensure V2 implementations don't regress performance compared to V1.
 
 ## Pre-Migration Setup
-- [ ] Set up visual regression testing environment
-- [ ] Take baseline screenshots of all components
-- [ ] Create backup of V1 implementation
+- [x] Set up visual regression testing environment
+- [x] Take baseline screenshots of all components
+- [x] Create backup of V1 implementation
 
 ## Core Migration Steps
-- [ ] **CRITICAL: Register all actor and item sheets explicitly**
-- [ ] **Choose correct base class**:
-  - [ ] ActorSheetV2 for actor sheets (automatic drag/drop)
-  - [ ] ItemSheetV2 for item sheets (document features)
-  - [ ] ApplicationV2 for configuration dialogs (basic features)
-  - [ ] DialogV2 for user prompts (modal behavior)
-- [ ] Update class inheritance (FormApplication → chosen V2 class)
-- [ ] Convert `defaultOptions` to `DEFAULT_OPTIONS`
-- [ ] Add `tag: 'form'` to DEFAULT_OPTIONS for dialogs
-- [ ] Move dimensions to `position` object
-- [ ] Move window properties to `window` object
-- [ ] Rename `getData()` to `_prepareContext()`
-- [ ] Define `PARTS` for templates
+- [x] **CRITICAL: Register all actor and item sheets explicitly**
+- [x] **Choose correct base class**:
+  - [x] ActorSheetV2 for actor sheets (automatic drag/drop)
+  - [x] ItemSheetV2 for item sheets (document features)
+  - [x] ApplicationV2 for configuration dialogs (basic features)
+  - [x] DialogV2 for user prompts (modal behavior)
+- [x] Update class inheritance (FormApplication → chosen V2 class)
+- [x] Convert `defaultOptions` to `DEFAULT_OPTIONS`
+- [x] Add `tag: 'form'` to DEFAULT_OPTIONS for dialogs
+- [x] Move dimensions to `position` object
+- [x] Move window properties to `window` object
+- [x] Rename `getData()` to `_prepareContext()`
+- [x] Define `PARTS` for templates
 
 ## Event System Migration
-- [ ] Convert `activateListeners` to `actions`
-- [ ] Change event handler methods from `_` prefix to `#` prefix
-- [ ] Update HTML templates to use `data-action` attributes
-- [ ] Test all interactive elements
+- [x] Convert `activateListeners` to `actions`
+- [x] Change event handler methods from `_` prefix to `#` prefix
+- [x] Update HTML templates to use `data-action` attributes
+- [x] Test all interactive elements
 
 ## Tab System Migration
-- [ ] Split monolithic templates into separate tab templates
-- [ ] Define TABS configuration
-- [ ] Implement `_getTabsConfig()` if tabs are dynamic
-- [ ] Test tab switching functionality
+- [x] Split monolithic templates into separate tab templates
+- [x] Define TABS configuration
+- [x] Implement `_getTabsConfig()` if tabs are dynamic
+- [x] Test tab switching functionality
 
 ## Advanced Features
-- [ ] **Implement drag/drop appropriately**:
-  - [ ] ActorSheetV2: Use `.draggable` class for automatic item/effect dragging
-  - [ ] ActorSheetV2: Add custom drag types if needed (like DCC system)
-  - [ ] ApplicationV2: Manual DragDrop setup required
-  - [ ] DocumentSheetV2: Usually no drag/drop needed
-- [ ] Migrate `{{editor}}` helpers to `<prose-mirror>` elements
-- [ ] **Update image editing to use inherited editImage** (RECOMMENDED):
-  - [ ] Remove custom `#editImage` methods
-  - [ ] Update actions to reference `YourSheetClass.editImage` instead of `this.#editImage`
-  - [ ] Update templates to use `data-action="editImage"` and `data-edit="img"`
-- [ ] Replace jQuery with vanilla JS in hooks
-- [ ] **Consider using DialogV2 factory methods** for simple prompts
+- [x] **Implement drag/drop appropriately**:
+  - [x] ActorSheetV2: Use `.draggable` class for automatic item/effect dragging
+  - [x] ActorSheetV2: Add custom drag types if needed (like DCC system)
+  - [x] ApplicationV2: Manual DragDrop setup required
+  - [x] DocumentSheetV2: Usually no drag/drop needed
+- [x] Migrate `{{editor}}` helpers to `<prose-mirror>` elements
+- [x] **Update image editing to use inherited editImage** (RECOMMENDED):
+  - [x] Remove custom `#editImage` methods
+  - [x] Update actions to reference `YourSheetClass.editImage` instead of `this.#editImage`
+  - [x] Update templates to use `data-action="editImage"` and `data-edit="img"`
+- [x] Replace jQuery with vanilla JS in hooks
+- [x] **Consider using DialogV2 factory methods** for simple prompts
 
 ## Theme Implementation
-- [ ] Create variables.css file with CSS custom properties
-- [ ] Add variables.css to system.json with "variables" layer
-- [ ] Define both light and dark theme variables
-- [ ] Update primary stylesheet to use variables instead of hard-coded values
-- [ ] Use `system-` prefix for all custom CSS variables
-- [ ] Test theme switching functionality
-- [ ] Verify proper contrast ratios in both themes
-- [ ] Check for opacity/layering issues
+- [x] Create variables.css file with CSS custom properties
+- [x] Add variables.css to system.json with "variables" layer
+- [x] Define both light and dark theme variables
+- [x] Update primary stylesheet to use variables instead of hard-coded values
+- [x] Use `system-` prefix for all custom CSS variables
+- [x] Test theme switching functionality
+- [x] Verify proper contrast ratios in both themes
+- [x] Check for opacity/layering issues
 
 ## V13 Compatibility
-- [ ] Replace deprecated namespace references
-- [ ] Update hook names (renderChatMessage → renderChatMessageHTML)
-- [ ] Fix static initializer CONFIG references
-- [ ] Test with CSS Layers compatibility
+- [x] Replace deprecated namespace references
+- [x] Update hook names (renderChatMessage → renderChatMessageHTML)
+- [x] Fix static initializer CONFIG references
+- [x] Test with CSS Layers compatibility
 
 ## Final Validation
-- [ ] Run visual regression tests
-- [ ] Test all functionality end-to-end
-- [ ] **Test drag/drop operations specifically** (ActorSheetV2 auto-features)
-- [ ] **Test dialog interactions** (DialogV2 factory methods)
-- [ ] Verify performance is acceptable
-- [ ] Test in multiple browsers
-- [ ] Test theme switching in multiple browsers
-- [ ] Document any remaining workarounds
+- [x] Run visual regression tests
+- [x] Test all functionality end-to-end
+- [x] **Test drag/drop operations specifically** (ActorSheetV2 auto-features)
+- [x] **Test dialog interactions** (DialogV2 factory methods)
+- [x] Verify performance is acceptable
+- [x] Test in multiple browsers
+- [x] Test theme switching in multiple browsers
+- [x] Document any remaining workarounds
 
 ## Common Issues and Solutions
 

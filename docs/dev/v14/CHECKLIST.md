@@ -4,65 +4,82 @@ This document provides a checklist for preparing for FoundryVTT V14.
 
 **Note**: V14 is in development. Update this checklist as new information becomes available.
 
+**Last Updated**: December 2024
+
 ## Prerequisites
 
-- [ ] Complete [V13 migration](../v13/CHECKLIST.md) first
-- [ ] All sheets using ApplicationV2
-- [ ] All templates using ProseMirror (not TinyMCE)
-- [ ] Running on latest V13 stable
+- [x] Complete [V13 migration](../v13/CHECKLIST.md) first
+- [x] All sheets using ApplicationV2
+- [x] All templates using ProseMirror (not TinyMCE)
+- [x] Running on latest V13 stable
 
 ## Critical: Data Model Migration
 
 ### Assess Current State
 
-- [ ] Review current `template.json` structure
-- [ ] Identify all Actor types and their schemas
-- [ ] Identify all Item types and their schemas
-- [ ] Document any computed/derived fields
+- [x] Review current `template.json` structure
+- [x] Identify all Actor types and their schemas (Player, NPC, Party)
+- [x] Identify all Item types and their schemas (9 types)
+- [x] Document any computed/derived fields
 
 ### Create TypeDataModel Classes
 
-- [ ] Create `module/data/` directory for data models
-- [ ] Implement TypeDataModel for each Actor type:
-  - [ ] `PlayerData` extends `TypeDataModel`
-  - [ ] `NPCData` extends `TypeDataModel`
-- [ ] Implement TypeDataModel for each Item type:
-  - [ ] `WeaponData`
-  - [ ] `AmmunitionData`
-  - [ ] `ArmorData`
-  - [ ] `EquipmentData`
-  - [ ] `SpellData`
-  - [ ] `SkillData`
-  - [ ] `LevelData`
-  - [ ] `MountData`
-  - [ ] `TreasureData`
+- [x] Create `module/data/` directory for data models
+- [x] Create reusable field types in `module/data/fields/`:
+  - [x] `AbilityField` - ability scores with spent/damage tracking
+  - [x] `CurrencyField` - pp, ep, gp, sp, cp
+  - [x] `DiceField` - dice notation with validation
+  - [x] `SaveField` - saving throws with bonuses
+- [x] Implement TypeDataModel for each Actor type:
+  - [x] `BaseActorData` - common fields shared by all actors
+  - [x] `PlayerData` extends `BaseActorData` - class fields, skills, config
+  - [x] `NPCData` extends `BaseActorData` - with NPC-specific overrides
+  - [x] `PartyData` extends `BaseActorData`
+- [x] Implement TypeDataModel for each Item type:
+  - [x] `BaseItemData` - description fields
+  - [x] `PhysicalItemData` extends `BaseItemData` - quantity, weight, equipped
+  - [x] `WeaponData` extends `PhysicalItemData`
+  - [x] `AmmunitionData` extends `PhysicalItemData`
+  - [x] `ArmorData` extends `PhysicalItemData`
+  - [x] `EquipmentData` extends `PhysicalItemData`
+  - [x] `MountData` extends `PhysicalItemData`
+  - [x] `SpellData` extends `BaseItemData`
+  - [x] `SkillData` extends `BaseItemData`
+  - [x] `LevelData` extends `TypeDataModel`
+  - [x] `TreasureData` extends `BaseItemData`
 
 ### Register Data Models
 
-- [ ] Register all Actor data models in `CONFIG.Actor.dataModels`
-- [ ] Register all Item data models in `CONFIG.Item.dataModels`
-- [ ] Verify registration happens in `init` hook
+- [x] Register all Actor data models in `CONFIG.Actor.dataModels`
+- [x] Register all Item data models in `CONFIG.Item.dataModels`
+- [x] Verify registration happens in `init` hook (module/dcc.js:70-88)
+
+### Remove template.json
+
+- [x] Add `documentTypes` to `system.json` with all Actor and Item types
+- [x] Delete `template.json` file
 
 ### Test Data Models
 
-- [ ] Create new actors/items of each type
-- [ ] Verify default values are correct
-- [ ] Test derived data calculations
-- [ ] Verify existing world data loads correctly
+- [x] Create new actors/items of each type
+- [x] Verify default values are correct
+- [x] Test derived data calculations
+- [x] Verify existing world data loads correctly
+- [x] E2E tests added in `browser-tests/e2e/data-models.spec.js`
 
 ### Implement Migrations
 
-- [ ] Add `migrateData()` for any schema changes
-- [ ] Test migration with legacy data
-- [ ] Document migration paths
+- [x] Add `migrateData()` for any schema changes in each data model class
+- [x] Test migration with legacy data
+- [x] Document migration paths (handled in data model classes)
 
 ## Active Effects
 
 ### Immediate (Do in V13)
 
-- [ ] Set `CONFIG.ActiveEffect.legacyTransferral = false`
-- [ ] Test all effects still work correctly
-- [ ] Fix any effects relying on legacy behavior
+- [x] Set `CONFIG.ActiveEffect.legacyTransferral = false` (module/dcc.js:68)
+- [x] Test all effects still work correctly
+- [x] Fix any effects relying on legacy behavior
 
 ### Before V14
 
@@ -75,48 +92,48 @@ This document provides a checklist for preparing for FoundryVTT V14.
 
 ### DataModel Operations
 
-- [ ] Search codebase for `-=` in updateSource calls
-- [ ] Search codebase for `==` in updateSource calls
-- [ ] Replace with new DataFieldOperator values (when documented)
+- [x] Search codebase for `-=` in updateSource calls (none found in production code)
+- [x] Search codebase for `==` in updateSource calls (none found)
+- [x] Replace with new DataFieldOperator values (not needed - no usage found)
 
 ### Null Checks
 
-- [ ] Add null checks for `game.activeTool`
-- [ ] Add null checks for `SceneControls#tool`
+- [x] Add null checks for `game.activeTool` (not used)
+- [x] Add null checks for `SceneControls#tool` (not used)
 
 ### parseHTML Changes
 
-- [ ] Update code checking for `undefined` from parseHTML
-- [ ] Change to check for `null` instead
+- [x] Update code checking for `undefined` from parseHTML (not used)
+- [x] Change to check for `null` instead (not used)
 
 ### Renamed APIs
 
-- [ ] Replace `RegionPolygonTree` → `foundry.data.PolygonTree`
-- [ ] Replace `RegionShape` usage with BaseShapeData mixins
-- [ ] Update `foundry.prosemirror.defaultPlugins` → `ProseMirrorEditor.buildDefaultPlugins()`
+- [x] Replace `RegionPolygonTree` → `foundry.data.PolygonTree` (not used)
+- [x] Replace `RegionShape` usage with BaseShapeData mixins (not used)
+- [x] Update `foundry.prosemirror.defaultPlugins` → `ProseMirrorEditor.buildDefaultPlugins()` (not used)
 
 ## Editor Migration
 
 ### TinyMCE Removal
 
-- [ ] Verify no TinyMCE references in codebase
-- [ ] Confirm all editors use ProseMirror
-- [ ] Test all rich text fields
+- [x] Verify no TinyMCE references in codebase
+- [x] Confirm all editors use ProseMirror
+- [x] Test all rich text fields
 
 ## Testing
 
 ### Functional Testing
 
-- [ ] Test all Actor sheet functionality
-- [ ] Test all Item sheet functionality
-- [ ] Test Active Effects application
-- [ ] Test drag and drop operations
-- [ ] Test all roll mechanics
+- [x] Test all Actor sheet functionality
+- [x] Test all Item sheet functionality
+- [x] Test Active Effects application
+- [x] Test drag and drop operations
+- [x] Test all roll mechanics
 
 ### Data Integrity
 
-- [ ] Test loading existing world data
-- [ ] Verify no data loss after migration
+- [x] Test loading existing world data
+- [x] Verify no data loss after migration
 - [ ] Test with various world sizes
 
 ### Performance
@@ -127,7 +144,7 @@ This document provides a checklist for preparing for FoundryVTT V14.
 
 ## Documentation
 
-- [ ] Update system documentation
+- [x] Update system documentation
 - [ ] Document any breaking changes for users
 - [ ] Update changelog
 

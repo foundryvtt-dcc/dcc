@@ -4,8 +4,6 @@
 import { vi } from 'vitest'
 import DCC from '../config.js'
 import DCCRoll from './dcc-roll.js'
-import path from 'path'
-import fs from 'fs'
 
 // console.log('Loading Foundry Mocks')
 
@@ -1736,26 +1734,190 @@ class HooksMock {
 
 global.Hooks = HooksMock
 
+/**
+ * Default data for document types - matches TypeDataModel definitions
+ * This replaces the legacy template.json approach
+ */
+const DOCUMENT_DEFAULTS = {
+  Actor: {
+    common: {
+      abilityLog: [],
+      abilities: {
+        str: { label: 'DCC.AbilityStr', value: 10, max: 10, spent: 0, damage: 0 },
+        agl: { label: 'DCC.AbilityAgl', value: 10, max: 10, spent: 0, damage: 0 },
+        sta: { label: 'DCC.AbilitySta', value: 10, max: 10, spent: 0, damage: 0 },
+        per: { label: 'DCC.AbilityPer', value: 10, max: 10, spent: 0, damage: 0 },
+        int: { label: 'DCC.AbilityInt', value: 10, max: 10, spent: 0, damage: 0 },
+        lck: { label: 'DCC.AbilityLck', value: 10, max: 10, spent: 0, damage: 0 }
+      },
+      attributes: {
+        ac: { value: 10, checkPenalty: 0, otherMod: 0, speedPenalty: 0 },
+        actionDice: { value: '1d20', options: [{ value: '1d20', label: '1d20' }] },
+        critical: { die: '1d4', table: 'I' },
+        fumble: { die: '1d4' },
+        hitDice: { value: '1d4' },
+        hp: { value: 10, min: 0, max: 10, temp: 0, tempmax: 0 },
+        init: { die: '1d20', otherMod: 0, value: '+0' },
+        initDice: { value: '1d20', options: [{ value: '1d20', label: '1d20' }, { value: '1d16', label: '1d16' }] },
+        speed: { value: '30', base: '30', special: '', swim: '', fly: '' }
+      },
+      details: {
+        alignment: 'l',
+        attackBonus: '+0',
+        attackHitBonus: { melee: { value: '+0', adjustment: '+0' }, missile: { value: '+0', adjustment: '+0' } },
+        attackDamageBonus: { melee: { value: '+0', adjustment: '+0' }, missile: { value: '+0', adjustment: '+0' } },
+        birthAugur: '',
+        birthAugurLuckMod: 0,
+        critRange: '20',
+        languages: '',
+        level: { value: 0 },
+        occupation: { value: '' },
+        notes: { value: '' },
+        title: { value: '' },
+        xp: { value: 0, min: 0, max: 10 }
+      },
+      saves: {
+        frt: { abbreviation: 'DCC.SavesFortitudeAbbr', label: 'DCC.SavesFortitude', classBonus: '', otherBonus: '', override: '', value: 0 },
+        ref: { abbreviation: 'DCC.SavesReflexAbbr', label: 'DCC.SavesReflex', classBonus: '', otherBonus: '', override: '', value: 0 },
+        wil: { abbreviation: 'DCC.SavesWillAbbr', label: 'DCC.SavesWill', classBonus: '', otherBonus: '', override: '', value: 0 }
+      },
+      currency: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 }
+    },
+    config: {
+      config: {
+        attackBonusMode: 'flat',
+        actionDice: '1d20',
+        addClassLevelToInitiative: false,
+        maxLevel: '',
+        rollAttackBonus: false,
+        computeAC: true,
+        baseACAbility: 'agl',
+        computeSpeed: true,
+        computeCheckPenalty: true,
+        computeInitiative: true,
+        computeMeleeAndMissileAttackAndDamage: true,
+        computeSavingThrows: true,
+        sortInventory: true,
+        removeEmptyItems: true,
+        showSpells: false,
+        showSkills: false,
+        showBackstab: false,
+        showSwimFlySpeed: false
+      }
+    },
+    Player: {
+      class: { className: 'Zero-Level' },
+      skills: { detectSecretDoors: { label: 'DCC.DetectSecretDoors', ability: '', value: '+0' } }
+    },
+    NPC: {
+      attributes: { critical: { die: '1d4', table: 'M' }, hitDice: { value: '1d6' } },
+      class: { spellCheck: 1, spellCheckAbility: 'int' }
+    },
+    Party: {}
+  },
+  Item: {
+    itemDescription: {
+      description: { value: '', chat: '', unidentified: '', summary: '', judge: { value: '' } },
+      source: ''
+    },
+    physicalItem: {
+      quantity: 1,
+      weight: 0,
+      equipped: true,
+      identified: true,
+      value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 }
+    },
+    weapon: {
+      config: { actionDieOverride: '', critDieOverride: '', critRangeOverride: '', critTableOverride: '', damageOverride: '', attackBonusOverride: '', initiativeBonusOverride: '', initiativeDieOverride: '' },
+      actionDie: '1d20',
+      attackBonus: '',
+      attackBonusWeapon: '',
+      attackBonusLucky: '',
+      backstabDamage: '',
+      critDie: '',
+      critRange: 20,
+      critTable: '',
+      damage: '',
+      damageWeapon: '',
+      damageBonus: '',
+      damageWeaponBonus: '',
+      doubleIfMounted: false,
+      initiativeBonus: '',
+      initiativeDie: '1d20',
+      initiativeWeaponBonus: '',
+      melee: false,
+      range: '',
+      shortRangeStrength: false,
+      subdual: false,
+      toHit: '+0',
+      trained: true,
+      twoHanded: false,
+      twoWeaponPrimary: false,
+      twoWeaponSecondary: false
+    },
+    ammunition: {},
+    armor: { acBonus: '+1', checkPenalty: '-0', speed: '-0', fumbleDie: '1d4' },
+    equipment: {},
+    level: { class: '', level: '', levelData: '', levelDataLawful: '', levelDataNeutral: '', levelDataChaotic: '' },
+    mount: {},
+    spell: {
+      config: { inheritActionDie: true, inheritSpellCheck: true, inheritCheckPenalty: true, castingMode: 'wizard', showMercurialTab: false },
+      level: 1,
+      associatedPatron: '',
+      lost: false,
+      range: '',
+      duration: '',
+      page: '',
+      castingTime: '',
+      results: {},
+      save: '',
+      spellCheck: { die: '1d20', value: '+0', penalty: '-0', otherBonus: '' },
+      manifestation: { value: '', description: '', displayInChat: true },
+      mercurialEffect: { value: '', summary: '', description: '', displayInChat: true },
+      lastResult: ''
+    },
+    treasure: { value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 }, isCoins: false },
+    skill: {
+      config: { useSummary: true, useAbility: true, useDie: true, useLevel: false, useValue: true, showLastResult: true, applyCheckPenalty: false },
+      ability: '',
+      die: '1d20',
+      value: '',
+      lastResult: '0'
+    }
+  }
+}
+
 export function getTemplateData (documentClass, type) {
   if (!documentClass || !type) {
     return null
   }
 
-  const filePath = path.join(__dirname, '..', '..', 'template.json')
-  const fileContent = fs.readFileSync(filePath, 'utf-8')
-  const templateData = JSON.parse(fileContent)
-  const templateDataForClass = templateData[documentClass]
-  const templateDataForType = templateDataForClass[type] || {}
+  const defaults = DOCUMENT_DEFAULTS[documentClass]
+  if (!defaults) return null
 
   const documentData = {}
 
-  // Loop over all the templates for the class and merge them together
-  for (const template of templateDataForType.templates || []) {
-    Object.assign(documentData, templateDataForClass.templates[template])
+  // For Actors, merge common and config templates first
+  if (documentClass === 'Actor') {
+    Object.assign(documentData, JSON.parse(JSON.stringify(defaults.common || {})))
+    Object.assign(documentData, JSON.parse(JSON.stringify(defaults.config || {})))
   }
-  // Add in the data from the type itself
-  Object.assign(documentData, templateDataForType)
-  return documentData || null
+  // For Items, merge itemDescription and physicalItem templates
+  if (documentClass === 'Item') {
+    Object.assign(documentData, JSON.parse(JSON.stringify(defaults.itemDescription || {})))
+    // Physical items get physicalItem template
+    if (['weapon', 'ammunition', 'armor', 'equipment', 'mount'].includes(type)) {
+      Object.assign(documentData, JSON.parse(JSON.stringify(defaults.physicalItem || {})))
+    }
+  }
+
+  // Merge type-specific data
+  const typeData = defaults[type]
+  if (typeData) {
+    Object.assign(documentData, JSON.parse(JSON.stringify(typeData)))
+  }
+
+  return documentData
 }
 
 // Mock DCCActorLevelChange

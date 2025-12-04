@@ -1,6 +1,24 @@
 {
   "id": "dcc",
   "title": "Dungeon Crawl Classics",
+  "documentTypes": {
+    "Actor": {
+      "Player": {},
+      "NPC": {},
+      "Party": {}
+    },
+    "Item": {
+      "weapon": {},
+      "ammunition": {},
+      "armor": {},
+      "equipment": {},
+      "level": {},
+      "mount": {},
+      "spell": {},
+      "treasure": {},
+      "skill": {}
+    }
+  },
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": "0.65.4",
   "compatibility": {

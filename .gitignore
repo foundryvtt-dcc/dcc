@@ -65,3 +65,7 @@ packs/**/MANIFEST*
 
 # Playwright MCP temporary files
 .playwright-mcp/
+
+# Environment files with secrets
+.env
+browser-tests/**/.env
