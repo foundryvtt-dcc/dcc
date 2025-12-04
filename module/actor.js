@@ -1381,11 +1381,15 @@ class DCCActor extends Actor {
       damagePrompt = game.i18n.localize('DCC.RollDamage')
     }
 
-    // Deed roll
-    const deedDieRoll = attackRollResult.deedDieRoll
+    // Deed roll - add to rolls array and track index
     const deedDieFormula = attackRollResult.deedDieFormula
     const deedDieRollResult = attackRollResult.deedDieRollResult
     const deedRollSuccess = attackRollResult.deedDieRollResult > 2
+    let deedDieRollIndex = null
+    if (attackRollResult.deedDieRoll) {
+      deedDieRollIndex = rolls.length
+      rolls.push(attackRollResult.deedDieRoll)
+    }
 
     // Crit roll
     let critRollFormula = ''
@@ -1507,26 +1511,22 @@ class DCCActor extends Actor {
         attackRollHTML,
         damageInlineRoll,
         damagePrompt,
-        damageRoll,
         damageRollFormula,
         critInlineRoll,
         critPrompt,
-        critRoll,
         critRollFormula,
         ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
         deedDieFormula,
-        deedDieRoll,
+        deedDieRollIndex,
         deedDieRollResult,
         deedRollSuccess,
         fumbleInlineRoll,
         fumblePrompt,
-        fumbleRoll,
         fumbleRollFormula,
         fumbleTableName,
         hitsAc: attackRollResult.hitsAc,
-        targets: game.user.targets,
         weaponId,
         weaponName: weapon.name,
         twoWeaponNote
