@@ -27,6 +27,7 @@ Work Process (for developers): [GitHub Process for JSON/LevelDB](docs/GITHUB-JSO
 * @sasquach45932
 * Tony Zito (@tonyrobots)
 * Marco Bertolini (@bertolinimarco) and Emanuele Granatello (Italian translation)
+* ZzNoah (Chinese Translation)
 
 Contains some icon art from game-icons.net.
 
