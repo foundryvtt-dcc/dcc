@@ -1431,8 +1431,7 @@ class DCCActor extends Actor {
     try {
       useNPCFumbles = game.settings.get('dcc-core-book', 'registerNPCFumbleTables') || true
     } catch {
-      // warn to console log
-      console.warn('DCC | Error reading "registerNPCFumbleTables" setting from "dcc-core-book" module. Defaulting useNPCFumbles to true.')
+      // Module not installed, use default (true)
     }
     let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName)
 
@@ -1542,6 +1541,15 @@ class DCCActor extends Actor {
      * @param {object} data
      */
     await Hooks.callAll('dcc.rollWeaponAttack', rolls, messageData)
+
+    // Remove non-serializable objects before creating the ChatMessage
+    // In Foundry v14, system data goes through TypeDataModel validation which can't handle
+    // Roll objects or Sets with circular references. This is safe for v13 as well.
+    delete messageData.system.targets
+    delete messageData.system.damageRoll
+    delete messageData.system.critRoll
+    delete messageData.system.fumbleRoll
+    delete messageData.system.deedDieRoll
 
     messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
 
