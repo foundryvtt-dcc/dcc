@@ -64,59 +64,216 @@ effect.changes[0].value  // Deserializes to JSON or string
 | UPGRADE | 4 | `'upgrade'` |
 | OVERRIDE | 5 | `'override'` |
 
-**DCC System Implementation:**
+**Note:** Accessing `CONST.ACTIVE_EFFECT_MODES` in V14 will log a deprecation warning. Use the string type values directly instead.
 
-The DCC system's `applyActiveEffects` method has been updated to use string types:
+### Application Phases Must Be Registered
+
+V14 uses a two-phase effect application system ("initial" and "final"). **You must register these phases** or you'll get the error: `"initial" is not a registered ActiveEffect application phase`.
 
 ```javascript
-// module/actor.js - applyActiveEffects method
-for (const change of effect.changes) {
-  const key = change.key
-  // v14 uses string 'type' field, fallback to numeric 'mode' for backwards compatibility
-  const type = change.type || change.mode || 'add'
-  const value = change.value
+// module/dcc.js - in Hooks.once('init', ...)
+CONFIG.ActiveEffect.phases = {
+  initial: { priority: 0, label: 'Initial' },
+  final: { priority: 100, label: 'Final' }
+}
+```
 
-  switch (type) {
-    case 'custom':
-      this._applyCustomEffect(key, value)
-      break
-    case 'add':
-      this._applyAddEffect(key, value, overrides)
-      break
-    case 'multiply':
-      this._applyMultiplyEffect(key, value, overrides)
-      break
-    case 'override':
-      this._applyOverrideEffect(key, value, overrides)
-      break
-    case 'upgrade':
-      this._applyUpgradeEffect(key, value, overrides)
-      break
-    case 'downgrade':
-      this._applyDowngradeEffect(key, value, overrides)
-      break
+### DataField.applyChange() for Schema Fields
+
+**Critical Change:** V14's `ActiveEffect.apply()` method uses `DataField.applyChange()` for fields defined in the DataModel schema. This bypasses the `_applyLegacy()` and `_applyAdd()` methods entirely.
+
+This means:
+- Custom `_applyAdd()` overrides won't be called for schema-defined fields
+- String fields with numeric-looking values (like thief skills: "+5", "-2") won't be treated as numbers
+- You must intercept in `apply()` before the DataField system handles the change
+
+## DCC System Implementation
+
+### Custom ActiveEffect Document Class
+
+The DCC system uses a custom `DCCActiveEffect` class to handle:
+1. **Equipped Status Filtering** - Only apply effects from equipped items
+2. **Signed String Numeric Operations** - Handle thief skills that store numbers as signed strings ("+5", "-2", "0")
+
+```javascript
+// module/active-effect.js
+export default class DCCActiveEffect extends ActiveEffect {
+  apply (actor, change) {
+    // Check if this effect comes from an item
+    const parentItem = this.parent
+    if (parentItem?.documentName === 'Item') {
+      const isEquipped = parentItem.system?.equipped ?? true
+      if (!isEquipped) {
+        return {}
+      }
+    }
+
+    // Handle string values that look like signed numbers (thief skills)
+    const current = foundry.utils.getProperty(actor, change.key)
+    const ct = foundry.utils.getType(current)
+
+    if (ct === 'string' && !String(current).includes('d') && !String(change.value).includes('d')) {
+      const currentNum = Number(current)
+      const deltaNum = Number(change.value)
+
+      if (!isNaN(currentNum) && !isNaN(deltaNum)) {
+        let result
+        switch (change.type) {
+          case 'add':
+            result = currentNum + deltaNum
+            break
+          case 'multiply':
+            result = currentNum * deltaNum
+            break
+          case 'upgrade':
+            result = Math.max(currentNum, deltaNum)
+            break
+          case 'downgrade':
+            result = Math.min(currentNum, deltaNum)
+            break
+          case 'override':
+            result = deltaNum
+            break
+          default:
+            result = null
+        }
+
+        if (result !== null) {
+          const formatted = result > 0 ? `+${result}` : String(result)
+          if (formatted !== current) {
+            foundry.utils.setProperty(actor, change.key, formatted)
+            return { [change.key]: formatted }
+          }
+          return {}
+        }
+      }
+    }
+
+    return super.apply(actor, change)
   }
 }
 ```
 
-**Note:** Accessing `CONST.ACTIVE_EFFECT_MODES` in V14 will log a deprecation warning. Use the string type values directly instead.
-
-## New Features
-
-### Compendium Storage
-
-Active Effects can now be stored in Compendium packs independently:
+Register the custom class in `dcc.js`:
 
 ```javascript
-// Create a compendium for effects
+import DCCActiveEffect from './active-effect.js'
+
+Hooks.once('init', async function () {
+  // ... other init code ...
+
+  CONFIG.ActiveEffect.legacyTransferral = false
+
+  CONFIG.ActiveEffect.phases = {
+    initial: { priority: 0, label: 'Initial' },
+    final: { priority: 100, label: 'Final' }
+  }
+
+  CONFIG.ActiveEffect.documentClass = DCCActiveEffect
+})
+```
+
+### Effect Target Fields
+
+For effects that modify values that also have modifier fields, target the modifier field instead of the base value to ensure proper stacking:
+
+| Attribute | Don't Use | Use Instead |
+|-----------|-----------|-------------|
+| Saves | `system.saves.frt.value` | `system.saves.frt.otherBonus` |
+| Saves | `system.saves.ref.value` | `system.saves.ref.otherBonus` |
+| Saves | `system.saves.wil.value` | `system.saves.wil.otherBonus` |
+| AC | `system.attributes.ac.value` | `system.attributes.ac.otherMod` |
+| Initiative | `system.attributes.init.value` | `system.attributes.init.otherMod` |
+
+This prevents effects from overwriting the base value and allows multiple effects to stack properly.
+
+## Effect Compendium Format
+
+### ID Requirements
+
+Effect IDs must be exactly 16 characters, alphanumeric only:
+
+```javascript
+// Invalid (too short)
+"_id": "AE039PICK1"      // 10 chars - will fail validation
+
+// Valid
+"_id": "xZT74QXf3xMkTrXT"  // 16 chars alphanumeric
+```
+
+### JSON Structure
+
+Example effect JSON for compendium:
+
+```json
+{
+  "name": "Fortitude Save Bonus (+1)",
+  "img": "systems/dcc/styles/images/game-icons-net/turtle-shell.svg",
+  "type": "base",
+  "system": {},
+  "changes": [
+    {
+      "key": "system.saves.frt.otherBonus",
+      "value": "1",
+      "type": "add",
+      "priority": null
+    }
+  ],
+  "disabled": false,
+  "duration": {
+    "startTime": null,
+    "seconds": null,
+    "combat": null,
+    "rounds": null,
+    "turns": null,
+    "startRound": null,
+    "startTurn": null
+  },
+  "description": "<p>Adds +1 to Fortitude saving throws.</p>",
+  "origin": null,
+  "transfer": true,
+  "statuses": [],
+  "flags": {},
+  "_id": "sFA7TCFXm6dwmDmg",
+  "_stats": {
+    "coreVersion": "14.352",
+    "systemId": "dcc",
+    "systemVersion": "0.66.0",
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "folder": null,
+  "sort": 1200,
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!effects!sFA7TCFXm6dwmDmg"
+}
+```
+
+Key points:
+- `type` field uses lowercase string ("add", not "Add" or 2)
+- `_id` is exactly 16 alphanumeric characters
+- `_key` follows pattern `!effects!{_id}`
+- Target `otherBonus`/`otherMod` fields where appropriate
+
+## Compendium Storage
+
+Active Effects can be stored in Compendium packs independently:
+
+```javascript
 // In system.json
 {
   "packs": [
     {
-      "name": "effects",
+      "name": "dcc-effects",
       "label": "DCC Effects",
       "type": "ActiveEffect",
-      "path": "packs/effects"
+      "path": "packs/dcc-effects"
     }
   ]
 }
@@ -132,16 +289,6 @@ Effects can be dropped directly onto Tokens:
 // No custom handling required for basic functionality
 ```
 
-### Application Phases
-
-Effects now support application phases for precise timing:
-
-```javascript
-// Effects can specify when they should be applied
-// during the data preparation cycle
-// This helps avoid priority competition between effects
-```
-
 ### Scene Region Effects
 
 Scene Regions can apply Active Effects to tokens:
@@ -152,104 +299,51 @@ Scene Regions can apply Active Effects to tokens:
 // Effects remove when tokens leave the region
 ```
 
-## Preparing for V14
+## Common Issues and Solutions
 
-### 1. Disable Legacy Transferral Now
+### Double Application Bug
 
-If you haven't already, disable legacy transferral in V13:
+**Symptom:** Effects apply twice (+1 becomes +2)
 
+**Cause:** V14's two-phase application system. If you have a custom `applyActiveEffects` that doesn't handle the `phase` parameter, effects apply in both phases.
+
+**Solution:** Don't override `applyActiveEffects`. Let Foundry handle effect application and use a custom ActiveEffect document class for DCC-specific behavior.
+
+### String Concatenation Instead of Addition
+
+**Symptom:** Thief skills show "01" instead of "+1" when adding effects
+
+**Cause:** V14 uses `DataField.applyChange()` for schema-defined fields, which treats string fields as strings, not numbers. "0" + "1" = "01" via string concatenation.
+
+**Solution:** Intercept in `apply()` method before calling `super.apply()`. Check if the current value is a numeric string and handle the math manually, then format with sign prefix.
+
+### Phase Not Registered Error
+
+**Symptom:** Error: `"initial" is not a registered ActiveEffect application phase`
+
+**Cause:** Missing phase registration in CONFIG.
+
+**Solution:** Add to init hook:
 ```javascript
-Hooks.once('init', () => {
-  CONFIG.ActiveEffect.legacyTransferral = false
-})
-```
-
-Test thoroughly to ensure your effects still work correctly.
-
-### 2. Audit Effect Origins
-
-Check that all effect origins are valid UUIDs:
-
-```javascript
-// Audit script for checking effect origins
-for (const actor of game.actors) {
-  for (const effect of actor.effects) {
-    if (effect.origin && !effect.origin.includes('.')) {
-      console.warn(`Invalid origin for effect ${effect.name}:`, effect.origin)
-    }
-  }
+CONFIG.ActiveEffect.phases = {
+  initial: { priority: 0, label: 'Initial' },
+  final: { priority: 100, label: 'Final' }
 }
 ```
 
-### 3. Review Effect Change Modes ✅ COMPLETED
-
-The mode → type migration has been implemented:
-
-```javascript
-// V13 numeric modes → V14 string types
-const MODE_TO_TYPE = {
-  0: 'custom',    // CUSTOM
-  1: 'multiply',  // MULTIPLY
-  2: 'add',       // ADD
-  3: 'downgrade', // DOWNGRADE
-  4: 'upgrade',   // UPGRADE
-  5: 'override'   // OVERRIDE
-}
-
-// DCC system now uses string types directly
-// See module/actor.js applyActiveEffects method
-```
-
-### 4. Update Effect Value Handling
-
-If you're parsing effect values, handle JSON deserialization:
-
-```javascript
-// V13: Values are always strings
-const value = effect.changes[0].value  // "5" or "{\"bonus\": 5}"
-
-// V14: Values may be parsed JSON
-const value = effect.changes[0].value  // 5 or { bonus: 5 }
-
-// Safe handling for both
-function getEffectValue(change) {
-  const value = change.value
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value)
-    } catch {
-      return value
-    }
-  }
-  return value
-}
-```
-
-## DCC System Considerations
-
-### Current DCC Effects Usage
-
-The DCC system uses Active Effects for:
-- Conditions (stunned, blessed, cursed)
-- Magic item bonuses
-- Spell effects
-- Class abilities
-
-### Migration Checklist
+## Migration Checklist
 
 - [x] Verify `legacyTransferral = false` works correctly
+- [x] Register ActiveEffect phases in CONFIG
+- [x] Create custom DCCActiveEffect document class
+- [x] Register document class in CONFIG
+- [x] Update effect targets to use otherBonus/otherMod fields
+- [x] Create effects compendium with proper format
+- [x] Ensure 16-char alphanumeric IDs
+- [x] Use lowercase string type values
 - [ ] Audit all effect origins for valid UUIDs
 - [ ] Test effect transfer behavior
-- [x] Review effect change modes used (now uses string types)
 - [ ] Update any custom effect value parsing
-- [ ] Consider creating an effects compendium for common conditions
-
-## Future Features (Coming in Later V14 Prototypes)
-
-- Robust duration data model
-- Automatic effect expiration
-- Token property application (vision, size, light)
-- Enhanced status icon control
 
 ## Related Documentation
 

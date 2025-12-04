@@ -5,6 +5,7 @@
  */
 
 // Import Modules
+import DCCActiveEffect from './active-effect.js'
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
@@ -66,6 +67,15 @@ Hooks.once('init', async function () {
 
   // Enable Active Effects
   CONFIG.ActiveEffect.legacyTransferral = false
+
+  // Register Active Effect application phases (required for V14)
+  CONFIG.ActiveEffect.phases = {
+    initial: { priority: 0, label: 'Initial' },
+    final: { priority: 100, label: 'Final' }
+  }
+
+  // Register custom ActiveEffect document class for DCC-specific behavior
+  CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
   // Register Actor data models
   CONFIG.Actor.dataModels = {

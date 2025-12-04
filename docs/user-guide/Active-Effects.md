@@ -85,16 +85,33 @@ When you drag an effect, a **copy** is created on the target - the original effe
 - Creating template effects on items that can be copied to actors
 - Quickly applying the same condition to multiple characters
 
-### Creating an Effect Library
+### Using the DCC Effects Compendium
 
-To create a reusable library of effects:
+The DCC system includes a built-in **DCC Effects** compendium with ready-to-use effects for common bonuses and penalties. To use it:
+
+1. Open the **Compendiums** tab in the sidebar
+2. Find **DCC Effects** under the system compendiums
+3. Browse the available effects (organized by type: AC, Attack, Damage, Initiative, Saves, Skills)
+4. Drag any effect directly onto an actor to apply it
+
+The compendium includes effects for:
+- **AC Bonuses/Penalties** (+1 to +5, -1 to -5)
+- **Attack Bonuses/Penalties** (melee and missile, +1 to +5, -1 to -5)
+- **Damage Bonuses/Penalties** (melee and missile, +1 to +5, -1 to -5)
+- **Initiative Bonuses/Penalties** (+1 to +5, -1 to -5)
+- **Save Bonuses/Penalties** (Fortitude, Reflex, Will, +1 to +5, -1 to -5)
+- **Thief Skill Bonuses** (+1 to +5 for all thief skills)
+
+### Creating Your Own Effect Library
+
+You can also create custom effects and organize them:
 
 1. Create one or more items (equipment type works well) to serve as "containers"
 2. Name them descriptively (e.g., "Combat Conditions", "Spell Effects", "Status Conditions")
 3. Add all your commonly-used effects to these items
 4. When you need an effect, drag it from the library item onto your actor
 
-You can organize your library items in a Compendium for easy access across worlds. In Foundry VTT v14, direct Compendiums of Active Effects will be supported, but until then this item-based approach works well.
+You can organize your library items in a Compendium for easy access across worlds.
 
 ### Using DFreds Convenient Effects
 

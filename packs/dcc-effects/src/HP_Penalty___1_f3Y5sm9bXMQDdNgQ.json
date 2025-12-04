@@ -1,0 +1,47 @@
+{
+  "name": "HP Penalty (-1)",
+  "img": "systems/dcc/styles/images/game-icons-net/glowing-hands.svg",
+  "type": "base",
+  "system": {},
+  "changes": [
+    {
+      "key": "system.attributes.hp.max",
+      "value": "-1",
+      "type": "add",
+      "priority": null
+    }
+  ],
+  "disabled": false,
+  "duration": {
+    "startTime": null,
+    "seconds": null,
+    "combat": null,
+    "rounds": null,
+    "turns": null,
+    "startRound": null,
+    "startTurn": null
+  },
+  "description": "<p>Subtracts 1 from maximum Hit Points.</p>",
+  "origin": null,
+  "transfer": true,
+  "statuses": [],
+  "flags": {},
+  "_id": "f3Y5sm9bXMQDdNgQ",
+  "_stats": {
+    "coreVersion": "14.352",
+    "systemId": "dcc",
+    "systemVersion": "0.66.0",
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "folder": null,
+  "sort": 2100,
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!effects!f3Y5sm9bXMQDdNgQ"
+}

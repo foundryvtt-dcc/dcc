@@ -1,4 +1,4 @@
-/* global game, foundry, CONFIG */
+/* global fromUuid, game, foundry, CONFIG */
 // noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
@@ -350,8 +350,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @returns {boolean}
    */
   _canDragDrop (selector) {
-    // Only allow drops on spell items
-    return this.document.type === 'spell' && this.isEditable
+    return this.isEditable
   }
 
   /**
@@ -516,8 +515,13 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   async _onDropActiveEffect (event, data) {
     if (!this.document.isOwner) return false
 
-    // Get the effect data
-    const effectData = data.data
+    // Get the effect - either from data.data or by resolving the UUID (for compendium drags)
+    let effectData = data.data
+    if (!effectData && data.uuid) {
+      const effect = await fromUuid(data.uuid)
+      if (!effect) return false
+      effectData = effect.toObject()
+    }
     if (!effectData) return false
 
     // Prepare the effect data for creation on the item
@@ -528,6 +532,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       changes: effectData.changes || [],
       disabled: effectData.disabled || false,
       duration: effectData.duration || {},
+      description: effectData.description || '',
       transfer: true, // Item effects should transfer to actors by default
       flags: effectData.flags || {}
     }

@@ -1,4 +1,4 @@
-/* global CONFIG, game, foundry */
+/* global CONFIG, fromUuid, game, foundry */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -1429,8 +1429,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const actor = this.options.document
     if (!actor.isOwner) return false
 
-    // Get the effect data
-    const effectData = data.data
+    // Get the effect - either from data.data or by resolving the UUID (for compendium drags)
+    let effectData = data.data
+    if (!effectData && data.uuid) {
+      const effect = await fromUuid(data.uuid)
+      if (!effect) return false
+      effectData = effect.toObject()
+    }
     if (!effectData) return false
 
     // Prepare the effect data for creation on the actor
@@ -1441,6 +1446,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       changes: effectData.changes || [],
       disabled: effectData.disabled || false,
       duration: effectData.duration || {},
+      description: effectData.description || '',
       transfer: false, // Effects directly on actors don't transfer
       flags: effectData.flags || {}
     }

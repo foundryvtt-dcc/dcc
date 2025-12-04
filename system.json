@@ -117,6 +117,14 @@
       "path": "packs/dcc-macros.db",
       "system": "dcc",
       "type": "Macro"
+    },
+    {
+      "name": "dcc-effects",
+      "label": "DCC Effects",
+      "path": "packs/dcc-effects.db",
+      "system": "dcc",
+      "type": "ActiveEffect",
+      "banner": "systems/dcc/styles/images/dcc-background.webp"
     }
   ],
   "relationships": {
