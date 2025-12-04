@@ -1,4 +1,4 @@
-/* global foundry */
+/* global foundry, Hooks */
 /**
  * Base data model for all DCC actors
  * Contains the common template fields shared by all actor types
@@ -108,7 +108,7 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
   }
 
   static defineSchema () {
-    return {
+    const schema = {
       // Abilities
       abilities: new SchemaField({
         str: new AbilityField({ label: 'DCC.AbilityStr' }),
@@ -255,5 +255,20 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
       // Currency
       currency: new CurrencyField()
     }
+
+    /**
+     * Allow modules to extend the base actor schema by adding fields to existing SchemaFields
+     * or adding entirely new top-level fields. This hook runs for all actor types.
+     *
+     * @example
+     * // In your module's init hook:
+     * Hooks.on('dcc.defineBaseActorSchema', (schema) => {
+     *   // Add a new field to details
+     *   schema.details.fields.sheetClass = new foundry.data.fields.StringField({ initial: '' })
+     * })
+     */
+    Hooks.callAll('dcc.defineBaseActorSchema', schema)
+
+    return schema
   }
 }

@@ -1,4 +1,4 @@
-/* global foundry */
+/* global foundry, Hooks */
 /**
  * Data model for Player actors
  * Players use all class templates merged together:
@@ -60,7 +60,7 @@ export class PlayerData extends BaseActorData {
   }
 
   static defineSchema () {
-    return {
+    const schema = {
       ...super.defineSchema(),
 
       // Class information
@@ -227,5 +227,29 @@ export class PlayerData extends BaseActorData {
         showSwimFlySpeed: new BooleanField({ initial: false })
       })
     }
+
+    /**
+     * Allow modules to extend the Player schema by adding fields to existing SchemaFields
+     * or adding entirely new top-level fields.
+     *
+     * @example
+     * // In your module's init hook:
+     * Hooks.on('dcc.definePlayerSchema', (schema) => {
+     *   // Add a new field to the class SchemaField
+     *   schema.class.fields.myCustomField = new foundry.data.fields.StringField({ initial: '' })
+     *
+     *   // Add a new field to details
+     *   schema.details.fields.sheetClass = new foundry.data.fields.StringField({ initial: '' })
+     *
+     *   // Add an entirely new top-level SchemaField
+     *   schema.rewards = new foundry.data.fields.SchemaField({
+     *     fame: new foundry.data.fields.NumberField({ initial: 0 }),
+     *     wealth: new foundry.data.fields.NumberField({ initial: 0 })
+     *   })
+     * })
+     */
+    Hooks.callAll('dcc.definePlayerSchema', schema)
+
+    return schema
   }
 }
