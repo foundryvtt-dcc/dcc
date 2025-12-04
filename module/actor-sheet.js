@@ -161,6 +161,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     foundry.utils.mergeObject(context, {
       abilityEffects: this.#prepareAbilityEffects(),
       saveEffects: this.#prepareSaveEffects(),
+      attributeEffects: this.#prepareAttributeEffects(),
       actor: this.options.document,
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
@@ -566,6 +567,78 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     return saveEffects
+  }
+
+  /**
+   * Collect active effects that modify AC and HP attributes
+   * Returns an object with ac and hp arrays of effect info
+   */
+  #prepareAttributeEffects () {
+    const attributeEffects = {
+      ac: [],
+      hp: []
+    }
+
+    const actor = this.options.document
+
+    // Collect all active effects (from actor and transferred from items)
+    const allEffects = []
+
+    // Effects directly on actor
+    for (const effect of actor.effects) {
+      if (!effect.disabled && !effect.isSuppressed) {
+        allEffects.push(effect)
+      }
+    }
+
+    // Effects from equipped items that transfer
+    for (const item of actor.items) {
+      const isEquipped = item.system?.equipped ?? true
+      if (isEquipped) {
+        for (const effect of item.effects) {
+          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
+            allEffects.push(effect)
+          }
+        }
+      }
+    }
+
+    // Check each effect for AC and HP modifications
+    for (const effect of allEffects) {
+      if (!effect.changes) continue
+
+      for (const change of effect.changes) {
+        const key = change.key
+        // Match patterns for AC: system.attributes.ac.value, system.attributes.ac.otherMod
+        if (key.match(/^system\.attributes\.ac\.(value|otherMod)$/)) {
+          const existing = attributeEffects.ac.find(e => e.id === effect.id)
+          if (!existing) {
+            attributeEffects.ac.push({
+              id: effect.id,
+              name: effect.name,
+              img: effect.img || 'icons/svg/aura.svg',
+              value: change.value,
+              mode: change.mode
+            })
+          }
+        }
+        // Match patterns for HP: system.attributes.hp.value, system.attributes.hp.max, system.attributes.hp.temp
+        if (key.match(/^system\.attributes\.hp\.(value|max|temp)$/)) {
+          const existing = attributeEffects.hp.find(e => e.id === effect.id)
+          if (!existing) {
+            attributeEffects.hp.push({
+              id: effect.id,
+              name: effect.name,
+              img: effect.img || 'icons/svg/aura.svg',
+              value: change.value,
+              mode: change.mode
+            })
+          }
+        }
+      }
+    }
+
+    return attributeEffects
   }
 
   /**

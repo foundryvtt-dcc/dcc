@@ -1832,6 +1832,7 @@ a.inline-roll {
 .dcc .character .ac-and-hp {
   display: grid;
   grid-template-rows: 65px 19px 20px;
+  position: relative;
   text-align: center;
 }
 .dcc .character .ac-and-hp input {
@@ -1842,6 +1843,32 @@ a.inline-roll {
   justify-self: center;
   margin-bottom: 5px;
   width: 37px;
+}
+.dcc .character .ac-and-hp .ac-effects,
+.dcc .character .ac-and-hp .hp-effects {
+  position: absolute;
+  top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+}
+.dcc .character .ac-and-hp .ac-effects {
+  left: 2px;
+}
+.dcc .character .ac-and-hp .hp-effects {
+  right: 2px;
+}
+.dcc .character .ac-and-hp .attribute-effect-icon {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 2px;
+  cursor: help;
+  opacity: 0.8;
+}
+.dcc .character .ac-and-hp .attribute-effect-icon:hover {
+  opacity: 1;
 }
 .dcc .character .combat-basics {
   align-items: center;
