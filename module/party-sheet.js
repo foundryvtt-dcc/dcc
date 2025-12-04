@@ -1,6 +1,7 @@
 /* global game, foundry */
 
 import DCCActorSheet from './actor-sheet.js'
+import HitPointsConfig from './hit-points-config.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -32,7 +33,8 @@ class DCCPartySheet extends DCCActorSheet {
       rollAbility: this.#rollAbility,
       rollSave: this.#rollSave,
       rollAttack: this.#rollAttack,
-      editImage: DCCPartySheet.editImage
+      editImage: DCCPartySheet.editImage,
+      adjustHitPoints: this.#adjustHitPoints
     },
     dragDrop: [{
       dragSelector: '[data-drag="true"]',
@@ -381,6 +383,31 @@ class DCCPartySheet extends DCCActorSheet {
       const actor = game.actors.get(actorId)
       if (actor) {
         actor.rollWeaponAttack(weaponId, options)
+      }
+    }
+  }
+
+  /**
+   * Open the hit points adjustment dialog for a party member
+   * @this {DCCPartySheet}
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   * @private
+   */
+  static async #adjustHitPoints (event, target) {
+    event.preventDefault()
+    const actorId = target.closest('[data-actor-id]')?.dataset.actorId
+    if (actorId) {
+      const actor = game.actors.get(actorId)
+      if (actor) {
+        new HitPointsConfig({
+          document: actor,
+          position: {
+            top: event.clientY - 50,
+            left: event.clientX - 140
+          },
+          callback: () => this.render(false)
+        }).render(true)
       }
     }
   }

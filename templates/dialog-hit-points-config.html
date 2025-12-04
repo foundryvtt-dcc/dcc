@@ -1,0 +1,15 @@
+<section class="hit-points-config grid-container grid-row-gap-8 p-8">
+  <div class="hp-display grid-col-span-12">
+    <span class="hp-current">{{hp}}</span>
+    <span class="hp-separator">/</span>
+    <span class="hp-max">{{maxHp}}</span>
+  </div>
+
+  <label class="grid-col-span-12" for="adjustment">{{localize "DCC.HitPointsAdjustment"}}</label>
+  <input class="grid-col-span-10" type="text" name="adjustment" id="adjustment" value="" placeholder="-3 or +3">
+  <button class="grid-col-span-2" type="submit" title="{{localize 'DCC.Apply'}}">
+    <i class="fas fa-check"></i>
+  </button>
+
+  <p class="grid-col-span-12 hint">{{localize "DCC.HitPointsHint"}}</p>
+</section>

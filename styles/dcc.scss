@@ -937,6 +937,24 @@ a.inline-roll {
     .hp-summary {
       grid-column: span 2;
       margin-top: 3px;
+
+      &.clickable {
+        cursor: pointer;
+        border-radius: 3px;
+        padding: 1px 4px;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.1);
+        }
+      }
+    }
+
+    .fa-heart.clickable {
+      cursor: pointer;
+
+      &:hover {
+        color: #8b0000;
+      }
     }
 
     .weapon {
@@ -976,6 +994,46 @@ a.inline-roll {
       color: #666;
       margin: 0;
     }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Hit Points Config Dialog                 */
+/* ----------------------------------------- */
+
+.dcc.hit-points-config {
+  .hp-display {
+    text-align: center;
+    font-size: 1.8em;
+    font-family: var(--system-data-font), serif;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+
+    .hp-current {
+      color: #8b0000;
+      font-weight: bold;
+    }
+
+    .hp-separator {
+      margin: 0 4px;
+      color: var(--system-primary-color);
+    }
+
+    .hp-max {
+      color: var(--system-primary-color);
+    }
+  }
+
+  input[name='adjustment'] {
+    text-align: center;
+  }
+
+  .hint {
+    font-size: 0.85em;
+    color: #666;
+    font-style: italic;
+    margin: 0;
   }
 }
 

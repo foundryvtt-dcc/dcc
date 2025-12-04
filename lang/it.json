@@ -283,6 +283,8 @@
   "DCC.HitDie": "D. Vita",
   "DCC.HitDieHint": "Inserire il Dado Vita che si tira ad ogni livello, es.: 1d6",
   "DCC.HitPoints": "PF",
+  "DCC.HitPointsAdjustment": "Danni / Guarigione",
+  "DCC.HitPointsHint": "-3 = danni, +3 = guarigione, 5 = imposta PF a 5",
   "DCC.Image": "Immagine",
   "DCC.Infravision": "Infravisione 18 m",
   "DCC.InfravisionHalfling": "Infravisione 9 m",
