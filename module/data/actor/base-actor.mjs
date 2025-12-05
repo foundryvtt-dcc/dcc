@@ -104,6 +104,19 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
       }
     }
 
+    // Convert currency values to integers if needed
+    if (source.currency) {
+      for (const key of ['pp', 'ep', 'gp', 'sp', 'cp']) {
+        if (source.currency[key] !== undefined) {
+          if (typeof source.currency[key] === 'string') {
+            source.currency[key] = parseInt(source.currency[key]) || 0
+          } else if (typeof source.currency[key] === 'number' && !Number.isInteger(source.currency[key])) {
+            source.currency[key] = Math.floor(source.currency[key])
+          }
+        }
+      }
+    }
+
     return super.migrateData(source)
   }
 
