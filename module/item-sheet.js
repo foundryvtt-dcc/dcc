@@ -533,6 +533,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       disabled: effectData.disabled || false,
       duration: effectData.duration || {},
       description: effectData.description || '',
+      statuses: effectData.statuses || [],
       transfer: true, // Item effects should transfer to actors by default
       flags: effectData.flags || {}
     }

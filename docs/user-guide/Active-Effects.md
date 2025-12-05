@@ -98,6 +98,7 @@ The compendium includes effects for:
 - **AC Bonuses/Penalties** (+1 to +5, -1 to -5)
 - **Attack Bonuses/Penalties** (melee and missile, +1 to +5, -1 to -5)
 - **Damage Bonuses/Penalties** (melee and missile, +1 to +5, -1 to -5)
+- **Dice Chain Effects** (Action Die +1d/-1d, Crit Die +1d, Luck Die +1d)
 - **Initiative Bonuses/Penalties** (+1 to +5, -1 to -5)
 - **Save Bonuses/Penalties** (Fortitude, Reflex, Will, +1 to +5, -1 to -5)
 - **Thief Skill Bonuses** (+1 to +5 for all thief skills)
@@ -183,7 +184,42 @@ Active Effects support different modes of application:
 - **Override**: Replaces the attribute with this value
 - **Upgrade**: Uses the higher of current value or effect value
 - **Downgrade**: Uses the lower of current value or effect value
+- **Dice Chain**: DCC-specific mode that moves dice along the dice chain (see below)
 - **Custom**: For special DCC-specific effects (requires module support)
+
+### Dice Chain Mode
+
+The **Dice Chain** effect mode is a DCC-specific feature that adjusts dice expressions along the DCC dice chain:
+
+**The Dice Chain:** d3 → d4 → d5 → d6 → d7 → d8 → d10 → d12 → d14 → d16 → d20 → d24 → d30
+
+**How to use:**
+1. Set the **Change Mode** to "Dice Chain"
+2. Set the **Value** to the number of steps to move:
+   - **1** = move up one step (e.g., d20 becomes d24)
+   - **-1** = move down one step (e.g., d20 becomes d16)
+   - **2** = move up two steps (e.g., d20 becomes d30)
+
+**Target Fields for Dice Chain:**
+| Field | Attribute Key |
+|-------|---------------|
+| Action Die | `system.attributes.actionDice.value` |
+| Critical Die | `system.attributes.critical.die` |
+| Fumble Die | `system.attributes.fumble.die` |
+| Luck Die | `system.class.luckDie` |
+
+**Example: -1d to Action Die (Penalty)**
+1. Create a new effect
+2. Add a change:
+   - Key: `system.attributes.actionDice.value`
+   - Mode: Dice Chain
+   - Value: -1
+3. This will reduce the character's action die by one step (e.g., d20 → d16)
+
+**Pre-made Effects:** The DCC Effects compendium includes ready-to-use dice chain effects:
+- Action Die +1d / -1d
+- Crit Die +1d
+- Luck Die +1d
 
 ## Duration
 

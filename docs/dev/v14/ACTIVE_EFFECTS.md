@@ -93,7 +93,45 @@ This means:
 
 The DCC system uses a custom `DCCActiveEffect` class to handle:
 1. **Equipped Status Filtering** - Only apply effects from equipped items
-2. **Signed String Numeric Operations** - Handle thief skills that store numbers as signed strings ("+5", "-2", "0")
+2. **Dice Chain Adjustments** - Custom effect type to move dice along the DCC dice chain
+3. **Signed String Numeric Operations** - Handle thief skills that store numbers as signed strings ("+5", "-2", "0")
+
+### Dice Chain Effect Type
+
+DCC introduces a custom effect type `diceChain` that adjusts dice expressions along the DCC dice chain:
+
+**Dice Chain:** d3 → d4 → d5 → d6 → d7 → d8 → d10 → d12 → d14 → d16 → d20 → d24 → d30
+
+**Usage:**
+- Set the effect's **Change Type** to "Dice Chain"
+- Set the **Value** to the number of steps to move (positive = up, negative = down)
+- **Value "1"** moves up one step (e.g., d20 → d24)
+- **Value "-1"** moves down one step (e.g., d20 → d16)
+- **Value "2"** moves up two steps (e.g., d20 → d30)
+
+**Target Fields (use with Dice Chain type):**
+| Field | Key |
+|-------|-----|
+| Action Die | `system.attributes.actionDice.value` |
+| Critical Die | `system.attributes.critical.die` |
+| Fumble Die | `system.attributes.fumble.die` |
+| Luck Die | `system.class.luckDie` |
+
+**JSON Example:**
+```json
+{
+  "changes": [
+    {
+      "key": "system.attributes.actionDice.value",
+      "value": "1",
+      "type": "diceChain",
+      "priority": null
+    }
+  ]
+}
+```
+
+This effect would move the action die up one step on the chain (e.g., from d20 to d24).
 
 ```javascript
 // module/active-effect.js

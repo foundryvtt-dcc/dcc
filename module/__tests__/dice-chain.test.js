@@ -3,6 +3,48 @@ import '../__mocks__/foundry.js'
 import DiceChain from '../dice-chain.js'
 
 describe('DiceChain', () => {
+  describe('bumpDie', () => {
+    it('moves dice up the chain with positive modifier', () => {
+      expect(DiceChain.bumpDie('1d20', 1)).toBe('1d24')
+      expect(DiceChain.bumpDie('1d20', 2)).toBe('1d30')
+      expect(DiceChain.bumpDie('1d8', 1)).toBe('1d10')
+      expect(DiceChain.bumpDie('1d4', 1)).toBe('1d5')
+    })
+
+    it('moves dice down the chain with negative modifier', () => {
+      expect(DiceChain.bumpDie('1d20', -1)).toBe('1d16')
+      expect(DiceChain.bumpDie('1d20', -2)).toBe('1d14')
+      expect(DiceChain.bumpDie('1d8', -1)).toBe('1d7')
+      expect(DiceChain.bumpDie('1d6', -1)).toBe('1d5')
+    })
+
+    it('handles edges of the dice chain', () => {
+      // At top of chain, can not go higher
+      expect(DiceChain.bumpDie('1d30', 1)).toBe('1d30')
+      // At bottom of chain, can not go lower
+      expect(DiceChain.bumpDie('1d3', -1)).toBe('1d3')
+    })
+
+    it('handles expressions with modifiers', () => {
+      expect(DiceChain.bumpDie('1d20+5', 1)).toBe('1d24+5')
+      expect(DiceChain.bumpDie('1d16-2', -1)).toBe('1d14-2')
+    })
+
+    it('preserves the number of dice', () => {
+      expect(DiceChain.bumpDie('2d6', 1)).toBe('2d7')
+      expect(DiceChain.bumpDie('3d8', -1)).toBe('3d7')
+    })
+
+    it('returns original expression for invalid input', () => {
+      expect(DiceChain.bumpDie('invalid', 1)).toBe('invalid')
+      expect(DiceChain.bumpDie('5', 1)).toBe('5')
+    })
+
+    it('handles zero modifier', () => {
+      expect(DiceChain.bumpDie('1d20', 0)).toBe('1d20')
+    })
+  })
+
   describe('calculateCritAdjustment', () => {
     it('calculates adjustment for die size increases', () => {
       expect(DiceChain.calculateCritAdjustment('1d20', '1d24')).toBe(4)

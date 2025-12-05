@@ -1,9 +1,12 @@
-/* global ActiveEffect, foundry */
+/* global ActiveEffect, foundry, CONFIG */
+
+import DiceChain from './dice-chain.js'
 
 /**
  * Custom ActiveEffect class for DCC system
  * Handles special cases like thief skills which are stored as signed strings ("+5", "-2", "0")
  * Also handles equipped status for item effects
+ * Also handles custom DCC effect types like dice chain adjustments
  */
 export default class DCCActiveEffect extends ActiveEffect {
   /**
@@ -25,11 +28,30 @@ export default class DCCActiveEffect extends ActiveEffect {
       }
     }
 
+    // Get the current value for this key
+    const current = foundry.utils.getProperty(actor, change.key)
+    const ct = foundry.utils.getType(current)
+
+    // Handle dice chain adjustment type
+    // The value should be a number representing steps to move on the dice chain (e.g., 1, -2)
+    if (change.type === CONFIG.DCC.effectChangeTypes.DICE_CHAIN) {
+      // Only process if the current value looks like a dice expression
+      if (ct === 'string' && String(current).includes('d')) {
+        const steps = parseInt(change.value)
+        if (!isNaN(steps)) {
+          const newValue = DiceChain.bumpDie(current, steps)
+          if (newValue !== current) {
+            foundry.utils.setProperty(actor, change.key, newValue)
+            return { [change.key]: newValue }
+          }
+        }
+      }
+      return {}
+    }
+
     // Handle string values that look like signed numbers (thief skills)
     // V14 uses DataModel fields which don't call _applyAdd etc. for schema-defined fields
     // We need to intercept here for numeric operations on string fields
-    const current = foundry.utils.getProperty(actor, change.key)
-    const ct = foundry.utils.getType(current)
 
     // Check if it's a string that looks like a signed number (not a dice expression)
     if (ct === 'string' && !String(current).includes('d') && !String(change.value).includes('d')) {

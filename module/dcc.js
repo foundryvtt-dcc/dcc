@@ -77,6 +77,13 @@ Hooks.once('init', async function () {
   // Register custom ActiveEffect document class for DCC-specific behavior
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
+  // Register custom DCC effect change types for the UI dropdown
+  // This adds the 'diceChain' type to Foundry's list of available effect change types
+  CONFIG.ActiveEffect.CHANGE_TYPES = {
+    ...CONFIG.ActiveEffect.CHANGE_TYPES,
+    [DCC.effectChangeTypes.DICE_CHAIN]: 'DCC.EffectChangeTypeDiceChain'
+  }
+
   // Register Actor data models
   CONFIG.Actor.dataModels = {
     Player: PlayerData,

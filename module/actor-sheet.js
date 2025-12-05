@@ -1447,6 +1447,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       disabled: effectData.disabled || false,
       duration: effectData.duration || {},
       description: effectData.description || '',
+      statuses: effectData.statuses || [],
       transfer: false, // Effects directly on actors don't transfer
       flags: effectData.flags || {}
     }

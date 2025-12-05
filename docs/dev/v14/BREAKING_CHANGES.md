@@ -15,6 +15,23 @@ This document covers breaking changes in FoundryVTT V14.
 **Active Effects:**
 - `CONFIG.ActiveEffect.legacyTransferral` support removed (deprecated since V11)
 
+**Status Effects:**
+- Status effect configuration now uses `img` instead of `icon` for the image path
+
+```javascript
+// V13
+CONFIG.statusEffects = [
+  { id: 'blind', icon: 'icons/svg/blind.svg', label: 'Blind' }
+]
+
+// V14
+CONFIG.statusEffects = [
+  { id: 'blind', img: 'icons/svg/blind.svg', label: 'Blind' }
+]
+```
+
+**DCC Impact**: ✅ FIXED in `module/status-icons.js` - Changed `icon` to `img` for all status effect definitions.
+
 **V12 Deprecations:**
 A large assortment of V12-era deprecations have been retired. See [GitHub issue #13436](https://github.com/foundryvtt/foundryvtt/issues/13436) for the complete list.
 

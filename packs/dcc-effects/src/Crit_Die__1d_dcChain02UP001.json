@@ -1,0 +1,47 @@
+{
+  "name": "Crit Die +1d",
+  "img": "systems/dcc/styles/images/game-icons-net/dice-twenty-faces-twenty.svg",
+  "type": "base",
+  "system": {},
+  "changes": [
+    {
+      "key": "system.attributes.critical.die",
+      "value": "1",
+      "type": "diceChain",
+      "priority": null
+    }
+  ],
+  "disabled": false,
+  "duration": {
+    "startTime": null,
+    "seconds": null,
+    "combat": null,
+    "rounds": null,
+    "turns": null,
+    "startRound": null,
+    "startTurn": null
+  },
+  "description": "<p>Moves the critical hit die up one step on the dice chain (e.g., d6 → d7). Use the Dice Chain effect mode with a value of 1 for +1d, 2 for +2d, etc.</p>",
+  "origin": null,
+  "transfer": true,
+  "statuses": [],
+  "flags": {},
+  "_id": "dcChain02UP001",
+  "_stats": {
+    "coreVersion": "14.352",
+    "systemId": "dcc",
+    "systemVersion": "0.66.0",
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "folder": null,
+  "sort": 3800,
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!effects!dcChain02UP001"
+}
