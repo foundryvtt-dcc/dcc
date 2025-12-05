@@ -25,6 +25,7 @@ import SpellResult from './spell-result.js'
 import ReleaseNotes from './release-notes.js'
 import KeyState from './key-state.js'
 import { defineStatusIcons } from './status-icons.js'
+import DCCActiveEffect from './active-effect.js'
 
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
@@ -66,6 +67,7 @@ Hooks.once('init', async function () {
 
   // Enable Active Effects
   CONFIG.ActiveEffect.legacyTransferral = false
+  CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
   // Register Actor data models
   CONFIG.Actor.dataModels = {
