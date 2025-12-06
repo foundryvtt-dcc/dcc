@@ -337,6 +337,9 @@ describe('Utilities', () => {
       global.game = {
         packs: {
           get: vi.fn().mockReturnValue(mockPack)
+        },
+        tables: {
+          find: vi.fn().mockReturnValue(null)
         }
       }
 
@@ -347,7 +350,19 @@ describe('Utilities', () => {
       }
     })
 
-    it('finds fumble table result from configured pack', async () => {
+    it('finds fumble table result from local world table', async () => {
+      const mockWorldFumbleTable = {
+        name: 'Table 4-2: Fumbles',
+        getResultsForRoll: vi.fn().mockReturnValue([{ text: 'World fumble result' }])
+      }
+      global.game.tables.find.mockReturnValue(mockWorldFumbleTable)
+
+      const result = await getFumbleTableResult(mockRoll)
+      expect(result).toEqual({ text: 'World fumble result' })
+      expect(mockWorldFumbleTable.getResultsForRoll).toHaveBeenCalledWith(8)
+    })
+
+    it('finds fumble table result from configured pack when no world table', async () => {
       const result = await getFumbleTableResult(mockRoll)
       expect(result).toEqual({ text: 'Fumble result' })
       expect(mockTable.getResultsForRoll).toHaveBeenCalledWith(8)

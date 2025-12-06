@@ -41,6 +41,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [Applying Damage](Applying-Damage.md)
 * [Modifying Rolls or using Spellburn with Ctrl/Command Click](Modifying-Rolls-or-using-Spellburn-with-Ctrl-Command-Click.md)
 * [Custom Critical Hit Table](Custom-Critical-Hit-Table.md)
+* [Custom Fumble Table](Custom-Fumble-Table.md)
 * [NPC and Monster Fumbles](NPC-and-Monster-Fumbles.md)
 
 ## Usage
