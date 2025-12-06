@@ -2377,4 +2377,11 @@ a.inline-roll {
   grid-column: 1/-1;
 }
 
+/* Level Change Dialog */
+.level-change-dialog .level-data-entries {
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
 /*# sourceMappingURL=dcc.css.map */
