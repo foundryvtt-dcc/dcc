@@ -2571,3 +2571,12 @@ a.inline-roll {
     }
   }
 }
+
+/* Level Change Dialog */
+.level-change-dialog {
+  .level-data-entries {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+}

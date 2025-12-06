@@ -11,12 +11,14 @@
       </div>
     </div>
 
-    <div class="grid-col-span-2">
+    <div class="grid-col-span-2 level-data-container">
       {{#if levelDataEntries}}
         <h3>{{levelDataHeader}}</h3>
-        {{#each levelDataEntries}}
-          <div>{{label}} = {{value}}</div>
-        {{/each}}
+        <div class="level-data-entries">
+          {{#each levelDataEntries}}
+            <div>{{label}} = {{value}}</div>
+          {{/each}}
+        </div>
       {{else if levelDataNotFound}}
         {{levelDataNotFound}}
       {{/if}}

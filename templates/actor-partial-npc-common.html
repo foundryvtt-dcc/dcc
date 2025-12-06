@@ -222,7 +222,7 @@
           <div>{{localize "DCC.Notes"}}</div>
           <div>
             <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-action="itemCreate" data-type="weapon"
-               data-melee=1>
+               data-melee="true">
               <i class="fas fa-plus"></i>
               {{localize "DCC.Add"}}
             </a>
@@ -245,8 +245,9 @@
           <div>{{localize "DCC.Damage"}}</div>
           <div>{{localize "DCC.Range"}}</div>
           <div>
-            <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-action="itemCreate" data-type="weapon">
-              <i class="fas fa-plus" data-melee=0></i>
+            <a class="item-control item-create" title="{{localize 'DCC.ItemCreate'}}" data-action="itemCreate" data-type="weapon"
+               data-melee="false">
+              <i class="fas fa-plus"></i>
               {{localize "DCC.Add"}}
             </a>
           </div>

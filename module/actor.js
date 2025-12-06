@@ -81,6 +81,23 @@ class DCCActor extends Actor {
     if (data.config.computeCheckPenalty) {
       data.attributes.ac.checkPenalty = checkPenalty
     }
+
+    // Compute derived values in prepareBaseData so items can access them during their preparation.
+    // These will be called again in prepareDerivedData to update with any active effect
+    // modifications to ability modifiers.
+    if (config.computeMeleeAndMissileAttackAndDamage) {
+      this.computeMeleeAndMissileAttackAndDamage()
+    }
+
+    // Compute spell check for PCs so spell items can inherit it
+    if (this.isPC) {
+      this.computeSpellCheck()
+    }
+
+    // Compute initiative for PCs so weapon items can access it
+    if (this.isPC && config.computeInitiative) {
+      this.computeInitiative(config)
+    }
   }
 
   /** @override */
@@ -161,10 +178,14 @@ class DCCActor extends Actor {
 
     // Compute Initiative if required
     if (this.isPC && config.computeInitiative) {
-      this.system.attributes.init.value = parseInt(this.system.abilities.agl.mod) + parseInt(this.system.attributes.init.otherMod || 0)
-      if (config.addClassLevelToInitiative) {
-        this.system.attributes.init.value += this.system.details.level.value
-      }
+      this.computeInitiative(config)
+    }
+
+    // Re-prepare embedded items so they can see active effect modifications
+    // Items initially prepare before applyActiveEffects runs, so they need
+    // to re-read actor values that may have been modified by effects
+    for (const item of this.items) {
+      item.prepareData()
     }
   }
 
@@ -597,6 +618,17 @@ class DCCActor extends Actor {
       this.system.skills.turnUnholy.ability = ''
       this.system.skills.layOnHands.value = this.system.class.spellCheck
       this.system.skills.layOnHands.ability = ''
+    }
+  }
+
+  /**
+   * Compute Initiative
+   * @param {Object} config - Actor configuration
+   */
+  computeInitiative (config) {
+    this.system.attributes.init.value = parseInt(this.system.abilities.agl.mod) + parseInt(this.system.attributes.init.otherMod || 0)
+    if (config.addClassLevelToInitiative) {
+      this.system.attributes.init.value += this.system.details.level.value
     }
   }
 
