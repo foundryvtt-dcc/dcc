@@ -114,15 +114,15 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _getLevelDataFromItem (levelItem) {
     if (Object.hasOwn(levelItem, 'system')) {
-      let levelData = levelItem.system.levelData
-      if (this.options.document.system.details.alignment === 'l') {
-        levelData += levelItem.system.levelDataLawful
+      let levelData = levelItem.system.levelData || ''
+      if (this.options.document.system.details.alignment === 'l' && levelItem.system.levelDataLawful) {
+        levelData += '\n' + levelItem.system.levelDataLawful
       }
-      if (this.options.document.system.details.alignment === 'n') {
-        levelData += levelItem.system.levelDataNeutral
+      if (this.options.document.system.details.alignment === 'n' && levelItem.system.levelDataNeutral) {
+        levelData += '\n' + levelItem.system.levelDataNeutral
       }
-      if (this.options.document.system.details.alignment === 'c') {
-        levelData += levelItem.system.levelDataChaotic
+      if (this.options.document.system.details.alignment === 'c' && levelItem.system.levelDataChaotic) {
+        levelData += '\n' + levelItem.system.levelDataChaotic
       }
       // console.log(levelData)
       return levelData
