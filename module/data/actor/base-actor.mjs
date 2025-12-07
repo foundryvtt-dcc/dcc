@@ -199,6 +199,9 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
           special: new StringField({ initial: '' }),
           swim: new StringField({ initial: '' }), // Can include units
           fly: new StringField({ initial: '' }) // Can include units
+        }),
+        special: new SchemaField({
+          value: new StringField({ initial: '' })
         })
       }),
 
