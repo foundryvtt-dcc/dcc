@@ -235,28 +235,41 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('dccPackExists', function (pack, options) {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
   })
+
+  // Register Fleeting Luck setting early so it's available for getSceneControlButtons
+  // which fires before the ready hook where other settings are registered
+  game.settings.register('dcc', 'enableFleetingLuck', {
+    name: 'DCC.SettingEnableFleetingLuck',
+    hint: 'DCC.SettingEnableFleetingLuckHint',
+    requiresReload: true,
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
 })
 
 /* --------------------------------------------- */
-/*  Initialize Fleeting Luck Button              */
-/*  In v13, has to happen before ready hook      */
-/*  The button is removed in FleetingLuck.init() */
-/*  If Fleeting Luck is disabled                 */
+/*  Initialize Scene Control Buttons             */
 /* --------------------------------------------- */
 Hooks.on('getSceneControlButtons', (controls) => {
-  controls.tokens.tools.fleetingLuck = {
-    name: 'fleetingLuck',
-    title: game.i18n.localize('DCC.FleetingLuck'),
-    icon: 'fas fa-balance-scale-left',
-    onChange: (event, active) => {
-      game.dcc.FleetingLuck.show()
-    },
-    button: true,
-    active: true
+  // Only add Fleeting Luck button if the setting is enabled
+  if (game.settings.get('dcc', 'enableFleetingLuck')) {
+    controls.tokens.tools.fleetingLuck = {
+      name: 'fleetingLuck',
+      title: 'DCC.FleetingLuck',
+      icon: 'fas fa-balance-scale-left',
+      onChange: (event, active) => {
+        game.dcc.FleetingLuck.show()
+      },
+      button: true,
+      active: true
+    }
   }
+
   controls.tokens.tools.spellDuel = {
     name: 'spellDuel',
-    title: game.i18n.localize('DCC.SpellDuel'),
+    title: 'DCC.SpellDuel',
     icon: 'fas fa-hat-wizard',
     onChange: (event, active) => {
       game.dcc.SpellDuel.show()

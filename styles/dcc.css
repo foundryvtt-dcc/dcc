@@ -1619,6 +1619,10 @@ a.inline-roll {
   grid-column: 2;
   justify-self: center;
 }
+.dcc .fleeting-luck .fleeting-luck-users {
+  max-height: 400px;
+  overflow-y: auto;
+}
 .dcc .fleeting-luck .fleeting-luck-row {
   align-items: center;
   display: grid;
