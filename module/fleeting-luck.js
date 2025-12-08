@@ -195,13 +195,6 @@ class FleetingLuck {
    */
   static init () {
     if (game.user.isGM) {
-      if (!FleetingLuck.enabled) {
-        const element = document.querySelector('[data-tool="fleetingLuck"]')
-        if (element) {
-          element.remove()
-        }
-      }
-
       // For GM, register hooks to manage fleeting luck
       Hooks.on('createChatMessage', (message) => {
         // Early out if automation is not enabled

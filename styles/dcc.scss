@@ -1669,6 +1669,11 @@ a.inline-roll {
     }
   }
 
+  .fleeting-luck-users {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
   .fleeting-luck-row {
     align-items: center;
     display: grid;
