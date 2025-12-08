@@ -254,17 +254,21 @@ Hooks.once('init', async function () {
 /* --------------------------------------------- */
 Hooks.on('getSceneControlButtons', (controls) => {
   // Only add Fleeting Luck button if the setting is enabled
-  if (game.settings.get('dcc', 'enableFleetingLuck')) {
-    controls.tokens.tools.fleetingLuck = {
-      name: 'fleetingLuck',
-      title: 'DCC.FleetingLuck',
-      icon: 'fas fa-balance-scale-left',
-      onChange: (event, active) => {
-        game.dcc.FleetingLuck.show()
-      },
-      button: true,
-      active: true
+  try {
+    if (game.settings.get('dcc', 'enableFleetingLuck')) {
+      controls.tokens.tools.fleetingLuck = {
+        name: 'fleetingLuck',
+        title: 'DCC.FleetingLuck',
+        icon: 'fas fa-balance-scale-left',
+        onChange: (event, active) => {
+          game.dcc.FleetingLuck.show()
+        },
+        button: true,
+        active: true
+      }
     }
+  } catch (e) {
+    console.error('DCC | Error adding Fleeting Luck button:', e)
   }
 
   controls.tokens.tools.spellDuel = {
