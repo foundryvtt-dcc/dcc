@@ -11,7 +11,8 @@
  */
 export function toInteger (value, defaultValue = 0) {
   if (typeof value === 'string') {
-    return parseInt(value) || defaultValue
+    const parsed = parseInt(value)
+    return isNaN(parsed) ? defaultValue : parsed
   }
   if (typeof value === 'number' && !Number.isInteger(value)) {
     return Math.floor(value)
