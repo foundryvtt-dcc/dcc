@@ -3,7 +3,7 @@
  * Base data model for all DCC actors
  * Contains the common template fields shared by all actor types
  */
-import { AbilityField, CurrencyField, DiceField, SaveField, isValidDiceNotation } from '../fields/_module.mjs'
+import { AbilityField, CurrencyField, DiceField, SaveField, isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
 
 const { SchemaField, StringField, NumberField, ArrayField, HTMLField } = foundry.data.fields
 
@@ -22,24 +22,13 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
     if (source.abilities) {
       for (const key of ['str', 'agl', 'sta', 'per', 'int', 'lck']) {
         if (source.abilities[key]) {
-          if (typeof source.abilities[key].value === 'string') {
-            source.abilities[key].value = parseInt(source.abilities[key].value) || 10
-          }
-          if (typeof source.abilities[key].max === 'string') {
-            source.abilities[key].max = parseInt(source.abilities[key].max) || 10
-          }
+          migrateFieldsToInteger(source.abilities[key], ['value', 'max'], 10)
         }
       }
     }
 
     // Convert string HP values to numbers if needed
-    if (source.attributes?.hp) {
-      for (const key of ['value', 'min', 'max', 'temp', 'tempmax']) {
-        if (typeof source.attributes.hp[key] === 'string') {
-          source.attributes.hp[key] = parseInt(source.attributes.hp[key]) || 0
-        }
-      }
-    }
+    migrateFieldsToInteger(source.attributes?.hp, ['value', 'min', 'max', 'temp', 'tempmax'], 0)
 
     // Fix invalid dice notation in attributes
     // hitDice.value might be just a number like "1" for zero-level
@@ -105,15 +94,21 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
     }
 
     // Convert currency values to integers if needed
-    if (source.currency) {
-      for (const key of ['pp', 'ep', 'gp', 'sp', 'cp']) {
-        if (source.currency[key] !== undefined) {
-          if (typeof source.currency[key] === 'string') {
-            source.currency[key] = parseInt(source.currency[key]) || 0
-          } else if (typeof source.currency[key] === 'number' && !Number.isInteger(source.currency[key])) {
-            source.currency[key] = Math.floor(source.currency[key])
-          }
-        }
+    migrateFieldsToInteger(source.currency, ['pp', 'ep', 'gp', 'sp', 'cp'], 0)
+
+    // Convert AC fields from strings to integers if needed
+    migrateFieldsToInteger(source.attributes?.ac, ['value', 'checkPenalty', 'otherMod', 'speedPenalty'], { value: 10 })
+
+    // Convert init.otherMod from string to integer if needed
+    migrateFieldsToInteger(source.attributes?.init, ['otherMod'], 0)
+
+    // Convert XP fields from strings to integers if needed
+    migrateFieldsToInteger(source.details?.xp, ['value', 'min', 'max'], { max: 10 })
+
+    // Convert save values from strings to integers if needed
+    if (source.saves) {
+      for (const save of ['frt', 'ref', 'wil']) {
+        migrateFieldsToInteger(source.saves[save], ['value'], 0)
       }
     }
 

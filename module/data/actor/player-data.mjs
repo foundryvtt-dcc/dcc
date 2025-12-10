@@ -5,7 +5,7 @@
  * common, config, player, cleric, thief, halfling, warrior, wizard, dwarf, elf
  */
 import { BaseActorData } from './base-actor.mjs'
-import { DiceField, isValidDiceNotation } from '../fields/_module.mjs'
+import { DiceField, isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
 
 const { SchemaField, StringField, NumberField, BooleanField, HTMLField } = foundry.data.fields
 
@@ -40,21 +40,15 @@ export class PlayerData extends BaseActorData {
     }
 
     // Convert class numeric fields from strings to integers
-    if (source.class) {
-      const numericFields = [
-        'spellCheck', 'spellsLevel1', 'spellsLevel2', 'spellsLevel3',
-        'spellsLevel4', 'spellsLevel5', 'knownSpells', 'maxSpellLevel'
-      ]
-      for (const key of numericFields) {
-        if (source.class[key] !== undefined) {
-          if (typeof source.class[key] === 'string') {
-            source.class[key] = parseInt(source.class[key]) || 0
-          } else if (typeof source.class[key] === 'number' && !Number.isInteger(source.class[key])) {
-            source.class[key] = Math.floor(source.class[key])
-          }
-        }
-      }
-    }
+    migrateFieldsToInteger(source.class, [
+      'spellCheck', 'spellsLevel1', 'spellsLevel2', 'spellsLevel3',
+      'spellsLevel4', 'spellsLevel5', 'knownSpells', 'maxSpellLevel'
+    ], { spellCheck: 1 })
+
+    // Convert cleric skill values from strings to integers
+    migrateFieldsToInteger(source.skills?.divineAid, ['value', 'drainDisapproval'], { drainDisapproval: 10 })
+    migrateFieldsToInteger(source.skills?.turnUnholy, ['value'], 0)
+    migrateFieldsToInteger(source.skills?.layOnHands, ['value'], 0)
 
     return super.migrateData(source)
   }
