@@ -1,6 +1,52 @@
 /* global foundry, game, ui, isObjectEmpty */
 
 /**
+ * Core class keys used for migration lookups
+ */
+const CLASS_KEYS = ['Warrior', 'Thief', 'Halfling', 'Cleric', 'Wizard', 'Elf', 'Dwarf']
+
+/**
+ * Lazy-loaded lookup table mapping localized class names to internal keys.
+ * Only built if quick checks fail during migration.
+ */
+let classNameLookup = null
+
+/**
+ * Build lookup table from all lang files.
+ * Called only when quick checks fail to find a match.
+ * @returns {Promise<Object>} Map of localized class names to internal keys
+ */
+async function buildClassNameLookup () {
+  if (classNameLookup) return classNameLookup
+
+  classNameLookup = {}
+
+  // English keys map to themselves
+  for (const key of CLASS_KEYS) {
+    classNameLookup[key] = key
+  }
+
+  // Load each lang file and extract class name translations
+  const langs = ['de', 'es', 'fr', 'it', 'pl', 'cn']
+  for (const lang of langs) {
+    try {
+      const response = await fetch(`systems/dcc/lang/${lang}.json`)
+      const translations = await response.json()
+      for (const key of CLASS_KEYS) {
+        const localizedName = translations[`DCC.${key}`]
+        if (localizedName) {
+          classNameLookup[localizedName] = key
+        }
+      }
+    } catch {
+      // Lang file not found or failed to parse, skip
+    }
+  }
+
+  return classNameLookup
+}
+
+/**
  * Migrate the current world to the current version of the system
  *
  * @return {Promise}    A promise which resolves once the migration is completed
@@ -11,7 +57,7 @@ export const migrateWorld = async function () {
   // Migrate World Actors
   for (const a of game.actors) {
     try {
-      const updateData = migrateActorData(a)
+      const updateData = await migrateActorData(a)
       if (!isObjectEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Actor', name: a.name }))
         await a.update(updateData, { enforceTypes: false })
@@ -37,7 +83,7 @@ export const migrateWorld = async function () {
   // Migrate Actor Override Tokens
   for (const s of game.scenes) {
     try {
-      const updateData = migrateSceneData(s)
+      const updateData = await migrateSceneData(s)
       if (!isObjectEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Scene', name: s.name }))
         await s.update(updateData, { enforceTypes: false })
@@ -89,10 +135,10 @@ const migrateCompendium = async function (pack) {
           updateData = migrateItemData(doc)
           break
         case 'Actor':
-          updateData = migrateActorData(doc)
+          updateData = await migrateActorData(doc)
           break
         case 'Scene':
-          updateData = migrateSceneData(doc)
+          updateData = await migrateSceneData(doc)
           break
       }
 
@@ -119,9 +165,9 @@ const migrateCompendium = async function (pack) {
  * Migrate a single Actor document to incorporate latest data model changes
  * Return an Object of updateData to be applied
  * @param {Actor} actor   The actor to Update
- * @return {Object}       The updateData to apply
+ * @return {Promise<Object>}       The updateData to apply
  */
-const migrateActorData = function (actor) {
+const migrateActorData = async function (actor) {
   const updateData = {}
 
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
@@ -151,6 +197,40 @@ const migrateActorData = function (actor) {
   if (currentVersion < 0.65) {
     if (!actor.system?.attributes?.speed?.base && actor.system?.attributes?.speed?.value) {
       updateData['system.attributes.speed.base'] = actor.system.attributes.speed.value
+    }
+  }
+
+  // If migrating from earlier than 0.67.0, convert critRange and disapproval from string to number
+  // and set sheetClass based on className to prevent class setup from overwriting custom values
+  if (currentVersion < 0.67) {
+    const critRange = actor.system?.details?.critRange
+    if (typeof critRange === 'string') {
+      updateData['system.details.critRange'] = parseInt(critRange) || 20
+    }
+    const disapproval = actor.system?.class?.disapproval
+    if (typeof disapproval === 'string') {
+      updateData['system.class.disapproval'] = parseInt(disapproval) || 1
+    }
+
+    // Set sheetClass from className for existing actors to prevent class setup overwriting values
+    if (!actor.system?.details?.sheetClass && actor.system?.class?.className) {
+      const className = actor.system.class.className
+
+      // Quick check 1: Is it already an English/internal key?
+      if (CLASS_KEYS.includes(className)) {
+        updateData['system.details.sheetClass'] = className
+      } else {
+        // Quick check 2: Does it match the current locale?
+        const localeMatch = CLASS_KEYS.find(key => game.i18n.localize(`DCC.${key}`) === className)
+        if (localeMatch) {
+          updateData['system.details.sheetClass'] = localeMatch
+        } else {
+          // Edge case: Load all translations and check
+          const lookup = await buildClassNameLookup()
+          // Use lookup result, or fall back to className for third-party classes
+          updateData['system.details.sheetClass'] = lookup[className] || className
+        }
+      }
     }
   }
 
@@ -237,10 +317,11 @@ const migrateItemData = function (item) {
  * Migrate a single Scene document to incorporate changes to the data model of its actor data overrides
  * Return an Object of updateData to be applied
  * @param {Object} scene  The Scene data to Update
- * @return {Object}       The updateData to apply
+ * @return {Promise<Object>}       The updateData to apply
  */
-const migrateSceneData = function (scene) {
-  const tokens = scene.tokens.map(token => {
+const migrateSceneData = async function (scene) {
+  const tokens = []
+  for (const token of scene.tokens) {
     const t = token.toObject()
     const update = {}
     if (Object.keys(update).length) foundry.utils.mergeObject(t, update)
@@ -252,20 +333,20 @@ const migrateSceneData = function (scene) {
     } else if (!t.actorLink) {
       const actorData = foundry.utils.duplicate(t.actorData)
       actorData.type = token.actor?.type
-      const update = migrateActorData(actorData);
+      const actorUpdate = await migrateActorData(actorData);
       ['items', 'effects'].forEach(embeddedName => {
-        if (!update[embeddedName]?.length) return
-        const updates = new Map(update[embeddedName].map(u => [u._id, u]))
+        if (!actorUpdate[embeddedName]?.length) return
+        const updates = new Map(actorUpdate[embeddedName].map(u => [u._id, u]))
         t.actorData[embeddedName].forEach(original => {
-          const update = updates.get(original._id)
-          if (update) foundry.utils.mergeObject(original, update)
+          const embeddedUpdate = updates.get(original._id)
+          if (embeddedUpdate) foundry.utils.mergeObject(original, embeddedUpdate)
         })
-        delete update[embeddedName]
+        delete actorUpdate[embeddedName]
       })
 
-      foundry.utils.mergeObject(t.actorData, update)
+      foundry.utils.mergeObject(t.actorData, actorUpdate)
     }
-    return t
-  })
+    tokens.push(t)
+  }
   return { tokens }
 }

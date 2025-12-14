@@ -1866,7 +1866,7 @@ class DCCActor extends Actor {
 
     const speaker = ChatMessage.getSpeaker({ actor: this })
     // Calculate new disapproval
-    const newRange = Math.min(parseInt(this.system.class.disapproval) + amount, 20)
+    const newRange = Math.min(this.system.class.disapproval + amount, 20)
 
     // Apply the new disapproval range
     this.update({

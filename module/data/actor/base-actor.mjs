@@ -226,7 +226,8 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
         }),
         birthAugur: new StringField({ initial: '' }),
         birthAugurLuckMod: new NumberField({ initial: 0, integer: true }),
-        critRange: new StringField({ initial: '20' }),
+        critRange: new NumberField({ initial: 20, integer: true, min: 1 }),
+        sheetClass: new StringField({ initial: '' }),
         languages: new StringField({ initial: '' }),
         level: new SchemaField({
           value: new NumberField({ initial: 0, integer: true, min: 0 })

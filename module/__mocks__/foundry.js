@@ -1768,7 +1768,7 @@ const DOCUMENT_DEFAULTS = {
         attackDamageBonus: { melee: { value: '+0', adjustment: '+0' }, missile: { value: '+0', adjustment: '+0' } },
         birthAugur: '',
         birthAugurLuckMod: 0,
-        critRange: '20',
+        critRange: 20,
         languages: '',
         level: { value: 0 },
         occupation: { value: '' },
@@ -1828,7 +1828,7 @@ const DOCUMENT_DEFAULTS = {
       value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 }
     },
     weapon: {
-      config: { actionDieOverride: '', critDieOverride: '', critRangeOverride: '', critTableOverride: '', damageOverride: '', attackBonusOverride: '', initiativeBonusOverride: '', initiativeDieOverride: '' },
+      config: { actionDieOverride: '', critDieOverride: '', critRangeOverride: null, critTableOverride: '', damageOverride: '', attackBonusOverride: '', initiativeBonusOverride: '', initiativeDieOverride: '' },
       actionDie: '1d20',
       attackBonus: '',
       attackBonusWeapon: '',

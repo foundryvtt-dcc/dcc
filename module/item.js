@@ -220,7 +220,7 @@ class DCCItem extends Item {
     // Crit Calculation
     // Only set critRange if it hasn't already been set by two-weapon fighting logic
     if (!this.system._twoWeaponCritSet) {
-      this.system.critRange = this.system?.config?.critRangeOverride || this.actor?.system?.details?.critRange || 20
+      this.system.critRange = this.system?.config?.critRangeOverride ?? this.actor?.system?.details?.critRange ?? 20
     }
     this.system.critDie = this.system?.config?.critDieOverride || this.actor?.system?.attributes?.critical?.die || '1d4'
     this.system.critTable = this.system?.config?.critTableOverride || this.actor?.system?.attributes?.critical?.table || 'I'

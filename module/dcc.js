@@ -346,7 +346,7 @@ function checkReleaseNotes () {
     } else if (action === 'dcc-credits') {
       _onShowJournal('dcc.dcc-userguide', 'Credits')
     } else if (action === 'dcc-user-guide') {
-      _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide')
+      _onShowURI('https://foundryvtt-dungeon-crawl-classics-user-guide.readthedocs.io/en/latest/')
     }
   })
 }

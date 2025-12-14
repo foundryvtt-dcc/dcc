@@ -70,7 +70,7 @@ export class PlayerData extends BaseActorData {
         spellsLevel4: new NumberField({ initial: 0, integer: true, min: 0 }),
         spellsLevel5: new NumberField({ initial: 0, integer: true, min: 0 }),
         deity: new StringField({ nullable: true, initial: null }),
-        disapproval: new StringField({ initial: '1' }),
+        disapproval: new NumberField({ initial: 1, integer: true, min: 1, max: 20 }),
         disapprovalTable: new StringField({ initial: 'Disapproval' }),
 
         // Thief fields

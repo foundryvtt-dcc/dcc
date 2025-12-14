@@ -141,7 +141,7 @@ function _parseJSONPCs (pcObject) {
       if (pcObject.className === 'Warrior' && pcObject.level) {
         const level = parseInt(pcObject.level) || 1
         const critRange = CONFIG.DCC.warriorCritRangeByLevel[level] || CONFIG.DCC.warriorCritRangeByLevel[1]
-        pc['details.critRange'] = critRange.toString()
+        pc['details.critRange'] = critRange
       }
       // Other classes use default 20 (set by template)
     }
