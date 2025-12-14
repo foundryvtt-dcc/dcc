@@ -52,7 +52,7 @@ describe('DCCItem Tests', () => {
           details: {
             attackHitBonus: { melee: { value: '+2' }, missile: { value: '+1' } },
             attackDamageBonus: { melee: { value: '+3' }, missile: { value: '+1' } },
-            critRange: 19
+            critRange: '19'
           }
         }
       }
@@ -114,7 +114,7 @@ describe('DCCItem Tests', () => {
 
     test('should calculate crit range correctly', () => {
       item.prepareBaseData()
-      expect(item.system.critRange).toBe(19)
+      expect(item.system.critRange).toBe('19')
     })
 
     test('should calculate crit die correctly', () => {
@@ -399,7 +399,7 @@ describe('DCCItem Tests', () => {
         type: 'Player',
         system: {
           details: {
-            critRange: 18
+            critRange: '18'
           },
           attributes: {
             critical: {
@@ -417,7 +417,7 @@ describe('DCCItem Tests', () => {
 
     test('should inherit critical range from actor', () => {
       weapon.prepareBaseData()
-      expect(weapon.system.critRange).toBe(18)
+      expect(weapon.system.critRange).toBe('18')
     })
 
     test('should inherit critical die from actor', () => {
@@ -433,14 +433,14 @@ describe('DCCItem Tests', () => {
     test('should use config overrides when present', () => {
       weapon.system = {
         config: {
-          critRangeOverride: 16,
+          critRangeOverride: '16',
           critDieOverride: '1d10',
           critTableOverride: 'V'
         }
       }
       weapon.prepareBaseData()
 
-      expect(weapon.system.critRange).toBe(16)
+      expect(weapon.system.critRange).toBe('16')
       expect(weapon.system.critDie).toBe('1d10')
       expect(weapon.system.critTable).toBe('V')
     })

@@ -201,7 +201,7 @@ describe('NPC Parser Comprehensive Tests', () => {
       const result = await parseNPCs('Test: Init +0; AC 10; HP 5; MV 30\'; Act 1d20; Crit M/d6; SV Fort +0, Ref +0, Will +0; AL N.')
       expect(result[0]['attributes.critical.die']).toBe('d6')
       expect(result[0]['attributes.critical.table']).toBe('M')
-      expect(result[0]['details.critRange']).toBe(20)
+      expect(result[0]['details.critRange']).toBe('20')
     })
 
     it('should infer humanoid critical hits from HD and keywords', async () => {

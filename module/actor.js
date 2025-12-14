@@ -1870,7 +1870,7 @@ class DCCActor extends Actor {
 
     // Apply the new disapproval range
     this.update({
-      'system.class.disapproval': newRange
+      'system.class.disapproval': String(newRange)
     })
 
     // Announce that disapproval was increased
