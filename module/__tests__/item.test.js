@@ -433,7 +433,7 @@ describe('DCCItem Tests', () => {
     test('should use config overrides when present', () => {
       weapon.system = {
         config: {
-          critRangeOverride: '16',
+          critRangeOverride: 16,
           critDieOverride: '1d10',
           critTableOverride: 'V'
         }
