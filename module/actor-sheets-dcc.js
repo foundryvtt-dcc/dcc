@@ -57,17 +57,13 @@ class DCCActorSheetCleric extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
-    })
-
     if (this.options.document.system.details.sheetClass !== 'Cleric') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Cleric'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink')),
         'system.details.sheetClass': 'Cleric',
         'system.class.spellCheckAbility': 'per',
-        'system.details.critRange': '20',
+        'system.details.critRange': 20,
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
         'system.config.showBackstab': false,
@@ -123,17 +119,13 @@ class DCCActorSheetThief extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
-    })
-
     if (this.options.document.system.details.sheetClass !== 'Thief') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Thief'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink')),
         'system.details.sheetClass': 'Thief',
-        'system.details.critRange': '20',
-        'system.class.disapproval': '1',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
         'system.config.showBackstab': true,
         'system.config.addClassLevelToInitiative': false,
@@ -194,16 +186,13 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
-    })
-
     if (this.options.document.system.details.sheetClass !== 'Halfling') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Halfling'),
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink')),
         'system.details.sheetClass': 'Halfling',
-        'system.details.critRange': '20',
-        'system.class.disapproval': '1',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
         'system.class.spellCheckAbility': null,
@@ -260,17 +249,14 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
-      'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
-    })
-
     if (this.options.document.system.details.sheetClass !== 'Warrior') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Warrior'),
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
+        'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink')),
         'system.details.sheetClass': 'Warrior',
-        'system.details.critRange': '20',
-        'system.class.disapproval': '1',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'autoPerAttack',
         'system.config.addClassLevelToInitiative': true,
         'system.class.spellCheckAbility': null,
@@ -332,19 +318,16 @@ class DCCActorSheetWizard extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
-      'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
-      'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink'))
-    })
-
     if (this.options.document.system.details.sheetClass !== 'Wizard') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Wizard'),
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
+        'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
+        'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink')),
         'system.details.sheetClass': 'Wizard',
         'system.class.spellCheckAbility': 'int',
-        'system.details.critRange': '20',
-        'system.class.disapproval': '1',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
         'system.config.showSpells': true,
@@ -400,17 +383,14 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
-      'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
-    })
-
     if (this.options.document.system.details.sheetClass !== 'Dwarf') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Dwarf'),
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
+        'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink')),
         'system.details.sheetClass': 'Dwarf',
-        'system.details.critRange': '20',
-        'system.class.disapproval': '1',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'autoPerAttack',
         'system.skills.shieldBash.useDeed': true,
         'system.config.addClassLevelToInitiative': false,
@@ -498,17 +478,14 @@ class DCCActorSheetElf extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    await this.options.document.update({
-      'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
-    })
-
     if (this.options.document.system.details.sheetClass !== 'Elf') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Elf'),
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink')),
         'system.details.sheetClass': 'Elf',
         'system.class.spellCheckAbility': 'int',
-        'system.details.critRange': '20',
-        'system.class.disapproval': '1',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
         'system.config.showSpells': true,
@@ -576,8 +553,8 @@ class DCCActorSheetGeneric extends DCCActorSheet {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Generic'),
         'system.details.sheetClass': 'Generic',
-        'system.details.critRange': '20',
-        'system.class.disapproval': '1',
+        'system.details.critRange': 20,
+        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
         'system.class.spellCheckAbility': null,

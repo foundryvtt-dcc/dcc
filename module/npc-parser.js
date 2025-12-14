@@ -89,9 +89,9 @@ async function parseNPC (npcString) {
     npc['attributes.critical.table'] = critMatch[1].match(/[A-Z][A-Z]?(?=\/)/)[0] || 'M'
     const critRangeMatch = critMatch[1].match(/(\d+)-\d+(?= )/)
     if (critRangeMatch) {
-      npc['details.critRange'] = critRangeMatch[1] || '20'
+      npc['details.critRange'] = parseInt(critRangeMatch[1]) || 20
     } else {
-      npc['details.critRange'] = '20'
+      npc['details.critRange'] = 20
     }
   }
 

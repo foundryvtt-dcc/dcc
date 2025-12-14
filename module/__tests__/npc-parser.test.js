@@ -569,7 +569,7 @@ infravision 60’, stone camouflage, transmute earth; SV Fort
       'attributes.speed.value': '40’',
       'config.actionDice': '1d24',
       'details.alignment': 'n',
-      'details.critRange': '20',
+      'details.critRange': 20,
       'saves.frt.value': '+12',
       'saves.ref.value': '+6',
       'saves.wil.value': '+8',

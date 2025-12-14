@@ -1768,7 +1768,7 @@ const DOCUMENT_DEFAULTS = {
         attackDamageBonus: { melee: { value: '+0', adjustment: '+0' }, missile: { value: '+0', adjustment: '+0' } },
         birthAugur: '',
         birthAugurLuckMod: 0,
-        critRange: '20',
+        critRange: 20,
         languages: '',
         level: { value: 0 },
         occupation: { value: '' },

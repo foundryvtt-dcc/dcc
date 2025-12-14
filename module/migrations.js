@@ -154,6 +154,90 @@ const migrateActorData = function (actor) {
     }
   }
 
+  // If migrating from earlier than 0.67.0, convert critRange and disapproval from string to number
+  // and set sheetClass based on className to prevent class setup from overwriting custom values
+  if (currentVersion < 0.67) {
+    const critRange = actor.system?.details?.critRange
+    if (typeof critRange === 'string') {
+      updateData['system.details.critRange'] = parseInt(critRange) || 20
+    }
+    const disapproval = actor.system?.class?.disapproval
+    if (typeof disapproval === 'string') {
+      updateData['system.class.disapproval'] = parseInt(disapproval) || 1
+    }
+
+    // Set sheetClass from className for existing actors to prevent class setup overwriting values
+    if (!actor.system?.details?.sheetClass && actor.system?.class?.className) {
+      const className = actor.system.class.className
+      // Map class names to internal sheetClass identifiers
+      // Includes current locale, English, and all known translations for robustness
+      const classMap = {
+        // Current locale (dynamic)
+        [game.i18n.localize('DCC.Warrior')]: 'Warrior',
+        [game.i18n.localize('DCC.Thief')]: 'Thief',
+        [game.i18n.localize('DCC.Halfling')]: 'Halfling',
+        [game.i18n.localize('DCC.Cleric')]: 'Cleric',
+        [game.i18n.localize('DCC.Wizard')]: 'Wizard',
+        [game.i18n.localize('DCC.Elf')]: 'Elf',
+        [game.i18n.localize('DCC.Dwarf')]: 'Dwarf',
+        // English
+        Warrior: 'Warrior',
+        Thief: 'Thief',
+        Halfling: 'Halfling',
+        Cleric: 'Cleric',
+        Wizard: 'Wizard',
+        Elf: 'Elf',
+        Dwarf: 'Dwarf',
+        // German (de)
+        Krieger: 'Warrior',
+        Dieb: 'Thief',
+        Halbling: 'Halfling',
+        Kleriker: 'Cleric',
+        Zauberkundiger: 'Wizard',
+        Zwerg: 'Dwarf',
+        // Spanish (es)
+        Guerrero: 'Warrior',
+        Ladrón: 'Thief',
+        Mediano: 'Halfling',
+        Clérigo: 'Cleric',
+        Mago: 'Wizard',
+        Elfo: 'Elf',
+        Enano: 'Dwarf',
+        // French (fr)
+        Guerrier: 'Warrior',
+        Voleur: 'Thief',
+        Halfelin: 'Halfling',
+        Clerc: 'Cleric',
+        Mage: 'Wizard',
+        Nain: 'Dwarf',
+        Elfe: 'Elf',
+        // Italian (it)
+        Guerriero: 'Warrior',
+        Ladro: 'Thief',
+        Chierico: 'Cleric',
+        Nano: 'Dwarf',
+        // Polish (pl)
+        Wojownik: 'Warrior',
+        Złodziej: 'Thief',
+        Niziołek: 'Halfling',
+        Kleryk: 'Cleric',
+        Czarodziej: 'Wizard',
+        Krasnolud: 'Dwarf',
+        // Chinese (cn)
+        战士: 'Warrior',
+        盗贼: 'Thief',
+        半身人: 'Halfling',
+        牧师: 'Cleric',
+        法师: 'Wizard',
+        精灵: 'Elf',
+        矮人: 'Dwarf'
+      }
+      if (classMap[className]) {
+        updateData['system.details.sheetClass'] = classMap[className]
+      }
+    }
+  }
+
   // Migrate Owned Items
   let hasItemUpdates = false
   let items = []

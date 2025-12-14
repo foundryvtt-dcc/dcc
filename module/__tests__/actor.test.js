@@ -1127,7 +1127,7 @@ test('applyDisapproval increases disapproval range', async () => {
   await actor.applyDisapproval(1)
 
   expect(actorUpdateMock).toHaveBeenCalledWith({
-    'system.class.disapproval': '3'
+    'system.class.disapproval': 3
   })
 })
 
@@ -1138,7 +1138,7 @@ test('applyDisapproval caps at 20', async () => {
   await actor.applyDisapproval(5) // Try to go over 20
 
   expect(actorUpdateMock).toHaveBeenCalledWith({
-    'system.class.disapproval': '20' // Capped at 20
+    'system.class.disapproval': 20 // Capped at 20
   })
 })
 
