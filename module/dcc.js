@@ -67,15 +67,13 @@ Hooks.once('init', async function () {
 
   // Enable Active Effects
   CONFIG.ActiveEffect.legacyTransferral = false
+  CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
   // Register Active Effect application phases (required for V14)
   CONFIG.ActiveEffect.phases = {
     initial: { priority: 0, label: 'Initial' },
     final: { priority: 100, label: 'Final' }
   }
-
-  // Register custom ActiveEffect document class for DCC-specific behavior
-  CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
   // Register custom DCC effect change types for the UI dropdown
   // This adds the 'diceChain' type to Foundry's list of available effect change types
@@ -250,28 +248,45 @@ Hooks.once('init', async function () {
   Handlebars.registerHelper('dccPackExists', function (pack, options) {
     return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
   })
+
+  // Register Fleeting Luck setting early so it's available for getSceneControlButtons
+  // which fires before the ready hook where other settings are registered
+  game.settings.register('dcc', 'enableFleetingLuck', {
+    name: 'DCC.SettingEnableFleetingLuck',
+    hint: 'DCC.SettingEnableFleetingLuckHint',
+    requiresReload: true,
+    scope: 'world',
+    type: Boolean,
+    default: false,
+    config: true
+  })
 })
 
 /* --------------------------------------------- */
-/*  Initialize Fleeting Luck Button              */
-/*  In v13, has to happen before ready hook      */
-/*  The button is removed in FleetingLuck.init() */
-/*  If Fleeting Luck is disabled                 */
+/*  Initialize Scene Control Buttons             */
 /* --------------------------------------------- */
 Hooks.on('getSceneControlButtons', (controls) => {
-  controls.tokens.tools.fleetingLuck = {
-    name: 'fleetingLuck',
-    title: game.i18n.localize('DCC.FleetingLuck'),
-    icon: 'fas fa-balance-scale-left',
-    onChange: (event, active) => {
-      game.dcc.FleetingLuck.show()
-    },
-    button: true,
-    active: true
+  // Only add Fleeting Luck button if the setting is enabled
+  try {
+    if (game.settings.get('dcc', 'enableFleetingLuck')) {
+      controls.tokens.tools.fleetingLuck = {
+        name: 'fleetingLuck',
+        title: 'DCC.FleetingLuck',
+        icon: 'fas fa-balance-scale-left',
+        onChange: (event, active) => {
+          game.dcc.FleetingLuck.show()
+        },
+        button: true,
+        active: true
+      }
+    }
+  } catch (e) {
+    console.error('DCC | Error adding Fleeting Luck button:', e)
   }
+
   controls.tokens.tools.spellDuel = {
     name: 'spellDuel',
-    title: game.i18n.localize('DCC.SpellDuel'),
+    title: 'DCC.SpellDuel',
     icon: 'fas fa-hat-wizard',
     onChange: (event, active) => {
       game.dcc.SpellDuel.show()
@@ -344,7 +359,7 @@ function checkReleaseNotes () {
     } else if (action === 'dcc-credits') {
       _onShowJournal('dcc.dcc-userguide', 'Credits')
     } else if (action === 'dcc-user-guide') {
-      _onShowURI('https://github.com/foundryvtt-dcc/dcc/wiki/FoundryVTT-DCC-System-User-Guide')
+      _onShowURI('https://foundryvtt-dungeon-crawl-classics-user-guide.readthedocs.io/en/latest/')
     }
   })
 }

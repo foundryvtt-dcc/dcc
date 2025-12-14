@@ -24,6 +24,12 @@ export class WeaponData extends PhysicalItemData {
       source.config = {}
     }
 
+    // Convert critRangeOverride from string to number/null
+    const critRangeOverride = source.config.critRangeOverride
+    if (typeof critRangeOverride === 'string') {
+      source.config.critRangeOverride = critRangeOverride === '' ? null : (parseInt(critRangeOverride) || null)
+    }
+
     return super.migrateData(source)
   }
 
@@ -35,7 +41,7 @@ export class WeaponData extends PhysicalItemData {
       config: new SchemaField({
         actionDieOverride: new StringField({ initial: '' }),
         critDieOverride: new StringField({ initial: '' }),
-        critRangeOverride: new StringField({ initial: '' }),
+        critRangeOverride: new NumberField({ nullable: true, initial: null, integer: true, min: 1, max: 20 }),
         critTableOverride: new StringField({ initial: '' }),
         damageOverride: new StringField({ initial: '' }),
         attackBonusOverride: new StringField({ initial: '' }),

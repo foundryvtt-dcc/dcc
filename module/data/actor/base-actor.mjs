@@ -1,9 +1,9 @@
-/* global foundry */
+/* global foundry, Hooks */
 /**
  * Base data model for all DCC actors
  * Contains the common template fields shared by all actor types
  */
-import { AbilityField, CurrencyField, DiceField, SaveField, isValidDiceNotation } from '../fields/_module.mjs'
+import { AbilityField, CurrencyField, DiceField, SaveField, isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
 
 const { SchemaField, StringField, NumberField, ArrayField, HTMLField } = foundry.data.fields
 
@@ -22,24 +22,13 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
     if (source.abilities) {
       for (const key of ['str', 'agl', 'sta', 'per', 'int', 'lck']) {
         if (source.abilities[key]) {
-          if (typeof source.abilities[key].value === 'string') {
-            source.abilities[key].value = parseInt(source.abilities[key].value) || 10
-          }
-          if (typeof source.abilities[key].max === 'string') {
-            source.abilities[key].max = parseInt(source.abilities[key].max) || 10
-          }
+          migrateFieldsToInteger(source.abilities[key], ['value', 'max'], 10)
         }
       }
     }
 
     // Convert string HP values to numbers if needed
-    if (source.attributes?.hp) {
-      for (const key of ['value', 'min', 'max', 'temp', 'tempmax']) {
-        if (typeof source.attributes.hp[key] === 'string') {
-          source.attributes.hp[key] = parseInt(source.attributes.hp[key]) || 0
-        }
-      }
-    }
+    migrateFieldsToInteger(source.attributes?.hp, ['value', 'min', 'max', 'temp', 'tempmax'], 0)
 
     // Fix invalid dice notation in attributes
     // hitDice.value might be just a number like "1" for zero-level
@@ -104,11 +93,30 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
       }
     }
 
+    // Convert currency values to integers if needed
+    migrateFieldsToInteger(source.currency, ['pp', 'ep', 'gp', 'sp', 'cp'], 0)
+
+    // Convert AC fields from strings to integers if needed
+    migrateFieldsToInteger(source.attributes?.ac, ['value', 'checkPenalty', 'otherMod', 'speedPenalty'], { value: 10 })
+
+    // Convert init.otherMod from string to integer if needed
+    migrateFieldsToInteger(source.attributes?.init, ['otherMod'], 0)
+
+    // Convert XP fields from strings to integers if needed
+    migrateFieldsToInteger(source.details?.xp, ['value', 'min', 'max'], { max: 10 })
+
+    // Convert save values from strings to integers if needed
+    if (source.saves) {
+      for (const save of ['frt', 'ref', 'wil']) {
+        migrateFieldsToInteger(source.saves[save], ['value'], 0)
+      }
+    }
+
     return super.migrateData(source)
   }
 
   static defineSchema () {
-    return {
+    const schema = {
       // Abilities
       abilities: new SchemaField({
         str: new AbilityField({ label: 'DCC.AbilityStr' }),
@@ -186,6 +194,9 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
           special: new StringField({ initial: '' }),
           swim: new StringField({ initial: '' }), // Can include units
           fly: new StringField({ initial: '' }) // Can include units
+        }),
+        special: new SchemaField({
+          value: new StringField({ initial: '' })
         })
       }),
 
@@ -215,7 +226,8 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
         }),
         birthAugur: new StringField({ initial: '' }),
         birthAugurLuckMod: new NumberField({ initial: 0, integer: true }),
-        critRange: new StringField({ initial: '20' }),
+        critRange: new NumberField({ initial: 20, integer: true, min: 1 }),
+        sheetClass: new StringField({ initial: '' }),
         languages: new StringField({ initial: '' }),
         level: new SchemaField({
           value: new NumberField({ initial: 0, integer: true, min: 0 })
@@ -255,5 +267,20 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
       // Currency
       currency: new CurrencyField()
     }
+
+    /**
+     * Allow modules to extend the base actor schema by adding fields to existing SchemaFields
+     * or adding entirely new top-level fields. This hook runs for all actor types.
+     *
+     * @example
+     * // In your module's init hook:
+     * Hooks.on('dcc.defineBaseActorSchema', (schema) => {
+     *   // Add a new field to details
+     *   schema.details.fields.sheetClass = new foundry.data.fields.StringField({ initial: '' })
+     * })
+     */
+    Hooks.callAll('dcc.defineBaseActorSchema', schema)
+
+    return schema
   }
 }

@@ -261,18 +261,8 @@ export const registerSystemSettings = async function () {
     config: true
   })
 
-  /**
-   * Enable Fleeting Luck
-   */
-  game.settings.register('dcc', 'enableFleetingLuck', {
-    name: 'DCC.SettingEnableFleetingLuck',
-    hint: 'DCC.SettingEnableFleetingLuckHint',
-    requiresReload: true,
-    scope: 'world',
-    type: Boolean,
-    default: false,
-    config: true
-  })
+  // Note: enableFleetingLuck is registered in dcc.js init hook
+  // so it's available for getSceneControlButtons which fires before ready
 
   /**
    * Automatically track Fleeting Luck

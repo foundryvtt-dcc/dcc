@@ -1,11 +1,11 @@
-/* global foundry */
+/* global foundry, Hooks */
 /**
  * Data model for Player actors
  * Players use all class templates merged together:
  * common, config, player, cleric, thief, halfling, warrior, wizard, dwarf, elf
  */
 import { BaseActorData } from './base-actor.mjs'
-import { DiceField, isValidDiceNotation } from '../fields/_module.mjs'
+import { DiceField, isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
 
 const { SchemaField, StringField, NumberField, BooleanField, HTMLField } = foundry.data.fields
 
@@ -40,27 +40,21 @@ export class PlayerData extends BaseActorData {
     }
 
     // Convert class numeric fields from strings to integers
-    if (source.class) {
-      const numericFields = [
-        'spellCheck', 'spellsLevel1', 'spellsLevel2', 'spellsLevel3',
-        'spellsLevel4', 'spellsLevel5', 'knownSpells', 'maxSpellLevel'
-      ]
-      for (const key of numericFields) {
-        if (source.class[key] !== undefined) {
-          if (typeof source.class[key] === 'string') {
-            source.class[key] = parseInt(source.class[key]) || 0
-          } else if (typeof source.class[key] === 'number' && !Number.isInteger(source.class[key])) {
-            source.class[key] = Math.floor(source.class[key])
-          }
-        }
-      }
-    }
+    migrateFieldsToInteger(source.class, [
+      'spellCheck', 'spellsLevel1', 'spellsLevel2', 'spellsLevel3',
+      'spellsLevel4', 'spellsLevel5', 'knownSpells', 'maxSpellLevel'
+    ], { spellCheck: 1 })
+
+    // Convert cleric skill values from strings to integers
+    migrateFieldsToInteger(source.skills?.divineAid, ['value', 'drainDisapproval'], { drainDisapproval: 10 })
+    migrateFieldsToInteger(source.skills?.turnUnholy, ['value'], 0)
+    migrateFieldsToInteger(source.skills?.layOnHands, ['value'], 0)
 
     return super.migrateData(source)
   }
 
   static defineSchema () {
-    return {
+    const schema = {
       ...super.defineSchema(),
 
       // Class information
@@ -76,7 +70,7 @@ export class PlayerData extends BaseActorData {
         spellsLevel4: new NumberField({ initial: 0, integer: true, min: 0 }),
         spellsLevel5: new NumberField({ initial: 0, integer: true, min: 0 }),
         deity: new StringField({ nullable: true, initial: null }),
-        disapproval: new StringField({ initial: '1' }),
+        disapproval: new NumberField({ initial: 1, integer: true, min: 1, max: 20 }),
         disapprovalTable: new StringField({ initial: 'Disapproval' }),
 
         // Thief fields
@@ -227,5 +221,29 @@ export class PlayerData extends BaseActorData {
         showSwimFlySpeed: new BooleanField({ initial: false })
       })
     }
+
+    /**
+     * Allow modules to extend the Player schema by adding fields to existing SchemaFields
+     * or adding entirely new top-level fields.
+     *
+     * @example
+     * // In your module's init hook:
+     * Hooks.on('dcc.definePlayerSchema', (schema) => {
+     *   // Add a new field to the class SchemaField
+     *   schema.class.fields.myCustomField = new foundry.data.fields.StringField({ initial: '' })
+     *
+     *   // Add a new field to details
+     *   schema.details.fields.sheetClass = new foundry.data.fields.StringField({ initial: '' })
+     *
+     *   // Add an entirely new top-level SchemaField
+     *   schema.rewards = new foundry.data.fields.SchemaField({
+     *     fame: new foundry.data.fields.NumberField({ initial: 0 }),
+     *     wealth: new foundry.data.fields.NumberField({ initial: 0 })
+     *   })
+     * })
+     */
+    Hooks.callAll('dcc.definePlayerSchema', schema)
+
+    return schema
   }
 }

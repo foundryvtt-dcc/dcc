@@ -194,7 +194,7 @@ describe('NPC Parser Comprehensive Tests', () => {
       const result = await parseNPCs('Test: Init +0; AC 10; HP 5; MV 30\'; Act 1d20; Crit 19-20 IV/d8; SV Fort +0, Ref +0, Will +0; AL N.')
       expect(result[0]['attributes.critical.die']).toBe('d8')
       expect(result[0]['attributes.critical.table']).toBe('IV')
-      expect(result[0]['details.critRange']).toBe('19')
+      expect(result[0]['details.critRange']).toBe(19)
     })
 
     it('should parse critical hit without range', async () => {
@@ -369,7 +369,7 @@ Another Good: Init +0; AC 10; HP 5; Act 1d20; SV Fort +0, Ref +0, Will +0; AL C.
       const result = await parseNPCs('Paladin (fighter 5): Init +2; Atk holy sword +8+deed die melee (1d8+4+deed die); AC 18 (plate mail); HD 5d10+10; hp 38; MV 20\'; Act 1d20; SP Mighty Deed of Arms, deed die (+d4), lay on hands, detect evil; SV Fort +6, Ref +3, Will +5; AL L; Crit 19-20 II/d8.')
       expect(result[0].name).toBe('Paladin (fighter 5)')
       expect(result[0]['attributes.critical.table']).toBe('II')
-      expect(result[0]['details.critRange']).toBe('19')
+      expect(result[0]['details.critRange']).toBe(19)
     })
   })
 

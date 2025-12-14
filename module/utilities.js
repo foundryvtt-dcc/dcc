@@ -108,9 +108,17 @@ export async function getCritTableResult (roll, critTableName) {
 /**
  * Draw a result from the fumble table
  * @param roll - roll instance to use
+ * @param localTableName - name of the local world table to check first (e.g. 'Table 4-2: Fumbles')
  */
-export async function getFumbleTableResult (roll) {
-// Lookup the fumble table if available
+export async function getFumbleTableResult (roll, localTableName = 'Table 4-2: Fumbles') {
+  // First check for a local world table
+  const worldFumbleTable = game.tables.find((entity) => entity.name === localTableName)
+  if (worldFumbleTable) {
+    const fumbleResult = worldFumbleTable.getResultsForRoll(roll.total)
+    return fumbleResult[0] || 'Unable to find fumble result'
+  }
+
+  // Lookup the fumble table in compendium packs if available
   const fumbleTableName = CONFIG.DCC.fumbleTable
   if (fumbleTableName) {
     const fumbleTablePath = fumbleTableName.split('.')

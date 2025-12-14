@@ -14,8 +14,10 @@ export class ArmorData extends PhysicalItemData {
    * @returns {object} - Migrated data
    */
   static migrateData (source) {
-    // Convert "-" fumbleDie to empty string (indicates no fumble die)
-    if (source.fumbleDie === '-' || source.fumbleDie === '—') {
+    // Convert invalid fumbleDie values to empty string (indicates no fumble die)
+    // This handles: "-", "—", "0", 0, and other non-dice values
+    if (source.fumbleDie === '-' || source.fumbleDie === '—' ||
+        source.fumbleDie === '0' || source.fumbleDie === 0) {
       source.fumbleDie = ''
     }
 

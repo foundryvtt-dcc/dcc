@@ -4,7 +4,7 @@ import DiceChain from './dice-chain.js'
 
 /**
  * Custom ActiveEffect class for DCC system
- * Handles special cases like thief skills which are stored as signed strings ("+5", "-2", "0")
+ * Handles special cases like thief skills and save bonuses which are stored as signed strings ("+5", "-2", "0")
  * Also handles equipped status for item effects
  * Also handles custom DCC effect types like dice chain adjustments
  */
@@ -49,7 +49,8 @@ export default class DCCActiveEffect extends ActiveEffect {
       return {}
     }
 
-    // Handle string values that look like signed numbers (thief skills)
+    // Handle string values that look like signed numbers (thief skills, save bonuses, etc.)
+    // These are stored as strings like "+5", "-2", "0" but need numeric operations
     // V14 uses DataModel fields which don't call _applyAdd etc. for schema-defined fields
     // We need to intercept here for numeric operations on string fields
 

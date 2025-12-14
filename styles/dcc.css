@@ -1619,6 +1619,10 @@ a.inline-roll {
   grid-column: 2;
   justify-self: center;
 }
+.dcc .fleeting-luck .fleeting-luck-users {
+  max-height: 400px;
+  overflow-y: auto;
+}
 .dcc .fleeting-luck .fleeting-luck-row {
   align-items: center;
   display: grid;
@@ -1885,7 +1889,7 @@ a.inline-roll {
   align-self: center;
   border: 0;
   font-size: 24px;
-  height: 17px;
+  height: 28px;
   justify-self: center;
   margin-bottom: 5px;
   width: 37px;
@@ -2375,6 +2379,13 @@ a.inline-roll {
 }
 .dcc.sheet.item #effects .effects-summary {
   grid-column: 1/-1;
+}
+
+/* Level Change Dialog */
+.level-change-dialog .level-data-entries {
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 /*# sourceMappingURL=dcc.css.map */

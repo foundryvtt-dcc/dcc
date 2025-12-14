@@ -4,11 +4,23 @@
  * NPCs use common and config templates with some overrides
  */
 import { BaseActorData } from './base-actor.mjs'
-import { DiceField } from '../fields/_module.mjs'
+import { DiceField, migrateFieldsToInteger } from '../fields/_module.mjs'
 
 const { SchemaField, StringField, NumberField, BooleanField } = foundry.data.fields
 
 export class NPCData extends BaseActorData {
+  /**
+   * Migrate source data to handle legacy formats
+   * @param {object} source - Raw source data
+   * @returns {object} - Migrated data
+   */
+  static migrateData (source) {
+    // Convert class.spellCheck from string to integer if needed
+    migrateFieldsToInteger(source.class, ['spellCheck'], 1)
+
+    return super.migrateData(source)
+  }
+
   static defineSchema () {
     const schema = super.defineSchema()
 
