@@ -350,8 +350,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @returns {boolean}
    */
   _canDragDrop (selector) {
-    // Only allow drops on spell items
-    return this.document.type === 'spell' && this.isEditable
+    // Allow drops on any item type (for ActiveEffects and RollTables on spells)
+    return this.isEditable
   }
 
   /**
@@ -521,18 +521,13 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (!effectData) return false
 
     // Prepare the effect data for creation on the item
-    const createData = {
-      name: effectData.name,
-      img: effectData.img || 'icons/svg/aura.svg',
-      origin: this.document.uuid, // Set origin to this item
-      changes: effectData.changes || [],
-      disabled: effectData.disabled || false,
-      duration: effectData.duration || {},
-      description: effectData.description || '',
-      statuses: effectData.statuses || [],
-      transfer: true, // Item effects should transfer to actors by default
-      flags: effectData.flags || {}
-    }
+    // Use foundry.utils.deepClone to preserve all effect data including module flags (e.g., aura settings)
+    const createData = foundry.utils.deepClone(effectData)
+    // Override specific fields for item-based effects
+    delete createData._id // Remove ID so a new one is generated
+    createData.origin = this.document.uuid // Set origin to this item
+    createData.transfer = true // Item effects should transfer to actors by default
+    createData.img = createData.img || 'icons/svg/aura.svg'
 
     // Create the effect on the item
     return this.document.createEmbeddedDocuments('ActiveEffect', [createData])
