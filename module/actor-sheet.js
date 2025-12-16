@@ -1434,18 +1434,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!effectData) return false
 
     // Prepare the effect data for creation on the actor
-    const createData = {
-      name: effectData.name,
-      img: effectData.img || 'icons/svg/aura.svg',
-      origin: actor.uuid, // Set origin to this actor
-      changes: effectData.changes || [],
-      disabled: effectData.disabled || false,
-      duration: effectData.duration || {},
-      description: effectData.description || '',
-      statuses: effectData.statuses || [],
-      transfer: false, // Effects directly on actors don't transfer
-      flags: effectData.flags || {}
-    }
+    // Use foundry.utils.deepClone to preserve all effect data including module flags (e.g., aura settings)
+    const createData = foundry.utils.deepClone(effectData)
+    // Override specific fields for actor-based effects
+    delete createData._id // Remove ID so a new one is generated
+    createData.origin = actor.uuid // Set origin to this actor
+    createData.transfer = false // Effects directly on actors don't transfer
+    createData.img = createData.img || 'icons/svg/aura.svg'
 
     // Create the effect on the actor
     return actor.createEmbeddedDocuments('ActiveEffect', [createData])
