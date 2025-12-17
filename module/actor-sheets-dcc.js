@@ -197,7 +197,6 @@ class DCCActorSheetHalfling extends DCCActorSheet {
         'system.config.addClassLevelToInitiative': false,
         'system.class.spellCheckAbility': null,
         'system.config.showBackstab': false,
-        'system.config.showSpells': false,
         'system.skills.shieldBash.useDeed': false
       })
     }
@@ -261,7 +260,6 @@ class DCCActorSheetWarrior extends DCCActorSheet {
         'system.config.addClassLevelToInitiative': true,
         'system.class.spellCheckAbility': null,
         'system.config.showBackstab': false,
-        'system.config.showSpells': false,
         'system.skills.shieldBash.useDeed': false
       })
     }
@@ -395,8 +393,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
         'system.skills.shieldBash.useDeed': true,
         'system.config.addClassLevelToInitiative': false,
         'system.class.spellCheckAbility': null,
-        'system.config.showBackstab': false,
-        'system.config.showSpells': false
+        'system.config.showBackstab': false
       })
 
       // Check if the dwarf has a shield bash weapon
