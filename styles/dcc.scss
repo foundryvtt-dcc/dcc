@@ -365,6 +365,11 @@
   font-family: var(--system-data-font), serif;
 }
 
+.journal-sheet blockquote {
+  font-family: var(--system-data-font), serif;
+  font-size: larger;
+}
+
 .journal-entry {
   table th,
   table td {
@@ -378,6 +383,7 @@
   .journal-entry-content {
     background-image: var(--system-background);
     color: var(--system-primary-color);
+    font-size: larger;
 
     .content-link {
       background: var(--system-light-bg);

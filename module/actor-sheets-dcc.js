@@ -57,7 +57,8 @@ class DCCActorSheetCleric extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.options.document.system.details.sheetClass !== 'Cleric' || !this.options.document.system.class.classLink) {
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.options.document.system.details.sheetClass !== 'Cleric') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Cleric'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink')),
@@ -69,6 +70,11 @@ class DCCActorSheetCleric extends DCCActorSheet {
         'system.config.showBackstab': false,
         'system.config.showSpells': false,
         'system.skills.shieldBash.useDeed': false
+      })
+    } else if (!this.options.document.system.class.classLink) {
+      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
+      await this.options.document.update({
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
       })
     }
 
@@ -119,7 +125,8 @@ class DCCActorSheetThief extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.options.document.system.details.sheetClass !== 'Thief' || !this.options.document.system.class.classLink) {
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.options.document.system.details.sheetClass !== 'Thief') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Thief'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink')),
@@ -132,6 +139,11 @@ class DCCActorSheetThief extends DCCActorSheet {
         'system.class.spellCheckAbility': null,
         'system.config.showSpells': false,
         'system.skills.shieldBash.useDeed': false
+      })
+    } else if (!this.options.document.system.class.classLink) {
+      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
+      await this.options.document.update({
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
       })
     }
 
@@ -186,7 +198,8 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.options.document.system.details.sheetClass !== 'Halfling' || !this.options.document.system.class.classLink) {
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.options.document.system.details.sheetClass !== 'Halfling') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Halfling'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink')),
@@ -197,8 +210,12 @@ class DCCActorSheetHalfling extends DCCActorSheet {
         'system.config.addClassLevelToInitiative': false,
         'system.class.spellCheckAbility': null,
         'system.config.showBackstab': false,
-        'system.config.showSpells': false,
         'system.skills.shieldBash.useDeed': false
+      })
+    } else if (!this.options.document.system.class.classLink) {
+      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
+      await this.options.document.update({
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
       })
     }
 
@@ -249,7 +266,8 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.options.document.system.details.sheetClass !== 'Warrior' || !this.options.document.system.class.classLink) {
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.options.document.system.details.sheetClass !== 'Warrior') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Warrior'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
@@ -261,8 +279,13 @@ class DCCActorSheetWarrior extends DCCActorSheet {
         'system.config.addClassLevelToInitiative': true,
         'system.class.spellCheckAbility': null,
         'system.config.showBackstab': false,
-        'system.config.showSpells': false,
         'system.skills.shieldBash.useDeed': false
+      })
+    } else if (!this.options.document.system.class.classLink) {
+      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
+      await this.options.document.update({
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
+        'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
       })
     }
 
@@ -318,7 +341,8 @@ class DCCActorSheetWizard extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.options.document.system.details.sheetClass !== 'Wizard' || !this.options.document.system.class.classLink) {
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.options.document.system.details.sheetClass !== 'Wizard') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Wizard'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
@@ -333,6 +357,13 @@ class DCCActorSheetWizard extends DCCActorSheet {
         'system.config.showSpells': true,
         'system.config.showBackstab': false,
         'system.skills.shieldBash.useDeed': false
+      })
+    } else if (!this.options.document.system.class.classLink) {
+      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
+      await this.options.document.update({
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
+        'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
+        'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink'))
       })
     }
 
@@ -383,7 +414,8 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.options.document.system.details.sheetClass !== 'Dwarf' || !this.options.document.system.class.classLink) {
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.options.document.system.details.sheetClass !== 'Dwarf') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Dwarf'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
@@ -395,8 +427,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
         'system.skills.shieldBash.useDeed': true,
         'system.config.addClassLevelToInitiative': false,
         'system.class.spellCheckAbility': null,
-        'system.config.showBackstab': false,
-        'system.config.showSpells': false
+        'system.config.showBackstab': false
       })
 
       // Check if the dwarf has a shield bash weapon
@@ -424,6 +455,12 @@ class DCCActorSheetDwarf extends DCCActorSheet {
         // Explicitly trigger a re-render to show the new item
         this.render(false)
       }
+    } else if (!this.options.document.system.class.classLink) {
+      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
+      await this.options.document.update({
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
+        'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
+      })
     }
 
     return context
@@ -478,7 +515,8 @@ class DCCActorSheetElf extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.options.document.system.details.sheetClass !== 'Elf' || !this.options.document.system.class.classLink) {
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.options.document.system.details.sheetClass !== 'Elf') {
       await this.options.document.update({
         'system.class.className': game.i18n.localize('DCC.Elf'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink')),
@@ -491,6 +529,11 @@ class DCCActorSheetElf extends DCCActorSheet {
         'system.config.showSpells': true,
         'system.config.showBackstab': false,
         'system.skills.shieldBash.useDeed': false
+      })
+    } else if (!this.options.document.system.class.classLink) {
+      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
+      await this.options.document.update({
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
       })
     }
 
