@@ -302,6 +302,38 @@
   letter-spacing: 0.5px;
   text-align: center;
 }
+.dcc .box-title .compendium-link {
+  color: var(--system-frame-title-color);
+  cursor: pointer;
+  font-size: 10px;
+  margin-left: 4px;
+  opacity: 0.6;
+}
+.dcc .box-title .compendium-link:hover {
+  opacity: 1;
+}
+.dcc .box-title .spell-compendium-links {
+  color: var(--system-frame-title-color);
+  font-size: 10px;
+  margin-left: 8px;
+  opacity: 0.6;
+}
+.dcc .box-title .spell-compendium-links .fa-book {
+  cursor: default;
+  margin-right: 4px;
+}
+.dcc .box-title .spell-compendium-links .spell-level-link {
+  cursor: pointer;
+  margin: 0 8px;
+  text-decoration: none;
+}
+.dcc .box-title .spell-compendium-links .spell-level-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+.dcc .box-title .spell-compendium-links:hover {
+  opacity: 1;
+}
 .dcc .disabled {
   opacity: 40%;
 }

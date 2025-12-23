@@ -37,6 +37,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       itemEdit: this.#itemEdit,
       itemDelete: this.#itemDelete,
       levelChange: this.#levelChange,
+      openCompendium: this.#openCompendium,
       rollAbilityCheck: this.#rollAbilityCheck,
       rollCritDie: this.#rollCritDie,
       rollDisapproval: this.#rollDisapproval,
@@ -163,6 +164,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       saveEffects: this.#prepareSaveEffects(),
       attributeEffects: this.#prepareAttributeEffects(),
       actor: this.options.document,
+      compendiumLinks: this.#prepareCompendiumLinks(),
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
       documentType: 'Actor',
@@ -642,6 +644,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /**
+   * Prepare compendium links for the equipment tab
+   * Returns links from CONFIG.DCC if the dcc-core-book module is active
+   * @returns {Object|null} Object with compendium pack names keyed by section, or null if module not active
+   */
+  #prepareCompendiumLinks () {
+    return CONFIG.DCC.coreBookCompendiumLinks
+  }
+
+  /**
    * Search the object and then its parent elements for a dataset attribute
    @param {Object} element    The starting element
    @param {String} attribute  The name of the dataset attribute
@@ -1079,6 +1090,24 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #levelChange (event, target) {
     this.options.document.levelChange()
+  }
+
+  /**
+   * Open a compendium pack from the equipment tab
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   */
+  static async #openCompendium (event, target) {
+    event.preventDefault()
+    const packName = target.dataset.pack
+    if (!packName) return
+
+    const pack = game.packs.get(packName)
+    if (pack) {
+      pack.render(true)
+    }
   }
 
   /**

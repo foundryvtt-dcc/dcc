@@ -83,6 +83,45 @@
     height: 19px;
     letter-spacing: 0.5px;
     text-align: center;
+
+    .compendium-link {
+      color: var(--system-frame-title-color);
+      cursor: pointer;
+      font-size: 10px;
+      margin-left: 4px;
+      opacity: 0.6;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    .spell-compendium-links {
+      color: var(--system-frame-title-color);
+      font-size: 10px;
+      margin-left: 8px;
+      opacity: 0.6;
+
+      .fa-book {
+        cursor: default;
+        margin-right: 4px;
+      }
+
+      .spell-level-link {
+        cursor: pointer;
+        margin: 0 8px;
+        text-decoration: none;
+
+        &:hover {
+          opacity: 1;
+          text-decoration: underline;
+        }
+      }
+
+      &:hover {
+        opacity: 1;
+      }
+    }
   }
 
   .disabled {
