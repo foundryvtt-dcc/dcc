@@ -56,7 +56,7 @@
       </div>
     </li>
   {{/inline}}
-  <div class="box-title">{{localize "DCC.MeleeWeapons"}}</div>
+  <div class="box-title">{{localize "DCC.MeleeWeapons"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.weapons}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.melee}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.melee decimals=2 sign=false}}</span>{{/if}}</div>
   <ol class="weapon-list box-border">
     <li class="grid-col-span-8 weapon-list-header">
       <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
@@ -80,7 +80,7 @@
   </ol>
 
   {{!-- Ranged Weapons --}}
-  <div class="box-title">{{localize "DCC.RangedWeapons"}}</div>
+  <div class="box-title">{{localize "DCC.RangedWeapons"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.weapons}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.ranged}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.ranged decimals=2 sign=false}}</span>{{/if}}</div>
   <ol class="weapon-list box-border">
     <li class="grid-col-span-8 weapon-list-header">
       <div title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>

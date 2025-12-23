@@ -1,7 +1,7 @@
 {{!-- Spells Tab --}}
 <section class="tab wizard-spells-bg {{tabs.wizardSpells.id}} {{tabs.wizardSpells.cssClass}}" id="wizardSpells" data-tab="{{tabs.wizardSpells.id}}"
          data-group="{{tabs.wizardSpells.group}}">
-  <div class="box-title" style="">{{localize "DCC.Spells"}}</div>
+  <div class="box-title" style="">{{localize "DCC.Spells"}}{{#if compendiumLinks.wizardSpells}}<span class="spell-compendium-links"><i class="fas fa-book" data-tooltip="{{localize 'DCC.SpellCompendiumHint'}}"></i>{{#each compendiumLinks.wizardSpells}}<a class="spell-level-link" data-action="openCompendium" data-pack="{{this}}">{{add @index 1}}</a>{{/each}}</span>{{/if}}</div>
   <ol class="item-list item-list-spells">
     <li class="item item-list-header grid-col-span-8">
       <div></div>
