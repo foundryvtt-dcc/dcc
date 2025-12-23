@@ -376,17 +376,24 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
     }
 
-    // Calculate total weight of equipment items
-    let totalWeight = 0
-    for (const item of equipment) {
-      const weight = parseFloat(item.system.weight) || 0
-      const quantity = parseInt(item.system.quantity) || 1
-      totalWeight += weight * quantity
+    // Helper function to calculate total weight for an array of items
+    const calculateWeight = (items) => {
+      let total = 0
+      for (const item of items) {
+        const weight = parseFloat(item.system.weight) || 0
+        const quantity = parseInt(item.system.quantity) || 1
+        total += weight * quantity
+      }
+      return Number.isFinite(total) ? total : 0
     }
-    // Ensure totalWeight is a valid number
-    if (!Number.isFinite(totalWeight)) {
-      totalWeight = 0
-    }
+
+    // Calculate weights for each section
+    const meleeWeight = calculateWeight(weapons.melee)
+    const rangedWeight = calculateWeight(weapons.ranged)
+    const armorWeight = calculateWeight(armor)
+    const equipmentWeight = calculateWeight(equipment)
+    const ammunitionWeight = calculateWeight(ammunition)
+    const mountsWeight = calculateWeight(mounts)
 
     // Return the inventory object
     return {
@@ -396,7 +403,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       'equipment.mounts': mounts,
       'equipment.treasure': treasure,
       'equipment.weapons': weapons,
-      'equipment.totalWeight': totalWeight,
+      'equipment.weights': {
+        melee: meleeWeight,
+        ranged: rangedWeight,
+        armor: armorWeight,
+        equipment: equipmentWeight,
+        ammunition: ammunitionWeight,
+        mounts: mountsWeight,
+        total: meleeWeight + rangedWeight + armorWeight + equipmentWeight + ammunitionWeight + mountsWeight
+      },
       skills,
       spells
     }

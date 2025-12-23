@@ -29,7 +29,7 @@
       </div>
     </li>
   {{/inline}}
-  <div class="box-title">{{localize "DCC.Armor"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.armor}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}</div>
+  <div class="box-title">{{localize "DCC.Armor"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.armor}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.armor}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.armor decimals=2 sign=false}}</span>{{/if}}</div>
   <ol class="armor-list box-border">
     <li class="grid-col-span-8 armor-list-header">
       <div class="" title="{{localize 'DCC.Equipped'}}"><i class="fa-solid fa-hand-holding"></i></div>
@@ -77,8 +77,7 @@
 
   {{!-- Equipment --}}
   <div class="box-title">
-    {{localize "DCC.Equipment"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.equipment}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}
-    <span class="data-font" style="float: right; margin-right: 5px;">{{numberFormat equipment.totalWeight decimals=2 sign=false}}</span>
+    {{localize "DCC.Equipment"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.equipment}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.equipment}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.equipment decimals=2 sign=false}}</span>{{/if}}
   </div>
   <ol class="item-list box-border">
     {{> ItemHeader type="equipment"}}
@@ -87,7 +86,7 @@
     {{/each}}
   </ol>
   {{!-- Ammunition --}}
-  <div class="box-title">{{localize "DCC.Ammunition"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.ammunition}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}</div>
+  <div class="box-title">{{localize "DCC.Ammunition"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.ammunition}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.ammunition}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.ammunition decimals=2 sign=false}}</span>{{/if}}</div>
   <ol class="item-list box-border">
     {{> ItemHeader type="ammunition"}}
     {{#each equipment.ammunition as |ammunition id|}}
@@ -95,7 +94,7 @@
     {{/each}}
   </ol>
   {{!-- Mounts --}}
-  <div class="box-title">{{localize "DCC.Mounts"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.mounts}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}</div>
+  <div class="box-title">{{localize "DCC.Mounts"}}{{#if compendiumLinks}}<a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.mounts}}" data-tooltip="{{localize 'DCC.OpenCompendium'}}"><i class="fas fa-book"></i></a>{{/if}}{{#if equipment.weights.mounts}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.mounts decimals=2 sign=false}}</span>{{/if}}</div>
   <ol class="item-list box-border">
     {{> ItemHeader type="mount"}}
     {{#each equipment.mounts as |mount id|}}

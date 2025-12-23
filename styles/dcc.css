@@ -300,6 +300,7 @@
   font-size: 14px;
   height: 19px;
   letter-spacing: 0.5px;
+  position: relative;
   text-align: center;
 }
 .dcc .box-title .compendium-link {
@@ -308,6 +309,9 @@
   font-size: 10px;
   margin-left: 4px;
   opacity: 0.6;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .dcc .box-title .compendium-link:hover {
   opacity: 1;
@@ -317,6 +321,9 @@
   font-size: 10px;
   margin-left: 8px;
   opacity: 0.6;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .dcc .box-title .spell-compendium-links .fa-book {
   cursor: default;
@@ -333,6 +340,14 @@
 }
 .dcc .box-title .spell-compendium-links:hover {
   opacity: 1;
+}
+.dcc .box-title .section-weight {
+  font-family: var(--system-data-font), serif;
+  font-size: 12px;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .dcc .disabled {
   opacity: 40%;
