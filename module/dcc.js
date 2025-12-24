@@ -22,6 +22,7 @@ import parser from './parser.js'
 import TablePackManager from './table-pack-manager.js'
 import EntityImages from './entity-images.js'
 import SpellResult from './spell-result.js'
+import TableResult from './table-result.js'
 import ReleaseNotes from './release-notes.js'
 import KeyState from './key-state.js'
 import { defineStatusIcons } from './status-icons.js'
@@ -97,6 +98,7 @@ Hooks.once('init', async function () {
     FleetingLuck,
     SpellDuel,
     SpellResult,
+    TableResult,
     getSkillTable,
     processSpellCheck,
     rollDCCWeaponMacro, // This is called from macros, don't remove
@@ -776,6 +778,10 @@ Hooks.on('renderChatMessageHTML', (message, html, data) => {
     chat.lookupCriticalRoll(message, html)
     chat.lookupFumbleRoll(message, html, data)
   }
+
+  // Process table result navigation AFTER emote functions have modified the HTML
+  // This ensures event listeners are attached to the final DOM elements
+  TableResult.processChatMessage(message, html, data)
 })
 
 // Support context menu on chat cards

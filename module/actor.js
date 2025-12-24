@@ -1,7 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
-import { ensurePlus, getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
+import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 const { TextEditor } = foundry.applications.ux
@@ -1425,13 +1425,16 @@ class DCCActor extends Actor {
     let critPrompt = game.i18n.localize('DCC.RollCritical')
     let critRoll
     const critTableName = weapon.system?.critTable || this.system.attributes.critical?.table || ''
-    let critText = ''
+    let critResult = '' // Separate storage for navigable result
+    let critRollTotal = null
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
       critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'}${luckMod}`
       const criticalText = game.i18n.localize('DCC.Critical')
       const critTableText = game.i18n.localize('DCC.CritTable')
-      critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableText} ${critTableName})]] (${critTableText} ${critTableName})`)
+      const critTableDisplayText = `${critTableText} ${critTableName}`
+      const critTableLink = await getCritTableLink(critTableName, critTableDisplayText)
+      critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableDisplayText})]] (${critTableLink})`)
       if (automateDamageFumblesCrits) {
         critPrompt = game.i18n.localize('DCC.Critical')
         critRoll = game.dcc.DCCRoll.createRoll([
@@ -1444,14 +1447,14 @@ class DCCActor extends Actor {
         await critRoll.evaluate()
         foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
         rolls.push(critRoll)
-        const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
-        if (critResult) {
-          critText = await TextEditor.enrichHTML(critResult.description)
-          critText = `: <br>${critText}`
+        critRollTotal = critRoll.total
+        const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
+        if (critResultObj) {
+          critResult = await TextEditor.enrichHTML(critResultObj.description)
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
         const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
-        critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableText} ${critTableName})${critText}`)
+        critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableLink})`)
       }
     }
 
@@ -1466,9 +1469,12 @@ class DCCActor extends Actor {
       // Module not installed, use default (true)
     }
     let fumbleTableName = (this.isPC || !useNPCFumbles) ? 'Table 4-2: Fumbles' : getFumbleTableNameFromCritTableName(critTableName)
+    const originalFumbleTableName = fumbleTableName // Preserve for navigation
 
-    let fumbleText = ''
     let fumbleRoll
+    let fumbleResult = '' // Separate storage for navigable result
+    let fumbleRollTotal = null
+    let isNPCFumble = false
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
       fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
@@ -1489,20 +1495,21 @@ class DCCActor extends Actor {
         await fumbleRoll.evaluate()
         foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
         rolls.push(fumbleRoll)
-        let fumbleResult
+        fumbleRollTotal = fumbleRoll.total
+        let fumbleResultObj
         if (this.isPC || !useNPCFumbles) {
-          fumbleResult = await getFumbleTableResult(fumbleRoll)
+          fumbleResultObj = await getFumbleTableResult(fumbleRoll)
         } else {
-          fumbleTableName = getFumbleTableNameFromCritTableName(critTableName)
-          fumbleResult = await getNPCFumbleTableResult(fumbleRoll, fumbleTableName)
+          isNPCFumble = true
+          fumbleResultObj = await getNPCFumbleTableResult(fumbleRoll, originalFumbleTableName)
         }
-        if (fumbleResult) {
-          fumbleTableName = `${fumbleResult?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
-          fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
+        if (fumbleResultObj) {
+          fumbleTableName = `${fumbleResultObj?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
+          fumbleResult = await TextEditor.enrichHTML(fumbleResultObj.description)
         }
         const onPrep = game.i18n.localize('DCC.on')
         const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
-        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor} ${onPrep} ${fumbleTableName} ${fumbleText}`)
+        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor} ${onPrep} ${fumbleTableName}`)
       }
     }
 
@@ -1544,6 +1551,8 @@ class DCCActor extends Actor {
         critPrompt,
         critRoll,
         critRollFormula,
+        critResult,
+        critRollTotal,
         ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
@@ -1555,7 +1564,11 @@ class DCCActor extends Actor {
         fumblePrompt,
         fumbleRoll,
         fumbleRollFormula,
+        fumbleResult,
+        fumbleRollTotal,
         fumbleTableName,
+        originalFumbleTableName,
+        isNPCFumble,
         hitsAc: attackRollResult.hitsAc,
         targets: game.user.targets,
         weaponId,
