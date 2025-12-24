@@ -717,6 +717,7 @@
   "DCC.Stealth": "Sigilo",
   "DCC.SubdualDamage": "Daño no letal",
   "DCC.Table": "Tabla",
+  "DCC.TableResultOutOfBounds": "No se puede navegar - el resultado está fuera de los límites de la tabla",
   "DCC.TakeDamage": "Recibe {damage} puntos de daño.",
   "DCC.Thief": "Ladrón",
   "DCC.ThiefAbilities": "Habilidades de ladrón",

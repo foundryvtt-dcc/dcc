@@ -704,6 +704,7 @@
   "DCC.SubdualDamage": "Dégâts Non-Létaux",
   "DCC.SwimSpeed": "Nage",
   "DCC.Table": "Table",
+  "DCC.TableResultOutOfBounds": "Impossible de naviguer - le résultat est hors des limites de la table",
   "DCC.TakeDamage": "Subit {damage} Points de dégats.",
   "DCC.Thief": "Voleur",
   "DCC.ThiefAbilities": "Capacités de Voleur",

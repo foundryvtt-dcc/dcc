@@ -1,4 +1,4 @@
-/* global game, foundry */
+/* global game, foundry, ui */
 
 import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
 
@@ -55,7 +55,7 @@ class TableResult {
    * Event handler for adjusting a crit result up
    * @param {Object} event The originating click event
    */
-  static async _onNextCritResult (event) {
+  static _onNextCritResult (event) {
     TableResult._adjustCritResult.bind(this)(event, +1)
   }
 
@@ -63,7 +63,7 @@ class TableResult {
    * Event handler for adjusting a crit result down
    * @param {Object} event The originating click event
    */
-  static async _onPreviousCritResult (event) {
+  static _onPreviousCritResult (event) {
     TableResult._adjustCritResult.bind(this)(event, -1)
   }
 
@@ -71,7 +71,7 @@ class TableResult {
    * Event handler for adjusting a fumble result up
    * @param {Object} event The originating click event
    */
-  static async _onNextFumbleResult (event) {
+  static _onNextFumbleResult (event) {
     TableResult._adjustFumbleResult.bind(this)(event, +1)
   }
 
@@ -79,7 +79,7 @@ class TableResult {
    * Event handler for adjusting a fumble result down
    * @param {Object} event The originating click event
    */
-  static async _onPreviousFumbleResult (event) {
+  static _onPreviousFumbleResult (event) {
     TableResult._adjustFumbleResult.bind(this)(event, -1)
   }
 
@@ -106,7 +106,10 @@ class TableResult {
     const mockRoll = { total: newRoll, _evaluated: true }
     const newResult = await getCritTableResult(mockRoll, tableName)
 
-    if (!newResult || !newResult.description) { return }
+    if (!newResult || !newResult.description) {
+      ui.notifications.warn(game.i18n.localize('DCC.TableResultOutOfBounds'))
+      return
+    }
 
     // Enrich the new result text
     const enrichedResult = await TextEditor.enrichHTML(newResult.description)
@@ -172,7 +175,10 @@ class TableResult {
       newResult = await getFumbleTableResult(mockRoll)
     }
 
-    if (!newResult || !newResult.description) { return }
+    if (!newResult || !newResult.description) {
+      ui.notifications.warn(game.i18n.localize('DCC.TableResultOutOfBounds'))
+      return
+    }
 
     // Enrich the new result text
     const enrichedResult = await TextEditor.enrichHTML(newResult.description)

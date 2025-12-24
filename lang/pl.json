@@ -717,6 +717,7 @@
   "DCC.Stealth": "Skradanie",
   "DCC.SubdualDamage": "Obrażenia Nieprowadzące do Śmierci",
   "DCC.Table": "Tabela",
+  "DCC.TableResultOutOfBounds": "Nie można nawigować - wynik jest poza granicami tabeli",
   "DCC.TakeDamage": "Otrzymuje {damage} PW obrażeń.",
   "DCC.Thief": "Złodziej",
   "DCC.ThiefAbilities": "Zdolności Złodzieja",

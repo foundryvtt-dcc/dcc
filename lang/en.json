@@ -717,6 +717,7 @@
   "DCC.Stealth": "Stealth",
   "DCC.SubdualDamage": "Subdual Damage",
   "DCC.Table": "Table",
+  "DCC.TableResultOutOfBounds": "Cannot navigate - result is out of table bounds",
   "DCC.TakeDamage": "Takes {damage} HP of damage.",
   "DCC.Thief": "Thief",
   "DCC.ThiefAbilities": "Thief Abilities",

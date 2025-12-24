@@ -717,6 +717,7 @@
   "DCC.Stealth": "Heimlichkeit",
   "DCC.SubdualDamage": "Betäubungsschaden",
   "DCC.Table": "Tabelle",
+  "DCC.TableResultOutOfBounds": "Navigation nicht möglich - Ergebnis liegt außerhalb der Tabellengrenzen",
   "DCC.TakeDamage": "{target} nimmt {damage} Punkte Schaden.",
   "DCC.Thief": "Dieb",
   "DCC.ThiefAbilities": "Dieb-Fähigkeiten",

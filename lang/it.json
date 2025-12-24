@@ -717,6 +717,7 @@
   "DCC.Stealth": "Furtività",
   "DCC.SubdualDamage": "Non letale",
   "DCC.Table": "Tabella",
+  "DCC.TableResultOutOfBounds": "Impossibile navigare - il risultato è fuori dai limiti della tabella",
   "DCC.TakeDamage": "Subisce {damage} danni.",
   "DCC.Thief": "Ladro",
   "DCC.ThiefAbilities": "Abilità del Ladro",

@@ -717,6 +717,7 @@
   "DCC.Stealth": "潜行",
   "DCC.SubdualDamage": "制服伤害",
   "DCC.Table": "表格",
+  "DCC.TableResultOutOfBounds": "无法导航 - 结果超出表格范围",
   "DCC.TakeDamage": "承受 {damage} HP 伤害",
   "DCC.Thief": "盗贼",
   "DCC.ThiefAbilities": "盗贼能力",
