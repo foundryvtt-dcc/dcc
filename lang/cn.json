@@ -168,7 +168,7 @@
   "DCC.DamageBonus": "伤害奖励",
   "DCC.DamageDie": "伤害骰",
   "DCC.DamageModifier": "伤害调整值",
-  "DCC.DamageRollInvalidFormulaInline": "<b无效伤害公式`{formula}`<\/b>",
+  "DCC.DamageRollInvalidFormulaInline": "<b>无效伤害公式`{formula}`<\/b>",
   "DCC.DeedDie": "壮举骰",
   "DCC.DeedRoll": "投壮举骰",
   "DCC.Deity": "神祇",
