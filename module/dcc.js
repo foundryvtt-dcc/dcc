@@ -176,7 +176,8 @@ Hooks.once('init', async function () {
   }
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
     types: ['Player'],
-    label: 'DCC.DCCActorSheetGeneric'
+    label: 'DCC.DCCActorSheetGeneric',
+    makeDefault: true
   })
 
   Items.unregisterSheet('core', ItemSheetV2)
