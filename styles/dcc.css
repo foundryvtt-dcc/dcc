@@ -300,7 +300,54 @@
   font-size: 14px;
   height: 19px;
   letter-spacing: 0.5px;
+  position: relative;
   text-align: center;
+}
+.dcc .box-title .compendium-link {
+  color: var(--system-frame-title-color);
+  cursor: pointer;
+  font-size: 10px;
+  margin-left: 4px;
+  opacity: 0.6;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.dcc .box-title .compendium-link:hover {
+  opacity: 1;
+}
+.dcc .box-title .spell-compendium-links {
+  color: var(--system-frame-title-color);
+  font-size: 10px;
+  margin-left: 8px;
+  opacity: 0.6;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.dcc .box-title .spell-compendium-links .fa-book {
+  cursor: default;
+  margin-right: 4px;
+}
+.dcc .box-title .spell-compendium-links .spell-level-link {
+  cursor: pointer;
+  margin: 0 8px;
+  text-decoration: none;
+}
+.dcc .box-title .spell-compendium-links .spell-level-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+.dcc .box-title .spell-compendium-links:hover {
+  opacity: 1;
+}
+.dcc .box-title .section-weight {
+  font-family: var(--system-data-font), serif;
+  font-size: 12px;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .dcc .disabled {
   opacity: 40%;

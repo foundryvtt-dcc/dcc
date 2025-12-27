@@ -37,6 +37,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       itemEdit: this.#itemEdit,
       itemDelete: this.#itemDelete,
       levelChange: this.#levelChange,
+      openCompendium: this.#openCompendium,
       rollAbilityCheck: this.#rollAbilityCheck,
       rollCritDie: this.#rollCritDie,
       rollDisapproval: this.#rollDisapproval,
@@ -163,6 +164,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       saveEffects: this.#prepareSaveEffects(),
       attributeEffects: this.#prepareAttributeEffects(),
       actor: this.options.document,
+      compendiumLinks: this.#prepareCompendiumLinks(),
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
       documentType: 'Actor',
@@ -374,17 +376,24 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       }
     }
 
-    // Calculate total weight of equipment items
-    let totalWeight = 0
-    for (const item of equipment) {
-      const weight = parseFloat(item.system.weight) || 0
-      const quantity = parseInt(item.system.quantity) || 1
-      totalWeight += weight * quantity
+    // Helper function to calculate total weight for an array of items
+    const calculateWeight = (items) => {
+      let total = 0
+      for (const item of items) {
+        const weight = parseFloat(item.system.weight) || 0
+        const quantity = parseInt(item.system.quantity) || 1
+        total += weight * quantity
+      }
+      return Number.isFinite(total) ? total : 0
     }
-    // Ensure totalWeight is a valid number
-    if (!Number.isFinite(totalWeight)) {
-      totalWeight = 0
-    }
+
+    // Calculate weights for each section
+    const meleeWeight = calculateWeight(weapons.melee)
+    const rangedWeight = calculateWeight(weapons.ranged)
+    const armorWeight = calculateWeight(armor)
+    const equipmentWeight = calculateWeight(equipment)
+    const ammunitionWeight = calculateWeight(ammunition)
+    const mountsWeight = calculateWeight(mounts)
 
     // Return the inventory object
     return {
@@ -394,7 +403,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       'equipment.mounts': mounts,
       'equipment.treasure': treasure,
       'equipment.weapons': weapons,
-      'equipment.totalWeight': totalWeight,
+      'equipment.weights': {
+        melee: meleeWeight,
+        ranged: rangedWeight,
+        armor: armorWeight,
+        equipment: equipmentWeight,
+        ammunition: ammunitionWeight,
+        mounts: mountsWeight,
+        total: meleeWeight + rangedWeight + armorWeight + equipmentWeight + ammunitionWeight + mountsWeight
+      },
       skills,
       spells
     }
@@ -639,6 +656,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     return attributeEffects
+  }
+
+  /**
+   * Prepare compendium links for the equipment tab
+   * Returns links from CONFIG.DCC if the dcc-core-book module is active
+   * @returns {Object|null} Object with compendium pack names keyed by section, or null if module not active
+   */
+  #prepareCompendiumLinks () {
+    return CONFIG.DCC.coreBookCompendiumLinks
   }
 
   /**
@@ -1079,6 +1105,24 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   static async #levelChange (event, target) {
     this.options.document.levelChange()
+  }
+
+  /**
+   * Open a compendium pack from the equipment tab
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   */
+  static async #openCompendium (event, target) {
+    event.preventDefault()
+    const packName = target.dataset.pack
+    if (!packName) return
+
+    const pack = game.packs.get(packName)
+    if (pack) {
+      pack.render(true)
+    }
   }
 
   /**

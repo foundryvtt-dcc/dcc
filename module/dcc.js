@@ -337,6 +337,9 @@ Hooks.once('ready', async function () {
     new WelcomeDialog().render(true)
   }
 
+  // Set up compendium links for the equipment tab if dcc-core-book is active
+  setupCoreBookCompendiumLinks()
+
   // Let modules know the DCC system is ready
   Hooks.callAll('dcc.ready')
 })
@@ -373,6 +376,39 @@ async function _onShowJournal (packName, journalName) {
 
 async function _onShowURI (uri) {
   window.open(uri)
+}
+
+/**
+ * Set up compendium links for the equipment tab if dcc-core-book module is active
+ * Stores links in CONFIG.DCC.coreBookCompendiumLinks
+ */
+function setupCoreBookCompendiumLinks () {
+  if (!game.modules.get('dcc-core-book')?.active) {
+    CONFIG.DCC.coreBookCompendiumLinks = null
+    return
+  }
+
+  CONFIG.DCC.coreBookCompendiumLinks = {
+    weapons: 'dcc-core-book.dcc-core-weapons',
+    armor: 'dcc-core-book.dcc-core-armor',
+    equipment: 'dcc-core-book.dcc-core-equipment',
+    ammunition: 'dcc-core-book.dcc-core-ammunition',
+    mounts: 'dcc-core-book.dcc-core-mounts',
+    wizardSpells: [
+      'dcc-core-book.dcc-core-spells-wizard-1',
+      'dcc-core-book.dcc-core-spells-wizard-2',
+      'dcc-core-book.dcc-core-spells-wizard-3',
+      'dcc-core-book.dcc-core-spells-wizard-4',
+      'dcc-core-book.dcc-core-spells-wizard-5'
+    ],
+    clericSpells: [
+      'dcc-core-book.dcc-core-spells-cleric-1',
+      'dcc-core-book.dcc-core-spells-cleric-2',
+      'dcc-core-book.dcc-core-spells-cleric-3',
+      'dcc-core-book.dcc-core-spells-cleric-4',
+      'dcc-core-book.dcc-core-spells-cleric-5'
+    ]
+  }
 }
 
 function checkMigrations () {
