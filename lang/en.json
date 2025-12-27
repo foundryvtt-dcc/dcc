@@ -232,6 +232,7 @@
   "DCC.Disabled": "Disabled",
   "DCC.TransfersToActor": "Transfers to Actor",
   "DCC.EffectsExpired": "Effects expired on {actor}: {effects}",
+  "DCC.EffectChangeTypeDiceChain": "Dice Chain",
   "DCC.EquipmentTabHint": "Weapons, armor, items, treasure",
   "DCC.Equipped": "Equipped",
   "DCC.Experience": "Experience",

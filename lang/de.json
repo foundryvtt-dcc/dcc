@@ -232,6 +232,7 @@
   "DCC.Disabled": "Deaktiviert",
   "DCC.TransfersToActor": "Überträgt auf Akteur",
   "DCC.EffectsExpired": "Effekte abgelaufen bei {actor}: {effects}",
+  "DCC.EffectChangeTypeDiceChain": "Würfelkette",
   "DCC.EquipmentTabHint": "Waffen, Rüstung, Gegenstände, Schätze",
   "DCC.Equipped": "Angelegt",
   "DCC.Experience": "Erfahrungspunkte",

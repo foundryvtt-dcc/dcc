@@ -232,6 +232,7 @@
   "DCC.Disabled": "Desactivado",
   "DCC.TransfersToActor": "Transfiere al Actor",
   "DCC.EffectsExpired": "Efectos expirados en {actor}: {effects}",
+  "DCC.EffectChangeTypeDiceChain": "Cadena de Dados",
   "DCC.EquipmentTabHint": "Armas, armaduras, objetos, tesoro",
   "DCC.Equipped": "Equipado",
   "DCC.Experience": "Experiencia",
