@@ -227,11 +227,41 @@ export const emoteAttackRoll = function (message, html) {
   let crit = ''
   if (message.getFlag('dcc', 'isCrit')) {
     crit = `<p class="emote-alert critical">${message.system.critPrompt}!</p> ${message.system.critInlineRoll}`
+    // Add navigable crit result if available
+    if (message.system.critResult) {
+      const critShiftDownTooltip = game.i18n.localize('DCC.CritShiftDown')
+      const critShiftUpTooltip = game.i18n.localize('DCC.CritShiftUp')
+      crit += `
+        <div class="table-draw crit-result" data-table-name="${message.system.critTableName}" data-current-roll="${message.system.critRollTotal}">
+          <ol class="table-results"><li class="table-result">
+            <div class="result-range">
+              <i class="fas fa-sort-up crit-shift-down" data-tooltip="${critShiftDownTooltip}"></i>
+              <i class="fas fa-sort-down crit-shift-up" data-tooltip="${critShiftUpTooltip}"></i>
+            </div>
+            <div class="result-text">${message.system.critResult}</div>
+          </li></ol>
+        </div>`
+    }
   }
 
   let fumble = ''
   if (message.getFlag('dcc', 'isFumble')) {
-    fumble = `<p class="emote-alert fumble">${message.system.fumblePrompt}!<p>${message.system.fumbleInlineRoll}`
+    fumble = `<p class="emote-alert fumble">${message.system.fumblePrompt}!</p>${message.system.fumbleInlineRoll}`
+    // Add navigable fumble result if available
+    if (message.system.fumbleResult) {
+      const fumbleShiftDownTooltip = game.i18n.localize('DCC.FumbleShiftDown')
+      const fumbleShiftUpTooltip = game.i18n.localize('DCC.FumbleShiftUp')
+      fumble += `
+        <div class="table-draw fumble-result" data-table-name="${message.system.originalFumbleTableName}" data-current-roll="${message.system.fumbleRollTotal}" data-is-npc="${message.system.isNPCFumble}">
+          <ol class="table-results"><li class="table-result">
+            <div class="result-range">
+              <i class="fas fa-sort-up fumble-shift-down" data-tooltip="${fumbleShiftDownTooltip}"></i>
+              <i class="fas fa-sort-down fumble-shift-up" data-tooltip="${fumbleShiftUpTooltip}"></i>
+            </div>
+            <div class="result-text">${message.system.fumbleResult}</div>
+          </li></ol>
+        </div>`
+    }
   }
 
   let twoWeaponNote = ''
@@ -495,8 +525,22 @@ export const lookupCriticalRoll = async function (message, html) {
   }
 
   const critText = await TextEditor.enrichHTML(critResult.description)
-  // Just append the critical result to the existing content
-  messageContent.innerHTML += `<br>${critText}`
+  const rollTotal = message.rolls[0].total
+
+  // Wrap in navigable container with data attributes for arrow navigation
+  const critShiftDownTooltip = game.i18n.localize('DCC.CritShiftDown')
+  const critShiftUpTooltip = game.i18n.localize('DCC.CritShiftUp')
+  const navigableResult = `
+    <div class="table-draw crit-result" data-table-name="${fullTableName}" data-current-roll="${rollTotal}">
+      <ol class="table-results"><li class="table-result">
+        <div class="result-range">
+          <i class="fas fa-sort-up crit-shift-down" data-tooltip="${critShiftDownTooltip}"></i>
+          <i class="fas fa-sort-down crit-shift-up" data-tooltip="${critShiftUpTooltip}"></i>
+        </div>
+        <div class="result-text">${critText}</div>
+      </li></ol>
+    </div>`
+  messageContent.innerHTML += `<br>${navigableResult}`
 }
 
 /**
@@ -512,6 +556,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
   let fumbleResult
   const pcFumbleTableIdentifier = '(Table 4-2: Fumbles).'
   let tableToUse = null
+  let isNPCFumble = false
 
   if (message.system && message.system.fumbleTableName) {
     tableToUse = message.system.fumbleTableName
@@ -523,8 +568,10 @@ export const lookupFumbleRoll = async function (message, html, data) {
   }
 
   if (tableToUse && tableToUse !== pcFumbleTableIdentifier) {
+    isNPCFumble = true
     fumbleResult = await getNPCFumbleTableResult(message.rolls[0], tableToUse)
   } else {
+    tableToUse = 'Table 4-2: Fumbles'
     fumbleResult = await getFumbleTableResult(message.rolls[0])
   }
 
@@ -539,8 +586,22 @@ export const lookupFumbleRoll = async function (message, html, data) {
   }
 
   const rollHTML = await message.rolls[0].render()
+  const rollTotal = message.rolls[0].total
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
-    messageContent.innerHTML = `${rollHTML}<br>${fumbleText}`
+    // Wrap in navigable container with data attributes for arrow navigation
+    const fumbleShiftDownTooltip = game.i18n.localize('DCC.FumbleShiftDown')
+    const fumbleShiftUpTooltip = game.i18n.localize('DCC.FumbleShiftUp')
+    const navigableResult = `
+      <div class="table-draw fumble-result" data-table-name="${tableToUse}" data-current-roll="${rollTotal}" data-is-npc="${isNPCFumble}">
+        <ol class="table-results"><li class="table-result">
+          <div class="result-range">
+            <i class="fas fa-sort-up fumble-shift-down" data-tooltip="${fumbleShiftDownTooltip}"></i>
+            <i class="fas fa-sort-down fumble-shift-up" data-tooltip="${fumbleShiftUpTooltip}"></i>
+          </div>
+          <div class="result-text">${fumbleText}</div>
+        </li></ol>
+      </div>`
+    messageContent.innerHTML = `${rollHTML}<br>${navigableResult}`
   }
 }

@@ -756,7 +756,11 @@ a.inline-roll {
   margin-right: 3px;
 }
 .table-draw .table-results .table-result .result-range .spell-shift-down,
-.table-draw .table-results .table-result .result-range .spell-shift-up {
+.table-draw .table-results .table-result .result-range .spell-shift-up,
+.table-draw .table-results .table-result .result-range .crit-shift-down,
+.table-draw .table-results .table-result .result-range .crit-shift-up,
+.table-draw .table-results .table-result .result-range .fumble-shift-down,
+.table-draw .table-results .table-result .result-range .fumble-shift-up {
   cursor: pointer;
 }
 .table-draw .spell-check-mod {

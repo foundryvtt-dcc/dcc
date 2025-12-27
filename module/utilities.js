@@ -106,6 +106,43 @@ export async function getCritTableResult (roll, critTableName) {
 }
 
 /**
+ * Get a link to the crit table if available, otherwise return plain text
+ * @param {string} critTableSuffix - The crit table suffix (e.g. "III", "IV")
+ * @param {string} displayText - The text to display for the link
+ * @returns {string} - A UUID link if the table is found, otherwise just the display text
+ */
+export async function getCritTableLink (critTableSuffix, displayText) {
+  let critTableCanonical = 'Crit Table ' + critTableSuffix
+
+  // Check to see if this is the Elemental Crit/Fumble table
+  if (critTableSuffix === 'EL') {
+    critTableCanonical = 'Crit/Fumble Table EL'
+  }
+
+  // Look up the crit table in compendium packs
+  for (const criticalHitPackName of CONFIG.DCC?.criticalHitPacks?.packs || []) {
+    if (criticalHitPackName) {
+      const pack = game.packs.get(criticalHitPackName)
+      if (pack) {
+        const entry = pack.index.find((entity) => entity.name.startsWith(critTableCanonical))
+        if (entry) {
+          return `@UUID[Compendium.${criticalHitPackName}.${entry._id}]{${displayText}}`
+        }
+      }
+    }
+  }
+
+  // Try in the local world
+  const worldCritTable = game.tables.find((entity) => entity.name.startsWith(critTableCanonical))
+  if (worldCritTable) {
+    return `@UUID[RollTable.${worldCritTable.id}]{${displayText}}`
+  }
+
+  // No table found, return plain text
+  return displayText
+}
+
+/**
  * Draw a result from the fumble table
  * @param roll - roll instance to use
  * @param localTableName - name of the local world table to check first (e.g. 'Table 4-2: Fumbles')
