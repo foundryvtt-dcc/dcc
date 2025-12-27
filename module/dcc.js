@@ -63,6 +63,19 @@ const { ItemSheetV2 } = foundry.applications.sheets
 Hooks.once('init', async function () {
   console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
 
+  // Register Lankhmar setting early so it's available for sheet registration
+  game.settings.register('dcc', 'enableLankhmar', {
+    name: 'DCC.SettingEnableLankhmar',
+    hint: 'DCC.SettingEnableLankhmarHint',
+    scope: 'world',
+    config: false, // Will be exposed in the settings screen by settings.js
+    requiresReload: true,
+    type: Boolean,
+    default: false
+  })
+
+  const lankhmarEnabled = game.settings.get('dcc', 'enableLankhmar')
+
   CONFIG.DCC = DCC
 
   // Enable Active Effects
@@ -127,18 +140,22 @@ Hooks.once('init', async function () {
   })
 
   // PC sheets - class-specific sheets only
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetCleric'
-  })
+  if (!lankhmarEnabled) {
+    Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
+      types: ['Player'],
+      label: 'DCC.DCCActorSheetCleric'
+    })
+  }
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, {
     types: ['Player'],
     label: 'DCC.DCCActorSheetThief'
   })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetHalfling'
-  })
+  if (!lankhmarEnabled) {
+    Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
+      types: ['Player'],
+      label: 'DCC.DCCActorSheetHalfling'
+    })
+  }
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, {
     types: ['Player'],
     label: 'DCC.DCCActorSheetWarrior'
@@ -147,14 +164,16 @@ Hooks.once('init', async function () {
     types: ['Player'],
     label: 'DCC.DCCActorSheetWizard'
   })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetDwarf'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetElf'
-  })
+  if (!lankhmarEnabled) {
+    Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
+      types: ['Player'],
+      label: 'DCC.DCCActorSheetDwarf'
+    })
+    Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
+      types: ['Player'],
+      label: 'DCC.DCCActorSheetElf'
+    })
+  }
   Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
     types: ['Player'],
     label: 'DCC.DCCActorSheetGeneric'

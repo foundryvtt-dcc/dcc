@@ -278,6 +278,19 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Enable Lankhmar ruleset, hiding non-Lankhmar classes
+   */
+  game.settings.register('dcc', 'enableLankhmar', {
+    name: 'DCC.SettingEnableLankhmar',
+    hint: 'DCC.SettingEnableLankhmarHint',
+    scope: 'world',
+    config: true,
+    requiresReload: true,
+    type: Boolean,
+    default: false
+  })
+
+  /**
    * Check weapon is equipped if not UI warning display appears and prevent rolls
    */
   game.settings.register('dcc', 'checkWeaponEquipment', {

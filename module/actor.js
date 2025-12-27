@@ -1183,6 +1183,41 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Roll a Patron Die
+   * @param {String} patronIndex  The index of the patron (1-5)
+   * @param {Object} options      Roll options
+   */
+  async rollPatronDie (patronIndex, options = {}) {
+    const patron = this.system.patrons?.[`patron${patronIndex}`]
+    if (!patron || !patron.die) {
+      return ui.notifications.warn(game.i18n.localize('DCC.PatronDieNotSetWarning'))
+    }
+
+    const die = patron.die
+    const patronName = patron.name || game.i18n.localize('DCC.Patron')
+
+    options.title = `${patronName} - ${game.i18n.localize('DCC.PatronDie')}`
+
+    // Collate terms for the roll
+    const terms = [
+      {
+        type: 'Die',
+        formula: die
+      }
+    ]
+
+    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+    await roll.evaluate()
+
+    // Convert the roll to a chat message
+    roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      flavor: `${patronName} - ${game.i18n.localize('DCC.PatronDie')}`,
+      flags: { 'dcc.RollType': 'PatronDie', 'dcc.PatronIndex': patronIndex }
+    })
+  }
+
+  /**
    * Roll a Spell Check
    * @param options
    */

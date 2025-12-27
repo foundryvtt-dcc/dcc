@@ -45,6 +45,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollInitiative: this.#rollInitiative,
       rollLuckDie: this.#rollLuckDie,
       rollSavingThrow: this.#rollSavingThrow,
+      rollPatronDie: this.#rollPatronDie,
       rollSkillCheck: this.#rollSkillCheck,
       rollSpellCheck: this.#rollSpellCheck,
       rollWeaponAttack: this.#rollWeaponAttack,
@@ -182,7 +183,58 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       ...preparedItems
     })
 
+    const lankhmarEnabled = game.settings.get('dcc', 'enableLankhmar')
+    if (lankhmarEnabled) {
+      context.benisonsAndDoomsHTML = await this.#prepareBenisonsAndDooms()
+    }
+
     return context
+  }
+
+  /** @override */
+  _onRender (context, options) {
+    super._onRender(context, options)
+
+    const lankhmarEnabled = game.settings.get('dcc', 'enableLankhmar')
+    if (lankhmarEnabled && this.actor.type === 'Player') {
+      const fundsContainer = this.element.querySelector('.funds')
+      if (!fundsContainer) return
+
+      const currencyMap = {
+        pp: { labelKey: 'DCC.CurrencyShortDAG', titleKey: 'DCC.CurrencyDAG' },
+        gp: { labelKey: 'DCC.CurrencyShortGR', titleKey: 'DCC.CurrencyGR' },
+        sp: { labelKey: 'DCC.CurrencyShortSS', titleKey: 'DCC.CurrencySS' },
+        cp: { labelKey: 'DCC.CurrencyShortCP', titleKey: 'DCC.CurrencyCPenny' },
+        ep: { labelKey: 'DCC.CurrencyShortBA', titleKey: 'DCC.CurrencyBA' }
+      }
+
+      let lastCurrencyElement = null
+
+      for (const [key, currency] of Object.entries(currencyMap)) {
+        const input = fundsContainer.querySelector(`input[name="system.currency.${key}"]`)
+        if (input) {
+          const currencyDiv = input.closest('div')
+          if (currencyDiv) {
+            lastCurrencyElement = currencyDiv
+            const label = currencyDiv.querySelector('label')
+            if (label) {
+              label.textContent = game.i18n.localize(currency.labelKey)
+              label.title = game.i18n.localize(currency.titleKey)
+            }
+          }
+        }
+      }
+
+      // Add Iron Tiks if it doesn't exist
+      if (lastCurrencyElement && !fundsContainer.querySelector('input[name="system.currency.it"]')) {
+        const itHTML = `
+          <div class="currency">
+            <label title="${game.i18n.localize('DCC.CurrencyIT')}">${game.i18n.localize('DCC.CurrencyShortIT')}</label>
+            <input type="text" name="system.currency.it" value="${this.actor.system.currency.it || 0}" data-dtype="Number"/>
+          </div>`
+        lastCurrencyElement.parentElement.insertAdjacentHTML('beforeend', itHTML)
+      }
+    }
   }
 
   /** @inheritDoc */
@@ -207,6 +259,15 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       parts.wizardSpells = {
         id: 'wizardSpells',
         template: 'systems/dcc/templates/actor-partial-wizard-spells.html'
+      }
+    }
+
+    // Add benisons and dooms part if lankhmar is enabled
+    const lankhmarEnabled = game.settings.get('dcc', 'enableLankhmar')
+    if (lankhmarEnabled) {
+      parts.benisonsAndDooms = {
+        id: 'benisonsAndDooms',
+        template: 'systems/dcc/templates/actor-partial-benisons-and-dooms.html'
       }
     }
 
@@ -242,6 +303,17 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (this.constructor.END_TABS && this.constructor.END_TABS[group].tabs) {
       for (const tab of this.constructor.END_TABS[group].tabs) {
         tabs.tabs.push(tab)
+      }
+    }
+
+    // Add Lankhmar specific tabs
+    const lankhmarEnabled = game.settings.get('dcc', 'enableLankhmar')
+    if (lankhmarEnabled) {
+      // Find the index of the 'notes' tab
+      const notesIndex = tabs.tabs.findIndex(tab => tab.id === 'notes')
+      // Insert 'benisonsAndDooms' before 'notes'
+      if (notesIndex !== -1) {
+        tabs.tabs.splice(notesIndex, 0, { id: 'benisonsAndDooms', group: 'sheet', label: 'DCC.BenisonsAndDooms' })
       }
     }
 
@@ -418,6 +490,16 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   }
 
   /* -------------------------------------------- */
+
+  /**
+   * Prepare enriched benisons & dooms HTML for the actor.
+   * @returns {string}
+   */
+  async #prepareBenisonsAndDooms () {
+    const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
+    const benisonsAndDooms = this.options.document.system.details.benisonsAndDooms?.value || ''
+    return await TextEditor.enrichHTML(benisonsAndDooms, context)
+  }
 
   /**
    * Prepare enriched notes HTML for the actor.
@@ -1296,6 +1378,21 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       backstab: target.classList.contains('backstab-button')
     })
     this.options.document.rollWeaponAttack(itemId, options)
+  }
+
+  /**
+   * Handle rolling a Patron Die
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @returns {Promise<void>}
+   */
+  static async #rollPatronDie (event, target) {
+    const options = DCCActorSheet.fillRollOptions(event)
+    const patronIndex = DCCActorSheet.findDataset(target, 'patronIndex')
+    if (patronIndex) {
+      this.options.document.rollPatronDie(patronIndex, options)
+    }
   }
 
   /**
