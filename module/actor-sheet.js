@@ -110,8 +110,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     sheet: { // this is the group name
       tabs:
         [
-          { id: 'character', group: 'sheet', label: 'DCC.Character' },
-          { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' }
+          { id: 'character', group: 'sheet', label: 'DCC.Character', icon: 'fas fa-user', tooltip: 'DCC.CharacterTabHint' },
+          { id: 'equipment', group: 'sheet', label: 'DCC.Equipment', icon: 'fas fa-suitcase', tooltip: 'DCC.EquipmentTabHint' }
         ],
       initial: 'character'
     }
@@ -131,14 +131,24 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     sheet: { // this is the group name
       tabs:
         [
-          { id: 'effects', group: 'sheet', label: 'DCC.Effects' },
-          { id: 'notes', group: 'sheet', label: 'DCC.Notes' }
+          { id: 'effects', group: 'sheet', label: 'DCC.Effects', tooltip: 'DCC.Effects' },
+          { id: 'notes', group: 'sheet', label: 'DCC.Notes', tooltip: 'DCC.NotesTabHint' }
         ]
     }
   }
 
   constructor (options = {}) {
     super(options)
+    if (this.options.document.type === 'Player') {
+      this.options.position.height = 640
+    }
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      const sheetClass = this.options.document.system?.details?.sheetClass
+      if (!sheetClass || ['Warrior', 'Thief', 'Wizard', 'Generic'].includes(sheetClass)) {
+        this.options.position.width = 620
+      }
+    }
+
     this.#dragDrop = this.#createDragDropHandlers()
   }
 
@@ -195,50 +205,141 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _onRender (context, options) {
     super._onRender(context, options)
 
-    const lankhmarEnabled = game.settings.get('dcc', 'enableLankhmar')
-    if (lankhmarEnabled && this.actor.type === 'Player') {
-      const fundsContainer = this.element.querySelector('.funds')
-      if (!fundsContainer) return
+    try {
+      const lankhmarEnabled = game.settings.get('dcc', 'enableLankhmar')
+      if (lankhmarEnabled && this.actor.type === 'Player') {
+        const fundsContainer = this.element.querySelector('.item-list-currency')
+        if (fundsContainer) {
+          const currencyMap = {
+            pp: { labelKey: 'DCC.CurrencyShortDAG', titleKey: 'DCC.CurrencyDAG' },
+            gp: { labelKey: 'DCC.CurrencyShortGR', titleKey: 'DCC.CurrencyGR' },
+            sp: { labelKey: 'DCC.CurrencyShortSS', titleKey: 'DCC.CurrencySS' },
+            cp: { labelKey: 'DCC.CurrencyShortCP', titleKey: 'DCC.CurrencyCPenny' },
+            ep: { labelKey: 'DCC.CurrencyShortBA', titleKey: 'DCC.CurrencyBA' }
+          }
 
-      const currencyMap = {
-        pp: { labelKey: 'DCC.CurrencyShortDAG', titleKey: 'DCC.CurrencyDAG' },
-        gp: { labelKey: 'DCC.CurrencyShortGR', titleKey: 'DCC.CurrencyGR' },
-        sp: { labelKey: 'DCC.CurrencyShortSS', titleKey: 'DCC.CurrencySS' },
-        cp: { labelKey: 'DCC.CurrencyShortCP', titleKey: 'DCC.CurrencyCPenny' },
-        ep: { labelKey: 'DCC.CurrencyShortBA', titleKey: 'DCC.CurrencyBA' }
-      }
+          let lastCurrencyElement = null
 
-      let lastCurrencyElement = null
-
-      for (const [key, currency] of Object.entries(currencyMap)) {
-        const input = fundsContainer.querySelector(`input[name="system.currency.${key}"]`)
-        if (input) {
-          const currencyDiv = input.closest('div')
-          if (currencyDiv) {
-            lastCurrencyElement = currencyDiv
-            const label = currencyDiv.querySelector('label')
-            if (label) {
-              label.textContent = game.i18n.localize(currency.labelKey)
-              label.title = game.i18n.localize(currency.titleKey)
+          for (const [key, currency] of Object.entries(currencyMap)) {
+            const input = fundsContainer.querySelector(`input[name="system.currency.${key}"]`)
+            if (input) {
+              const currencyDiv = input.closest('div')
+              if (currencyDiv) {
+                lastCurrencyElement = currencyDiv
+                const label = currencyDiv.querySelector('label')
+                if (label) {
+                  label.textContent = game.i18n.localize(currency.labelKey)
+                  label.title = game.i18n.localize(currency.titleKey)
+                }
+              }
             }
+          }
+
+          // Add Iron Tiks if it doesn't exist
+          if (lastCurrencyElement && !fundsContainer.querySelector('input[name="system.currency.it"]')) {
+            const itHTML = `
+            <div class="currency">
+              <label title="${game.i18n.localize('DCC.CurrencyIT')}">${game.i18n.localize('DCC.CurrencyShortIT')}</label>
+              <input type="text" name="system.currency.it" value="${this.actor.system.currency.it || 0}" data-dtype="Number"/>
+            </div>`
+            lastCurrencyElement.parentElement.insertAdjacentHTML('beforeend', itHTML)
+          }
+        }
+
+        const sheetClass = this.actor.system.details.sheetClass
+
+        // Common changes for Lankhmar classes
+        if (['Warrior', 'Thief', 'Wizard'].includes(sheetClass)) {
+          // Change Lucky Roll to Birth Augur
+          const birthAugurInput = this.element.querySelector('textarea[name="system.details.birthAugur.value"]')
+          if (birthAugurInput) {
+            const label = birthAugurInput.closest('.form-group')?.querySelector('label')
+            if (label) {
+              label.textContent = game.i18n.localize('DCC.BirthAugur')
+            }
+          }
+
+          // Add Patron Die section
+          const savesElement = this.element.querySelector('.saves')
+          if (savesElement && !this.element.querySelector('.patron-die-section')) {
+            let patronHTML = `<div class="patron-die-section box-background">
+              <h3 class="header">${game.i18n.localize('DCC.PatronDie')}</h3>
+              <div class="header flexrow">
+                <label class="flex3">${game.i18n.localize('DCC.Patron')}</label>
+                <label class="flex1">${game.i18n.localize('DCC.PatronDie')}</label>
+              </div>`
+
+            const patronDieOptions = ['', '1d10', '1d12', '1d14', '1d16', '1d20', '1d24']
+
+            for (let i = 1; i <= 5; i++) {
+              const patron = this.actor.system.patrons?.[`patron${i}`] || { name: '', die: '' }
+              patronHTML += `
+                <div class="form-group flexrow patron-row">
+                  <input class="flex3" type="text" name="system.patrons.patron${i}.name" value="${patron.name}" />
+                  <select class="flex1" name="system.patrons.patron${i}.die">
+                    ${patronDieOptions.map(d => `<option value="${d}" ${patron.die === d ? 'selected' : ''}>${d}</option>`).join('')}
+                  </select>
+                  <a class="rollable" data-action="rollPatronDie" data-patron-index="${i}"><i class="fas fa-dice-d20"></i></a>
+                </div>
+              `
+            }
+
+            patronHTML += '</div>'
+            savesElement.insertAdjacentHTML('afterend', patronHTML)
+          }
+        }
+
+        // Class-specific changes
+        if (sheetClass === 'Thief') {
+          const occupationInput = this.element.querySelector('input[name="system.details.occupation.value"]')
+          if (occupationInput) {
+            const label = occupationInput.closest('.form-group')?.querySelector('label')
+            if (label) { label.textContent = game.i18n.localize('DCC.ThievingPath') }
+          }
+          const titleInput = this.element.querySelector('input[name="system.details.title.value"]')
+          if (titleInput) {
+            const label = titleInput.closest('.form-group')?.querySelector('label')
+            if (label) { label.textContent = game.i18n.localize('DCC.PlaceOfOrigin') }
+          }
+          const titleFormGroup = titleInput?.closest('.form-group')
+          if (titleFormGroup && !this.element.querySelector('input[name="system.details.neighborhood.value"]')) {
+            const neighborhoodHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.NeighborhoodQuarter')}</label><div class="form-fields"><input type="text" name="system.details.neighborhood.value" value="${this.actor.system.details.neighborhood?.value || ''}" /></div></div>`
+            const hangoutHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.Hangout')}</label><div class="form-fields"><input type="text" name="system.details.hangout.value" value="${this.actor.system.details.hangout?.value || ''}" /></div></div>`
+            titleFormGroup.insertAdjacentHTML('afterend', hangoutHTML)
+            titleFormGroup.insertAdjacentHTML('afterend', neighborhoodHTML)
+          }
+        } else if (sheetClass === 'Warrior') {
+          const titleInput = this.element.querySelector('input[name="system.details.title.value"]')
+          const formGroup = titleInput?.closest('.form-group')
+          if (formGroup) { formGroup.remove() }
+
+          const occupationInput = this.element.querySelector('input[name="system.details.occupation.value"]')
+          const occupationFormGroup = occupationInput?.closest('.form-group')
+          if (occupationFormGroup && !this.element.querySelector('input[name="system.details.neighborhood.value"]')) {
+            const neighborhoodHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.NeighborhoodQuarter')}</label><div class="form-fields"><input type="text" name="system.details.neighborhood.value" value="${this.actor.system.details.neighborhood?.value || ''}" /></div></div>`
+            const hangoutHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.Hangout')}</label><div class="form-fields"><input type="text" name="system.details.hangout.value" value="${this.actor.system.details.hangout?.value || ''}" /></div></div>`
+            occupationFormGroup.insertAdjacentHTML('afterend', hangoutHTML)
+            occupationFormGroup.insertAdjacentHTML('afterend', neighborhoodHTML)
+          }
+        } else if (sheetClass === 'Wizard') {
+          const titleInput = this.element.querySelector('input[name="system.details.title.value"]')
+          if (titleInput) {
+            const label = titleInput.closest('.form-group')?.querySelector('label')
+            if (label) { label.textContent = game.i18n.localize('DCC.SpellPath') }
+          }
+          const titleFormGroup = titleInput?.closest('.form-group')
+          if (titleFormGrop && !this.element.querySelector('input[name="system.details.neighborhood.value"]')) {
+            const neighborhoodHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.NeighborhoodQuarter')}</label><div class="form-fields"><input type="text" name="system.details.neighborhood.value" value="${this.actor.system.details.neighborhood?.value || ''}" /></div></div>`
+            const hangoutHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.Hangout')}</label><div class="form-fields"><input type="text" name="system.details.hangout.value" value="${this.actor.system.details.hangout?.value || ''}" /></div></div>`
+            titleFormGroup.insertAdjacentHTML('afterend', hangoutHTML)
+            titleFormGroup.insertAdjacentHTML('afterend', neighborhoodHTML)
           }
         }
       }
-
-      // Add Iron Tiks if it doesn't exist
-      if (lastCurrencyElement && !fundsContainer.querySelector('input[name="system.currency.it"]')) {
-        const itHTML = `
-          <div class="currency">
-            <label title="${game.i18n.localize('DCC.CurrencyIT')}">${game.i18n.localize('DCC.CurrencyShortIT')}</label>
-            <input type="text" name="system.currency.it" value="${this.actor.system.currency.it || 0}" data-dtype="Number"/>
-          </div>`
-        lastCurrencyElement.parentElement.insertAdjacentHTML('beforeend', itHTML)
-      }
+    } catch (err) {
+      console.error('DCC | Error in Lankhmar sheet rendering:', err)
     }
-  }
 
-  /** @inheritDoc */
-  _onRender (context, options) {
     this.#dragDrop.forEach((d) => d.bind(this.element))
   }
 
@@ -293,10 +394,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     // Add in optional tabs
     if (this.options.document?.system?.config?.showSkills && !tabs.skills) {
-      tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills' })
+      tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills', icon: 'fas fa-cogs', tooltip: 'DCC.SkillsTabHint' })
     }
     if (this.options.document?.system?.config?.showSpells && !tabs.wizardSpells) {
-      tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells' })
+      tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells', icon: 'fas fa-hat-wizard', tooltip: 'DCC.SpellsTabHint' })
     }
 
     // Add end tabs (e.g. notes)
@@ -313,7 +414,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       const notesIndex = tabs.tabs.findIndex(tab => tab.id === 'notes')
       // Insert 'benisonsAndDooms' before 'notes'
       if (notesIndex !== -1) {
-        tabs.tabs.splice(notesIndex, 0, { id: 'benisonsAndDooms', group: 'sheet', label: 'DCC.BenisonsAndDooms' })
+        tabs.tabs.splice(notesIndex, 0, { id: 'benisonsAndDooms', group: 'sheet', label: 'DCC.BenisonsAndDooms', icon: 'fas fa-balance-scale', tooltip: 'DCC.BenisonsAndDooms' })
       }
     }
 
@@ -496,9 +597,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @returns {string}
    */
   async #prepareBenisonsAndDooms () {
-    const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
-    const benisonsAndDooms = this.options.document.system.details.benisonsAndDooms?.value || ''
-    return await TextEditor.enrichHTML(benisonsAndDooms, context)
+    try {
+      const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
+      const benisonsAndDooms = this.options.document.system?.details?.benisonsAndDooms?.value || ''
+      return await TextEditor.enrichHTML(benisonsAndDooms, context)
+    } catch (err) {
+      console.warn('DCC | Failed to prepare Benisons & Dooms HTML:', err)
+      return ''
+    }
   }
 
   /**

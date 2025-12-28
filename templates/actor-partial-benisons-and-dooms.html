@@ -1,0 +1,18 @@
+{{!-- Benisons and Dooms Tab --}}
+<section class="tab notes-bg {{tabs.benisonsAndDooms.id}} {{tabs.benisonsAndDooms.cssClass}}" id="benisonsAndDooms" data-tab="{{tabs.benisonsAndDooms.id}}" data-group="{{tabs.benisonsAndDooms.group}}">
+  <div class="grid-col-span-12" style="height: 100%;">
+    <div class="box-title">{{localize "DCC.BenisonsAndDooms"}}</div>
+    {{#if editable}}
+      <prose-mirror
+        name="system.details.benisonsAndDooms.value"
+        button="true"
+        editable="{{editable}}"
+        toggled="false"
+        value="{{system.details.benisonsAndDooms.value}}">
+        {{{benisonsAndDoomsHTML}}}
+      </prose-mirror>
+    {{else}}
+      {{{benisonsAndDoomsHTML}}}
+    {{/if}}
+  </div>
+</section>

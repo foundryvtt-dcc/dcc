@@ -199,6 +199,7 @@ Hooks.once('init', async function () {
     'systems/dcc/templates/actor-partial-pc-equipment.html',
     'systems/dcc/templates/actor-partial-npc-equipment.html',
     'systems/dcc/templates/actor-partial-pc-notes.html',
+    'systems/dcc/templates/actor-partial-benisons-and-dooms.html',
     'systems/dcc/templates/actor-partial-skills.html',
     'systems/dcc/templates/actor-partial-wizard-spells.html',
     'systems/dcc/templates/actor-partial-cleric-spells.html',
