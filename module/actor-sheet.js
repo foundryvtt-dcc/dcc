@@ -1,4 +1,4 @@
-/* global CONFIG, game, foundry */
+/* global CONFIG, CONST, game, foundry */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -45,6 +45,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollInitiative: this.#rollInitiative,
       rollLuckDie: this.#rollLuckDie,
       rollSavingThrow: this.#rollSavingThrow,
+      'lankhmar-rollPatronDie': this.#lankhmarRollPatronDie,
       rollPatronDie: this.#rollPatronDie,
       rollSkillCheck: this.#rollSkillCheck,
       rollSpellCheck: this.#rollSpellCheck,
@@ -141,12 +142,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     super(options)
     if (this.options.document.type === 'Player') {
       this.options.position.height = 640
-    }
-    if (game.settings.get('dcc', 'enableLankhmar')) {
-      const sheetClass = this.options.document.system?.details?.sheetClass
-      if (!sheetClass || ['Warrior', 'Thief', 'Wizard', 'Generic'].includes(sheetClass)) {
-        this.options.position.width = 620
-      }
     }
 
     this.#dragDrop = this.#createDragDropHandlers()
@@ -328,7 +323,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             if (label) { label.textContent = game.i18n.localize('DCC.SpellPath') }
           }
           const titleFormGroup = titleInput?.closest('.form-group')
-          if (titleFormGrop && !this.element.querySelector('input[name="system.details.neighborhood.value"]')) {
+          if (titleFormGroup && !this.element.querySelector('input[name="system.details.neighborhood.value"]')) {
             const neighborhoodHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.NeighborhoodQuarter')}</label><div class="form-fields"><input type="text" name="system.details.neighborhood.value" value="${this.actor.system.details.neighborhood?.value || ''}" /></div></div>`
             const hangoutHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.Hangout')}</label><div class="form-fields"><input type="text" name="system.details.hangout.value" value="${this.actor.system.details.hangout?.value || ''}" /></div></div>`
             titleFormGroup.insertAdjacentHTML('afterend', hangoutHTML)
@@ -599,7 +594,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async #prepareBenisonsAndDooms () {
     try {
       const context = { relativeTo: this.options.document, secrets: this.options.document.isOwner }
-      const benisonsAndDooms = this.options.document.system?.details?.benisonsAndDooms?.value || ''
+      const benisonsAndDooms = this.actor.getFlag('dcc', 'benisonsAndDooms') || ''
       return await TextEditor.enrichHTML(benisonsAndDooms, context)
     } catch (err) {
       console.warn('DCC | Failed to prepare Benisons & Dooms HTML:', err)
@@ -1498,6 +1493,45 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const patronIndex = DCCActorSheet.findDataset(target, 'patronIndex')
     if (patronIndex) {
       this.options.document.rollPatronDie(patronIndex, options)
+    }
+  }
+
+  /**
+   * Handle rolling of a patron die for Lankhmar characters
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   * @private
+   */
+  static async #lankhmarRollPatronDie (event, target) {
+    event.preventDefault()
+    const dataset = target.dataset
+    const die = dataset.die
+    const name = dataset.name || game.i18n.localize('DCC.Patron')
+
+    if (die) {
+      const roll = new Roll(die)
+      await roll.evaluate()
+
+      // Create an inline roll that can be hovered to see the roll details
+      const rollHTML = `<a class="inline-roll inline-result" data-roll="${encodeURIComponent(JSON.stringify(roll.toJSON()))}" title="${roll.formula}">${roll.total}</a>`
+
+      // Format the chat message using a new localization string
+      const content = game.i18n.format('DCC.RolledPatronDieEmote', {
+        actorName: this.actor.name,
+        rollHTML,
+        patronName: name
+      })
+
+      // Create the chat message as an emote
+      ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        content,
+        style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+        sound: CONFIG.sounds.dice
+      })
+    } else {
+      return ui.notifications.warn(game.i18n.localize('DCC.PatronDieNotSetWarning'))
     }
   }
 

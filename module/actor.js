@@ -29,6 +29,15 @@ class DCCActor extends Actor {
       }
     }
 
+    // Ensure currency values are numbers
+    if (this.system.currency) {
+      for (const currency in CONFIG.DCC.currencies) {
+        this.system.currency[currency] = Number(this.system.currency[currency]) || 0
+      }
+      // Also handle Lankhmar currency if it's not defined
+      this.system.currency.it = Number(this.system.currency.it) || 0
+    }
+
     // Ability modifiers
     const abilities = this.system.abilities
     for (const abilityId in abilities) {

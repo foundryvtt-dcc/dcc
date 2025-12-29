@@ -2004,16 +2004,18 @@ a.inline-roll {
 .dcc .character .lucky-roll {
   border: var(--system-frame-border);
   border-top: 0;
+  align-items: center;
   display: grid;
   font-size: 12px;
   grid-column: 2;
   grid-column-end: span 3;
-  grid-template-rows: 19px 19px;
+  grid-template-rows: 19px 1fr;
   height: 59px;
   text-align: left;
 }
 .dcc .character .languages label,
-.dcc .character .lucky-roll label {
+.dcc .character .lucky-roll label,
+.dcc .character .patron-die-lankhmar .box-title {
   text-align: left;
   padding-left: 3px;
 }
@@ -2024,8 +2026,7 @@ a.inline-roll {
   font-family: var(--system-data-font), serif;
   font-size: 12px;
   grid-row: 2;
-  height: 17px;
-  min-height: 38px;
+  /* height: 100%; */
   overflow: hidden;
   padding: 2px 5px 2px 5px;
   resize: none;
@@ -2084,6 +2085,67 @@ a.inline-roll {
   justify-self: center;
   align-self: center;
 }
+.dcc .character .patron-die-lankhmar {
+  border: var(--system-frame-border);
+  border-top: 0;
+  display: grid;
+  grid-row: 7;
+  grid-column: 3;
+  grid-column-end: span 2;
+  grid-row-end: span 3;
+  grid-template-rows: 19px auto;
+  font-size: 12px;
+}
+
+.dcc .character .patron-die-lankhmar .header {
+  font-family: var(--system-label-font), serif;
+  font-size: 12px;
+  text-align: left;
+  padding-left: 3px;
+}
+.dcc .character .patron-die-lankhmar .patron-header {
+  display: grid;
+  grid-template-columns: 1fr 60px 22px;
+  gap: 5px;
+  align-items: center;
+  padding: 0 5px;
+}
+
+.dcc .character .patron-die-lankhmar .patron-row {
+  display: grid;
+  grid-template-columns: 1fr auto min-content;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.dcc .character .patron-die-lankhmar .patron-row input {
+  height: 17px;
+  font-size: 12px;
+  background: var(--system-input-background);
+  border-radius: 3px;
+}
+
+.dcc .character .patron-die-lankhmar .patron-row select {
+  height: 17px;
+  font-size: 12px;
+  background: var(--system-input-background);
+  width: 60px;
+}
+
+.dcc .character .patron-die-lankhmar .patron-row a {
+  text-align: center;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dcc .character .patron-die-lankhmar .patron-row a i {
+  font-size: 16px;
+}
+
 .dcc .character .row-separator {
   border-bottom: 2px dotted var(--system-secondary-color);
   margin-bottom: 3px;

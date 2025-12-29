@@ -58,96 +58,31 @@ class DCCActorSheetCleric extends DCCActorSheet {
     const context = await super._prepareContext(options)
 
     // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Cleric') {
-      await this.options.document.update({
+    if (this.actor.type === 'Player' && this.actor.system.details.sheetClass !== 'Cleric') {
+      // Fire and forget
+      await this.actor.update({
+        'system.details.sheetClass': 'Cleric',
         'system.class.className': game.i18n.localize('DCC.Cleric'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink')),
-        'system.details.sheetClass': 'Cleric',
         'system.class.spellCheckAbility': 'per',
-        'system.details.critRange': 20,
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
         'system.config.showBackstab': false,
-        'system.config.showSpells': false,
-        'system.skills.shieldBash.useDeed': false
+        'system.config.showSpells': false
       })
-    } else if (!this.options.document.system.class.classLink) {
+    } else if (this.actor.type === 'Player' && !this.actor.system.class.classLink) {
       // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
+      await this.actor.update({
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ClericClassLink'))
       })
     }
 
     return context
   }
-}
-
-/**
- * Extend the zero-level/NPC sheet for a Thief
- * @extends {DCCActorSheet}
- */
-class DCCActorSheetThief extends DCCActorSheet {
-  /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 640
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_PARTS = {
-    character: {
-      id: 'character',
-      template: 'systems/dcc/templates/actor-partial-pc-common.html'
-    },
-    equipment: {
-      id: 'equipment',
-      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
-    },
-    thief: {
-      id: 'thief',
-      template: 'systems/dcc/templates/actor-partial-thief.html'
-    }
-  }
-
-  /** @inheritDoc */
-  static CLASS_TABS = {
-    sheet: {
-      tabs: [
-        { id: 'character', group: 'sheet', label: 'DCC.Character' },
-        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
-        { id: 'thief', group: 'sheet', label: 'DCC.Thief' }
-      ]
-    }
-  }
 
   /** @override */
-  async _prepareContext (options) {
-    const context = await super._prepareContext(options)
-
-    // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Thief') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Thief'),
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink')),
-        'system.details.sheetClass': 'Thief',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat',
-        'system.config.showBackstab': true,
-        'system.config.addClassLevelToInitiative': false,
-        'system.class.spellCheckAbility': null,
-        'system.config.showSpells': false,
-        'system.skills.shieldBash.useDeed': false
-      })
-    } else if (!this.options.document.system.class.classLink) {
-      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
-        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
-      })
-    }
-
-    return context
+  async _onRender (context, options) {
+    super._onRender(context, options)
   }
 }
 
@@ -199,27 +134,111 @@ class DCCActorSheetHalfling extends DCCActorSheet {
     const context = await super._prepareContext(options)
 
     // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Halfling') {
-      await this.options.document.update({
+    if (this.actor.type === 'Player' && this.actor.system.details.sheetClass !== 'Halfling') {
+      await this.actor.update({
+        'system.details.sheetClass': 'Halfling',
         'system.class.className': game.i18n.localize('DCC.Halfling'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink')),
-        'system.details.sheetClass': 'Halfling',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
-        'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false,
-        'system.class.spellCheckAbility': null,
-        'system.config.showBackstab': false,
-        'system.skills.shieldBash.useDeed': false
+        'system.config.attackBonusMode': 'flat'
       })
-    } else if (!this.options.document.system.class.classLink) {
+    } else if (this.actor.type === 'Player' && !this.actor.system.class.classLink) {
       // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
+      await this.actor.update({
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.HalflingClassLink'))
       })
     }
 
     return context
+  }
+
+  /** @override */
+  async _onRender (context, options) {
+    super._onRender(context, options)
+  }
+}
+
+/**
+ * Extend the zero-level/NPC sheet for a Thief
+ * @extends {DCCActorSheet}
+ */
+class DCCActorSheetThief extends DCCActorSheet {
+  /** @inheritDoc */
+  static get DEFAULT_OPTIONS () {
+    const options = {
+      position: {
+        height: 640
+      }
+    }
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      options.position.width = 755
+      options.position.height = 705
+    }
+    return foundry.utils.mergeObject(super.DEFAULT_OPTIONS, options)
+  }
+
+  /** @inheritDoc */
+  static CLASS_PARTS = {
+    character: {
+      id: 'character',
+      template: 'systems/dcc/templates/actor-partial-pc-common.html'
+    },
+    equipment: {
+      id: 'equipment',
+      template: 'systems/dcc/templates/actor-partial-pc-equipment.html'
+    },
+    thief: {
+      id: 'thief',
+      template: 'systems/dcc/templates/actor-partial-thief.html'
+    }
+  }
+
+  /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      parts.character.template = 'systems/dcc/templates/actor-partial-pc-common-lankhmar.html'
+      parts.equipment.template = 'systems/dcc/templates/actor-partial-pc-equipment-lankhmar.html'
+    }
+    return parts
+  }
+
+  /** @inheritDoc */
+  static CLASS_TABS = {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'thief', group: 'sheet', label: 'DCC.Thief' }
+      ]
+    }
+  }
+
+  /** @override */
+  async _prepareContext (options) {
+    const context = await super._prepareContext(options)
+
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.actor.type === 'Player' && this.actor.system.details.sheetClass !== 'Thief') {
+      await this.actor.update({
+        'system.details.sheetClass': 'Thief',
+        'system.class.className': game.i18n.localize('DCC.Thief'),
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink')),
+        'system.config.attackBonusMode': 'flat',
+        'system.config.showBackstab': true
+      })
+    } else if (this.actor.type === 'Player' && !this.actor.system.class.classLink) {
+      // Regenerate classLink if missing (e.g., core book wasn't installed initially)
+      await this.actor.update({
+        'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ThiefClassLink'))
+      })
+    }
+
+    return context
+  }
+
+  /** @override */
+  async _onRender (context, options) {
+    super._onRender(context, options)
   }
 }
 
@@ -229,10 +248,17 @@ class DCCActorSheetHalfling extends DCCActorSheet {
  */
 class DCCActorSheetWarrior extends DCCActorSheet {
   /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 640
+  static get DEFAULT_OPTIONS () {
+    const options = {
+      position: {
+        height: 640
+      }
     }
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      options.position.width = 755
+      options.position.height = 705
+    }
+    return foundry.utils.mergeObject(super.DEFAULT_OPTIONS, options)
   }
 
   /** @inheritDoc */
@@ -252,6 +278,16 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   }
 
   /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      parts.character.template = 'systems/dcc/templates/actor-partial-pc-common-lankhmar.html'
+      parts.equipment.template = 'systems/dcc/templates/actor-partial-pc-equipment-lankhmar.html'
+    }
+    return parts
+  }
+
+  /** @inheritDoc */
   static CLASS_TABS = {
     sheet: {
       tabs: [
@@ -267,29 +303,29 @@ class DCCActorSheetWarrior extends DCCActorSheet {
     const context = await super._prepareContext(options)
 
     // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Warrior') {
-      await this.options.document.update({
+    if (this.actor.type === 'Player' && this.actor.system.details.sheetClass !== 'Warrior') {
+      await this.actor.update({
+        'system.details.sheetClass': 'Warrior',
         'system.class.className': game.i18n.localize('DCC.Warrior'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
         'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink')),
-        'system.details.sheetClass': 'Warrior',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'autoPerAttack',
-        'system.config.addClassLevelToInitiative': true,
-        'system.class.spellCheckAbility': null,
-        'system.config.showBackstab': false,
-        'system.skills.shieldBash.useDeed': false
+        'system.config.addClassLevelToInitiative': true
       })
-    } else if (!this.options.document.system.class.classLink) {
+    } else if (this.actor.type === 'Player' && !this.actor.system.class.classLink) {
       // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
+      await this.actor.update({
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WarriorClassLink')),
         'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
       })
     }
 
     return context
+  }
+
+  /** @override */
+  async _onRender (context, options) {
+    super._onRender(context, options)
   }
 }
 
@@ -299,10 +335,20 @@ class DCCActorSheetWarrior extends DCCActorSheet {
  */
 class DCCActorSheetWizard extends DCCActorSheet {
   /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 640
+  static get DEFAULT_OPTIONS () {
+    const options = {
+      position: {
+        height: 640
+      }
     }
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      options.position.width = 855
+      options.position.height = 705
+    } else {
+      options.position.width = 755
+      options.position.height = 705
+    }
+    return foundry.utils.mergeObject(super.DEFAULT_OPTIONS, options)
   }
 
   /** @inheritDoc */
@@ -326,6 +372,16 @@ class DCCActorSheetWizard extends DCCActorSheet {
   }
 
   /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      parts.character.template = 'systems/dcc/templates/actor-partial-pc-common-lankhmar.html'
+      parts.equipment.template = 'systems/dcc/templates/actor-partial-pc-equipment-lankhmar.html'
+    }
+    return parts
+  }
+
+  /** @inheritDoc */
   static CLASS_TABS = {
     sheet: {
       tabs: [
@@ -342,25 +398,20 @@ class DCCActorSheetWizard extends DCCActorSheet {
     const context = await super._prepareContext(options)
 
     // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Wizard') {
-      await this.options.document.update({
+    if (this.actor.type === 'Player' && this.actor.system.details.sheetClass !== 'Wizard') {
+      await this.actor.update({
+        'system.details.sheetClass': 'Wizard',
         'system.class.className': game.i18n.localize('DCC.Wizard'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
         'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
         'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink')),
-        'system.details.sheetClass': 'Wizard',
         'system.class.spellCheckAbility': 'int',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false,
-        'system.config.showSpells': true,
-        'system.config.showBackstab': false,
-        'system.skills.shieldBash.useDeed': false
+        'system.config.showSpells': true
       })
-    } else if (!this.options.document.system.class.classLink) {
+    } else if (this.actor.type === 'Player' && !this.actor.system.class.classLink) {
       // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
+      await this.actor.update({
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.WizardClassLink')),
         'system.class.spellcastingLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellcastingLink')),
         'system.class.spellburnLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.SpellburnLink'))
@@ -368,6 +419,11 @@ class DCCActorSheetWizard extends DCCActorSheet {
     }
 
     return context
+  }
+
+  /** @override */
+  async _onRender (context, options) {
+    super._onRender(context, options)
   }
 }
 
@@ -415,32 +471,24 @@ class DCCActorSheetDwarf extends DCCActorSheet {
     const context = await super._prepareContext(options)
 
     // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Dwarf') {
-      await this.options.document.update({
+    if (this.actor.type === 'Player' && this.actor.system.details.sheetClass !== 'Dwarf') {
+      await this.actor.update({
+        'system.details.sheetClass': 'Dwarf',
         'system.class.className': game.i18n.localize('DCC.Dwarf'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
         'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink')),
-        'system.details.sheetClass': 'Dwarf',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'autoPerAttack',
-        'system.skills.shieldBash.useDeed': true,
-        'system.config.addClassLevelToInitiative': false,
-        'system.class.spellCheckAbility': null,
-        'system.config.showBackstab': false
+        'system.skills.shieldBash.useDeed': true
       })
 
-      // Check if the dwarf has a shield bash weapon
       const shieldBashName = game.i18n.localize('DCC.ShieldBash')
-      const hasBashWeapon = this.options.document.items.some(item =>
+      const hasBashWeapon = this.actor.items.some(item =>
         item.type === 'weapon' &&
         item.name === shieldBashName
       )
 
-      // If no shield bash weapon exists, create it
       if (!hasBashWeapon) {
-        // Create the item after this render completes
-        await this.options.document.createEmbeddedDocuments('Item', [{
+        this.actor.createEmbeddedDocuments('Item', [{
           name: shieldBashName,
           type: 'weapon',
           img: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
@@ -452,18 +500,21 @@ class DCCActorSheetDwarf extends DCCActorSheet {
             }
           }
         }])
-        // Explicitly trigger a re-render to show the new item
-        this.render(false)
       }
-    } else if (!this.options.document.system.class.classLink) {
+    } else if (this.actor.type === 'Player' && !this.actor.system.class.classLink) {
       // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
+      await this.actor.update({
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.DwarfClassLink')),
         'system.class.mightyDeedsLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.MightyDeedsLink'))
       })
     }
 
     return context
+  }
+
+  /** @override */
+  async _onRender (context, options) {
+    super._onRender(context, options)
   }
 }
 
@@ -516,28 +567,28 @@ class DCCActorSheetElf extends DCCActorSheet {
     const context = await super._prepareContext(options)
 
     // Only set class defaults on initial setup (when sheetClass doesn't match)
-    if (this.options.document.system.details.sheetClass !== 'Elf') {
-      await this.options.document.update({
+    if (this.actor.type === 'Player' && this.actor.system.details.sheetClass !== 'Elf') {
+      await this.actor.update({
+        'system.details.sheetClass': 'Elf',
         'system.class.className': game.i18n.localize('DCC.Elf'),
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink')),
-        'system.details.sheetClass': 'Elf',
         'system.class.spellCheckAbility': 'int',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
         'system.config.attackBonusMode': 'flat',
-        'system.config.addClassLevelToInitiative': false,
-        'system.config.showSpells': true,
-        'system.config.showBackstab': false,
-        'system.skills.shieldBash.useDeed': false
+        'system.config.showSpells': true
       })
-    } else if (!this.options.document.system.class.classLink) {
+    } else if (this.actor.type === 'Player' && !this.actor.system.class.classLink) {
       // Regenerate classLink if missing (e.g., core book wasn't installed initially)
-      await this.options.document.update({
+      await this.actor.update({
         'system.class.classLink': await TextEditor.enrichHTML(game.i18n.localize('DCC.ElfClassLink'))
       })
     }
 
     return context
+  }
+
+  /** @override */
+  async _onRender (context, options) {
+    super._onRender(context, options)
   }
 }
 
@@ -547,10 +598,16 @@ class DCCActorSheetElf extends DCCActorSheet {
  */
 class DCCActorSheetGeneric extends DCCActorSheet {
   /** @inheritDoc */
-  static DEFAULT_OPTIONS = {
-    position: {
-      height: 640
+  static get DEFAULT_OPTIONS () {
+    const options = {
+      position: {
+        height: 640
+      }
     }
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      options.position.width = 755
+    }
+    return foundry.utils.mergeObject(super.DEFAULT_OPTIONS, options)
   }
 
   /** @inheritDoc */
@@ -586,28 +643,40 @@ class DCCActorSheetGeneric extends DCCActorSheet {
   }
 
   /** @inheritDoc */
+  _configureRenderParts (options) {
+    const parts = super._configureRenderParts(options)
+    if (game.settings.get('dcc', 'enableLankhmar')) {
+      parts.character.template = 'systems/dcc/templates/actor-partial-pc-common-lankhmar.html'
+      parts.equipment.template = 'systems/dcc/templates/actor-partial-pc-equipment-lankhmar.html'
+    }
+    return parts
+  }
+
+  /** @inheritDoc */
   static CLASS_TABS = {}
 
   /** @override */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
 
-    if (this.options.document.system.details.sheetClass !== 'Generic') {
-      await this.options.document.update({
-        'system.class.className': game.i18n.localize('DCC.Generic'),
+    // Only set class defaults on initial setup (when sheetClass doesn't match)
+    if (this.actor.type === 'Player' && this.actor.system.details.sheetClass !== 'Generic') {
+      await this.actor.update({
         'system.details.sheetClass': 'Generic',
-        'system.details.critRange': 20,
-        'system.class.disapproval': 1,
+        'system.class.className': game.i18n.localize('DCC.Generic'),
         'system.config.attackBonusMode': 'flat',
         'system.config.addClassLevelToInitiative': false,
-        'system.class.spellCheckAbility': null,
         'system.config.showBackstab': false,
-        'system.config.showSpells': false,
-        'system.skills.shieldBash.useDeed': false
+        'system.config.showSpells': false
       })
     }
 
     return context
+  }
+
+  /** @override */
+  async _onRender (context, options) {
+    super._onRender(context, options)
   }
 }
 

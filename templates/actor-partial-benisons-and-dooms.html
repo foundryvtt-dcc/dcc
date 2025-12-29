@@ -4,11 +4,11 @@
     <div class="box-title">{{localize "DCC.BenisonsAndDooms"}}</div>
     {{#if editable}}
       <prose-mirror
-        name="system.details.benisonsAndDooms.value"
+        name="flags.dcc.benisonsAndDooms"
         button="true"
         editable="{{editable}}"
         toggled="false"
-        value="{{system.details.benisonsAndDooms.value}}">
+        value="{{actor.flags.dcc.benisonsAndDooms}}">
         {{{benisonsAndDoomsHTML}}}
       </prose-mirror>
     {{else}}
