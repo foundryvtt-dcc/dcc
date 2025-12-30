@@ -27,33 +27,33 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       height: 455
     },
     actions: {
-      applyDisapproval: this.#applyDisapproval,
-      configureActor: this.#configureActor,
-      configureMeleeMissileBonus: this.#configureMeleeMissileBonus,
-      configureSavingThrows: this.#configureSavingThrows,
-      decreaseQty: this.#decreaseQty,
-      increaseQty: this.#increaseQty,
-      itemCreate: this.#itemCreate,
-      itemEdit: this.#itemEdit,
-      itemDelete: this.#itemDelete,
-      levelChange: this.#levelChange,
-      openCompendium: this.#openCompendium,
-      rollAbilityCheck: this.#rollAbilityCheck,
-      rollCritDie: this.#rollCritDie,
-      rollDisapproval: this.#rollDisapproval,
-      rollHitDice: this.#rollHitDice,
-      rollInitiative: this.#rollInitiative,
-      rollLuckDie: this.#rollLuckDie,
-      rollSavingThrow: this.#rollSavingThrow,
-      'lankhmar-rollPatronDie': this.#lankhmarRollPatronDie,
-      rollPatronDie: this.#rollPatronDie,
-      rollSkillCheck: this.#rollSkillCheck,
-      rollSpellCheck: this.#rollSpellCheck,
-      rollWeaponAttack: this.#rollWeaponAttack,
-      effectCreate: this.#effectCreate,
-      effectEdit: this.#effectEdit,
-      effectDelete: this.#effectDelete,
-      effectToggle: this.#effectToggle
+      applyDisapproval: this._applyDisapproval,
+      configureActor: this._configureActor,
+      configureMeleeMissileBonus: this._configureMeleeMissileBonus,
+      configureSavingThrows: this._configureSavingThrows,
+      decreaseQty: this._decreaseQty,
+      increaseQty: this._increaseQty,
+      itemCreate: this._itemCreate,
+      itemEdit: this._itemEdit,
+      itemDelete: this._itemDelete,
+      levelChange: this._levelChange,
+      openCompendium: this._openCompendium,
+      rollAbilityCheck: this._rollAbilityCheck,
+      rollCritDie: this._rollCritDie,
+      rollDisapproval: this._rollDisapproval,
+      rollHitDice: this._rollHitDice,
+      rollInitiative: this._rollInitiative,
+      rollLuckDie: this._rollLuckDie,
+      rollSavingThrow: this._rollSavingThrow,
+      'lankhmar-rollPatronDie': this._lankhmarRollPatronDie,
+      rollPatronDie: this._rollPatronDie,
+      rollSkillCheck: this._rollSkillCheck,
+      rollSpellCheck: this._rollSpellCheck,
+      rollWeaponAttack: this._rollWeaponAttack,
+      effectCreate: this._effectCreate,
+      effectEdit: this._effectEdit,
+      effectDelete: this._effectDelete,
+      effectToggle: this._effectToggle
     },
     form: {
       // handler: DCCActorSheet.#onSubmitForm,
@@ -246,12 +246,23 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         // Common changes for Lankhmar classes
         if (['Warrior', 'Thief', 'Wizard'].includes(sheetClass)) {
           // Change Lucky Roll to Birth Augur
-          const birthAugurInput = this.element.querySelector('textarea[name="system.details.birthAugur.value"]')
+          const birthAugurInput = this.element.querySelector('textarea[name="system.details.birthAugur"], textarea[name="system.details.birthAugur.value"]')
           if (birthAugurInput) {
+            // Ensure the input name matches the schema (String) to prevent data migration errors
+            if (birthAugurInput.name === 'system.details.birthAugur.value') {
+              birthAugurInput.name = 'system.details.birthAugur'
+            }
+
             const label = birthAugurInput.closest('.form-group')?.querySelector('label')
             if (label) {
               label.textContent = game.i18n.localize('DCC.BirthAugur')
             }
+          }
+
+          // Fix Languages input name if it's using .value (which creates an object) instead of direct string
+          const languagesInput = this.element.querySelector('input[name="system.details.languages.value"]')
+          if (languagesInput) {
+            languagesInput.name = 'system.details.languages'
           }
 
           // Add Patron Die section
@@ -872,7 +883,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<Document[]>}
    **/
-  static async #itemCreate (event, target) {
+  static async _itemCreate (event, target) {
     // Get the type of item to create.
     const type = target.dataset.type
     // Grab any data associated with this control.
@@ -904,7 +915,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #itemDelete (event, target) {
+  static async _itemDelete (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.options.document.items.get(itemId)
     await item.deleteDialog()
@@ -917,7 +928,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #itemEdit (event, target) {
+  static async _itemEdit (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.options.document.items.get(itemId)
     await item.sheet.render({ force: true })
@@ -930,7 +941,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #decreaseQty (event, target) {
+  static async _decreaseQty (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.options.document.items?.get(itemId)
     let qty = item.system?.quantity || 0
@@ -945,7 +956,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #increaseQty (event, target) {
+  static async _increaseQty (event, target) {
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const item = this.options.document?.items?.get(itemId)
     let qty = item.system?.quantity || 0
@@ -960,7 +971,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<Document[]>}
    **/
-  static async #effectCreate (event, target) {
+  static async _effectCreate (event, target) {
     const effectData = {
       name: game.i18n.localize('DCC.EffectNew'),
       label: game.i18n.localize('DCC.EffectNew'),
@@ -981,7 +992,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #effectEdit (event, target) {
+  static async _effectEdit (event, target) {
     const effectId = DCCActorSheet.findDataset(target, 'effectId')
     const effect = this.options.document.effects.get(effectId)
     await effect.sheet.render({ force: true })
@@ -994,7 +1005,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #effectDelete (event, target) {
+  static async _effectDelete (event, target) {
     const effectId = DCCActorSheet.findDataset(target, 'effectId')
     const effect = this.options.document.effects.get(effectId)
     await effect.deleteDialog()
@@ -1007,7 +1018,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #effectToggle (event, target) {
+  static async _effectToggle (event, target) {
     const effectId = DCCActorSheet.findDataset(target, 'effectId')
     const effect = this.options.document.effects.get(effectId)
     await effect.update({ disabled: !effect.disabled })
@@ -1236,7 +1247,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {PointerEvent} event
    * @returns {Promise<void>}
    */
-  static async #configureActor (event) {
+  static async _configureActor (event) {
     event.preventDefault()
     await new DCCActorConfig({
       document: this.options.document,
@@ -1254,7 +1265,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    **/
-  static async #configureMeleeMissileBonus (event, target) {
+  static async _configureMeleeMissileBonus (event, target) {
     await new MeleeMissileBonusConfig({
       document: this.options.document,
       position: {
@@ -1271,7 +1282,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    **/
-  static async #configureSavingThrows (event, target) {
+  static async _configureSavingThrows (event, target) {
     await new SavingThrowConfig({
       document: this.options.document,
       top: this.position.top + 40,
@@ -1286,7 +1297,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #levelChange (event, target) {
+  static async _levelChange (event, target) {
     this.options.document.levelChange()
   }
 
@@ -1297,7 +1308,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #openCompendium (event, target) {
+  static async _openCompendium (event, target) {
     event.preventDefault()
     const packName = target.dataset.pack
     if (!packName) return
@@ -1327,7 +1338,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollAbilityCheck (event, target) {
+  static async _rollAbilityCheck (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
 
     const ability = target.parentElement.dataset.ability
@@ -1349,7 +1360,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollCritDie (event, target) {
+  static async _rollCritDie (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     this.options.document.rollCritical(options)
   }
@@ -1361,7 +1372,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollHitDice (event, target) {
+  static async _rollHitDice (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     this.options.document.rollHitDice(options)
   }
@@ -1373,7 +1384,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollInitiative (event, target) {
+  static async _rollInitiative (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     await this.options.document.rollInit(event, options)
   }
@@ -1385,7 +1396,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollSavingThrow (event, target) {
+  static async _rollSavingThrow (event, target) {
     event.preventDefault() // Stops the Save Config from opening because clicking label elements focus their input
     const options = DCCActorSheet.fillRollOptions(event)
     const save = target.parentElement.dataset.save
@@ -1399,7 +1410,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollSkillCheck (event, target) {
+  static async _rollSkillCheck (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     const skill = target.parentElement.dataset.skill
     await this.options.document.rollSkillCheck(skill, options)
@@ -1413,7 +1424,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollLuckDie (event, target) {
+  static async _rollLuckDie (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     this.options.document.rollLuckDie(options)
   }
@@ -1425,7 +1436,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #rollSpellCheck (event, target) {
+  static async _rollSpellCheck (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     const dataset = target.parentElement.dataset
     if (dataset.itemId) {
@@ -1446,7 +1457,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #applyDisapproval (event, target) {
+  static async _applyDisapproval (event, target) {
     event.preventDefault()
     this.options.document.applyDisapproval()
   }
@@ -1458,7 +1469,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    @returns {Promise<void>}
    **/
-  static async #rollDisapproval (event, target) {
+  static async _rollDisapproval (event, target) {
     event.preventDefault()
     const options = DCCActorSheet.fillRollOptions(event)
     this.options.document.rollDisapproval(undefined, options)
@@ -1471,7 +1482,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollWeaponAttack (event, target) {
+  static async _rollWeaponAttack (event, target) {
     event.preventDefault()
     const itemId = DCCActorSheet.findDataset(target, 'itemId')
     const options = DCCActorSheet.fillRollOptions(event)
@@ -1488,7 +1499,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @returns {Promise<void>}
    */
-  static async #rollPatronDie (event, target) {
+  static async _rollPatronDie (event, target) {
     const options = DCCActorSheet.fillRollOptions(event)
     const patronIndex = DCCActorSheet.findDataset(target, 'patronIndex')
     if (patronIndex) {
@@ -1503,7 +1514,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
    * @private
    */
-  static async #lankhmarRollPatronDie (event, target) {
+  static async _lankhmarRollPatronDie (event, target) {
     event.preventDefault()
     const dataset = target.dataset
     const die = dataset.die
