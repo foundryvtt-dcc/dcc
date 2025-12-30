@@ -1552,6 +1552,7 @@ class DCCActor extends Actor {
         critRoll,
         critRollFormula,
         critResult,
+        critText: critResult, // Legacy name for dcc-qol compatibility
         critRollTotal,
         ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
@@ -1565,6 +1566,7 @@ class DCCActor extends Actor {
         fumbleRoll,
         fumbleRollFormula,
         fumbleResult,
+        fumbleText: fumbleResult, // Legacy name for dcc-qol compatibility
         fumbleRollTotal,
         fumbleTableName,
         originalFumbleTableName,
