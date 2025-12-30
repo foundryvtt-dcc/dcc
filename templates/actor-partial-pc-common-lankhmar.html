@@ -38,8 +38,12 @@
         </div>
       {{else if (or (eq system.details.sheetClass "Warrior") (eq system.details.sheetClass "Generic"))}}
         <div class="grid-tpl-max-auto">
-          <label for="system.details.occupation.value">{{localize "DCC.PlaceOfOrigin"}}</label>
+          <label for="system.details.occupation.value">{{localize "DCC.Occupation"}}</label>
           <input id="system.details.occupation.value" name="system.details.occupation.value" value="{{system.details.occupation.value}}"/>
+        </div>
+        <div class="grid-tpl-max-auto">
+          <label for="system.details.title.value">{{localize "DCC.PlaceOfOrigin"}}</label>
+          <input id="system.details.title.value" name="system.details.title.value" value="{{system.details.title.value}}"/>
         </div>
         <div class="grid-tpl-max-auto">
           <label for="system.details.neighborhood.value">{{localize "DCC.NeighborhoodQuarter"}}</label>
