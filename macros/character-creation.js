@@ -613,15 +613,25 @@ async function chooseClass(actor) {
         
         const totalHP = hp1 + hp2;
         
+        // Roll Starting Gold (DCC RPG p. 70)
+        let goldFormula = "3d10";
+        if (selectedClass === "Warrior") goldFormula = "5d12";
+
+        const rGold = new Roll(goldFormula);
+        await rGold.evaluate();
+        const startingGold = rGold.total;
+
         await actor.update({
             "system.attributes.hp.value": totalHP,
-            "system.attributes.hp.max": totalHP
+            "system.attributes.hp.max": totalHP,
+            "system.currency.gp": startingGold
         });
 
         ChatMessage.create({
             content: `<div class="dcc-lankhmar-creation">
                 <strong>${actor.name}</strong> has chosen the path of the <strong>${selectedClass}</strong>.<br>
-                <strong>Hit Points:</strong> ${totalHP} (Rolled ${classDie} [${hp1}] + 1d4 [${hp2}] with Sta Mod ${staMod})
+                <strong>Hit Points:</strong> ${totalHP} (Rolled ${classDie} [${hp1}] + 1d4 [${hp2}] with Sta Mod ${staMod})<br>
+                <strong>Starting Funds:</strong> ${startingGold} Gold Rilks (Rolled ${goldFormula})
             </div>`,
             speaker: ChatMessage.getSpeaker({ actor: actor })
         });

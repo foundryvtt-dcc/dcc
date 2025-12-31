@@ -18,7 +18,7 @@ Hooks.once('init', () => {
     if (!game.settings.get('dcc', 'enableFleetingLuck')) return
 
     // Only process messages that are dice rolls from the current user
-    if (!message.isRoll || message.user.id !== game.user.id) return
+    if (!message.isRoll || message.author.id !== game.user.id) return
 
     // Get the actor for this roll
     const actor = ChatMessage.getSpeakerActor(message.speaker)
