@@ -7,6 +7,57 @@
 
 import DCCActorSheet from './actor-sheet.js'
 
+/*
+* Automated Fleeting Luck Hook
+* Listens for d20 rolls to grant or remove Fleeting Luck per Lankhmar rules.
+*/
+Hooks.once('init', () => {
+  Hooks.on('createChatMessage', async (message, options, userId) => {
+    // Only proceed if Fleeting Luck is enabled
+    // We check this inside the hook to avoid race conditions during init
+    if (!game.settings.get('dcc', 'enableFleetingLuck')) return
+
+    // Only process messages that are dice rolls from the current user
+    if (!message.isRoll || message.user.id !== game.user.id) return
+
+    // Get the actor for this roll
+    const actor = ChatMessage.getSpeakerActor(message.speaker)
+
+    // Only process for player characters
+    if (!actor || actor.type !== 'Player') return
+
+    // Check each d20 roll in the message
+    for (const roll of message.rolls) {
+      for (const die of roll.dice) {
+        if (die.faces === 20) {
+          for (const result of die.results) {
+            if (result.result === 20 && result.active) {
+              // Natural 20! Award Fleeting Luck.
+              const currentLuck = actor.system.attributes.fleetingLuck.value || 0
+              await actor.update({ 'system.attributes.fleetingLuck.value': currentLuck + 1 })
+              ui.notifications.info(game.i18n.format('DCCL.FleetingLuckGained', {
+                actor: actor.name
+              }))
+            } else if (result.result === 1 && result.active) {
+              // Natural 1! The gods are displeased.
+              ui.notifications.warn(game.i18n.localize('DCCL.FleetingLuckLostAll'))
+
+              // Reset fleeting luck for all player characters
+              const updates = game.actors.filter(a => a.type === 'Player').map(pc => {
+                return { _id: pc.id, 'system.attributes.fleetingLuck.value': 0 }
+              })
+              if (updates.length) { await Actor.updateDocuments(updates) }
+
+              // Since we found a 1 and processed it, we can stop.
+              return
+            }
+          }
+        }
+      }
+    }
+  })
+})
+
 const { TextEditor } = foundry.applications.ux
 
 /**
