@@ -1,4 +1,3 @@
-// DCC Lankhmar Character Generator - Full Suite (Steps 1, 1.5, 2, 3, & 4)
 // DCC Lankhmar Character Generator - Full Suite (Steps 1, 1.5, 2, 3, 4, & 8)
 // Step 1: Rolls 3d6 for abilities, allows swapping.
 // Step 1.5: Choose Class (Warrior, Thief, Wizard), updates sheet, sets Level 1 stats, AND rolls Hit Points.
@@ -311,6 +310,11 @@ async function rollLanguages(actor) {
         knownLanguages.push("Low Lankhmarese");
     }
 
+    // Add Thieves' Cant if Thief
+    if (className === "Thief") {
+        knownLanguages.push("Thieves' Cant");
+    }
+
     const newLanguages = [];
 
     if (intMod > 0 && table) {
@@ -550,6 +554,16 @@ async function chooseClass(actor) {
     }
 
     if (selectedClass) {
+        const getMod = (score) => {
+            if (score <= 3) return -3; if (score <= 5) return -2; if (score <= 8) return -1;
+            if (score <= 12) return 0; if (score <= 15) return 1; if (score <= 17) return 2;
+            return 3;
+        };
+
+        const aglMod = getMod(actor.system.abilities.agl.value);
+        const intMod = getMod(actor.system.abilities.int.value);
+        const perMod = getMod(actor.system.abilities.per.value);
+
         const updates = {
             "system.class.className": selectedClass,
             "system.details.sheetClass": selectedClass,
@@ -569,6 +583,106 @@ async function chooseClass(actor) {
             updates["system.saves.wil.classBonus"] = 0;
             updates["system.class.luckDie"] = "1d3";
             updates["system.details.attackBonus"] = "+0";
+
+            // Ask for Thieving Path
+            const pathContent = `
+                <div class="form-group">
+                    <label>Thieving Path</label>
+                    <select id="path" name="path" style="width: 100%">
+                        <option value="Boss">Path of the Boss (Lawful)</option>
+                        <option value="Assassin">Path of the Assassin (Chaotic)</option>
+                        <option value="Swindler">Path of the Swindler (Neutral)</option>
+                    </select>
+                </div>
+            `;
+            
+            let path;
+            if (foundry.applications?.api?.DialogV2) {
+                path = await foundry.applications.api.DialogV2.prompt({
+                    window: { title: "Choose Thieving Path" },
+                    content: pathContent,
+                    ok: {
+                        label: "Select",
+                        callback: (event, button) => button.form.elements.path.value
+                    }
+                });
+            } else {
+                path = await new Promise(resolve => {
+                    new Dialog({
+                        title: "Choose Thieving Path",
+                        content: pathContent,
+                        buttons: {
+                            ok: {
+                                label: "Select",
+                                callback: html => resolve(html.find("#path").val())
+                            }
+                        },
+                        default: "ok",
+                        close: () => resolve("Swindler")
+                    }).render(true);
+                });
+            }
+
+            let alignment = "n";
+            let skills = {};
+
+            if (path === "Boss") {
+                alignment = "l";
+                skills = {
+                    "system.class.backstab": 0,
+                    "system.skills.sneakSilently.value": 3 + aglMod,
+                    "system.skills.hideInShadows.value": 1 + aglMod,
+                    "system.skills.pickPockets.value": 3 + aglMod,
+                    "system.skills.climbSheerSurfaces.value": 3 + aglMod,
+                    "system.skills.pickLock.value": 1 + aglMod,
+                    "system.skills.findTrap.value": 3 + intMod,
+                    "system.skills.disableTrap.value": 3 + aglMod,
+                    "system.skills.forgeDocument.value": 0 + aglMod,
+                    "system.skills.disguiseSelf.value": 0 + perMod,
+                    "system.skills.readLanguages.value": 0 + intMod,
+                    "system.skills.handlePoison.value": 0,
+                    "system.skills.castSpellFromScroll.die": "1d10"
+                };
+            } else if (path === "Assassin") {
+                alignment = "c";
+                skills = {
+                    "system.class.backstab": 3,
+                    "system.skills.sneakSilently.value": 3 + aglMod,
+                    "system.skills.hideInShadows.value": 1 + aglMod,
+                    "system.skills.pickPockets.value": 0 + aglMod,
+                    "system.skills.climbSheerSurfaces.value": 1 + aglMod,
+                    "system.skills.pickLock.value": 0 + aglMod,
+                    "system.skills.findTrap.value": 0 + intMod,
+                    "system.skills.disableTrap.value": 0 + aglMod,
+                    "system.skills.forgeDocument.value": 0 + aglMod,
+                    "system.skills.disguiseSelf.value": 3 + perMod,
+                    "system.skills.readLanguages.value": 0 + intMod,
+                    "system.skills.handlePoison.value": 3,
+                    "system.skills.castSpellFromScroll.die": "1d10"
+                };
+            } else { // Swindler
+                alignment = "n";
+                skills = {
+                    "system.class.backstab": 1,
+                    "system.skills.sneakSilently.value": 1 + aglMod,
+                    "system.skills.hideInShadows.value": 3 + aglMod,
+                    "system.skills.pickPockets.value": 1 + aglMod,
+                    "system.skills.climbSheerSurfaces.value": 3 + aglMod,
+                    "system.skills.pickLock.value": 1 + aglMod,
+                    "system.skills.findTrap.value": 1 + intMod,
+                    "system.skills.disableTrap.value": 1 + aglMod,
+                    "system.skills.forgeDocument.value": 3 + aglMod,
+                    "system.skills.disguiseSelf.value": 0 + perMod,
+                    "system.skills.readLanguages.value": 0 + intMod,
+                    "system.skills.handlePoison.value": 0,
+                    "system.skills.castSpellFromScroll.die": "1d10"
+                };
+            }
+
+            updates["system.details.occupation.value"] = `Path of the ${path}`;
+            updates["system.details.alignment"] = alignment;
+
+            Object.assign(updates, skills);
         } else if (selectedClass === "Warrior") {
             updates["system.attributes.hitDice.value"] = "1d12";
             updates["system.attributes.critical.die"] = "1d12";
@@ -592,11 +706,6 @@ async function chooseClass(actor) {
         await actor.update(updates);
         
         const staScore = actor.system.abilities.sta.value;
-        const getMod = (score) => {
-            if (score <= 3) return -3; if (score <= 5) return -2; if (score <= 8) return -1;
-            if (score <= 12) return 0; if (score <= 15) return 1; if (score <= 17) return 2;
-            return 3;
-        };
         const staMod = getMod(staScore);
         
         let classDie = "1d4";
