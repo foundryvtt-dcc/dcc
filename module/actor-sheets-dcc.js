@@ -12,7 +12,13 @@ import DCCActorSheet from './actor-sheet.js'
 * Listens for d20 rolls to grant or remove Fleeting Luck per Lankhmar rules.
 */
 Hooks.once('init', () => {
-  Hooks.on('createChatMessage', async (message, options, userId) => {
+  // Register Handlebars helper for Lankhmar setting
+  Handlebars.registerHelper('lankhmarEnabled', function () {
+    return game.settings.get('dcc', 'enableLankhmar')
+  })
+})
+
+Hooks.on('createChatMessage', async (message, options, userId) => {
     // Only proceed if Fleeting Luck is enabled
     // We check this inside the hook to avoid race conditions during init
     if (!game.settings.get('dcc', 'enableFleetingLuck')) return
@@ -55,7 +61,6 @@ Hooks.once('init', () => {
         }
       }
     }
-  })
 })
 
 const { TextEditor } = foundry.applications.ux

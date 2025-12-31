@@ -111,8 +111,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     sheet: { // this is the group name
       tabs:
         [
-          { id: 'character', group: 'sheet', label: 'DCC.Character', icon: 'fas fa-user', tooltip: 'DCC.CharacterTabHint' },
-          { id: 'equipment', group: 'sheet', label: 'DCC.Equipment', icon: 'fas fa-suitcase', tooltip: 'DCC.EquipmentTabHint' }
+          { id: 'character', group: 'sheet', label: 'DCC.Character', tooltip: 'DCC.CharacterTabHint' },
+          { id: 'equipment', group: 'sheet', label: 'DCC.Equipment', tooltip: 'DCC.EquipmentTabHint' }
         ],
       initial: 'character'
     }
@@ -337,8 +337,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           if (titleFormGroup && !this.element.querySelector('input[name="system.details.neighborhood.value"]')) {
             const neighborhoodHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.NeighborhoodQuarter')}</label><div class="form-fields"><input type="text" name="system.details.neighborhood.value" value="${this.actor.system.details.neighborhood?.value || ''}" /></div></div>`
             const hangoutHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.Hangout')}</label><div class="form-fields"><input type="text" name="system.details.hangout.value" value="${this.actor.system.details.hangout?.value || ''}" /></div></div>`
+
+            const currentPath = this.actor.flags.dcc?.lankhmarWizardPath || ''
+            const magicPathHTML = `<div class="form-group"><label>${game.i18n.localize('DCC.MagicPath')}</label><div class="form-fields"><select name="flags.dcc.lankhmarWizardPath"><option value="" ${currentPath === '' ? 'selected' : ''}>${game.i18n.localize('DCC.None')}</option><option value="white" ${currentPath === 'white' ? 'selected' : ''}>${game.i18n.localize('DCC.WhiteMagic')}</option><option value="black" ${currentPath === 'black' ? 'selected' : ''}>${game.i18n.localize('DCC.BlackMagic')}</option></select></div></div>`
+
             titleFormGroup.insertAdjacentHTML('afterend', hangoutHTML)
             titleFormGroup.insertAdjacentHTML('afterend', neighborhoodHTML)
+            titleFormGroup.insertAdjacentHTML('afterend', magicPathHTML)
           }
         }
       }
@@ -400,10 +405,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     // Add in optional tabs
     if (this.options.document?.system?.config?.showSkills && !tabs.skills) {
-      tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills', icon: 'fas fa-cogs', tooltip: 'DCC.SkillsTabHint' })
+      tabs.tabs.push({ id: 'skills', group: 'sheet', label: 'DCC.Skills', tooltip: 'DCC.SkillsTabHint' })
     }
     if (this.options.document?.system?.config?.showSpells && !tabs.wizardSpells) {
-      tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells', icon: 'fas fa-hat-wizard', tooltip: 'DCC.SpellsTabHint' })
+      tabs.tabs.push({ id: 'wizardSpells', group: 'sheet', label: 'DCC.Spells', tooltip: 'DCC.SpellsTabHint' })
     }
 
     // Add end tabs (e.g. notes)

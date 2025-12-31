@@ -436,6 +436,7 @@ class DCCItem extends Item {
     const manifestationTableName = `${this.name} Manifestation`
     const pack = game.packs.get(manifestationPackName)
     if (pack) {
+      await pack.getIndex()
       const entry = pack.index.find((entity) => entity.name === manifestationTableName)
       if (entry) {
         const table = await pack.getDocument(entry._id)
@@ -574,6 +575,91 @@ class DCCItem extends Item {
         updates['system.mercurialEffect.description'] = `<p>${result}</p>`
       } catch (err) {
         console.error(`Couldn't extract Mercurial Magic result from table:\n${err}`)
+      }
+    }
+
+    this.update(updates)
+  }
+
+  /**
+   * Roll a or lookup new spell stipulation for a spell item
+   * @param {Number} lookup   Optional entry number to lookup instead of rolling
+   * @param options
+   * @return
+   */
+  async rollSpellStipulation (lookup = undefined, options = {}) {
+    if (this.type !== 'spell') { return }
+
+    const actor = this.actor
+    if (!actor) { return }
+
+    const abilityId = 'lck'
+    const ability = actor.system.abilities[abilityId]
+    ability.label = CONFIG.DCC.abilities[abilityId]
+
+    let roll
+
+    if (lookup) {
+      // Look up a stipulation by value
+      roll = new Roll('@value', {
+        value: lookup
+      })
+    } else {
+      const modifier = (ability.mod * 10).toString()
+      const terms = [
+        {
+          type: 'Die',
+          formula: '1d100'
+        },
+        {
+          type: 'Modifier',
+          label: game.i18n.localize('DCC.AbilityLck'),
+          formula: ensurePlus(modifier)
+        }
+      ]
+
+      // Otherwise roll for a stipulation
+      roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
+    }
+
+    // Lookup the stipulation table
+    let stipulationResult = null
+    const stipulationTableName = 'Spell Stipulations'
+    const table = game.tables.getName(stipulationTableName)
+    if (table) {
+      stipulationResult = await table.draw({ roll })
+    }
+
+    // Grab the result from the table if present
+    if (stipulationResult) {
+      roll = stipulationResult.roll
+    } else {
+      // Fall back to displaying just the roll
+      await roll.evaluate()
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor: 'Spell Stipulation Roll',
+        flags: {
+          'dcc.RollType': 'SpellStipulation'
+        }
+      })
+    }
+
+    // Stow away the data in the appropriate fields
+    const updates = {}
+    updates['system.mercurialEffect.value'] = roll.total
+    updates['system.mercurialEffect.summary'] = ''
+    updates['system.mercurialEffect.description'] = ''
+
+    if (stipulationResult) {
+      try {
+        const resultEntry = stipulationResult.results[0]
+        const result = resultEntry.description || resultEntry.name
+        const split = result.split('.')
+        updates['system.mercurialEffect.summary'] = split[0]
+        updates['system.mercurialEffect.description'] = `<p>${result}</p>`
+      } catch (err) {
+        console.error(`Couldn't extract Spell Stipulation result from table:\n${err}`)
       }
     }
 

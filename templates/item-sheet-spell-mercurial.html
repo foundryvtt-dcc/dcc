@@ -3,9 +3,15 @@
   <div class="tab-body">
     <div class="grid-col-span-12 grid-container">
       <div class="grid-col-span-3 grid-tpl-max-auto">
-        <label class="mercurial-roll rollable grid-tpl-max-auto" for="system.mercurialEffect.value"
-               data-action="rollMercurialMagic">
-          <i class="fas fa-dice-d20">&nbsp;</i> {{localize "DCC.MercurialEffectValue"}}</label>
+        {{#if (lankhmarEnabled)}}
+          <label class="stipulation-roll rollable grid-tpl-max-auto" for="system.mercurialEffect.value"
+                 data-action="rollSpellStipulation">
+            <i class="fas fa-dice-d20">&nbsp;</i> Stipulation</label>
+        {{else}}
+          <label class="mercurial-roll rollable grid-tpl-max-auto" for="system.mercurialEffect.value"
+                 data-action="rollMercurialMagic">
+            <i class="fas fa-dice-d20">&nbsp;</i> {{localize "DCC.MercurialEffectValue"}}</label>
+        {{/if}}
         <input name="system.mercurialEffect.value" id="system.mercurialEffect.value"
                value="{{system.mercurialEffect.value}}" data-dtype="Number"/>
       </div>
@@ -26,7 +32,7 @@
       </div>
     </div>
     <div class="grid-col-span-12">
-      <div class="box-title">{{localize "DCC.MercurialEffect"}}</div>
+      <div class="box-title">{{#if (lankhmarEnabled)}}Stipulation{{else}}{{localize "DCC.MercurialEffect"}}{{/if}}</div>
       <div class="mercurial">
         {{#if editable}}
           <prose-mirror

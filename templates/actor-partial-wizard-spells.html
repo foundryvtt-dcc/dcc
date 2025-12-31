@@ -8,7 +8,7 @@
       <div></div>
       <div>{{localize "DCC.SpellLevelShort"}}</div>
       <div>{{localize "DCC.SpellName"}}</div>
-      <div>{{localize "DCC.MercurialEffect"}}</div>
+      <div>{{#if (lankhmarEnabled)}}{{localize "DCC.SpellStipulation"}}{{else}}{{localize "DCC.MercurialEffect"}}{{/if}}</div>
       <div>{{localize "DCC.SkillResult"}}</div>
       <div>{{localize "DCC.SpellLost"}}</div>
       <div>

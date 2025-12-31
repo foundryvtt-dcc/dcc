@@ -517,6 +517,51 @@ async function rollBirthAugur(actor) {
 
 // --- STEP 1.5: CHOOSE CLASS & ROLL HP ---
 
+async function rollWizardSpells(actor) {
+    // 1. Find Level 1 Spells
+    // Try World Items first (as per user "imported" comment)
+    let availableSpells = game.items.filter(i => i.type === 'spell' && i.system.level === 1);
+    
+    // Fallback to Compendium if not enough world items
+    if (availableSpells.length < 4) {
+        const pack = game.packs.get("dcc.spells");
+        if (pack) {
+            const index = await pack.getIndex({fields: ["system.level"]});
+            const spellIds = index.filter(i => i.system.level === 1).map(i => i._id);
+            if (spellIds.length > 0) {
+                const pickedIds = [];
+                const count = Math.min(4, spellIds.length);
+                while (pickedIds.length < count) {
+                    const r = Math.floor(Math.random() * spellIds.length);
+                    if (!pickedIds.includes(spellIds[r])) pickedIds.push(spellIds[r]);
+                }
+                availableSpells = await Promise.all(pickedIds.map(id => pack.getDocument(id)));
+            }
+        }
+    } else {
+        // Shuffle and pick 4 from world items
+        availableSpells = availableSpells.sort(() => 0.5 - Math.random()).slice(0, 4);
+    }
+
+    if (availableSpells.length === 0) return;
+
+    const spellData = availableSpells.map(spell => {
+        const data = spell.toObject();
+        delete data._id;
+        return data;
+    });
+
+    await actor.createEmbeddedDocuments("Item", spellData);
+
+    ChatMessage.create({
+        content: `<div class="dcc-lankhmar-creation">
+            <h3>Wizard Spells</h3>
+            <p><strong>Spells Learned:</strong> ${spellData.map(s => s.name).join(", ")}</p>
+        </div>`,
+        speaker: ChatMessage.getSpeaker({ actor: actor })
+    });
+}
+
 async function chooseClass(actor) {
     const classes = ["Warrior", "Thief", "Wizard"];
     
@@ -744,6 +789,10 @@ async function chooseClass(actor) {
             </div>`,
             speaker: ChatMessage.getSpeaker({ actor: actor })
         });
+
+        if (selectedClass === "Wizard") {
+            await rollWizardSpells(actor);
+        }
 
         await rollBirthAugur(actor);
     }

@@ -42,6 +42,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     actions: {
       rollManifestation: this.#rollManifestation,
       rollMercurialMagic: this.#rollMercurialMagic,
+      rollSpellStipulation: this.#rollSpellStipulation,
       rollValue: this.#rollValue,
       convertUpward: this.#convertUpward,
       convertDownward: this.#convertDownward,
@@ -168,7 +169,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const showMercurialTab = !!this.actor && (castingMode === 'wizard' || forceShowMercurialTab)
 
       if (showMercurialTab) {
-        tabs.tabs.splice(2, 0, { id: 'mercurial', group: 'sheet', label: 'DCC.Mercurial' })
+        const label = game.settings.get('dcc', 'enableLankhmar') ? 'Stipulation' : 'DCC.Mercurial'
+        tabs.tabs.splice(2, 0, { id: 'mercurial', group: 'sheet', label })
       }
 
       // Add judge-only tab for GMs
@@ -419,6 +421,38 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   /**
+   * Roll a new Spell Stipulation
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #rollSpellStipulation (event, target) {
+    event.preventDefault()
+    if (!this.document.isOwner) return
+
+    const options = this._fillRollOptions(event)
+    // Prompt if there's an existing effect, or we're using the roll modifier dialog
+    if (!options.showModifierDialog && this.document.hasExistingMercurialMagic()) {
+      await foundry.applications.api.DialogV2.confirm({
+        window: { title: 'Reroll Spell Stipulation?' },
+        content: `<p>This spell already has a stipulation. Are you sure you want to re-roll it?</p>`,
+        yes: {
+          icon: 'fas fa-dice-d20',
+          label: 'Reroll',
+          callback: () => this._rollSpellStipulation(event, options)
+        },
+        no: {
+          icon: 'fas fa-search',
+          label: 'Lookup',
+          callback: () => this._lookupSpellStipulation()
+        }
+      })
+    } else {
+      this._rollSpellStipulation(event, options)
+    }
+  }
+
+  /**
    * Roll the value of this item
    * @this {DCCItemSheet}
    * @param {PointerEvent} event   The originating click event
@@ -608,6 +642,16 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   }
 
   /**
+   * Roll a new Spell Stipulation
+   * @param {Event}  event   The originating click event
+   * @param options
+   * @private
+   */
+  _rollSpellStipulation (event, options) {
+    this.document.rollSpellStipulation(undefined, options)
+  }
+
+  /**
    * Look up a Manifestation
    * @private
    */
@@ -621,8 +665,16 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
    * @private
    */
   _lookupMercurialMagic () {
-    console.log('lookupMercurialMagic')
     this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
+    // No need to render - the document update will trigger re-render automatically
+  }
+
+  /**
+   * Look up a Spell Stipulation
+   * @private
+   */
+  _lookupSpellStipulation () {
+    this.document.rollSpellStipulation(this.document.system.mercurialEffect.value)
     // No need to render - the document update will trigger re-render automatically
   }
 
