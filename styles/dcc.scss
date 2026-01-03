@@ -634,7 +634,11 @@ a.inline-roll {
         margin-right: 3px;
 
         .spell-shift-down,
-        .spell-shift-up {
+        .spell-shift-up,
+        .crit-shift-down,
+        .crit-shift-up,
+        .fumble-shift-down,
+        .fumble-shift-up {
           cursor: pointer;
         }
       }

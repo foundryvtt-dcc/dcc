@@ -10,8 +10,30 @@
 {{#if message.system.critInlineRoll}}
   <div class="pt-8"><strong>{{message.system.critPrompt}}!</strong> {{{message.system.critInlineRoll}}}</div>
 {{/if}}
+{{#if message.system.critResult}}
+  <div class="table-draw crit-result pt-8" data-table-name="{{message.system.critTableName}}" data-current-roll="{{message.system.critRollTotal}}">
+    <ol class="table-results"><li class="table-result">
+      <div class="result-range">
+        <i class="fas fa-sort-up crit-shift-down" data-tooltip="{{localize 'DCC.CritShiftDown'}}"></i>
+        <i class="fas fa-sort-down crit-shift-up" data-tooltip="{{localize 'DCC.CritShiftUp'}}"></i>
+      </div>
+      <div class="result-text">{{{message.system.critResult}}}</div>
+    </li></ol>
+  </div>
+{{/if}}
 {{#if message.system.fumbleInlineRoll}}
   <div class="pt-8"><strong>{{message.system.fumblePrompt}}!</strong> {{{message.system.fumbleInlineRoll}}}</div>
+{{/if}}
+{{#if message.system.fumbleResult}}
+  <div class="table-draw fumble-result pt-8" data-table-name="{{message.system.originalFumbleTableName}}" data-current-roll="{{message.system.fumbleRollTotal}}" data-is-npc="{{message.system.isNPCFumble}}">
+    <ol class="table-results"><li class="table-result">
+      <div class="result-range">
+        <i class="fas fa-sort-up fumble-shift-down" data-tooltip="{{localize 'DCC.FumbleShiftDown'}}"></i>
+        <i class="fas fa-sort-down fumble-shift-up" data-tooltip="{{localize 'DCC.FumbleShiftUp'}}"></i>
+      </div>
+      <div class="result-text">{{{message.system.fumbleResult}}}</div>
+    </li></ol>
+  </div>
 {{/if}}
 {{#if message.system.twoWeaponNote}}
   <div class="pt-8"><em>{{message.system.twoWeaponNote}}</em></div>
