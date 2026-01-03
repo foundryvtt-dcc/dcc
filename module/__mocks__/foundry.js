@@ -1453,7 +1453,32 @@ class DragDropMock {
 
 // Namespace for Foundry helper functions
 global.foundry = {
-  utils: {},
+  utils: {
+    // Get a property from an object using dot notation
+    getProperty (object, key) {
+      if (!key) return undefined
+      const parts = key.split('.')
+      let result = object
+      for (const part of parts) {
+        if (result == null) return undefined
+        result = result[part]
+      }
+      return result
+    },
+    // Set a property on an object using dot notation
+    setProperty (object, key, value) {
+      if (!key) return false
+      const parts = key.split('.')
+      let target = object
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i]
+        if (target[part] == null) target[part] = {}
+        target = target[part]
+      }
+      target[parts[parts.length - 1]] = value
+      return true
+    }
+  },
   applications: {
     api: {
       // HandlebarsApplicationMixin - provides Handlebars template rendering capabilities

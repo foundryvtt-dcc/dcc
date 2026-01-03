@@ -125,5 +125,8 @@ describe('NPC Active Effects - Save Bonuses', () => {
   })
 })
 
-// Note: applyActiveEffects tests require more complex mocking of CONST.ACTIVE_EFFECT_MODES
-// The core functionality is tested via integration in the actual Foundry environment
+// Note: DCCActiveEffect.apply() handles:
+// 1. Equipped status filtering for item effects
+// 2. Signed string numeric operations for thief skills
+// These are tested via integration in the actual Foundry environment
+// since they require the full ActiveEffect document class infrastructure

@@ -5,6 +5,7 @@
  */
 
 // Import Modules
+import DCCActiveEffect from './active-effect.js'
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
@@ -26,7 +27,6 @@ import TableResult from './table-result.js'
 import ReleaseNotes from './release-notes.js'
 import KeyState from './key-state.js'
 import { defineStatusIcons } from './status-icons.js'
-import DCCActiveEffect from './active-effect.js'
 
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
@@ -69,6 +69,19 @@ Hooks.once('init', async function () {
   // Enable Active Effects
   CONFIG.ActiveEffect.legacyTransferral = false
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
+
+  // Register Active Effect application phases (required for V14)
+  CONFIG.ActiveEffect.phases = {
+    initial: { priority: 0, label: 'Initial' },
+    final: { priority: 100, label: 'Final' }
+  }
+
+  // Register custom DCC effect change types for the UI dropdown
+  // This adds the 'diceChain' type to Foundry's list of available effect change types
+  CONFIG.ActiveEffect.CHANGE_TYPES = {
+    ...CONFIG.ActiveEffect.CHANGE_TYPES,
+    [DCC.effectChangeTypes.DICE_CHAIN]: 'DCC.EffectChangeTypeDiceChain'
+  }
 
   // Register Actor data models
   CONFIG.Actor.dataModels = {
