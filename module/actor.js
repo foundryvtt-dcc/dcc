@@ -1380,21 +1380,32 @@ class DCCActor extends Actor {
     }
     let damageRoll, damageInlineRoll, damagePrompt
     if (automateDamageFumblesCrits) {
-      const flavorMatch = damageRollFormula.match(/\[(.*)]/)
-      let flavor = ''
-      if (flavorMatch) {
-        flavor = flavorMatch[1]
-        damageRollFormula = damageRollFormula.replace(/\[.*]/, '')
-      }
-      damageRoll = game.dcc.DCCRoll.createRoll([
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.Damage'),
-          flavor,
-          formula: damageRollFormula
+      // Check if the formula has per-term flavors like 1d6[fire] or 1d6+1d6[cold]
+      // Per-term flavors have brackets immediately after a die expression
+      const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
+
+      if (hasPerTermFlavors) {
+        // Use Foundry's native Roll to preserve per-term flavors
+        damageRoll = new Roll(damageRollFormula, this.getRollData())
+        await damageRoll.evaluate()
+      } else {
+        // Use DCCRoll for simple formulas (may have a single trailing flavor)
+        const flavorMatch = damageRollFormula.match(/\[(.*)]/)
+        let flavor = ''
+        if (flavorMatch) {
+          flavor = flavorMatch[1]
+          damageRollFormula = damageRollFormula.replace(/\[.*]/, '')
         }
-      ])
-      await damageRoll.evaluate()
+        damageRoll = game.dcc.DCCRoll.createRoll([
+          {
+            type: 'Compound',
+            dieLabel: game.i18n.localize('DCC.Damage'),
+            flavor,
+            formula: damageRollFormula
+          }
+        ])
+        await damageRoll.evaluate()
+      }
       foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
       if (damageRoll.total < 1) {
         damageRoll._total = 1
