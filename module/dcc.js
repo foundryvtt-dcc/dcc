@@ -725,7 +725,7 @@ Hooks.on('hotbarDrop', (bar, data, slot) => {
 })
 
 // Highlight 1's and 20's for all regular rolls, special spell check handling
-Hooks.on('renderChatMessageHTML', (message, html, data) => {
+Hooks.on('renderChatMessageHTML', async (message, html, data) => {
   if (!message.isRoll || !message.isContentVisible || !message.rolls.length) return
 
   if (game.user.isGM) {
@@ -775,11 +775,12 @@ Hooks.on('renderChatMessageHTML', (message, html, data) => {
   }
 
   if (emoteRolls === false || (emoteRolls === true && automateDamageFumblesCrits === false)) {
-    chat.lookupCriticalRoll(message, html)
-    chat.lookupFumbleRoll(message, html, data)
+    // Await these async functions so the DOM is modified before we attach event listeners
+    await chat.lookupCriticalRoll(message, html)
+    await chat.lookupFumbleRoll(message, html, data)
   }
 
-  // Process table result navigation AFTER emote functions have modified the HTML
+  // Process table result navigation AFTER emote/lookup functions have modified the HTML
   // This ensures event listeners are attached to the final DOM elements
   TableResult.processChatMessage(message, html, data)
 })
