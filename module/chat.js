@@ -1,7 +1,7 @@
 /* global canvas, foundry, game */
 // noinspection DuplicatedCode
 
-import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
+import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, addDamageFlavorToRolls } from './utilities.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -390,7 +390,7 @@ export const emoteFumbleRoll = async function (message, html, data) {
 
   let fumbleText
   if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.description) {
-    fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
+    fumbleText = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResult.description))
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
   } else {
@@ -553,7 +553,7 @@ export const lookupCriticalRoll = async function (message, html) {
       return
     }
 
-    critText = await TextEditor.enrichHTML(critResult.description)
+    critText = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResult.description))
     rollTotal = message.rolls[0].total
   }
 
@@ -620,7 +620,7 @@ export const lookupFumbleRoll = async function (message, html, data) {
     }
 
     if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.description) {
-      fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
+      fumbleText = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResult.description))
     } else if (typeof fumbleResult === 'string') {
       fumbleText = fumbleResult
     } else {

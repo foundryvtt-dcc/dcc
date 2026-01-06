@@ -1,7 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
-import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
+import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 const { TextEditor } = foundry.applications.ux
@@ -1450,7 +1450,7 @@ class DCCActor extends Actor {
         critRollTotal = critRoll.total
         const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResultObj) {
-          critResult = await TextEditor.enrichHTML(critResultObj.description)
+          critResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResultObj.description))
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
         const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
@@ -1505,7 +1505,7 @@ class DCCActor extends Actor {
         }
         if (fumbleResultObj) {
           fumbleTableName = `${fumbleResultObj?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
-          fumbleResult = await TextEditor.enrichHTML(fumbleResultObj.description)
+          fumbleResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResultObj.description))
         }
         const onPrep = game.i18n.localize('DCC.on')
         const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
@@ -1763,7 +1763,7 @@ class DCCActor extends Actor {
     const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     let critResult = ''
     if (critResultObj) {
-      critResult = await TextEditor.enrichHTML(critResultObj.description)
+      critResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResultObj.description))
     }
 
     foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
