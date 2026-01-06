@@ -1,7 +1,7 @@
 /* global Actor, ChatMessage, CONFIG, CONST, Hooks, Roll, game, ui, foundry */
 // noinspection JSUnresolvedReference
 
-import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName } from './utilities.js'
+import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 const { TextEditor } = foundry.applications.ux
@@ -215,6 +215,44 @@ class DCCActor extends Actor {
     this.system.config = defaultConfig
 
     return defaultConfig
+  }
+
+  /**
+   * Build a damage breakdown string showing damage by type
+   * Only returns a string if there are multiple damage types
+   * @param {Roll} roll - The evaluated damage roll
+   * @returns {string|null} - Breakdown string like "3 + 5 fire" or null if single type
+   */
+  _buildDamageBreakdown (roll) {
+    // Collect damage totals by flavor
+    const damageByFlavor = new Map()
+
+    for (const term of roll.terms) {
+      // Skip operator terms
+      if (term.operator) continue
+
+      // Get the term's total and flavor
+      const total = term.total ?? 0
+      const flavor = term.flavor || ''
+
+      // Accumulate damage by flavor
+      damageByFlavor.set(flavor, (damageByFlavor.get(flavor) || 0) + total)
+    }
+
+    // Only show breakdown if there are multiple distinct damage types
+    if (damageByFlavor.size <= 1) return null
+
+    // Build the breakdown string
+    const parts = []
+    for (const [flavor, total] of damageByFlavor) {
+      if (flavor) {
+        parts.push(`${total} ${flavor}`)
+      } else {
+        parts.push(`${total}`)
+      }
+    }
+
+    return parts.join(' + ')
   }
 
   /* -------------------------------------------- */
@@ -1185,21 +1223,32 @@ class DCCActor extends Actor {
     }
     let damageRoll; let damageInlineRoll; let damagePrompt; let damageRollIndex = null
     if (automateDamageFumblesCrits) {
-      const flavorMatch = damageRollFormula.match(/\[(.*)]/)
-      let flavor = ''
-      if (flavorMatch) {
-        flavor = flavorMatch[1]
-        damageRollFormula = damageRollFormula.replace(/\[.*]/, '')
-      }
-      damageRoll = game.dcc.DCCRoll.createRoll([
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.Damage'),
-          flavor,
-          formula: damageRollFormula
+      // Check if the formula has per-term flavors like 1d6[fire] or 1d6+1d6[cold]
+      // Per-term flavors have brackets immediately after a die expression
+      const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
+
+      if (hasPerTermFlavors) {
+        // Use Foundry's native Roll to preserve per-term flavors
+        damageRoll = new Roll(damageRollFormula, this.getRollData())
+        await damageRoll.evaluate()
+      } else {
+        // Use DCCRoll for simple formulas (may have a single trailing flavor)
+        const flavorMatch = damageRollFormula.match(/\[(.*)]/)
+        let flavor = ''
+        if (flavorMatch) {
+          flavor = flavorMatch[1]
+          damageRollFormula = damageRollFormula.replace(/\[.*]/, '')
         }
-      ])
-      await damageRoll.evaluate()
+        damageRoll = game.dcc.DCCRoll.createRoll([
+          {
+            type: 'Compound',
+            dieLabel: game.i18n.localize('DCC.Damage'),
+            flavor,
+            formula: damageRollFormula
+          }
+        ])
+        await damageRoll.evaluate()
+      }
       foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
       if (damageRoll.total < 1) {
         damageRoll._total = 1
@@ -1210,6 +1259,13 @@ class DCCActor extends Actor {
         classes: ['damage-applyable', 'inline-dsn-hidden'],
         dataset: { damage: damageRoll.total }
       }).outerHTML
+
+      // Build damage breakdown if there are multiple damage types
+      const damageBreakdown = this._buildDamageBreakdown(damageRoll)
+      if (damageBreakdown) {
+        damageInlineRoll += ` <span class="damage-breakdown">(${damageBreakdown})</span>`
+      }
+
       damagePrompt = game.i18n.localize('DCC.Damage')
     } else {
       if (damageRollFormula.includes('-')) {
@@ -1260,7 +1316,7 @@ class DCCActor extends Actor {
         critRollTotal = critRoll.total
         const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
         if (critResultObj) {
-          critResult = await TextEditor.enrichHTML(critResultObj.description)
+          critResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResultObj.description))
         }
         const critResultPrompt = game.i18n.localize('DCC.CritResult')
         const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
@@ -1315,7 +1371,7 @@ class DCCActor extends Actor {
         }
         if (fumbleResultObj) {
           fumbleTableName = `${fumbleResultObj?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
-          fumbleResult = await TextEditor.enrichHTML(fumbleResultObj.description)
+          fumbleResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResultObj.description))
         }
         const onPrep = game.i18n.localize('DCC.on')
         const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
@@ -1574,10 +1630,10 @@ class DCCActor extends Actor {
     const critPrompt = game.i18n.localize('DCC.Critical')
 
     const critTableName = this.system.attributes.critical?.table
-    const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
-    let critText = ''
-    if (critResult) {
-      critText = await TextEditor.enrichHTML(critResult.description)
+    const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
+    let critResult = ''
+    if (critResultObj) {
+      critResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResultObj.description))
     }
 
     foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
@@ -1598,13 +1654,16 @@ class DCCActor extends Actor {
         actorId: this.id,
         critPrompt,
         critResult,
-        critRoll,
+        critText: critResult, // Legacy name for dcc-qol compatibility
         critRollFormula,
+        critRollTotal: critRoll.total,
         critTableName,
-        critInlineRoll: critText
+        critInlineRoll: critResult
       }
     }
 
+    // Note: critRoll is already in rolls array, no need to include in system data
+    // Roll objects in system data can cause issues with Foundry v14's TypeDataModel
     ChatMessage.create(messageData)
   }
 

@@ -48,6 +48,22 @@ export function getFirstMod (value) {
 }
 
 /**
+ * Add #damage flavor to inline dice rolls that are followed by "damage", "additional damage", or "extra damage".
+ * This makes the rolls clickable as damage rolls in chat, enabling "Apply Damage" context option.
+ * Only modifies rolls that don't already have a flavor and are specifically damage rolls.
+ * @param {string} text - Text containing inline roll syntax like [[1d6]]
+ * @returns {string} - Text with #damage added to damage rolls, e.g. [[1d6 #damage]] damage
+ */
+export function addDamageFlavorToRolls (text) {
+  if (!text) return text
+  // Match inline rolls that contain dice notation (XdY) but don't already have a # flavor
+  // Only match when followed by optional horizontal whitespace and "damage" (with optional "additional" or "extra" prefix)
+  // Uses positive lookahead to check for "damage" without consuming it
+  // Uses [ \t] instead of \s to avoid matching across newlines/sentences
+  return text.replace(/\[\[([^\]#]*\d+d\d+[^\]#]*)\]\](?=[ \t]*(?:additional[ \t]+|extra[ \t]+)?damage)/gi, '[[$1 #damage]]')
+}
+
+/**
  * Draw a result from the crit table
  * @param roll - roll instance to use
  * @param critTableName - name of the crit table - like 'Crit Table III' -- might be localized, e.g. "Table d'critique III"

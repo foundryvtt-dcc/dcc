@@ -1,7 +1,7 @@
 /* global canvas, foundry, game */
 // noinspection DuplicatedCode
 
-import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
+import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, addDamageFlavorToRolls } from './utilities.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -303,13 +303,31 @@ export const emoteAttackRoll = function (message, html) {
 export const emoteCritRoll = function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.getFlag('dcc', 'isCrit') || message.getFlag('dcc', 'isToHit')) return
 
+  // Build navigable crit result with arrows if result is available
+  let critResultHTML = '.'
+  if (message.system.critResult && message.system.critRollTotal) {
+    const critShiftDownTooltip = game.i18n.localize('DCC.CritShiftDown')
+    const critShiftUpTooltip = game.i18n.localize('DCC.CritShiftUp')
+    // Use just the table name suffix (e.g., "II") to match emoteAttackRoll format
+    critResultHTML = `
+      <div class="table-draw crit-result" data-table-name="${message.system.critTableName}" data-current-roll="${message.system.critRollTotal}">
+        <ol class="table-results"><li class="table-result">
+          <div class="result-range">
+            <i class="fas fa-sort-up crit-shift-down" data-tooltip="${critShiftDownTooltip}"></i>
+            <i class="fas fa-sort-down crit-shift-up" data-tooltip="${critShiftUpTooltip}"></i>
+          </div>
+          <div class="result-text">${message.system.critResult}</div>
+        </li></ol>
+      </div>`
+  }
+
   const critRollEmote = game.i18n.format(
     'DCC.RolledCritEmote',
     {
       actorName: data.alias,
       critInlineRollHTML: message.rolls[0].toAnchor().outerHTML,
       critTableName: message.system.critTableName,
-      critResult: message.system.critResult ? `:<br>${message.system.critInlineRoll}` : '.'
+      critResult: message.system.critResult ? `:${critResultHTML}` : '.'
     }
   )
 
@@ -374,7 +392,7 @@ export const emoteFumbleRoll = async function (message, html, data) {
 
   let fumbleText
   if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.description) {
-    fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
+    fumbleText = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResult.description))
   } else if (typeof fumbleResult === 'string') {
     fumbleText = fumbleResult
   } else {
@@ -514,20 +532,32 @@ export const lookupCriticalRoll = async function (message, html) {
 
   // If tableName already starts with the localized prefix, use it as-is, otherwise prepend it
   const fullTableName = tableName.startsWith(critTablePrefix) ? tableName : `${critTablePrefix} ${tableName}`
-  const critResult = await getCritTableResult(message.rolls[0], fullTableName)
 
   const messageContent = html.querySelector('.message-content')
   if (!messageContent) return
 
-  // Check if we got a result from the table lookup
-  if (!critResult || !critResult.description) {
-    // No table available or no result found - just append the unavailable message
-    messageContent.innerHTML += `<br>${game.i18n.localize('DCC.CritTableUnavailable')}`
-    return
-  }
+  // Use stored result if available (from previous lookup or navigation),
+  // otherwise do a fresh lookup
+  let critText
+  let rollTotal
+  if (message.system?.critResult && message.system?.critRollTotal) {
+    // Use the stored result - this preserves navigation state on re-render
+    critText = message.system.critResult
+    rollTotal = message.system.critRollTotal
+  } else {
+    // Fresh lookup using the original roll
+    const critResult = await getCritTableResult(message.rolls[0], fullTableName)
 
-  const critText = await TextEditor.enrichHTML(critResult.description)
-  const rollTotal = message.rolls[0].total
+    // Check if we got a result from the table lookup
+    if (!critResult || !critResult.description) {
+      // No table available or no result found - just append the unavailable message
+      messageContent.innerHTML += `<br>${game.i18n.localize('DCC.CritTableUnavailable')}`
+      return
+    }
+
+    critText = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResult.description))
+    rollTotal = message.rolls[0].total
+  }
 
   // Wrap in navigable container with data attributes for arrow navigation
   const critShiftDownTooltip = game.i18n.localize('DCC.CritShiftDown')
@@ -555,7 +585,6 @@ export const lookupCriticalRoll = async function (message, html) {
 export const lookupFumbleRoll = async function (message, html, data) {
   if (!message.rolls || !message.isContentVisible || !message.flavor.includes(game.i18n.localize('DCC.Fumble'))) return
 
-  let fumbleResult
   const pcFumbleTableIdentifier = '(Table 4-2: Fumbles).'
   let tableToUse = null
   let isNPCFumble = false
@@ -571,24 +600,39 @@ export const lookupFumbleRoll = async function (message, html, data) {
 
   if (tableToUse && tableToUse !== pcFumbleTableIdentifier) {
     isNPCFumble = true
-    fumbleResult = await getNPCFumbleTableResult(message.rolls[0], tableToUse)
   } else {
     tableToUse = 'Table 4-2: Fumbles'
-    fumbleResult = await getFumbleTableResult(message.rolls[0])
   }
 
+  // Use stored result if available (from previous lookup or navigation),
+  // otherwise do a fresh lookup
   let fumbleText
-  if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.description) {
-    fumbleText = await TextEditor.enrichHTML(fumbleResult.description)
-  } else if (typeof fumbleResult === 'string') {
-    fumbleText = fumbleResult
+  let rollTotal
+  if (message.system?.fumbleResult && message.system?.fumbleRollTotal) {
+    // Use the stored result - this preserves navigation state on re-render
+    fumbleText = message.system.fumbleResult
+    rollTotal = message.system.fumbleRollTotal
   } else {
-    // No fumble table available or no result found
-    fumbleText = game.i18n.localize('DCC.FumbleTableUnavailable')
+    // Fresh lookup using the original roll
+    let fumbleResult
+    if (isNPCFumble) {
+      fumbleResult = await getNPCFumbleTableResult(message.rolls[0], tableToUse)
+    } else {
+      fumbleResult = await getFumbleTableResult(message.rolls[0])
+    }
+
+    if (fumbleResult && typeof fumbleResult === 'object' && fumbleResult.description) {
+      fumbleText = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResult.description))
+    } else if (typeof fumbleResult === 'string') {
+      fumbleText = fumbleResult
+    } else {
+      // No fumble table available or no result found
+      fumbleText = game.i18n.localize('DCC.FumbleTableUnavailable')
+    }
+    rollTotal = message.rolls[0].total
   }
 
   const rollHTML = await message.rolls[0].render()
-  const rollTotal = message.rolls[0].total
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
     // Wrap in navigable container with data attributes for arrow navigation

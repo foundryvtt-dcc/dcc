@@ -6,6 +6,7 @@ import {
   ensurePlus,
   getFirstDie,
   getFirstMod,
+  addDamageFlavorToRolls,
   getCritTableResult,
   getFumbleTableResult,
   getFumbleTableNameFromCritTableName,
@@ -142,6 +143,89 @@ describe('Utilities', () => {
     it('does not match invalid modifiers', () => {
       expect(getFirstMod('+100')).toBe('+10') // Regex captures first 2 digits
       expect(getFirstMod('-100')).toBe('-10') // Regex captures first 2 digits
+    })
+  })
+
+  describe('addDamageFlavorToRolls', () => {
+    it('adds #damage to dice rolls followed by "damage"', () => {
+      expect(addDamageFlavorToRolls('[[1d6]] damage')).toBe('[[1d6 #damage]] damage')
+      expect(addDamageFlavorToRolls('[[2d8]]damage')).toBe('[[2d8 #damage]]damage')
+      expect(addDamageFlavorToRolls('Inflict [[3d10]] damage')).toBe('Inflict [[3d10 #damage]] damage')
+    })
+
+    it('adds #damage to dice rolls followed by "additional damage"', () => {
+      expect(addDamageFlavorToRolls('+[[1d6]] additional damage')).toBe('+[[1d6 #damage]] additional damage')
+      expect(addDamageFlavorToRolls('[[2d8]] additional damage')).toBe('[[2d8 #damage]] additional damage')
+    })
+
+    it('adds #damage to dice rolls followed by "extra damage"', () => {
+      expect(addDamageFlavorToRolls('[[1d6]] extra damage')).toBe('[[1d6 #damage]] extra damage')
+      expect(addDamageFlavorToRolls('Deal [[2d4]] extra damage')).toBe('Deal [[2d4 #damage]] extra damage')
+    })
+
+    it('adds #damage to dice rolls with modifiers followed by damage', () => {
+      expect(addDamageFlavorToRolls('[[1d6+2]] damage')).toBe('[[1d6+2 #damage]] damage')
+      expect(addDamageFlavorToRolls('[[2d8-1]] additional damage')).toBe('[[2d8-1 #damage]] additional damage')
+    })
+
+    it('adds #damage to dice rolls with /r prefix followed by damage', () => {
+      expect(addDamageFlavorToRolls('[[/r 1d6]] damage')).toBe('[[/r 1d6 #damage]] damage')
+      expect(addDamageFlavorToRolls('[[/r 2d8+2]] extra damage')).toBe('[[/r 2d8+2 #damage]] extra damage')
+    })
+
+    it('does not modify rolls that already have a flavor', () => {
+      expect(addDamageFlavorToRolls('[[1d6 #fire]] damage')).toBe('[[1d6 #fire]] damage')
+      expect(addDamageFlavorToRolls('[[2d8 #healing]] extra damage')).toBe('[[2d8 #healing]] extra damage')
+    })
+
+    it('does not modify dice rolls NOT followed by damage', () => {
+      expect(addDamageFlavorToRolls('[[1d4]] hours')).toBe('[[1d4]] hours')
+      expect(addDamageFlavorToRolls('[[1d6]] rounds')).toBe('[[1d6]] rounds')
+      expect(addDamageFlavorToRolls('Wait [[2d8]] minutes')).toBe('Wait [[2d8]] minutes')
+      expect(addDamageFlavorToRolls('[[1d6]]')).toBe('[[1d6]]')
+    })
+
+    it('does not match across sentences when damage appears later', () => {
+      // The weapon distance roll should NOT be tagged even though "damage" appears later
+      expect(addDamageFlavorToRolls("Strike to hand knocks weapon into the air. The weapon lands [[/r 1d20+5]]' away."))
+        .toBe("Strike to hand knocks weapon into the air. The weapon lands [[/r 1d20+5]]' away.")
+      // Multi-line text where damage is on a different line
+      expect(addDamageFlavorToRolls('Roll [[1d6]] for distance.\nDeal [[1d4]] damage.'))
+        .toBe('Roll [[1d6]] for distance.\nDeal [[1d4 #damage]] damage.')
+    })
+
+    it('does not modify non-dice expressions', () => {
+      expect(addDamageFlavorToRolls('[[@abilities.str.mod]] damage')).toBe('[[@abilities.str.mod]] damage')
+      expect(addDamageFlavorToRolls('[[5+3]] damage')).toBe('[[5+3]] damage')
+      expect(addDamageFlavorToRolls('[[@level]] extra damage')).toBe('[[@level]] extra damage')
+    })
+
+    it('handles text with multiple inline rolls selectively', () => {
+      // Only the first roll followed by "damage" should be modified
+      expect(addDamageFlavorToRolls('Inflict +[[/r 1d6]] damage and foe loses sense of smell for [[/r 1d4]] hours'))
+        .toBe('Inflict +[[/r 1d6 #damage]] damage and foe loses sense of smell for [[/r 1d4]] hours')
+    })
+
+    it('handles multiple damage rolls in same text', () => {
+      expect(addDamageFlavorToRolls('Deal [[1d6]] damage plus [[1d4]] extra damage'))
+        .toBe('Deal [[1d6 #damage]] damage plus [[1d4 #damage]] extra damage')
+    })
+
+    it('handles null and undefined input', () => {
+      expect(addDamageFlavorToRolls(null)).toBe(null)
+      expect(addDamageFlavorToRolls(undefined)).toBe(undefined)
+      expect(addDamageFlavorToRolls('')).toBe('')
+    })
+
+    it('handles text without any inline rolls', () => {
+      expect(addDamageFlavorToRolls('No rolls here')).toBe('No rolls here')
+      expect(addDamageFlavorToRolls('Just plain text')).toBe('Just plain text')
+    })
+
+    it('is case insensitive for damage keyword', () => {
+      expect(addDamageFlavorToRolls('[[1d6]] Damage')).toBe('[[1d6 #damage]] Damage')
+      expect(addDamageFlavorToRolls('[[1d6]] DAMAGE')).toBe('[[1d6 #damage]] DAMAGE')
+      expect(addDamageFlavorToRolls('[[1d6]] Additional Damage')).toBe('[[1d6 #damage]] Additional Damage')
     })
   })
 

@@ -1,6 +1,6 @@
 /* global game, foundry, ui */
 
-import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult } from './utilities.js'
+import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, addDamageFlavorToRolls } from './utilities.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -111,8 +111,8 @@ class TableResult {
       return
     }
 
-    // Enrich the new result text
-    const enrichedResult = await TextEditor.enrichHTML(newResult.description)
+    // Enrich the new result text with damage flavor for inline rolls
+    const enrichedResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(newResult.description))
 
     // Update the result text in the DOM
     const resultText = container.querySelector('.result-text')
@@ -180,8 +180,8 @@ class TableResult {
       return
     }
 
-    // Enrich the new result text
-    const enrichedResult = await TextEditor.enrichHTML(newResult.description)
+    // Enrich the new result text with damage flavor for inline rolls
+    const enrichedResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(newResult.description))
 
     // Update the result text in the DOM
     const resultText = container.querySelector('.result-text')
