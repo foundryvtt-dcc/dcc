@@ -1760,10 +1760,10 @@ class DCCActor extends Actor {
     const critPrompt = game.i18n.localize('DCC.Critical')
 
     const critTableName = this.system.attributes.critical?.table
-    const critResult = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
-    let critText = ''
-    if (critResult) {
-      critText = await TextEditor.enrichHTML(critResult.description)
+    const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
+    let critResult = ''
+    if (critResultObj) {
+      critResult = await TextEditor.enrichHTML(critResultObj.description)
     }
 
     foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
@@ -1784,13 +1784,16 @@ class DCCActor extends Actor {
         actorId: this.id,
         critPrompt,
         critResult,
-        critRoll,
+        critText: critResult, // Legacy name for dcc-qol compatibility
         critRollFormula,
+        critRollTotal: critRoll.total,
         critTableName,
-        critInlineRoll: critText
+        critInlineRoll: critResult
       }
     }
 
+    // Note: critRoll is already in rolls array, no need to include in system data
+    // Roll objects in system data can cause issues with Foundry v14's TypeDataModel
     ChatMessage.create(messageData)
   }
 
