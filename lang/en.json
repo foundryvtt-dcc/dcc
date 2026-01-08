@@ -627,6 +627,8 @@
   "DCC.SpellCheckNonSpellWarning": "Cannot roll a spell check with a non-spell item",
   "DCC.SpellCheckOtherMod": "Other Modifier",
   "DCC.SpellCheckOtherModHint": "Modifier to Spell Checks that is not from ability or level that should be included in the auto calculation",
+  "DCC.SpellCheckAbility": "Spell Check Ability",
+  "DCC.SpellCheckAbilityHint": "Which ability modifier to use for spell checks",
   "DCC.SpellOtherBonus": "Other Bonus",
   "DCC.SpellOtherBonusHint": "Bonus to this spell's spell check (e.g. elf level 1 bonus)",
   "DCC.SpellDetails": "Spell Details",

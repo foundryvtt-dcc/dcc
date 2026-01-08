@@ -191,6 +191,15 @@ DCC.castingModes = {
 }
 
 /**
+ * Spell check abilities - which ability modifier to use for spell checks
+ */
+DCC.spellCheckAbilities = {
+  int: 'DCC.AbilityInt',
+  per: 'DCC.AbilityPer',
+  sta: 'DCC.AbilitySta'
+}
+
+/**
  * Attack Bonus modes
  */
 DCC.attackBonusModes = {

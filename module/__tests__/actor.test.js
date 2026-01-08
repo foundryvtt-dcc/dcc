@@ -830,6 +830,89 @@ test('roll spell check per', async () => {
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 })
 
+test('roll spell check sta', async () => {
+  dccRollCreateRollMock.mockClear()
+  collectionFindMock.mockReset()
+  uiNotificationsWarnMock.mockReset()
+  game.dcc.processSpellCheck.mockClear()
+  // Force stamina for display purposes (e.g. for a stamina-based caster)
+  await actor.rollSpellCheck({ abilityId: 'sta' })
+  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
+    [
+      {
+        type: 'Die',
+        label: 'Action Die',
+        formula: '1d20',
+        presets: [
+          {
+            formula: '1d20',
+            label: '1d20'
+          },
+          {
+            formula: '1d10',
+            label: 'Untrained'
+          }
+        ]
+      },
+      {
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        formula: '+1',
+        modifierLabel: 'Level'
+      },
+      {
+        type: 'Compound',
+        dieLabel: 'RollModifierDieTerm',
+        formula: '+0',
+        modifierLabel: 'Ability Modifier'
+      },
+      {
+        dieLabel: 'RollModifierDieTerm',
+        formula: '',
+        modifierLabel: 'Other Modifier',
+        type: 'Compound'
+      },
+      {
+        type: 'CheckPenalty',
+        apply: true,
+        formula: '+0',
+        label: 'Check Penalty'
+      },
+      {
+        type: 'Spellburn',
+        formula: '+0',
+        str: 6,
+        sta: 12,
+        agl: 8,
+        callback: expect.any(Function)
+      }
+    ],
+    actor.getRollData(),
+    {
+      abilityId: 'sta',
+      title: 'Spell Check'
+    }
+  )
+  expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
+    actor,
+    {
+      rollTable: null,
+      roll: expect.objectContaining({
+        dice: [
+          expect.objectContaining({
+            results: [
+              10
+            ]
+          })
+        ]
+      }),
+      item: null,
+      flavor: 'Spell Check (Stamina)'
+    }
+  )
+  expect(collectionFindMock).toHaveBeenCalledTimes(0)
+})
+
 test('roll spell check item', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockReset()
@@ -881,7 +964,13 @@ test('computeSpellCheck sets correct values', () => {
   actor.computeSpellCheck()
   expect(actor.system.class.spellCheck).toEqual('+1+2') // level 1 + per mod 2
 
-  // Test with other modifier
+  // Test stamina-based spell check
+  actor.system.class.spellCheckAbility = 'sta'
+  actor.computeSpellCheck()
+  expect(actor.system.class.spellCheck).toEqual('+1+0') // level 1 + sta mod 0
+
+  // Test with other modifier (reset to per for this test)
+  actor.system.class.spellCheckAbility = 'per'
   actor.system.class.spellCheckOtherMod = '+2'
   actor.computeSpellCheck()
   expect(actor.system.class.spellCheck).toEqual('+1+2+2') // level 1 + per mod 2 + other 2
