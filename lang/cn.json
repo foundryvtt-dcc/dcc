@@ -627,6 +627,8 @@
   "DCC.SpellCheckNonSpellWarning": "无法投骰非法术物品的法术检定",
   "DCC.SpellCheckOtherMod": "其他调整值",
   "DCC.SpellCheckOtherModHint": "用于自动计算且非属性非等级的法术检定修正值",
+  "DCC.SpellCheckAbility": "法术检定属性",
+  "DCC.SpellCheckAbilityHint": "用于法术检定的属性调整值",
   "DCC.SpellOtherBonus": "其他奖励",
   "DCC.SpellOtherBonusHint": "此法术的法术检定奖励（譬如精灵 1 级奖励）",
   "DCC.SpellDetails": "法术细节",

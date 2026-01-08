@@ -627,6 +627,8 @@
   "DCC.SpellCheckNonSpellWarning": "No puedes tirar un chequeo de hechizo con un objeto que no es un hechizo",
   "DCC.SpellCheckOtherMod": "Otro modific.",
   "DCC.SpellCheckOtherModHint": "Modificador a chequeos de hechizo que no proviene de atributo o nivel y debe incluirse en el cálculo automático",
+  "DCC.SpellCheckAbility": "Atributo de Chequeo de Hechizo",
+  "DCC.SpellCheckAbilityHint": "Qué modificador de atributo usar para los chequeos de hechizo",
   "DCC.SpellOtherBonus": "Otro bonus",
   "DCC.SpellOtherBonusHint": "Bonificación al chequeo de este hechizo (ej. bonus de elfo nivel 1)",
   "DCC.SpellDetails": "Detalles del hechizo",
