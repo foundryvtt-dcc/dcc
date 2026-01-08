@@ -20,7 +20,7 @@
     {{#each spells as |spells spelllevel|}}
       {{#each spells as |item id|}}
         <li class="item spell-item spell-draggable grid-col-span-8" data-item-id="{{item._id}}"
-            data-ability="int" data-die="{{item.spellCheck.die}}"
+            data-ability="{{@root.system.class.spellCheckAbility}}" data-die="{{item.spellCheck.die}}"
             data-bonus="{{item.spellCheck.value}}"
             data-spell="{{item.name}}" data-drag="true" data-drag-action="item">
           <div class="item-image">

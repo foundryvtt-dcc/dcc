@@ -104,6 +104,10 @@
   <label for="system.config.showSpells" title="{{localize 'DCC.ShowSpellsConfigHint'}}">{{localize "DCC.ShowSpellsConfig"}}</label>
   <input type="checkbox" name="system.config.showSpells" id="system.config.showSpells" {{checked system.config.showSpells}}
          data-dtype="boolean"/>
+  <label for="system.class.spellCheckAbility" title="{{localize 'DCC.SpellCheckAbilityHint'}}">{{localize "DCC.SpellCheckAbility"}}</label>
+  <select name="system.class.spellCheckAbility" id="system.class.spellCheckAbility">
+    {{selectOptions config.spellCheckAbilities selected=system.class.spellCheckAbility localize=true}}
+  </select>
   <label for="system.config.showSkills" title="{{localize 'DCC.ShowSkillsConfigHint'}}">{{localize "DCC.ShowSkillsConfig"}}</label>
   <input type="checkbox" name="system.config.showSkills" id="system.config.showSkills" {{checked system.config.showSkills}}
          data-dtype="boolean"/>

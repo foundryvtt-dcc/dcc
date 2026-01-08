@@ -982,6 +982,25 @@ describe('DCCItem Tests', () => {
       expect(spellburnTerm).toBeUndefined()
     })
 
+    test('should handle spell casting with stamina ability', async () => {
+      actor.type = 'Player'
+      actor.system.class.spellCheckAbility = 'sta'
+
+      await spell.rollSpellCheck('sta')
+
+      expect(global.game.dcc.DCCRoll.createRoll).toHaveBeenCalled()
+      const terms = global.game.dcc.DCCRoll.createRoll.mock.calls[0][0]
+      // Should have the standard spell check terms
+      const dieTerm = terms.find(term => term.type === 'Die')
+      expect(dieTerm).toBeDefined()
+      // Should have spell check compound term (combines level + ability mod)
+      const spellCheckTerm = terms.find(term => term.type === 'Compound')
+      expect(spellCheckTerm).toBeDefined()
+      // Should include spellburn for wizard-style casting
+      const spellburnTerm = terms.find(term => term.type === 'Spellburn')
+      expect(spellburnTerm).toBeDefined()
+    })
+
     test('should include spellburn for wizard spells', async () => {
       await spell.rollSpellCheck('int')
 
