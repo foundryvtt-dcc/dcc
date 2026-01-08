@@ -440,10 +440,12 @@ class DCCActor extends Actor {
     }
 
     let abilityMod = ensurePlus(this.system.abilities.int.mod)
-    if (this.system.class.spellCheckAbility === 'per') {
+    const spellCheckAbility = this.system.class.spellCheckAbility
+    if (spellCheckAbility === 'per') {
       abilityMod = ensurePlus(this.system.abilities.per.mod)
-    }
-    if (this.system.class.spellCheckAbility === '') {
+    } else if (spellCheckAbility === 'sta') {
+      abilityMod = ensurePlus(this.system.abilities.sta.mod)
+    } else if (spellCheckAbility === '') {
       abilityMod = ''
     }
     let otherMod = ''
