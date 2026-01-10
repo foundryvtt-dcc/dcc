@@ -308,7 +308,11 @@ class DCCActor extends Actor {
     const delta = Number(value)
     if (isNaN(delta)) return
 
-    const newValue = current + delta
+    // Convert current to number to ensure numeric addition (not string concatenation)
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = currentNumber + delta
     foundry.utils.setProperty(this, key, newValue)
     overrides[key] = newValue
   }
@@ -324,7 +328,11 @@ class DCCActor extends Actor {
     const multiplier = Number(value)
     if (isNaN(multiplier)) return
 
-    const newValue = current * multiplier
+    // Convert current to number for consistency with other effect methods
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = currentNumber * multiplier
     foundry.utils.setProperty(this, key, newValue)
     overrides[key] = newValue
   }
