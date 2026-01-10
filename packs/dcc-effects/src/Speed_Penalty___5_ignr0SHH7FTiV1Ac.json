@@ -1,0 +1,47 @@
+{
+  "name": "Speed Penalty (-5)",
+  "img": "systems/dcc/styles/images/game-icons-net/jumping-rope.svg",
+  "type": "base",
+  "system": {},
+  "changes": [
+    {
+      "key": "system.attributes.speed.value",
+      "value": "-5",
+      "type": "add",
+      "priority": null
+    }
+  ],
+  "disabled": false,
+  "duration": {
+    "startTime": null,
+    "seconds": null,
+    "combat": null,
+    "rounds": null,
+    "turns": null,
+    "startRound": null,
+    "startTurn": null
+  },
+  "description": "<p>Subtracts 5 from movement speed.</p>",
+  "origin": null,
+  "transfer": true,
+  "statuses": [],
+  "flags": {},
+  "_id": "ignr0SHH7FTiV1Ac",
+  "_stats": {
+    "coreVersion": "14.352",
+    "systemId": "dcc",
+    "systemVersion": "0.66.0",
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "folder": null,
+  "sort": 2900,
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!effects!ignr0SHH7FTiV1Ac"
+}
