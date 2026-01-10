@@ -190,6 +190,209 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Apply active effects to the actor
+   * Collects effects from the actor and equipped items, then applies them
+   * Called automatically by core Foundry prepareData
+   */
+  applyActiveEffects () {
+    // Note: Do NOT call super.applyActiveEffects() here
+    // This custom implementation replaces the core behavior to handle equipped item effects
+    // Calling super would cause effects to be applied twice
+
+    // Create a deep copy of the base system data to preserve the original
+    const overrides = {}
+
+    // Collect all active effects
+    const effects = []
+
+    // Add effects directly on the actor
+    for (const effect of this.effects) {
+      if (!effect.disabled && !effect.isSuppressed) {
+        effects.push(effect)
+      }
+    }
+
+    // Add effects from equipped items that transfer to the actor
+    for (const item of this.items) {
+      // Check if item is equipped (for equipment) or always apply (for conditions, etc)
+      const isEquipped = item.system?.equipped ?? true
+
+      if (isEquipped) {
+        for (const effect of item.effects) {
+          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
+            effects.push(effect)
+          }
+        }
+      }
+    }
+
+    // Sort effects by mode to apply them in the correct order
+    // Order: custom (0), multiply (1), add (2), upgrade (3), downgrade (4), override (5)
+    effects.sort((a, b) => {
+      const aChanges = Array.from(a.changes || [])
+      const bChanges = Array.from(b.changes || [])
+      const aMode = Math.min(...aChanges.map(c => c.mode), 5)
+      const bMode = Math.min(...bChanges.map(c => c.mode), 5)
+      return aMode - bMode
+    })
+
+    // Apply each effect
+    for (const effect of effects) {
+      if (!effect.changes) continue
+
+      for (const change of effect.changes) {
+        const key = change.key
+        const mode = change.mode || CONST.ACTIVE_EFFECT_MODES.ADD
+        const value = change.value
+
+        // Handle different change modes
+        try {
+          switch (mode) {
+            case CONST.ACTIVE_EFFECT_MODES.CUSTOM:
+              // Custom mode - let modules handle this
+              this._applyCustomEffect(key, value)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.ADD:
+              // Add numeric value
+              this._applyAddEffect(key, value, overrides)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
+              // Multiply by value
+              this._applyMultiplyEffect(key, value, overrides)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.OVERRIDE:
+              // Override the value completely
+              this._applyOverrideEffect(key, value, overrides)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
+              // Use the higher value
+              this._applyUpgradeEffect(key, value, overrides)
+              break
+
+            case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
+              // Use the lower value
+              this._applyDowngradeEffect(key, value, overrides)
+              break
+          }
+        } catch (err) {
+          console.warn(`DCC | Failed to apply active effect change to ${key}:`, err)
+        }
+      }
+    }
+  }
+
+  /**
+   * Apply a custom active effect
+   * @private
+   */
+  _applyCustomEffect (key, value) {
+    // Handle DCC-specific custom effects here
+    // For example, effects that modify dice chains or special class abilities
+
+    // This is where we'd handle special DCC mechanics that don't fit the standard modes
+    // Examples: modifying dice chains, adjusting spell check results, etc.
+  }
+
+  /**
+   * Apply an additive active effect
+   * @private
+   */
+  _applyAddEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const delta = Number(value)
+    if (isNaN(delta)) return
+
+    // Convert current to number to ensure numeric addition (not string concatenation)
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = currentNumber + delta
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
+   * Apply a multiplicative active effect
+   * @private
+   */
+  _applyMultiplyEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const multiplier = Number(value)
+    if (isNaN(multiplier)) return
+
+    // Convert current to number for consistency with other effect methods
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = currentNumber * multiplier
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
+   * Apply an override active effect
+   * @private
+   */
+  _applyOverrideEffect (key, value, overrides) {
+    // For override, parse the value appropriately
+    let parsedValue = value
+
+    // Try to parse as number if it looks numeric
+    if (!isNaN(Number(value)) && value !== '') {
+      parsedValue = Number(value)
+    }
+
+    foundry.utils.setProperty(this, key, parsedValue)
+    overrides[key] = parsedValue
+  }
+
+  /**
+   * Apply an upgrade active effect
+   * @private
+   */
+  _applyUpgradeEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const compareValue = Number(value)
+    if (isNaN(compareValue)) return
+
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = Math.max(currentNumber, compareValue)
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
+   * Apply a downgrade active effect
+   * @private
+   */
+  _applyDowngradeEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const compareValue = Number(value)
+    if (isNaN(compareValue)) return
+
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = Math.min(currentNumber, compareValue)
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
    * Get per actor configuration
    *
    * @return {Object}       Configuration data
@@ -1223,7 +1426,7 @@ class DCCActor extends Actor {
         damageRollFormula = damageRollFormula.replace(weapon.system.damageWeapon, weapon.system.backstabDamage)
       }
     }
-    let damageRoll; let damageInlineRoll; let damagePrompt; let damageRollIndex = null
+    let damageRoll, damageInlineRoll, damagePrompt
     if (automateDamageFumblesCrits) {
       // Check if the formula has per-term flavors like 1d6[fire] or 1d6+1d6[cold]
       // Per-term flavors have brackets immediately after a die expression
@@ -1255,7 +1458,6 @@ class DCCActor extends Actor {
       if (damageRoll.total < 1) {
         damageRoll._total = 1
       }
-      damageRollIndex = rolls.length
       rolls.push(damageRoll)
       damageInlineRoll = damageRoll.toAnchor({
         classes: ['damage-applyable', 'inline-dsn-hidden'],
@@ -1277,15 +1479,11 @@ class DCCActor extends Actor {
       damagePrompt = game.i18n.localize('DCC.RollDamage')
     }
 
-    // Deed roll - add to rolls array and track index
+    // Deed roll
+    const deedDieRoll = attackRollResult.deedDieRoll
     const deedDieFormula = attackRollResult.deedDieFormula
     const deedDieRollResult = attackRollResult.deedDieRollResult
     const deedRollSuccess = attackRollResult.deedDieRollResult > 2
-    let deedDieRollIndex = null
-    if (attackRollResult.deedDieRoll) {
-      deedDieRollIndex = rolls.length
-      rolls.push(attackRollResult.deedDieRoll)
-    }
 
     // Crit roll
     let critRollFormula = ''
@@ -1413,10 +1611,11 @@ class DCCActor extends Actor {
         attackRollHTML,
         damageInlineRoll,
         damagePrompt,
+        damageRoll,
         damageRollFormula,
-        damageRollIndex,
         critInlineRoll,
         critPrompt,
+        critRoll,
         critRollFormula,
         critResult,
         critText: critResult, // Legacy name for dcc-qol compatibility
@@ -1425,11 +1624,12 @@ class DCCActor extends Actor {
         critDieOverride: weapon.system?.config?.critDieOverride,
         critTableOverride: weapon.system?.config?.critTableOverride,
         deedDieFormula,
-        deedDieRollIndex,
+        deedDieRoll,
         deedDieRollResult,
         deedRollSuccess,
         fumbleInlineRoll,
         fumblePrompt,
+        fumbleRoll,
         fumbleRollFormula,
         fumbleResult,
         fumbleText: fumbleResult, // Legacy name for dcc-qol compatibility
@@ -1438,18 +1638,12 @@ class DCCActor extends Actor {
         originalFumbleTableName,
         isNPCFumble,
         hitsAc: attackRollResult.hitsAc,
+        targets: game.user.targets,
         weaponId,
         weaponName: weapon.name,
         twoWeaponNote
       }
     }
-
-    // Add Roll objects and targets to system for hook consumers (like dcc-qol)
-    // These will be removed before creating the ChatMessage to avoid v14 serialization issues
-    messageData.system.targets = game.user.targets
-    messageData.system.damageRoll = damageRoll
-    messageData.system.critRoll = critRoll
-    messageData.system.fumbleRoll = fumbleRoll
 
     // noinspection JSValidateJSDoc
     /**
@@ -1463,7 +1657,7 @@ class DCCActor extends Actor {
 
     // Remove non-serializable objects before creating the ChatMessage
     // In Foundry v14, system data goes through TypeDataModel validation which can't handle
-    // Roll objects or Sets with circular references
+    // Roll objects or Sets with circular references. This is safe for v13 as well.
     delete messageData.system.targets
     delete messageData.system.damageRoll
     delete messageData.system.critRoll
@@ -1523,7 +1717,7 @@ class DCCActor extends Actor {
         type: 'Modifier',
         label: game.i18n.localize('DCC.Backstab'),
         presets: [],
-        formula: parseInt(this.system?.class?.backstab || '+0')
+        formula: parseInt(this.system?.class?.backstab || '0')
       })
     }
 

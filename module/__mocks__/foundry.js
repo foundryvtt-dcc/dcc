@@ -1254,6 +1254,14 @@ global.CONST = {
   ENTITY_TYPES: {
     ACTOR: 'Actor',
     ITEM: 'Item'
+  },
+  ACTIVE_EFFECT_MODES: {
+    CUSTOM: 0,
+    MULTIPLY: 1,
+    ADD: 2,
+    DOWNGRADE: 3,
+    UPGRADE: 4,
+    OVERRIDE: 5
   }
 }
 
@@ -1644,6 +1652,31 @@ global.foundry.utils.getProperty = function (object, key) {
   }
 
   return result
+}
+
+// Foundry's implementation of setProperty
+global.foundry.utils.setProperty = function (object, key, value) {
+  let target = object
+  let changed = false
+
+  // Convert the key to an object reference if it contains dot notation
+  if (key.indexOf('.') !== -1) {
+    const parts = key.split('.')
+    key = parts.pop()
+    target = parts.reduce((o, i) => {
+      if (!Object.hasOwn(o, i)) o[i] = {}
+      return o[i]
+    }, object)
+  }
+
+  // Update the target
+  if (target[key] !== value) {
+    changed = true
+    target[key] = value
+  }
+
+  // Return changed status
+  return changed
 }
 
 // Foundry's implementation of mergeObject
