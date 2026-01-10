@@ -1717,7 +1717,7 @@ class DCCActor extends Actor {
         type: 'Modifier',
         label: game.i18n.localize('DCC.Backstab'),
         presets: [],
-        formula: parseInt(this.system?.class?.backstab || '+0')
+        formula: parseInt(this.system?.class?.backstab || '0')
       })
     }
 
