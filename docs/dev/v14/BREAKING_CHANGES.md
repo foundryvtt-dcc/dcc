@@ -15,6 +15,23 @@ This document covers breaking changes in FoundryVTT V14.
 **Active Effects:**
 - `CONFIG.ActiveEffect.legacyTransferral` support removed (deprecated since V11)
 
+**Status Effects:**
+- Status effect configuration now uses `img` instead of `icon` for the image path
+
+```javascript
+// V13
+CONFIG.statusEffects = [
+  { id: 'blind', icon: 'icons/svg/blind.svg', label: 'Blind' }
+]
+
+// V14
+CONFIG.statusEffects = [
+  { id: 'blind', img: 'icons/svg/blind.svg', label: 'Blind' }
+]
+```
+
+**DCC Impact**: ✅ FIXED in `module/status-icons.js` - Changed `icon` to `img` for all status effect definitions.
+
 **V12 Deprecations:**
 A large assortment of V12-era deprecations have been retired. See [GitHub issue #13436](https://github.com/foundryvtt/foundryvtt/issues/13436) for the complete list.
 
@@ -67,7 +84,36 @@ effect.origin  // Now a DocumentUUIDField instead of StringField
 
 // EffectChangeData changes
 effect.change.value  // Now deserializes to JSON parse result or string value
-effect.change.mode   // Migrated from numeric mode to string #type
+effect.change.mode   // DEPRECATED - use effect.change.type instead
+effect.change.type   // New string-based type field
+```
+
+**CONST.ACTIVE_EFFECT_MODES → CONST.ACTIVE_EFFECT_CHANGE_TYPES:**
+
+Accessing `CONST.ACTIVE_EFFECT_MODES` will log a deprecation warning. The new `CONST.ACTIVE_EFFECT_CHANGE_TYPES` uses string values:
+
+| Old Mode | Old Value | New Type |
+|----------|-----------|----------|
+| CUSTOM | 0 | `'custom'` |
+| MULTIPLY | 1 | `'multiply'` |
+| ADD | 2 | `'add'` |
+| DOWNGRADE | 3 | `'downgrade'` |
+| UPGRADE | 4 | `'upgrade'` |
+| OVERRIDE | 5 | `'override'` |
+
+**DCC Impact**: ✅ FIXED in `module/actor.js` - The `applyActiveEffects` method now uses string types with fallback to numeric mode for backwards compatibility:
+
+```javascript
+// DCC system implementation
+const type = change.type || change.mode || 'add'
+switch (type) {
+  case 'custom': ...
+  case 'add': ...
+  case 'multiply': ...
+  case 'override': ...
+  case 'upgrade': ...
+  case 'downgrade': ...
+}
 ```
 
 ### ActiveEffect Duration Time Units
