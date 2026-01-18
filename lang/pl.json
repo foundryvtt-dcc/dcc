@@ -649,6 +649,8 @@
   "DCC.SettingSpellSideEffectsCompendiumHint": "Kompendium Efektów Ubocznych Czarów zawiera tabele dla manifestacji czarów i skażeń",
   "DCC.SettingStrictCriticalHits": "Strict Critical Hit Rules",
   "DCC.SettingStrictCriticalHitsHint": "When enabled, critical hit ranges scale proportionally with die size changes. For example, if you normally crit on 20 and roll a d24, you only crit on 24. If you normally crit on 18-20 and roll a d24, you crit on 22-24.",
+  "DCC.SettingCoinWeight": "Waga monet (monety na funt)",
+  "DCC.SettingCoinWeightHint": "Ustaw, ile monet równa się jednemu funtowi wagi dla obciążenia. Domyślnie 10 (styl B/X). Ustaw na 0, aby wyłączyć wagę monet.",
   "DCC.SpellSideEffectsCompendiumNotFoundWarning": "Nie znaleziono 'Kompendium Efektów Ubocznych Czarów', będziesz musiał je stworzyć lub aktywować Moduł Core Book",
   "DCC.Spells": "Czary",
   "DCC.SpellShiftDown": "Przesunięcie w Dół o Jeden Wynik Czaru",
