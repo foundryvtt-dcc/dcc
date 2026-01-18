@@ -1183,6 +1183,10 @@ a.inline-roll {
 .dcc .item-list-currency {
   display: grid;
   grid-template-columns: 22px minmax(90px, 1fr) repeat(5, 40px) 39px;
+
+  .treasure-notes {
+    grid-column: span 5;
+  }
 }
 
 .dcc .left-arrow-button {

@@ -107,18 +107,14 @@
     <li class="grid-col-span-8 item item-draggable" data-item-id="{{item._id}}">
       <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22"/>
       <div>{{item.name}}</div>
-      <div>{{item.value.pp}}</div>
-      <div>{{item.value.ep}}</div>
-      <div>{{item.value.gp}}</div>
-      <div>{{item.value.sp}}</div>
-      <div>{{item.value.cp}}</div>
+      <div class="treasure-notes">{{{item.system.description.summary}}}</div>
       <div>
         <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
         <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
       </div>
     </li>
   {{/inline}}
-  <div class="box-title">{{localize "DCC.Treasure"}}</div>
+  <div class="box-title">{{localize "DCC.Treasure"}}{{#if equipment.weights.treasure}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.treasure decimals=2 sign=false}}</span>{{/if}}</div>
   <ol class="item-list item-list-currency box-border">
     <li class="grid-col-span-8 item-list-header">
       <div></div>

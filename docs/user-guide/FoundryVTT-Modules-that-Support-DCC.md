@@ -4,6 +4,7 @@ Here is a list of FoundryVTT modules that support DCC!
 
 * [Always HP](https://foundryvtt.com/packages/always-hp) (Lets you quickly adjust the HP of selected token(s))
 * [Actor Attribute List](https://github.com/mybigfriendjo/actor-attribute-list) (get paths of attributes for DCC actors for macro-making)
+* [Carousel Combat Tracker](https://foundryvtt.com/packages/combat-tracker-dock) (nice initialtive tracker at the top of the screen)
 * [DCC Quality of Life Improvements](https://github.com/tonyrobots/dcc-qol)
 * [Dice So Nice!](https://gitlab.com/riccisi/foundryvtt-dice-so-nice) (3d dice rolling)
 * [Dice Tray](https://foundryvtt.com/packages/dice-calculator) (Roll funky dice with one click)
