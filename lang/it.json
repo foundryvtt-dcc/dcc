@@ -649,6 +649,8 @@
   "DCC.SettingSpellSideEffectsCompendiumHint": "Il Compendio degli Effetti Collaterali degli Incantesimi contiene le tabelle per le manifestazioni e la corruzione degli incantesimi",
   "DCC.SettingStrictCriticalHits": "Regole per i Colpi Critici Severi",
   "DCC.SettingStrictCriticalHitsHint": "Quando abilitato, gli intervalli dei colpi critici si adattano proporzionalmente alle modifiche delle dimensioni dei dadi. Ad esempio, se normalmente si realizza un critico con 20 e si tira 1d24, il critico si realizza solo con un risultato di 24. Se normalmente si ottiene un critico con 18-20 e si tira 1d24, il critico si realizza con un risultato di 22-24.",
+  "DCC.SettingCoinWeight": "Peso delle monete (monete per libbra)",
+  "DCC.SettingCoinWeightHint": "Imposta quante monete equivalgono a una libbra di peso per l'ingombro. Il valore predefinito è 10 (stile B/X). Imposta 0 per disabilitare il peso delle monete.",
   "DCC.SpellSideEffectsCompendiumNotFoundWarning": "Il 'Compendio degli Effetti Collaterali degli Incantesimi' non è stato trovato, sarà necessario crearne uno o attivare il Modulo del Libro Base",
   "DCC.Spells": "Incantesimi",
   "DCC.SpellShiftDown": "Sposta Giù un Risultato di Incantesimo",

@@ -105,7 +105,7 @@
   {{!-- Treasure --}}
   {{#* inline "TreasureRow"}}
     <li class="grid-col-span-8 item item-draggable" data-item-id="{{item._id}}">
-      <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22"/>
+      <img class="item-draggable icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22" data-drag="true" data-drag-action="item">
       <div>{{item.name}}</div>
       <div class="treasure-notes">{{{item.system.description.summary}}}</div>
       <div>
