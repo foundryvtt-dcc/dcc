@@ -394,6 +394,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equipmentWeight = calculateWeight(equipment)
     const ammunitionWeight = calculateWeight(ammunition)
     const mountsWeight = calculateWeight(mounts)
+    const treasureWeight = calculateWeight(treasure)
 
     // Return the inventory object
     return {
@@ -410,7 +411,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         equipment: equipmentWeight,
         ammunition: ammunitionWeight,
         mounts: mountsWeight,
-        total: meleeWeight + rangedWeight + armorWeight + equipmentWeight + ammunitionWeight + mountsWeight
+        treasure: treasureWeight,
+        total: meleeWeight + rangedWeight + armorWeight + equipmentWeight + ammunitionWeight + mountsWeight + treasureWeight
       },
       skills,
       spells
