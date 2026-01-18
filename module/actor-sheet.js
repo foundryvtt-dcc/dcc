@@ -387,6 +387,26 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return Number.isFinite(total) ? total : 0
     }
 
+    // Helper function to calculate treasure weight with B/X-style coin weight
+    // When isCoins is true, weight = total coins / 10 (10 coins per pound)
+    const calculateTreasureWeight = (items) => {
+      let total = 0
+      for (const item of items) {
+        if (item.system.isCoins) {
+          // B/X style: 10 coins = 1 pound
+          const value = item.system.value || {}
+          const totalCoins = (value.pp || 0) + (value.ep || 0) + (value.gp || 0) + (value.sp || 0) + (value.cp || 0)
+          total += totalCoins / 10
+        } else {
+          // Non-coin treasure uses standard weight * quantity
+          const weight = parseFloat(item.system.weight) || 0
+          const quantity = parseInt(item.system.quantity) || 1
+          total += weight * quantity
+        }
+      }
+      return Number.isFinite(total) ? total : 0
+    }
+
     // Calculate weights for each section
     const meleeWeight = calculateWeight(weapons.melee)
     const rangedWeight = calculateWeight(weapons.ranged)
@@ -394,7 +414,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const equipmentWeight = calculateWeight(equipment)
     const ammunitionWeight = calculateWeight(ammunition)
     const mountsWeight = calculateWeight(mounts)
-    const treasureWeight = calculateWeight(treasure)
+
+    // Calculate treasure weight including actor's currency (B/X style: 10 coins = 1 lb)
+    const actorCurrency = this.options.document.system.currency || {}
+    const actorCoinCount = (actorCurrency.pp || 0) + (actorCurrency.ep || 0) + (actorCurrency.gp || 0) + (actorCurrency.sp || 0) + (actorCurrency.cp || 0)
+    const actorCoinWeight = actorCoinCount / 10
+    const treasureWeight = calculateTreasureWeight(treasure) + actorCoinWeight
 
     // Return the inventory object
     return {

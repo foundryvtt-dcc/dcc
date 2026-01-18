@@ -9,6 +9,12 @@
       <input id="name" name="name" value="{{document.name}}" placeholder="Name" autocomplete="off" size="25">
     </div>
 
+    <div class="grid-col-span-12 grid-tpl-max-auto">
+      <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
+      <input type="text" id="system.description.summary" name="system.description.summary"
+             value="{{system.description.summary}}" data-dtype="String"/>
+    </div>
+
     <div class="box-border grid-col-span-3">
       <div class="box-title">{{localize "DCC.SettingsLabel"}}</div>
       <div class="box-inner">
