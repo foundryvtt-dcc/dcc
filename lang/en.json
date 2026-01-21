@@ -706,6 +706,8 @@
   "DCC.SettingSpellSideEffectsCompendiumHint": "The Spell Side Effects Compendium holds the tables for spell manifestations and corruptions",
   "DCC.SettingStrictCriticalHits": "Strict Critical Hit Rules",
   "DCC.SettingStrictCriticalHitsHint": "When enabled, critical hit ranges scale proportionally with die size changes. For example, if you normally crit on 20 and roll a d24, you only crit on 24. If you normally crit on 18-20 and roll a d24, you crit on 22-24.",
+  "DCC.SettingCoinWeight": "Coin Weight (coins per pound)",
+  "DCC.SettingCoinWeightHint": "Set how many coins equal one pound of weight for encumbrance. Default is 10 (B/X style). Set to 0 to disable coin weight.",
   "DCC.SpellSideEffectsCompendiumNotFoundWarning": "The 'Spell Side Effects Compendium' was not found, you will either need to make one or activate the Core Book Module",
   "DCC.Spells": "Spells",
   "DCC.SpellShiftDown": "Shift Down One Spell Result",

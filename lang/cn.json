@@ -706,6 +706,8 @@
   "DCC.SettingSpellSideEffectsCompendiumHint": "法术副作用合集附有法术显现和腐化",
   "DCC.SettingStrictCriticalHits": "严格大成功命中规则",
   "DCC.SettingStrictCriticalHitsHint": "启用时，大成功命中范围会随骰子规模而缩放。譬如，若平常大成功在 20 但投骰了 d24，则大成功改为在 24。若平常大成功在 18–20 但投骰了 d24，则大成功改为在 22–24",
+  "DCC.SettingCoinWeight": "硬币重量（每磅硬币数）",
+  "DCC.SettingCoinWeightHint": "设置多少硬币等于一磅重量用于负重计算。默认值为10（B/X风格）。设置为0以禁用硬币重量。",
   "DCC.SpellSideEffectsCompendiumNotFoundWarning": "找不到「法术副作用合集」，需制造一份或激活核心书模组",
   "DCC.Spells": "法术",
   "DCC.SpellShiftDown": "向下变动 1 层法术结果",

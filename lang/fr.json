@@ -538,6 +538,8 @@
   "DCC.SettingSpellSideEffectsCompendiumHint": "Le Compendium des Effets Secondaires de Sorts contient les tables pour les manifestations et corruptions de sorts",
   "DCC.SettingStrictCriticalHits": "Règles Strictes de Coups Critiques",
   "DCC.SettingStrictCriticalHitsHint": "Quand activé, les plages de coups critiques s'adaptent proportionnellement aux changements de taille de dé. Par exemple, si vous faites normalement un critique sur 20 et lancez un d24, vous ne faites critique que sur 24. Si vous faites normalement critique sur 18-20 et lancez un d24, vous faites critique sur 22-24.",
+  "DCC.SettingCoinWeight": "Poids des pièces (pièces par livre)",
+  "DCC.SettingCoinWeightHint": "Définit combien de pièces égalent une livre de poids pour l'encombrement. La valeur par défaut est 10 (style B/X). Réglez sur 0 pour désactiver le poids des pièces.",
   "DCC.SettingTurnUnholyTable": "Table pour Repousser les impies",
   "DCC.SettingTurnUnholyTableHint": "Table à utiliser pour Repousser les impie - doit être dans un compendium pack",
   "DCC.SettingWeaponEquipmentCheck": "Vérifier que l'arme est équipée",

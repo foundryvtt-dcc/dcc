@@ -328,6 +328,18 @@ export const registerSystemSettings = async function () {
   })
 
   /**
+   * Coin weight - how many coins equal one pound for encumbrance
+   */
+  game.settings.register('dcc', 'coinWeight', {
+    name: 'DCC.SettingCoinWeight',
+    hint: 'DCC.SettingCoinWeightHint',
+    scope: 'world',
+    type: Number,
+    default: 10,
+    config: true
+  })
+
+  /**
    * Last used Importer Type
    */
   game.settings.register('dcc', 'lastImporterType', {
