@@ -233,6 +233,7 @@
   "DCC.Disabled": "禁用",
   "DCC.TransfersToActor": "转移给角色",
   "DCC.EffectsExpired": "效果过期 {actor}: {effects}",
+  "DCC.EffectChangeTypeDiceChain": "骰链",
   "DCC.EquipmentTabHint": "角色，护甲，物品，财宝",
   "DCC.Equipped": "装备",
   "DCC.Experience": "经验",

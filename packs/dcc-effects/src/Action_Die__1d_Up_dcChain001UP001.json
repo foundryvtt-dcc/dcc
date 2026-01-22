@@ -1,0 +1,47 @@
+{
+  "name": "Action Die +1d",
+  "img": "systems/dcc/styles/images/game-icons-net/d4.svg",
+  "type": "base",
+  "system": {},
+  "changes": [
+    {
+      "key": "system.attributes.actionDice.value",
+      "value": "1",
+      "type": "diceChain",
+      "priority": null
+    }
+  ],
+  "disabled": false,
+  "duration": {
+    "startTime": null,
+    "seconds": null,
+    "combat": null,
+    "rounds": null,
+    "turns": null,
+    "startRound": null,
+    "startTurn": null
+  },
+  "description": "<p>Moves the action die up one step on the dice chain (e.g., d20 → d24). Use the Dice Chain effect mode with a value of 1 for +1d, 2 for +2d, etc.</p>",
+  "origin": null,
+  "transfer": true,
+  "statuses": [],
+  "flags": {},
+  "_id": "dcChain001UP001",
+  "_stats": {
+    "coreVersion": "14.352",
+    "systemId": "dcc",
+    "systemVersion": "0.66.0",
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "folder": null,
+  "sort": 3600,
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!effects!dcChain001UP001"
+}
