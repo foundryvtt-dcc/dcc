@@ -58,6 +58,7 @@
   "DCC.AlreadyHasInitiative": "指示物已在战斗记录器中获得先攻值；而不重骰。",
   "DCC.Ammunition": "弹药",
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
+  "DCC.ApplyDamageNoRoll": "未找到伤害骰。请先投掷伤害。",
   "DCC.ApplyDisapprovalMacroName": "提升不悦范围",
   "DCC.ApplyLevelChanges": "应用等级改变",
   "DCC.AdjustHitPoints": "调整生命值",

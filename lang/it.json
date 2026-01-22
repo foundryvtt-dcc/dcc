@@ -58,6 +58,7 @@
   "DCC.AlreadyHasInitiative": "Il Segnalino ha già un punteggio di iniziativa nel Combat Tracker; non verrà rilanciato",
   "DCC.Ammunition": "Munizione",
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
+  "DCC.ApplyDamageNoRoll": "Nessun tiro per i danni trovato. Tira prima per i danni.",
   "DCC.ApplyDisapprovalMacroName": "Aumenta l'Intervallo di Disapprovazione",
   "DCC.ApplyLevelChanges": "Applica Modifiche di Livello",
   "DCC.AdjustHitPoints": "Modifica i Punti Ferita",

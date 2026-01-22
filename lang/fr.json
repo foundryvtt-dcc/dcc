@@ -47,6 +47,7 @@
   "DCC.AlreadyHasInitiative": "Le token a déjà un score d'initiative dans le Tracker de Combat ; pas de relance",
   "DCC.Ammunition": "Munitions",
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
+  "DCC.ApplyDamageNoRoll": "Aucun jet de dégâts trouvé. Lancez d'abord les dégâts.",
   "DCC.ApplyDisapprovalMacroName": "Augmentation du risque de défaveur",
   "DCC.ApplyLevelChanges": "Appliquer les Changements de Niveau",
   "DCC.Armor": "Armure",

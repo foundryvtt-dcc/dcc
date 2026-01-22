@@ -58,6 +58,7 @@
   "DCC.AlreadyHasInitiative": "Żeton ma już wynik inicjatywy w Trackerze Walki; nie przerzucam",
   "DCC.Ammunition": "Amunicja",
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
+  "DCC.ApplyDamageNoRoll": "Nie znaleziono rzutu na obrażenia. Najpierw rzuć na obrażenia.",
   "DCC.ApplyDisapprovalMacroName": "Zwiększ Zakres Dezaprobaty",
   "DCC.ApplyLevelChanges": "Zastosuj Zmiany Poziomu",
   "DCC.AdjustHitPoints": "Dostosuj Punkty Wytrzymałości",

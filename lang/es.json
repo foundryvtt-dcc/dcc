@@ -58,6 +58,7 @@
   "DCC.AlreadyHasInitiative": "El token ya tiene puntuación de iniciativa en el rastreador de combate; no se vuelve a tirar",
   "DCC.Ammunition": "Munición",
   "DCC.ApplyDamageEmote": "{targetName} {damageInline}",
+  "DCC.ApplyDamageNoRoll": "No se encontró tirada de daño. Tira el daño primero.",
   "DCC.ApplyDisapprovalMacroName": "Incrementar rango de desaprobación",
   "DCC.ApplyLevelChanges": "Aplicar cambios de nivel",
   "DCC.AdjustHitPoints": "Ajustar puntos de golpe",
