@@ -1,4 +1,4 @@
-/* global canvas, foundry, game */
+/* global canvas, foundry, game, ui */
 // noinspection DuplicatedCode
 
 import { getCritTableResult, getFumbleTableResult, getNPCFumbleTableResult, addDamageFlavorToRolls } from './utilities.js'
@@ -114,8 +114,27 @@ export const addChatMessageContextOptions = function (html, options) {
  */
 function applyChatCardDamage (roll, multiplier) {
   const damageApplyable = roll.querySelector('.damage-applyable')
-  const diceTotal = roll.querySelector('.dice-total')
-  const amount = damageApplyable?.getAttribute('data-damage') || diceTotal?.textContent
+
+  // Check if this is an attack roll message - if so, only use damage-applyable to avoid
+  // accidentally applying the attack roll as damage when damage hasn't been rolled yet
+  const messageId = roll.closest('[data-message-id]')?.dataset.messageId
+  const message = messageId ? game.messages.get(messageId) : null
+  const isAttackRoll = message?.getFlag('dcc', 'isToHit')
+
+  let amount
+  if (damageApplyable) {
+    amount = damageApplyable.getAttribute('data-damage')
+  } else if (!isAttackRoll) {
+    // Only fall back to dice-total for non-attack rolls (e.g., standalone damage rolls)
+    const diceTotal = roll.querySelector('.dice-total')
+    amount = diceTotal?.textContent
+  }
+
+  if (!amount) {
+    ui.notifications.warn(game.i18n.localize('DCC.ApplyDamageNoRoll'))
+    return Promise.resolve()
+  }
+
   return Promise.all(canvas.tokens.controlled.map(t => {
     const a = t.actor
     return a.applyDamage(amount, multiplier)
