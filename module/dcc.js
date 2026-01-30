@@ -76,12 +76,9 @@ Hooks.once('init', async function () {
     final: { priority: 100, label: 'Final' }
   }
 
-  // Register custom DCC effect change types for the UI dropdown
-  // This adds the 'diceChain' type to Foundry's list of available effect change types
-  CONFIG.ActiveEffect.CHANGE_TYPES = {
-    ...CONFIG.ActiveEffect.CHANGE_TYPES,
-    [DCC.effectChangeTypes.DICE_CHAIN]: 'DCC.EffectChangeTypeDiceChain'
-  }
+  // Note: Custom DCC dice chain effects use the standard 'add' type
+  // The actor's effect application automatically detects dice expressions
+  // and applies dice chain logic (e.g., adding 1 to "1d20" -> "1d24")
 
   // Register Actor data models
   CONFIG.Actor.dataModels = {
@@ -416,8 +413,10 @@ function setupCoreBookCompendiumLinks () {
 function checkMigrations () {
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const NEEDS_MIGRATION_VERSION = 0.22
-  const needMigration = (currentVersion <= NEEDS_MIGRATION_VERSION) || (currentVersion === null)
+  // Version that triggers migration - set this to the version that introduced breaking changes
+  // After migration completes, we save this version to prevent repeated migrations
+  const NEEDS_MIGRATION_VERSION = 0.67
+  const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration
   if (needMigration && game.user.isGM) {

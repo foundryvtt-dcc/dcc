@@ -6,8 +6,8 @@
   "changes": [
     {
       "key": "system.attributes.actionDice.value",
-      "value": "-1",
-      "type": "diceChain",
+      "value": "1",
+      "type": "subtract",
       "priority": null
     }
   ],
@@ -21,7 +21,7 @@
     "startRound": null,
     "startTurn": null
   },
-  "description": "<p>Moves the action die down one step on the dice chain (e.g., d20 → d16). Use the Dice Chain effect mode with a value of -1 for -1d, -2 for -2d, etc.</p>",
+  "description": "<p>Moves the action die down one step on the dice chain (e.g., d20 → d16). Uses Subtract mode - the system automatically detects dice expressions and applies dice chain logic.</p>",
   "origin": null,
   "transfer": true,
   "statuses": [],

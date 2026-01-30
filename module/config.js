@@ -240,15 +240,6 @@ DCC.currencyValue = {
 }
 
 /**
- * Custom Active Effect Change Types for DCC
- * These extend the standard Foundry types with DCC-specific functionality
- * @type {Object}
- */
-DCC.effectChangeTypes = {
-  DICE_CHAIN: 'diceChain' // Adjust a die along the dice chain (value is steps, e.g., 1 or -2)
-}
-
-/**
  * Active Effect Attribute Keys
  * Common paths for modifying actor data via Active Effects
  * @type {Object}
@@ -295,7 +286,7 @@ DCC.activeEffectKeys = {
   'system.attributes.critical.die': 'DCC.CriticalDie',
   'system.attributes.fumble.die': 'DCC.FumbleDie',
 
-  // Dice Chain Adjustable (use with diceChain effect type)
+  // Dice Chain Adjustable (add/subtract auto-detects dice expressions)
   'system.attributes.actionDice.value': 'DCC.ActionDie'
 }
 

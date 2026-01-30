@@ -539,7 +539,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
                 name: effect.name,
                 img: effect.img || 'icons/svg/aura.svg',
                 value: change.value,
-                mode: change.mode
+                type: change.type
               })
             }
           }
@@ -604,7 +604,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
                 name: effect.name,
                 img: effect.img || 'icons/svg/aura.svg',
                 value: change.value,
-                mode: change.mode
+                type: change.type
               })
             }
           }
@@ -664,7 +664,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
               name: effect.name,
               img: effect.img || 'icons/svg/aura.svg',
               value: change.value,
-              mode: change.mode
+              type: change.type
             })
           }
         }
@@ -677,7 +677,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
               name: effect.name,
               img: effect.img || 'icons/svg/aura.svg',
               value: change.value,
-              mode: change.mode
+              type: change.type
             })
           }
         }

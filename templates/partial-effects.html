@@ -82,7 +82,7 @@
           {{#unless effect.disabled}}
             {{#if effect.changes.length}}
               <div class="effect-summary">
-                <strong>{{effect.name}}:</strong>
+                <strong>{{effect.name}}</strong>&nbsp;&nbsp;
                 {{#if (eq ../documentType "Item")}}
                   {{#if effect.transfer}}
                     <span class="transfer-note">({{localize "DCC.TransfersToActor"}})</span>
@@ -91,7 +91,7 @@
                 {{#each effect.changes as |change|}}
                   <span class="change-summary">
                       {{change.key}}
-                    {{#if (eq change.mode 2)}} +{{else if (eq change.mode 1)}} ×{{else if (eq change.mode 5)}} ={{/if}} {{change.value}}{{#unless
+                    {{#if (eq change.type "add")}} +{{else if (eq change.type "subtract")}} -{{else if (eq change.type "multiply")}} ×{{else if (eq change.type "override")}} ={{else if (eq change.type "diceChain")}} {{/if}}{{change.value}}{{#if (eq change.type "diceChain")}}d{{/if}}{{#unless
                     @last}}, {{/unless}}
                     </span>
                 {{/each}}

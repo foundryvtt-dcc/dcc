@@ -9,7 +9,7 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 | `npm test` | Run unit tests (Vitest) |
 | `npm run format` | Format code (StandardJS + StyleLint) |
 | `npm run scss` | Compile SASS to CSS |
-| `npm run todb` | Compile JSON → LevelDB packs |
+| `npm run todb` | Compile JSON → LevelDB packs (Foundry must be shut down) |
 | `npm run tojson` | Extract LevelDB → JSON packs |
 | `npm run compare-lang` | Check translation coverage |
 

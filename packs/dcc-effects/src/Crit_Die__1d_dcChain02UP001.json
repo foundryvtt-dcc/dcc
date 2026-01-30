@@ -7,7 +7,7 @@
     {
       "key": "system.attributes.critical.die",
       "value": "1",
-      "type": "diceChain",
+      "type": "add",
       "priority": null
     }
   ],
@@ -21,7 +21,7 @@
     "startRound": null,
     "startTurn": null
   },
-  "description": "<p>Moves the critical hit die up one step on the dice chain (e.g., d6 → d7). Use the Dice Chain effect mode with a value of 1 for +1d, 2 for +2d, etc.</p>",
+  "description": "<p>Moves the critical hit die up one step on the dice chain (e.g., d6 → d7). Uses Add mode - the system automatically detects dice expressions and applies dice chain logic.</p>",
   "origin": null,
   "transfer": true,
   "statuses": [],
