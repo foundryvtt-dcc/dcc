@@ -259,6 +259,13 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       this._terms = this._constructTermsFromRoll(terms, options.rollData)
     }
     this._roll = this._constructRoll()
+
+    // Handle damage terms if provided
+    if (options.damageTerms) {
+      this._damageTerms = this._constructTermsFromArray(options.damageTerms, 'damage-')
+    } else {
+      this._damageTerms = null
+    }
   }
 
   /** @inheritDoc */
@@ -321,6 +328,28 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     return this._terms
   }
 
+  /*
+   * The damage terms (if any)
+   * @type {Array|null}
+   */
+  get damageTerms () {
+    return this._damageTerms
+  }
+
+  /**
+   * Get a term by its index (handles both attack and damage terms)
+   * @param {string|number} index - The term index (e.g., "0", "1", "damage-0")
+   * @return {Object|undefined}
+   */
+  getTermByIndex (index) {
+    const indexStr = String(index)
+    if (indexStr.startsWith('damage-')) {
+      const damageIndex = parseInt(indexStr.replace('damage-', ''))
+      return this._damageTerms?.[damageIndex]
+    }
+    return this._terms[parseInt(indexStr)]
+  }
+
   /* -------------------------------------------- */
 
   /**
@@ -332,6 +361,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     data.user = game.user
     data.options = this.options
     data.terms = this._terms
+    data.damageTerms = this._damageTerms
     data.rollLabel = this.options.rollLabel || game.i18n.localize('DCC.RollModifierRoll')
     data.cancelLabel = this.options.cancelLabel || game.i18n.localize('DCC.RollModifierCancel')
     return data
@@ -353,12 +383,17 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault()
 
     this._roll = this._constructRoll()
+    // If damage terms exist, construct the damage formula and store it on the roll
+    if (this._damageTerms) {
+      const damageFormula = this._constructDamageFormula()
+      foundry.utils.mergeObject(this._roll.options, { modifiedDamageFormula: damageFormula })
+    }
     this._resolve(this.roll)
     await this.close()
   }
 
   /**
-   * Construct a Foundry Roll object from the collected terms
+   * Construct a Foundry Roll object from the collected attack terms
    * @return {Object}
    * @private
    */
@@ -369,18 +404,23 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
         term.callback(formula, term)
       }
     }
-    // Build a new Roll object from the collected terms
+    // Build a new Roll object from the collected terms (excluding damage terms)
     let formula = ''
+    let termIndex = 0
     if (this._state !== ApplicationV2.RENDER_STATES.NONE && this.element) {
       // Once the form is constructed extract data from the form fields
-      this.element.querySelectorAll('input.term-field').forEach(
-        (element, index) => {
-          if (index > 0) {
+      // Only process attack terms (IDs that are numeric, not prefixed with 'damage-')
+      for (const term of this.terms) {
+        const element = this.element.querySelector(`#term-${term.index}`)
+        if (element) {
+          if (termIndex > 0) {
             formula += '+'
           }
           formula += element.value
-          resolveTerm(element.value, this.terms[index])
-        })
+          resolveTerm(element.value, term)
+          termIndex++
+        }
+      }
     } else {
       // Otherwise extract data straight from the terms array
       for (const term of this.terms) {
@@ -393,6 +433,50 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     formula = _cleanFormula(formula)
     return new Roll(formula)
+  }
+
+  /**
+   * Construct a damage formula from the collected damage terms
+   * @return {String}
+   * @private
+   */
+  _constructDamageFormula () {
+    if (!this._damageTerms) return ''
+
+    // Helper to safely call the resolve method for a term
+    const resolveTerm = function (formula, term) {
+      if (term.callback) {
+        term.callback(formula, term)
+      }
+    }
+
+    let formula = ''
+    let termIndex = 0
+    if (this._state !== ApplicationV2.RENDER_STATES.NONE && this.element) {
+      // Extract data from the damage term form fields
+      for (const term of this._damageTerms) {
+        const element = this.element.querySelector(`#term-${term.index}`)
+        if (element) {
+          if (termIndex > 0) {
+            formula += '+'
+          }
+          formula += element.value
+          resolveTerm(element.value, term)
+          termIndex++
+        }
+      }
+    } else {
+      // Extract data straight from the damage terms array
+      for (let i = 0; i < this._damageTerms.length; i++) {
+        const term = this._damageTerms[i]
+        if (i > 0) {
+          formula += '+'
+        }
+        formula += term.formula
+        resolveTerm(term.formula, term)
+      }
+    }
+    return _cleanFormula(formula)
   }
 
   /**
@@ -421,7 +505,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     const mod = target.dataset.mod
     const formField = this.element.querySelector('#term-' + index)
     let termFormula = game.dcc.DiceChain.bumpDie(formField.value, parseInt(mod))
-    if (index > 0) {
+    if (index !== '0' && index !== 0) {
       // Add a sign if this isn't the first term in the expression
       termFormula = '+' + termFormula
     }
@@ -439,10 +523,10 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault()
     const index = target.dataset.term
     const mod = target.dataset.mod
-    const term = this.terms[index]
+    const term = this.getTermByIndex(index)
     const formField = this.element.querySelector('#term-' + index)
     let termFormula = game.dcc.DiceChain.bumpDieCount(formField.value, parseInt(mod), term.maxCount)
-    if (index > 0) {
+    if (index !== '0' && index !== 0) {
       // Add a sign if this isn't the first term in the expression
       termFormula = '+' + termFormula
     }
@@ -461,13 +545,13 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault()
     const index = target.dataset.term
     const mod = target.dataset.mod
-    const term = this.terms[index]
+    const term = this.getTermByIndex(index)
     const formField = this.element.querySelector('#term-' + index)
     let termFormula = parseInt(formField.value) + parseInt(mod)
-    if (term.minAmount) {
+    if (term?.minAmount) {
       termFormula = Math.max(termFormula, parseInt(term.minAmount))
     }
-    if (term.maxAmount) {
+    if (term?.maxAmount) {
       termFormula = Math.min(termFormula, parseInt(term.maxAmount))
     }
     termFormula = termFormula.toString()
@@ -532,7 +616,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #checkboxChange (event, target) {
     const index = target.dataset.term
-    const term = this.terms[index]
+    const term = this.getTermByIndex(index)
     const formField = this.element.querySelector('#term-' + index)
     const checked = target.checked
     formField.value = checked ? term.checkedFormula : '+0'
@@ -549,7 +633,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault()
     const index = target.dataset.term
     const formField = this.element.querySelector('#term-' + index)
-    formField.value = this.terms[index].formula
+    formField.value = this.getTermByIndex(index).formula
   }
 
   /** @override */
@@ -561,9 +645,10 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Construct the terms from an array
    * @param termConstructors {Object}
+   * @param idPrefix {String}  Optional prefix for term IDs (e.g., 'damage-' for damage terms)
    * @private
    */
-  _constructTermsFromArray (termConstructors) {
+  _constructTermsFromArray (termConstructors, idPrefix = '') {
     const terms = []
 
     // Construct and number the terms
@@ -572,7 +657,7 @@ class RollModifierDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       const constructedTerms = constructDCCTerm(constructor.type, this.options.rollData, constructor)
       for (const term of constructedTerms) {
         if (term) {
-          term.index = index++
+          term.index = idPrefix + index++
           terms.push(term)
         }
       }
