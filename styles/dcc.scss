@@ -1625,10 +1625,15 @@ a.inline-roll {
 
 .dcc-roll-modifier {
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-columns: 1fr;
+  grid-auto-flow: row;
   row-gap: 15px;
 
   min-width: 400px;
+
+  > * {
+    grid-column: 1;
+  }
 
   .formula-row {
     display: grid;

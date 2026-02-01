@@ -1472,8 +1472,8 @@ class DCCActor extends Actor {
     const attackRollHTML = await attackRollResult.roll.render()
     rolls.push(attackRollResult.roll)
 
-    // Damage roll
-    let damageRollFormula = weapon.system.damage
+    // Damage roll - use modified formula from roll modifier dialog if available
+    let damageRollFormula = attackRollResult.weaponDamageFormula || weapon.system.damage
     if (attackRollResult.deedDieRollResult) {
       const rawDeedFormula = attackRollResult.deedDieFormula // e.g. "d4"
       const deedBonusStringComponent = ensurePlus(rawDeedFormula) // e.g. "+d4", this is what's in the damage formula from warrior bonus
@@ -1804,6 +1804,19 @@ class DCCActor extends Actor {
       },
       options
     )
+
+    // Add damage terms if showing the modifier dialog
+    if (options.showModifierDialog && weapon.system?.damage) {
+      rollOptions.damageTerms = [
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.DamageDie'),
+          modifierLabel: game.i18n.localize('DCC.DamageModifier'),
+          formula: weapon.system.damage
+        }
+      ]
+    }
+
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
     await attackRoll.evaluate()
 
@@ -1856,6 +1869,9 @@ class DCCActor extends Actor {
     const naturalCrit = d20RollResult >= critRange
     const crit = !fumble && (naturalCrit || options.backstab)
 
+    // Use modified damage formula from roll modifier dialog if available
+    const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
+
     return {
       d20RollResult,
       deedDieFormula,
@@ -1869,7 +1885,7 @@ class DCCActor extends Actor {
       naturalCrit,
       roll: attackRoll,
       rolled: true,
-      weaponDamageFormula: weapon.damage
+      weaponDamageFormula: modifiedDamageFormula || weapon.system?.damage || weapon.damage
     }
   }
 
