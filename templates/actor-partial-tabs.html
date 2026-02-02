@@ -1,6 +1,16 @@
 {{!-- Sheet Tab Navigation --}}
-<nav class="sheet-tabs tabs">
-  {{#each tabs as |tab|}}
-    <a class="{{tab.cssClass}}" data-action="tab" data-group="{{tab.group}}" data-tab="{{tab.id}}" data-tooltip="{{localize tab.tooltip}}">{{localize tab.label}}</a>
-  {{/each}}
+<nav class="sheet-tabs tabs responsive-tabs">
+  <div class="tabs-container">
+    {{#each tabs as |tab|}}
+      <a class="{{tab.cssClass}}" data-action="tab" data-group="{{tab.group}}" data-tab="{{tab.id}}" data-tooltip="{{localize tab.tooltip}}">{{localize tab.label}}</a>
+    {{/each}}
+  </div>
+  <div class="tabs-overflow">
+    <button type="button" class="tabs-overflow-button" data-tooltip="{{localize 'DCC.MoreTabs'}}">
+      <i class="fas fa-ellipsis-h"></i>
+    </button>
+    <div class="tabs-overflow-menu">
+      {{!-- Overflow tabs will be populated by JavaScript --}}
+    </div>
+  </div>
 </nav>

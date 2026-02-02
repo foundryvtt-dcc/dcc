@@ -290,7 +290,7 @@ export const emoteAttackRoll = function (message, html) {
     twoWeaponNote = `<p class="emote-note"><em>${message.system.twoWeaponNote}</em></p>`
   }
 
-  const damageInlineRoll = message.system.damageInlineRoll.replaceAll('@ab', message.system.deedDieRollResult)
+  const damageInlineRoll = message.system.damageInlineRoll?.replaceAll('@ab', message.system.deedDieRollResult) || ''
 
   const attackEmote = game.i18n.format('DCC.AttackRollEmote', {
     actionName: message.getFlag('dcc', 'isBackstab') ? 'backstabs' : 'attacks',

@@ -1485,6 +1485,102 @@ a.inline-roll {
   border-top: 0;
   margin-bottom: 8px;
 }
+.dcc.sheet {
+  /* Responsive tabs with overflow dropdown */
+}
+.dcc.sheet .sheet-tabs.responsive-tabs {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-container {
+  display: flex;
+  flex: 1 1 auto;
+  overflow: hidden;
+  min-width: 0;
+  justify-content: space-evenly; /* Evenly distribute tabs */
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-container a[data-tab] {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-container a[data-tab].tab-hidden {
+  display: none;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow {
+  flex: 0 0 auto;
+  position: relative;
+  display: none; /* Hidden by default, shown by JS when needed */
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow.has-overflow {
+  display: block;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--color-text-dark-secondary);
+  font-size: 1em;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-button:hover {
+  color: var(--color-text-dark-primary);
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-button i {
+  pointer-events: none;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 100;
+  background: #f0e8d8; /* Parchment-like background matching sheet style */
+  border: 1px solid #8b7355;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  min-width: 150px;
+  padding: 4px 0;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu.open {
+  display: block;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab] {
+  display: block;
+  padding: 6px 12px;
+  color: #4a3c2a;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]:hover {
+  background: #e0d5c0;
+  color: #2a1f14;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab].active {
+  color: var(--color-text-dark-primary);
+  font-weight: bold;
+}
+.dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]::before {
+  font-family: var(--system-icon-font), serif;
+  padding-right: 8px;
+}
+.dcc.sheet {
+  /* Dark mode styles for tabs overflow dropdown */
+}
+body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu {
+  background: #2a2a2a;
+  border-color: #444;
+}
+body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab] {
+  color: #ccc;
+}
+body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab]:hover {
+  background: #3a3a3a;
+  color: #fff;
+}
+body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu a[data-tab].active {
+  color: #fff;
+}
 .dcc.sheet a[data-tab] {
   padding: 4px 0 4px 0;
 }
