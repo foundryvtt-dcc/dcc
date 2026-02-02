@@ -74,6 +74,11 @@ See [Internationalization](I18N.md) for translation workflow.
 - All PRs must pass automated tests
 - All user-facing text must use i18n (no hardcoded strings)
 - Run `npm run format` before committing
+- **Check dependent modules**: Verify changes don't break these related modules:
+  - `../../modules/dcc-qol` - Quality of Life enhancements
+  - `../../modules/xcc` - Xcrawl Classics support
+  - `../../mcc-classes` - Mutant Crawl Classics classes
+  - `../../dcc-crawl-classes` - Additional DCC classes
 
 ## Project Structure
 
