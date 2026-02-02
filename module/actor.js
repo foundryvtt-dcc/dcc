@@ -144,6 +144,24 @@ class DCCActor extends Actor {
       }
     }
 
+    // For NPCs, add init.otherMod to init.value (after effects are applied)
+    if (this.isNPC) {
+      const initOtherMod = parseInt(this.system.attributes.init.otherMod || 0)
+      if (initOtherMod !== 0) {
+        const baseInit = parseInt(this.system.attributes.init.value || 0)
+        this.system.attributes.init.value = baseInit + initOtherMod
+      }
+    }
+
+    // For NPCs with computeAC disabled, add ac.otherMod to ac.value (after effects are applied)
+    if (this.isNPC && !config.computeAC) {
+      const acOtherMod = parseInt(this.system.attributes.ac.otherMod || 0)
+      if (acOtherMod !== 0) {
+        const baseAC = parseInt(this.system.attributes.ac.value || 10)
+        this.system.attributes.ac.value = baseAC + acOtherMod
+      }
+    }
+
     // Set base speed from current speed if not present (for display purposes only)
     if (!this.system.attributes.speed.base) {
       this.system.attributes.speed.base = this.system.attributes.speed.value
@@ -1426,8 +1444,21 @@ class DCCActor extends Actor {
         damageRollFormula = damageRollFormula.replace(weapon.system.damageWeapon, weapon.system.backstabDamage)
       }
     }
+
+    // Add damage bonus adjustment for NPCs (from Active Effects)
+    // For PCs, this is already incorporated via computeMeleeAndMissileAttackAndDamage()
+    if (this.isNPC && damageRollFormula) {
+      const isMeleeWeapon = weapon.system?.melee !== false
+      const damageAdjustment = isMeleeWeapon
+        ? parseInt(this.system.details.attackDamageBonus?.melee?.adjustment) || 0
+        : parseInt(this.system.details.attackDamageBonus?.missile?.adjustment) || 0
+      if (damageAdjustment !== 0) {
+        damageRollFormula = `${damageRollFormula}${damageAdjustment >= 0 ? '+' : ''}${damageAdjustment}`
+      }
+    }
+
     let damageRoll, damageInlineRoll, damagePrompt
-    if (automateDamageFumblesCrits) {
+    if (automateDamageFumblesCrits && damageRollFormula) {
       // Check if the formula has per-term flavors like 1d6[fire] or 1d6+1d6[cold]
       // Per-term flavors have brackets immediately after a die expression
       const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
@@ -1471,7 +1502,7 @@ class DCCActor extends Actor {
       }
 
       damagePrompt = game.i18n.localize('DCC.Damage')
-    } else {
+    } else if (damageRollFormula) {
       if (damageRollFormula.includes('-')) {
         damageRollFormula = `max(${damageRollFormula}, 1)`
       }
@@ -1719,6 +1750,22 @@ class DCCActor extends Actor {
         presets: [],
         formula: parseInt(this.system?.class?.backstab || '0')
       })
+    }
+
+    // Add attack hit bonus adjustment for NPCs (from Active Effects)
+    // For PCs, this is already incorporated via computeMeleeAndMissileAttackAndDamage()
+    if (this.isNPC) {
+      const isMelee = weapon.system?.melee !== false
+      const attackAdjustment = isMelee
+        ? parseInt(this.system.details.attackHitBonus?.melee?.adjustment) || 0
+        : parseInt(this.system.details.attackHitBonus?.missile?.adjustment) || 0
+      if (attackAdjustment !== 0) {
+        terms.push({
+          type: 'Modifier',
+          label: game.i18n.localize(isMelee ? 'DCC.MeleeAttackAdjustment' : 'DCC.MissileAttackAdjustment'),
+          formula: attackAdjustment
+        })
+      }
     }
 
     // Allow modules to modify the terms before the roll is created
