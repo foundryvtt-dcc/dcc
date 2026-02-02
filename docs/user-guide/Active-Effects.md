@@ -184,6 +184,29 @@ Effects can have various durations:
 3. **Order of Operations**: Effects are applied in this order: Custom, Multiply, Add, Upgrade/Downgrade, Override
 4. **Testing**: Use the browser console to check `actor.system` to find the exact path for attributes
 
+## NPC-Specific Behavior
+
+NPCs handle some Active Effects differently from PCs due to their simplified stat blocks.
+
+### Effects Applied at Roll Time (Not Shown on Sheet)
+
+The following effects are applied when the NPC makes a roll, but are **not** reflected in the NPC sheet's displayed values:
+
+- **Attack Bonuses** (`system.details.attackHitBonus.melee.adjustment`, `system.details.attackHitBonus.missile.adjustment`)
+- **Damage Bonuses** (`system.details.attackDamageBonus.melee.adjustment`, `system.details.attackDamageBonus.missile.adjustment`)
+
+This is because NPCs don't have calculated melee/missile totals like PCs do - each NPC attack has its own to-hit and damage values. The effect bonuses are added to the roll when the attack is made.
+
+### Effects That Work the Same as PCs
+
+These effects are applied normally and displayed on the NPC sheet:
+
+- **Armor Class** (`system.attributes.ac.value` or `system.attributes.ac.otherMod`)
+- **Initiative** (`system.attributes.init.value` or `system.attributes.init.otherMod`)
+- **Saving Throws** (`system.saves.frt.otherBonus`, `system.saves.ref.otherBonus`, `system.saves.wil.otherBonus`)
+- **Hit Points** (`system.attributes.hp.value`, `system.attributes.hp.max`)
+- **Speed** (`system.attributes.speed.value`)
+
 ## Troubleshooting
 
 If an effect isn't working:

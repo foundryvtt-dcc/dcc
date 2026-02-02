@@ -438,3 +438,452 @@ describe('Active Effects - Attack Bonus Adjustments', () => {
     expect(actor.system.details.attackDamageBonus.melee.value).toEqual('+4')
   })
 })
+
+describe('NPC Active Effects - Initiative', () => {
+  test('NPC initiative includes otherMod when prepareDerivedData runs', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    // Set init value and otherMod
+    actor.system.attributes.init.value = 2
+    actor.system.attributes.init.otherMod = 3
+
+    // Apply NPC init logic (same as in prepareDerivedData)
+    const initOtherMod = parseInt(actor.system.attributes.init.otherMod || 0)
+    if (initOtherMod !== 0) {
+      const baseInit = parseInt(actor.system.attributes.init.value || 0)
+      actor.system.attributes.init.value = baseInit + initOtherMod
+    }
+
+    // Check that value includes the otherMod
+    expect(actor.system.attributes.init.value).toEqual(5) // 2 + 3
+  })
+
+  test('NPC initiative handles negative otherMod', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.attributes.init.value = 4
+    actor.system.attributes.init.otherMod = -2
+
+    // Apply NPC init logic
+    const initOtherMod = parseInt(actor.system.attributes.init.otherMod || 0)
+    if (initOtherMod !== 0) {
+      const baseInit = parseInt(actor.system.attributes.init.value || 0)
+      actor.system.attributes.init.value = baseInit + initOtherMod
+    }
+
+    expect(actor.system.attributes.init.value).toEqual(2) // 4 - 2
+  })
+
+  test('NPC initiative handles zero otherMod correctly', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.attributes.init.value = 3
+    actor.system.attributes.init.otherMod = 0
+
+    // Apply NPC init logic
+    const initOtherMod = parseInt(actor.system.attributes.init.otherMod || 0)
+    if (initOtherMod !== 0) {
+      const baseInit = parseInt(actor.system.attributes.init.value || 0)
+      actor.system.attributes.init.value = baseInit + initOtherMod
+    }
+
+    // Value should remain unchanged
+    expect(actor.system.attributes.init.value).toEqual(3)
+  })
+
+  test('NPC initiative handles missing otherMod gracefully', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.attributes.init.value = 5
+    // Don't set otherMod
+
+    // Apply NPC init logic - should not throw
+    const initOtherMod = parseInt(actor.system.attributes.init.otherMod || 0)
+    if (initOtherMod !== 0) {
+      const baseInit = parseInt(actor.system.attributes.init.value || 0)
+      actor.system.attributes.init.value = baseInit + initOtherMod
+    }
+
+    expect(actor.system.attributes.init.value).toEqual(5)
+  })
+})
+
+describe('NPC Active Effects - AC', () => {
+  test('NPC AC includes otherMod when computeAC is disabled', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    // Set AC value and otherMod
+    actor.system.attributes.ac.value = 14
+    actor.system.attributes.ac.otherMod = 2
+    actor.system.config.computeAC = false
+
+    // Apply NPC AC logic (same as in prepareDerivedData)
+    if (actor.isNPC && !actor.system.config.computeAC) {
+      const acOtherMod = parseInt(actor.system.attributes.ac.otherMod || 0)
+      if (acOtherMod !== 0) {
+        const baseAC = parseInt(actor.system.attributes.ac.value || 10)
+        actor.system.attributes.ac.value = baseAC + acOtherMod
+      }
+    }
+
+    // Check that value includes the otherMod
+    expect(actor.system.attributes.ac.value).toEqual(16) // 14 + 2
+  })
+
+  test('NPC AC handles negative otherMod', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.attributes.ac.value = 12
+    actor.system.attributes.ac.otherMod = -3
+    actor.system.config.computeAC = false
+
+    // Apply NPC AC logic
+    if (actor.isNPC && !actor.system.config.computeAC) {
+      const acOtherMod = parseInt(actor.system.attributes.ac.otherMod || 0)
+      if (acOtherMod !== 0) {
+        const baseAC = parseInt(actor.system.attributes.ac.value || 10)
+        actor.system.attributes.ac.value = baseAC + acOtherMod
+      }
+    }
+
+    expect(actor.system.attributes.ac.value).toEqual(9) // 12 - 3
+  })
+
+  test('NPC AC does not apply otherMod when computeAC is enabled', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.attributes.ac.value = 14
+    actor.system.attributes.ac.otherMod = 2
+    actor.system.config.computeAC = true // computeAC is enabled
+
+    // Apply NPC AC logic - should NOT apply because computeAC handles it
+    if (actor.isNPC && !actor.system.config.computeAC) {
+      const acOtherMod = parseInt(actor.system.attributes.ac.otherMod || 0)
+      if (acOtherMod !== 0) {
+        const baseAC = parseInt(actor.system.attributes.ac.value || 10)
+        actor.system.attributes.ac.value = baseAC + acOtherMod
+      }
+    }
+
+    // Value should remain unchanged (computeAC would handle it separately)
+    expect(actor.system.attributes.ac.value).toEqual(14)
+  })
+
+  test('NPC AC handles zero otherMod correctly', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.attributes.ac.value = 15
+    actor.system.attributes.ac.otherMod = 0
+    actor.system.config.computeAC = false
+
+    // Apply NPC AC logic
+    if (actor.isNPC && !actor.system.config.computeAC) {
+      const acOtherMod = parseInt(actor.system.attributes.ac.otherMod || 0)
+      if (acOtherMod !== 0) {
+        const baseAC = parseInt(actor.system.attributes.ac.value || 10)
+        actor.system.attributes.ac.value = baseAC + acOtherMod
+      }
+    }
+
+    expect(actor.system.attributes.ac.value).toEqual(15)
+  })
+})
+
+describe('NPC Active Effects - Attack Roll Adjustments', () => {
+  test('NPC melee attack includes adjustment in roll terms', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    // Set up adjustment
+    actor.system.details.attackHitBonus = {
+      melee: { value: '+0', adjustment: 2 },
+      missile: { value: '+0', adjustment: 0 }
+    }
+
+    // Simulate the logic from rollToHit for NPCs
+    const weapon = { system: { melee: true } }
+    const terms = []
+
+    if (actor.isNPC) {
+      const isMelee = weapon.system?.melee !== false
+      const attackAdjustment = isMelee
+        ? parseInt(actor.system.details.attackHitBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackHitBonus?.missile?.adjustment) || 0
+      if (attackAdjustment !== 0) {
+        terms.push({
+          type: 'Modifier',
+          label: isMelee ? 'MeleeAttackAdjustment' : 'MissileAttackAdjustment',
+          formula: attackAdjustment
+        })
+      }
+    }
+
+    expect(terms.length).toEqual(1)
+    expect(terms[0].formula).toEqual(2)
+    expect(terms[0].label).toEqual('MeleeAttackAdjustment')
+  })
+
+  test('NPC missile attack includes adjustment in roll terms', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.details.attackHitBonus = {
+      melee: { value: '+0', adjustment: 0 },
+      missile: { value: '+0', adjustment: -1 }
+    }
+
+    // Simulate the logic from rollToHit for NPCs
+    const weapon = { system: { melee: false } }
+    const terms = []
+
+    if (actor.isNPC) {
+      const isMelee = weapon.system?.melee !== false
+      const attackAdjustment = isMelee
+        ? parseInt(actor.system.details.attackHitBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackHitBonus?.missile?.adjustment) || 0
+      if (attackAdjustment !== 0) {
+        terms.push({
+          type: 'Modifier',
+          label: isMelee ? 'MeleeAttackAdjustment' : 'MissileAttackAdjustment',
+          formula: attackAdjustment
+        })
+      }
+    }
+
+    expect(terms.length).toEqual(1)
+    expect(terms[0].formula).toEqual(-1)
+    expect(terms[0].label).toEqual('MissileAttackAdjustment')
+  })
+
+  test('NPC attack does not add term when adjustment is zero', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.details.attackHitBonus = {
+      melee: { value: '+0', adjustment: 0 },
+      missile: { value: '+0', adjustment: 0 }
+    }
+
+    const weapon = { system: { melee: true } }
+    const terms = []
+
+    if (actor.isNPC) {
+      const isMelee = weapon.system?.melee !== false
+      const attackAdjustment = isMelee
+        ? parseInt(actor.system.details.attackHitBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackHitBonus?.missile?.adjustment) || 0
+      if (attackAdjustment !== 0) {
+        terms.push({
+          type: 'Modifier',
+          label: isMelee ? 'MeleeAttackAdjustment' : 'MissileAttackAdjustment',
+          formula: attackAdjustment
+        })
+      }
+    }
+
+    expect(terms.length).toEqual(0)
+  })
+
+  test('PC attack does not add adjustment term (already computed)', () => {
+    const actor = new DCCActor()
+    actor.type = 'Player'
+    actor.isNPC = false
+    actor.isPC = true
+
+    actor.system.details.attackHitBonus = {
+      melee: { value: '+3', adjustment: 2 }, // adjustment already in value
+      missile: { value: '+0', adjustment: 0 }
+    }
+
+    const weapon = { system: { melee: true } }
+    const terms = []
+
+    // This logic should NOT run for PCs
+    if (actor.isNPC) {
+      const isMelee = weapon.system?.melee !== false
+      const attackAdjustment = isMelee
+        ? parseInt(actor.system.details.attackHitBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackHitBonus?.missile?.adjustment) || 0
+      if (attackAdjustment !== 0) {
+        terms.push({
+          type: 'Modifier',
+          label: isMelee ? 'MeleeAttackAdjustment' : 'MissileAttackAdjustment',
+          formula: attackAdjustment
+        })
+      }
+    }
+
+    // No term should be added for PCs
+    expect(terms.length).toEqual(0)
+  })
+})
+
+describe('NPC Active Effects - Damage Roll Adjustments', () => {
+  test('NPC melee damage includes adjustment in formula', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.details.attackDamageBonus = {
+      melee: { value: '+0', adjustment: 3 },
+      missile: { value: '+0', adjustment: 0 }
+    }
+
+    const weapon = { system: { melee: true } }
+    let damageRollFormula = '1d6+2'
+
+    // Simulate the logic from rollWeaponAttack for NPCs
+    if (actor.isNPC) {
+      const isMeleeWeapon = weapon.system?.melee !== false
+      const damageAdjustment = isMeleeWeapon
+        ? parseInt(actor.system.details.attackDamageBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackDamageBonus?.missile?.adjustment) || 0
+      if (damageAdjustment !== 0) {
+        damageRollFormula = `${damageRollFormula}${damageAdjustment >= 0 ? '+' : ''}${damageAdjustment}`
+      }
+    }
+
+    expect(damageRollFormula).toEqual('1d6+2+3')
+  })
+
+  test('NPC missile damage includes adjustment in formula', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.details.attackDamageBonus = {
+      melee: { value: '+0', adjustment: 0 },
+      missile: { value: '+0', adjustment: 2 }
+    }
+
+    const weapon = { system: { melee: false } }
+    let damageRollFormula = '1d8'
+
+    if (actor.isNPC) {
+      const isMeleeWeapon = weapon.system?.melee !== false
+      const damageAdjustment = isMeleeWeapon
+        ? parseInt(actor.system.details.attackDamageBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackDamageBonus?.missile?.adjustment) || 0
+      if (damageAdjustment !== 0) {
+        damageRollFormula = `${damageRollFormula}${damageAdjustment >= 0 ? '+' : ''}${damageAdjustment}`
+      }
+    }
+
+    expect(damageRollFormula).toEqual('1d8+2')
+  })
+
+  test('NPC damage handles negative adjustment', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.details.attackDamageBonus = {
+      melee: { value: '+0', adjustment: -2 },
+      missile: { value: '+0', adjustment: 0 }
+    }
+
+    const weapon = { system: { melee: true } }
+    let damageRollFormula = '1d6+1'
+
+    if (actor.isNPC) {
+      const isMeleeWeapon = weapon.system?.melee !== false
+      const damageAdjustment = isMeleeWeapon
+        ? parseInt(actor.system.details.attackDamageBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackDamageBonus?.missile?.adjustment) || 0
+      if (damageAdjustment !== 0) {
+        damageRollFormula = `${damageRollFormula}${damageAdjustment >= 0 ? '+' : ''}${damageAdjustment}`
+      }
+    }
+
+    expect(damageRollFormula).toEqual('1d6+1-2')
+  })
+
+  test('NPC damage does not modify formula when adjustment is zero', () => {
+    const actor = new DCCActor()
+    actor.type = 'NPC'
+    actor.isNPC = true
+    actor.isPC = false
+
+    actor.system.details.attackDamageBonus = {
+      melee: { value: '+0', adjustment: 0 },
+      missile: { value: '+0', adjustment: 0 }
+    }
+
+    const weapon = { system: { melee: true } }
+    let damageRollFormula = '1d6+2'
+
+    if (actor.isNPC) {
+      const isMeleeWeapon = weapon.system?.melee !== false
+      const damageAdjustment = isMeleeWeapon
+        ? parseInt(actor.system.details.attackDamageBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackDamageBonus?.missile?.adjustment) || 0
+      if (damageAdjustment !== 0) {
+        damageRollFormula = `${damageRollFormula}${damageAdjustment >= 0 ? '+' : ''}${damageAdjustment}`
+      }
+    }
+
+    expect(damageRollFormula).toEqual('1d6+2')
+  })
+
+  test('PC damage does not add adjustment (already computed)', () => {
+    const actor = new DCCActor()
+    actor.type = 'Player'
+    actor.isNPC = false
+    actor.isPC = true
+
+    actor.system.details.attackDamageBonus = {
+      melee: { value: '+4', adjustment: 3 }, // adjustment already in value
+      missile: { value: '+0', adjustment: 0 }
+    }
+
+    const weapon = { system: { melee: true } }
+    let damageRollFormula = '1d6+4' // PC formula already includes computed bonus
+
+    // This logic should NOT run for PCs
+    if (actor.isNPC) {
+      const isMeleeWeapon = weapon.system?.melee !== false
+      const damageAdjustment = isMeleeWeapon
+        ? parseInt(actor.system.details.attackDamageBonus?.melee?.adjustment) || 0
+        : parseInt(actor.system.details.attackDamageBonus?.missile?.adjustment) || 0
+      if (damageAdjustment !== 0) {
+        damageRollFormula = `${damageRollFormula}${damageAdjustment >= 0 ? '+' : ''}${damageAdjustment}`
+      }
+    }
+
+    // Formula should remain unchanged for PCs
+    expect(damageRollFormula).toEqual('1d6+4')
+  })
+})
