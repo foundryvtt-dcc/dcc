@@ -395,6 +395,7 @@
   "DCC.MissileDamageAdjustment": "Fernkampf-Schadensbonus-Anpassung",
   "DCC.MissileDamageHint": "Berechnet aus Angriffsbonus (Kriegerwürfel) nur für Krieger und Zwerge",
   "DCC.Modifier": "Modifikator",
+  "DCC.MoreTabs": "Mehr Tabs",
   "DCC.Mount": "Reittier",
   "DCC.Mounts": "Reittiere",
   "DCC.Name": "Name",

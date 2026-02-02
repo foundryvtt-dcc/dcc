@@ -1494,6 +1494,117 @@ a.inline-roll {
     margin-bottom: 8px;
   }
 
+  /* Responsive tabs with overflow dropdown */
+  .sheet-tabs.responsive-tabs {
+    display: flex;
+    align-items: center;
+    position: relative;
+
+    .tabs-container {
+      display: flex;
+      flex: 1 1 auto;
+      overflow: hidden;
+      min-width: 0;
+      justify-content: space-evenly; /* Evenly distribute tabs */
+
+      a[data-tab] {
+        flex: 0 0 auto;
+        white-space: nowrap;
+
+        &.tab-hidden {
+          display: none;
+        }
+      }
+    }
+
+    .tabs-overflow {
+      flex: 0 0 auto;
+      position: relative;
+      display: none; /* Hidden by default, shown by JS when needed */
+
+      &.has-overflow {
+        display: block;
+      }
+
+      .tabs-overflow-button {
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        padding: 4px 8px;
+        color: var(--color-text-dark-secondary);
+        font-size: 1em;
+
+        &:hover {
+          color: var(--color-text-dark-primary);
+        }
+
+        i {
+          pointer-events: none;
+        }
+      }
+
+      .tabs-overflow-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        z-index: 100;
+        background: #f0e8d8; /* Parchment-like background matching sheet style */
+        border: 1px solid #8b7355;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        min-width: 150px;
+        padding: 4px 0;
+
+        &.open {
+          display: block;
+        }
+
+        a[data-tab] {
+          display: block;
+          padding: 6px 12px;
+          color: #4a3c2a;
+          text-decoration: none;
+          white-space: nowrap;
+
+          &:hover {
+            background: #e0d5c0;
+            color: #2a1f14;
+          }
+
+          &.active {
+            color: var(--color-text-dark-primary);
+            font-weight: bold;
+          }
+
+          &::before {
+            font-family: var(--system-icon-font), serif;
+            padding-right: 8px;
+          }
+        }
+      }
+    }
+  }
+
+  /* Dark mode styles for tabs overflow dropdown */
+  body.theme-dark & .sheet-tabs.responsive-tabs .tabs-overflow .tabs-overflow-menu {
+    background: #2a2a2a;
+    border-color: #444;
+
+    a[data-tab] {
+      color: #ccc;
+
+      &:hover {
+        background: #3a3a3a;
+        color: #fff;
+      }
+
+      &.active {
+        color: #fff;
+      }
+    }
+  }
+
   a[data-tab] {
     padding: 4px 0 4px 0;
 
