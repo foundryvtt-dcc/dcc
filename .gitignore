@@ -69,3 +69,14 @@ packs/**/MANIFEST*
 # Environment files with secrets
 .env
 browser-tests/**/.env
+
+# Test/debug screenshots
+*.png
+*.jpeg
+*.gif
+!styles/images/**/*.png
+!styles/images/**/*.jpeg
+!styles/images/**/*.gif
+!docs/**/*.png
+!docs/**/*.jpeg
+!docs/**/*.gif
