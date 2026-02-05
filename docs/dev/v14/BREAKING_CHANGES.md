@@ -2,11 +2,13 @@
 
 This document covers breaking changes in FoundryVTT V14.
 
-**Note**: V14 is in development. This information is based on prototype releases and may change.
+**Current Status**: Developer 1 (Build 354). Information based on official release notes.
 
 ## Resources
 
 - [V14 Breaking Changes GitHub Board](https://github.com/orgs/foundryvtt/projects/67/views/8)
+- [V14 Prototype 1 Release Notes](https://foundryvtt.com/releases/14.349)
+- [V14 Developer 1 Release Notes](https://foundryvtt.com/releases/14.354)
 
 ## Deprecation Expirations
 
@@ -34,6 +36,29 @@ CONFIG.statusEffects = [
 
 **V12 Deprecations:**
 A large assortment of V12-era deprecations have been retired. See [GitHub issue #13436](https://github.com/foundryvtt/foundryvtt/issues/13436) for the complete list.
+
+**TinyMCE Fully Removed:**
+TinyMCE has been entirely removed from Foundry. An external integration API exists for modules/systems that need to reintroduce it.
+
+**TextureData Attributes Removed:**
+The unused `offsetX`, `offsetY`, and `rotation` attributes have been removed from `TextureData`.
+
+**Macro Author Field:**
+`Macro#author` field is now nullable.
+
+**Utility Function Renames:**
+- `foundry.utils.objectsEqual` → `foundry.utils.equals()` (redesigned for generalized equality testing)
+- New utility: `foundry.utils.isPlainObject` for plain object detection
+- New utility: `foundry.utils.closestPointToPath`
+
+**Boolean Values in Rolls:**
+Boolean values in Rolls now evaluate as numbers (0 for false, 1 for true).
+
+**Wall Properties Moved:**
+Wall properties (`isDoor`, `isOpen`) moved from Wall placeable to `WallDocument` class.
+
+**Thumbnail Generation:**
+Scene thumbnail generation now uses either the initial level or currently viewed level. The `properties`, `src`, and `texture` properties of `ImageHelper#createThumbnail` return type are deprecated.
 
 ## Documents and Data
 
@@ -132,6 +157,17 @@ ActiveEffect duration now supports multiple time units beyond just seconds:
 
 ## Applications and UI
 
+### Pop-out Applications
+
+`ApplicationV2` instances can now render in separate browser windows. **Important**: Legacy v1 Applications do not support pop-out functionality.
+
+```javascript
+// ApplicationV2 supports pop-out windows
+// Legacy Application (v1) does NOT support this feature
+```
+
+**DCC Impact**: All DCC sheets have been migrated to ApplicationV2 and support pop-out windows.
+
 ### Roll Mode Renamed to Message Mode
 
 The `rollMode` property is being renamed (likely to `mode` or `visibility`) since the modes affect more than just rolls. See [GitHub issue #8856](https://github.com/foundryvtt/foundryvtt/issues/8856).
@@ -203,6 +239,20 @@ if (result === null) {
 
 ## Canvas Changes
 
+### Scene Levels (New in Developer 1)
+
+Scene Levels allow vertically stacking multiple images inside a single scene, each at a defined elevation.
+
+Key features:
+- Dedicated "Levels" tab in Scene Configuration dialog
+- Token positioning adjusts when changing levels via Change Level behavior
+- `Scene#gridlessGrid` property added (gridless version of `Scene#grid`)
+- New grid helper methods: `BaseGrid#getRectangle`, `BaseGrid#getLine`, `BaseGrid#getEllipse`
+
+### Placeables Palette (Technical Preview)
+
+New bulk-editing feature for canvas objects. Adds Select tool for Ambient Lights, Ambient Sounds, and Map Notes.
+
 ### MeasuredTemplates
 
 The `MeasuredTemplate` Document type has been absorbed by the Scene Regions framework. Parity features have been added to maintain functionality.
@@ -244,7 +294,36 @@ CONST.EDGE_SENSE_TYPES
 CONST.EDGE_RESTRICTION_TYPES
 CONST.EDGE_DIRECTIONS
 CONST.EDGE_DIRECTION_MODES
+CONST.ACTIVE_EFFECT_CHANGE_TYPES  // Replaces numeric ACTIVE_EFFECT_MODES
 ```
+
+## New API Features
+
+### DataModel Improvements
+
+Performance improvements:
+- Document construction: ~9% faster
+- Local updates: ~3% faster
+- Persisted creation: ~26% faster
+- Persisted updates: ~10% faster
+
+New features:
+- Batch multiple Document modifications into single database transaction
+- `DataModel#updateSource` now accepts another `DataModel` as changes
+- New lifecycle functions: `DataModel#_updateDiff` and `DataModel#_updateCommit`
+- `SchemaField#entries` caching for performance optimization
+
+### ApplicationV2 Improvements
+
+- Middle mouse button click support (`auxclick`)
+- Standard `ContextMenu` implementation for kebab menu
+- Pop-out window spawning API with bootstrap hooks
+- `ApplicationV2.instances` generator for iterating application instances
+
+### PolygonTree API
+
+- `PolygonTreeNode#testPoint` now accepts `tolerance` parameter
+- New methods: `PolygonTreeNode#findContainingNode`, `PolygonTreeNode#findClosestPoint`
 
 ## Related Documentation
 

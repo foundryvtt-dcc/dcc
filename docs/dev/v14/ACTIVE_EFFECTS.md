@@ -2,14 +2,26 @@
 
 This document covers Active Effects changes in FoundryVTT V14.
 
+**Current Status**: Developer 1 (Build 354)
+
 ## Overview
 
 V14 introduces Active Effects V2 with significant improvements:
-- Effects can be stored in Compendiums independently of Actors
-- Drop effects directly onto Tokens
-- Application phases for precise timing
-- Improved duration handling (coming in later prototypes)
-- Token property application (vision, size, light)
+- **Primary Documents**: Effects promoted to primary documents, can exist in compendiums independently
+- **Token Drop Support**: Drop effects directly onto canvas tokens to apply them
+- **Application Phases**: Two-phase system ("initial" and "final") for precise timing
+- **Status Icon Control**: Greater control over effect status icon presentation
+- **Compendium Packs**: Predefined effects available for drag-and-drop
+- **Duration Handling**: Support for multiple time units (years, months, days, hours, minutes, seconds, rounds, turns)
+- **Expiry Events**: Combat-related expiry (combatStart, roundStart, turnStart)
+- **Future**: Token property modifications (vision, size, light) and automatic expiration
+
+### Developer 1 Updates
+
+- `ActiveEffectConfig` type field corrected (was freeform text, now properly configured)
+- `ActiveEffectRegistry` no longer changes expired statuses in-memory
+- `ActiveEffect#expiryReached` validates triggering event matches effect's expiry event
+- Status effects properly display when added via `ActiveEffect.fromStatusEffect`
 
 ## Breaking Changes
 

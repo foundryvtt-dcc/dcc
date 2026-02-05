@@ -2,9 +2,9 @@
 
 This document provides a checklist for preparing for FoundryVTT V14.
 
-**Note**: V14 is in development. Update this checklist as new information becomes available.
+**Current Status**: Developer 1 (Build 354)
 
-**Last Updated**: December 2024
+**Last Updated**: February 2026
 
 ## Prerequisites
 
@@ -111,6 +111,14 @@ This document provides a checklist for preparing for FoundryVTT V14.
 - [x] Replace `RegionPolygonTree` → `foundry.data.PolygonTree` (not used)
 - [x] Replace `RegionShape` usage with BaseShapeData mixins (not used)
 - [x] Update `foundry.prosemirror.defaultPlugins` → `ProseMirrorEditor.buildDefaultPlugins()` (not used)
+- [x] Update `foundry.utils.objectsEqual` → `foundry.utils.equals()` (not used directly)
+
+### New in Developer 1
+
+- [x] Check for TextureData `offsetX/Y` and `rotation` usage (not used)
+- [x] Check for `Macro#author` null handling (not used)
+- [x] Check for Wall `isDoor`/`isOpen` on placeable (should use WallDocument)
+- [x] Check for Boolean values in Rolls (auto-converted to numbers)
 
 ## Editor Migration
 
@@ -150,16 +158,31 @@ This document provides a checklist for preparing for FoundryVTT V14.
 
 ## Pre-Release Testing
 
-When V14 beta is available:
+### Prototype/Developer Builds (Current)
 
-- [ ] Test system on V14 beta
+- [x] Test system on V14 Prototype 1 (Build 349)
+- [x] Test system on V14 Developer 1 (Build 354)
 - [ ] Report any issues to Foundry team
+- [ ] Monitor future prototype releases for new breaking changes
+
+### Before V14 Stable
+
+- [ ] Test system on V14 beta (when available)
 - [ ] Address any new breaking changes
 - [ ] Final verification before V14 stable
+- [ ] Update minimum/verified compatibility in system.json
+
+## Scene Levels (New Feature)
+
+- [ ] Evaluate Scene Levels support for DCC
+- [ ] Consider multi-level dungeon support
+- [ ] Test token behavior across levels
 
 ## Resources
 
 - [FoundryVTT Release Notes](https://foundryvtt.com/releases/)
+- [V14 Prototype 1](https://foundryvtt.com/releases/14.349)
+- [V14 Developer 1](https://foundryvtt.com/releases/14.354)
 - [API Migration Guides](https://foundryvtt.com/article/migration/)
 - [System Data Models](https://foundryvtt.com/article/system-data-models/)
 - [GitHub Issues](https://github.com/foundryvtt/foundryvtt/issues)
