@@ -1262,6 +1262,15 @@ global.CONST = {
     DOWNGRADE: 3,
     UPGRADE: 4,
     OVERRIDE: 5
+  },
+  // V14: New string-based change types (replaces numeric ACTIVE_EFFECT_MODES)
+  ACTIVE_EFFECT_CHANGE_TYPES: {
+    CUSTOM: 'custom',
+    MULTIPLY: 'multiply',
+    ADD: 'add',
+    DOWNGRADE: 'downgrade',
+    UPGRADE: 'upgrade',
+    OVERRIDE: 'override'
   }
 }
 
