@@ -1262,6 +1262,15 @@ global.CONST = {
     DOWNGRADE: 3,
     UPGRADE: 4,
     OVERRIDE: 5
+  },
+  // V14: New string-based change types (replaces numeric ACTIVE_EFFECT_MODES)
+  ACTIVE_EFFECT_CHANGE_TYPES: {
+    CUSTOM: 'custom',
+    MULTIPLY: 'multiply',
+    ADD: 'add',
+    DOWNGRADE: 'downgrade',
+    UPGRADE: 'upgrade',
+    OVERRIDE: 'override'
   }
 }
 
@@ -1461,7 +1470,32 @@ class DragDropMock {
 
 // Namespace for Foundry helper functions
 global.foundry = {
-  utils: {},
+  utils: {
+    // Get a property from an object using dot notation
+    getProperty (object, key) {
+      if (!key) return undefined
+      const parts = key.split('.')
+      let result = object
+      for (const part of parts) {
+        if (result == null) return undefined
+        result = result[part]
+      }
+      return result
+    },
+    // Set a property on an object using dot notation
+    setProperty (object, key, value) {
+      if (!key) return false
+      const parts = key.split('.')
+      let target = object
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i]
+        if (target[part] == null) target[part] = {}
+        target = target[part]
+      }
+      target[parts[parts.length - 1]] = value
+      return true
+    }
+  },
   applications: {
     api: {
       // HandlebarsApplicationMixin - provides Handlebars template rendering capabilities

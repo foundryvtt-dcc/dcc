@@ -85,16 +85,34 @@ When you drag an effect, a **copy** is created on the target - the original effe
 - Creating template effects on items that can be copied to actors
 - Quickly applying the same condition to multiple characters
 
-### Creating an Effect Library
+### Using the DCC Effects Compendium
 
-To create a reusable library of effects:
+The DCC system includes a built-in **DCC Effects** compendium with ready-to-use effects for common bonuses and penalties. To use it:
+
+1. Open the **Compendiums** tab in the sidebar
+2. Find **DCC Effects** under the system compendiums
+3. Browse the available effects (organized by type: AC, Attack, Damage, Initiative, Saves, Skills)
+4. Drag any effect directly onto an actor to apply it
+
+The compendium includes effects for:
+- **AC Bonuses/Penalties** (+1 to +5, -1 to -5)
+- **Attack Bonuses/Penalties** (melee and missile, +1 to +5, -1 to -5)
+- **Damage Bonuses/Penalties** (melee and missile, +1 to +5, -1 to -5)
+- **Dice Chain Effects** (Action Die +1d/-1d, Crit Die +1d, Luck Die +1d)
+- **Initiative Bonuses/Penalties** (+1 to +5, -1 to -5)
+- **Save Bonuses/Penalties** (Fortitude, Reflex, Will, +1 to +5, -1 to -5)
+- **Thief Skill Bonuses** (+1 to +5 for all thief skills)
+
+### Creating Your Own Effect Library
+
+You can also create custom effects and organize them:
 
 1. Create one or more items (equipment type works well) to serve as "containers"
 2. Name them descriptively (e.g., "Combat Conditions", "Spell Effects", "Status Conditions")
 3. Add all your commonly-used effects to these items
 4. When you need an effect, drag it from the library item onto your actor
 
-You can organize your library items in a Compendium for easy access across worlds. In Foundry VTT v14, direct Compendiums of Active Effects will be supported, but until then this item-based approach works well.
+You can organize your library items in a Compendium for easy access across worlds.
 
 ### Using DFreds Convenient Effects
 
@@ -166,7 +184,42 @@ Active Effects support different modes of application:
 - **Override**: Replaces the attribute with this value
 - **Upgrade**: Uses the higher of current value or effect value
 - **Downgrade**: Uses the lower of current value or effect value
+- **Dice Chain**: DCC-specific mode that moves dice along the dice chain (see below)
 - **Custom**: For special DCC-specific effects (requires module support)
+
+### Dice Chain Mode
+
+The **Dice Chain** effect mode is a DCC-specific feature that adjusts dice expressions along the DCC dice chain:
+
+**The Dice Chain:** d3 → d4 → d5 → d6 → d7 → d8 → d10 → d12 → d14 → d16 → d20 → d24 → d30
+
+**How to use:**
+1. Set the **Change Mode** to "Dice Chain"
+2. Set the **Value** to the number of steps to move:
+   - **1** = move up one step (e.g., d20 becomes d24)
+   - **-1** = move down one step (e.g., d20 becomes d16)
+   - **2** = move up two steps (e.g., d20 becomes d30)
+
+**Target Fields for Dice Chain:**
+| Field | Attribute Key |
+|-------|---------------|
+| Action Die | `system.attributes.actionDice.value` |
+| Critical Die | `system.attributes.critical.die` |
+| Fumble Die | `system.attributes.fumble.die` |
+| Luck Die | `system.class.luckDie` |
+
+**Example: -1d to Action Die (Penalty)**
+1. Create a new effect
+2. Add a change:
+   - Key: `system.attributes.actionDice.value`
+   - Mode: Dice Chain
+   - Value: -1
+3. This will reduce the character's action die by one step (e.g., d20 → d16)
+
+**Pre-made Effects:** The DCC Effects compendium includes ready-to-use dice chain effects:
+- Action Die +1d / -1d
+- Crit Die +1d
+- Luck Die +1d
 
 ## Duration
 

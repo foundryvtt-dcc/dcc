@@ -22,9 +22,9 @@
   "description": "Dungeon Crawl Classics from Goodman Games",
   "version": "0.66.28",
   "compatibility": {
-    "maximum": "13",
-    "minimum": "13",
-    "verified": "13"
+    "maximum": "14",
+    "minimum": "14",
+    "verified": "14"
   },
   "authors": [
     {
@@ -112,16 +112,24 @@
     {
       "name": "dcc-userguide",
       "label": "User Guide",
-      "path": "packs/dcc-userguide.db",
+      "path": "packs/dcc-userguide",
       "system": "dcc",
       "type": "JournalEntry"
     },
     {
       "name": "dcc-macros",
       "label": "DCC Macros",
-      "path": "packs/dcc-macros.db",
+      "path": "packs/dcc-macros",
       "system": "dcc",
       "type": "Macro"
+    },
+    {
+      "name": "dcc-effects",
+      "label": "DCC Effects",
+      "path": "packs/dcc-effects",
+      "system": "dcc",
+      "type": "ActiveEffect",
+      "banner": "systems/dcc/styles/images/dcc-background.webp"
     }
   ],
   "relationships": {

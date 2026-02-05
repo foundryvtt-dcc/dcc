@@ -1,4 +1,4 @@
-/* global CONFIG, document, game, foundry, ResizeObserver */
+/* global CONFIG, document, fromUuid, game, foundry, ResizeObserver */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -652,7 +652,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
                 name: effect.name,
                 img: effect.img || 'icons/svg/aura.svg',
                 value: change.value,
-                mode: change.mode
+                type: change.type
               })
             }
           }
@@ -717,7 +717,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
                 name: effect.name,
                 img: effect.img || 'icons/svg/aura.svg',
                 value: change.value,
-                mode: change.mode
+                type: change.type
               })
             }
           }
@@ -777,7 +777,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
               name: effect.name,
               img: effect.img || 'icons/svg/aura.svg',
               value: change.value,
-              mode: change.mode
+              type: change.type
             })
           }
         }
@@ -790,7 +790,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
               name: effect.name,
               img: effect.img || 'icons/svg/aura.svg',
               value: change.value,
-              mode: change.mode
+              type: change.type
             })
           }
         }
@@ -1615,8 +1615,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const actor = this.options.document
     if (!actor.isOwner) return false
 
-    // Get the effect data
-    const effectData = data.data
+    // Get the effect - either from data.data or by resolving the UUID (for compendium drags)
+    let effectData = data.data
+    if (!effectData && data.uuid) {
+      const effect = await fromUuid(data.uuid)
+      if (!effect) return false
+      effectData = effect.toObject()
+    }
     if (!effectData) return false
 
     // Prepare the effect data for creation on the actor

@@ -233,6 +233,7 @@
   "DCC.Disabled": "Wyłączony",
   "DCC.TransfersToActor": "Przenosi na Aktora",
   "DCC.EffectsExpired": "Efekty wygasły na {actor}: {effects}",
+  "DCC.EffectChangeTypeDiceChain": "Łańcuch Kości",
   "DCC.EquipmentTabHint": "Broń, zbroja, przedmioty, skarby",
   "DCC.Equipped": "Założone",
   "DCC.Experience": "Doświadczenie",

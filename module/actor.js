@@ -3,6 +3,7 @@
 
 import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
+import DiceChain from './dice-chain.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -211,8 +212,13 @@ class DCCActor extends Actor {
    * Apply active effects to the actor
    * Collects effects from the actor and equipped items, then applies them
    * Called automatically by core Foundry prepareData
+   * @param {string} phase - The application phase ("initial" or "final") - v14 requirement
    */
-  applyActiveEffects () {
+  applyActiveEffects (phase = 'initial') {
+    // V14 calls this method twice - once for each phase
+    // Only apply effects in the "initial" phase to prevent double application
+    if (phase !== 'initial') return
+
     // Note: Do NOT call super.applyActiveEffects() here
     // This custom implementation replaces the core behavior to handle equipped item effects
     // Calling super would cause effects to be applied twice
@@ -244,14 +250,15 @@ class DCCActor extends Actor {
       }
     }
 
-    // Sort effects by mode to apply them in the correct order
-    // Order: custom (0), multiply (1), add (2), upgrade (3), downgrade (4), override (5)
+    // Sort effects by type to apply them in the correct order
+    // Order: custom, multiply, add, subtract, downgrade, upgrade, override
+    const typeOrder = { custom: 0, multiply: 1, add: 2, subtract: 3, downgrade: 4, upgrade: 5, override: 6 }
     effects.sort((a, b) => {
       const aChanges = Array.from(a.changes || [])
       const bChanges = Array.from(b.changes || [])
-      const aMode = Math.min(...aChanges.map(c => c.mode), 5)
-      const bMode = Math.min(...bChanges.map(c => c.mode), 5)
-      return aMode - bMode
+      const aOrder = Math.min(...aChanges.map(c => typeOrder[c.type] ?? 6), 6)
+      const bOrder = Math.min(...bChanges.map(c => typeOrder[c.type] ?? 6), 6)
+      return aOrder - bOrder
     })
 
     // Apply each effect
@@ -260,40 +267,50 @@ class DCCActor extends Actor {
 
       for (const change of effect.changes) {
         const key = change.key
-        const mode = change.mode || CONST.ACTIVE_EFFECT_MODES.ADD
+        const type = change.type || 'add'
         const value = change.value
 
-        // Handle different change modes
+        // Handle different change types
         try {
-          switch (mode) {
-            case CONST.ACTIVE_EFFECT_MODES.CUSTOM:
+          switch (type) {
+            case 'custom':
               // Custom mode - let modules handle this
               this._applyCustomEffect(key, value)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.ADD:
+            case 'add':
               // Add numeric value
               this._applyAddEffect(key, value, overrides)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
+            case 'subtract':
+              // Subtract numeric value
+              this._applySubtractEffect(key, value, overrides)
+              break
+
+            case 'multiply':
               // Multiply by value
               this._applyMultiplyEffect(key, value, overrides)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.OVERRIDE:
+            case 'override':
               // Override the value completely
               this._applyOverrideEffect(key, value, overrides)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
+            case 'upgrade':
               // Use the higher value
               this._applyUpgradeEffect(key, value, overrides)
               break
 
-            case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
+            case 'downgrade':
               // Use the lower value
               this._applyDowngradeEffect(key, value, overrides)
+              break
+
+            case 'diceChain':
+              // Legacy DCC type - treat as add (dice chain logic is auto-detected)
+              this._applyAddEffect(key, value, overrides)
               break
           }
         } catch (err) {
@@ -317,20 +334,75 @@ class DCCActor extends Actor {
 
   /**
    * Apply an additive active effect
+   * Automatically detects dice expressions and uses dice chain logic
    * @private
    */
   _applyAddEffect (key, value, overrides) {
     const current = foundry.utils.getProperty(this, key)
     if (current == null) return
 
+    const currentStr = String(current)
+
+    // Check if the current value is a dice expression (contains 'd')
+    // If so, use dice chain logic instead of numeric addition
+    if (currentStr.includes('d')) {
+      const steps = parseInt(value)
+      if (isNaN(steps)) return
+
+      const newValue = DiceChain.bumpDie(currentStr, steps)
+      if (newValue !== currentStr) {
+        foundry.utils.setProperty(this, key, newValue)
+        overrides[key] = newValue
+      }
+      return
+    }
+
+    // Standard numeric addition
     const delta = Number(value)
     if (isNaN(delta)) return
 
-    // Convert current to number to ensure numeric addition (not string concatenation)
     const currentNumber = Number(current)
     if (isNaN(currentNumber)) return
 
     const newValue = currentNumber + delta
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
+   * Apply a subtractive active effect
+   * Automatically detects dice expressions and uses dice chain logic
+   * @private
+   */
+  _applySubtractEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key)
+    if (current == null) return
+
+    const currentStr = String(current)
+
+    // Check if the current value is a dice expression (contains 'd')
+    // If so, use dice chain logic (negative steps = move down the chain)
+    if (currentStr.includes('d')) {
+      const steps = parseInt(value)
+      if (isNaN(steps)) return
+
+      // Subtract = move down the chain (negative steps)
+      const newValue = DiceChain.bumpDie(currentStr, -steps)
+      if (newValue !== currentStr) {
+        foundry.utils.setProperty(this, key, newValue)
+        overrides[key] = newValue
+      }
+      return
+    }
+
+    // Standard numeric subtraction
+    const delta = Number(value)
+    if (isNaN(delta)) return
+
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = currentNumber - delta
     foundry.utils.setProperty(this, key, newValue)
     overrides[key] = newValue
   }

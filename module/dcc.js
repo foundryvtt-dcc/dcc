@@ -5,6 +5,7 @@
  */
 
 // Import Modules
+import DCCActiveEffect from './active-effect.js'
 import DCCActor from './actor.js'
 import DCCActorSheet from './actor-sheet.js'
 import * as DCCSheets from './actor-sheets-dcc.js'
@@ -26,7 +27,6 @@ import TableResult from './table-result.js'
 import ReleaseNotes from './release-notes.js'
 import KeyState from './key-state.js'
 import { defineStatusIcons } from './status-icons.js'
-import DCCActiveEffect from './active-effect.js'
 
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
@@ -69,6 +69,16 @@ Hooks.once('init', async function () {
   // Enable Active Effects
   CONFIG.ActiveEffect.legacyTransferral = false
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
+
+  // Register Active Effect application phases (required for V14)
+  CONFIG.ActiveEffect.phases = {
+    initial: { priority: 0, label: 'Initial' },
+    final: { priority: 100, label: 'Final' }
+  }
+
+  // Note: Custom DCC dice chain effects use the standard 'add' type
+  // The actor's effect application automatically detects dice expressions
+  // and applies dice chain logic (e.g., adding 1 to "1d20" -> "1d24")
 
   // Register Actor data models
   CONFIG.Actor.dataModels = {
@@ -403,8 +413,10 @@ function setupCoreBookCompendiumLinks () {
 function checkMigrations () {
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const NEEDS_MIGRATION_VERSION = 0.22
-  const needMigration = (currentVersion <= NEEDS_MIGRATION_VERSION) || (currentVersion === null)
+  // Version that triggers migration - set this to the version that introduced breaking changes
+  // After migration completes, we save this version to prevent repeated migrations
+  const NEEDS_MIGRATION_VERSION = 0.67
+  const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration
   if (needMigration && game.user.isGM) {

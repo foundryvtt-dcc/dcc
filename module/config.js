@@ -284,7 +284,10 @@ DCC.activeEffectKeys = {
   'system.class.spellCheckOtherMod': 'DCC.SpellCheckBonus',
   'system.class.luckDie': 'DCC.LuckDie',
   'system.attributes.critical.die': 'DCC.CriticalDie',
-  'system.attributes.fumble.die': 'DCC.FumbleDie'
+  'system.attributes.fumble.die': 'DCC.FumbleDie',
+
+  // Dice Chain Adjustable (add/subtract auto-detects dice expressions)
+  'system.attributes.actionDice.value': 'DCC.ActionDie'
 }
 
 // Dice Types for Dice Configuration Dialog

@@ -2,6 +2,8 @@
 
 This document covers migrating from `template.json` to `TypeDataModel` for V14.
 
+**Current Status**: Developer 1 (Build 354)
+
 ## Overview
 
 The legacy `template.json` specification is deprecated in V14. Systems must migrate to `TypeDataModel` for schema definition.
@@ -13,9 +15,37 @@ The legacy `template.json` specification is deprecated in V14. Systems must migr
 Benefits of TypeDataModel over template.json:
 - **Type Safety**: Proper field validation and type coercion
 - **Migrations**: Built-in data migration support
-- **Performance**: Better initialization and update performance
+- **Performance**: Significant performance improvements in V14
 - **Flexibility**: Dynamic schema based on document state
 - **Modern API**: Consistent with Foundry's DataModel architecture
+
+### V14 Performance Improvements
+
+V14 brings significant DataModel performance gains:
+- Document construction: ~9% faster
+- Local updates: ~3% faster
+- Persisted creation: ~26% faster
+- Persisted updates: ~10% faster
+
+### New V14 DataModel Features
+
+```javascript
+// Batch multiple Document modifications into single database transaction
+await Document.updateDocuments([...changes], { transaction: true })
+
+// updateSource now accepts another DataModel as changes
+document.updateSource(otherDataModel)
+
+// New lifecycle functions for custom update handling
+class MyDataModel extends foundry.abstract.TypeDataModel {
+  _updateDiff(changes, options) { /* custom diff logic */ }
+  _updateCommit(changes, options) { /* custom commit logic */ }
+}
+
+// SchemaField#entries caching for performance
+const schema = MyDataModel.schema
+for (const [key, field] of schema.entries()) { /* iterate cached entries */ }
+```
 
 ## Basic Migration
 
