@@ -147,7 +147,7 @@ function DCCFleetingLuckTerm (options) {
  * @return {Object}
  */
 function DCCCompoundTerm (options) {
-  const dieExpression = /^-?\d+d\d+$/
+  const dieExpression = /^-?\d+d\d+(\[.+\])?$/
   const dieLabel = options.dieLabel || null
   const modifierExpression = /^-?\d+$/
   const modifierLabel = options.modifierLabel || null

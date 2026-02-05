@@ -39,7 +39,6 @@ class RollMock {
   dice = [{ results: [10], options: {} }]
   toMessage = global.rollToMessageMock
   evaluate = global.rollEvaluateMock
-  formula = global.rollFormulaMock
   parse = global.rollParseMock
   render = global.rollRenderMock
   roll = global.rollEvaluateMock
@@ -51,6 +50,8 @@ class RollMock {
 
   constructor (rollData) {
     this.rollData = rollData
+    // Store the formula as a string property
+    this.formula = typeof rollData === 'string' ? rollData : (rollData?.formula || '1d20')
   }
 
   options = { dcc: {} }
