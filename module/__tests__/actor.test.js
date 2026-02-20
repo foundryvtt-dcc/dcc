@@ -1783,3 +1783,41 @@ test('roll skill check without useLevel config', async () => {
     }
   )
 })
+
+test('computeSpellCheck propagates spellCheckOtherMod to cleric abilities', () => {
+  // Set up cleric-like skills
+  actor.system.skills.divineAid = { label: 'Divine Aid', value: '', ability: '' }
+  actor.system.skills.turnUnholy = { label: 'Turn Unholy', value: '', ability: '' }
+  actor.system.skills.layOnHands = { label: 'Lay on Hands', value: '', ability: '' }
+
+  // Reset to personality-based (cleric)
+  actor.system.class.spellCheckAbility = 'per'
+  actor.system.class.spellCheckOverride = ''
+  actor.system.class.spellCheckOtherMod = '+3'
+  actor.system.details.level.value = 1
+
+  actor.computeSpellCheck()
+
+  // spellCheck = level(1) + per mod(+2) + other(+3) = +1+2+3
+  expect(actor.system.class.spellCheck).toEqual('+1+2+3')
+  // divineAid and layOnHands mirror spellCheck
+  expect(actor.system.skills.divineAid.value).toEqual('+1+2+3')
+  expect(actor.system.skills.layOnHands.value).toEqual('+1+2+3')
+  // turnUnholy adds luck mod
+  expect(actor.system.skills.turnUnholy.value).toEqual(`+1+2+3+${actor.system.abilities.lck.mod}`)
+})
+
+test('_applyAddEffect treats null initial values as zero', () => {
+  const overrides = {}
+
+  // Set a property to null to simulate cleric's spellCheckOtherMod
+  actor.system.class.spellCheckOtherMod = null
+  expect(actor.system.class.spellCheckOtherMod).toBeNull()
+
+  // Apply an ADD effect of +2
+  actor._applyAddEffect('system.class.spellCheckOtherMod', '2', overrides)
+
+  // Should treat null as 0 and add 2
+  expect(actor.system.class.spellCheckOtherMod).toEqual(2)
+  expect(overrides['system.class.spellCheckOtherMod']).toEqual(2)
+})

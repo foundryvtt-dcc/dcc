@@ -321,13 +321,12 @@ class DCCActor extends Actor {
    */
   _applyAddEffect (key, value, overrides) {
     const current = foundry.utils.getProperty(this, key)
-    if (current == null) return
 
     const delta = Number(value)
     if (isNaN(delta)) return
 
-    // Convert current to number to ensure numeric addition (not string concatenation)
-    const currentNumber = Number(current)
+    // Treat null as 0 for ADD operations (e.g. cleric spellCheckOtherMod starts as null)
+    const currentNumber = Number(current ?? 0)
     if (isNaN(currentNumber)) return
 
     const newValue = currentNumber + delta
