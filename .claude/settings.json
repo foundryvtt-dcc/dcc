@@ -1,4 +1,7 @@
 {
+  "enabledPlugins": {
+    "foundryvtt-dev@cyface": true
+  },
   "permissions": {
     "allow": [
       "Bash(cat:*)",
