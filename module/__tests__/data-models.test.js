@@ -8,6 +8,7 @@ import { describe, test, expect } from 'vitest'
 
 // Import pure utility function directly (no Foundry dependency)
 import { isValidDiceNotation } from '../data/fields/dice-utils.mjs'
+import { migrateSkillDie } from '../data/item/skill-migration.mjs'
 
 describe('isValidDiceNotation', () => {
   describe('valid dice notation', () => {
@@ -70,5 +71,48 @@ describe('isValidDiceNotation', () => {
       const elapsed = Date.now() - start
       expect(elapsed).toBeLessThan(100)
     })
+  })
+})
+
+describe('migrateSkillDie', () => {
+  describe('migrates @CL expressions', () => {
+    test.each([
+      ['1d10+@CL', '1d10', 'plus @CL'],
+      ['1d20+@CL', '1d20', 'plus @CL with d20'],
+      ['1d10-@CL', '1d10', 'minus @CL'],
+      ['1d10 + @CL', '1d10', 'plus @CL with spaces'],
+      ['1d10 +@CL', '1d10', 'plus @CL with leading space'],
+      ['1d10+ @CL', '1d10', 'plus @CL with trailing space'],
+      ['1d10 + @cl', '1d10', 'lowercase @cl'],
+      ['1d10+@Cl', '1d10', 'mixed case @Cl'],
+      ['2d6+@CL', '2d6', 'multiple dice plus @CL']
+    ])('%s → %s (%s)', (input, expectedDie) => {
+      const result = migrateSkillDie(input)
+      expect(result).not.toBeNull()
+      expect(result.die).toBe(expectedDie)
+      expect(result.useLevel).toBe(true)
+    })
+  })
+
+  describe('does not migrate expressions without @CL', () => {
+    test.each([
+      ['1d20', 'standard dice'],
+      ['1d10+2', 'dice with numeric modifier'],
+      ['2d6-1', 'dice with negative modifier'],
+      ['1d20+1d4', 'compound dice'],
+      ['', 'empty string'],
+      [null, 'null'],
+      [undefined, 'undefined']
+    ])('%s (%s)', (input) => {
+      expect(migrateSkillDie(input)).toBeNull()
+    })
+  })
+
+  test('defaults to 1d20 if removing @CL leaves die empty', () => {
+    // Unlikely but defensive - e.g. if someone had just "+@CL" as their die
+    const result = migrateSkillDie('+@CL')
+    expect(result).not.toBeNull()
+    expect(result.die).toBe('1d20')
+    expect(result.useLevel).toBe(true)
   })
 })
