@@ -198,16 +198,15 @@ describe('Active Effect Methods - String to Number Conversion', () => {
     expect(overrides['system.attributes.hp.value']).toEqual(5)
   })
 
-  test('_applyAddEffect returns early for null current values', () => {
+  test('_applyAddEffect treats null current values as zero', () => {
     const actor = new DCCActor()
 
     const overrides = {}
 
-    // Try to add to a non-existent property
+    // Add to a non-existent (null) property — should treat null as 0
     actor._applyAddEffect('system.nonexistent.property', '5', overrides)
 
-    // Should not throw or add to overrides
-    expect(overrides).toEqual({})
+    expect(overrides['system.nonexistent.property']).toEqual(5)
   })
 
   test('_applyAddEffect returns early for non-numeric delta values', () => {

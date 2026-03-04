@@ -4,6 +4,7 @@
  */
 import { BaseItemData } from './base-item.mjs'
 import { DiceField } from '../fields/_module.mjs'
+import { migrateSkillDie } from './skill-migration.mjs'
 
 const { SchemaField, StringField, BooleanField } = foundry.data.fields
 
@@ -17,6 +18,13 @@ export class SkillData extends BaseItemData {
     // Ensure config exists
     if (!source.config) {
       source.config = {}
+    }
+
+    const dieMigration = migrateSkillDie(source.die)
+    if (dieMigration) {
+      console.log(`DCC | Migrated skill die from "${source.die}" to "${dieMigration.die}" (useLevel: ${dieMigration.useLevel})`)
+      source.die = dieMigration.die
+      source.config.useLevel = dieMigration.useLevel
     }
 
     return super.migrateData(source)

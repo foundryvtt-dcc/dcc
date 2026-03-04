@@ -338,8 +338,8 @@ class DCCActor extends Actor {
    * @private
    */
   _applyAddEffect (key, value, overrides) {
-    const current = foundry.utils.getProperty(this, key)
-    if (current == null) return
+    // Treat null/undefined as 0 for ADD operations (e.g. cleric spellCheckOtherMod starts as null)
+    const current = foundry.utils.getProperty(this, key) ?? 0
 
     const currentStr = String(current)
 
