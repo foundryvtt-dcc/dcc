@@ -85,7 +85,8 @@ describe('migrateSkillDie', () => {
       ['1d10+ @CL', '1d10', 'plus @CL with trailing space'],
       ['1d10 + @cl', '1d10', 'lowercase @cl'],
       ['1d10+@Cl', '1d10', 'mixed case @Cl'],
-      ['2d6+@CL', '2d6', 'multiple dice plus @CL']
+      ['2d6+@CL', '2d6', 'multiple dice plus @CL'],
+      ['1d10+@CL+2', '1d10+2', '@CL in middle with trailing modifier']
     ])('%s → %s (%s)', (input, expectedDie) => {
       const result = migrateSkillDie(input)
       expect(result).not.toBeNull()

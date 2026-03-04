@@ -20,9 +20,9 @@ export class SkillData extends BaseItemData {
       source.config = {}
     }
 
-    // Migrate legacy @CL expressions in die field
     const dieMigration = migrateSkillDie(source.die)
     if (dieMigration) {
+      console.log(`DCC | Migrated skill die from "${source.die}" to "${dieMigration.die}" (useLevel: ${dieMigration.useLevel})`)
       source.die = dieMigration.die
       source.config.useLevel = dieMigration.useLevel
     }
