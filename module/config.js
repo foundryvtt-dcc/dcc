@@ -178,7 +178,8 @@ DCC.items = {
   mount: 'DCC.Mount',
   spell: 'DCC.Spell',
   skill: 'DCC.Skill',
-  treasure: 'DCC.Treasure'
+  treasure: 'DCC.Treasure',
+  birthAugur: 'DCC.BirthAugurItem'
 }
 
 /**
@@ -213,6 +214,27 @@ DCC.attackBonusModes = {
 DCC.birthAugurModes = {
   static: 'DCC.BirthAugurModeStatic',
   floating: 'DCC.BirthAugurModeFloating'
+}
+
+/**
+ * Birth Augur effect types for the item sheet dropdown
+ */
+DCC.birthAugurEffects = {
+  none: 'DCC.BirthAugurEffectNone',
+  allAttack: 'DCC.BirthAugurEffectAllAttack',
+  meleeAttack: 'DCC.BirthAugurEffectMeleeAttack',
+  missileAttack: 'DCC.BirthAugurEffectMissileAttack',
+  allDamage: 'DCC.BirthAugurEffectAllDamage',
+  meleeDamage: 'DCC.BirthAugurEffectMeleeDamage',
+  missileDamage: 'DCC.BirthAugurEffectMissileDamage',
+  spellCheck: 'DCC.BirthAugurEffectSpellCheck',
+  allSaves: 'DCC.BirthAugurEffectAllSaves',
+  reflexSave: 'DCC.BirthAugurEffectReflexSave',
+  fortSave: 'DCC.BirthAugurEffectFortSave',
+  willSave: 'DCC.BirthAugurEffectWillSave',
+  armorClass: 'DCC.BirthAugurEffectArmorClass',
+  initiative: 'DCC.BirthAugurEffectInitiative',
+  speed: 'DCC.BirthAugurEffectSpeed'
 }
 
 /**
@@ -642,7 +664,8 @@ DCC.defaultItemImages = {
   spell: 'systems/dcc/styles/images/spell.webp',
   treasure: 'systems/dcc/styles/images/coins.webp',
   weapon: 'systems/dcc/styles/images/weapon.webp',
-  skill: 'systems/dcc/styles/images/skill.webp'
+  skill: 'systems/dcc/styles/images/skill.webp',
+  birthAugur: 'systems/dcc/styles/images/item.webp'
 }
 
 // Default macro images

@@ -2142,6 +2142,41 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
 .dcc .character .lucky-roll textarea:focus {
   box-shadow: none;
 }
+.dcc .character .birth-augur-item-display {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  padding: 0 3px;
+}
+.dcc .character .birth-augur-item-display .birth-augur-icon {
+  border: 0;
+  flex-shrink: 0;
+}
+.dcc .character .birth-augur-item-display .birth-augur-name {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dcc .character .birth-augur-item-display .birth-augur-mod {
+  flex-shrink: 0;
+  font-weight: bold;
+}
+.dcc .character .birth-augur-item-display .birth-augur-delete {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+.dcc .character .birth-augur-item-display .birth-augur-delete:hover {
+  opacity: 1;
+}
+.dcc .character .lucky-roll .compendium-link {
+  font-size: 11px;
+  opacity: 0.7;
+  padding: 0 3px;
+}
+.dcc .character .lucky-roll .compendium-link:hover {
+  opacity: 1;
+}
 .dcc .character .melee-missile-attack-damage {
   align-items: center;
   display: grid;

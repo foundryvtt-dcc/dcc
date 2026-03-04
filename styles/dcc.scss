@@ -2278,6 +2278,49 @@ a.inline-roll {
     }
   }
 
+  .birth-augur-item-display {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    padding: 0 3px;
+
+    .birth-augur-icon {
+      border: 0;
+      flex-shrink: 0;
+    }
+
+    .birth-augur-name {
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .birth-augur-mod {
+      flex-shrink: 0;
+      font-weight: bold;
+    }
+
+    .birth-augur-delete {
+      flex-shrink: 0;
+      opacity: 0.5;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  .lucky-roll .compendium-link {
+    font-size: 11px;
+    opacity: 0.7;
+    padding: 0 3px;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
   .melee-missile-attack-damage {
     align-items: center;
     display: grid;

@@ -3,6 +3,7 @@
  */
 export { BaseItemData, PhysicalItemData } from './base-item.mjs'
 export { AmmunitionData } from './ammunition-data.mjs'
+export { BirthAugurData } from './birth-augur-data.mjs'
 export { ArmorData } from './armor-data.mjs'
 export { EquipmentData } from './equipment-data.mjs'
 export { LevelData } from './level-data.mjs'

@@ -44,6 +44,7 @@ import {
   WeaponData,
   AmmunitionData,
   ArmorData,
+  BirthAugurData,
   EquipmentData,
   LevelData,
   MountData,
@@ -87,7 +88,8 @@ Hooks.once('init', async function () {
     mount: MountData,
     spell: SpellData,
     treasure: TreasureData,
-    skill: SkillData
+    skill: SkillData,
+    birthAugur: BirthAugurData
   }
 
   // noinspection JSUndefinedPropertyAssignment,JSUnusedGlobalSymbols
@@ -396,14 +398,15 @@ function setupCoreBookCompendiumLinks () {
       'dcc-core-book.dcc-core-spells-cleric-3',
       'dcc-core-book.dcc-core-spells-cleric-4',
       'dcc-core-book.dcc-core-spells-cleric-5'
-    ]
+    ],
+    birthAugurs: 'dcc-core-book.dcc-core-birth-augurs'
   }
 }
 
 function checkMigrations () {
   // Determine whether a system migration is required and feasible
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  const NEEDS_MIGRATION_VERSION = 0.22
+  const NEEDS_MIGRATION_VERSION = 0.67
   const needMigration = (currentVersion <= NEEDS_MIGRATION_VERSION) || (currentVersion === null)
 
   // Perform the migration

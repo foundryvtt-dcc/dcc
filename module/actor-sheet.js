@@ -166,6 +166,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       attributeEffects: this.#prepareAttributeEffects(),
       actor: this.options.document,
       birthAugurs: this.#prepareBirthAugurs(),
+      birthAugurItem: this.options.document._birthAugurItem ?? null,
       birthAugurMod: this.options.document._computedBirthAugurMod ?? null,
       birthAugurEffect: this.options.document._computedBirthAugurEffect ?? null,
       compendiumLinks: this.#prepareCompendiumLinks(),

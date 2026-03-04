@@ -204,18 +204,28 @@ class DCCActor extends Actor {
 
     // Compute birth augur display info for UI
     if (this.isPC) {
-      const augurIndex = this.system.details.birthAugurIndex
-      if (augurIndex != null) {
-        const augur = BIRTH_AUGURS[augurIndex - 1]
-        if (augur) {
-          this._computedBirthAugurEffect = augur.effect
-          this._computedBirthAugurMod = this.system.config.birthAugurMode === 'floating'
-            ? this.system.abilities.lck.mod
-            : this.system.details.birthAugurLuckMod
-        } else {
-          this._computedBirthAugurEffect = null
-          this._computedBirthAugurMod = null
+      this._birthAugurItem = this.items.find(i => i.type === 'birthAugur') ?? null
+      let effect = null
+
+      if (this._birthAugurItem) {
+        // Primary: birthAugur item
+        effect = this._birthAugurItem.system.effect
+      } else {
+        // Fallback: legacy birthAugurIndex
+        const augurIndex = this.system.details.birthAugurIndex
+        if (augurIndex != null) {
+          const augur = BIRTH_AUGURS[augurIndex - 1]
+          if (augur) {
+            effect = augur.effect
+          }
         }
+      }
+
+      if (effect && effect !== 'none') {
+        this._computedBirthAugurEffect = effect
+        this._computedBirthAugurMod = this.system.config.birthAugurMode === 'floating'
+          ? this.system.abilities.lck.mod
+          : this.system.details.birthAugurLuckMod
       } else {
         this._computedBirthAugurEffect = null
         this._computedBirthAugurMod = null
@@ -432,6 +442,25 @@ class DCCActor extends Actor {
     overrides[key] = newValue
   }
 
+  /** @inheritDoc */
+  _onCreateDescendantDocuments (parent, collection, documents, data, options, userId) {
+    super._onCreateDescendantDocuments(parent, collection, documents, data, options, userId)
+
+    // Enforce single birth augur: when a new birthAugur item is added, delete existing ones
+    if (collection === 'items' && game.user.id === userId) {
+      const newAugurs = documents.filter(d => d.type === 'birthAugur')
+      if (newAugurs.length > 0) {
+        const newestId = newAugurs[newAugurs.length - 1].id
+        const toDelete = this.items
+          .filter(i => i.type === 'birthAugur' && i.id !== newestId)
+          .map(i => i.id)
+        if (toDelete.length > 0) {
+          this.deleteEmbeddedDocuments('Item', toDelete)
+        }
+      }
+    }
+  }
+
   /**
    * Get per actor configuration
    *
@@ -610,16 +639,26 @@ class DCCActor extends Actor {
 
   /**
    * Get the birth augur bonus for one or more effect types.
-   * Returns the effective modifier based on the selected birth augur and mode.
+   * Checks birthAugur items first, then falls back to legacy birthAugurIndex.
    * @param {...string} effectTypes - Effect types to check (e.g. 'allAttack', 'meleeAttack')
    * @returns {number} The birth augur bonus, or 0 if no matching augur
    */
   _getBirthAugurBonusFor (...effectTypes) {
     if (!this.isPC) return 0
-    const augurIndex = this.system.details.birthAugurIndex
-    if (augurIndex == null) return 0
-    const augur = BIRTH_AUGURS[augurIndex - 1]
-    if (!augur || !effectTypes.includes(augur.effect)) return 0
+
+    // Determine active effect: item first, then legacy index fallback
+    let effect = null
+    if (this._birthAugurItem) {
+      effect = this._birthAugurItem.system.effect
+    } else {
+      const augurIndex = this.system.details.birthAugurIndex
+      if (augurIndex != null) {
+        const augur = BIRTH_AUGURS[augurIndex - 1]
+        if (augur) effect = augur.effect
+      }
+    }
+
+    if (!effect || !effectTypes.includes(effect)) return 0
     return this.system.config.birthAugurMode === 'floating'
       ? this.system.abilities.lck.mod
       : this.system.details.birthAugurLuckMod

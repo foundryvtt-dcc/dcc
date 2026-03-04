@@ -20,6 +20,15 @@ function createPCActor () {
   return actor
 }
 
+/**
+ * Create a mock birthAugur item
+ * @param {string} effect - The effect type (e.g. 'allAttack')
+ * @returns {object} A mock item object matching Collection.find() expectations
+ */
+function createMockAugurItem (effect) {
+  return { type: 'birthAugur', system: { effect } }
+}
+
 describe('BIRTH_AUGURS table', () => {
   test('has 30 entries', () => {
     expect(BIRTH_AUGURS).toHaveLength(30)
@@ -312,5 +321,57 @@ describe('birth augur integration with compute methods', () => {
     actor.computeMeleeAndMissileAttackAndDamage()
     // Melee: str mod (-1) + augur (-2) = -3
     expect(actor.system.details.attackHitBonus.melee.value).toBe('-3')
+  })
+})
+
+describe('birthAugur item-based lookup', () => {
+  test('birthAugur item takes priority over birthAugurIndex', () => {
+    const actor = createPCActor()
+    // Legacy index points to allAttack
+    actor.system.details.birthAugurIndex = 1
+    actor.system.details.birthAugurLuckMod = 2
+    actor.system.config.birthAugurMode = 'static'
+    // Item overrides to meleeAttack
+    actor._birthAugurItem = createMockAugurItem('meleeAttack')
+    // Should match meleeAttack (from item), not allAttack (from index)
+    expect(actor._getBirthAugurBonusFor('meleeAttack')).toBe(2)
+    expect(actor._getBirthAugurBonusFor('allAttack')).toBe(0)
+  })
+
+  test('falls back to birthAugurIndex when no item exists', () => {
+    const actor = createPCActor()
+    actor.system.details.birthAugurIndex = 1 // harshWinter -> allAttack
+    actor.system.details.birthAugurLuckMod = 2
+    actor.system.config.birthAugurMode = 'static'
+    actor._birthAugurItem = null
+    expect(actor._getBirthAugurBonusFor('allAttack')).toBe(2)
+  })
+
+  test('birthAugur item with none effect returns 0', () => {
+    const actor = createPCActor()
+    actor.system.details.birthAugurLuckMod = 2
+    actor.system.config.birthAugurMode = 'static'
+    actor._birthAugurItem = createMockAugurItem('none')
+    expect(actor._getBirthAugurBonusFor('allAttack')).toBe(0)
+  })
+
+  test('birthAugur item bonus works with floating mode', () => {
+    const actor = createPCActor()
+    actor.system.details.birthAugurLuckMod = 2
+    actor.system.config.birthAugurMode = 'floating'
+    actor._birthAugurItem = createMockAugurItem('allAttack')
+    // Floating mode uses lck.mod (value 18 -> mod 3)
+    expect(actor._getBirthAugurBonusFor('allAttack')).toBe(3)
+  })
+
+  test('birthAugur item integrates with compute methods', () => {
+    const actor = createPCActor()
+    actor.system.details.birthAugurLuckMod = 2
+    actor.system.config.birthAugurMode = 'static'
+    actor._birthAugurItem = createMockAugurItem('allAttack')
+    actor.computeMeleeAndMissileAttackAndDamage()
+    // str mod (-1) + augur (+2) = +1
+    expect(actor.system.details.attackHitBonus.melee.value).toBe('+1')
+    expect(actor.system.details.attackHitBonus.missile.value).toBe('+1')
   })
 })
