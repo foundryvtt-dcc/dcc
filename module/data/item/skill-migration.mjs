@@ -14,17 +14,8 @@
 export function migrateSkillDie (die) {
   if (!die || typeof die !== 'string') return null
 
-  const clPattern = /\s*[+-]\s*@CL\s*/gi
-  if (!clPattern.test(die)) return null
+  const migrated = die.replace(/\s*[+-]\s*@CL\s*/gi, '')
+  if (migrated === die) return null
 
-  // Reset lastIndex after test() call since we use the global flag
-  clPattern.lastIndex = 0
-  let migrated = die.replace(clPattern, '')
-
-  // If removing @CL left the die empty, default to 1d20
-  if (!migrated) {
-    migrated = '1d20'
-  }
-
-  return { die: migrated, useLevel: true }
+  return { die: migrated || '1d20', useLevel: true }
 }
