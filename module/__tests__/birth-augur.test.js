@@ -284,6 +284,26 @@ describe('birth augur integration with compute methods', () => {
     expect(actor.system.attributes.init.value).toBe(-1)
   })
 
+  test('armorClass augur returns correct bonus', () => {
+    const actor = createPCActor()
+    actor.system.details.birthAugurIndex = 23 // charmedHouse -> armorClass
+    actor.system.details.birthAugurLuckMod = 2
+    actor.system.config.birthAugurMode = 'static'
+    expect(actor._getBirthAugurBonusFor('armorClass')).toBe(2)
+    // Verify it doesn't match unrelated effect types
+    expect(actor._getBirthAugurBonusFor('allAttack')).toBe(0)
+  })
+
+  test('speed augur returns correct bonus (caller multiplies by 5)', () => {
+    const actor = createPCActor()
+    actor.system.details.birthAugurIndex = 30 // wildChild -> speed
+    actor.system.details.birthAugurLuckMod = 1
+    actor.system.config.birthAugurMode = 'static'
+    // _getBirthAugurBonusFor returns raw bonus; prepareDerivedData multiplies by 5
+    expect(actor._getBirthAugurBonusFor('speed')).toBe(1)
+    expect(actor._getBirthAugurBonusFor('speed') * 5).toBe(5)
+  })
+
   test('negative birthAugurLuckMod applies correctly', () => {
     const actor = createPCActor()
     actor.system.details.birthAugurIndex = 1 // harshWinter -> allAttack

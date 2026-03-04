@@ -212,7 +212,13 @@ class DCCActor extends Actor {
           this._computedBirthAugurMod = this.system.config.birthAugurMode === 'floating'
             ? this.system.abilities.lck.mod
             : this.system.details.birthAugurLuckMod
+        } else {
+          this._computedBirthAugurEffect = null
+          this._computedBirthAugurMod = null
         }
+      } else {
+        this._computedBirthAugurEffect = null
+        this._computedBirthAugurMod = null
       }
     }
 

@@ -345,7 +345,7 @@
         <option value="">{{localize "DCC.BirthAugurNone"}}</option>
         {{selectOptions birthAugurs selected=system.details.birthAugurIndex localize=true}}
       </select>
-      {{#if birthAugurMod}}
+      {{#if birthAugurEffect}}
       <div class="birth-augur-mod" data-tooltip="{{localize 'DCC.BirthAugurMod'}}">
         {{localize "DCC.BirthAugurMod"}}: {{numberFormat birthAugurMod decimals=0 sign=true}}
       </div>

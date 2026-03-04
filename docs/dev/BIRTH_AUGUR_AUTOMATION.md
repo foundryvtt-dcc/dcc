@@ -87,7 +87,7 @@ Remaining augurs (#4, 5, 9, 10–12, 14–16, 18–19, 25–29) are defined in t
 **`templates/dialog-actor-config.html`**
 - Add Birth Augur Mode selector (Static / Floating) with tooltip explaining RAW vs house rule
 
-**`module/actor-sheets-dcc.js`** (or whichever sheet class provides template data)
+**`module/actor-sheet.js`**
 - Pass `birthAugurs` array with selection state to template context
 
 **`lang/en.json`** (and other lang files)

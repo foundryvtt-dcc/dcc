@@ -92,8 +92,6 @@
   "DCC.BadValueFormulaWarning": "Bad formula in item value field!",
   "DCC.BaseACAbilityConfig": "Base AC Ability",
   "DCC.BirthAugur": "Birth Augur",
-  "DCC.BirthAugurCustom": "Custom",
-  "DCC.BirthAugurIndex": "Birth Augur",
   "DCC.BirthAugurMode": "Birth Augur Mode",
   "DCC.BirthAugurModeHint": "Static uses the luck modifier at character creation (RAW). Floating uses the current luck modifier (house rule).",
   "DCC.BirthAugurModeStatic": "Static (RAW)",
