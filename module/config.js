@@ -208,6 +208,14 @@ DCC.attackBonusModes = {
 }
 
 /**
+ * Birth Augur modes
+ */
+DCC.birthAugurModes = {
+  static: 'DCC.BirthAugurModeStatic',
+  floating: 'DCC.BirthAugurModeFloating'
+}
+
+/**
  * The valid currency denominations supported by the DCC system
  * @type {Object}
  */

@@ -4,6 +4,7 @@
  * Contains the common template fields shared by all actor types
  */
 import { AbilityField, CurrencyField, DiceField, SaveField, isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
+import { matchAugurFromText } from '../../birth-augurs.mjs'
 
 const { SchemaField, StringField, NumberField, ArrayField, HTMLField } = foundry.data.fields
 
@@ -90,6 +91,14 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
       const match = source.details.birthAugur.match(/\(([+-]?\d+)\)\s*$/)
       if (match) {
         source.details.birthAugurLuckMod = parseInt(match[1]) || 0
+      }
+    }
+
+    // Auto-populate birthAugurIndex from birthAugur text if not already set
+    if (source.details?.birthAugur && source.details.birthAugurIndex == null) {
+      const matchedIndex = matchAugurFromText(source.details.birthAugur)
+      if (matchedIndex !== null) {
+        source.details.birthAugurIndex = matchedIndex
       }
     }
 
@@ -225,6 +234,7 @@ export class BaseActorData extends foundry.abstract.TypeDataModel {
           })
         }),
         birthAugur: new StringField({ initial: '' }),
+        birthAugurIndex: new NumberField({ initial: null, nullable: true, integer: true, min: 1, max: 30 }),
         birthAugurLuckMod: new NumberField({ initial: 0, integer: true }),
         critRange: new NumberField({ initial: 20, integer: true, min: 1 }),
         sheetClass: new StringField({ initial: '' }),

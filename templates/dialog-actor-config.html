@@ -85,6 +85,12 @@
            data-dtype="boolean"/>
 
     <div class="group-separator"></div>
+    <label for="system.config.birthAugurMode" title="{{localize 'DCC.BirthAugurModeHint'}}">{{localize "DCC.BirthAugurMode"}}</label>
+    <select name="system.config.birthAugurMode" id="system.config.birthAugurMode">
+      {{selectOptions config.birthAugurModes selected=system.config.birthAugurMode localize=true}}
+    </select>
+
+    <div class="group-separator"></div>
     <label for="system.config.computeCheckPenalty" title="{{localize 'DCC.ComputeCheckPenaltyConfigHint'}}">
       {{localize "DCC.ComputeCheckPenaltyConfig"}}
     </label>

@@ -4,6 +4,7 @@ import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
 import EntityImages from './entity-images.js'
+import { BIRTH_AUGURS } from './birth-augurs.mjs'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
 // eslint-disable-next-line no-unused-vars
@@ -164,6 +165,9 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       saveEffects: this.#prepareSaveEffects(),
       attributeEffects: this.#prepareAttributeEffects(),
       actor: this.options.document,
+      birthAugurs: this.#prepareBirthAugurs(),
+      birthAugurMod: this.options.document._computedBirthAugurMod ?? null,
+      birthAugurEffect: this.options.document._computedBirthAugurEffect ?? null,
       compendiumLinks: this.#prepareCompendiumLinks(),
       config: CONFIG.DCC,
       corruptionHTML: await this.#prepareCorruption(),
@@ -807,6 +811,18 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    */
   #prepareCompendiumLinks () {
     return CONFIG.DCC.coreBookCompendiumLinks
+  }
+
+  /**
+   * Prepare birth augur select options for the template
+   * @returns {Object} Object keyed by augur index with i18n labels, suitable for selectOptions
+   */
+  #prepareBirthAugurs () {
+    const options = {}
+    for (const augur of BIRTH_AUGURS) {
+      options[augur.index] = `DCC.BirthAugur.${augur.key}`
+    }
+    return options
   }
 
   /**

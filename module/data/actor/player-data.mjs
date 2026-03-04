@@ -213,6 +213,7 @@ export class PlayerData extends BaseActorData {
         computeInitiative: new BooleanField({ initial: true }),
         computeMeleeAndMissileAttackAndDamage: new BooleanField({ initial: true }),
         computeSavingThrows: new BooleanField({ initial: true }),
+        birthAugurMode: new StringField({ initial: 'static' }),
         sortInventory: new BooleanField({ initial: true }),
         removeEmptyItems: new BooleanField({ initial: true }),
         showSpells: new BooleanField({ initial: false }),

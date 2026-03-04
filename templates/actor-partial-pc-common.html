@@ -338,10 +338,20 @@
       <textarea id="system.details.languages" name="system.details.languages" rows="2">{{system.details.languages}}</textarea>
     </div>
 
-    {{!-- Lucky Roll --}}
+    {{!-- Lucky Roll / Birth Augur --}}
     <div class="lucky-roll">
-      <label for="system.details.birthAugur" class="box-title">{{localize "DCC.LuckyRoll"}}</label>
-      <textarea id="system.details.birthAugur" name="system.details.birthAugur" rows="4">{{system.details.birthAugur}}</textarea>
+      <label for="system.details.birthAugurIndex" class="box-title">{{localize "DCC.LuckyRoll"}}</label>
+      <select id="system.details.birthAugurIndex" name="system.details.birthAugurIndex" data-dtype="Number">
+        <option value="">{{localize "DCC.BirthAugurNone"}}</option>
+        {{selectOptions birthAugurs selected=system.details.birthAugurIndex localize=true}}
+      </select>
+      {{#if birthAugurMod}}
+      <div class="birth-augur-mod" data-tooltip="{{localize 'DCC.BirthAugurMod'}}">
+        {{localize "DCC.BirthAugurMod"}}: {{numberFormat birthAugurMod decimals=0 sign=true}}
+      </div>
+      {{/if}}
+      <textarea id="system.details.birthAugur" name="system.details.birthAugur" rows="2"
+                placeholder="{{localize 'DCC.BirthAugur'}}">{{system.details.birthAugur}}</textarea>
     </div>
 
     {{!-- Row separators --}}
