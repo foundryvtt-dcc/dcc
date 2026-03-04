@@ -1,0 +1,32 @@
+<section class="tab {{tabs.birthAugur.id}} {{tabs.birthAugur.cssClass}}" id="birthAugur" data-tab="{{tabs.birthAugur.id}}" data-group="{{tabs.birthAugur.group}}">
+  <div class="tab-body">
+    <div class="grid-col-span-8 grid-tpl-max-auto mb-5">
+      <label for="name">{{localize "DCC.Name"}}</label>
+      <input id="name" name="name" value="{{document.name}}" placeholder="Name" autocomplete="off" size="25">
+    </div>
+    <div class="grid-col-span-4">&nbsp;</div>
+
+    <div class="box-border grid-col-span-12">
+      <div class="box-title">{{localize "DCC.BirthAugurDetails"}}</div>
+      <div class="grid-tpl-max-auto-loose p-5">
+        <label for="system.effect">{{localize "DCC.BirthAugurEffect"}}</label>
+        <select name="system.effect" id="system.effect" style="height: 22px">
+          {{selectOptions config.birthAugurEffects selected=system.effect localize=true}}
+        </select>
+      </div>
+    </div>
+
+    <div class="box-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+      <div class="box-title">{{localize "DCC.DescriptionPreview"}}</div>
+      <div class="box-inner description">
+        {{{descriptionHTML}}}
+      </div>
+    </div>
+    <div class="box-border grid-col-span-3" style="max-height: 127px; overflow: hidden;">
+      <div class="box-title">{{localize "DCC.Image"}}</div>
+      <div class="p-5">
+        <img class="item-img" src="{{document.img}}" data-action="editImage" data-edit="img" title="{{document.name}}" alt="{{document.name}}"/>
+      </div>
+    </div>
+  </div>
+</section>

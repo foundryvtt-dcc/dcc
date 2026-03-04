@@ -16,7 +16,7 @@ export async function setupItemPilesForDCC () {
     ITEM_FILTERS: [
       {
         path: 'type',
-        filters: 'spell,skill'
+        filters: 'spell,skill,birthAugur'
       }
     ],
 

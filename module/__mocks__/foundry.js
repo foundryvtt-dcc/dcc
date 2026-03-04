@@ -1099,6 +1099,8 @@ class ActorMock {
                 adjustment: '+0'
               }
             },
+            birthAugurIndex: null,
+            birthAugurLuckMod: 0,
             lastRolledAttackBonus: '',
             level: {
               value: 1
@@ -1153,7 +1155,8 @@ class ActorMock {
             baseACAbility: 'agl',
             initiativeDieOverride: '',
             sortInventory: true,
-            removeEmptyItems: true
+            removeEmptyItems: true,
+            birthAugurMode: 'static'
           }
         }
       })
@@ -1800,6 +1803,7 @@ const DOCUMENT_DEFAULTS = {
         attackHitBonus: { melee: { value: '+0', adjustment: '+0' }, missile: { value: '+0', adjustment: '+0' } },
         attackDamageBonus: { melee: { value: '+0', adjustment: '+0' }, missile: { value: '+0', adjustment: '+0' } },
         birthAugur: '',
+        birthAugurIndex: null,
         birthAugurLuckMod: 0,
         critRange: 20,
         languages: '',
@@ -1835,7 +1839,8 @@ const DOCUMENT_DEFAULTS = {
         showSpells: false,
         showSkills: false,
         showBackstab: false,
-        showSwimFlySpeed: false
+        showSwimFlySpeed: false,
+        birthAugurMode: 'static'
       }
     },
     Player: {

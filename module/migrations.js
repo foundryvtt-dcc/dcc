@@ -1,5 +1,7 @@
 /* global foundry, game, ui, isObjectEmpty */
 
+import { BIRTH_AUGURS } from './birth-augurs.mjs'
+
 /**
  * Core class keys used for migration lookups
  */
@@ -62,6 +64,8 @@ export const migrateWorld = async function () {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Actor', name: a.name }))
         await a.update(updateData, { enforceTypes: false })
       }
+      // Create birthAugur items for Player actors with a legacy birthAugurIndex
+      await migrateBirthAugurToItem(a)
     } catch (err) {
       console.error(err)
     }
@@ -349,4 +353,39 @@ const migrateSceneData = async function (scene) {
     tokens.push(t)
   }
   return { tokens }
+}
+
+/**
+ * Create a birthAugur item for a Player actor that has a legacy birthAugurIndex
+ * but no birthAugur item yet
+ * @param {Actor} actor - The actor to migrate
+ * @returns {Promise<void>}
+ */
+async function migrateBirthAugurToItem (actor) {
+  if (actor.type !== 'Player') return
+
+  const augurIndex = actor.system?.details?.birthAugurIndex
+  if (augurIndex == null) return
+
+  // Skip if actor already has a birthAugur item
+  const hasAugurItem = actor.items.some(i => i.type === 'birthAugur')
+  if (hasAugurItem) return
+
+  const augur = BIRTH_AUGURS[augurIndex - 1]
+  if (!augur) {
+    console.warn(`DCC | Migration: Actor "${actor.name}" has birthAugurIndex ${augurIndex} which is out of range (1-30). Skipping birthAugur item creation.`)
+    return
+  }
+
+  const name = game.i18n.localize(`DCC.BirthAugur.${augur.key}`)
+  console.log(`DCC | Migration: Creating birthAugur item "${name}" for actor "${actor.name}"`)
+
+  await actor.createEmbeddedDocuments('Item', [{
+    name,
+    type: 'birthAugur',
+    img: 'systems/dcc/styles/images/item.webp',
+    system: {
+      effect: augur.effect
+    }
+  }])
 }

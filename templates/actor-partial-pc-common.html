@@ -338,10 +338,40 @@
       <textarea id="system.details.languages" name="system.details.languages" rows="2">{{system.details.languages}}</textarea>
     </div>
 
-    {{!-- Lucky Roll --}}
+    {{!-- Lucky Roll / Birth Augur --}}
     <div class="lucky-roll">
-      <label for="system.details.birthAugur" class="box-title">{{localize "DCC.LuckyRoll"}}</label>
-      <textarea id="system.details.birthAugur" name="system.details.birthAugur" rows="4">{{system.details.birthAugur}}</textarea>
+      <label class="box-title">{{localize "DCC.LuckyRoll"}}</label>
+      {{#if birthAugurItem}}
+      <div class="birth-augur-item-display">
+        <img class="birth-augur-icon" src="{{birthAugurItem.img}}" alt="{{birthAugurItem.name}}" width="24" height="24">
+        <a class="birth-augur-name" data-action="itemEdit" data-item-id="{{birthAugurItem.id}}">{{birthAugurItem.name}}</a>
+        {{#if birthAugurEffect}}
+        <span class="birth-augur-mod" data-tooltip="{{localize 'DCC.BirthAugurMod'}}">
+          ({{numberFormat birthAugurMod decimals=0 sign=true}})
+        </span>
+        {{/if}}
+        <a class="birth-augur-delete" data-action="itemDelete" data-item-id="{{birthAugurItem.id}}" data-tooltip="{{localize 'DCC.ItemDelete'}}">
+          <i class="fas fa-trash"></i>
+        </a>
+      </div>
+      {{else}}
+      <select id="system.details.birthAugurIndex" name="system.details.birthAugurIndex" data-dtype="Number">
+        <option value="">{{localize "DCC.BirthAugurNone"}}</option>
+        {{selectOptions birthAugurs selected=system.details.birthAugurIndex localize=true}}
+      </select>
+      {{#if birthAugurEffect}}
+      <div class="birth-augur-mod" data-tooltip="{{localize 'DCC.BirthAugurMod'}}">
+        {{localize "DCC.BirthAugurMod"}}: {{numberFormat birthAugurMod decimals=0 sign=true}}
+      </div>
+      {{/if}}
+      {{/if}}
+      {{#if compendiumLinks.birthAugurs}}
+      <a class="compendium-link" data-action="openCompendium" data-pack="{{compendiumLinks.birthAugurs}}" data-tooltip="{{localize 'DCC.BirthAugurOpenCompendium'}}">
+        <i class="fas fa-atlas"></i> {{localize "DCC.BirthAugurDragHint"}}
+      </a>
+      {{/if}}
+      <textarea id="system.details.birthAugur" name="system.details.birthAugur" rows="2"
+                placeholder="{{localize 'DCC.BirthAugur'}}">{{system.details.birthAugur}}</textarea>
     </div>
 
     {{!-- Row separators --}}

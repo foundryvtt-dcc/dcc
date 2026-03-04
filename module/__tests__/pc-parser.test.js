@@ -83,6 +83,14 @@ Languages: Common`)
           },
           isCoins: true
         }
+      },
+      {
+        name: 'BirthAugur.foxsCunning',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
+        }
       }
     ]
   }
@@ -193,6 +201,14 @@ test('beekeeper', () => {
           },
           isCoins: true
         }
+      },
+      {
+        name: 'BirthAugur.unholy',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
+        }
       }
     ]
   }
@@ -265,6 +281,14 @@ Languages: Common`)
             sp: '0'
           },
           isCoins: true
+        }
+      },
+      {
+        name: 'BirthAugur.foxsCunning',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
         }
       }
     ]
@@ -373,6 +397,14 @@ Languages: Common `)
             },
             isCoins: true
           }
+        },
+        {
+          name: 'BirthAugur.foxsCunning',
+          type: 'birthAugur',
+          img: 'systems/dcc/styles/images/item.webp',
+          system: {
+            effect: 'none'
+          }
         }
       ]
     },
@@ -433,6 +465,14 @@ Languages: Common `)
               sp: '0'
             },
             isCoins: true
+          }
+        },
+        {
+          name: 'BirthAugur.survivedThePlague',
+          type: 'birthAugur',
+          img: 'systems/dcc/styles/images/item.webp',
+          system: {
+            effect: 'none'
           }
         }
       ]
@@ -575,6 +615,14 @@ Spells: (Spell Check: d20+2)
             cp: '36'
           },
           isCoins: true
+        }
+      },
+      {
+        name: 'BirthAugur.luckySign',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'allSaves'
         }
       },
       {
@@ -787,6 +835,14 @@ Cast Spell From Scroll (d16)`
           },
           isCoins: true
         }
+      },
+      {
+        name: 'BirthAugur.foxsCunning',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
+        }
       }
     ]
   }
@@ -930,6 +986,14 @@ Hide In Shadows: 11 (-4)`
           },
           isCoins: true
         }
+      },
+      {
+        name: 'BirthAugur.harshWinter',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'allAttack'
+        }
       }
     ]
   }
@@ -1065,6 +1129,14 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
             cp: '34'
           },
           isCoins: true
+        }
+      },
+      {
+        name: 'BirthAugur.resistedTemptation',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'willSave'
         }
       }
     ]
@@ -1220,6 +1292,14 @@ Spells: (Spell Check: d20+12)
             cp: '34'
           },
           isCoins: true
+        }
+      },
+      {
+        name: 'BirthAugur.warriorsBattle',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
         }
       },
       {
@@ -1573,6 +1653,14 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
           },
           isCoins: true
         }
+      },
+      {
+        name: 'BirthAugur.raisedByWolves',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
+        }
       }
     ]
   }
@@ -1718,6 +1806,14 @@ Spells: (Spell Check: d20+5)
             cp: '30'
           },
           isCoins: true
+        }
+      },
+      {
+        name: 'BirthAugur.bornOnTheBattlefield',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'allDamage'
         }
       },
       {
@@ -1918,6 +2014,14 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
           },
           isCoins: true
         }
+      },
+      {
+        name: 'BirthAugur.unholy',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
+        }
       }]
   }
   expect(parsedNPC).toMatchObject([expected])
@@ -2033,6 +2137,14 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
           },
           isCoins: true
         }
+      },
+      {
+        name: 'BirthAugur.unholy',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
+        }
       }]
   }
   expect(parsedNPC).toMatchObject([expected])
@@ -2147,6 +2259,14 @@ Warrior trait: Lucky weapon - choose one weapon that you apply your luck mod to`
             cp: '33'
           },
           isCoins: true
+        }
+      },
+      {
+        name: 'BirthAugur.unholy',
+        type: 'birthAugur',
+        img: 'systems/dcc/styles/images/item.webp',
+        system: {
+          effect: 'none'
         }
       }]
   }
@@ -2322,6 +2442,14 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
               cp: '30'
             },
             isCoins: true
+          }
+        },
+        {
+          name: 'BirthAugur.bornOnTheBattlefield',
+          type: 'birthAugur',
+          img: 'systems/dcc/styles/images/item.webp',
+          system: {
+            effect: 'allDamage'
           }
         },
         {
@@ -2505,6 +2633,14 @@ Dwarf skill: Shield bash - make an extra d14 attack with your shield. (1d3 damag
               cp: '27'
             },
             isCoins: true
+          }
+        },
+        {
+          name: 'BirthAugur.raisedByWolves',
+          type: 'birthAugur',
+          img: 'systems/dcc/styles/images/item.webp',
+          system: {
+            effect: 'none'
           }
         }
       ]

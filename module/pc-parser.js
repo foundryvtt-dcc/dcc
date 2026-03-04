@@ -3,6 +3,7 @@
 import EntityImages from './entity-images.js'
 import { getFirstDie, getFirstMod } from './utilities.js'
 import DCC from './config.js'
+import { BIRTH_AUGURS, matchAugurFromText } from './birth-augurs.mjs'
 
 /**
  *  Parses Player Stat Blocks (e.g. from Purple Sorcerer) into an Actor sheet
@@ -225,6 +226,21 @@ function _parseJSONPCs (pcObject) {
     if (pcObject.luckySign) {
       notes = notes + game.i18n.localize('DCC.BirthAugur') + ': ' + pcObject.luckySign + '<br/>'
       pc['details.birthAugur'] = pcObject.luckySign
+      const augurIndex = matchAugurFromText(pcObject.luckySign)
+      if (augurIndex !== null) {
+        pc['details.birthAugurIndex'] = augurIndex
+        const augur = BIRTH_AUGURS[augurIndex - 1]
+        if (augur) {
+          pc.items.push({
+            name: game.i18n.localize(`DCC.BirthAugur.${augur.key}`),
+            type: 'birthAugur',
+            img: EntityImages.imageForItem('birthAugur'),
+            system: {
+              effect: augur.effect
+            }
+          })
+        }
+      }
     }
     if (pcObject.languages) {
       notes = notes + game.i18n.localize('DCC.Languages') + ': ' + pcObject.languages + '<br/>'

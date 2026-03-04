@@ -3,6 +3,7 @@
 
 import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from './utilities.js'
 import DCCActorLevelChange from './actor-level-change.js'
+import { BIRTH_AUGURS } from './birth-augurs.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -115,6 +116,11 @@ class DCCActor extends Actor {
     // Get configuration data
     const config = this._getConfig()
 
+    // Cache birth augur item before compute methods that use _getBirthAugurBonusFor
+    if (this.isPC) {
+      this._birthAugurItem = this.items.find(i => i.type === 'birthAugur') ?? null
+    }
+
     // Compute melee/missile attack and damage bonuses (after effects have modified ability modifiers)
     if (config.computeMeleeAndMissileAttackAndDamage) {
       this.computeMeleeAndMissileAttackAndDamage()
@@ -183,20 +189,51 @@ class DCCActor extends Actor {
         }
       }
       if (config.computeAC) {
+        const augurACBonus = this._getBirthAugurBonusFor('armorClass')
         this.system.attributes.ac.baseAbility = abilityMod
         this.system.attributes.ac.baseAbilityLabel = abilityLabel
         this.system.attributes.ac.armorBonus = armorBonus
-        this.system.attributes.ac.value = 10 + abilityMod + armorBonus + acOtherMod
+        this.system.attributes.ac.value = 10 + abilityMod + armorBonus + acOtherMod + augurACBonus
       }
       if (config.computeSpeed) {
+        const augurSpeedBonus = this._getBirthAugurBonusFor('speed') * 5
         this.system.attributes.ac.speedPenalty = speedPenalty
-        this.system.attributes.speed.value = baseSpeed + speedPenalty
+        this.system.attributes.speed.value = baseSpeed + speedPenalty + augurSpeedBonus
       }
     }
 
     // Compute Initiative if required
     if (this.isPC && config.computeInitiative) {
       this.computeInitiative(config)
+    }
+
+    // Compute birth augur display info for UI
+    if (this.isPC) {
+      let effect = null
+
+      if (this._birthAugurItem) {
+        // Primary: birthAugur item
+        effect = this._birthAugurItem.system.effect
+      } else {
+        // Fallback: legacy birthAugurIndex
+        const augurIndex = this.system.details.birthAugurIndex
+        if (augurIndex != null) {
+          const augur = BIRTH_AUGURS[augurIndex - 1]
+          if (augur) {
+            effect = augur.effect
+          }
+        }
+      }
+
+      if (effect && effect !== 'none') {
+        this._computedBirthAugurEffect = effect
+        this._computedBirthAugurMod = this.system.config.birthAugurMode === 'floating'
+          ? this.system.abilities.lck.mod
+          : this.system.details.birthAugurLuckMod
+      } else {
+        this._computedBirthAugurEffect = null
+        this._computedBirthAugurMod = null
+      }
     }
 
     // Re-prepare embedded items so they can see active effect modifications
@@ -409,6 +446,27 @@ class DCCActor extends Actor {
     overrides[key] = newValue
   }
 
+  /** @inheritDoc */
+  _onCreateDescendantDocuments (parent, collection, documents, data, options, userId) {
+    super._onCreateDescendantDocuments(parent, collection, documents, data, options, userId)
+
+    // Enforce single birth augur: when a new birthAugur item is added, delete existing ones
+    if (collection === 'items' && game.user.id === userId) {
+      const newAugurs = documents.filter(d => d.type === 'birthAugur')
+      if (newAugurs.length > 0) {
+        const newestId = newAugurs[newAugurs.length - 1].id
+        const toDelete = this.items
+          .filter(i => i.type === 'birthAugur' && i.id !== newestId)
+          .map(i => i.id)
+        if (toDelete.length > 0) {
+          this.deleteEmbeddedDocuments('Item', toDelete).catch(err => {
+            console.error(`DCC | Failed to remove duplicate birthAugur items from actor "${this.name}":`, err)
+          })
+        }
+      }
+    }
+  }
+
   /**
    * Get per actor configuration
    *
@@ -585,16 +643,49 @@ class DCCActor extends Actor {
     return actionDice
   }
 
+  /**
+   * Get the birth augur bonus for one or more effect types.
+   * Checks birthAugur items first, then falls back to legacy birthAugurIndex.
+   * @param {...string} effectTypes - Effect types to check (e.g. 'allAttack', 'meleeAttack')
+   * @returns {number} The birth augur bonus, or 0 if no matching augur
+   */
+  _getBirthAugurBonusFor (...effectTypes) {
+    if (!this.isPC) return 0
+
+    // Determine active effect: item first, then legacy index fallback
+    let effect = null
+    if (this._birthAugurItem) {
+      effect = this._birthAugurItem.system.effect
+    } else {
+      const augurIndex = this.system.details.birthAugurIndex
+      if (augurIndex != null) {
+        const augur = BIRTH_AUGURS[augurIndex - 1]
+        if (augur) effect = augur.effect
+      }
+    }
+
+    if (!effect || !effectTypes.includes(effect)) return 0
+    return this.system.config.birthAugurMode === 'floating'
+      ? this.system.abilities.lck.mod
+      : this.system.details.birthAugurLuckMod
+  }
+
   /** Compute Melee/Missile Base Attack and Damage Modifiers
    */
   computeMeleeAndMissileAttackAndDamage () {
     const attackBonus = this.system.details.attackBonus || '0'
     const strengthBonus = parseInt(this.system.abilities.str.mod) || 0
     const agilityBonus = parseInt(this.system.abilities.agl.mod) || 0
-    const meleeAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus?.melee?.adjustment) || 0
-    const meleeDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus?.melee?.adjustment) || 0
-    const missileAttackBonusAdjustment = parseInt(this.system.details.attackHitBonus?.missile?.adjustment) || 0
-    const missileDamageBonusAdjustment = parseInt(this.system.details.attackDamageBonus?.missile?.adjustment) || 0
+    const augurAttackBonus = this._getBirthAugurBonusFor('allAttack')
+    const augurMeleeAttackBonus = this._getBirthAugurBonusFor('meleeAttack')
+    const augurMissileAttackBonus = this._getBirthAugurBonusFor('missileAttack')
+    const augurDamageBonus = this._getBirthAugurBonusFor('allDamage')
+    const augurMeleeDamageBonus = this._getBirthAugurBonusFor('meleeDamage')
+    const augurMissileDamageBonus = this._getBirthAugurBonusFor('missileDamage')
+    const meleeAttackBonusAdjustment = (parseInt(this.system.details.attackHitBonus?.melee?.adjustment) || 0) + augurAttackBonus + augurMeleeAttackBonus
+    const meleeDamageBonusAdjustment = (parseInt(this.system.details.attackDamageBonus?.melee?.adjustment) || 0) + augurDamageBonus + augurMeleeDamageBonus
+    const missileAttackBonusAdjustment = (parseInt(this.system.details.attackHitBonus?.missile?.adjustment) || 0) + augurAttackBonus + augurMissileAttackBonus
+    const missileDamageBonusAdjustment = (parseInt(this.system.details.attackDamageBonus?.missile?.adjustment) || 0) + augurDamageBonus + augurMissileDamageBonus
     let meleeAttackBonus
     let missileAttackBonus
     let meleeAttackDamage
@@ -627,14 +718,15 @@ class DCCActor extends Actor {
     const perMod = parseInt(this.system.abilities.per.mod)
     const aglMod = parseInt(this.system.abilities.agl.mod)
     const staMod = parseInt(this.system.abilities.sta.mod)
+    const augurAllSaves = this._getBirthAugurBonusFor('allSaves')
     const refSaveClassBonus = parseInt(this.system.saves.ref.classBonus || 0)
-    const refSaveOtherBonus = parseInt(this.system.saves.ref.otherBonus || 0)
+    const refSaveOtherBonus = parseInt(this.system.saves.ref.otherBonus || 0) + augurAllSaves + this._getBirthAugurBonusFor('reflexSave')
     const refSaveOverride = this.system.saves.ref.override
     const frtSaveClassBonus = parseInt(this.system.saves.frt.classBonus || 0)
-    const frtSaveOtherBonus = parseInt(this.system.saves.frt.otherBonus || 0)
+    const frtSaveOtherBonus = parseInt(this.system.saves.frt.otherBonus || 0) + augurAllSaves + this._getBirthAugurBonusFor('fortSave')
     const frtSaveOverride = this.system.saves.frt.override
     const wilSaveClassBonus = parseInt(this.system.saves.wil.classBonus || 0)
-    const wilSaveOtherBonus = parseInt(this.system.saves.wil.otherBonus || 0)
+    const wilSaveOtherBonus = parseInt(this.system.saves.wil.otherBonus || 0) + augurAllSaves + this._getBirthAugurBonusFor('willSave')
     const wilSaveOverride = this.system.saves.wil.override
 
     this.system.saves.ref.value = ensurePlus(`${aglMod + refSaveClassBonus + refSaveOtherBonus}`)
@@ -672,7 +764,12 @@ class DCCActor extends Actor {
     if (this.system.class.spellCheckOtherMod) {
       otherMod = ensurePlus(this.system.class.spellCheckOtherMod)
     }
-    this.system.class.spellCheck = ensurePlus(this.system.details.level.value + abilityMod + otherMod)
+    let augurMod = ''
+    const augurSpellBonus = this._getBirthAugurBonusFor('spellCheck')
+    if (augurSpellBonus) {
+      augurMod = ensurePlus(augurSpellBonus)
+    }
+    this.system.class.spellCheck = ensurePlus(this.system.details.level.value + abilityMod + otherMod + augurMod)
     if (this.system.class.spellCheckOverride) {
       this.system.class.spellCheck = this.system.class.spellCheckOverride
     }
@@ -691,7 +788,7 @@ class DCCActor extends Actor {
    * @param {Object} config - Actor configuration
    */
   computeInitiative (config) {
-    this.system.attributes.init.value = parseInt(this.system.abilities.agl.mod) + parseInt(this.system.attributes.init.otherMod || 0)
+    this.system.attributes.init.value = parseInt(this.system.abilities.agl.mod) + parseInt(this.system.attributes.init.otherMod || 0) + this._getBirthAugurBonusFor('initiative')
     if (config.addClassLevelToInitiative) {
       this.system.attributes.init.value += this.system.details.level.value
     }
