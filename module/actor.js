@@ -116,6 +116,11 @@ class DCCActor extends Actor {
     // Get configuration data
     const config = this._getConfig()
 
+    // Cache birth augur item before compute methods that use _getBirthAugurBonusFor
+    if (this.isPC) {
+      this._birthAugurItem = this.items.find(i => i.type === 'birthAugur') ?? null
+    }
+
     // Compute melee/missile attack and damage bonuses (after effects have modified ability modifiers)
     if (config.computeMeleeAndMissileAttackAndDamage) {
       this.computeMeleeAndMissileAttackAndDamage()
@@ -204,7 +209,6 @@ class DCCActor extends Actor {
 
     // Compute birth augur display info for UI
     if (this.isPC) {
-      this._birthAugurItem = this.items.find(i => i.type === 'birthAugur') ?? null
       let effect = null
 
       if (this._birthAugurItem) {
@@ -455,7 +459,9 @@ class DCCActor extends Actor {
           .filter(i => i.type === 'birthAugur' && i.id !== newestId)
           .map(i => i.id)
         if (toDelete.length > 0) {
-          this.deleteEmbeddedDocuments('Item', toDelete)
+          this.deleteEmbeddedDocuments('Item', toDelete).catch(err => {
+            console.error(`DCC | Failed to remove duplicate birthAugur items from actor "${this.name}":`, err)
+          })
         }
       }
     }

@@ -372,7 +372,10 @@ async function migrateBirthAugurToItem (actor) {
   if (hasAugurItem) return
 
   const augur = BIRTH_AUGURS[augurIndex - 1]
-  if (!augur) return
+  if (!augur) {
+    console.warn(`DCC | Migration: Actor "${actor.name}" has birthAugurIndex ${augurIndex} which is out of range (1-30). Skipping birthAugur item creation.`)
+    return
+  }
 
   const name = game.i18n.localize(`DCC.BirthAugur.${augur.key}`)
   console.log(`DCC | Migration: Creating birthAugur item "${name}" for actor "${actor.name}"`)
