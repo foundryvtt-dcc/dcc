@@ -2285,6 +2285,32 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   border: 0;
   font-size: 22px;
 }
+.dcc .npc-grid .ac-and-hp .ac-effects,
+.dcc .npc-grid .ac-and-hp .hp-effects {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: absolute;
+  top: 2px;
+  z-index: 10;
+}
+.dcc .npc-grid .ac-and-hp .ac-effects {
+  left: 2px;
+}
+.dcc .npc-grid .ac-and-hp .hp-effects {
+  right: 2px;
+}
+.dcc .npc-grid .ac-and-hp .attribute-effect-icon {
+  border: 0;
+  border-radius: 2px;
+  cursor: help;
+  height: 16px;
+  opacity: 0.8;
+  width: 16px;
+}
+.dcc .npc-grid .ac-and-hp .attribute-effect-icon:hover {
+  opacity: 1;
+}
 .dcc .npc-grid .combat-basics {
   column-gap: 5px;
   display: grid;
