@@ -2433,6 +2433,7 @@ a.inline-roll {
       display: grid;
       font-size: 12px;
       grid-template-rows: 50px 15px 17px;
+      position: relative;
       text-align: center;
 
       input {
