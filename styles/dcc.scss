@@ -2433,12 +2433,44 @@ a.inline-roll {
       display: grid;
       font-size: 12px;
       grid-template-rows: 50px 15px 17px;
+      position: relative;
       text-align: center;
 
       input {
         align-self: center;
         border: 0;
         font-size: 22px;
+      }
+
+      .ac-effects,
+      .hp-effects {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        position: absolute;
+        top: 2px;
+        z-index: 10;
+      }
+
+      .ac-effects {
+        left: 2px;
+      }
+
+      .hp-effects {
+        right: 2px;
+      }
+
+      .attribute-effect-icon {
+        border: 0;
+        border-radius: 2px;
+        cursor: help;
+        height: 16px;
+        opacity: 0.8;
+        width: 16px;
+
+        &:hover {
+          opacity: 1;
+        }
       }
     }
 
