@@ -1298,7 +1298,10 @@ class Localization {
       'DCC.Equipment': 'Equipment',
       'DCC.TradeGoods': 'Trade Goods',
       'DCC.BirthAugur': 'Birth Augur',
-      'DCC.Languages': 'Languages'
+      'DCC.Languages': 'Languages',
+      'DCC.SaveDC': 'DC {dc}',
+      'DCC.SaveSuccess': 'Success',
+      'DCC.SaveFailure': 'Failure'
     }
   }
 
