@@ -279,6 +279,30 @@ test('roll saving throw with dc option shows dc when showDc is true', async () =
   )
 })
 
+test('roll saving throw with dc equal to roll total succeeds', async () => {
+  rollToMessageMock.mockClear()
+
+  // Mock roll total is 10, DC 10 should succeed (meet-or-beat)
+  await actor.rollSavingThrow('ref', { dc: 10 })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save — Success'
+    })
+  )
+})
+
+test('roll saving throw with invalid dc ignores dc check', async () => {
+  rollToMessageMock.mockClear()
+
+  // Invalid DC should be ignored, producing a plain save flavor
+  await actor.rollSavingThrow('ref', { dc: 'invalid' })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save'
+    })
+  )
+})
+
 test('roll saving throw returns roll', async () => {
   dccRollCreateRollMock.mockClear()
 

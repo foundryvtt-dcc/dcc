@@ -994,14 +994,16 @@ class DCCActor extends Actor {
     // Check against DC if provided
     if (options.dc !== undefined) {
       const dc = parseInt(options.dc)
-      const success = roll.total >= dc
-      const resultLabel = success
-        ? game.i18n.localize('DCC.SaveSuccess')
-        : game.i18n.localize('DCC.SaveFailure')
-      if (options.showDc) {
-        flavor += ` (${game.i18n.format('DCC.SaveDC', { dc })}) — ${resultLabel}`
-      } else {
-        flavor += ` — ${resultLabel}`
+      if (Number.isFinite(dc)) {
+        const success = roll.total >= dc
+        const resultLabel = success
+          ? game.i18n.localize('DCC.SaveSuccess')
+          : game.i18n.localize('DCC.SaveFailure')
+        if (options.showDc) {
+          flavor += ` (${game.i18n.format('DCC.SaveDC', { dc })}) — ${resultLabel}`
+        } else {
+          flavor += ` — ${resultLabel}`
+        }
       }
     }
 
