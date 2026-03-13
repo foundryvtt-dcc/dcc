@@ -235,6 +235,82 @@ test('roll saving throw', async () => {
   })
 })
 
+test('roll saving throw with dc option hides dc by default', async () => {
+  dccRollCreateRollMock.mockClear()
+  rollToMessageMock.mockClear()
+
+  // Roll with DC lower than mock total (10) - should succeed without showing DC
+  await actor.rollSavingThrow('ref', { dc: 5 })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save — Success'
+    })
+  )
+
+  rollToMessageMock.mockClear()
+
+  // Roll with DC higher than mock total (10) - should fail without showing DC
+  await actor.rollSavingThrow('ref', { dc: 15 })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save — Failure'
+    })
+  )
+})
+
+test('roll saving throw with dc option shows dc when showDc is true', async () => {
+  dccRollCreateRollMock.mockClear()
+  rollToMessageMock.mockClear()
+
+  await actor.rollSavingThrow('ref', { dc: 5, showDc: true })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save (DC 5) — Success'
+    })
+  )
+
+  rollToMessageMock.mockClear()
+
+  await actor.rollSavingThrow('ref', { dc: 15, showDc: true })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save (DC 15) — Failure'
+    })
+  )
+})
+
+test('roll saving throw with dc equal to roll total succeeds', async () => {
+  rollToMessageMock.mockClear()
+
+  // Mock roll total is 10, DC 10 should succeed (meet-or-beat)
+  await actor.rollSavingThrow('ref', { dc: 10 })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save — Success'
+    })
+  )
+})
+
+test('roll saving throw with invalid dc ignores dc check', async () => {
+  rollToMessageMock.mockClear()
+
+  // Invalid DC should be ignored, producing a plain save flavor
+  await actor.rollSavingThrow('ref', { dc: 'invalid' })
+  expect(rollToMessageMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save'
+    })
+  )
+})
+
+test('roll saving throw returns roll', async () => {
+  dccRollCreateRollMock.mockClear()
+
+  const roll = await actor.rollSavingThrow('ref')
+  expect(roll).toBeDefined()
+  expect(roll.total).toBeDefined()
+})
+
 test('roll initiative', async () => {
   dccRollCreateRollMock.mockClear()
 

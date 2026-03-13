@@ -36,6 +36,7 @@ global.rollValidateMock = vi.fn((formula) => {
 }).mockName('validate')
 
 class RollMock {
+  total = 10
   dice = [{ results: [10], options: {} }]
   toMessage = global.rollToMessageMock
   evaluate = global.rollEvaluateMock

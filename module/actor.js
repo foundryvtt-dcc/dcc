@@ -1044,7 +1044,7 @@ class DCCActor extends Actor {
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
     const modifierLabel = game.i18n.localize(save.label)
-    const flavor = `${modifierLabel} ${game.i18n.localize('DCC.Save')}`
+    let flavor = `${modifierLabel} ${game.i18n.localize('DCC.Save')}`
     options.title = flavor
 
     // Collate terms for the roll
@@ -1064,6 +1064,22 @@ class DCCActor extends Actor {
 
     await roll.evaluate()
 
+    // Check against DC if provided
+    if (options.dc !== undefined) {
+      const dc = parseInt(options.dc)
+      if (Number.isFinite(dc)) {
+        const success = roll.total >= dc
+        const resultLabel = success
+          ? game.i18n.localize('DCC.SaveSuccess')
+          : game.i18n.localize('DCC.SaveFailure')
+        if (options.showDc) {
+          flavor += ` (${game.i18n.format('DCC.SaveDC', { dc })}) — ${resultLabel}`
+        } else {
+          flavor += ` — ${resultLabel}`
+        }
+      }
+    }
+
     // Generate flags for the roll
     const flags = {
       'dcc.RollType': 'SavingThrow',
@@ -1078,6 +1094,8 @@ class DCCActor extends Actor {
       flavor,
       flags
     })
+
+    return roll
   }
 
   /**
