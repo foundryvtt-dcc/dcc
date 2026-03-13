@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="FoundryV14" type="NodeJSConfigurationType" path-to-js-file="$USER_HOME$/Applications/foundry-14/main.js" working-dir="$PROJECT_DIR$">
+  <configuration default="false" name="FoundryV14" type="NodeJSConfigurationType" path-to-node="$USER_HOME$/.nvm/versions/node/v24.14.0/bin/node" path-to-js-file="$USER_HOME$/Applications/foundry-14/main.js" working-dir="$PROJECT_DIR$">
     <method v="2" />
   </configuration>
 </component>

@@ -73,6 +73,23 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
     // Wait for Foundry to fully initialize
     await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
 
+    // Remove any Foundry notification banners (e.g. hardware acceleration warning)
+    // These are persistent and can't be dismissed by clicking
+    await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
+
+    // Clean up leftover test actors/items from previous failed runs
+    /* eslint-disable no-undef */
+    await page.evaluate(async () => {
+      const testNames = ['Test Player', 'Test NPC', 'Persistence Test', 'Action Die Test', 'Test Weapon', 'Test Armor', 'Test Treasure']
+      for (const actor of game.actors.filter(a => testNames.includes(a.name))) {
+        await actor.delete()
+      }
+      for (const item of game.items.filter(i => testNames.includes(i.name))) {
+        await item.delete()
+      }
+    })
+    /* eslint-enable no-undef */
+
     // Close any welcome dialogs
     const dccDialog = page.locator('#dcc-welcome-dialog')
     if (await dccDialog.isVisible({ timeout: 500 }).catch(() => false)) {
@@ -284,11 +301,13 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.selectOption('select[name="type"]', 'Player')
       await page.click('button[data-action="ok"]')
       await page.waitForSelector('.dcc.actor.sheet', { timeout: 5000 })
+      await page.waitForTimeout(500) // Wait for sheet to fully render
 
-      // Edit strength
+      // Edit strength - fill then submit the form explicitly
       const strInput = page.locator('input[name="system.abilities.str.value"]')
       await strInput.fill('18')
-      await page.waitForTimeout(1000) // Wait for auto-save
+      await page.evaluate(() => document.querySelector('form.dcc.actor.sheet')?.requestSubmit())
+      await page.waitForTimeout(1000) // Wait for save and re-render
 
       // Close the sheet
       await page.click('.dcc.actor.sheet button[data-action="close"]')
@@ -320,10 +339,12 @@ test.describe('DCC TypeDataModels E2E Tests', () => {
       await page.selectOption('select[name="type"]', 'Player')
       await page.click('button[data-action="ok"]')
       await page.waitForSelector('.dcc.actor.sheet', { timeout: 5000 })
+      await page.waitForTimeout(500) // Wait for sheet to fully render
 
-      // Edit action die (string field)
+      // Edit action die (string field) - fill then submit the form explicitly
       const actionDieInput = page.locator('input[name="system.attributes.actionDice.value"]')
       await actionDieInput.fill('1d24')
+      await page.evaluate(() => document.querySelector('form.dcc.actor.sheet')?.requestSubmit())
       await page.waitForTimeout(1000)
 
       // Close and reopen
