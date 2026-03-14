@@ -506,6 +506,9 @@ describe('Utilities', () => {
       global.game = {
         packs: {
           get: vi.fn().mockReturnValue(mockPack)
+        },
+        tables: {
+          find: vi.fn().mockReturnValue(null)
         }
       }
     })
@@ -558,6 +561,18 @@ describe('Utilities', () => {
 
       // Should get the first entry that starts with the fumble table name
       expect(mockPack.getDocument).toHaveBeenCalledWith('1')
+    })
+
+    it('falls back to world table when pack not found', async () => {
+      global.game.packs.get.mockReturnValue(null)
+      const mockWorldTable = {
+        name: 'Fumble Table M',
+        getResultsForRoll: vi.fn().mockReturnValue([{ text: 'World NPC fumble result' }])
+      }
+      global.game.tables.find.mockReturnValue(mockWorldTable)
+
+      const result = await getNPCFumbleTableResult(mockRoll, 'Fumble Table M')
+      expect(result).toEqual({ text: 'World NPC fumble result' })
     })
   })
 })
