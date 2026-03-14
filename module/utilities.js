@@ -228,5 +228,12 @@ export async function getNPCFumbleTableResult (roll, fumbleTableName) {
         return fumbleResult[0] || 'Unable to find fumble result'
       }
     }
+
+    // Fall back to searching world tables by name
+    const worldTable = game.tables.find((entity) => entity.name.startsWith(fumbleTableName))
+    if (worldTable) {
+      const fumbleResult = worldTable.getResultsForRoll(roll.total)
+      return fumbleResult[0] || 'Unable to find fumble result'
+    }
   }
 }

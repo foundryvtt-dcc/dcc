@@ -90,22 +90,24 @@ function isDccCoreBookActive () {
  * @returns {Promise<RollTable|null>}
  */
 async function getSpellDuelTable (tableKey) {
-  if (!isDccCoreBookActive()) return null
-
   const tableInfo = SPELL_DUEL_TABLES[tableKey]
   if (!tableInfo) return null
 
-  try {
-    const pack = game.packs.get(tableInfo.pack)
-    if (!pack) return null
-
-    const entry = pack.index.find(e => e.name === tableInfo.name)
-    if (!entry) return null
-
-    return await pack.getDocument(entry._id)
-  } catch {
-    return null
+  // Try compendium pack first
+  if (isDccCoreBookActive()) {
+    try {
+      const pack = game.packs.get(tableInfo.pack)
+      if (pack) {
+        const entry = pack.index.find(e => e.name === tableInfo.name)
+        if (entry) {
+          return await pack.getDocument(entry._id)
+        }
+      }
+    } catch { }
   }
+
+  // Fall back to searching world tables by name
+  return game.tables.getName(tableInfo.name) || null
 }
 
 /**

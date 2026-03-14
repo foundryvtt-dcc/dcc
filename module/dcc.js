@@ -521,6 +521,13 @@ async function getSkillTable (skillName) {
         return pack.getDocument(entry._id)
       }
     }
+
+    // Fall back to searching world tables by name
+    const worldTableName = tablePath.length === 3 ? tablePath[2] : tableName
+    const worldTable = game.tables.getName(worldTableName)
+    if (worldTable) {
+      return worldTable
+    }
   }
 
   return null
