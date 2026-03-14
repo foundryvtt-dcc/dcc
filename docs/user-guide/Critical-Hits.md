@@ -1,6 +1,6 @@
 # Critical Hits
 
-You can add critical hit tables and put them in a compendium. That way you can automatically roll a critical hit when you roll a natural 20. Just import a table with EasyTable, and title it:
+You can add critical hit tables and put them in a compendium. That way you can automatically roll a critical hit when you roll a natural 20. Just import a table with [Roll Table Importer](https://foundryvtt.com/packages/roll-table-importer), and title it:
 
 ![Critical Hit Tables](images/crit_tables.png)
 

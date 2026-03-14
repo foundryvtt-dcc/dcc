@@ -1,7 +1,7 @@
-You can use the **EasyTable module** to import a table straight from a PDF. First click the **Settings** icon (3 gears) in the top right and click **Configure Settings**, then the **Module Settings** tab. Scroll down to **EasyTable** and make sure **Paste from table mode** is checked.
+You can use the **[Roll Table Importer](https://foundryvtt.com/packages/roll-table-importer)** module to import a table straight from a PDF. First click the **Settings** icon (3 gears) in the top right and click **Configure Settings**, then the **Module Settings** tab. Scroll down to **Roll Table Importer** and make sure **Paste from table mode** is checked.
 
 
-Next, go to the **Rollable Tables** tab in the upper right of the Foundry interface and click **New EasyTable** at the bottom of the sidebar.
+Next, go to the **Rollable Tables** tab in the upper right of the Foundry interface and click **New Roll Table Importer** at the bottom of the sidebar.
 
 ![Paste formatting](images/spell_import_notepad.png)
 
