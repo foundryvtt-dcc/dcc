@@ -103,7 +103,9 @@ async function getSpellDuelTable (tableKey) {
           return await pack.getDocument(entry._id)
         }
       }
-    } catch { }
+    } catch (err) {
+      console.warn('dcc | Failed to load spell duel table from compendium:', err)
+    }
   }
 
   // Fall back to searching world tables by name

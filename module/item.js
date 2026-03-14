@@ -543,13 +543,14 @@ class DCCItem extends Item {
           mercurialMagicResult = await table.draw({ roll })
         }
       }
-    }
 
-    // Fall back to searching world tables by name
-    if (!mercurialMagicResult) {
-      const table = game.tables.getName('Table 5-2: Mercurial Magic')
-      if (table) {
-        mercurialMagicResult = await table.draw({ roll })
+      // Fall back to searching world tables by name
+      if (!mercurialMagicResult) {
+        const worldTableName = mercurialMagicTablePath.length === 3 ? mercurialMagicTablePath[2] : mercurialMagicTableName
+        const table = game.tables.getName(worldTableName)
+        if (table) {
+          mercurialMagicResult = await table.draw({ roll })
+        }
       }
     }
 
