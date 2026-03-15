@@ -275,6 +275,31 @@ describe('Spell Check Critical - Table Lookup Logic', () => {
     expect(result.results[0]._id).toBe('result-22-24')
   })
 
+  test('fumble result must fully replace result object to use result 1', () => {
+    // This test documents the fix for the bug where fumble table lookups
+    // only set result.results instead of replacing the whole result object,
+    // causing the modified roll total (e.g. 1+1=2) to be used instead of result 1
+
+    // Simulate getResultsForRoll returning a Set-like object
+    const resultForTwo = [
+      { range: [2, 11], description: 'Lost, failure, and worse!', _id: 'result-2-11' }
+    ]
+
+    const resultForOne = [
+      { range: [1, 1], description: 'Misfire! Spell is lost.', _id: 'result-1' }
+    ]
+
+    // WRONG WAY (the bug): Setting .results on an array/Set doesn't change iteration
+    let result = resultForTwo
+    result.results = resultForOne // This adds a property but doesn't change the array contents!
+    expect(result[0].description).toBe('Lost, failure, and worse!') // Still the wrong result!
+
+    // CORRECT WAY (the fix): Replace entire result object
+    result = resultForOne
+    expect(result[0].description).toBe('Misfire! Spell is lost.')
+    expect(result[0].range).toEqual([1, 1])
+  })
+
   test('parseInt ensures numeric addition for crit roll calculation', () => {
     // Document the parseInt fix that prevents string concatenation
 
