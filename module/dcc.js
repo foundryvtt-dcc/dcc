@@ -626,32 +626,46 @@ async function processSpellCheck (actor, spellData) {
   }
 
   try {
+    // Detect fumbles and crits before applying to table
+    if (roll.dice.length > 0) {
+      if (naturalRoll === 1) {
+        fumble = true
+      } else if (naturalRoll === 20) {
+        if (actor.type === 'Player') {
+          crit = true
+        }
+      }
+    }
+
     // Apply the roll to the table if present
     if (rollTable) {
       result = rollTable.getResultsForRoll(roll.total)
 
-      if (roll.dice.length > 0) {
-        if (naturalRoll === 1) {
-          result = rollTable.getResultsForRoll(1)
-          fumble = true
-        } else if (naturalRoll === 20) {
-          if (actor.type === 'Player') {
-            const levelValue = parseInt(actor.system.details.level.value)
-            const critRoll = roll.total + levelValue
-            result = rollTable.getResultsForRoll(critRoll)
-            roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
-            roll.terms.push(new foundry.dice.terms.NumericTerm({ number: levelValue }))
-            roll._formula += ` + ${levelValue}`
-            roll._total += levelValue
-            crit = true
-          }
-        }
+      if (fumble) {
+        result = rollTable.getResultsForRoll(1)
+      } else if (crit) {
+        const levelValue = parseInt(actor.system.details.level.value)
+        const critRoll = roll.total + levelValue
+        result = rollTable.getResultsForRoll(critRoll)
+        roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
+        roll.terms.push(new foundry.dice.terms.NumericTerm({ number: levelValue }))
+        roll._formula += ` + ${levelValue}`
+        roll._total += levelValue
       }
+
       await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, { crit, fumble, item, patronTaint })
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
         await roll.evaluate()
+      }
+
+      // Build the flavor text, adding fumble/crit indicators
+      let messageFlavor = flavor
+      if (fumble) {
+        messageFlavor += ` <br><span class="fumble">${game.i18n.localize('DCC.SpellCheckFumble')}</span>`
+      } else if (crit) {
+        messageFlavor += ` <br><span class="critical">${game.i18n.localize('DCC.SpellCheckCrit')}</span>`
       }
 
       // Generate flags for the roll
@@ -666,7 +680,7 @@ async function processSpellCheck (actor, spellData) {
       // Display the roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
-        flavor,
+        flavor: messageFlavor,
         flags,
         system: { spellId: item?.id }
       })
