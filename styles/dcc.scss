@@ -554,6 +554,16 @@ a.inline-roll {
 
 .flavor-text {
   font-family: var(--system-label-font), serif;
+
+  .critical {
+    color: green;
+    font-weight: 900;
+  }
+
+  .fumble {
+    color: red;
+    font-weight: 900;
+  }
 }
 
 .message-content {

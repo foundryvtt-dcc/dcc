@@ -663,9 +663,9 @@ async function processSpellCheck (actor, spellData) {
       // Build the flavor text, adding fumble/crit indicators
       let messageFlavor = flavor
       if (fumble) {
-        messageFlavor += ` <br><span class="fumble">${game.i18n.localize('DCC.SpellCheckFumble')}</span>`
+        messageFlavor += ` <br><span class="fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</span>`
       } else if (crit) {
-        messageFlavor += ` <br><span class="critical">${game.i18n.localize('DCC.SpellCheckCrit')}</span>`
+        messageFlavor += ` <br><span class="critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</span>`
       }
 
       // Generate flags for the roll
