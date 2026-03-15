@@ -632,8 +632,7 @@ async function processSpellCheck (actor, spellData) {
 
       if (roll.dice.length > 0) {
         if (naturalRoll === 1) {
-          const fumbleResult = rollTable.getResultsForRoll(1)
-          result.results = fumbleResult.results
+          result = rollTable.getResultsForRoll(1)
           fumble = true
         } else if (naturalRoll === 20) {
           if (actor.type === 'Player') {
