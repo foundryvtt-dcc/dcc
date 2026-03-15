@@ -231,11 +231,13 @@ export const emoteAttackRoll = function (message, html) {
     if (message.system?.deedDieFormula.includes('d10')) {
       iconClass = 'fa-dice-d10'
     }
-    // Create a proper Roll object for the deed die if we have the roll data
+    // Get the deed die roll from the rolls array by index
     let deedDieHTML
-    if (message.system.deedDieRoll) {
-      // If we have the full roll object, create a proper inline roll
-      deedDieHTML = `<a class="inline-roll inline-result${critical}" data-roll="${encodeURIComponent(JSON.stringify(message.system.deedDieRoll))}" title="${message.system?.deedDieFormula}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</a>`
+    const deedDieRollIndex = message.system.deedDieRollIndex
+    if (deedDieRollIndex !== null && deedDieRollIndex !== undefined && message.rolls[deedDieRollIndex]) {
+      // If we have the roll in the rolls array, create a proper inline roll using toAnchor
+      const deedDieRoll = message.rolls[deedDieRollIndex]
+      deedDieHTML = `<span class="inline-roll inline-result${critical}" title="${message.system?.deedDieFormula}">${deedDieRoll.toAnchor({ classes: ['inline-dsn-hidden'] }).outerHTML}</span>`
     } else {
       // Fallback to non-clickable display if roll data is missing
       deedDieHTML = `<span class="inline-roll${critical}" title="${message.system?.deedDieFormula}"><i class="fas ${iconClass}"></i>${message.system.deedDieRollResult}</span>`

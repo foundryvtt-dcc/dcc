@@ -1,9 +1,21 @@
-/* global foundry, game, ui, isObjectEmpty */
+/* global foundry, game, ui */
 
 /**
  * Core class keys used for migration lookups
  */
 const CLASS_KEYS = ['Warrior', 'Thief', 'Halfling', 'Cleric', 'Wizard', 'Elf', 'Dwarf']
+
+/**
+ * Map numeric ActiveEffect mode values to v14 string type values
+ */
+const EFFECT_MODE_TO_TYPE = {
+  0: 'custom',
+  1: 'multiply',
+  2: 'add',
+  3: 'downgrade',
+  4: 'upgrade',
+  5: 'override'
+}
 
 /**
  * Lazy-loaded lookup table mapping localized class names to internal keys.
@@ -58,7 +70,7 @@ export const migrateWorld = async function () {
   for (const a of game.actors) {
     try {
       const updateData = await migrateActorData(a)
-      if (!isObjectEmpty(updateData)) {
+      if (!foundry.utils.isEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Actor', name: a.name }))
         await a.update(updateData, { enforceTypes: false })
       }
@@ -71,7 +83,7 @@ export const migrateWorld = async function () {
   for (const i of game.items) {
     try {
       const updateData = migrateItemData(i)
-      if (!isObjectEmpty(updateData)) {
+      if (!foundry.utils.isEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Item', name: i.name }))
         await i.update(updateData, { enforceTypes: false })
       }
@@ -84,7 +96,7 @@ export const migrateWorld = async function () {
   for (const s of game.scenes) {
     try {
       const updateData = await migrateSceneData(s)
-      if (!isObjectEmpty(updateData)) {
+      if (!foundry.utils.isEmpty(updateData)) {
         console.log(game.i18n.format('DCC.MigrationMessage', { type: 'Scene', name: s.name }))
         await s.update(updateData, { enforceTypes: false })
       }
@@ -102,8 +114,9 @@ export const migrateWorld = async function () {
   }
 
   // Set the migration as complete
-  // parseFloat will pull out the major and minor version ignoring the patch version
-  game.settings.set('dcc', 'systemMigrationVersion', parseFloat(game.system.version))
+  // Save the target migration version to prevent repeated migrations
+  // This must match NEEDS_MIGRATION_VERSION in dcc.js
+  game.settings.set('dcc', 'systemMigrationVersion', 0.67)
   ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
 }
 
@@ -142,7 +155,7 @@ const migrateCompendium = async function (pack) {
           break
       }
 
-      if (!isObjectEmpty(updateData)) {
+      if (!foundry.utils.isEmpty(updateData)) {
         await doc.update(updateData)
         console.log(`Migrated ${documentName} document ${doc.name} in Compendium ${pack.collection}`)
       }
@@ -200,37 +213,76 @@ const migrateActorData = async function (actor) {
     }
   }
 
-  // If migrating from earlier than 0.67.0, convert critRange and disapproval from string to number
-  // and set sheetClass based on className to prevent class setup from overwriting custom values
-  if (currentVersion < 0.67) {
-    const critRange = actor.system?.details?.critRange
-    if (typeof critRange === 'string') {
-      updateData['system.details.critRange'] = parseInt(critRange) || 20
-    }
-    const disapproval = actor.system?.class?.disapproval
-    if (typeof disapproval === 'string') {
-      updateData['system.class.disapproval'] = parseInt(disapproval) || 1
-    }
+  // Convert critRange and disapproval from string to number if needed (data-driven check)
+  const critRange = actor.system?.details?.critRange
+  if (typeof critRange === 'string') {
+    updateData['system.details.critRange'] = parseInt(critRange) || 20
+  }
+  const disapproval = actor.system?.class?.disapproval
+  if (typeof disapproval === 'string') {
+    updateData['system.class.disapproval'] = parseInt(disapproval) || 1
+  }
 
-    // Set sheetClass from className for existing actors to prevent class setup overwriting values
-    if (!actor.system?.details?.sheetClass && actor.system?.class?.className) {
-      const className = actor.system.class.className
+  // Set sheetClass from className for existing actors to prevent class setup overwriting values
+  if (!actor.system?.details?.sheetClass && actor.system?.class?.className) {
+    const className = actor.system.class.className
 
-      // Quick check 1: Is it already an English/internal key?
-      if (CLASS_KEYS.includes(className)) {
-        updateData['system.details.sheetClass'] = className
+    // Quick check 1: Is it already an English/internal key?
+    if (CLASS_KEYS.includes(className)) {
+      updateData['system.details.sheetClass'] = className
+    } else {
+      // Quick check 2: Does it match the current locale?
+      const localeMatch = CLASS_KEYS.find(key => game.i18n.localize(`DCC.${key}`) === className)
+      if (localeMatch) {
+        updateData['system.details.sheetClass'] = localeMatch
       } else {
-        // Quick check 2: Does it match the current locale?
-        const localeMatch = CLASS_KEYS.find(key => game.i18n.localize(`DCC.${key}`) === className)
-        if (localeMatch) {
-          updateData['system.details.sheetClass'] = localeMatch
-        } else {
-          // Edge case: Load all translations and check
-          const lookup = await buildClassNameLookup()
-          // Use lookup result, or fall back to className for third-party classes
-          updateData['system.details.sheetClass'] = lookup[className] || className
+        // Edge case: Load all translations and check
+        const lookup = await buildClassNameLookup()
+        // Use lookup result, or fall back to className for third-party classes
+        updateData['system.details.sheetClass'] = lookup[className] || className
+      }
+    }
+  }
+
+  // Convert ActiveEffect changes for v14 compatibility (data-driven check)
+  // - Convert numeric mode to string type
+  // - Convert custom 'diceChain' type to standard 'add'/'subtract'
+  if (actor.effects?.length) {
+    const migratedEffects = []
+    let hasEffectUpdates = false
+    for (const effect of actor.effects) {
+      const effectData = effect.toObject ? effect.toObject() : foundry.utils.duplicate(effect)
+      if (effectData.changes?.length) {
+        let effectModified = false
+        for (const change of effectData.changes) {
+          // Convert numeric mode to string type if needed
+          if (typeof change.mode === 'number' && change.type === undefined) {
+            change.type = EFFECT_MODE_TO_TYPE[change.mode] || 'add'
+            delete change.mode
+            effectModified = true
+          }
+          // Convert custom 'diceChain' type to standard 'add' or 'subtract'
+          if (change.type === 'diceChain') {
+            const value = parseInt(change.value)
+            if (!isNaN(value) && value < 0) {
+              // Negative value: use subtract with positive value
+              change.type = 'subtract'
+              change.value = String(Math.abs(value))
+            } else {
+              // Positive or zero value: use add
+              change.type = 'add'
+            }
+            effectModified = true
+          }
+        }
+        if (effectModified) {
+          hasEffectUpdates = true
         }
       }
+      migratedEffects.push(effectData)
+    }
+    if (hasEffectUpdates) {
+      updateData.effects = migratedEffects
     }
   }
 
@@ -243,7 +295,7 @@ const migrateActorData = async function (actor) {
       const itemUpdate = migrateItemData(i)
 
       // Update the Owned Item
-      if (!isObjectEmpty(itemUpdate)) {
+      if (!foundry.utils.isEmpty(itemUpdate)) {
         hasItemUpdates = true
         return foundry.utils.mergeObject(i, itemUpdate, { enforceTypes: false, inplace: false })
       } else {
@@ -304,6 +356,48 @@ const migrateItemData = function (item) {
       if (item.damage && !item.damageWeapon) {
         item.config.damageOverride = item.damage
       }
+    }
+  }
+
+  // Convert ActiveEffect changes for v14 compatibility (data-driven check)
+  // - Convert numeric mode to string type
+  // - Convert custom 'diceChain' type to standard 'add'/'subtract'
+  if (item.effects?.length) {
+    const migratedEffects = []
+    let hasEffectUpdates = false
+    for (const effect of item.effects) {
+      const effectData = effect.toObject ? effect.toObject() : foundry.utils.duplicate(effect)
+      if (effectData.changes?.length) {
+        let effectModified = false
+        for (const change of effectData.changes) {
+          // Convert numeric mode to string type if needed
+          if (typeof change.mode === 'number' && change.type === undefined) {
+            change.type = EFFECT_MODE_TO_TYPE[change.mode] || 'add'
+            delete change.mode
+            effectModified = true
+          }
+          // Convert custom 'diceChain' type to standard 'add' or 'subtract'
+          if (change.type === 'diceChain') {
+            const value = parseInt(change.value)
+            if (!isNaN(value) && value < 0) {
+              // Negative value: use subtract with positive value
+              change.type = 'subtract'
+              change.value = String(Math.abs(value))
+            } else {
+              // Positive or zero value: use add
+              change.type = 'add'
+            }
+            effectModified = true
+          }
+        }
+        if (effectModified) {
+          hasEffectUpdates = true
+        }
+      }
+      migratedEffects.push(effectData)
+    }
+    if (hasEffectUpdates) {
+      updateData.effects = migratedEffects
     }
   }
 

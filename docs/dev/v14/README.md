@@ -2,16 +2,18 @@
 
 This directory contains documentation for preparing for FoundryVTT V14.
 
-**Note**: V14 is currently in prototype/development. Expected stable release: January 2026.
+**Current Status**: Developer 1 (Build 354) released. API development phase.
 
 ## Overview
 
 V14 focuses on several key pillars:
-- **Scene Levels** - New framework for multi-level scenes
-- **Active Effects V2** - Major improvements to effect handling
-- **Scene Regions V2** - MeasuredTemplates absorbed into Scene Regions
-- **ProseMirror Improvements** - TinyMCE removed entirely
+- **Scene Levels** - Vertically stacking multiple images inside a single scene at defined elevations
+- **Active Effects V2** - Promoted to primary documents, compendium storage, token drop support
+- **Scene Regions V2** - MeasuredTemplates absorbed into Scene Regions, enhanced shape editing
+- **ProseMirror Only** - TinyMCE entirely removed (external integration API available for modules)
 - **Pop-out Applications** - Render ApplicationV2 in separate browser windows
+- **Performance Improvements** - Significant DataModel and document operation speedups
+- **Placeables Palette** - Bulk-editing canvas objects (technical preview)
 
 ## Quick Start
 
@@ -49,14 +51,19 @@ TinyMCE is fully removed in V14. Only ProseMirror editor is available.
 
 ## Timeline
 
-- **Prototype Phase**: Through November 2025
-- **Alpha (API Development)**: Following prototypes
+- **Prototype 1**: Build 349 - Core API changes, Active Effects V2, Pop-out Apps
+- **Developer 1**: Build 354 (Current) - Scene Levels, TinyMCE removal, Placeables Palette
+- **Future**: Scene Objects Sidebar, Measured Templates redesign
+- **Alpha (API Development)**: Following developer builds
 - **Beta (User Testing)**: Before stable release
-- **Expected Stable**: January 2026
+- **Expected Stable**: 2026
 
 ## Resources
 
 - [Official Release Notes](https://foundryvtt.com/releases/)
+- [V14 Prototype 1 Notes](https://foundryvtt.com/releases/14.349)
+- [V14 Developer 1 Notes](https://foundryvtt.com/releases/14.354)
+- [V14 Breaking Changes Board](https://github.com/orgs/foundryvtt/projects/67/views/8)
 - [API Migration Guides](https://foundryvtt.com/article/migration/)
 - [System Data Models Guide](https://foundryvtt.com/article/system-data-models/)
 - [Community Wiki - DataModel](https://foundryvtt.wiki/en/development/api/DataModel)

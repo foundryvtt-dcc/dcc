@@ -1,0 +1,47 @@
+{
+  "name": "Attack Penalty (-1)",
+  "img": "systems/dcc/styles/images/game-icons-net/swordman.svg",
+  "type": "base",
+  "system": {},
+  "changes": [
+    {
+      "key": "system.details.attackBonus",
+      "value": "-1",
+      "type": "add",
+      "priority": null
+    }
+  ],
+  "disabled": false,
+  "duration": {
+    "startTime": null,
+    "seconds": null,
+    "combat": null,
+    "rounds": null,
+    "turns": null,
+    "startRound": null,
+    "startTurn": null
+  },
+  "description": "<p>Subtracts 1 from attack rolls.</p>",
+  "origin": null,
+  "transfer": true,
+  "statuses": [],
+  "flags": {},
+  "_id": "mmUBBSBagHvMuFP5",
+  "_stats": {
+    "coreVersion": "14.352",
+    "systemId": "dcc",
+    "systemVersion": "0.66.0",
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "folder": null,
+  "sort": 2300,
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!effects!mmUBBSBagHvMuFP5"
+}
