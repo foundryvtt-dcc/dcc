@@ -672,8 +672,15 @@ async function processSpellCheck (actor, spellData) {
       }
 
       const spellResultOptions = { crit, fumble, item, patronTaint }
+      const messageData = {}
       if (flavor) {
-        spellResultOptions.messageData = { flavor }
+        messageData.flavor = flavor
+      }
+      if (!item && actor) {
+        messageData.speaker = ChatMessage.getSpeaker({ actor })
+      }
+      if (Object.keys(messageData).length) {
+        spellResultOptions.messageData = messageData
       }
       await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, spellResultOptions)
       // Otherwise just roll the dice
