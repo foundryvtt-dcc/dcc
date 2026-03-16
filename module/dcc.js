@@ -660,8 +660,7 @@ async function processSpellCheck (actor, spellData) {
         await roll.evaluate()
       }
 
-      // Build the flavor text and spell result indicator
-      const messageFlavor = flavor
+      // Build the spell result indicator for pass/fail display
       const noTableLevel = item ? item.system.level : 1
       const noTableSuccess = roll.total >= (10 + noTableLevel * 2)
       let spellResultHtml = ''
@@ -688,7 +687,7 @@ async function processSpellCheck (actor, spellData) {
       // Display the roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
-        flavor: messageFlavor,
+        flavor,
         flags,
         system: { spellId: item?.id }
       })

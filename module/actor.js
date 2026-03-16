@@ -1187,11 +1187,6 @@ class DCCActor extends Actor {
         item: skillItem,
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
-
-      // Handle drainDisapproval for divine aid
-      if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
-        await this.applyDisapproval(skill.drainDisapproval)
-      }
     } else {
       await roll.evaluate()
 
