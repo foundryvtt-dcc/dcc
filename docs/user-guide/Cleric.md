@@ -71,3 +71,41 @@ The system will automatically find and list your world table in the dropdown. If
 - If you have the Core Book module, it includes the standard disapproval table automatically
 - Works with localized versions of "Disapproval" in other languages (e.g., "Ungnade" in German, "Désapprobation" in French)
 
+## Creating Cleric Ability Roll Tables
+
+By default, cleric abilities (Turn Unholy, Lay on Hands, Divine Aid) roll a spell check and show a simple pass/fail result. If you want detailed results from a roll table (like the tables in the DCC RPG rulebook), you can create your own world RollTables and the system will find them automatically.
+
+If you have the **Core Book module** installed, these tables are included automatically and no setup is needed.
+
+### Step 1: Create a RollTable
+
+1. Click on the **RollTables** tab in the sidebar
+2. Click **Create RollTable**
+3. **Name the table one of these exact names** (must match exactly):
+   - **Turn Unholy**
+   - **Lay on Hands**
+   - **Divine Aid**
+4. Leave the **Roll Formula** blank — the system uses the spell check result to look up the table row
+5. Add table results in the **Results** section. Each row maps a spell check total to its effect:
+   - Click **Add Result** for each row
+   - Set the **Range** to match the spell check totals from the DCC RPG rulebook
+   - Set the **Text** to the effect description
+   - **IMPORTANT**: Your first result should have a minimum range of **1** to catch low rolls
+   - **IMPORTANT**: Your last result should have a high maximum range (e.g., **40**) to catch high rolls with bonuses
+
+   Example for Turn Unholy:
+   - `1 to 11`: No effect
+   - `12 to 13`: Turned 1d4 HD of unholy creatures, etc.
+   - `14 to 19`: Greater effect...
+   - `20 to 40`: Maximum effect...
+6. Click **Create RollTable** to save
+
+The system will automatically find and use your world table the next time that ability is rolled. The table result text will be displayed in the chat card instead of the simple "Success." / "Failure." message.
+
+### Tips
+
+- The table name must **exactly match** one of the three names above — the system looks up world tables by the localized ability name, so non-English users should use the translated name from their language file
+- Each ability needs its own RollTable — they have different result ranges and effects
+- Fumbles (natural 1) always use the lowest table result, and crits (natural 20) add the cleric's level to the roll before looking up the result
+- To stop using a table, simply delete or rename the world RollTable — the system will fall back to the simple pass/fail display
+

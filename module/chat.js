@@ -502,6 +502,11 @@ export const emoteSkillCheckRoll = function (message, html, data) {
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
     messageContent.innerHTML = skillCheckRollEmote
+    // Append spell check result (pass/fail) after the emote if present
+    const spellResult = message.getFlag('dcc', 'spellResult')
+    if (spellResult) {
+      messageContent.innerHTML += `<br>${spellResult}`
+    }
   }
   const header = html.querySelector('header')
   if (header) {

@@ -454,7 +454,13 @@ function registerTables () {
       }
     }
   })
-  CONFIG.DCC.disapprovalPacks.addPack(game.settings.get('dcc', 'disapprovalCompendium'), true)
+  const disapprovalCompendium = game.settings.get('dcc', 'disapprovalCompendium')
+  if (disapprovalCompendium) {
+    CONFIG.DCC.disapprovalPacks.addPack(disapprovalCompendium, true)
+  } else {
+    // No compendium configured - still scan world tables for disapproval tables
+    CONFIG.DCC.disapprovalPacks._updateHook(CONFIG.DCC.disapprovalPacks)
+  }
 
   // Create manager for critical hit table packs and register the system setting
   CONFIG.DCC.criticalHitPacks = new TablePackManager()
@@ -525,6 +531,18 @@ async function getSkillTable (skillName) {
     // Fall back to searching world tables by name
     const worldTableName = tablePath.length === 3 ? tablePath[2] : tableName
     const worldTable = game.tables.getName(worldTableName)
+    if (worldTable) {
+      return worldTable
+    }
+  }
+
+  // Fall back to searching world tables by localized skill name
+  // This allows users to create a world table named "Turn Unholy" (or the
+  // equivalent in their language) without any system settings configuration
+  const labelKey = CONFIG.DCC.skillTableLabels?.[skillName]
+  if (labelKey) {
+    const localizedName = game.i18n.localize(labelKey)
+    const worldTable = game.tables.getName(localizedName)
     if (worldTable) {
       return worldTable
     }
@@ -653,19 +671,36 @@ async function processSpellCheck (actor, spellData) {
         roll._total += levelValue
       }
 
-      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, { crit, fumble, item, patronTaint })
+      const spellResultOptions = { crit, fumble, item, patronTaint }
+      const messageData = {}
+      if (flavor) {
+        messageData.flavor = flavor
+      }
+      if (!item && actor) {
+        messageData.speaker = ChatMessage.getSpeaker({ actor })
+      }
+      if (Object.keys(messageData).length) {
+        spellResultOptions.messageData = messageData
+      }
+      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, spellResultOptions)
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
         await roll.evaluate()
       }
 
-      // Build the flavor text, adding fumble/crit indicators
-      let messageFlavor = flavor
+      // Build the spell result indicator for pass/fail display
+      const noTableLevel = item ? item.system.level : 1
+      const noTableSuccess = roll.total >= (10 + noTableLevel * 2)
+      let spellResultHtml = ''
       if (fumble) {
-        messageFlavor += ` <br><span class="fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</span>`
+        spellResultHtml = `<span class="fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</span>`
       } else if (crit) {
-        messageFlavor += ` <br><span class="critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</span>`
+        spellResultHtml = `<span class="critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</span>`
+      } else if (noTableSuccess) {
+        spellResultHtml = `<span class="critical">${game.i18n.localize('DCC.SpellCheckSuccessNoTable')}</span>`
+      } else {
+        spellResultHtml = `<span class="fumble">${game.i18n.localize('DCC.SpellCheckFailureNoTable')}</span>`
       }
 
       // Generate flags for the roll
@@ -673,14 +708,15 @@ async function processSpellCheck (actor, spellData) {
         'dcc.RollType': 'SpellCheck',
         'dcc.isSpellCheck': true,
         'dcc.isSkillCheck': true,
-        'dcc.ItemId': item?.id
+        'dcc.ItemId': item?.id,
+        'dcc.spellResult': spellResultHtml
       }
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
       // Display the roll
       await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
-        flavor: messageFlavor,
+        flavor,
         flags,
         system: { spellId: item?.id }
       })
