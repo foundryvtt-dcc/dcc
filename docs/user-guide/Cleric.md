@@ -73,7 +73,7 @@ The system will automatically find and list your world table in the dropdown. If
 
 ## Creating Cleric Ability Roll Tables
 
-By default, cleric abilities (Turn Unholy, Lay on Hands, Divine Aid) roll a spell check and show a simple pass/fail result. If you want detailed results from a roll table (like the tables in the DCC RPG rulebook), you can create your own world RollTables and configure the system to use them.
+By default, cleric abilities (Turn Unholy, Lay on Hands, Divine Aid) roll a spell check and show a simple pass/fail result. If you want detailed results from a roll table (like the tables in the DCC RPG rulebook), you can create your own world RollTables and the system will find them automatically.
 
 If you have the **Core Book module** installed, these tables are included automatically and no setup is needed.
 
@@ -81,10 +81,12 @@ If you have the **Core Book module** installed, these tables are included automa
 
 1. Click on the **RollTables** tab in the sidebar
 2. Click **Create RollTable**
-3. Fill in the table details:
-   - **Name**: A descriptive name (e.g., "Turn Unholy", "Lay on Hands", "Divine Aid")
-   - **Roll Formula**: Leave blank — the system uses the spell check result to look up the table row
-4. Add table results in the **Results** section. Each row maps a spell check total to its effect:
+3. **Name the table one of these exact names** (must match exactly):
+   - **Turn Unholy**
+   - **Lay on Hands**
+   - **Divine Aid**
+4. Leave the **Roll Formula** blank — the system uses the spell check result to look up the table row
+5. Add table results in the **Results** section. Each row maps a spell check total to its effect:
    - Click **Add Result** for each row
    - Set the **Range** to match the spell check totals from the DCC RPG rulebook
    - Set the **Text** to the effect description
@@ -96,26 +98,14 @@ If you have the **Core Book module** installed, these tables are included automa
    - `12 to 13`: Turned 1d4 HD of unholy creatures, etc.
    - `14 to 19`: Greater effect...
    - `20 to 40`: Maximum effect...
-5. Click **Create RollTable** to save
+6. Click **Create RollTable** to save
 
-### Step 2: Configure the System Setting
-
-1. Go to **Game Settings** → **Configure Settings** → **System Settings**
-2. Check **Manual Compendium Configuration** and save
-3. The settings page will reload with additional fields. Find the field for your ability:
-   - **Turn Unholy Table**
-   - **Lay on Hands Table**
-   - **Divine Aid Table**
-4. Type the **exact name** of your world RollTable into the field
-5. Click **Save Changes**
-
-The system will now look up your world table when that ability is rolled. The table result text will be displayed in the chat card instead of the simple "Success." / "Failure." message.
+The system will automatically find and use your world table the next time that ability is rolled. The table result text will be displayed in the chat card instead of the simple "Success." / "Failure." message.
 
 ### Tips
 
-- The table name in the setting must **exactly match** the world RollTable name (case-sensitive)
+- The table name must **exactly match** one of the three names above — the system looks up world tables by the localized ability name, so non-English users should use the translated name from their language file
 - Each ability needs its own RollTable — they have different result ranges and effects
-- When a table is configured, fumbles (natural 1) always use the lowest table result, and crits (natural 20) add the cleric's level to the roll before looking up the result
-- You can remove a table by clearing the setting field and saving — the system will fall back to the simple pass/fail display
-- If you later install the Core Book module, set the settings back to "Automatic" by unchecking Manual Compendium Configuration
+- Fumbles (natural 1) always use the lowest table result, and crits (natural 20) add the cleric's level to the roll before looking up the result
+- To stop using a table, simply delete or rename the world RollTable — the system will fall back to the simple pass/fail display
 

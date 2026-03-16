@@ -530,6 +530,18 @@ async function getSkillTable (skillName) {
     }
   }
 
+  // Fall back to searching world tables by localized skill name
+  // This allows users to create a world table named "Turn Unholy" (or the
+  // equivalent in their language) without any system settings configuration
+  const labelKey = CONFIG.DCC.skillTableLabels?.[skillName]
+  if (labelKey) {
+    const localizedName = game.i18n.localize(labelKey)
+    const worldTable = game.tables.getName(localizedName)
+    if (worldTable) {
+      return worldTable
+    }
+  }
+
   return null
 }
 
