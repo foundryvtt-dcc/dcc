@@ -1518,6 +1518,33 @@ test('rollSkillCheck with disapproval range for cleric', async () => {
   expect(rollCall[2].title).toBe('Lay on Hands')
 })
 
+test('rollSkillCheck routes cleric abilities through processSpellCheck even without a table', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+
+  // Ensure no table is returned
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  // Set up cleric with disapproval
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.turnUnholy = {
+    label: 'DCC.TurnUnholy',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true
+  }
+
+  await actor.rollSkillCheck('turnUnholy')
+
+  // processSpellCheck should be called even without a table
+  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
+  expect(spellCheckCall[0]).toBe(actor)
+  expect(spellCheckCall[1].rollTable).toBeNull()
+})
+
 test('rollLuckDie with negative luck modifier', async () => {
   dccRollCreateRollMock.mockClear()
   actorUpdateMock.mockClear()

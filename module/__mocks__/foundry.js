@@ -1301,7 +1301,11 @@ class Localization {
       'DCC.Languages': 'Languages',
       'DCC.SaveDC': 'DC {dc}',
       'DCC.SaveSuccess': 'Success',
-      'DCC.SaveFailure': 'Failure'
+      'DCC.SaveFailure': 'Failure',
+      'DCC.SpellCheckSuccessNoTable': 'Success.',
+      'DCC.SpellCheckFailureNoTable': 'Failure.',
+      'DCC.SpellCheckCritNoTable': 'Crit! Natural 20.',
+      'DCC.SpellCheckFumbleNoTable': 'Fumble! Natural 1.'
     }
   }
 
