@@ -454,7 +454,13 @@ function registerTables () {
       }
     }
   })
-  CONFIG.DCC.disapprovalPacks.addPack(game.settings.get('dcc', 'disapprovalCompendium'), true)
+  const disapprovalCompendium = game.settings.get('dcc', 'disapprovalCompendium')
+  if (disapprovalCompendium) {
+    CONFIG.DCC.disapprovalPacks.addPack(disapprovalCompendium, true)
+  } else {
+    // No compendium configured - still scan world tables for disapproval tables
+    CONFIG.DCC.disapprovalPacks._updateHook(CONFIG.DCC.disapprovalPacks)
+  }
 
   // Create manager for critical hit table packs and register the system setting
   CONFIG.DCC.criticalHitPacks = new TablePackManager()
