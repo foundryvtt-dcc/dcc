@@ -1570,12 +1570,21 @@ test('rollSkillCheck routes layOnHands through processSpellCheck without a table
   expect(spellCheckCall[1].item).toBeNull()
 })
 
-test('rollSkillCheck routes divineAid through processSpellCheck without a table', async () => {
+test('rollSkillCheck routes divineAid through processSpellCheck and applies +10 disapproval', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
   game.dcc.getSkillTable.mockClear()
+  actorUpdateMock.mockClear()
 
   game.dcc.getSkillTable.mockResolvedValue(null)
+
+  // Mock automateClericDisapproval to return true for this test
+  const originalGet = game.settings.get
+  game.settings.get = vi.fn((module, key) => {
+    if (module === 'dcc' && key === 'automateClericDisapproval') return true
+    if (module === 'core' && key === 'rollMode') return 'publicroll'
+    return originalGet(module, key)
+  })
 
   actor.system.details.sheetClass = 'Cleric'
   actor.system.class.disapproval = 1
@@ -1594,6 +1603,40 @@ test('rollSkillCheck routes divineAid through processSpellCheck without a table'
   const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
   expect(spellCheckCall[0]).toBe(actor)
   expect(spellCheckCall[1].rollTable).toBeNull()
+
+  // Divine aid should always apply +10 disapproval per DCC rules
+  expect(actorUpdateMock).toHaveBeenCalledWith({
+    'system.class.disapproval': 11
+  })
+
+  // Restore original settings mock
+  game.settings.get = originalGet
+})
+
+test('rollSkillCheck does not apply drainDisapproval for turnUnholy', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+  actorUpdateMock.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.turnUnholy = {
+    label: 'DCC.TurnUnholy',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true
+  }
+
+  await actor.rollSkillCheck('turnUnholy')
+
+  // processSpellCheck should be called
+  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+
+  // Turn unholy should NOT apply extra disapproval (no drainDisapproval property)
+  expect(actorUpdateMock).not.toHaveBeenCalled()
 })
 
 test('rollSkillCheck does not route regular skills through processSpellCheck', async () => {
