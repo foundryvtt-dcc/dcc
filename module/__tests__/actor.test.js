@@ -1545,6 +1545,80 @@ test('rollSkillCheck routes cleric abilities through processSpellCheck even with
   expect(spellCheckCall[1].rollTable).toBeNull()
 })
 
+test('rollSkillCheck routes layOnHands through processSpellCheck without a table', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.layOnHands = {
+    label: 'DCC.LayOnHands',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true
+  }
+
+  await actor.rollSkillCheck('layOnHands')
+
+  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
+  expect(spellCheckCall[0]).toBe(actor)
+  expect(spellCheckCall[1].rollTable).toBeNull()
+  expect(spellCheckCall[1].item).toBeNull()
+})
+
+test('rollSkillCheck routes divineAid through processSpellCheck without a table', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.divineAid = {
+    label: 'DCC.DivineAid',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true,
+    drainDisapproval: 10
+  }
+
+  await actor.rollSkillCheck('divineAid')
+
+  // processSpellCheck should be called
+  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
+  expect(spellCheckCall[0]).toBe(actor)
+  expect(spellCheckCall[1].rollTable).toBeNull()
+})
+
+test('rollSkillCheck does not route regular skills through processSpellCheck', async () => {
+  dccRollCreateRollMock.mockClear()
+  game.dcc.processSpellCheck.mockClear()
+  game.dcc.getSkillTable.mockClear()
+  rollToMessageMock.mockClear()
+
+  game.dcc.getSkillTable.mockResolvedValue(null)
+
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.skills.sneakSilently = {
+    label: 'DCC.SneakSilently',
+    die: '1d20',
+    value: '+2'
+  }
+
+  await actor.rollSkillCheck('sneakSilently')
+
+  // Regular skills should NOT go through processSpellCheck
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  // Should use the plain skill check path
+  expect(rollToMessageMock).toHaveBeenCalled()
+})
+
 test('rollLuckDie with negative luck modifier', async () => {
   dccRollCreateRollMock.mockClear()
   actorUpdateMock.mockClear()
