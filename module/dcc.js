@@ -671,7 +671,11 @@ async function processSpellCheck (actor, spellData) {
         roll._total += levelValue
       }
 
-      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, { crit, fumble, item, patronTaint })
+      const spellResultOptions = { crit, fumble, item, patronTaint }
+      if (flavor) {
+        spellResultOptions.messageData = { flavor }
+      }
+      await game.dcc.SpellResult.addChatMessage(roll, rollTable, result, spellResultOptions)
       // Otherwise just roll the dice
     } else {
       if (!roll._evaluated) {
