@@ -1178,13 +1178,20 @@ class DCCActor extends Actor {
 
     // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
-    if (skillTable) {
+    if (skillTable || skill.useDisapprovalRange) {
+      // Route through processSpellCheck for skills with tables or cleric abilities
+      // processSpellCheck handles pass/fail display, disapproval range checks, and disapproval increase
       await game.dcc.processSpellCheck(this, {
         rollTable: skillTable,
         roll,
         item: skillItem,
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
+
+      // Handle drainDisapproval for divine aid
+      if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
+        await this.applyDisapproval(skill.drainDisapproval)
+      }
     } else {
       await roll.evaluate()
 
@@ -1213,11 +1220,6 @@ class DCCActor extends Actor {
       }
 
       roll.toMessage(messageData)
-
-      // Need to drain disapproval
-      if (skill && skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
-        await this.applyDisapproval(skill.drainDisapproval)
-      }
     }
 
     // Store last result if required

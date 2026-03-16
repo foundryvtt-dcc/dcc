@@ -660,12 +660,19 @@ async function processSpellCheck (actor, spellData) {
         await roll.evaluate()
       }
 
-      // Build the flavor text, adding fumble/crit indicators
-      let messageFlavor = flavor
+      // Build the flavor text and spell result indicator
+      const messageFlavor = flavor
+      const noTableLevel = item ? item.system.level : 1
+      const noTableSuccess = roll.total >= (10 + noTableLevel * 2)
+      let spellResultHtml = ''
       if (fumble) {
-        messageFlavor += ` <br><span class="fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</span>`
+        spellResultHtml = `<span class="fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</span>`
       } else if (crit) {
-        messageFlavor += ` <br><span class="critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</span>`
+        spellResultHtml = `<span class="critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</span>`
+      } else if (noTableSuccess) {
+        spellResultHtml = `<span class="critical">${game.i18n.localize('DCC.SpellCheckSuccessNoTable')}</span>`
+      } else {
+        spellResultHtml = `<span class="fumble">${game.i18n.localize('DCC.SpellCheckFailureNoTable')}</span>`
       }
 
       // Generate flags for the roll
@@ -673,7 +680,8 @@ async function processSpellCheck (actor, spellData) {
         'dcc.RollType': 'SpellCheck',
         'dcc.isSpellCheck': true,
         'dcc.isSkillCheck': true,
-        'dcc.ItemId': item?.id
+        'dcc.ItemId': item?.id,
+        'dcc.spellResult': spellResultHtml
       }
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
