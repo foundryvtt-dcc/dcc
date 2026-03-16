@@ -1187,6 +1187,12 @@ class DCCActor extends Actor {
         item: skillItem,
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
+
+      // Divine aid always increases disapproval by its cost (e.g. +10), separate from
+      // the standard +1 on failure that processSpellCheck handles
+      if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
+        await this.applyDisapproval(skill.drainDisapproval)
+      }
     } else {
       await roll.evaluate()
 
