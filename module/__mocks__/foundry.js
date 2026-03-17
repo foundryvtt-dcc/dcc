@@ -1668,7 +1668,8 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   overwrite = true,
   recursive = true,
   inplace = true,
-  enforceTypes = false
+  enforceTypes = false,
+  performDeletions = false
 } = {}, _d = 0) {
   other = other || {}
   if (!(original instanceof Object) || !(other instanceof Object)) {
@@ -1687,9 +1688,9 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   for (let [k, v] of Object.entries(other)) {
     const tv = global.getType(v)
 
-    // Prepare to delete
+    // Prepare to delete - requires performDeletions flag (real Foundry v13 behavior)
     let toDelete = false
-    if (k.startsWith('-=')) {
+    if (k.startsWith('-=') && performDeletions) {
       k = k.slice(2)
       toDelete = (v === null)
     }
@@ -1715,7 +1716,8 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
           insertValues,
           overwrite,
           inplace: true,
-          enforceTypes
+          enforceTypes,
+          performDeletions
         }, depth)
 
         // 1.2 - Remove an existing key

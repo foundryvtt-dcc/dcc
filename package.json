@@ -37,7 +37,10 @@
     "check": "npm run format && npm run scss && npm run test && npm run compare-lang",
     "format": "standard --fix && stylelint \"**/*.scss\" --fix",
     "test": "vitest run module/",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
     "test-watch": "vitest module/",
+    "setup:foundry": "node scripts/setup-foundry-dev.js",
     "scss": "sass styles/dcc.scss styles/dcc.css",
     "scss-watch": "sass --watch styles/dcc.scss styles/dcc.css",
     "todb": "node module/compilePacks.js",
@@ -51,11 +54,5 @@
     ]
   },
   "type": "module",
-  "version": "0.50.0",
-  "vitest": {
-    "exclude": [
-      "**/node_modules/**",
-      "**/browser-tests/**"
-    ]
-  }
+  "version": "0.50.0"
 }
