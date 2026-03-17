@@ -13,8 +13,9 @@ function isFoundryAvailable () {
   if (fs.existsSync(path.join(import.meta.dirname, '.foundry-dev', 'common'))) {
     return true
   }
-  // Check known local paths
+  // Check known local paths (v14 preferred over v13)
   const knownPaths = [
+    path.join(os.homedir(), 'Applications', 'foundry-14'),
     path.join(os.homedir(), 'Applications', 'foundry-13'),
     path.join(os.homedir(), 'Applications', 'foundryvtt'),
     '/Applications/FoundryVTT',
@@ -42,9 +43,17 @@ const projects = [
   }
 ]
 
+// Resolve .foundry-dev path for alias
+const foundryDevDir = path.join(import.meta.dirname, '.foundry-dev')
+
 // Only include integration tests if Foundry is available
 if (foundryAvailable) {
   projects.push({
+    resolve: {
+      alias: {
+        '@common': path.join(foundryDevDir, 'common')
+      }
+    },
     test: {
       name: 'integration',
       include: ['module/__integration__/**/*.test.js'],

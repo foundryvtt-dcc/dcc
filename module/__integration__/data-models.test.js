@@ -321,17 +321,22 @@ describe('Data Migration (real Foundry migration pipeline)', () => {
 
 describe('Real foundry.utils behavior', () => {
   test('mergeObject handles deletion keys with performDeletions', () => {
-    // REAL FOUNDRY: deletion keys require performDeletions: true (since v10+)
-    // Without it, the '-=key' is treated as a literal key name
+    // v14 renamed performDeletions to applyOperators and '-=key' creates ForcedDeletion operators
+    // v13 uses performDeletions: true to delete '-=key' entries
     const original1 = { a: 1, b: 2, c: 3 }
     const withoutFlag = foundry.utils.mergeObject(original1, { '-=b': null })
-    expect(withoutFlag.b).toBe(2) // NOT deleted without the flag
+    expect(withoutFlag.a).toBe(1)
+    expect(withoutFlag.c).toBe(3)
+    // Without the flag, b is not deleted as a number (v13: preserved, v14: becomes ForcedDeletion)
+    expect(withoutFlag.b).not.toBe(2)
 
+    // Use applyOperators (v14) or performDeletions (v13) — both work in v14 via compat shim
     const original2 = { a: 1, b: 2, c: 3 }
-    const withFlag = foundry.utils.mergeObject(original2, { '-=b': null }, { performDeletions: true })
-    expect(withFlag.b).toBeUndefined() // Deleted with the flag
+    const withFlag = foundry.utils.mergeObject(original2, { '-=b': null }, { applyOperators: true, performDeletions: true })
     expect(withFlag.a).toBe(1)
     expect(withFlag.c).toBe(3)
+    // b should be fully deleted
+    expect(withFlag.b).toBeUndefined()
   })
 
   test('mergeObject handles dot-notation keys', () => {

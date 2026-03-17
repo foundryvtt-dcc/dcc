@@ -29,8 +29,11 @@ const PROJECT_ROOT = path.resolve(import.meta.dirname, '..')
 const FOUNDRY_DEV_DIR = path.join(PROJECT_ROOT, '.foundry-dev')
 const VERSION_FILE = path.join(FOUNDRY_DEV_DIR, '.foundry-version')
 
-// What we copy from a Foundry install - only the common/ layer (no browser/server deps)
+// What we copy from a Foundry install - common/ layer plus client/dice for dice engine
 const REQUIRED_DIRS = ['common']
+
+// Optional directories to copy when present (v14+)
+const OPTIONAL_DIRS = ['client/dice', 'common/primitives']
 
 // Default Foundry build to download (latest stable v13)
 const DEFAULT_BUILD = '351'
@@ -39,7 +42,8 @@ const DEFAULT_BUILD = '351'
 const KNOWN_PATHS = [
   // Explicitly set env var
   process.env.FOUNDRY_PATH,
-  // macOS locations
+  // macOS locations (v14 preferred over v13)
+  path.join(os.homedir(), 'Applications', 'foundry-14'),
   path.join(os.homedir(), 'Applications', 'foundry-13'),
   path.join(os.homedir(), 'Applications', 'foundryvtt'),
   '/Applications/FoundryVTT',
@@ -113,6 +117,7 @@ Environment variables:
 
 Auto-detect searches these paths (in order):
   $FOUNDRY_PATH
+  ~/Applications/foundry-14
   ~/Applications/foundry-13
   ~/Applications/foundryvtt
   /Applications/FoundryVTT
@@ -245,11 +250,27 @@ function copyFromInstall (foundryPath) {
     copyDirectory(src, dest)
   }
 
+  // Copy optional directories when present
+  for (const dir of OPTIONAL_DIRS) {
+    const src = path.join(foundryPath, dir)
+    if (fs.existsSync(src)) {
+      const dest = path.join(FOUNDRY_DEV_DIR, dir)
+      console.log(`  Copying ${dir}/...`)
+      copyDirectory(src, dest)
+    }
+  }
+
   // Also copy package.json for version tracking
   fs.copyFileSync(
     path.join(foundryPath, 'package.json'),
     path.join(FOUNDRY_DEV_DIR, 'package.json')
   )
+
+  // If client/dice was copied, pre-compile the PEG grammar
+  const grammarPath = path.join(FOUNDRY_DEV_DIR, 'client', 'dice', 'grammar.pegjs')
+  if (fs.existsSync(grammarPath)) {
+    compilePegGrammar(foundryPath, grammarPath)
+  }
 
   // Write version marker
   fs.writeFileSync(VERSION_FILE, JSON.stringify(version, null, 2) + '\n')
@@ -258,6 +279,60 @@ function copyFromInstall (foundryPath) {
   const size = getDirSize(FOUNDRY_DEV_DIR)
   console.log(`\nDone! Copied ${fileCount} files (${formatSize(size)}) to .foundry-dev/`)
   console.log(`Foundry version: v${version.version} (gen ${version.generation}, build ${version.build})`)
+}
+
+// ============================================================================
+// PEG grammar compilation
+// ============================================================================
+
+function compilePegGrammar (foundryPath, grammarPath) {
+  console.log('  Compiling PEG grammar...')
+
+  // Use peggy from Foundry's own node_modules (run in-place to resolve its dependencies)
+  const peggyPath = path.join(foundryPath, 'node_modules', 'peggy', 'lib', 'peg.js')
+  if (!fs.existsSync(peggyPath)) {
+    console.warn('  Warning: peggy not found in Foundry node_modules, skipping grammar compilation')
+    return
+  }
+
+  const outputPath = grammarPath.replace('grammar.pegjs', 'grammar.compiled.mjs')
+
+  try {
+    // Run the compilation from the Foundry install dir so peggy can find its own dependencies
+    const compileScript = `
+      import peggy from '${peggyPath.replace(/\\/g, '/')}';
+      import fs from 'node:fs';
+      const grammar = fs.readFileSync('${grammarPath.replace(/\\/g, '/')}', 'utf-8');
+      const parser = peggy.generate(grammar, { output: 'source', format: 'es' });
+      fs.writeFileSync('${outputPath.replace(/\\/g, '/')}', parser);
+    `
+
+    execSync(`node --input-type=module -e "${compileScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, {
+      stdio: 'pipe',
+      cwd: foundryPath
+    })
+
+    // The compiled grammar exports { parse } as a named export, but _module.mjs
+    // expects a default import. Add a default export wrapper.
+    const compiledPath = path.join(FOUNDRY_DEV_DIR, 'client', 'dice', 'grammar.compiled.mjs')
+    let compiledContent = fs.readFileSync(compiledPath, 'utf-8')
+    compiledContent += '\nexport default { parse: peg$parse };\n'
+    fs.writeFileSync(compiledPath, compiledContent)
+
+    // Patch _module.mjs to import compiled grammar instead of .pegjs
+    const modulePath = path.join(FOUNDRY_DEV_DIR, 'client', 'dice', '_module.mjs')
+    let moduleContent = fs.readFileSync(modulePath, 'utf-8')
+    moduleContent = moduleContent.replace(
+      'import Parser from "./grammar.pegjs"',
+      'import Parser from "./grammar.compiled.mjs"'
+    )
+    fs.writeFileSync(modulePath, moduleContent)
+
+    console.log('  PEG grammar compiled successfully')
+  } catch (err) {
+    console.warn(`  Warning: PEG grammar compilation failed: ${err.message}`)
+    console.warn('  Dice engine will not be available in integration tests')
+  }
 }
 
 // ============================================================================
@@ -293,12 +368,12 @@ async function downloadFoundry (build) {
     fs.writeFileSync(zipPath, buffer)
     console.log(`Downloaded ${formatSize(buffer.length)}`)
 
-    // Extract just the common/ directory and package.json
-    console.log('Extracting common/ modules...')
+    // Extract common/, client/dice/, and package.json
+    console.log('Extracting modules...')
     const extractDir = path.join(tmpDir, 'extracted')
     fs.mkdirSync(extractDir, { recursive: true })
 
-    execSync(`unzip -q "${zipPath}" "common/*" "package.json" -d "${extractDir}"`, {
+    execSync(`unzip -q "${zipPath}" "common/*" "client/dice/*" "package.json" -d "${extractDir}"`, {
       stdio: 'pipe'
     })
 
