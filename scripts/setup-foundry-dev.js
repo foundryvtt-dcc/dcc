@@ -32,8 +32,8 @@ const VERSION_FILE = path.join(FOUNDRY_DEV_DIR, '.foundry-version')
 // What we copy from a Foundry install - common/ layer plus client/dice for dice engine
 const REQUIRED_DIRS = ['common']
 
-// Optional directories to copy when present (v14+)
-const OPTIONAL_DIRS = ['client/dice', 'common/primitives']
+// Optional directories to copy when present (v14+ dice engine)
+const OPTIONAL_DIRS = ['client/dice']
 
 // Default Foundry build to download (latest stable v13)
 const DEFAULT_BUILD = '351'
@@ -96,8 +96,8 @@ function printHelp () {
   console.log(`
 Setup Foundry VTT for integration tests
 
-Populates .foundry-dev/ with Foundry's common/ modules, similar to how
-Playwright installs browsers. Only the common/ layer is needed (~1.5 MB).
+Populates .foundry-dev/ with Foundry's common/ modules and optional dice
+engine, similar to how Playwright installs browsers.
 
 Usage:
   node scripts/setup-foundry-dev.js [options]
@@ -130,7 +130,7 @@ Examples:
   node scripts/setup-foundry-dev.js
 
   # Copy from specific install
-  node scripts/setup-foundry-dev.js --source ~/Applications/foundry-13
+  node scripts/setup-foundry-dev.js --source ~/Applications/foundry-14
 
   # Download with presigned URL (from foundryvtt.com Purchased Licenses)
   FOUNDRY_RELEASE_URL="https://..." node scripts/setup-foundry-dev.js --download
@@ -321,12 +321,16 @@ function compilePegGrammar (foundryPath, grammarPath) {
 
     // Patch _module.mjs to import compiled grammar instead of .pegjs
     const modulePath = path.join(FOUNDRY_DEV_DIR, 'client', 'dice', '_module.mjs')
-    let moduleContent = fs.readFileSync(modulePath, 'utf-8')
-    moduleContent = moduleContent.replace(
+    const originalModule = fs.readFileSync(modulePath, 'utf-8')
+    const patchedModule = originalModule.replace(
       'import Parser from "./grammar.pegjs"',
       'import Parser from "./grammar.compiled.mjs"'
     )
-    fs.writeFileSync(modulePath, moduleContent)
+    if (patchedModule === originalModule) {
+      console.warn('  Warning: Could not find expected import statement in _module.mjs')
+      console.warn('  The dice engine may not load correctly')
+    }
+    fs.writeFileSync(modulePath, patchedModule)
 
     console.log('  PEG grammar compiled successfully')
   } catch (err) {
@@ -368,14 +372,23 @@ async function downloadFoundry (build) {
     fs.writeFileSync(zipPath, buffer)
     console.log(`Downloaded ${formatSize(buffer.length)}`)
 
-    // Extract common/, client/dice/, and package.json
+    // Extract required files
     console.log('Extracting modules...')
     const extractDir = path.join(tmpDir, 'extracted')
     fs.mkdirSync(extractDir, { recursive: true })
 
-    execSync(`unzip -q "${zipPath}" "common/*" "client/dice/*" "package.json" -d "${extractDir}"`, {
+    execSync(`unzip -q "${zipPath}" "common/*" "package.json" -d "${extractDir}"`, {
       stdio: 'pipe'
     })
+
+    // Optionally extract dice engine (v14+)
+    try {
+      execSync(`unzip -q "${zipPath}" "client/dice/*" -d "${extractDir}"`, {
+        stdio: 'pipe'
+      })
+    } catch {
+      console.log('  Note: client/dice/ not in archive (expected for older builds)')
+    }
 
     copyFromInstall(extractDir)
   } finally {

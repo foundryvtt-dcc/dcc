@@ -6,12 +6,24 @@
  * classes to verify that dice evaluation works correctly.
  */
 import { describe, test, expect } from 'vitest'
+import fs from 'node:fs'
+import path from 'node:path'
 
 // =============================================================================
 // Skip if dice engine is not available
 // =============================================================================
 
 const hasDiceEngine = typeof Roll !== 'undefined' && Roll?.parse
+
+// Fail loudly if dice files exist but engine didn't load (catches broken setup)
+const dicePath = path.join(import.meta.dirname, '..', '..', '.foundry-dev', 'client', 'dice')
+if (fs.existsSync(dicePath) && !hasDiceEngine) {
+  throw new Error(
+    'Dice engine files exist in .foundry-dev/client/dice/ but Roll is not available. ' +
+    'setup-dice.js likely failed during import. Check setup logs above.'
+  )
+}
+
 const describeIfDice = hasDiceEngine ? describe : describe.skip
 
 // =============================================================================
@@ -57,7 +69,7 @@ describeIfDice('Basic Dice Evaluation (real Foundry dice)', () => {
     expect(Number.isFinite(roll.total)).toBe(true)
   })
 
-  test('evaluate() is idempotent (throws on re-evaluate)', async () => {
+  test('evaluate() throws if called more than once', async () => {
     const roll = new Roll('1d20')
     await roll.evaluate()
     await expect(roll.evaluate()).rejects.toThrow(/already been evaluated/)
@@ -203,37 +215,38 @@ describeIfDice('Roll.validate (real validation)', () => {
 describeIfDice('Seeded Determinism (MersenneTwister)', () => {
   test('same seed produces identical sequence of roll results', async () => {
     const MersenneTwister = foundry.dice.MersenneTwister
-
-    // First run with seed 12345
-    const twister1 = new MersenneTwister(12345)
     const originalRandom = CONFIG.Dice.randomUniform
-    CONFIG.Dice.randomUniform = () => twister1.random()
 
-    const results1 = []
-    for (let i = 0; i < 20; i++) {
-      const roll = new Roll('1d20')
-      await roll.evaluate()
-      results1.push(roll.total)
+    try {
+      // First run with seed 12345
+      const twister1 = new MersenneTwister(12345)
+      CONFIG.Dice.randomUniform = () => twister1.random()
+
+      const results1 = []
+      for (let i = 0; i < 20; i++) {
+        const roll = new Roll('1d20')
+        await roll.evaluate()
+        results1.push(roll.total)
+      }
+
+      // Second run with same seed
+      const twister2 = new MersenneTwister(12345)
+      CONFIG.Dice.randomUniform = () => twister2.random()
+
+      const results2 = []
+      for (let i = 0; i < 20; i++) {
+        const roll = new Roll('1d20')
+        await roll.evaluate()
+        results2.push(roll.total)
+      }
+
+      // Both sequences must be identical
+      expect(results1).toEqual(results2)
+      // Verify we got actual variance (not all the same)
+      const unique = new Set(results1)
+      expect(unique.size).toBeGreaterThan(1)
+    } finally {
+      CONFIG.Dice.randomUniform = originalRandom
     }
-
-    // Second run with same seed
-    const twister2 = new MersenneTwister(12345)
-    CONFIG.Dice.randomUniform = () => twister2.random()
-
-    const results2 = []
-    for (let i = 0; i < 20; i++) {
-      const roll = new Roll('1d20')
-      await roll.evaluate()
-      results2.push(roll.total)
-    }
-
-    // Restore original
-    CONFIG.Dice.randomUniform = originalRandom
-
-    // Both sequences must be identical
-    expect(results1).toEqual(results2)
-    // Verify we got actual variance (not all the same)
-    const unique = new Set(results1)
-    expect(unique.size).toBeGreaterThan(1)
   })
 })

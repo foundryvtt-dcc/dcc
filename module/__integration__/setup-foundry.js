@@ -7,7 +7,7 @@
  * Resolution order for finding Foundry:
  *   1. FOUNDRY_PATH environment variable
  *   2. .foundry-dev/ in the project root (populated by scripts/setup-foundry-dev.js)
- *   3. Known local install paths (~/Applications/foundry-13, etc.)
+ *   3. Known local install paths (~/Applications/foundry-14, ~/Applications/foundry-13, etc.)
  *
  * What's real:
  * - foundry.utils (mergeObject, expandObject, getProperty, setProperty, deepClone, etc.)

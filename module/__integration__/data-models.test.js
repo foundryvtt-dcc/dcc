@@ -327,15 +327,20 @@ describe('Real foundry.utils behavior', () => {
     const withoutFlag = foundry.utils.mergeObject(original1, { '-=b': null })
     expect(withoutFlag.a).toBe(1)
     expect(withoutFlag.c).toBe(3)
-    // Without the flag, b is not deleted as a number (v13: preserved, v14: becomes ForcedDeletion)
-    expect(withoutFlag.b).not.toBe(2)
+    // v13: b preserved as 2, '-=b' added as literal key
+    // v14: '-=b' migrated to ForcedDeletion operator on key 'b'
+    if (typeof withoutFlag.b === 'number') {
+      expect(withoutFlag.b).toBe(2) // v13 behavior
+    } else {
+      expect(withoutFlag.b.constructor.name).toBe('ForcedDeletion') // v14 behavior
+    }
 
     // Use applyOperators (v14) or performDeletions (v13) — both work in v14 via compat shim
     const original2 = { a: 1, b: 2, c: 3 }
     const withFlag = foundry.utils.mergeObject(original2, { '-=b': null }, { applyOperators: true, performDeletions: true })
     expect(withFlag.a).toBe(1)
     expect(withFlag.c).toBe(3)
-    // b should be fully deleted
+    // b should be fully deleted in both versions
     expect(withFlag.b).toBeUndefined()
   })
 
