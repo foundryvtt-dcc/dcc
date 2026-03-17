@@ -694,13 +694,13 @@ async function processSpellCheck (actor, spellData) {
       const noTableSuccess = roll.total >= (10 + noTableLevel * 2)
       let spellResultHtml = ''
       if (fumble) {
-        spellResultHtml = `<span class="fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</span>`
+        spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</p>`
       } else if (crit) {
-        spellResultHtml = `<span class="critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</span>`
+        spellResultHtml = `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</p>`
       } else if (noTableSuccess) {
-        spellResultHtml = `<span class="critical">${game.i18n.localize('DCC.SpellCheckSuccessNoTable')}</span>`
+        spellResultHtml = `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckSuccessNoTable')}</p>`
       } else {
-        spellResultHtml = `<span class="fumble">${game.i18n.localize('DCC.SpellCheckFailureNoTable')}</span>`
+        spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFailureNoTable')}</p>`
       }
 
       // Generate flags for the roll
@@ -828,6 +828,17 @@ Hooks.on('renderChatMessageHTML', async (message, html, data) => {
     chat.emoteInitiativeRoll(message, html, data)
     chat.emoteSavingThrowRoll(message, html, data)
     chat.emoteSkillCheckRoll(message, html, data)
+  }
+
+  // Show spell check pass/fail result for non-emote messages (emote path handles this in emoteSkillCheckRoll)
+  if (emoteRolls === false) {
+    const spellResult = message.getFlag('dcc', 'spellResult')
+    if (spellResult) {
+      const messageContent = html.querySelector('.message-content')
+      if (messageContent) {
+        messageContent.innerHTML += spellResult
+      }
+    }
   }
 
   if (emoteRolls === false || (emoteRolls === true && automateDamageFumblesCrits === false)) {
