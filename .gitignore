@@ -63,6 +63,9 @@ packs/**/MANIFEST*
 # Claude local settings
 .claude/settings.local.json
 
+# Foundry VTT dev install for integration tests (populated by scripts/setup-foundry-dev.js)
+.foundry-dev/
+
 # Playwright MCP temporary files
 .playwright-mcp/
 
