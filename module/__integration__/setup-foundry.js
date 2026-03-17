@@ -210,7 +210,7 @@ try {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
     versionInfo = pkg.version || 'unknown'
   }
-} catch { /* ignore */ }
+} catch (e) { console.warn('[integration] Could not read Foundry version:', e.message) }
 
 console.log(`[integration] Foundry v${versionInfo} from: ${commonPath}`)
 console.log('[integration] Real: foundry.utils, foundry.data.fields, foundry.abstract, CONST')

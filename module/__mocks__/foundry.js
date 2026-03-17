@@ -1716,7 +1716,8 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
           insertValues,
           overwrite,
           inplace: true,
-          enforceTypes
+          enforceTypes,
+          performDeletions
         }, depth)
 
         // 1.2 - Remove an existing key
