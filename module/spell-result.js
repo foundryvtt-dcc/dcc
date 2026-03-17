@@ -29,7 +29,6 @@ class SpellResult {
 
     // construct flags for the message
     const flags = {
-      'core.RollTableId': result.id,
       'dcc.SpellCheck': true,
       'dcc.RollType': 'SpellCheck',
       'dcc.ItemId': item?.id || null
