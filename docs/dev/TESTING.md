@@ -43,7 +43,9 @@ module/
 │   └── fixtures/             # Test data files
 ├── __integration__/          # Integration tests (real Foundry)
 │   ├── setup-foundry.js      # Setup: loads real Foundry modules
-│   └── data-models.test.js   # Data model tests against real fields
+│   ├── setup-dice.js         # Setup: loads real Foundry dice engine
+│   ├── data-models.test.js   # Data model tests against real fields
+│   └── dice-engine.test.js   # Dice engine tests (Roll, Die, parsing)
 ├── __mocks__/
 │   ├── foundry.js            # FoundryVTT API mocks
 │   ├── roll.js               # Roll system mocks
@@ -84,28 +86,38 @@ Integration tests import real Foundry VTT source code instead of mocks. This cat
 | `foundry.utils.*` (mergeObject, expandObject, etc.) | `game` (settings, i18n, user) |
 | `foundry.data.fields.*` (SchemaField, NumberField, etc.) | `Actor`, `Item`, `ChatMessage` |
 | `foundry.abstract.*` (DataModel, TypeDataModel) | `ApplicationV2`, `DialogV2` |
-| `CONST` (ownership levels, chat modes, etc.) | `Roll` (dice engine) |
-| `Collection` class | `Hooks`, `ui` |
+| `CONST` (ownership levels, chat modes, etc.) | `Hooks`, `ui` |
+| `Collection` class | |
+| `Roll`, `Die`, `RollParser`, `MersenneTwister` (dice engine) | |
 
 ### Setup
 
-Integration tests require a copy of Foundry's `common/` modules. The setup script populates `.foundry-dev/` (gitignored) with just what's needed (~1.5 MB):
+Integration tests require a copy of Foundry's `common/` modules. The setup script populates `.foundry-dev/` (gitignored) with what's needed:
+
+- `common/` — utilities, data fields, constants (~1.5 MB)
+- `client/dice/` — dice engine with pre-compiled PEG grammar (when available)
+- `common/primitives/` — prototype extensions (Array.filterJoin, Number.isNumeric, etc.)
+
+Both Foundry v13 and v14 are supported. v14 is preferred when both are available.
 
 ```bash
 # Auto-detect from a local Foundry install
 npm run setup:foundry
 
 # Or specify a path
-node scripts/setup-foundry-dev.js --source ~/Applications/foundry-13
+node scripts/setup-foundry-dev.js --source ~/Applications/foundry-14
 
 # Or download from foundryvtt.com (see "CI Setup" below)
 node scripts/setup-foundry-dev.js --download
+
+# Force re-setup (e.g., after installing a new Foundry version)
+npm run setup:foundry -- --force
 ```
 
 The resolution order for finding Foundry is:
 1. `FOUNDRY_PATH` environment variable
 2. `.foundry-dev/` in the project root
-3. Known local install paths (`~/Applications/foundry-13`, etc.)
+3. Known local install paths (`~/Applications/foundry-14`, `~/Applications/foundry-13`, etc.)
 
 ### CI Setup
 
@@ -160,6 +172,9 @@ DCC data models and utilities against real Foundry code:
 - TypeDataModel construction and migration pipeline
 - `foundry.utils` behavior (mergeObject, expandObject, etc.)
 - Field coercion (NumberField, StringField, BooleanField)
+- Real dice engine: Roll evaluation, formula parsing, variable substitution
+- DCC-specific dice (d3, d5, d7, d14, d16, d24, d30)
+- Seeded determinism with MersenneTwister PRNG
 
 ## Parser Tests
 

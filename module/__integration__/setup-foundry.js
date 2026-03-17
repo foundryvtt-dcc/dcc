@@ -7,7 +7,7 @@
  * Resolution order for finding Foundry:
  *   1. FOUNDRY_PATH environment variable
  *   2. .foundry-dev/ in the project root (populated by scripts/setup-foundry-dev.js)
- *   3. Known local install paths (~/Applications/foundry-13, etc.)
+ *   3. Known local install paths (~/Applications/foundry-14, ~/Applications/foundry-13, etc.)
  *
  * What's real:
  * - foundry.utils (mergeObject, expandObject, getProperty, setProperty, deepClone, etc.)
@@ -16,11 +16,13 @@
  * - CONST (ownership levels, chat modes, dice roll modes, etc.)
  * - Collection class
  *
+ * What's conditionally real (when client/dice is available):
+ * - Roll, Die, RollParser, MersenneTwister (dice engine)
+ *
  * What's still mocked (requires browser/server environment):
  * - game (settings, i18n, user, etc.)
  * - Actor, Item, ChatMessage (client-side Document classes)
  * - ApplicationV2, DialogV2 (UI framework)
- * - Roll (client-side dice engine)
  * - Hooks (event system - lightweight mock)
  * - ui (notifications, sidebar, etc.)
  */
@@ -48,8 +50,9 @@ function resolveFoundryPath () {
   const devDir = path.join(projectRoot, '.foundry-dev')
   if (fs.existsSync(path.join(devDir, 'common'))) return devDir
 
-  // 3. Known local install paths
+  // 3. Known local install paths (v14 preferred over v13)
   const knownPaths = [
+    path.join(os.homedir(), 'Applications', 'foundry-14'),
     path.join(os.homedir(), 'Applications', 'foundry-13'),
     path.join(os.homedir(), 'Applications', 'foundryvtt'),
     '/Applications/FoundryVTT',
@@ -71,6 +74,39 @@ function resolveFoundryPath () {
 
 const foundryPath = resolveFoundryPath()
 const commonPath = path.join(foundryPath, 'common')
+
+// Detect Foundry generation from package.json
+let foundryGeneration = 13
+try {
+  const pkgPath = path.join(foundryPath, 'package.json')
+  if (fs.existsSync(pkgPath)) {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+    foundryGeneration = pkg.release?.generation ?? 13
+  }
+} catch { /* default to 13 */ }
+
+// =============================================================================
+// V14 PRIMITIVES - must load before helpers.mjs which depends on them
+// =============================================================================
+
+// Load all primitives (Array.filterJoin, Number.isNumeric, etc.)
+const primitivesDir = path.join(commonPath, 'primitives')
+if (fs.existsSync(primitivesDir)) {
+  // Load individual primitive modules that install prototype extensions
+  const primitiveModules = ['array.mjs', 'number.mjs', 'string.mjs', 'set.mjs', 'math.mjs']
+  for (const mod of primitiveModules) {
+    const modPath = path.join(primitivesDir, mod)
+    if (fs.existsSync(modPath)) {
+      await import(modPath)
+    }
+  }
+}
+
+// v14 uses _loc for localization in non-browser contexts
+globalThis._loc = (key) => key
+
+// v14 uses globalThis.logger for compatibility warnings
+globalThis.logger = globalThis.logger || console
 
 // =============================================================================
 // REAL FOUNDRY IMPORTS - these are the actual Foundry implementations
@@ -140,6 +176,15 @@ const ui = {
 // ASSIGN GLOBALS - make real + mocked code available as Foundry globals
 // =============================================================================
 
+// Import logging utilities if available (v14+)
+let logCompatibilityWarning = () => {}
+try {
+  const logging = await import(path.join(commonPath, 'utils', 'logging.mjs'))
+  if (logging.logCompatibilityWarning) {
+    logCompatibilityWarning = logging.logCompatibilityWarning
+  }
+} catch { /* v13 doesn't need this */ }
+
 // The foundry namespace - mix of real and mocked
 globalThis.foundry = {
   // REAL: utility functions from Foundry source
@@ -157,6 +202,12 @@ globalThis.foundry = {
     flattenObject: utils.flattenObject,
     filterObject: utils.filterObject,
     randomID: utils.randomID,
+    logCompatibilityWarning,
+    isSubclass: utils.isSubclass || ((cls, parent) => {
+      if (typeof cls !== 'function') return false
+      if (cls === parent) return true
+      return Object.prototype.isPrototypeOf.call(parent, cls)
+    }),
     Collection
   },
   // REAL: data field classes from Foundry source
@@ -212,6 +263,20 @@ try {
   }
 } catch (e) { console.warn('[integration] Could not read Foundry version:', e.message) }
 
-console.log(`[integration] Foundry v${versionInfo} from: ${commonPath}`)
+console.log(`[integration] Foundry v${versionInfo} (gen ${foundryGeneration}) from: ${commonPath}`)
 console.log('[integration] Real: foundry.utils, foundry.data.fields, foundry.abstract, CONST')
 console.log('[integration] Mocked: game, Hooks, ui, ApplicationV2, Actor, Item')
+
+// =============================================================================
+// DICE ENGINE - load real Foundry dice if client/dice was copied
+// =============================================================================
+
+const dicePath = path.join(foundryPath, 'client', 'dice')
+if (fs.existsSync(dicePath)) {
+  try {
+    await import('./setup-dice.js')
+    console.log('[integration] Real: Dice engine (Roll, Die, RollParser, MersenneTwister)')
+  } catch (err) {
+    console.warn(`[integration] Dice engine not available: ${err.message}`)
+  }
+}
