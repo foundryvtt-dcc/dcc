@@ -1867,7 +1867,8 @@ const DOCUMENT_DEFAULTS = {
       weight: 0,
       equipped: true,
       identified: true,
-      value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 }
+      value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 },
+      container: null
     },
     weapon: {
       config: { actionDieOverride: '', critDieOverride: '', critRangeOverride: null, critTableOverride: '', damageOverride: '', attackBonusOverride: '', initiativeBonusOverride: '', initiativeDieOverride: '' },
@@ -1899,6 +1900,7 @@ const DOCUMENT_DEFAULTS = {
     },
     ammunition: {},
     armor: { acBonus: '+1', checkPenalty: '-0', speed: '-0', fumbleDie: '1d4' },
+    container: { capacity: { weight: 0, items: 0 }, weightReduction: 0 },
     equipment: {},
     level: { class: '', level: '', levelData: '', levelDataLawful: '', levelDataNeutral: '', levelDataChaotic: '' },
     mount: {},
