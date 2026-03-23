@@ -46,6 +46,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       convertUpward: this.#convertUpward,
       convertDownward: this.#convertDownward,
       configureItem: this.#configureItem,
+      containerRemoveItem: this.#containerRemoveItem,
       twoWeaponChange: this.#twoWeaponChange,
       effectCreate: this.#effectCreate,
       effectEdit: this.#effectEdit,
@@ -245,6 +246,10 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         relativeTo: this.document,
         secrets: this.document.isOwner
       })
+    }
+
+    if (data.document.type === 'container') {
+      data.containerContents = this.document.contents
     }
 
     if (data.document.type === 'treasure') {
@@ -624,6 +629,24 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     console.log('lookupMercurialMagic')
     this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
     // No need to render - the document update will trigger re-render automatically
+  }
+
+  /**
+   * Remove an item from this container
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #containerRemoveItem (event, target) {
+    if (!this.document.isOwner) return
+    const li = target.closest('[data-item-id]')
+    if (!li) return
+    const itemId = li.dataset.itemId
+    const item = this.document.parent?.items?.get(itemId)
+    if (item) {
+      await item.update({ 'system.container': null })
+      this.render(false)
+    }
   }
 
   /**

@@ -1,0 +1,81 @@
+<section class="tab {{tabs.container.id}} {{tabs.container.cssClass}}" id="container" data-group="{{tabs.container.group}}" data-tab="{{tabs.container.id}}">
+  <div class="tab-body container-sheet">
+    <div class="grid-col-span-8 grid-tpl-max-auto mb-5">
+      <label for="name">{{localize "DCC.Name"}}</label>
+      <input id="name" name="name" value="{{document.name}}" placeholder="Name" autocomplete="off" size="25">
+    </div>
+    <div class="grid-col-span-4 grid-tpl-max-auto">
+      <label for="system.quantity">{{localize "DCC.Quantity"}}</label>
+      <input type="text" id="system.quantity" name="system.quantity" value="{{system.quantity}}" data-dtype="Number"/>
+    </div>
+
+    <div class="grid-col-span-12 container-capacity-fields">
+      <div>
+        <label for="system.capacity.weight">{{localize "DCC.ContainerCapacityWeight"}}</label>
+        <input type="text" id="system.capacity.weight" name="system.capacity.weight"
+               value="{{system.capacity.weight}}" data-dtype="Number" placeholder="0 = {{localize 'DCC.Unlimited'}}"/>
+      </div>
+      <div>
+        <label for="system.capacity.items">{{localize "DCC.ContainerCapacityItems"}}</label>
+        <input type="text" id="system.capacity.items" name="system.capacity.items"
+               value="{{system.capacity.items}}" data-dtype="Number" placeholder="0 = {{localize 'DCC.Unlimited'}}"/>
+      </div>
+      <div>
+        <label for="system.weightReduction">{{localize "DCC.ContainerWeightReduction"}}</label>
+        <input type="text" id="system.weightReduction" name="system.weightReduction"
+               value="{{system.weightReduction}}" data-dtype="Number" placeholder="0"/>
+      </div>
+    </div>
+
+    <div class="grid-col-span-12 grid-tpl-max-auto">
+      <label for="system.description.summary">{{localize "DCC.Notes"}}</label>
+      <input type="text" id="system.description.summary" name="system.description.summary"
+             value="{{system.description.summary}}" data-dtype="String"/>
+    </div>
+
+    <div class="box-border grid-col-span-9" title="{{localize 'DCC.DescriptionTooltip'}}">
+      <div class="box-title">{{localize "DCC.DescriptionPreview"}}</div>
+      <div class="box-inner description">
+        {{{descriptionHTML}}}
+      </div>
+    </div>
+    <div class="box-border grid-col-span-3" style="max-height: 127px; overflow: hidden;">
+      <div class="box-title">{{localize "DCC.Image"}}</div>
+      <div class="p-5">
+        <img class="item-img" src="{{document.img}}" data-action="editImage" data-edit="img" title="{{document.name}}" alt="{{document.name}}"/>
+      </div>
+    </div>
+
+    {{> systems/dcc/templates/item-sheet-partial-values.html }}
+
+    {{#if actor}}
+    <div class="grid-col-span-12 container-contents-section">
+      <div class="box-title">{{localize "DCC.ContainerContents"}}</div>
+      <div class="box-border">
+        <ol class="container-contents-list">
+          <li class="container-content-item" style="font-weight: bold; font-size: 11px;">
+            <div></div>
+            <div>{{localize "DCC.Name"}}</div>
+            <div>{{localize "DCC.Quantity"}}</div>
+            <div>{{localize "DCC.Weight"}}</div>
+            <div></div>
+          </li>
+          {{#each containerContents as |item|}}
+            <li class="container-content-item" data-item-id="{{item._id}}">
+              <img class="icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="22" height="22">
+              <div>{{item.name}}</div>
+              <div>{{item.system.quantity}}</div>
+              <div>{{item.system.weight}}</div>
+              <div>
+                <a class="item-control" title="{{localize 'DCC.ContainerRemoveItem'}}" data-action="containerRemoveItem"><i class="fas fa-arrow-up-from-bracket"></i></a>
+              </div>
+            </li>
+          {{else}}
+            <li class="container-empty">{{localize "DCC.ContainerEmpty"}}</li>
+          {{/each}}
+        </ol>
+      </div>
+    </div>
+    {{/if}}
+  </div>
+</section>
