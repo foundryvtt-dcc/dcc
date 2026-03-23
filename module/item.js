@@ -3,6 +3,8 @@
 import DiceChain from './dice-chain.js'
 import { ensurePlus, getFirstDie } from './utilities.js'
 
+const MAX_CONTAINER_DEPTH = 3
+
 // noinspection JSUnusedGlobalSymbols
 /**
  * Extend the base Item entity for DCC RPG
@@ -590,6 +592,177 @@ class DCCItem extends Item {
 
     this.update(updates)
   }
+
+  /* -------------------------------------------- */
+  /*  Container Support                            */
+  /* -------------------------------------------- */
+
+  /**
+   * Is this item a container type?
+   * @returns {boolean}
+   */
+  get isContainer () {
+    return this.type === 'container'
+  }
+
+  /**
+   * Is this item contained inside another item?
+   * @returns {boolean}
+   */
+  get isContained () {
+    return !!this.system.container
+  }
+
+  /**
+   * Get the items contained in this container
+   * @returns {DCCItem[]}
+   */
+  get contents () {
+    if (!this.isContainer || !this.parent) return []
+    return this.parent.items.filter(i => i.system.container === this.id)
+  }
+
+  /**
+   * Get the total weight of contents, applying weight reduction
+   * @returns {number}
+   */
+  get contentsWeight () {
+    if (!this.isContainer) return 0
+    let total = 0
+    for (const item of this.contents) {
+      const weight = parseFloat(item.system.weight) || 0
+      const quantity = parseInt(item.system.quantity) || 1
+      total += weight * quantity
+    }
+    const reduction = this.system.weightReduction || 0
+    return total * (1 - reduction / 100)
+  }
+
+  /**
+   * Get total weight: container's own weight + reduced contents weight
+   * @returns {number}
+   */
+  get totalWeight () {
+    const ownWeight = (parseFloat(this.system.weight) || 0) * (parseInt(this.system.quantity) || 1)
+    return ownWeight + this.contentsWeight
+  }
+
+  /**
+   * Get remaining weight capacity
+   * @returns {number|null} null if unlimited
+   */
+  get availableWeightCapacity () {
+    if (!this.isContainer) return null
+    const maxWeight = this.system.capacity?.weight || 0
+    if (maxWeight <= 0) return null
+    return Math.max(0, maxWeight - this.contentsWeight)
+  }
+
+  /**
+   * Get remaining item count capacity
+   * @returns {number|null} null if unlimited
+   */
+  get availableItemCapacity () {
+    if (!this.isContainer) return null
+    const maxItems = this.system.capacity?.items || 0
+    if (maxItems <= 0) return null
+    return Math.max(0, maxItems - this.contents.length)
+  }
+
+  /**
+   * Calculate the nesting depth of this item in container hierarchy
+   * @returns {number} 0 if not contained, 1+ for nesting level
+   */
+  get containerDepth () {
+    if (!this.isContained || !this.parent) return 0
+    let depth = 0
+    let current = this
+    while (current.system.container) {
+      depth++
+      current = this.parent.items.get(current.system.container)
+      if (!current) break
+    }
+    return depth
+  }
+
+  /**
+   * Check if adding an item to this container would create a circular reference
+   * @param {string} itemId - ID of the item to check
+   * @returns {boolean} true if circular
+   */
+  wouldCreateCircularContainment (itemId) {
+    if (this.id === itemId) return true
+    if (!this.isContained || !this.parent) return false
+    let current = this
+    while (current.system.container) {
+      if (current.system.container === itemId) return true
+      current = this.parent.items.get(current.system.container)
+      if (!current) break
+    }
+    return false
+  }
+
+  /**
+   * Check if an item can be added to this container
+   * @param {DCCItem} item - The item to check
+   * @returns {{allowed: boolean, reason: string|null}}
+   */
+  canContainItem (item) {
+    if (!this.isContainer) {
+      return { allowed: false, reason: 'DCC.ContainerNotAContainer' }
+    }
+    if (!item.system.container && item.system.container !== null) {
+      return { allowed: false, reason: 'DCC.ContainerItemNotPhysical' }
+    }
+    if (item.id === this.id) {
+      return { allowed: false, reason: 'DCC.ContainerCannotContainSelf' }
+    }
+    if (this.wouldCreateCircularContainment(item.id)) {
+      return { allowed: false, reason: 'DCC.ContainerCircularReference' }
+    }
+    // Check nesting depth
+    if (item.isContainer) {
+      const itemDepth = item.isContained ? item.containerDepth : 0
+      const thisDepth = this.containerDepth
+      if (thisDepth + itemDepth + 1 >= MAX_CONTAINER_DEPTH) {
+        return { allowed: false, reason: 'DCC.ContainerMaxDepth' }
+      }
+    }
+    // Check item capacity
+    if (this.availableItemCapacity !== null && this.availableItemCapacity <= 0) {
+      return { allowed: false, reason: 'DCC.ContainerFull' }
+    }
+    // Check weight capacity
+    if (this.availableWeightCapacity !== null) {
+      const itemWeight = (parseFloat(item.system.weight) || 0) * (parseInt(item.system.quantity) || 1)
+      if (itemWeight > this.availableWeightCapacity) {
+        return { allowed: false, reason: 'DCC.ContainerTooHeavy' }
+      }
+    }
+    return { allowed: true, reason: null }
+  }
+
+  /**
+   * Handle pre-delete to cascade or unparent contained items
+   * @param {object} options
+   * @param {string} userId
+   */
+  async _preDelete (options, userId) {
+    await super._preDelete(options, userId)
+    if (this.isContainer && this.parent) {
+      const contents = this.contents
+      if (contents.length > 0) {
+        // Unparent all contained items
+        const updates = contents.map(item => ({
+          _id: item.id,
+          'system.container': null
+        }))
+        await this.parent.updateEmbeddedDocuments('Item', updates)
+      }
+    }
+  }
+
+  /* -------------------------------------------- */
 
   /**
    * Determine if this item needs to have its treasure value rolled

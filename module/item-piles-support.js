@@ -1,7 +1,7 @@
 /* global game, getProperty */
 export async function setupItemPilesForDCC () {
   const baseConfig = {
-    VERSION: '1.1.0',
+    VERSION: '1.2.0',
 
     // The actor class type is the type of actor that will be used for the default item pile actor that is created on first item drop.
     ACTOR_CLASS_TYPE: 'Player',
@@ -45,6 +45,26 @@ export async function setupItemPilesForDCC () {
         }
       })
       return overallCost ?? 0
+    },
+
+    // Container item type handlers
+    ITEM_TYPE_HANDLERS: {
+      GLOBAL: {
+        IS_CONTAINED: ({ item }) => !!item?.system?.container,
+        IS_CONTAINED_PATH: 'system.container'
+      },
+      container: {
+        HAS_CURRENCY: false,
+        CONTENTS: ({ item }) => {
+          return item.parent?.items?.filter(i => i.system.container === item.id) || []
+        },
+        TRANSFER: ({ item, items, raw = false }) => {
+          const contents = (item.parent?.items || [])
+            .filter(i => i.system.container === item.id)
+            .map(i => raw ? i : i.toObject())
+          return [...items, ...contents]
+        }
+      }
     },
 
     // Item similarities determines how item piles detect similarities and differences in the system
