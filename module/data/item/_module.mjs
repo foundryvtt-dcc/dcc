@@ -4,6 +4,7 @@
 export { BaseItemData, PhysicalItemData } from './base-item.mjs'
 export { AmmunitionData } from './ammunition-data.mjs'
 export { ArmorData } from './armor-data.mjs'
+export { ContainerData } from './container-data.mjs'
 export { EquipmentData } from './equipment-data.mjs'
 export { LevelData } from './level-data.mjs'
 export { MountData } from './mount-data.mjs'

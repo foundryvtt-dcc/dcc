@@ -173,6 +173,7 @@ DCC.items = {
   weapon: 'DCC.Weapon',
   ammunition: 'DCC.Ammunition',
   armor: 'DCC.Armor',
+  container: 'DCC.Container',
   level: 'DCC.Level',
   equipment: 'DCC.Equipment',
   mount: 'DCC.Mount',
@@ -638,6 +639,7 @@ DCC.defaultActorImages = {
 DCC.defaultItemImages = {
   default: 'systems/dcc/styles/images/item.webp',
   armor: 'systems/dcc/styles/images/armor.webp',
+  container: 'icons/containers/bags/pack-leather-tan.webp',
   spell: 'systems/dcc/styles/images/spell.webp',
   treasure: 'systems/dcc/styles/images/coins.webp',
   weapon: 'systems/dcc/styles/images/weapon.webp',
