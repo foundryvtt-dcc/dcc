@@ -2618,7 +2618,7 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
 }
 .dcc .container-list .container-contents-list .container-content-item {
   display: grid;
-  grid-template-columns: 18px 1fr 30px 39px;
+  grid-template-columns: 18px 1fr 30px 58px;
   align-items: center;
   gap: 4px;
   padding: 1px 0;
@@ -2644,9 +2644,9 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
 }
 .dcc .container-sheet .container-contents-section .container-contents-list .container-content-item {
   display: grid;
-  grid-template-columns: 22px 1fr 40px 60px 39px;
+  grid-template-columns: 22px 1fr 60px 60px 58px;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   padding: 2px 0;
   border-bottom: 1px dotted var(--system-secondary-color);
 }

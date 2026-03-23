@@ -1,4 +1,4 @@
-/* global game, foundry, CONFIG */
+/* global fromUuid, game, foundry, CONFIG, ui */
 // noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
@@ -47,6 +47,7 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       convertDownward: this.#convertDownward,
       configureItem: this.#configureItem,
       containerRemoveItem: this.#containerRemoveItem,
+      containerDeleteItem: this.#containerDeleteItem,
       twoWeaponChange: this.#twoWeaponChange,
       effectCreate: this.#effectCreate,
       effectEdit: this.#effectEdit,
@@ -487,6 +488,40 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return this._onDropActiveEffect(event, data)
     }
 
+    // Handle item drops onto container sheets — add the item to this container
+    if (this.document.type === 'container' && (data.type === 'Item' || data.type === 'DCC Item') && data.uuid) {
+      const actor = this.document.parent
+      if (!actor) return false
+      let item
+      try {
+        item = await fromUuid(data.uuid)
+      } catch {
+        return false
+      }
+      if (!item) return false
+
+      // Item already on this actor — just set the container reference
+      if (item.parent?.id === actor.id) {
+        const check = this.document.canContainItem(item)
+        if (!check.allowed) {
+          ui.notifications.warn(game.i18n.localize(check.reason))
+          return false
+        }
+        await item.update({ 'system.container': this.document.id })
+        this.render(false)
+        return true
+      }
+
+      // Item from sidebar, compendium, or another actor — create on actor inside the container
+      const itemData = item.toObject ? item.toObject() : data.data
+      if (!itemData) return false
+      itemData.system = itemData.system || {}
+      itemData.system.container = this.document.id
+      await actor.createEmbeddedDocuments('Item', [itemData])
+      this.render(false)
+      return true
+    }
+
     if (this.document.type === 'spell') {
       // Handle dropping a roll table to set the spells table
       if (data.type === 'RollTable') {
@@ -646,6 +681,23 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (item) {
       await item.update({ 'system.container': null })
       this.render(false)
+    }
+  }
+
+  /**
+   * Delete an item from this container
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #containerDeleteItem (event, target) {
+    if (!this.document.isOwner) return
+    const li = target.closest('[data-item-id]')
+    if (!li) return
+    const itemId = li.dataset.itemId
+    const item = this.document.parent?.items?.get(itemId)
+    if (item) {
+      await item.deleteDialog()
     }
   }
 

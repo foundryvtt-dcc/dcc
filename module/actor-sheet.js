@@ -426,24 +426,31 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       if (containedItemIds.has(i._id)) continue
 
       if (i.type === 'container') {
-        // Attach contents to the container for template rendering
+        // Build a plain object for template rendering since DCCItem has read-only getters
         const item = this.options.document.items.get(i._id)
-        i.containerContents = item.contents
-        i.contentsWeight = item.contentsWeight
-        i.totalWeight = item.totalWeight
-        i.availableWeightCapacity = item.availableWeightCapacity
-        i.availableItemCapacity = item.availableItemCapacity
+        const containerData = {
+          _id: i._id,
+          name: i.name,
+          img: i.img,
+          type: i.type,
+          system: i.system,
+          containerContents: item.contents,
+          contentsWeight: item.contentsWeight,
+          totalWeight: item.totalWeight,
+          availableWeightCapacity: item.availableWeightCapacity,
+          availableItemCapacity: item.availableItemCapacity
+        }
         const maxWeight = i.system.capacity?.weight || 0
         const maxItems = i.system.capacity?.items || 0
-        i.capacitySummary = []
+        const summaryParts = []
         if (maxWeight > 0) {
-          i.capacitySummary.push(`${Number(i.contentsWeight.toFixed(2))}/${maxWeight} ${game.i18n.localize('DCC.WeightUnit')}`)
+          summaryParts.push(`${Number(containerData.contentsWeight.toFixed(2))}/${maxWeight} ${game.i18n.localize('DCC.WeightUnit')}`)
         }
         if (maxItems > 0) {
-          i.capacitySummary.push(`${i.containerContents.length}/${maxItems} ${game.i18n.localize('DCC.ContainerItemsUnit')}`)
+          summaryParts.push(`${containerData.containerContents.length}/${maxItems} ${game.i18n.localize('DCC.ContainerItemsUnit')}`)
         }
-        i.capacitySummary = i.capacitySummary.join(', ')
-        containers.push(i)
+        containerData.capacitySummary = summaryParts.join(', ')
+        containers.push(containerData)
       } else if (i.type === 'weapon') {
         if (i.system.melee) {
           weapons.melee.push(i)
@@ -1705,18 +1712,23 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     if (!item) return false
 
-    // If the item is from a different actor, let normal handling proceed
-    if (item.parent?.id !== this.options.document.id) return undefined
-
-    // Validate containment
-    const check = container.canContainItem(item)
-    if (!check.allowed) {
-      ui.notifications.warn(game.i18n.localize(check.reason))
-      return false
+    // Item already on this actor — just set the container reference
+    if (item.parent?.id === this.options.document.id) {
+      const check = container.canContainItem(item)
+      if (!check.allowed) {
+        ui.notifications.warn(game.i18n.localize(check.reason))
+        return false
+      }
+      await item.update({ 'system.container': containerId })
+      return true
     }
 
-    // Set the container reference
-    await item.update({ 'system.container': containerId })
+    // Item from sidebar, compendium, or another actor — create on actor inside the container
+    const itemData = item.toObject ? item.toObject() : data.data
+    if (!itemData) return undefined
+    itemData.system = itemData.system || {}
+    itemData.system.container = containerId
+    await this.options.document.createEmbeddedDocuments('Item', [itemData])
     return true
   }
 

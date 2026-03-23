@@ -2856,7 +2856,7 @@ a.inline-roll {
 
     .container-content-item {
       display: grid;
-      grid-template-columns: 18px 1fr 30px 39px;
+      grid-template-columns: 18px 1fr 30px 58px;
       align-items: center;
       gap: 4px;
       padding: 1px 0;
@@ -2888,9 +2888,9 @@ a.inline-roll {
 
       .container-content-item {
         display: grid;
-        grid-template-columns: 22px 1fr 40px 60px 39px;
+        grid-template-columns: 22px 1fr 60px 60px 58px;
         align-items: center;
-        gap: 4px;
+        gap: 8px;
         padding: 2px 0;
         border-bottom: 1px dotted var(--system-secondary-color);
       }

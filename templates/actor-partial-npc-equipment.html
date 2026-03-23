@@ -116,13 +116,13 @@
       </div>
     </li>
     {{#each equipment.containers as |container id|}}
-      <li class="grid-col-span-5 item item-draggable container-row" data-item-id="{{container._id}}">
+      <li class="grid-col-span-5 item item-draggable container-row" data-item-id="{{container._id}}" data-container-id="{{container._id}}">
         <div class="container-toggle-wrapper">
           <a class="container-toggle" data-action="containerToggle" data-container-id="{{container._id}}"><i class="fas fa-chevron-down"></i></a>
           <img class="item-draggable icon-filter" src="{{container.img}}" title="{{container.name}}" alt="{{container.name}}" width="22" height="22" data-drag="true" data-drag-action="item">
         </div>
         <div>{{container.name}}</div>
-        <div class="container-capacity">{{container.capacitySummary}}</div>
+        <div class="container-capacity" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat container.totalWeight decimals=2 sign=false}}">{{#if container.capacitySummary}}{{container.capacitySummary}}{{else}}{{numberFormat container.totalWeight decimals=2 sign=false}} {{localize "DCC.WeightUnit"}}{{/if}}</div>
         <div>{{{container.system.description.summary}}}</div>
         <div>
           <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
@@ -135,10 +135,11 @@
             <li class="container-content-item" data-item-id="{{item._id}}">
               <img class="icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="18" height="18" data-drag="true" data-drag-action="item">
               <div class="container-content-name">{{item.name}}</div>
-              <div class="container-content-qty">{{item.system.quantity}}</div>
+              <div class="container-content-qty" data-tooltip="{{localize 'DCC.Quantity'}}">{{item.system.quantity}}</div>
               <div>
                 <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
                 <a class="item-control" title="{{localize 'DCC.ContainerRemoveItem'}}" data-action="containerRemoveItem"><i class="fas fa-arrow-up-from-bracket"></i></a>
+                <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
               </div>
             </li>
           {{else}}
