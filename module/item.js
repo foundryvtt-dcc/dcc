@@ -745,7 +745,7 @@ class DCCItem extends Item {
   }
 
   /**
-   * Handle pre-delete to cascade or unparent contained items
+   * Handle pre-delete to unparent contained items when a container is deleted
    * @param {object} options
    * @param {string} userId
    */
@@ -754,12 +754,15 @@ class DCCItem extends Item {
     if (this.isContainer && this.parent) {
       const contents = this.contents
       if (contents.length > 0) {
-        // Unparent all contained items
         const updates = contents.map(item => ({
           _id: item.id,
           'system.container': null
         }))
-        await this.parent.updateEmbeddedDocuments('Item', updates)
+        try {
+          await this.parent.updateEmbeddedDocuments('Item', updates)
+        } catch {
+          console.error(`DCC | Failed to unparent ${contents.length} items from container "${this.name}" (${this.id}) during deletion`)
+        }
       }
     }
   }

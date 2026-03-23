@@ -50,12 +50,10 @@ Contents are **not stored on the container** — they are derived by querying th
 Add to `module/data/item/base-item.mjs`:
 
 ```js
-container: new foundry.data.fields.ForeignDocumentField(
-  foundry.documents.BaseItem, { idOnly: true, nullable: true, initial: null }
-)
+container: new StringField({ nullable: true, initial: null })
 ```
 
-This field is inherited by all physical item types (weapon, ammunition, armor, equipment, mount, treasure) and holds the ID of the parent container, or `null` if not contained.
+This field is inherited by all physical item types (weapon, ammunition, armor, container, equipment, mount, treasure) and holds the ID of the parent container, or `null` if not contained. A `StringField` is used instead of `ForeignDocumentField` for compatibility with the integration test environment.
 
 #### 1c. Register the new item type
 
@@ -77,9 +75,9 @@ Add methods/getters to `DCCItem` (or `ContainerData`) for:
 | `availableCapacity` | Remaining weight/item capacity |
 
 Handle lifecycle events:
-- **Delete container**: cascade delete or unparent all contained items (with confirmation dialog)
+- **Delete container**: unparent all contained items (items move to top-level inventory)
 - **Transfer container**: include contents when transferring between actors
-- **Validation**: prevent circular containment, enforce max nesting depth (suggest 3 levels for DCC)
+- **Validation**: prevent circular containment, enforce max nesting depth (MAX_CONTAINER_DEPTH = 3, effective 2 container levels deep)
 
 ### Phase 3: Actor Sheet UI
 
@@ -151,15 +149,14 @@ Bump the integration `VERSION`.
 
 ## i18n Keys
 
-New keys needed:
-- `DCC.ItemTypeContainer` — "Container"
-- `DCC.ContainerCapacityWeight` — "Weight Capacity"
-- `DCC.ContainerCapacityItems` — "Item Capacity"
+Key i18n keys added (see `lang/en.json` for the complete list):
+- `TYPES.Item.container` — "Container"
+- `DCC.Container` / `DCC.Containers` — Type label and section header
+- `DCC.ContainerCapacityWeight` / `DCC.ContainerCapacityItems` — Capacity config labels
 - `DCC.ContainerWeightReduction` — "Weight Reduction (%)"
-- `DCC.ContainerContents` — "Contents"
-- `DCC.ContainerEmpty` — "Empty"
-- `DCC.ContainerFull` — "Full"
-- `DCC.ContainerDeleteConfirm` — "Delete this container and all its contents?"
+- `DCC.ContainerContents` / `DCC.ContainerEmpty` / `DCC.ContainerFull` — Contents display
+- `DCC.ContainerRemoveItem` — "Remove from container"
+- Validation messages: `DCC.ContainerCannotContainSelf`, `DCC.ContainerCircularReference`, `DCC.ContainerMaxDepth`, `DCC.ContainerTooHeavy`, `DCC.ContainerNotAContainer`, `DCC.ContainerItemNotPhysical`
 
 ## Testing
 

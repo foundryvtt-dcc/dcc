@@ -1696,7 +1696,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (!container) return undefined
 
     // Get the dropped item
-    const item = await fromUuid(data.uuid)
+    let item
+    try {
+      item = await fromUuid(data.uuid)
+    } catch {
+      console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`)
+      return false
+    }
     if (!item) return false
 
     // If the item is from a different actor, let normal handling proceed
