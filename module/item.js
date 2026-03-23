@@ -677,7 +677,7 @@ class DCCItem extends Item {
     if (!this.isContained || !this.parent) return 0
     let depth = 0
     let current = this
-    while (current.system.container) {
+    while (current.system.container && depth <= MAX_CONTAINER_DEPTH) {
       depth++
       current = this.parent.items.get(current.system.container)
       if (!current) break
@@ -694,10 +694,12 @@ class DCCItem extends Item {
     if (this.id === itemId) return true
     if (!this.isContained || !this.parent) return false
     let current = this
-    while (current.system.container) {
+    let steps = 0
+    while (current.system.container && steps <= MAX_CONTAINER_DEPTH) {
       if (current.system.container === itemId) return true
       current = this.parent.items.get(current.system.container)
       if (!current) break
+      steps++
     }
     return false
   }
