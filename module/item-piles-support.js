@@ -59,9 +59,19 @@ export async function setupItemPilesForDCC () {
           return item.parent?.items?.filter(i => i.system.container === item.id) || []
         },
         TRANSFER: ({ item, items, raw = false }) => {
+          const sourceContainerId = item.id
           const contents = (item.parent?.items || [])
-            .filter(i => i.system.container === item.id)
-            .map(i => raw ? i : i.toObject())
+            .filter(i => i.system.container === sourceContainerId)
+            .map(i => {
+              const obj = raw ? i : i.toObject()
+              // Tag with source container name so _onCreate can re-associate
+              if (!raw && obj.flags) {
+                obj.flags.dcc = { ...obj.flags.dcc, sourceContainerName: item.name }
+              } else if (!raw) {
+                obj.flags = { dcc: { sourceContainerName: item.name } }
+              }
+              return obj
+            })
           return [...items, ...contents]
         }
       }
