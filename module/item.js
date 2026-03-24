@@ -713,7 +713,7 @@ class DCCItem extends Item {
     if (!this.isContainer) {
       return { allowed: false, reason: 'DCC.ContainerNotAContainer' }
     }
-    if (!item.system.container && item.system.container !== null) {
+    if (item.system.container === undefined) {
       return { allowed: false, reason: 'DCC.ContainerItemNotPhysical' }
     }
     if (item.id === this.id) {

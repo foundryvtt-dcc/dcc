@@ -745,7 +745,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
   }
 
-
   /**
    * Handle two-weapon checkbox changes
    * @this {DCCItemSheet}
