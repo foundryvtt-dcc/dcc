@@ -772,8 +772,8 @@ class DCCItem extends Item {
         }))
         try {
           await this.parent.updateEmbeddedDocuments('Item', updates)
-        } catch {
-          console.error(`DCC | Failed to re-associate ${orphaned.length} items with container "${this.name}"`)
+        } catch (err) {
+          console.error(`DCC | Failed to re-associate ${orphaned.length} items with container "${this.name}"`, err)
         }
       }
     }
