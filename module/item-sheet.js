@@ -49,7 +49,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       containerRemoveItem: this.#containerRemoveItem,
       containerDeleteItem: this.#containerDeleteItem,
       containerEditItem: this.#containerEditItem,
-      containerContentEdit: this.#containerContentEdit,
       twoWeaponChange: this.#twoWeaponChange,
       effectCreate: this.#effectCreate,
       effectEdit: this.#effectEdit,
@@ -151,6 +150,21 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @inheritDoc */
   _onRender (context, options) {
     this.#dragDrop.forEach((d) => d.bind(this.element))
+
+    // Bind change listeners for inline-editable container content fields
+    // These update the contained item (not the container) so they must bypass submitOnChange
+    this.element.querySelectorAll('.container-content-input').forEach(input => {
+      input.addEventListener('change', async (event) => {
+        event.stopPropagation()
+        const li = input.closest('[data-item-id]')
+        if (!li) return
+        const item = this.document.parent?.items?.get(li.dataset.itemId)
+        if (!item) return
+        const field = input.dataset.field
+        const value = input.dataset.dtype === 'Number' ? Number(input.value) : input.value
+        await item.update({ [field]: value })
+      })
+    })
   }
 
   /** @inheritdoc */
@@ -731,21 +745,6 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     }
   }
 
-  /**
-   * Handle inline editing of a contained item's field (quantity/weight)
-   * @this {DCCItemSheet}
-   * @param {Event} event   The originating change event
-   * @param {HTMLElement} target   The input element with data-field and data-item-id
-   */
-  static async #containerContentEdit (event, target) {
-    const li = target.closest('[data-item-id]')
-    if (!li) return
-    const item = this.document.parent?.items?.get(li.dataset.itemId)
-    if (!item) return
-    const field = target.dataset.field
-    const value = target.dataset.dtype === 'Number' ? Number(target.value) : target.value
-    await item.update({ [field]: value })
-  }
 
   /**
    * Handle two-weapon checkbox changes
