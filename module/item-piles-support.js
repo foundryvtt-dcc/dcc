@@ -59,11 +59,19 @@ export async function setupItemPilesForDCC () {
       container: {
         [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.HAS_CURRENCY]: false,
         [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.CONTENTS]: ({ item }) => {
-          return item.parent?.items?.filter(i => i.system.container === item.id) || []
+          if (!item.parent?.items) {
+            console.warn(`DCC | Item Piles CONTENTS handler: container "${item.name}" has no parent items collection`)
+            return []
+          }
+          return item.parent.items.filter(i => i.system.container === item.id)
         },
         [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.TRANSFER]: ({ item, items, raw = false }) => {
           const sourceContainerId = item.id
-          const contents = (item.parent?.items || [])
+          if (!item.parent?.items) {
+            console.warn(`DCC | Item Piles TRANSFER handler: container "${item.name}" has no parent items collection`)
+            return
+          }
+          const contents = item.parent.items
             .filter(i => i.system.container === sourceContainerId)
             .map(i => {
               const obj = raw ? i : i.toObject()

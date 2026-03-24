@@ -967,6 +967,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const item = this.options.document.items.get(itemId)
     if (item) {
       await item.update({ 'system.container': null })
+    } else {
+      console.warn(`DCC | Container remove: item ${itemId} not found`)
     }
   }
 
@@ -1719,7 +1721,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         ui.notifications.warn(game.i18n.localize(check.reason))
         return false
       }
-      await item.update({ 'system.container': containerId })
+      try {
+        await item.update({ 'system.container': containerId })
+      } catch (err) {
+        console.error(`DCC | Failed to add item "${item.name}" to container`, err)
+        return false
+      }
       return true
     }
 
@@ -1740,7 +1747,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     itemData.system = itemData.system || {}
     itemData.system.container = containerId
-    await this.options.document.createEmbeddedDocuments('Item', [itemData])
+    try {
+      await this.options.document.createEmbeddedDocuments('Item', [itemData])
+    } catch (err) {
+      console.error('DCC | Failed to create item in container', err)
+      return false
+    }
     return true
   }
 

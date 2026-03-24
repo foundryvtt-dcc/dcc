@@ -161,8 +161,13 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         const item = this.document.parent?.items?.get(li.dataset.itemId)
         if (!item) return
         const field = input.dataset.field
+        if (!field) return
         const value = input.dataset.dtype === 'Number' ? Number(input.value) : input.value
-        await item.update({ [field]: value })
+        try {
+          await item.update({ [field]: value })
+        } catch (err) {
+          console.error(`DCC | Failed to update ${field} on contained item ${item.name}`, err)
+        }
       })
     })
   }
@@ -524,8 +529,12 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
           ui.notifications.warn(game.i18n.localize(check.reason))
           return false
         }
-        await item.update({ 'system.container': this.document.id })
-        this.render(false)
+        try {
+          await item.update({ 'system.container': this.document.id })
+          this.render(false)
+        } catch (err) {
+          console.error(`DCC | Failed to add item "${item.name}" to container "${this.document.name}"`, err)
+        }
         return true
       }
 
@@ -546,8 +555,12 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       }
       itemData.system = itemData.system || {}
       itemData.system.container = this.document.id
-      await actor.createEmbeddedDocuments('Item', [itemData])
-      this.render(false)
+      try {
+        await actor.createEmbeddedDocuments('Item', [itemData])
+        this.render(false)
+      } catch (err) {
+        console.error(`DCC | Failed to create item in container "${this.document.name}"`, err)
+      }
       return true
     }
 
@@ -710,6 +723,9 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (item) {
       await item.update({ 'system.container': null })
       this.render(false)
+    } else {
+      console.warn(`DCC | Container remove: item ${itemId} not found, refreshing sheet`)
+      this.render(false)
     }
   }
 
@@ -742,6 +758,9 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     const item = this.document.parent?.items?.get(li.dataset.itemId)
     if (item) {
       await item.sheet.render({ force: true })
+    } else {
+      console.warn(`DCC | Container edit: item ${li.dataset.itemId} not found, refreshing sheet`)
+      this.render(false)
     }
   }
 

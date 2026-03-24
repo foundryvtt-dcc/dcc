@@ -796,7 +796,12 @@ class DCCItem extends Item {
       yes: async () => {
         const deleteIds = this.contents.map(i => i.id)
         deleteIds.push(this.id)
-        await this.parent.deleteEmbeddedDocuments('Item', deleteIds)
+        try {
+          await this.parent.deleteEmbeddedDocuments('Item', deleteIds)
+        } catch (err) {
+          console.error(`DCC | Failed to delete container "${this.name}" and its contents`, err)
+          return null
+        }
         return this
       },
       no: () => null,
