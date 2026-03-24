@@ -1726,6 +1726,18 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // Item from sidebar, compendium, or another actor — create on actor inside the container
     const itemData = item.toObject ? item.toObject() : data.data
     if (!itemData) return undefined
+    // Validate capacity (circularity checks don't apply for items not yet on the actor)
+    if (container.availableItemCapacity !== null && container.availableItemCapacity <= 0) {
+      ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
+      return false
+    }
+    if (container.availableWeightCapacity !== null) {
+      const itemWeight = (parseFloat(itemData.system?.weight) || 0) * (parseInt(itemData.system?.quantity) || 1)
+      if (itemWeight > container.availableWeightCapacity) {
+        ui.notifications.warn(game.i18n.localize('DCC.ContainerTooHeavy'))
+        return false
+      }
+    }
     itemData.system = itemData.system || {}
     itemData.system.container = containerId
     await this.options.document.createEmbeddedDocuments('Item', [itemData])
