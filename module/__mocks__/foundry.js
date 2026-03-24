@@ -474,6 +474,11 @@ class DialogV2Mock extends ApplicationV2Mock {
 
 global.DialogV2 = DialogV2Mock
 
+// Legacy Dialog mock (used by DCCItem.deleteDialog for container confirmation)
+global.Dialog = {
+  confirm: vi.fn(async ({ yes, no }) => yes ? yes() : null)
+}
+
 /**
  * DocumentSheetV2 - Base class for v2 document sheets
  * Extends ApplicationV2 to provide document-specific functionality including:
@@ -1000,6 +1005,10 @@ class MockItem {
     }
   }
 }
+
+// Lifecycle hooks and dialogs for MockItem
+MockItem.prototype._onCreate = async function () {}
+MockItem.prototype.deleteDialog = async function () { return this }
 
 // Enhanced MockItem with drag data support
 MockItem.prototype.toDragData = function () {
