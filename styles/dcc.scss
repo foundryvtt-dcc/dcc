@@ -2899,11 +2899,25 @@ a.inline-roll {
 
       .container-content-item {
         display: grid;
-        grid-template-columns: 22px 1fr 60px 60px 58px;
+        grid-template-columns: 22px 1fr 60px 60px 78px;
         align-items: center;
         gap: 8px;
         padding: 2px 0 2px 8px;
         border-bottom: 1px dotted var(--system-secondary-color);
+      }
+
+      .container-content-input {
+        width: 100%;
+        text-align: center;
+        border: 1px solid transparent;
+        background: transparent;
+        padding: 1px 4px;
+        font-size: inherit;
+
+        &:hover,
+        &:focus {
+          border-color: var(--system-secondary-color);
+        }
       }
 
       .container-empty {

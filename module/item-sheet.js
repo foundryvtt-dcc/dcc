@@ -48,6 +48,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       configureItem: this.#configureItem,
       containerRemoveItem: this.#containerRemoveItem,
       containerDeleteItem: this.#containerDeleteItem,
+      containerEditItem: this.#containerEditItem,
+      containerContentEdit: this.#containerContentEdit,
       twoWeaponChange: this.#twoWeaponChange,
       effectCreate: this.#effectCreate,
       effectEdit: this.#effectEdit,
@@ -712,6 +714,37 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     if (item) {
       await item.deleteDialog()
     }
+  }
+
+  /**
+   * Open the sheet for a contained item
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #containerEditItem (event, target) {
+    const li = target.closest('[data-item-id]')
+    if (!li) return
+    const item = this.document.parent?.items?.get(li.dataset.itemId)
+    if (item) {
+      await item.sheet.render({ force: true })
+    }
+  }
+
+  /**
+   * Handle inline editing of a contained item's field (quantity/weight)
+   * @this {DCCItemSheet}
+   * @param {Event} event   The originating change event
+   * @param {HTMLElement} target   The input element with data-field and data-item-id
+   */
+  static async #containerContentEdit (event, target) {
+    const li = target.closest('[data-item-id]')
+    if (!li) return
+    const item = this.document.parent?.items?.get(li.dataset.itemId)
+    if (!item) return
+    const field = target.dataset.field
+    const value = target.dataset.dtype === 'Number' ? Number(target.value) : target.value
+    await item.update({ [field]: value })
   }
 
   /**
