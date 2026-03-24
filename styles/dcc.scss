@@ -2840,7 +2840,20 @@ a.inline-roll {
 
   .container-contents {
     grid-column: span 5;
-    padding: 0 0 4px 26px;
+    padding: 0 0 4px 32px;
+    position: relative;
+
+    // Vertical connector line from the container icon down through contents
+    &::before {
+      content: '';
+      position: absolute;
+      left: 21px;
+      top: 0;
+      bottom: 4px;
+      width: 2px;
+      background: var(--system-secondary-color);
+      opacity: 0.5;
+    }
 
     &.collapsed {
       display: none;
@@ -2851,8 +2864,6 @@ a.inline-roll {
     list-style: none;
     margin: 0;
     padding: 0;
-    border-left: 2px solid var(--system-secondary-color);
-    padding-left: 8px;
 
     .container-content-item {
       display: grid;
