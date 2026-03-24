@@ -1706,8 +1706,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let item
     try {
       item = await fromUuid(data.uuid)
-    } catch {
-      console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`)
+    } catch (err) {
+      console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
       return false
     }
     if (!item) return false

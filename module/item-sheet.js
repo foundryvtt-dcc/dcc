@@ -495,7 +495,8 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       let item
       try {
         item = await fromUuid(data.uuid)
-      } catch {
+      } catch (err) {
+        console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
         return false
       }
       if (!item) return false
