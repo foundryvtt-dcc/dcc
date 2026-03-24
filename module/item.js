@@ -5,10 +5,6 @@ import { ensurePlus, getFirstDie } from './utilities.js'
 
 const MAX_CONTAINER_DEPTH = 3
 
-// Temporary storage for container contents during transfer
-// Maps container name+actor to contents data for recreation on target
-const _pendingContainerTransfers = new Map()
-
 // noinspection JSUnusedGlobalSymbols
 /**
  * Extend the base Item entity for DCC RPG
@@ -749,10 +745,10 @@ class DCCItem extends Item {
   }
 
   /**
-   * After creation, fix up orphaned container references from transfers
-   * When a container and its contents are transferred together, the contents
+   * After creation, fix up orphaned container references from transfers.
+   * When a container and its contents are transferred via Item Piles, the contents
    * arrive with system.container pointing to the old container ID. This method
-   * re-associates them with the new container by matching on the source name flag.
+   * re-associates them with the new container by matching on the sourceContainerName flag.
    * @param {object} data
    * @param {object} options
    * @param {string} userId
@@ -760,25 +756,9 @@ class DCCItem extends Item {
   async _onCreate (data, options, userId) {
     await super._onCreate(data, options, userId)
     if (this.isContainer && this.parent) {
-      // Check for pending container transfer contents (from _preDelete on source)
-      for (const [key, contentsData] of _pendingContainerTransfers) {
-        if (key.startsWith(`${this.name}:`)) {
-          _pendingContainerTransfers.delete(key)
-          // Set the container reference to this new container's ID
-          const itemsToCreate = contentsData.map(itemData => {
-            itemData.system.container = this.id
-            return itemData
-          })
-          try {
-            await this.parent.createEmbeddedDocuments('Item', itemsToCreate)
-          } catch {
-            console.error(`DCC | Failed to recreate ${itemsToCreate.length} items in container "${this.name}"`)
-          }
-          return
-        }
-      }
-
-      // Also check for orphaned items from Item Piles TRANSFER handler
+      // Check for orphaned items from Item Piles TRANSFER handler
+      // These items were transferred alongside the container but have stale
+      // system.container refs pointing to the old container ID
       const orphaned = this.parent.items.filter(i => {
         if (!i.system.container) return false
         if (this.parent.items.get(i.system.container)) return false
@@ -794,38 +774,6 @@ class DCCItem extends Item {
           await this.parent.updateEmbeddedDocuments('Item', updates)
         } catch {
           console.error(`DCC | Failed to re-associate ${orphaned.length} items with container "${this.name}"`)
-        }
-      }
-    }
-  }
-
-  /**
-   * Handle pre-delete to unparent contained items when a container is deleted
-   * @param {object} options
-   * @param {string} userId
-   */
-  async _preDelete (options, userId) {
-    await super._preDelete(options, userId)
-    if (this.isContainer && this.parent) {
-      const contents = this.contents
-      if (contents.length > 0) {
-        // Stash contents data for potential transfer recreation
-        const contentsData = contents.map(item => {
-          const obj = item.toObject()
-          delete obj._id
-          return obj
-        })
-        const transferKey = `${this.name}:${Date.now()}`
-        _pendingContainerTransfers.set(transferKey, contentsData)
-        // Clean up after 5 seconds if not consumed by _onCreate
-        setTimeout(() => _pendingContainerTransfers.delete(transferKey), 5000)
-
-        // Delete the contained items from the source actor
-        const deleteIds = contents.map(item => item.id)
-        try {
-          await this.parent.deleteEmbeddedDocuments('Item', deleteIds)
-        } catch {
-          console.error(`DCC | Failed to remove ${contents.length} items from container "${this.name}" (${this.id}) during deletion`)
         }
       }
     }

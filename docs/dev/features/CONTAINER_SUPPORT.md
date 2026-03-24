@@ -111,28 +111,15 @@ A dedicated sheet (or shared equipment sheet with container-specific section) sh
 
 ### Phase 4: Item Piles Integration
 
-Update `module/item-piles-support.js` to add `ITEM_TYPE_HANDLERS`:
+Update `module/item-piles-support.js` to add `ITEM_TYPE_HANDLERS`.
 
-```js
-ITEM_TYPE_HANDLERS: {
-  GLOBAL: {
-    IS_CONTAINED: ({ item }) => !!item?.system?.container,
-    IS_CONTAINED_PATH: 'system.container'
-  },
-  container: {
-    HAS_CURRENCY: false,
-    CONTENTS: ({ item }) => {
-      return item.parent.items.filter(i => i.system.container === item.id)
-    },
-    TRANSFER: ({ item, items, raw = false }) => {
-      const contents = item.parent.items
-        .filter(i => i.system.container === item.id)
-        .map(i => raw ? i : i.toObject())
-      return [...items, ...contents]
-    }
-  }
-}
-```
+**Important**: Handler keys must use `game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.*` computed
+property names (e.g., `[game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.TRANSFER]`), not string
+literals. The TRANSFER handler must mutate the `items` array in place via `items.push(...)` —
+item-piles ignores the return value.
+
+When a container is transferred, `_onCreate` on `DCCItem` re-associates orphaned content items
+with the new container by matching `flags.dcc.sourceContainerName`.
 
 Bump the integration `VERSION`.
 

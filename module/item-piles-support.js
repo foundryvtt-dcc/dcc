@@ -1,4 +1,4 @@
-/* global game, getProperty */
+/* global game, getProperty, Item */
 export async function setupItemPilesForDCC () {
   const baseConfig = {
     VERSION: '1.2.0',
@@ -47,18 +47,21 @@ export async function setupItemPilesForDCC () {
       return overallCost ?? 0
     },
 
-    // Container item type handlers
+    // Container item type handlers — keys must use game.itempiles.CONSTANTS.ITEM_TYPE_METHODS values
     ITEM_TYPE_HANDLERS: {
       GLOBAL: {
-        IS_CONTAINED: ({ item }) => !!item?.system?.container,
-        IS_CONTAINED_PATH: 'system.container'
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.IS_CONTAINED]: ({ item }) => {
+          const itemData = item instanceof Item ? item.toObject() : item
+          return itemData?.system?.container
+        },
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.IS_CONTAINED_PATH]: 'system.container'
       },
       container: {
-        HAS_CURRENCY: false,
-        CONTENTS: ({ item }) => {
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.HAS_CURRENCY]: false,
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.CONTENTS]: ({ item }) => {
           return item.parent?.items?.filter(i => i.system.container === item.id) || []
         },
-        TRANSFER: ({ item, items, raw = false }) => {
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.TRANSFER]: ({ item, items, raw = false }) => {
           const sourceContainerId = item.id
           const contents = (item.parent?.items || [])
             .filter(i => i.system.container === sourceContainerId)
@@ -72,7 +75,8 @@ export async function setupItemPilesForDCC () {
               }
               return obj
             })
-          return [...items, ...contents]
+          // Must mutate the items array in place — item-piles ignores the return value
+          items.push(...contents)
         }
       }
     },
