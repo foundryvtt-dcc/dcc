@@ -1,0 +1,55 @@
+{
+  "name": "Backpack",
+  "type": "container",
+  "img": "systems/dcc/styles/images/game-icons-net/knapsack.svg",
+  "folder": null,
+  "sort": 100,
+  "system": {
+    "quantity": 1,
+    "weight": 2,
+    "equipped": true,
+    "identified": true,
+    "value": {
+      "pp": "0",
+      "ep": "0",
+      "gp": "2",
+      "sp": "0",
+      "cp": "0"
+    },
+    "container": null,
+    "description": {
+      "value": "<p>A sturdy canvas backpack with leather straps for carrying equipment on the road.</p>",
+      "chat": "",
+      "unidentified": "",
+      "summary": "",
+      "judge": {
+        "value": ""
+      }
+    },
+    "source": "",
+    "capacity": {
+      "weight": 0,
+      "items": 0
+    },
+    "weightReduction": 0
+  },
+  "flags": {
+    "core": {}
+  },
+  "_id": "dccContainer001",
+  "_stats": {
+    "coreVersion": "13.342",
+    "systemId": "dcc",
+    "systemVersion": "0.50.0",
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!items!dccContainer001"
+}

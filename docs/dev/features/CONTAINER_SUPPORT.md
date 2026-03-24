@@ -158,7 +158,7 @@ Key i18n keys added (see `lang/en.json` for the complete list):
 1. **Should containers support currency?** A pouch could hold coins. D&D5e supports this; DCC could too but it adds complexity.
 2. ~~**Max nesting depth?**~~ Resolved: `MAX_CONTAINER_DEPTH = 3` (backpack > pouch > item).
 3. ~~**NPC sheets?**~~ Resolved: NPC sheets support containers via `actor-partial-npc-equipment.html`.
-4. **Default container items?** Should we ship compendium entries for common containers (backpack, sack, saddlebag, chest)?
+4. ~~**Default container items?**~~ Resolved: `dcc-containers` compendium pack ships backpack, sack (large/small), chest (large/small), and saddlebags.
 
 ## Dependencies
 

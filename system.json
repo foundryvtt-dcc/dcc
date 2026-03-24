@@ -123,6 +123,13 @@
       "path": "packs/dcc-macros.db",
       "system": "dcc",
       "type": "Macro"
+    },
+    {
+      "name": "dcc-containers",
+      "label": "Containers",
+      "path": "packs/dcc-containers.db",
+      "system": "dcc",
+      "type": "Item"
     }
   ],
   "relationships": {

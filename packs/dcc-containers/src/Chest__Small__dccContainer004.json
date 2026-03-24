@@ -1,0 +1,55 @@
+{
+  "name": "Chest, Small",
+  "type": "container",
+  "img": "systems/dcc/styles/images/game-icons-net/knapsack.svg",
+  "folder": null,
+  "sort": 400,
+  "system": {
+    "quantity": 1,
+    "weight": 25,
+    "equipped": false,
+    "identified": true,
+    "value": {
+      "pp": "0",
+      "ep": "0",
+      "gp": "1",
+      "sp": "0",
+      "cp": "0"
+    },
+    "container": null,
+    "description": {
+      "value": "<p>A small wooden chest with iron fittings, suitable for storing valuables.</p>",
+      "chat": "",
+      "unidentified": "",
+      "summary": "",
+      "judge": {
+        "value": ""
+      }
+    },
+    "source": "",
+    "capacity": {
+      "weight": 0,
+      "items": 0
+    },
+    "weightReduction": 0
+  },
+  "flags": {
+    "core": {}
+  },
+  "_id": "dccContainer004",
+  "_stats": {
+    "coreVersion": "13.342",
+    "systemId": "dcc",
+    "systemVersion": "0.50.0",
+    "createdTime": null,
+    "modifiedTime": null,
+    "lastModifiedBy": null,
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null
+  },
+  "ownership": {
+    "default": 0
+  },
+  "_key": "!items!dccContainer004"
+}
