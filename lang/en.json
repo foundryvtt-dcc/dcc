@@ -142,7 +142,7 @@
   "DCC.ContainerCapacityWeight": "Weight Capacity",
   "DCC.ContainerCircularReference": "Cannot place a container inside itself or its contents.",
   "DCC.ContainerContents": "Contents",
-  "DCC.ContainerDeleteConfirm": "Delete this container? Its contents will be moved to the inventory.",
+  "DCC.ContainerDeleteConfirm": "Delete this container and its {count} contained item(s)? Move items out of the container first if you want to keep them.",
   "DCC.ContainerEmpty": "Empty",
   "DCC.ContainerFull": "This container is full.",
   "DCC.ContainerItemNotPhysical": "Only physical items can be placed in containers.",

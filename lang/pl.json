@@ -142,7 +142,7 @@
   "DCC.ContainerCapacityWeight": "Pojemność wagowa",
   "DCC.ContainerCircularReference": "Nie można umieścić pojemnika w nim samym ani w jego zawartości.",
   "DCC.ContainerContents": "Zawartość",
-  "DCC.ContainerDeleteConfirm": "Usunąć ten pojemnik? Jego zawartość zostanie przeniesiona do ekwipunku.",
+  "DCC.ContainerDeleteConfirm": "Usunąć ten pojemnik i jego {count} przedmiot(ów)? Przenieś przedmioty z pojemnika, jeśli chcesz je zachować.",
   "DCC.ContainerEmpty": "Pusty",
   "DCC.ContainerFull": "Ten pojemnik jest pełny.",
   "DCC.ContainerItemNotPhysical": "W pojemnikach można umieszczać tylko fizyczne przedmioty.",

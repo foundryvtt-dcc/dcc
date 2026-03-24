@@ -142,7 +142,7 @@
   "DCC.ContainerCapacityWeight": "Capacidad de peso",
   "DCC.ContainerCircularReference": "No se puede colocar un contenedor dentro de sí mismo ni de su contenido.",
   "DCC.ContainerContents": "Contenido",
-  "DCC.ContainerDeleteConfirm": "¿Eliminar este contenedor? Su contenido se moverá al inventario.",
+  "DCC.ContainerDeleteConfirm": "¿Eliminar este contenedor y sus {count} objeto(s)? Mueve los objetos fuera del contenedor primero si deseas conservarlos.",
   "DCC.ContainerEmpty": "Vacío",
   "DCC.ContainerFull": "Este contenedor está lleno.",
   "DCC.ContainerItemNotPhysical": "Solo los objetos físicos pueden colocarse en contenedores.",

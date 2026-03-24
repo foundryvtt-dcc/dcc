@@ -142,7 +142,7 @@
   "DCC.ContainerCapacityWeight": "Tragkraft",
   "DCC.ContainerCircularReference": "Ein Behälter kann nicht in sich selbst oder seinem Inhalt platziert werden.",
   "DCC.ContainerContents": "Inhalt",
-  "DCC.ContainerDeleteConfirm": "Diesen Behälter löschen? Der Inhalt wird in das Inventar verschoben.",
+  "DCC.ContainerDeleteConfirm": "Diesen Behälter und seine {count} Gegenstände löschen? Verschieben Sie Gegenstände vorher aus dem Behälter, wenn Sie sie behalten möchten.",
   "DCC.ContainerEmpty": "Leer",
   "DCC.ContainerFull": "Dieser Behälter ist voll.",
   "DCC.ContainerItemNotPhysical": "Nur physische Gegenstände können in Behälter gelegt werden.",

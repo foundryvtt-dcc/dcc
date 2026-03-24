@@ -142,7 +142,7 @@
   "DCC.ContainerCapacityWeight": "承重",
   "DCC.ContainerCircularReference": "不能将容器放入自身或其内容物中。",
   "DCC.ContainerContents": "内容物",
-  "DCC.ContainerDeleteConfirm": "删除此容器？其内容物将移至物品栏。",
+  "DCC.ContainerDeleteConfirm": "删除此容器及其 {count} 件物品？如需保留物品，请先将其移出容器。",
   "DCC.ContainerEmpty": "空",
   "DCC.ContainerFull": "此容器已满。",
   "DCC.ContainerItemNotPhysical": "只有实体物品才能放入容器。",

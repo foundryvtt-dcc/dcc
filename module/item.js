@@ -1,4 +1,4 @@
-/* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
+/* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST, Dialog */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus, getFirstDie } from './utilities.js'
@@ -777,6 +777,31 @@ class DCCItem extends Item {
         }
       }
     }
+  }
+
+  /**
+   * Override deleteDialog for containers with contents.
+   * Warns the user that contained items will also be deleted and requires confirmation.
+   * @param {object} [options] - Options passed to the parent deleteDialog
+   * @returns {Promise<Item|false|null>}
+   */
+  async deleteDialog (options = {}) {
+    if (!this.isContainer || !this.parent || this.contents.length === 0) {
+      return super.deleteDialog(options)
+    }
+    const contentsCount = this.contents.length
+    return Dialog.confirm({
+      title: `${game.i18n.localize('DOCUMENT.Delete')}: ${this.name}`,
+      content: `<p>${game.i18n.format('DCC.ContainerDeleteConfirm', { count: contentsCount })}</p>`,
+      yes: async () => {
+        const deleteIds = this.contents.map(i => i.id)
+        deleteIds.push(this.id)
+        await this.parent.deleteEmbeddedDocuments('Item', deleteIds)
+        return this
+      },
+      no: () => null,
+      defaultYes: false
+    })
   }
 
   /* -------------------------------------------- */
