@@ -2,6 +2,7 @@
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from './utilities.js'
+import DCCActiveEffect from './active-effect.js'
 import DCCActorLevelChange from './actor-level-change.js'
 
 const { TextEditor } = foundry.applications.ux
@@ -217,24 +218,19 @@ class DCCActor extends Actor {
     // This custom implementation replaces the core behavior to handle equipped item effects
     // Calling super would cause effects to be applied twice
 
-    // Create a deep copy of the base system data to preserve the original
     const overrides = {}
-
-    // Collect all active effects
     const effects = []
 
-    // Add effects directly on the actor
+    // Collect active effects from the actor
     for (const effect of this.effects) {
       if (!effect.disabled && !effect.isSuppressed) {
         effects.push(effect)
       }
     }
 
-    // Add effects from equipped items that transfer to the actor
+    // Collect transferring effects from equipped items
     for (const item of this.items) {
-      // Check if item is equipped (for equipment) or always apply (for conditions, etc)
       const isEquipped = item.system?.equipped ?? true
-
       if (isEquipped) {
         for (const effect of item.effects) {
           if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
@@ -244,55 +240,39 @@ class DCCActor extends Actor {
       }
     }
 
-    // Sort effects by mode to apply them in the correct order
-    // Order: custom (0), multiply (1), add (2), upgrade (3), downgrade (4), override (5)
+    // Sort by mode: custom (0), multiply (1), add (2), upgrade (3), downgrade (4), override (5)
     effects.sort((a, b) => {
-      const aChanges = Array.from(a.changes || [])
-      const bChanges = Array.from(b.changes || [])
-      const aMode = Math.min(...aChanges.map(c => c.mode), 5)
-      const bMode = Math.min(...bChanges.map(c => c.mode), 5)
+      const aMode = Math.min(...Array.from(a.changes || []).map(c => c.mode), 5)
+      const bMode = Math.min(...Array.from(b.changes || []).map(c => c.mode), 5)
       return aMode - bMode
     })
 
-    // Apply each effect
     for (const effect of effects) {
       if (!effect.changes) continue
 
       for (const change of effect.changes) {
         const key = change.key
         const mode = change.mode || CONST.ACTIVE_EFFECT_MODES.ADD
-        const value = change.value
+        const value = this._resolveEffectValue(change.value)
 
-        // Handle different change modes
         try {
           switch (mode) {
             case CONST.ACTIVE_EFFECT_MODES.CUSTOM:
-              // Custom mode - let modules handle this
               this._applyCustomEffect(key, value)
               break
-
             case CONST.ACTIVE_EFFECT_MODES.ADD:
-              // Add numeric value
               this._applyAddEffect(key, value, overrides)
               break
-
             case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
-              // Multiply by value
               this._applyMultiplyEffect(key, value, overrides)
               break
-
             case CONST.ACTIVE_EFFECT_MODES.OVERRIDE:
-              // Override the value completely
               this._applyOverrideEffect(key, value, overrides)
               break
-
             case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
-              // Use the higher value
               this._applyUpgradeEffect(key, value, overrides)
               break
-
             case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
-              // Use the lower value
               this._applyDowngradeEffect(key, value, overrides)
               break
           }
@@ -304,15 +284,21 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Apply a custom active effect
+   * Resolve @-variable references in an effect value string
+   * Delegates to DCCActiveEffect.resolveValue for shared implementation
+   * @param {string} value - The raw effect value (may contain @references)
+   * @returns {string} - The resolved value with references replaced by numbers
+   * @private
+   */
+  _resolveEffectValue (value) {
+    return DCCActiveEffect.resolveValue(this, value)
+  }
+
+  /**
+   * Apply a custom active effect (extensibility hook for DCC-specific mechanics)
    * @private
    */
   _applyCustomEffect (key, value) {
-    // Handle DCC-specific custom effects here
-    // For example, effects that modify dice chains or special class abilities
-
-    // This is where we'd handle special DCC mechanics that don't fit the standard modes
-    // Examples: modifying dice chains, adjusting spell check results, etc.
   }
 
   /**
@@ -345,7 +331,6 @@ class DCCActor extends Actor {
     const multiplier = Number(value)
     if (isNaN(multiplier)) return
 
-    // Convert current to number for consistency with other effect methods
     const currentNumber = Number(current)
     if (isNaN(currentNumber)) return
 
@@ -359,14 +344,7 @@ class DCCActor extends Actor {
    * @private
    */
   _applyOverrideEffect (key, value, overrides) {
-    // For override, parse the value appropriately
-    let parsedValue = value
-
-    // Try to parse as number if it looks numeric
-    if (!isNaN(Number(value)) && value !== '') {
-      parsedValue = Number(value)
-    }
-
+    const parsedValue = (!isNaN(Number(value)) && value !== '') ? Number(value) : value
     foundry.utils.setProperty(this, key, parsedValue)
     overrides[key] = parsedValue
   }

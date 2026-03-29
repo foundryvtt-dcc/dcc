@@ -1210,6 +1210,13 @@ class ActorMock {
 global.Actor = ActorMock
 
 /**
+ * ActiveEffect - Base class for active effects
+ */
+class ActiveEffectMock {}
+
+global.ActiveEffect = ActiveEffectMock
+
+/**
  * ChatMessage
  */
 class ChatMessageMock {
