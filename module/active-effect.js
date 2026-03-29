@@ -17,12 +17,24 @@ export default class DCCActiveEffect extends ActiveEffect {
    * @returns {string} - The resolved value with references replaced by numbers
    */
   static resolveValue (actor, value) {
-    if (typeof value !== 'string' || !value.includes('@')) return value
+    if (!actor || typeof value !== 'string' || !value.includes('@')) return value
     return value.replace(/@([a-zA-Z0-9_.]+)/g, (match, path) => {
-      const resolved = foundry.utils.getProperty(actor, path)
-      if (resolved === undefined || resolved === null) return '0'
-      const num = Number(resolved)
-      return isNaN(num) ? '0' : String(num)
+      try {
+        const resolved = foundry.utils.getProperty(actor, path)
+        if (resolved === undefined || resolved === null) {
+          console.warn(`DCC | Active Effect @-reference '${match}' resolved to undefined on actor '${actor.name ?? 'unknown'}'`)
+          return '0'
+        }
+        const num = Number(resolved)
+        if (isNaN(num)) {
+          console.warn(`DCC | Active Effect @-reference '${match}' resolved to non-numeric value '${resolved}' on actor '${actor.name ?? 'unknown'}'`)
+          return '0'
+        }
+        return String(num)
+      } catch {
+        console.warn(`DCC | Active Effect @-reference '${match}' failed to resolve on actor '${actor.name ?? 'unknown'}'`)
+        return '0'
+      }
     })
   }
 

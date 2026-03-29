@@ -253,9 +253,9 @@ class DCCActor extends Actor {
       for (const change of effect.changes) {
         const key = change.key
         const mode = change.mode || CONST.ACTIVE_EFFECT_MODES.ADD
-        const value = this._resolveEffectValue(change.value)
 
         try {
+          const value = this._resolveEffectValue(change.value)
           switch (mode) {
             case CONST.ACTIVE_EFFECT_MODES.CUSTOM:
               this._applyCustomEffect(key, value)
