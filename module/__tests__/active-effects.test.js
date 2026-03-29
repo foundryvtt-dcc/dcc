@@ -119,7 +119,9 @@ function applyNPCDamageAdjustment (actor, weapon, formula) {
 /**
  * Set up a PC actor with attack bonus structures for testing
  * @param {object} options
+ * @param {number} options.strValue
  * @param {number} options.strMod
+ * @param {number} options.aglValue
  * @param {number} options.aglMod
  * @returns {DCCActor}
  */
@@ -688,6 +690,29 @@ describe('Active Effects - @-Variable Resolution', () => {
     const overrides = {}
     actor._applyAddEffect('system.details.attackHitBonus.melee.adjustment', resolvedValue, overrides)
 
+    actor.computeMeleeAndMissileAttackAndDamage()
+
+    // Base attack (+0) + STR (+1) + luck adjustment (+2) = +3
+    expect(actor.system.details.attackHitBonus.melee.value).toEqual('+3')
+  })
+
+  test('applyActiveEffects resolves @-variable in effect changes end-to-end', () => {
+    const actor = createPCWithAttackSetup({ strValue: 14, strMod: 1 })
+    actor.system.abilities.lck.value = 16
+    actor.system.abilities.lck.mod = 2
+
+    // Add a mock effect with an @-variable value to the actor's effects collection
+    const mockEffect = {
+      disabled: false,
+      isSuppressed: false,
+      changes: [
+        { key: 'system.details.attackHitBonus.melee.adjustment', mode: 2, value: '@system.abilities.lck.mod' }
+      ]
+    }
+    actor.effects = [mockEffect]
+    actor.items = []
+
+    actor.applyActiveEffects()
     actor.computeMeleeAndMissileAttackAndDamage()
 
     // Base attack (+0) + STR (+1) + luck adjustment (+2) = +3

@@ -240,7 +240,7 @@ class DCCActor extends Actor {
       }
     }
 
-    // Sort by mode: custom (0), multiply (1), add (2), upgrade (3), downgrade (4), override (5)
+    // Sort by mode: custom (0), multiply (1), add (2), downgrade (3), upgrade (4), override (5)
     effects.sort((a, b) => {
       const aMode = Math.min(...Array.from(a.changes || []).map(c => c.mode), 5)
       const bMode = Math.min(...Array.from(b.changes || []).map(c => c.mode), 5)
@@ -286,8 +286,8 @@ class DCCActor extends Actor {
   /**
    * Resolve @-variable references in an effect value string
    * Delegates to DCCActiveEffect.resolveValue for shared implementation
-   * @param {string} value - The raw effect value (may contain @references)
-   * @returns {string} - The resolved value with references replaced by numbers
+   * @param {*} value - The raw effect value (may contain @references if string)
+   * @returns {*} - Strings get references replaced by numbers; non-strings pass through unchanged
    * @private
    */
   _resolveEffectValue (value) {

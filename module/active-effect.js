@@ -11,10 +11,11 @@ export default class DCCActiveEffect extends ActiveEffect {
   /**
    * Resolve @-variable references in an effect value string
    * Replaces @path.to.property with the actual value from the actor's data
-   * Follows the same @ convention used in Foundry roll formulas
+   * Uses @-path syntax similar to Foundry roll formulas, but resolves against
+   * the actor object directly (not roll data), so paths must include the system. prefix
    * @param {Actor} actor - The actor to resolve values from
-   * @param {string} value - The raw effect value (may contain @references)
-   * @returns {string} - The resolved value with references replaced by numbers
+   * @param {*} value - The raw effect value (may contain @references if string)
+   * @returns {*} - Strings get references replaced by numbers; non-strings pass through unchanged
    */
   static resolveValue (actor, value) {
     if (!actor || typeof value !== 'string' || !value.includes('@')) return value
