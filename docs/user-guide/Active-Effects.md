@@ -54,7 +54,9 @@ Instead of entering a static number as the Effect Value, you can reference anoth
 - `@system.abilities.str.mod` - The character's Strength modifier
 - `@system.abilities.per.value` - The character's Personality score
 
-If the referenced path doesn't exist or isn't a number, it resolves to `0`.
+If the referenced path doesn't exist or isn't a number, it resolves to `0`. A warning will be logged to the browser console (F12) to help diagnose typos in attribute paths.
+
+**Important timing note**: `@`-variable references are resolved *before* derived values are recalculated. This means if you have one effect that changes an ability score (e.g., +2 to `system.abilities.lck.value`) and another effect that references the modifier for that same ability (`@system.abilities.lck.mod`), the reference will use the *base* modifier, not the modified one. In practice this only matters if you have two effects interacting with the same ability score. If your character's Luck score isn't being changed by another active effect, the modifier will be correct.
 
 ### @-Variable Use Case Ideas
 
