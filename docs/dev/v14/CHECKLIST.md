@@ -2,9 +2,9 @@
 
 This document provides a checklist for preparing for FoundryVTT V14.
 
-**Current Status**: Developer 1 (Build 354)
+**Current Status**: User Testing 3 (Build 358)
 
-**Last Updated**: February 2026
+**Last Updated**: March 2026
 
 ## Prerequisites
 
@@ -120,6 +120,16 @@ This document provides a checklist for preparing for FoundryVTT V14.
 - [x] Check for Wall `isDoor`/`isOpen` on placeable (should use WallDocument)
 - [x] Check for Boolean values in Rolls (auto-converted to numbers)
 
+### New in User Testing 2 (Build 357)
+
+- [x] Check for `TokenFindMovementPathOptions#ignoreWalls/ignoreCost/history` usage (not used - replaced by `constrainOptions`)
+- [x] Check for token dimension label assumptions (renamed to Size X/Y/Z)
+
+### New in User Testing 3 (Build 358)
+
+- [ ] Check custom `SceneControlTool` registrations in `dcc.js` (Fleeting Luck and Spell Duel buttons - may need `interaction`, `control`, `creation` properties)
+- [x] V14 requires Node.js 24 (note: mutually exclusive with V13)
+
 ## Editor Migration
 
 ### TinyMCE Removal
@@ -158,12 +168,14 @@ This document provides a checklist for preparing for FoundryVTT V14.
 
 ## Pre-Release Testing
 
-### Prototype/Developer Builds (Current)
+### Prototype/Developer/User Testing Builds (Current)
 
 - [x] Test system on V14 Prototype 1 (Build 349)
 - [x] Test system on V14 Developer 1 (Build 354)
+- [ ] Test system on V14 User Testing 2 (Build 357)
+- [ ] Test system on V14 User Testing 3 (Build 358)
 - [ ] Report any issues to Foundry team
-- [ ] Monitor future prototype releases for new breaking changes
+- [ ] Monitor future releases for new breaking changes
 
 ### Before V14 Stable
 
@@ -183,6 +195,8 @@ This document provides a checklist for preparing for FoundryVTT V14.
 - [FoundryVTT Release Notes](https://foundryvtt.com/releases/)
 - [V14 Prototype 1](https://foundryvtt.com/releases/14.349)
 - [V14 Developer 1](https://foundryvtt.com/releases/14.354)
+- [V14 User Testing 2](https://foundryvtt.com/releases/14.357)
+- [V14 User Testing 3](https://foundryvtt.com/releases/14.358)
 - [API Migration Guides](https://foundryvtt.com/article/migration/)
 - [System Data Models](https://foundryvtt.com/article/system-data-models/)
 - [GitHub Issues](https://github.com/foundryvtt/foundryvtt/issues)

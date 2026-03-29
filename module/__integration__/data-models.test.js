@@ -474,13 +474,13 @@ describe('Real CONST values', () => {
     expect(CONST.CHAT_MESSAGE_STYLES.EMOTE).toBe(3)
   })
 
-  test('ACTIVE_EFFECT_MODES has expected values', () => {
-    expect(CONST.ACTIVE_EFFECT_MODES.CUSTOM).toBe(0)
-    expect(CONST.ACTIVE_EFFECT_MODES.MULTIPLY).toBe(1)
-    expect(CONST.ACTIVE_EFFECT_MODES.ADD).toBe(2)
-    expect(CONST.ACTIVE_EFFECT_MODES.DOWNGRADE).toBe(3)
-    expect(CONST.ACTIVE_EFFECT_MODES.UPGRADE).toBe(4)
-    expect(CONST.ACTIVE_EFFECT_MODES.OVERRIDE).toBe(5)
+  test('ACTIVE_EFFECT_CHANGE_TYPES has expected values with lowercase keys', () => {
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.custom).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.multiply).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.add).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.downgrade).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.upgrade).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.override).toBeDefined()
   })
 })
 

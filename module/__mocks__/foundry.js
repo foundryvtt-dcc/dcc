@@ -608,7 +608,7 @@ class DocumentSheetV2Mock {
 
     // Merge additional update data if provided
     if (updateData) {
-      // In real Foundry: foundry.utils.mergeObject with performDeletions
+      // In real Foundry: foundry.utils.mergeObject with applyOperators
       Object.assign(submitData, updateData)
     }
 
@@ -1286,22 +1286,13 @@ global.CONST = {
     ACTOR: 'Actor',
     ITEM: 'Item'
   },
-  ACTIVE_EFFECT_MODES: {
-    CUSTOM: 0,
-    MULTIPLY: 1,
-    ADD: 2,
-    DOWNGRADE: 3,
-    UPGRADE: 4,
-    OVERRIDE: 5
-  },
-  // V14: New string-based change types (replaces numeric ACTIVE_EFFECT_MODES)
   ACTIVE_EFFECT_CHANGE_TYPES: {
-    CUSTOM: 'custom',
-    MULTIPLY: 'multiply',
-    ADD: 'add',
-    DOWNGRADE: 'downgrade',
-    UPGRADE: 'upgrade',
-    OVERRIDE: 'override'
+    custom: 0,
+    multiply: 1,
+    add: 2,
+    downgrade: 3,
+    upgrade: 4,
+    override: 5
   }
 }
 
@@ -1734,6 +1725,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   recursive = true,
   inplace = true,
   enforceTypes = false,
+  applyOperators = false,
   performDeletions = false
 } = {}, _d = 0) {
   other = other || {}
@@ -1753,9 +1745,9 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   for (let [k, v] of Object.entries(other)) {
     const tv = global.getType(v)
 
-    // Prepare to delete - requires performDeletions flag (real Foundry v13 behavior)
+    // Prepare to delete - requires applyOperators (v14) or performDeletions (v13 compat)
     let toDelete = false
-    if (k.startsWith('-=') && performDeletions) {
+    if (k.startsWith('-=') && (applyOperators || performDeletions)) {
       k = k.slice(2)
       toDelete = (v === null)
     }
@@ -1782,6 +1774,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
           overwrite,
           inplace: true,
           enforceTypes,
+          applyOperators,
           performDeletions
         }, depth)
 

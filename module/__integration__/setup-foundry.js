@@ -164,7 +164,7 @@ const game = {
 const CONFIG = {
   ...DCC,
   DCC,
-  ActiveEffect: { legacyTransferral: false }
+  ActiveEffect: {}
 }
 
 // ui mock

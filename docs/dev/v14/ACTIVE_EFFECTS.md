@@ -2,7 +2,7 @@
 
 This document covers Active Effects changes in FoundryVTT V14.
 
-**Current Status**: Developer 1 (Build 354)
+**Current Status**: User Testing 3 (Build 358)
 
 ## Overview
 
@@ -16,12 +16,26 @@ V14 introduces Active Effects V2 with significant improvements:
 - **Expiry Events**: Combat-related expiry (combatStart, roundStart, turnStart)
 - **Future**: Token property modifications (vision, size, light) and automatic expiration
 
-### Developer 1 Updates
+### Developer 1 Updates (Build 354)
 
 - `ActiveEffectConfig` type field corrected (was freeform text, now properly configured)
 - `ActiveEffectRegistry` no longer changes expired statuses in-memory
 - `ActiveEffect#expiryReached` validates triggering event matches effect's expiry event
 - Status effects properly display when added via `ActiveEffect.fromStatusEffect`
+
+### User Testing 2 Updates (Build 357)
+
+- `ActiveEffect#_prepareTimeBasedDuration` no longer passes deprecated option to `CalendarData` format methods
+- `ActiveEffect#isSuppressed` simplified by removing unnecessary check
+- Compendiums containing only Active Effects no longer have missing banner images
+
+### User Testing 3 Updates (Build 358)
+
+- Combat-based active effect duration accuracy loss across multiple combats fixed
+- `ArrayField`/`SetField` `_applyChangeAdd`/`_applyChangeSubtract` now respect min/max constraints
+- Data model initialization when applying active effects to `EmbeddedDataField` fixed
+- Active Effect drop on tokens now uses token shape instead of token bounds for hit detection
+- Manually added `tokenActiveEffectChanges` now properly apply to synthetic actors
 
 ## Breaking Changes
 

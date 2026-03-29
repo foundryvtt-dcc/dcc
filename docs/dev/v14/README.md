@@ -2,7 +2,7 @@
 
 This directory contains documentation for preparing for FoundryVTT V14.
 
-**Current Status**: Developer 1 (Build 354) released. API development phase.
+**Current Status**: User Testing 3 (Build 358). Active user testing phase.
 
 ## Overview
 
@@ -52,10 +52,9 @@ TinyMCE is fully removed in V14. Only ProseMirror editor is available.
 ## Timeline
 
 - **Prototype 1**: Build 349 - Core API changes, Active Effects V2, Pop-out Apps
-- **Developer 1**: Build 354 (Current) - Scene Levels, TinyMCE removal, Placeables Palette
-- **Future**: Scene Objects Sidebar, Measured Templates redesign
-- **Alpha (API Development)**: Following developer builds
-- **Beta (User Testing)**: Before stable release
+- **Developer 1**: Build 354 - Scene Levels, TinyMCE removal, Placeables Palette
+- **User Testing 2**: Build 357 - Token movement API enhancements, debounce cancel, bug fixes
+- **User Testing 3**: Build 358 (Current) - Major world loading performance improvements, compendium search, new SceneControlTool requirements
 - **Expected Stable**: 2026
 
 ## Resources
@@ -63,6 +62,8 @@ TinyMCE is fully removed in V14. Only ProseMirror editor is available.
 - [Official Release Notes](https://foundryvtt.com/releases/)
 - [V14 Prototype 1 Notes](https://foundryvtt.com/releases/14.349)
 - [V14 Developer 1 Notes](https://foundryvtt.com/releases/14.354)
+- [V14 User Testing 2 Notes](https://foundryvtt.com/releases/14.357)
+- [V14 User Testing 3 Notes](https://foundryvtt.com/releases/14.358)
 - [V14 Breaking Changes Board](https://github.com/orgs/foundryvtt/projects/67/views/8)
 - [API Migration Guides](https://foundryvtt.com/article/migration/)
 - [System Data Models Guide](https://foundryvtt.com/article/system-data-models/)

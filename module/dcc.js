@@ -66,8 +66,7 @@ Hooks.once('init', async function () {
 
   CONFIG.DCC = DCC
 
-  // Enable Active Effects
-  CONFIG.ActiveEffect.legacyTransferral = false
+  // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
   // Register Active Effect application phases (required for V14)

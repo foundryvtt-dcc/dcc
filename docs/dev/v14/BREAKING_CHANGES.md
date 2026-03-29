@@ -2,13 +2,15 @@
 
 This document covers breaking changes in FoundryVTT V14.
 
-**Current Status**: Developer 1 (Build 354). Information based on official release notes.
+**Current Status**: User Testing 3 (Build 358). Information based on official release notes.
 
 ## Resources
 
 - [V14 Breaking Changes GitHub Board](https://github.com/orgs/foundryvtt/projects/67/views/8)
 - [V14 Prototype 1 Release Notes](https://foundryvtt.com/releases/14.349)
 - [V14 Developer 1 Release Notes](https://foundryvtt.com/releases/14.354)
+- [V14 User Testing 2 Release Notes](https://foundryvtt.com/releases/14.357)
+- [V14 User Testing 3 Release Notes](https://foundryvtt.com/releases/14.358)
 
 ## Deprecation Expirations
 
@@ -273,6 +275,41 @@ getAnimationOptions(tokenDocument: TokenDocument)
 
 `TokenDocument#detectionModes` is now a `TypedObjectField` instead of a standard field.
 
+### Token Movement Path Options (User Testing 2 - Build 357)
+
+`TokenFindMovementPathOptions` deprecated properties replaced:
+
+```javascript
+// Deprecated
+TokenFindMovementPathOptions#ignoreWalls
+TokenFindMovementPathOptions#ignoreCost
+TokenFindMovementPathOptions#history
+
+// Replaced by
+TokenFindMovementPathOptions#constrainOptions
+```
+
+New `TokenConstrainMovementPathOptions` properties: `maxCost` and `maxDistance`.
+
+**DCC Impact**: Not directly used by the DCC system.
+
+### Token Configuration Labels (User Testing 2 - Build 357)
+
+Token Configuration dialog labels updated:
+- `Dimensions (Grid Spaces) Width / Height / Depth` → `Size (Grid Spaces) X / Y / Z`
+
+### SceneControlTool Required Properties (User Testing 3 - Build 358)
+
+New required properties added to `SceneControlTool`:
+
+```javascript
+SceneControlTool#interaction
+SceneControlTool#control
+SceneControlTool#creation
+```
+
+**DCC Impact**: If the DCC system registers any custom scene control tools, these properties must now be provided.
+
 ## Editor Changes
 
 ### TinyMCE Removed
@@ -324,6 +361,58 @@ New features:
 
 - `PolygonTreeNode#testPoint` now accepts `tolerance` parameter
 - New methods: `PolygonTreeNode#findContainingNode`, `PolygonTreeNode#findClosestPoint`
+
+### User Testing 2 (Build 357) API Additions
+
+- Core `debounce` helper now supports `cancel()` for cleanup workflows
+- `Roll.replaceFormulaData` uses custom `value.toString()` when available for object-type values
+- Token movement API: explicit movement ID support in `TokenMovement#move` and `Scene#moveTokens`
+- New high-level API: `token.planMovement(options)` for interactive movement planning
+- `RegionLayer#placeRegions` added; index/count arguments renamed to `shapeIndex`/`shapeCount`
+- `RegionLayer#placeRegion` accepts `allowEmpty` option
+
+### User Testing 3 (Build 358) API Additions
+
+- `Scene#pullUsers()` now accepts `viewOptions?: SceneViewOptions` parameter
+- `Scene#activate()` now accepts `{viewOptions?: SceneViewOptions; pullUsers?: boolean}` options
+- New `highlightElement(element, options={})` helper function (extracted from Tour class)
+- `SceneControlTool#shapeData` added for Region drawing tool shapes
+- `RegionDocument#spawnTokens()` accepts `{create: false}` for ephemeral tokens
+- New `SceneManager#_determineInitialLevel` method
+- `TokenDocument#getOccupiedGridSpaceOffsets` now accounts for walls and surfaces
+- `FogManager` made easier to extend; improved shared fog handling
+
+### User Testing 3 (Build 358) Performance
+
+Major world loading improvements:
+- D&D 5E: 25,258ms → 10,354ms (59% faster)
+- Crucible: 11,315ms → 4,998ms (56% faster)
+- Achieved by eliminating accidental `ActorDelta` creation and world-level guards
+
+## Bug Fixes of Note
+
+### Active Effect Fixes (Build 357-358)
+
+- `ActiveEffect#_prepareTimeBasedDuration` no longer passes deprecated option to `CalendarData` format methods (357)
+- `ActiveEffect#isSuppressed` simplified by removing unnecessary check (357)
+- Compendiums containing only Active Effects no longer have missing banner images (357)
+- Combat-based active effect duration accuracy loss across multiple combats fixed (358)
+- `ArrayField`/`SetField` `_applyChangeAdd`/`_applyChangeSubtract` now respect min/max constraints (358)
+- Data model initialization when applying active effects to `EmbeddedDataField` fixed (358)
+- Active Effect drop on tokens now uses token shape instead of bounds (358)
+- Manually added `tokenActiveEffectChanges` now properly apply to synthetic actors (358)
+
+### Other Notable Fixes
+
+- Documents with invalid `type` can now be deleted (357)
+- Compendium item updates no longer lose data in index entries (358)
+- Compendium sidebar filter now searches across compendium contents, not just names (358)
+
+## Compatibility Notes
+
+- V14 requires **Node.js 24** (mutually exclusive with V13 which requires earlier Node.js)
+- Separate installation and User Data folder recommended for testing
+- ~800 new sci-fi themed core icons added in Build 358
 
 ## Related Documentation
 

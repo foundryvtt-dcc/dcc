@@ -2,7 +2,7 @@
 
 This document covers migrating from `template.json` to `TypeDataModel` for V14.
 
-**Current Status**: Developer 1 (Build 354)
+**Current Status**: User Testing 3 (Build 358)
 
 ## Overview
 
@@ -26,6 +26,10 @@ V14 brings significant DataModel performance gains:
 - Local updates: ~3% faster
 - Persisted creation: ~26% faster
 - Persisted updates: ~10% faster
+
+Build 358 added major world loading performance improvements (eliminating accidental `ActorDelta` creation):
+- D&D 5E: 25,258ms → 10,354ms (59% faster)
+- Crucible: 11,315ms → 4,998ms (56% faster)
 
 ### New V14 DataModel Features
 
