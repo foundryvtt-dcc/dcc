@@ -4,11 +4,41 @@ import DiceChain from './dice-chain.js'
 
 /**
  * Custom ActiveEffect class for DCC system
- * Handles special cases like thief skills and save bonuses which are stored as signed strings ("+5", "-2", "0")
- * Also handles equipped status for item effects
- * Also handles custom DCC effect types like dice chain adjustments
+ * Handles signed string values ("+5", "-2", "0"), equipped status for item effects,
+ * and custom DCC effect types like dice chain adjustments
  */
 export default class DCCActiveEffect extends ActiveEffect {
+  /**
+   * Resolve @-variable references in an effect value string
+   * Replaces @path.to.property with the actual value from the actor's data
+   * Uses @-path syntax similar to Foundry roll formulas, but resolves against
+   * the actor object directly (not roll data), so paths must include the system. prefix
+   * @param {Actor} actor - The actor to resolve values from
+   * @param {*} value - The raw effect value (may contain @references if string)
+   * @returns {*} - Strings get references replaced by numbers; non-strings pass through unchanged
+   */
+  static resolveValue (actor, value) {
+    if (!actor || typeof value !== 'string' || !value.includes('@')) return value
+    return value.replace(/@([a-zA-Z0-9_.]+)/g, (match, path) => {
+      try {
+        const resolved = foundry.utils.getProperty(actor, path)
+        if (resolved === undefined || resolved === null) {
+          console.warn(`DCC | Active Effect @-reference '${match}' resolved to undefined on actor '${actor.name ?? 'unknown'}'`)
+          return '0'
+        }
+        const num = Number(resolved)
+        if (isNaN(num)) {
+          console.warn(`DCC | Active Effect @-reference '${match}' resolved to non-numeric value '${resolved}' on actor '${actor.name ?? 'unknown'}'`)
+          return '0'
+        }
+        return String(num)
+      } catch {
+        console.warn(`DCC | Active Effect @-reference '${match}' failed to resolve on actor '${actor.name ?? 'unknown'}'`)
+        return '0'
+      }
+    })
+  }
+
   /**
    * Override apply to handle equipped status for item effects
    * Effects from unequipped items should not be applied
@@ -17,18 +47,14 @@ export default class DCCActiveEffect extends ActiveEffect {
    * @returns {object} - The changes to apply
    */
   apply (actor, change) {
-    // Check if this effect comes from an item
+    // Skip effects from unequipped items (default to equipped if no property)
     const parentItem = this.parent
-    if (parentItem?.documentName === 'Item') {
-      // Check if the item is equipped (default to true if no equipped property)
-      const isEquipped = parentItem.system?.equipped ?? true
-      if (!isEquipped) {
-        // Skip applying effects from unequipped items
-        return {}
-      }
+    if (parentItem?.documentName === 'Item' && !(parentItem.system?.equipped ?? true)) {
+      return {}
     }
 
-    // Get the current value for this key
+    change = { ...change, value: DCCActiveEffect.resolveValue(actor, change.value) }
+
     const current = foundry.utils.getProperty(actor, change.key)
     const ct = foundry.utils.getType(current)
 

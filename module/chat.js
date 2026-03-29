@@ -504,6 +504,11 @@ export const emoteSkillCheckRoll = function (message, html, data) {
   const messageContent = html.querySelector('.message-content')
   if (messageContent) {
     messageContent.innerHTML = skillCheckRollEmote
+    // Append spell check result (pass/fail) after the emote if present
+    const spellResult = message.getFlag('dcc', 'spellResult')
+    if (spellResult) {
+      messageContent.innerHTML += spellResult
+    }
   }
   const header = html.querySelector('header')
   if (header) {
@@ -523,9 +528,6 @@ export const lookupCriticalRoll = async function (message, html) {
   // Only process messages that are specifically critical table rolls, not attack rolls with crits
   const hasCriticalInFlavor = message.flavor && message.flavor.includes(game.i18n.localize('DCC.Critical'))
   const hasCritTableInSystem = message.system?.critTableName
-
-  // Don't process attack rolls - those are handled by emoteAttackRoll
-  if (message.getFlag('dcc', 'isToHit')) return
 
   // Only process if this is specifically a critical table roll
   if (!hasCriticalInFlavor && !hasCritTableInSystem) return

@@ -1013,14 +1013,38 @@ MockItem.prototype.toDragData = function () {
 global.Item = MockItem
 
 /**
- * Collection
+ * Collection - Map-based collection matching Foundry's Collection API
+ * Extends Map but iterates values (not entries) and adds find/filter/map convenience methods
+ * The find method uses a global mock for backwards compatibility with existing tests
  */
 global.collectionFindMock = vi.fn().mockName('Collection.find')
-const CollectionMock = vi.fn().mockImplementation(() => {
-  return {
-    find: global.collectionFindMock
+class CollectionMock extends Map {
+  constructor (entries) {
+    super(entries)
+    // Override find with the global mock for backwards compatibility with existing tests
+    this.find = global.collectionFindMock
   }
-}).mockName('Collection')
+
+  [Symbol.iterator] () {
+    return this.values()
+  }
+
+  filter (fn) {
+    return Array.from(this.values()).filter(fn)
+  }
+
+  map (fn) {
+    return Array.from(this.values()).map(fn)
+  }
+
+  get contents () {
+    return Array.from(this.values())
+  }
+
+  getName (name) {
+    return Array.from(this.values()).find(v => v.name === name)
+  }
+}
 global.Collection = CollectionMock
 
 /**
@@ -1210,6 +1234,13 @@ class ActorMock {
 global.Actor = ActorMock
 
 /**
+ * ActiveEffect - Base class for active effects
+ */
+class ActiveEffectMock {}
+
+global.ActiveEffect = ActiveEffectMock
+
+/**
  * ChatMessage
  */
 class ChatMessageMock {
@@ -1310,7 +1341,11 @@ class Localization {
       'DCC.Languages': 'Languages',
       'DCC.SaveDC': 'DC {dc}',
       'DCC.SaveSuccess': 'Success',
-      'DCC.SaveFailure': 'Failure'
+      'DCC.SaveFailure': 'Failure',
+      'DCC.SpellCheckSuccessNoTable': 'Success.',
+      'DCC.SpellCheckFailureNoTable': 'Failure.',
+      'DCC.SpellCheckCritNoTable': 'Crit! Natural 20.',
+      'DCC.SpellCheckFumbleNoTable': 'Fumble! Natural 1.'
     }
   }
 
@@ -1698,7 +1733,8 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   overwrite = true,
   recursive = true,
   inplace = true,
-  enforceTypes = false
+  enforceTypes = false,
+  performDeletions = false
 } = {}, _d = 0) {
   other = other || {}
   if (!(original instanceof Object) || !(other instanceof Object)) {
@@ -1717,9 +1753,9 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   for (let [k, v] of Object.entries(other)) {
     const tv = global.getType(v)
 
-    // Prepare to delete
+    // Prepare to delete - requires performDeletions flag (real Foundry v13 behavior)
     let toDelete = false
-    if (k.startsWith('-=')) {
+    if (k.startsWith('-=') && performDeletions) {
       k = k.slice(2)
       toDelete = (v === null)
     }
@@ -1745,7 +1781,8 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
           insertValues,
           overwrite,
           inplace: true,
-          enforceTypes
+          enforceTypes,
+          performDeletions
         }, depth)
 
         // 1.2 - Remove an existing key

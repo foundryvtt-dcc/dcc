@@ -6,7 +6,10 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 
 | Command | Description |
 |---------|-------------|
-| `npm test` | Run unit tests (Vitest) |
+| `npm test` | Run all tests (unit + integration) |
+| `npm run test:unit` | Run unit tests only (mocked Foundry) |
+| `npm run test:integration` | Run integration tests only (real Foundry) |
+| `npm run setup:foundry` | Setup Foundry for integration tests |
 | `npm run format` | Format code (StandardJS + StyleLint) |
 | `npm run scss` | Compile SASS to CSS |
 | `npm run todb` | Compile JSON → LevelDB packs (Foundry must be shut down) |

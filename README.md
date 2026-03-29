@@ -13,9 +13,11 @@ You can purchase a module containing copyrighted Goodman Games content ready for
 Work Process (for developers): [GitHub Process for JSON/LevelDB](docs/GITHUB-JSON-LEVELDB-FLOW.md)
 
 ###### Maintainers
-* Steve Barnett (@mooped)
-* Christian Ovsenik (@algnc)
 * Tim L. White (@cyface, tim@cyface.com)
+
+###### Maintainers Emeritus
+* Christian Ovsenik (@algnc)
+* Steve Barnett (@mooped)
 
 ###### Contributors
 * Connor Stone (@ckwk)

@@ -2,6 +2,7 @@
 // noinspection JSUnresolvedReference
 
 import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from './utilities.js'
+import DCCActiveEffect from './active-effect.js'
 import DCCActorLevelChange from './actor-level-change.js'
 import DiceChain from './dice-chain.js'
 
@@ -223,24 +224,19 @@ class DCCActor extends Actor {
     // This custom implementation replaces the core behavior to handle equipped item effects
     // Calling super would cause effects to be applied twice
 
-    // Create a deep copy of the base system data to preserve the original
     const overrides = {}
-
-    // Collect all active effects
     const effects = []
 
-    // Add effects directly on the actor
+    // Collect active effects from the actor
     for (const effect of this.effects) {
       if (!effect.disabled && !effect.isSuppressed) {
         effects.push(effect)
       }
     }
 
-    // Add effects from equipped items that transfer to the actor
+    // Collect transferring effects from equipped items
     for (const item of this.items) {
-      // Check if item is equipped (for equipment) or always apply (for conditions, etc)
       const isEquipped = item.system?.equipped ?? true
-
       if (isEquipped) {
         for (const effect of item.effects) {
           if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
@@ -261,17 +257,16 @@ class DCCActor extends Actor {
       return aOrder - bOrder
     })
 
-    // Apply each effect
     for (const effect of effects) {
       if (!effect.changes) continue
 
       for (const change of effect.changes) {
         const key = change.key
         const type = change.type || 'add'
-        const value = change.value
 
         // Handle different change types
         try {
+          const value = this._resolveEffectValue(change.value)
           switch (type) {
             case 'custom':
               // Custom mode - let modules handle this
@@ -321,15 +316,21 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Apply a custom active effect
+   * Resolve @-variable references in an effect value string
+   * Delegates to DCCActiveEffect.resolveValue for shared implementation
+   * @param {*} value - The raw effect value (may contain @references if string)
+   * @returns {*} - Strings get references replaced by numbers; non-strings pass through unchanged
+   * @private
+   */
+  _resolveEffectValue (value) {
+    return DCCActiveEffect.resolveValue(this, value)
+  }
+
+  /**
+   * Apply a custom active effect (extensibility hook for DCC-specific mechanics)
    * @private
    */
   _applyCustomEffect (key, value) {
-    // Handle DCC-specific custom effects here
-    // For example, effects that modify dice chains or special class abilities
-
-    // This is where we'd handle special DCC mechanics that don't fit the standard modes
-    // Examples: modifying dice chains, adjusting spell check results, etc.
   }
 
   /**
@@ -418,7 +419,6 @@ class DCCActor extends Actor {
     const multiplier = Number(value)
     if (isNaN(multiplier)) return
 
-    // Convert current to number for consistency with other effect methods
     const currentNumber = Number(current)
     if (isNaN(currentNumber)) return
 
@@ -432,14 +432,7 @@ class DCCActor extends Actor {
    * @private
    */
   _applyOverrideEffect (key, value, overrides) {
-    // For override, parse the value appropriately
-    let parsedValue = value
-
-    // Try to parse as number if it looks numeric
-    if (!isNaN(Number(value)) && value !== '') {
-      parsedValue = Number(value)
-    }
-
+    const parsedValue = (!isNaN(Number(value)) && value !== '') ? Number(value) : value
     foundry.utils.setProperty(this, key, parsedValue)
     overrides[key] = parsedValue
   }
@@ -1251,13 +1244,21 @@ class DCCActor extends Actor {
 
     // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
-    if (skillTable) {
+    if (skillTable || skill.useDisapprovalRange) {
+      // Route through processSpellCheck for skills with tables or cleric abilities
+      // processSpellCheck handles pass/fail display, disapproval range checks, and disapproval increase
       await game.dcc.processSpellCheck(this, {
         rollTable: skillTable,
         roll,
         item: skillItem,
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
+
+      // Divine aid always increases disapproval by its cost (e.g. +10), separate from
+      // the standard +1 on failure that processSpellCheck handles
+      if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
+        await this.applyDisapproval(skill.drainDisapproval)
+      }
     } else {
       await roll.evaluate()
 
@@ -1286,11 +1287,6 @@ class DCCActor extends Actor {
       }
 
       roll.toMessage(messageData)
-
-      // Need to drain disapproval
-      if (skill && skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
-        await this.applyDisapproval(skill.drainDisapproval)
-      }
     }
 
     // Store last result if required

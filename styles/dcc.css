@@ -681,8 +681,20 @@ a.inline-roll {
   color: red;
 }
 
+.emote-note {
+  font-size: 0.9em;
+}
+
 .flavor-text {
   font-family: var(--system-label-font), serif;
+}
+.flavor-text .critical {
+  color: green;
+  font-weight: 900;
+}
+.flavor-text .fumble {
+  color: red;
+  font-weight: 900;
 }
 
 .message-content {
