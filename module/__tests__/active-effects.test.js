@@ -709,8 +709,7 @@ describe('Active Effects - @-Variable Resolution', () => {
         { key: 'system.details.attackHitBonus.melee.adjustment', mode: 2, value: '@system.abilities.lck.mod' }
       ]
     }
-    actor.effects = [mockEffect]
-    actor.items = []
+    actor.effects = new global.Collection([['luck-effect', mockEffect]])
 
     actor.applyActiveEffects()
     actor.computeMeleeAndMissileAttackAndDamage()
