@@ -484,7 +484,7 @@
   border-radius: 0;
   font-family: var(--system-data-font), serif;
   font-size: 12px;
-  height: 17px;
+  height: 20px;
   text-align: center;
 }
 .dcc select:focus {
@@ -2110,11 +2110,18 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   text-align: left;
   padding-top: 2px;
 }
-.dcc .character .combat-basics input,
-.dcc .character .combat-basics select {
+.dcc .character .combat-basics input {
   background: var(--system-input-background);
   font-size: 14px;
   height: 17px;
+  vertical-align: middle;
+  margin-right: 8px;
+  border: 0;
+}
+.dcc .character .combat-basics select {
+  background: var(--system-input-background);
+  font-size: 14px;
+  height: 20px;
   vertical-align: middle;
   margin-right: 8px;
   border: 0;

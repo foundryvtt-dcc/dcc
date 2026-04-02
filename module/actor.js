@@ -1476,7 +1476,7 @@ class DCCActor extends Actor {
    */
   async rollWeaponAttack (weaponId, options = {}) {
     const automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
-    const rollMode = game.settings.get('core', 'rollMode')
+    const messageMode = game.settings.get('core', 'messageMode')
 
     // First try and find the item by id
     const weapon = this.items.find(i => i.id === weaponId)
@@ -1784,7 +1784,7 @@ class DCCActor extends Actor {
     messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
 
     // Output the results
-    ChatMessage.applyRollMode(messageData, rollMode)
+    ChatMessage.applyMode(messageData, messageMode)
     ChatMessage.create(messageData)
   }
 
@@ -2053,7 +2053,7 @@ class DCCActor extends Actor {
         type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         sound: CONFIG.sounds.notification
       }
-      ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
+      ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
       await CONFIG.ChatMessage.documentClass.create(messageData)
     }
 
@@ -2085,7 +2085,7 @@ class DCCActor extends Actor {
       content: locString,
       sound: CONFIG.sounds.notification
     }
-    ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
+    ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
     await CONFIG.ChatMessage.documentClass.create(messageData)
   }
 
@@ -2117,7 +2117,7 @@ class DCCActor extends Actor {
       content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
       sound: CONFIG.sounds.notification
     }
-    ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
+    ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
     await CONFIG.ChatMessage.documentClass.create(messageData)
   }
 

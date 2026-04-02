@@ -9,7 +9,7 @@ import { vi } from 'vitest'
 /**
  * Roll
  */
-global.rollToMessageMock = vi.fn((messageData = {}, { rollMode = null, create = true } = {}) => {
+global.rollToMessageMock = vi.fn((messageData = {}, { messageMode = null, rollMode = null, create = true } = {}) => {
   // console.log('Mock Roll: toMessage was called with:')
   // console.log(messageData)
 })

@@ -135,6 +135,9 @@ This document provides a checklist for preparing for FoundryVTT V14.
 - [x] Replace `CONST.DICE_ROLL_MODES` with `CONFIG.ChatMessage.modes` (production code unaffected, tests fixed)
 - [x] Replace `performDeletions` with `applyOperators` in `mergeObject` calls (mocks and tests fixed)
 - [x] Replace `-=key` deletion syntax with `ForcedDeletion` operator (mocks and tests fixed)
+- [x] Replace `ChatMessage.applyRollMode` with `ChatMessage.applyMode` (actor.js, spell-result.js)
+- [x] Replace `game.settings.get('core', 'rollMode')` with `game.settings.get('core', 'messageMode')` (actor.js)
+- [x] Replace `rollMode` option with `messageMode` in `Roll.toMessage()` calls (spell-result.js)
 
 ## Editor Migration
 

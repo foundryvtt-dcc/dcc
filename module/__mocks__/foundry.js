@@ -1246,6 +1246,7 @@ global.ActiveEffect = ActiveEffectMock
 class ChatMessageMock {
   static getSpeaker = vi.fn(({ scene, actor, token, alias } = {}) => { return actor })
   static applyRollMode = vi.fn()
+  static applyMode = vi.fn()
 
   static create (data, options = {}) { if (data) { this.data = data } }
 

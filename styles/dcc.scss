@@ -323,7 +323,7 @@
     border-radius: 0;
     font-family: var(--system-data-font), serif;
     font-size: 12px;
-    height: 17px;
+    height: 20px;
     text-align: center;
 
     &:focus {
@@ -2244,11 +2244,19 @@ a.inline-roll {
       padding-top: 2px;
     }
 
-    input,
-    select {
+    input {
       background: var(--system-input-background);
       font-size: 14px;
       height: 17px;
+      vertical-align: middle;
+      margin-right: 8px;
+      border: 0;
+    }
+
+    select {
+      background: var(--system-input-background);
+      font-size: 14px;
+      height: 20px;
       vertical-align: middle;
       margin-right: 8px;
       border: 0;

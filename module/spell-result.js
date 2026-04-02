@@ -24,7 +24,7 @@ class SpellResult {
     patronTaint = undefined
   } = {}) {
     messageOptions = foundry.utils.mergeObject({
-      rollMode: game.settings.get('core', 'rollMode')
+      messageMode: game.settings.get('core', 'messageMode')
     }, messageOptions)
 
     // construct flags for the message

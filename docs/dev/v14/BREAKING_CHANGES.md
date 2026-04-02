@@ -173,21 +173,25 @@ ActiveEffect duration now supports multiple time units beyond just seconds:
 
 ### Roll Mode Renamed to Message Mode
 
-The `rollMode` property is being renamed (likely to `mode` or `visibility`) since the modes affect more than just rolls. See [GitHub issue #8856](https://github.com/foundryvtt/foundryvtt/issues/8856).
+The `rollMode` setting and `ChatMessage.applyRollMode` are deprecated. Use the new `messageMode` setting and `ChatMessage.applyMode` instead. The mode values changed from legacy strings to shorter names.
 
 ```javascript
 // V13
-const rollMode = game.settings.get('core', 'rollMode')
+const rollMode = game.settings.get('core', 'rollMode')  // "publicroll", "gmroll", "blindroll", "selfroll"
 ChatMessage.applyRollMode(messageData, rollMode)
 
-// V14 (TBD - check official docs when V14 releases)
-// Property name will change from 'rollMode' to 'mode' or 'visibility'
+// V14
+const messageMode = game.settings.get('core', 'messageMode')  // "public", "gm", "blind", "self"
+ChatMessage.applyMode(messageData, messageMode)
+
+// Roll.toMessage options
+// V13: { rollMode: game.settings.get('core', 'rollMode') }
+// V14: { messageMode: game.settings.get('core', 'messageMode') }
 ```
 
-**DCC Impact**: The system uses `rollMode` in multiple places:
-- `module/actor.js` - `game.settings.get('core', 'rollMode')` and `ChatMessage.applyRollMode()`
-- `module/spell-result.js` - `rollMode` in message options
-- Translation keys: `DCC.RollMode` in language files
+**DCC Impact**: ✅ FIXED - All usages updated:
+- `module/actor.js` - 4 calls migrated to `ChatMessage.applyMode` + `messageMode` setting
+- `module/spell-result.js` - `rollMode` option → `messageMode` in `Roll.toMessage()` options
 
 ### Scene Controls
 
