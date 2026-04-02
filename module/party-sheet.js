@@ -129,7 +129,7 @@ class DCCPartySheet extends DCCActorSheet {
         }
 
         const memberData = foundry.utils.mergeObject(
-          foundry.utils.duplicate(member),
+          foundry.utils.deepClone(member),
           {
             actor,
             melee,

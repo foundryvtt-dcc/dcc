@@ -127,7 +127,7 @@ This document provides a checklist for preparing for FoundryVTT V14.
 
 ### New in User Testing 3 (Build 358)
 
-- [ ] Check custom `SceneControlTool` registrations in `dcc.js` (Fleeting Luck and Spell Duel buttons - may need `interaction`, `control`, `creation` properties)
+- [ ] Check custom `SceneControlTool` registrations in `dcc.js:270-294` (Fleeting Luck and Spell Duel buttons use `button: true` - verify on V14 Stable whether button-type tools are exempt from new `interaction`, `control`, `creation` required properties)
 - [x] V14 requires Node.js 24 (note: mutually exclusive with V13)
 
 ### V14 Deprecations (Removed in V16)
@@ -135,7 +135,9 @@ This document provides a checklist for preparing for FoundryVTT V14.
 - [x] Replace `CONST.DICE_ROLL_MODES` with `CONFIG.ChatMessage.modes` (production code unaffected, tests fixed)
 - [x] Replace `performDeletions` with `applyOperators` in `mergeObject` calls (mocks and tests fixed)
 - [x] Replace `-=key` deletion syntax with `ForcedDeletion` operator (mocks and tests fixed)
+- [x] Replace `foundry.utils.duplicate()` with `foundry.utils.deepClone()` (7 production calls: actor-sheet.js, spell-result.js, party-sheet.js, migrations.js)
 - [x] Replace `ChatMessage.applyRollMode` with `ChatMessage.applyMode` (actor.js, spell-result.js)
+- [x] Clean up stale `applyRollMode` mock in `module/__mocks__/foundry.js` (removed - `applyMode` mock remains)
 - [x] Replace `game.settings.get('core', 'rollMode')` with `game.settings.get('core', 'messageMode')` (actor.js)
 - [x] Replace `rollMode` option with `messageMode` in `Roll.toMessage()` calls (spell-result.js)
 

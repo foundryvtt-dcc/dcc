@@ -1245,7 +1245,6 @@ global.ActiveEffect = ActiveEffectMock
  */
 class ChatMessageMock {
   static getSpeaker = vi.fn(({ scene, actor, token, alias } = {}) => { return actor })
-  static applyRollMode = vi.fn()
   static applyMode = vi.fn()
 
   static create (data, options = {}) { if (data) { this.data = data } }
@@ -1660,10 +1659,13 @@ global.foundry.utils.expandObject = function (obj, _d = 0) {
   return expanded
 }
 
-// Foundry's implementation of duplicate
-global.foundry.utils.duplicate = function (original) {
+// Foundry's implementation of deepClone
+global.foundry.utils.deepClone = function (original) {
   return JSON.parse(JSON.stringify(original))
 }
+
+// Foundry's legacy duplicate (deprecated in V14, removed in V16)
+global.foundry.utils.duplicate = global.foundry.utils.deepClone
 
 // Foundry's implementation of getProperty
 global.foundry.utils.getProperty = function (object, key) {
@@ -1739,7 +1741,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   const depth = _d + 1
 
   // Maybe copy the original data at depth 0
-  if (!inplace && (_d === 0)) original = foundry.utils.duplicate(original)
+  if (!inplace && (_d === 0)) original = foundry.utils.deepClone(original)
 
   // Enforce object expansion at depth 0
   if ((_d === 0) && Object.keys(original).some(k => /\./.test(k))) original = global.foundry.utils.expandObject(original)

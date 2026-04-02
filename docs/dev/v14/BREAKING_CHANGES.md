@@ -446,7 +446,7 @@ These are deprecated in V14 but still functional. They will be removed in V16.
 
 `CONST.DICE_ROLL_MODES` is deprecated. Use `CONFIG.ChatMessage.modes` instead with new string values. Migration is facilitated by `Roll._mapLegacyRollMode`.
 
-**DCC Impact**: ✅ FIXED - Production code uses `game.settings.get('core', 'rollMode')` which returns the setting value directly (not via CONST). Integration tests updated to avoid deprecated CONST access.
+**DCC Impact**: ✅ FIXED - Production code uses `game.settings.get('core', 'messageMode')` (migrated from `rollMode`). Integration tests updated to avoid deprecated CONST access.
 
 ### mergeObject: performDeletions → applyOperators
 
@@ -476,6 +476,20 @@ foundry.utils.mergeObject(obj, { b: new ForcedDeletion() }, { applyOperators: tr
 ```
 
 **DCC Impact**: ✅ FIXED - Mocks and tests updated to use `ForcedDeletion` operator.
+
+### foundry.utils.duplicate → foundry.utils.deepClone
+
+`foundry.utils.duplicate()` is deprecated. Use `foundry.utils.deepClone()` instead. `duplicate()` uses `JSON.parse(JSON.stringify())` which is slower and loses non-serializable values.
+
+```javascript
+// Deprecated (removed in V16)
+const copy = foundry.utils.duplicate(original)
+
+// V14 (required by V16)
+const copy = foundry.utils.deepClone(original)
+```
+
+**DCC Impact**: ✅ FIXED - All 7 production calls migrated to `deepClone()`. Mock updated to define `deepClone` as primary with `duplicate` as alias. Integration test retained to verify legacy `duplicate` still works.
 
 ## Compatibility Notes
 

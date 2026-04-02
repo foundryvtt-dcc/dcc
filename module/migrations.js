@@ -251,7 +251,7 @@ const migrateActorData = async function (actor) {
     const migratedEffects = []
     let hasEffectUpdates = false
     for (const effect of actor.effects) {
-      const effectData = effect.toObject ? effect.toObject() : foundry.utils.duplicate(effect)
+      const effectData = effect.toObject ? effect.toObject() : foundry.utils.deepClone(effect)
       if (effectData.changes?.length) {
         let effectModified = false
         for (const change of effectData.changes) {
@@ -366,7 +366,7 @@ const migrateItemData = function (item) {
     const migratedEffects = []
     let hasEffectUpdates = false
     for (const effect of item.effects) {
-      const effectData = effect.toObject ? effect.toObject() : foundry.utils.duplicate(effect)
+      const effectData = effect.toObject ? effect.toObject() : foundry.utils.deepClone(effect)
       if (effectData.changes?.length) {
         let effectModified = false
         for (const change of effectData.changes) {
@@ -425,7 +425,7 @@ const migrateSceneData = async function (scene) {
       t.actorId = null
       t.actorData = {}
     } else if (!t.actorLink) {
-      const actorData = foundry.utils.duplicate(t.actorData)
+      const actorData = foundry.utils.deepClone(t.actorData)
       actorData.type = token.actor?.type
       const actorUpdate = await migrateActorData(actorData);
       ['items', 'effects'].forEach(embeddedName => {

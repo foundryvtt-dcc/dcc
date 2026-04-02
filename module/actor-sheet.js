@@ -835,7 +835,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // Get the type of item to create.
     const type = target.dataset.type
     // Grab any data associated with this control.
-    const system = foundry.utils.duplicate(target.dataset)
+    const system = foundry.utils.deepClone(target.dataset)
     // Initialize a default name.
     let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
     if (this.options.document.type === 'NPC' && type === 'weapon') {
@@ -1451,7 +1451,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // Get the type of item to create.
     const type = header.dataset.type
     // Grab any data associated with this control.
-    const system = foundry.utils.duplicate(header.dataset)
+    const system = foundry.utils.deepClone(header.dataset)
     // Initialize a default name.
     let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
     if (this.options.document.type === 'NPC' && type === 'weapon') {
