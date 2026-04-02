@@ -2,9 +2,9 @@
 
 This document provides a checklist for preparing for FoundryVTT V14.
 
-**Current Status**: User Testing 3 (Build 358)
+**Current Status**: Stable 1 (Build 359)
 
-**Last Updated**: March 2026
+**Last Updated**: April 2026
 
 ## Prerequisites
 
@@ -130,6 +130,12 @@ This document provides a checklist for preparing for FoundryVTT V14.
 - [ ] Check custom `SceneControlTool` registrations in `dcc.js` (Fleeting Luck and Spell Duel buttons - may need `interaction`, `control`, `creation` properties)
 - [x] V14 requires Node.js 24 (note: mutually exclusive with V13)
 
+### V14 Deprecations (Removed in V16)
+
+- [x] Replace `CONST.DICE_ROLL_MODES` with `CONFIG.ChatMessage.modes` (production code unaffected, tests fixed)
+- [x] Replace `performDeletions` with `applyOperators` in `mergeObject` calls (mocks and tests fixed)
+- [x] Replace `-=key` deletion syntax with `ForcedDeletion` operator (mocks and tests fixed)
+
 ## Editor Migration
 
 ### TinyMCE Removal
@@ -168,20 +174,21 @@ This document provides a checklist for preparing for FoundryVTT V14.
 
 ## Pre-Release Testing
 
-### Prototype/Developer/User Testing Builds (Current)
+### Prototype/Developer/User Testing Builds
 
 - [x] Test system on V14 Prototype 1 (Build 349)
 - [x] Test system on V14 Developer 1 (Build 354)
-- [ ] Test system on V14 User Testing 2 (Build 357)
-- [ ] Test system on V14 User Testing 3 (Build 358)
-- [ ] Report any issues to Foundry team
-- [ ] Monitor future releases for new breaking changes
+- [x] Test system on V14 User Testing 2 (Build 357)
+- [x] Test system on V14 User Testing 3 (Build 358)
+- [x] Report any issues to Foundry team
+- [x] Monitor future releases for new breaking changes
 
-### Before V14 Stable
+### V14 Stable Release
 
-- [ ] Test system on V14 beta (when available)
-- [ ] Address any new breaking changes
-- [ ] Final verification before V14 stable
+- [x] V14 Stable 1 (Build 359) released April 1, 2026
+- [ ] Test system on V14 Stable 1 (Build 359)
+- [ ] Address any new breaking changes from stable
+- [ ] Final verification on stable
 - [ ] Update minimum/verified compatibility in system.json
 
 ## Scene Levels (New Feature)
@@ -197,6 +204,7 @@ This document provides a checklist for preparing for FoundryVTT V14.
 - [V14 Developer 1](https://foundryvtt.com/releases/14.354)
 - [V14 User Testing 2](https://foundryvtt.com/releases/14.357)
 - [V14 User Testing 3](https://foundryvtt.com/releases/14.358)
+- [V14 Stable 1](https://foundryvtt.com/releases/14.359)
 - [API Migration Guides](https://foundryvtt.com/article/migration/)
 - [System Data Models](https://foundryvtt.com/article/system-data-models/)
 - [GitHub Issues](https://github.com/foundryvtt/foundryvtt/issues)

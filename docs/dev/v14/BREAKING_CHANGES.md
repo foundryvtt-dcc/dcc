@@ -2,7 +2,7 @@
 
 This document covers breaking changes in FoundryVTT V14.
 
-**Current Status**: User Testing 3 (Build 358). Information based on official release notes.
+**Current Status**: Stable 1 (Build 359). Official release on April 1, 2026.
 
 ## Resources
 
@@ -11,6 +11,7 @@ This document covers breaking changes in FoundryVTT V14.
 - [V14 Developer 1 Release Notes](https://foundryvtt.com/releases/14.354)
 - [V14 User Testing 2 Release Notes](https://foundryvtt.com/releases/14.357)
 - [V14 User Testing 3 Release Notes](https://foundryvtt.com/releases/14.358)
+- [V14 Stable 1 Release Notes](https://foundryvtt.com/releases/14.359)
 
 ## Deprecation Expirations
 
@@ -407,6 +408,70 @@ Major world loading improvements:
 - Documents with invalid `type` can now be deleted (357)
 - Compendium item updates no longer lose data in index entries (358)
 - Compendium sidebar filter now searches across compendium contents, not just names (358)
+
+### Stable 1 (Build 359) Changes
+
+**Installation:**
+- Cannot update to V14 from within Foundry; requires uninstall and reinstall
+- Complete data backup recommended before upgrading
+
+**New Stable Features:**
+- Scene transition effects
+- Screen shake API
+- Particle generation engine with rotation randomization and `onUpdate` callbacks
+- `RegionDocument#elevation.base` property added
+- Token `shape` property now targetable by Active Effects
+- `Level#background`, `#foreground`, `#fog` made non-nullable fields
+- Font Awesome updated to 7.2.0
+- Token drag ruler customization via `TokenRuler#_getWaypointStyle`
+- Alpha Threshold field added to Tile Configuration dialog
+- "Clear All Objects" buttons now respect locked object status
+- Non-GMs can delete their own placeable objects
+
+**Known Issues:**
+- Roll visibility bug: Player-visible rolls show as `'???'` when message mode is Private to Gamemasters or using `/gmroll`; GM receives correct results. Text messages work correctly.
+
+**Confirmed Compatible Systems at Launch:**
+- D&D 5E, Crucible, Universal Tabletop System, Blades In The Dark, Discworld, Fate Core Official, Metanthropes, Ryuutama, Star Trek Adventures 2d20
+
+## V14 Deprecations (Removed in V16)
+
+These are deprecated in V14 but still functional. They will be removed in V16.
+
+### CONST.DICE_ROLL_MODES → CONFIG.ChatMessage.modes
+
+`CONST.DICE_ROLL_MODES` is deprecated. Use `CONFIG.ChatMessage.modes` instead with new string values. Migration is facilitated by `Roll._mapLegacyRollMode`.
+
+**DCC Impact**: ✅ FIXED - Production code uses `game.settings.get('core', 'rollMode')` which returns the setting value directly (not via CONST). Integration tests updated to avoid deprecated CONST access.
+
+### mergeObject: performDeletions → applyOperators
+
+The `performDeletions` option in `foundry.utils.mergeObject` is renamed to `applyOperators`.
+
+```javascript
+// V13 (deprecated in V14)
+foundry.utils.mergeObject(original, changes, { performDeletions: true })
+
+// V14 (required by V16)
+foundry.utils.mergeObject(original, changes, { applyOperators: true })
+```
+
+**DCC Impact**: ✅ FIXED - Mocks and tests updated to use `applyOperators`.
+
+### mergeObject: -=key syntax → ForcedDeletion operator
+
+The `-=key` deletion syntax in `mergeObject` is deprecated. Use `foundry.data.operators.ForcedDeletion` instead.
+
+```javascript
+// V13 (deprecated in V14)
+foundry.utils.mergeObject(obj, { '-=b': null }, { performDeletions: true })
+
+// V14 (required by V16)
+const { ForcedDeletion } = foundry.data.operators
+foundry.utils.mergeObject(obj, { b: new ForcedDeletion() }, { applyOperators: true })
+```
+
+**DCC Impact**: ✅ FIXED - Mocks and tests updated to use `ForcedDeletion` operator.
 
 ## Compatibility Notes
 

@@ -2,7 +2,7 @@
 
 This document covers migrating from `template.json` to `TypeDataModel` for V14.
 
-**Current Status**: User Testing 3 (Build 358)
+**Current Status**: Stable 1 (Build 359)
 
 ## Overview
 

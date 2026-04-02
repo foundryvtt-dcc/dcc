@@ -1272,15 +1272,10 @@ global.CONFIG = {
 // Enhanced CONST to include more Foundry constants
 global.CONST = {
   CHAT_MESSAGE_STYLES: {
-    EMOTE: 'emote',
-    IC: 'ic',
-    OOC: 'ooc'
-  },
-  DICE_ROLL_MODES: {
-    PUBLIC: 'roll',
-    PRIVATE: 'gmroll',
-    BLIND: 'blindroll',
-    SELF: 'selfroll'
+    OTHER: 0,
+    OOC: 1,
+    IC: 2,
+    EMOTE: 3
   },
   ENTITY_TYPES: {
     ACTOR: 'Actor',
@@ -1718,6 +1713,15 @@ global.foundry.utils.setProperty = function (object, key, value) {
 }
 
 // Foundry's implementation of mergeObject
+// Mock ForcedDeletion operator (matches foundry.data.operators.ForcedDeletion)
+class MockForcedDeletion {
+  constructor () {
+    this._isForcedDeletion = true
+  }
+}
+global.foundry.data = global.foundry.data || {}
+global.foundry.data.operators = { ForcedDeletion: MockForcedDeletion }
+
 global.foundry.utils.mergeObject = function (original, other = {}, {
   insertKeys = true,
   insertValues = true,
@@ -1725,8 +1729,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   recursive = true,
   inplace = true,
   enforceTypes = false,
-  applyOperators = false,
-  performDeletions = false
+  applyOperators = false
 } = {}, _d = 0) {
   other = other || {}
   if (!(original instanceof Object) || !(other instanceof Object)) {
@@ -1742,14 +1745,13 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   if ((_d === 0) && Object.keys(other).some(k => /\./.test(k))) other = global.foundry.utils.expandObject(other)
 
   // Iterate over the other object
-  for (let [k, v] of Object.entries(other)) {
+  for (const [k, v] of Object.entries(other)) {
     const tv = global.getType(v)
 
-    // Prepare to delete - requires applyOperators (v14) or performDeletions (v13 compat)
+    // Handle ForcedDeletion operator (v14)
     let toDelete = false
-    if (k.startsWith('-=') && (applyOperators || performDeletions)) {
-      k = k.slice(2)
-      toDelete = (v === null)
+    if (applyOperators && v instanceof MockForcedDeletion) {
+      toDelete = true
     }
 
     // Get the existing object
@@ -1774,8 +1776,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
           overwrite,
           inplace: true,
           enforceTypes,
-          applyOperators,
-          performDeletions
+          applyOperators
         }, depth)
 
         // 1.2 - Remove an existing key
