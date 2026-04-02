@@ -2050,7 +2050,7 @@ class DCCActor extends Actor {
           'dcc.isApplyDamage': true
         },
         content: game.i18n.format(locString, { damage: Math.abs(deltaHp) }),
-        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+        style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         sound: CONFIG.sounds.notification
       }
       ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
@@ -2081,7 +2081,7 @@ class DCCActor extends Actor {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: locString,
       sound: CONFIG.sounds.notification
     }
@@ -2113,7 +2113,7 @@ class DCCActor extends Actor {
       flags: {
         'dcc.isDisapproval': true
       },
-      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
       sound: CONFIG.sounds.notification
     }
