@@ -6,6 +6,7 @@ This is the documentation for the FoundryVTT Dungeon Crawl Classics (DCC) System
 * [System Vs Module](System-Vs-Module.md)
 * [How To Install Purchased DCC Content](Installing-the-Paid-Foundry-Modules.md)
 * [FoundryVTT Modules that support DCC](FoundryVTT-Modules-that-Support-DCC.md)
+* [Attribute Paths for Third-Party Modules](Attribute-Paths-for-Modules.md)
 * [Reporting Bugs and Submitting Feature Requests](Reporting-Bugs.md)
 
 ## Characters

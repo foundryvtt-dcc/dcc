@@ -2,6 +2,7 @@
 
 Here is a list of FoundryVTT modules that support DCC!
 
+* [Aeris Tokens](https://foundryvtt.com/packages/aeris-tokens) (Movement visualization and limits for tokens - use `system.attributes.speed.value` for all actor types)
 * [Always HP](https://foundryvtt.com/packages/always-hp) (Lets you quickly adjust the HP of selected token(s))
 * [Actor Attribute List](https://github.com/mybigfriendjo/actor-attribute-list) (get paths of attributes for DCC actors for macro-making)
 * [Carousel Combat Tracker](https://foundryvtt.com/packages/combat-tracker-dock) (nice initialtive tracker at the top of the screen)
