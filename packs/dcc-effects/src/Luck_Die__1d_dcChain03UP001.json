@@ -6,7 +6,7 @@
   "changes": [
     {
       "key": "system.class.luckDie",
-      "value": "1", "type": "add",
+      "value": "1", "type": "diceChain",
       "priority": null
     }
   ],
@@ -20,7 +20,7 @@
     "startRound": null,
     "startTurn": null
   },
-  "description": "<p>Moves the luck die up one step on the dice chain (e.g., d3 → d4). Uses Add mode - the system automatically detects dice expressions and applies dice chain logic.</p>",
+  "description": "<p>Moves the luck die up one step on the dice chain (e.g., d3 → d4).</p>",
   "origin": null,
   "transfer": true,
   "statuses": [],
