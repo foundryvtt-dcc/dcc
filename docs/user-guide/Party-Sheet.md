@@ -12,7 +12,7 @@ You drag actors from the Actors tab onto the Party Sheet.
 ![Party Sheet](images/party_sheet.png)
 
 ## Editing Actors in the Party
-THere is a button that is a person with a gear in the lower right of each actor on the party sheet. Click that to open the regular actor sheet for that actor.
+You can click the avatar image of an actor on the party sheet to open their character sheet. Alternatively, there is a button that is a person with a gear in the lower right of each actor. Click that to open the regular actor sheet for that actor.
 ![Party Actor Edit](images/party_sheet_edit_member.png)
 
 ## Removing Actors from the Party
