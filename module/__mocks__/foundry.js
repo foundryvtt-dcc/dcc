@@ -1008,6 +1008,7 @@ class MockItem {
 
 // Lifecycle hooks and dialogs for MockItem
 MockItem.prototype._onCreate = async function () {}
+MockItem.prototype._preDelete = async function () {}
 MockItem.prototype.deleteDialog = async function () { return this }
 
 // Enhanced MockItem with drag data support

@@ -401,9 +401,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     // Build a set of contained item IDs to filter them from normal categories
+    // Only treat as contained if the referenced container actually exists on this actor
     const containedItemIds = new Set()
     for (const i of inventory) {
-      if (i.system.container) {
+      if (i.system.container && this.options.document.items.get(i.system.container)) {
         containedItemIds.add(i._id)
       }
     }

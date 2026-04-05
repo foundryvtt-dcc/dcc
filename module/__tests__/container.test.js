@@ -620,4 +620,69 @@ describe('Container Item Tests', () => {
       consoleSpy.mockRestore()
     })
   })
+
+  describe('_preDelete contained item cleanup', () => {
+    let container
+
+    beforeEach(() => {
+      container = new DCCItem({ type: 'container', name: 'Backpack' }, {})
+      container._id = 'container-1'
+      container.id = 'container-1'
+      container.system = {
+        ...container.system,
+        capacity: { weight: 50, items: 10 },
+        weightReduction: 0,
+        container: null
+      }
+    })
+
+    test('clears container reference on contained items before deletion', async () => {
+      const sword = { id: 'sword-1', _id: 'sword-1', system: { container: 'container-1' } }
+      const rope = { id: 'rope-1', _id: 'rope-1', system: { container: 'container-1' } }
+
+      container.parent = {
+        items: {
+          filter: (fn) => [sword, rope].filter(fn),
+          get: () => null
+        },
+        updateEmbeddedDocuments: vi.fn().mockResolvedValue([])
+      }
+
+      await container._preDelete({}, {})
+
+      expect(container.parent.updateEmbeddedDocuments).toHaveBeenCalledWith('Item', [
+        { _id: 'sword-1', 'system.container': null },
+        { _id: 'rope-1', 'system.container': null }
+      ])
+    })
+
+    test('does nothing for empty containers', async () => {
+      container.parent = {
+        items: {
+          filter: () => [],
+          get: () => null
+        },
+        updateEmbeddedDocuments: vi.fn()
+      }
+
+      await container._preDelete({}, {})
+
+      expect(container.parent.updateEmbeddedDocuments).not.toHaveBeenCalled()
+    })
+
+    test('does nothing for non-container items', async () => {
+      const equipment = new DCCItem({ type: 'equipment', name: 'Torch' }, {})
+      equipment.parent = {
+        items: {
+          filter: () => [],
+          get: () => null
+        },
+        updateEmbeddedDocuments: vi.fn()
+      }
+
+      await equipment._preDelete({}, {})
+
+      expect(equipment.parent.updateEmbeddedDocuments).not.toHaveBeenCalled()
+    })
+  })
 })

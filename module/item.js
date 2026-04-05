@@ -780,6 +780,23 @@ class DCCItem extends Item {
   }
 
   /**
+   * Before deletion, release contained items so they aren't orphaned.
+   * This handles programmatic deletion (API, macros, modules) where deleteDialog is bypassed.
+   * @param {object} options
+   * @param {object} user
+   */
+  async _preDelete (options, user) {
+    await super._preDelete(options, user)
+    if (this.isContainer && this.parent && this.contents.length > 0) {
+      const updates = this.contents.map(i => ({
+        _id: i.id,
+        'system.container': null
+      }))
+      await this.parent.updateEmbeddedDocuments('Item', updates)
+    }
+  }
+
+  /**
    * Override deleteDialog for containers with contents.
    * Warns the user that contained items will also be deleted and requires confirmation.
    * @param {object} [options] - Options passed to the parent deleteDialog
