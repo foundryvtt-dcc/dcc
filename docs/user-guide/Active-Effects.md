@@ -41,7 +41,34 @@ Each change consists of:
 
 - **Attribute Key**: The path to the value you want to modify
 - **Change Mode**: How to apply the modification (Add, Multiply, Override, etc.)
-- **Effect Value**: The value to use for the modification
+- **Effect Value**: The value to use for the modification. This can be a plain number (e.g., `2`) or an `@`-variable reference to another actor attribute (e.g., `@system.abilities.lck.mod`). See [Using @-Variable References](#using--variable-references) below.
+
+## Using @-Variable References
+
+Instead of entering a static number as the Effect Value, you can reference another attribute on the actor using the `@` prefix. The reference will be resolved dynamically each time effects are applied, so the bonus updates automatically when the referenced attribute changes.
+
+**Syntax**: `@path.to.property`
+
+**Examples**:
+- `@system.abilities.lck.mod` - The character's Luck modifier
+- `@system.abilities.str.mod` - The character's Strength modifier
+- `@system.abilities.per.value` - The character's Personality score
+
+If the referenced path doesn't exist or isn't a number, it resolves to `0`. A warning will be logged to the browser console (F12) to help diagnose typos in attribute paths.
+
+**Important timing note**: `@`-variable references are resolved *before* derived values are recalculated. This means if you have one effect that changes an ability score (e.g., +2 to `system.abilities.lck.value`) and another effect that references the modifier for that same ability (`@system.abilities.lck.mod`), the reference will use the *base* modifier, not the modified one. In practice this only matters if you have two effects interacting with the same ability score. If your character's Luck score isn't being changed by another active effect, the modifier will be correct.
+
+### @-Variable Use Case Ideas
+
+| Goal | Key | Mode | Value |
+|------|-----|------|-------|
+| Add Luck mod to melee attacks | `system.details.attackHitBonus.melee.adjustment` | Add | `@system.abilities.lck.mod` |
+| Add Luck mod to missile attacks | `system.details.attackHitBonus.missile.adjustment` | Add | `@system.abilities.lck.mod` |
+| Add Luck mod to melee damage | `system.details.attackDamageBonus.melee.adjustment` | Add | `@system.abilities.lck.mod` |
+| Add Personality mod to AC | `system.attributes.ac.otherMod` | Add | `@system.abilities.per.mod` |
+| Add Luck mod to Reflex saves | `system.saves.ref.otherBonus` | Add | `@system.abilities.lck.mod` |
+| Add Stamina mod to initiative | `system.attributes.init.otherMod` | Add | `@system.abilities.sta.mod` |
+| Add Luck mod to spell checks | `system.class.spellCheckOtherMod` | Add | `@system.abilities.lck.mod` |
 
 ## Common Use Cases
 
@@ -56,7 +83,16 @@ Each change consists of:
      - Key: `system.details.attackHitBonus.missile.adjustment`, Mode: Add, Value: -2
    - Set duration as needed (e.g., 1 round)
 
-### Example 2: "+1 Str while equipped" (Magic Item Effect)
+### Example 2: "Add Luck modifier to melee attacks" (Dynamic Reference)
+
+1. Go to the actor's **Effects** tab
+2. Click **Create Effect**
+3. In the effect editor:
+   - Name: "Luck bonus to melee"
+   - Add change: Key: `system.details.attackHitBonus.melee.adjustment`, Mode: Add, Value: `@system.abilities.lck.mod`
+4. The value `@system.abilities.lck.mod` will automatically resolve to the character's current Luck modifier each time effects are applied. If the Luck score changes, the bonus updates automatically.
+
+### Example 3: "+1 Str while equipped" (Magic Item Effect)
 
 1. Open the item and go to its **Effects** tab
 2. Click **Create Effect**

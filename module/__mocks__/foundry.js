@@ -1023,14 +1023,38 @@ MockItem.prototype.toDragData = function () {
 global.Item = MockItem
 
 /**
- * Collection
+ * Collection - Map-based collection matching Foundry's Collection API
+ * Extends Map but iterates values (not entries) and adds find/filter/map convenience methods
+ * The find method uses a global mock for backwards compatibility with existing tests
  */
 global.collectionFindMock = vi.fn().mockName('Collection.find')
-const CollectionMock = vi.fn().mockImplementation(() => {
-  return {
-    find: global.collectionFindMock
+class CollectionMock extends Map {
+  constructor (entries) {
+    super(entries)
+    // Override find with the global mock for backwards compatibility with existing tests
+    this.find = global.collectionFindMock
   }
-}).mockName('Collection')
+
+  [Symbol.iterator] () {
+    return this.values()
+  }
+
+  filter (fn) {
+    return Array.from(this.values()).filter(fn)
+  }
+
+  map (fn) {
+    return Array.from(this.values()).map(fn)
+  }
+
+  get contents () {
+    return Array.from(this.values())
+  }
+
+  getName (name) {
+    return Array.from(this.values()).find(v => v.name === name)
+  }
+}
 global.Collection = CollectionMock
 
 /**
@@ -1218,6 +1242,13 @@ class ActorMock {
 }
 
 global.Actor = ActorMock
+
+/**
+ * ActiveEffect - Base class for active effects
+ */
+class ActiveEffectMock {}
+
+global.ActiveEffect = ActiveEffectMock
 
 /**
  * ChatMessage

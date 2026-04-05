@@ -1061,6 +1061,7 @@ a.inline-roll {
   height: 90px;
   width: 90px;
   padding: 6px;
+  cursor: pointer;
 }
 .dcc .party-body .character-row .occupation {
   grid-column: span 7;
