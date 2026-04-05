@@ -1,4 +1,4 @@
-/* global fromUuid, game, foundry, CONFIG */
+/* global fromUuid, game, foundry, CONFIG, ui */
 // noinspection JSClosureCompilerSyntax
 
 import DCCItemConfig from './item-config.js'
@@ -46,6 +46,9 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       convertUpward: this.#convertUpward,
       convertDownward: this.#convertDownward,
       configureItem: this.#configureItem,
+      containerRemoveItem: this.#containerRemoveItem,
+      containerDeleteItem: this.#containerDeleteItem,
+      containerEditItem: this.#containerEditItem,
       twoWeaponChange: this.#twoWeaponChange,
       effectCreate: this.#effectCreate,
       effectEdit: this.#effectEdit,
@@ -147,6 +150,26 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   /** @inheritDoc */
   _onRender (context, options) {
     this.#dragDrop.forEach((d) => d.bind(this.element))
+
+    // Bind change listeners for inline-editable container content fields
+    // These update the contained item (not the container) so they must bypass submitOnChange
+    this.element.querySelectorAll('.container-content-input').forEach(input => {
+      input.addEventListener('change', async (event) => {
+        event.stopPropagation()
+        const li = input.closest('[data-item-id]')
+        if (!li) return
+        const item = this.document.parent?.items?.get(li.dataset.itemId)
+        if (!item) return
+        const field = input.dataset.field
+        if (!field) return
+        const value = input.dataset.dtype === 'Number' ? Number(input.value) : input.value
+        try {
+          await item.update({ [field]: value })
+        } catch (err) {
+          console.error(`DCC | Failed to update ${field} on contained item ${item.name}`, err)
+        }
+      })
+    })
   }
 
   /** @inheritdoc */
@@ -245,6 +268,10 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
         relativeTo: this.document,
         secrets: this.document.isOwner
       })
+    }
+
+    if (data.document.type === 'container') {
+      data.containerContents = this.document.contents
     }
 
     if (data.document.type === 'treasure') {
@@ -482,6 +509,61 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       return this._onDropActiveEffect(event, data)
     }
 
+    // Handle item drops onto container sheets — add the item to this container
+    if (this.document.type === 'container' && (data.type === 'Item' || data.type === 'DCC Item') && data.uuid) {
+      const actor = this.document.parent
+      if (!actor) return false
+      let item
+      try {
+        item = await fromUuid(data.uuid)
+      } catch (err) {
+        console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
+        return false
+      }
+      if (!item) return false
+
+      // Item already on this actor — just set the container reference
+      if (item.parent?.id === actor.id) {
+        const check = this.document.canContainItem(item)
+        if (!check.allowed) {
+          ui.notifications.warn(game.i18n.localize(check.reason))
+          return false
+        }
+        try {
+          await item.update({ 'system.container': this.document.id })
+          this.render(false)
+        } catch (err) {
+          console.error(`DCC | Failed to add item "${item.name}" to container "${this.document.name}"`, err)
+        }
+        return true
+      }
+
+      // Item from sidebar, compendium, or another actor — create on actor inside the container
+      const itemData = item.toObject ? item.toObject() : data.data
+      if (!itemData) return false
+      // Validate capacity (circularity checks don't apply for items not yet on the actor)
+      if (this.document.availableItemCapacity !== null && this.document.availableItemCapacity <= 0) {
+        ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
+        return false
+      }
+      if (this.document.availableWeightCapacity !== null) {
+        const itemWeight = (parseFloat(itemData.system?.weight) || 0) * (parseInt(itemData.system?.quantity) || 1)
+        if (itemWeight > this.document.availableWeightCapacity) {
+          ui.notifications.warn(game.i18n.localize('DCC.ContainerTooHeavy'))
+          return false
+        }
+      }
+      itemData.system = itemData.system || {}
+      itemData.system.container = this.document.id
+      try {
+        await actor.createEmbeddedDocuments('Item', [itemData])
+        this.render(false)
+      } catch (err) {
+        console.error(`DCC | Failed to create item in container "${this.document.name}"`, err)
+      }
+      return true
+    }
+
     if (this.document.type === 'spell') {
       // Handle dropping a roll table to set the spells table
       if (data.type === 'RollTable') {
@@ -629,6 +711,62 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
     console.log('lookupMercurialMagic')
     this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
     // No need to render - the document update will trigger re-render automatically
+  }
+
+  /**
+   * Remove an item from this container
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #containerRemoveItem (event, target) {
+    if (!this.document.isOwner) return
+    const li = target.closest('[data-item-id]')
+    if (!li) return
+    const itemId = li.dataset.itemId
+    const item = this.document.parent?.items?.get(itemId)
+    if (item) {
+      await item.update({ 'system.container': null })
+      this.render(false)
+    } else {
+      console.warn(`DCC | Container remove: item ${itemId} not found, refreshing sheet`)
+      this.render(false)
+    }
+  }
+
+  /**
+   * Delete an item from this container
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #containerDeleteItem (event, target) {
+    if (!this.document.isOwner) return
+    const li = target.closest('[data-item-id]')
+    if (!li) return
+    const itemId = li.dataset.itemId
+    const item = this.document.parent?.items?.get(itemId)
+    if (item) {
+      await item.deleteDialog()
+    }
+  }
+
+  /**
+   * Open the sheet for a contained item
+   * @this {DCCItemSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #containerEditItem (event, target) {
+    const li = target.closest('[data-item-id]')
+    if (!li) return
+    const item = this.document.parent?.items?.get(li.dataset.itemId)
+    if (item) {
+      await item.sheet.render({ force: true })
+    } else {
+      console.warn(`DCC | Container edit: item ${li.dataset.itemId} not found, refreshing sheet`)
+      this.render(false)
+    }
   }
 
   /**

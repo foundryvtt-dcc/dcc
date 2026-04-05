@@ -13,6 +13,7 @@ import { NPCData } from '../data/actor/npc-data.mjs'
 import { BaseItemData, PhysicalItemData } from '../data/item/base-item.mjs'
 import { WeaponData } from '../data/item/weapon-data.mjs'
 import { ArmorData } from '../data/item/armor-data.mjs'
+import { ContainerData } from '../data/item/container-data.mjs'
 import { SpellData } from '../data/item/spell-data.mjs'
 import { SkillData } from '../data/item/skill-data.mjs'
 import { EquipmentData } from '../data/item/equipment-data.mjs'
@@ -62,6 +63,7 @@ describe('Schema Definition (real Foundry fields)', () => {
       ['ArmorData', ArmorData],
       ['SpellData', SpellData],
       ['SkillData', SkillData],
+      ['ContainerData', ContainerData],
       ['EquipmentData', EquipmentData],
       ['TreasureData', TreasureData],
       ['AmmunitionData', AmmunitionData],
@@ -596,5 +598,86 @@ describe('Edge cases caught by real Foundry code', () => {
     const data = new PlayerData(input)
     // The _source should preserve the original clean data
     expect(data._source.abilities.str.value).toBe(15)
+  })
+})
+
+// ============================================================================
+// ContainerData Tests
+// ============================================================================
+
+describe('ContainerData (real Foundry TypeDataModel)', () => {
+  test('ContainerData constructs with defaults', () => {
+    const data = new ContainerData({})
+    expect(data.description).toBeDefined()
+    expect(data.quantity).toBe(1)
+    expect(data.weight).toBe(0)
+    expect(data.equipped).toBe(true)
+    expect(data.capacity.weight).toBe(0)
+    expect(data.capacity.items).toBe(0)
+    expect(data.weightReduction).toBe(0)
+    expect(data.container).toBeNull()
+  })
+
+  test('ContainerData constructs with provided capacity', () => {
+    const data = new ContainerData({
+      capacity: { weight: 50, items: 10 },
+      weightReduction: 25
+    })
+    expect(data.capacity.weight).toBe(50)
+    expect(data.capacity.items).toBe(10)
+    expect(data.weightReduction).toBe(25)
+  })
+
+  test('ContainerData inherits PhysicalItemData fields', () => {
+    const schema = ContainerData.defineSchema()
+    expect(schema.quantity).toBeDefined()
+    expect(schema.weight).toBeDefined()
+    expect(schema.equipped).toBeDefined()
+    expect(schema.value).toBeDefined()
+    expect(schema.container).toBeDefined()
+    expect(schema.capacity).toBeDefined()
+    expect(schema.weightReduction).toBeDefined()
+  })
+
+  test('ContainerData coerces string capacity to number', () => {
+    const data = new ContainerData({
+      capacity: { weight: '50', items: '10' },
+      weightReduction: '25'
+    })
+    expect(typeof data.capacity.weight).toBe('number')
+    expect(typeof data.capacity.items).toBe('number')
+    expect(typeof data.weightReduction).toBe('number')
+  })
+
+  test('ContainerData enforces min 0 on capacity fields', () => {
+    const data = new ContainerData({
+      capacity: { weight: -5, items: -3 },
+      weightReduction: -10
+    })
+    expect(data.capacity.weight).toBeGreaterThanOrEqual(0)
+    expect(data.capacity.items).toBeGreaterThanOrEqual(0)
+    expect(data.weightReduction).toBeGreaterThanOrEqual(0)
+  })
+
+  test('ContainerData enforces max 100 on weightReduction', () => {
+    const data = new ContainerData({
+      weightReduction: 150
+    })
+    expect(data.weightReduction).toBeLessThanOrEqual(100)
+  })
+
+  test('PhysicalItemData now has container field', () => {
+    const schema = PhysicalItemData.defineSchema()
+    expect(schema.container).toBeDefined()
+  })
+
+  test('PhysicalItemData container field defaults to null', () => {
+    const data = new EquipmentData({})
+    expect(data.container).toBeNull()
+  })
+
+  test('PhysicalItemData container field accepts string ID', () => {
+    const data = new EquipmentData({ container: 'abc123' })
+    expect(data.container).toBe('abc123')
   })
 })

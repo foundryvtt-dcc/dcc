@@ -64,6 +64,7 @@ The `template.json` file defines the data structure for all Actors and Items.
 | `weapon` | Melee and missile weapons |
 | `ammunition` | Arrows, bolts, bullets |
 | `armor` | Protective equipment |
+| `container` | Backpacks, sacks, saddlebags (holds other physical items) |
 | `equipment` | General adventuring gear |
 | `level` | Character level/class progression |
 | `mount` | Horses, mules, etc. |

@@ -1,4 +1,4 @@
-/* global game, canvas, ui, CONST, Dialog */
+/* global game, canvas, ui, Dialog */
 
 /**
  * Test Macro for DCC Active Effects
