@@ -83,3 +83,4 @@ browser-tests/**/.env
 !docs/**/*.png
 !docs/**/*.jpeg
 !docs/**/*.gif
+/.claude/worktrees/

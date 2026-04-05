@@ -1,7 +1,7 @@
-/* global game, getProperty */
+/* global game, getProperty, Item */
 export async function setupItemPilesForDCC () {
   const baseConfig = {
-    VERSION: '1.1.0',
+    VERSION: '1.2.0',
 
     // The actor class type is the type of actor that will be used for the default item pile actor that is created on first item drop.
     ACTOR_CLASS_TYPE: 'Player',
@@ -45,6 +45,48 @@ export async function setupItemPilesForDCC () {
         }
       })
       return overallCost ?? 0
+    },
+
+    // Container item type handlers — keys must use game.itempiles.CONSTANTS.ITEM_TYPE_METHODS values
+    ITEM_TYPE_HANDLERS: {
+      GLOBAL: {
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.IS_CONTAINED]: ({ item }) => {
+          const itemData = item instanceof Item ? item.toObject() : item
+          return itemData?.system?.container
+        },
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.IS_CONTAINED_PATH]: 'system.container'
+      },
+      container: {
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.HAS_CURRENCY]: false,
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.CONTENTS]: ({ item }) => {
+          if (!item.parent?.items) {
+            console.warn(`DCC | Item Piles CONTENTS handler: container "${item.name}" has no parent items collection`)
+            return []
+          }
+          return item.parent.items.filter(i => i.system.container === item.id)
+        },
+        [game.itempiles.CONSTANTS.ITEM_TYPE_METHODS.TRANSFER]: ({ item, items, raw = false }) => {
+          const sourceContainerId = item.id
+          if (!item.parent?.items) {
+            console.warn(`DCC | Item Piles TRANSFER handler: container "${item.name}" has no parent items collection`)
+            return
+          }
+          const contents = item.parent.items
+            .filter(i => i.system.container === sourceContainerId)
+            .map(i => {
+              const obj = raw ? i : i.toObject()
+              // Tag with source container name so _onCreate can re-associate
+              if (!raw && obj.flags) {
+                obj.flags.dcc = { ...obj.flags.dcc, sourceContainerName: item.name }
+              } else if (!raw) {
+                obj.flags = { dcc: { sourceContainerName: item.name } }
+              }
+              return obj
+            })
+          // Must mutate the items array in place — item-piles ignores the return value
+          items.push(...contents)
+        }
+      }
     },
 
     // Item similarities determines how item piles detect similarities and differences in the system

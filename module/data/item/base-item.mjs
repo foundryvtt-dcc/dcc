@@ -50,7 +50,7 @@ export class BaseItemData extends foundry.abstract.TypeDataModel {
 /**
  * Physical item data with quantity, weight, equipped status
  * Maps to template.json "physicalItem" and "currency" templates
- * Used by: weapon, ammunition, armor, equipment, mount
+ * Used by: weapon, ammunition, armor, container, equipment, mount, treasure
  */
 export class PhysicalItemData extends BaseItemData {
   /**
@@ -97,7 +97,8 @@ export class PhysicalItemData extends BaseItemData {
       weight: new NumberField({ initial: 0, min: 0 }),
       equipped: new BooleanField({ initial: true }),
       identified: new BooleanField({ initial: true }),
-      value: new CurrencyField()
+      value: new CurrencyField(),
+      container: new StringField({ nullable: true, initial: null })
     }
   }
 }

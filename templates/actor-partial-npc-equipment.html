@@ -102,6 +102,54 @@
     {{/each}}
   </ol>
 
+  {{!-- Containers --}}
+  <div class="box-title">{{localize "DCC.Containers"}}{{#if equipment.weights.containers}}<span class="section-weight" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat equipment.weights.total decimals=2 sign=false}}">{{numberFormat equipment.weights.containers decimals=2 sign=false}}</span>{{/if}}</div>
+  <ol class="item-list box-border container-list">
+    <li class="grid-col-span-5 item-list-header">
+      <div></div>
+      <div>{{localize "DCC.Name"}}</div>
+      <div>{{localize "DCC.ContainerCapacityLabel"}}</div>
+      <div>{{localize "DCC.Notes"}}</div>
+      <div>
+        <a class="item-control" title="{{localize 'DCC.ItemCreate'}}" data-type="container" data-action="itemCreate"><i class="fas fa-plus"></i>
+          {{localize "DCC.Add"}}</a>
+      </div>
+    </li>
+    {{#each equipment.containers as |container id|}}
+      <li class="grid-col-span-5 item item-draggable container-row" data-item-id="{{container._id}}" data-container-id="{{container._id}}">
+        <div class="container-toggle-wrapper">
+          <a class="container-toggle" data-action="containerToggle" data-container-id="{{container._id}}"><i class="fas fa-chevron-down"></i></a>
+          <img class="item-draggable icon-filter" src="{{container.img}}" title="{{container.name}}" alt="{{container.name}}" width="22" height="22" data-drag="true" data-drag-action="item">
+        </div>
+        <div>{{container.name}}</div>
+        <div class="container-capacity" data-tooltip="{{localize 'DCC.TotalWeight'}}: {{numberFormat container.totalWeight decimals=2 sign=false}}">{{#if container.capacitySummary}}{{container.capacitySummary}}{{else}}{{numberFormat container.totalWeight decimals=2 sign=false}} {{localize "DCC.WeightUnit"}}{{/if}}</div>
+        <div>{{{container.system.description.summary}}}</div>
+        <div>
+          <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
+          <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
+        </div>
+      </li>
+      <li class="grid-col-span-5 container-contents" data-container-id="{{container._id}}">
+        <ol class="container-contents-list">
+          {{#each container.containerContents as |item|}}
+            <li class="container-content-item" data-item-id="{{item._id}}">
+              <img class="icon-filter" src="{{item.img}}" title="{{item.name}}" alt="{{item.name}}" width="18" height="18" data-drag="true" data-drag-action="item">
+              <div class="container-content-name">{{item.name}}</div>
+              <div class="container-content-qty" data-tooltip="{{localize 'DCC.Quantity'}}">{{item.system.quantity}}</div>
+              <div>
+                <a class="item-control" title="{{localize 'DCC.ItemEdit'}}" data-action="itemEdit"><i class="fas fa-edit"></i></a>
+                <a class="item-control" title="{{localize 'DCC.ContainerRemoveItem'}}" data-action="containerRemoveItem"><i class="fas fa-arrow-up-from-bracket"></i></a>
+                <a class="item-control" title="{{localize 'DCC.ItemDelete'}}" data-action="itemDelete"><i class="fas fa-trash"></i></a>
+              </div>
+            </li>
+          {{else}}
+            <li class="container-empty">{{localize "DCC.ContainerEmpty"}}</li>
+          {{/each}}
+        </ol>
+      </li>
+    {{/each}}
+  </ol>
+
   {{!-- Treasure --}}
   {{#* inline "TreasureRow"}}
     <li class="grid-col-span-8 item item-draggable" data-item-id="{{item._id}}">

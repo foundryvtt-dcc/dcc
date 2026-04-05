@@ -1,7 +1,9 @@
-/* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST */
+/* global Item, game, ui, ChatMessage, Roll, CONFIG, CONST, Dialog */
 
 import DiceChain from './dice-chain.js'
 import { ensurePlus, getFirstDie } from './utilities.js'
+
+const MAX_CONTAINER_DEPTH = 3
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -590,6 +592,241 @@ class DCCItem extends Item {
 
     this.update(updates)
   }
+
+  /* -------------------------------------------- */
+  /*  Container Support                            */
+  /* -------------------------------------------- */
+
+  /**
+   * Is this item a container type?
+   * @returns {boolean}
+   */
+  get isContainer () {
+    return this.type === 'container'
+  }
+
+  /**
+   * Is this item contained inside another item?
+   * @returns {boolean}
+   */
+  get isContained () {
+    return !!this.system.container
+  }
+
+  /**
+   * Get the items contained in this container
+   * @returns {DCCItem[]}
+   */
+  get contents () {
+    if (!this.isContainer || !this.parent) return []
+    return this.parent.items.filter(i => i.system.container === this.id)
+  }
+
+  /**
+   * Get the total weight of contents, applying weight reduction
+   * @returns {number}
+   */
+  get contentsWeight () {
+    if (!this.isContainer) return 0
+    let total = 0
+    for (const item of this.contents) {
+      const weight = parseFloat(item.system.weight) || 0
+      const quantity = parseInt(item.system.quantity) || 1
+      total += weight * quantity
+    }
+    const reduction = this.system.weightReduction || 0
+    return total * (1 - reduction / 100)
+  }
+
+  /**
+   * Get total weight: container's own weight + reduced contents weight
+   * @returns {number}
+   */
+  get totalWeight () {
+    const ownWeight = (parseFloat(this.system.weight) || 0) * (parseInt(this.system.quantity) || 1)
+    return ownWeight + this.contentsWeight
+  }
+
+  /**
+   * Get remaining weight capacity
+   * @returns {number|null} null if unlimited
+   */
+  get availableWeightCapacity () {
+    if (!this.isContainer) return null
+    const maxWeight = this.system.capacity?.weight || 0
+    if (maxWeight <= 0) return null
+    return Math.max(0, maxWeight - this.contentsWeight)
+  }
+
+  /**
+   * Get remaining item count capacity
+   * @returns {number|null} null if unlimited
+   */
+  get availableItemCapacity () {
+    if (!this.isContainer) return null
+    const maxItems = this.system.capacity?.items || 0
+    if (maxItems <= 0) return null
+    return Math.max(0, maxItems - this.contents.length)
+  }
+
+  /**
+   * Calculate the nesting depth of this item in container hierarchy
+   * @returns {number} 0 if not contained, 1+ for nesting level
+   */
+  get containerDepth () {
+    if (!this.isContained || !this.parent) return 0
+    let depth = 0
+    let current = this
+    while (current.system.container && depth <= MAX_CONTAINER_DEPTH) {
+      depth++
+      current = this.parent.items.get(current.system.container)
+      if (!current) break
+    }
+    return depth
+  }
+
+  /**
+   * Check if adding an item to this container would create a circular reference
+   * @param {string} itemId - ID of the item to check
+   * @returns {boolean} true if circular
+   */
+  wouldCreateCircularContainment (itemId) {
+    if (this.id === itemId) return true
+    if (!this.isContained || !this.parent) return false
+    let current = this
+    let steps = 0
+    while (current.system.container && steps <= MAX_CONTAINER_DEPTH) {
+      if (current.system.container === itemId) return true
+      current = this.parent.items.get(current.system.container)
+      if (!current) break
+      steps++
+    }
+    return false
+  }
+
+  /**
+   * Check if an item can be added to this container
+   * @param {DCCItem} item - The item to check
+   * @returns {{allowed: boolean, reason: string|null}}
+   */
+  canContainItem (item) {
+    if (!this.isContainer) {
+      return { allowed: false, reason: 'DCC.ContainerNotAContainer' }
+    }
+    if (item.system.container === undefined) {
+      return { allowed: false, reason: 'DCC.ContainerItemNotPhysical' }
+    }
+    if (item.id === this.id) {
+      return { allowed: false, reason: 'DCC.ContainerCannotContainSelf' }
+    }
+    if (this.wouldCreateCircularContainment(item.id)) {
+      return { allowed: false, reason: 'DCC.ContainerCircularReference' }
+    }
+    // Check nesting depth
+    if (item.isContainer) {
+      const itemDepth = item.isContained ? item.containerDepth : 0
+      const thisDepth = this.containerDepth
+      if (thisDepth + itemDepth + 1 >= MAX_CONTAINER_DEPTH) {
+        return { allowed: false, reason: 'DCC.ContainerMaxDepth' }
+      }
+    }
+    // Check item capacity
+    if (this.availableItemCapacity !== null && this.availableItemCapacity <= 0) {
+      return { allowed: false, reason: 'DCC.ContainerFull' }
+    }
+    // Check weight capacity
+    if (this.availableWeightCapacity !== null) {
+      const itemWeight = (parseFloat(item.system.weight) || 0) * (parseInt(item.system.quantity) || 1)
+      if (itemWeight > this.availableWeightCapacity) {
+        return { allowed: false, reason: 'DCC.ContainerTooHeavy' }
+      }
+    }
+    return { allowed: true, reason: null }
+  }
+
+  /**
+   * After creation, fix up orphaned container references from transfers.
+   * When a container and its contents are transferred via Item Piles, the contents
+   * arrive with system.container pointing to the old container ID. This method
+   * re-associates them with the new container by matching on the sourceContainerName flag.
+   * @param {object} data
+   * @param {object} options
+   * @param {string} userId
+   */
+  async _onCreate (data, options, userId) {
+    await super._onCreate(data, options, userId)
+    if (this.isContainer && this.parent) {
+      // Check for orphaned items from Item Piles TRANSFER handler
+      // These items were transferred alongside the container but have stale
+      // system.container refs pointing to the old container ID
+      const orphaned = this.parent.items.filter(i => {
+        if (!i.system.container) return false
+        if (this.parent.items.get(i.system.container)) return false
+        return i.flags?.dcc?.sourceContainerName === this.name
+      })
+      if (orphaned.length > 0) {
+        const updates = orphaned.map(i => ({
+          _id: i.id,
+          'system.container': this.id,
+          'flags.dcc.-=sourceContainerName': null
+        }))
+        try {
+          await this.parent.updateEmbeddedDocuments('Item', updates)
+        } catch (err) {
+          console.error(`DCC | Failed to re-associate ${orphaned.length} items with container "${this.name}"`, err)
+        }
+      }
+    }
+  }
+
+  /**
+   * Before deletion, release contained items so they aren't orphaned.
+   * This handles programmatic deletion (API, macros, modules) where deleteDialog is bypassed.
+   * @param {object} options
+   * @param {object} user
+   */
+  async _preDelete (options, user) {
+    await super._preDelete(options, user)
+    if (this.isContainer && this.parent && this.contents.length > 0) {
+      const updates = this.contents.map(i => ({
+        _id: i.id,
+        'system.container': null
+      }))
+      await this.parent.updateEmbeddedDocuments('Item', updates)
+    }
+  }
+
+  /**
+   * Override deleteDialog for containers with contents.
+   * Warns the user that contained items will also be deleted and requires confirmation.
+   * @param {object} [options] - Options passed to the parent deleteDialog
+   * @returns {Promise<Item|false|null>}
+   */
+  async deleteDialog (options = {}) {
+    if (!this.isContainer || !this.parent || this.contents.length === 0) {
+      return super.deleteDialog(options)
+    }
+    const contentsCount = this.contents.length
+    return Dialog.confirm({
+      title: `${game.i18n.localize('DOCUMENT.Delete')}: ${this.name}`,
+      content: `<p>${game.i18n.format('DCC.ContainerDeleteConfirm', { count: contentsCount })}</p>`,
+      yes: async () => {
+        const deleteIds = this.contents.map(i => i.id)
+        deleteIds.push(this.id)
+        try {
+          await this.parent.deleteEmbeddedDocuments('Item', deleteIds)
+        } catch (err) {
+          console.error(`DCC | Failed to delete container "${this.name}" and its contents`, err)
+          return null
+        }
+        return this
+      },
+      no: () => null,
+      defaultYes: false
+    })
+  }
+
+  /* -------------------------------------------- */
 
   /**
    * Determine if this item needs to have its treasure value rolled

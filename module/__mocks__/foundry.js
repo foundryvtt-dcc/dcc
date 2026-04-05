@@ -474,6 +474,11 @@ class DialogV2Mock extends ApplicationV2Mock {
 
 global.DialogV2 = DialogV2Mock
 
+// Legacy Dialog mock (used by DCCItem.deleteDialog for container confirmation)
+global.Dialog = {
+  confirm: vi.fn(async ({ yes, no }) => yes ? yes() : null)
+}
+
 /**
  * DocumentSheetV2 - Base class for v2 document sheets
  * Extends ApplicationV2 to provide document-specific functionality including:
@@ -1000,6 +1005,11 @@ class MockItem {
     }
   }
 }
+
+// Lifecycle hooks and dialogs for MockItem
+MockItem.prototype._onCreate = async function () {}
+MockItem.prototype._preDelete = async function () {}
+MockItem.prototype.deleteDialog = async function () { return this }
 
 // Enhanced MockItem with drag data support
 MockItem.prototype.toDragData = function () {
@@ -1898,7 +1908,8 @@ const DOCUMENT_DEFAULTS = {
       weight: 0,
       equipped: true,
       identified: true,
-      value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 }
+      value: { pp: 0, ep: 0, gp: 0, sp: 0, cp: 0 },
+      container: null
     },
     weapon: {
       config: { actionDieOverride: '', critDieOverride: '', critRangeOverride: null, critTableOverride: '', damageOverride: '', attackBonusOverride: '', initiativeBonusOverride: '', initiativeDieOverride: '' },
@@ -1930,6 +1941,7 @@ const DOCUMENT_DEFAULTS = {
     },
     ammunition: {},
     armor: { acBonus: '+1', checkPenalty: '-0', speed: '-0', fumbleDie: '1d4' },
+    container: { capacity: { weight: 0, items: 0 }, weightReduction: 0 },
     equipment: {},
     level: { class: '', level: '', levelData: '', levelDataLawful: '', levelDataNeutral: '', levelDataChaotic: '' },
     mount: {},

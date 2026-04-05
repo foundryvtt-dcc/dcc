@@ -2588,4 +2588,94 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   padding-right: 8px;
 }
 
+/* Container Items */
+.dcc .container-list .container-row .container-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dcc .container-list .container-row .container-toggle {
+  cursor: pointer;
+  width: 14px;
+  text-align: center;
+}
+.dcc .container-list .container-row .container-capacity {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.dcc .container-list .container-contents {
+  grid-column: span 5;
+  padding: 0 0 4px 32px;
+  position: relative;
+}
+.dcc .container-list .container-contents::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 0;
+  bottom: 4px;
+  width: 2px;
+  background: var(--system-secondary-color);
+  opacity: 0.5;
+}
+.dcc .container-list .container-contents.collapsed {
+  display: none;
+}
+.dcc .container-list .container-contents-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dcc .container-list .container-contents-list .container-content-item {
+  display: grid;
+  grid-template-columns: 18px 1fr 30px 58px;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 0;
+  font-size: 11px;
+}
+.dcc .container-list .container-contents-list .container-empty {
+  font-style: italic;
+  opacity: 0.6;
+  padding: 2px 0;
+  font-size: 11px;
+}
+
+.dcc .container-sheet .container-capacity-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.dcc .container-sheet .container-contents-section .container-contents-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dcc .container-sheet .container-contents-section .container-contents-list .container-content-item {
+  display: grid;
+  grid-template-columns: 22px 1fr 60px 60px 78px;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0 2px 8px;
+  border-bottom: 1px dotted var(--system-secondary-color);
+}
+.dcc .container-sheet .container-contents-section .container-contents-list .container-content-input {
+  width: 100%;
+  text-align: center;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 1px 4px;
+  font-size: inherit;
+}
+.dcc .container-sheet .container-contents-section .container-contents-list .container-content-input:hover, .dcc .container-sheet .container-contents-section .container-contents-list .container-content-input:focus {
+  border-color: var(--system-secondary-color);
+}
+.dcc .container-sheet .container-contents-section .container-contents-list .container-empty {
+  font-style: italic;
+  opacity: 0.6;
+  padding: 8px;
+  text-align: center;
+}
+
 /*# sourceMappingURL=dcc.css.map */

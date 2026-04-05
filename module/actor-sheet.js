@@ -1,4 +1,4 @@
-/* global CONFIG, document, game, foundry, ResizeObserver */
+/* global CONFIG, document, fromUuid, game, foundry, ResizeObserver, ui */
 
 import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
@@ -48,6 +48,8 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       rollSkillCheck: this.#rollSkillCheck,
       rollSpellCheck: this.#rollSpellCheck,
       rollWeaponAttack: this.#rollWeaponAttack,
+      containerRemoveItem: this.#containerRemoveItem,
+      containerToggle: this.#containerToggle,
       effectCreate: this.#effectCreate,
       effectEdit: this.#effectEdit,
       effectDelete: this.#effectDelete,
@@ -375,10 +377,11 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
    * @return {undefined}
    */
   async #prepareItems () {
-    // Initialize containers.
+    // Initialize categories
     const ammunition = []
     const armor = []
     const coins = []
+    const containers = []
     const equipment = []
     const mounts = []
     const spells = {}
@@ -397,7 +400,16 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       inventory = inventory.sort((a, b) => a.name.localeCompare(b.name))
     }
 
-    // Iterate through items, allocating to containers
+    // Build a set of contained item IDs to filter them from normal categories
+    // Only treat as contained if the referenced container actually exists on this actor
+    const containedItemIds = new Set()
+    for (const i of inventory) {
+      if (i.system.container && this.options.document.items.get(i.system.container)) {
+        containedItemIds.add(i._id)
+      }
+    }
+
+    // Iterate through items, allocating to categories
     const removeEmptyItems = this.options.document.system.config.removeEmptyItems
     for (const i of inventory) {
       // Remove physical items with zero quantity
@@ -411,14 +423,42 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         i.img = EntityImages.imageForItem(i.type)
       }
 
-      if (i.type === 'weapon') {
+      // Skip contained items — they will be nested under their container
+      if (containedItemIds.has(i._id)) continue
+
+      if (i.type === 'container') {
+        // Build a plain object for template rendering since DCCItem has read-only getters
+        const item = this.options.document.items.get(i._id)
+        const containerData = {
+          _id: i._id,
+          name: i.name,
+          img: i.img,
+          type: i.type,
+          system: i.system,
+          containerContents: item.contents,
+          contentsWeight: item.contentsWeight,
+          totalWeight: item.totalWeight,
+          availableWeightCapacity: item.availableWeightCapacity,
+          availableItemCapacity: item.availableItemCapacity
+        }
+        const maxWeight = i.system.capacity?.weight || 0
+        const maxItems = i.system.capacity?.items || 0
+        const summaryParts = []
+        if (maxWeight > 0) {
+          summaryParts.push(`${Number(containerData.contentsWeight.toFixed(2))}/${maxWeight} ${game.i18n.localize('DCC.WeightUnit')}`)
+        }
+        if (maxItems > 0) {
+          summaryParts.push(`${containerData.containerContents.length}/${maxItems} ${game.i18n.localize('DCC.ContainerItemsUnit')}`)
+        }
+        containerData.capacitySummary = summaryParts.join(', ')
+        containers.push(containerData)
+      } else if (i.type === 'weapon') {
         if (i.system.melee) {
           weapons.melee.push(i)
         } else {
           weapons.ranged.push(i)
         }
-      }
-      if (i.type === 'ammunition') {
+      } else if (i.type === 'ammunition') {
         ammunition.push(i)
       } else if (i.type === 'armor') {
         armor.push(i)
@@ -522,6 +562,9 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       return Number.isFinite(total) ? total : 0
     }
 
+    // Calculate container weight (each container's totalWeight includes contents with reduction)
+    const containersWeight = containers.reduce((sum, c) => sum + (c.totalWeight || 0), 0)
+
     // Calculate weights for each section
     const meleeWeight = calculateWeight(weapons.melee)
     const rangedWeight = calculateWeight(weapons.ranged)
@@ -540,6 +583,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     return {
       'equipment.ammunition': ammunition,
       'equipment.armor': armor,
+      'equipment.containers': containers,
       'equipment.equipment': equipment,
       'equipment.mounts': mounts,
       'equipment.treasure': treasure,
@@ -548,11 +592,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         melee: meleeWeight,
         ranged: rangedWeight,
         armor: armorWeight,
+        containers: containersWeight,
         equipment: equipmentWeight,
         ammunition: ammunitionWeight,
         mounts: mountsWeight,
         treasure: treasureWeight,
-        total: meleeWeight + rangedWeight + armorWeight + equipmentWeight + ammunitionWeight + mountsWeight + treasureWeight
+        total: meleeWeight + rangedWeight + armorWeight + containersWeight + equipmentWeight + ammunitionWeight + mountsWeight + treasureWeight
       },
       skills,
       spells
@@ -910,6 +955,41 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     let qty = item.system?.quantity || 0
     qty += 1
     item.update({ 'system.quantity': qty })
+  }
+
+  /**
+   * Remove an item from its container
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #containerRemoveItem (event, target) {
+    const itemId = DCCActorSheet.findDataset(target, 'itemId')
+    const item = this.options.document.items.get(itemId)
+    if (item) {
+      await item.update({ 'system.container': null })
+    } else {
+      console.warn(`DCC | Container remove: item ${itemId} not found`)
+    }
+  }
+
+  /**
+   * Toggle a container's collapsed/expanded state
+   * @this {DCCActorSheet}
+   * @param {PointerEvent} event   The originating click event
+   * @param {HTMLElement} target   The capturing HTML element which defined a [data-action]
+   */
+  static async #containerToggle (event, target) {
+    const containerId = DCCActorSheet.findDataset(target, 'containerId')
+    const containerEl = this.element.querySelector(`.container-contents[data-container-id="${containerId}"]`)
+    if (containerEl) {
+      containerEl.classList.toggle('collapsed')
+      const icon = target.querySelector('i')
+      if (icon) {
+        icon.classList.toggle('fa-chevron-down')
+        icon.classList.toggle('fa-chevron-right')
+      }
+    }
   }
 
   /**
@@ -1582,6 +1662,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       data.type = 'Item'
     }
 
+    // Check if this item is being dropped onto a container
+    if (data.type === 'Item' && data.uuid) {
+      const containerDrop = await this._handleContainerDrop(event, data)
+      if (containerDrop !== undefined) return containerDrop
+    }
+
     // Check if this is an item being dragged from another actor
     const isItemTransfer = (data.type === 'Item') && data.actorId && (data.actorId !== this.options.document.id)
 
@@ -1602,6 +1688,73 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     return result
+  }
+
+  /**
+   * Handle dropping an item onto a container element
+   * @param {DragEvent} event
+   * @param {object} data - Drag event data
+   * @returns {Promise<boolean|undefined>} false if handled with error, true if handled, undefined if not a container drop
+   */
+  async _handleContainerDrop (event, data) {
+    // Find the closest container drop target
+    const containerEl = event.target.closest('[data-container-id]')
+    if (!containerEl) return undefined
+
+    const containerId = containerEl.dataset.containerId
+    const container = this.options.document.items.get(containerId)
+    if (!container) return undefined
+
+    // Get the dropped item
+    let item
+    try {
+      item = await fromUuid(data.uuid)
+    } catch (err) {
+      console.warn(`DCC | Failed to resolve dropped item UUID: ${data.uuid}`, err)
+      return false
+    }
+    if (!item) return false
+
+    // Item already on this actor — just set the container reference
+    if (item.parent?.id === this.options.document.id) {
+      const check = container.canContainItem(item)
+      if (!check.allowed) {
+        ui.notifications.warn(game.i18n.localize(check.reason))
+        return false
+      }
+      try {
+        await item.update({ 'system.container': containerId })
+      } catch (err) {
+        console.error(`DCC | Failed to add item "${item.name}" to container`, err)
+        return false
+      }
+      return true
+    }
+
+    // Item from sidebar, compendium, or another actor — create on actor inside the container
+    const itemData = item.toObject ? item.toObject() : data.data
+    if (!itemData) return undefined
+    // Validate capacity (circularity checks don't apply for items not yet on the actor)
+    if (container.availableItemCapacity !== null && container.availableItemCapacity <= 0) {
+      ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
+      return false
+    }
+    if (container.availableWeightCapacity !== null) {
+      const itemWeight = (parseFloat(itemData.system?.weight) || 0) * (parseInt(itemData.system?.quantity) || 1)
+      if (itemWeight > container.availableWeightCapacity) {
+        ui.notifications.warn(game.i18n.localize('DCC.ContainerTooHeavy'))
+        return false
+      }
+    }
+    itemData.system = itemData.system || {}
+    itemData.system.container = containerId
+    try {
+      await this.options.document.createEmbeddedDocuments('Item', [itemData])
+    } catch (err) {
+      console.error('DCC | Failed to create item in container', err)
+      return false
+    }
+    return true
   }
 
   /**
