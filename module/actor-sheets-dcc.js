@@ -17,7 +17,7 @@ class DCCActorSheetCleric extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
-      height: 640
+      height: 660
     }
   }
 
@@ -90,7 +90,7 @@ class DCCActorSheetThief extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
-      height: 640
+      height: 660
     }
   }
 
@@ -159,7 +159,7 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
-      height: 640
+      height: 660
     }
   }
 
@@ -231,7 +231,7 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
-      height: 640
+      height: 660
     }
   }
 
@@ -301,7 +301,7 @@ class DCCActorSheetWizard extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
-      height: 640
+      height: 660
     }
   }
 
@@ -379,7 +379,7 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
-      height: 640
+      height: 660
     }
   }
 
@@ -475,7 +475,7 @@ class DCCActorSheetElf extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
-      height: 640
+      height: 660
     }
   }
 
@@ -549,7 +549,7 @@ class DCCActorSheetGeneric extends DCCActorSheet {
   /** @inheritDoc */
   static DEFAULT_OPTIONS = {
     position: {
-      height: 640
+      height: 660
     }
   }
 

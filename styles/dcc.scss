@@ -2282,8 +2282,11 @@ a.inline-roll {
     }
   }
 
-  .languages textarea,
-  .lucky-roll textarea, {
+  .lucky-roll {
+    height: 79px;
+  }
+
+  .languages textarea {
     background: none;
     border: 0;
     font-family: var(--system-data-font), serif;
@@ -2291,6 +2294,16 @@ a.inline-roll {
     grid-row: 2;
     height: 17px;
     min-height: 38px;
+  }
+
+  .lucky-roll textarea {
+    background: none;
+    border: 0;
+    font-family: var(--system-data-font), serif;
+    font-size: 12px;
+    grid-row: 2;
+    height: 17px;
+    min-height: 58px;
     overflow: hidden;
     padding: 2px 5px 2px 5px;
     resize: none;

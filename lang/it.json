@@ -93,6 +93,8 @@
   "DCC.BadValueFormulaWarning": "Formula non valida nel campo valore dell'oggetto!",
   "DCC.BaseACAbilityConfig": "Caratteristica per la CA",
   "DCC.BirthAugur": "Presagio di Nascita",
+  "DCC.BirthAugurLuckMod": "Mod Presagio",
+  "DCC.BirthAugurLuckModHint": "Modificatore di fortuna alla creazione del personaggio, usato dagli effetti attivi del presagio di nascita",
   "DCC.BlindnessDeafness": "Cecità/Sordità",
   "DCC.Bonus": "Bonus",
   "DCC.BrokenLimbs": "Membra rotte",

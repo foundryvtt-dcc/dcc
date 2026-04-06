@@ -93,6 +93,8 @@
   "DCC.BadValueFormulaWarning": "Bad formula in item value field!",
   "DCC.BaseACAbilityConfig": "Base AC Ability",
   "DCC.BirthAugur": "Birth Augur",
+  "DCC.BirthAugurLuckMod": "Aug Mod",
+  "DCC.BirthAugurLuckModHint": "Luck modifier at character creation, used by birth augur active effects",
   "DCC.BlindnessDeafness": "Blindness/Deafness",
   "DCC.Bonus": "Bonus",
   "DCC.BrokenLimbs": "Broken limbs",

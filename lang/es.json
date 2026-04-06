@@ -93,6 +93,8 @@
   "DCC.BadValueFormulaWarning": "¡Fórmula incorrecta en el campo de valor del objeto!",
   "DCC.BaseACAbilityConfig": "Habilidad base para CA",
   "DCC.BirthAugur": "Augurio de nacimiento",
+  "DCC.BirthAugurLuckMod": "Mod Augurio",
+  "DCC.BirthAugurLuckModHint": "Modificador de suerte en la creación del personaje, usado por los efectos activos de augurio de nacimiento",
   "DCC.BlindnessDeafness": "Ceguera/Sordera",
   "DCC.Bonus": "Bono",
   "DCC.BrokenLimbs": "Miembros rotos",
