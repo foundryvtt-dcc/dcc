@@ -98,40 +98,30 @@ function _parseJSONPCs (pcObject) {
     if (pcObject.initiative) {
       pc['attributes.init.value'] = pcObject.initiative
     }
+    // Determine birth augur contribution to saves
+    // Purple Sorcerer includes birth augur modifiers in save values, but the importer
+    // applies birth augur as an active effect, so we subtract it from classBonus to avoid double-counting
+    const augurSaveAdj = _getAugurSaveAdjustment(pcObject.luckySign)
+
     if (pcObject.saveReflex) {
       pc['saves.ref.value'] = pcObject.saveReflex
       if (pcObject.className) {
-        pc['saves.ref.classBonus'] = pcObject.saveReflex
-        if (pcObject.agilityScore) {
-          const agilityMod = DCC.abilityModifiers[pcObject.agilityScore]
-          if (agilityMod != null && agilityMod !== 0) {
-            pc['saves.ref.classBonus'] = parseInt(pcObject.saveReflex) + (agilityMod * -1)
-          }
-        }
+        const agilityMod = pcObject.agilityScore ? (DCC.abilityModifiers[pcObject.agilityScore] ?? 0) : 0
+        pc['saves.ref.classBonus'] = parseInt(pcObject.saveReflex) - agilityMod - augurSaveAdj.ref
       }
     }
     if (pcObject.saveFort) {
       pc['saves.frt.value'] = pcObject.saveFort
       if (pcObject.className) {
-        pc['saves.frt.classBonus'] = pcObject.saveFort
-        if (pcObject.staminaScore) {
-          const staminaMod = DCC.abilityModifiers[pcObject.staminaScore]
-          if (staminaMod != null && staminaMod !== 0) {
-            pc['saves.frt.classBonus'] = parseInt(pcObject.saveFort) + (staminaMod * -1)
-          }
-        }
+        const staminaMod = pcObject.staminaScore ? (DCC.abilityModifiers[pcObject.staminaScore] ?? 0) : 0
+        pc['saves.frt.classBonus'] = parseInt(pcObject.saveFort) - staminaMod - augurSaveAdj.frt
       }
     }
     if (pcObject.saveWill) {
       pc['saves.wil.value'] = pcObject.saveWill
       if (pcObject.className) {
-        pc['saves.wil.classBonus'] = pcObject.saveWill
-        if (pcObject.personalityScore) {
-          const personalityMod = DCC.abilityModifiers[pcObject.personalityScore]
-          if (personalityMod != null && personalityMod !== 0) {
-            pc['saves.wil.classBonus'] = parseInt(pcObject.saveWill) + (personalityMod * -1)
-          }
-        }
+        const personalityMod = pcObject.personalityScore ? (DCC.abilityModifiers[pcObject.personalityScore] ?? 0) : 0
+        pc['saves.wil.classBonus'] = parseInt(pcObject.saveWill) - personalityMod - augurSaveAdj.wil
       }
     }
 
@@ -478,6 +468,32 @@ function _parsePlainPCToJSON (pcString) {
  */
 function _firstMatch (result) {
   return (result && result.length > 0) ? result[1] : null
+}
+
+/**
+ * Determine birth augur contribution to saving throws
+ * Purple Sorcerer includes the birth augur modifier in save values,
+ * so we need to know how much to subtract when computing classBonus
+ * @param {string} luckySign - The birth augur text (e.g. "Lucky sign (Saving throws) (-1)")
+ * @return {object} Object with ref, frt, wil adjustment values
+ */
+function _getAugurSaveAdjustment (luckySign) {
+  const adj = { ref: 0, frt: 0, wil: 0 }
+  if (!luckySign) return adj
+
+  const modMatch = luckySign.match(/\(([+-]?\d+)\)\s*$/)
+  const augurMod = modMatch ? parseInt(modMatch[1]) : 0
+  if (augurMod === 0) return adj
+
+  const text = luckySign.toLowerCase()
+  if (text.includes('willpower saving throw')) {
+    adj.wil = augurMod
+  } else if (text.includes('saving throw')) {
+    adj.ref = augurMod
+    adj.frt = augurMod
+    adj.wil = augurMod
+  }
+  return adj
 }
 
 function _parseWeapon (weaponString) {

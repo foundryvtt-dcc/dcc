@@ -509,8 +509,11 @@ Spells: (Spell Check: d20+2)
     'details.languages': 'Common, Elf',
     'details.level.value': '1',
     'saves.frt.value': '0',
+    'saves.frt.classBonus': 1,
     'saves.ref.value': '1',
+    'saves.ref.classBonus': 0,
     'saves.wil.value': '2',
+    'saves.wil.classBonus': 1,
     items: [
       {
         name: 'Dagger',
@@ -791,6 +794,54 @@ Cast Spell From Scroll (d16)`
     ]
   }
   expect(parsedNPC).toMatchObject([expected])
+})
+
+/* Test that classBonus accounts for birth augur affecting saving throws */
+test('thief with saving throws birth augur subtracts augur from classBonus', () => {
+  const parsedNPC = parsePCs(
+    `Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Lawful Thief (1st level)
+Occupation: Caravan guard
+Strength: 8 (-1)
+Agility: 14 (+1)
+Stamina: 13 (+1)
+Personality: 7 (-1)
+Intelligence: 10 (0)
+Luck: 8 (-1)
+
+HP: 9; Speed: 30; Init: 1
+Ref: 1; Fort: 1; Will: -2
+
+Base Attack Mod: 0
+Attack Dice: 1d20; Crit Die/Table: 1d10/II
+Occupation Weapon: Short sword melee -1 (dmg 1d6-1)
+Main Weapon:
+Secondary Weapon:
+
+AC: (11) (Unarmored (+0) Check penalty (0) Fumble die (d4))
+Equipment: Holy symbol (25 gp)
+Trade good: Linen (1 yard)
+Starting Funds: 17 cp + 23 gp
+Lucky sign: Lucky sign (Saving throws) (-1)
+Languages: Common, Thieves' Cant`
+  )
+  // PS save values include birth augur (-1 to all saves)
+  // classBonus should NOT include the augur modifier, to avoid double-counting
+  // when the birth augur active effect is applied later
+  // Thief L1 class saves: Fort +1, Ref +1, Will +0
+  // Ref: PS=1, aglMod=1, augur=-1 → classBonus = 1 - 1 - (-1) = 1
+  // Fort: PS=1, staMod=1, augur=-1 → classBonus = 1 - 1 - (-1) = 1
+  // Will: PS=-2, perMod=-1, augur=-1 → classBonus = -2 - (-1) - (-1) = 0
+  expect(parsedNPC[0]).toMatchObject({
+    'saves.ref.value': '1',
+    'saves.ref.classBonus': 1,
+    'saves.frt.value': '1',
+    'saves.frt.classBonus': 1,
+    'saves.wil.value': '-2',
+    'saves.wil.classBonus': 0
+  })
 })
 
 /* Test Halfling's text */
