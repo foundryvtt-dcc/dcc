@@ -542,9 +542,12 @@ class DCCItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
       const itemData = item.toObject ? item.toObject() : data.data
       if (!itemData) return false
       // Validate capacity (circularity checks don't apply for items not yet on the actor)
-      if (this.document.availableItemCapacity !== null && this.document.availableItemCapacity <= 0) {
-        ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
-        return false
+      if (this.document.availableItemCapacity !== null) {
+        const itemQuantity = parseInt(itemData.system?.quantity) || 1
+        if (itemQuantity > this.document.availableItemCapacity) {
+          ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
+          return false
+        }
       }
       if (this.document.availableWeightCapacity !== null) {
         const itemWeight = (parseFloat(itemData.system?.weight) || 0) * (parseInt(itemData.system?.quantity) || 1)
