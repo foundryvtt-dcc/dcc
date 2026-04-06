@@ -5,7 +5,13 @@
   "system": {},
   "changes": [
     {
-      "key": "system.details.attackBonus",
+      "key": "system.details.attackHitBonus.melee.adjustment",
+      "value": "-1",
+      "type": "add",
+      "priority": null
+    },
+    {
+      "key": "system.details.attackHitBonus.missile.adjustment",
       "value": "-1",
       "type": "add",
       "priority": null
