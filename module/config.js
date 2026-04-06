@@ -603,6 +603,11 @@ DCC.DICE_CHAIN = [
   3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30
 ]
 
+// Custom effect change types beyond the standard Foundry types
+DCC.effectChangeTypes = {
+  DICE_CHAIN: 'diceChain'
+}
+
 // Critical Hit and Disapproval Compendiums, Fumble table, and Mercurial Magic table
 // Updated at runtime from settings
 DCC.criticalHitPacks = null

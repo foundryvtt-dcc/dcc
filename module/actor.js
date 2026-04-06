@@ -222,7 +222,9 @@ class DCCActor extends Actor {
 
     // Note: Do NOT call super.applyActiveEffects() here
     // This custom implementation replaces the core behavior to handle equipped item effects
-    // Calling super would cause effects to be applied twice
+    // and DCC-specific change types (diceChain, subtract). Calling super would cause effects
+    // to be applied twice. DCCActiveEffect.apply() exists as a fallback for non-actor contexts
+    // (e.g. if core Foundry applies effects outside this method) but is not called here.
 
     const overrides = {}
     const effects = []
@@ -248,7 +250,7 @@ class DCCActor extends Actor {
 
     // Sort effects by type to apply them in the correct order
     // Order: custom, multiply, add, subtract, downgrade, upgrade, override
-    const typeOrder = { custom: 0, multiply: 1, add: 2, subtract: 3, downgrade: 4, upgrade: 5, override: 6 }
+    const typeOrder = { custom: 0, multiply: 1, add: 2, subtract: 3, diceChain: 3, downgrade: 4, upgrade: 5, override: 6 }
     effects.sort((a, b) => {
       const aChanges = Array.from(a.changes || [])
       const bChanges = Array.from(b.changes || [])
@@ -304,7 +306,7 @@ class DCCActor extends Actor {
               break
 
             case 'diceChain':
-              // Legacy DCC type - treat as add (dice chain logic is auto-detected)
+              // DCC dice chain type - moves dice up/down the chain (e.g. d20 → d24)
               this._applyAddEffect(key, value, overrides)
               break
           }
@@ -376,8 +378,7 @@ class DCCActor extends Actor {
    * @private
    */
   _applySubtractEffect (key, value, overrides) {
-    const current = foundry.utils.getProperty(this, key)
-    if (current == null) return
+    const current = foundry.utils.getProperty(this, key) ?? 0
 
     const currentStr = String(current)
 

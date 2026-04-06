@@ -32,7 +32,7 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 - **i18n required**: All user text must use `game.i18n.localize()`
 - **Translate new keys**: When adding to language files, translate them
 - **Tests must pass**: All PRs require passing tests
-- **FoundryVTT v13**: Uses ApplicationV2 API
+- **FoundryVTT v14**: Target version (v14-only, ApplicationV2 API)
 - **Check dependent modules**: Before PRs, verify no breakage in `../../modules/dcc-qol`, `../../modules/xcc`, `../../mcc-classes`, `../../dcc-crawl-classes`
 
 ## Documentation
@@ -45,6 +45,7 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 - [Internationalization](docs/dev/I18N.md) - Translation system
 
 ### Reference Docs
+- [V14 Migration](docs/dev/v14/) - V14 breaking changes, checklist, data models, active effects
 - [V13 ApplicationV2](docs/dev/V13_APP_V2.md) - Migration patterns
 - [Test Coverage](docs/dev/TEST_COVERAGE.md) - Detailed testing strategy
 - [Release Process](docs/dev/RELEASE_PROCESS.md) - How to release

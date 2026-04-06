@@ -393,9 +393,9 @@ describe('Real foundry.utils behavior', () => {
     expect(clone.a.b).toEqual([1, 2, 3, 4])
   })
 
-  test('duplicate creates JSON-safe deep copy', () => {
+  test('deepClone creates deep copy', () => {
     const original = { a: 1, b: { c: 2 } }
-    const copy = foundry.utils.duplicate(original)
+    const copy = foundry.utils.deepClone(original)
     copy.b.c = 99
     expect(original.b.c).toBe(2)
   })

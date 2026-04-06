@@ -76,9 +76,12 @@ Hooks.once('init', async function () {
     final: { priority: 100, label: 'Final' }
   }
 
-  // Note: Custom DCC dice chain effects use the standard 'add' type
-  // The actor's effect application automatically detects dice expressions
-  // and applies dice chain logic (e.g., adding 1 to "1d20" -> "1d24")
+  // Register custom diceChain change type for the ActiveEffect editing UI
+  CONFIG.ActiveEffect.changeTypes ??= {}
+  CONFIG.ActiveEffect.changeTypes.diceChain = {
+    label: 'DCC.EffectChangeTypeDiceChain',
+    defaultPriority: 2
+  }
 
   // Register Actor data models
   CONFIG.Actor.dataModels = {

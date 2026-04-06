@@ -246,7 +246,6 @@ const migrateActorData = async function (actor) {
 
   // Convert ActiveEffect changes for v14 compatibility (data-driven check)
   // - Convert numeric mode to string type
-  // - Convert custom 'diceChain' type to standard 'add'/'subtract'
   if (actor.effects?.length) {
     const migratedEffects = []
     let hasEffectUpdates = false
@@ -259,19 +258,6 @@ const migrateActorData = async function (actor) {
           if (typeof change.mode === 'number' && change.type === undefined) {
             change.type = EFFECT_MODE_TO_TYPE[change.mode] || 'add'
             delete change.mode
-            effectModified = true
-          }
-          // Convert custom 'diceChain' type to standard 'add' or 'subtract'
-          if (change.type === 'diceChain') {
-            const value = parseInt(change.value)
-            if (!isNaN(value) && value < 0) {
-              // Negative value: use subtract with positive value
-              change.type = 'subtract'
-              change.value = String(Math.abs(value))
-            } else {
-              // Positive or zero value: use add
-              change.type = 'add'
-            }
             effectModified = true
           }
         }
@@ -361,7 +347,6 @@ const migrateItemData = function (item) {
 
   // Convert ActiveEffect changes for v14 compatibility (data-driven check)
   // - Convert numeric mode to string type
-  // - Convert custom 'diceChain' type to standard 'add'/'subtract'
   if (item.effects?.length) {
     const migratedEffects = []
     let hasEffectUpdates = false
@@ -374,19 +359,6 @@ const migrateItemData = function (item) {
           if (typeof change.mode === 'number' && change.type === undefined) {
             change.type = EFFECT_MODE_TO_TYPE[change.mode] || 'add'
             delete change.mode
-            effectModified = true
-          }
-          // Convert custom 'diceChain' type to standard 'add' or 'subtract'
-          if (change.type === 'diceChain') {
-            const value = parseInt(change.value)
-            if (!isNaN(value) && value < 0) {
-              // Negative value: use subtract with positive value
-              change.type = 'subtract'
-              change.value = String(Math.abs(value))
-            } else {
-              // Positive or zero value: use add
-              change.type = 'add'
-            }
             effectModified = true
           }
         }

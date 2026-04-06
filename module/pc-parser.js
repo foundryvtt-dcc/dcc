@@ -104,7 +104,7 @@ function _parseJSONPCs (pcObject) {
         pc['saves.ref.classBonus'] = pcObject.saveReflex
         if (pcObject.agilityScore) {
           const agilityMod = DCC.abilityModifiers[pcObject.agilityScore]
-          if (agilityMod !== 0) {
+          if (agilityMod != null && agilityMod !== 0) {
             pc['saves.ref.classBonus'] = parseInt(pcObject.saveReflex) + (agilityMod * -1)
           }
         }
@@ -116,7 +116,7 @@ function _parseJSONPCs (pcObject) {
         pc['saves.frt.classBonus'] = pcObject.saveFort
         if (pcObject.staminaScore) {
           const staminaMod = DCC.abilityModifiers[pcObject.staminaScore]
-          if (staminaMod !== 0) {
+          if (staminaMod != null && staminaMod !== 0) {
             pc['saves.frt.classBonus'] = parseInt(pcObject.saveFort) + (staminaMod * -1)
           }
         }
@@ -128,7 +128,7 @@ function _parseJSONPCs (pcObject) {
         pc['saves.wil.classBonus'] = pcObject.saveWill
         if (pcObject.personalityScore) {
           const personalityMod = DCC.abilityModifiers[pcObject.personalityScore]
-          if (personalityMod !== 0) {
+          if (personalityMod != null && personalityMod !== 0) {
             pc['saves.wil.classBonus'] = parseInt(pcObject.saveWill) + (personalityMod * -1)
           }
         }
