@@ -74,8 +74,16 @@ describe('PC Parser Comprehensive Tests', () => {
         expect(equipmentItems[0].name).toBe('Rope')
       })
 
-      it('should handle save calculation with ability modifier extraction', async () => {
+      it('should not set classBonus for zero-level characters without a class', async () => {
         const result = parsePCs('{"saveReflex": "+3", "agilityScore": "16", "saveFort": "-1", "staminaScore": "8"}')
+        expect(result[0]['saves.ref.value']).toBe('+3')
+        expect(result[0]['saves.ref.classBonus']).toBeUndefined()
+        expect(result[0]['saves.frt.value']).toBe('-1')
+        expect(result[0]['saves.frt.classBonus']).toBeUndefined()
+      })
+
+      it('should set classBonus for upper-level characters with a class', async () => {
+        const result = parsePCs('{"className": "Warrior", "saveReflex": "+3", "agilityScore": "16", "saveFort": "-1", "staminaScore": "8"}')
         expect(result[0]['saves.ref.value']).toBe('+3')
         expect(result[0]['saves.ref.classBonus']).toBe(1) // +3 save - +2 agi mod = +1 class bonus
         expect(result[0]['saves.frt.value']).toBe('-1')

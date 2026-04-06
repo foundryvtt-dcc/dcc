@@ -732,6 +732,9 @@ DCC.actorImporterItemPacks = [
   'dcc-core-book.dcc-core-spells-patron'
 ]
 
+// Compendium pack for birth augur active effects used by the actor importer
+DCC.birthAugurEffectsPack = 'dcc-core-book.dcc-core-birth-augur-effects'
+
 // Name re-mappings for the actor importer
 DCC.actorImporterNameMap = {
   'Hammer (as club)': ['Club'],
