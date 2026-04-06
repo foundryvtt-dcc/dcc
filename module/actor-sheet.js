@@ -438,6 +438,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           system: i.system,
           containerContents: item.contents,
           contentsWeight: item.contentsWeight,
+          contentsItemCount: item.contentsItemCount,
           totalWeight: item.totalWeight,
           availableWeightCapacity: item.availableWeightCapacity,
           availableItemCapacity: item.availableItemCapacity
@@ -449,7 +450,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           summaryParts.push(`${Number(containerData.contentsWeight.toFixed(2))}/${maxWeight} ${game.i18n.localize('DCC.WeightUnit')}`)
         }
         if (maxItems > 0) {
-          summaryParts.push(`${containerData.containerContents.length}/${maxItems} ${game.i18n.localize('DCC.ContainerItemsUnit')}`)
+          summaryParts.push(`${containerData.contentsItemCount}/${maxItems} ${game.i18n.localize('DCC.ContainerItemsUnit')}`)
         }
         containerData.capacitySummary = summaryParts.join(', ')
         containers.push(containerData)
@@ -1808,9 +1809,12 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const itemData = item.toObject ? item.toObject() : data.data
     if (!itemData) return undefined
     // Validate capacity (circularity checks don't apply for items not yet on the actor)
-    if (container.availableItemCapacity !== null && container.availableItemCapacity <= 0) {
-      ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
-      return false
+    if (container.availableItemCapacity !== null) {
+      const itemQuantity = parseInt(itemData.system?.quantity) || 1
+      if (itemQuantity > container.availableItemCapacity) {
+        ui.notifications.warn(game.i18n.localize('DCC.ContainerFull'))
+        return false
+      }
     }
     if (container.availableWeightCapacity !== null) {
       const itemWeight = (parseFloat(itemData.system?.weight) || 0) * (parseInt(itemData.system?.quantity) || 1)

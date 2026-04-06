@@ -666,7 +666,18 @@ class DCCItem extends Item {
     if (!this.isContainer) return null
     const maxItems = this.system.capacity?.items || 0
     if (maxItems <= 0) return null
-    return Math.max(0, maxItems - this.contents.length)
+    return Math.max(0, maxItems - this.contentsItemCount)
+  }
+
+  /**
+   * Get the total item count of contents, factoring in quantity
+   * @returns {number}
+   */
+  get contentsItemCount () {
+    if (!this.isContainer) return 0
+    return this.contents.reduce((total, item) => {
+      return total + (parseInt(item.system.quantity) || 1)
+    }, 0)
   }
 
   /**
@@ -731,8 +742,11 @@ class DCCItem extends Item {
       }
     }
     // Check item capacity
-    if (this.availableItemCapacity !== null && this.availableItemCapacity <= 0) {
-      return { allowed: false, reason: 'DCC.ContainerFull' }
+    if (this.availableItemCapacity !== null) {
+      const itemQuantity = parseInt(item.system.quantity) || 1
+      if (itemQuantity > this.availableItemCapacity) {
+        return { allowed: false, reason: 'DCC.ContainerFull' }
+      }
     }
     // Check weight capacity
     if (this.availableWeightCapacity !== null) {

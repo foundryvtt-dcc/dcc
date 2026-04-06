@@ -233,6 +233,56 @@ describe('Container Item Tests', () => {
       expect(container.availableItemCapacity).toBe(1)
     })
 
+    test('availableItemCapacity factors in item quantity', () => {
+      container.system.capacity.items = 20
+      const items = [
+        { system: { weight: 0.1, quantity: 15, container: 'container-1' } },
+        { system: { weight: 1, quantity: 3, container: 'container-1' } }
+      ]
+      container.parent = {
+        items: {
+          filter: () => items,
+          get: () => null
+        }
+      }
+      expect(container.availableItemCapacity).toBe(2)
+    })
+
+    test('availableItemCapacity treats missing quantity as 1', () => {
+      container.system.capacity.items = 5
+      const items = [
+        { system: { weight: 1, container: 'container-1' } },
+        { system: { weight: 1, quantity: 2, container: 'container-1' } }
+      ]
+      container.parent = {
+        items: {
+          filter: () => items,
+          get: () => null
+        }
+      }
+      expect(container.availableItemCapacity).toBe(2)
+    })
+
+    test('contentsItemCount sums quantities of contained items', () => {
+      const items = [
+        { system: { weight: 0.1, quantity: 20, container: 'container-1' } },
+        { system: { weight: 1, quantity: 1, container: 'container-1' } },
+        { system: { weight: 0.5, quantity: 5, container: 'container-1' } }
+      ]
+      container.parent = {
+        items: {
+          filter: () => items,
+          get: () => null
+        }
+      }
+      expect(container.contentsItemCount).toBe(26)
+    })
+
+    test('contentsItemCount returns 0 for non-containers', () => {
+      const nonContainer = new DCCItem({ type: 'equipment', name: 'Sword' }, {})
+      expect(nonContainer.contentsItemCount).toBe(0)
+    })
+
     test('availableItemCapacity returns null when unlimited', () => {
       container.system.capacity.items = 0
       expect(container.availableItemCapacity).toBeNull()
@@ -301,6 +351,41 @@ describe('Container Item Tests', () => {
       const result = container.canContainItem(newItem)
       expect(result.allowed).toBe(false)
       expect(result.reason).toBe('DCC.ContainerFull')
+    })
+
+    test('canContainItem rejects when item quantity exceeds remaining capacity', () => {
+      container.system.capacity.items = 5
+      const existing = { system: { weight: 1, quantity: 3, container: 'container-1' } }
+      container.parent = {
+        items: {
+          filter: () => [existing],
+          get: () => null
+        }
+      }
+      const arrows = new DCCItem({ type: 'equipment', name: 'Arrows' }, {})
+      arrows._id = 'arrows-1'
+      arrows.id = 'arrows-1'
+      arrows.system = { ...arrows.system, weight: 0.1, quantity: 5, container: null }
+      const result = container.canContainItem(arrows)
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toBe('DCC.ContainerFull')
+    })
+
+    test('canContainItem allows item when quantity fits remaining capacity', () => {
+      container.system.capacity.items = 10
+      const existing = { system: { weight: 1, quantity: 3, container: 'container-1' } }
+      container.parent = {
+        items: {
+          filter: () => [existing],
+          get: () => null
+        }
+      }
+      const arrows = new DCCItem({ type: 'equipment', name: 'Arrows' }, {})
+      arrows._id = 'arrows-1'
+      arrows.id = 'arrows-1'
+      arrows.system = { ...arrows.system, weight: 0.1, quantity: 7, container: null }
+      const result = container.canContainItem(arrows)
+      expect(result.allowed).toBe(true)
     })
 
     test('canContainItem rejects when item too heavy', () => {
