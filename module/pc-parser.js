@@ -488,6 +488,10 @@ function _getAugurSaveAdjustment (luckySign) {
   const text = luckySign.toLowerCase()
   if (text.includes('willpower saving throw')) {
     adj.wil = augurMod
+  } else if (text.includes('fortitude saving throw')) {
+    adj.frt = augurMod
+  } else if (text.includes('reflex saving throw')) {
+    adj.ref = augurMod
   } else if (text.includes('saving throw')) {
     adj.ref = augurMod
     adj.frt = augurMod

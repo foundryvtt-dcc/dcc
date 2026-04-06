@@ -844,6 +844,91 @@ Languages: Common, Thieves' Cant`
   })
 })
 
+/* Test that specific saving throw birth augurs only adjust the relevant save */
+test('fortitude saving throw birth augur only adjusts fort classBonus', () => {
+  const parsedNPC = parsePCs(
+    `Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Lawful Warrior (1st level)
+Occupation: Squire
+Strength: 14 (+1)
+Agility: 10 (0)
+Stamina: 13 (+1)
+Personality: 10 (0)
+Intelligence: 10 (0)
+Luck: 14 (+1)
+
+HP: 14; Speed: 30; Init: 0
+Ref: 1; Fort: 3; Will: 1
+
+Base Attack Mod: d3
+Attack Dice: 1d20; Crit Die/Table: 1d12/III
+Occupation Weapon: Longsword melee +1 (dmg 1d8+1)
+Main Weapon:
+Secondary Weapon:
+
+AC: (10) (Unarmored (+0) Check penalty (0) Fumble die (d4))
+Equipment: Waterskin (5 sp)
+Trade good: Steel helmet
+Starting Funds: 29 cp + 34 gp
+Lucky sign: Lived through famine (Fortitude saving throws) (+1)
+Languages: Common`
+  )
+  // Fortitude augur (+1) only affects Fort save
+  // Warrior L1 class saves: Fort +1, Ref +1, Will +0
+  // Ref: PS=1, aglMod=0, augur=0 → classBonus = 1 - 0 - 0 = 1
+  // Fort: PS=3, staMod=1, augur=+1 → classBonus = 3 - 1 - 1 = 1
+  // Will: PS=1, perMod=0, augur=0 → classBonus = 1 - 0 - 0 = 1
+  expect(parsedNPC[0]).toMatchObject({
+    'saves.ref.classBonus': 1,
+    'saves.frt.classBonus': 1,
+    'saves.wil.classBonus': 1
+  })
+})
+
+test('reflex saving throw birth augur only adjusts ref classBonus', () => {
+  const parsedNPC = parsePCs(
+    `Generator Settings
+Source: Rulebook | Roll Mode: 3d6 | HP: normal | HP-up: normal | Augur: normal
+
+Neutral Thief (1st level)
+Occupation: Beggar
+Strength: 10 (0)
+Agility: 14 (+1)
+Stamina: 10 (0)
+Personality: 10 (0)
+Intelligence: 10 (0)
+Luck: 14 (+1)
+
+HP: 7; Speed: 30; Init: 1
+Ref: 3; Fort: 1; Will: 0
+
+Base Attack Mod: 0
+Attack Dice: 1d20; Crit Die/Table: 1d10/II
+Occupation Weapon: Club melee +0 (dmg 1d4)
+Main Weapon:
+Secondary Weapon:
+
+AC: (11) (Unarmored (+0) Check penalty (0) Fumble die (d4))
+Equipment: Begging bowl
+Trade good: Pawn ticket
+Starting Funds: 21 cp + 28 gp
+Lucky sign: Struck by lightning (Reflex saving throws) (+1)
+Languages: Common, Thieves' Cant`
+  )
+  // Reflex augur (+1) only affects Ref save
+  // Thief L1 class saves: Fort +1, Ref +1, Will +0
+  // Ref: PS=3, aglMod=1, augur=+1 → classBonus = 3 - 1 - 1 = 1
+  // Fort: PS=1, staMod=0, augur=0 → classBonus = 1 - 0 - 0 = 1
+  // Will: PS=0, perMod=0, augur=0 → classBonus = 0 - 0 - 0 = 0
+  expect(parsedNPC[0]).toMatchObject({
+    'saves.ref.classBonus': 1,
+    'saves.frt.classBonus': 1,
+    'saves.wil.classBonus': 0
+  })
+})
+
 /* Test Halfling's text */
 test('halfling', () => {
   const parsedNPC = parsePCs(
