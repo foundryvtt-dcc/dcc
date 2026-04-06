@@ -2323,6 +2323,10 @@ a.inline-roll {
     grid-template-columns: subgrid;
     grid-template-rows: 69px 69px;
 
+    .box-border {
+      position: relative;
+    }
+
     input {
       border: 0;
       font-size: 14px;
@@ -2335,6 +2339,28 @@ a.inline-roll {
       padding-bottom: 2px;
       height: 32px;
       padding-top: 1px;
+    }
+
+    .attack-bonus-effects {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .attack-bonus-effect-icon {
+        width: 14px;
+        height: 14px;
+        border: 0;
+        border-radius: 2px;
+        cursor: help;
+        opacity: 0.8;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
     }
   }
 

@@ -163,6 +163,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     foundry.utils.mergeObject(context, {
       abilityEffects: this.#prepareAbilityEffects(),
+      attackBonusEffects: this.#prepareAttackBonusEffects(),
       saveEffects: this.#prepareSaveEffects(),
       attributeEffects: this.#prepareAttributeEffects(),
       actor: this.options.document,
@@ -706,6 +707,78 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     return abilityEffects
+  }
+
+  /**
+   * Collect active effects that modify attack hit/damage bonuses
+   * Returns an object keyed by bonus type with arrays of effect info
+   */
+  #prepareAttackBonusEffects () {
+    const attackBonusEffects = {
+      meleeHit: [],
+      meleeDamage: [],
+      missileHit: [],
+      missileDamage: []
+    }
+
+    const actor = this.options.document
+
+    // Collect all active effects (from actor and transferred from items)
+    const allEffects = []
+
+    // Effects directly on actor
+    for (const effect of actor.effects) {
+      if (!effect.disabled && !effect.isSuppressed) {
+        allEffects.push(effect)
+      }
+    }
+
+    // Effects from equipped items that transfer
+    for (const item of actor.items) {
+      const isEquipped = item.system?.equipped ?? true
+      if (isEquipped) {
+        for (const effect of item.effects) {
+          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
+            allEffects.push(effect)
+          }
+        }
+      }
+    }
+
+    // Map from regex capture groups to effect keys
+    const keyMap = {
+      'attackHitBonus.melee': 'meleeHit',
+      'attackHitBonus.missile': 'missileHit',
+      'attackDamageBonus.melee': 'meleeDamage',
+      'attackDamageBonus.missile': 'missileDamage'
+    }
+
+    // Check each effect for attack bonus modifications
+    for (const effect of allEffects) {
+      if (!effect.changes) continue
+
+      for (const change of effect.changes) {
+        const key = change.key
+        const match = key.match(/^system\.details\.(attackHitBonus|attackDamageBonus)\.(melee|missile)\.(adjustment|value)$/)
+        if (match) {
+          const effectKey = keyMap[`${match[1]}.${match[2]}`]
+          if (effectKey) {
+            const existing = attackBonusEffects[effectKey].find(e => e.id === effect.id)
+            if (!existing) {
+              attackBonusEffects[effectKey].push({
+                id: effect.id,
+                name: effect.name,
+                img: effect.img || 'icons/svg/aura.svg',
+                value: change.value,
+                type: change.type
+              })
+            }
+          }
+        }
+      }
+    }
+
+    return attackBonusEffects
   }
 
   /**
