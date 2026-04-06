@@ -93,6 +93,8 @@
   "DCC.BadValueFormulaWarning": "Błędna formuła w polu wartości przedmiotu!",
   "DCC.BaseACAbilityConfig": "Bazowa Cecha KP",
   "DCC.BirthAugur": "Wróżba Narodzin",
+  "DCC.BirthAugurLuckMod": "Mod Wróżby",
+  "DCC.BirthAugurLuckModHint": "Modyfikator szczęścia przy tworzeniu postaci, używany przez efekty aktywne wróżby narodzin",
   "DCC.BlindnessDeafness": "Paraliż/Słuch",
   "DCC.Bonus": "Bonus",
   "DCC.BrokenLimbs": "Złamane Kończyny",

@@ -93,6 +93,8 @@
   "DCC.BadValueFormulaWarning": "Ungültige Formel für Wert des Gegenstands!",
   "DCC.BaseACAbilityConfig": "RK-Modifikator",
   "DCC.BirthAugur": "Geburtszeichen",
+  "DCC.BirthAugurLuckMod": "Zeichen-Mod",
+  "DCC.BirthAugurLuckModHint": "Glücksmodifikator bei Charaktererstellung, verwendet für Geburtszeichen-Effekte",
   "DCC.BlindnessDeafness": "Blindheit/Taubheit",
   "DCC.Bonus": "Bonus",
   "DCC.BrokenLimbs": "Gebrochene Gliedmaßen",

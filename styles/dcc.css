@@ -2137,8 +2137,10 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   text-align: left;
   padding-left: 3px;
 }
-.dcc .character .languages textarea,
-.dcc .character .lucky-roll textarea {
+.dcc .character .lucky-roll {
+  height: 79px;
+}
+.dcc .character .languages textarea {
   background: none;
   border: 0;
   font-family: var(--system-data-font), serif;
@@ -2146,12 +2148,20 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   grid-row: 2;
   height: 17px;
   min-height: 38px;
+}
+.dcc .character .lucky-roll textarea {
+  background: none;
+  border: 0;
+  font-family: var(--system-data-font), serif;
+  font-size: 12px;
+  grid-row: 2;
+  height: 17px;
+  min-height: 58px;
   overflow: hidden;
   padding: 2px 5px 2px 5px;
   resize: none;
   text-align: left;
 }
-.dcc .character .languages textarea:focus,
 .dcc .character .lucky-roll textarea:focus {
   box-shadow: none;
 }

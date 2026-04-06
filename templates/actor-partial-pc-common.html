@@ -235,6 +235,14 @@
         <input id="system.abilities.{{id}}.max" style="grid-area: 3/2"
                name="system.abilities.{{id}}.max" value="{{ability.max}}" size="2"
                data-dtype="Number" placeholder="10">
+        {{#if isLuck}}
+        <label for="system.details.birthAugurLuckMod" style="grid-area: 4/1"
+               data-tooltip="{{localize 'DCC.BirthAugurLuckModHint'}}">{{localize "DCC.BirthAugurLuckMod"}}:</label>
+        <input id="system.details.birthAugurLuckMod" style="grid-area: 4/2"
+               name="system.details.birthAugurLuckMod" value="{{numberFormat @root.system.details.birthAugurLuckMod decimals=0 sign=true}}"
+               size="3" data-dtype="Number" placeholder="0"
+               data-tooltip="{{localize 'DCC.BirthAugurLuckModHint'}}">
+        {{/if}}
       </div>
     {{/inline}}
 
@@ -341,7 +349,7 @@
     {{!-- Lucky Roll --}}
     <div class="lucky-roll">
       <label for="system.details.birthAugur" class="box-title">{{localize "DCC.LuckyRoll"}}</label>
-      <textarea id="system.details.birthAugur" name="system.details.birthAugur" rows="4">{{system.details.birthAugur}}</textarea>
+      <textarea id="system.details.birthAugur" name="system.details.birthAugur" rows="5">{{system.details.birthAugur}}</textarea>
     </div>
 
     {{!-- Row separators --}}

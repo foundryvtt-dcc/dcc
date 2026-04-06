@@ -93,6 +93,8 @@
   "DCC.BadValueFormulaWarning": "物品值字段的公式错误！",
   "DCC.BaseACAbilityConfig": "基础 AC 属性",
   "DCC.BirthAugur": "出生征兆",
+  "DCC.BirthAugurLuckMod": "征兆调整",
+  "DCC.BirthAugurLuckModHint": "角色创建时的幸运调整值，用于出生征兆主动效果",
   "DCC.BlindnessDeafness": "目盲\/耳聋",
   "DCC.Bonus": "奖励",
   "DCC.BrokenLimbs": "残破肢体",
