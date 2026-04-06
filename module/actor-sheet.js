@@ -437,6 +437,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           system: i.system,
           containerContents: item.contents,
           contentsWeight: item.contentsWeight,
+          contentsItemCount: item.contentsItemCount,
           totalWeight: item.totalWeight,
           availableWeightCapacity: item.availableWeightCapacity,
           availableItemCapacity: item.availableItemCapacity
@@ -448,7 +449,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
           summaryParts.push(`${Number(containerData.contentsWeight.toFixed(2))}/${maxWeight} ${game.i18n.localize('DCC.WeightUnit')}`)
         }
         if (maxItems > 0) {
-          summaryParts.push(`${containerData.containerContents.length}/${maxItems} ${game.i18n.localize('DCC.ContainerItemsUnit')}`)
+          summaryParts.push(`${containerData.contentsItemCount}/${maxItems} ${game.i18n.localize('DCC.ContainerItemsUnit')}`)
         }
         containerData.capacitySummary = summaryParts.join(', ')
         containers.push(containerData)
