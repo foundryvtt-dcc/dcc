@@ -1,5 +1,7 @@
 /* global game, CONFIG, foundry */
 
+import { removeActiveEffectOverrides } from './utilities.js'
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -68,8 +70,8 @@ class DCCActorConfig extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onSubmitForm (event, form, formData) {
     event.preventDefault()
-    // Update the actor with the form data
-    await this.options.document.update(formData.object)
+    const updateData = removeActiveEffectOverrides(this.options.document, formData.object)
+    await this.options.document.update(updateData)
     // Re-draw the updated sheet
     await this.options.document.sheet.render(true)
   }

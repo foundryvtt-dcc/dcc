@@ -1,6 +1,24 @@
 /* global game, CONFIG */
 
 /**
+ * Remove keys from an update data object that are overridden by active effects
+ * Prevents form submission from persisting computed in-memory values,
+ * which would cause effect values to accumulate over time (see #714)
+ * @param {Actor} document - The actor document with overrides
+ * @param {Object} updateData - The update data object to filter
+ * @returns {Object} The filtered update data object
+ */
+export function removeActiveEffectOverrides (document, updateData) {
+  const overrides = document.overrides
+  if (overrides) {
+    for (const key of Object.keys(overrides)) {
+      delete updateData[key]
+    }
+  }
+  return updateData
+}
+
+/**
  * Ensure modifiers have a + on the front of them if they aren't negative
  * @param {string} value - value to ensure has a plus
  * @param {boolean} includeZero - if true, will return +0 if the value is 0
