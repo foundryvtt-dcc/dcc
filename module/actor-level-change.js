@@ -1,7 +1,7 @@
 /* global ChatMessage, game, CONFIG, Roll, ui, foundry */
 
 import DiceChain from './dice-chain.js'
-import { ensurePlus } from './utilities.js'
+import { ensurePlus, removeActiveEffectOverrides } from './utilities.js'
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
@@ -281,7 +281,8 @@ class DCCActorLevelChange extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault()
 
     // Do any basic updates from this dialog
-    await this.options.document.update(formData.object)
+    const updateData = removeActiveEffectOverrides(this.options.document, formData.object)
+    await this.options.document.update(updateData)
 
     // Try and get data for the new level from the compendium
     const newLevel = this.currentLevel

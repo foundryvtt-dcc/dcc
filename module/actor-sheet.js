@@ -1659,6 +1659,14 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   /** @override */
   async _processSubmitData (event, form, formData) {
+    // Remove fields overridden by active effects to prevent persisting computed values (#714)
+    const overrides = this.document.overrides
+    if (overrides) {
+      for (const key of Object.keys(overrides)) {
+        delete formData[key]
+      }
+    }
+
     // Process the actor data normally
     const result = await super._processSubmitData(event, form, formData)
 

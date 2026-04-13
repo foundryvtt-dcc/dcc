@@ -105,6 +105,7 @@ class DCCActor extends Actor {
   /** @override */
   prepareDerivedData () {
     super.prepareDerivedData()
+    if (!this.overrides) this.overrides = {}
 
     // Recalculate ability modifiers after Active Effects have been applied
     // This ensures effects that modify ability values (e.g. +2 to str.value) are reflected in the modifiers
@@ -134,7 +135,7 @@ class DCCActor extends Actor {
       this.system.skills.detectSecretDoors.value = '+4'
     }
 
-    // For NPCs, add otherBonus to displayed save values (after effects are applied)
+    // For NPCs, add otherBonus to displayed save values (tracked as overrides for #714)
     if (this.isNPC) {
       const saves = this.system.saves
       for (const saveId of ['ref', 'frt', 'wil']) {
@@ -142,6 +143,7 @@ class DCCActor extends Actor {
         if (otherBonus !== 0) {
           const baseValue = parseInt(saves[saveId].value || 0)
           saves[saveId].value = baseValue + otherBonus
+          this.overrides[`system.saves.${saveId}.value`] = saves[saveId].value
         }
       }
     }
@@ -152,6 +154,7 @@ class DCCActor extends Actor {
       if (initOtherMod !== 0) {
         const baseInit = parseInt(this.system.attributes.init.value || 0)
         this.system.attributes.init.value = baseInit + initOtherMod
+        this.overrides['system.attributes.init.value'] = this.system.attributes.init.value
       }
     }
 
@@ -161,6 +164,7 @@ class DCCActor extends Actor {
       if (acOtherMod !== 0) {
         const baseAC = parseInt(this.system.attributes.ac.value || 10)
         this.system.attributes.ac.value = baseAC + acOtherMod
+        this.overrides['system.attributes.ac.value'] = this.system.attributes.ac.value
       }
     }
 
@@ -226,7 +230,9 @@ class DCCActor extends Actor {
     // to be applied twice. DCCActiveEffect.apply() exists as a fallback for non-actor contexts
     // (e.g. if core Foundry applies effects outside this method) but is not called here.
 
-    const overrides = {}
+    // Track which fields are modified by effects so form submission can exclude them (#714)
+    this.overrides = {}
+    const overrides = this.overrides
     const effects = []
 
     // Collect active effects from the actor
