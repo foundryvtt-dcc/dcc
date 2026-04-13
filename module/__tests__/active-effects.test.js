@@ -36,12 +36,14 @@ function createPC () {
  * @param {DCCActor} actor
  */
 function applyNPCSaveBonuses (actor) {
+  if (!actor.overrides) actor.overrides = {}
   const saves = actor.system.saves
   for (const saveId of ['ref', 'frt', 'wil']) {
     const otherBonus = parseInt(saves[saveId].otherBonus || 0)
     if (otherBonus !== 0) {
       const baseValue = parseInt(saves[saveId].value || 0)
       saves[saveId].value = baseValue + otherBonus
+      actor.overrides[`system.saves.${saveId}.value`] = saves[saveId].value
     }
   }
 }
@@ -51,10 +53,12 @@ function applyNPCSaveBonuses (actor) {
  * @param {DCCActor} actor
  */
 function applyNPCInitBonus (actor) {
+  if (!actor.overrides) actor.overrides = {}
   const initOtherMod = parseInt(actor.system.attributes.init.otherMod || 0)
   if (initOtherMod !== 0) {
     const baseInit = parseInt(actor.system.attributes.init.value || 0)
     actor.system.attributes.init.value = baseInit + initOtherMod
+    actor.overrides['system.attributes.init.value'] = actor.system.attributes.init.value
   }
 }
 
@@ -63,11 +67,13 @@ function applyNPCInitBonus (actor) {
  * @param {DCCActor} actor
  */
 function applyNPCACBonus (actor) {
+  if (!actor.overrides) actor.overrides = {}
   if (actor.isNPC && !actor.system.config.computeAC) {
     const acOtherMod = parseInt(actor.system.attributes.ac.otherMod || 0)
     if (acOtherMod !== 0) {
       const baseAC = parseInt(actor.system.attributes.ac.value || 10)
       actor.system.attributes.ac.value = baseAC + acOtherMod
+      actor.overrides['system.attributes.ac.value'] = actor.system.attributes.ac.value
     }
   }
 }
@@ -716,5 +722,122 @@ describe('Active Effects - @-Variable Resolution', () => {
 
     // Base attack (+0) + STR (+1) + luck adjustment (+2) = +3
     expect(actor.system.details.attackHitBonus.melee.value).toEqual('+3')
+  })
+})
+
+describe('Active Effects - Overrides Tracking (#714)', () => {
+  test('applyActiveEffects populates this.overrides with affected keys', () => {
+    const actor = createNPC()
+    const mockEffect = {
+      disabled: false,
+      isSuppressed: false,
+      changes: [
+        { key: 'system.saves.frt.otherBonus', mode: 2, value: '-1' }
+      ]
+    }
+    actor.effects = new global.Collection([['save-effect', mockEffect]])
+
+    actor.applyActiveEffects()
+
+    expect(actor.overrides).toBeDefined()
+    expect(actor.overrides['system.saves.frt.otherBonus']).toEqual(-1)
+  })
+
+  test('applyActiveEffects tracks multiple overridden keys', () => {
+    const actor = createNPC()
+    const mockEffect = {
+      disabled: false,
+      isSuppressed: false,
+      changes: [
+        { key: 'system.saves.frt.otherBonus', mode: 2, value: '-1' },
+        { key: 'system.attributes.init.otherMod', mode: 2, value: '3' }
+      ]
+    }
+    actor.effects = new global.Collection([['multi-effect', mockEffect]])
+
+    actor.applyActiveEffects()
+
+    expect(Object.keys(actor.overrides)).toContain('system.saves.frt.otherBonus')
+    expect(Object.keys(actor.overrides)).toContain('system.attributes.init.otherMod')
+  })
+
+  test('NPC save derived values are tracked in overrides', () => {
+    const actor = createNPC()
+    actor.system.saves.frt.value = 2
+    actor.system.saves.frt.otherBonus = -1
+
+    applyNPCSaveBonuses(actor)
+
+    expect(actor.system.saves.frt.value).toEqual(1)
+    expect(actor.overrides['system.saves.frt.value']).toEqual(1)
+  })
+
+  test('NPC save overrides are not set when otherBonus is zero', () => {
+    const actor = createNPC()
+    actor.system.saves.frt.value = 2
+    actor.system.saves.frt.otherBonus = 0
+
+    applyNPCSaveBonuses(actor)
+
+    expect(actor.system.saves.frt.value).toEqual(2)
+    expect(actor.overrides['system.saves.frt.value']).toBeUndefined()
+  })
+
+  test('NPC init derived value is tracked in overrides', () => {
+    const actor = createNPC()
+    actor.system.attributes.init.value = 2
+    actor.system.attributes.init.otherMod = 3
+
+    applyNPCInitBonus(actor)
+
+    expect(actor.system.attributes.init.value).toEqual(5)
+    expect(actor.overrides['system.attributes.init.value']).toEqual(5)
+  })
+
+  test('NPC AC derived value is tracked in overrides', () => {
+    const actor = createNPC()
+    actor.system.attributes.ac.value = 14
+    actor.system.attributes.ac.otherMod = 2
+    actor.system.config.computeAC = false
+
+    applyNPCACBonus(actor)
+
+    expect(actor.system.attributes.ac.value).toEqual(16)
+    expect(actor.overrides['system.attributes.ac.value']).toEqual(16)
+  })
+
+  test('NPC save bonus does not accumulate across multiple preparation cycles', () => {
+    const actor = createNPC()
+    actor.system.saves.ref.value = 3
+    actor.system.saves.ref.otherBonus = -1
+
+    // First cycle: value should become 2
+    applyNPCSaveBonuses(actor)
+    expect(actor.system.saves.ref.value).toEqual(2)
+
+    // Simulate form NOT persisting the computed value (our fix)
+    // by restoring the base value before next cycle
+    actor.system.saves.ref.value = 3
+    actor.overrides = {}
+
+    // Second cycle: value should still be 2, not accumulated
+    applyNPCSaveBonuses(actor)
+    expect(actor.system.saves.ref.value).toEqual(2)
+  })
+
+  test('spellCheckOtherMod is tracked when modified by active effect', () => {
+    const actor = createPC()
+    const mockEffect = {
+      disabled: false,
+      isSuppressed: false,
+      changes: [
+        { key: 'system.class.spellCheckOtherMod', mode: 2, value: '-1' }
+      ]
+    }
+    actor.effects = new global.Collection([['spell-effect', mockEffect]])
+
+    actor.applyActiveEffects()
+
+    expect(actor.overrides['system.class.spellCheckOtherMod']).toBeDefined()
   })
 })
