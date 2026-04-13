@@ -104,6 +104,7 @@ class DCCActor extends Actor {
   /** @override */
   prepareDerivedData () {
     super.prepareDerivedData()
+    if (!this.overrides) this.overrides = {}
 
     // Recalculate ability modifiers after Active Effects have been applied
     // This ensures effects that modify ability values (e.g. +2 to str.value) are reflected in the modifiers

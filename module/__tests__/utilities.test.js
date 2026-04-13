@@ -4,6 +4,7 @@ import { expect, vi, describe, it, beforeEach } from 'vitest'
 import '../__mocks__/foundry.js'
 import {
   ensurePlus,
+  removeActiveEffectOverrides,
   getFirstDie,
   getFirstMod,
   addDamageFlavorToRolls,
@@ -574,5 +575,52 @@ describe('Utilities', () => {
       const result = await getNPCFumbleTableResult(mockRoll, 'Fumble Table M')
       expect(result).toEqual({ text: 'World NPC fumble result' })
     })
+  })
+})
+
+describe('removeActiveEffectOverrides', () => {
+  it('removes keys present in document.overrides from updateData', () => {
+    const document = { overrides: { 'system.saves.frt.value': 1, 'system.attributes.init.value': 5 } }
+    const updateData = { 'system.saves.frt.value': 1, 'system.saves.frt.otherBonus': 2, 'system.attributes.init.value': 5 }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result).toEqual({ 'system.saves.frt.otherBonus': 2 })
+  })
+
+  it('preserves all keys when document.overrides is empty', () => {
+    const document = { overrides: {} }
+    const updateData = { 'system.saves.frt.value': 3 }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result).toEqual({ 'system.saves.frt.value': 3 })
+  })
+
+  it('handles document.overrides being undefined', () => {
+    const document = {}
+    const updateData = { 'system.saves.frt.value': 3 }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result).toEqual({ 'system.saves.frt.value': 3 })
+  })
+
+  it('handles override keys not present in updateData', () => {
+    const document = { overrides: { 'system.saves.frt.value': 1 } }
+    const updateData = { 'system.attributes.init.value': 5 }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result).toEqual({ 'system.attributes.init.value': 5 })
+  })
+
+  it('returns the same object reference (mutates in place)', () => {
+    const document = { overrides: { 'system.saves.frt.value': 1 } }
+    const updateData = { 'system.saves.frt.value': 1, 'system.saves.frt.otherBonus': 2 }
+
+    const result = removeActiveEffectOverrides(document, updateData)
+
+    expect(result).toBe(updateData)
   })
 })

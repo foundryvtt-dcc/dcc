@@ -1590,7 +1590,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const overrides = this.document.overrides
     if (overrides) {
       for (const key of Object.keys(overrides)) {
-        formData.delete(key)
+        delete formData[key]
       }
     }
 
