@@ -790,6 +790,7 @@ Hooks.on('renderChatMessageHTML', async (message, html, data) => {
     message.setFlag('core', 'canPopout', true)
   }
   chat.highlightCriticalSuccessFailure(message, html, data)
+  chat.enforceMinimumDamage(message, html)
   SpellResult.processChatMessage(message, html, data)
 
   // Add data-item-id for modules that want to use it

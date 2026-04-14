@@ -142,6 +142,33 @@ function applyChatCardDamage (roll, multiplier) {
 }
 
 /**
+ * Enforce minimum 1 damage on damage rolls rendered in chat
+ * Handles inline rolls (e.g. [[/r 1d4-2 # Damage]]) that can't use post-roll clamping
+ * @param message
+ * @param html
+ */
+export const enforceMinimumDamage = function (message, html) {
+  if (!message.rolls?.length || !message.isContentVisible) return
+  if (!message.flavor?.includes(game.i18n.localize('DCC.Damage'))) return
+
+  const roll = message.rolls[0]
+  if (roll.total < 1) {
+    roll._total = 1
+    // Update the rendered roll display in the chat HTML
+    const rollTotal = html.querySelector('.dice-total')
+    if (rollTotal) {
+      rollTotal.textContent = '1'
+    }
+    // Update damage-applyable elements
+    html.querySelectorAll('.damage-applyable').forEach(el => {
+      if (el.dataset.damage !== undefined) {
+        el.dataset.damage = '1'
+      }
+    })
+  }
+}
+
+/**
  * Change attack rolls into emotes
  * @param message
  * @param html
