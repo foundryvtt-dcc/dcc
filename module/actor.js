@@ -1596,9 +1596,6 @@ class DCCActor extends Actor {
 
       damagePrompt = game.i18n.localize('DCC.Damage')
     } else if (damageRollFormula) {
-      if (damageRollFormula.includes('-')) {
-        damageRollFormula = `max(${damageRollFormula}, 1)`
-      }
       damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
       damagePrompt = game.i18n.localize('DCC.RollDamage')
     }
