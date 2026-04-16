@@ -196,7 +196,12 @@ class DCCActor extends Actor {
       }
       if (config.computeSpeed) {
         this.system.attributes.ac.speedPenalty = speedPenalty
-        this.system.attributes.speed.value = baseSpeed + speedPenalty
+        // Preserve any modifier already applied to value (e.g. by an active
+        // effect targeting system.attributes.speed.value) — without this,
+        // recomputing from base would clobber speed-modifying effects.
+        const currentValue = parseInt(this.system.attributes.speed.value)
+        const valueModifier = isNaN(currentValue) ? 0 : currentValue - baseSpeed
+        this.system.attributes.speed.value = baseSpeed + speedPenalty + valueModifier
       }
     }
 
