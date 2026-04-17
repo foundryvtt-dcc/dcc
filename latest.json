@@ -149,8 +149,8 @@
   "socket": true,
   "initiative": "@attributes.init.die + @attributes.init.value",
   "url": "https://github.com/foundryvtt-dcc/dcc",
-  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/latest/download/system.json",
-  "download": "https://github.com/foundryvtt-dcc/dcc/releases/latest/download/dcc.zip",
+  "manifest": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.67.0/system.json",
+  "download": "https://github.com/foundryvtt-dcc/dcc/releases/download/v0.67.0/dcc.zip",
   "protected": false,
   "bugs": "https://github.com/foundryvtt-dcc/dcc/issues",
   "license": "LICENSE.txt"
