@@ -396,6 +396,58 @@ describe('Active Effect Methods - String to Number Conversion', () => {
   })
 })
 
+describe('Active Effects - Skill StringField Paths', () => {
+  // Birth augur presets (e.g. Fox's Cunning, Born under the Loom, Righteous
+  // Heart) target thief/cleric skill paths that are StringField in the data
+  // model. These tests guard against regressions in how _applyAddEffect
+  // handles those paths — a Number is written to the in-memory actor, which
+  // Handlebars and .toString() call-sites downstream handle correctly.
+
+  test('_applyAddEffect on thief skill StringField ("+0")', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { findTrap: { value: '+0' } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.findTrap.value', '+1', overrides)
+
+    expect(actor.system.skills.findTrap.value).toEqual(1)
+    expect(overrides['system.skills.findTrap.value']).toEqual(1)
+  })
+
+  test('_applyAddEffect on thief skill with non-zero base value', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { disableTrap: { value: '+3' } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.disableTrap.value', '+2', overrides)
+
+    expect(actor.system.skills.disableTrap.value).toEqual(5)
+    expect(overrides['system.skills.disableTrap.value']).toEqual(5)
+  })
+
+  test('_applyAddEffect on cleric skill NumberField (turnUnholy)', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { turnUnholy: { value: 0 } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.turnUnholy.value', '1', overrides)
+
+    expect(actor.system.skills.turnUnholy.value).toEqual(1)
+    expect(overrides['system.skills.turnUnholy.value']).toEqual(1)
+  })
+
+  test('_applyAddEffect with negative delta on skill value', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { sneakSilently: { value: '+1' } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.sneakSilently.value', '-2', overrides)
+
+    expect(actor.system.skills.sneakSilently.value).toEqual(-1)
+    expect(overrides['system.skills.sneakSilently.value']).toEqual(-1)
+  })
+})
+
 describe('Active Effects - Attack Bonus Adjustments', () => {
   test('Melee attack adjustment affects computed melee attack bonus', () => {
     const actor = createPCWithAttackSetup({ strValue: 14, strMod: 1 })
