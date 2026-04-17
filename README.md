@@ -35,8 +35,8 @@ Contains some icon art from game-icons.net.
 
 ###### Documentation
 * [Release Process](docs/README_RELEASE_PROCESS.md) - Guidelines for creating releases and managing versions
-* [V14 Migration Guide](docs/dev/v14/) - FoundryVTT V14 compatibility changes, breaking changes, and migration details
-* [V13 ApplicationV2 Conversion Guide](docs/V13_APP_V2_HOW_TO.md) - Step-by-step guide for converting to FoundryVTT v13/ApplicationV2
+* [V14 Reference](docs/dev/V14.md) - FoundryVTT V14 data models, Active Effects V2, and API changes
+* [V13 / ApplicationV2 Reference](docs/dev/V13.md) - ApplicationV2 patterns used by all sheets and dialogs
 
 ###### Contributing
 * Thanks for considering helping out!

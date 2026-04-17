@@ -4,7 +4,7 @@ This document describes the architecture of the Dungeon Crawl Classics RPG syste
 
 ## Overview
 
-This is a **Dungeon Crawl Classics RPG system** for FoundryVTT, implementing the Goodman Games tabletop RPG. The system supports FoundryVTT v13 and uses ES modules.
+This is a **Dungeon Crawl Classics RPG system** for FoundryVTT, implementing the Goodman Games tabletop RPG. The system targets FoundryVTT V14 and uses ES modules.
 
 ## Core System Structure
 
@@ -50,13 +50,12 @@ DCC uses 6 abilities (different from D&D standard):
 
 ## Data Model
 
-### template.json
-
-The `template.json` file defines the data structure for all Actors and Items.
+Actor and Item schemas are defined as `TypeDataModel` classes under `module/data/` and registered on `CONFIG.Actor.dataModels` / `CONFIG.Item.dataModels` during the `init` hook. Type names are declared in `system.json` under `documentTypes`. See [V14 Reference](V14.md) for the data model layout.
 
 #### Actor Types
-- **Player**: Full character sheet with all class templates (cleric, thief, warrior, wizard, dwarf, elf, halfling)
+- **Player**: Full character sheet with all class fields (cleric, thief, warrior, wizard, dwarf, elf, halfling)
 - **NPC**: Simplified structure for monsters and NPCs
+- **Party**: Party sheet for tracking multiple characters
 
 #### Item Types
 | Type | Description |
@@ -94,7 +93,7 @@ Related docs: [Testing - Parser Tests](TESTING.md#parser-tests)
 - `module/item-sheet.js` - Item editing interface
 - Type-specific templates for each item type
 
-For V13 ApplicationV2 migration details, see [V13 Migration Guide](v13/README.md).
+For ApplicationV2 sheet patterns, see [V13 / ApplicationV2 Reference](V13.md).
 
 ## Active Effects
 

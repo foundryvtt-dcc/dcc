@@ -112,10 +112,10 @@ The system is configured for hot reload during development. Changes to these fil
 
 ## FoundryVTT Compatibility
 
-- **Current Target**: FoundryVTT v13
-- **ApplicationV2**: All sheets use the new ApplicationV2 API
+- **Current Target**: FoundryVTT V14 (V14-only)
+- **ApplicationV2**: All sheets use the ApplicationV2 API
 
-For ApplicationV2 migration patterns, see [V13 ApplicationV2](V13_APP_V2.md).
+See [V14 Reference](V14.md) for data models and V14-specific APIs, and [V13 / ApplicationV2 Reference](V13.md) for sheet patterns.
 
 ## Related Documentation
 

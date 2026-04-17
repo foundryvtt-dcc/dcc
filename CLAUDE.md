@@ -45,8 +45,8 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 - [Internationalization](docs/dev/I18N.md) - Translation system
 
 ### Reference Docs
-- [V14 Migration](docs/dev/v14/) - V14 breaking changes, checklist, data models, active effects
-- [V13 ApplicationV2](docs/dev/V13_APP_V2.md) - Migration patterns
+- [V14](docs/dev/V14.md) - V14 reference: data models, Active Effects V2, API changes
+- [V13](docs/dev/V13.md) - ApplicationV2 patterns reference
 - [Test Coverage](docs/dev/TEST_COVERAGE.md) - Detailed testing strategy
 - [Release Process](docs/dev/RELEASE_PROCESS.md) - How to release
 
