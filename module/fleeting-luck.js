@@ -467,7 +467,7 @@ class FleetingLuck {
   static async addChatMessage (content) {
     const messageData = {
       user: game.user.id,
-      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content,
       sound: CONFIG.sounds.notification
     }

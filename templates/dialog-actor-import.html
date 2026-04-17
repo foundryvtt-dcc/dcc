@@ -22,6 +22,7 @@
 
     <label for="folderId" style="justify-self: right" class="mr-8 mt-8 mb-8">{{localize 'DCC.Folder'}}</label>
     <select id="folderId" name="folderId" style="height: 24px">
+      <option value="">{{localize "DCC.None"}}</option>
       {{selectOptions folders selected=importFolderId localize=true}}
     </select>
 

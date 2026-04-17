@@ -24,7 +24,7 @@ class SpellResult {
     patronTaint = undefined
   } = {}) {
     messageOptions = foundry.utils.mergeObject({
-      rollMode: game.settings.get('core', 'rollMode')
+      messageMode: game.settings.get('core', 'messageMode')
     }, messageOptions)
 
     // construct flags for the message
@@ -65,7 +65,7 @@ class SpellResult {
       mercurial,
       patronTaint,
       results: result.map(r => {
-        return foundry.utils.duplicate(r)
+        return foundry.utils.deepClone(r)
       }),
       rollHTML: rollTable.displayRoll ? await roll.render() : null,
       table: rollTable,
@@ -154,7 +154,7 @@ class SpellResult {
       const newContent = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-spell-result.html', {
         description: await TextEditor.enrichHTML(rollTable.description),
         results: [newResult].map(r => {
-          return foundry.utils.duplicate(r)
+          return foundry.utils.deepClone(r)
         }),
         rollHTML: rollTable.displayRoll ? await this.rolls[0].render() : null,
         table: rollTable,

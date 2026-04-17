@@ -213,6 +213,12 @@ describe('NPC Active Effects - Save Bonuses', () => {
   })
 })
 
+// Note: DCCActiveEffect.apply() handles:
+// 1. Equipped status filtering for item effects
+// 2. Signed string numeric operations for thief skills
+// These are tested via integration in the actual Foundry environment
+// since they require the full ActiveEffect document class infrastructure
+
 describe('Active Effect Methods - String to Number Conversion', () => {
   test('_applyAddEffect correctly handles string values like "+0"', () => {
     const actor = new DCCActor()
@@ -387,6 +393,58 @@ describe('Active Effect Methods - String to Number Conversion', () => {
 
     expect(actor.system.details.alignment).toEqual('c')
     expect(overrides['system.details.alignment']).toEqual('c')
+  })
+})
+
+describe('Active Effects - Skill StringField Paths', () => {
+  // Birth augur presets (e.g. Fox's Cunning, Born under the Loom, Righteous
+  // Heart) target thief/cleric skill paths that are StringField in the data
+  // model. These tests guard against regressions in how _applyAddEffect
+  // handles those paths — a Number is written to the in-memory actor, which
+  // Handlebars and .toString() call-sites downstream handle correctly.
+
+  test('_applyAddEffect on thief skill StringField ("+0")', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { findTrap: { value: '+0' } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.findTrap.value', '+1', overrides)
+
+    expect(actor.system.skills.findTrap.value).toEqual(1)
+    expect(overrides['system.skills.findTrap.value']).toEqual(1)
+  })
+
+  test('_applyAddEffect on thief skill with non-zero base value', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { disableTrap: { value: '+3' } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.disableTrap.value', '+2', overrides)
+
+    expect(actor.system.skills.disableTrap.value).toEqual(5)
+    expect(overrides['system.skills.disableTrap.value']).toEqual(5)
+  })
+
+  test('_applyAddEffect on cleric skill NumberField (turnUnholy)', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { turnUnholy: { value: 0 } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.turnUnholy.value', '1', overrides)
+
+    expect(actor.system.skills.turnUnholy.value).toEqual(1)
+    expect(overrides['system.skills.turnUnholy.value']).toEqual(1)
+  })
+
+  test('_applyAddEffect with negative delta on skill value', () => {
+    const actor = new DCCActor()
+    actor.system.skills = { sneakSilently: { value: '+1' } }
+    const overrides = {}
+
+    actor._applyAddEffect('system.skills.sneakSilently.value', '-2', overrides)
+
+    expect(actor.system.skills.sneakSilently.value).toEqual(-1)
+    expect(overrides['system.skills.sneakSilently.value']).toEqual(-1)
   })
 })
 

@@ -257,6 +257,11 @@ async function createActors (type, folderId, actorData) {
       }
     }
 
+    // Try to match and apply a birth augur active effect
+    if (type === 'Player' && parsedCharacter['details.birthAugur']) {
+      await _applyBirthAugurEffect(actor, parsedCharacter['details.birthAugur'])
+    }
+
     // Link Actor Data by Default
     if (type === 'Player') {
       actor.updateSource({ prototypeToken: { actorLink: true } })
@@ -305,6 +310,41 @@ function onRenderActorDirectory (app, html) {
 
   // Append the button to the footer
   footer.appendChild(button)
+}
+
+/**
+ * Try to match a birth augur string and apply the corresponding active effect
+ * Also extracts and sets the birthAugurLuckMod on the actor
+ * @param {Actor} actor - The actor to apply the effect to
+ * @param {string} birthAugurText - The birth augur text (e.g. "Harsh winter (All attack rolls) (+2)")
+ */
+async function _applyBirthAugurEffect (actor, birthAugurText) {
+  // Extract the luck modifier from the text (e.g. "(+2)" or "(-1)" at the end)
+  const modMatch = birthAugurText.match(/\(([+-]?\d+)\)\s*$/)
+  if (modMatch) {
+    await actor.update({ 'system.details.birthAugurLuckMod': parseInt(modMatch[1]) || 0 })
+  }
+
+  // Extract the augur name (everything before the first parenthetical)
+  const augurName = birthAugurText.replace(/\s*\(.*$/, '').trim().toLowerCase()
+  if (!augurName) return
+
+  // Look up the birth augur effects compendium
+  const packName = CONFIG.DCC.birthAugurEffectsPack
+  const pack = game.packs.get(packName)
+  if (!pack) return
+
+  // Find a matching effect by checking if the effect name starts with the augur name
+  const match = pack.index.find(entry =>
+    entry.name.toLowerCase().startsWith(augurName)
+  )
+  if (!match) return
+
+  // Get the full effect document and apply it to the actor
+  const effectDoc = await pack.getDocument(match._id)
+  const effectData = effectDoc.toObject()
+  delete effectData._id
+  await actor.createEmbeddedDocuments('ActiveEffect', [effectData])
 }
 
 export default { onRenderActorDirectory, createActors }

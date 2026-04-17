@@ -235,6 +235,14 @@
         <input id="system.abilities.{{id}}.max" style="grid-area: 3/2"
                name="system.abilities.{{id}}.max" value="{{ability.max}}" size="2"
                data-dtype="Number" placeholder="10">
+        {{#if isLuck}}
+        <label for="system.details.birthAugurLuckMod" style="grid-area: 4/1"
+               data-tooltip="{{localize 'DCC.BirthAugurLuckModHint'}}">{{localize "DCC.BirthAugurLuckMod"}}:</label>
+        <input id="system.details.birthAugurLuckMod" style="grid-area: 4/2"
+               name="system.details.birthAugurLuckMod" value="{{numberFormat @root.system.details.birthAugurLuckMod decimals=0 sign=true}}"
+               size="3" data-dtype="Number" placeholder="0"
+               data-tooltip="{{localize 'DCC.BirthAugurLuckModHint'}}">
+        {{/if}}
       </div>
     {{/inline}}
 
@@ -262,6 +270,14 @@
                value="{{system.details.attackHitBonus.melee.value}}" title="{{localize 'DCC.MeleeAttackHint'}}"
                {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
         >
+        {{#if attackBonusEffects.meleeHit.length}}
+        <div class="attack-bonus-effects">
+          {{#each attackBonusEffects.meleeHit}}
+          <img src="{{this.img}}" class="attack-bonus-effect-icon"
+               data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+          {{/each}}
+        </div>
+        {{/if}}
       </div>
       <div class="box-border grid-tpl-max mb-10">
         <label for="system.details.attackDamageBonus.melee.value" class="box-title" title="{{localize 'DCC.MeleeDamageHint'}}"
@@ -272,6 +288,14 @@
                value="{{system.details.attackDamageBonus.melee.value}}"
                {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
         >
+        {{#if attackBonusEffects.meleeDamage.length}}
+        <div class="attack-bonus-effects">
+          {{#each attackBonusEffects.meleeDamage}}
+          <img src="{{this.img}}" class="attack-bonus-effect-icon"
+               data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+          {{/each}}
+        </div>
+        {{/if}}
       </div>
       {{!-- Missile Attack Values --}}
       <div class="box-border grid-tpl-max mb-11">
@@ -283,6 +307,14 @@
                value="{{system.details.attackHitBonus.missile.value}}"
                {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
         >
+        {{#if attackBonusEffects.missileHit.length}}
+        <div class="attack-bonus-effects">
+          {{#each attackBonusEffects.missileHit}}
+          <img src="{{this.img}}" class="attack-bonus-effect-icon"
+               data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+          {{/each}}
+        </div>
+        {{/if}}
       </div>
       <div class="box-border grid-tpl-max mb-11">
         <label for="system.details.attackDamageBonus.missile.value" class="box-title" title="{{localize 'DCC.MissileDamageHint'}}"
@@ -293,6 +325,14 @@
                value="{{system.details.attackDamageBonus.missile.value}}"
                {{#if system.config.computeMeleeAndMissileAttackAndDamage}}readonly{{/if}}
         >
+        {{#if attackBonusEffects.missileDamage.length}}
+        <div class="attack-bonus-effects">
+          {{#each attackBonusEffects.missileDamage}}
+          <img src="{{this.img}}" class="attack-bonus-effect-icon"
+               data-tooltip="{{this.name}}: {{this.value}}" alt="{{this.name}}">
+          {{/each}}
+        </div>
+        {{/if}}
       </div>
     </div>
 
@@ -341,7 +381,7 @@
     {{!-- Lucky Roll --}}
     <div class="lucky-roll">
       <label for="system.details.birthAugur" class="box-title">{{localize "DCC.LuckyRoll"}}</label>
-      <textarea id="system.details.birthAugur" name="system.details.birthAugur" rows="4">{{system.details.birthAugur}}</textarea>
+      <textarea id="system.details.birthAugur" name="system.details.birthAugur" rows="5">{{system.details.birthAugur}}</textarea>
     </div>
 
     {{!-- Row separators --}}

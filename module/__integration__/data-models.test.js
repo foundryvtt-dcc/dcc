@@ -322,28 +322,14 @@ describe('Data Migration (real Foundry migration pipeline)', () => {
 // ============================================================================
 
 describe('Real foundry.utils behavior', () => {
-  test('mergeObject handles deletion keys with performDeletions', () => {
-    // v14 renamed performDeletions to applyOperators and '-=key' creates ForcedDeletion operators
-    // v13 uses performDeletions: true to delete '-=key' entries
-    const original1 = { a: 1, b: 2, c: 3 }
-    const withoutFlag = foundry.utils.mergeObject(original1, { '-=b': null })
-    expect(withoutFlag.a).toBe(1)
-    expect(withoutFlag.c).toBe(3)
-    // v13: b preserved as 2, '-=b' added as literal key
-    // v14: '-=b' migrated to ForcedDeletion operator on key 'b'
-    if (typeof withoutFlag.b === 'number') {
-      expect(withoutFlag.b).toBe(2) // v13 behavior
-    } else {
-      expect(withoutFlag.b.constructor.name).toBe('ForcedDeletion') // v14 behavior
-    }
-
-    // Use applyOperators (v14) or performDeletions (v13) — both work in v14 via compat shim
-    const original2 = { a: 1, b: 2, c: 3 }
-    const withFlag = foundry.utils.mergeObject(original2, { '-=b': null }, { applyOperators: true, performDeletions: true })
-    expect(withFlag.a).toBe(1)
-    expect(withFlag.c).toBe(3)
-    // b should be fully deleted in both versions
-    expect(withFlag.b).toBeUndefined()
+  test('mergeObject handles deletion keys with applyOperators', () => {
+    // v14 uses applyOperators and ForcedDeletion operator
+    const { ForcedDeletion } = foundry.data.operators
+    const original = { a: 1, b: 2, c: 3 }
+    const result = foundry.utils.mergeObject(original, { b: new ForcedDeletion() }, { applyOperators: true })
+    expect(result.a).toBe(1)
+    expect(result.c).toBe(3)
+    expect(result.b).toBeUndefined()
   })
 
   test('mergeObject handles dot-notation keys', () => {
@@ -407,9 +393,9 @@ describe('Real foundry.utils behavior', () => {
     expect(clone.a.b).toEqual([1, 2, 3, 4])
   })
 
-  test('duplicate creates JSON-safe deep copy', () => {
+  test('deepClone creates deep copy', () => {
     const original = { a: 1, b: { c: 2 } }
-    const copy = foundry.utils.duplicate(original)
+    const copy = foundry.utils.deepClone(original)
     copy.b.c = 99
     expect(original.b.c).toBe(2)
   })
@@ -462,27 +448,22 @@ describe('Real CONST values', () => {
     expect(CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER).toBe(3)
   })
 
-  test('DICE_ROLL_MODES has expected values', () => {
-    expect(CONST.DICE_ROLL_MODES.PUBLIC).toBe('publicroll')
-    expect(CONST.DICE_ROLL_MODES.PRIVATE).toBe('gmroll')
-    expect(CONST.DICE_ROLL_MODES.BLIND).toBe('blindroll')
-    expect(CONST.DICE_ROLL_MODES.SELF).toBe('selfroll')
-  })
-
   test('CHAT_MESSAGE_STYLES has expected values', () => {
+    // Note: CONST.DICE_ROLL_MODES is deprecated in V14 (removed V16)
+    // Use CONFIG.ChatMessage.modes at runtime instead
     expect(CONST.CHAT_MESSAGE_STYLES.OTHER).toBe(0)
     expect(CONST.CHAT_MESSAGE_STYLES.OOC).toBe(1)
     expect(CONST.CHAT_MESSAGE_STYLES.IC).toBe(2)
     expect(CONST.CHAT_MESSAGE_STYLES.EMOTE).toBe(3)
   })
 
-  test('ACTIVE_EFFECT_MODES has expected values', () => {
-    expect(CONST.ACTIVE_EFFECT_MODES.CUSTOM).toBe(0)
-    expect(CONST.ACTIVE_EFFECT_MODES.MULTIPLY).toBe(1)
-    expect(CONST.ACTIVE_EFFECT_MODES.ADD).toBe(2)
-    expect(CONST.ACTIVE_EFFECT_MODES.DOWNGRADE).toBe(3)
-    expect(CONST.ACTIVE_EFFECT_MODES.UPGRADE).toBe(4)
-    expect(CONST.ACTIVE_EFFECT_MODES.OVERRIDE).toBe(5)
+  test('ACTIVE_EFFECT_CHANGE_TYPES has expected values with lowercase keys', () => {
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.custom).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.multiply).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.add).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.downgrade).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.upgrade).toBeDefined()
+    expect(CONST.ACTIVE_EFFECT_CHANGE_TYPES.override).toBeDefined()
   })
 })
 

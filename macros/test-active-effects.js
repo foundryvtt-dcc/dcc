@@ -1,4 +1,4 @@
-/* global game, canvas, ui, CONST, Dialog */
+/* global game, canvas, ui, Dialog */
 
 /**
  * Test Macro for DCC Active Effects
@@ -14,17 +14,17 @@ if (!actor) {
 // Example 1: Create a temporary "-2 to next attack" effect
   async function applyAttackPenalty () {
     const effectData = {
-      label: 'Attack Penalty',
-      icon: 'icons/svg/downgrade.svg',
+      name: 'Attack Penalty',
+      img: 'icons/svg/downgrade.svg',
       changes: [
         {
           key: 'system.details.attackHitBonus.melee.adjustment',
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: 'add',
           value: -2
         },
         {
           key: 'system.details.attackHitBonus.missile.adjustment',
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: 'add',
           value: -2
         }
       ],
@@ -46,12 +46,12 @@ if (!actor) {
   // Example 2: Create a strength bonus effect (as if from a magic item)
   async function applyStrengthBonus () {
     const effectData = {
-      label: 'Strength Enhancement',
-      icon: 'icons/magic/life/heart-glowing-red.webp',
+      name: 'Strength Enhancement',
+      img: 'icons/magic/life/heart-glowing-red.webp',
       changes: [
         {
           key: 'system.abilities.str.value',
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: 'add',
           value: 1
         }
       ],
@@ -70,12 +70,12 @@ if (!actor) {
   // Example 3: Apply an AC bonus
   async function applyACBonus () {
     const effectData = {
-      label: 'Shield of Faith',
-      icon: 'icons/magic/defensive/shield-barrier-blue.webp',
+      name: 'Shield of Faith',
+      img: 'icons/magic/defensive/shield-barrier-blue.webp',
       changes: [
         {
           key: 'system.attributes.ac.otherMod',
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: 'add',
           value: 2
         }
       ],

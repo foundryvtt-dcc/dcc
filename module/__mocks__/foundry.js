@@ -613,7 +613,7 @@ class DocumentSheetV2Mock {
 
     // Merge additional update data if provided
     if (updateData) {
-      // In real Foundry: foundry.utils.mergeObject with performDeletions
+      // In real Foundry: foundry.utils.mergeObject with applyOperators
       Object.assign(submitData, updateData)
     }
 
@@ -1255,7 +1255,7 @@ global.ActiveEffect = ActiveEffectMock
  */
 class ChatMessageMock {
   static getSpeaker = vi.fn(({ scene, actor, token, alias } = {}) => { return actor })
-  static applyRollMode = vi.fn()
+  static applyMode = vi.fn()
 
   static create (data, options = {}) { if (data) { this.data = data } }
 
@@ -1282,27 +1282,22 @@ global.CONFIG = {
 // Enhanced CONST to include more Foundry constants
 global.CONST = {
   CHAT_MESSAGE_STYLES: {
-    EMOTE: 'emote',
-    IC: 'ic',
-    OOC: 'ooc'
-  },
-  DICE_ROLL_MODES: {
-    PUBLIC: 'roll',
-    PRIVATE: 'gmroll',
-    BLIND: 'blindroll',
-    SELF: 'selfroll'
+    OTHER: 0,
+    OOC: 1,
+    IC: 2,
+    EMOTE: 3
   },
   ENTITY_TYPES: {
     ACTOR: 'Actor',
     ITEM: 'Item'
   },
-  ACTIVE_EFFECT_MODES: {
-    CUSTOM: 0,
-    MULTIPLY: 1,
-    ADD: 2,
-    DOWNGRADE: 3,
-    UPGRADE: 4,
-    OVERRIDE: 5
+  ACTIVE_EFFECT_CHANGE_TYPES: {
+    custom: 0,
+    multiply: 1,
+    add: 2,
+    downgrade: 3,
+    upgrade: 4,
+    override: 5
   }
 }
 
@@ -1509,7 +1504,32 @@ class DragDropMock {
 
 // Namespace for Foundry helper functions
 global.foundry = {
-  utils: {},
+  utils: {
+    // Get a property from an object using dot notation
+    getProperty (object, key) {
+      if (!key) return undefined
+      const parts = key.split('.')
+      let result = object
+      for (const part of parts) {
+        if (result == null) return undefined
+        result = result[part]
+      }
+      return result
+    },
+    // Set a property on an object using dot notation
+    setProperty (object, key, value) {
+      if (!key) return false
+      const parts = key.split('.')
+      let target = object
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i]
+        if (target[part] == null) target[part] = {}
+        target = target[part]
+      }
+      target[parts[parts.length - 1]] = value
+      return true
+    }
+  },
   applications: {
     api: {
       // HandlebarsApplicationMixin - provides Handlebars template rendering capabilities
@@ -1649,10 +1669,13 @@ global.foundry.utils.expandObject = function (obj, _d = 0) {
   return expanded
 }
 
-// Foundry's implementation of duplicate
-global.foundry.utils.duplicate = function (original) {
+// Foundry's implementation of deepClone
+global.foundry.utils.deepClone = function (original) {
   return JSON.parse(JSON.stringify(original))
 }
+
+// Foundry's legacy duplicate (deprecated in V14, removed in V16)
+global.foundry.utils.duplicate = global.foundry.utils.deepClone
 
 // Foundry's implementation of getProperty
 global.foundry.utils.getProperty = function (object, key) {
@@ -1703,6 +1726,15 @@ global.foundry.utils.setProperty = function (object, key, value) {
 }
 
 // Foundry's implementation of mergeObject
+// Mock ForcedDeletion operator (matches foundry.data.operators.ForcedDeletion)
+class MockForcedDeletion {
+  constructor () {
+    this._isForcedDeletion = true
+  }
+}
+global.foundry.data = global.foundry.data || {}
+global.foundry.data.operators = { ForcedDeletion: MockForcedDeletion }
+
 global.foundry.utils.mergeObject = function (original, other = {}, {
   insertKeys = true,
   insertValues = true,
@@ -1710,7 +1742,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   recursive = true,
   inplace = true,
   enforceTypes = false,
-  performDeletions = false
+  applyOperators = false
 } = {}, _d = 0) {
   other = other || {}
   if (!(original instanceof Object) || !(other instanceof Object)) {
@@ -1719,21 +1751,20 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
   const depth = _d + 1
 
   // Maybe copy the original data at depth 0
-  if (!inplace && (_d === 0)) original = foundry.utils.duplicate(original)
+  if (!inplace && (_d === 0)) original = foundry.utils.deepClone(original)
 
   // Enforce object expansion at depth 0
   if ((_d === 0) && Object.keys(original).some(k => /\./.test(k))) original = global.foundry.utils.expandObject(original)
   if ((_d === 0) && Object.keys(other).some(k => /\./.test(k))) other = global.foundry.utils.expandObject(other)
 
   // Iterate over the other object
-  for (let [k, v] of Object.entries(other)) {
+  for (const [k, v] of Object.entries(other)) {
     const tv = global.getType(v)
 
-    // Prepare to delete - requires performDeletions flag (real Foundry v13 behavior)
+    // Handle ForcedDeletion operator (v14)
     let toDelete = false
-    if (k.startsWith('-=') && performDeletions) {
-      k = k.slice(2)
-      toDelete = (v === null)
+    if (applyOperators && v instanceof MockForcedDeletion) {
+      toDelete = true
     }
 
     // Get the existing object
@@ -1758,7 +1789,7 @@ global.foundry.utils.mergeObject = function (original, other = {}, {
           overwrite,
           inplace: true,
           enforceTypes,
-          performDeletions
+          applyOperators
         }, depth)
 
         // 1.2 - Remove an existing key

@@ -886,7 +886,7 @@ class DCCItem extends Item {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.ResolveValueEmote', {
         itemName: this.name,
         pp: valueRolls.pp,

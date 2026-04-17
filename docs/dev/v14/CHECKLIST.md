@@ -2,9 +2,9 @@
 
 This document provides a checklist for preparing for FoundryVTT V14.
 
-**Note**: V14 is in development. Update this checklist as new information becomes available.
+**Current Status**: Stable 1 (Build 359)
 
-**Last Updated**: December 2024
+**Last Updated**: April 2026
 
 ## Prerequisites
 
@@ -84,9 +84,9 @@ This document provides a checklist for preparing for FoundryVTT V14.
 ### Before V14
 
 - [ ] Audit effect origins for valid UUIDs
-- [ ] Review effect change modes used
+- [x] Review effect change modes used (migrated to string types in actor.js)
 - [ ] Update any custom effect value parsing
-- [ ] Consider creating effects compendium
+- [x] Create effects compendium (48 effects in packs/dcc-effects)
 
 ## Breaking Changes
 
@@ -111,6 +111,35 @@ This document provides a checklist for preparing for FoundryVTT V14.
 - [x] Replace `RegionPolygonTree` → `foundry.data.PolygonTree` (not used)
 - [x] Replace `RegionShape` usage with BaseShapeData mixins (not used)
 - [x] Update `foundry.prosemirror.defaultPlugins` → `ProseMirrorEditor.buildDefaultPlugins()` (not used)
+- [x] Update `foundry.utils.objectsEqual` → `foundry.utils.equals()` (not used directly)
+
+### New in Developer 1
+
+- [x] Check for TextureData `offsetX/Y` and `rotation` usage (not used)
+- [x] Check for `Macro#author` null handling (not used)
+- [x] Check for Wall `isDoor`/`isOpen` on placeable (should use WallDocument)
+- [x] Check for Boolean values in Rolls (auto-converted to numbers)
+
+### New in User Testing 2 (Build 357)
+
+- [x] Check for `TokenFindMovementPathOptions#ignoreWalls/ignoreCost/history` usage (not used - replaced by `constrainOptions`)
+- [x] Check for token dimension label assumptions (renamed to Size X/Y/Z)
+
+### New in User Testing 3 (Build 358)
+
+- [ ] Check custom `SceneControlTool` registrations in `dcc.js:270-294` (Fleeting Luck and Spell Duel buttons use `button: true` - verify on V14 Stable whether button-type tools are exempt from new `interaction`, `control`, `creation` required properties)
+- [x] V14 requires Node.js 24 (note: mutually exclusive with V13)
+
+### V14 Deprecations (Removed in V16)
+
+- [x] Replace `CONST.DICE_ROLL_MODES` with `CONFIG.ChatMessage.modes` (production code unaffected, tests fixed)
+- [x] Replace `performDeletions` with `applyOperators` in `mergeObject` calls (mocks and tests fixed)
+- [x] Replace `-=key` deletion syntax with `ForcedDeletion` operator (mocks and tests fixed)
+- [x] Replace `foundry.utils.duplicate()` with `foundry.utils.deepClone()` (7 production calls: actor-sheet.js, spell-result.js, party-sheet.js, migrations.js)
+- [x] Replace `ChatMessage.applyRollMode` with `ChatMessage.applyMode` (actor.js, spell-result.js)
+- [x] Clean up stale `applyRollMode` mock in `module/__mocks__/foundry.js` (removed - `applyMode` mock remains)
+- [x] Replace `game.settings.get('core', 'rollMode')` with `game.settings.get('core', 'messageMode')` (actor.js)
+- [x] Replace `rollMode` option with `messageMode` in `Roll.toMessage()` calls (spell-result.js)
 
 ## Editor Migration
 
@@ -150,16 +179,37 @@ This document provides a checklist for preparing for FoundryVTT V14.
 
 ## Pre-Release Testing
 
-When V14 beta is available:
+### Prototype/Developer/User Testing Builds
 
-- [ ] Test system on V14 beta
-- [ ] Report any issues to Foundry team
-- [ ] Address any new breaking changes
-- [ ] Final verification before V14 stable
+- [x] Test system on V14 Prototype 1 (Build 349)
+- [x] Test system on V14 Developer 1 (Build 354)
+- [x] Test system on V14 User Testing 2 (Build 357)
+- [x] Test system on V14 User Testing 3 (Build 358)
+- [x] Report any issues to Foundry team
+- [x] Monitor future releases for new breaking changes
+
+### V14 Stable Release
+
+- [x] V14 Stable 1 (Build 359) released April 1, 2026
+- [ ] Test system on V14 Stable 1 (Build 359)
+- [ ] Address any new breaking changes from stable
+- [ ] Final verification on stable
+- [ ] Update minimum/verified compatibility in system.json
+
+## Scene Levels (New Feature)
+
+- [ ] Evaluate Scene Levels support for DCC
+- [ ] Consider multi-level dungeon support
+- [ ] Test token behavior across levels
 
 ## Resources
 
 - [FoundryVTT Release Notes](https://foundryvtt.com/releases/)
+- [V14 Prototype 1](https://foundryvtt.com/releases/14.349)
+- [V14 Developer 1](https://foundryvtt.com/releases/14.354)
+- [V14 User Testing 2](https://foundryvtt.com/releases/14.357)
+- [V14 User Testing 3](https://foundryvtt.com/releases/14.358)
+- [V14 Stable 1](https://foundryvtt.com/releases/14.359)
 - [API Migration Guides](https://foundryvtt.com/article/migration/)
 - [System Data Models](https://foundryvtt.com/article/system-data-models/)
 - [GitHub Issues](https://github.com/foundryvtt/foundryvtt/issues)

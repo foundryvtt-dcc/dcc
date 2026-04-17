@@ -163,6 +163,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     foundry.utils.mergeObject(context, {
       abilityEffects: this.#prepareAbilityEffects(),
+      attackBonusEffects: this.#prepareAttackBonusEffects(),
       saveEffects: this.#prepareSaveEffects(),
       attributeEffects: this.#prepareAttributeEffects(),
       actor: this.options.document,
@@ -698,7 +699,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
                 name: effect.name,
                 img: effect.img || 'icons/svg/aura.svg',
                 value: change.value,
-                mode: change.mode
+                type: change.type
               })
             }
           }
@@ -707,6 +708,78 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 
     return abilityEffects
+  }
+
+  /**
+   * Collect active effects that modify attack hit/damage bonuses
+   * Returns an object keyed by bonus type with arrays of effect info
+   */
+  #prepareAttackBonusEffects () {
+    const attackBonusEffects = {
+      meleeHit: [],
+      meleeDamage: [],
+      missileHit: [],
+      missileDamage: []
+    }
+
+    const actor = this.options.document
+
+    // Collect all active effects (from actor and transferred from items)
+    const allEffects = []
+
+    // Effects directly on actor
+    for (const effect of actor.effects) {
+      if (!effect.disabled && !effect.isSuppressed) {
+        allEffects.push(effect)
+      }
+    }
+
+    // Effects from equipped items that transfer
+    for (const item of actor.items) {
+      const isEquipped = item.system?.equipped ?? true
+      if (isEquipped) {
+        for (const effect of item.effects) {
+          if (!effect.disabled && !effect.isSuppressed && effect.transfer) {
+            allEffects.push(effect)
+          }
+        }
+      }
+    }
+
+    // Map from regex capture groups to effect keys
+    const keyMap = {
+      'attackHitBonus.melee': 'meleeHit',
+      'attackHitBonus.missile': 'missileHit',
+      'attackDamageBonus.melee': 'meleeDamage',
+      'attackDamageBonus.missile': 'missileDamage'
+    }
+
+    // Check each effect for attack bonus modifications
+    for (const effect of allEffects) {
+      if (!effect.changes) continue
+
+      for (const change of effect.changes) {
+        const key = change.key
+        const match = key.match(/^system\.details\.(attackHitBonus|attackDamageBonus)\.(melee|missile)\.(adjustment|value)$/)
+        if (match) {
+          const effectKey = keyMap[`${match[1]}.${match[2]}`]
+          if (effectKey) {
+            const existing = attackBonusEffects[effectKey].find(e => e.id === effect.id)
+            if (!existing) {
+              attackBonusEffects[effectKey].push({
+                id: effect.id,
+                name: effect.name,
+                img: effect.img || 'icons/svg/aura.svg',
+                value: change.value,
+                type: change.type
+              })
+            }
+          }
+        }
+      }
+    }
+
+    return attackBonusEffects
   }
 
   /**
@@ -763,7 +836,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
                 name: effect.name,
                 img: effect.img || 'icons/svg/aura.svg',
                 value: change.value,
-                mode: change.mode
+                type: change.type
               })
             }
           }
@@ -823,7 +896,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
               name: effect.name,
               img: effect.img || 'icons/svg/aura.svg',
               value: change.value,
-              mode: change.mode
+              type: change.type
             })
           }
         }
@@ -836,7 +909,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
               name: effect.name,
               img: effect.img || 'icons/svg/aura.svg',
               value: change.value,
-              mode: change.mode
+              type: change.type
             })
           }
         }
@@ -880,8 +953,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #itemCreate (event, target) {
     // Get the type of item to create.
     const type = target.dataset.type
-    // Grab any data associated with this control.
-    const system = foundry.utils.duplicate(target.dataset)
+    // Grab any data associated with this control. Spread DOMStringMap into a
+    // plain object — deepClone returns non-plain objects by reference, which
+    // causes SchemaField._cast to discard all values during DataModel cleaning.
+    const system = { ...target.dataset }
     // Initialize a default name.
     let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
     if (this.options.document.type === 'NPC' && type === 'weapon') {
@@ -1521,39 +1596,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     this.options.document.rollWeaponAttack(itemId, options)
   }
 
-  /**
-   * Handle creating a new Owned Item for the actor using initial data defined in the HTML dataset
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onItemCreate (event) {
-    event.preventDefault()
-    const header = event.currentTarget
-    // Get the type of item to create.
-    const type = header.dataset.type
-    // Grab any data associated with this control.
-    const system = foundry.utils.duplicate(header.dataset)
-    // Initialize a default name.
-    let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
-    if (this.options.document.type === 'NPC' && type === 'weapon') {
-      name = game.i18n.localize('DCC.NewAttack')
-    }
-    // Prepare the item object.
-    const itemData = {
-      name,
-      img: EntityImages.imageForItem(type),
-      type,
-      system
-    }
-    // Remove the type from the dataset since it's in the itemData.type prop.
-    delete itemData.system.type
-
-    // Finally, create the item!
-    return this.options.document.createEmbeddedDocuments('Item', [itemData])
-  }
-
-  /* -------------------------------------------- */
-
   /** @override */
   _processFormData (event, form, formData) {
     // Extract the raw form data object BEFORE validation strips out items
@@ -1780,8 +1822,13 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const actor = this.options.document
     if (!actor.isOwner) return false
 
-    // Get the effect data
-    const effectData = data.data
+    // Get the effect - either from data.data or by resolving the UUID (for compendium drags)
+    let effectData = data.data
+    if (!effectData && data.uuid) {
+      const effect = await fromUuid(data.uuid)
+      if (!effect) return false
+      effectData = effect.toObject()
+    }
     if (!effectData) return false
 
     // Prepare the effect data for creation on the actor

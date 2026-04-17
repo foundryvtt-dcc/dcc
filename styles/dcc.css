@@ -484,7 +484,7 @@
   border-radius: 0;
   font-family: var(--system-data-font), serif;
   font-size: 12px;
-  height: 17px;
+  height: 20px;
   text-align: center;
 }
 .dcc select:focus {
@@ -2111,11 +2111,18 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   text-align: left;
   padding-top: 2px;
 }
-.dcc .character .combat-basics input,
-.dcc .character .combat-basics select {
+.dcc .character .combat-basics input {
   background: var(--system-input-background);
   font-size: 14px;
   height: 17px;
+  vertical-align: middle;
+  margin-right: 8px;
+  border: 0;
+}
+.dcc .character .combat-basics select {
+  background: var(--system-input-background);
+  font-size: 14px;
+  height: 20px;
   vertical-align: middle;
   margin-right: 8px;
   border: 0;
@@ -2137,8 +2144,10 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   text-align: left;
   padding-left: 3px;
 }
-.dcc .character .languages textarea,
-.dcc .character .lucky-roll textarea {
+.dcc .character .lucky-roll {
+  height: 79px;
+}
+.dcc .character .languages textarea {
   background: none;
   border: 0;
   font-family: var(--system-data-font), serif;
@@ -2146,12 +2155,20 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   grid-row: 2;
   height: 17px;
   min-height: 38px;
+}
+.dcc .character .lucky-roll textarea {
+  background: none;
+  border: 0;
+  font-family: var(--system-data-font), serif;
+  font-size: 12px;
+  grid-row: 2;
+  height: 17px;
+  min-height: 58px;
   overflow: hidden;
   padding: 2px 5px 2px 5px;
   resize: none;
   text-align: left;
 }
-.dcc .character .languages textarea:focus,
 .dcc .character .lucky-roll textarea:focus {
   box-shadow: none;
 }
@@ -2164,6 +2181,9 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   grid-template-columns: subgrid;
   grid-template-rows: 69px 69px;
 }
+.dcc .character .melee-missile-attack-damage .box-border {
+  position: relative;
+}
 .dcc .character .melee-missile-attack-damage input {
   border: 0;
   font-size: 14px;
@@ -2175,6 +2195,25 @@ body.theme-dark .dcc.sheet .sheet-tabs.responsive-tabs .tabs-overflow .tabs-over
   padding-bottom: 2px;
   height: 32px;
   padding-top: 1px;
+}
+.dcc .character .melee-missile-attack-damage .attack-bonus-effects {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dcc .character .melee-missile-attack-damage .attack-bonus-effects .attack-bonus-effect-icon {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 2px;
+  cursor: help;
+  opacity: 0.8;
+}
+.dcc .character .melee-missile-attack-damage .attack-bonus-effects .attack-bonus-effect-icon:hover {
+  opacity: 1;
 }
 .dcc .character .name-and-level {
   column-gap: 12px;

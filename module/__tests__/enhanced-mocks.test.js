@@ -41,8 +41,8 @@ describe('Enhanced Foundry Mocks', () => {
   })
 
   test('Enhanced CONST provides more realistic Foundry constants', () => {
-    expect(global.CONST.DICE_ROLL_MODES.PUBLIC).toBe('roll')
-    expect(global.CONST.CHAT_MESSAGE_STYLES.IC).toBe('ic')
+    expect(global.CONST.CHAT_MESSAGE_STYLES.IC).toBe(2)
+    expect(global.CONST.CHAT_MESSAGE_STYLES.OOC).toBe(1)
     expect(global.CONST.ENTITY_TYPES.ACTOR).toBe('Actor')
   })
 

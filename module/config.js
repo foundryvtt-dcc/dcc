@@ -285,7 +285,10 @@ DCC.activeEffectKeys = {
   'system.class.spellCheckOtherMod': 'DCC.SpellCheckBonus',
   'system.class.luckDie': 'DCC.LuckDie',
   'system.attributes.critical.die': 'DCC.CriticalDie',
-  'system.attributes.fumble.die': 'DCC.FumbleDie'
+  'system.attributes.fumble.die': 'DCC.FumbleDie',
+
+  // Dice Chain Adjustable (add/subtract auto-detects dice expressions)
+  'system.attributes.actionDice.value': 'DCC.ActionDie'
 }
 
 // Dice Types for Dice Configuration Dialog
@@ -600,6 +603,11 @@ DCC.DICE_CHAIN = [
   3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 30
 ]
 
+// Custom effect change types beyond the standard Foundry types
+DCC.effectChangeTypes = {
+  DICE_CHAIN: 'diceChain'
+}
+
 // Critical Hit and Disapproval Compendiums, Fumble table, and Mercurial Magic table
 // Updated at runtime from settings
 DCC.criticalHitPacks = null
@@ -728,6 +736,9 @@ DCC.actorImporterItemPacks = [
   'dcc-core-book.dcc-core-spells-cleric-5',
   'dcc-core-book.dcc-core-spells-patron'
 ]
+
+// Compendium pack for birth augur active effects used by the actor importer
+DCC.birthAugurEffectsPack = 'dcc-core-book.dcc-core-birth-augur-effects'
 
 // Name re-mappings for the actor importer
 DCC.actorImporterNameMap = {

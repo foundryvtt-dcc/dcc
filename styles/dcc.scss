@@ -323,7 +323,7 @@
     border-radius: 0;
     font-family: var(--system-data-font), serif;
     font-size: 12px;
-    height: 17px;
+    height: 20px;
     text-align: center;
 
     &:focus {
@@ -2245,11 +2245,19 @@ a.inline-roll {
       padding-top: 2px;
     }
 
-    input,
-    select {
+    input {
       background: var(--system-input-background);
       font-size: 14px;
       height: 17px;
+      vertical-align: middle;
+      margin-right: 8px;
+      border: 0;
+    }
+
+    select {
+      background: var(--system-input-background);
+      font-size: 14px;
+      height: 20px;
       vertical-align: middle;
       margin-right: 8px;
       border: 0;
@@ -2274,8 +2282,11 @@ a.inline-roll {
     }
   }
 
-  .languages textarea,
-  .lucky-roll textarea, {
+  .lucky-roll {
+    height: 79px;
+  }
+
+  .languages textarea {
     background: none;
     border: 0;
     font-family: var(--system-data-font), serif;
@@ -2283,6 +2294,16 @@ a.inline-roll {
     grid-row: 2;
     height: 17px;
     min-height: 38px;
+  }
+
+  .lucky-roll textarea {
+    background: none;
+    border: 0;
+    font-family: var(--system-data-font), serif;
+    font-size: 12px;
+    grid-row: 2;
+    height: 17px;
+    min-height: 58px;
     overflow: hidden;
     padding: 2px 5px 2px 5px;
     resize: none;
@@ -2302,6 +2323,10 @@ a.inline-roll {
     grid-template-columns: subgrid;
     grid-template-rows: 69px 69px;
 
+    .box-border {
+      position: relative;
+    }
+
     input {
       border: 0;
       font-size: 14px;
@@ -2314,6 +2339,28 @@ a.inline-roll {
       padding-bottom: 2px;
       height: 32px;
       padding-top: 1px;
+    }
+
+    .attack-bonus-effects {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .attack-bonus-effect-icon {
+        width: 14px;
+        height: 14px;
+        border: 0;
+        border-radius: 2px;
+        cursor: help;
+        opacity: 0.8;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
     }
   }
 

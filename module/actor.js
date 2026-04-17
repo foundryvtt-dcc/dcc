@@ -4,6 +4,7 @@
 import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult, getNPCFumbleTableResult, getFumbleTableNameFromCritTableName, addDamageFlavorToRolls } from './utilities.js'
 import DCCActiveEffect from './active-effect.js'
 import DCCActorLevelChange from './actor-level-change.js'
+import DiceChain from './dice-chain.js'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -195,7 +196,12 @@ class DCCActor extends Actor {
       }
       if (config.computeSpeed) {
         this.system.attributes.ac.speedPenalty = speedPenalty
-        this.system.attributes.speed.value = baseSpeed + speedPenalty
+        // Preserve any modifier already applied to value (e.g. by an active
+        // effect targeting system.attributes.speed.value) — without this,
+        // recomputing from base would clobber speed-modifying effects.
+        const currentValue = parseInt(this.system.attributes.speed.value)
+        const valueModifier = isNaN(currentValue) ? 0 : currentValue - baseSpeed
+        this.system.attributes.speed.value = baseSpeed + speedPenalty + valueModifier
       }
     }
 
@@ -216,11 +222,18 @@ class DCCActor extends Actor {
    * Apply active effects to the actor
    * Collects effects from the actor and equipped items, then applies them
    * Called automatically by core Foundry prepareData
+   * @param {string} phase - The application phase ("initial" or "final") - v14 requirement
    */
-  applyActiveEffects () {
+  applyActiveEffects (phase = 'initial') {
+    // V14 calls this method twice - once for each phase
+    // Only apply effects in the "initial" phase to prevent double application
+    if (phase !== 'initial') return
+
     // Note: Do NOT call super.applyActiveEffects() here
     // This custom implementation replaces the core behavior to handle equipped item effects
-    // Calling super would cause effects to be applied twice
+    // and DCC-specific change types (diceChain, subtract). Calling super would cause effects
+    // to be applied twice. DCCActiveEffect.apply() exists as a fallback for non-actor contexts
+    // (e.g. if core Foundry applies effects outside this method) but is not called here.
 
     // Track which fields are modified by effects so form submission can exclude them (#714)
     this.overrides = {}
@@ -246,11 +259,15 @@ class DCCActor extends Actor {
       }
     }
 
-    // Sort by mode: custom (0), multiply (1), add (2), downgrade (3), upgrade (4), override (5)
+    // Sort effects by type to apply them in the correct order
+    // Order: custom, multiply, add, subtract, downgrade, upgrade, override
+    const typeOrder = { custom: 0, multiply: 1, add: 2, subtract: 3, diceChain: 3, downgrade: 4, upgrade: 5, override: 6 }
     effects.sort((a, b) => {
-      const aMode = Math.min(...Array.from(a.changes || []).map(c => c.mode), 5)
-      const bMode = Math.min(...Array.from(b.changes || []).map(c => c.mode), 5)
-      return aMode - bMode
+      const aChanges = Array.from(a.changes || [])
+      const bChanges = Array.from(b.changes || [])
+      const aOrder = Math.min(...aChanges.map(c => typeOrder[c.type] ?? 6), 6)
+      const bOrder = Math.min(...bChanges.map(c => typeOrder[c.type] ?? 6), 6)
+      return aOrder - bOrder
     })
 
     for (const effect of effects) {
@@ -258,28 +275,50 @@ class DCCActor extends Actor {
 
       for (const change of effect.changes) {
         const key = change.key
-        const mode = change.mode || CONST.ACTIVE_EFFECT_MODES.ADD
+        const type = change.type || 'add'
 
+        // Handle different change types
         try {
           const value = this._resolveEffectValue(change.value)
-          switch (mode) {
-            case CONST.ACTIVE_EFFECT_MODES.CUSTOM:
+          switch (type) {
+            case 'custom':
+              // Custom mode - let modules handle this
               this._applyCustomEffect(key, value)
               break
-            case CONST.ACTIVE_EFFECT_MODES.ADD:
+
+            case 'add':
+              // Add numeric value
               this._applyAddEffect(key, value, overrides)
               break
-            case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
+
+            case 'subtract':
+              // Subtract numeric value
+              this._applySubtractEffect(key, value, overrides)
+              break
+
+            case 'multiply':
+              // Multiply by value
               this._applyMultiplyEffect(key, value, overrides)
               break
-            case CONST.ACTIVE_EFFECT_MODES.OVERRIDE:
+
+            case 'override':
+              // Override the value completely
               this._applyOverrideEffect(key, value, overrides)
               break
-            case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
+
+            case 'upgrade':
+              // Use the higher value
               this._applyUpgradeEffect(key, value, overrides)
               break
-            case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
+
+            case 'downgrade':
+              // Use the lower value
               this._applyDowngradeEffect(key, value, overrides)
+              break
+
+            case 'diceChain':
+              // DCC dice chain type - moves dice up/down the chain (e.g. d20 → d24)
+              this._applyAddEffect(key, value, overrides)
               break
           }
         } catch (err) {
@@ -309,19 +348,74 @@ class DCCActor extends Actor {
 
   /**
    * Apply an additive active effect
+   * Automatically detects dice expressions and uses dice chain logic
    * @private
    */
   _applyAddEffect (key, value, overrides) {
-    const current = foundry.utils.getProperty(this, key)
+    // Treat null/undefined as 0 for ADD operations (e.g. cleric spellCheckOtherMod starts as null)
+    const current = foundry.utils.getProperty(this, key) ?? 0
 
+    const currentStr = String(current)
+
+    // Check if the current value is a dice expression (contains 'd')
+    // If so, use dice chain logic instead of numeric addition
+    if (currentStr.includes('d')) {
+      const steps = parseInt(value)
+      if (isNaN(steps)) return
+
+      const newValue = DiceChain.bumpDie(currentStr, steps)
+      if (newValue !== currentStr) {
+        foundry.utils.setProperty(this, key, newValue)
+        overrides[key] = newValue
+      }
+      return
+    }
+
+    // Standard numeric addition
     const delta = Number(value)
     if (isNaN(delta)) return
 
-    // Treat null as 0 for ADD operations (e.g. cleric spellCheckOtherMod starts as null)
-    const currentNumber = Number(current ?? 0)
+    const currentNumber = Number(current)
     if (isNaN(currentNumber)) return
 
     const newValue = currentNumber + delta
+    foundry.utils.setProperty(this, key, newValue)
+    overrides[key] = newValue
+  }
+
+  /**
+   * Apply a subtractive active effect
+   * Automatically detects dice expressions and uses dice chain logic
+   * @private
+   */
+  _applySubtractEffect (key, value, overrides) {
+    const current = foundry.utils.getProperty(this, key) ?? 0
+
+    const currentStr = String(current)
+
+    // Check if the current value is a dice expression (contains 'd')
+    // If so, use dice chain logic (negative steps = move down the chain)
+    if (currentStr.includes('d')) {
+      const steps = parseInt(value)
+      if (isNaN(steps)) return
+
+      // Subtract = move down the chain (negative steps)
+      const newValue = DiceChain.bumpDie(currentStr, -steps)
+      if (newValue !== currentStr) {
+        foundry.utils.setProperty(this, key, newValue)
+        overrides[key] = newValue
+      }
+      return
+    }
+
+    // Standard numeric subtraction
+    const delta = Number(value)
+    if (isNaN(delta)) return
+
+    const currentNumber = Number(current)
+    if (isNaN(currentNumber)) return
+
+    const newValue = currentNumber - delta
     foundry.utils.setProperty(this, key, newValue)
     overrides[key] = newValue
   }
@@ -1394,7 +1488,7 @@ class DCCActor extends Actor {
    */
   async rollWeaponAttack (weaponId, options = {}) {
     const automateDamageFumblesCrits = game.settings.get('dcc', 'automateDamageFumblesCrits')
-    const rollMode = game.settings.get('core', 'rollMode')
+    const messageMode = game.settings.get('core', 'messageMode')
 
     // First try and find the item by id
     const weapon = this.items.find(i => i.id === weaponId)
@@ -1699,7 +1793,7 @@ class DCCActor extends Actor {
     messageData.content = await foundry.applications.handlebars.renderTemplate('systems/dcc/templates/chat-card-attack-result.html', { message: messageData })
 
     // Output the results
-    ChatMessage.applyRollMode(messageData, rollMode)
+    ChatMessage.applyMode(messageData, messageMode)
     ChatMessage.create(messageData)
   }
 
@@ -1965,10 +2059,10 @@ class DCCActor extends Actor {
           'dcc.isApplyDamage': true
         },
         content: game.i18n.format(locString, { damage: Math.abs(deltaHp) }),
-        type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+        style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
         sound: CONFIG.sounds.notification
       }
-      ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
+      ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
       await CONFIG.ChatMessage.documentClass.create(messageData)
     }
 
@@ -1996,11 +2090,11 @@ class DCCActor extends Actor {
     const messageData = {
       user: game.user.id,
       speaker,
-      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: locString,
       sound: CONFIG.sounds.notification
     }
-    ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
+    ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
     await CONFIG.ChatMessage.documentClass.create(messageData)
   }
 
@@ -2028,11 +2122,11 @@ class DCCActor extends Actor {
       flags: {
         'dcc.isDisapproval': true
       },
-      type: CONST.CHAT_MESSAGE_STYLES.EMOTE,
+      style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
       content: game.i18n.format('DCC.DisapprovalGained', { range: newRange }),
       sound: CONFIG.sounds.notification
     }
-    ChatMessage.applyRollMode(messageData, game.settings.get('core', 'rollMode'))
+    ChatMessage.applyMode(messageData, game.settings.get('core', 'messageMode'))
     await CONFIG.ChatMessage.documentClass.create(messageData)
   }
 

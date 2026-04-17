@@ -1582,7 +1582,7 @@ test('rollSkillCheck routes divineAid through processSpellCheck and applies +10 
   const originalGet = game.settings.get
   game.settings.get = vi.fn((module, key) => {
     if (module === 'dcc' && key === 'automateClericDisapproval') return true
-    if (module === 'core' && key === 'rollMode') return 'publicroll'
+    if (module === 'core' && key === 'messageMode') return 'public'
     return originalGet(module, key)
   })
 

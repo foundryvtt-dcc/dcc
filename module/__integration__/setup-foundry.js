@@ -119,6 +119,12 @@ const Collection = (await import(path.join(commonPath, 'utils', 'collection.mjs'
 // Data fields - schema definition and validation engine
 const fields = await import(path.join(commonPath, 'data', 'fields.mjs'))
 
+// Data operators - ForcedDeletion, ForcedReplacement (v14+)
+let operators = {}
+try {
+  operators = await import(path.join(commonPath, 'data', 'operators.mjs'))
+} catch { /* v13 doesn't have operators */ }
+
 // Abstract base classes - DataModel and TypeDataModel
 const DataModel = (await import(path.join(commonPath, 'abstract', 'data.mjs'))).default
 const TypeDataModel = (await import(path.join(commonPath, 'abstract', 'type-data.mjs'))).default
@@ -164,7 +170,7 @@ const game = {
 const CONFIG = {
   ...DCC,
   DCC,
-  ActiveEffect: { legacyTransferral: false }
+  ActiveEffect: {}
 }
 
 // ui mock
@@ -210,9 +216,10 @@ globalThis.foundry = {
     }),
     Collection
   },
-  // REAL: data field classes from Foundry source
+  // REAL: data field classes and operators from Foundry source
   data: {
-    fields
+    fields,
+    operators
   },
   // REAL: abstract base classes from Foundry source
   abstract: {

@@ -1,4 +1,4 @@
-/* global ActiveEffect, foundry, CONST */
+/* global ActiveEffect, foundry, CONFIG */
 
 import DiceChain from './dice-chain.js'
 
@@ -58,11 +58,12 @@ export default class DCCActiveEffect extends ActiveEffect {
     const current = foundry.utils.getProperty(actor, change.key)
     const ct = foundry.utils.getType(current)
 
-    // Handle dice chain adjustment: custom mode with value like "+1d" or "-2d"
-    if (change.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
-      const match = String(change.value).match(/^([+-]?\d+)[dD]$/)
-      if (match && ct === 'string' && String(current).includes('d')) {
-        const steps = parseInt(match[1])
+    // Handle dice chain adjustment type
+    // The value should be a number representing steps to move on the dice chain (e.g., 1, -2)
+    if (change.type === CONFIG.DCC.effectChangeTypes.DICE_CHAIN) {
+      // Only process if the current value looks like a dice expression
+      if (ct === 'string' && String(current).includes('d')) {
+        const steps = parseInt(change.value)
         if (!isNaN(steps)) {
           const newValue = DiceChain.bumpDie(current, steps)
           if (newValue !== current) {
@@ -70,39 +71,47 @@ export default class DCCActiveEffect extends ActiveEffect {
             return { [change.key]: newValue }
           }
         }
-        return {}
       }
+      return {}
     }
 
-    // Handle signed-number strings (thief skills, save bonuses, etc.)
-    // Stored as "+5", "-2", "0" but need numeric operations
+    // Handle string values that look like signed numbers (thief skills, save bonuses, etc.)
+    // These are stored as strings like "+5", "-2", "0" but need numeric operations
+    // V14 uses DataModel fields which don't call _applyAdd etc. for schema-defined fields
+    // We need to intercept here for numeric operations on string fields
+
+    // Check if it's a string that looks like a signed number (not a dice expression)
     if (ct === 'string' && !String(current).includes('d') && !String(change.value).includes('d')) {
       const currentNum = Number(current)
       const deltaNum = Number(change.value)
 
+      // If both can be parsed as numbers, handle numeric operations
       if (!isNaN(currentNum) && !isNaN(deltaNum)) {
         let result
-        switch (change.mode) {
-          case CONST.ACTIVE_EFFECT_MODES.ADD:
+        switch (change.type) {
+          case 'add':
             result = currentNum + deltaNum
             break
-          case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
+          case 'multiply':
             result = currentNum * deltaNum
             break
-          case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
+          case 'upgrade':
             result = Math.max(currentNum, deltaNum)
             break
-          case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
+          case 'downgrade':
             result = Math.min(currentNum, deltaNum)
             break
-          case CONST.ACTIVE_EFFECT_MODES.OVERRIDE:
+          case 'override':
+            // For override, just use the delta value directly
             result = deltaNum
             break
           default:
+            // For custom or unknown types, fall through to default behavior
             result = null
         }
 
         if (result !== null) {
+          // Format as signed string: positive gets "+", zero and negative are plain
           const formatted = result > 0 ? `+${result}` : String(result)
           if (formatted !== current) {
             foundry.utils.setProperty(actor, change.key, formatted)
@@ -113,6 +122,7 @@ export default class DCCActiveEffect extends ActiveEffect {
       }
     }
 
+    // Call parent apply method for all other cases
     return super.apply(actor, change)
   }
 }
