@@ -16,13 +16,20 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ### Session 2026-04-17 (first session)
 
-- Created worktree `/Users/timwhite/WebstormProjects/dcc-refactor` on branch
-  `refactor/dcc-core-lib-adapter` off `main` (`2337ec0`).
+- Created worktree on branch `refactor/dcc-core-lib-adapter` off `main`
+  (`2337ec0`). Worktree now lives at
+  `/Users/timwhite/FoundryVTT-Next/Data/systems/dcc` (moved 2026-04-17 —
+  see Decisions §1 for the updated location rationale).
 - Committed architecture doc at `docs/dev/ARCHITECTURE_REIMAGINED.md`
   (**32a5f79**).
 - Phase 0 scaffolding + audit committed as **6b433a3**.
 - Wired `@moonloch/dcc-core-lib` via `npm link` (see §Decisions about the
   scoped name). Verified runtime resolution — library imports succeed.
+  Re-linked from the new worktree location on 2026-04-17 after the move
+  (the original link didn't travel with the worktree because
+  `node_modules/` isn't tracked). Current symlink:
+  `node_modules/@moonloch/dcc-core-lib` →
+  `/Users/timwhite/WebstormProjects/dcc-core-lib`.
 - Created Phase 0 adapter stubs under `module/adapter/`:
   - `character-accessors.mjs` — Foundry actor shape → lib `Character` via
     `CharacterAccessors`
@@ -47,20 +54,20 @@ Nothing carrying over.
 
 ## Blockers / open questions
 
-1. **Runtime loading strategy.** The system has **no existing build
-   pipeline** (no Rollup / Vite / esbuild). `package.json`'s `main` is
-   `module/dcc.js`, which Foundry loads directly; there's no bundler to
-   pull `@moonloch/dcc-core-lib` in from `node_modules`. Before Phase 1
-   imports any lib code at runtime, one of the following needs to be
-   decided:
-   - **(a)** Add a bundler (Rollup/Vite) — new build step, but standard
-     for modern JS systems.
-   - **(b)** Ship the lib's `dist/` under `module/vendor/dcc-core-lib/`
-     and import via relative path. No build step; requires a sync step
-     when the lib updates.
-   - **(c)** Symlink the lib's `dist/` into `module/vendor/` in dev, and
-     copy on release.
-   Recommendation TBD. Flagging for Tim.
+1. ~~**Runtime loading strategy.**~~ **Resolved 2026-04-17: vendor
+   approach (option b).** `scripts/sync-core-lib.mjs` builds the linked
+   lib and copies its `dist/` into `module/vendor/dcc-core-lib/`, which
+   is committed. Adapter code imports via relative path
+   (`../vendor/dcc-core-lib/index.js`). No bundler added. One sync
+   command (`npm run sync-core-lib`) + one commit per lib-version bump.
+   Rationale: keeps the "Foundry loads `module/dcc.js` directly"
+   invariant; CI needs no `npm link` or unpublished-package handling;
+   unit tests and Foundry runtime resolve identically; each
+   vendor-update commit is a reviewable pin. Initial sync (0.2.1,
+   `fa908c2`) is ~4.3 MB across 577 files (1.3 MB JS, 1.1 MB source
+   maps, 0.5 MB `.d.ts`/maps for IDE support). If repo bloat becomes a
+   concern later, source maps can be excluded from the sync — costs
+   some legibility in Foundry console stack traces.
 
 2. **Package name discrepancy.** The architecture doc and setup instructions
    refer to `dcc-core-lib`, but the actual npm package name is
@@ -87,13 +94,29 @@ Nothing carrying over.
 
 ## Decisions made
 
-1. **Worktree location.** Parked at
-   `/Users/timwhite/WebstormProjects/dcc-refactor`, not under
-   `FoundryVTT/Data/systems/` — siblings inside `systems/` are picked up
-   by Foundry as separate game systems and would clash on `system.json`
-   id.
-   *Why:* avoids Foundry startup conflicts and keeps the refactor
-   invisible to Foundry until we copy it over.
+0. **Runtime loading: vendor the lib's built `dist/`.** See open
+   question #1 above for the full rationale. Committed the initial
+   sync + `scripts/sync-core-lib.mjs` in a standalone prep commit so
+   Phase 1 imports have somewhere to import *from*. The sync script
+   reads from `$DCC_CORE_LIB_SRC` (default
+   `/Users/timwhite/WebstormProjects/dcc-core-lib`), runs `npm run
+   build` inside the lib, wipes and copies `dist/`, and writes a
+   `VERSION.json` with `{ name, version, commit, dirty, syncedAt }`.
+   `module/vendor/**` added to `standard.ignore` so the linter skips
+   vendored output.
+
+1. **Worktree location.** Now at
+   `/Users/timwhite/FoundryVTT-Next/Data/systems/dcc`. Main repo remains
+   at `/Users/timwhite/FoundryVTT/Data/systems/dcc`.
+   *Why:* `FoundryVTT-Next` is a separate Foundry user-data install, so
+   the worktree can live under its `systems/` directory without clashing
+   with the main repo on `system.json` id (each Foundry install sees
+   only its own `systems/` tree). This lets Tim actually run the
+   refactored system in Foundry for testing during Phase 1+.
+   *History:* originally parked at
+   `/Users/timwhite/WebstormProjects/dcc-refactor` on 2026-04-17 to
+   avoid `systems/` collisions; moved same day once the separate
+   `FoundryVTT-Next` install was set up.
 
 2. **No `package.json` dependency entry this phase.** Adding
    `"@moonloch/dcc-core-lib": "file:../../../WebstormProjects/dcc-core-lib"`
@@ -140,10 +163,19 @@ When Phase 1 kicks off (per architecture doc §7.2):
 - The pre-commit hook runs `npm run format` → `git add .` → `npm test`.
   That `git add .` **will sweep untracked files into the commit**. Before
   committing, either stash or add to `.gitignore`.
-- `npm link @moonloch/dcc-core-lib` must be re-run if `node_modules/`
-  is ever wiped. The source of truth is
-  `/Users/timwhite/WebstormProjects/dcc-core-lib` (it's co-evolving; do
-  not pin to a published version).
+- **Lib updates require `npm run sync-core-lib`** to re-vendor
+  `module/vendor/dcc-core-lib/`. Commit the vendor delta separately
+  from any adapter change that depends on it — two commits: `vendor:
+  sync dcc-core-lib to <version> (<sha>)` then the adapter change.
+  `VERSION.json` records the lib's git SHA and flags `dirty: true` if
+  the lib tree had uncommitted changes at sync time (do not release
+  from a dirty sync).
+- `npm link @moonloch/dcc-core-lib` is no longer required for runtime
+  loading (the vendored copy is used instead). It *is* still useful if
+  you want TypeScript-aware IDE support against the linked source, but
+  nothing in the system imports from `@moonloch/dcc-core-lib` at
+  runtime anymore — all imports are relative paths into
+  `module/vendor/dcc-core-lib/`.
 - Sibling modules that must keep working:
   - `../../modules/dcc-qol` — attack hook consumer, reaches into
     `DiceChain.bumpDie` + `DCCRoll.createRoll`

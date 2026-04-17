@@ -1,0 +1,93 @@
+/**
+ * Attack Roll System
+ *
+ * Handles attack roll calculations including:
+ * - Melee and missile attacks
+ * - Deed die for warriors/dwarves
+ * - Critical threat detection
+ * - Fumble detection
+ * - Bonus aggregation from multiple sources
+ */
+import type { DiceRoller } from "../types/dice.js";
+import type { AttackInput, AttackResult, CombatEvents } from "../types/combat.js";
+import type { RollBonus } from "../types/bonuses.js";
+/**
+ * Make an attack roll
+ *
+ * @param input - Attack input parameters
+ * @param roller - Optional custom dice roller
+ * @param events - Optional event callbacks
+ * @returns Attack result
+ *
+ * @example
+ * // Simple melee attack
+ * const result = makeAttackRoll({
+ *   attackType: "melee",
+ *   attackBonus: 2,
+ *   actionDie: "d20",
+ *   threatRange: 20,
+ *   abilityModifier: 2, // STR
+ * });
+ *
+ * @example
+ * // Warrior attack with deed die
+ * const result = makeAttackRoll({
+ *   attackType: "melee",
+ *   attackBonus: 3,
+ *   actionDie: "d20",
+ *   threatRange: 19,
+ *   abilityModifier: 3,
+ *   deedDie: "d4",
+ *   targetAC: 15,
+ * });
+ */
+export declare function makeAttackRoll(input: AttackInput, roller?: DiceRoller, events?: CombatEvents): AttackResult;
+/**
+ * Calculate attack bonus from character data
+ *
+ * @param baseAttackBonus - Class/level attack bonus
+ * @param abilityModifier - Relevant ability modifier
+ * @param bonuses - Additional bonuses
+ * @returns Total attack bonus
+ */
+export declare function calculateAttackBonus(baseAttackBonus: number, abilityModifier: number, bonuses?: RollBonus[]): number;
+/**
+ * Check if an attack hits a target
+ *
+ * Note: Only natural max (20 on d20, 24 on d24) is an automatic hit.
+ * Rolls in the threat range that don't beat AC do NOT hit.
+ *
+ * @param attackTotal - Total attack roll result
+ * @param targetAC - Target's armor class
+ * @param isNaturalOne - Whether the roll was a natural 1 (auto-miss)
+ * @param isNaturalMax - Whether the roll was the die's maximum value (auto-hit)
+ * @returns Whether the attack hits
+ */
+export declare function doesAttackHit(attackTotal: number, targetAC: number, isNaturalOne: boolean, isNaturalMax: boolean): boolean;
+/**
+ * Get the attack ability for an attack type
+ *
+ * @param attackType - Type of attack
+ * @returns The ability ID to use
+ */
+export declare function getAttackAbility(attackType: "melee" | "missile" | "special"): "str" | "agl";
+/**
+ * Calculate two-weapon fighting penalty
+ *
+ * In DCC, two-weapon fighting typically has a -2 penalty to each attack,
+ * except for halflings who have a reduced penalty.
+ *
+ * @param isHalfling - Whether the attacker is a halfling
+ * @returns The attack penalty
+ */
+export declare function getTwoWeaponPenalty(isHalfling: boolean): number;
+/**
+ * Check if a deed die roll is successful
+ *
+ * A deed is successful if the deed die shows 3 or higher.
+ *
+ * @param deedRoll - The deed die roll result
+ * @returns Whether the deed succeeded
+ */
+export declare function isDeedSuccessful(deedRoll: number): boolean;
+//# sourceMappingURL=attack.d.ts.map

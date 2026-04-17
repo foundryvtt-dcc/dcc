@@ -46,11 +46,13 @@
     "todb": "node module/compilePacks.js",
     "tojson": "node module/extractPacks.js",
     "compare-lang": "node module/compare-lang-files.js lang/en.json lang/cn.json lang/de.json lang/es.json lang/fr.json lang/it.json lang/pl.json",
+    "sync-core-lib": "node scripts/sync-core-lib.mjs",
     "prepare": "husky"
   },
   "standard": {
     "ignore": [
-      "docs/**"
+      "docs/**",
+      "module/vendor/**"
     ]
   },
   "type": "module",
