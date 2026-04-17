@@ -20,6 +20,7 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
   `refactor/dcc-core-lib-adapter` off `main` (`2337ec0`).
 - Committed architecture doc at `docs/dev/ARCHITECTURE_REIMAGINED.md`
   (**32a5f79**).
+- Phase 0 scaffolding + audit committed as **6b433a3**.
 - Wired `@moonloch/dcc-core-lib` via `npm link` (see §Decisions about the
   scoped name). Verified runtime resolution — library imports succeed.
 - Created Phase 0 adapter stubs under `module/adapter/`:
