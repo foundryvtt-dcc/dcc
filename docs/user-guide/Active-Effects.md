@@ -69,6 +69,7 @@ If the referenced path doesn't exist or isn't a number, it resolves to `0`. A wa
 | Add Luck mod to Reflex saves | `system.saves.ref.otherBonus` | Add | `@system.abilities.lck.mod` |
 | Add Stamina mod to initiative | `system.attributes.init.otherMod` | Add | `@system.abilities.sta.mod` |
 | Add Luck mod to spell checks | `system.class.spellCheckOtherMod` | Add | `@system.abilities.lck.mod` |
+| Apply birth augur luck to AC (Charmed house) | `system.attributes.ac.otherMod` | Add | `@system.details.birthAugurLuckMod` |
 
 ## Common Use Cases
 
@@ -101,6 +102,23 @@ If the referenced path doesn't exist or isn't a number, it resolves to `0`. A wa
    - Add change: Key: `system.abilities.str.value`, Mode: Add, Value: 1
    - Enable **Transfer to Actor** (should be enabled by default for items)
 4. The effect will automatically apply when the item is equipped and remove when unequipped
+
+### Example 4: "Charmed house: Armor Class" (Birth Augur AC Bonus)
+
+Birth augurs that modify a specific roll use the lucky roll modifier *frozen at character creation* — per the core rulebook (p. 19), this modifier does not change when Luck changes later. The DCC system stores this value at `system.details.birthAugurLuckMod`, which is populated automatically by the character parser.
+
+To apply the "Charmed house: Armor Class" augur:
+
+1. Go to the actor's **Effects** tab
+2. Click **Create Effect**
+3. In the effect editor:
+   - Name: "Charmed house: Armor Class"
+   - Add change: Key: `system.attributes.ac.otherMod`, Mode: Add, Value: `@system.details.birthAugurLuckMod`
+4. The frozen birth augur luck modifier is added to AC, and stays fixed as the character's Luck score changes.
+
+The same pattern works for any birth augur that modifies a specific roll — just target the appropriate attribute key (e.g., `system.details.attackHitBonus.melee.adjustment` for "The bull: Melee attack rolls") and use `@system.details.birthAugurLuckMod` as the value.
+
+**Pre-made effects:** If the [DCC Core Book](https://foundryvtt.com/packages/dcc-core-book) module is installed, all 13 birth augur effects are already defined in the **DCC Core: Birth Augur Effects** compendium. Open the **Compendiums** sidebar, find that compendium, and drag the matching effect directly onto the actor.
 
 ## Effect Icons on Ability Scores
 
