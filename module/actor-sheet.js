@@ -953,8 +953,10 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async #itemCreate (event, target) {
     // Get the type of item to create.
     const type = target.dataset.type
-    // Grab any data associated with this control.
-    const system = foundry.utils.deepClone(target.dataset)
+    // Grab any data associated with this control. Spread DOMStringMap into a
+    // plain object — deepClone returns non-plain objects by reference, which
+    // causes SchemaField._cast to discard all values during DataModel cleaning.
+    const system = { ...target.dataset }
     // Initialize a default name.
     let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
     if (this.options.document.type === 'NPC' && type === 'weapon') {
@@ -1593,39 +1595,6 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     })
     this.options.document.rollWeaponAttack(itemId, options)
   }
-
-  /**
-   * Handle creating a new Owned Item for the actor using initial data defined in the HTML dataset
-   * @param {Event} event   The originating click event
-   * @private
-   */
-  _onItemCreate (event) {
-    event.preventDefault()
-    const header = event.currentTarget
-    // Get the type of item to create.
-    const type = header.dataset.type
-    // Grab any data associated with this control.
-    const system = foundry.utils.deepClone(header.dataset)
-    // Initialize a default name.
-    let name = game.i18n.format('DCC.ItemNew', { type: type.capitalize() })
-    if (this.options.document.type === 'NPC' && type === 'weapon') {
-      name = game.i18n.localize('DCC.NewAttack')
-    }
-    // Prepare the item object.
-    const itemData = {
-      name,
-      img: EntityImages.imageForItem(type),
-      type,
-      system
-    }
-    // Remove the type from the dataset since it's in the itemData.type prop.
-    delete itemData.system.type
-
-    // Finally, create the item!
-    return this.options.document.createEmbeddedDocuments('Item', [itemData])
-  }
-
-  /* -------------------------------------------- */
 
   /** @override */
   _processFormData (event, form, formData) {
