@@ -118,7 +118,7 @@ To apply the "Charmed house: Armor Class" augur:
 
 The same pattern works for any birth augur that modifies a specific roll — just target the appropriate attribute key (e.g., `system.details.attackHitBonus.melee.adjustment` for "The bull: Melee attack rolls") and use `@system.details.birthAugurLuckMod` as the value.
 
-**Pre-made effects:** If the [DCC Core Book](https://foundryvtt.com/packages/dcc-core-book) module is installed, all of the standard birth augur effects are already defined in the **DCC Core: Birth Augur Effects** compendium. Open the **Compendiums** sidebar, find that compendium, and drag the matching effect directly onto the actor.
+**Pre-made effects:** If the [DCC Core Book](https://foundryvtt.com/packages/dcc-core-book) module is installed, all of the automatable birth augur effects from the core book are already defined in the **DCC Core: Birth Augur Effects** compendium. Open the **Compendiums** sidebar, find that compendium, and drag the matching effect directly onto the actor.
 
 ## Effect Icons on Ability Scores
 
