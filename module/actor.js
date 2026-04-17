@@ -1722,7 +1722,7 @@ class DCCActor extends Actor {
     let twoWeaponNote = ''
     if (attackRollResult.fumble &&
       (weapon.system?.twoWeaponPrimary || weapon.system?.twoWeaponSecondary) &&
-      this.system?.class?.className === game.i18n.localize('DCC.Halfling')) {
+      this.system?.details?.sheetClass === 'Halfling') {
       twoWeaponNote = game.i18n.localize('DCC.HalflingTwoWeaponFumbleNote')
     }
 

@@ -34,7 +34,8 @@ describe('Two-Weapon Fighting', () => {
             melee: { value: '+0', adjustment: '+0' },
             missile: { value: '+0', adjustment: '+0' }
           },
-          level: { value: 1 }
+          level: { value: 1 },
+          sheetClass: className
         },
         class: { className },
         config: {}
