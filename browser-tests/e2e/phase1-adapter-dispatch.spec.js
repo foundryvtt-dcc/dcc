@@ -8,17 +8,16 @@ const { test, expect } = require('@playwright/test')
  * this spec drives the public `DCCActor` method in a live Foundry, then
  * asserts the `[DCC adapter] <rollType> -> <via adapter|LEGACY path>`
  * console log emitted by `module/adapter/debug.mjs`. The log is the
- * signal the session-start prompt uses to verify the dispatcher picks
- * the intended branch; this spec makes that check automatic.
+ * signal used to verify the dispatcher picks the intended branch; this
+ * spec makes that check automatic.
  *
- * The spec is gated on the dispatch logging being present in
- * `module/actor.js`. When the Phase 1 cleanup commit strips
- * `logDispatch`, this file should be deleted (or re-targeted at
- * chat-message flags / libResult payloads, which survive the cleanup).
+ * The dispatch logging is permanent (not a Phase 1 temporary scaffold) —
+ * later phases add their own logDispatch calls and extend this spec.
  *
- * PREREQUISITES:
- * 1. Start Foundry: npx @foundryvtt/foundryvtt-cli launch --world=automated_testing
- * 2. Run tests: npm test -- phase1-adapter-dispatch.spec.js
+ * Setup: see docs/dev/TESTING.md#browser-tests-playwright for Node 24,
+ * fvtt CLI installPath/dataPath, and launch command. TL;DR:
+ *   nvm use 24 && npx @foundryvtt/foundryvtt-cli launch --world=v14
+ *   npm test -- phase1-adapter-dispatch.spec.js
  */
 
 test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {

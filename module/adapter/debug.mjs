@@ -1,13 +1,14 @@
 /**
- * Phase 1 dispatch logging.
+ * Adapter dispatch logging.
  *
  * Emits a single-line console log at every adapter / legacy dispatch
- * so we can verify in the Foundry console which code path fired when
- * testing end-to-end. Centralized here so the tag stays consistent and
- * so there's exactly one place to rip it out when Phase 1 lands.
+ * so each code path is identifiable in the Foundry console. Centralized
+ * here so the tag stays consistent across every dispatcher branch.
  *
- * Remove this module and its call sites at the close of Phase 1 (after
- * skill + init migrations have been verified in Foundry).
+ * Permanent infrastructure: `browser-tests/e2e/phase1-adapter-dispatch.spec.js`
+ * captures these lines via Playwright and asserts every dispatcher
+ * branch end-to-end. Every new `_xxxViaAdapter` / `_xxxLegacy` method
+ * in later phases must call `logDispatch` as its first line.
  */
 
 /**

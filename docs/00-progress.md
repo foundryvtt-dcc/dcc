@@ -6,11 +6,21 @@
 
 ## Current phase
 
-**Phase 1 — Adopt the lib for simple rolls.** All four rolls are
-migrated: `rollAbilityCheck`, `rollSavingThrow`, `rollSkillCheck`,
-and now initiative (via `getInitiativeRoll`). Remaining Phase 1
-work is the `debug.mjs` + `logDispatch` cleanup commit, gated on
-in-Foundry verification of the skill + init paths.
+**Phase 1 — Adopt the lib for simple rolls — COMPLETE.** All four
+rolls are migrated through the adapter: `rollAbilityCheck`,
+`rollSavingThrow`, `rollSkillCheck`, and initiative (via
+`getInitiativeRoll`). A Playwright adapter-dispatch spec
+(`browser-tests/e2e/phase1-adapter-dispatch.spec.js`, 15 tests)
+validates every dispatcher branch end-to-end by asserting on the
+`[DCC adapter]` console logs from `module/adapter/debug.mjs`.
+
+**Dispatch-logging decision (2026-04-18):** `debug.mjs` +
+`logDispatch` are now PERMANENT infrastructure, not a Phase 1
+scaffold. The earlier plan to strip them at phase close is
+cancelled — the Playwright spec depends on them for automated
+validation, and `getInitiativeRoll` emits no chat message that
+could substitute as an assertion target. Later phases add their
+own `logDispatch` calls and extend the browser-test spec.
 
 Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 > Phase 1: ability check · save · skill · init through the adapter.
@@ -223,10 +233,10 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 1 implementation is complete. The remaining work is the
-one-commit cleanup of `module/adapter/debug.mjs` + every
-`logDispatch` call site, gated on exercising the skill + init paths
-in Foundry end-to-end.
+Phase 1 closed. Automated dispatch validation lives in
+`browser-tests/e2e/phase1-adapter-dispatch.spec.js` (15/15 green
+against a live V14 Foundry). Next: review/signoff gate before
+Phase 2 (spell checks).
 
 ## Blockers / open questions
 
@@ -315,22 +325,10 @@ in Foundry end-to-end.
 
 ## Next steps
 
-Phase 1 close-out:
-
-1. **In-Foundry verification** of the skill + init adapter paths.
-   Watch for `[DCC adapter] rollSkillCheck → via adapter …` and
-   `[DCC adapter] rollInit → via adapter die=…` in the console on
-   each click; confirm the legacy path still fires for the dialog,
-   disapproval, and skill-table carve-outs. Roll initiative from
-   the sheet button and from the combat tracker's round-start
-   button to exercise both entry points into `getInitiativeRoll`.
-2. **Cleanup commit** — strip `module/adapter/debug.mjs` and every
-   `logDispatch` call site (`_rollAbilityCheck{Via,}Adapter`,
-   `_rollSavingThrow{Via,Legacy}`, `_rollSkillCheck{ViaAdapter,Legacy}`,
-   `_getInitiativeRoll{ViaAdapter,Legacy}`) as one commit. That
-   closes Phase 1.
-
-Then review/signoff gate before Phase 2 (spell checks).
+Review/signoff gate before Phase 2 (spell checks). No further
+Phase 1 work is pending — the browser-test spec replaces the
+manual verification step, and the dispatch-logging cleanup is
+cancelled (logs stay permanently).
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with
@@ -363,19 +361,21 @@ its own PR in `dcc-core-lib`, then sync via `npm run sync-core-lib`.
   - `../../modules/mcc-classes` — clean schema-hook consumer
   - `../../modules/dcc-crawl-classes` — clean schema-hook consumer
 
-### Debug logging (temporary — Phase 1 only)
+### Dispatch logging (permanent)
 
 - Centralized at `module/adapter/debug.mjs`. Every dispatch path calls
   `logDispatch(rollType, 'adapter'|'legacy', details)` to print one
   line to the Foundry console, e.g.
   `[DCC adapter] rollSavingThrow → via adapter saveId=ref`.
-- Add a matching `logDispatch(...)` call at the top of every new
-  `_xxxViaAdapter` / `_xxxLegacy` method introduced during the rest
-  of Phase 1 (skill + init). One line, same tag.
-- Do **not** strip these logs mid-phase. They're how Tim verifies in
-  Foundry that each click is hitting the expected path. The whole
-  module — the `debug.mjs` file and every `logDispatch` call site —
-  gets removed in one commit at the close of Phase 1, after the
-  skill and init migrations have been exercised in Foundry.
-- The helper's header JSDoc notes this so it's discoverable from the
-  code; this bullet is the process-level reminder.
+- **The logs are permanent, not a Phase-1 scaffold** (decision
+  2026-04-18). `browser-tests/e2e/phase1-adapter-dispatch.spec.js`
+  captures them via Playwright and asserts every dispatcher branch
+  end-to-end; stripping the logs would delete that signal.
+- Every `_xxxViaAdapter` / `_xxxLegacy` added in later phases (spell,
+  attack, damage, crit, fumble) must call `logDispatch(...)` as its
+  first line. Mirror the pattern at `_rollSavingThrowViaAdapter` in
+  `module/actor.js`.
+- The helper's header JSDoc describes the role. This bullet is the
+  process-level reminder; `debug.mjs` itself should be treated as
+  core adapter infrastructure on a par with `chat-renderer.mjs` and
+  `character-accessors.mjs`.

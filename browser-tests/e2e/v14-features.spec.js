@@ -7,9 +7,10 @@ const { test, expect } = require('@playwright/test')
  * Tests Active Effects, dice chain, equipped item filtering,
  * class-specific tabs, compendium, and status icons.
  *
- * PREREQUISITES:
- * 1. Start Foundry: npx @foundryvtt/foundryvtt-cli launch --world=automated_testing
- * 2. Run tests: npm test
+ * Setup: see docs/dev/TESTING.md#browser-tests-playwright for Node 24,
+ * fvtt CLI installPath/dataPath, and launch command. TL;DR:
+ *   nvm use 24 && npx @foundryvtt/foundryvtt-cli launch --world=v14
+ *   npm test
  */
 
 test.describe('DCC V14 Features E2E Tests', () => {

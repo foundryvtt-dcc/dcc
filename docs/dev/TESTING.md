@@ -247,6 +247,57 @@ Tests run automatically on:
 
 All PRs must pass tests before merging.
 
+## Browser tests (Playwright)
+
+End-to-end tests that drive a live Foundry instance live in `browser-tests/`. Two suites:
+
+- `browser-tests/e2e/` — functional specs (data models, V14 features, Phase 1 adapter dispatch)
+- `browser-tests/visual-regression/` — sheet screenshot diffs
+
+Both use Playwright against a real Foundry server — no mocks, no Vitest. The specs create their own test actors/items via `page.evaluate` and clean up in `afterEach`, so the world state only needs to be a valid DCC world.
+
+### One-time setup
+
+```bash
+# From browser-tests/e2e/ (or visual-regression/)
+npm install
+npx playwright install chromium
+```
+
+### Running a suite
+
+Foundry must be running before Playwright starts. The fvtt CLI config is global — set it to match the worktree you're testing:
+
+```bash
+# One-time per worktree: tell the fvtt CLI which Foundry install and
+# which user-data dir to use. --dataPath as a launch flag is silently
+# ignored — the CLI reads the persisted config instead.
+npx @foundryvtt/foundryvtt-cli configure set installPath ~/Applications/foundry-14
+npx @foundryvtt/foundryvtt-cli configure set dataPath /Users/timwhite/FoundryVTT-Next
+
+# Every run: Node 24 (required by V14), then launch + test.
+nvm use 24
+nohup npx @foundryvtt/foundryvtt-cli launch --world=v14 \
+  >/tmp/foundry-v14.log 2>&1 & disown
+
+# From browser-tests/e2e/:
+npm test                                      # full suite
+npm test -- phase1-adapter-dispatch.spec.js   # one spec
+npm run test:headed                           # watch it drive the browser
+```
+
+### Gotchas
+
+- **Node 24 is required.** V14 Foundry refuses to boot on older Node. `.nvmrc` pins 24; `nvm use` in the project dir picks it up.
+- **`installPath` default is `foundry-13`.** Running a V14 world on that install fails with `World "…" is not available to auto-launch` plus cryptic data-model validation errors. Always `configure view` first.
+- **`dataPath` matters per worktree.** The main repo lives under `/Users/timwhite/FoundryVTT/Data/systems/dcc`; the `refactor/*` worktrees usually live under `/Users/timwhite/FoundryVTT-Next/Data/systems/dcc`. Pointing the CLI at the wrong dataPath silently loads the OTHER copy of the system and your code changes don't show up. Verify by `curl http://localhost:30000/systems/dcc/module/actor.js | head` and check for an expected recent edit.
+- **World name is `v14`, not `automated_testing`.** The worlds in `FoundryVTT-Next/Data/worlds/` are `v14`, `v13`, and `secrets-of-the-spectral-summoner`. Use `v14`.
+- **Close your manual Foundry browser tab first.** If a Gamemaster is already logged in there, the join-page select disables the option and Playwright's login times out (11 s per test) before any assertion runs.
+
+### Adapter dispatch validation
+
+`phase1-adapter-dispatch.spec.js` validates every Phase-1 roll branch by capturing the `[DCC adapter] <rollType> → <via adapter|LEGACY path>` console line emitted by `module/adapter/debug.mjs`. The dispatch logging is kept permanently (not a phase-close scaffold) precisely so this spec has a stable signal to assert against. Later phases add their own logDispatch calls and extend the spec.
+
 ## Related Documentation
 
 - [Test Coverage](TEST_COVERAGE.md) - Comprehensive coverage strategy
