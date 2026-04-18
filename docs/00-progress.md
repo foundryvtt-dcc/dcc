@@ -6,11 +6,12 @@
 
 ## Current phase
 
-**Phase 0 — Prep.** Awaiting review of this session's work before Phase 1.
+**Phase 1 — Adopt the lib for simple rolls.** `rollAbilityCheck` is
+migrated end-to-end. Next up: save throws, skill checks, initiative —
+all reusing the wave-1 pattern.
 
 Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
-> Phase 0: fix halfling bug · add dcc-core-lib · adapter scaffolding ·
-> document hooks + game.dcc exports.
+> Phase 1: ability check · save · skill · init through the adapter.
 
 ## Done
 
@@ -48,9 +49,52 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 - Halfling i18n fix carried in via `main` — merged as commit `2337ec0`
   before the branch was created, so no extra work needed this session.
 
+### Session 2026-04-18 (second session)
+
+- **Runtime loading resolved** (open question #1). Chose option (b):
+  vendor the lib's built `dist/` under `module/vendor/dcc-core-lib/`.
+  Added `scripts/sync-core-lib.mjs` + `npm run sync-core-lib`. Initial
+  vendor commit **fddcf04** (0.2.1, ~4.3 MB).
+- **Wave 1 modifier redesign landed in `@moonloch/dcc-core-lib@0.3.0`**
+  (commit `93033cb` in the lib repo, follow-up `f78cbdf` for async
+  exports). Replaces the flat `RollModifier` with a tagged union of
+  seven transformations paired with a structured `ModifierOrigin`.
+  Design doc at `dcc-core-lib/docs/MODIFIERS.md`. Staged migration:
+  wave 1 (checks, skills, dice, cleric) adopts the new type; combat,
+  spells, patron, occupation keep `LegacyRollModifier` until later
+  waves.
+- **Async siblings added** through the check pipeline:
+  `resolveSkillCheckAsync`, `rollCheckAsync`, `rollAbilityCheckAsync`,
+  `rollSavingThrowAsync`, `evaluateRollAsync`. Lets the Foundry
+  adapter use Foundry's Promise-based Roll.evaluate idiomatically.
+- **Vendor re-sync** to 0.3.0 + `f78cbdf`, committed as **c200938**.
+- **Phase 1 adapter wired** for `DCCActor.rollAbilityCheck`:
+  - `module/adapter/character-accessors.mjs` — `actorToCharacter`
+    builds a lib `Character` from DCCActor; handles save-id remap
+    (frt/ref/wil ↔ fortitude/reflex/will) and parses signed save
+    strings to numbers.
+  - `module/adapter/foundry-roller.mjs` — `createFoundryRoller`
+    returns an async roller that wraps `new Roll()`, awaits
+    `.evaluate()`, stashes the Foundry Roll on a context object.
+  - `module/adapter/chat-renderer.mjs` — `renderAbilityCheck` builds
+    a ChatMessage with the same flags + speaker the legacy path
+    emitted, plus a structured `system.libResult` payload for
+    downstream consumers.
+  - `DCCActor.rollAbilityCheck` is now a thin dispatcher: the legacy
+    path handles `rollUnder`, `showModifierDialog`, and str/agl with
+    CheckPenalty display (preserved verbatim as
+    `_rollAbilityCheckLegacy`); everything else flows through
+    `_rollAbilityCheckViaAdapter`. Public signature unchanged.
+- **Tests**: new `module/__tests__/adapter-ability-check.test.js`
+  (3 tests) locks the adapter round-trip. Existing `actor.test.js`
+  updated to reflect the new dispatch (legacy path for str+penalty
+  and lck+rollUnder; adapter for lck default). 683 unit tests pass
+  across 19 test files.
+
 ## In progress
 
-Nothing carrying over.
+Nothing carrying over. Phase 1 ability-check migration complete;
+next session migrates saves (Phase 1 continuation).
 
 ## Blockers / open questions
 
@@ -139,24 +183,31 @@ Nothing carrying over.
 
 ## Next steps
 
-**Stop. Do not start Phase 1 until Tim signs off on Phase 0.**
+Phase 1 continuation — migrate the remaining simple rolls to the
+adapter, each as its own commit:
 
-When Phase 1 kicks off (per architecture doc §7.2):
+1. **`rollSavingThrow`** → `rollSavingThrowAsync(saveId, character, …)`.
+   Pattern is identical to ability check: actor → Character →
+   `rollSavingThrowAsync` → chat renderer. The save-id remapping
+   (frt/ref/wil ↔ fortitude/reflex/will) is already in
+   `character-accessors.mjs`. One new test file modeled on
+   `adapter-ability-check.test.js`.
+2. **`rollSkillCheck`** → `rollCheckAsync` with a SkillDefinition
+   derived from the actor's skill item or `system.skills.{id}`.
+   `actor.js:1111` (current dispatcher between built-in vs. item
+   skills) becomes the adapter boundary. Some skills use custom dice
+   (`d14`, `d24`) — the lib's `set-die` modifier handles that.
+3. **`rollInit`** → `rollCheckAsync` with `{ ability: 'agl', die:
+   actor.system.attributes.init.value }`. Simplest migration. Chat
+   message must preserve the flags the combat tracker reads.
 
-1. Resolve open question #1 (runtime loading). Whatever the decision,
-   land it in a small prep commit so Phase 1's import statements have
-   somewhere to import *from*.
-2. Start with the easiest roll to migrate: `rollAbilityCheck` →
-   `rollCheck('ability:str', character, …)`. Wire it through:
-   `character-accessors.mjs` → `foundry-roller.mjs` → the lib → result
-   back through `chat-renderer.mjs`. Keep the existing
-   `DCCActor.rollAbilityCheck` as a thin wrapper so dcc-qol /
-   token-action-hud-dcc keep working.
-3. Add one vitest case under `module/tests/` that exercises the whole
-   adapter round-trip against a mock actor, to lock the contract before
-   migrating the next roll.
-4. Repeat for saves, then skill checks, then init. Ship each as a
-   separate commit; each should leave the system in a working state.
+Each commit leaves the system shippable. After these four, Phase 1
+is complete and review/signoff gate before Phase 2 (spell checks).
+
+**Cross-repo coordination:** if any migration uncovers a missing
+feature in the lib's tagged-union modifier (e.g. skill items with
+`allowLuck` needing dice-chain bumps), land the lib change first in
+its own PR in `dcc-core-lib`, then sync via `npm run sync-core-lib`.
 
 ## Notes for future sessions
 

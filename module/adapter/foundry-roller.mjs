@@ -1,21 +1,44 @@
+/* global Roll */
+
 /**
- * Foundry-backed custom roller for dcc-core-lib.
+ * Foundry-backed async roller for dcc-core-lib.
  *
- * The library's `evaluateRoll(formula, { roller })` (see
- * `@moonloch/dcc-core-lib` `dice/roll.ts`) accepts an injected roller so that
- * integrations can plug in their platform's dice pipeline. For Foundry, that
- * means Foundry's `Roll` class — so dice operator (DSN), replay, and the
- * whole Foundry chat flow still work.
+ * The lib's async pipeline (`evaluateRollAsync`, `resolveSkillCheckAsync`,
+ * `rollCheckAsync` and siblings — see dcc-core-lib/docs/MODIFIERS.md)
+ * accepts an async custom roller with the signature
+ *   (expression: string) => Promise<number>
  *
- * Responsibilities (to be implemented during Phase 1+):
- *   - Wrap `DCCRoll.createRoll(terms, data, options)` as a `CustomRoller`
- *   - Translate library-side modifiers into Foundry roll `terms`
- *   - Preserve the existing DCC roll-modifier dialog flow when user interaction
- *     is needed (roll-modifier.js is the UI over this)
- *   - Return the lib's expected `RollResult` shape so pure lib code downstream
- *     is unaffected
+ * We create a Foundry `Roll` from the expression, await `.evaluate()`,
+ * and return `roll.total`. The Foundry Roll instance itself is stashed
+ * on a context object supplied by the caller, so downstream adapter
+ * code (chat-renderer) can attach the same Roll to the ChatMessage
+ * for DSN animation and breakdown display.
  *
- * Phase 0: stub. No implementation yet.
+ * This single integration point keeps the lib's "what formula?"
+ * calculation pure, while Foundry's async dice pipeline stays the
+ * source of truth for actual dice rolls.
  */
 
-export {}
+/**
+ * Create an async custom roller that wraps Foundry's `Roll` class.
+ *
+ * @param {Object} context - Shared context object. On each invocation
+ *   the created Foundry Roll is pushed onto `context.rolls`, so callers
+ *   can collect all Foundry Rolls produced during a lib call.
+ * @returns {(expression: string) => Promise<number>} An async roller
+ *   suitable for `RollOptionsAsync.roller`.
+ */
+export function createFoundryRoller (context) {
+  if (context && !Array.isArray(context.rolls)) {
+    context.rolls = []
+  }
+
+  return async (expression) => {
+    const roll = new Roll(String(expression))
+    await roll.evaluate()
+    if (context && Array.isArray(context.rolls)) {
+      context.rolls.push(roll)
+    }
+    return roll.total
+  }
+}

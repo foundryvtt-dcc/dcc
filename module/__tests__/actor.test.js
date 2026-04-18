@@ -115,45 +115,25 @@ test('roll ability check', async () => {
     }
   }, { create: false })
 
-  // ...both ways
+  // ...and the non-rollUnder Luck check takes the adapter path (not
+  // str/agl, no dialog, no rollUnder → adapter). DCCRoll.createRoll is
+  // NOT called; the Foundry Roll is constructed directly by the
+  // adapter's foundry-roller and passed through chat-renderer.
   await actor.rollAbilityCheck('lck', { rollUnder: false })
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: 'Action Die',
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Modifier',
-        label: 'Luck',
-        formula: '+3'
-      }
-    ],
-    {},
-    {
-      rollUnder: false,
-      title: 'Luck Check'
-    })
-  expect(rollToMessageMock).toHaveBeenLastCalledWith({
-    flavor: 'Luck Check',
-    speaker: actor,
-    flags: { 'dcc.Ability': 'lck', 'dcc.RollType': 'AbilityCheck', 'dcc.isAbilityCheck': true },
-    system: {
-      checkPenaltyRollIndex: null
-    }
-  }, { create: false })
+  // Still 2 — adapter path does not invoke DCCRoll.createRoll.
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Luck Check',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.Ability': 'lck',
+        'dcc.RollType': 'AbilityCheck',
+        'dcc.isAbilityCheck': true
+      })
+    }),
+    { create: false }
+  )
 })
 
 test('roll saving throw', async () => {

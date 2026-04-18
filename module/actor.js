@@ -5,6 +5,10 @@ import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult,
 import DCCActiveEffect from './active-effect.js'
 import DCCActorLevelChange from './actor-level-change.js'
 import DiceChain from './dice-chain.js'
+import { rollAbilityCheckAsync } from './vendor/dcc-core-lib/index.js'
+import { actorToCharacter } from './adapter/character-accessors.mjs'
+import { createFoundryRoller } from './adapter/foundry-roller.mjs'
+import { renderAbilityCheck } from './adapter/chat-renderer.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -783,11 +787,73 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll an Ability Check
-   * @param {String} abilityId    The ability ID (e.g. "str")
-   * @param {Object} options      Options which configure how ability checks are rolled
+   * Roll an Ability Check.
+   *
+   * Phase 1 of the adapter refactor: the simple path (no dialog,
+   * no rollUnder) flows through the lib via character-accessors →
+   * foundry-roller → rollAbilityCheckAsync → chat-renderer. The
+   * dialog / rollUnder / CheckPenalty-display paths fall through to
+   * the legacy implementation below, which remains the source of
+   * truth for those UX flows until later phases migrate them.
+   *
+   * Signature and emitted chat-message flags are preserved — dcc-qol
+   * and token-action-hud-dcc depend on the public shape of this
+   * method.
+   *
+   * @param {String} abilityId  The ability ID (e.g. "str")
+   * @param {Object} options    Options which configure how ability checks are rolled
    */
   async rollAbilityCheck (abilityId, options = {}) {
+    const needsLegacyPath =
+      options.rollUnder === true ||
+      options.showModifierDialog === true ||
+      (this.system.config?.computeCheckPenalty && (abilityId === 'str' || abilityId === 'agl'))
+
+    if (needsLegacyPath) {
+      return this._rollAbilityCheckLegacy(abilityId, options)
+    }
+
+    return this._rollAbilityCheckViaAdapter(abilityId, options)
+  }
+
+  /**
+   * Adapter path for ability checks. Single-pass async flow:
+   * actor → Character shape → lib's rollAbilityCheckAsync (which
+   * awaits the Foundry Roll via the injected roller) → chat renderer.
+   * @private
+   */
+  async _rollAbilityCheckViaAdapter (abilityId, options) {
+    const abilityLabel = game.i18n.localize(CONFIG.DCC.abilities[abilityId])
+
+    const character = actorToCharacter(this)
+
+    const rollerContext = { rolls: [] }
+    const roller = createFoundryRoller(rollerContext)
+
+    const result = await rollAbilityCheckAsync(abilityId, character, {
+      mode: 'evaluate',
+      roller,
+      luckBurn: options.luckBurn
+    })
+
+    const foundryRoll = rollerContext.rolls[0]
+
+    return renderAbilityCheck({
+      actor: this,
+      abilityId,
+      abilityLabel,
+      result,
+      foundryRoll
+    })
+  }
+
+  /**
+   * Legacy ability-check path. Used when the options flags require
+   * structured terms (modifier dialog, rollUnder, check-penalty
+   * display). Preserved verbatim until later phases migrate these.
+   * @private
+   */
+  async _rollAbilityCheckLegacy (abilityId, options = {}) {
     const ability = this.system.abilities[abilityId]
     ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
