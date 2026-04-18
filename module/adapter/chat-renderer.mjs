@@ -232,3 +232,70 @@ export async function renderSkillCheck ({
 
   return ChatMessage.create(messageData)
 }
+
+/**
+ * Render a spell-check result as a Foundry ChatMessage.
+ *
+ * Phase 2 session-1 scaffold: minimal rendering for the generic
+ * casting path. Preserves the `dcc.RollType: 'SpellCheck'` /
+ * `dcc.isSpellCheck` flag contract the legacy `processSpellCheck`
+ * path emits (so downstream consumers keep working), plus a
+ * structured `dcc.libResult` payload carrying the lib's spell-check
+ * outcome. Side effects (spell loss, disapproval, patron taint,
+ * mercurial magic) are NOT applied here — they live on the legacy
+ * path this session and migrate into `spell-events.mjs` in later
+ * sessions.
+ *
+ * @param {Object} params
+ * @param {Object} params.actor - The DCCActor that cast.
+ * @param {Object} [params.spellItem] - The spell item being cast.
+ * @param {string} params.flavor - Chat flavor (typically the spell
+ *   name plus the ability suffix).
+ * @param {Object} params.result - The lib's SpellCheckResult
+ *   (see dcc-core-lib/types/spells.d.ts).
+ * @param {Roll} params.foundryRoll - The evaluated Foundry Roll.
+ * @returns {Promise<ChatMessage>} The created ChatMessage.
+ */
+export async function renderSpellCheck ({
+  actor,
+  spellItem,
+  flavor,
+  result,
+  foundryRoll
+}) {
+  const flags = {
+    'dcc.RollType': 'SpellCheck',
+    'dcc.isSpellCheck': true,
+    'dcc.isSkillCheck': true,
+    'dcc.ItemId': spellItem?.id,
+    'dcc.libResult': {
+      spellId: result.spellId,
+      die: result.die,
+      natural: result.natural,
+      total: result.total,
+      formula: result.formula,
+      critical: result.critical,
+      fumble: result.fumble,
+      tier: result.tier,
+      spellLost: result.spellLost,
+      corruptionTriggered: result.corruptionTriggered,
+      modifiers: result.modifiers
+    }
+  }
+
+  if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
+    game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
+  }
+
+  const messageData = await foundryRoll.toMessage(
+    {
+      speaker: ChatMessage.getSpeaker({ actor }),
+      flavor,
+      flags,
+      system: { spellId: spellItem?.id }
+    },
+    { create: false }
+  )
+
+  return ChatMessage.create(messageData)
+}

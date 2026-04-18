@@ -23,13 +23,20 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 1 is closed.** All four rolls flow through the
-adapter: `rollAbilityCheck`, `rollSavingThrow`, `rollSkillCheck`, and
-initiative (via `getInitiativeRoll`, Path A — formula-only). 759
-Vitest tests pass (unit + dice-gated integration) plus 15 Playwright
-e2e tests in `browser-tests/e2e/phase1-adapter-dispatch.spec.js` that
-validate every dispatcher branch by asserting on the `[DCC adapter]`
-console logs.
+**Status:** **Phase 1 closed. Phase 2 session 1 complete.**
+`DCCActor.rollSpellCheck` is now a dispatcher. Generic-castingMode
+spell items on non-Cleric, non-patron actors flow through
+`_rollSpellCheckViaAdapter` (buildSpellCastInput → libCastSpell two-pass
+→ renderSpellCheck); wizard / cleric / patron-bound paths and naked
+spell checks stay on `_rollSpellCheckLegacy` (which still hands off to
+`game.dcc.processSpellCheck` verbatim). Adapter files scaffolded:
+`module/adapter/spell-input.mjs` (synthetic generic caster profile —
+session 2 swaps this for a real wizard lookup), `module/adapter/spell-events.mjs`
+(header-only stub — sessions 2–5 wire the callbacks), and a new
+`renderSpellCheck` in `module/adapter/chat-renderer.mjs`. 763 Vitest
+tests pass (759 + 4 new in `adapter-spell-check.test.js`). The
+Playwright spec is up to 18 tests (`npx playwright test --list`
+confirms parse); a live Foundry run is still pending.
 
 `@moonloch/dcc-core-lib@0.4.0` is vendored at
 `module/vendor/dcc-core-lib/`. The lib uses a tagged-union
@@ -47,68 +54,70 @@ Playwright spec relies on them for automated dispatch validation and
 `_xxxViaAdapter` / `_xxxLegacy` added in later phases must call
 `logDispatch` as its first line.
 
-**This session's goal:** open **Phase 2 — spell checks** by landing
-the smallest possible green slice. Full phase is 3–4 sessions;
-target for session 1 below.
+**This session's goal:** **Phase 2 session 2 — wizard spell loss
+migration.** Session 1 landed the dispatcher + scaffold. Session 2
+broadens the adapter gate to cover wizard-castingMode items, wires
+`onSpellLost` through `spell-events.mjs` to replace the
+`actor.loseSpell(item)` call in `processSpellCheck`, and switches
+the adapter to `calculateSpellCheck` (not just `castSpell`) once a
+real caster profile + spellbook entry is available.
 
-### Session 1 slice — scaffold the adapter path, no side effects yet
+### Session 2 slice — wizard spell loss
 
-The existing `processSpellCheck` in `module/dcc.js` (~200 lines)
-interleaves wizard spell loss, cleric disapproval, patron taint,
-spellburn, and mercurial magic. Migrating it in one commit is the
-trap. Instead, this session:
+1. **Read first** — the `_rollSpellCheckViaAdapter` +
+   `_rollSpellCheckLegacy` split already in `module/actor.js`, plus
+   `module/item.js:255` (`DCCItem.rollSpellCheck` — spell-loss
+   pre-check at line 260), `module/dcc.js:753-761`
+   (`processSpellCheck`'s wizard branch — the `actor.loseSpell(item)`
+   call), and the lib entry points:
+   `calculateSpellCheck`, `getCasterProfile('wizard')`, and
+   `findSpellEntry` / `markSpellLost` in
+   `module/vendor/dcc-core-lib/spells/spellbook.js`.
 
-1. **Read first** — `module/dcc.js` `processSpellCheck`,
-   `config.js:188-192` (the three casting modes: `generic`,
-   `wizard`, `cleric`), and the lib entry points:
-   `module/vendor/dcc-core-lib/index.js` exports
-   `calculateSpellCheck` + `castSpell`. Skim
-   `/Users/timwhite/WebstormProjects/dcc-core-lib/src/spells/`
-   to see the `SpellCastInput` + `SpellEvents` shapes.
+2. **Extend `spell-input.mjs`** — look up a real caster profile via
+   `getCasterProfile(classId)` when the actor has a caster class;
+   build a real `spellbookEntry` from the spell item's
+   `system.lost` / `system.timesPreparedOrCast` fields. For the
+   generic path keep the synthetic profile, or move it to a named
+   factory (e.g. `syntheticGenericProfile()`).
 
-2. **Scaffold adapter files** (empty-ish stubs, like Phase 0 did):
-   - `module/adapter/spell-events.mjs` — header JSDoc describing
-     the Foundry-flavored `SpellEvents` implementation. No body
-     yet; later sessions fill in `onSuccess` / `onFailure` /
-     `onSpellLost` / `onPatronTaint` / etc.
-   - `module/adapter/spell-input.mjs` — builds a lib
-     `SpellCastInput` from `(actor, spellItem, options)`.
-   - Extend `module/adapter/chat-renderer.mjs` with a
-     `renderSpellCheck` stub that just posts a minimal chat
-     message and a `dcc.libResult` flag, matching the shape of
-     `renderSavingThrow` / `renderSkillCheck`.
+3. **Switch the adapter call to `calculateSpellCheck`.** Only once
+   the caster profile + spellbook entry are real; `castSpell`
+   stays as a fallback for the synthetic generic path (or we drop
+   the generic branch in favor of routing all casts through
+   `calculateSpellCheck`). Handle the error shape
+   (`{ error: string }`) gracefully — render an error chat
+   message and return without touching actor state.
 
-3. **Dispatcher split for generic casts only.** Add a new
-   `rollSpellCheck` method on `DCCActor` that dispatches:
-   - Adapter path: only when `spellType === 'generic'` AND no
-     wizard/cleric/patron side effects involved. Uses
-     `calculateSpellCheck` to produce the result; renders via
-     `renderSpellCheck`.
-   - Legacy path: everything else — delegates to today's
-     `processSpellCheck` in `dcc.js`, which stays intact this
-     session. Keep `game.dcc.processSpellCheck` exported verbatim
-     (XCC's wizard + cleric sheets consume it — see
-     `EXTENSION_API.md`).
-   Both branches get a `logDispatch('rollSpellCheck', 'adapter'|'legacy', …)`
-   call as their first line.
+4. **Fill in `onSpellLost`** in `module/adapter/spell-events.mjs`.
+   When the lib reports `result.spellLost` for a wizard, set
+   `spellItem.system.lost: true` via `item.update(...)`. This
+   replaces the `actor.loseSpell(item)` side effect that
+   `processSpellCheck` performs today.
 
-4. **Tests.** Unit: `module/__tests__/adapter-spell-check.test.js`
-   (2–3 tests covering the dispatcher). Browser: extend
-   `browser-tests/e2e/phase1-adapter-dispatch.spec.js` with a
-   `rollSpellCheck` test group — adapter path for a generic
-   spell item, legacy path for a wizard spell.
+5. **Broaden the adapter gate.** Currently:
+   `castingMode === 'generic' && !hasPatron && !isCleric`.
+   Session 2: also allow `castingMode === 'wizard' && !hasPatron`
+   (cleric disapproval is session 3, patron taint is session 4).
+   Handle `spellItem.system.lost && settings.get('dcc',
+   'automateWizardSpellLoss')` as an adapter-side warn + early
+   return (mirrors `DCCItem.rollSpellCheck:260`).
 
-5. **Lib-side wave-2 modifier migration is a prerequisite for
-   later sessions.** The spell subsystem still uses
-   `LegacyRollModifier`. If session 1's scaffolding can get away
-   with the legacy shape for generic casts, fine. If the lib APIs
-   we adopt return the new tagged union, we'll need to land the
-   lib's wave-2 migration first in its own PR + `npm run sync-core-lib`.
-   Decide after reading the lib exports.
+6. **Tests.** Extend `adapter-spell-check.test.js`: wizard-castingMode
+   item on a wizard actor → adapter; lost wizard spell with
+   automation on → warn + early return; wizard item on a
+   patron-bound actor → legacy (taint still carved out). Extend
+   the Playwright spec with at least one wizard-adapter test.
 
-Do NOT in session 1: migrate wizard spell loss, cleric
-disapproval, patron taint, or mercurial magic. Those are
-session 2+ slices.
+7. **Lib-side wave-2 modifier migration** may now be required if
+   the switch to `calculateSpellCheck` returns tagged-union
+   modifiers. Check before writing code; if it does, land the lib
+   migration in `dcc-core-lib` first + `npm run sync-core-lib`.
+
+Do NOT in session 2: migrate cleric disapproval (session 3),
+patron taint (session 4), spellburn or mercurial magic (session 5).
+Keep `game.dcc.processSpellCheck` exported verbatim — XCC's
+wizard/cleric sheets consume it until the full Phase 2 is done.
 
 **Before touching Phase 2 code, confirm the repo is green:**
 

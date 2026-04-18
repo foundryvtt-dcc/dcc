@@ -8,10 +8,12 @@ import DiceChain from './dice-chain.js'
 import {
   rollAbilityCheck as libRollAbilityCheck,
   rollCheck as libRollCheck,
-  rollSavingThrow as libRollSavingThrow
+  rollSavingThrow as libRollSavingThrow,
+  castSpell as libCastSpell
 } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
-import { renderAbilityCheck, renderSavingThrow, renderSkillCheck } from './adapter/chat-renderer.mjs'
+import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck } from './adapter/chat-renderer.mjs'
+import { buildSpellCastInput } from './adapter/spell-input.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -1832,7 +1834,16 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a Spell Check
+   * Roll a Spell Check.
+   *
+   * Dispatcher: routes generic-castingMode spell items (no wizard
+   * spell-loss, no cleric disapproval, no patron taint side effects)
+   * through the adapter. Everything else — wizard spells, cleric
+   * spells, patron-bound actors, and naked spell checks — stays on
+   * the legacy path. The single item lookup is hoisted here so
+   * `collectionFindMock`-style call-count assertions in the existing
+   * tests continue to match.
+   *
    * @param options
    */
   async rollSpellCheck (options = {}) {
@@ -1840,14 +1851,12 @@ class DCCActor extends Actor {
       options.abilityId = this.system.class.spellCheckAbility || ''
     }
 
-    // If a spell name is provided attempt to look up an item with that name for the roll
+    let spellItem = null
     if (options.spell) {
       const item = this.items.find(i => i.name === options.spell)
       if (item) {
         if (item.type === 'spell') {
-          // Roll through the item and return, so we don't also roll a basic spell check
-          item.rollSpellCheck(options.abilityId, options)
-          return
+          spellItem = item
         } else {
           return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNonSpellWarning'))
         }
@@ -1856,7 +1865,86 @@ class DCCActor extends Actor {
       }
     }
 
-    // Otherwise fall back to a raw dice roll with appropriate flavor
+    const castingMode = spellItem?.system?.config?.castingMode
+    const hasPatron = !!this.system.class?.patron
+    const isCleric = this.system.details?.sheetClass === 'Cleric'
+
+    if (castingMode === 'generic' && !hasPatron && !isCleric) {
+      return this._rollSpellCheckViaAdapter(spellItem, options)
+    }
+
+    return this._rollSpellCheckLegacy(options, spellItem)
+  }
+
+  /**
+   * Adapter path for spell checks — Phase 2, session 1. Scaffold that
+   * handles generic-castingMode spell items with no side effects. Uses
+   * the lib's `castSpell` directly (bypassing `calculateSpellCheck`'s
+   * spellbook lookup, which is wired in later sessions once the
+   * wizard/cleric spellbook bridge lands) with the two-pass
+   * formula/evaluate pattern established by `_rollSavingThrowViaAdapter`
+   * and `_rollSkillCheckViaAdapter`.
+   * @private
+   */
+  async _rollSpellCheckViaAdapter (spellItem, options) {
+    logDispatch('rollSpellCheck', 'adapter', { spell: spellItem?.name ?? '' })
+
+    const input = buildSpellCastInput(this, spellItem, options)
+
+    // Pass 1: lib builds the formula without rolling.
+    const plan = libCastSpell(input, { mode: 'formula' })
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies against the rolled natural.
+    const result = libCastSpell(input, {
+      mode: 'evaluate',
+      roller: () => natural
+    })
+
+    const abilityLabel = CONFIG.DCC.abilities[options.abilityId]
+    let flavor = spellItem?.name ?? game.i18n.localize('DCC.SpellCheck')
+    if (abilityLabel) {
+      flavor += ` (${game.i18n.localize(abilityLabel)})`
+    }
+
+    await renderSpellCheck({
+      actor: this,
+      spellItem,
+      flavor,
+      result,
+      foundryRoll
+    })
+
+    return foundryRoll
+  }
+
+  /**
+   * Legacy spell-check path. Preserves the pre-adapter behavior for
+   * every dispatch that doesn't meet the session-1 adapter gate —
+   * spell items delegate to `DCCItem.rollSpellCheck`, naked checks
+   * build DCCRoll terms and hand off to `game.dcc.processSpellCheck`
+   * (still the source of truth for wizard spell loss, cleric
+   * disapproval, patron taint, spellburn, and mercurial magic).
+   * @private
+   */
+  async _rollSpellCheckLegacy (options, spellItem) {
+    logDispatch('rollSpellCheck', 'legacy', { spell: options.spell ?? '' })
+
+    if (spellItem) {
+      // Fire-and-forget — matches the pre-dispatcher contract. The
+      // item's rollSpellCheck performs its own chat + processSpellCheck
+      // orchestration; awaiting here would change the public return
+      // shape and surface errors the original path swallowed.
+      spellItem.rollSpellCheck(options.abilityId, options)
+      return
+    }
+
+    // Naked spell-check path (no item): retained verbatim from the
+    // pre-dispatcher rollSpellCheck body.
     const ability = this.system.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
