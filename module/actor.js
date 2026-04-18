@@ -1846,14 +1846,21 @@ class DCCActor extends Actor {
    *     actors; wizard spell loss via the lib's `onSpellLost` event.
    *     Pre-check for already-lost spells (mirrors
    *     `DCCItem.rollSpellCheck:260`) fires adapter-side.
-   *   - Session 3 (current): cleric-castingMode items on cleric actors
-   *     without patrons; cleric disapproval via the lib's
+   *   - Session 3: cleric-castingMode items on cleric actors without
+   *     patrons; cleric disapproval via the lib's
    *     `onDisapprovalIncreased` event (replaces
    *     `actor.applyDisapproval()` + `actor.rollDisapproval()`).
-   *   - Session 4+: patron taint, spellburn, mercurial magic.
+   *   - Session 4 (current): wizard-castingMode items on patron-bound
+   *     wizard / elf actors flow through the adapter. The patron field
+   *     populates `character.state.classState.<type>.patron` so the lib
+   *     records `castInput.patron`; the RAW lib taint pipeline stays
+   *     dormant (no fumbleTable plumbed in), and the adapter calls
+   *     `_runLegacyPatronTaint` after the cast to preserve the legacy
+   *     d100-vs-chance creeping mechanic verbatim.
+   *   - Session 5+: spellburn, mercurial magic.
    *
    * Everything else (wizard on cleric, cleric on non-cleric,
-   * patron-bound actors, naked spell checks, unknown casting modes)
+   * patron-bound clerics, naked spell checks, unknown casting modes)
    * stays on the legacy path. The item lookup is hoisted here so the
    * existing actor.test.js `collectionFindMock` call-count assertions
    * still match.
@@ -1883,8 +1890,8 @@ class DCCActor extends Actor {
     const hasPatron = !!this.system.class?.patron
     const isCleric = this.system.details?.sheetClass === 'Cleric'
 
-    if (spellItem && !hasPatron) {
-      if (castingMode === 'generic' && !isCleric) {
+    if (spellItem) {
+      if (castingMode === 'generic' && !isCleric && !hasPatron) {
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }
       if (castingMode === 'wizard' && !isCleric) {
@@ -1900,7 +1907,7 @@ class DCCActor extends Actor {
         }
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }
-      if (castingMode === 'cleric' && isCleric) {
+      if (castingMode === 'cleric' && isCleric && !hasPatron) {
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }
     }
@@ -2079,7 +2086,58 @@ class DCCActor extends Actor {
       })
     }
 
+    // Session 4 — patron taint. Adapter-side preservation of the
+    // legacy `processSpellCheck:623-660` mechanic for wizard / elf
+    // patron casters. The lib's RAW patron-taint pipeline is dormant
+    // (no `input.fumbleTable` plumbed in), so this runs the d100-vs-
+    // chance creeping mechanic verbatim instead. See
+    // `_runLegacyPatronTaint` for the rationale and the migration
+    // hand-off plan.
+    if ((profile?.type === 'wizard' || profile?.type === 'elf') && this.system.class?.patron) {
+      await this._runLegacyPatronTaint(spellItem)
+    }
+
     return foundryRoll
+  }
+
+  /**
+   * Adapter-side preservation of the legacy patron-taint mechanic from
+   * `processSpellCheck` (`module/dcc.js:623-660`). DCC-system-as-shipped
+   * has a creeping-chance model: every patron-related cast on a patron-
+   * bound actor rolls 1d100 vs `system.class.patronTaintChance` and then
+   * bumps that chance by 1%, regardless of outcome. The chat indication
+   * only renders when the spell has a result table (the chat-card path);
+   * for table-less spells (the adapter's current scope) the chance bump
+   * is silent — exactly mirroring the legacy no-table fallback.
+   *
+   * The lib's RAW model (`spells/spell-check.js:241` `handleWizardFumble`)
+   * is gated on a fumble (natural 1) AND a fumble-table entry tagged
+   * with `effect.type === 'patron-taint'` — the Foundry-side fumble
+   * tables don't carry those tags, so the mechanics diverge in real
+   * worlds. Session 4 chose to preserve the legacy mechanic verbatim
+   * (option 1 in the session-start scope discussion) and defer the RAW
+   * alignment to a future session that figures out the fumble-table
+   * effect-tag migration. See `00-progress.md` open question on RAW
+   * patron-taint alignment.
+   *
+   * @private
+   */
+  async _runLegacyPatronTaint (spellItem) {
+    if (!spellItem) return
+    const patronField = this.system.class?.patron
+    if (!patronField) return
+
+    const spellName = spellItem.name || ''
+    const associatedPatron = spellItem.system?.associatedPatron || ''
+    if (!spellName.includes('Patron') && !associatedPatron) return
+
+    const patronTaintRoll = new Roll('1d100')
+    await patronTaintRoll.evaluate()
+
+    const currentChance = parseInt(this.system.class?.patronTaintChance) || 1
+    const newChance = currentChance + 1
+
+    await this.update({ 'system.class.patronTaintChance': `${newChance}%` })
   }
 
   /**

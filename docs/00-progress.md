@@ -6,33 +6,42 @@
 
 ## Current phase
 
-**Phase 2 — Spell checks — session 3 complete.** Cleric disapproval
-now flows through the adapter. Cleric-castingMode spell items on
-non-patron-bound Cleric actors route through `calculateSpellCheck`
-with a real `getCasterProfile('cleric')` profile,
+**Phase 2 — Spell checks — session 4 complete.** Patron-bound
+wizard / elf actors now route wizard-castingMode spell checks
+through the adapter. `buildSpellCheckArgs` populates
+`character.state.classState.wizard.patron` (and `elf.patron` for
+elves) so `getPatronId(character)` resolves and the lib records
+`castInput.patron`. The lib's RAW patron-taint pipeline (`spells/
+spell-check.js:241` `handleWizardFumble`) stays dormant — gated on
+`input.fumbleTable`, which the adapter never plumbs in — and the
+adapter calls a new `_runLegacyPatronTaint(spellItem)` after
+`_castViaCalculateSpellCheck` to preserve the legacy
+`processSpellCheck:623-660` d100-vs-chance creeping mechanic
+verbatim. Dispatcher gate: `castingMode === 'wizard' && !isCleric`
+(patron OK now); generic + cleric branches still require `!hasPatron`.
+
+**Cleric disapproval (session 3)** continues to work: cleric-castingMode
+spell items on non-patron-bound Cleric actors route through
+`calculateSpellCheck` with a real `getCasterProfile('cleric')` profile,
 `character.state.classState.cleric.disapprovalRange` seeded from
 `actor.system.class.disapproval`, and a Foundry-loaded disapproval
-table adapted to the lib's `SimpleTable` shape. When the natural
-roll triggers disapproval, the lib's `handleClericDisapproval`
-rolls 1d4 × range via the adapter's formula-dispatching roller
-(pre-rolled in Foundry), looks up the table entry, and fires
-`onDisapprovalIncreased`; the event bridge in `spell-events.mjs`
-updates `actor.system.class.disapproval` to the new range and posts
-the "DCC.DisapprovalGained" EMOTE chat (replaces
-`actor.applyDisapproval()`). The adapter then posts the disapproval
-roll chat from `result.disapprovalResult` (replaces
-`actor.rollDisapproval(natural)` + `RollTable.draw`).
+table adapted to the lib's `SimpleTable` shape. When the natural roll
+triggers disapproval, the lib's `handleClericDisapproval` rolls 1d4 ×
+range via the adapter's formula-dispatching roller (pre-rolled in
+Foundry), looks up the table entry, and fires `onDisapprovalIncreased`;
+the event bridge in `spell-events.mjs` updates
+`actor.system.class.disapproval` to the new range and posts the
+"DCC.DisapprovalGained" EMOTE chat (replaces `actor.applyDisapproval()`).
+The adapter then posts the disapproval roll chat from
+`result.disapprovalResult` (replaces `actor.rollDisapproval(natural)` +
+`RollTable.draw`).
 
 Wizard spell loss (session 2) + generic side-effect-free path
-(session 1) continue to work unchanged. Dispatcher gate:
-`castingMode === 'generic' && !isCleric && !hasPatron` OR
-`castingMode === 'wizard' && !isCleric && !hasPatron` OR
-`castingMode === 'cleric' && isCleric && !hasPatron`.
+(session 1) continue to work unchanged.
 
-Patron taint (session 4) and spellburn + mercurial magic (session
-5) still route to the legacy path. `game.dcc.processSpellCheck` is
-exported verbatim — XCC's wizard/cleric sheets depend on it until
-Phase 2 closes.
+Spellburn + mercurial magic (session 5) still route to the legacy
+path. `game.dcc.processSpellCheck` is exported verbatim — XCC's
+wizard/cleric sheets depend on it until Phase 2 closes.
 
 **Phase 1 — Adopt the lib for simple rolls — COMPLETE.** All four
 rolls are migrated through the adapter: `rollAbilityCheck`,
@@ -264,11 +273,13 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 ## In progress
 
 Phase 2 — spell checks. Sessions 1 (generic scaffold), 2 (wizard
-spell loss), and 3 (cleric disapproval) complete. Remaining: patron
-taint (session 4), spellburn + mercurial magic (session 5).
-`spell-events.mjs` has `onSpellLost` + `onDisapprovalIncreased`
-wired; sessions 4–5 add `onPatronTaint`, `onSpellburnApplied`, and
-`onMercurialEffect`.
+spell loss), 3 (cleric disapproval), and 4 (patron route +
+adapter-side legacy taint preservation) complete. Remaining:
+spellburn + mercurial magic (session 5). `spell-events.mjs` has
+`onSpellLost` + `onDisapprovalIncreased` wired; session 4 chose
+adapter-side legacy preservation (`_runLegacyPatronTaint`) over
+the lib's RAW `onPatronTaint` callback — see "Scope decisions"
+below. Session 5 adds `onSpellburnApplied` + `onMercurialEffect`.
 
 ### Session 2026-04-18 (sixth session — Phase 2, session 1)
 
@@ -338,6 +349,87 @@ wired; sessions 4–5 add `onPatronTaint`, `onSpellburnApplied`, and
     still pass unchanged (the legacy branch preserves the old
     body + call-sequence).
   - 763 tests pass (up from 759). `npm run format` clean.
+
+### Session 2026-04-18 (ninth session — Phase 2, session 4)
+
+- **Patron route lands on the adapter; legacy taint mechanic preserved
+  verbatim adapter-side.** `DCCActor.rollSpellCheck`'s gate broadens
+  for the wizard branch from `castingMode === 'wizard' && !isCleric &&
+  !hasPatron` to `castingMode === 'wizard' && !isCleric` — patron-bound
+  wizards / elves with wizard-castingMode items now flow through
+  `_castViaCalculateSpellCheck`. Generic + cleric branches keep
+  `!hasPatron` (rare cross-class cases — defer until session 5 close).
+- **`buildSpellCheckArgs` extended** to populate
+  `character.state.classState.<wizard|elf>.patron` from
+  `actor.system.class.patron` so `getPatronId(character)`
+  (`spells/spell-check.js:72`) resolves and the lib records
+  `castInput.patron`. The lib's RAW patron-taint pipeline
+  (`handleWizardFumble` → `rollPatronTaint`) stays dormant because
+  the adapter never plumbs in `input.fumbleTable` — populating the
+  patron field is harmless but future-proofs for when the RAW
+  alignment lands.
+- **`_runLegacyPatronTaint(spellItem)`** — new private DCCActor method.
+  Ports `module/dcc.js:623-660` verbatim: rolls 1d100 for the d100-vs-
+  chance check, parses `system.class.patronTaintChance` ("3%" → 3),
+  bumps to `${chance + 1}%`, calls `actor.update`. Same trigger
+  conditions as legacy: `actor.system.class?.patron` set AND
+  (`spell name includes 'Patron'` OR `item.system.associatedPatron`
+  truthy). Called from `_castViaCalculateSpellCheck` after
+  `renderSpellCheck` for `profile.type === 'wizard' || 'elf'` casts on
+  patron-bound actors. **Silent chance bump** — no chat message — which
+  matches the legacy no-table fallback in `processSpellCheck` (the
+  patron-taint chat only renders inside `chat-card-spell-result.html`
+  when a spell result table is present, and the adapter doesn't
+  produce result-table chats this phase).
+- **Tests**:
+  - `module/__tests__/adapter-spell-check.test.js` — now 18 tests
+    (up from 14). Removed the rescoped "wizard + patron → legacy"
+    case. Added: `wizard-castingMode item on a patron-bound wizard
+    routes to adapter (session 4)` (no chance bump for non-patron-
+    related spell name); `patron-related spell (name contains
+    Patron) bumps patronTaintChance adapter-side` (3% → 4%); `spell
+    with system.associatedPatron set bumps patronTaintChance
+    adapter-side` (1% → 2%); `non-patron-related spell on patron-
+    bound wizard does not bump patronTaintChance`; `wizard-castingMode
+    item on a patron-bound elf routes to adapter (session 4)` (2% → 3%).
+  - `browser-tests/e2e/phase1-adapter-dispatch.spec.js` — still 20
+    tests. Rescoped the existing "wizard + patron → legacy" case to
+    "wizard + patron → adapter (session 4)" with a chance-bump
+    assertion (reads `system.class.patronTaintChance` before + after,
+    expects +1). **All 20 tests pass against live v14 Foundry**
+    (verified 2026-04-18 against the running `v14` world; 2.2 min run).
+  - 777 Vitest tests pass (up from 773).
+
+**Scope decisions (Phase 2 session 4):**
+
+- **Option 1: adapter-side legacy preservation, not RAW migration.**
+  The session-start prompt step 5 implied wiring the lib's
+  `onPatronTaint` callback to bump `patronTaintChance`. On reading
+  the legacy code (`dcc.js:623-660`), the Foundry-system patron-taint
+  mechanic is fundamentally different from the lib's RAW model:
+  - **Legacy**: per-cast 1d100 vs creeping chance, +1% each cast
+    (regardless of outcome). No table lookup. Triggered for any
+    patron-related spell on a patron-bound actor.
+  - **Lib RAW** (`spells/spell-check.js:241` + `spells/fumble.js:46`):
+    only fires on a fumble (natural 1) AND only when the fumble-
+    table entry is tagged with `effect.type === 'patron-taint'`.
+    Foundry-side fumble tables don't carry these tags, so naively
+    switching to the lib's pipeline would have made patron taint
+    effectively never trigger AND lost the creeping-chance display.
+  Discussed the tradeoff with the user mid-session; chose to keep the
+  legacy mechanic verbatim adapter-side and defer the RAW alignment.
+  See open question below.
+- **No fumble / corruption / patron-taint tables loaded.** With the
+  lib's RAW pipeline dormant, plumbing in tables would have been dead
+  code. Sessions 5+ revisit when figuring out the RAW alignment.
+- **Generic + cleric branches keep `!hasPatron`.** Generic items on
+  patron-bound actors: still legacy (rare; preserves XCC compatibility
+  for patron-related generic-mode side spells). Cleric + patron is a
+  rare XCC variant; defer until the last session decides whether to
+  include.
+- **Patron field populated even though the lib's pipeline is dormant.**
+  Harmless (no fumbleTable means no taint trigger) and forward-looking:
+  when RAW alignment lands, the character state is already correct.
 
 ### Session 2026-04-18 (eighth session — Phase 2, session 3)
 
@@ -606,6 +698,24 @@ wired; sessions 4–5 add `onPatronTaint`, `onSpellburnApplied`, and
    (attack/crit migration) is required because that's where those
    utilities are implicated.
 
+5. **Patron-taint mechanic alignment (legacy creeping-chance vs lib
+   RAW).** Session 4 chose option 1 (adapter-side legacy preservation
+   via `_runLegacyPatronTaint`). The Foundry system ships a non-RAW
+   creeping-chance mechanic (`processSpellCheck:623-660`: every
+   patron-related cast bumps `system.class.patronTaintChance` by 1%,
+   no actual taint effect applied beyond the display). The lib follows
+   RAW: taint only on fumble, only when the fumble-table entry has
+   `effect.type === 'patron-taint'`. Aligning them needs:
+   (a) decision on whether DCC keeps the creeping mechanic or moves to
+   RAW; (b) if RAW: a fumble-table effect-tag migration (or a Foundry-
+   side adapter that infers `patronTaint: true` from fumble-table row
+   text); (c) per-patron taint table resolution (Foundry has
+   `spellSideEffectsCompendium` but no setting for taint tables
+   specifically — likely a name-convention lookup like
+   `${patronName} Taint` inside the side-effects compendium, similar
+   to `module/item.js:436` manifestation lookup). Defer until after
+   Phase 2 closes.
+
 ## Decisions made
 
 0. **Runtime loading: vendor the lib's built `dist/`.** See open
@@ -653,23 +763,23 @@ wired; sessions 4–5 add `onPatronTaint`, `onSpellburnApplied`, and
 
 ## Next steps
 
-Phase 2 session 4 — migrate patron taint. Wire `onPatronTaint` in
-`spell-events.mjs` to replace the patron taint d100 roll + "patron
-taint chance" bump in `processSpellCheck` (dcc.js — search for
-`patronTaint` / `applyPatronTaint`). Extend `buildSpellCheckArgs`
-to populate `character.state.classState.wizard.patron` (and maybe
-`.elf.patron`) from `actor.system.class.patron` so
-`calculateSpellCheck`'s patron-path sets `castInput.patron` and
-triggers `handleWizardFumble` → `rollPatronTaint`. Load the patron
-taint table via the same `toLibSimpleTable` adapter session 3
-introduced (extract a shared table loader if the shape matches —
-likely yes). Broaden the adapter gate to include patron-bound
-wizard / elf actors: remove `!hasPatron` from the wizard branch
-once the migration is complete. Tests: wizard-castingMode item on
-a patron-bound wizard → adapter; patron taint triggers on
-appropriate fumbles; legacy path still works for non-patron-bound
-wizards (now covered by session 2 path) and XCC variants that keep
-`className === 'Wizard'` with novel patrons.
+Phase 2 session 5 — migrate spellburn + mercurial magic. Wire
+`onSpellburnApplied` + `onMercurialEffect` callbacks in
+`spell-events.mjs` to replace the spellburn ability-cost application
++ mercurial-magic table lookup that `processSpellCheck` (and
+`DCCActor.applySpellburn`, `DCCItem.rollMercurialMagic`) handle on
+the legacy path. Load the mercurial magic table via the same
+`toLibSimpleTable` adapter session 3 introduced (single world table
+per `dcc.setMercurialMagicTable` setting — straightforward). Extend
+`buildSpellCheckArgs` to set `input.mercurialMagicTable` for wizard
+profiles and to thread spellburn input through `castInput.spellburn`.
+Tests: wizard cast with spellburn applied → ability scores updated
+adapter-side; wizard cast that triggers mercurial → table draw
+posted as a separate chat (similar to the session-3
+`renderDisapprovalRoll` pattern); patron-bound wizard with spellburn
++ mercurial all in one cast still works. Phase 2 closes once
+session 5 ships and the patron-taint RAW alignment question (open
+question #5) is resolved.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

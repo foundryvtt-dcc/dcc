@@ -23,8 +23,13 @@
  *     introduces it; sessions 4–5 reuse the same Foundry-RollTable
  *     → lib-SimpleTable adapter for corruption / patron taint.
  *
- * Session 3 (cleric disapproval) scope. Patron taint / spellburn /
- * mercurial migrate in sessions 4–5.
+ * Session 4 (patron route) extends `buildSpellCheckArgs` to populate
+ * `wizard.patron` / `elf.patron` so `getPatronId(character)` resolves;
+ * the lib's RAW patron-taint pipeline stays dormant (no fumbleTable
+ * loaded) and `_runLegacyPatronTaint` adapter-side preserves the
+ * legacy d100-vs-chance creeping mechanic verbatim.
+ *
+ * Spellburn / mercurial migrate in session 5.
  */
 
 import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
@@ -212,6 +217,26 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
       disapprovalRange: Number.isFinite(disapprovalRange) && disapprovalRange > 0
         ? disapprovalRange
         : 1
+    }
+  }
+
+  // Wizard / elf profiles can be patron-bound. Populate the patron id
+  // so `getPatronId(character)` (spell-check.js:72) returns the actor's
+  // bound patron and the lib records `castInput.patron` on the result.
+  // Session 4 routes patron-bound wizards/elves through the adapter for
+  // the spell check itself, but the patron-taint side effect is still
+  // handled adapter-side (`_runLegacyPatronTaint`) — populating the
+  // field here is harmless because the lib's `handleWizardFumble`
+  // pipeline is gated on `input.fumbleTable`, which the adapter never
+  // sets. Future migration of the RAW patron-taint pipeline picks up
+  // this state without further plumbing.
+  if (profile.type === 'wizard' || profile.type === 'elf') {
+    const patron = actor.system.class?.patron
+    if (patron) {
+      classState[profile.type] = {
+        ...classState[profile.type],
+        patron
+      }
     }
   }
 

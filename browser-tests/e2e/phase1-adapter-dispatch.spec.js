@@ -386,7 +386,7 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { spell: 'P1-Wizard-Spell', mode: 'wizard' })
     })
 
-    test('wizard-castingMode spell item on a patron-bound actor → legacy', async ({ page }) => {
+    test('wizard-castingMode spell item on a patron-bound wizard → adapter (session 4)', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({
           name: 'P1 Spell WizardPatron',
@@ -399,15 +399,28 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
           system: {
             level: 1,
             config: { castingMode: 'wizard', inheritCheckPenalty: true },
-            spellCheck: { die: '1d20', value: '+0', penalty: '-0' }
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            associatedPatron: 'Bobugbubilz'
           }
         }])
+      })
+      const beforeChance = await page.evaluate(() => {
+        return game.actors.getName('P1 Spell WizardPatron').system.class.patronTaintChance
       })
       await page.evaluate(async () => {
         await game.actors.getName('P1 Spell WizardPatron').rollSpellCheck({ spell: 'P1-Patron-Spell' })
       })
       const line = await waitForAdapterLog('rollSpellCheck')
-      assertPath(line, 'legacy', { spell: 'P1-Patron-Spell' })
+      assertPath(line, 'adapter', { spell: 'P1-Patron-Spell', mode: 'wizard' })
+
+      // Adapter-side legacy patron-taint bump: chance increments by 1%
+      // for any patron-related cast (associatedPatron set here).
+      const afterChance = await page.evaluate(() => {
+        return game.actors.getName('P1 Spell WizardPatron').system.class.patronTaintChance
+      })
+      const before = parseInt(beforeChance) || 1
+      const after = parseInt(afterChance) || 1
+      expect(after, `patronTaintChance should bump from ${beforeChance} to ${before + 1}%, got ${afterChance}`).toBe(before + 1)
     })
 
     test('cleric-castingMode spell item on a Cleric actor → adapter (cleric)', async ({ page }) => {

@@ -168,13 +168,91 @@ test('already-lost wizard spell + automateWizardSpellLoss on → warn + early re
   findSpy.mockRestore()
 })
 
-test('wizard-castingMode item on a patron-bound actor routes to legacy', async () => {
+test('wizard-castingMode item on a patron-bound wizard routes to adapter (session 4)', async () => {
   rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   actor.system.class.patron = 'Bobugbubilz'
+  actor.system.class.patronTaintChance = '1%'
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  // Spell name without 'Patron' and no associatedPatron — adapter
+  // routes through but the legacy taint helper is a no-op.
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // Adapter took over; legacy item delegation must not fire.
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  // Spell isn't patron-related → no patronTaintChance bump.
+  expect(actorUpdateMock).not.toHaveBeenCalledWith(
+    expect.objectContaining({ 'system.class.patronTaintChance': expect.anything() })
+  )
+
+  itemSpy.mockRestore()
+  findSpy.mockRestore()
+})
+
+test('patron-related spell (name contains Patron) bumps patronTaintChance adapter-side', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = 'Bobugbubilz'
+  actor.system.class.patronTaintChance = '3%'
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  spellItem.name = 'Patron Bond'
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Patron Bond' })
+
+  // Adapter ran the cast (one chat) AND bumped the chance via the
+  // legacy verbatim helper.
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.class.patronTaintChance': '4%' })
+
+  findSpy.mockRestore()
+})
+
+test('spell with system.associatedPatron set bumps patronTaintChance adapter-side', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = 'Cthulhu'
+  actor.system.class.patronTaintChance = '1%'
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({ associatedPatron: 'Cthulhu' })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.class.patronTaintChance': '2%' })
+
+  findSpy.mockRestore()
+})
+
+test('non-patron-related spell on patron-bound wizard does not bump patronTaintChance', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = 'Bobugbubilz'
+  actor.system.class.patronTaintChance = '5%'
   actor.system.class.className = 'Wizard'
   actor.system.details.sheetClass = 'Wizard'
 
@@ -183,8 +261,34 @@ test('wizard-castingMode item on a patron-bound actor routes to legacy', async (
 
   await actor.rollSpellCheck({ spell: 'Magic Missile' })
 
-  expect(itemSpy).toHaveBeenCalledTimes(1)
-  expect(rollToMessageMock).not.toHaveBeenCalled()
+  expect(actorUpdateMock).not.toHaveBeenCalledWith(
+    expect.objectContaining({ 'system.class.patronTaintChance': expect.anything() })
+  )
+
+  findSpy.mockRestore()
+})
+
+test('wizard-castingMode item on a patron-bound elf routes to adapter (session 4)', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = 'Sezrekan'
+  actor.system.class.patronTaintChance = '2%'
+  actor.system.class.className = 'Elf'
+  actor.system.details.sheetClass = 'Elf'
+
+  const spellItem = makeWizardSpellItem({ associatedPatron: 'Sezrekan' })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // Elf profile + patron flows through the adapter and bumps chance.
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.class.patronTaintChance': '3%' })
 
   itemSpy.mockRestore()
   findSpy.mockRestore()
