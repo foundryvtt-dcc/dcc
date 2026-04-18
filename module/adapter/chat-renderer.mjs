@@ -1,4 +1,4 @@
-/* global ChatMessage, game */
+/* global ChatMessage, Roll, game */
 
 /**
  * Renders dcc-core-lib result objects into Foundry ChatMessages.
@@ -293,6 +293,59 @@ export async function renderSpellCheck ({
       flavor,
       flags,
       system: { spellId: spellItem?.id }
+    },
+    { create: false }
+  )
+
+  return ChatMessage.create(messageData)
+}
+
+/**
+ * Render a cleric disapproval roll as a Foundry ChatMessage. Mirrors
+ * the legacy `_onRollDisapproval` chat (`actor.js:2852`) for the
+ * table-found branch: one message carrying the 1d4 sub-roll + the
+ * drawn table entry's description.
+ *
+ * The lib has already rolled (via the caster's sync roller, which the
+ * adapter primes with a Foundry-evaluated 1d4 value — see
+ * `_castViaCalculateSpellCheck`). This function builds a deterministic
+ * `Roll` for the `disapprovalResult.roll` total so Foundry can render
+ * it, then attaches the table text as the chat flavor.
+ *
+ * @param {Object} params
+ * @param {Object} params.actor - The DCCActor that cast.
+ * @param {Object} params.disapprovalResult - The lib's
+ *   `DisapprovalResult` (from `spells/disapproval.js`).
+ * @returns {Promise<ChatMessage>}
+ */
+export async function renderDisapprovalRoll ({ actor, disapprovalResult }) {
+  const total = Number(disapprovalResult?.roll) || 0
+  const description = disapprovalResult?.description || ''
+
+  // Build a deterministic Roll that evaluates to the lib's rolled
+  // value. `${total}d1` always totals `total` regardless of dice.
+  // The flavor carries the description so chat displays the drawn
+  // table entry like the legacy `RollTable.draw` path.
+  const roll = new Roll(`${Math.max(1, total)}d1`)
+  await roll.evaluate()
+
+  const flavor = [game.i18n.localize('DCC.DisapprovalRoll'), description]
+    .filter(Boolean)
+    .join(' — ')
+
+  const messageData = await roll.toMessage(
+    {
+      speaker: ChatMessage.getSpeaker({ actor }),
+      flavor,
+      flags: {
+        'dcc.RollType': 'Disapproval',
+        'dcc.isDisapproval': true,
+        'dcc.libDisapproval': {
+          roll: disapprovalResult?.roll,
+          description,
+          disapprovalRange: disapprovalResult?.disapprovalRange
+        }
+      }
     },
     { create: false }
   )

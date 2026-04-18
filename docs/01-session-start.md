@@ -23,35 +23,51 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 1 closed. Phase 2 sessions 1 + 2 complete.**
+**Status:** **Phase 1 closed. Phase 2 sessions 1 + 2 + 3 complete.**
 `DCCActor.rollSpellCheck` is a dispatcher. Generic-castingMode spell
 items on non-Cleric, non-patron actors flow through
 `_castViaCastSpell` (buildSpellCastInput → libCastSpell two-pass →
-renderSpellCheck). Wizard-castingMode items on the same actors now
-flow through `_castViaCalculateSpellCheck` (buildSpellCheckArgs →
-libCalculateSpellCheck two-pass with `createSpellEvents` callbacks →
-renderSpellCheck); `onSpellLost` marks the Foundry item
-`system.lost: true` via `item.update`, replacing the
-`actor.loseSpell(item)` side effect in `processSpellCheck`. An
-adapter-side lost-spell pre-check (mirrors `DCCItem.rollSpellCheck:260`)
-warns + returns before dispatch when
-`spellItem.system.lost && automateWizardSpellLoss`. Cleric /
-patron-bound / naked spell checks stay on `_rollSpellCheckLegacy`
-(which still hands off to `game.dcc.processSpellCheck` verbatim).
+renderSpellCheck). Wizard-castingMode items on non-cleric,
+non-patron actors flow through `_castViaCalculateSpellCheck`
+(buildSpellCheckArgs → libCalculateSpellCheck two-pass with
+`createSpellEvents` callbacks → renderSpellCheck); `onSpellLost`
+marks the Foundry item `system.lost: true` via `item.update`,
+replacing the `actor.loseSpell(item)` side effect in
+`processSpellCheck`. An adapter-side lost-spell pre-check (mirrors
+`DCCItem.rollSpellCheck:260`) warns + returns before dispatch when
+`spellItem.system.lost && automateWizardSpellLoss`.
+**Cleric-castingMode items on non-patron Cleric actors** also flow
+through `_castViaCalculateSpellCheck`: `buildSpellCheckArgs`
+populates `character.state.classState.cleric.disapprovalRange` from
+`actor.system.class.disapproval`; `loadDisapprovalTable(actor)`
+adapts the Foundry disapproval table to a lib `SimpleTable`;
+`_castViaCalculateSpellCheck` pre-rolls 1d4 via Foundry when
+natural ≤ range, and the pass-2 roller dispatches on formula
+(`'1d4'` → pre-rolled d4, else spell-check natural). The
+`onDisapprovalIncreased` bridge updates `actor.system.class.disapproval`
++ posts the "DCC.DisapprovalGained" EMOTE (replaces
+`actor.applyDisapproval()`); `renderDisapprovalRoll` posts the
+disapproval roll chat from `result.disapprovalResult` (replaces
+`actor.rollDisapproval(natural)` + `RollTable.draw`). Patron-bound
+actors, wizard-on-cleric, cleric-on-non-cleric, naked spell checks,
+and unknown casting modes stay on `_rollSpellCheckLegacy` (still
+hands off to `game.dcc.processSpellCheck` verbatim).
 
 `module/adapter/spell-input.mjs` now exports
 `syntheticGenericProfile`, `buildSpellbookEntry`,
-`buildSpellCastInput` (castSpell args), and `buildSpellCheckArgs`
+`buildSpellCastInput`, `buildSpellCheckArgs`
 (calculateSpellCheck args — returns `null` when the actor's class
 has no lib-side profile, letting the adapter fall back to legacy
-for homebrew / spinoff classes). `module/adapter/spell-events.mjs`
-exports `createSpellEvents({ actor, spellItem })` — only
-`onSpellLost` is wired this session; sessions 3–5 add
-`onDisapprovalIncreased`, `onPatronTaint`, `onSpellburnApplied`,
-`onMercurialEffect`. 767 Vitest tests pass (763 + 4 new in
-`adapter-spell-check.test.js`). The Playwright spec is at 19 tests
-(wizard-castingMode → adapter added; ex-"wizard → legacy" rescoped
-to "wizard + patron → legacy"). Live Foundry run still pending.
+for homebrew / spinoff classes), and `loadDisapprovalTable` (async).
+`module/adapter/spell-events.mjs` exports
+`createSpellEvents({ actor, spellItem })` — `onSpellLost` and
+`onDisapprovalIncreased` wired; sessions 4–5 add `onPatronTaint`,
+`onSpellburnApplied`, `onMercurialEffect`.
+`module/adapter/chat-renderer.mjs` now exports
+`renderDisapprovalRoll`. 773 Vitest tests pass (767 + 6 new in
+`adapter-spell-check.test.js`). The Playwright spec is at 20 tests
+(cleric-castingMode → adapter (cleric) added), all 20 passing
+against live v14 Foundry as of 2026-04-18.
 
 `@moonloch/dcc-core-lib@0.4.0` is vendored at
 `module/vendor/dcc-core-lib/`. The lib uses a tagged-union
@@ -69,76 +85,80 @@ Playwright spec relies on them for automated dispatch validation and
 `_xxxViaAdapter` / `_xxxLegacy` added in later phases must call
 `logDispatch` as its first line.
 
-**This session's goal:** **Phase 2 session 3 — cleric disapproval
-migration.** Sessions 1 + 2 landed the dispatcher, generic +
-wizard adapter branches, `createSpellEvents.onSpellLost`, and the
-wizard lost-spell pre-check. Session 3 broadens the adapter gate
-to cover cleric actors, wires `onDisapprovalIncreased` through
-`spell-events.mjs` to replace the
-`actor.rollDisapproval(natural)` + `actor.applyDisapproval()` side
-effects in `processSpellCheck`, and extends `buildSpellCheckArgs`
-to populate `character.state.classState.cleric.disapprovalRange`
-so the lib's disapproval-range read succeeds.
+**This session's goal:** **Phase 2 session 4 — patron taint
+migration.** Sessions 1 + 2 + 3 landed the dispatcher, generic +
+wizard + cleric adapter branches, `createSpellEvents.onSpellLost`
++ `.onDisapprovalIncreased`, `loadDisapprovalTable`, and
+`renderDisapprovalRoll`. Session 4 broadens the adapter gate to
+cover patron-bound wizard / elf actors, wires `onPatronTaint`
+through `spell-events.mjs` to replace the taint roll + chance bump
+in `processSpellCheck`, and extends `buildSpellCheckArgs` to
+populate `character.state.classState.wizard.patron` (and/or
+`.elf.patron`) so `calculateSpellCheck`'s patron path runs.
 
-### Session 3 slice — cleric disapproval
+### Session 4 slice — patron taint
 
 1. **Read first** — the current dispatcher + adapter branches in
-   `module/actor.js` (`rollSpellCheck`,
-   `_rollSpellCheckViaAdapter`, `_castViaCastSpell`,
-   `_castViaCalculateSpellCheck`), the session-2 event bridge in
-   `module/adapter/spell-events.mjs`, the disapproval branch in
-   `module/dcc.js:762-779` (the `castingMode === 'cleric'` section
-   of `processSpellCheck`), and the lib pieces at
-   `module/vendor/dcc-core-lib/spells/disapproval.js` +
-   `spell-check.js` (search `handleClericDisapproval`).
+   `module/actor.js` (`rollSpellCheck`, `_rollSpellCheckViaAdapter`,
+   `_castViaCalculateSpellCheck`), the session-3 event bridge +
+   table loader in `module/adapter/spell-events.mjs` +
+   `module/adapter/spell-input.mjs` (`loadDisapprovalTable` /
+   `toLibSimpleTable`), the patron / fumble branches in
+   `module/dcc.js` (search `patronTaint`, `applyPatronTaint`), and
+   the lib pieces at `module/vendor/dcc-core-lib/spells/corruption.js`
+   (search `rollPatronTaint`) + `spells/spell-check.js` (search
+   `handleWizardFumble`).
 
-2. **Extend `buildSpellCheckArgs`** — when
-   `profile.type === 'cleric'`, populate
-   `character.state.classState.cleric.disapprovalRange` from
-   `actor.system.class.disapproval` so
-   `getDisapprovalRange(character)` reads a real value. Add a
-   disapproval-range default when the actor has no value yet.
+2. **Extend `buildSpellCheckArgs`** — when the actor's class is a
+   patron caster (wizard / elf), populate
+   `character.state.classState.<profile.type>.patron` from
+   `actor.system.class.patron`. The lib's `getPatronId(character)`
+   (spell-check.js:72) reads this to set `castInput.patron`.
 
-3. **Pass a `disapprovalTable` to `calculateSpellCheck`** — the
-   lib's `handleClericDisapproval` only runs the roll when the
-   table is supplied. Pull it from
-   `game.settings.get('dcc', 'disapprovalPacks')` + the first
-   compendium entry. Session 1 + 2 skipped table loading (no
-   disapproval + no corruption table needed); session 3 introduces
-   it. Document the table-loading pattern so sessions 4–5 reuse it.
+3. **Load the patron-taint table and (likely) fumble / corruption
+   tables.** `handleWizardFumble` reads `input.fumbleTable` +
+   `input.corruptionTable` + `input.patronTaintTable`. Session 4
+   needs at least the patron taint table; the fumble + corruption
+   tables are probably needed too because wizard fumbles drive
+   corruption / taint from the same pipeline. Reuse session 3's
+   `toLibSimpleTable` — extract it to a shared `table-adapter.mjs`
+   if the third consumer shape matches.
 
-4. **Broaden the adapter gate.** Currently:
-   `castingMode === 'generic' | 'wizard' && !hasPatron && !isCleric`.
-   Session 3: also allow `(castingMode === 'cleric' || isCleric)`
-   on non-patron-bound actors. Preserve the cleric sheet's
-   idol-magic / no-checkPenalty semantics inside the adapter
-   branch.
+4. **Broaden the adapter gate.** Currently wizard branch requires
+   `!isCleric` AND the top-level dispatch still requires `!hasPatron`.
+   Session 4: drop `!hasPatron` from the wizard branch once the
+   patron taint pipeline is wired. Keep the cleric branch at
+   `!hasPatron` for now — patron + cleric is a rare XCC variant;
+   defer until the last session decides whether to include it.
 
-5. **Fill in `onDisapprovalIncreased`** in
-   `module/adapter/spell-events.mjs`. When the lib reports
-   `result.newDisapprovalRange > oldRange`, update
-   `actor.system.class.disapproval` via `actor.update(...)` and
-   emit the disapproval chat message (mirrors today's
-   `actor.rollDisapproval(natural)` behavior). The `disapprovalResult`
-   from the lib carries the table row + description — surface it
-   in the chat message.
+5. **Fill in `onPatronTaint`** in `module/adapter/spell-events.mjs`.
+   When the lib reports patron taint, bump the actor's patron-taint
+   chance (find the exact field in `processSpellCheck` —
+   something like `actor.system.class.patronTaint`) via
+   `actor.update(...)` and emit the taint chat message (the
+   `patronTaintResult` from the lib carries the rolled row +
+   description — surface it like session 3 did with
+   `disapprovalResult`).
 
-6. **Tests.** Extend `adapter-spell-check.test.js`: cleric-castingMode
-   item on a cleric actor with natural above disapproval range →
-   adapter no-op on disapproval; cleric item with natural within
-   range → adapter triggers disapproval; cleric item on a
-   patron-bound actor → legacy. Extend the Playwright spec with a
-   cleric-adapter test.
+6. **Tests.** Extend `adapter-spell-check.test.js`: wizard-castingMode
+   item on a patron-bound wizard → adapter; patron taint triggers
+   on a natural 1 (or whatever the lib's gate is) → adapter posts
+   taint chat + updates actor; wizard item on a patron-bound elf →
+   adapter. Extend the Playwright spec with a patron-wizard adapter
+   test (the existing "wizard + patron → legacy" test flips to
+   "wizard + patron → adapter" — rename accordingly).
 
-7. **Lib-side wave-2 modifier migration** may now be required if
-   the disapproval pipeline needs tagged-union modifiers. Check
-   before writing code; if it does, land the lib migration in
-   `dcc-core-lib` first + `npm run sync-core-lib`.
+7. **Lib-side wave-2 modifier migration** is likely required this
+   session because the corruption / fumble / patron pipelines are
+   on `LegacyRollModifier` (per `dcc-core-lib/docs/MODIFIERS.md §9`
+   wave 2). Check first by reading the types; if wave 2 hasn't
+   landed yet, coordinate with `dcc-core-lib` maintainer / land the
+   lib migration in its own repo + `npm run sync-core-lib` before
+   adapter work starts.
 
-Do NOT in session 3: migrate patron taint (session 4), spellburn
-or mercurial magic (session 5). Keep `game.dcc.processSpellCheck`
-exported verbatim — XCC's wizard/cleric sheets consume it until
-Phase 2 closes.
+Do NOT in session 4: migrate spellburn or mercurial magic (session
+5). Keep `game.dcc.processSpellCheck` exported verbatim — XCC's
+wizard/cleric sheets consume it until Phase 2 closes.
 
 **Before touching Phase 2 code, confirm the repo is green:**
 

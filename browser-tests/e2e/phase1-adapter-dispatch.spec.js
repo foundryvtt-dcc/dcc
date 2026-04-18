@@ -410,6 +410,33 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(line, 'legacy', { spell: 'P1-Patron-Spell' })
     })
 
+    test('cleric-castingMode spell item on a Cleric actor → adapter (cleric)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell Cleric',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1 },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Cleric-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'cleric', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' }
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell Cleric').rollSpellCheck({ spell: 'P1-Cleric-Spell' })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P1-Cleric-Spell', mode: 'cleric' })
+    })
+
     test('naked spell check (no item) → legacy', async ({ page }) => {
       await makePlayer(page, 'P1 Spell Naked')
       await page.evaluate(async () => {

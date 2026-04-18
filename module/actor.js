@@ -13,8 +13,8 @@ import {
   calculateSpellCheck as libCalculateSpellCheck
 } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
-import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck } from './adapter/chat-renderer.mjs'
-import { buildSpellCastInput, buildSpellCheckArgs } from './adapter/spell-input.mjs'
+import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll } from './adapter/chat-renderer.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
@@ -1840,18 +1840,23 @@ class DCCActor extends Actor {
    *
    * Dispatcher. Phase 2 scope — as sessions land, more casting modes
    * peel off onto the adapter:
-   *   - Session 1: generic-castingMode items (no side effects).
-   *   - Session 2 (current): wizard-castingMode items on non-cleric,
-   *     non-patron-bound actors; wizard spell loss via the lib's
-   *     `onSpellLost` event. Pre-check for already-lost spells
-   *     (mirrors `DCCItem.rollSpellCheck:260`) fires adapter-side.
-   *   - Session 3+: cleric disapproval, patron taint, spellburn,
-   *     mercurial magic.
+   *   - Session 1: generic-castingMode items on non-cleric, non-patron-bound
+   *     actors (no side effects).
+   *   - Session 2: wizard-castingMode items on non-cleric, non-patron-bound
+   *     actors; wizard spell loss via the lib's `onSpellLost` event.
+   *     Pre-check for already-lost spells (mirrors
+   *     `DCCItem.rollSpellCheck:260`) fires adapter-side.
+   *   - Session 3 (current): cleric-castingMode items on cleric actors
+   *     without patrons; cleric disapproval via the lib's
+   *     `onDisapprovalIncreased` event (replaces
+   *     `actor.applyDisapproval()` + `actor.rollDisapproval()`).
+   *   - Session 4+: patron taint, spellburn, mercurial magic.
    *
-   * Everything else (cleric actors, patron-bound actors, naked
-   * spell checks, unknown casting modes) stays on the legacy path.
-   * The item lookup is hoisted here so the existing actor.test.js
-   * `collectionFindMock` call-count assertions still match.
+   * Everything else (wizard on cleric, cleric on non-cleric,
+   * patron-bound actors, naked spell checks, unknown casting modes)
+   * stays on the legacy path. The item lookup is hoisted here so the
+   * existing actor.test.js `collectionFindMock` call-count assertions
+   * still match.
    *
    * @param options
    */
@@ -1878,11 +1883,11 @@ class DCCActor extends Actor {
     const hasPatron = !!this.system.class?.patron
     const isCleric = this.system.details?.sheetClass === 'Cleric'
 
-    if (spellItem && !hasPatron && !isCleric) {
-      if (castingMode === 'generic') {
+    if (spellItem && !hasPatron) {
+      if (castingMode === 'generic' && !isCleric) {
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }
-      if (castingMode === 'wizard') {
+      if (castingMode === 'wizard' && !isCleric) {
         // Adapter-side spell-loss pre-check — mirrors the legacy
         // `DCCItem.rollSpellCheck:260` gate that would otherwise warn
         // and abort. Once the cast reaches the adapter the item has
@@ -1893,6 +1898,9 @@ class DCCActor extends Actor {
             spell: spellItem.name
           }))
         }
+        return this._rollSpellCheckViaAdapter(spellItem, options)
+      }
+      if (castingMode === 'cleric' && isCleric) {
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }
     }
@@ -1926,10 +1934,10 @@ class DCCActor extends Actor {
       mode: castingMode
     })
 
-    if (castingMode === 'wizard') {
+    if (castingMode === 'wizard' || castingMode === 'cleric') {
       const args = buildSpellCheckArgs(this, spellItem, options)
       // No lib-side profile for this actor's class — drop back to legacy
-      // so spinoff classes with wizard-castingMode spells still work.
+      // so spinoff classes with wizard/cleric-castingMode spells still work.
       if (!args) {
         return this._rollSpellCheckLegacy(options, spellItem)
       }
@@ -1972,15 +1980,37 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Wizard-castingMode adapter branch. Routes through
-   * `calculateSpellCheck` so the lib's spell-loss bookkeeping (and,
-   * in later sessions, fumble / corruption handling) is used. Event
-   * callbacks bridge lib events to Foundry side effects.
+   * Wizard / cleric-castingMode adapter branch. Routes through
+   * `calculateSpellCheck` so the lib's spell-loss bookkeeping (wizard)
+   * and disapproval handling (cleric) drive the cast. Event callbacks
+   * in `spell-events.mjs` bridge lib events to Foundry side effects:
+   * `onSpellLost` → `item.update({system.lost: true})`,
+   * `onDisapprovalIncreased` → `actor.update({system.class.disapproval:
+   * newRange})` + gain chat. The disapproval sub-roll chat is posted
+   * here (the lib doesn't pass `disapprovalResult` to the callback).
+   *
+   * Two-pass formula/evaluate pattern. The pass-2 roller is
+   * formula-dispatching: returns the pre-rolled spell-check natural
+   * for the action-die formula, and a pre-rolled 1d4 for the
+   * disapproval sub-roll (only when cleric + natural is inside the
+   * range — the lib's `handleClericDisapproval` is the only sub-roll
+   * path today).
    * @private
    */
   async _castViaCalculateSpellCheck (args, spellItem, options) {
     const { character, input, profile } = args
     const events = createSpellEvents({ actor: this, spellItem })
+
+    // Cleric path needs a disapproval table so the lib's
+    // `handleClericDisapproval` runs the full table draw (lib skips
+    // the draw if the table is missing — matching legacy behavior
+    // when no table is configured).
+    if (profile?.type === 'cleric') {
+      const disapprovalTable = await loadDisapprovalTable(this)
+      if (disapprovalTable) {
+        input.disapprovalTable = disapprovalTable
+      }
+    }
 
     // Pass 1: build the formula without rolling.
     const plan = libCalculateSpellCheck(character, input, { mode: 'formula' }, events)
@@ -1994,13 +2024,35 @@ class DCCActor extends Actor {
 
     const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
 
+    // Pre-roll the disapproval 1d4 via Foundry so the pass-2 roller
+    // has a value to hand back when the lib calls `options.roller('1d4')`
+    // inside `rollDisapproval`. Only needed when cleric + natural is
+    // in the disapproval range; avoids a spurious d4 roll otherwise.
+    let disapprovalD4 = null
+    if (
+      profile?.type === 'cleric' &&
+      input.disapprovalTable &&
+      natural <= (character.state.classState?.cleric?.disapprovalRange ?? 0)
+    ) {
+      const d4Roll = new Roll('1d4')
+      await d4Roll.evaluate()
+      disapprovalD4 = d4Roll.total
+    }
+
     // Pass 2: classify against the pre-rolled natural. Fires
-    // `onSpellLost` when the total lands in a lost tier; the event
-    // bridge updates the Foundry item.
+    // `onSpellLost` when the total lands in a lost tier and
+    // `onDisapprovalIncreased` when the cleric roll triggers
+    // disapproval; the event bridges update the Foundry item / actor.
     const result = libCalculateSpellCheck(
       character,
       input,
-      { mode: 'evaluate', roller: () => natural },
+      {
+        mode: 'evaluate',
+        roller: (formula) => {
+          if (formula === '1d4' && disapprovalD4 !== null) return disapprovalD4
+          return natural
+        }
+      },
       events
     )
     if (result.error) {
@@ -2016,6 +2068,16 @@ class DCCActor extends Actor {
       result,
       foundryRoll
     })
+
+    // Post the disapproval roll chat after the main spell-check chat,
+    // mirroring the legacy two-message ordering (spell check, then
+    // disapproval roll, then gained-range emote from the callback).
+    if (result.disapprovalResult) {
+      await renderDisapprovalRoll({
+        actor: this,
+        disapprovalResult: result.disapprovalResult
+      })
+    }
 
     return foundryRoll
   }

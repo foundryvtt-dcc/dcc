@@ -1,3 +1,5 @@
+/* global CONFIG, game */
+
 /**
  * Foundry → dcc-core-lib spell input builders.
  *
@@ -15,10 +17,14 @@
  *     orchestration finds the entry. Returns `null` when the actor's
  *     class has no lib-side caster profile — callers should fall
  *     back to the legacy path.
+ *   - `loadDisapprovalTable(actor)` — async. Returns a lib
+ *     `SimpleTable` for the actor's configured disapproval table
+ *     (compendium or world), or `null` when unavailable. Session 3
+ *     introduces it; sessions 4–5 reuse the same Foundry-RollTable
+ *     → lib-SimpleTable adapter for corruption / patron taint.
  *
- * Session 2 (wizard spell loss) scope. Cleric disapproval is
- * session 3; patron taint / spellburn / mercurial migrate in
- * sessions 4–5.
+ * Session 3 (cleric disapproval) scope. Patron taint / spellburn /
+ * mercurial migrate in sessions 4–5.
  */
 
 import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
@@ -189,6 +195,26 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
     0
   )
 
+  const classState = {
+    ...(base.state?.classState || {}),
+    [profile.type]: {
+      spellbook: { spells: [spellbookEntry] }
+    }
+  }
+
+  // Cleric profile needs a disapproval range so the lib's
+  // `getDisapprovalRange(character)` read succeeds. Fall back to the
+  // lib's default (1) if the actor has no value yet.
+  if (profile.type === 'cleric') {
+    const disapprovalRange = Number(actor.system.class?.disapproval)
+    classState.cleric = {
+      ...classState.cleric,
+      disapprovalRange: Number.isFinite(disapprovalRange) && disapprovalRange > 0
+        ? disapprovalRange
+        : 1
+    }
+  }
+
   const character = {
     ...base,
     identity: {
@@ -198,12 +224,7 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
     },
     state: {
       ...base.state,
-      classState: {
-        ...(base.state?.classState || {}),
-        [profile.type]: {
-          spellbook: { spells: [spellbookEntry] }
-        }
-      }
+      classState
     }
   }
 
@@ -216,4 +237,85 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
   }
 
   return { character, input, profile, abilityId }
+}
+
+/**
+ * Convert a Foundry `RollTable` document to a lib `SimpleTable`. The
+ * lib's `lookupSimple` indexes entries by `[min, max]` ranges, so
+ * each Foundry `TableResult` maps to one entry.
+ */
+function toLibSimpleTable (foundryTable) {
+  const results = foundryTable?.results
+  if (!results) return null
+  const entries = []
+  for (const entry of results) {
+    const [min, max] = Array.isArray(entry.range) ? entry.range : [0, 0]
+    if (!Number.isFinite(min) || !Number.isFinite(max)) continue
+    entries.push({
+      min,
+      max,
+      text: entry.description || entry.text || entry.name || ''
+    })
+  }
+  if (entries.length === 0) return null
+  return {
+    id: foundryTable.id || foundryTable.name || 'foundry-table',
+    name: foundryTable.name || '',
+    entries
+  }
+}
+
+/**
+ * Load the actor's configured disapproval table and convert it to
+ * the lib's `SimpleTable` shape. Reads from the compendium pack
+ * registry (`CONFIG.DCC.disapprovalPacks`) first, then falls back
+ * to world tables — mirrors the resolution order the legacy
+ * `_onRollDisapproval` walks (`actor.js:2858-2886`).
+ *
+ * Returns `null` when no table is resolvable (no pack configured,
+ * table missing, or running under the Vitest mock environment with
+ * no `CONFIG.DCC.disapprovalPacks` registry). Callers drop the
+ * `input.disapprovalTable` field; the lib's `handleClericDisapproval`
+ * then detects the triggered natural roll but skips the table-driven
+ * sub-roll (which is the legacy behavior when the table is missing).
+ *
+ * Sessions 4–5 (corruption, patron taint, spellburn, mercurial) will
+ * reuse the same Foundry-RollTable → lib-SimpleTable adapter via
+ * `toLibSimpleTable`. Extract a shared loader then if the lookup
+ * logic stays identical.
+ *
+ * @param {Object} actor - DCCActor (reads `system.class.disapprovalTable`).
+ * @returns {Promise<Object|null>}
+ */
+export async function loadDisapprovalTable (actor) {
+  const tableName = actor?.system?.class?.disapprovalTable
+  if (!tableName) return null
+
+  const packManager = (typeof CONFIG !== 'undefined' && CONFIG?.DCC?.disapprovalPacks) || null
+  const packs = packManager?.packs || []
+
+  for (const packName of packs) {
+    if (!packName) continue
+    const pack = game.packs?.get?.(packName)
+    if (!pack) continue
+    const entry = pack.index?.find?.((e) => `${packName}.${e.name}` === tableName)
+    if (!entry) continue
+    const doc = await pack.getDocument(entry._id)
+    const libTable = toLibSimpleTable(doc)
+    if (libTable) return libTable
+  }
+
+  // Fall back to world tables — same resolution pattern as the legacy
+  // `_onRollDisapproval` walk: strip the pack prefix if present and
+  // match by name.
+  const worldTableName = tableName.includes('.')
+    ? tableName.split('.').pop()
+    : tableName
+  const worldTable = game.tables?.find?.((t) => t.name === worldTableName)
+  if (worldTable) {
+    const libTable = toLibSimpleTable(worldTable)
+    if (libTable) return libTable
+  }
+
+  return null
 }

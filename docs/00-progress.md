@@ -6,25 +6,33 @@
 
 ## Current phase
 
-**Phase 2 — Spell checks — session 2 complete.** Wizard spell loss
-now flows through the adapter. Wizard-castingMode spell items on
-non-cleric, non-patron-bound actors route through
-`calculateSpellCheck` with a real `getCasterProfile('wizard')`
-profile and a single-entry spellbook built from the item; when the
-lib reports `result.spellLost`, the `onSpellLost` event bridge in
-`spell-events.mjs` marks the Foundry item `system.lost: true`,
-replacing the `actor.loseSpell(item)` side effect that
-`processSpellCheck` performs on the legacy path. Generic-castingMode
-items still use `castSpell` with the synthetic side-effect-free
-profile from session 1. The adapter-side pre-check for already-lost
-wizard spells (`spellItem.system.lost && automateWizardSpellLoss`)
-mirrors `DCCItem.rollSpellCheck:260` and warns + early-returns
-before dispatch.
+**Phase 2 — Spell checks — session 3 complete.** Cleric disapproval
+now flows through the adapter. Cleric-castingMode spell items on
+non-patron-bound Cleric actors route through `calculateSpellCheck`
+with a real `getCasterProfile('cleric')` profile,
+`character.state.classState.cleric.disapprovalRange` seeded from
+`actor.system.class.disapproval`, and a Foundry-loaded disapproval
+table adapted to the lib's `SimpleTable` shape. When the natural
+roll triggers disapproval, the lib's `handleClericDisapproval`
+rolls 1d4 × range via the adapter's formula-dispatching roller
+(pre-rolled in Foundry), looks up the table entry, and fires
+`onDisapprovalIncreased`; the event bridge in `spell-events.mjs`
+updates `actor.system.class.disapproval` to the new range and posts
+the "DCC.DisapprovalGained" EMOTE chat (replaces
+`actor.applyDisapproval()`). The adapter then posts the disapproval
+roll chat from `result.disapprovalResult` (replaces
+`actor.rollDisapproval(natural)` + `RollTable.draw`).
 
-Cleric disapproval (session 3), patron taint (session 4), and
-spellburn + mercurial magic (session 5) still route to the legacy
-path. `game.dcc.processSpellCheck` is exported verbatim — XCC's
-wizard/cleric sheets depend on it until Phase 2 closes.
+Wizard spell loss (session 2) + generic side-effect-free path
+(session 1) continue to work unchanged. Dispatcher gate:
+`castingMode === 'generic' && !isCleric && !hasPatron` OR
+`castingMode === 'wizard' && !isCleric && !hasPatron` OR
+`castingMode === 'cleric' && isCleric && !hasPatron`.
+
+Patron taint (session 4) and spellburn + mercurial magic (session
+5) still route to the legacy path. `game.dcc.processSpellCheck` is
+exported verbatim — XCC's wizard/cleric sheets depend on it until
+Phase 2 closes.
 
 **Phase 1 — Adopt the lib for simple rolls — COMPLETE.** All four
 rolls are migrated through the adapter: `rollAbilityCheck`,
@@ -254,12 +262,12 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 2 — spell checks. Sessions 1 (generic scaffold) and 2 (wizard
-spell loss) complete. Remaining: cleric disapproval (session 3),
-patron taint (session 4), spellburn + mercurial magic (session 5).
-`spell-events.mjs` grows per-session — session 2 landed
-`createSpellEvents` with `onSpellLost` wired; sessions 3–5 add the
-remaining callback handlers.
+Phase 2 — spell checks. Sessions 1 (generic scaffold), 2 (wizard
+spell loss), and 3 (cleric disapproval) complete. Remaining: patron
+taint (session 4), spellburn + mercurial magic (session 5).
+`spell-events.mjs` has `onSpellLost` + `onDisapprovalIncreased`
+wired; sessions 4–5 add `onPatronTaint`, `onSpellburnApplied`, and
+`onMercurialEffect`.
 
 ### Session 2026-04-18 (sixth session — Phase 2, session 1)
 
@@ -329,6 +337,116 @@ remaining callback handlers.
     still pass unchanged (the legacy branch preserves the old
     body + call-sequence).
   - 763 tests pass (up from 759). `npm run format` clean.
+
+### Session 2026-04-18 (eighth session — Phase 2, session 3)
+
+- **Cleric disapproval migration.** `DCCActor.rollSpellCheck` now
+  routes cleric-castingMode items on non-patron-bound Cleric actors
+  through the adapter. The dispatcher gate broadens from the
+  session-2 set to also accept `castingMode === 'cleric' && isCleric
+  && !hasPatron`. Wizard-on-cleric and cleric-on-non-cleric stay on
+  legacy (class-vs-castingMode mismatch would silently switch the
+  side-effect set between `handleClericDisapproval` and wizard spell
+  loss — safer to keep the mismatch on the old path).
+- **`_castViaCalculateSpellCheck` extended** to the cleric path.
+  When `profile.type === 'cleric'`, the adapter loads the actor's
+  configured disapproval table via `loadDisapprovalTable(actor)` and
+  attaches it to `input.disapprovalTable`; when the pass-1 natural
+  roll lands within the disapproval range, a 1d4 is pre-rolled in
+  Foundry so the pass-2 roller can hand it back when the lib calls
+  `options.roller('1d4')` inside `rollDisapproval`. The pass-2 roller
+  is now formula-dispatching (`'1d4'` → pre-rolled d4, else spell-check
+  natural) instead of the session-2 `() => natural`. After the lib
+  returns, `result.disapprovalResult` drives a dedicated chat message
+  via `renderDisapprovalRoll` (replaces `_onRollDisapproval` +
+  `RollTable.draw`).
+- **`module/adapter/spell-input.mjs`** extended:
+  - `buildSpellCheckArgs` now populates
+    `character.state.classState.cleric.disapprovalRange` from
+    `actor.system.class.disapproval` when `profile.type === 'cleric'`;
+    defaults to 1 when the actor has no value yet (matches the lib's
+    `DEFAULT_DISAPPROVAL_RANGE`).
+  - New `loadDisapprovalTable(actor)` — async. Walks the same
+    resolution path as the legacy `_onRollDisapproval`
+    (`actor.js:2858-2886`): `CONFIG.DCC.disapprovalPacks.packs` first,
+    then world tables. Converts the Foundry `RollTable` to the lib's
+    `SimpleTable` via `toLibSimpleTable` (module-local helper). Returns
+    `null` when no table resolves (unit-test env, misconfigured
+    compendium) — the lib then skips the table draw and still triggers
+    the range bump via `handleClericDisapproval`, matching legacy
+    "no table configured" behavior. **Sessions 4–5 reuse
+    `toLibSimpleTable`** for corruption / patron taint / mercurial
+    tables if the lookup shape stays the same; extract a shared loader
+    when the third consumer lands.
+- **`module/adapter/spell-events.mjs`** extended:
+  - `createSpellEvents` now returns `onDisapprovalIncreased` when an
+    `actor` is provided (previously only `onSpellLost` when a
+    `spellItem` was). The handler mirrors the legacy `applyDisapproval`
+    (`actor.js:2789`): bails early on `actor.isNPC`, otherwise updates
+    `system.class.disapproval` and posts the "DCC.DisapprovalGained"
+    EMOTE chat message. Chat rendering is additionally gated on
+    `ChatMessage` + `CONFIG.ChatMessage.documentClass` being defined so
+    unit tests can assert on `actor.update` without setting up the
+    full chat mock.
+- **`module/adapter/chat-renderer.mjs`** extended:
+  - New `renderDisapprovalRoll({ actor, disapprovalResult })` export.
+    Posts a single chat message with the lib's rolled disapproval total
+    and the drawn table entry's description (mirrors the
+    `RollTable.draw` chat the legacy `_onRollDisapproval` emits). Uses
+    a deterministic `${total}d1` Roll so the value renders through
+    Foundry's normal chat pipeline (DSN, highlighting, etc.).
+- **Tests**:
+  - `module/__tests__/adapter-spell-check.test.js` — now 14 tests (up
+    from 8). New: `adapter path fires for a cleric-castingMode item on
+    a Cleric actor`; `cleric-castingMode item on a patron-bound actor
+    routes to legacy`; `cleric-castingMode item on a non-Cleric actor
+    routes to legacy`; `createSpellEvents onDisapprovalIncreased
+    updates system.class.disapproval`; `createSpellEvents
+    onDisapprovalIncreased bails early for NPC actors`;
+    `createSpellEvents without actor does not wire
+    onDisapprovalIncreased`. Existing "generic item on Cleric →
+    legacy" test kept (generic castingMode doesn't gate on isCleric in
+    the old dispatcher logic; the new gate `!isCleric` keeps it legacy).
+  - `browser-tests/e2e/phase1-adapter-dispatch.spec.js` — 20 tests
+    (up from 19). New: "cleric-castingMode spell item on a Cleric
+    actor → adapter (cleric)" asserts `mode=cleric`. **All 20 tests
+    pass against live v14 Foundry** (verified 2026-04-18 against the
+    running `v14` world; 2.1 min run).
+  - Existing `actor.test.js` cleric spell-check tests all still
+    pass: the dispatcher routes them to legacy when castingMode is
+    generic/wizard or when the actor has no className set.
+  - 773 Vitest tests pass (up from 767).
+
+**Scope decisions (Phase 2 session 3):**
+
+- **Gate tightened from `(castingMode === 'cleric' || isCleric)` to
+  `castingMode === 'cleric' && isCleric`.** The session-start slice
+  was permissive (any cleric-mode item OR any cleric actor). Routing
+  wizard-castingMode items on a cleric actor through the adapter
+  would pick up the cleric profile (since `getCasterProfile` reads
+  `actor.system.class.className`) and trigger `handleClericDisapproval`
+  — swapping the legacy wizard-spell-loss side effect for disapproval.
+  The narrower gate preserves the legacy behavior for mismatched
+  cases. Re-open if a future session surfaces a real cross-class need.
+- **`toLibSimpleTable` conversion is local to `spell-input.mjs`.**
+  Sessions 4–5 (corruption / taint / mercurial) will likely reuse the
+  same Foundry-RollTable → lib-SimpleTable shape; extracting a shared
+  helper now would be premature. When the third consumer lands, fold
+  into a `table-adapter.mjs` or similar.
+- **Pre-roll the 1d4 only when natural ≤ disapprovalRange.** The lib
+  calls `options.roller('1d4')` inside `rollDisapproval` only when
+  `rollTriggersDisapproval` is true. Pre-rolling unconditionally would
+  waste a roll (and pollute DSN); pre-rolling conditionally is the
+  same branch the lib uses.
+- **`renderDisapprovalRoll` uses a `${total}d1` Roll.** The lib's
+  rolled value is already computed; Foundry just needs *some* Roll
+  object to post the chat message. `NdN1d1` evaluates deterministically
+  to `N`, preserving the DSN/chat highlighting pipeline without
+  re-rolling the d4.
+- **Wave-2 lib modifier migration still not required.** The
+  disapproval pipeline reads from `castInput.disapprovalRange` (a
+  plain number) and writes to `result.disapprovalResult` /
+  `result.newDisapprovalRange`. No tagged-union modifiers touched.
 
 ### Session 2026-04-18 (seventh session — Phase 2, session 2)
 
@@ -534,21 +652,23 @@ remaining callback handlers.
 
 ## Next steps
 
-Phase 2 session 3 — migrate cleric disapproval. The adapter's gate
-still excludes cleric actors (`isCleric === true` routes to legacy).
-Session 3 broadens it to cover clerics, wires
-`onDisapprovalIncreased` in `spell-events.mjs` to replace the
-disapproval-range bump + `actor.rollDisapproval(natural)` + followup
-`actor.applyDisapproval()` that `processSpellCheck` performs, and
-extends `buildSpellCheckArgs` to populate
-`character.state.classState.cleric.disapprovalRange` (so the lib's
-`getDisapprovalRange` read succeeds) and hand a disapproval table to
-`calculateSpellCheck` so the full roll happens lib-side. Tests: a
-cleric-castingMode item with natural below disapproval range →
-adapter path fires disapproval, warns, and leaves the chat message
-matching the legacy shape. Wave-2 lib modifier migration may apply
-this session if the disapproval pipeline needs tagged-union
-modifiers; check before coding.
+Phase 2 session 4 — migrate patron taint. Wire `onPatronTaint` in
+`spell-events.mjs` to replace the patron taint d100 roll + "patron
+taint chance" bump in `processSpellCheck` (dcc.js — search for
+`patronTaint` / `applyPatronTaint`). Extend `buildSpellCheckArgs`
+to populate `character.state.classState.wizard.patron` (and maybe
+`.elf.patron`) from `actor.system.class.patron` so
+`calculateSpellCheck`'s patron-path sets `castInput.patron` and
+triggers `handleWizardFumble` → `rollPatronTaint`. Load the patron
+taint table via the same `toLibSimpleTable` adapter session 3
+introduced (extract a shared table loader if the shape matches —
+likely yes). Broaden the adapter gate to include patron-bound
+wizard / elf actors: remove `!hasPatron` from the wizard branch
+once the migration is complete. Tests: wizard-castingMode item on
+a patron-bound wizard → adapter; patron taint triggers on
+appropriate fumbles; legacy path still works for non-patron-bound
+wizards (now covered by session 2 path) and XCC variants that keep
+`className === 'Wizard'` with novel patrons.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with
