@@ -338,10 +338,10 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
     })
   })
 
-  // ── rollSpellCheck (Phase 2 session 1 scaffold) ─────────────────────
+  // ── rollSpellCheck (Phase 2) ────────────────────────────────────────
 
   test.describe('rollSpellCheck', () => {
-    test('generic-castingMode spell item → adapter', async ({ page }) => {
+    test('generic-castingMode spell item → adapter (generic)', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Spell Generic', type: 'Player' })
         await actor.createEmbeddedDocuments('Item', [{
@@ -358,14 +358,43 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
         await game.actors.getName('P1 Spell Generic').rollSpellCheck({ spell: 'P1-Generic-Cantrip' })
       })
       const line = await waitForAdapterLog('rollSpellCheck')
-      assertPath(line, 'adapter', { spell: 'P1-Generic-Cantrip' })
+      assertPath(line, 'adapter', { spell: 'P1-Generic-Cantrip', mode: 'generic' })
     })
 
-    test('wizard-castingMode spell item → legacy', async ({ page }) => {
+    test('wizard-castingMode spell item on a Wizard actor → adapter (wizard)', async ({ page }) => {
       await page.evaluate(async () => {
-        const actor = await Actor.create({ name: 'P1 Spell Wizard', type: 'Player' })
+        const actor = await Actor.create({
+          name: 'P1 Spell Wizard',
+          type: 'Player',
+          system: { class: { className: 'Wizard' } }
+        })
         await actor.createEmbeddedDocuments('Item', [{
           name: 'P1-Wizard-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell Wizard').rollSpellCheck({ spell: 'P1-Wizard-Spell' })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P1-Wizard-Spell', mode: 'wizard' })
+    })
+
+    test('wizard-castingMode spell item on a patron-bound actor → legacy', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell WizardPatron',
+          type: 'Player',
+          system: { class: { className: 'Wizard', patron: 'Bobugbubilz' } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Patron-Spell',
           type: 'spell',
           system: {
             level: 1,
@@ -375,10 +404,10 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
         }])
       })
       await page.evaluate(async () => {
-        await game.actors.getName('P1 Spell Wizard').rollSpellCheck({ spell: 'P1-Wizard-Spell' })
+        await game.actors.getName('P1 Spell WizardPatron').rollSpellCheck({ spell: 'P1-Patron-Spell' })
       })
       const line = await waitForAdapterLog('rollSpellCheck')
-      assertPath(line, 'legacy', { spell: 'P1-Wizard-Spell' })
+      assertPath(line, 'legacy', { spell: 'P1-Patron-Spell' })
     })
 
     test('naked spell check (no item) → legacy', async ({ page }) => {

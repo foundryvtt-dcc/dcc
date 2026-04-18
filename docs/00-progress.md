@@ -6,17 +6,25 @@
 
 ## Current phase
 
-**Phase 2 — Spell checks — session 1 complete.** The dispatcher is
-wired and routes generic-castingMode spell items (no wizard spell
-loss, no cleric disapproval, no patron taint) through the adapter;
-every other spell-check path stays on the legacy body, preserving
-`processSpellCheck` and its side-effect orchestration verbatim.
-Adapter files scaffolded: `module/adapter/spell-input.mjs`
-(`buildSpellCastInput`), `module/adapter/spell-events.mjs` (stub),
-and a new `renderSpellCheck` export in
-`module/adapter/chat-renderer.mjs`. Sessions 2+ fill in wizard spell
-loss, cleric disapproval, patron taint, spellburn, and mercurial
-magic migration.
+**Phase 2 — Spell checks — session 2 complete.** Wizard spell loss
+now flows through the adapter. Wizard-castingMode spell items on
+non-cleric, non-patron-bound actors route through
+`calculateSpellCheck` with a real `getCasterProfile('wizard')`
+profile and a single-entry spellbook built from the item; when the
+lib reports `result.spellLost`, the `onSpellLost` event bridge in
+`spell-events.mjs` marks the Foundry item `system.lost: true`,
+replacing the `actor.loseSpell(item)` side effect that
+`processSpellCheck` performs on the legacy path. Generic-castingMode
+items still use `castSpell` with the synthetic side-effect-free
+profile from session 1. The adapter-side pre-check for already-lost
+wizard spells (`spellItem.system.lost && automateWizardSpellLoss`)
+mirrors `DCCItem.rollSpellCheck:260` and warns + early-returns
+before dispatch.
+
+Cleric disapproval (session 3), patron taint (session 4), and
+spellburn + mercurial magic (session 5) still route to the legacy
+path. `game.dcc.processSpellCheck` is exported verbatim — XCC's
+wizard/cleric sheets depend on it until Phase 2 closes.
 
 **Phase 1 — Adopt the lib for simple rolls — COMPLETE.** All four
 rolls are migrated through the adapter: `rollAbilityCheck`,
@@ -246,11 +254,12 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 2 — spell checks. Session 1 (scaffold + generic-castingMode
-adapter path) is green. Remaining sessions migrate wizard spell
-loss (session 2), cleric disapproval (session 3), patron taint
-(session 4), spellburn + mercurial magic (session 5). `spell-events.mjs`
-fills in per-session.
+Phase 2 — spell checks. Sessions 1 (generic scaffold) and 2 (wizard
+spell loss) complete. Remaining: cleric disapproval (session 3),
+patron taint (session 4), spellburn + mercurial magic (session 5).
+`spell-events.mjs` grows per-session — session 2 landed
+`createSpellEvents` with `onSpellLost` wired; sessions 3–5 add the
+remaining callback handlers.
 
 ### Session 2026-04-18 (sixth session — Phase 2, session 1)
 
@@ -320,6 +329,103 @@ fills in per-session.
     still pass unchanged (the legacy branch preserves the old
     body + call-sequence).
   - 763 tests pass (up from 759). `npm run format` clean.
+
+### Session 2026-04-18 (seventh session — Phase 2, session 2)
+
+- **Wizard spell loss migration.** `DCCActor.rollSpellCheck` now
+  routes wizard-castingMode items (on non-cleric, non-patron-bound
+  actors) through the adapter. The dispatcher's gate broadened from
+  `castingMode === 'generic' && !hasPatron && !isCleric` to also
+  accept `castingMode === 'wizard' && !hasPatron && !isCleric`.
+  Adapter-side pre-check: `spellItem.system.lost &&
+  settings.get('dcc', 'automateWizardSpellLoss')` → warn + early
+  return, mirroring `DCCItem.rollSpellCheck:260`.
+- **Adapter branch structure:**
+  `_rollSpellCheckViaAdapter` (single logDispatch call, now logs
+  `mode=generic|wizard`) internally dispatches to
+  `_castViaCastSpell` (generic path) or
+  `_castViaCalculateSpellCheck` (wizard path). Both use the
+  two-pass formula/evaluate pattern established by Phase 1.
+  `_buildSpellCheckFlavor` factors out the shared chat-flavor
+  construction.
+- **`module/adapter/spell-input.mjs`** extended:
+  - Exported `syntheticGenericProfile(abilityId)` — named factory
+    for the generic profile.
+  - Exported `buildSpellbookEntry(spellItem, spellId)` — builds a
+    lib-shaped entry from the item's `system.lost` /
+    `system.lastResult`.
+  - New `buildSpellCheckArgs(actor, spellItem, options)` —
+    returns `{ character, input, profile, abilityId }` for
+    `calculateSpellCheck`. Looks up the real caster profile via
+    `getCasterProfile(classId)` (from `actor.system.class.className
+    .toLowerCase()`), extends `actorToCharacter` with the
+    `identity.birthAugur.multiplier` + `identity.startingLuck` that
+    the lib's luck-modifier helpers read, and populates
+    `character.state.classState.<profile.type>.spellbook` with the
+    single entry so `findSpellEntry` succeeds. Returns `null` for
+    classes with no lib-side profile — the adapter then falls back
+    to the legacy path.
+- **`module/adapter/spell-events.mjs`** filled in:
+  - `createSpellEvents({ actor, spellItem })` — session-2 returns
+    `{ onSpellLost }`; `onSpellLost(result)` calls
+    `spellItem.update({ 'system.lost': true })` fire-and-forget.
+    Actor kept in the closure for sessions 3–5.
+- **Tests**:
+  - `module/__tests__/adapter-spell-check.test.js` — now 8 tests
+    (up from 4). New: wizard-on-wizard → adapter (asserts flags +
+    no legacy delegation); already-lost wizard + automation on →
+    warn + early return; wizard on patron-bound → legacy;
+    `createSpellEvents.onSpellLost` bridge unit test; naked-path
+    `createSpellEvents` has no `onSpellLost`.
+  - `browser-tests/e2e/phase1-adapter-dispatch.spec.js` — 19 tests
+    (up from 18). New: "wizard-castingMode spell item on a Wizard
+    actor → adapter (wizard)" asserts `mode=wizard`. The previous
+    "wizard → legacy" test was rescoped to "wizard on patron-bound
+    → legacy" since plain wizard now goes through the adapter.
+    Not yet run against live Foundry — pending next v14 launch.
+  - Existing `actor.test.js` wizard spell-check tests all still
+    pass: the dispatcher routes them to legacy (default mock actor
+    has no `className`, so `getCasterProfile` returns undefined
+    and the wizard-adapter path falls back — see the "no lib-side
+    profile" branch in `_rollSpellCheckViaAdapter`).
+  - 767 Vitest tests pass (up from 763).
+
+**Scope decisions (Phase 2 session 2):**
+
+- **`calculateSpellCheck` for the wizard path, `castSpell` for
+  generic.** The session doc left both paths open
+  ("`castSpell` stays as a fallback for the synthetic generic
+  path (or we drop the generic branch in favor of routing all
+  casts through `calculateSpellCheck`)"). We kept them split: the
+  generic path already had a working single-call `castSpell`
+  pipeline; migrating it to `calculateSpellCheck` would force a
+  synthetic `Character.state.classState` for no behavioral gain.
+  The wizard path genuinely needs `calculateSpellCheck` because
+  its lib-side spellbook + `updatedSpellbookEntry` bookkeeping is
+  what session 2 is migrating toward — and because later sessions
+  layer fumble / corruption / patron / disapproval on top of
+  `calculateSpellCheck`'s orchestrator.
+- **Class fallback to legacy.** When the actor's
+  `system.class.className` doesn't resolve to a lib-side caster
+  profile (homebrew class, spinoff module, or a non-caster class
+  with a wizard-castingMode item), `buildSpellCheckArgs` returns
+  `null` and the adapter drops back to the legacy
+  `DCCItem.rollSpellCheck` delegation. This keeps XCC / spinoff
+  content working while the migration proceeds.
+- **Lost-spell pre-check in the dispatcher, not the adapter.**
+  Placing the check in `rollSpellCheck` before dispatch means
+  `_rollSpellCheckViaAdapter` / `_castViaCalculateSpellCheck` can
+  assume the cast is going ahead. The adapter-side `logDispatch`
+  call does not fire when the cast is pre-empted — the observable
+  signal is the `ui.notifications.warn`, matching the legacy
+  `DCCItem.rollSpellCheck:260` path.
+- **Wave-2 lib modifier migration not required.**
+  `calculateSpellCheck` / `castSpell` still emit
+  `LegacyRollModifier[]` (per the staged migration in
+  `dcc-core-lib/docs/MODIFIERS.md §9`, spells are wave 2 and not
+  yet landed). The renderer passes the list through unchanged in
+  `dcc.libResult.modifiers`; downstream consumers already know
+  about the legacy shape.
 
 **Scope decisions (Phase 2 session 1):**
 
@@ -428,20 +534,21 @@ fills in per-session.
 
 ## Next steps
 
-Phase 2 session 2 — migrate wizard spell loss. The adapter path's
-gate today excludes wizard-castingMode items (they route to
-legacy). Session 2 broadens the gate to cover wizards, wires
-`onSpellLost` through `spell-events.mjs` to replace the
-`actor.loseSpell(item)` call in `processSpellCheck`, and extends
-`buildSpellCastInput` to look up a real wizard caster profile +
-spellbook entry so `calculateSpellCheck` (not just `castSpell`)
-can be used. Tests: a wizard-castingMode item with known spell →
-adapter path; wizard-castingMode item with `lost: true` → adapter
-path rejects casting (matches the legacy
-`DCC.SpellLostWarning` pre-check in `DCCItem.rollSpellCheck`). If
-session 2 needs the spell-subsystem tagged-union modifier migration
-(wave 2 per `dcc-core-lib/docs/MODIFIERS.md §9`), land the lib change
-first in its own PR + `npm run sync-core-lib`.
+Phase 2 session 3 — migrate cleric disapproval. The adapter's gate
+still excludes cleric actors (`isCleric === true` routes to legacy).
+Session 3 broadens it to cover clerics, wires
+`onDisapprovalIncreased` in `spell-events.mjs` to replace the
+disapproval-range bump + `actor.rollDisapproval(natural)` + followup
+`actor.applyDisapproval()` that `processSpellCheck` performs, and
+extends `buildSpellCheckArgs` to populate
+`character.state.classState.cleric.disapprovalRange` (so the lib's
+`getDisapprovalRange` read succeeds) and hand a disapproval table to
+`calculateSpellCheck` so the full roll happens lib-side. Tests: a
+cleric-castingMode item with natural below disapproval range →
+adapter path fires disapproval, warns, and leaves the chat message
+matching the legacy shape. Wave-2 lib modifier migration may apply
+this session if the disapproval pipeline needs tagged-union
+modifiers; check before coding.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

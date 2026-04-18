@@ -9,11 +9,13 @@ import {
   rollAbilityCheck as libRollAbilityCheck,
   rollCheck as libRollCheck,
   rollSavingThrow as libRollSavingThrow,
-  castSpell as libCastSpell
+  castSpell as libCastSpell,
+  calculateSpellCheck as libCalculateSpellCheck
 } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
 import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck } from './adapter/chat-renderer.mjs'
-import { buildSpellCastInput } from './adapter/spell-input.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs } from './adapter/spell-input.mjs'
+import { createSpellEvents } from './adapter/spell-events.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -1836,13 +1838,20 @@ class DCCActor extends Actor {
   /**
    * Roll a Spell Check.
    *
-   * Dispatcher: routes generic-castingMode spell items (no wizard
-   * spell-loss, no cleric disapproval, no patron taint side effects)
-   * through the adapter. Everything else — wizard spells, cleric
-   * spells, patron-bound actors, and naked spell checks — stays on
-   * the legacy path. The single item lookup is hoisted here so
-   * `collectionFindMock`-style call-count assertions in the existing
-   * tests continue to match.
+   * Dispatcher. Phase 2 scope — as sessions land, more casting modes
+   * peel off onto the adapter:
+   *   - Session 1: generic-castingMode items (no side effects).
+   *   - Session 2 (current): wizard-castingMode items on non-cleric,
+   *     non-patron-bound actors; wizard spell loss via the lib's
+   *     `onSpellLost` event. Pre-check for already-lost spells
+   *     (mirrors `DCCItem.rollSpellCheck:260`) fires adapter-side.
+   *   - Session 3+: cleric disapproval, patron taint, spellburn,
+   *     mercurial magic.
+   *
+   * Everything else (cleric actors, patron-bound actors, naked
+   * spell checks, unknown casting modes) stays on the legacy path.
+   * The item lookup is hoisted here so the existing actor.test.js
+   * `collectionFindMock` call-count assertions still match.
    *
    * @param options
    */
@@ -1869,29 +1878,75 @@ class DCCActor extends Actor {
     const hasPatron = !!this.system.class?.patron
     const isCleric = this.system.details?.sheetClass === 'Cleric'
 
-    if (castingMode === 'generic' && !hasPatron && !isCleric) {
-      return this._rollSpellCheckViaAdapter(spellItem, options)
+    if (spellItem && !hasPatron && !isCleric) {
+      if (castingMode === 'generic') {
+        return this._rollSpellCheckViaAdapter(spellItem, options)
+      }
+      if (castingMode === 'wizard') {
+        // Adapter-side spell-loss pre-check — mirrors the legacy
+        // `DCCItem.rollSpellCheck:260` gate that would otherwise warn
+        // and abort. Once the cast reaches the adapter the item has
+        // already been looked up, so this is the natural place.
+        if (spellItem.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss')) {
+          return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
+            actor: this.name,
+            spell: spellItem.name
+          }))
+        }
+        return this._rollSpellCheckViaAdapter(spellItem, options)
+      }
     }
 
     return this._rollSpellCheckLegacy(options, spellItem)
   }
 
   /**
-   * Adapter path for spell checks — Phase 2, session 1. Scaffold that
-   * handles generic-castingMode spell items with no side effects. Uses
-   * the lib's `castSpell` directly (bypassing `calculateSpellCheck`'s
-   * spellbook lookup, which is wired in later sessions once the
-   * wizard/cleric spellbook bridge lands) with the two-pass
-   * formula/evaluate pattern established by `_rollSavingThrowViaAdapter`
-   * and `_rollSkillCheckViaAdapter`.
+   * Adapter path for spell checks. Dispatches to the lib entry point
+   * appropriate for the item's casting mode:
+   *   - Generic: `castSpell` with a synthetic side-effect-free profile.
+   *     No spellbook lookup, no events wired.
+   *   - Wizard: `calculateSpellCheck` with the real wizard caster
+   *     profile + a single-entry spellbook built from the item's
+   *     `system.lost` / `system.timesPreparedOrCast`. `onSpellLost`
+   *     fires when the lib marks the spell lost; the event bridge in
+   *     `spell-events.mjs` mirrors that to the Foundry item via
+   *     `item.update({ 'system.lost': true })`, replacing the
+   *     `actor.loseSpell(item)` side effect `processSpellCheck`
+   *     performs on the legacy path.
+   *
+   * Two-pass formula/evaluate pattern established by the Phase 1
+   * adapter methods: pass 1 yields a formula, Foundry rolls it, pass
+   * 2 classifies against the pre-rolled natural.
    * @private
    */
   async _rollSpellCheckViaAdapter (spellItem, options) {
-    logDispatch('rollSpellCheck', 'adapter', { spell: spellItem?.name ?? '' })
+    const castingMode = spellItem?.system?.config?.castingMode || 'generic'
+    logDispatch('rollSpellCheck', 'adapter', {
+      spell: spellItem?.name ?? '',
+      mode: castingMode
+    })
 
+    if (castingMode === 'wizard') {
+      const args = buildSpellCheckArgs(this, spellItem, options)
+      // No lib-side profile for this actor's class — drop back to legacy
+      // so spinoff classes with wizard-castingMode spells still work.
+      if (!args) {
+        return this._rollSpellCheckLegacy(options, spellItem)
+      }
+      return this._castViaCalculateSpellCheck(args, spellItem, options)
+    }
+
+    return this._castViaCastSpell(spellItem, options)
+  }
+
+  /**
+   * Generic-castingMode adapter branch. Side-effect-free cast via the
+   * lib's `castSpell`.
+   * @private
+   */
+  async _castViaCastSpell (spellItem, options) {
     const input = buildSpellCastInput(this, spellItem, options)
 
-    // Pass 1: lib builds the formula without rolling.
     const plan = libCastSpell(input, { mode: 'formula' })
 
     const foundryRoll = new Roll(plan.formula)
@@ -1899,18 +1954,12 @@ class DCCActor extends Actor {
 
     const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
 
-    // Pass 2: lib classifies against the rolled natural.
     const result = libCastSpell(input, {
       mode: 'evaluate',
       roller: () => natural
     })
 
-    const abilityLabel = CONFIG.DCC.abilities[options.abilityId]
-    let flavor = spellItem?.name ?? game.i18n.localize('DCC.SpellCheck')
-    if (abilityLabel) {
-      flavor += ` (${game.i18n.localize(abilityLabel)})`
-    }
-
+    const flavor = this._buildSpellCheckFlavor(spellItem, options)
     await renderSpellCheck({
       actor: this,
       spellItem,
@@ -1920,6 +1969,69 @@ class DCCActor extends Actor {
     })
 
     return foundryRoll
+  }
+
+  /**
+   * Wizard-castingMode adapter branch. Routes through
+   * `calculateSpellCheck` so the lib's spell-loss bookkeeping (and,
+   * in later sessions, fumble / corruption handling) is used. Event
+   * callbacks bridge lib events to Foundry side effects.
+   * @private
+   */
+  async _castViaCalculateSpellCheck (args, spellItem, options) {
+    const { character, input, profile } = args
+    const events = createSpellEvents({ actor: this, spellItem })
+
+    // Pass 1: build the formula without rolling.
+    const plan = libCalculateSpellCheck(character, input, { mode: 'formula' }, events)
+    if (plan.error) {
+      ui.notifications.warn(plan.error)
+      return
+    }
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+    // Pass 2: classify against the pre-rolled natural. Fires
+    // `onSpellLost` when the total lands in a lost tier; the event
+    // bridge updates the Foundry item.
+    const result = libCalculateSpellCheck(
+      character,
+      input,
+      { mode: 'evaluate', roller: () => natural },
+      events
+    )
+    if (result.error) {
+      ui.notifications.warn(result.error)
+      return
+    }
+
+    const flavor = this._buildSpellCheckFlavor(spellItem, options, profile)
+    await renderSpellCheck({
+      actor: this,
+      spellItem,
+      flavor,
+      result,
+      foundryRoll
+    })
+
+    return foundryRoll
+  }
+
+  /**
+   * Build the chat flavor line shared by both adapter branches.
+   * @private
+   */
+  _buildSpellCheckFlavor (spellItem, options, profile) {
+    const abilityId = options.abilityId || profile?.spellCheckAbility
+    const abilityLabel = abilityId ? CONFIG.DCC.abilities[abilityId] : undefined
+    let flavor = spellItem?.name ?? game.i18n.localize('DCC.SpellCheck')
+    if (abilityLabel) {
+      flavor += ` (${game.i18n.localize(abilityLabel)})`
+    }
+    return flavor
   }
 
   /**

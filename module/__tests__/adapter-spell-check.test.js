@@ -1,25 +1,25 @@
-/* global rollToMessageMock, ChatMessage */
+/* global rollToMessageMock, ChatMessage, uiNotificationsWarnMock, gameSettingsGetMock */
 /**
- * Adapter round-trip test — Phase 2 session 1 (spell check).
+ * Adapter round-trip test — Phase 2 (spell check).
  *
- * Exercises the dispatcher's routing decision and the minimal
- * generic-castingMode adapter path:
+ * Dispatcher + adapter coverage:
  *   DCCActor.rollSpellCheck →
- *     (generic item + no patron + not Cleric) → _rollSpellCheckViaAdapter →
- *       buildSpellCastInput → libCastSpell (formula) →
- *       new Roll(formula).evaluate() →
- *       libCastSpell (evaluate, pre-rolled natural) →
- *       renderSpellCheck.
+ *     (generic item + no patron + not Cleric) → _castViaCastSpell
+ *     (wizard item + no patron + not Cleric) → _castViaCalculateSpellCheck
+ *     (cleric actor | patron-bound | naked | unknown mode) → legacy
  *
- * Mirrors adapter-skill-check.test.js / adapter-saving-throw.test.js.
- * Wizard / cleric / patron paths stay on the legacy path this session
- * and are covered by the existing actor.test.js / item.test.js suites.
+ * Wizard path exercises the `calculateSpellCheck` route with a real
+ * `getCasterProfile('wizard')` profile and a single-entry spellbook
+ * built from the spell item. The `onSpellLost` event bridge is
+ * covered by a dedicated test against `createSpellEvents` so we
+ * don't need to drive the lib to a lost outcome in the round-trip.
  */
 
 import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
+import { createSpellEvents } from '../adapter/spell-events.mjs'
 
 // Mock actor-level-change like actor.test.js does
 vi.mock('../actor-level-change.js')
@@ -34,6 +34,21 @@ function makeGenericSpellItem (overrides = {}) {
     lost: false,
     ...overrides
   }
+  return spell
+}
+
+function makeWizardSpellItem (overrides = {}) {
+  const spell = new DCCItem({ name: 'Magic Missile', type: 'spell' }, {})
+  spell.system = {
+    level: 1,
+    config: { castingMode: 'wizard', inheritCheckPenalty: true },
+    spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+    results: { table: '', collection: '' },
+    lost: false,
+    timesPreparedOrCast: 0,
+    ...overrides
+  }
+  spell.update = vi.fn().mockResolvedValue(undefined)
   return spell
 }
 
@@ -68,28 +83,90 @@ test('adapter path fires for a generic spell item on a non-cleric non-patron act
   findSpy.mockRestore()
 })
 
-test('wizard-castingMode spell item routes to the legacy path (delegates to DCCItem)', async () => {
+test('adapter path fires for a wizard-castingMode item on a Wizard actor', async () => {
   rollToMessageMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
   actor.system.details.sheetClass = 'Wizard'
 
-  const wizardSpell = new DCCItem({ name: 'Wizard Spell', type: 'spell' }, {})
-  wizardSpell.system = {
-    config: { castingMode: 'wizard' },
-    results: { table: '' },
-    lost: false
-  }
-  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(wizardSpell)
-  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
 
-  await actor.rollSpellCheck({ spell: 'Wizard Spell' })
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
 
   expect(findSpy).toHaveBeenCalledTimes(1)
-  expect(itemSpy).toHaveBeenCalledWith('int', { abilityId: 'int', spell: 'Wizard Spell' })
-  // Adapter did not render — no roll.toMessage from chat-renderer.
+  // Wizard adapter does NOT delegate to DCCItem — that's the whole
+  // point of migrating away from the legacy path.
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('SpellCheck')
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult).toBeDefined()
+  expect(libResult.die).toBe('d20')
+  // Wizard profile emits the Intelligence ability mod + caster level
+  // into the modifier list. We don't assert on exact values (actor
+  // mock stats vary) — just that the lib ran through the real
+  // calculateSpellCheck pipeline.
+  expect(Array.isArray(libResult.modifiers)).toBe(true)
+
+  itemSpy.mockRestore()
+  chatMessageCreateSpy.mockRestore()
+  findSpy.mockRestore()
+})
+
+test('already-lost wizard spell + automateWizardSpellLoss on → warn + early return', async () => {
+  rollToMessageMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  gameSettingsGetMock.mockImplementationOnce((module, key) => {
+    if (module === 'dcc' && key === 'automateWizardSpellLoss') return true
+    return undefined
+  })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({ lost: true })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+  // Neither the adapter nor the legacy path continued with the cast.
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+  expect(itemSpy).not.toHaveBeenCalled()
+
+  itemSpy.mockRestore()
+  findSpy.mockRestore()
+})
+
+test('wizard-castingMode item on a patron-bound actor routes to legacy', async () => {
+  rollToMessageMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = 'Bobugbubilz'
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(itemSpy).toHaveBeenCalledTimes(1)
   expect(rollToMessageMock).not.toHaveBeenCalled()
 
   itemSpy.mockRestore()
@@ -136,4 +213,21 @@ test('generic item on a patron-bound actor routes to legacy (taint side-effects 
 
   itemSpy.mockRestore()
   findSpy.mockRestore()
+})
+
+test('createSpellEvents onSpellLost bridges to spellItem.update({ system.lost: true })', () => {
+  const actor = {}
+  const spellItem = { update: vi.fn() }
+  const events = createSpellEvents({ actor, spellItem })
+
+  expect(typeof events.onSpellLost).toBe('function')
+  events.onSpellLost({ spellLost: true })
+
+  expect(spellItem.update).toHaveBeenCalledTimes(1)
+  expect(spellItem.update).toHaveBeenCalledWith({ 'system.lost': true })
+})
+
+test('createSpellEvents without spellItem does not wire onSpellLost (naked path)', () => {
+  const events = createSpellEvents({ actor: {}, spellItem: null })
+  expect(events.onSpellLost).toBeUndefined()
 })
