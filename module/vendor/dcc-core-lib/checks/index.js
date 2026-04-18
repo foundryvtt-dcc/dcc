@@ -42,8 +42,10 @@ Save, SAVE_ABILITY_MAP, parseCheckId, createCheckId, isAbilityCheckId, isSaveChe
 export { DEFAULT_ACCESSORS, extractAbilityScores, } from "./accessors.js";
 // Definitions
 export { ABILITY_CHECK_DEFINITIONS, SAVE_DEFINITIONS, getCheckDefinition, getCheckDefinitionByParts, registerCheckDefinition, hasCheckDefinition, getRegisteredCheckIds, getCheckIdsByNamespace, } from "./definitions.js";
-// Roll API
+// Roll API (sync)
 export { rollCheck, rollAbilityCheck, rollSavingThrow, } from "./roll.js";
+// Roll API (async siblings — for Promise-based roll machinery)
+export { rollCheckAsync, rollAbilityCheckAsync, rollSavingThrowAsync, } from "./roll.js";
 // Luck Check (roll-under)
 export { rollLuckCheck, rollLuckCheckSimple, } from "./luck-check.js";
 //# sourceMappingURL=index.js.map

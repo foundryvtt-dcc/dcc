@@ -34,5 +34,6 @@ export { CheckNamespace, type CheckNamespaceType, Ability, type AbilityCheckId, 
 export { type CharacterAccessors, DEFAULT_ACCESSORS, extractAbilityScores, } from "./accessors.js";
 export { ABILITY_CHECK_DEFINITIONS, SAVE_DEFINITIONS, getCheckDefinition, getCheckDefinitionByParts, registerCheckDefinition, hasCheckDefinition, getRegisteredCheckIds, getCheckIdsByNamespace, } from "./definitions.js";
 export { rollCheck, rollAbilityCheck, rollSavingThrow, type CheckInput, type InlineCheckConfig, type RollCheckOptions, } from "./roll.js";
+export { rollCheckAsync, rollAbilityCheckAsync, rollSavingThrowAsync, type RollCheckOptionsAsync, } from "./roll.js";
 export { rollLuckCheck, rollLuckCheckSimple, type LuckCheckResult, type RollLuckCheckOptions, } from "./luck-check.js";
 //# sourceMappingURL=index.d.ts.map
