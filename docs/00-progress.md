@@ -38,10 +38,11 @@ Phase 2 closes.
 rolls are migrated through the adapter: `rollAbilityCheck`,
 `rollSavingThrow`, `rollSkillCheck`, and initiative (via
 `getInitiativeRoll`). A Playwright adapter-dispatch spec
-(`browser-tests/e2e/phase1-adapter-dispatch.spec.js`, 18 tests
-after the Phase 2 session 1 extension) validates every dispatcher
-branch end-to-end by asserting on the `[DCC adapter]` console logs
-from `module/adapter/debug.mjs`.
+(`browser-tests/e2e/phase1-adapter-dispatch.spec.js`, 20 tests
+after the Phase 2 session 1–3 extensions) validates every
+dispatcher branch end-to-end by asserting on the `[DCC adapter]`
+console logs from `module/adapter/debug.mjs`. All 20 passing
+against live v14 Foundry as of 2026-04-18.
 
 **Dispatch-logging decision (2026-04-18):** `debug.mjs` +
 `logDispatch` are now PERMANENT infrastructure, not a Phase 1
