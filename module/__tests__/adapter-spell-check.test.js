@@ -1,4 +1,4 @@
-/* global rollToMessageMock, ChatMessage, uiNotificationsWarnMock, gameSettingsGetMock, actorUpdateMock */
+/* global rollToMessageMock, ChatMessage, uiNotificationsWarnMock, gameSettingsGetMock, actorUpdateMock, CONFIG, game */
 /**
  * Adapter round-trip test — Phase 2 (spell check).
  *
@@ -23,6 +23,7 @@ import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
+import { buildSpellCheckArgs } from '../adapter/spell-input.mjs'
 
 // Mock actor-level-change like actor.test.js does
 vi.mock('../actor-level-change.js')
@@ -461,4 +462,306 @@ test('createSpellEvents onDisapprovalIncreased bails early for NPC actors (mirro
 test('createSpellEvents without actor does not wire onDisapprovalIncreased', () => {
   const events = createSpellEvents({ actor: null, spellItem: { update: vi.fn() } })
   expect(events.onDisapprovalIncreased).toBeUndefined()
+})
+
+// ---- Session 5 — spellburn + mercurial magic ----
+
+test('createSpellEvents onSpellburnApplied subtracts burn amounts from physical abilities', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: false,
+    system: {
+      abilities: {
+        str: { value: 14 },
+        agl: { value: 12 },
+        sta: { value: 13 }
+      }
+    }
+  }
+  const events = createSpellEvents({ actor, spellItem: null })
+
+  expect(typeof events.onSpellburnApplied).toBe('function')
+  events.onSpellburnApplied({ str: 2, agl: 0, sta: 3 })
+
+  expect(actor.update).toHaveBeenCalledTimes(1)
+  expect(actor.update).toHaveBeenCalledWith({
+    'system.abilities.str.value': 12,
+    'system.abilities.sta.value': 10
+  })
+})
+
+test('createSpellEvents onSpellburnApplied clamps ability scores at 1', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: false,
+    system: { abilities: { str: { value: 3 }, agl: { value: 5 }, sta: { value: 5 } } }
+  }
+  const events = createSpellEvents({ actor, spellItem: null })
+
+  // Burn 5 from str (would go to -2) — expect clamp to 1.
+  events.onSpellburnApplied({ str: 5, agl: 0, sta: 0 })
+
+  expect(actor.update).toHaveBeenCalledWith({ 'system.abilities.str.value': 1 })
+})
+
+test('createSpellEvents onSpellburnApplied bails early for NPC actors', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: true,
+    system: { abilities: { str: { value: 10 }, agl: { value: 10 }, sta: { value: 10 } } }
+  }
+  const events = createSpellEvents({ actor, spellItem: null })
+
+  events.onSpellburnApplied({ str: 2, agl: 1, sta: 0 })
+
+  expect(actor.update).not.toHaveBeenCalled()
+})
+
+test('createSpellEvents onSpellburnApplied with zero commitment does not update', () => {
+  const actor = {
+    update: vi.fn(),
+    isNPC: false,
+    system: { abilities: { str: { value: 10 }, agl: { value: 10 }, sta: { value: 10 } } }
+  }
+  const events = createSpellEvents({ actor, spellItem: null })
+
+  events.onSpellburnApplied({ str: 0, agl: 0, sta: 0 })
+
+  expect(actor.update).not.toHaveBeenCalled()
+})
+
+test('createSpellEvents without actor does not wire onSpellburnApplied', () => {
+  const events = createSpellEvents({ actor: null, spellItem: { update: vi.fn() } })
+  expect(events.onSpellburnApplied).toBeUndefined()
+})
+
+test('renderMercurialEffect posts a chat with the mercurial flag payload', async () => {
+  rollToMessageMock.mockClear()
+  const { renderMercurialEffect } = await import('../adapter/chat-renderer.mjs')
+  const actor = { name: 'Wiz' }
+  const spellItem = { id: 'Magic Missile' }
+
+  await renderMercurialEffect({
+    actor,
+    spellItem,
+    effect: { rollValue: 55, summary: 'Blue sparks', description: 'Blue sparks accompany the cast.', displayOnCast: true }
+  })
+
+  expect(rollToMessageMock).toHaveBeenCalled()
+  const [messageData] = rollToMessageMock.mock.calls[rollToMessageMock.mock.calls.length - 1]
+  expect(messageData.flags['dcc.RollType']).toBe('MercurialMagic')
+  expect(messageData.flags['dcc.libMercurial']).toMatchObject({ rollValue: 55, summary: 'Blue sparks' })
+  expect(messageData.flags['dcc.ItemId']).toBe('Magic Missile')
+})
+
+test('buildSpellCheckArgs threads options.spellburn into input.spellburn', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const args = buildSpellCheckArgs(actor, spellItem, {
+    spellburn: { str: 2, agl: 0, sta: 1 }
+  })
+
+  expect(args.input.spellburn).toEqual({ str: 2, agl: 0, sta: 1 })
+})
+
+test('buildSpellCheckArgs drops an all-zero spellburn commitment', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const args = buildSpellCheckArgs(actor, spellItem, {
+    spellburn: { str: 0, agl: 0, sta: 0 }
+  })
+
+  // Avoids a no-op modifier surfacing in the lib's result — matches
+  // the lib's `totalSpellburn > 0` gate in `cast.js`.
+  expect(args.input.spellburn).toBeUndefined()
+})
+
+test('buildSpellCheckArgs populates spellbookEntry.mercurialEffect from existing Foundry item', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({
+    mercurialEffect: {
+      value: 42,
+      summary: 'Blue aura',
+      description: 'Spell is surrounded by a shimmering blue aura.',
+      displayInChat: true
+    }
+  })
+
+  const args = buildSpellCheckArgs(actor, spellItem, {})
+  const spellbookEntry = args.character.state.classState.wizard.spellbook.spells[0]
+
+  expect(spellbookEntry.mercurialEffect).toEqual({
+    rollValue: 42,
+    summary: 'Blue aura',
+    description: 'Spell is surrounded by a shimmering blue aura.',
+    displayOnCast: true
+  })
+})
+
+test('buildSpellCheckArgs omits mercurialEffect when the Foundry item has no rolled value', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  // No mercurial on the item — spellbook entry should not carry one,
+  // so `_rollMercurialIfNeeded` in the adapter picks it up for the
+  // first-cast pre-roll path.
+  const spellItem = makeWizardSpellItem()
+  const args = buildSpellCheckArgs(actor, spellItem, {})
+  const spellbookEntry = args.character.state.classState.wizard.spellbook.spells[0]
+
+  expect(spellbookEntry.mercurialEffect).toBeUndefined()
+})
+
+test('adapter wizard first-cast pre-rolls mercurial magic when the item has none', async () => {
+  rollToMessageMock.mockClear()
+
+  // Configure a world mercurial-magic table the adapter's
+  // `loadMercurialMagicTable` can resolve. One entry spans the full
+  // d100 + luck-mod range so the lookup always succeeds.
+  const originalTable = CONFIG.DCC.mercurialMagicTable
+  const originalTables = game.tables
+  CONFIG.DCC.mercurialMagicTable = 'Mercurial Magic'
+  const fakeTable = {
+    id: 'merc-magic',
+    name: 'Mercurial Magic',
+    results: [
+      {
+        range: [-20, 130],
+        description: 'Blue aura. The spell is surrounded by a shimmering blue aura.'
+      }
+    ]
+  }
+  game.tables = {
+    getName: (name) => (name === 'Mercurial Magic' ? fakeTable : null),
+    find: () => null
+  }
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // Item updated with the rolled mercurial effect so later casts
+  // display it without rolling again. Summary is the leading
+  // sentence-fragment of the table row (split on '.').
+  expect(spellItem.update).toHaveBeenCalledWith(expect.objectContaining({
+    'system.mercurialEffect.value': expect.any(Number),
+    'system.mercurialEffect.summary': 'Blue aura',
+    'system.mercurialEffect.description': expect.stringContaining('Blue aura')
+  }))
+
+  // Main spell-check chat + mercurial display chat (two toMessage
+  // calls in evaluate order).
+  expect(rollToMessageMock.mock.calls.length).toBeGreaterThanOrEqual(2)
+  const mercurialCall = rollToMessageMock.mock.calls.find(([data]) =>
+    data?.flags?.['dcc.RollType'] === 'MercurialMagic'
+  )
+  expect(mercurialCall).toBeDefined()
+
+  // Cleanup test state so other tests aren't affected.
+  CONFIG.DCC.mercurialMagicTable = originalTable
+  game.tables = originalTables
+  findSpy.mockRestore()
+})
+
+test('adapter wizard cast on a spell item that already has mercurial does not re-roll', async () => {
+  rollToMessageMock.mockClear()
+
+  // Provide a table even though we expect NOT to load it — proves the
+  // "already-rolled" short-circuit, not a missing-table early return.
+  const originalTable = CONFIG.DCC.mercurialMagicTable
+  const originalTables = game.tables
+  CONFIG.DCC.mercurialMagicTable = 'Mercurial Magic'
+  game.tables = {
+    getName: () => ({ id: 'm', name: 'Mercurial Magic', results: [] }),
+    find: () => null
+  }
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem({
+    mercurialEffect: {
+      value: 60,
+      summary: 'Existing',
+      description: 'Pre-rolled effect',
+      displayInChat: true
+    }
+  })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // spellItem.update NOT called for mercurial re-roll (no keys
+  // matching `system.mercurialEffect.*`).
+  const mercurialUpdates = spellItem.update.mock.calls.filter(([data]) =>
+    Object.keys(data || {}).some((k) => k.startsWith('system.mercurialEffect'))
+  )
+  expect(mercurialUpdates).toHaveLength(0)
+
+  // The existing mercurial effect still fires the display-chat bridge.
+  const mercurialCall = rollToMessageMock.mock.calls.find(([data]) =>
+    data?.flags?.['dcc.RollType'] === 'MercurialMagic'
+  )
+  expect(mercurialCall).toBeDefined()
+  expect(mercurialCall[0].flags['dcc.libMercurial'].rollValue).toBe(60)
+
+  CONFIG.DCC.mercurialMagicTable = originalTable
+  game.tables = originalTables
+  findSpy.mockRestore()
+})
+
+test('adapter wizard cast with options.spellburn reduces ability scores adapter-side', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 14
+  actor.system.abilities.agl.value = 12
+  actor.system.abilities.sta.value = 13
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({
+    spell: 'Magic Missile',
+    spellburn: { str: 2, agl: 0, sta: 1 }
+  })
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  // The onSpellburnApplied bridge updated the actor's physical stats
+  // post-cast. Exact values: 14-2=12, 13-1=12 (agl unchanged so dropped).
+  expect(actorUpdateMock).toHaveBeenCalledWith({
+    'system.abilities.str.value': 12,
+    'system.abilities.sta.value': 12
+  })
+
+  findSpy.mockRestore()
 })

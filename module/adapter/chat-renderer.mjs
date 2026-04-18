@@ -352,3 +352,60 @@ export async function renderDisapprovalRoll ({ actor, disapprovalResult }) {
 
   return ChatMessage.create(messageData)
 }
+
+/**
+ * Render a mercurial magic effect as a Foundry ChatMessage. Mirrors
+ * the session-3 `renderDisapprovalRoll` pattern — a deterministic
+ * `${rollValue}d1` Roll carries the lib's rolled value through
+ * Foundry's chat pipeline so DSN / highlighting work as expected.
+ * Replaces the chat-card mercurial block that
+ * `DCCItem.rollSpellCheck:382` threaded through
+ * `game.dcc.processSpellCheck` on the legacy path.
+ *
+ * @param {Object} params
+ * @param {Object} params.actor - The DCCActor casting.
+ * @param {Object} [params.spellItem] - Spell item (used for speaker
+ *   context + chat flag).
+ * @param {Object} params.effect - The lib's `MercurialEffect`
+ *   (see `dcc-core-lib/types/spells.d.ts`).
+ * @returns {Promise<ChatMessage>}
+ */
+export async function renderMercurialEffect ({ actor, spellItem, effect }) {
+  if (!effect) return
+  const rollValue = Number(effect.rollValue) || 0
+  const summary = effect.summary || ''
+  const description = effect.description || ''
+
+  // Deterministic roll mirroring the session-3 disapproval pattern.
+  // `${N}d1` evaluates to `N`; callers use the flavor / content for
+  // the descriptive text rather than the die formula.
+  const roll = new Roll(`${Math.max(1, rollValue)}d1`)
+  await roll.evaluate()
+
+  const flavor = [game.i18n.localize('DCC.MercurialMagicRoll'), summary]
+    .filter(Boolean)
+    .join(' — ')
+
+  const content = description ? `<p>${description}</p>` : undefined
+
+  const toMessageData = {
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor,
+    flags: {
+      'dcc.RollType': 'MercurialMagic',
+      'dcc.isMercurial': true,
+      'dcc.ItemId': spellItem?.id,
+      'dcc.libMercurial': {
+        rollValue,
+        summary,
+        description,
+        displayOnCast: effect.displayOnCast !== false
+      }
+    }
+  }
+  if (content !== undefined) toMessageData.content = content
+
+  const messageData = await roll.toMessage(toMessageData, { create: false })
+
+  return ChatMessage.create(messageData)
+}

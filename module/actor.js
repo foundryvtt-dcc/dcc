@@ -10,11 +10,12 @@ import {
   rollCheck as libRollCheck,
   rollSavingThrow as libRollSavingThrow,
   castSpell as libCastSpell,
-  calculateSpellCheck as libCalculateSpellCheck
+  calculateSpellCheck as libCalculateSpellCheck,
+  rollMercurialMagic as libRollMercurialMagic
 } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
-import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll } from './adapter/chat-renderer.mjs'
-import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable } from './adapter/spell-input.mjs'
+import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
@@ -1857,7 +1858,15 @@ class DCCActor extends Actor {
    *     dormant (no fumbleTable plumbed in), and the adapter calls
    *     `_runLegacyPatronTaint` after the cast to preserve the legacy
    *     d100-vs-chance creeping mechanic verbatim.
-   *   - Session 5+: spellburn, mercurial magic.
+   *   - Session 5: spellburn + mercurial magic on wizard / elf
+   *     casts. `input.spellburn` is forwarded from `options.spellburn`
+   *     when the caller provides a `SpellburnCommitment`; the
+   *     `onSpellburnApplied` bridge subtracts the burn from
+   *     `system.abilities.<str|agl|sta>.value`. Mercurial magic
+   *     pre-rolls via `_rollMercurialIfNeeded` when the spell item
+   *     has no stored effect — updates the item and attaches the
+   *     effect to the in-flight spellbook entry so the lib's
+   *     `onMercurialEffect` fires with the fresh result.
    *
    * Everything else (wizard on cleric, cleric on non-cleric,
    * patron-bound clerics, naked spell checks, unknown casting modes)
@@ -2019,8 +2028,33 @@ class DCCActor extends Actor {
       }
     }
 
-    // Pass 1: build the formula without rolling.
-    const plan = libCalculateSpellCheck(character, input, { mode: 'formula' }, events)
+    // Wizard / elf path — if the spell item doesn't yet carry a
+    // rolled mercurial effect, pre-roll one via the lib's
+    // `rollMercurialMagic`, persist it to the Foundry item, and
+    // attach it to the lib's spellbook entry so the cast's
+    // `onMercurialEffect` event fires with the freshly rolled
+    // effect. When a table isn't configured (setting unset, unit-test
+    // env), skip the pre-roll — matches legacy `DCCItem.rollSpellCheck`
+    // behavior (the legacy path only displays an existing mercurial
+    // effect and leaves first-cast rolling to the user-triggered
+    // `DCCItem.rollMercurialMagic` item-sheet button).
+    if (profile && profile.usesMercurial && spellItem) {
+      const spellbookEntry = character.state?.classState?.[profile.type]?.spellbook?.spells?.[0]
+      if (spellbookEntry && !spellbookEntry.mercurialEffect) {
+        await this._rollMercurialIfNeeded(spellItem, spellbookEntry)
+      }
+    }
+
+    // Pass 1: build the formula without rolling. Events are omitted
+    // here — the lib fires `onSpellburnApplied` + `onMercurialEffect`
+    // unconditionally when their inputs are set (see `cast.js:339-343`),
+    // so passing `events` to pass 1 would double-apply the burn / emit
+    // duplicate mercurial chat. Pass 2 is the authoritative side-effect
+    // pass. `onSpellLost` / `onDisapprovalIncreased` are gated on
+    // pass-2-only conditions (spell lost / natural roll), so earlier
+    // sessions could pass events to both passes without issue; the
+    // unconditional events introduced by session 5 force the split.
+    const plan = libCalculateSpellCheck(character, input, { mode: 'formula' }, {})
     if (plan.error) {
       ui.notifications.warn(plan.error)
       return
@@ -2086,6 +2120,22 @@ class DCCActor extends Actor {
       })
     }
 
+    // Session 5 — mercurial display chat. Rendered directly from
+    // `result.mercurialEffect` rather than via the lib's
+    // `onMercurialEffect` event because that event fires on both
+    // formula + evaluate passes (unconditional when the spellbook
+    // entry carries an effect) and its Promise return isn't
+    // awaitable through the lib. Legacy parity: the effect's
+    // `displayOnCast` gate mirrors the item's `displayInChat` flag
+    // (`DCCItem.rollSpellCheck:382`).
+    if (spellItem && result.mercurialEffect && result.mercurialEffect.displayOnCast !== false) {
+      await renderMercurialEffect({
+        actor: this,
+        spellItem,
+        effect: result.mercurialEffect
+      })
+    }
+
     // Session 4 — patron taint. Adapter-side preservation of the
     // legacy `processSpellCheck:623-660` mechanic for wizard / elf
     // patron casters. The lib's RAW patron-taint pipeline is dormant
@@ -2138,6 +2188,47 @@ class DCCActor extends Actor {
     const newChance = currentChance + 1
 
     await this.update({ 'system.class.patronTaintChance': `${newChance}%` })
+  }
+
+  /**
+   * Pre-roll a mercurial magic effect for a wizard / elf spell whose
+   * Foundry item doesn't yet carry one. Mirrors the lib-spec flow in
+   * `dcc-core-lib/spells/mercurial.js`: d100 + (luckMod × 10) lookup
+   * on a mercurial table. The rolled effect is persisted to the
+   * Foundry item so later casts display it without re-rolling, and
+   * attached to the supplied `spellbookEntry` so the same cast's
+   * `onMercurialEffect` event fires with the fresh effect. Silent
+   * no-op when no mercurial magic table is configured — matches the
+   * legacy `DCCItem.rollMercurialMagic:564` fall-back.
+   *
+   * @private
+   */
+  async _rollMercurialIfNeeded (spellItem, spellbookEntry) {
+    const mercurialTable = await loadMercurialMagicTable()
+    if (!mercurialTable) return
+
+    // Foundry-side d100 so Dice So Nice + chat breakdown show a real
+    // roll. The lib's roller receives '1d100' and we hand back the
+    // Foundry total; the luck modifier is applied inside the lib.
+    const d100Roll = new Roll('1d100')
+    await d100Roll.evaluate()
+    const luckMod = Number(this.system?.abilities?.lck?.mod) || 0
+
+    const effect = libRollMercurialMagic(luckMod, mercurialTable, {
+      roller: () => d100Roll.total
+    })
+
+    await spellItem.update({
+      'system.mercurialEffect.value': effect.rollValue,
+      'system.mercurialEffect.summary': effect.summary || '',
+      'system.mercurialEffect.description': effect.description || '',
+      'system.mercurialEffect.displayInChat': effect.displayOnCast !== false
+    })
+
+    // Attach to the in-flight spellbookEntry so the lib's pass-2
+    // `castSpell` surfaces the mercurial effect on the result, and
+    // `_castViaCalculateSpellCheck`'s post-cast render sees it.
+    spellbookEntry.mercurialEffect = effect
   }
 
   /**

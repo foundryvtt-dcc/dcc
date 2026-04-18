@@ -6,6 +6,30 @@
 
 ## Current phase
 
+**Phase 2 — Spell checks — session 5 complete.** Spellburn + mercurial
+magic now flow through the adapter for wizard / elf casts.
+`buildSpellCheckArgs` forwards `options.spellburn` (a lib
+`SpellburnCommitment`) into `input.spellburn`; the lib's `castSpell`
+adds a spellburn modifier to the roll formula and returns
+`result.spellburnApplied`. The new `onSpellburnApplied` bridge in
+`spell-events.mjs` subtracts the burn from `system.abilities.<str|agl|sta>
+.value` (clamped at 1, NPC-aware). Mercurial magic: the pre-cast
+`_rollMercurialIfNeeded(spellItem, spellbookEntry)` walks the
+configured `CONFIG.DCC.mercurialMagicTable` via the new
+`loadMercurialMagicTable()` helper (compendium → world fallback,
+same shape as session-3's `loadDisapprovalTable`), pre-rolls the
+d100 + luckMod × 10 via `libRollMercurialMagic`, persists the
+rolled effect to `spellItem.system.mercurialEffect.{value,summary,
+description,displayInChat}`, and attaches it to the in-flight
+spellbook entry. `_castViaCalculateSpellCheck` then renders a
+mercurial display chat via the new `renderMercurialEffect` (mirrors
+the session-3 `renderDisapprovalRoll` pattern) directly from
+`result.mercurialEffect` — NOT through the lib's `onMercurialEffect`
+event, because that fires unconditionally on both formula + evaluate
+passes and its Promise return isn't awaitable through the lib.
+Pass-1 events were tightened to `{}` for the same reason (otherwise
+spellburn would double-apply).
+
 **Phase 2 — Spell checks — session 4 complete.** Patron-bound
 wizard / elf actors now route wizard-castingMode spell checks
 through the adapter. `buildSpellCheckArgs` populates
@@ -39,9 +63,11 @@ The adapter then posts the disapproval roll chat from
 Wizard spell loss (session 2) + generic side-effect-free path
 (session 1) continue to work unchanged.
 
-Spellburn + mercurial magic (session 5) still route to the legacy
-path. `game.dcc.processSpellCheck` is exported verbatim — XCC's
-wizard/cleric sheets depend on it until Phase 2 closes.
+`game.dcc.processSpellCheck` is exported verbatim — XCC's
+wizard/cleric sheets depend on it until Phase 2 closes. Phase 2
+close needs: (a) XCC migration plan for `processSpellCheck`
+consumers, (b) resolution of open question #5 (patron-taint RAW
+alignment).
 
 **Phase 1 — Adopt the lib for simple rolls — COMPLETE.** All four
 rolls are migrated through the adapter: `rollAbilityCheck`,
@@ -272,14 +298,16 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 2 — spell checks. Sessions 1 (generic scaffold), 2 (wizard
-spell loss), 3 (cleric disapproval), and 4 (patron route +
-adapter-side legacy taint preservation) complete. Remaining:
-spellburn + mercurial magic (session 5). `spell-events.mjs` has
-`onSpellLost` + `onDisapprovalIncreased` wired; session 4 chose
-adapter-side legacy preservation (`_runLegacyPatronTaint`) over
-the lib's RAW `onPatronTaint` callback — see "Scope decisions"
-below. Session 5 adds `onSpellburnApplied` + `onMercurialEffect`.
+Phase 2 — spell checks. Sessions 1–5 complete. `spell-events.mjs`
+has `onSpellLost` + `onDisapprovalIncreased` + `onSpellburnApplied`
+wired; mercurial display chat is rendered directly from
+`result.mercurialEffect` in `_castViaCalculateSpellCheck` rather
+than via the lib's `onMercurialEffect` event (session 5 scope
+decision — the event fires on both formula + evaluate passes
+unconditionally, and its Promise return isn't awaitable through
+the lib). Phase 2 closes once: (a) the XCC migration plan for
+`game.dcc.processSpellCheck` consumers is in place, and (b) open
+question #5 (patron-taint RAW alignment) is resolved.
 
 ### Session 2026-04-18 (sixth session — Phase 2, session 1)
 
@@ -349,6 +377,183 @@ below. Session 5 adds `onSpellburnApplied` + `onMercurialEffect`.
     still pass unchanged (the legacy branch preserves the old
     body + call-sequence).
   - 763 tests pass (up from 759). `npm run format` clean.
+
+### Session 2026-04-18 (tenth session — Phase 2, session 5)
+
+- **Spellburn migration (wizard / elf).** `DCCActor.rollSpellCheck` for
+  wizard-castingMode items now forwards `options.spellburn` (a lib
+  `SpellburnCommitment`) through `buildSpellCheckArgs` →
+  `input.spellburn` → lib `castSpell`. The lib adds a Spellburn modifier
+  to the roll formula (`cast.js:50-58`) and fires `onSpellburnApplied`
+  with the burn commitment. The new `spell-events.mjs` bridge subtracts
+  each ability's burn from `system.abilities.<id>.value`, clamped at
+  1 and NPC-gated (mirrors `onDisapprovalIncreased`). Today no code
+  path supplies `options.spellburn` — the roll-modifier dialog's
+  Spellburn term (`roll-modifier.js:115-126`) still sits on the legacy
+  `DCCRoll.createRoll` path, which the adapter bypasses. Plumbing is
+  in place for a future dialog-adapter session.
+- **Mercurial magic migration (wizard / elf).** `_castViaCalculateSpellCheck`
+  now calls `_rollMercurialIfNeeded(spellItem, spellbookEntry)` before
+  pass 1 when `profile.usesMercurial === true` and the Foundry spell
+  item has no stored effect. The helper walks the configured
+  `CONFIG.DCC.mercurialMagicTable` via the new
+  `loadMercurialMagicTable()` exporter (pack-then-world resolution,
+  mirrors the legacy `DCCItem.rollMercurialMagic:531-558` walk),
+  pre-rolls a Foundry `1d100`, passes the total into the lib's
+  `rollMercurialMagic(luckMod, table, {roller})`, and persists the
+  rolled effect to `spellItem.system.mercurialEffect.{value,summary,
+  description,displayInChat}` + attaches it to the in-flight
+  spellbook entry. After the main spell-check chat, the adapter
+  renders a dedicated mercurial display chat via the new
+  `renderMercurialEffect` (mirrors session-3's `renderDisapprovalRoll`
+  pattern) directly from `result.mercurialEffect` — see "Scope
+  decisions" below for why the lib's `onMercurialEffect` callback is
+  intentionally NOT wired.
+- **Pass-1 events tightened.** `libCalculateSpellCheck` is now called
+  in formula mode with an empty events object `{}` instead of the
+  full bridge. Rationale in `cast.js:339-343`: `onSpellburnApplied`
+  and `onMercurialEffect` fire unconditionally whenever their input
+  fields are populated, so passing events to both passes would
+  double-apply the burn and double-post the mercurial chat. Pass 2
+  remains the authoritative side-effect pass. `onSpellLost` and
+  `onDisapprovalIncreased` were already pass-2-gated via natural-roll
+  / spellLost conditions, so earlier sessions didn't hit this.
+- **`module/adapter/spell-input.mjs`** extended:
+  - `readMercurialEffect(spellItem)` (module-local) converts the
+    Foundry item's `system.mercurialEffect.{value,summary,description,
+    displayInChat}` to the lib's `MercurialEffect` shape, returning
+    `null` when `value` is missing / zero. Called from
+    `buildSpellbookEntry` so the lib sees an already-rolled mercurial
+    on subsequent casts.
+  - `foundryTableEntries(foundryTable, project)` (module-local)
+    factors out the Foundry-RollTable → lib-entries walk shared by
+    `toLibSimpleTable` (disapproval) and the new `toLibMercurialTable`
+    (mercurial). Per-entry projection differs — mercurial carries
+    `summary` + `description` + `displayOnCast` — but the row-range
+    extraction is identical.
+  - `loadMercurialMagicTable()` — async. Walks
+    `CONFIG.DCC.mercurialMagicTable` compendium → world-name fallback
+    and converts via `toLibMercurialTable`. Returns `null` when no
+    table is resolvable.
+  - `buildSpellCheckArgs` now forwards `options.spellburn` when the
+    commitment is a valid `{str, agl, sta}` object with at least one
+    positive value. All-zero commitments are dropped to avoid a no-op
+    Spellburn modifier surfacing in the lib's result.
+- **`module/adapter/spell-events.mjs`** extended:
+  - `createSpellEvents` returns `onSpellburnApplied` when an `actor`
+    is provided. The handler bails for NPC actors, then builds
+    `actor.update({ 'system.abilities.<id>.value': max(1, current -
+    burn) })` for each of str/agl/sta with a positive burn. Skips the
+    update entirely if all three are zero.
+  - No `onMercurialEffect` bridge — mercurial rendering happens
+    adapter-side in `_castViaCalculateSpellCheck` instead (see "Scope
+    decisions" below).
+- **`module/adapter/chat-renderer.mjs`** extended:
+  - `renderMercurialEffect({actor, spellItem, effect})` — posts a
+    single chat with the `${rollValue}d1` deterministic Roll, the
+    localized "Mercurial Magic Roll" flavor + summary, and a
+    `dcc.libMercurial` structured flag (`rollValue`, `summary`,
+    `description`, `displayOnCast`). Replaces the chat-card mercurial
+    block that `DCCItem.rollSpellCheck:382` threaded through
+    `game.dcc.processSpellCheck` on the legacy path.
+- **`module/actor.js`** extended:
+  - New `_rollMercurialIfNeeded(spellItem, spellbookEntry)` — private.
+    Skips when `loadMercurialMagicTable()` returns null (matches the
+    legacy `DCCItem.rollMercurialMagic:564` no-table fall-back). Rolls
+    via the lib's `rollMercurialMagic(luckMod, table, {roller})`,
+    persists the effect to the Foundry item, and mutates the in-flight
+    spellbook entry.
+  - `_castViaCalculateSpellCheck` now calls `_rollMercurialIfNeeded`
+    before pass 1 for wizard / elf profiles, and renders
+    `renderMercurialEffect(result.mercurialEffect)` after
+    `renderSpellCheck` when the effect's `displayOnCast !== false`.
+  - Pass-1 `libCalculateSpellCheck` call now passes `{}` as events
+    instead of the full `events` bridge.
+- **Tests**:
+  - `module/__tests__/adapter-spell-check.test.js` — now 31 tests
+    (up from 18 at session 4 close). New:
+    `createSpellEvents onSpellburnApplied subtracts burn amounts` (PC
+    with str=14/agl=12/sta=13, burn {str:2,sta:3} → str→12/sta→10);
+    `onSpellburnApplied clamps at 1` (str=3, burn=5 → str=1);
+    `onSpellburnApplied bails early for NPC actors`;
+    `onSpellburnApplied with zero commitment does not update`;
+    `without actor does not wire onSpellburnApplied`;
+    `renderMercurialEffect posts chat with the mercurial flag payload`;
+    `buildSpellCheckArgs threads options.spellburn into input.spellburn`;
+    `buildSpellCheckArgs drops all-zero spellburn commitment`;
+    `buildSpellCheckArgs populates spellbookEntry.mercurialEffect from
+    existing Foundry item`;
+    `buildSpellCheckArgs omits mercurialEffect when item has no rolled
+    value`;
+    `adapter wizard first-cast pre-rolls mercurial magic when the item
+    has none` (CONFIG.DCC.mercurialMagicTable + game.tables.getName
+    mocked);
+    `adapter wizard cast on a spell item that already has mercurial does
+    not re-roll` (display chat still fires via result path);
+    `adapter wizard cast with options.spellburn reduces ability scores
+    adapter-side` (integration of the above — str=14, agl=12, sta=13,
+    burn {str:2,sta:1} → actor.update str=12, sta=12).
+  - `browser-tests/e2e/phase1-adapter-dispatch.spec.js` — 22 tests (up
+    from 20). Two new session-5 cases:
+    `wizard cast with options.spellburn reduces physical ability scores`
+    (asserts str=12/agl=12/sta=12 after a 14/12/13 cast with burn
+    {str:2,agl:0,sta:1});
+    `wizard first-cast pre-rolls mercurial magic` (asserts
+    `item.system.mercurialEffect.value > 0` after first cast, with
+    `test.skip` when no `mercurialMagicTable` is configured). **All 22
+    tests pass against live v14 Foundry** (verified 2026-04-18 against
+    the running `v14` world; 2.3 min run).
+  - 790 Vitest tests pass (up from 777).
+
+**Scope decisions (Phase 2 session 5):**
+
+- **Direct render over `onMercurialEffect` bridge.** The initial
+  design wired `onMercurialEffect` to call `renderMercurialEffect`.
+  That failed in tests because: (1) the lib fires the event on BOTH
+  formula-mode and evaluate-mode passes (cast.js:342-344, unconditional
+  when `input.spellbookEntry.mercurialEffect` is set), which would
+  double-post; (2) the bridge's returned Promise isn't propagated
+  through the lib, so the adapter couldn't await the chat before
+  returning — causing race-conditions with `rollToMessageMock` in the
+  unit tests. Refactored to: (a) pass `{}` events to pass 1 to prevent
+  the pass-1 fire; (b) remove the `onMercurialEffect` bridge entirely;
+  (c) render directly from `result.mercurialEffect` in
+  `_castViaCalculateSpellCheck` post-renderSpellCheck. Same for
+  spellburn — pass 1 no longer fires `onSpellburnApplied`; pass 2 is
+  the authoritative side-effect pass.
+- **`_rollMercurialIfNeeded` is adapter-side, not lib-extension.** The
+  lib's `calculateSpellCheck` doesn't accept a mercurial-magic table —
+  mercurial effects are expected to be pre-attached to the spellbook
+  entry (rolled at spell-learn time per RAW). The legacy Foundry flow
+  rolls mercurial via a user-triggered button
+  (`DCCItem.rollMercurialMagic`) rather than auto-rolling at first
+  cast. Session 5 added adapter-side first-cast auto-roll as an
+  improvement: any wizard / elf casting a spell without a stored
+  mercurial effect gets one rolled and persisted. This is slightly
+  more RAW-aligned than legacy (which left mercurial rolling fully
+  manual). Could revisit if users want explicit opt-in.
+- **No spellburn dialog integration.** The spellburn UI ships as a
+  `Spellburn` term in the legacy roll-modifier dialog
+  (`roll-modifier.js:115` `DCCSpellburnTerm`) — the user clicks +/- to
+  allocate burn, the dialog calls the term's callback with post-burn
+  ability values, which calls `actor.update` directly. The adapter
+  path bypasses `DCCRoll.createRoll` entirely, so the dialog never
+  appears. Today this means wizard adapter casts silently don't offer
+  spellburn UI — a regression introduced in session 2 that's been
+  latent until now. Session 5 wires the `options.spellburn` plumbing
+  but does NOT integrate the dialog; a future session needs to either:
+  (a) detect `options.showModifierDialog` on the dispatcher and fall
+  back to legacy for wizard casts (loses the adapter migration for the
+  dialog case), or (b) build a dialog-adapter that collects the
+  commitment as `options.spellburn` before the adapter runs. Track as
+  open question #6 (added below).
+- **Factored table conversion via `foundryTableEntries` helper.**
+  `toLibSimpleTable` (disapproval) and the new `toLibMercurialTable`
+  (mercurial) differ only in per-entry projection. Extracted the
+  row-walk into a shared module-local `foundryTableEntries(table,
+  project)` helper. If a third consumer lands (corruption, fumble,
+  patron-taint) the helper is ready. Still not promoted to a top-level
+  `table-adapter.mjs` — three consumers would tip the balance.
 
 ### Session 2026-04-18 (ninth session — Phase 2, session 4)
 
@@ -716,6 +921,24 @@ below. Session 5 adds `onSpellburnApplied` + `onMercurialEffect`.
    to `module/item.js:436` manifestation lookup). Defer until after
    Phase 2 closes.
 
+6. **Spellburn dialog integration.** Session 5 wired `options.spellburn`
+   plumbing but did NOT integrate the legacy roll-modifier Spellburn
+   term. A wizard casting via the adapter path today has no spellburn
+   UI — the dialog only appears on `DCCRoll.createRoll` paths which
+   the adapter bypasses. This is a pre-existing regression from
+   session 2; session 5 made the plumbing for a fix but didn't ship
+   it. Two options to resolve:
+   (a) **Dispatcher carve-out**: add `options.showModifierDialog`
+   check to `rollSpellCheck` that routes to `_rollSpellCheckLegacy`
+   for wizard / elf casts. Simple, preserves dialog behavior, but
+   undoes part of the adapter migration for any right-click cast.
+   (b) **Dialog-adapter**: extract the Spellburn term's UI into a
+   standalone adapter-side dialog that collects `{str, agl, sta}`
+   burn amounts, then invokes `rollSpellCheck` with
+   `options.spellburn` set. More work but keeps the full adapter
+   pipeline. Pick during the first Phase 3 session (attack / damage
+   dialog integration has similar patterns to share with).
+
 ## Decisions made
 
 0. **Runtime loading: vendor the lib's built `dist/`.** See open
@@ -763,23 +986,28 @@ below. Session 5 adds `onSpellburnApplied` + `onMercurialEffect`.
 
 ## Next steps
 
-Phase 2 session 5 — migrate spellburn + mercurial magic. Wire
-`onSpellburnApplied` + `onMercurialEffect` callbacks in
-`spell-events.mjs` to replace the spellburn ability-cost application
-+ mercurial-magic table lookup that `processSpellCheck` (and
-`DCCActor.applySpellburn`, `DCCItem.rollMercurialMagic`) handle on
-the legacy path. Load the mercurial magic table via the same
-`toLibSimpleTable` adapter session 3 introduced (single world table
-per `dcc.setMercurialMagicTable` setting — straightforward). Extend
-`buildSpellCheckArgs` to set `input.mercurialMagicTable` for wizard
-profiles and to thread spellburn input through `castInput.spellburn`.
-Tests: wizard cast with spellburn applied → ability scores updated
-adapter-side; wizard cast that triggers mercurial → table draw
-posted as a separate chat (similar to the session-3
-`renderDisapprovalRoll` pattern); patron-bound wizard with spellburn
-+ mercurial all in one cast still works. Phase 2 closes once
-session 5 ships and the patron-taint RAW alignment question (open
-question #5) is resolved.
+Phase 2 close audit. Sessions 1–5 are in. Two blockers remain:
+
+1. **Audit `game.dcc.processSpellCheck` consumers** across the
+   sibling modules, particularly XCC (which has the heaviest
+   consumption — its custom wizard / cleric sheets invoke
+   `processSpellCheck` from overridden `rollSpellCheck` methods).
+   Coordinate with the XCC maintainer on a migration plan:
+   (a) deprecate the export with a 1-version warning, (b) ship a
+   per-cast adapter call path that XCC can import / invoke. Could be
+   a standalone PR landing before Phase 3. `EXTENSION_API.md` marks
+   `processSpellCheck` as stable — removing it without a migration
+   plan breaks XCC.
+2. **Resolve open question #5** (patron-taint RAW alignment). Either
+   keep the creeping-chance mechanic (`_runLegacyPatronTaint` stays)
+   or migrate to the lib's RAW model (fumble-table effect-tag
+   migration + per-patron taint table resolution needed). Phase 2
+   doesn't close without a decision.
+
+Phase 3 — attack / damage / crit / fumble migration — starts after
+the close. Early Phase 3 work should also pick up open question #6
+(spellburn dialog integration) since the attack/damage dialogs share
+the same pattern.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

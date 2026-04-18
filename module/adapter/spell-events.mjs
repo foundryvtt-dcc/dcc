@@ -12,14 +12,25 @@
  * Phase 2 rollout (staged across sessions):
  *   - Session 2: `onSpellLost` drives wizard spell loss (replaces the
  *     `actor.loseSpell(item)` call in `processSpellCheck`).
- *   - Session 3 (current): `onDisapprovalIncreased` drives cleric
- *     disapproval (replaces `actor.applyDisapproval()`).
- *   - Session 4: `onPatronTaint` drives the d100 taint roll + chance bump.
- *   - Session 5: `onSpellburnApplied` / `onMercurialEffect`.
+ *   - Session 3: `onDisapprovalIncreased` drives cleric disapproval
+ *     (replaces `actor.applyDisapproval()`).
+ *   - Session 4: patron-taint creeping-chance mechanic preserved
+ *     adapter-side by `_runLegacyPatronTaint` (the lib's RAW
+ *     `onPatronTaint` is dormant — see `00-progress.md` open q5).
+ *   - Session 5 (current): `onSpellburnApplied` subtracts the burn
+ *     commitment from the actor's physical abilities. Mercurial
+ *     display chat is posted directly by `_castViaCalculateSpellCheck`
+ *     from `result.mercurialEffect` (mirrors session-3's
+ *     `renderDisapprovalRoll` pattern) so the adapter can await the
+ *     render before returning — the lib's `onMercurialEffect` callback
+ *     fires twice (formula + evaluate passes) and isn't awaitable, so
+ *     using it for rendering would double-post and race with the
+ *     main spell-check chat.
  *
- * Until later sessions wire them up, the other handlers are deliberately
- * absent: the lib only invokes callbacks that exist on the supplied
- * object, so omitting a handler is a no-op rather than a crash.
+ * The lib only invokes callbacks that exist on the supplied object,
+ * so omitting a handler is a no-op rather than a crash. Handlers that
+ * require missing context (no actor for spellburn) are omitted below
+ * for the same reason.
  */
 
 /**
@@ -87,6 +98,35 @@ export function createSpellEvents ({ actor, spellItem }) {
       }
       ChatMessage.applyMode?.(messageData, game.settings?.get?.('core', 'messageMode'))
       CONFIG.ChatMessage.documentClass.create(messageData)
+    }
+
+    /**
+     * Lib reports spellburn was applied for this cast. Mirror the
+     * legacy roll-modifier `Spellburn` term callback
+     * (`module/item.js:329-336`): for each physical ability, subtract
+     * the burn from `system.abilities.<id>.value`, clamped at 1. NPC
+     * actors bail (consistent with the disapproval handler and the
+     * legacy spellburn-dialog flow, which is PC-only in practice).
+     *
+     * The lib passes the `SpellburnCommitment` ({ str, agl, sta })
+     * directly — these are burn AMOUNTS, not post-burn scores. The
+     * bridge converts them to post-burn scores here.
+     */
+    events.onSpellburnApplied = (burn) => {
+      if (actor.isNPC) return
+      if (!burn) return
+
+      const updates = {}
+      for (const abilityId of ['str', 'agl', 'sta']) {
+        const amount = Number(burn[abilityId]) || 0
+        if (amount <= 0) continue
+        const current = Number(actor.system?.abilities?.[abilityId]?.value) || 0
+        updates[`system.abilities.${abilityId}.value`] = Math.max(1, current - amount)
+      }
+
+      if (Object.keys(updates).length > 0) {
+        actor.update(updates)
+      }
     }
   }
 

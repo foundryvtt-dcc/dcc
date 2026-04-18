@@ -458,5 +458,106 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       const line = await waitForAdapterLog('rollSpellCheck')
       assertPath(line, 'legacy')
     })
+
+    test('wizard cast with options.spellburn reduces physical ability scores (session 5)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell Spellburn',
+          type: 'Player',
+          system: {
+            class: { className: 'Wizard' },
+            abilities: {
+              str: { value: 14, max: 14 },
+              agl: { value: 12, max: 12 },
+              sta: { value: 13, max: 13 },
+              per: { value: 10, max: 10 },
+              int: { value: 16, max: 16 },
+              lck: { value: 10, max: 10 }
+            }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Spellburn-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+      })
+
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell Spellburn').rollSpellCheck({
+          spell: 'P1-Spellburn-Spell',
+          spellburn: { str: 2, agl: 0, sta: 1 }
+        })
+      })
+
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P1-Spellburn-Spell', mode: 'wizard' })
+
+      // Allow async actor.update to land (onSpellburnApplied bridge).
+      await page.waitForTimeout(300)
+
+      const { str, agl, sta } = await page.evaluate(() => {
+        const actor = game.actors.getName('P1 Spell Spellburn')
+        return {
+          str: actor.system.abilities.str.value,
+          agl: actor.system.abilities.agl.value,
+          sta: actor.system.abilities.sta.value
+        }
+      })
+      // Burn: str -2 → 12, agl unchanged → 12, sta -1 → 12.
+      expect(str).toBe(12)
+      expect(agl).toBe(12)
+      expect(sta).toBe(12)
+    })
+
+    test('wizard first-cast pre-rolls mercurial magic (session 5)', async ({ page }) => {
+      // CONFIG.DCC.mercurialMagicTable is set from a world setting at
+      // init. Skip gracefully when no table is configured in this world
+      // — the adapter falls back to silent no-op in that case.
+      const tableConfigured = await page.evaluate(() => !!CONFIG.DCC.mercurialMagicTable)
+      test.skip(!tableConfigured, 'No mercurialMagicTable configured in this world')
+
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell Mercurial',
+          type: 'Player',
+          system: { class: { className: 'Wizard' } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Mercurial-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+      })
+
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell Mercurial').rollSpellCheck({ spell: 'P1-Mercurial-Spell' })
+      })
+
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P1-Mercurial-Spell', mode: 'wizard' })
+
+      // Allow the async item.update to land.
+      await page.waitForTimeout(400)
+
+      const mercurialValue = await page.evaluate(() => {
+        const actor = game.actors.getName('P1 Spell Mercurial')
+        const item = actor.items.getName('P1-Mercurial-Spell')
+        return item?.system?.mercurialEffect?.value
+      })
+      // Foundry's spell data model coerces mercurialEffect.value to a
+      // string at save time — normalize before the numeric assertion.
+      expect(Number(mercurialValue), 'mercurial effect should be rolled and stored on first cast').toBeGreaterThan(0)
+    })
   })
 })

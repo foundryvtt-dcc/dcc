@@ -3,33 +3,42 @@
 /**
  * Foundry → dcc-core-lib spell input builders.
  *
- * Two adapter paths:
- *   - `buildSpellCastInput(actor, spellItem, options)` — returns a
- *     lib `SpellCastInput` for `castSpell`. Session 1's
- *     generic-castingMode path. Uses `syntheticGenericProfile()` so
- *     the lib sees a side-effect-free caster.
+ * Adapter paths:
+ *   - `buildSpellCastInput(actor, spellItem, options)` — lib
+ *     `SpellCastInput` for `castSpell` (generic-castingMode path,
+ *     session 1). Uses `syntheticGenericProfile()` so the lib sees a
+ *     side-effect-free caster.
  *   - `buildSpellCheckArgs(actor, spellItem, options)` — returns
- *     `{ character, input, profile }` for `calculateSpellCheck`.
- *     Session 2's wizard-castingMode path. Looks up the real caster
+ *     `{ character, input, profile }` for `calculateSpellCheck`
+ *     (wizard / cleric / elf paths). Looks up the real caster
  *     profile via `getCasterProfile(classId)`, builds a lib
  *     `SpellbookEntry` from the Foundry spell item, and populates
  *     `character.state.classState.<type>.spellbook` so the lib's
  *     orchestration finds the entry. Returns `null` when the actor's
  *     class has no lib-side caster profile — callers should fall
  *     back to the legacy path.
- *   - `loadDisapprovalTable(actor)` — async. Returns a lib
- *     `SimpleTable` for the actor's configured disapproval table
- *     (compendium or world), or `null` when unavailable. Session 3
- *     introduces it; sessions 4–5 reuse the same Foundry-RollTable
- *     → lib-SimpleTable adapter for corruption / patron taint.
+ *   - `loadDisapprovalTable(actor)` / `loadMercurialMagicTable(actor)` —
+ *     async. Each returns a lib `SimpleTable` / `MercurialTable`
+ *     loaded from a configured Foundry `RollTable` (compendium or
+ *     world), or `null` when unavailable.
  *
- * Session 4 (patron route) extends `buildSpellCheckArgs` to populate
- * `wizard.patron` / `elf.patron` so `getPatronId(character)` resolves;
- * the lib's RAW patron-taint pipeline stays dormant (no fumbleTable
- * loaded) and `_runLegacyPatronTaint` adapter-side preserves the
- * legacy d100-vs-chance creeping mechanic verbatim.
+ * Session 4 populates `wizard.patron` / `elf.patron` so
+ * `getPatronId(character)` resolves; the lib's RAW patron-taint
+ * pipeline stays dormant (no fumbleTable loaded) and
+ * `_runLegacyPatronTaint` adapter-side preserves the legacy
+ * d100-vs-chance creeping mechanic verbatim.
  *
- * Spellburn / mercurial migrate in session 5.
+ * Session 5 adds spellburn + mercurial wiring:
+ *   - `input.spellburn` is forwarded from `options.spellburn` when the
+ *     caller provides an ability-burn commitment. Callers today pass
+ *     it programmatically — the spellburn modifier-dialog UI (see
+ *     `roll-modifier.js`) still sits on the legacy path until a
+ *     dedicated dialog-adapter lands.
+ *   - `spellbookEntry.mercurialEffect` is populated from the Foundry
+ *     item's stored mercurial effect so the lib's `onMercurialEffect`
+ *     event fires per cast; when no mercurial is stored yet on a
+ *     wizard / elf spell, the adapter pre-rolls one via
+ *     `rollMercurialIfMissing` (see `module/actor.js`).
  */
 
 import { getCasterProfile } from '../vendor/dcc-core-lib/index.js'
@@ -113,6 +122,26 @@ function buildSpellDefinition (spellItem) {
 }
 
 /**
+ * Convert the Foundry spell item's `system.mercurialEffect` to a lib
+ * `MercurialEffect`. Returns `null` when the item has no rolled effect
+ * (the `value` field is the d100 roll total; absent until the wizard
+ * rolls via `DCCItem.rollMercurialMagic` or the adapter's first-cast
+ * auto-roll).
+ */
+function readMercurialEffect (spellItem) {
+  const me = spellItem?.system?.mercurialEffect
+  if (!me) return null
+  const rollValue = Number(me.value)
+  if (!Number.isFinite(rollValue) || rollValue === 0) return null
+  return {
+    rollValue,
+    summary: me.summary || '',
+    description: me.description || '',
+    displayOnCast: me.displayInChat !== false
+  }
+}
+
+/**
  * Build a lib `SpellbookEntry` from a Foundry spell item. Only the
  * fields the lib actually reads (`spellId`, `lost`, optional
  * `mercurialEffect` / `manifestation` / `lastResult`).
@@ -125,6 +154,10 @@ export function buildSpellbookEntry (spellItem, spellId) {
   const lastResult = Number(spellItem?.system?.lastResult)
   if (Number.isFinite(lastResult) && lastResult !== 0) {
     entry.lastResult = lastResult
+  }
+  const mercurialEffect = readMercurialEffect(spellItem)
+  if (mercurialEffect) {
+    entry.mercurialEffect = mercurialEffect
   }
   return entry
 }
@@ -261,7 +294,44 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
     actionDie
   }
 
+  // Session 5 — spellburn commitment. The caller (not wired yet to the
+  // roll-modifier dialog; see module docstring) passes a lib
+  // `SpellburnCommitment` via `options.spellburn`. The lib's
+  // `calculateSpellCheck` forwards it to `castInput.spellburn`; the
+  // `onSpellburnApplied` bridge in `spell-events.mjs` subtracts the
+  // burn from the actor's ability scores post-cast. Only wizard /
+  // elf profiles have `canSpellburn: true` in the lib — for cleric
+  // the commitment is dropped by `buildSpellCheckModifiers`.
+  if (options.spellburn && typeof options.spellburn === 'object') {
+    const burn = options.spellburn
+    const str = Number(burn.str) || 0
+    const agl = Number(burn.agl) || 0
+    const sta = Number(burn.sta) || 0
+    if (str > 0 || agl > 0 || sta > 0) {
+      input.spellburn = { str, agl, sta }
+    }
+  }
+
   return { character, input, profile, abilityId }
+}
+
+/**
+ * Walk a Foundry `RollTable`'s results list, producing `[min, max,
+ * source]` triples for any entry with a valid numeric range.
+ * Shared by `toLibSimpleTable` + `toLibMercurialTable` — the only
+ * difference between the two is the per-entry projection.
+ */
+function foundryTableEntries (foundryTable, project) {
+  const results = foundryTable?.results
+  if (!results) return null
+  const entries = []
+  for (const entry of results) {
+    const [min, max] = Array.isArray(entry.range) ? entry.range : [0, 0]
+    if (!Number.isFinite(min) || !Number.isFinite(max)) continue
+    entries.push(project(entry, min, max))
+  }
+  if (entries.length === 0) return null
+  return entries
 }
 
 /**
@@ -270,19 +340,40 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
  * each Foundry `TableResult` maps to one entry.
  */
 function toLibSimpleTable (foundryTable) {
-  const results = foundryTable?.results
-  if (!results) return null
-  const entries = []
-  for (const entry of results) {
-    const [min, max] = Array.isArray(entry.range) ? entry.range : [0, 0]
-    if (!Number.isFinite(min) || !Number.isFinite(max)) continue
-    entries.push({
+  const entries = foundryTableEntries(foundryTable, (entry, min, max) => ({
+    min,
+    max,
+    text: entry.description || entry.text || entry.name || ''
+  }))
+  if (!entries) return null
+  return {
+    id: foundryTable.id || foundryTable.name || 'foundry-table',
+    name: foundryTable.name || '',
+    entries
+  }
+}
+
+/**
+ * Convert a Foundry `RollTable` document to a lib `MercurialTable`.
+ * Per-entry shape carries `summary` + `description` + `displayOnCast`
+ * so the lib's `MercurialEffect` lookup (see `spells/mercurial.js`)
+ * builds a complete effect. Summary is the first sentence of the
+ * Foundry row description (mirrors `DCCItem.rollMercurialMagic:583`
+ * which splits on `.` for the item's stored summary).
+ */
+function toLibMercurialTable (foundryTable) {
+  const entries = foundryTableEntries(foundryTable, (entry, min, max) => {
+    const text = entry.description || entry.text || entry.name || ''
+    const summary = text.split('.')[0] || text
+    return {
       min,
       max,
-      text: entry.description || entry.text || entry.name || ''
-    })
-  }
-  if (entries.length === 0) return null
+      summary,
+      description: text,
+      displayOnCast: true
+    }
+  })
+  if (!entries) return null
   return {
     id: foundryTable.id || foundryTable.name || 'foundry-table',
     name: foundryTable.name || '',
@@ -339,6 +430,49 @@ export async function loadDisapprovalTable (actor) {
   const worldTable = game.tables?.find?.((t) => t.name === worldTableName)
   if (worldTable) {
     const libTable = toLibSimpleTable(worldTable)
+    if (libTable) return libTable
+  }
+
+  return null
+}
+
+/**
+ * Load the configured mercurial magic table and convert it to the
+ * lib's `MercurialTable` shape. Reads `CONFIG.DCC.mercurialMagicTable`
+ * (wired from the `dcc.mercurialMagicTable` world setting in
+ * `module/dcc.js:503-507`) using the same pack-then-world resolution
+ * the legacy `DCCItem.rollMercurialMagic:531-558` walks.
+ *
+ * Returns `null` when no table is resolvable (setting unset, pack
+ * missing, unit-test env). Callers should skip mercurial pre-rolling
+ * in that case — matches legacy "fall back to just displaying the
+ * roll" behavior at `DCCItem.rollMercurialMagic:564`.
+ *
+ * @returns {Promise<Object|null>}
+ */
+export async function loadMercurialMagicTable () {
+  const tableName = (typeof CONFIG !== 'undefined' && CONFIG?.DCC?.mercurialMagicTable) || null
+  if (!tableName) return null
+
+  // Compendium lookup — `packId.collectionName.tableName` (3 parts).
+  const parts = tableName.split('.')
+  if (parts.length === 3) {
+    const pack = game.packs?.get?.(`${parts[0]}.${parts[1]}`)
+    if (pack) {
+      const entry = pack.index?.find?.((e) => e.name === parts[2])
+      if (entry) {
+        const doc = await pack.getDocument(entry._id)
+        const libTable = toLibMercurialTable(doc)
+        if (libTable) return libTable
+      }
+    }
+  }
+
+  // World-table fallback — strip the pack prefix if present.
+  const worldTableName = parts.length === 3 ? parts[2] : tableName
+  const worldTable = game.tables?.getName?.(worldTableName)
+  if (worldTable) {
+    const libTable = toLibMercurialTable(worldTable)
     if (libTable) return libTable
   }
 
