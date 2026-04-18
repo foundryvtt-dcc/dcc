@@ -5,7 +5,24 @@
  * - Formula-only mode (returns formula without rolling)
  * - Built-in random roller
  * - Custom roller injection (for FoundryVTT, testing, etc.)
+ *
+ * This module contains two tiers of functionality:
+ *
+ * - **Legacy helpers** (`buildFormula`, `createRoll`, `rollSimple`) that
+ *   work with `LegacyRollModifier` — the flat `{ source, value, label }`
+ *   shape. Subsystems not yet migrated to the tagged-union modifier
+ *   (combat, spells, patron, occupation — see docs/MODIFIERS.md §9)
+ *   continue to use these.
+ *
+ * - **New-modifier pipeline** (`applyModifierPipeline`,
+ *   `buildFormulaFromModifiers`, `markApplied`) that understands the
+ *   tagged-union `RollModifier`. Used by the check / skill / save
+ *   pipeline (wave 1 of the modifier migration).
+ *
+ * - **Async evaluators** (`evaluateRollAsync`) for callers whose
+ *   underlying roll machinery is Promise-based (e.g. FoundryVTT).
  */
+import { bumpDie as bumpDieOnChain } from "./dice-chain.js";
 /**
  * Default random number generator for dice
  * Returns a random integer from 1 to faces (inclusive)
@@ -14,7 +31,7 @@ function defaultRoller(faces) {
     return Math.floor(Math.random() * faces) + 1;
 }
 /**
- * Roll multiple dice and sum them
+ * Roll multiple dice and sum them (sync path)
  */
 function rollDice(count, faces, roller) {
     if (roller) {
@@ -30,6 +47,14 @@ function rollDice(count, faces, roller) {
         total += roll;
     }
     return { total, rolls };
+}
+/**
+ * Roll multiple dice and sum them (async path). The custom roller is
+ * required — if you don't need async, use `rollDice` instead.
+ */
+async function rollDiceAsync(count, faces, roller) {
+    const total = await roller(`${String(count)}d${String(faces)}`);
+    return { total, rolls: [total] };
 }
 /**
  * Ensure a modifier string has a + prefix if positive
@@ -91,11 +116,15 @@ export function getFirstMod(formula) {
     return match?.[0] ?? "";
 }
 /**
- * Build a roll formula from components
+ * Build a roll formula from components (LEGACY).
+ *
+ * Used by subsystems still on the flat `LegacyRollModifier` shape.
+ * New code should use `buildFormulaFromModifiers` which understands
+ * the tagged-union `RollModifier`.
  *
  * @param die - Base die (e.g., "d20")
  * @param count - Number of dice
- * @param modifiers - Array of modifiers to add
+ * @param modifiers - Array of legacy modifiers to add
  * @returns Complete formula string
  */
 export function buildFormula(die, count, modifiers) {
@@ -150,7 +179,7 @@ export function parseFormula(formula) {
     };
 }
 /**
- * Evaluate a roll formula
+ * Evaluate a roll formula (sync).
  *
  * @param formula - The roll formula (e.g., "1d20+5")
  * @param options - Roll options (mode, custom roller)
@@ -159,7 +188,9 @@ export function parseFormula(formula) {
 export function evaluateRoll(formula, options = {}) {
     const parsed = parseFormula(formula);
     const mode = options.mode ?? "formula";
-    // Build modifiers list
+    // Build modifiers list (legacy-shape; RollResult carries the legacy
+    // shape for consumer compatibility — new-shape modifier tracking
+    // happens at the skills/resolve layer).
     const modifiers = [];
     if (parsed.totalModifier !== 0) {
         modifiers.push({
@@ -201,13 +232,58 @@ export function evaluateRoll(formula, options = {}) {
     return result;
 }
 /**
- * Create a roll with modifiers
+ * Evaluate a roll formula (async).
  *
- * This is a higher-level function that builds a formula from
- * components and optionally evaluates it.
+ * Use this when the custom roller is Promise-based (e.g. FoundryVTT's
+ * `Roll.evaluate()`). The roller is required; if you have a sync
+ * roller, use `evaluateRoll` instead.
+ *
+ * @param formula - The roll formula
+ * @param options - Async roll options (mode + async roller)
+ * @returns Promise of roll result
+ */
+export async function evaluateRollAsync(formula, options) {
+    const parsed = parseFormula(formula);
+    const mode = options.mode ?? "evaluate";
+    const modifiers = [];
+    if (parsed.totalModifier !== 0) {
+        modifiers.push({
+            source: "formula",
+            value: parsed.totalModifier,
+        });
+    }
+    const diceInfo = parsed.dice ?? { count: 0, faces: 20 };
+    const die = `d${String(diceInfo.faces)}`;
+    const diceCount = diceInfo.count;
+    const result = {
+        formula: parsed.normalized,
+        modifiers,
+        die,
+        diceCount,
+    };
+    if (mode === "evaluate") {
+        let total = 0;
+        let natural = 0;
+        if (diceCount > 0) {
+            const diceResult = await rollDiceAsync(diceCount, diceInfo.faces, options.roller);
+            natural = diceResult.total;
+            total = natural;
+        }
+        for (const addDice of parsed.additionalDice) {
+            const addResult = await rollDiceAsync(addDice.count, addDice.faces, options.roller);
+            total += addResult.total;
+        }
+        total += parsed.totalModifier;
+        result.natural = natural;
+        result.total = total;
+    }
+    return result;
+}
+/**
+ * Create a roll with legacy modifiers (LEGACY).
  *
  * @param die - The die to roll
- * @param modifiers - Modifiers to apply
+ * @param modifiers - Legacy modifiers to apply
  * @param options - Roll options
  * @returns Roll result
  */
@@ -219,7 +295,7 @@ export function createRoll(die, modifiers, options = {}) {
     return result;
 }
 /**
- * Roll a simple die
+ * Roll a simple die (LEGACY).
  *
  * Convenience function for quick single-die rolls.
  *
@@ -305,5 +381,116 @@ export function isAutoHit(result) {
     }
     const faces = parseInt(result.die.slice(1), 10);
     return result.natural === faces;
+}
+/**
+ * Phase 1 of the pipeline: determine the effective die.
+ *
+ * Applies `set-die` modifiers (last wins) then `bump-die` modifiers
+ * (sum of steps). Returns the effective die and any superseded
+ * `set-die` values for display purposes.
+ */
+export function selectDie(baseDie, modifiers) {
+    const setDies = modifiers.filter((m) => m.kind === 'set-die');
+    const bumps = modifiers.filter((m) => m.kind === 'bump-die');
+    let die = baseDie;
+    const superseded = [];
+    if (setDies.length > 0) {
+        // Last wins; earlier ones are superseded
+        for (let i = 0; i < setDies.length - 1; i++) {
+            const entry = setDies[i];
+            if (entry)
+                superseded.push(entry.die);
+        }
+        const winner = setDies[setDies.length - 1];
+        if (winner)
+            die = winner.die;
+    }
+    const totalSteps = bumps.reduce((sum, m) => sum + m.steps, 0);
+    if (totalSteps !== 0) {
+        const bumpedExpr = bumpDieOnChain(`1${die}`, totalSteps);
+        const bumpedMatch = /^(\d+)(d\d+)/.exec(bumpedExpr);
+        if (bumpedMatch?.[2]) {
+            die = bumpedMatch[2];
+        }
+    }
+    return { die, supersededSetDies: superseded };
+}
+/**
+ * Phase 2 of the pipeline: build the formula string from additive
+ * modifiers against a pre-selected die.
+ */
+export function buildFormulaFromModifiers(die, modifiers) {
+    let formula = `1${die}`;
+    // Add-dice modifiers contribute "+NdM" to the formula
+    for (const mod of modifiers) {
+        if (mod.kind === 'add-dice') {
+            formula += `+${mod.dice}`;
+        }
+    }
+    // Sum all additive modifier values into a single trailing number
+    let additiveSum = 0;
+    for (const mod of modifiers) {
+        if (mod.kind === 'add') {
+            additiveSum += mod.value;
+        }
+    }
+    if (additiveSum !== 0) {
+        formula += ensurePlus(String(additiveSum));
+    }
+    return formula;
+}
+/**
+ * Phase 4 of the pipeline: apply multiplicative modifiers to a subtotal.
+ * Multiplicative modifiers compose by multiplication
+ * (factor1 * factor2 * ...). Used primarily by damage rolls.
+ */
+export function applyMultipliers(subtotal, modifiers) {
+    let total = subtotal;
+    for (const mod of modifiers) {
+        if (mod.kind === 'multiply') {
+            total *= mod.factor;
+        }
+    }
+    return total;
+}
+/**
+ * Phase 5 of the pipeline: resolve effective threat range by summing
+ * `threat-shift` modifier amounts against a base threat range, then
+ * scaling for dice larger than d20.
+ *
+ * @param baseThreatRange - Base threat range in d20 space (e.g. 20 for crit-on-20, 19 for 19-20)
+ * @param dieFaces - Faces on the die being rolled
+ * @param modifiers - The modifier list
+ * @returns The effective threat range to compare the natural roll against
+ */
+export function resolveThreatRange(baseThreatRange, dieFaces, modifiers) {
+    let threat = baseThreatRange;
+    for (const mod of modifiers) {
+        if (mod.kind === 'threat-shift') {
+            // amount: +1 widens (19-20 → 18-20), so subtract from threshold
+            threat -= mod.amount;
+        }
+    }
+    return adjustThreatRange(threat, dieFaces);
+}
+/**
+ * Phase 6 of the pipeline: return a new modifier list with `applied`
+ * flags set on `add` and `add-dice` kinds.
+ *
+ * - `add` modifiers are `applied: true` when their `value !== 0`.
+ * - `add-dice` modifiers are always `applied: true` (a dice expression
+ *   always contributes at least 1 to the total).
+ * - Other kinds pass through untouched.
+ */
+export function markApplied(modifiers) {
+    return modifiers.map((m) => {
+        if (m.kind === 'add') {
+            return { ...m, applied: m.value !== 0 };
+        }
+        if (m.kind === 'add-dice') {
+            return { ...m, applied: true };
+        }
+        return m;
+    });
 }
 //# sourceMappingURL=roll.js.map

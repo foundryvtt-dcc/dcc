@@ -10,7 +10,7 @@
  * This is the main entry point for spell casting in applications.
  */
 import type { Character } from "../types/character.js";
-import type { DieType, RollModifier } from "../types/dice.js";
+import type { DieType, LegacyRollModifier } from "../types/dice.js";
 import type { SimpleTable, TieredTable } from "../tables/types.js";
 import type { SpellDefinition, SpellbookEntry, SpellCastInput, SpellCastResult, SpellCheckOptions, SpellEvents, CasterProfile, SpellburnCommitment } from "../types/spells.js";
 import type { DisapprovalResult } from "./disapproval.js";
@@ -26,7 +26,7 @@ export interface SpellCheckInput {
     /** Spellburn commitment (wizard/elf only) */
     spellburn?: SpellburnCommitment;
     /** Situational modifiers to apply */
-    situationalModifiers?: RollModifier[];
+    situationalModifiers?: LegacyRollModifier[];
     /** Action die override (if not d20) */
     actionDie?: DieType;
     /** Result table for spell effects (pre-loaded) */

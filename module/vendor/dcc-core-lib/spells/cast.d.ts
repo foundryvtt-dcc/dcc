@@ -6,13 +6,13 @@
  * with the table lookup system.
  */
 import type { SpellCastInput, SpellCastResult, SpellCheckOptions, SpellDefinition, SpellResultEntry, SpellEvents, CasterProfile } from "../types/spells.js";
-import type { RollModifier } from "../types/dice.js";
+import type { LegacyRollModifier } from "../types/dice.js";
 import type { ResultTier, TieredTable, TieredEntry } from "../tables/types.js";
 /**
  * Build the modifier list for a spell check.
  * Combines ability modifier, caster level, luck burn, spellburn, and situational modifiers.
  */
-export declare function buildSpellCheckModifiers(input: SpellCastInput): RollModifier[];
+export declare function buildSpellCheckModifiers(input: SpellCastInput): LegacyRollModifier[];
 /**
  * Find a spell result entry from inline results
  */
@@ -72,5 +72,5 @@ export declare function isFailure(tier: ResultTier | undefined): boolean;
 /**
  * Calculate the total modifier sum from a spell check modifiers list
  */
-export declare function getSpellCheckTotalModifier(modifiers: RollModifier[]): number;
+export declare function getSpellCheckTotalModifier(modifiers: LegacyRollModifier[]): number;
 //# sourceMappingURL=cast.d.ts.map

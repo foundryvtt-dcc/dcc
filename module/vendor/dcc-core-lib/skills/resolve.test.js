@@ -21,7 +21,7 @@ describe("resolve", () => {
             const result = resolveSkillCheck(input);
             expect(result.skillId).toBe("test-skill");
             expect(result.die).toBe("d20");
-            expect(result.formula).toBe("1d20+2+3"); // +2 STR mod, +3 level
+            expect(result.formula).toBe("1d20+5"); // +2 STR mod, +3 level
             expect(result.natural).toBeUndefined();
             expect(result.total).toBeUndefined();
         });
@@ -100,9 +100,10 @@ describe("resolve", () => {
             };
             const result = resolveSkillCheck(input);
             expect(result.modifiers).toContainEqual({
-                source: "str",
+                kind: "add",
                 value: 3,
-                label: "STR modifier",
+                origin: { category: "ability", id: "str", label: "STR modifier" },
+                applied: true,
             });
         });
         it("handles missing ability score", () => {
@@ -123,9 +124,10 @@ describe("resolve", () => {
             };
             const result = resolveSkillCheck(input);
             expect(result.modifiers).toContainEqual({
-                source: "level",
+                kind: "add",
                 value: 5,
-                label: "Level",
+                origin: { category: "level", id: "level", label: "Level" },
+                applied: true,
             });
         });
         it("includes half level modifier", () => {
@@ -145,9 +147,10 @@ describe("resolve", () => {
             };
             const result = resolveSkillCheck(input);
             expect(result.modifiers).toContainEqual({
-                source: "level",
+                kind: "add",
                 value: 2,
-                label: "Level",
+                origin: { category: "level", id: "level", label: "Level" },
+                applied: true,
             });
         });
         it("includes no level modifier when none", () => {
@@ -166,7 +169,7 @@ describe("resolve", () => {
                 level: 5,
             };
             const result = resolveSkillCheck(input);
-            expect(result.modifiers.find((m) => m.source === "level")).toBeUndefined();
+            expect(result.modifiers.find((m) => m.origin.category === "level")).toBeUndefined();
         });
         it("includes custom bonus from progression", () => {
             const skill = {
@@ -191,9 +194,10 @@ describe("resolve", () => {
             const result = resolveSkillCheck(input);
             // Level modifier should be the custom bonus
             expect(result.modifiers).toContainEqual({
-                source: "level",
+                kind: "add",
                 value: 4,
-                label: "Level",
+                origin: { category: "level", id: "level", label: "Level" },
+                applied: true,
             });
         });
         it("includes progression bonus separate from level modifier", () => {
@@ -217,14 +221,16 @@ describe("resolve", () => {
             };
             const result = resolveSkillCheck(input);
             expect(result.modifiers).toContainEqual({
-                source: "level",
+                kind: "add",
                 value: 4,
-                label: "Level",
+                origin: { category: "level", id: "level", label: "Level" },
+                applied: true,
             });
             expect(result.modifiers).toContainEqual({
-                source: "progression",
+                kind: "add",
                 value: 2,
-                label: "Class bonus",
+                origin: { category: "progression", id: "class-bonus", label: "Class bonus" },
+                applied: true,
             });
         });
         it("handles luck burn", () => {
@@ -247,9 +253,10 @@ describe("resolve", () => {
             };
             const result = resolveSkillCheck(input);
             expect(result.modifiers).toContainEqual({
-                source: "luck",
+                kind: "add",
                 value: 3,
-                label: "Luck",
+                origin: { category: "luck-burn", id: "lck", label: "Luck" },
+                applied: true,
             });
         });
         it("applies luck multiplier", () => {
@@ -273,9 +280,10 @@ describe("resolve", () => {
             };
             const result = resolveSkillCheck(input);
             expect(result.modifiers).toContainEqual({
-                source: "luck",
+                kind: "add",
                 value: 6, // 3 * 2
-                label: "Luck",
+                origin: { category: "luck-burn", id: "lck", label: "Luck" },
+                applied: true,
             });
         });
         it("does not allow luck when not configured", () => {
@@ -287,7 +295,7 @@ describe("resolve", () => {
                 luckBurn: 3,
             };
             const result = resolveSkillCheck(input);
-            expect(result.modifiers.find((m) => m.source === "luck")).toBeUndefined();
+            expect(result.modifiers.find((m) => m.origin.category === "luck-burn")).toBeUndefined();
         });
         it("includes situational modifiers", () => {
             const input = {
@@ -295,20 +303,22 @@ describe("resolve", () => {
                 abilities: {},
                 level: 1,
                 situationalModifiers: [
-                    { source: "darkness", value: -2, label: "Darkness penalty" },
-                    { source: "blessing", value: 1, label: "Blessing" },
+                    { kind: "add", value: -2, origin: { category: "situational", id: "darkness", label: "Darkness penalty" } },
+                    { kind: "add", value: 1, origin: { category: "situational", id: "blessing", label: "Blessing" } },
                 ],
             };
             const result = resolveSkillCheck(input);
             expect(result.modifiers).toContainEqual({
-                source: "darkness",
+                kind: "add",
                 value: -2,
-                label: "Darkness penalty",
+                origin: { category: "situational", id: "darkness", label: "Darkness penalty" },
+                applied: true,
             });
             expect(result.modifiers).toContainEqual({
-                source: "blessing",
+                kind: "add",
                 value: 1,
-                label: "Blessing",
+                origin: { category: "situational", id: "blessing", label: "Blessing" },
+                applied: true,
             });
         });
         it("detects critical hit at max roll", () => {
@@ -467,7 +477,7 @@ describe("resolve", () => {
         });
         it("returns formula only in default mode", () => {
             const result = quickSkillCheck("test", "d20", 14, "dex", 2);
-            expect(result.formula).toBe("1d20+1+2"); // +1 DEX, +2 level
+            expect(result.formula).toBe("1d20+3"); // +1 DEX, +2 level
             expect(result.total).toBeUndefined();
         });
     });
@@ -486,7 +496,7 @@ describe("resolve", () => {
         it("has no level modifier", () => {
             const result = abilityCheck("int", 10);
             expect(result.formula).toBe("1d20"); // No modifier for INT 10
-            expect(result.modifiers.find((m) => m.source === "level")).toBeUndefined();
+            expect(result.modifiers.find((m) => m.origin.category === "level")).toBeUndefined();
         });
     });
     describe("savingThrow", () => {
@@ -503,9 +513,10 @@ describe("resolve", () => {
         it("includes save bonus in modifiers", () => {
             const result = savingThrow("ref", "dex", 16, 2);
             expect(result.modifiers).toContainEqual({
-                source: "save-bonus",
+                kind: "add",
                 value: 2,
-                label: "Save bonus",
+                origin: { category: "other", id: "save-bonus", label: "Save bonus" },
+                applied: true,
             });
         });
     });

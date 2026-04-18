@@ -13,7 +13,7 @@
  * - Subdual damage
  * - Unarmed combat
  */
-import type { DiceRoller, RollModifier } from "../types/dice.js";
+import type { DiceRoller, LegacyRollModifier } from "../types/dice.js";
 import type { DCCAbilityId } from "../types/system.js";
 /**
  * Effect of having an ability reduced to 0
@@ -133,7 +133,7 @@ export interface GrappleResult {
     /** Whether target is now pinned */
     targetPinned: boolean;
     /** All modifiers applied */
-    modifiers: RollModifier[];
+    modifiers: LegacyRollModifier[];
 }
 /**
  * Result of armor recovery check

@@ -6,7 +6,7 @@
  * for supernatural aid. Results are determined by a spell check against the
  * patron's unique invoke table.
  */
-import type { RollOptions, RollModifier } from "../types/dice.js";
+import type { RollOptions, LegacyRollModifier } from "../types/dice.js";
 import type { TieredTable } from "../tables/types.js";
 import type { InvokePatronInput, InvokePatronResult, PatronEvents } from "../types/patron.js";
 /**
@@ -24,14 +24,14 @@ export declare const INVOKE_PATRON_FUMBLE_TRIGGERS_TAINT = true;
  * @param input - Invoke patron input
  * @returns Array of roll modifiers
  */
-export declare function buildInvokeModifiers(input: InvokePatronInput): RollModifier[];
+export declare function buildInvokeModifiers(input: InvokePatronInput): LegacyRollModifier[];
 /**
  * Sum all modifiers to get total modifier value.
  *
  * @param modifiers - Array of roll modifiers
  * @returns Total modifier value
  */
-export declare function sumModifiers(modifiers: readonly RollModifier[]): number;
+export declare function sumModifiers(modifiers: readonly LegacyRollModifier[]): number;
 /**
  * Build the formula string for display.
  *
@@ -39,7 +39,7 @@ export declare function sumModifiers(modifiers: readonly RollModifier[]): number
  * @param modifiers - Array of roll modifiers
  * @returns Formula string (e.g., "15 + 3 + 2 = 20")
  */
-export declare function buildInvokeFormula(natural: number, modifiers: readonly RollModifier[]): string;
+export declare function buildInvokeFormula(natural: number, modifiers: readonly LegacyRollModifier[]): string;
 /**
  * Invoke a patron.
  *

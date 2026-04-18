@@ -15,7 +15,7 @@
  * - Single monster: when lost half HP
  * - Retainer: first combat/danger per adventure, end of adventure
  */
-import type { DiceRoller, RollModifier } from "../types/dice.js";
+import type { DiceRoller, LegacyRollModifier } from "../types/dice.js";
 /**
  * Type of entity making the morale check
  */
@@ -76,7 +76,7 @@ export interface MoraleCheckInput {
     /** Whether creature is immune to morale (automatons, golems, etc.) */
     isImmune?: boolean | undefined;
     /** Additional modifiers */
-    additionalModifiers?: RollModifier[] | undefined;
+    additionalModifiers?: LegacyRollModifier[] | undefined;
 }
 /**
  * Result of a morale check
@@ -93,7 +93,7 @@ export interface MoraleCheckResult {
     /** Whether the check was skipped due to immunity */
     immune: boolean;
     /** All modifiers applied */
-    modifiers: RollModifier[];
+    modifiers: LegacyRollModifier[];
     /** What triggered this check */
     trigger: MoraleTrigger;
     /** Description of outcome */

@@ -1,5 +1,8 @@
 /**
  * Dice-related type definitions for DCC
+ *
+ * @see docs/MODIFIERS.md for the tagged-union RollModifier design and
+ * the staged migration plan from LegacyRollModifier to RollModifier.
  */
 /**
  * Standard DCC dice chain - the progression of dice sizes

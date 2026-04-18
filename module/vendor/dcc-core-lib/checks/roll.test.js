@@ -264,7 +264,7 @@ describe("checks", () => {
                 expect(result.skillId).toBe("save:reflex");
                 expect(result.die).toBe("d20");
                 // AGL 14 = +1 modifier, save bonus = 2
-                expect(result.formula).toBe("1d20+1+2");
+                expect(result.formula).toBe("1d20+3");
             });
             it("rolls a fortitude save", () => {
                 const character = createMockCharacter();
@@ -306,7 +306,7 @@ describe("checks", () => {
                 expect(result.skillId).toBe("skill:custom");
                 expect(result.die).toBe("d24");
                 // STR 16 = +2, level 3 = +3
-                expect(result.formula).toBe("1d24+2+3");
+                expect(result.formula).toBe("1d24+5");
             });
             it("accepts an inline config", () => {
                 const character = createMockCharacter();
@@ -327,16 +327,17 @@ describe("checks", () => {
                 const character = createMockCharacter();
                 const result = rollCheck(Ability.STR, character, {
                     modifiers: [
-                        { source: "bless", value: 1, label: "Bless" },
-                        { source: "prone", value: -2, label: "Prone" },
+                        { kind: "add", value: 1, origin: { category: "situational", id: "bless", label: "Bless" } },
+                        { kind: "add", value: -2, origin: { category: "situational", id: "prone", label: "Prone" } },
                     ],
                 });
-                // STR +2, bless +1, prone -2
-                expect(result.formula).toBe("1d20+2+1-2");
+                // STR +2, bless +1, prone -2 → additive sum = +1 → "1d20+1"
+                expect(result.formula).toBe("1d20+1");
                 expect(result.modifiers).toContainEqual({
-                    source: "bless",
+                    kind: "add",
                     value: 1,
-                    label: "Bless",
+                    origin: { category: "situational", id: "bless", label: "Bless" },
+                    applied: true,
                 });
             });
             it("applies luck burn when skill allows it", () => {
@@ -356,7 +357,7 @@ describe("checks", () => {
                     luckBurn: 3,
                 });
                 // STR +2, luck burn +3
-                expect(result.formula).toBe("1d20+2+3");
+                expect(result.formula).toBe("1d20+5");
                 expect(result.resourcesConsumed).toContainEqual({
                     resource: "luck",
                     amount: 3,
@@ -445,21 +446,22 @@ describe("checks", () => {
             const result = rollSavingThrow(Save.REF, character);
             expect(result.skillId).toBe("save:reflex");
             // AGL +1, save bonus +2
-            expect(result.formula).toBe("1d20+1+2");
+            expect(result.formula).toBe("1d20+3");
         });
         it("handles raw save IDs by namespacing them", () => {
             const character = createMockCharacter();
             const result = rollSavingThrow("reflex", character);
             expect(result.skillId).toBe("save:reflex");
-            expect(result.formula).toBe("1d20+1+2");
+            expect(result.formula).toBe("1d20+3");
         });
         it("includes save bonus in modifiers", () => {
             const character = createMockCharacter();
             const result = rollSavingThrow(Save.FORT, character);
             expect(result.modifiers).toContainEqual({
-                source: "save-bonus",
+                kind: "add",
                 value: 3,
-                label: "Save bonus",
+                origin: { category: "other", id: "save-bonus", label: "Save bonus" },
+                applied: true,
             });
         });
     });

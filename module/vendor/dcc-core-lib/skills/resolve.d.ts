@@ -2,34 +2,51 @@
  * Skill Resolution
  *
  * The core of the unified skill system. This module provides the
- * resolveSkillCheck function that handles all skill checks, from
+ * `resolveSkillCheck` function (and its async sibling
+ * `resolveSkillCheckAsync`) that handles all skill checks — from
  * thief skills to turn unholy to spell checks.
+ *
+ * Modifier handling follows the tagged-union `RollModifier` design
+ * in docs/MODIFIERS.md. See §3 for the canonical pipeline that
+ * `resolveSkillCheck` implements.
  */
-import type { DieType, RollOptions } from "../types/dice.js";
+import type { DieType, RollOptions, RollOptionsAsync } from "../types/dice.js";
 import type { SkillCheckInput, SkillCheckResult, SkillEvents } from "../types/skills.js";
 /**
- * Options for skill resolution
+ * Options for skill resolution (sync)
  */
 export interface SkillResolveOptions extends RollOptions {
     /** Threat range for critical success (default: max on die) */
     threatRange?: number;
 }
 /**
- * Resolve a skill check
+ * Options for skill resolution (async)
+ */
+export interface SkillResolveOptionsAsync extends RollOptionsAsync {
+    /** Threat range for critical success (default: max on die) */
+    threatRange?: number;
+}
+/**
+ * Resolve a skill check (sync).
  *
- * This is the core function of the unified skill system. It handles
- * all types of skill checks by:
- * 1. Determining the die to roll
- * 2. Calculating all applicable modifiers
- * 3. Building and optionally evaluating the roll
- * 4. Firing events for integrations
- *
- * @param input - The skill check input
- * @param options - Roll options (mode, custom roller)
- * @param events - Optional event callbacks
- * @returns The skill check result
+ * Implements the 7-phase modifier pipeline from docs/MODIFIERS.md §3:
+ * 1. Die selection (set-die, bump-die)
+ * 2. Formula construction (add, add-dice)
+ * 3. Roll execution (evaluateRoll with optional custom roller)
+ * 4. Multiplicative arithmetic (multiply)
+ * 5. Threat range resolution (threat-shift) + crit/fumble classification
+ * 6. Applied flagging on add / add-dice modifiers
+ * 7. Resource tracking + event emission
  */
 export declare function resolveSkillCheck(input: SkillCheckInput, options?: SkillResolveOptions, events?: SkillEvents): SkillCheckResult;
+/**
+ * Resolve a skill check (async). Same pipeline as the sync variant;
+ * uses an async custom roller for the dice evaluation step.
+ *
+ * Use this when your roll machinery is Promise-based
+ * (e.g. FoundryVTT's `Roll.evaluate()`).
+ */
+export declare function resolveSkillCheckAsync(input: SkillCheckInput, options: SkillResolveOptionsAsync, events?: SkillEvents): Promise<SkillCheckResult>;
 /**
  * Quick skill check with minimal input
  *

@@ -7,7 +7,7 @@
  * - Trade skills (background knowledge)
  * - Limited thief skill access
  */
-import type { DieType, RollModifier, RollOptions } from "../types/dice.js";
+import type { DieType, LegacyRollModifier, RollOptions } from "../types/dice.js";
 import type { OccupationSkillGrant, OccupationSkillCheckInput, OccupationSkillCheckResult, OccupationSkillEvents, OccupationWeaponTraining, ThiefSkillId } from "../types/occupation-skills.js";
 /**
  * Default die for trade skill checks.
@@ -78,7 +78,7 @@ export declare function hasOccupationThiefSkill(occupationSkills: OccupationSkil
  * @param input - The skill check input
  * @returns Array of roll modifiers
  */
-export declare function buildOccupationSkillModifiers(input: OccupationSkillCheckInput): RollModifier[];
+export declare function buildOccupationSkillModifiers(input: OccupationSkillCheckInput): LegacyRollModifier[];
 /**
  * Resolve an occupation skill check.
  *

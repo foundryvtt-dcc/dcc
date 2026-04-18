@@ -8,7 +8,7 @@
  * - Magic weapon bonuses
  * - Backstab multipliers (thieves)
  */
-import type { DieType, RollModifier, DiceRoller } from "../types/dice.js";
+import type { DieType, LegacyRollModifier, DiceRoller } from "../types/dice.js";
 import type { DamageInput, DamageResult, CombatEvents } from "../types/combat.js";
 import type { RollBonus } from "../types/bonuses.js";
 /**
@@ -82,7 +82,7 @@ export declare function getTwoHandedDamageDie(baseDamageDie: DieType, twoHandedD
  * @param modifiers - Modifiers to include
  * @returns Formatted damage string
  */
-export declare function buildDamageFormula(damageDie: DieType, diceCount: number, modifiers: RollModifier[]): string;
+export declare function buildDamageFormula(damageDie: DieType, diceCount: number, modifiers: LegacyRollModifier[]): string;
 /**
  * Calculate minimum damage
  *

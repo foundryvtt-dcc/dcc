@@ -50,25 +50,37 @@ export function layOnHands(input, healTable, options = {}) {
     // Self-healing penalty (typically -4 in DCC)
     if (input.healingSelf) {
         modifiers.push({
-            source: "self-healing",
+            kind: "add",
             value: -4,
-            label: "Healing self",
+            origin: {
+                category: "situational",
+                id: "self-healing",
+                label: "Healing self",
+            },
         });
     }
     // Alignment modifiers
     if (input.alignmentMod) {
         if (input.alignmentMod.sameAlignment) {
             modifiers.push({
-                source: "alignment",
+                kind: "add",
                 value: 2,
-                label: "Same alignment",
+                origin: {
+                    category: "situational",
+                    id: "alignment-same",
+                    label: "Same alignment",
+                },
             });
         }
         else if (input.alignmentMod.oppositeAlignment) {
             modifiers.push({
-                source: "alignment",
+                kind: "add",
                 value: -2,
-                label: "Opposite alignment",
+                origin: {
+                    category: "situational",
+                    id: "alignment-opposite",
+                    label: "Opposite alignment",
+                },
             });
         }
     }

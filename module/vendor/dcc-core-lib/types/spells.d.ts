@@ -8,7 +8,7 @@
  * - Spell casting input/output
  * - Corruption and fumble results
  */
-import type { DieType, RollModifier, RollOptions } from "./dice.js";
+import type { DieType, LegacyRollModifier, RollOptions } from "./dice.js";
 import type { DCCAbilityId } from "./system.js";
 import type { ResultTier, TableEffect, SimpleTable, TieredTable } from "../tables/types.js";
 /**
@@ -359,7 +359,7 @@ export interface SpellCastInput {
     /** Patron ID (for patron taint on fumbles) */
     patron?: string;
     /** Situational modifiers to apply */
-    situationalModifiers?: RollModifier[];
+    situationalModifiers?: LegacyRollModifier[];
     /** Action die override (if not d20) */
     actionDie?: DieType;
     /** Result table for spell effects (pre-loaded) */
@@ -386,7 +386,7 @@ export interface SpellCastResult {
     /** The formula used */
     formula: string;
     /** All modifiers applied */
-    modifiers: RollModifier[];
+    modifiers: LegacyRollModifier[];
     /** Was this a critical (natural 20)? */
     critical: boolean;
     /** Was this a fumble (natural 1)? */

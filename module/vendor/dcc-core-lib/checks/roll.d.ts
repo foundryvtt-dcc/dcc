@@ -13,7 +13,7 @@
 import type { Character } from "../types/index.js";
 import type { SkillDefinition, SkillCheckResult, SkillEvents } from "../types/skills.js";
 import type { RollModifier, DieType } from "../types/dice.js";
-import { type SkillResolveOptions } from "../skills/resolve.js";
+import { type SkillResolveOptions, type SkillResolveOptionsAsync } from "../skills/resolve.js";
 import { type CharacterAccessors } from "./accessors.js";
 /**
  * Inline check configuration for custom/ad-hoc checks
@@ -31,7 +31,7 @@ export interface InlineCheckConfig {
  */
 export type CheckInput = string | SkillDefinition | InlineCheckConfig;
 /**
- * Options for rollCheck
+ * Options for rollCheck (sync)
  */
 export interface RollCheckOptions extends SkillResolveOptions {
     /** Additional situational modifiers */
@@ -56,46 +56,27 @@ export interface RollCheckOptions extends SkillResolveOptions {
     additionalAbilities?: string[];
 }
 /**
- * Roll a check for a character
- *
- * This is the main entry point for the character-level check API.
- * It accepts namespaced check IDs:
- *
- * - `rollCheck(Ability.STR, character)` → "ability:str"
- * - `rollCheck(Save.REF, character)` → "save:reflex"
- * - `rollCheck("skill:backstab", character)` → registered skill
- * - `rollCheck(customSkill, character)` → SkillDefinition
- * - `rollCheck({ ability: 'str' }, character)` → inline config
- *
- * ## How namespaced IDs work
- *
- * | Input              | Namespace | Value    | Character Path                    |
- * |--------------------|-----------|----------|-----------------------------------|
- * | "ability:str"      | ability   | str      | state.abilities.str.current       |
- * | "save:reflex"      | save      | reflex   | state.saves.reflex + agl modifier |
- * | "skill:backstab"   | skill     | backstab | (from skill definition)           |
- *
- * @param check - The check to roll (namespaced ID, definition, or inline config)
- * @param character - The character making the check
- * @param options - Roll options (modifiers, luck burn, accessors, etc.)
- * @returns The skill check result
- *
- * @example
- * import { Ability, Save, rollCheck } from 'dcc-core-lib';
- *
- * // Ability check
- * const result = rollCheck(Ability.STR, character);
- *
- * // Saving throw
- * const result = rollCheck(Save.REF, character);
- *
- * // Custom ability with custom accessors
- * rollCheck({ ability: 'psy' }, character, {
- *   accessors: mccAccessors,
- *   additionalAbilities: ['psy'],
- * });
+ * Options for rollCheckAsync. Uses an async custom roller — required
+ * when the underlying roll machinery is Promise-based (e.g. FoundryVTT's
+ * `Roll.evaluate()`).
  */
+export interface RollCheckOptionsAsync extends SkillResolveOptionsAsync {
+    modifiers?: RollModifier[];
+    luckBurn?: number;
+    events?: SkillEvents;
+    accessors?: CharacterAccessors;
+    additionalAbilities?: string[];
+}
 export declare function rollCheck(check: CheckInput, character: Character, options?: RollCheckOptions): SkillCheckResult;
+/**
+ * Roll a check for a character (async).
+ *
+ * Same semantics as `rollCheck`, but the dice evaluation is performed
+ * via an async custom roller (see `RollCheckOptionsAsync.roller`). Use
+ * this when integrating with Promise-based roll machinery like
+ * FoundryVTT's `Roll.evaluate()`.
+ */
+export declare function rollCheckAsync(check: CheckInput, character: Character, options: RollCheckOptionsAsync): Promise<SkillCheckResult>;
 /**
  * Roll an ability check for a character
  *
@@ -116,4 +97,12 @@ export declare function rollAbilityCheck(abilityId: string, character: Character
  * @param options - Roll options
  */
 export declare function rollSavingThrow(saveId: string, character: Character, options?: RollCheckOptions): SkillCheckResult;
+/**
+ * Roll an ability check for a character (async).
+ */
+export declare function rollAbilityCheckAsync(abilityId: string, character: Character, options: RollCheckOptionsAsync): Promise<SkillCheckResult>;
+/**
+ * Roll a saving throw for a character (async).
+ */
+export declare function rollSavingThrowAsync(saveId: string, character: Character, options: RollCheckOptionsAsync): Promise<SkillCheckResult>;
 //# sourceMappingURL=roll.d.ts.map

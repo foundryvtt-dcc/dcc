@@ -5,8 +5,24 @@
  * - Formula-only mode (returns formula without rolling)
  * - Built-in random roller
  * - Custom roller injection (for FoundryVTT, testing, etc.)
+ *
+ * This module contains two tiers of functionality:
+ *
+ * - **Legacy helpers** (`buildFormula`, `createRoll`, `rollSimple`) that
+ *   work with `LegacyRollModifier` — the flat `{ source, value, label }`
+ *   shape. Subsystems not yet migrated to the tagged-union modifier
+ *   (combat, spells, patron, occupation — see docs/MODIFIERS.md §9)
+ *   continue to use these.
+ *
+ * - **New-modifier pipeline** (`applyModifierPipeline`,
+ *   `buildFormulaFromModifiers`, `markApplied`) that understands the
+ *   tagged-union `RollModifier`. Used by the check / skill / save
+ *   pipeline (wave 1 of the modifier migration).
+ *
+ * - **Async evaluators** (`evaluateRollAsync`) for callers whose
+ *   underlying roll machinery is Promise-based (e.g. FoundryVTT).
  */
-import type { DieType, RollOptions, RollResult, RollModifier, ParsedDiceExpression } from "../types/dice.js";
+import type { DieType, RollOptions, RollOptionsAsync, RollResult, LegacyRollModifier, RollModifier, ParsedDiceExpression } from "../types/dice.js";
 /**
  * Ensure a modifier string has a + prefix if positive
  *
@@ -37,14 +53,18 @@ export declare function getFirstDie(formula: string): string;
  */
 export declare function getFirstMod(formula: string): string;
 /**
- * Build a roll formula from components
+ * Build a roll formula from components (LEGACY).
+ *
+ * Used by subsystems still on the flat `LegacyRollModifier` shape.
+ * New code should use `buildFormulaFromModifiers` which understands
+ * the tagged-union `RollModifier`.
  *
  * @param die - Base die (e.g., "d20")
  * @param count - Number of dice
- * @param modifiers - Array of modifiers to add
+ * @param modifiers - Array of legacy modifiers to add
  * @returns Complete formula string
  */
-export declare function buildFormula(die: DieType, count: number, modifiers: RollModifier[]): string;
+export declare function buildFormula(die: DieType, count: number, modifiers: LegacyRollModifier[]): string;
 /**
  * Parse a complete roll formula into components
  *
@@ -73,7 +93,7 @@ export interface ParsedFormula {
 }
 export declare function parseFormula(formula: string): ParsedFormula;
 /**
- * Evaluate a roll formula
+ * Evaluate a roll formula (sync).
  *
  * @param formula - The roll formula (e.g., "1d20+5")
  * @param options - Roll options (mode, custom roller)
@@ -81,19 +101,28 @@ export declare function parseFormula(formula: string): ParsedFormula;
  */
 export declare function evaluateRoll(formula: string, options?: RollOptions): RollResult;
 /**
- * Create a roll with modifiers
+ * Evaluate a roll formula (async).
  *
- * This is a higher-level function that builds a formula from
- * components and optionally evaluates it.
+ * Use this when the custom roller is Promise-based (e.g. FoundryVTT's
+ * `Roll.evaluate()`). The roller is required; if you have a sync
+ * roller, use `evaluateRoll` instead.
+ *
+ * @param formula - The roll formula
+ * @param options - Async roll options (mode + async roller)
+ * @returns Promise of roll result
+ */
+export declare function evaluateRollAsync(formula: string, options: RollOptionsAsync): Promise<RollResult>;
+/**
+ * Create a roll with legacy modifiers (LEGACY).
  *
  * @param die - The die to roll
- * @param modifiers - Modifiers to apply
+ * @param modifiers - Legacy modifiers to apply
  * @param options - Roll options
  * @returns Roll result
  */
-export declare function createRoll(die: DieType, modifiers: RollModifier[], options?: RollOptions): RollResult;
+export declare function createRoll(die: DieType, modifiers: LegacyRollModifier[], options?: RollOptions): RollResult;
 /**
- * Roll a simple die
+ * Roll a simple die (LEGACY).
  *
  * Convenience function for quick single-die rolls.
  *
@@ -149,4 +178,54 @@ export declare function meetsThreatRange(result: RollResult, threatRange: number
  * @returns True if natural roll equals the die's maximum value
  */
 export declare function isAutoHit(result: RollResult): boolean;
+/**
+ * Result of die selection (pipeline phase 1): applies set-die and
+ * bump-die modifiers to a base die.
+ */
+export interface DieSelection {
+    die: DieType;
+    /** Set-die modifiers that were superseded by later set-die modifiers
+     *  (and thus not applied). Stored for renderers. */
+    supersededSetDies: readonly DieType[];
+}
+/**
+ * Phase 1 of the pipeline: determine the effective die.
+ *
+ * Applies `set-die` modifiers (last wins) then `bump-die` modifiers
+ * (sum of steps). Returns the effective die and any superseded
+ * `set-die` values for display purposes.
+ */
+export declare function selectDie(baseDie: DieType, modifiers: RollModifier[]): DieSelection;
+/**
+ * Phase 2 of the pipeline: build the formula string from additive
+ * modifiers against a pre-selected die.
+ */
+export declare function buildFormulaFromModifiers(die: DieType, modifiers: RollModifier[]): string;
+/**
+ * Phase 4 of the pipeline: apply multiplicative modifiers to a subtotal.
+ * Multiplicative modifiers compose by multiplication
+ * (factor1 * factor2 * ...). Used primarily by damage rolls.
+ */
+export declare function applyMultipliers(subtotal: number, modifiers: RollModifier[]): number;
+/**
+ * Phase 5 of the pipeline: resolve effective threat range by summing
+ * `threat-shift` modifier amounts against a base threat range, then
+ * scaling for dice larger than d20.
+ *
+ * @param baseThreatRange - Base threat range in d20 space (e.g. 20 for crit-on-20, 19 for 19-20)
+ * @param dieFaces - Faces on the die being rolled
+ * @param modifiers - The modifier list
+ * @returns The effective threat range to compare the natural roll against
+ */
+export declare function resolveThreatRange(baseThreatRange: number, dieFaces: number, modifiers: RollModifier[]): number;
+/**
+ * Phase 6 of the pipeline: return a new modifier list with `applied`
+ * flags set on `add` and `add-dice` kinds.
+ *
+ * - `add` modifiers are `applied: true` when their `value !== 0`.
+ * - `add-dice` modifiers are always `applied: true` (a dice expression
+ *   always contributes at least 1 to the total).
+ * - Other kinds pass through untouched.
+ */
+export declare function markApplied(modifiers: RollModifier[]): RollModifier[];
 //# sourceMappingURL=roll.d.ts.map

@@ -2,11 +2,16 @@
  * Skill Resolution
  *
  * The core of the unified skill system. This module provides the
- * resolveSkillCheck function that handles all skill checks, from
+ * `resolveSkillCheck` function (and its async sibling
+ * `resolveSkillCheckAsync`) that handles all skill checks — from
  * thief skills to turn unholy to spell checks.
+ *
+ * Modifier handling follows the tagged-union `RollModifier` design
+ * in docs/MODIFIERS.md. See §3 for the canonical pipeline that
+ * `resolveSkillCheck` implements.
  */
 import { getAbilityModifier } from "../data/ability-modifiers.js";
-import { evaluateRoll, buildFormula } from "../dice/roll.js";
+import { evaluateRoll, evaluateRollAsync, selectDie, buildFormulaFromModifiers, applyMultipliers, resolveThreatRange, markApplied, } from "../dice/roll.js";
 /**
  * Get the skill progression data for a given level
  */
@@ -38,7 +43,7 @@ function getSkillDie(skill, level) {
     return skill.roll?.die ?? "d20";
 }
 /**
- * Calculate the level modifier for a skill
+ * Calculate the level modifier value for a skill
  */
 function getLevelModifier(skill, level, _classId) {
     const levelModType = skill.roll?.levelModifier ?? "none";
@@ -94,47 +99,46 @@ function getLuckMod(skill, luck, luckBurn) {
     return { mod: burned * multiplier, burned };
 }
 /**
- * Build the complete modifier list for a skill check
+ * Helper: construct an 'add' tagged-union RollModifier.
+ */
+function addMod(value, origin) {
+    return { kind: 'add', value, origin };
+}
+/**
+ * Build the complete modifier list for a skill check in the new
+ * tagged-union shape.
  */
 function buildModifiers(skill, input) {
     const modifiers = [];
     // Ability modifier
     const { mod: abilityMod, abilityId } = getAbilityMod(skill, input.abilities);
     if (abilityMod !== 0 && abilityId) {
-        modifiers.push({
-            source: abilityId,
-            value: abilityMod,
+        modifiers.push(addMod(abilityMod, {
+            category: 'ability',
+            id: abilityId,
             label: `${abilityId.toUpperCase()} modifier`,
-        });
+        }));
     }
     // Level modifier
     const levelMod = getLevelModifier(skill, input.level, input.classId);
     if (levelMod !== 0) {
-        modifiers.push({
-            source: "level",
-            value: levelMod,
-            label: "Level",
-        });
+        modifiers.push(addMod(levelMod, { category: 'level', id: 'level', label: 'Level' }));
     }
     // Progression bonus (if any, separate from level modifier)
     const progression = getProgressionForLevel(skill, input.level);
     if (progression?.bonus && skill.roll?.levelModifier !== "custom") {
-        modifiers.push({
-            source: "progression",
-            value: progression.bonus,
-            label: "Class bonus",
-        });
+        modifiers.push(addMod(progression.bonus, {
+            category: 'progression',
+            id: 'class-bonus',
+            label: 'Class bonus',
+        }));
     }
     // Luck burn
     const { mod: luckMod } = getLuckMod(skill, input.luck, input.luckBurn);
     if (luckMod !== 0) {
-        modifiers.push({
-            source: "luck",
-            value: luckMod,
-            label: "Luck",
-        });
+        modifiers.push(addMod(luckMod, { category: 'luck-burn', id: 'lck', label: 'Luck' }));
     }
-    // Situational modifiers
+    // Situational modifiers (already in new shape — emitted by callers)
     if (input.situationalModifiers) {
         modifiers.push(...input.situationalModifiers);
     }
@@ -147,67 +151,48 @@ function isFumble(natural) {
     return natural === 1;
 }
 /**
- * Resolve a skill check
- *
- * This is the core function of the unified skill system. It handles
- * all types of skill checks by:
- * 1. Determining the die to roll
- * 2. Calculating all applicable modifiers
- * 3. Building and optionally evaluating the roll
- * 4. Firing events for integrations
- *
- * @param input - The skill check input
- * @param options - Roll options (mode, custom roller)
- * @param events - Optional event callbacks
- * @returns The skill check result
+ * Shared internals: given a pre-rolled (total, natural) from either
+ * the sync or async evaluator, classify the result and build the
+ * SkillCheckResult. Factored out so the sync and async wrappers stay
+ * thin and identical in behavior.
  */
-export function resolveSkillCheck(input, options = {}, events) {
-    const { skill } = input;
-    // Fire start event
-    events?.onSkillCheckStart?.(input);
-    // Determine die and modifiers
-    const die = getSkillDie(skill, input.level);
-    const modifiers = buildModifiers(skill, input);
-    // Build formula
-    const formula = buildFormula(die, 1, modifiers);
-    // Evaluate roll
-    const rollResult = evaluateRoll(formula, options);
-    // Build result
+function finalizeSkillCheck(skill, input, die, formula, modifiers, natural, rawTotal, threatRangeOption, events) {
     const result = {
         skillId: skill.id,
         die,
         formula,
         modifiers,
     };
-    // Conditionally assign optional properties (exactOptionalPropertyTypes)
-    if (rollResult.natural !== undefined) {
-        result.natural = rollResult.natural;
+    if (natural !== undefined) {
+        result.natural = natural;
     }
-    if (rollResult.total !== undefined) {
-        result.total = rollResult.total;
+    // Phase 4: multipliers (relevant for damage; pass-through for checks)
+    let total = rawTotal;
+    if (rawTotal !== undefined) {
+        total = applyMultipliers(rawTotal, modifiers);
+        result.total = total;
     }
-    // Determine critical/fumble if evaluated
-    if (rollResult.natural !== undefined) {
-        const threatRange = options.threatRange ?? parseInt(die.slice(1), 10);
-        result.critical = rollResult.natural >= threatRange;
-        result.fumble = isFumble(rollResult.natural);
-        // Fire critical/fumble events
-        if (result.critical) {
+    // Phase 5: threat resolution + critical/fumble classification
+    if (natural !== undefined) {
+        const faces = parseInt(die.slice(1), 10);
+        const baseThreat = threatRangeOption ?? faces;
+        const effectiveThreat = resolveThreatRange(baseThreat, faces, modifiers);
+        result.critical = natural >= effectiveThreat;
+        result.fumble = isFumble(natural);
+        if (result.critical)
             events?.onCritical?.(result);
-        }
-        if (result.fumble) {
+        if (result.fumble)
             events?.onFumble?.(result);
-        }
     }
-    // Track resources consumed
+    // Phase 6: flag which modifiers actually applied
+    result.modifiers = markApplied(modifiers);
+    // Phase 7: resources consumed + events
     const resourcesConsumed = [];
-    // Luck burn
     const { burned } = getLuckMod(skill, input.luck, input.luckBurn);
     if (burned > 0) {
         resourcesConsumed.push({ resource: "luck", amount: burned });
         events?.onResourceConsumed?.("luck", burned);
     }
-    // Skill cost (e.g., disapproval for clerics)
     if (skill.cost && result.fumble) {
         const costAmount = typeof skill.cost.amount === "number"
             ? skill.cost.amount
@@ -223,9 +208,50 @@ export function resolveSkillCheck(input, options = {}, events) {
     if (resourcesConsumed.length > 0) {
         result.resourcesConsumed = resourcesConsumed;
     }
-    // Fire complete event
     events?.onSkillCheckComplete?.(result);
     return result;
+}
+/**
+ * Resolve a skill check (sync).
+ *
+ * Implements the 7-phase modifier pipeline from docs/MODIFIERS.md §3:
+ * 1. Die selection (set-die, bump-die)
+ * 2. Formula construction (add, add-dice)
+ * 3. Roll execution (evaluateRoll with optional custom roller)
+ * 4. Multiplicative arithmetic (multiply)
+ * 5. Threat range resolution (threat-shift) + crit/fumble classification
+ * 6. Applied flagging on add / add-dice modifiers
+ * 7. Resource tracking + event emission
+ */
+export function resolveSkillCheck(input, options = {}, events) {
+    const { skill } = input;
+    events?.onSkillCheckStart?.(input);
+    const modifiers = buildModifiers(skill, input);
+    // Phase 1: die selection
+    const baseDie = getSkillDie(skill, input.level);
+    const { die } = selectDie(baseDie, modifiers);
+    // Phase 2: formula construction
+    const formula = buildFormulaFromModifiers(die, modifiers);
+    // Phase 3: roll
+    const rollResult = evaluateRoll(formula, options);
+    return finalizeSkillCheck(skill, input, die, formula, modifiers, rollResult.natural, rollResult.total, options.threatRange, events);
+}
+/**
+ * Resolve a skill check (async). Same pipeline as the sync variant;
+ * uses an async custom roller for the dice evaluation step.
+ *
+ * Use this when your roll machinery is Promise-based
+ * (e.g. FoundryVTT's `Roll.evaluate()`).
+ */
+export async function resolveSkillCheckAsync(input, options, events) {
+    const { skill } = input;
+    events?.onSkillCheckStart?.(input);
+    const modifiers = buildModifiers(skill, input);
+    const baseDie = getSkillDie(skill, input.level);
+    const { die } = selectDie(baseDie, modifiers);
+    const formula = buildFormulaFromModifiers(die, modifiers);
+    const rollResult = await evaluateRollAsync(formula, options);
+    return finalizeSkillCheck(skill, input, die, formula, modifiers, rollResult.natural, rollResult.total, options.threatRange, events);
 }
 /**
  * Quick skill check with minimal input
@@ -291,9 +317,13 @@ export function savingThrow(saveType, abilityId, abilityScore, saveBonus, option
         level: 1,
         situationalModifiers: [
             {
-                source: "save-bonus",
+                kind: 'add',
                 value: saveBonus,
-                label: "Save bonus",
+                origin: {
+                    category: 'other',
+                    id: 'save-bonus',
+                    label: 'Save bonus',
+                },
             },
         ],
     };

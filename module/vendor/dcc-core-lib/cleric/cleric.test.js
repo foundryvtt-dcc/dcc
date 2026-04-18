@@ -68,7 +68,7 @@ describe("Turn Unholy", () => {
             const result = turnUnholy({ level: 1, personality: 10, luck: 14, luckBurn: 2 }, TEST_TURN_UNHOLY_TABLE, { mode: "evaluate", roller: mockRoller(10) });
             // With d20=10, level=1, PER 10 (+0), luck burn 2, total = 13
             expect(result.check.total).toBe(13);
-            expect(result.check.modifiers.some((m) => m.source === "luck")).toBe(true);
+            expect(result.check.modifiers.some((m) => m.origin.category === "luck-burn")).toBe(true);
         });
     });
     describe("getTurnUnholyModifier", () => {
@@ -166,7 +166,7 @@ describe("Lay on Hands", () => {
             const result = layOnHands({ level: 3, personality: 16, healingSelf: true }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
             // With d20=10, level=3, PER 16 (+2), self-heal -4, total = 11
             expect(result.check.total).toBe(11);
-            expect(result.check.modifiers.some((m) => m.source === "self-healing")).toBe(true);
+            expect(result.check.modifiers.some((m) => m.origin.id === "self-healing")).toBe(true);
         });
         it("applies same alignment bonus", () => {
             const result = layOnHands({
@@ -176,7 +176,7 @@ describe("Lay on Hands", () => {
             }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
             // With d20=10, level=3, PER 16 (+2), same alignment +2, total = 17
             expect(result.check.total).toBe(17);
-            expect(result.check.modifiers.some((m) => m.source === "alignment")).toBe(true);
+            expect(result.check.modifiers.some((m) => m.origin.category === "situational" && m.origin.id.startsWith("alignment-"))).toBe(true);
         });
         it("applies opposite alignment penalty", () => {
             const result = layOnHands({
@@ -321,7 +321,7 @@ describe("Divine Aid", () => {
             const result = divineAid({ level: 1, personality: 10, disapprovalRange: 1, luck: 14, luckBurn: 2 }, TEST_DIVINE_AID_TABLE, { mode: "evaluate", roller: mockRoller(10) });
             // With d20=10, level=1, PER 10 (+0), luck burn 2, total = 13
             expect(result.check.total).toBe(13);
-            expect(result.check.modifiers.some((m) => m.source === "luck")).toBe(true);
+            expect(result.check.modifiers.some((m) => m.origin.category === "luck-burn")).toBe(true);
         });
         it("includes spell level in effect", () => {
             const result = divineAid({ level: 3, personality: 14, disapprovalRange: 1 }, TEST_DIVINE_AID_TABLE, { mode: "evaluate", roller: mockRoller(10) });
