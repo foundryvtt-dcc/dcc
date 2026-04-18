@@ -1005,16 +1005,110 @@ class DCCActor extends Actor {
 
   // noinspection JSUnusedGlobalSymbols
   /**
-   * Generate Initiative Roll formula
-   * This is used by the core Foundry methods
+   * Generate Initiative Roll formula. Invoked by Foundry's core init
+   * flow via `DCCCombatant.getInitiativeRoll`, and by `rollInit` when
+   * a modifier dialog is requested.
+   *
+   * Phase 1 adapter dispatcher. The default (no-dialog) path flows
+   * through the lib via `rollCheck(mode: 'formula')` — the lib builds
+   * the formula string, Foundry evaluates it. Init has no gameplay
+   * crit/fumble semantics, so there's no pass-2 classification; the
+   * chat message is emitted by Foundry's core `Combat#rollInitiative`
+   * (with the `core.initiativeRoll` flag that `emoteInitiativeRoll`
+   * gates on). The dialog path falls through to the legacy body below,
+   * which preserves the structured-term shape the modifier dialog
+   * relies on.
+   *
+   * Return shape is unchanged: a Foundry `Roll` the combat tracker
+   * evaluates.
    */
   getInitiativeRoll (formula, options = {}) {
-    // Handle coming back from a modifier dialog with a roll
+    // Handle coming back from a modifier dialog with a pre-built Roll.
     if (formula instanceof Roll) {
       return formula
     }
 
-    // Set up the roll
+    if (options.showModifierDialog) {
+      return this._getInitiativeRollLegacy(options)
+    }
+
+    return this._getInitiativeRollViaAdapter(options)
+  }
+
+  /**
+   * Adapter path for initiative. Builds a lib `SkillDefinition` with
+   * no ability (init.value already bakes in agl mod + otherMod + class
+   * level from `computeInitiative`), emits init.value as a single
+   * aggregate `add` modifier, and asks the lib for the formula string.
+   * Weapon-die overrides (two-handed / custom init die) are applied
+   * Foundry-side because the `[Two-Handed]` / `[Weapon]` die label is
+   * a Foundry display idiom the lib doesn't model.
+   * @private
+   */
+  _getInitiativeRollViaAdapter (options = {}) {
+    let dieFormula = this.system.attributes.init.die || '1d20'
+    let weaponLabel = null
+
+    const twoHandedWeapon = this.items.find(t => t.system.twoHanded && t.system.equipped)
+    if (twoHandedWeapon) {
+      dieFormula = twoHandedWeapon.system.initiativeDie
+      weaponLabel = game.i18n.localize('DCC.WeaponPropertiesTwoHanded')
+    }
+    const customInitDieWeapon = this.items.find(t => (t.system.config?.initiativeDieOverride || '') && t.system.equipped)
+    if (customInitDieWeapon) {
+      dieFormula = customInitDieWeapon.system.initiativeDie
+      weaponLabel = game.i18n.localize('DCC.Weapon')
+    }
+
+    logDispatch('rollInit', 'adapter', { die: dieFormula })
+
+    const libDie = this._stripDieCount(dieFormula) || 'd20'
+    const initValue = parseInt(this.system.attributes.init.value) || 0
+
+    const definition = {
+      id: 'initiative',
+      name: game.i18n.localize('DCC.Initiative'),
+      type: 'check',
+      roll: {
+        die: libDie,
+        levelModifier: 'none'
+      }
+    }
+
+    const modifiers = initValue !== 0
+      ? [{
+          kind: 'add',
+          value: initValue,
+          origin: {
+            category: 'other',
+            id: 'initiative-total',
+            label: game.i18n.localize('DCC.Initiative')
+          }
+        }]
+      : []
+
+    const character = actorToCharacter(this)
+    const plan = libRollCheck(definition, character, {
+      mode: 'formula',
+      modifiers
+    })
+
+    // Re-inject the Foundry `[Two-Handed]` / `[Weapon]` die label so the
+    // Roll Breakdown surfaces where the die came from.
+    const finalFormula = weaponLabel
+      ? plan.formula.replace(/^(1d\d+)/i, `$1[${weaponLabel}]`)
+      : plan.formula
+
+    return new Roll(finalFormula, this.getRollData())
+  }
+
+  /**
+   * Legacy initiative path. Builds structured `DCCRoll.createRoll`
+   * terms — required by the roll-modifier dialog's preset handling,
+   * which the adapter path doesn't support.
+   * @private
+   */
+  _getInitiativeRollLegacy (options = {}) {
     let die = this.system.attributes.init.die || '1d20'
     const init = ensurePlus(this.system.attributes.init.value)
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
@@ -1028,7 +1122,8 @@ class DCCActor extends Actor {
       die = `${customInitDieWeapon.system.initiativeDie}[${game.i18n.localize('DCC.Weapon')}]`
     }
 
-    // Collate terms for the roll
+    logDispatch('rollInit', 'legacy', { die })
+
     const terms = [
       {
         type: 'Die',

@@ -6,9 +6,11 @@
 
 ## Current phase
 
-**Phase 1 — Adopt the lib for simple rolls.** `rollAbilityCheck`,
-`rollSavingThrow`, and `rollSkillCheck` are migrated end-to-end. Next
-up: initiative, reusing the wave-1 two-pass pattern.
+**Phase 1 — Adopt the lib for simple rolls.** All four rolls are
+migrated: `rollAbilityCheck`, `rollSavingThrow`, `rollSkillCheck`,
+and now initiative (via `getInitiativeRoll`). Remaining Phase 1
+work is the `debug.mjs` + `logDispatch` cleanup commit, gated on
+in-Foundry verification of the skill + init paths.
 
 Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 > Phase 1: ability check · save · skill · init through the adapter.
@@ -164,10 +166,67 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
   invocation). All cleric / disapproval / table-routed tests stay on
   their exact-legacy assertions. 746 tests pass (up from 733).
 
+### Session 2026-04-18 (fifth session)
+
+- **Phase 1 adapter wired** for initiative (Path A — formula-only):
+  - `module/actor.js` — `getInitiativeRoll` is now a dispatcher. A
+    pre-built `Roll` still short-circuits (Foundry's combat tracker
+    reuses one Roll across combatants). `options.showModifierDialog`
+    routes to `_getInitiativeRollLegacy`, which keeps the structured
+    `DCCRoll.createRoll` terms the modifier dialog's preset-die UI
+    needs. Everything else flows through `_getInitiativeRollViaAdapter`,
+    which asks the lib for a formula via `rollCheck(mode: 'formula')`
+    and returns `new Roll(formula)`. `rollInit` itself is unchanged —
+    Foundry's `Combat#rollInitiative` calls back through
+    `DCCCombatant.getInitiativeRoll` → `actor.getInitiativeRoll` as
+    today, so the core `initiativeRoll` flag (that
+    `emoteInitiativeRoll` in `module/chat.js:492` gates on) is still
+    set by Foundry, and the init chat message + combatant update
+    continue to go through Foundry's core orchestration.
+  - **Single-pass, not two-pass.** Init has no gameplay
+    crit/fumble in vanilla DCC; pass-2 classification would be
+    cosmetic only. Formula-mode is sufficient and preserves the
+    `Roll` contract Foundry's combat flow relies on. Save /
+    ability / skill migrations remain two-pass where classification
+    drives gameplay.
+  - **SkillDefinition shape:** `{ id: 'initiative', type: 'check',
+    roll: { die, levelModifier: 'none' } }` with NO `roll.ability`
+    — `system.attributes.init.value` already bakes in agl mod +
+    otherMod + class level (from `computeInitiative`). The aggregate
+    init value is emitted as a single `add` modifier with origin
+    category `'other'` / id `'initiative-total'`. A future refactor
+    could decompose this into per-source modifiers (ability / level
+    / AE) once the init-preparation step is aware of its components.
+  - **Weapon-die overrides** (two-handed weapon, custom
+    `initiativeDieOverride` item) stay Foundry-side. The
+    `[Two-Handed]` / `[Weapon]` die label is a Foundry display
+    idiom; the adapter re-injects it into the lib's formula string
+    with a targeted regex replace after the lib call returns.
+- **No chat renderer needed.** Foundry's `Combat#rollInitiative`
+  posts the init chat message with `flags.core.initiativeRoll: true`
+  — the flag `emoteInitiativeRoll` gates on. Bypassing Foundry's
+  rollInitiative (Path B) would have silently broken that emote
+  integration; Path A preserves it.
+- **Tests**: new `module/__tests__/adapter-initiative.test.js`
+  (6 tests: adapter default, zero modifier, custom d24, two-handed
+  weapon label, legacy dialog path, pre-built Roll short-circuit)
+  plus `module/__integration__/adapter-initiative.test.js` (7
+  dice-gated tests: default d20 formula, +N / -N modifier arithmetic,
+  custom d14 / d24 die propagation, 30-iteration range check, and
+  the aggregate initiative-total modifier origin). Existing
+  `actor.test.js` tests for `roll initiative` and `rollInit creates
+  initiative roll` relaxed from `expect(dccRollCreateRollMock)
+  .toHaveBeenCalled()` to `.not.toHaveBeenCalled()` — the adapter
+  path uses `new Roll(formula)`, not `DCCRoll.createRoll`. 759 tests
+  pass (up from 746). `logDispatch('rollInit', …)` wired in both
+  branches.
+
 ## In progress
 
-Nothing carrying over. Phase 1 ability-check, saving-throw, and
-skill-check migrations complete; next session migrates `rollInit`.
+Phase 1 implementation is complete. The remaining work is the
+one-commit cleanup of `module/adapter/debug.mjs` + every
+`logDispatch` call site, gated on exercising the skill + init paths
+in Foundry end-to-end.
 
 ## Blockers / open questions
 
@@ -256,17 +315,22 @@ skill-check migrations complete; next session migrates `rollInit`.
 
 ## Next steps
 
-Phase 1 continuation — migrate the remaining simple roll to the
-adapter as its own commit:
+Phase 1 close-out:
 
-1. **`rollInit`** → `rollCheck` (two-pass) with `{ ability: 'agl',
-   die: actor.system.attributes.init.value }`. Simplest migration.
-   Chat message must preserve the flags the combat tracker reads.
+1. **In-Foundry verification** of the skill + init adapter paths.
+   Watch for `[DCC adapter] rollSkillCheck → via adapter …` and
+   `[DCC adapter] rollInit → via adapter die=…` in the console on
+   each click; confirm the legacy path still fires for the dialog,
+   disapproval, and skill-table carve-outs. Roll initiative from
+   the sheet button and from the combat tracker's round-start
+   button to exercise both entry points into `getInitiativeRoll`.
+2. **Cleanup commit** — strip `module/adapter/debug.mjs` and every
+   `logDispatch` call site (`_rollAbilityCheck{Via,}Adapter`,
+   `_rollSavingThrow{Via,Legacy}`, `_rollSkillCheck{ViaAdapter,Legacy}`,
+   `_getInitiativeRoll{ViaAdapter,Legacy}`) as one commit. That
+   closes Phase 1.
 
-After this lands, Phase 1 is complete and review/signoff gate
-before Phase 2 (spell checks). At that point strip
-`module/adapter/debug.mjs` and every `logDispatch` call site in a
-single cleanup commit.
+Then review/signoff gate before Phase 2 (spell checks).
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with
