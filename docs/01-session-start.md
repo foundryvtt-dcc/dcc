@@ -94,20 +94,52 @@ extracted it) for: `flags['dcc.RollType'] = 'SavingThrow'`,
 `flags['dcc.Save'] = saveId`, `flags['dcc.isSave'] = true`, and a
 `flavor` of `<SaveLabel> Save` (plus DC suffix behavior if applicable).
 
-**Tests required before committing:**
-1. A new vitest under `module/__tests__/adapter-saving-throw.test.js`
-   modeled on `adapter-ability-check.test.js`. Exercise actor →
-   `actorToCharacter` → two-pass → chat-renderer.
-2. A new integration test under
+**Tests required before committing** — all three kinds, matching the
+ability-check pattern:
+
+1. **Unit test (mock-based):** new
+   `module/__tests__/adapter-saving-throw.test.js` modeled on
+   `adapter-ability-check.test.js`. Exercises actor →
+   `actorToCharacter` → two-pass → chat-renderer against the Foundry
+   mocks in `module/__mocks__/`. Runs in every environment.
+2. **Integration test (real Foundry dice):** new
    `module/__integration__/adapter-saving-throw.test.js` modeled on
-   `adapter-ability-check.test.js`. Gate it on `hasDiceEngine` the
-   same way. It should verify: save-id remap, Foundry Roll total =
-   natural + save bonus + ability-mod (saves combine both in DCC),
-   result classification, origin metadata on modifiers.
-3. Update `module/__tests__/actor.test.js` if the existing `roll saving
-   throw` test now hits the adapter path — its assertions about
-   `dccRollCreateRollMock` calls will need relaxing to
-   `expect.objectContaining`.
+   the existing `module/__integration__/adapter-ability-check.test.js`.
+   Gate dice-requiring cases with
+   `const describeIfDice = hasDiceEngine ? describe : describe.skip`.
+   The `actorToCharacter` shape checks can run always-on. The dice
+   cases should verify: save-id remap round-trip, Foundry Roll total
+   matches `natural + ability-mod + save-bonus`, `result.total` ==
+   `foundryRoll.total`, crit / fumble classification, and that the
+   modifier breakdown contains both the ability (`origin.category ==
+   'ability'`) and the save bonus (`origin.id == 'save-bonus'`)
+   entries with `applied: true`.
+3. **Existing-test update:** `module/__tests__/actor.test.js` has a
+   `roll saving throw` test that currently asserts
+   `dccRollCreateRollMock` was called with specific terms. After the
+   migration it'll hit the adapter path — relax those assertions to
+   `expect.objectContaining(...)` the same way the ability-check test
+   at lines ~43–80 was relaxed.
+
+**Running tests:**
+
+- `npm test` — runs unit + integration projects, both gated on Foundry
+  being available. Always the final check before committing.
+- `npm run test:unit` — unit project only (mock-based). Runs in every
+  environment; use this during iteration.
+- `npm run test:integration` — integration project only. Skips
+  everything if Foundry isn't detected (env var `FOUNDRY_PATH`,
+  `.foundry-dev/` in project root, or `~/Applications/foundry-14`
+  etc.).
+- The **8 dice-engine-gated** tests in `adapter-ability-check.test.js`
+  (and the equivalent ones you add for saves) only execute if
+  `.foundry-dev/client/dice/` exists. Check with
+  `ls .foundry-dev/client/dice` — if missing, run
+  `npm run setup:foundry` once to populate it. Without that, the dice
+  cases **skip** (not fail); the status line will show
+  `N passed | M skipped` rather than a clean pass. Before claiming the
+  integration suite is green, confirm the skip count dropped by the
+  number of new dice cases you added.
 
 **DCC saves-combine-both note:** in DCC the save bonus is `ability mod
 + class save bonus`. The lib handles this via its save-check
@@ -119,11 +151,14 @@ should be `1d20 + <abilityMod> + <saveBonus>` collapsed to a single
 trailing sum.
 
 **Verification after landing:**
-- `npm test` — all unit + gated integration tests pass
+- `npm test` — all unit + gated integration tests pass. If the dice
+  cases skipped, run `npm run setup:foundry` first and re-run
+  `npm run test:integration` to confirm the new dice-gated cases
+  actually exercise.
 - In Foundry: click each of the three saves on a Player sheet, confirm
   chat total matches `raw d20 + ability mod + save bonus`. Check that
   `game.messages.contents.at(-1).getFlag('dcc', 'libResult')` returns
-  the structured result.
+  the structured result with both ability and save-bonus modifiers.
 
 **Constraints:**
 - Small commits; each leaves the system in a working state.
