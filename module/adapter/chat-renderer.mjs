@@ -34,10 +34,22 @@ export async function renderAbilityCheck ({
 }) {
   const flavor = `${abilityLabel} ${game.i18n.localize('DCC.Check')}`
 
+  // Lib structured result goes into flags (arbitrary JSON) rather than
+  // system (which is schema-constrained and will drop unknown fields).
   const flags = {
     'dcc.RollType': 'AbilityCheck',
     'dcc.Ability': abilityId,
-    'dcc.isAbilityCheck': true
+    'dcc.isAbilityCheck': true,
+    'dcc.libResult': {
+      skillId: result.skillId,
+      die: result.die,
+      natural: result.natural,
+      total: result.total,
+      formula: result.formula,
+      critical: result.critical,
+      fumble: result.fumble,
+      modifiers: result.modifiers
+    }
   }
 
   if (abilityId === 'str' || abilityId === 'agl') {
@@ -56,20 +68,7 @@ export async function renderAbilityCheck ({
       flavor,
       flags,
       system: {
-        checkPenaltyRollIndex: null,
-        // The lib-side breakdown is included for downstream consumers
-        // that want structured modifier info. Non-load-bearing for
-        // rendering.
-        libResult: {
-          skillId: result.skillId,
-          die: result.die,
-          natural: result.natural,
-          total: result.total,
-          formula: result.formula,
-          critical: result.critical,
-          fumble: result.fumble,
-          modifiers: result.modifiers
-        }
+        checkPenaltyRollIndex: null
       }
     },
     { create: false }

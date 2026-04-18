@@ -5,9 +5,8 @@ import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult,
 import DCCActiveEffect from './active-effect.js'
 import DCCActorLevelChange from './actor-level-change.js'
 import DiceChain from './dice-chain.js'
-import { rollAbilityCheckAsync } from './vendor/dcc-core-lib/index.js'
+import { rollAbilityCheck as libRollAbilityCheck } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter } from './adapter/character-accessors.mjs'
-import { createFoundryRoller } from './adapter/foundry-roller.mjs'
 import { renderAbilityCheck } from './adapter/chat-renderer.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -804,10 +803,18 @@ class DCCActor extends Actor {
    * @param {Object} options    Options which configure how ability checks are rolled
    */
   async rollAbilityCheck (abilityId, options = {}) {
+    const checkPenaltyValue = parseInt(this.system.attributes?.ac?.checkPenalty ?? 0)
+    const hasNonZeroCheckPenalty =
+      this.system.config?.computeCheckPenalty &&
+      (abilityId === 'str' || abilityId === 'agl') &&
+      checkPenaltyValue !== 0
+
+    // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
+    // which returns 0 or 1, not true/false. Strict === would miss those.
     const needsLegacyPath =
-      options.rollUnder === true ||
-      options.showModifierDialog === true ||
-      (this.system.config?.computeCheckPenalty && (abilityId === 'str' || abilityId === 'agl'))
+      !!options.rollUnder ||
+      !!options.showModifierDialog ||
+      hasNonZeroCheckPenalty
 
     if (needsLegacyPath) {
       return this._rollAbilityCheckLegacy(abilityId, options)
@@ -827,16 +834,32 @@ class DCCActor extends Actor {
 
     const character = actorToCharacter(this)
 
-    const rollerContext = { rolls: [] }
-    const roller = createFoundryRoller(rollerContext)
-
-    const result = await rollAbilityCheckAsync(abilityId, character, {
-      mode: 'evaluate',
-      roller,
+    // Pass 1: ask the lib for the formula it wants rolled (no evaluation).
+    const plan = libRollAbilityCheck(abilityId, character, {
+      mode: 'formula',
       luckBurn: options.luckBurn
     })
 
-    const foundryRoll = rollerContext.rolls[0]
+    // Foundry rolls the FULL formula so the Roll object has the correct
+    // display-total (dice + modifiers), not just the naked dice total.
+    // Keep the Roll reference; .evaluate() returns `this` in real Foundry
+    // but returns a plain object in some test mocks.
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    // Extract the natural die value from the Foundry Roll so the lib's
+    // second pass classifies against the same dice outcome we'll display.
+    const primaryDie = foundryRoll.dice?.[0]
+    const natural = primaryDie?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies the rolled result (crit / fumble / resources /
+    // applied flags on modifiers). The sync roller returns the pre-rolled
+    // natural so the lib doesn't re-roll.
+    const result = libRollAbilityCheck(abilityId, character, {
+      mode: 'evaluate',
+      roller: () => natural,
+      luckBurn: options.luckBurn
+    })
 
     return renderAbilityCheck({
       actor: this,

@@ -60,10 +60,12 @@ test('adapter path invokes lib and renders ChatMessage', async () => {
   // lck is not str/agl, so checkPenaltyCouldApply must NOT be set
   expect(messageData.flags.checkPenaltyCouldApply).toBeUndefined()
 
-  // Lib result is attached for downstream structured consumers
-  expect(messageData.system.libResult).toBeDefined()
-  expect(messageData.system.libResult.skillId).toBe('ability:lck')
-  expect(Array.isArray(messageData.system.libResult.modifiers)).toBe(true)
+  // Lib result attached in flags (schema-free JSON). system.* is
+  // schema-constrained and would drop unknown keys; flags accept
+  // arbitrary module namespaces like 'dcc.libResult'.
+  expect(messageData.flags['dcc.libResult']).toBeDefined()
+  expect(messageData.flags['dcc.libResult'].skillId).toBe('ability:lck')
+  expect(Array.isArray(messageData.flags['dcc.libResult'].modifiers)).toBe(true)
 
   // toMessage called with create: false so we can inject into messageData.rolls[]
   expect(toMessageOpts).toEqual({ create: false })

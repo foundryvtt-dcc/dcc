@@ -44,55 +44,32 @@ test('roll ability check', async () => {
   dccRollCreateRollMock.mockClear()
   const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
 
+  // Strength check with the mock actor's checkPenalty=0 takes the
+  // adapter path (no non-zero penalty to display). DCCRoll.createRoll
+  // is NOT invoked; the lib builds the formula and the Foundry Roll
+  // is constructed directly in foundry-roller.
   await actor.rollAbilityCheck('str')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: 'Action Die',
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Modifier',
-        label: 'Strength',
-        formula: '-1'
-      },
-      {
-        apply: false,
-        formula: '+0',
-        type: 'CheckPenalty'
-      }
-    ],
-    {},
-    {
-      title: 'Strength Check'
-    })
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Strength Check',
-    speaker: actor,
-    flags: { 'dcc.Ability': 'str', 'dcc.RollType': 'AbilityCheck', checkPenaltyCouldApply: true, 'dcc.isAbilityCheck': true },
-    system: {
-      checkPenaltyRollIndex: null
-    }
-  }, { create: false })
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Strength Check',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.Ability': 'str',
+        'dcc.RollType': 'AbilityCheck',
+        'dcc.isAbilityCheck': true,
+        checkPenaltyCouldApply: true
+      })
+    }),
+    { create: false }
+  )
   expect(chatMessageCreateSpy).toHaveBeenCalledTimes(1)
 
   chatMessageCreateSpy.mockRestore()
 
-  // Check that rollUnder option is interpreted correctly
+  // rollUnder forces the legacy code path.
   await actor.rollAbilityCheck('lck', { rollUnder: true })
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
   expect(dccRollCreateRollMock).toHaveBeenCalledWith(
     [
       {
@@ -120,8 +97,8 @@ test('roll ability check', async () => {
   // NOT called; the Foundry Roll is constructed directly by the
   // adapter's foundry-roller and passed through chat-renderer.
   await actor.rollAbilityCheck('lck', { rollUnder: false })
-  // Still 2 — adapter path does not invoke DCCRoll.createRoll.
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
+  // Still 1 — only the rollUnder call invoked DCCRoll.createRoll.
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
   expect(rollToMessageMock).toHaveBeenLastCalledWith(
     expect.objectContaining({
       flavor: 'Luck Check',
