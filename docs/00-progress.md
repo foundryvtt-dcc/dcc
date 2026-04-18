@@ -6,9 +6,9 @@
 
 ## Current phase
 
-**Phase 1 — Adopt the lib for simple rolls.** `rollAbilityCheck` is
-migrated end-to-end. Next up: save throws, skill checks, initiative —
-all reusing the wave-1 pattern.
+**Phase 1 — Adopt the lib for simple rolls.** `rollAbilityCheck`,
+`rollSavingThrow`, and `rollSkillCheck` are migrated end-to-end. Next
+up: initiative, reusing the wave-1 two-pass pattern.
 
 Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 > Phase 1: ability check · save · skill · init through the adapter.
@@ -91,10 +91,83 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
   and lck+rollUnder; adapter for lck default). 683 unit tests pass
   across 19 test files.
 
+### Session 2026-04-18 (third session)
+
+- **Phase 1 adapter wired** for `DCCActor.rollSavingThrow`:
+  - `module/actor.js` — `rollSavingThrow` is now a dispatcher. The
+    legacy path (preserved verbatim as `_rollSavingThrowLegacy`) only
+    handles `showModifierDialog` / `rollUnder`; everything else flows
+    through `_rollSavingThrowViaAdapter` using the two-pass
+    formula/evaluate pattern locked in for ability checks.
+  - `module/adapter/chat-renderer.mjs` — new `renderSavingThrow`
+    export. Preserves legacy flags (`dcc.RollType: 'SavingThrow'`,
+    `dcc.Save: <frt|ref|wil>`, `dcc.isSave: true`) plus a structured
+    `dcc.libResult` payload. Renders the DC success/failure suffix
+    (with / without showDc) from the original call options.
+  - `foundrySaveIdToLib` already in `character-accessors.mjs` handles
+    the frt/ref/wil ↔ fortitude/reflex/will remap at the adapter
+    boundary.
+  - Adapter path returns the `foundryRoll` so the public return shape
+    matches the legacy `rollSavingThrow` contract (used by one test
+    and potentially downstream macro code).
+- **Tests**: new `module/__tests__/adapter-saving-throw.test.js`
+  (5 tests) plus `module/__integration__/adapter-saving-throw.test.js`
+  (10 tests, 9 dice-gated). `module/__tests__/actor.test.js` updated
+  to reflect the new dispatch for the three save tests (adapter path
+  no longer invokes `DCCRoll.createRoll`; flavor/flags still locked).
+  733 unit + integration tests pass (up from 683).
+- **Dispatch debug logging** — added `module/adapter/debug.mjs` with a
+  single `logDispatch(rollType, path, details)` helper. Called from
+  all four dispatch branches (`_rollAbilityCheckViaAdapter`,
+  `_rollAbilityCheckLegacy`, `_rollSavingThrowViaAdapter`,
+  `_rollSavingThrowLegacy`) so the Foundry console shows, e.g.,
+  `[DCC adapter] rollSavingThrow → via adapter saveId=ref` on every
+  click. Intentionally kept in place through the rest of Phase 1
+  (skill + init) and ripped out in one commit at Phase 1 close. See
+  the "Debug logging" note below.
+
+### Session 2026-04-18 (fourth session)
+
+- **Phase 1 adapter wired** for `DCCActor.rollSkillCheck`:
+  - `module/actor.js` — `rollSkillCheck` is now a dispatcher. A new
+    `_resolveSkill(skillId)` helper normalizes the built-in-slot vs.
+    skill-item dichotomy into a single bundle shared by both paths.
+    The adapter path (`_rollSkillCheckViaAdapter`) builds a lib
+    `SkillDefinition` from that bundle and emits the Foundry-side
+    numerics (skill value, useLevel, useDeed, armor check penalty)
+    as situational `add` modifiers. Two helpers —
+    `_buildSkillDefinition` and `_buildSkillCheckModifiers` — keep
+    the adapter focused on the two-pass pattern. `_stripDieCount`
+    turns Foundry's `'1d14'` into the lib's `DieType` `'d14'`.
+    Carve-outs routed to `_rollSkillCheckLegacy`:
+    `options.showModifierDialog`, `skill.useDisapprovalRange` (cleric
+    spellchecks / spell-table routing), any `CONFIG.DCC.skillTables`
+    entry, and the no-die / description-only skill-item path.
+  - `module/adapter/chat-renderer.mjs` — new `renderSkillCheck`
+    export. Preserves the legacy flag contract
+    (`dcc.RollType: 'SkillCheck'`, `dcc.ItemId` + `dcc.SkillId` set
+    to the skill id, `dcc.isSkillCheck: true`) plus the structured
+    `dcc.libResult` payload. For skill items carrying a description,
+    the rendered content appends the `skill-description` div the
+    legacy path emitted.
+  - Adapter path returns the `foundryRoll`; legacy path preserves
+    the existing (implicit undefined) return. Public signature of
+    `rollSkillCheck` unchanged.
+- **Tests**: new `module/__tests__/adapter-skill-check.test.js`
+  (5 tests) plus `module/__integration__/adapter-skill-check.test.js`
+  (8 dice-gated tests) exercising built-in + skill-item dispatch,
+  custom dice (d14 / d24), crit / fumble classification, skill-value
+  modifier origins, and the description-only legacy routing.
+  `module/__tests__/actor.test.js` updated: the six built-in skill
+  tests and the two skill-item tests now assert on adapter-path
+  flags/flavor via `objectContaining` (no `DCCRoll.createRoll`
+  invocation). All cleric / disapproval / table-routed tests stay on
+  their exact-legacy assertions. 746 tests pass (up from 733).
+
 ## In progress
 
-Nothing carrying over. Phase 1 ability-check migration complete;
-next session migrates saves (Phase 1 continuation).
+Nothing carrying over. Phase 1 ability-check, saving-throw, and
+skill-check migrations complete; next session migrates `rollInit`.
 
 ## Blockers / open questions
 
@@ -183,26 +256,17 @@ next session migrates saves (Phase 1 continuation).
 
 ## Next steps
 
-Phase 1 continuation — migrate the remaining simple rolls to the
-adapter, each as its own commit:
+Phase 1 continuation — migrate the remaining simple roll to the
+adapter as its own commit:
 
-1. **`rollSavingThrow`** → `rollSavingThrowAsync(saveId, character, …)`.
-   Pattern is identical to ability check: actor → Character →
-   `rollSavingThrowAsync` → chat renderer. The save-id remapping
-   (frt/ref/wil ↔ fortitude/reflex/will) is already in
-   `character-accessors.mjs`. One new test file modeled on
-   `adapter-ability-check.test.js`.
-2. **`rollSkillCheck`** → `rollCheckAsync` with a SkillDefinition
-   derived from the actor's skill item or `system.skills.{id}`.
-   `actor.js:1111` (current dispatcher between built-in vs. item
-   skills) becomes the adapter boundary. Some skills use custom dice
-   (`d14`, `d24`) — the lib's `set-die` modifier handles that.
-3. **`rollInit`** → `rollCheckAsync` with `{ ability: 'agl', die:
-   actor.system.attributes.init.value }`. Simplest migration. Chat
-   message must preserve the flags the combat tracker reads.
+1. **`rollInit`** → `rollCheck` (two-pass) with `{ ability: 'agl',
+   die: actor.system.attributes.init.value }`. Simplest migration.
+   Chat message must preserve the flags the combat tracker reads.
 
-Each commit leaves the system shippable. After these four, Phase 1
-is complete and review/signoff gate before Phase 2 (spell checks).
+After this lands, Phase 1 is complete and review/signoff gate
+before Phase 2 (spell checks). At that point strip
+`module/adapter/debug.mjs` and every `logDispatch` call site in a
+single cleanup commit.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with
@@ -234,3 +298,20 @@ its own PR in `dcc-core-lib`, then sync via `npm run sync-core-lib`.
     system (replaces `CONFIG.Actor.documentClass` globally)
   - `../../modules/mcc-classes` — clean schema-hook consumer
   - `../../modules/dcc-crawl-classes` — clean schema-hook consumer
+
+### Debug logging (temporary — Phase 1 only)
+
+- Centralized at `module/adapter/debug.mjs`. Every dispatch path calls
+  `logDispatch(rollType, 'adapter'|'legacy', details)` to print one
+  line to the Foundry console, e.g.
+  `[DCC adapter] rollSavingThrow → via adapter saveId=ref`.
+- Add a matching `logDispatch(...)` call at the top of every new
+  `_xxxViaAdapter` / `_xxxLegacy` method introduced during the rest
+  of Phase 1 (skill + init). One line, same tag.
+- Do **not** strip these logs mid-phase. They're how Tim verifies in
+  Foundry that each click is hitting the expected path. The whole
+  module — the `debug.mjs` file and every `logDispatch` call site —
+  gets removed in one commit at the close of Phase 1, after the
+  skill and init migrations have been exercised in Foundry.
+- The helper's header JSDoc notes this so it's discoverable from the
+  code; this bullet is the process-level reminder.

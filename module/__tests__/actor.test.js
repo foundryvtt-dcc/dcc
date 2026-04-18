@@ -116,80 +116,53 @@ test('roll ability check', async () => {
 test('roll saving throw', async () => {
   dccRollCreateRollMock.mockClear()
 
+  // Saving throws without a dialog flow through the adapter path, so
+  // DCCRoll.createRoll is NOT invoked — the lib builds the formula and
+  // the Foundry Roll is constructed directly in the adapter.
   await actor.rollSavingThrow('frt')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        formula: '1d20'
-      },
-      {
-        type: 'Modifier',
-        label: 'Fortitude',
-        formula: '-1'
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Fortitude Save'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Fortitude Save',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.Save': 'frt',
+        'dcc.RollType': 'SavingThrow',
+        'dcc.isSave': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Fortitude Save',
-    speaker: actor,
-    flags: { 'dcc.Save': 'frt', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
-  })
 
   await actor.rollSavingThrow('ref')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(2)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        formula: '1d20'
-      },
-      {
-        type: 'Modifier',
-        label: 'Reflex',
-        formula: '+0'
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Reflex Save'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Reflex Save',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.Save': 'ref',
+        'dcc.RollType': 'SavingThrow',
+        'dcc.isSave': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Reflex Save',
-    speaker: actor,
-    flags: { 'dcc.Save': 'ref', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
-  })
 
   await actor.rollSavingThrow('wil')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(3)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        formula: '1d20'
-      },
-      {
-        type: 'Modifier',
-        label: 'Will',
-        formula: '+2'
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Will Save'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Will Save',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.Save': 'wil',
+        'dcc.RollType': 'SavingThrow',
+        'dcc.isSave': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Will Save',
-    speaker: actor,
-    flags: { 'dcc.Save': 'wil', 'dcc.RollType': 'SavingThrow', 'dcc.isSave': true }
-  })
 })
 
 test('roll saving throw with dc option hides dc by default', async () => {
@@ -200,8 +173,9 @@ test('roll saving throw with dc option hides dc by default', async () => {
   await actor.rollSavingThrow('ref', { dc: 5 })
   expect(rollToMessageMock).toHaveBeenCalledWith(
     expect.objectContaining({
-      flavor: 'Reflex Save — Success'
-    })
+      flavor: 'Reflex Save \u2014 Success'
+    }),
+    { create: false }
   )
 
   rollToMessageMock.mockClear()
@@ -210,8 +184,9 @@ test('roll saving throw with dc option hides dc by default', async () => {
   await actor.rollSavingThrow('ref', { dc: 15 })
   expect(rollToMessageMock).toHaveBeenCalledWith(
     expect.objectContaining({
-      flavor: 'Reflex Save — Failure'
-    })
+      flavor: 'Reflex Save \u2014 Failure'
+    }),
+    { create: false }
   )
 })
 
@@ -222,8 +197,9 @@ test('roll saving throw with dc option shows dc when showDc is true', async () =
   await actor.rollSavingThrow('ref', { dc: 5, showDc: true })
   expect(rollToMessageMock).toHaveBeenCalledWith(
     expect.objectContaining({
-      flavor: 'Reflex Save (DC 5) — Success'
-    })
+      flavor: 'Reflex Save (DC 5) \u2014 Success'
+    }),
+    { create: false }
   )
 
   rollToMessageMock.mockClear()
@@ -231,8 +207,9 @@ test('roll saving throw with dc option shows dc when showDc is true', async () =
   await actor.rollSavingThrow('ref', { dc: 15, showDc: true })
   expect(rollToMessageMock).toHaveBeenCalledWith(
     expect.objectContaining({
-      flavor: 'Reflex Save (DC 15) — Failure'
-    })
+      flavor: 'Reflex Save (DC 15) \u2014 Failure'
+    }),
+    { create: false }
   )
 })
 
@@ -243,8 +220,9 @@ test('roll saving throw with dc equal to roll total succeeds', async () => {
   await actor.rollSavingThrow('ref', { dc: 10 })
   expect(rollToMessageMock).toHaveBeenCalledWith(
     expect.objectContaining({
-      flavor: 'Reflex Save — Success'
-    })
+      flavor: 'Reflex Save \u2014 Success'
+    }),
+    { create: false }
   )
 })
 
@@ -256,7 +234,8 @@ test('roll saving throw with invalid dc ignores dc check', async () => {
   expect(rollToMessageMock).toHaveBeenCalledWith(
     expect.objectContaining({
       flavor: 'Reflex Save'
-    })
+    }),
+    { create: false }
   )
 })
 
@@ -341,246 +320,127 @@ test('roll weapon attack dagger', async () => {
   )
 })
 
+// Skill checks that reach the lib adapter no longer invoke DCCRoll.createRoll:
+// the lib builds the formula and Foundry evaluates it directly. Assertions
+// use objectContaining against the chat-message flags + flavor that the
+// legacy path previously emitted verbatim.
+
 test('roll Custom Die Skill', async () => {
   dccRollCreateRollMock.mockClear()
 
   await actor.rollSkillCheck('customDieSkill')
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: null,
-        formula: '1d14',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Custom Die Skill'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Custom Die Skill',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'SkillCheck',
+        'dcc.ItemId': 'customDieSkill',
+        'dcc.SkillId': 'customDieSkill',
+        'dcc.isSkillCheck': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Custom Die Skill',
-    speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieSkill', 'dcc.SkillId': 'customDieSkill', 'dcc.isSkillCheck': true },
-    system: {
-      skillId: 'customDieSkill'
-    }
-  })
 })
 
 test('roll Custom Die And Value Skill', async () => {
   dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('customDieAndValueSkill')
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: null,
-        formula: '1d14',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'Custom Die And Value Skill',
-        formula: '3'
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Custom Die And Value Skill'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Custom Die And Value Skill',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'SkillCheck',
+        'dcc.ItemId': 'customDieAndValueSkill',
+        'dcc.SkillId': 'customDieAndValueSkill',
+        'dcc.isSkillCheck': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Custom Die And Value Skill',
-    speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieAndValueSkill', 'dcc.SkillId': 'customDieAndValueSkill', 'dcc.isSkillCheck': true },
-    system: {
-      skillId: 'customDieAndValueSkill'
-    }
-  })
 })
 
 test('roll Action Die Skill', async () => {
   dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('actionDieSkill')
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: 'Action Die',
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'Action Die Skill',
-        formula: '-4'
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Action Die Skill'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Action Die Skill',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'SkillCheck',
+        'dcc.ItemId': 'actionDieSkill',
+        'dcc.SkillId': 'actionDieSkill',
+        'dcc.isSkillCheck': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Action Die Skill',
-    speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'actionDieSkill', 'dcc.SkillId': 'actionDieSkill', 'dcc.isSkillCheck': true },
-    system: {
-      skillId: 'actionDieSkill'
-    }
-  })
 })
 
 test('roll Custom Die Skill With Int', async () => {
   dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('customDieSkillWithInt')
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: null,
-        formula: '1d24',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Custom Die Skill With Int'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Custom Die Skill With Int (Intelligence)',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'SkillCheck',
+        'dcc.Ability': 'int',
+        'dcc.ItemId': 'customDieSkillWithInt',
+        'dcc.SkillId': 'customDieSkillWithInt',
+        'dcc.isSkillCheck': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Custom Die Skill With Int (Intelligence)',
-    speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieSkillWithInt', 'dcc.SkillId': 'customDieSkillWithInt', 'dcc.isSkillCheck': true },
-    system: {
-      skillId: 'customDieSkillWithInt'
-    }
-  })
 })
 
 test('roll Custom Die And Value Skill With Per', async () => {
   dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('customDieAndValueSkillWithPer')
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: null,
-        formula: '1d24',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'Custom Die And Value Skill With Per (Personality)',
-        formula: '3 + 2'
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Custom Die And Value Skill With Per'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Custom Die And Value Skill With Per (Personality)',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'SkillCheck',
+        'dcc.Ability': 'per',
+        'dcc.ItemId': 'customDieAndValueSkillWithPer',
+        'dcc.SkillId': 'customDieAndValueSkillWithPer',
+        'dcc.isSkillCheck': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Custom Die And Value Skill With Per (Personality)',
-    speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'customDieAndValueSkillWithPer', 'dcc.SkillId': 'customDieAndValueSkillWithPer', 'dcc.isSkillCheck': true },
-    system: {
-      skillId: 'customDieAndValueSkillWithPer'
-    }
-  })
 })
 
 test('roll Custom Die And Value Luck', async () => {
   dccRollCreateRollMock.mockClear()
   await actor.rollSkillCheck('actionDieAndValueSkillWithLck')
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: 'Action Die',
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'Action Die And Value Skill With Lck (Luck)',
-        formula: '1 + 3'
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'Action Die And Value Skill With Lck'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'Action Die And Value Skill With Lck (Luck)',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'SkillCheck',
+        'dcc.Ability': 'lck',
+        'dcc.ItemId': 'actionDieAndValueSkillWithLck',
+        'dcc.SkillId': 'actionDieAndValueSkillWithLck',
+        'dcc.isSkillCheck': true
+      })
+    }),
+    { create: false }
   )
-  expect(rollToMessageMock).toHaveBeenCalledWith({
-    flavor: 'Action Die And Value Skill With Lck (Luck)',
-    speaker: actor,
-    flags: { 'dcc.RollType': 'SkillCheck', 'dcc.ItemId': 'actionDieAndValueSkillWithLck', 'dcc.SkillId': 'actionDieAndValueSkillWithLck', 'dcc.isSkillCheck': true },
-    system: {
-      skillId: 'actionDieAndValueSkillWithLck'
-    }
-  })
 })
 
 test('roll luck die', async () => {
@@ -1857,40 +1717,22 @@ test('roll skill check with useLevel config', async () => {
 
   await actor.rollSkillCheck('levelBasedSkill')
 
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: null,
-        formula: '1d20',
-        presets: [
-          {
-            formula: 'invalid',
-            label: 'invalid'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'levelBasedSkill (Intelligence)',
-        formula: '+2 + 1' // value 2 + int mod 1
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'Level',
-        formula: '+5' // level 5 as separate term
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'levelBasedSkill'
-    }
+  // Skill-item adapter path: DCCRoll.createRoll is not invoked; the
+  // lib builds the formula and Foundry evaluates it directly.
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'levelBasedSkill (Intelligence)',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'SkillCheck',
+        'dcc.Ability': 'int',
+        'dcc.ItemId': 'levelBasedSkill',
+        'dcc.SkillId': 'levelBasedSkill',
+        'dcc.isSkillCheck': true
+      })
+    }),
+    { create: false }
   )
 })
 
@@ -1930,34 +1772,20 @@ test('roll skill check without useLevel config', async () => {
 
   await actor.rollSkillCheck('nonLevelSkill')
 
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: null,
-        formula: '1d24',
-        presets: [
-          {
-            formula: 'invalid',
-            label: 'invalid'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        modifierLabel: 'nonLevelSkill (Personality)',
-        formula: '+3 + 2' // value 3 + per mod 2, NO level
-      }
-    ],
-    actor.getRollData(),
-    {
-      title: 'nonLevelSkill'
-    }
+  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(0)
+  expect(rollToMessageMock).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      flavor: 'nonLevelSkill (Personality)',
+      speaker: actor,
+      flags: expect.objectContaining({
+        'dcc.RollType': 'SkillCheck',
+        'dcc.Ability': 'per',
+        'dcc.ItemId': 'nonLevelSkill',
+        'dcc.SkillId': 'nonLevelSkill',
+        'dcc.isSkillCheck': true
+      })
+    }),
+    { create: false }
   )
 })
 

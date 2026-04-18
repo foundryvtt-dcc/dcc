@@ -9,8 +9,8 @@
  * preserving the flag contract that downstream modules
  * (dcc-qol, token-action-hud-dcc) parse.
  *
- * Phase 1 scope: ability checks. Save / skill / init renderers follow
- * the same shape and will land as they migrate.
+ * Phase 1 scope: ability checks + saving throws. Skill / init
+ * renderers follow the same shape and will land as they migrate.
  */
 
 /**
@@ -73,6 +73,162 @@ export async function renderAbilityCheck ({
     },
     { create: false }
   )
+
+  return ChatMessage.create(messageData)
+}
+
+/**
+ * Render a saving-throw result as a Foundry ChatMessage.
+ *
+ * @param {Object} params
+ * @param {Object} params.actor - The DCCActor that rolled
+ * @param {string} params.saveId - Foundry save id ('frt' / 'ref' / 'wil').
+ *   Stored on the flag as-is so downstream consumers see the same
+ *   shape the legacy path emitted.
+ * @param {string} params.saveLabel - Localized label e.g. 'Fortitude'
+ * @param {Object} params.result - The lib's SkillCheckResult
+ * @param {Roll} params.foundryRoll - The Foundry Roll instance.
+ * @param {Object} [params.options] - Original call options. Supports
+ *   `dc` / `showDc` for the DC suffix the legacy path rendered.
+ * @returns {Promise<ChatMessage>} The created ChatMessage.
+ */
+export async function renderSavingThrow ({
+  actor,
+  saveId,
+  saveLabel,
+  result,
+  foundryRoll,
+  options = {}
+}) {
+  let flavor = `${saveLabel} ${game.i18n.localize('DCC.Save')}`
+
+  if (options.dc !== undefined) {
+    const dc = parseInt(options.dc)
+    if (Number.isFinite(dc)) {
+      const success = foundryRoll.total >= dc
+      const resultLabel = success
+        ? game.i18n.localize('DCC.SaveSuccess')
+        : game.i18n.localize('DCC.SaveFailure')
+      if (options.showDc) {
+        flavor += ` (${game.i18n.format('DCC.SaveDC', { dc })}) \u2014 ${resultLabel}`
+      } else {
+        flavor += ` \u2014 ${resultLabel}`
+      }
+    }
+  }
+
+  const flags = {
+    'dcc.RollType': 'SavingThrow',
+    'dcc.Save': saveId,
+    'dcc.isSave': true,
+    'dcc.libResult': {
+      skillId: result.skillId,
+      die: result.die,
+      natural: result.natural,
+      total: result.total,
+      formula: result.formula,
+      critical: result.critical,
+      fumble: result.fumble,
+      modifiers: result.modifiers
+    }
+  }
+
+  if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
+    game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
+  }
+
+  const messageData = await foundryRoll.toMessage(
+    {
+      speaker: ChatMessage.getSpeaker({ actor }),
+      flavor,
+      flags
+    },
+    { create: false }
+  )
+
+  return ChatMessage.create(messageData)
+}
+
+/**
+ * Render a skill-check result as a Foundry ChatMessage.
+ *
+ * Preserves the legacy flag contract — `dcc.RollType: 'SkillCheck'`,
+ * `dcc.ItemId` and `dcc.SkillId` set to the skill id (both emitted
+ * regardless of whether the skill is a built-in slot or a skill
+ * item, matching the pre-migration behavior), `dcc.isSkillCheck:
+ * true` — plus a structured `dcc.libResult` payload. When the
+ * skill is backed by an item with a description, the item body is
+ * appended to the rendered roll content.
+ *
+ * @param {Object} params
+ * @param {Object} params.actor - The DCCActor that rolled.
+ * @param {string} params.skillId - The skill id (e.g. 'sneakSilently'
+ *   or a skill item's name).
+ * @param {string} params.skillLabel - Localized label for flavor.
+ * @param {string} [params.abilityId] - Ability id if the skill rolls
+ *   against one (e.g. 'int').
+ * @param {string} params.abilityLabel - Parenthesized ability suffix
+ *   for flavor (e.g. ' (Intelligence)' or '').
+ * @param {Object} [params.skillItem] - Optional skill item document.
+ *   When present and carrying a description, it is appended to the
+ *   rendered chat content.
+ * @param {Object} params.result - The lib's SkillCheckResult.
+ * @param {Roll} params.foundryRoll - The evaluated Foundry Roll.
+ * @returns {Promise<ChatMessage>} The created ChatMessage.
+ */
+export async function renderSkillCheck ({
+  actor,
+  skillId,
+  skillLabel,
+  abilityId,
+  abilityLabel,
+  skillItem,
+  result,
+  foundryRoll
+}) {
+  const flavor = `${skillLabel}${abilityLabel}`
+
+  const flags = {
+    'dcc.RollType': 'SkillCheck',
+    'dcc.ItemId': skillId,
+    'dcc.SkillId': skillId,
+    'dcc.isSkillCheck': true,
+    'dcc.libResult': {
+      skillId: result.skillId,
+      die: result.die,
+      natural: result.natural,
+      total: result.total,
+      formula: result.formula,
+      critical: result.critical,
+      fumble: result.fumble,
+      modifiers: result.modifiers
+    }
+  }
+
+  if (abilityId) {
+    flags['dcc.Ability'] = abilityId
+  }
+
+  if (game.dcc?.FleetingLuck?.updateFlags && foundryRoll) {
+    game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
+  }
+
+  const systemData = { skillId }
+
+  const toMessageData = {
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor,
+    flags,
+    system: systemData
+  }
+
+  if (skillItem && skillItem.system.description?.value) {
+    systemData.skillDescription = skillItem.system.description.value
+    const rollHTML = await foundryRoll.render()
+    toMessageData.content = `${rollHTML}<div class="skill-description">${skillItem.system.description.value}</div>`
+  }
+
+  const messageData = await foundryRoll.toMessage(toMessageData, { create: false })
 
   return ChatMessage.create(messageData)
 }

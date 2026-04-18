@@ -5,9 +5,14 @@ import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult,
 import DCCActiveEffect from './active-effect.js'
 import DCCActorLevelChange from './actor-level-change.js'
 import DiceChain from './dice-chain.js'
-import { rollAbilityCheck as libRollAbilityCheck } from './vendor/dcc-core-lib/index.js'
-import { actorToCharacter } from './adapter/character-accessors.mjs'
-import { renderAbilityCheck } from './adapter/chat-renderer.mjs'
+import {
+  rollAbilityCheck as libRollAbilityCheck,
+  rollCheck as libRollCheck,
+  rollSavingThrow as libRollSavingThrow
+} from './vendor/dcc-core-lib/index.js'
+import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
+import { renderAbilityCheck, renderSavingThrow, renderSkillCheck } from './adapter/chat-renderer.mjs'
+import { logDispatch } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -830,6 +835,7 @@ class DCCActor extends Actor {
    * @private
    */
   async _rollAbilityCheckViaAdapter (abilityId, options) {
+    logDispatch('rollAbilityCheck', 'adapter', { abilityId })
     const abilityLabel = game.i18n.localize(CONFIG.DCC.abilities[abilityId])
 
     const character = actorToCharacter(this)
@@ -877,6 +883,7 @@ class DCCActor extends Actor {
    * @private
    */
   async _rollAbilityCheckLegacy (abilityId, options = {}) {
+    logDispatch('rollAbilityCheck', 'legacy', { abilityId })
     const ability = this.system.abilities[abilityId]
     ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
@@ -1129,11 +1136,85 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a Saving Throw
-   * @param {String} saveId       The save ID (e.g. "ref")
-   * @param options
+   * Roll a Saving Throw.
+   *
+   * Phase 1 of the adapter refactor: the simple path (no dialog) flows
+   * through the lib via character-accessors → two-pass formula/evaluate
+   * → chat-renderer. The dialog path falls through to the legacy
+   * implementation below, preserved verbatim until later phases.
+   *
+   * Signature and emitted chat-message flags are preserved — downstream
+   * modules depend on the public shape of this method.
+   *
+   * @param {String} saveId       The save ID (e.g. "ref"/"frt"/"wil")
+   * @param {Object} options      Roll options
    */
   async rollSavingThrow (saveId, options = {}) {
+    // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
+    // which returns 0 or 1, not true/false. Strict === would miss those.
+    const needsLegacyPath =
+      !!options.showModifierDialog ||
+      !!options.rollUnder
+
+    if (needsLegacyPath) {
+      return this._rollSavingThrowLegacy(saveId, options)
+    }
+
+    return this._rollSavingThrowViaAdapter(saveId, options)
+  }
+
+  /**
+   * Adapter path for saving throws. Two-pass sync flow:
+   * Pass 1 asks the lib for the formula, Foundry evaluates the full
+   * formula so its Roll.total includes modifiers, Pass 2 classifies
+   * against the same natural for crit/fumble/resources.
+   * @private
+   */
+  async _rollSavingThrowViaAdapter (saveId, options) {
+    logDispatch('rollSavingThrow', 'adapter', { saveId })
+    const saveLabel = game.i18n.localize(CONFIG.DCC.saves[saveId])
+    const character = actorToCharacter(this)
+    const libSaveId = foundrySaveIdToLib(saveId)
+
+    // Pass 1: ask the lib for the formula (no evaluation).
+    const plan = libRollSavingThrow(libSaveId, character, {
+      mode: 'formula'
+    })
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const primaryDie = foundryRoll.dice?.[0]
+    const natural = primaryDie?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies the rolled result.
+    const result = libRollSavingThrow(libSaveId, character, {
+      mode: 'evaluate',
+      roller: () => natural
+    })
+
+    await renderSavingThrow({
+      actor: this,
+      saveId,
+      saveLabel,
+      result,
+      foundryRoll,
+      options
+    })
+
+    // Legacy rollSavingThrow returned the evaluated Roll; preserve
+    // that contract for downstream macros / tests.
+    return foundryRoll
+  }
+
+  /**
+   * Legacy saving-throw path. Used when the options flags require
+   * structured terms (modifier dialog, rollUnder). Preserved verbatim
+   * until later phases migrate those flows.
+   * @private
+   */
+  async _rollSavingThrowLegacy (saveId, options = {}) {
+    logDispatch('rollSavingThrow', 'legacy', { saveId })
     const save = this.system.saves[saveId]
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
@@ -1193,11 +1274,51 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a Skill Check
-   * @param {String}  skillId       The skill ID (e.g. "sneakSilently")
-   * @param {Object}  options       Roll options
+   * Roll a Skill Check.
+   *
+   * Phase 1 adapter dispatcher. Ordinary skill rolls (built-in skills
+   * and skill items with a die, no dialog / no disapproval / no skill
+   * table) flow through the lib via the two-pass formula/evaluate
+   * pattern. Dialog, cleric disapproval, skill-table routing, and
+   * description-only fallbacks stay on the legacy path.
+   *
+   * Signature and emitted chat-message flags are preserved —
+   * downstream modules depend on this public surface.
+   *
+   * @param {String} skillId  The skill ID (e.g. "sneakSilently")
+   * @param {Object} options  Roll options
    */
   async rollSkillCheck (skillId, options = {}) {
+    const resolved = this._resolveSkill(skillId)
+
+    // Title for the roll modifier dialog — legacy mutates options,
+    // keep the behavior so the dialog path still sees it.
+    if (resolved.skill) {
+      options.title = game.i18n.localize(resolved.skill.label) ||
+        (game.i18n.localize('DCC.AbilityCheck') + resolved.abilityLabel)
+    }
+
+    const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
+    const needsLegacyPath =
+      !!options.showModifierDialog ||
+      !!resolved.skill?.useDisapprovalRange ||
+      hasSkillTable ||
+      !resolved.hasDie
+
+    if (needsLegacyPath) {
+      return this._rollSkillCheckLegacy(skillId, options, resolved)
+    }
+
+    return this._rollSkillCheckViaAdapter(skillId, options, resolved)
+  }
+
+  /**
+   * Normalize a skill reference (built-in slot or skill item) to the
+   * shared bundle both dispatch paths consume. Extracted from the
+   * legacy dispatcher so the adapter can reuse the same resolution.
+   * @private
+   */
+  _resolveSkill (skillId) {
     let skill = this.system.skills ? this.system.skills[skillId] : null
     let skillItem = null
     if (!skill) {
@@ -1221,40 +1342,230 @@ class DCCActor extends Actor {
       }
     }
 
-    // Check if skill should use level (for built-in skills)
     if (skill?.config?.useLevel) {
       skill.level = `+${this.system.details.level.value ?? 0}`
     }
 
-    let die = (skill.die && skill.die.trim()) ? skill.die : null
+    let die = (skill?.die && skill.die.trim()) ? skill.die : null
     let hasDie = !!die
 
-    // Handle Override Die for special Cleric Skills
-    if (skill.useDisapprovalRange && this.system.class.spellCheckOverrideDie) {
+    if (skill?.useDisapprovalRange && this.system.class.spellCheckOverrideDie) {
       die = this.system.class.spellCheckOverrideDie
       hasDie = true
     }
 
-    // If no die is specified and no override, fall back to action dice for backward compatibility with built-in skills
-    if (!hasDie && !skillItem) {
+    if (!hasDie && !skillItem && skill) {
       die = this.getActionDice()[0].formula || '1d20'
       hasDie = true
     }
 
-    const ability = skill.ability && skill.ability.trim() ? skill.ability : null
-    let abilityLabel = ''
-    let abilityMod = 0
-    if (ability) {
-      abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
-      abilityMod = parseInt(this.system.abilities[ability]?.mod || '0')
+    const abilityId = skill?.ability && skill.ability.trim() ? skill.ability : null
+    const abilityLabel = abilityId
+      ? ` (${game.i18n.localize(CONFIG.DCC.abilities[abilityId])})`
+      : ''
+    const abilityMod = abilityId
+      ? parseInt(this.system.abilities[abilityId]?.mod || '0')
+      : 0
+
+    return {
+      skill,
+      skillItem,
+      abilityId,
+      abilityLabel,
+      abilityMod,
+      die,
+      hasDie
+    }
+  }
+
+  /**
+   * Adapter path for skill checks. Two-pass sync flow mirroring
+   * `_rollSavingThrowViaAdapter`: pass 1 asks the lib for the formula,
+   * Foundry evaluates it (so Roll.total includes every modifier),
+   * pass 2 classifies against the same natural for crit/fumble.
+   * @private
+   */
+  async _rollSkillCheckViaAdapter (skillId, options, resolved) {
+    logDispatch('rollSkillCheck', 'adapter', { skillId })
+    const { skill, skillItem, abilityId, abilityLabel, die } = resolved
+
+    const character = actorToCharacter(this)
+    const definition = this._buildSkillDefinition(skillId, resolved)
+    const modifiers = this._buildSkillCheckModifiers(skillId, resolved)
+
+    // Pass 1: lib builds the formula (no evaluation).
+    const plan = libRollCheck(definition, character, {
+      mode: 'formula',
+      modifiers
+    })
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies against the rolled natural.
+    const result = libRollCheck(definition, character, {
+      mode: 'evaluate',
+      roller: () => natural,
+      modifiers
+    })
+
+    const skillLabel = game.i18n.localize(skill.label)
+
+    await renderSkillCheck({
+      actor: this,
+      skillId,
+      skillLabel,
+      abilityId,
+      abilityLabel,
+      skillItem,
+      result,
+      foundryRoll,
+      die
+    })
+
+    if (skillItem && skillItem.system.config.showLastResult) {
+      skillItem.update({ 'system.lastResult': foundryRoll.total })
     }
 
-    // Title for the roll modifier dialog
-    options.title = game.i18n.localize(skill.label) || (game.i18n.localize('DCC.AbilityCheck') + abilityLabel)
-    // Collate terms for the roll
+    return foundryRoll
+  }
+
+  /**
+   * Build a lib `SkillDefinition` for a resolved skill. Ability
+   * modifier and level are added by the lib from the character
+   * (see `roll.ability` / `roll.levelModifier`). Other Foundry-side
+   * modifiers (skill value, deed, check penalty) are emitted as
+   * situational modifiers in `_buildSkillCheckModifiers`.
+   * @private
+   */
+  _buildSkillDefinition (skillId, { skill, die, abilityId }) {
+    // Foundry stores `1d14`; lib's DieType is just `d14`.
+    const libDie = this._stripDieCount(die) || 'd20'
+
+    const definition = {
+      id: `skill:${skillId}`,
+      name: game.i18n.localize(skill.label),
+      type: 'check',
+      roll: {
+        die: libDie,
+        levelModifier: 'none'
+      }
+    }
+
+    if (abilityId) {
+      definition.roll.ability = abilityId
+    }
+
+    return definition
+  }
+
+  /**
+   * Emit the situational modifiers the lib needs to produce the same
+   * total the legacy term list would have: skill value, level (when
+   * useLevel is true), Mighty Deed's last attack bonus, and the
+   * armor check penalty for skills that honor it.
+   * @private
+   */
+  _buildSkillCheckModifiers (skillId, { skill, abilityMod }) {
+    const modifiers = []
+    const skillLabel = game.i18n.localize(skill.label)
+
+    if (skill.value !== undefined) {
+      const valueNum = parseInt(String(skill.value), 10) || 0
+      // Legacy folded ability mod into the same Compound term as skill
+      // value. The lib adds ability mod on its own from roll.ability,
+      // so we emit just skill.value here — total arithmetic matches.
+      if (valueNum !== 0 || abilityMod === 0) {
+        modifiers.push({
+          kind: 'add',
+          value: valueNum,
+          origin: {
+            category: 'other',
+            id: 'skill-value',
+            label: skillLabel
+          }
+        })
+      }
+    }
+
+    if (skill.level !== undefined && skill.level !== 0) {
+      const levelNum = parseInt(String(skill.level), 10) || 0
+      if (levelNum !== 0) {
+        modifiers.push({
+          kind: 'add',
+          value: levelNum,
+          origin: {
+            category: 'level',
+            id: 'level',
+            label: game.i18n.localize('DCC.Level')
+          }
+        })
+      }
+    }
+
+    if (skill.useDeed && this.system.details.lastRolledAttackBonus) {
+      const deedNum = parseInt(String(this.system.details.lastRolledAttackBonus), 10)
+      if (Number.isFinite(deedNum) && deedNum !== 0) {
+        modifiers.push({
+          kind: 'add',
+          value: deedNum,
+          origin: {
+            category: 'class-feature',
+            id: 'mighty-deed',
+            label: game.i18n.localize('DCC.DeedRoll')
+          }
+        })
+      }
+    }
+
+    const checkPenaltyCouldApply =
+      ['sneakSilently', 'climbSheerSurfaces'].includes(skillId) ||
+      !!skill.config?.applyCheckPenalty
+    if (checkPenaltyCouldApply) {
+      const penaltyNum = parseInt(String(this.system.attributes.ac.checkPenalty || '0'), 10)
+      if (Number.isFinite(penaltyNum) && penaltyNum !== 0) {
+        modifiers.push({
+          kind: 'add',
+          value: penaltyNum,
+          origin: {
+            category: 'penalty',
+            id: 'armor-check-penalty',
+            label: game.i18n.localize('DCC.CheckPenalty')
+          }
+        })
+      }
+    }
+
+    return modifiers
+  }
+
+  /**
+   * Turn a Foundry die formula like `'1d14'` into the bare die type
+   * `'d14'` the lib's SkillDefinition wants. Returns null when the
+   * input can't be parsed.
+   * @private
+   */
+  _stripDieCount (formula) {
+    if (!formula) return null
+    const match = /^(?:\d+)?(d\d+)$/i.exec(formula.trim())
+    return match ? match[1].toLowerCase() : null
+  }
+
+  /**
+   * Legacy skill-check path. Used when the dispatcher detects a
+   * modifier dialog, cleric disapproval, a skill-table lookup, or
+   * a no-die / description-only case — all paths the adapter does
+   * not yet cover. Preserved verbatim from the pre-migration logic.
+   * @private
+   */
+  async _rollSkillCheckLegacy (skillId, options, resolved) {
+    logDispatch('rollSkillCheck', 'legacy', { skillId })
+    const { skill, skillItem, abilityLabel, abilityMod, die, hasDie } = resolved
+
     const terms = []
 
-    // Only add a die term if a die is specified
     if (hasDie) {
       terms.push({
         type: 'Die',
@@ -1311,7 +1622,6 @@ class DCCActor extends Actor {
       })
     }
 
-    // If no meaningful terms, just show the description without a roll
     const hasMeaningfulTerms = terms.some(term => term.formula && term.formula.trim() !== '')
     if (terms.length === 0 || !hasMeaningfulTerms) {
       if (skillItem && skillItem.system.description.value) {
@@ -1334,7 +1644,6 @@ class DCCActor extends Actor {
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
-    // Handle special cleric spellchecks that are treated as skills
     if (skill.useDisapprovalRange) {
       if (roll.dice.length > 0) {
         roll.dice[0].options.dcc = {
@@ -1343,11 +1652,8 @@ class DCCActor extends Actor {
       }
     }
 
-    // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
     if (skillTable || skill.useDisapprovalRange) {
-      // Route through processSpellCheck for skills with tables or cleric abilities
-      // processSpellCheck handles pass/fail display, disapproval range checks, and disapproval increase
       await game.dcc.processSpellCheck(this, {
         rollTable: skillTable,
         roll,
@@ -1355,15 +1661,12 @@ class DCCActor extends Actor {
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
 
-      // Divine aid always increases disapproval by its cost (e.g. +10), separate from
-      // the standard +1 on failure that processSpellCheck handles
       if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
         await this.applyDisapproval(skill.drainDisapproval)
       }
     } else {
       await roll.evaluate()
 
-      // Generate flags for the roll
       const flags = {
         'dcc.RollType': 'SkillCheck',
         'dcc.ItemId': skillId,
@@ -1372,7 +1675,6 @@ class DCCActor extends Actor {
       }
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
-      // Convert the roll to a chat message
       const systemData = { skillId }
       const messageData = {
         speaker: ChatMessage.getSpeaker({ actor: this }),
@@ -1390,7 +1692,6 @@ class DCCActor extends Actor {
       roll.toMessage(messageData)
     }
 
-    // Store last result if required
     if (skillItem && skillItem.system.config.showLastResult) {
       skillItem.update({ 'system.lastResult': roll.total })
     }
