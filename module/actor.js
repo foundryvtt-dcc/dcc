@@ -17,6 +17,7 @@ import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-access
 import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
+import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -1913,6 +1914,21 @@ class DCCActor extends Actor {
             actor: this.name,
             spell: spellItem.name
           }))
+        }
+        // Spellburn dialog bridge (open question #6, resolved Phase 3
+        // session 1). The adapter path bypasses `DCCRoll.createRoll`,
+        // so the legacy `RollModifierDialog`'s Spellburn term never
+        // surfaces. When the caller asks for the modifier dialog and
+        // hasn't already committed a burn programmatically, prompt
+        // for it adapter-side and forward as `options.spellburn` —
+        // the lib then adds the Spellburn modifier to the roll and
+        // fires `onSpellburnApplied` so the adapter can deduct the
+        // ability points (see `spell-events.mjs`). NPCs don't burn
+        // (the legacy dialog never offered it to them either).
+        if (options.showModifierDialog && !options.spellburn && !this.isNPC) {
+          const commitment = await promptSpellburnCommitment(this, spellItem)
+          if (commitment === null) return
+          options.spellburn = commitment
         }
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }

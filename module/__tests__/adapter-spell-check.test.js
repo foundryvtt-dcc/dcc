@@ -24,9 +24,17 @@ import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
 import { buildSpellCheckArgs } from '../adapter/spell-input.mjs'
+import { promptSpellburnCommitment } from '../adapter/roll-dialog.mjs'
 
 // Mock actor-level-change like actor.test.js does
 vi.mock('../actor-level-change.js')
+
+// Mock the dialog-adapter so the dispatcher's showModifierDialog branch
+// can drive the code path deterministically. Tests override the return
+// value per-case via `promptSpellburnCommitment.mockResolvedValue(...)`.
+vi.mock('../adapter/roll-dialog.mjs', () => ({
+  promptSpellburnCommitment: vi.fn()
+}))
 
 function makeGenericSpellItem (overrides = {}) {
   const spell = new DCCItem({ name: 'Generic Cantrip', type: 'spell' }, {})
@@ -762,6 +770,128 @@ test('adapter wizard cast with options.spellburn reduces ability scores adapter-
     'system.abilities.str.value': 12,
     'system.abilities.sta.value': 12
   })
+
+  findSpy.mockRestore()
+})
+
+test('wizard cast with showModifierDialog prompts spellburn and forwards the commitment', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+  promptSpellburnCommitment.mockReset()
+  promptSpellburnCommitment.mockResolvedValue({ str: 1, agl: 0, sta: 2 })
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 14
+  actor.system.abilities.agl.value = 12
+  actor.system.abilities.sta.value = 13
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({
+    spell: 'Magic Missile',
+    showModifierDialog: true
+  })
+
+  expect(promptSpellburnCommitment).toHaveBeenCalledTimes(1)
+  expect(promptSpellburnCommitment).toHaveBeenCalledWith(actor, spellItem)
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  // The prompted commitment reaches the onSpellburnApplied bridge:
+  // 14-1=13 (str), 13-2=11 (sta); agl unchanged so dropped.
+  expect(actorUpdateMock).toHaveBeenCalledWith({
+    'system.abilities.str.value': 13,
+    'system.abilities.sta.value': 11
+  })
+
+  findSpy.mockRestore()
+})
+
+test('wizard cast with showModifierDialog aborts when the dialog is canceled', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+  promptSpellburnCommitment.mockReset()
+  promptSpellburnCommitment.mockResolvedValue(null)
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({
+    spell: 'Magic Missile',
+    showModifierDialog: true
+  })
+
+  expect(promptSpellburnCommitment).toHaveBeenCalledTimes(1)
+  // Neither the adapter nor the legacy path continued with the cast.
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(actorUpdateMock).not.toHaveBeenCalled()
+
+  itemSpy.mockRestore()
+  findSpy.mockRestore()
+})
+
+test('wizard cast with preset options.spellburn bypasses the dialog', async () => {
+  rollToMessageMock.mockClear()
+  promptSpellburnCommitment.mockReset()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 14
+  actor.system.abilities.agl.value = 12
+  actor.system.abilities.sta.value = 13
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({
+    spell: 'Magic Missile',
+    showModifierDialog: true,
+    spellburn: { str: 0, agl: 0, sta: 1 }
+  })
+
+  expect(promptSpellburnCommitment).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+
+  findSpy.mockRestore()
+})
+
+test('wizard cast on an NPC actor bypasses the spellburn dialog', async () => {
+  rollToMessageMock.mockClear()
+  promptSpellburnCommitment.mockReset()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.type = 'NPC'
+  actor.isNPC = true
+  actor.isPC = false
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({
+    spell: 'Magic Missile',
+    showModifierDialog: true
+  })
+
+  expect(promptSpellburnCommitment).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
 
   findSpy.mockRestore()
 })

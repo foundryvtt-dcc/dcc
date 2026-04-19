@@ -6,8 +6,18 @@
 
 ## Current phase
 
-**Phase 2 — CLOSED 2026-04-18.** Both gates resolved. Phase 3 (attack /
-damage / crit / fumble migration) is now the active phase; see the
+**Phase 3 — ACTIVE. Session 1 (2026-04-18) shipped the Spellburn
+dialog-adapter scaffold.** Open question #6 resolved: the adapter path
+for wizard / elf casts with `options.showModifierDialog` now prompts a
+DialogV2-based Spellburn input adapter-side (`module/adapter/roll-dialog.mjs`),
+forwards the resulting `SpellburnCommitment` as `options.spellburn`, and
+delegates to `_rollSpellCheckViaAdapter` — which already knew how to
+apply the burn via `onSpellburnApplied`. The prior latent regression
+(wizard adapter casts silently skipping the Spellburn UI) is fixed.
+No attack / damage / crit / fumble migration in this session; attack
+scaffolding is session 2.
+
+**Phase 2 — CLOSED 2026-04-18.** Both gates resolved. See the Phase 2
 close-out section below for decisions + hand-off.
 
 **Phase 2 — Spell checks — session 5 complete.** Spellburn + mercurial
@@ -302,16 +312,18 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 2 — spell checks. Sessions 1–5 complete. `spell-events.mjs`
-has `onSpellLost` + `onDisapprovalIncreased` + `onSpellburnApplied`
-wired; mercurial display chat is rendered directly from
-`result.mercurialEffect` in `_castViaCalculateSpellCheck` rather
-than via the lib's `onMercurialEffect` event (session 5 scope
-decision — the event fires on both formula + evaluate passes
-unconditionally, and its Promise return isn't awaitable through
-the lib). Phase 2 closes once: (a) the XCC migration plan for
-`game.dcc.processSpellCheck` consumers is in place, and (b) open
-question #5 (patron-taint RAW alignment) is resolved.
+Phase 3 — attack / damage / crit / fumble migration. Session 1
+(2026-04-18, this session) scaffolded the adapter-side roll dialog
+and closed open question #6 (Spellburn dialog integration). Session 2
+is the first attack migration — the `rollWeaponAttack` dispatcher
+plus an `_rollWeaponAttackViaAdapter` path for the simplest weapon
+(no deed die, no backstab, no two-weapon). `dcc.modifyAttackRollTerms`
+preservation is the gate: dcc-qol has two active handlers
+(`applyFiringIntoMeleePenalty`, `applyRangeChecksAndPenalties`) that
+must keep firing. Lib-side wave-3 combat modifier migration remains
+pending — session 2 can emit / consume `LegacyRollModifier[]` the
+same way spells do, per the wave-2-not-required precedent
+(Phase 2 session 2 scope decisions).
 
 ### Session 2026-04-18 (sixth session — Phase 2, session 1)
 
@@ -867,6 +879,107 @@ question #5 (patron-taint RAW alignment) is resolved.
   Not ideal long-term, but matches today's behavior; a later
   session can audit whether the swallow is safe.
 
+### Session 2026-04-18 (twelfth session — Phase 3, session 1)
+
+Phase 3 kickoff. No attack migration yet; this session built the
+adapter-side Spellburn dialog scaffold that both the wizard cast path
+(today) and the attack / damage dialog path (future session) can share,
+and closed open question #6 (Spellburn dialog integration).
+
+- **`module/adapter/roll-dialog.mjs`** — new file.
+  `promptSpellburnCommitment(actor, spellItem)` displays a
+  `DialogV2.wait` prompt with three number inputs (Str / Agl / Sta),
+  each clamped to `[0, currentAbilityValue]`. Commit → returns a lib
+  `SpellburnCommitment` (`{str, agl, sta}`); Cancel / close → returns
+  `null`. Module header JSDoc lays out the broader role — Phase 3
+  future sessions will extend this file (not replace it) when the
+  attack / damage dialog needs its own prompt.
+- **`module/actor.js`** — `rollSpellCheck` dispatcher gains a
+  Spellburn-dialog bridge in the wizard / elf branch. When
+  `castingMode === 'wizard' && !isCleric`, after the spell-loss
+  pre-check, the dispatcher now checks `options.showModifierDialog
+  && !options.spellburn && !this.isNPC` and awaits
+  `promptSpellburnCommitment` when all three conditions hold. On
+  cancel (null) the cast early-returns verbatim to how
+  `RollModifierDialog.close` aborted the legacy path. On commit the
+  returned commitment is set as `options.spellburn` and the cast
+  falls through to `_rollSpellCheckViaAdapter` — which already knew
+  how to thread `spellburn` to `buildSpellCheckArgs` and apply
+  ability-score changes via the existing `onSpellburnApplied` bridge
+  (session-5 plumbing).
+- **i18n** — four new keys landed in all 7 languages
+  (en / de / es / fr / it / pl / cn): `DCC.SpellburnCommit`,
+  `DCC.SpellburnDialogPrompt`, `DCC.SpellburnDialogTitle`,
+  `DCC.SpellburnDialogTitleForSpell`. `compare-lang` reports 876
+  keys / 0 missing / 0 extra across every locale.
+- **Tests**:
+  - `module/__tests__/adapter-spell-check.test.js` — now 35 tests
+    (up from 31). Imports `vi.mock('../adapter/roll-dialog.mjs')` so
+    each test can drive `promptSpellburnCommitment.mockResolvedValue`
+    deterministically without rendering DialogV2. New cases:
+    `wizard cast with showModifierDialog prompts spellburn and
+    forwards the commitment` (mocked return `{str:1,agl:0,sta:2}` →
+    asserts actor.update gets `str: 13 / sta: 11` with str=14/sta=13
+    baseline); `wizard cast with showModifierDialog aborts when the
+    dialog is canceled` (null return → no rollToMessage, no legacy
+    item delegation, no actor.update); `wizard cast with preset
+    options.spellburn bypasses the dialog` (preset commitment reaches
+    the adapter without the prompt firing); `wizard cast on an NPC
+    actor bypasses the spellburn dialog` (NPC short-circuit — the
+    legacy dialog never offered spellburn to NPCs either).
+  - 794 Vitest tests pass (up from 790). `npm run format` clean,
+    `npm run compare-lang` clean.
+  - Playwright spec NOT extended this session — the adapter-dispatch
+    spec asserts on `logDispatch` console output, which the
+    Spellburn dialog bridge doesn't directly emit (the bridge sits
+    in the dispatcher BEFORE the adapter path's logDispatch line).
+    Future session can add a Playwright case that drives the
+    DialogV2 UI if that coverage is worth the complexity; today the
+    34-test unit coverage is the integration signal.
+
+**Scope decisions (Phase 3 session 1):**
+
+- **Slice (a) — dialog-adapter — picked over (b) attack-formula and
+  (c) hook translation.** The session-start prompt's guidance:
+  "Lean (a) if lib wave-3 isn't ready." `module/vendor/dcc-core-lib/`
+  is pinned at 0.4.0 where all `src/combat/*.ts` still import
+  `LegacyRollModifier`; wave-3 has not shipped. Attack migration
+  could still proceed on the legacy shape (Phase 2 precedent), but
+  landing the dialog first unblocks BOTH spellburn (immediate
+  regression fix) AND the attack / damage dialog (future session)
+  and builds reusable scaffolding before the larger attack work
+  commits to a shape.
+- **OQ6 resolved via (b) dialog-adapter, NOT (a) dispatcher
+  carve-out.** Carve-out would have routed `showModifierDialog` back
+  to `_rollSpellCheckLegacy` — shipping quickly but undoing the
+  session-2 wizard migration for every right-click cast. Dialog-
+  adapter preserves the full adapter pipeline and gives a template
+  for the attack dialog. The tradeoff: this session's dialog is
+  narrow (only Spellburn). Other legacy-dialog capabilities (die
+  tweak, custom modifier rows, CheckPenalty toggle, FleetingLuck)
+  remain absent on the wizard adapter path — but they have been
+  since session 2, and landing those back is a session-5+ project
+  once the attack dialog has revealed the general pattern.
+- **DialogV2 over Handlebars+custom-UI.** The legacy Spellburn term
+  uses a Handlebars partial with +/- buttons that update a display
+  showing the post-burn stat in real time. DialogV2 with simple
+  number inputs is a UX regression vs that (no live readout;
+  keyboard-only +/- via input), but it's dramatically simpler to
+  build and test, and matches how the rest of the system's modal
+  prompts already work (`spell-duel.js:538`, `parser.js:126`,
+  `item-sheet.js:397/429`). If user feedback surfaces the missing
+  +/- UX, a later session can port the Handlebars partial onto an
+  ApplicationV2 subclass behind the same `promptSpellburnCommitment`
+  export.
+- **NPC short-circuit.** The legacy `DCCSpellburnTerm` was only
+  built on PC-path casts (the dialog only opens for PC casts).
+  Mirroring that: NPCs never see the prompt. The condition is
+  `!this.isNPC` (not `this.isPC`) to match how other `rollSpellCheck`
+  branches gate. A hypothetical NPC with `options.spellburn` pre-set
+  still gets the burn applied — the bridge in `spell-events.mjs`
+  already bails on NPCs anyway, so the effective behavior is still
+  "no NPC spellburn".
+
 ### Session 2026-04-18 (eleventh session — Phase 2 CLOSE)
 
 Doc-only session. No code changed. Closes both Phase 2 gate items.
@@ -975,6 +1088,16 @@ Actions taken:
    close session above. RAW alignment remains possible as a future
    backlog project but is not gated on Phase 3 or later.
 
+6. ~~**Spellburn dialog integration.**~~ **Resolved 2026-04-18 at
+   Phase 3 session 1: adapter-side `promptSpellburnCommitment` dialog
+   via DialogV2, wired into `rollSpellCheck` dispatcher for the
+   wizard / elf + `showModifierDialog` branch.** The latent regression
+   from Phase 2 session 2 (wizard adapter casts silently lost the
+   Spellburn UI) is fixed. Other legacy-dialog capabilities (die
+   tweak, custom modifier rows, CheckPenalty toggle, FleetingLuck)
+   remain absent on the adapter path and will be revisited once the
+   attack / damage dialog work generalizes the roll-dialog scaffold.
+
 ## Blockers / open questions
 
 1. ~~**Runtime loading strategy.**~~ **Resolved 2026-04-17: vendor
@@ -1019,23 +1142,20 @@ Actions taken:
    close, 2026-04-18.** See "Closed questions" section above. RAW
    alignment is backlog, not a phase gate.
 
-6. **Spellburn dialog integration.** Session 5 wired `options.spellburn`
-   plumbing but did NOT integrate the legacy roll-modifier Spellburn
-   term. A wizard casting via the adapter path today has no spellburn
-   UI — the dialog only appears on `DCCRoll.createRoll` paths which
-   the adapter bypasses. This is a pre-existing regression from
-   session 2; session 5 made the plumbing for a fix but didn't ship
-   it. Two options to resolve:
-   (a) **Dispatcher carve-out**: add `options.showModifierDialog`
-   check to `rollSpellCheck` that routes to `_rollSpellCheckLegacy`
-   for wizard / elf casts. Simple, preserves dialog behavior, but
-   undoes part of the adapter migration for any right-click cast.
-   (b) **Dialog-adapter**: extract the Spellburn term's UI into a
-   standalone adapter-side dialog that collects `{str, agl, sta}`
-   burn amounts, then invokes `rollSpellCheck` with
-   `options.spellburn` set. More work but keeps the full adapter
-   pipeline. Pick during the first Phase 3 session (attack / damage
-   dialog integration has similar patterns to share with).
+6. ~~**Spellburn dialog integration.**~~ **Resolved 2026-04-18 at
+   Phase 3 session 1 via option (b) dialog-adapter.** See "Closed
+   questions" above for rationale.
+
+7. **Wizard / elf adapter-path modifier-dialog coverage beyond
+   Spellburn.** Session 7 (Phase 3 session 1) added back the
+   Spellburn prompt but the other legacy `RollModifierDialog`
+   capabilities (die tweak, custom modifier rows, CheckPenalty
+   toggle, FleetingLuck) remain absent for wizard adapter casts.
+   These have been absent since Phase 2 session 2 and are low-volume
+   (most users take default rolls), but a fully UI-equivalent
+   adapter-side dialog is eventually needed. Most likely path:
+   generalize `module/adapter/roll-dialog.mjs` after the attack /
+   damage dialog lands, once the two dialogs share a common scaffold.
 
 ## Decisions made
 
@@ -1084,29 +1204,45 @@ Actions taken:
 
 ## Next steps
 
-**Phase 2 is closed.** Phase 3 — attack / damage / crit / fumble
-migration — is the active phase.
+**Phase 3 — session 1 (dialog-adapter) is complete.** Session 2 is
+the first attack migration.
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
   from the lib. Attack → damage → crit → fumble is chained; pick a
   session slice that can ship independently.
 - Preserve `dcc.modifyAttackRollTerms` (dcc-qol's main hook integration
-  point) by translating from the lib's modifier list.
+  point) by translating from the lib's modifier list. Emit site in
+  `actor.js` at the `rollToHit` path; dcc-qol's active handlers
+  (`applyFiringIntoMeleePenalty`, `applyRangeChecksAndPenalties`)
+  read / mutate the `terms` array. A translator helper in the adapter
+  can convert lib `LegacyRollModifier[]` → terms for the hook call,
+  then translate back; or hook the `terms` array first, run the
+  lib pipeline on the translated modifier list.
 - Wave 3 modifier migration on the lib side (combat subsystems) lands
-  alongside Phase 3 sessions. Flag lib-side gaps early; sync via
-  `npm run sync-core-lib` when the lib ships a wave-3 release.
+  alongside Phase 3 sessions. Session 2 can emit `LegacyRollModifier[]`
+  (Phase 2 session 2 precedent — wave-2-not-required). Flag lib-side
+  gaps early; sync via `npm run sync-core-lib` when the lib ships a
+  wave-3 release.
 
-**Early Phase 3 pick-up — open question #6 (spellburn dialog):**
-session 5 wired `options.spellburn` plumbing but not the dialog.
-Attack / damage dialogs share the same pattern; pick a dialog-adapter
-approach (carve-out vs. standalone) in the first Phase 3 session and
-apply the same answer to both spellburn and attack dialogs.
+**Session 2 pick-up** — Attack migration scaffold. Options:
+(a) **Simplest-weapon happy-path adapter**: weapon with no deed die,
+   no backstab, no two-weapon, no `showModifierDialog`. Validates the
+   `makeAttackRoll` bridge end-to-end. `_rollWeaponAttackViaAdapter` +
+   `_rollWeaponAttackLegacy` dispatch; legacy takes every non-happy-
+   path case verbatim.
+(b) **Hook-translation infrastructure**: build the adapter-side
+   translator for `dcc.modifyAttackRollTerms` first, so later
+   attack-adapter slices inherit working dcc-qol integration. No
+   migration yet.
+(c) **Extend `module/adapter/roll-dialog.mjs`** with an attack-
+   modifier prompt (the generalized roll-dialog), preparing for the
+   `showModifierDialog` attack case.
 
-**Cross-repo coordination:** if any migration uncovers a missing
-feature in the lib's tagged-union modifier (e.g. skill items with
-`allowLuck` needing dice-chain bumps), land the lib change first in
-its own PR in `dcc-core-lib`, then sync via `npm run sync-core-lib`.
+Lean (a) for session 2. The simplest happy-path is the smallest
+possible test of the bridge; (b) without a consumer is infrastructure
+without validation; (c) is premature until attacks flow through the
+adapter at all.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with
