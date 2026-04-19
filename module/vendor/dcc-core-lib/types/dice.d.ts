@@ -67,7 +67,7 @@ export interface ModifierOrigin {
      * Stable identifier within the category. Examples:
      * - `'str'` for ability modifiers
      * - `'armor-check-penalty'` for the DCC armor check penalty
-     * - `'backstab'` for the thief's backstab multiplier
+     * - `'mighty-deed'` for a warrior's deed die contribution
      * - a Foundry item/AE UUID for equipment or active-effect sources
      */
     id: string;
@@ -137,7 +137,8 @@ export interface BumpDieModifier {
 }
 /**
  * Multiplicative factor applied after additive modifiers. Primarily
- * used by damage rolls (e.g. backstab ×2, critical multipliers).
+ * used by damage rolls (e.g. spell-effect damage doubling, critical
+ * multipliers).
  */
 export interface MultiplyModifier {
     kind: 'multiply';

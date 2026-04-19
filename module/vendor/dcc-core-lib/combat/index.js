@@ -13,7 +13,7 @@
 // Attack functions
 export { makeAttackRoll, calculateAttackBonus, doesAttackHit, getAttackAbility, getTwoWeaponPenalty, isDeedSuccessful, } from "./attack.js";
 // Damage functions
-export { rollDamage, calculateDamageModifier, getBackstabMultiplier, getTwoHandedDamageDie, buildDamageFormula, applyMinimumDamage, } from "./damage.js";
+export { rollDamage, calculateDamageModifier, getTwoHandedDamageDie, getWeaponDamage, buildDamageFormula, applyMinimumDamage, } from "./damage.js";
 // Critical hit functions
 export { rollCritical, calculateCritModifier, determineCritTable, getCritTable, getCritDie, buildCritFormula, parseCritExtraDamage, WARRIOR_CRIT_DIE, THIEF_CRIT_DIE, DEFAULT_CRIT_DIE, CLASS_CRIT_TABLE, } from "./crits.js";
 // Fumble functions

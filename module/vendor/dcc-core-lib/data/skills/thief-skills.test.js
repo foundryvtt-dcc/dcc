@@ -36,19 +36,26 @@ describe("Thief Skill Definitions", () => {
     });
     describe("BACKSTAB", () => {
         it("has correct structure", () => {
+            // BACKSTAB is defined in enabling-skills.ts (passive enabling
+            // skill: auto-crit + Table 1-9 attack bonus) and re-exported
+            // through the thief-skills catalog so the Table 1-7 skill list
+            // is complete under one registry.
             expect(BACKSTAB.id).toBe("backstab");
             expect(BACKSTAB.name).toBe("Backstab");
-            expect(BACKSTAB.type).toBe("modifier");
+            expect(BACKSTAB.type).toBe("passive");
         });
-        it("modifies damage", () => {
-            expect(BACKSTAB.modifies?.action).toBe("damage");
+        it("enables an auto-crit on Crit Table II", () => {
+            expect(BACKSTAB.enables?.action).toBe("backstab");
+            expect(BACKSTAB.enables?.data?.["grantsAutoCrit"]).toBe(true);
+            expect(BACKSTAB.enables?.data?.["critTable"]).toBe("II");
         });
-        it("requires surprised target from behind", () => {
-            expect(BACKSTAB.modifies?.condition).toBe("surprised-target-from-behind");
+        it("triggers on a target from behind or an unaware target", () => {
+            expect(BACKSTAB.enables?.condition).toBe("target-behind-or-unaware");
         });
-        it("has combat and stealth tags", () => {
+        it("has combat, stealth, and thief tags", () => {
             expect(BACKSTAB.tags).toContain("combat");
             expect(BACKSTAB.tags).toContain("stealth");
+            expect(BACKSTAB.tags).toContain("thief");
         });
     });
     describe("Check-type skills", () => {

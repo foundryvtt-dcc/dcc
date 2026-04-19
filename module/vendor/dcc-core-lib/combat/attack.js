@@ -100,6 +100,28 @@ function rollDeedDie(deedDie, roller) {
  *   deedDie: "d4",
  *   targetAC: 15,
  * });
+ *
+ * @example
+ * // Thief backstab: caller precomputes the Table 1-9 bonus and passes
+ * // it via `bonuses` (a full `RollBonus`, not the legacy shape);
+ * // `isBackstab: true` only drives the auto-crit.
+ * const backstabBonus = getBackstabAttackBonus(progression, 3, "chaotic"); // +7
+ * const result = makeAttackRoll({
+ *   attackType: "melee",
+ *   attackBonus: 2,
+ *   actionDie: "d20",
+ *   threatRange: 20,
+ *   abilityModifier: 1,
+ *   targetAC: 13,
+ *   isBackstab: true,
+ *   bonuses: [{
+ *     id: "class:backstab",
+ *     label: "Backstab (Table 1-9)",
+ *     source: { type: "class", id: "thief" },
+ *     category: "inherent",
+ *     effect: { type: "modifier", value: backstabBonus },
+ *   }],
+ * });
  */
 export function makeAttackRoll(input, roller, events) {
     // Compute bonuses
@@ -157,17 +179,33 @@ export function makeAttackRoll(input, roller, events) {
             isHit = total >= input.targetAC;
         }
     }
-    // Critical threat only occurs if:
-    // 1. The roll is in the threat range, AND
-    // 2. The attack actually hits
-    // A roll in threat range that misses is NOT a critical hit
-    const isCriticalThreat = meetsRange && (isHit === undefined || isHit);
+    // Critical threat requires both a roll in the threat range AND a
+    // hit — a threat-range roll that misses is NOT a crit. A backstab
+    // hit auto-crits regardless of the natural roll (DCC core rules).
+    // A natural 1 is always a fumble and can never be a backstab crit,
+    // even when targetAC is omitted (isHit === undefined).
+    const isHitting = isHit === undefined || isHit;
+    const backstabAutoCrit = input.isBackstab === true && isHitting && !isFumble;
+    const threatRangeCrit = meetsRange && isHitting;
+    const isCriticalThreat = threatRangeCrit || backstabAutoCrit;
+    // Determine which cause fired. Threat-range wins if both are true
+    // (the attacker would roll on their class's normal crit table in
+    // that case; backstab-auto only applies when a threat didn't
+    // otherwise occur, and downstream selects Crit Table II).
+    let critSource;
+    if (threatRangeCrit) {
+        critSource = autoHit ? "natural-max" : "threat-range";
+    }
+    else if (backstabAutoCrit) {
+        critSource = "backstab-auto";
+    }
     const result = {
         roll,
         deedRoll,
         totalBonus: totalBonus + deedValue,
         total,
         isCriticalThreat,
+        critSource,
         isFumble,
         isHit,
         appliedModifiers,

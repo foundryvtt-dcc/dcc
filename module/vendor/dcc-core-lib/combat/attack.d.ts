@@ -40,6 +40,28 @@ import type { RollBonus } from "../types/bonuses.js";
  *   deedDie: "d4",
  *   targetAC: 15,
  * });
+ *
+ * @example
+ * // Thief backstab: caller precomputes the Table 1-9 bonus and passes
+ * // it via `bonuses` (a full `RollBonus`, not the legacy shape);
+ * // `isBackstab: true` only drives the auto-crit.
+ * const backstabBonus = getBackstabAttackBonus(progression, 3, "chaotic"); // +7
+ * const result = makeAttackRoll({
+ *   attackType: "melee",
+ *   attackBonus: 2,
+ *   actionDie: "d20",
+ *   threatRange: 20,
+ *   abilityModifier: 1,
+ *   targetAC: 13,
+ *   isBackstab: true,
+ *   bonuses: [{
+ *     id: "class:backstab",
+ *     label: "Backstab (Table 1-9)",
+ *     source: { type: "class", id: "thief" },
+ *     category: "inherent",
+ *     effect: { type: "modifier", value: backstabBonus },
+ *   }],
+ * });
  */
 export declare function makeAttackRoll(input: AttackInput, roller?: DiceRoller, events?: CombatEvents): AttackResult;
 /**

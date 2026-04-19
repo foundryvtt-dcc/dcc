@@ -118,7 +118,6 @@ export interface PSCharacter {
     spells?: PSSpell[];
     spellCheck?: string;
     luckDie?: DieType;
-    backstabMultiplier?: number;
     castSpellFromScrollDie?: DieType;
 }
 /**

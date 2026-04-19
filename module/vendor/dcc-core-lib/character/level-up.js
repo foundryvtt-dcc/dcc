@@ -489,7 +489,6 @@ function buildClassState(classId, _level, _abilities) {
         case "thief":
             state.thief = {
                 luckDie: "d3",
-                backstabMultiplier: 2,
             };
             break;
         case "elf":
@@ -527,7 +526,6 @@ function updateClassState(character, classId, level, attackBonus) {
             classState.thief = {
                 ...classState.thief,
                 luckDie: getThiefLuckDie(level),
-                backstabMultiplier: getBackstabMultiplier(level),
             };
             break;
     }
@@ -548,17 +546,5 @@ function getThiefLuckDie(level) {
     if (level >= 2)
         return "d4";
     return "d3";
-}
-/**
- * Get backstab multiplier by level
- */
-function getBackstabMultiplier(level) {
-    if (level >= 9)
-        return 5;
-    if (level >= 7)
-        return 4;
-    if (level >= 4)
-        return 3;
-    return 2;
 }
 //# sourceMappingURL=level-up.js.map

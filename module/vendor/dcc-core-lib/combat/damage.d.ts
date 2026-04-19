@@ -6,10 +6,9 @@
  * - Strength modifier
  * - Deed die bonus damage (warriors/dwarves)
  * - Magic weapon bonuses
- * - Backstab multipliers (thieves)
  */
 import type { DieType, LegacyRollModifier, DiceRoller } from "../types/dice.js";
-import type { DamageInput, DamageResult, CombatEvents } from "../types/combat.js";
+import type { DamageInput, DamageResult, CombatEvents, WeaponStats } from "../types/combat.js";
 import type { RollBonus } from "../types/bonuses.js";
 /**
  * Roll weapon damage
@@ -34,14 +33,6 @@ import type { RollBonus } from "../types/bonuses.js";
  *   deedDieResult: 4,
  *   magicBonus: 1,
  * });
- *
- * @example
- * // Thief backstab damage
- * const result = rollDamage({
- *   damageDie: "d6",
- *   strengthModifier: 1,
- *   backstabMultiplier: 3,
- * });
  */
 export declare function rollDamage(input: DamageInput, roller?: DiceRoller, events?: CombatEvents): DamageResult;
 /**
@@ -55,12 +46,15 @@ export declare function rollDamage(input: DamageInput, roller?: DiceRoller, even
  */
 export declare function calculateDamageModifier(strengthModifier: number, deedDieResult?: number, magicBonus?: number, bonuses?: RollBonus[]): number;
 /**
- * Get backstab multiplier by thief level
- *
- * @param level - Thief level
- * @returns Backstab damage multiplier
+ * Select the damage die and dice count to roll for a weapon attack,
+ * substituting `weapon.backstabDamage` when `isBackstab` is true
+ * (DCC Table 3-1 footnote). The caller is responsible for gating the
+ * thief-class requirement via `canBackstab(...)` before setting the flag.
  */
-export declare function getBackstabMultiplier(level: number): number;
+export declare function getWeaponDamage(weapon: WeaponStats, isBackstab: boolean): {
+    damageDie: DieType;
+    diceCount: number;
+};
 /**
  * Calculate two-handed weapon damage bonus
  *

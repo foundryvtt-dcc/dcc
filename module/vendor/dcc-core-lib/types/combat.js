@@ -50,6 +50,31 @@ export const COMMON_WEAPONS = {
         isMelee: true,
         isRanged: true,
         range: 10,
+        backstabDamage: { damageDie: "d10" },
+    },
+    blackjack: {
+        name: "Blackjack",
+        damageDie: "d3",
+        isMelee: true,
+        isRanged: false,
+        backstabDamage: { damageDie: "d6", diceCount: 2 },
+    },
+    blowgun: {
+        name: "Blowgun",
+        damageDie: "d3",
+        isMelee: false,
+        isRanged: true,
+        range: 20,
+        backstabDamage: { damageDie: "d5" },
+    },
+    garrote: {
+        name: "Garrote",
+        // RAW: normal damage is a flat 1. Modeled as d1 so the dice
+        // pipeline can roll it uniformly (1d1 always yields 1).
+        damageDie: "d1",
+        isMelee: true,
+        isRanged: false,
+        backstabDamage: { damageDie: "d4", diceCount: 3 },
     },
     shortSword: {
         name: "Short Sword",

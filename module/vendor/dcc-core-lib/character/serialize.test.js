@@ -239,4 +239,22 @@ describe("fixture import regression", () => {
         expect(peek.characterName).toBe("Whisper of the Meadow");
     });
 });
+describe("v1.0 → v1.1 migration", () => {
+    it("strips legacy thief.backstabMultiplier from imported characters", () => {
+        const random = createSeededRandomSource(12345);
+        const result = createZeroLevelCharacter(DEFAULT_CHARACTER_CREATION_DATA, undefined, random);
+        // Simulate a v1.0 export that persisted the removed field.
+        const char = result.character;
+        char.state.classState = { thief: { luckDie: "d3", backstabMultiplier: 3 } };
+        const exported = exportCharacter(result.character);
+        // Downgrade the wrapper version so it looks like a v1.0 export.
+        const downgraded = exported.replace(`"version": "${CHARACTER_FORMAT_VERSION}"`, '"version": "1.0"');
+        const imported = importCharacter(downgraded);
+        expect(imported.success).toBe(true);
+        const thief = imported.character?.state.classState?.thief;
+        expect(thief).toBeDefined();
+        expect(thief?.["luckDie"]).toBe("d3");
+        expect(thief?.["backstabMultiplier"]).toBeUndefined();
+    });
+});
 //# sourceMappingURL=serialize.test.js.map

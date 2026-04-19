@@ -6,8 +6,12 @@
 /**
  * Current export format version.
  * Increment when making breaking changes to the format.
+ *
+ * 1.1 — dropped `ThiefState.backstabMultiplier` (DCC backstab is
+ *       auto-crit + Table 1-9 attack bonus, not a damage multiplier).
+ *       Legacy imports are migrated automatically on read.
  */
-export const CHARACTER_FORMAT_VERSION = "1.0";
+export const CHARACTER_FORMAT_VERSION = "1.1";
 /**
  * Export a character to JSON string.
  *
@@ -93,11 +97,27 @@ export function importCharacter(json) {
             error: validation.error,
         };
     }
+    // Strip fields that were removed from the schema in later versions
+    // so stale data from v1.0 exports doesn't leak into runtime state.
+    const migrated = migrateLegacyCharacter(character);
     return {
         success: true,
-        character: character,
+        character: migrated,
         warnings: warnings.length > 0 ? warnings : undefined,
     };
+}
+/**
+ * Apply in-place migrations for legacy character exports.
+ *
+ * v1.0 → v1.1: Drop `thief.backstabMultiplier` (removed when backstab
+ * was rewritten to the RAW auto-crit + attack-bonus model).
+ */
+function migrateLegacyCharacter(character) {
+    const thief = character.state.classState?.thief;
+    if (thief && "backstabMultiplier" in thief) {
+        delete thief["backstabMultiplier"];
+    }
+    return character;
 }
 /**
  * Validate that an object has the required character structure.

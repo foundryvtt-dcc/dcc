@@ -4,13 +4,13 @@
 import { describe, it, expect } from "vitest";
 import { 
 // Skill definitions
-MIGHTY_DEED, SHIELD_BASH, BACKSTAB_ENABLING, TWO_WEAPON_FIGHTING, LUCK_RECOVERY, LUCK_SHARING, ENABLING_SKILLS, ENABLING_SKILL_IDS, 
+MIGHTY_DEED, SHIELD_BASH, BACKSTAB, TWO_WEAPON_FIGHTING, LUCK_RECOVERY, LUCK_SHARING, ENABLING_SKILLS, ENABLING_SKILL_IDS, 
 // Mighty Deed functions
 getDeedDieFromSkill, getDeedSuccessThreshold, 
 // Shield Bash functions
 canShieldBash, getShieldBashDamageDie, 
 // Backstab functions
-getBackstabMultiplierFromSkill, canBackstab, 
+getBackstabAttackBonus, canBackstab, isBackstabTriggeredRaw, 
 // Two-Weapon Fighting functions
 hasTwoWeaponFighting, getTwoWeaponAttackPenalty, getTwoWeaponInitBonus, 
 // Luck Recovery functions
@@ -103,55 +103,120 @@ describe("Enabling Skills", () => {
             expect(getShieldBashDamageDie()).toBe("d3");
         });
     });
-    describe("BACKSTAB_ENABLING", () => {
+    describe("BACKSTAB", () => {
         it("has correct structure", () => {
-            expect(BACKSTAB_ENABLING.id).toBe("backstab");
-            expect(BACKSTAB_ENABLING.type).toBe("passive");
-            expect(BACKSTAB_ENABLING.enables?.action).toBe("backstab");
-            expect(BACKSTAB_ENABLING.classes).toContain("thief");
+            expect(BACKSTAB.id).toBe("backstab");
+            expect(BACKSTAB.type).toBe("passive");
+            expect(BACKSTAB.enables?.action).toBe("backstab");
+            expect(BACKSTAB.classes).toContain("thief");
         });
-        it("has progression data for all 10 levels", () => {
-            expect(BACKSTAB_ENABLING.progression).toBeDefined();
-            for (let level = 1; level <= 10; level++) {
-                expect(BACKSTAB_ENABLING.progression?.[level]).toBeDefined();
-            }
+        it("grants an auto-crit on Crit Table II", () => {
+            expect(BACKSTAB.enables?.data?.["grantsAutoCrit"]).toBe(true);
+            expect(BACKSTAB.enables?.data?.["critTable"]).toBe("II");
+        });
+        it("requires target anatomy (RAW: clear anatomical vulnerabilities)", () => {
+            expect(BACKSTAB.enables?.data?.["requiresAnatomy"]).toBe(true);
+        });
+        it("does not encode a damage multiplier (per RAW)", () => {
+            // Per DCC core rules, backstab does not apply any damage multiplier.
+            expect(BACKSTAB.enables?.data?.["multipliesDamage"]).toBeUndefined();
+            expect(BACKSTAB.progression).toBeUndefined();
         });
     });
-    describe("getBackstabMultiplierFromSkill", () => {
-        it("returns 1 for level 0", () => {
-            expect(getBackstabMultiplierFromSkill(0)).toBe(1);
+    describe("getBackstabAttackBonus", () => {
+        // Table 1-9 values per DCC core rulebook
+        const thiefProgression = {
+            classId: "thief",
+            name: "Thief",
+            skills: ["backstab"],
+            levels: {
+                1: {
+                    attackBonus: 0, criticalDie: "1d10", criticalTable: "II",
+                    actionDice: ["1d20"], hitDie: "d6",
+                    saves: { ref: 0, frt: 0, wil: 0 },
+                    lawful: { title: "Bravo", skills: { backstab: 1 } },
+                    neutral: { title: "Beggar", skills: { backstab: 0 } },
+                    chaotic: { title: "Thug", skills: { backstab: 3 } },
+                },
+                5: {
+                    attackBonus: 3, criticalDie: "1d20", criticalTable: "II",
+                    actionDice: ["1d20"], hitDie: "d6",
+                    saves: { ref: 3, frt: 1, wil: 2 },
+                    lawful: { title: "Robber", skills: { backstab: 8 } },
+                    neutral: { title: "Burglar", skills: { backstab: 4 } },
+                    chaotic: { title: "Bandit", skills: { backstab: 9 } },
+                },
+                10: {
+                    attackBonus: 7, criticalDie: "1d30+6", criticalTable: "II",
+                    actionDice: ["1d20", "1d16"], hitDie: "d6",
+                    saves: { ref: 7, frt: 3, wil: 4 },
+                    lawful: { title: "Master Thief", skills: { backstab: 13 } },
+                    neutral: { title: "Master Thief", skills: { backstab: 9 } },
+                    chaotic: { title: "Master Thief", skills: { backstab: 15 } },
+                },
+            },
+        };
+        it("returns the Table 1-9 bonus at level 1 per alignment", () => {
+            expect(getBackstabAttackBonus(thiefProgression, 1, "lawful")).toBe(1);
+            expect(getBackstabAttackBonus(thiefProgression, 1, "neutral")).toBe(0);
+            expect(getBackstabAttackBonus(thiefProgression, 1, "chaotic")).toBe(3);
         });
-        it("returns 2 for levels 1-2", () => {
-            expect(getBackstabMultiplierFromSkill(1)).toBe(2);
-            expect(getBackstabMultiplierFromSkill(2)).toBe(2);
+        it("returns the Table 1-9 bonus at level 5 per alignment", () => {
+            expect(getBackstabAttackBonus(thiefProgression, 5, "lawful")).toBe(8);
+            expect(getBackstabAttackBonus(thiefProgression, 5, "neutral")).toBe(4);
+            expect(getBackstabAttackBonus(thiefProgression, 5, "chaotic")).toBe(9);
         });
-        it("returns 3 for levels 3-4", () => {
-            expect(getBackstabMultiplierFromSkill(3)).toBe(3);
-            expect(getBackstabMultiplierFromSkill(4)).toBe(3);
+        it("returns the Table 1-9 bonus at level 10 per alignment", () => {
+            expect(getBackstabAttackBonus(thiefProgression, 10, "lawful")).toBe(13);
+            expect(getBackstabAttackBonus(thiefProgression, 10, "neutral")).toBe(9);
+            expect(getBackstabAttackBonus(thiefProgression, 10, "chaotic")).toBe(15);
         });
-        it("returns 4 for levels 5-6", () => {
-            expect(getBackstabMultiplierFromSkill(5)).toBe(4);
-            expect(getBackstabMultiplierFromSkill(6)).toBe(4);
+        it("returns undefined when the level or alignment is missing", () => {
+            expect(getBackstabAttackBonus(thiefProgression, 99, "lawful")).toBeUndefined();
         });
-        it("returns 5 for levels 7+", () => {
-            expect(getBackstabMultiplierFromSkill(7)).toBe(5);
-            expect(getBackstabMultiplierFromSkill(10)).toBe(5);
-            expect(getBackstabMultiplierFromSkill(15)).toBe(5);
+        it("returns 0 (not undefined) for a legitimate +0 bonus", () => {
+            // L1 neutral thieves legitimately have +0 per Table 1-9.
+            expect(getBackstabAttackBonus(thiefProgression, 1, "neutral")).toBe(0);
+        });
+    });
+    describe("isBackstabTriggeredRaw", () => {
+        it("fires when attacker is behind", () => {
+            expect(isBackstabTriggeredRaw(true, false)).toBe(true);
+        });
+        it("fires when target is unaware", () => {
+            expect(isBackstabTriggeredRaw(false, true)).toBe(true);
+        });
+        it("fires when both are true", () => {
+            expect(isBackstabTriggeredRaw(true, true)).toBe(true);
+        });
+        it("does not fire when neither is true", () => {
+            expect(isBackstabTriggeredRaw(false, false)).toBe(false);
         });
     });
     describe("canBackstab", () => {
-        it("returns true for thief when conditions are met", () => {
-            expect(canBackstab(true, true, "thief")).toBe(true);
+        it("returns true for thief when the trigger is met", () => {
+            expect(canBackstab(true, "thief")).toBe(true);
         });
-        it("returns false when target is not surprised", () => {
-            expect(canBackstab(false, true, "thief")).toBe(false);
+        it("returns false for thief when the trigger is not met", () => {
+            expect(canBackstab(false, "thief")).toBe(false);
         });
-        it("returns false when not behind target", () => {
-            expect(canBackstab(true, false, "thief")).toBe(false);
+        it("returns false when target has no anatomical vulnerabilities", () => {
+            expect(canBackstab(true, "thief", false)).toBe(false);
         });
-        it("returns false for non-thief classes", () => {
-            expect(canBackstab(true, true, "warrior")).toBe(false);
-            expect(canBackstab(true, true, "wizard")).toBe(false);
+        it("returns false for non-thief classes even when triggered", () => {
+            expect(canBackstab(true, "warrior")).toBe(false);
+            expect(canBackstab(true, "wizard")).toBe(false);
+        });
+        it("composes with RAW trigger via isBackstabTriggeredRaw", () => {
+            const triggered = isBackstabTriggeredRaw(false, true); // unaware only
+            expect(canBackstab(triggered, "thief")).toBe(true);
+        });
+        it("allows extensions to supply a broader trigger", () => {
+            // An extension (magic item, homebrew class) might pre-compute
+            // its own trigger by OR-ing the RAW rule with extension conditions.
+            const rawTriggered = isBackstabTriggeredRaw(false, false);
+            const hasAssassinCloak = true;
+            expect(canBackstab(rawTriggered || hasAssassinCloak, "thief")).toBe(true);
         });
     });
     describe("TWO_WEAPON_FIGHTING", () => {
@@ -290,7 +355,7 @@ describe("Enabling Skills", () => {
             expect(Object.keys(ENABLING_SKILLS)).toHaveLength(6);
             expect(ENABLING_SKILLS["mighty-deed"]).toBe(MIGHTY_DEED);
             expect(ENABLING_SKILLS["shield-bash"]).toBe(SHIELD_BASH);
-            expect(ENABLING_SKILLS["backstab"]).toBe(BACKSTAB_ENABLING);
+            expect(ENABLING_SKILLS["backstab"]).toBe(BACKSTAB);
             expect(ENABLING_SKILLS["two-weapon-fighting"]).toBe(TWO_WEAPON_FIGHTING);
             expect(ENABLING_SKILLS["luck-recovery"]).toBe(LUCK_RECOVERY);
             expect(ENABLING_SKILLS["luck-sharing"]).toBe(LUCK_SHARING);

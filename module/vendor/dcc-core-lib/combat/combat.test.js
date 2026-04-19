@@ -4,11 +4,12 @@
  * Tests for attack rolls, damage, critical hits, fumbles, and initiative
  */
 import { describe, it, expect } from "vitest";
+import { COMMON_WEAPONS } from "../types/combat.js";
 import { 
 // Attack
 makeAttackRoll, calculateAttackBonus, doesAttackHit, getAttackAbility, getTwoWeaponPenalty, isDeedSuccessful, 
 // Damage
-rollDamage, getBackstabMultiplier, getTwoHandedDamageDie, buildDamageFormula, applyMinimumDamage, 
+rollDamage, getTwoHandedDamageDie, getWeaponDamage, buildDamageFormula, applyMinimumDamage, 
 // Crits
 rollCritical, determineCritTable, getCritTable, getCritDie, buildCritFormula, parseCritExtraDamage, 
 // Fumbles
@@ -34,6 +35,15 @@ function createSequenceRoller(values) {
         index = (index + 1) % values.length;
         return value;
     };
+}
+/**
+ * Look up a weapon from the common catalog, failing loudly if missing.
+ */
+function getWeapon(key) {
+    const weapon = COMMON_WEAPONS[key];
+    if (!weapon)
+        throw new Error(`${key} missing from COMMON_WEAPONS`);
+    return weapon;
 }
 // =============================================================================
 // Attack Roll Tests
@@ -202,6 +212,151 @@ describe("Attack System", () => {
             expect(result.total).toBe(22); // 19 + 3 deed
             expect(result.isHit).toBe(true); // 22 >= 21 AC
             expect(result.isCriticalThreat).toBe(true); // Crit because 19 is in range AND it hit
+        });
+        it("should auto-crit on a backstab hit regardless of threat range", () => {
+            // Thief rolls 12 (well outside any threat range), hits AC, so per
+            // RAW this is an automatic critical hit on Crit Table II.
+            const roller = createMockRoller(12);
+            const input = {
+                attackType: "melee",
+                attackBonus: 1,
+                actionDie: "d20",
+                threatRange: 20,
+                abilityModifier: 2,
+                targetAC: 13,
+                isBackstab: true,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.roll.natural).toBe(12);
+            expect(result.isHit).toBe(true); // 12 + 1 + 2 = 15 >= 13
+            expect(result.isCriticalThreat).toBe(true);
+        });
+        it("should NOT auto-crit on a backstab miss", () => {
+            // Backstab that misses AC is still a miss; no crit.
+            const roller = createMockRoller(2);
+            const input = {
+                attackType: "melee",
+                attackBonus: 0,
+                actionDie: "d20",
+                threatRange: 20,
+                abilityModifier: 0,
+                targetAC: 15,
+                isBackstab: true,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.isHit).toBe(false);
+            expect(result.isCriticalThreat).toBe(false);
+            expect(result.critSource).toBeUndefined();
+        });
+        it("should NOT auto-crit on a natural 1 backstab (fumble wins)", () => {
+            // A natural 1 is always a fumble and never a crit, even when
+            // isBackstab is set. Regression test for the silent-failure
+            // path where missing targetAC + nat 1 used to crit+fumble both.
+            const roller = createMockRoller(1);
+            const input = {
+                attackType: "melee",
+                attackBonus: 5,
+                actionDie: "d20",
+                threatRange: 20,
+                abilityModifier: 3,
+                targetAC: 10,
+                isBackstab: true,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.isFumble).toBe(true);
+            expect(result.isHit).toBe(false);
+            expect(result.isCriticalThreat).toBe(false);
+            expect(result.critSource).toBeUndefined();
+        });
+        it("should NOT auto-crit on nat 1 backstab even without targetAC", () => {
+            // Same invariant when the caller omits targetAC — we cannot let
+            // "unknown hit" upgrade a fumble into a crit.
+            const roller = createMockRoller(1);
+            const input = {
+                attackType: "melee",
+                attackBonus: 0,
+                actionDie: "d20",
+                threatRange: 20,
+                abilityModifier: 0,
+                isBackstab: true,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.isFumble).toBe(true);
+            expect(result.isCriticalThreat).toBe(false);
+            expect(result.critSource).toBeUndefined();
+        });
+        it("tags the critSource as 'backstab-auto' on a backstab auto-crit", () => {
+            const roller = createMockRoller(12);
+            const input = {
+                attackType: "melee",
+                attackBonus: 1,
+                actionDie: "d20",
+                threatRange: 20,
+                abilityModifier: 2,
+                targetAC: 13,
+                isBackstab: true,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.isCriticalThreat).toBe(true);
+            expect(result.critSource).toBe("backstab-auto");
+        });
+        it("tags the critSource as 'threat-range' on a normal threat-range crit", () => {
+            const roller = createMockRoller(19);
+            const input = {
+                attackType: "melee",
+                attackBonus: 3,
+                actionDie: "d20",
+                threatRange: 19,
+                abilityModifier: 2,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.isCriticalThreat).toBe(true);
+            expect(result.critSource).toBe("threat-range");
+        });
+        it("tags the critSource as 'natural-max' on a natural-20 auto-hit crit", () => {
+            const roller = createMockRoller(20);
+            const input = {
+                attackType: "melee",
+                attackBonus: 0,
+                actionDie: "d20",
+                threatRange: 20,
+                abilityModifier: 0,
+                targetAC: 50,
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.isCriticalThreat).toBe(true);
+            expect(result.critSource).toBe("natural-max");
+        });
+        it("applies a precomputed backstab RollBonus end-to-end (Table 1-9 wiring)", () => {
+            // Regression test for the full backstab contract: the caller
+            // precomputes the Table 1-9 bonus (L3 Chaotic = +7), passes it
+            // as a full RollBonus, and sets isBackstab: true — the bonus
+            // lands in totalBonus AND the hit auto-crits.
+            const roller = createMockRoller(10);
+            const input = {
+                attackType: "melee",
+                attackBonus: 1,
+                actionDie: "d20",
+                threatRange: 20,
+                abilityModifier: 2,
+                targetAC: 20,
+                isBackstab: true,
+                bonuses: [
+                    {
+                        id: "class:backstab",
+                        label: "Backstab (Table 1-9)",
+                        source: { type: "class", id: "thief" },
+                        category: "inherent",
+                        effect: { type: "modifier", value: 7 },
+                    },
+                ],
+            };
+            const result = makeAttackRoll(input, roller);
+            expect(result.totalBonus).toBe(10); // 1 attack + 2 abil + 7 backstab
+            expect(result.total).toBe(20); // 10 + 10
+            expect(result.isHit).toBe(true); // 20 >= 20
+            expect(result.isCriticalThreat).toBe(true);
+            expect(result.critSource).toBe("backstab-auto");
         });
         it("should apply two-weapon fighting penalty", () => {
             const roller = createMockRoller(15);
@@ -372,7 +527,6 @@ describe("Damage System", () => {
             expect(result.baseDamage).toBe(6);
             expect(result.modifierDamage).toBe(2);
             expect(result.total).toBe(8);
-            expect(result.multiplier).toBe(1);
         });
         it("should add deed die result to damage", () => {
             const roller = createMockRoller(5);
@@ -397,18 +551,6 @@ describe("Damage System", () => {
             expect(result.modifierDamage).toBe(3); // 1 + 2
             expect(result.total).toBe(7);
         });
-        it("should apply backstab multiplier", () => {
-            const roller = createMockRoller(4);
-            const input = {
-                damageDie: "d6",
-                strengthModifier: 2,
-                backstabMultiplier: 3,
-            };
-            const result = rollDamage(input, roller);
-            expect(result.subtotal).toBe(6); // 4 + 2
-            expect(result.multiplier).toBe(3);
-            expect(result.total).toBe(18); // 6 * 3
-        });
         it("should enforce minimum 1 damage", () => {
             const roller = createMockRoller(1);
             const input = {
@@ -416,21 +558,49 @@ describe("Damage System", () => {
                 strengthModifier: -3,
             };
             const result = rollDamage(input, roller);
-            expect(result.subtotal).toBe(-2); // 1 - 3
-            expect(result.total).toBe(1); // Minimum 1
+            expect(result.total).toBe(1); // Minimum 1 (1 - 3 would be -2)
         });
     });
-    describe("getBackstabMultiplier", () => {
-        it("should return correct multipliers by level", () => {
-            expect(getBackstabMultiplier(0)).toBe(1);
-            expect(getBackstabMultiplier(1)).toBe(2);
-            expect(getBackstabMultiplier(2)).toBe(2);
-            expect(getBackstabMultiplier(3)).toBe(3);
-            expect(getBackstabMultiplier(4)).toBe(3);
-            expect(getBackstabMultiplier(5)).toBe(4);
-            expect(getBackstabMultiplier(6)).toBe(4);
-            expect(getBackstabMultiplier(7)).toBe(5);
-            expect(getBackstabMultiplier(10)).toBe(5);
+    describe("getWeaponDamage (backstab-friendly weapons)", () => {
+        it("returns normal damage when isBackstab is false", () => {
+            expect(getWeaponDamage(getWeapon("dagger"), false)).toEqual({
+                damageDie: "d4",
+                diceCount: 1,
+            });
+        });
+        it("returns alternate damage when isBackstab is true and weapon has backstabDamage", () => {
+            expect(getWeaponDamage(getWeapon("dagger"), true)).toEqual({
+                damageDie: "d10",
+                diceCount: 1,
+            });
+        });
+        it("returns normal damage on backstab when weapon has no backstabDamage", () => {
+            expect(getWeaponDamage(getWeapon("longsword"), true)).toEqual({
+                damageDie: "d8",
+                diceCount: 1,
+            });
+        });
+        it("honors multi-dice backstab expressions", () => {
+            expect(getWeaponDamage(getWeapon("blackjack"), true)).toEqual({
+                damageDie: "d6",
+                diceCount: 2,
+            });
+            expect(getWeaponDamage(getWeapon("garrote"), true)).toEqual({
+                damageDie: "d4",
+                diceCount: 3,
+            });
+        });
+        it("encodes the 4 Table 3-1 backstab weapons", () => {
+            expect(getWeapon("dagger").backstabDamage).toEqual({ damageDie: "d10" });
+            expect(getWeapon("blackjack").backstabDamage).toEqual({
+                damageDie: "d6",
+                diceCount: 2,
+            });
+            expect(getWeapon("blowgun").backstabDamage).toEqual({ damageDie: "d5" });
+            expect(getWeapon("garrote").backstabDamage).toEqual({
+                damageDie: "d4",
+                diceCount: 3,
+            });
         });
     });
     describe("getTwoHandedDamageDie", () => {

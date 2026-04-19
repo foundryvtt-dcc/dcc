@@ -699,7 +699,6 @@ describe("convertPSCharacter", () => {
         expect(character.classInfo?.classId).toBe("thief");
         expect(character.classInfo?.level).toBe(5);
         expect(character.state.classState?.thief?.luckDie).toBe("d7");
-        expect(character.state.classState?.thief?.backstabMultiplier).toBe(4);
     });
     it("converts wizard with spellbook", () => {
         const result = parsePurpleSorcerer(WIZARD_TEXT);

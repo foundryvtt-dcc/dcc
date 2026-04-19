@@ -7,8 +7,12 @@ import type { Character } from "../types/character.js";
 /**
  * Current export format version.
  * Increment when making breaking changes to the format.
+ *
+ * 1.1 — dropped `ThiefState.backstabMultiplier` (DCC backstab is
+ *       auto-crit + Table 1-9 attack bonus, not a damage multiplier).
+ *       Legacy imports are migrated automatically on read.
  */
-export declare const CHARACTER_FORMAT_VERSION = "1.0";
+export declare const CHARACTER_FORMAT_VERSION = "1.1";
 /**
  * Exported character wrapper with metadata.
  */

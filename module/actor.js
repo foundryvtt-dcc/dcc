@@ -3151,8 +3151,6 @@ class DCCActor extends Actor {
         natural: naturalDamage,
         baseDamage: libResult.baseDamage,
         modifierDamage: libResult.modifierDamage,
-        subtotal: libResult.subtotal,
-        multiplier: libResult.multiplier,
         total: libResult.total,
         breakdown: libResult.breakdown
       }

@@ -166,12 +166,14 @@ export interface WizardState {
 }
 /**
  * Thief-specific state
+ *
+ * Note: backstab mechanics are derived, not stored. The attack bonus
+ * comes from class progression (alignment + level), and the auto-crit
+ * is inherent to the class — nothing to persist here.
  */
 export interface ThiefState {
     /** Luck die for spending luck */
     luckDie: DieType;
-    /** Backstab damage multiplier */
-    backstabMultiplier: number;
 }
 /**
  * Warrior-specific state

@@ -87,9 +87,8 @@ export function extractWeaponMagicBonus (weapon) {
  * For the simplest-damage slice, the formula already bakes in the
  * strength modifier + any other Foundry-side derivations from
  * `computeMeleeAndMissileAttackAndDamage`. We pass the flat modifier
- * as `strengthModifier` and leave `deedDieResult` /
- * `backstabMultiplier` absent — the gate ensures those cases don't
- * reach here.
+ * as `strengthModifier` and leave `deedDieResult` absent — the gate
+ * ensures those cases don't reach here.
  *
  * NPC damage-bonus adjustment (Phase 3 session 7): when present, the
  * `rollWeaponAttack` body baked it into the formula's flat modifier
