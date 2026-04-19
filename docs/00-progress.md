@@ -6,7 +6,24 @@
 
 ## Current phase
 
-**Phase 3 — ACTIVE. Session 1 (2026-04-18) shipped the Spellburn
+**Phase 3 — ACTIVE. Session 2 (2026-04-18) landed the first attack-
+migration slice.** `DCCActor.rollToHit` is now a dispatcher:
+simplest-weapon happy-path (no deed, no backstab, no two-weapon, no
+`showModifierDialog`, `automateDamageFumblesCrits` on, simple numeric
+`weapon.system.toHit`) routes through `_rollToHitViaAdapter`;
+everything else through `_rollToHitLegacy` (pre-dispatcher body
+verbatim). The adapter path preserves the legacy terms /
+`dcc.modifyAttackRollTerms` / `DCCRoll.createRoll` pipeline for chat
+rendering and hook compatibility, but after evaluation feeds the
+natural d20 into the lib's `makeAttackRoll` so the lib owns classification
++ the `appliedModifiers` list that surfaces as `dcc.libResult` on the
+chat flags. dcc-qol's `applyFiringIntoMeleePenalty` and
+`applyRangeChecksAndPenalties` keep working unchanged (same hook, same
+`terms` shape). 803 Vitest tests pass (up from 794); all 26 Playwright
+dispatch tests pass against live v14 Foundry (verified 2026-04-18,
+3.0 min run).
+
+**Phase 3 — session 1 (2026-04-18) shipped the Spellburn
 dialog-adapter scaffold.** Open question #6 resolved: the adapter path
 for wizard / elf casts with `options.showModifierDialog` now prompts a
 DialogV2-based Spellburn input adapter-side (`module/adapter/roll-dialog.mjs`),
@@ -14,8 +31,6 @@ forwards the resulting `SpellburnCommitment` as `options.spellburn`, and
 delegates to `_rollSpellCheckViaAdapter` — which already knew how to
 apply the burn via `onSpellburnApplied`. The prior latent regression
 (wizard adapter casts silently skipping the Spellburn UI) is fixed.
-No attack / damage / crit / fumble migration in this session; attack
-scaffolding is session 2.
 
 **Phase 2 — CLOSED 2026-04-18.** Both gates resolved. See the Phase 2
 close-out section below for decisions + hand-off.
@@ -312,18 +327,167 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 3 — attack / damage / crit / fumble migration. Session 1
-(2026-04-18, this session) scaffolded the adapter-side roll dialog
-and closed open question #6 (Spellburn dialog integration). Session 2
-is the first attack migration — the `rollWeaponAttack` dispatcher
-plus an `_rollWeaponAttackViaAdapter` path for the simplest weapon
-(no deed die, no backstab, no two-weapon). `dcc.modifyAttackRollTerms`
-preservation is the gate: dcc-qol has two active handlers
-(`applyFiringIntoMeleePenalty`, `applyRangeChecksAndPenalties`) that
-must keep firing. Lib-side wave-3 combat modifier migration remains
-pending — session 2 can emit / consume `LegacyRollModifier[]` the
-same way spells do, per the wave-2-not-required precedent
-(Phase 2 session 2 scope decisions).
+Phase 3 — attack / damage / crit / fumble migration. Session 2
+(2026-04-18) landed the first attack-migration slice (simplest-weapon
+happy-path through `rollToHit`); see the thirteenth-session entry
+below for detail. Session 3 picks up the next slice — candidates
+include deed-die migration (warriors / dwarves), hook-translator
+upgrade for `dcc.modifyAttackRollTerms` (so the adapter can map
+injected `Modifier` terms to lib `bonuses`), or attack-modifier
+dialog-adapter extension (open question #7). Lib-side wave-3 combat
+modifier migration remains pending — session 2's implementation
+carries the Phase 2 precedent (emit/consume `LegacyRollModifier[]`
+until wave 3 ships).
+
+### Session 2026-04-18 (thirteenth session — Phase 3, session 2)
+
+Phase 3 session 2 — first attack migration slice landed.
+
+- **Dispatcher in `DCCActor.rollToHit`.** New `_canRouteAttackViaAdapter`
+  gate routes through the adapter when ALL of:
+  - `options.showModifierDialog` falsy
+  - `options.backstab` falsy
+  - `weapon.system.twoWeaponPrimary` / `twoWeaponSecondary` both falsy
+  - `actor.system.details.attackBonus` has no `d` (no actor-side deed
+    die)
+  - `weapon.system.toHit` has no `d` (weapon-side to-hit is simple
+    numeric)
+  - `game.settings.get('dcc', 'automateDamageFumblesCrits')` truthy
+
+  Any failure → `_rollToHitLegacy` (the pre-dispatcher body verbatim).
+  Both branches call `logDispatch('rollWeaponAttack', ...)` as the
+  first line (same permanent-infrastructure contract as Phase 1/2).
+- **`_rollToHitViaAdapter`.** Structurally mirrors legacy for Foundry
+  compatibility: builds the same `terms` array (action die + `+toHit`
+  compound, NPC attack adjustment if present), fires the
+  `dcc.modifyAttackRollTerms` hook, builds + evaluates a `Roll` via
+  `game.dcc.DCCRoll.createRoll` (preserves chat rendering). After
+  evaluation the natural d20 feeds into the lib's `makeAttackRoll` with
+  a deterministic sync roller (`() => d20RollResult`) and an
+  `AttackInput` built from `buildAttackInput(actor, weapon)`. The lib's
+  `isCriticalThreat` / `isFumble` / `appliedModifiers` populate a new
+  `libResult` field on the return object; `rollWeaponAttack` surfaces
+  it as `flags['dcc.libResult']` on the chat flags.
+- **`module/adapter/attack-input.mjs`** — new file.
+  - `buildAttackInput(actor, weapon)` returns `{ attackType,
+    attackBonus, actionDie, threatRange, abilityModifier }`. For the
+    happy-path slice, `attackBonus` carries the fully-summed
+    `weapon.system.toHit` (which already bakes in class attack bonus
+    + ability mod + adjustments via
+    `computeMeleeAndMissileAttackAndDamage` + `DCCItem.prepareBaseData`),
+    and `abilityModifier` stays at 0 to avoid double-counting. Later
+    slices with deed die / backstab will need the split apart.
+  - `normalizeLibDie` converts Foundry-style `'1d20'` to the lib's
+    `'d20'` shape (same helper pattern as `spell-input.mjs`).
+  - `parseToHitBonus` parses signed-integer toHit strings; the gate
+    rejects dice toHits before `buildAttackInput` runs so the parser
+    can assume numeric input.
+- **`module/adapter/attack-events.mjs`** — stub. Header JSDoc lists the
+  callback surface sessions 3+ will wire (`onAttackRoll`,
+  `onCriticalThreat`, `onFumbleRoll`, `onDamageRoll`, `onDeedAttempt`)
+  once damage / crit / fumble rolls migrate off their current Foundry
+  `getCritTableResult` / `getFumbleTableResult` paths. Empty
+  `export {}` body — the simplest-weapon happy-path has no side
+  effects.
+- **`dcc.modifyAttackRollTerms` preservation.** The adapter path still
+  fires the hook with the legacy-shape `terms` array before the Roll
+  evaluates. dcc-qol's `applyFiringIntoMeleePenalty` and
+  `applyRangeChecksAndPenalties` mutate the array in place; those
+  modifications flow into `DCCRoll.createRoll` unchanged. A future
+  slice will need to also reflect any injected `Modifier` terms into
+  the lib's `bonuses` so `libResult.total` agrees with the Foundry
+  `Roll.total` — session 2 keeps the Foundry Roll as the source of
+  truth for the display / chat total, so the divergence is
+  observational only.
+- **Tests**:
+  - `module/__tests__/adapter-weapon-attack.test.js` — new file
+    (9 tests). `vi.mock('../adapter/debug.mjs')` replaces
+    `logDispatch` with a spy (vitest's reporter captures
+    `console.log` before spies see it; mocking the helper is the
+    reliable signal). Cases: adapter fires for the simplest weapon
+    with automate on; adapter result carries `libResult` with
+    `die='d20'` + `modifiers[]`; legacy fires when automate is off,
+    backstab set, `showModifierDialog` set, `twoWeaponPrimary` set,
+    or actor has a deed-die attackBonus; `buildAttackInput` unit
+    coverage for melee + missile weapons with different toHit signs.
+  - `browser-tests/e2e/phase1-adapter-dispatch.spec.js` — four new
+    cases in a `rollWeaponAttack` describe block: simplest happy
+    path → adapter with `weapon=<name>`; `options.backstab` →
+    legacy; `options.showModifierDialog` → legacy (fire-and-forget
+    past the modal); automate off → legacy. **All 26 tests pass
+    against live v14 Foundry** (verified 2026-04-18, 3.0 min run).
+  - `module/__tests__/actor.test.js` tests for `rollWeaponAttack`
+    (`roll weapon attack dagger` at line 260, `rollWeaponAttack
+    creates attack roll` at line 1515, `rollToHit with basic weapon`
+    at line 1554) keep passing unchanged: the mock's
+    `automateDamageFumblesCrits` default is `undefined` → gate fails
+    → legacy path → same `DCCRoll.createRoll` assertions hold.
+  - 803 Vitest tests pass (up from 794). `npm run format` + `npm run
+    compare-lang` clean.
+
+**Scope decisions (Phase 3 session 2):**
+
+- **Dispatcher at `rollToHit`, not `rollWeaponAttack`.** `rollWeaponAttack`
+  is 300+ lines of damage / crit / fumble / chat orchestration that
+  session 2 doesn't migrate. Duplicating it into `_rollWeaponAttackLegacy`
+  + `_rollWeaponAttackViaAdapter` would double the tail for no
+  behavioral gain. Splitting at `rollToHit` keeps the migration
+  focused on the attack roll itself and lets `rollWeaponAttack`
+  propagate `libResult` as a single new field on the return object.
+  Future sessions that migrate the damage / crit / fumble chain can
+  revisit — but the natural split is per-roll, not per-method.
+- **Adapter path still goes through `DCCRoll.createRoll`, not the
+  lib's own roller.** The lib's `makeAttackRoll` rolls `1${actionDie}`
+  only — it deliberately doesn't construct a full attack formula or
+  render chat. The Foundry `Roll` object is still the source of truth
+  for display (chat card per-die breakdown, DSN animation,
+  FleetingLuck tagging, crit/fumble highlighting). Feeding the natural
+  d20 into the lib after evaluation validates the bridge
+  end-to-end — lib's `isCriticalThreat` / `isFumble` can be
+  cross-checked against the Foundry-derived `fumble === (d20 === 1)`
+  / `naturalCrit === (d20 >= critRange)` — without losing any of the
+  Foundry presentation layer.
+- **`dcc.libResult` on flags, not a new chat renderer.** Phase 1/2
+  renderers (`renderAbilityCheck`, `renderSavingThrow`,
+  `renderSkillCheck`, `renderSpellCheck`) emit their own `ChatMessage`
+  shape because those rolls have simple, uniform chat cards.
+  `rollWeaponAttack`'s chat card is a complex Handlebars template with
+  per-roll breakdowns for attack / damage / crit / fumble — renaming
+  that would regress every attack presentation. Instead the adapter
+  attaches `libResult` to `messageData.flags['dcc.libResult']` so the
+  existing chat template is untouched. When the lib grows a structured
+  combat chat renderer (wave 3), the renderer can read from the same
+  flag without a breaking change.
+- **`abilityModifier: 0` with `attackBonus: parsed toHit`.**
+  `weapon.system.toHit` at roll time has already absorbed the ability
+  modifier via `DCCItem.prepareBaseData` → reads
+  `actor.system.details.attackHitBonus.melee.value` which
+  `computeMeleeAndMissileAttackAndDamage` sums str/agl into. Passing
+  both would double-count. The lib is content with either split —
+  `totalBonus` is just `attackBonus + abilityModifier + bonuses`. When
+  the hook-translator slice lands and `dcc.modifyAttackRollTerms`
+  injected terms need to appear in the lib's `bonuses`, the clean
+  split is: base `attackBonus` from `actor.system.details.attackBonus`,
+  `abilityModifier` split out separately, and any hook-added terms
+  mapped to `bonuses[]`. Session 2 deferred that.
+- **Wave-3 lib modifier migration still not required.** `makeAttackRoll`
+  emits `appliedModifiers` as `LegacyRollModifier[]` — same flat
+  `{ source, value }` shape spells / combat use until wave 3 ships in
+  the lib. The `dcc.libResult.modifiers` flag inherits that shape. No
+  consumer reads it today; when the lib migrates combat to the
+  tagged-union `RollModifier`, renderers can adapt in one place
+  without the adapter changing.
+- **Logs vs. spies.** The Phase 1/2 unit tests assert on
+  `logDispatch` console.log output via `vi.spyOn(console, 'log')`.
+  Session 2 discovered that vitest's reporter intercepts
+  `console.log` before spies can see it — the output prints to the
+  test runner but doesn't land in `spy.mock.calls`. Switched to
+  `vi.mock('../adapter/debug.mjs', () => ({ logDispatch: vi.fn() }))`
+  so the dispatch-path assertions are deterministic. Earlier adapter
+  tests work because they use downstream observable assertions
+  (`rollToMessage` call-count, flag structure) rather than spying on
+  the log itself. If a later session migrates those tests, use the
+  same `vi.mock` pattern.
 
 ### Session 2026-04-18 (sixth session — Phase 2, session 1)
 
@@ -1204,8 +1368,8 @@ Actions taken:
 
 ## Next steps
 
-**Phase 3 — session 1 (dialog-adapter) is complete.** Session 2 is
-the first attack migration.
+**Phase 3 — session 2 (first attack migration slice) complete.**
+Session 3 picks up the next slice.
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
@@ -1215,34 +1379,41 @@ the first attack migration.
   point) by translating from the lib's modifier list. Emit site in
   `actor.js` at the `rollToHit` path; dcc-qol's active handlers
   (`applyFiringIntoMeleePenalty`, `applyRangeChecksAndPenalties`)
-  read / mutate the `terms` array. A translator helper in the adapter
-  can convert lib `LegacyRollModifier[]` → terms for the hook call,
-  then translate back; or hook the `terms` array first, run the
-  lib pipeline on the translated modifier list.
+  read / mutate the `terms` array. Session 2 kept the hook firing
+  with the legacy `terms` shape; later slices need to reflect any
+  hook-injected `Modifier` terms into the lib's `bonuses[]` so
+  `libResult.total` agrees with the Foundry Roll.
 - Wave 3 modifier migration on the lib side (combat subsystems) lands
-  alongside Phase 3 sessions. Session 2 can emit `LegacyRollModifier[]`
-  (Phase 2 session 2 precedent — wave-2-not-required). Flag lib-side
-  gaps early; sync via `npm run sync-core-lib` when the lib ships a
-  wave-3 release.
+  alongside Phase 3 sessions. Session 2's attack bridge emits
+  `LegacyRollModifier[]` (Phase 2 precedent). Flag lib-side gaps
+  early; sync via `npm run sync-core-lib` when the lib ships a wave-3
+  release.
 
-**Session 2 pick-up** — Attack migration scaffold. Options:
-(a) **Simplest-weapon happy-path adapter**: weapon with no deed die,
-   no backstab, no two-weapon, no `showModifierDialog`. Validates the
-   `makeAttackRoll` bridge end-to-end. `_rollWeaponAttackViaAdapter` +
-   `_rollWeaponAttackLegacy` dispatch; legacy takes every non-happy-
-   path case verbatim.
-(b) **Hook-translation infrastructure**: build the adapter-side
-   translator for `dcc.modifyAttackRollTerms` first, so later
-   attack-adapter slices inherit working dcc-qol integration. No
-   migration yet.
-(c) **Extend `module/adapter/roll-dialog.mjs`** with an attack-
-   modifier prompt (the generalized roll-dialog), preparing for the
-   `showModifierDialog` attack case.
+**Session 3 pick-up** — Options (session 2 Playwright validation is
+already green, so session 3 can widen the adapter):
+(b) **Hook-translation infrastructure**: teach the adapter to map
+   `dcc.modifyAttackRollTerms`-injected `Modifier` terms into the
+   lib's `bonuses[]`. Once this lands, dcc-qol's firing-into-melee /
+   range penalties appear in `libResult.appliedModifiers` — one step
+   closer to wave-3 readiness.
+(c) **Broaden the happy-path gate**: pick ONE excluded case
+   (backstab, or simplest weapon with automate=off) and drive it
+   through the adapter. Backstab is attractive because the lib has
+   `isBackstab` / `getBackstabMultiplier` but the legacy code treats
+   backstab as an auto-crit (see `rollToHit:2855`), which diverges
+   from RAW. Resolving that is a design call.
+(d) **Deed-die adapter path** (warriors / dwarves). Requires plumbing
+   `deedDie` into `AttackInput` and extracting the rolled deed from
+   Foundry's attack roll's `dice[1]`. Non-trivial but high-value —
+   exercises the lib's `onDeedAttempt` callback.
+(e) **Attack-modifier dialog** (open question #7 tie-in): extend
+   `module/adapter/roll-dialog.mjs` with an attack-modifier prompt
+   before driving a broader adapter path. The Spellburn dialog is
+   the only current consumer; generalizing the scaffold ahead of a
+   second consumer keeps the design grounded.
 
-Lean (a) for session 2. The simplest happy-path is the smallest
-possible test of the bridge; (b) without a consumer is infrastructure
-without validation; (c) is premature until attacks flow through the
-adapter at all.
+Lean (b) for session 3 — hook-translation is the cleanest next
+bridge expansion now that the happy-path is green against live v14.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

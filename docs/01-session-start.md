@@ -23,28 +23,33 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 1 closed. Phase 2 CLOSED 2026-04-18. Phase 3 —
+**Status:** **Phase 1 closed. Phase 2 CLOSED 2026-04-18. Phase 3
 session 1 (dialog-adapter) CLOSED 2026-04-18. Phase 3 session 2
-(first attack-migration slice) is the active work.** Phase 2
-close-out pinned two decisions: (a) `game.dcc.processSpellCheck` is
-permanent stable API — no deprecation, no shim, route migration is
-per-call-site and incremental; (b) `_runLegacyPatronTaint` is
-permanent adapter infrastructure — RAW alignment deferred to backlog.
-Phase 3 session 1 closed open question #6 via a dialog-adapter
-(`module/adapter/roll-dialog.mjs` + `promptSpellburnCommitment`); the
-latent regression where wizard adapter casts silently lost the
-Spellburn UI is fixed. See `docs/00-progress.md` for full rationale.
+(first attack-migration slice) CLOSED 2026-04-18. Phase 3 session 3
+is the active work.** Phase 2 close-out pinned two decisions:
+(a) `game.dcc.processSpellCheck` is permanent stable API — no
+deprecation, no shim, route migration is per-call-site and
+incremental; (b) `_runLegacyPatronTaint` is permanent adapter
+infrastructure — RAW alignment deferred to backlog. Phase 3 session
+1 closed open question #6 via a dialog-adapter
+(`module/adapter/roll-dialog.mjs` + `promptSpellburnCommitment`).
+Phase 3 session 2 split `DCCActor.rollToHit` into a dispatcher +
+`_rollToHitLegacy` + `_rollToHitViaAdapter`; the adapter path routes
+the simplest-weapon happy-path through the lib's `makeAttackRoll`
+while preserving `dcc.modifyAttackRollTerms` and the Foundry chat
+render path. See `docs/00-progress.md` for full rationale.
 
-**Phase 2 + 3 session-1 infrastructure session 2 builds on:**
+**Phase 2 + 3 sessions 1–2 infrastructure session 3 builds on:**
 
-- `DCCActor.rollSpellCheck` is a dispatcher (`_castViaCastSpell` /
-  `_castViaCalculateSpellCheck` + legacy fall-through). The same
-  two-pass formula/evaluate pattern is the template for session 2's
-  `_rollWeaponAttackViaAdapter`.
+- `DCCActor.rollSpellCheck` + `DCCActor.rollToHit` are both
+  dispatchers. The two-pass formula/evaluate pattern (spell side)
+  and the adapter-path-with-legacy-roll pattern (attack side, session
+  2) are the templates for future slices.
 - Adapter modules: `module/adapter/{character-accessors,
   foundry-roller, chat-renderer, spell-input, spell-events,
-  roll-dialog, debug}.mjs`. Session 2 will likely add
-  `attack-input.mjs` + `attack-events.mjs` alongside these.
+  attack-input, attack-events, roll-dialog, debug}.mjs`. Session 2
+  added `attack-input.mjs` (buildAttackInput) + `attack-events.mjs`
+  (stub — combat events wire later).
 - `module/adapter/roll-dialog.mjs` (added session 1) currently
   exports `promptSpellburnCommitment` only. When the attack /
   damage dialog needs its own prompt, **extend this file** — don't
@@ -53,26 +58,26 @@ Spellburn UI is fixed. See `docs/00-progress.md` for full rationale.
 - `@moonloch/dcc-core-lib@0.4.0` vendored at
   `module/vendor/dcc-core-lib/`. Wave-1 modifier redesign covers
   checks / skills / dice / cleric; **combat subsystems still use
-  `LegacyRollModifier` pending wave 3.** Session 1 confirmed
-  `src/combat/*.ts` all still import `LegacyRollModifier`.
-  Session 2 can emit / consume `LegacyRollModifier[]` on the attack
-  bridge (Phase 2 session 2 precedent — wave-2-not-required).
+  `LegacyRollModifier` pending wave 3.** Session 2's attack bridge
+  emits `LegacyRollModifier[]` via `makeAttackRoll`'s
+  `appliedModifiers`; downstream consumers surface it through
+  `flags['dcc.libResult'].modifiers`.
 - `module/adapter/debug.mjs` + `logDispatch('rollXxx',
-  'adapter'|'legacy', details)` is PERMANENT. Every
-  `_xxxViaAdapter` / `_xxxLegacy` added in Phase 3 must call
-  `logDispatch` as its first line. The Playwright
-  `phase1-adapter-dispatch.spec.js` extends to cover new branches.
-- **Baseline:** 794 Vitest tests pass (790 at Phase 2 close + 4
-  session-1 dialog-bridge tests). Playwright spec not extended in
-  session 1 (DialogV2 UI not covered).
+  'adapter'|'legacy', details)` is PERMANENT. Session 2 wired
+  `logDispatch('rollWeaponAttack', ...)` in both branches. Every
+  future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
+- **Baseline:** 803 Vitest tests pass (794 at session 1 close + 9
+  session-2 weapon-attack tests) + 26 Playwright dispatch tests pass
+  against live v14 Foundry (verified 2026-04-18 at session 2 close).
 
-**This session's goal:** **Phase 3 session 2 — first attack
-migration slice.**
+**This session's goal:** **Phase 3 session 3 — next attack-migration
+slice.**
 
-The simplest weapon happy-path through the adapter: no deed die, no
-backstab, no two-weapon, no `showModifierDialog`,
-`automateDamageFumblesCrits` on. Validates the `makeAttackRoll`
-bridge end-to-end. Legacy takes every non-happy-path case verbatim.
+Session 2 landed the simplest-weapon happy-path through the adapter.
+Session 3 picks up one of the options in `00-progress.md §Next steps`
+— leaning (a) validate session 2's browser tests against live v14
+Foundry, then (b) hook-translator for `dcc.modifyAttackRollTerms` so
+dcc-qol-injected terms flow into the lib's `bonuses[]`.
 
 Phase 3 as a whole is the largest migration so far:
 `rollWeaponAttack` → `makeAttackRoll` + `rollDamage` + `rollCritical`
@@ -92,47 +97,37 @@ handlers (`applyFiringIntoMeleePenalty`, `applyRangeChecksAndPenalties`
 at `../../modules/dcc-qol/scripts/hooks/listeners.js:25-27`) keep
 working.
 
-### Session 8 slice — Phase 3, session 2 (first attack adapter path)
+### Session 9 slice — Phase 3, session 3 (next attack slice)
 
-1. **Read first** — `docs/00-progress.md` (Phase 3 session 1 scope
-   decisions + session 2 pick-up + Blockers / open questions),
+1. **Read first** — `docs/00-progress.md` (Phase 3 session 2 entry +
+   Next steps options + Blockers / open questions),
    `docs/dev/ARCHITECTURE_REIMAGINED.md §7 Phase 3`, `module/actor.js`
-   `rollWeaponAttack` (line ~2388) + `rollToHit` +
-   `dcc.modifyAttackRollTerms` emit site (line 2766), dcc-qol's
-   `modifyAttackRollTerms` handlers in `../../modules/dcc-qol/
-   scripts/hooks/attackRollHooks.js`. Also check if the lib has
-   shipped wave-3 modifier support for combat —
-   `module/vendor/dcc-core-lib/VERSION.json` shows the current
-   pinned version; if wave-3 has landed, sync + refactor accordingly.
+   `rollToHit` dispatcher (line ~2719), `_rollToHitViaAdapter` (line
+   ~2787), `_rollToHitLegacy` (line ~2896), `module/adapter/
+   attack-input.mjs`. Check
+   `module/vendor/dcc-core-lib/VERSION.json` — if wave-3 lib support
+   has landed, sync + refactor accordingly.
 
-2. **Pick the session slice.** Options:
-   (a) **Simplest-weapon happy-path adapter** (recommended for
-       session 2): weapon with no deed die, no backstab, no two-
-       weapon, no `showModifierDialog`. Dispatch routes only this
-       case through the adapter; everything else → legacy.
-   (b) **Hook-translation infrastructure first**: build the adapter-
-       side translator for `dcc.modifyAttackRollTerms` so later
-       slices inherit working dcc-qol integration. No migration yet.
-   (c) **Dialog-adapter generalization**: extend
-       `module/adapter/roll-dialog.mjs` with an attack-modifier
-       prompt ahead of the attack-migration. Premature until attacks
-       flow through the adapter at all.
+2. **Pick the session slice** (per `00-progress.md §Next steps`).
+   Leaning (a) + (b): validate session 2's Playwright additions
+   against live v14 Foundry first (4 new `rollWeaponAttack` cases),
+   then teach the adapter to map `dcc.modifyAttackRollTerms`-injected
+   `Modifier` terms into the lib's `bonuses[]` so dcc-qol's
+   firing-into-melee / range penalties appear in
+   `libResult.appliedModifiers`.
 
-   Lean (a). A working attack slice is the smallest test of the
-   bridge; (b) is infrastructure without validation; (c) is
-   premature.
-
-3. **Dispatch logging.** Every `_rollWeaponAttackViaAdapter` /
-   `_rollWeaponAttackLegacy` / related helper must call `logDispatch`
-   as first line (same permanent-infrastructure contract as Phase 1/2).
-   Extend the Playwright `phase1-adapter-dispatch.spec.js` (or rename
-   to `adapter-dispatch.spec.js`) to validate the new branches.
+3. **Dispatch logging.** Every `_rollXxxViaAdapter` /
+   `_rollXxxLegacy` must call `logDispatch` as first line
+   (permanent infrastructure). Session 2 added weapon-attack
+   branches; extend the Playwright spec to validate any new
+   branches session 3 opens up.
 
 4. **Integration testing.** Playwright against live v14 Foundry is
-   the gold standard for dispatcher validation. Run the full dispatch
-   spec before claiming a session complete.
+   the gold standard for dispatcher validation. Session 2's 4 new
+   cases are the first thing to validate in session 3. Run the full
+   dispatch spec before claiming a session complete.
 
-Do NOT in session 8: touch data-model slimming (Phase 4) or sheet
+Do NOT in session 9: touch data-model slimming (Phase 4) or sheet
 composition (Phase 5). Do NOT break `dcc.modifyAttackRollTerms` — it
 has external consumers.
 

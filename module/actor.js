@@ -11,13 +11,15 @@ import {
   rollSavingThrow as libRollSavingThrow,
   castSpell as libCastSpell,
   calculateSpellCheck as libCalculateSpellCheck,
-  rollMercurialMagic as libRollMercurialMagic
+  rollMercurialMagic as libRollMercurialMagic,
+  makeAttackRoll as libMakeAttackRoll
 } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
 import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
+import { buildAttackInput } from './adapter/attack-input.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -2628,6 +2630,9 @@ class DCCActor extends Actor {
       'dcc.isNaturalCrit': attackRollResult.naturalCrit,
       'dcc.isMelee': weapon.system?.melee
     }
+    if (attackRollResult.libResult) {
+      flags['dcc.libResult'] = attackRollResult.libResult
+    }
     game.dcc.FleetingLuck.updateFlags(flags, attackRollResult.roll)
 
     // Speaker object for the chat cards
@@ -2713,12 +2718,189 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a weapon's attack roll
+   * Dispatcher: route the simplest-weapon happy-path through the lib
+   * adapter (Phase 3 session 2), everything else through the legacy
+   * body verbatim. See `_canRouteAttackViaAdapter` for the gate.
+   *
+   * Both branches return the same result shape (see `_rollToHitLegacy`).
+   * The adapter path adds an optional `libResult` field consumed by
+   * `rollWeaponAttack` to populate `dcc.libResult` on the chat flags.
+   *
    * @param {Object} weapon      The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
   async rollToHit (weapon, options = {}) {
+    if (this._canRouteAttackViaAdapter(weapon, options)) {
+      return this._rollToHitViaAdapter(weapon, options)
+    }
+    return this._rollToHitLegacy(weapon, options)
+  }
+
+  /**
+   * Gate for the Phase 3 session 2 happy-path adapter. Routes only the
+   * simplest weapon attack — no deed die, no backstab, no two-weapon,
+   * no roll-modifier dialog, no dice-bearing to-hit / attack-bonus.
+   *
+   * The `automateDamageFumblesCrits` requirement is paired with the
+   * session-prompt happy-path definition so the first bridge is
+   * exercised end-to-end (damage + crit + fumble rolls all fire) when
+   * the adapter path runs. Later slices can broaden the gate.
+   *
+   * @param {Object} weapon
+   * @param {Object} options
+   * @returns {boolean}
+   * @private
+   */
+  _canRouteAttackViaAdapter (weapon, options = {}) {
+    if (options.showModifierDialog) return false
+    if (options.backstab) return false
+    if (weapon?.system?.twoWeaponPrimary || weapon?.system?.twoWeaponSecondary) return false
+    const attackBonus = String(this.system.details?.attackBonus ?? '')
+    if (attackBonus.includes('d')) return false
+    const weaponToHit = String(weapon?.system?.toHit ?? '')
+    if (weaponToHit.includes('d')) return false
+    let automate = false
+    try {
+      automate = !!game.settings.get('dcc', 'automateDamageFumblesCrits')
+    } catch {
+      automate = false
+    }
+    if (!automate) return false
+    return true
+  }
+
+  /**
+   * Adapter path for `rollToHit`. Structurally mirrors the legacy body
+   * (same terms / hook / Roll construction) so the Foundry chat render
+   * and the `dcc.modifyAttackRollTerms` contract are preserved verbatim.
+   * After the Foundry `Roll` evaluates, feeds the natural d20 into the
+   * lib's `makeAttackRoll` so the lib owns the classification +
+   * `appliedModifiers` list that downstream chat flags surface as
+   * `dcc.libResult`.
+   *
+   * @param {Object} weapon
+   * @param {Object} options
+   * @returns {Object}
+   * @private
+   */
+  async _rollToHitViaAdapter (weapon, options = {}) {
+    logDispatch('rollWeaponAttack', 'adapter', { weapon: weapon?.name || 'unknown' })
+
+    const toHit = weapon.system?.toHit.replaceAll('@ab', this.system.details.attackBonus)
+    const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
+    const die = weapon.system?.actionDie || actorActionDice
+    let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
+
+    if (!Roll.validate(toHit)) {
+      return { rolled: false, formula: toHit }
+    }
+
+    const terms = [
+      {
+        type: 'Die',
+        label: game.i18n.localize('DCC.ActionDie'),
+        formula: die,
+        presets: this.getActionDice({ includeUntrained: true })
+      },
+      {
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.DeedDie'),
+        modifierLabel: game.i18n.localize('DCC.ToHit'),
+        formula: toHit
+      }
+    ]
+
+    if (this.isNPC) {
+      const isMelee = weapon.system?.melee !== false
+      const attackAdjustment = isMelee
+        ? parseInt(this.system.details.attackHitBonus?.melee?.adjustment) || 0
+        : parseInt(this.system.details.attackHitBonus?.missile?.adjustment) || 0
+      if (attackAdjustment !== 0) {
+        terms.push({
+          type: 'Modifier',
+          label: game.i18n.localize(isMelee ? 'DCC.MeleeAttackAdjustment' : 'DCC.MissileAttackAdjustment'),
+          formula: attackAdjustment
+        })
+      }
+    }
+
+    const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options)
+    if (!proceed) return
+
+    const rollOptions = Object.assign({ title: game.i18n.localize('DCC.ToHit') }, options)
+
+    const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
+    await attackRoll.evaluate()
+
+    const strictCrits = game.settings.get('dcc', 'strictCriticalHits')
+    if (strictCrits) {
+      const originalDieMatch = die.match(/(\d+)d(\d+)/)
+      const adjustedDieMatch = attackRoll.formula.match(/(\d+)d(\d+)/)
+      if (originalDieMatch && adjustedDieMatch) {
+        const originalDieSize = parseInt(originalDieMatch[2])
+        const adjustedDieSize = parseInt(adjustedDieMatch[2])
+        if (originalDieSize !== adjustedDieSize) {
+          critRange = game.dcc.DiceChain.calculateProportionalCritRange(critRange, originalDieSize, adjustedDieSize)
+        }
+      }
+    } else {
+      critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
+    }
+
+    const d20RollResult = attackRoll.dice[0].total
+    attackRoll.dice[0].options.dcc = { upperThreshold: critRange }
+
+    const attackInput = buildAttackInput(this, weapon)
+    attackInput.threatRange = critRange
+    const libResult = libMakeAttackRoll(attackInput, () => d20RollResult)
+
+    const fumble = libResult.isFumble
+    const naturalCrit = libResult.isCriticalThreat
+    const crit = !fumble && naturalCrit
+
+    const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
+
+    return {
+      d20RollResult,
+      deedDieFormula: '',
+      deedDieRollResult: '',
+      deedDieRoll: undefined,
+      deedSucceed: false,
+      crit,
+      formula: game.dcc.DCCRoll.cleanFormula(attackRoll.terms),
+      fumble,
+      hitsAc: attackRoll.total,
+      naturalCrit,
+      roll: attackRoll,
+      rolled: true,
+      weaponDamageFormula: modifiedDamageFormula || weapon.system?.damage || weapon.damage,
+      libResult: {
+        die: attackInput.actionDie,
+        natural: d20RollResult,
+        total: libResult.total,
+        totalBonus: libResult.totalBonus,
+        isHit: libResult.isHit,
+        isCriticalThreat: libResult.isCriticalThreat,
+        isFumble: libResult.isFumble,
+        modifiers: libResult.appliedModifiers
+      }
+    }
+  }
+
+  /**
+   * Legacy rollToHit body. Preserved verbatim; any change here should
+   * be mirrored in `_rollToHitViaAdapter` where applicable. Non-happy-
+   * path cases (deed die, backstab, two-weapon, modifier dialog,
+   * automate off) continue to execute this path.
+   *
+   * @param {Object} weapon      The weapon object being used for the roll
+   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
+   * @return {Object}            Object representing the results of the attack roll
+   * @private
+   */
+  async _rollToHitLegacy (weapon, options = {}) {
+    logDispatch('rollWeaponAttack', 'legacy', { weapon: weapon?.name || 'unknown' })
     /* Grab the To Hit modifier */
     const toHit = weapon.system?.toHit.replaceAll('@ab', this.system.details.attackBonus)
 

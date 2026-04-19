@@ -560,4 +560,117 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(Number(mercurialValue), 'mercurial effect should be rolled and stored on first cast').toBeGreaterThan(0)
     })
   })
+
+  // ── rollWeaponAttack (Phase 3 session 2) ────────────────────────────
+
+  test.describe('rollWeaponAttack', () => {
+    test('simplest weapon + automate on → adapter (happy path)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Weapon Happy', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Longsword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d8',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Weapon Happy').items.getName('P1-Longsword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Weapon Happy').rollWeaponAttack(id)
+      }, weaponId)
+      const line = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(line, 'adapter', { weapon: 'P1-Longsword' })
+    })
+
+    test('options.backstab → legacy', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Weapon Backstab', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-BackstabDagger',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+1',
+            critRange: 20,
+            damage: '1d4',
+            backstabDamage: '1d4',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Weapon Backstab').items.getName('P1-BackstabDagger').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Weapon Backstab').rollWeaponAttack(id, { backstab: true })
+      }, weaponId)
+      const line = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(line, 'legacy', { weapon: 'P1-BackstabDagger' })
+    })
+
+    test('showModifierDialog flag → legacy', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Weapon Dialog', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-DialogSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+0',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Weapon Dialog').items.getName('P1-DialogSword').id
+      })
+      await fireAndForget(page, async (id) => {
+        game.actors.getName('P1 Weapon Dialog').rollWeaponAttack(id, { showModifierDialog: true })
+      }, weaponId)
+      const line = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(line, 'legacy', { weapon: 'P1-DialogSword' })
+    })
+
+    test('automate off → legacy', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Weapon NoAutomate', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-NoAutomateSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+0',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', false)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Weapon NoAutomate').items.getName('P1-NoAutomateSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Weapon NoAutomate').rollWeaponAttack(id)
+      }, weaponId)
+      const line = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(line, 'legacy', { weapon: 'P1-NoAutomateSword' })
+    })
+  })
 })
