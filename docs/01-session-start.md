@@ -13,13 +13,18 @@ pins Node 24.
 
 **Read these first, in order:**
 1. `docs/00-progress.md` — rolling handoff log. Update at session end.
-2. `docs/dev/ARCHITECTURE_REIMAGINED.md §7` — the 7-phase plan.
-3. `docs/dev/EXTENSION_API.md` — what sibling modules consume (stable /
+2. `docs/02-slice-backlog.md` — prioritized executable worklist; the
+   next slice(s) come from the top of the active queue.
+3. `docs/dev/ARCHITECTURE_REIMAGINED.md` — read §2 (pain points the
+   refactor addresses), §7 (the 7-phase plan), and §8.6 (legacy-path
+   retirement principle — Foundry-facing API stays as thin wrappers,
+   `_xxxLegacy` branches retire once gate is exhaustive).
+4. `docs/dev/EXTENSION_API.md` — what sibling modules consume (stable /
    internal / dead).
-4. `docs/dev/TESTING.md` — testing tiers; `#browser-tests-playwright`
+5. `docs/dev/TESTING.md` — testing tiers; `#browser-tests-playwright`
    covers the e2e launch recipe (fvtt CLI installPath / dataPath /
    Node 24 / world name gotchas).
-5. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md`
+6. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md`
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 

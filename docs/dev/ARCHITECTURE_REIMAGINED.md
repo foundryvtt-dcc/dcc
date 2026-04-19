@@ -81,13 +81,38 @@ XCC *cannot* use the DCC extension hook because its shape doesn't fit XCC's data
 ### 2.6 CSS is monolithic with no theming contract
 `styles/dcc.scss` is ~2500 lines in one file. `dcc-qol` uses 40+ `!important` declarations — specificity warfare, not intent.
 
-### 2.7 God objects and transitional code
-- `actor.js` — 2,251 lines
+### 2.7 God objects and accumulated cruft
+- `actor.js` — 2,251 lines (now 3,851 mid-refactor — reversal depends on Phase 4 schema slim + legacy-branch retirement)
 - `actor-sheet.js` — 1,848 lines
 - `dcc.js` — 1,560 lines (bootstrap + settings + hotbar + spell-result processing + patron taint + disapproval drain + migration triggers)
 - `item.js` — 967 lines
 - `item-sheet.js` — 874 lines
 - Backward-compat shims: `critText` / `fumbleText` ("Legacy name for dcc-qol compatibility"), the `useSummary` migration path, 418 lines of cumulative migrations
+
+Cruft removal is a direct goal of the refactor, not a side effect. Six years of accumulated migrations, compatibility shims, and stringly-typed workarounds tax every read of the codebase. Phase 7 is the formal cleanup window, but low-risk shim removals and migration pruning can land as parallel slices throughout the refactor.
+
+### 2.8 No primitive for homebrew classes
+Users want to invent classes — a `Steampunk Inventor`, a `Mushroom Knight` — without forking the system or PRing changes upstream. Today they can't: sheet parts are hardcoded per subclass, the Player schema bakes in every official class's fields, and class-specific behavior is scattered through string-matched dispatch (§2.2). Homebrew requires either a full fork or monkey-patching every seam DCC didn't design for. `dcc-core-lib` already supports this cleanly (`registerClassProgression`, `SkillDefinition` registries keyed by class ID); the Foundry side has to catch up with `registerClassMixin`, `registerSheetPart`, and variant-aware data loading.
+
+### 2.9 Foundry's yearly version-upgrade tax
+Every FoundryVTT major version (V11 → V12 → V13 → V14 and onward) breaks or moves significant API surface. Rules logic coupled to Foundry's Actor / Item / Roll APIs has to be re-tested, re-ported, and re-debugged each year. The thousands of lines in `actor.js` / `actor-sheet.js` / `dcc.js` all pay this tax. Every line that moves into `dcc-core-lib` (pure functions, zero Foundry deps) has **zero upgrade cost**.
+
+**This is the strongest ongoing argument for the refactor.** But cashing the benefit requires legacy paths to actually retire — maintaining both `_rollXxxViaAdapter` and `_rollXxxLegacy` indefinitely *doubles* the upgrade surface instead of shrinking it. See §8.6 for the retirement principle.
+
+### 2.10 Core rules duplicated across consumer projects
+Outside of Foundry, the same DCC rules power `dcc-character-sheet` (a standalone app at `~/WebstormProjects/dcc-character-sheet`) and future tools. Today, a rules tweak — a fumble-table edit, a dice-chain adjustment, a class-progression fix — has to be applied twice: once in the Foundry system, once in the sibling project. `dcc-core-lib` is the single source of truth that ends this. Non-Foundry consumers import the lib directly; no Foundry shim required.
+
+The Foundry system is the most complex consumer and the one this refactor prioritizes. Once it consumes the lib cleanly, standalone consumers are a straight import.
+
+### 2.11 Module-extension pressure keeps building
+When extension surface is closed, every new capability pressures the core system to absorb it — `dcc-qol`'s attack tweaks, `xcc-core-book`'s pack manipulation, homebrew class definitions, alternate mercurial tables. The system grows by accretion because module authors have nowhere else to hang their work.
+
+The goal: **documented, composable extension APIs that relieve this pressure.** `dcc.registerItemSheet`, `dcc.registerClassMixin`, `dcc.registerSheetPart`, `dcc.registerVariant`, post-roll effect handlers. With these, module authors can build clean integrations without touching core, and the DCC system can stay focused on DCC.
+
+### 2.12 Foundry-ecosystem compatibility constrains the refactor
+The DCC system needs to play cleanly with Foundry's third-party ecosystem: Token Action HUD reads `system.attributes.ac.value`, Item Piles walks currency paths, Dynamic Active Effects hooks schema paths, `dnd-ui` consumers read standard Foundry shapes. Any refactor — **especially Phase 4's schema slimming** — must preserve the **Foundry-smelling API surface** these tools depend on, even as the internals move to the lib.
+
+The constraint is not just "don't break the public API" — it's "keep the data shapes looking like idiomatic Foundry" so ecosystem integration doesn't regress. This bounds how aggressive Phase 4 can be with `system.*` restructuring and what counts as "done" for schema slimming.
 
 ---
 
@@ -370,8 +395,18 @@ The lib already supports XCC via `SystemConfig`. The Foundry side:
 ### 8.5 What about modules like `dcc-qol` that don't currently depend on the lib?
 They don't need to migrate. `dcc-qol` listens to Foundry Hooks; those hooks keep firing. If `dcc-qol` wants cleaner access to crit-range-scaling or dice-chain utilities, it can depend on `dcc-core-lib` directly as a peer — but it doesn't have to.
 
-### 8.6 What about backward compatibility during the migration?
-Every phase keeps the existing public API (`DCCActor.rollAbilityCheck` still exists, `game.dcc.DiceChain.bumpDie` still works) — they become thin wrappers. Deprecation warnings come in Phase 6/7, removals in a later major version.
+### 8.6 Legacy-path retirement principle
+Two surfaces exist, and they retire differently:
+
+**Foundry-facing API — stays indefinitely as thin wrappers.**
+`DCCActor.rollAbilityCheck`, `DCCActor.rollInitiative`, `game.dcc.DiceChain.bumpDie`, `game.dcc.processSpellCheck`, hook names like `dcc.modifyAttackRollTerms`, and documented `CONFIG.DCC.*` entries. These are what third-party tools (Token Action HUD, Item Piles, XCC sheets, `dcc-qol`) depend on (§2.12). They stay forever — but their *bodies* become thin wrappers over adapter calls once the adapter is capable. This preserves the Foundry-smelling surface without keeping the old implementation logic.
+
+**Internal legacy branches — retire once adapter coverage is exhaustive.**
+`_rollToHitLegacy`, `_rollDamageLegacy`, `_rollCriticalLegacy`, `_rollFumbleLegacy`, `_runLegacyPatronTaint`, and the direct-reimpl branches inside `rollSpellCheck`. These exist *only* to keep code working while the adapter gains coverage. Once the gate for a given call site is exhaustive, the legacy branch is deleted and the dispatcher collapses to a single call.
+
+**Keeping legacy paths alive permanently doubles the Foundry version-upgrade tax (§2.9), defeating one of the refactor's strongest motivations.** Any earlier phase close-out decision that marked a specific legacy branch as "permanent" is superseded by this principle — those branches retire when their outstanding blockers are resolved. Blockers (e.g., RAW alignment for patron taint) move from "deferred to backlog" onto the critical path.
+
+Deprecation warnings for the Foundry-facing surface come in Phase 6/7; removals of *actually-unused* Foundry-facing APIs come in a later major version. The internal-legacy retirements are silent — no external consumer knows or cares.
 
 ### 8.7 Who keeps writing tests?
 The Foundry system's existing unit tests (17 files, ~369 cases) stay valuable for the adapter layer — schema validation, active effect integration, pack round-trips. Business-logic tests (rolls, skill resolution, spell mechanics) migrate to `dcc-core-lib` if not already there, with the Foundry side keeping integration tests that wire the whole thing together.
