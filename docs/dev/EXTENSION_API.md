@@ -99,6 +99,7 @@ Set in `module/dcc.js:108–121`.
 | `game.dcc.FleetingLuck` | class | `xcc` (`init`, `updateFlags`, `give`, `enabled`, `automationEnabled`) | §2.5 | XCC uses `Object.defineProperty` on `enabled` and `automationEnabled` — so those must remain configurable properties, not frozen. |
 | `game.dcc.processSpellCheck` | function | `xcc` (`xcc-actor-sheet.js` for wizard + cleric spells) | §2.4 (magic system), §2.5, §2.11 | Post-roll spell-check orchestrator: pre-built `Roll` + optional `RollTable` → patron taint check + crit/fumble classification + result-table lookup + level-added crit totaling + `SpellResult` chat render + wizard spell loss / cleric disapproval gating. **Phase 2 close (2026-04-18) finalized this as a permanent stable API** — not a deprecation target. The adapter dispatcher (`DCCActor.rollSpellCheck`) routes the happy-path generic / wizard / cleric / patron-bound casts through `_castViaCastSpell` / `_castViaCalculateSpellCheck`; everything else (result-table spells, naked pre-built-Roll calls, skill-table spells like Turn Unholy, XCC sheet paths with elf-trickster / blaster tweaks) continues to invoke `processSpellCheck`. Future adapter capability growth (result-table rendering, manifestation, forceCrit, mercurial display w/o race condition) can progressively migrate routes; `processSpellCheck` stays as the fallback orchestrator indefinitely. See `docs/00-progress.md` Phase 2 close-out for the inventory and rationale. |
 | `game.dcc.registerItemSheet` | function | (none yet — stable from day one per recommendation 7) | §2.5 (extension surface), §2.11 | `(types, SheetClass, options?)` — single declarative call that folds the `Items.unregisterSheet('core', ItemSheetV2) + Items.registerSheet(scope, SheetClass, …)` boilerplate. `types` is `string \| string[] \| undefined` (undefined → all sub-types). `options.makeDefault: true` (the common case) also unregisters Foundry's core `ItemSheetV2` for the same `types` so the new sheet wins the default-pick. Source: `module/extension-api.mjs`. Added 2026-04-19 (Group B1). DCC's own `DCCItemSheet` registration was migrated to dogfood the helper — see `module/dcc.js`. |
+| `game.dcc.registerActorSheet` | function | (none yet — stable from day one; sibling-module migration is opt-in) | §2.5 (extension surface), §2.11 | `(types, SheetClass, options?)` — Actor-side mirror of `registerItemSheet`. Same signature shape; defaults `options.scope` to `'dcc'` (sibling modules pass their own scope: `'xcc'`, `'mcc-healer'`, `'dcc-crawl-classes-bard'`, etc.). Closes the 19 `Actors.registerSheet('xcc', ...)` calls in XCC, 7 in MCC, 9 in dcc-crawl-classes, and 11 in DCC's own code (the latter migrated 2026-04-19 to dogfood the helper). The legacy global `Actors.unregisterSheet('core', ActorSheetV2)` line in `module/dcc.js` is kept as a one-shot system-replaces-core gesture, separate from any single helper call. Source: `module/extension-api.mjs`. Added 2026-04-19. |
 
 ### Internal
 
@@ -156,9 +157,10 @@ None identified.
 7. **Plan extension-hook additions to relieve §2.11 pressure.** The
    refactor's stated direction (§2.5, §2.8, §2.11) calls for new
    stable-from-day-one hooks to absorb pressure that currently leaks
-   into core: `dcc.registerItemSheet` (closes §2.5 XCC
-   `unregisterSheet`/`registerSheet` dance — Group B1 in
-   `02-slice-backlog.md`), `dcc.registerClassMixin` (Phase 4),
+   into core: `dcc.registerItemSheet` (closes §2.5 — Group B1, landed
+   2026-04-19), `dcc.registerActorSheet` (mirror; closes ~46 sibling
+   call sites across XCC + MCC + dcc-crawl-classes — landed
+   2026-04-19), `dcc.registerClassMixin` (Phase 4),
    `dcc.registerSheetPart` + `dcc.registerVariant` (Phase 5/6). Each
    ships **stable** the moment it lands; document under the table above
    rather than waiting for downstream consumers to materialize.

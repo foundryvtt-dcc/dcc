@@ -7,12 +7,20 @@
  */
 
 import { expect, test, vi } from 'vitest'
-import { registerItemSheet } from '../extension-api.mjs'
+import { registerActorSheet, registerItemSheet } from '../extension-api.mjs'
 
 class FakeSheet {}
 class FakeDefaultItemSheetV2 {}
+class FakeDefaultActorSheetV2 {}
 
 function makeMockItems () {
+  return {
+    registerSheet: vi.fn(),
+    unregisterSheet: vi.fn()
+  }
+}
+
+function makeMockActors () {
   return {
     registerSheet: vi.fn(),
     unregisterSheet: vi.fn()
@@ -99,4 +107,69 @@ test('registerItemSheet skips unregister when makeDefault is true but ItemSheetV
 
   expect(Items.unregisterSheet).not.toHaveBeenCalled()
   expect(Items.registerSheet).toHaveBeenCalledTimes(1)
+})
+
+// ── registerActorSheet ──────────────────────────────────────────────
+
+test('registerActorSheet calls Actors.registerSheet with normalized options', () => {
+  const Actors = makeMockActors()
+  registerActorSheet('Player', FakeSheet, { label: 'TEST.ActorSheet' }, { Actors, ActorSheetV2: FakeDefaultActorSheetV2 })
+
+  expect(Actors.registerSheet).toHaveBeenCalledTimes(1)
+  expect(Actors.registerSheet).toHaveBeenCalledWith('dcc', FakeSheet, {
+    label: 'TEST.ActorSheet',
+    makeDefault: false,
+    types: ['Player']
+  })
+  expect(Actors.unregisterSheet).not.toHaveBeenCalled()
+})
+
+test('registerActorSheet accepts an array of types', () => {
+  const Actors = makeMockActors()
+  registerActorSheet(['Player', 'NPC'], FakeSheet, {}, { Actors, ActorSheetV2: FakeDefaultActorSheetV2 })
+
+  expect(Actors.registerSheet.mock.calls[0][2].types).toEqual(['Player', 'NPC'])
+})
+
+test('registerActorSheet with makeDefault unregisters core ActorSheetV2 first for the same types', () => {
+  const Actors = makeMockActors()
+  registerActorSheet('NPC', FakeSheet, { makeDefault: true, label: 'TEST.NpcSheet' }, { Actors, ActorSheetV2: FakeDefaultActorSheetV2 })
+
+  expect(Actors.unregisterSheet).toHaveBeenCalledTimes(1)
+  expect(Actors.unregisterSheet).toHaveBeenCalledWith('core', FakeDefaultActorSheetV2, { types: ['NPC'] })
+  // Order: unregister has to land before register so Foundry's
+  // default-pick doesn't race us.
+  expect(Actors.unregisterSheet.mock.invocationCallOrder[0])
+    .toBeLessThan(Actors.registerSheet.mock.invocationCallOrder[0])
+})
+
+test('registerActorSheet honors a custom scope (sibling-module use)', () => {
+  // XCC + MCC + dcc-crawl-classes call this with their own scopes
+  // ('xcc', 'mcc-healer', 'dcc-crawl-classes-bard', etc.) so the
+  // resulting sheet ids are per-module unique.
+  const Actors = makeMockActors()
+  registerActorSheet('Player', FakeSheet, { scope: 'xcc', label: 'XCC.AthleteSheet' }, { Actors, ActorSheetV2: FakeDefaultActorSheetV2 })
+
+  expect(Actors.registerSheet.mock.calls[0][0]).toBe('xcc')
+})
+
+test('registerActorSheet throws on missing SheetClass', () => {
+  const Actors = makeMockActors()
+  expect(() => registerActorSheet('Player', null, {}, { Actors, ActorSheetV2: FakeDefaultActorSheetV2 }))
+    .toThrow(/SheetClass is required/)
+})
+
+test('registerActorSheet throws when Foundry Actors collection is unavailable', () => {
+  expect(() => registerActorSheet('Player', FakeSheet, {}, { Actors: undefined, ActorSheetV2: FakeDefaultActorSheetV2 }))
+    .toThrow(/Actors` collection unavailable/)
+})
+
+test('registerActorSheet skips unregister when makeDefault is true but ActorSheetV2 is absent', () => {
+  // Defensive: if a future Foundry release moves ActorSheetV2 from
+  // the expected path, the helper still proceeds with the register.
+  const Actors = makeMockActors()
+  registerActorSheet('Player', FakeSheet, { makeDefault: true }, { Actors, ActorSheetV2: undefined })
+
+  expect(Actors.unregisterSheet).not.toHaveBeenCalled()
+  expect(Actors.registerSheet).toHaveBeenCalledTimes(1)
 })

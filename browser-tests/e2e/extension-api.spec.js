@@ -66,6 +66,15 @@ test.describe('DCC Extension API', () => {
     expect(result.keys).toEqual(['registerItemSheet'])
   })
 
+  test('game.dcc.registerActorSheet is exposed and is a function', async ({ page }) => {
+    const result = await page.evaluate(() => ({
+      hasFn: typeof game.dcc.registerActorSheet === 'function',
+      keys: Object.keys(game.dcc).filter(k => k === 'registerActorSheet')
+    }))
+    expect(result.hasFn).toBe(true)
+    expect(result.keys).toEqual(['registerActorSheet'])
+  })
+
   test('registerItemSheet adds a sheet option Foundry can resolve for the item type', async ({ page }) => {
     const result = await page.evaluate(async () => {
       class TestModuleWeaponSheet extends foundry.applications.api.DocumentSheetV2 {
@@ -131,6 +140,65 @@ test.describe('DCC Extension API', () => {
     expect(result.ourEntry.default).toBe(true)
     // No other sheet should remain default for armor — the unregister
     // pulled core's ItemSheetV2 and our register set us as default.
+    expect(result.otherDefaults).toEqual([])
+  })
+
+  test('registerActorSheet adds a sheet option Foundry can resolve for the actor type', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      class TestModulePlayerSheet extends foundry.applications.api.DocumentSheetV2 {
+        static DEFAULT_OPTIONS = { id: 'test-module-player-sheet' }
+      }
+
+      game.dcc.registerActorSheet('Player', TestModulePlayerSheet, {
+        scope: 'extension-api-test',
+        label: 'Extension API Test Actor Sheet',
+        makeDefault: false
+      })
+
+      // Create a real Player document and inspect its sheet ctor.
+      // DCC's existing class-specific sheets register without
+      // makeDefault, so the actual ctor name will depend on Foundry's
+      // first-registered fallback. We assert on the sheetClasses
+      // entry shape directly.
+      const playerEntries = Object.keys(CONFIG.Actor.sheetClasses?.Player || {})
+
+      return {
+        playerEntries,
+        ourEntry: CONFIG.Actor.sheetClasses?.Player?.['extension-api-test.TestModulePlayerSheet'] ?? null
+      }
+    })
+
+    expect(result.playerEntries, 'our sheet should appear in CONFIG.Actor.sheetClasses.Player')
+      .toContain('extension-api-test.TestModulePlayerSheet')
+    expect(result.ourEntry).not.toBeNull()
+    expect(result.ourEntry.label).toBe('Extension API Test Actor Sheet')
+    expect(result.ourEntry.default).toBe(false)
+  })
+
+  test('registerActorSheet with makeDefault unregisters core ActorSheetV2 for that type', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      class TestDefaultMonsterSheet extends foundry.applications.api.DocumentSheetV2 {
+        static DEFAULT_OPTIONS = { id: 'test-module-default-monster-sheet' }
+      }
+
+      game.dcc.registerActorSheet('NPC', TestDefaultMonsterSheet, {
+        scope: 'extension-api-test',
+        label: 'Extension API Default Monster',
+        makeDefault: true
+      })
+
+      const sheetClasses = CONFIG.Actor.sheetClasses?.NPC ?? {}
+      const entry = sheetClasses['extension-api-test.TestDefaultMonsterSheet']
+      const otherDefaults = Object.entries(sheetClasses)
+        .filter(([key, val]) => val.default && key !== 'extension-api-test.TestDefaultMonsterSheet')
+        .map(([key]) => key)
+      return { ourEntry: entry ?? null, otherDefaults }
+    })
+
+    expect(result.ourEntry).not.toBeNull()
+    expect(result.ourEntry.default).toBe(true)
+    // No other sheet should remain default for NPC — the unregister
+    // pulled the prior default and our register replaced it.
     expect(result.otherDefaults).toEqual([])
   })
 })

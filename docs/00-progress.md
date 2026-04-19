@@ -6,6 +6,24 @@
 
 ## Current phase
 
+**Extension API (2026-04-19) — `dcc.registerActorSheet(types,
+SheetClass, options?)` shipped as the Actor-side mirror of
+`registerItemSheet`.** Same signature shape, same dogfooding pattern
+(DCC's own 11 actor-sheet registrations in `module/dcc.js` migrated
+to call the helper). Closes 19 call sites in XCC, 7 in MCC, 9 in
+dcc-crawl-classes (their migration is opt-in for the sibling
+maintainers — no code changes there in this slice; the helper is
+ready to consume). The legacy `Actors.unregisterSheet('core',
+ActorSheetV2)` line in `module/dcc.js` stays as a one-shot
+"system replaces core globally" gesture, separate from per-call
+helper invocations — preserves the prior Player-sheet behavior
+verbatim. 854 Vitest pass (was 847, +7 in `extension-api.test.js`
+covering type normalization, scope override, makeDefault
+unregister-then-register order, defensive missing-deps) + 69
+Playwright e2e (was 66, +3 in `extension-api.spec.js`: helper
+exposed on `game.dcc`, register-without-default, register-with-
+default unseats prior default for Actor types).
+
 **Extension API (2026-04-19) — `dcc.registerItemSheet(types,
 SheetClass, options?)` shipped** (Group B1 from
 `02-slice-backlog.md`). Folds the

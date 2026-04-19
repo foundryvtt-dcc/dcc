@@ -77,3 +77,70 @@ export function registerItemSheet (types, SheetClass, options = {}, deps = {}) {
   if (normalizedTypes) registerOptions.types = normalizedTypes
   ItemsImpl.registerSheet(scope, SheetClass, registerOptions)
 }
+
+/**
+ * Register an Actor sheet for the DCC system. Mirror of
+ * `registerItemSheet` for the Actor side. Closes the same §2.5 /
+ * §2.11 pain points: sibling modules (XCC, MCC, dcc-crawl-classes)
+ * each have 7–19 `Actors.registerSheet('<scope>', SheetClass, { types,
+ * label })` boilerplate calls; this helper turns each into a
+ * one-liner that also handles the unregister-default dance for the
+ * `makeDefault: true` cases without the caller having to remember
+ * `foundry.applications.sheets.ActorSheetV2`.
+ *
+ * Stable from day one (per `EXTENSION_API.md` recommendation 7).
+ *
+ * @param {string | string[] | undefined} types - Actor sub-type(s)
+ *   the sheet handles (`'Player'`, `'NPC'`, `'Party'`, etc.).
+ *   `undefined` registers across all sub-types.
+ * @param {typeof foundry.applications.api.DocumentSheetV2} SheetClass -
+ *   The sheet to register.
+ * @param {object} [options]
+ * @param {string} [options.scope='dcc'] - Namespace scope. Sibling
+ *   modules pass their own scope (`'xcc'`, `'mcc-healer'`, etc.) so
+ *   the resulting sheet id is per-module unique.
+ * @param {string} [options.label] - i18n key for the sheet's label.
+ * @param {boolean} [options.makeDefault=false] - When true, also
+ *   unregister the Foundry-core default `ActorSheetV2` for the same
+ *   `types` so this sheet wins the default-pick. Common case for the
+ *   primary system sheet (DCC's NPC sheet, party sheet); class-specific
+ *   variant sheets (XCC's per-class list) typically pass false.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.Actors] - `Actors` collection (defaults to
+ *   `foundry.documents.collections.Actors` / `globalThis.Actors`).
+ * @param {Function} [deps.ActorSheetV2] - Default actor sheet class
+ *   (defaults to `foundry.applications.sheets.ActorSheetV2`).
+ */
+export function registerActorSheet (types, SheetClass, options = {}, deps = {}) {
+  const ActorsImpl = deps.Actors ??
+    globalThis.foundry?.documents?.collections?.Actors ??
+    globalThis.Actors
+  const ActorSheetV2Impl = deps.ActorSheetV2 ??
+    globalThis.foundry?.applications?.sheets?.ActorSheetV2 ??
+    globalThis.ActorSheetV2
+
+  if (!SheetClass) {
+    throw new Error('registerActorSheet: SheetClass is required')
+  }
+  if (!ActorsImpl?.registerSheet) {
+    throw new Error('registerActorSheet: Foundry `Actors` collection unavailable')
+  }
+
+  const normalizedTypes = Array.isArray(types)
+    ? types
+    : (typeof types === 'string' && types.length ? [types] : undefined)
+  const { scope = 'dcc', label, makeDefault = false } = options
+
+  if (makeDefault && ActorSheetV2Impl && ActorsImpl.unregisterSheet) {
+    ActorsImpl.unregisterSheet(
+      'core',
+      ActorSheetV2Impl,
+      normalizedTypes ? { types: normalizedTypes } : undefined
+    )
+  }
+
+  const registerOptions = { label, makeDefault }
+  if (normalizedTypes) registerOptions.types = normalizedTypes
+  ActorsImpl.registerSheet(scope, SheetClass, registerOptions)
+}

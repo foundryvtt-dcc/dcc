@@ -31,7 +31,7 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
-import { registerItemSheet } from './extension-api.mjs'
+import { registerActorSheet, registerItemSheet } from './extension-api.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -114,6 +114,7 @@ Hooks.once('init', async function () {
     TableResult,
     getSkillTable,
     processSpellCheck,
+    registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove
@@ -128,59 +129,28 @@ Hooks.once('init', async function () {
   CONFIG.Item.documentClass = DCCItem
   CONFIG.Combatant.documentClass = DCCCombatant
 
-  // Register sheet application classes
+  // Register sheet application classes via the stable extension API
+  // we expose to modules. The legacy global `Actors.unregisterSheet`
+  // remains as a one-shot statement of intent — "this system fully
+  // replaces core actor sheets across every sub-type" — and stays
+  // here rather than being implicitly tied to any one helper call.
   Actors.unregisterSheet('core', ActorSheetV2)
 
   // NPC sheets - DCCActorSheet as default, with Generic as option
-  Actors.registerSheet('dcc', DCCActorSheet, {
-    types: ['NPC'],
-    label: 'DCC.DCCActorSheet',
-    makeDefault: true
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
-    types: ['NPC'],
-    label: 'DCC.DCCActorSheetGeneric'
-  })
+  registerActorSheet('NPC', DCCActorSheet, { label: 'DCC.DCCActorSheet', makeDefault: true })
+  registerActorSheet('NPC', DCCSheets.DCCActorSheetGeneric, { label: 'DCC.DCCActorSheetGeneric' })
 
   // PC sheets - class-specific sheets only
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetCleric'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetThief'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetHalfling'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetWarrior'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetWizard'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetDwarf'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetElf'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetGeneric'
-  })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetCleric, { label: 'DCC.DCCActorSheetCleric' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetThief, { label: 'DCC.DCCActorSheetThief' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetHalfling, { label: 'DCC.DCCActorSheetHalfling' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetWarrior, { label: 'DCC.DCCActorSheetWarrior' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetWizard, { label: 'DCC.DCCActorSheetWizard' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetDwarf, { label: 'DCC.DCCActorSheetDwarf' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetElf, { label: 'DCC.DCCActorSheetElf' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetGeneric, { label: 'DCC.DCCActorSheetGeneric' })
 
-  Actors.registerSheet('dcc', DCCPartySheet, {
-    makeDefault: true,
-    types: ['Party'],
-    label: 'DCC.DCCPartySheet'
-  })
+  registerActorSheet('Party', DCCPartySheet, { label: 'DCC.DCCPartySheet', makeDefault: true })
 
   // Use the stable extension API we expose to modules — folds the
   // unregister-default + register dance into a single call.

@@ -249,3 +249,10 @@ See `docs/00-progress.md` for details. Summary:
   pain points. Helper at `module/extension-api.mjs`; DCC's own
   `DCCItemSheet` registration migrated to dogfood it. 9 unit tests
   + 3 Playwright e2e cases.
+- B1-followup (2026-04-19): `game.dcc.registerActorSheet(types,
+  SheetClass, options?)` Actor-side mirror. DCC's own 11 actor-sheet
+  registrations migrated to dogfood the helper. Sibling-module
+  migration is opt-in (XCC has 19 call sites, MCC 7,
+  dcc-crawl-classes 9 — total 35 lines of boilerplate that can each
+  collapse to a one-liner when their maintainers want to take it up).
+  +7 unit tests + 3 Playwright cases.
