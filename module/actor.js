@@ -1497,7 +1497,7 @@ class DCCActor extends Actor {
    */
   async _rollSkillCheckViaAdapter (skillId, options, resolved) {
     logDispatch('rollSkillCheck', 'adapter', { skillId })
-    const { skill, skillItem, abilityId, abilityLabel, die } = resolved
+    const { skill, skillItem, abilityId, abilityLabel } = resolved
 
     const character = actorToCharacter(this)
     const definition = this._buildSkillDefinition(skillId, resolved)
