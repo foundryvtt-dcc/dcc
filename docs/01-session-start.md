@@ -26,55 +26,68 @@ pins Node 24.
 **Status:** **Phase 1 closed. Phase 2 CLOSED 2026-04-18. Phase 3
 sessions 1 (dialog-adapter), 2 (first attack-migration slice), 3
 (hook-translation bridge), and 4 (long-range dice-chain translation)
-all CLOSED 2026-04-18. Phase 3 session 5 (first damage-migration
-slice) CLOSED 2026-04-19. Phase 3 session 6 is the active work.**
-Phase 2 close-out pinned two decisions: (a) `game.dcc.processSpellCheck`
-is permanent stable API — no deprecation, no shim, route migration
-is per-call-site and incremental; (b) `_runLegacyPatronTaint` is
-permanent adapter infrastructure — RAW alignment deferred to
-backlog. Phase 3 session 1 closed open question #6 via a
-dialog-adapter (`module/adapter/roll-dialog.mjs` +
-`promptSpellburnCommitment`). Phase 3 session 2 split
-`DCCActor.rollToHit` into a dispatcher + `_rollToHitLegacy` +
-`_rollToHitViaAdapter`; the adapter path routes the simplest-weapon
-happy-path through the lib's `makeAttackRoll` while preserving
-`dcc.modifyAttackRollTerms` and the Foundry chat render path. Phase
-3 session 3 added `hookTermsToBonuses` in
-`module/adapter/attack-input.mjs` — pushed `Modifier` terms with
-pure signed-integer formulas flow into `attackInput.bonuses` and
-surface as `libResult.bonuses` + an aggregate `{source:'bonuses',…}`
-entry in `libResult.modifiers`. Phase 3 session 4 closed the
-long-range gap: `_rollToHitViaAdapter` re-reads `terms[0].formula`
-post-hook and assigns it to `attackInput.actionDie` via
-`normalizeLibDie`, so dcc-qol's `DiceChain.bumpDie` in-place
-mutation is reflected in `libResult.die`. Phase 3 session 5 split
+all CLOSED 2026-04-18. Phase 3 sessions 5 (first damage-migration
+slice) and 6 (crit + fumble migration) CLOSED 2026-04-19. Phase 3
+session 7 is the active work.** Phase 2 close-out pinned two
+decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
+— no deprecation, no shim, route migration is per-call-site and
+incremental; (b) `_runLegacyPatronTaint` is permanent adapter
+infrastructure — RAW alignment deferred to backlog. Phase 3
+session 1 closed open question #6 via a dialog-adapter
+(`module/adapter/roll-dialog.mjs` + `promptSpellburnCommitment`).
+Phase 3 session 2 split `DCCActor.rollToHit` into a dispatcher +
+`_rollToHitLegacy` + `_rollToHitViaAdapter`; the adapter path
+routes the simplest-weapon happy-path through the lib's
+`makeAttackRoll` while preserving `dcc.modifyAttackRollTerms` and
+the Foundry chat render path. Phase 3 session 3 added
+`hookTermsToBonuses` in `module/adapter/attack-input.mjs` — pushed
+`Modifier` terms with pure signed-integer formulas flow into
+`attackInput.bonuses` and surface as `libResult.bonuses` + an
+aggregate `{source:'bonuses',…}` entry in `libResult.modifiers`.
+Phase 3 session 4 closed the long-range gap:
+`_rollToHitViaAdapter` re-reads `terms[0].formula` post-hook and
+assigns it to `attackInput.actionDie` via `normalizeLibDie`, so
+dcc-qol's `DiceChain.bumpDie` in-place mutation is reflected in
+`libResult.die`. Phase 3 session 5 split
 `DCCActor.rollWeaponAttack`'s inline damage block into
 `_rollDamage` + `_canRouteDamageViaAdapter` + `_rollDamageViaAdapter`
 + `_rollDamageLegacy`. Simplest-damage happy-path (single-die
 `NdM[+K]` + adapter-routed attack + no backstab + no per-term
 flavors) flows through the lib's `rollDamage`; Foundry keeps the
 Roll + chat total; the lib-owned breakdown surfaces as
-`flags['dcc.libDamageResult']`. See `docs/00-progress.md` for full
-rationale.
+`flags['dcc.libDamageResult']`. Phase 3 session 6 split the inline
+crit + fumble blocks the same way: `_rollCritical` /
+`_rollFumble` dispatchers gate on (attack-via-adapter + automate
+on) and route through `_rollCriticalViaAdapter` /
+`_rollFumbleViaAdapter`, which call the lib's `rollCritical` /
+`rollFumble` after Foundry evaluates — results surface as
+`flags['dcc.libCritResult']` / `flags['dcc.libFumbleResult']`. See
+`docs/00-progress.md` for full rationale.
 
-**Phase 2 + 3 sessions 1–5 infrastructure session 6 builds on:**
+**Phase 2 + 3 sessions 1–6 infrastructure session 7 builds on:**
 
-- `DCCActor.rollSpellCheck` + `DCCActor.rollToHit` + `DCCActor._rollDamage`
-  are all dispatchers. The two-pass formula/evaluate pattern (spell
-  side) and the adapter-path-with-legacy-roll pattern (attack side,
-  session 2; damage side, session 5) are the templates for future
+- `DCCActor.rollSpellCheck` + `DCCActor.rollToHit` +
+  `DCCActor._rollDamage` + `DCCActor._rollCritical` +
+  `DCCActor._rollFumble` are all dispatchers. The two-pass
+  formula/evaluate pattern (spell side) and the adapter-path-with-
+  legacy-roll pattern (attack side, session 2; damage side, session
+  5; crit + fumble side, session 6) are the templates for future
   slices.
 - Adapter modules: `module/adapter/{character-accessors,
   foundry-roller, chat-renderer, spell-input, spell-events,
-  attack-input, attack-events, damage-input, roll-dialog,
-  debug}.mjs`. Session 2 added `attack-input.mjs` (buildAttackInput)
-  + `attack-events.mjs` (stub — combat events wire later). Session 3
-  extended `attack-input.mjs` with `hookTermsToBonuses` (translator
-  for hook-pushed Modifier terms). Session 4 exported `normalizeLibDie`
-  so the dispatcher can normalize post-hook `terms[0].formula`
-  mutations. Session 5 added `damage-input.mjs` (`parseDamageFormula`
-  + `buildDamageInput` — translates a Foundry weapon damage formula
-  into the lib's `DamageInput`).
+  attack-input, attack-events, damage-input, crit-fumble-input,
+  roll-dialog, debug}.mjs`. Session 2 added `attack-input.mjs`
+  (buildAttackInput) + `attack-events.mjs` (stub — combat events
+  wire later). Session 3 extended `attack-input.mjs` with
+  `hookTermsToBonuses` (translator for hook-pushed Modifier
+  terms). Session 4 exported `normalizeLibDie` so the dispatcher
+  can normalize post-hook `terms[0].formula` mutations. Session 5
+  added `damage-input.mjs` (`parseDamageFormula` +
+  `buildDamageInput` — translates a Foundry weapon damage formula
+  into the lib's `DamageInput`). Session 6 added
+  `crit-fumble-input.mjs` (`buildCriticalInput` +
+  `buildFumbleInput` — translate weapon + luck state into the
+  lib's `CriticalInput` / `FumbleInput`).
 - `module/adapter/roll-dialog.mjs` (added session 1) currently
   exports `promptSpellburnCommitment` only. When the attack /
   damage dialog needs its own prompt, **extend this file** — don't
@@ -93,45 +106,55 @@ rationale.
   die when hooks bump `terms[0].formula` in place. Session 5's
   damage bridge uses the lib's native `DamageResult.breakdown[]`
   shape — no legacy-modifier translation needed — and surfaces it
-  as `flags['dcc.libDamageResult']`.
+  as `flags['dcc.libDamageResult']`. Session 6's crit + fumble
+  bridges surface `CriticalResult.roll.modifiers` /
+  `FumbleResult.roll.modifiers` (lib-native `RollModifier[]`) on
+  `flags['dcc.libCritResult'].modifiers` /
+  `flags['dcc.libFumbleResult'].modifiers`.
 - `module/adapter/debug.mjs` + `logDispatch('rollXxx',
-  'adapter'|'legacy', details)` is PERMANENT. Sessions 2 + 5 wired
-  `logDispatch('rollWeaponAttack', ...)` and `logDispatch('rollDamage',
-  ...)` in both branches. Every future `_xxxViaAdapter` /
-  `_xxxLegacy` must do the same.
-- **Baseline:** 821 Vitest tests pass (811 at session 4 close + 10
-  session-5 tests: `parseDamageFormula` + `buildDamageInput` unit,
-  `_canRouteDamageViaAdapter` gate truth-table, both dispatch
-  branches, per-term-flavor legacy routing, minimum-1-damage clamp)
-  + 27 Playwright dispatch tests pass against live v14 Foundry
-  (verified 2026-04-19 at session 5 close — 26 prior + 1 new for the
-  per-term-flavor damage → legacy path).
+  'adapter'|'legacy', details)` is PERMANENT. Sessions 2 + 5 + 6
+  wired `logDispatch('rollWeaponAttack', ...)`,
+  `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
+  ...)`, and `logDispatch('rollFumble', ...)` in both branches.
+  Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
+- **Baseline:** 834 Vitest tests pass (821 at session 5 close + 13
+  session-6 tests: `buildCriticalInput` + `buildFumbleInput` unit
+  coverage, `_canRouteCritViaAdapter` + `_canRouteFumbleViaAdapter`
+  gate truth-tables, both crit dispatch branches, both fumble
+  dispatch branches, NPC fumble die swap, libCritResult +
+  libFumbleResult shape validation) + 33 Playwright dispatch
+  tests pass against live v14 Foundry (28 prior + 5 new
+  crit/fumble cases), verified 2026-04-19. Full e2e suite (62
+  tests including data-models + v14-features) runs in ~7 min
+  after the session-reuse fixture landed — dispatch-spec tests
+  alone run in ~30 s (down from ~4 min) because the worker-scoped
+  login is amortized across the spec's 33 tests.
 
-**This session's goal:** **Phase 3 session 6 — next attack-migration
+**This session's goal:** **Phase 3 session 7 — next attack-migration
 slice.**
 
-Sessions 2–5 landed the simplest-weapon-attack happy-path + its
-damage tail through the adapter, plus the full attack-side hook
-bridge: pushed `Modifier` terms (session 3) and in-place action-die
-mutations (session 4) both flow through to the lib's `AttackInput`,
-and the simplest-damage formula (session 5) flows through to the
-lib's `DamageInput`. Session 6 picks up one of the options in
-`00-progress.md §Next steps` — leaning (a) + (b) crit + fumble
-migration off the now-stable attack-roll bridge (structurally
-parallel, both lib-supported via `rollCritical` / `rollFumble`, both
-close the "what does the lib own on this chat card?" story). Other
-candidates: (c) broaden the damage gate (magic bonus, NPC damage
-adjustment), (d) backstab, (e) deed-die adapter, (f) attack-modifier
-dialog (open question #7).
+Sessions 2–6 landed the simplest-weapon-attack happy-path + its
+damage / crit / fumble tails through the adapter, plus the full
+attack-side hook bridge. Every chained call in a simplest-weapon
+attack now surfaces a lib-native result on chat flags
+(`dcc.libResult` / `dcc.libDamageResult` / `dcc.libCritResult` /
+`dcc.libFumbleResult`). Session 7 picks up one of the remaining
+gate-broadening slices in `00-progress.md §Next steps` — leaning
+(a) broaden the damage gate (magic bonus, NPC damage adjustment):
+low-risk, extends session 5's adapter, and immediately useful for
+NPCs which rarely crit but frequently have damage-bonus adjustments.
+Other candidates: (b) backstab attack + damage, (c) deed-die
+adapter, (d) attack-modifier dialog (open question #7), (e)
+two-weapon fighting, (f) crit-result lookup in the lib (lib's
+`parseCritExtraDamage`).
 
 Phase 3 as a whole is the largest migration so far:
 `rollWeaponAttack` → `makeAttackRoll` + `rollDamage` + `rollCritical`
 + `rollFumble`, with the interleaving crit-range-scaling, two-weapon
 penalty, backstab multiplier, deed-die, and weapon-type logic all
-needing the adapter bridge. The lib has every piece (`makeAttackRoll`,
-`rollDamage`, `rollCritical`, `rollFumble`, `getTwoWeaponPenalty`,
-`getBackstabMultiplier`) — the work is building the Foundry-side
-adapter that feeds them, one slice at a time.
+needing the adapter bridge. **All four core lib calls now have
+adapter paths**; remaining sessions broaden the happy-path gate
+to cover additional weapon-attack variants.
 
 **Critical integration point:** `dcc.modifyAttackRollTerms` is
 dcc-qol's main hook. It fires inside `_rollToHitViaAdapter` and again
@@ -146,58 +169,55 @@ aggregate on `libResult.modifiers`), and in-place mutations of
 `../../modules/dcc-qol/scripts/hooks/listeners.js:25-27`) are both
 now observationally faithful through the adapter path.
 
-### Session 12 slice — Phase 3, session 6 (next attack slice)
+### Session 13 slice — Phase 3, session 7 (next attack slice)
 
-1. **Read first** — `docs/00-progress.md` (Phase 3 session 5 entry +
+1. **Read first** — `docs/00-progress.md` (Phase 3 session 6 entry +
    Next steps options + Blockers / open questions),
    `docs/dev/ARCHITECTURE_REIMAGINED.md §7 Phase 3`, `module/actor.js`
-   `rollToHit` dispatcher (line ~2733), `_rollToHit{ViaAdapter,
-   Legacy}`, `_rollDamage` dispatcher (line ~3054),
-   `_canRouteDamageViaAdapter` (line ~3075), `_rollDamage{ViaAdapter,
-   Legacy}`, `module/adapter/{attack,damage}-input.mjs`, and
-   `rollCritical` (line ~3077) + the `if (attackRollResult.crit)` /
-   `if (attackRollResult.fumble)` blocks inside `rollWeaponAttack`
-   (the session 6 target zone). Check
+   `rollToHit` dispatcher, `_rollToHit{ViaAdapter,Legacy}`,
+   `_rollDamage` / `_rollCritical` / `_rollFumble` dispatchers +
+   their adapter + legacy bodies, `module/adapter/{attack,damage,
+   crit-fumble}-input.mjs`, and the `rollWeaponAttack` body
+   (`damageRollFormula` construction around the NPC `attackDamageBonus`
+   branch — likely target for session 7 option (a)). Check
    `module/vendor/dcc-core-lib/VERSION.json` — if wave-3 lib support
    has landed, sync + refactor accordingly.
 
 2. **Pick the session slice** (per `00-progress.md §Next steps`).
-   Leaning (a) + (b) combined — crit + fumble migration off the
-   now-stable attack-roll bridge. The attack-roll bridge already
-   returns `libResult.isCriticalThreat` / `libResult.isFumble`, so
-   `rollWeaponAttack`'s inline `if (attackRollResult.crit)` /
-   `if (attackRollResult.fumble)` blocks are the natural split
-   points. Each becomes a `_rollCritical{ViaAdapter,Legacy}` /
-   `_rollFumble{ViaAdapter,Legacy}` dispatcher, mirroring session 5's
-   damage pattern. Preserve the Foundry-side crit-table /
-   fumble-table lookups (`getCritTableResult` /
-   `getFumbleTableResult`) — the lib's `rollCritical` /
-   `rollFumble` results surface additively as
-   `flags['dcc.libCritResult']` / `flags['dcc.libFumbleResult']`.
-   Alternatives: broaden the damage gate, backstab, deed-die,
-   attack-modifier dialog.
+   Leaning (a) broaden the damage gate — NPC damage adjustment is
+   currently inlined as `damageRollFormula += ±N` before the gate
+   check, which passes the `_canRouteDamageViaAdapter` regex but
+   the adjustment semantics are lost (the lib's `DamageInput` has
+   no "post-roll flat additive" field). Either (i) pass it as
+   `strengthModifier` (folding both into the single flat slot, same
+   as session 5 does for PC damage), or (ii) add a new lib input
+   field for it. Alternative slices: (b) backstab (needs RAW-divergence
+   decision), (c) deed-die adapter, (d) attack-modifier dialog, (e)
+   two-weapon fighting, (f) crit-result lookup in the lib.
 
 3. **Dispatch logging.** Every `_rollXxxViaAdapter` /
    `_rollXxxLegacy` must call `logDispatch` as first line
-   (permanent infrastructure). Session 5 added `rollDamage` branches;
-   extend the Playwright spec to validate any new branches session 6
-   opens up (e.g. `_rollCriticalViaAdapter` / `_rollCriticalLegacy`
-   + `_rollFumbleViaAdapter` / `_rollFumbleLegacy`).
+   (permanent infrastructure). Extend the Playwright spec to
+   validate any new branches session 7 opens up.
 
 4. **Integration testing.** Playwright against live v14 Foundry is
-   the gold standard for dispatcher validation. The 27-test suite
-   was last run green at session 5 close (2026-04-19). If session 6
-   changes dispatch behavior, re-run before claiming complete.
+   the gold standard for dispatcher validation. The 33-test dispatch
+   spec + full 62-test e2e suite was last run green at session 6
+   close (2026-04-19). If session 7 changes dispatch behavior,
+   re-run before claiming complete. Session-reuse fixture is in
+   place — dispatch-spec tests run in ~0.5-1 s each instead of
+   7-13 s.
 
-Do NOT in session 12: touch data-model slimming (Phase 4) or sheet
+Do NOT in session 13: touch data-model slimming (Phase 4) or sheet
 composition (Phase 5). Do NOT break `dcc.modifyAttackRollTerms` — it
-has external consumers. Do NOT touch the simplest-damage gate in
-`_canRouteDamageViaAdapter` without mirroring changes to the test
-truth-table.
+has external consumers. Do NOT touch any Phase 3 gate
+(`_canRouteAttackViaAdapter`, `_canRouteDamageViaAdapter`,
+`_canRouteCritViaAdapter`, `_canRouteFumbleViaAdapter`) without
+mirroring changes to the test truth-tables.
 
 **Before touching Phase 3 code, confirm the repo is green:**
 
-- `npm test` — 821 Vitest tests + dice-gated integration. Final
+- `npm test` — 834 Vitest tests + dice-gated integration. Final
   check before any commit.
 - `npm run test:unit` — mock-only; runs in every environment.
 - `npm run test:integration` — integration project. Skips if Foundry

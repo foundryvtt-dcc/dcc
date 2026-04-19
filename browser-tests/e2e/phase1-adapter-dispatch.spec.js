@@ -1,5 +1,69 @@
 /* eslint-disable no-undef -- Browser globals used in page.evaluate */
-const { test, expect } = require('@playwright/test')
+const { test: base, expect } = require('@playwright/test')
+
+const ADAPTER_TAG = '[DCC adapter]'
+const adapterLogs = []
+const consoleErrors = []
+
+/**
+ * Session-reuse fixture. Playwright's default is a fresh browser context per
+ * test; with Foundry that means a full `/join` navigation + login + system
+ * boot every single time (~6–13 s of overhead per test). The
+ * `sessionPage` fixture is worker-scoped — each worker logs in ONCE and
+ * reuses the same page across every test it runs. The `page` override is
+ * test-scoped and simply forwards `sessionPage`, keeping the existing test
+ * bodies (`async ({ page }) => ...`) source-compatible. `beforeEach` then
+ * only clears captured logs and cleans up `P1 ...` actors / open app
+ * windows.
+ *
+ * The console listener is attached once per worker (attaching it per test
+ * would leak listeners on the reused page).
+ *
+ * With `workers: 1` (playwright.config.js), `adapterLogs` / `consoleErrors`
+ * as module-scoped arrays are safe. If we later parallelize, move them
+ * onto the fixture object.
+ */
+const test = base.extend({
+  sessionPage: [async ({ browser }, use) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    const page = await context.newPage()
+
+    page.on('console', msg => {
+      const text = msg.text()
+      if (text.includes(ADAPTER_TAG)) adapterLogs.push(text)
+      if (msg.type() === 'error') consoleErrors.push(text)
+    })
+
+    await page.goto('http://localhost:30000/join')
+    await page.waitForTimeout(1000)
+
+    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
+    if (!isInGame) {
+      const userSelect = page.locator('select[name="userid"]')
+      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
+      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
+      await page.click('button[name="join"]')
+      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
+    }
+
+    await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
+    await page.waitForFunction(() => game?.dcc?.KeyState !== undefined, { timeout: 10000 })
+
+    for (const sel of ['#dcc-welcome-dialog', '#dcc-core-book-welcome-dialog']) {
+      const dialog = page.locator(sel)
+      if (await dialog.isVisible({ timeout: 500 }).catch(() => false)) {
+        await page.keyboard.press('Escape')
+      }
+    }
+
+    await use(page)
+    await context.close()
+  }, { scope: 'worker' }],
+
+  page: async ({ sessionPage }, use) => {
+    await use(sessionPage)
+  }
+})
 
 /**
  * Phase 1 adapter-dispatch validation.
@@ -21,10 +85,6 @@ const { test, expect } = require('@playwright/test')
  */
 
 test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
-  const ADAPTER_TAG = '[DCC adapter]'
-  const adapterLogs = []
-  const consoleErrors = []
-
   test.beforeAll(async () => {
     let serverUp
     try {
@@ -46,47 +106,11 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
   test.beforeEach(async ({ page }) => {
     adapterLogs.length = 0
     consoleErrors.length = 0
-
-    page.on('console', msg => {
-      const text = msg.text()
-      if (text.includes(ADAPTER_TAG)) {
-        adapterLogs.push(text)
-      }
-      if (msg.type() === 'error') {
-        consoleErrors.push(text)
-      }
-    })
-
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await page.goto('http://localhost:30000/join')
-    await page.waitForTimeout(1000)
-
-    const isInGame = await page.locator('.game.system-dcc').isVisible({ timeout: 1000 }).catch(() => false)
-    if (!isInGame) {
-      const userSelect = page.locator('select[name="userid"]')
-      await userSelect.waitFor({ state: 'visible', timeout: 10000 })
-      await page.selectOption('select[name="userid"]', { label: 'Gamemaster' })
-      await page.click('button[name="join"]')
-      await page.waitForSelector('.game.system-dcc', { timeout: 30000 })
-    }
-
-    await page.waitForSelector('#actors', { timeout: 10000, state: 'attached' })
-    await page.evaluate(() => document.querySelectorAll('#notifications .notification').forEach(n => n.remove()))
-    await page.waitForFunction(() => game?.dcc?.KeyState !== undefined, { timeout: 10000 })
-
     await page.evaluate(async () => {
       for (const app of Object.values(ui.windows)) { await app.close() }
       for (const actor of game.actors.filter(a => a.name.startsWith('P1 '))) { await actor.delete() }
-    })
-
-    const dccDialog = page.locator('#dcc-welcome-dialog')
-    if (await dccDialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
-    }
-    const coreBookDialog = page.locator('#dcc-core-book-welcome-dialog')
-    if (await coreBookDialog.isVisible({ timeout: 500 }).catch(() => false)) {
-      await page.keyboard.press('Escape')
-    }
+      document.querySelectorAll('#notifications .notification').forEach(n => n.remove())
+    }).catch(() => {})
   })
 
   test.afterEach(async ({ page }) => {
@@ -771,6 +795,228 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       const weaponEntry = flag.breakdown.find(b => b.source === 'weapon')
       expect(weaponEntry, 'breakdown must include weapon entry').toBeDefined()
       expect(weaponEntry.amount).toBe(flag.baseDamage)
+    })
+  })
+
+  // ── rollCritical + rollFumble (Phase 3 session 6) ──────────────────
+
+  test.describe('rollCritical', () => {
+    test('adapter path fires when attack was adapter + natural crit (forced natural 20)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Crit Adapter', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-CritSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d8',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        // Force natural 20 on every die roll so the attack is always a crit.
+        // Foundry's Die#mapRandomFace = Math.ceil((1 - randomUniform) * faces);
+        // so randomUniform near 0 → max face (20 on d20).
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.0001
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Crit Adapter').items.getName('P1-CritSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Crit Adapter').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-CritSword' })
+      const critLine = await waitForAdapterLog('rollCritical')
+      assertPath(critLine, 'adapter', { weapon: 'P1-CritSword' })
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+    })
+
+    test('legacy path fires when attack went through legacy (backstab)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Crit Legacy', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-CritDagger',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d4',
+            backstabDamage: '1d4',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.0001
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Crit Legacy').items.getName('P1-CritDagger').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Crit Legacy').rollWeaponAttack(id, { backstab: true })
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'legacy', { weapon: 'P1-CritDagger' })
+      const critLine = await waitForAdapterLog('rollCritical')
+      assertPath(critLine, 'legacy', { weapon: 'P1-CritDagger' })
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+    })
+
+    test('adapter path populates dcc.libCritResult chat flag', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Crit LibFlag', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-LibCritSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d8',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.0001
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Crit LibFlag').items.getName('P1-LibCritSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Crit LibFlag').rollWeaponAttack(id)
+      }, weaponId)
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m => m.getFlag('dcc', 'isToHit') && m.getFlag('dcc', 'libCritResult'))
+          if (msg) return msg.getFlag('dcc', 'libCritResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
+      expect(flag, 'adapter-path crit must set dcc.libCritResult').not.toBeNull()
+      expect(typeof flag.critDie).toBe('string')
+      expect(flag.critDie).toMatch(/d\d+/)
+      expect(typeof flag.natural).toBe('number')
+      expect(flag.natural).toBeGreaterThanOrEqual(1)
+      expect(typeof flag.total).toBe('number')
+      expect(typeof flag.critTable).toBe('string')
+      expect(Array.isArray(flag.modifiers)).toBe(true)
+    })
+  })
+
+  test.describe('rollFumble', () => {
+    test('adapter path fires when attack was adapter + natural 1 fumble', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Fumble Adapter', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-FumbleSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        // Force natural 1 → fumble on every die roll.
+        // Foundry's Die#mapRandomFace = Math.ceil((1 - randomUniform) * faces);
+        // so randomUniform near 1 → min face (1 on d20).
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.9999
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Fumble Adapter').items.getName('P1-FumbleSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Fumble Adapter').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-FumbleSword' })
+      const fumbleLine = await waitForAdapterLog('rollFumble')
+      assertPath(fumbleLine, 'adapter', { weapon: 'P1-FumbleSword' })
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+    })
+
+    test('adapter path populates dcc.libFumbleResult chat flag', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Fumble LibFlag', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-LibFumbleSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.9999
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Fumble LibFlag').items.getName('P1-LibFumbleSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Fumble LibFlag').rollWeaponAttack(id)
+      }, weaponId)
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m => m.getFlag('dcc', 'isToHit') && m.getFlag('dcc', 'libFumbleResult'))
+          if (msg) return msg.getFlag('dcc', 'libFumbleResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
+      expect(flag, 'adapter-path fumble must set dcc.libFumbleResult').not.toBeNull()
+      expect(typeof flag.fumbleDie).toBe('string')
+      expect(flag.fumbleDie).toMatch(/d\d+/)
+      expect(typeof flag.natural).toBe('number')
+      expect(typeof flag.total).toBe('number')
+      expect(Array.isArray(flag.modifiers)).toBe(true)
     })
   })
 })
