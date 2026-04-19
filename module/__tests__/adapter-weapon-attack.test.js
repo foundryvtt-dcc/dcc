@@ -5,7 +5,8 @@
  * Dispatcher + adapter coverage:
  *   DCCActor.rollToHit →
  *     (happy path + automate on) → _rollToHitViaAdapter
- *     (showModifierDialog | backstab | two-weapon | deed die | automate off) → _rollToHitLegacy
+ *     (backstab on a thief — session 9) → _rollToHitViaAdapter with isBackstab
+ *     (showModifierDialog | two-weapon | deed die | automate off) → _rollToHitLegacy
  *
  * Adapter-path validation points:
  *   - `dcc.modifyAttackRollTerms` hook still fires with the legacy-shape
@@ -134,12 +135,13 @@ test('legacy path fires when automate off', async () => {
   expect(assertDispatched('adapter')).toBe(false)
 })
 
-test('legacy path fires when options.backstab is set', async () => {
+test('adapter path fires when options.backstab is set (session 9)', async () => {
   logDispatch.mockClear()
   const restore = withAutomate(true)
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
-  const weapon = makeSimpleWeapon()
+  actor.system.class.backstab = '+3'
+  const weapon = makeSimpleWeapon({ backstabDamage: '1d10' })
 
   try {
     await actor.rollToHit(weapon, { backstab: true })
@@ -147,8 +149,33 @@ test('legacy path fires when options.backstab is set', async () => {
     restore()
   }
 
-  expect(assertDispatched('legacy')).toBe(true)
-  expect(assertDispatched('adapter')).toBe(false)
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
+})
+
+test('adapter path with backstab sets isBackstab + class:backstab RollBonus', async () => {
+  logDispatch.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  // L3 chaotic thief backstab bonus (Table 1-9).
+  actor.system.class.backstab = '+7'
+  const weapon = makeSimpleWeapon()
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, { backstab: true })
+  } finally {
+    restore()
+  }
+
+  expect(result.libResult).toBeDefined()
+  // `bonuses` aggregate in the lib result has a `class:backstab` entry
+  // with value 7.
+  const backstabEntry = result.libResult.bonuses?.find(b => b.id === 'class:backstab')
+  expect(backstabEntry).toBeDefined()
+  expect(backstabEntry.effect).toEqual({ type: 'modifier', value: 7 })
+  expect(backstabEntry.source).toEqual({ type: 'class', id: 'thief' })
 })
 
 test('legacy path fires when options.showModifierDialog is set', async () => {

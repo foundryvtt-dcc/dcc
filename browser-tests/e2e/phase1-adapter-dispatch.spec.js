@@ -617,9 +617,19 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(damageLine, 'adapter', { weapon: 'P1-Longsword' })
     })
 
-    test('options.backstab → legacy', async ({ page }) => {
+    test('options.backstab on a thief → adapter (session 9)', async ({ page }) => {
+      // Phase 3 session 9: backstab attack + damage flow through the
+      // adapter. `isBackstab: true` drives the lib's auto-crit;
+      // `rollWeaponAttack` swaps `damageRollFormula` to the alternate
+      // backstab damage formula before reaching the adapter's gate,
+      // so the damage path accepts the alternate die naturally.
       await page.evaluate(async () => {
-        const actor = await Actor.create({ name: 'P1 Weapon Backstab', type: 'Player' })
+        const actor = await Actor.create({
+          name: 'P1 Weapon Backstab',
+          type: 'Player',
+          // L3 chaotic thief: Table 1-9 backstab bonus is +7.
+          system: { class: { backstab: '+7' } }
+        })
         await actor.createEmbeddedDocuments('Item', [{
           name: 'P1-BackstabDagger',
           type: 'weapon',
@@ -627,8 +637,9 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
             actionDie: '1d20',
             toHit: '+1',
             critRange: 20,
+            damageWeapon: '1d4',
             damage: '1d4',
-            backstabDamage: '1d4',
+            backstabDamage: '1d10',
             melee: true,
             equipped: true
           }
@@ -642,9 +653,74 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
         await game.actors.getName('P1 Weapon Backstab').rollWeaponAttack(id, { backstab: true })
       }, weaponId)
       const attackLine = await waitForAdapterLog('rollWeaponAttack')
-      assertPath(attackLine, 'legacy', { weapon: 'P1-BackstabDagger' })
+      assertPath(attackLine, 'adapter', { weapon: 'P1-BackstabDagger' })
       const damageLine = await waitForAdapterLog('rollDamage')
-      assertPath(damageLine, 'legacy', { weapon: 'P1-BackstabDagger' })
+      assertPath(damageLine, 'adapter', { weapon: 'P1-BackstabDagger' })
+    })
+
+    test('options.backstab populates libResult with auto-crit + class:backstab bonus', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Backstab LibFlag',
+          type: 'Player',
+          system: { class: { backstab: '+7' } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-BackstabShortSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+1',
+            critRange: 20,
+            damageWeapon: '1d6',
+            damage: '1d6',
+            backstabDamage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        // Force d20 to roll exactly 10 — below threatRange (20) so the
+        // only crit path is backstab-auto, not threat-range / natural-max.
+        // Foundry: Math.ceil((1 - randomUniform) * faces); 0.5 → 10 on d20.
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.5
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Backstab LibFlag').items.getName('P1-BackstabShortSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Backstab LibFlag').rollWeaponAttack(id, { backstab: true })
+      }, weaponId)
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Backstab LibFlag' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'backstab adapter-path attack must set dcc.libResult').not.toBeNull()
+      expect(flag.natural).toBe(10)
+      expect(flag.isCriticalThreat).toBe(true)
+      expect(flag.critSource).toBe('backstab-auto')
+      const backstabEntry = flag.bonuses.find(b => b.id === 'class:backstab')
+      expect(backstabEntry, 'class:backstab RollBonus must surface on libResult.bonuses').toBeDefined()
+      expect(backstabEntry.effect.value).toBe(7)
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
     })
 
     test('showModifierDialog flag → legacy', async ({ page }) => {
@@ -961,42 +1037,6 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(attackLine, 'adapter', { weapon: 'P1-CritSword' })
       const critLine = await waitForAdapterLog('rollCritical')
       assertPath(critLine, 'adapter', { weapon: 'P1-CritSword' })
-
-      await page.evaluate(() => {
-        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
-      })
-    })
-
-    test('legacy path fires when attack went through legacy (backstab)', async ({ page }) => {
-      await page.evaluate(async () => {
-        const actor = await Actor.create({ name: 'P1 Crit Legacy', type: 'Player' })
-        await actor.createEmbeddedDocuments('Item', [{
-          name: 'P1-CritDagger',
-          type: 'weapon',
-          system: {
-            actionDie: '1d20',
-            toHit: '+2',
-            critRange: 20,
-            damage: '1d4',
-            backstabDamage: '1d4',
-            melee: true,
-            equipped: true
-          }
-        }])
-        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
-        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
-        CONFIG.Dice.randomUniform = () => 0.0001
-      })
-      const weaponId = await page.evaluate(() => {
-        return game.actors.getName('P1 Crit Legacy').items.getName('P1-CritDagger').id
-      })
-      await page.evaluate(async (id) => {
-        await game.actors.getName('P1 Crit Legacy').rollWeaponAttack(id, { backstab: true })
-      }, weaponId)
-      const attackLine = await waitForAdapterLog('rollWeaponAttack')
-      assertPath(attackLine, 'legacy', { weapon: 'P1-CritDagger' })
-      const critLine = await waitForAdapterLog('rollCritical')
-      assertPath(critLine, 'legacy', { weapon: 'P1-CritDagger' })
 
       await page.evaluate(() => {
         CONFIG.Dice.randomUniform = globalThis.__origRandomUniform

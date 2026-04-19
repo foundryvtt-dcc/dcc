@@ -64,25 +64,17 @@ for simplest-weapon, two-weapon, backstab, and deed-die paths.
 Completion unblocks Group D retirement slices. Must serialize — all
 touch `module/actor.js` dispatchers.
 
-#### A2. Backstab attack + damage through adapter — **BLOCKED**
-- **Blocked on:** in-flight `dcc-core-lib` backstab fix. User is
-  correcting the lib's backstab semantics to match DCC RAW + the
-  legacy DCC Foundry behavior. Do not start this slice until the
-  vendored lib version (`module/vendor/dcc-core-lib/VERSION.json`)
-  reflects a post-fix commit. See
-  `memory/project_dcc_core_lib_backstab_fix_inflight.md`.
-- **Scope:** Broaden attack + damage gates to allow backstab. Lib has
-  `getBackstabMultiplier`; surface it as a `MultiplyModifier` on the
-  damage `modifiers` list when wave 3 is in, or translate to the
-  multiplier field on `DamageInput` in the meantime.
-- **Files:** `module/actor.js` (both `_canRouteAttackViaAdapter` and
-  `_canRouteDamageViaAdapter` + their adapter branches),
-  `module/adapter/damage-input.mjs`,
-  `module/__tests__/adapter-weapon-{attack,damage}.test.js`.
-- **Browser tests:** extend dispatch spec with a thief-backstab scenario
-  asserting the adapter path for both attack and damage, validating the
-  `libDamageResult` breakdown includes the multiplier.
-- **Commit:** `feat(adapter): Phase 3 session <M> — backstab adapter route`
+#### ~~A2. Backstab attack + damage through adapter~~ — **DONE 2026-04-19**
+Landed as Phase 3 session 9 after the `dcc-core-lib@0.4.1` sync.
+Both attack + damage gates dropped their `options.backstab → false`
+exclusions; `AttackInput.isBackstab: true` drives the lib's auto-crit;
+Table 1-9 attack bonus flows as a `class:backstab` RollBonus;
+`libResult.critSource: 'backstab-auto'` surfaces for downstream
+crit-table routing. The lib's new RAW model replaced the multiplier
+approach with alternate damage dies on backstab-friendly weapons
+(dagger, blackjack, blowgun, garrote) — no damage-side translation
+needed since `rollWeaponAttack` already swaps
+`damageRollFormula = weapon.system.backstabDamage` pre-gate.
 
 #### A3. Deed-die adapter route (warrior + dwarf)
 - **Scope:** Broaden attack gate to allow deed-die weapons. Lib has
@@ -224,7 +216,7 @@ explicit user decision before drafting its concrete slice list.
 
 Move entries here as they land; keep the active queue scannable.
 
-### Phase 3 sessions 1–8 (2026-04-18 → 2026-04-19)
+### Phase 3 sessions 1–9 (2026-04-18 → 2026-04-19)
 
 See `docs/00-progress.md` for details. Summary:
 - Phase 3 session 1: Spellburn dialog-adapter
@@ -241,6 +233,12 @@ See `docs/00-progress.md` for details. Summary:
   breakdown carries a separate `source: 'magic'` entry; parser extended
   to sum multiple flat modifiers, new `extractWeaponMagicBonus` helper
   gates dice-bearing / cursed bonuses to legacy
+- Phase 3 session 9: thief backstab through the adapter. Followed the
+  `dcc-core-lib@0.4.1` sync (backstab fix + post-review API cleanup);
+  `AttackInput.isBackstab: true` drives lib auto-crit; Table 1-9 bonus
+  flows as a `class:backstab` RollBonus; `libResult.critSource`
+  surfaced on chat flags; `libResult.bonuses` expanded to carry the
+  full bonus list (not just hook-added).
 
 ### Docs slices
 

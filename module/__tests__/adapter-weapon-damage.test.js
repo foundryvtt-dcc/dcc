@@ -188,15 +188,27 @@ test('_canRouteDamageViaAdapter rejects when the attack went through legacy', ()
   expect(actor._canRouteDamageViaAdapter(weapon, '1d8', {}, {})).toBe(false)
 })
 
-test('_canRouteDamageViaAdapter rejects on backstab + per-term flavors', () => {
+test('_canRouteDamageViaAdapter rejects per-term flavors + multi-dice formulas', () => {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'sword' }
   const attackRollResult = { libResult: { total: 15 } }
 
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d8', attackRollResult, { backstab: true })).toBe(false)
   expect(actor._canRouteDamageViaAdapter(weapon, '1d6[fire]+1d6[cold]', attackRollResult, {})).toBe(false)
   expect(actor._canRouteDamageViaAdapter(weapon, '1d6+1d4', attackRollResult, {})).toBe(false)
+})
+
+test('_canRouteDamageViaAdapter accepts backstab (session 9)', () => {
+  // Session 9 dropped the `options.backstab → false` gate. `rollWeaponAttack`
+  // already swaps the formula to `weapon.system.backstabDamage` BEFORE
+  // reaching `_rollDamage`, so by the time the adapter sees it, it's the
+  // alternate die; no separate translation is needed.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'dagger' }
+  const attackRollResult = { libResult: { total: 15 } }
+
+  expect(actor._canRouteDamageViaAdapter(weapon, '1d10', attackRollResult, { backstab: true })).toBe(true)
 })
 
 test('_canRouteDamageViaAdapter accepts simple formulas when attack was adapter', () => {

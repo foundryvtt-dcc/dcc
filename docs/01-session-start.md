@@ -29,20 +29,18 @@ pins Node 24.
    adapter emits and consumes.
 
 **Status:** **Phase 1 closed. Phase 2 CLOSED 2026-04-18. Phase 3
-sessions 1 (dialog-adapter), 2 (first attack-migration slice), 3
-(hook-translation bridge), and 4 (long-range dice-chain translation)
-all CLOSED 2026-04-18. Phase 3 sessions 5 (first damage-migration
-slice), 6 (crit + fumble migration), 7 (NPC damage-bonus adapter
-route with proper attribution), and 8 (PC magic-weapon-bonus damage
-adapter route) all CLOSED 2026-04-19. Group B1
-(`dcc.registerItemSheet` extension hook) + B2 (`EXTENSION_API.md`
-pain-point cross-reference + §2.12 stated contract) CLOSED
-2026-04-19. Phase 3 session 9 is the active work — pick up the
-next slice from `docs/02-slice-backlog.md` / `00-progress.md §Next
-steps`. A2 (backstab) is currently blocked on an in-flight
-`dcc-core-lib` backstab fix (see
-`memory/project_dcc_core_lib_backstab_fix_inflight.md`); lean
-deed-die (A3) or attack-modifier dialog next.** Phase 2 close-out pinned two
+sessions 1–4 all CLOSED 2026-04-18. Phase 3 sessions 5 (first
+damage-migration slice), 6 (crit + fumble migration), 7 (NPC
+damage-bonus adapter route with proper attribution), 8 (PC magic-
+weapon-bonus damage adapter route), and 9 (thief backstab adapter
+route — A2) all CLOSED 2026-04-19. Vendor sync to
+`@moonloch/dcc-core-lib@0.4.1` (backstab fix + post-review API
+cleanup) landed 2026-04-19. Group B1 (`dcc.registerItemSheet`
+extension hook) + B2 (`EXTENSION_API.md` pain-point cross-reference
++ §2.12 stated contract) CLOSED 2026-04-19. Phase 3 session 10 is
+the active work — pick up the next slice from
+`docs/02-slice-backlog.md` / `00-progress.md §Next steps`; lean
+deed-die (A3).** Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and
 incremental; (b) `_runLegacyPatronTaint` is permanent adapter
@@ -102,7 +100,25 @@ sets `input.magicBonus`. The lib surfaces it as
 `{ source: 'magic', amount: N }` on `libDamageResult.breakdown`
 alongside (not merged with) the Strength entry.
 
-**Phase 2 + 3 sessions 1–8 infrastructure session 9 builds on:**
+**Phase 3 session 9 (2026-04-19) routed thief backstab through
+the adapter.** Followed on from the `dcc-core-lib@0.4.1` sync:
+`AttackInput.isBackstab: true` drives the lib's auto-crit
+(matches legacy Foundry's `crit = !fumble && options.backstab`
+semantic); `DamageResult.subtotal` + `.multiplier` removed
+(the new damage pipeline has no multiplier concept);
+`AttackResult.critSource` added. `_canRouteAttackViaAdapter` +
+`_canRouteDamageViaAdapter` dropped their `options.backstab →
+false` gates. `_rollToHitViaAdapter` pushes the Table 1-9 bonus
+term pre-hook (same as legacy) then surfaces it as a RollBonus
+with `id: 'class:backstab'`, `source: { type: 'class', id:
+'thief' }` on `attackInput.bonuses`. `rollWeaponAttack` already
+swaps `damageRollFormula = weapon.system.backstabDamage` before
+reaching `_rollDamage`, so the damage adapter sees the alternate
+die naturally. Chat flag: `libResult.bonuses` now carries the
+full bonuses list (was hook-added only); `libResult.critSource`
+is surfaced for downstream crit-table routing.
+
+**Phase 2 + 3 sessions 1–9 infrastructure session 10 builds on:**
 
 - `DCCActor.rollSpellCheck` + `DCCActor.rollToHit` +
   `DCCActor._rollDamage` + `DCCActor._rollCritical` +
@@ -158,37 +174,36 @@ alongside (not merged with) the Strength entry.
   `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
   ...)`, and `logDispatch('rollFumble', ...)` in both branches.
   Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
-- **Baseline:** 866 Vitest tests pass (856 at session 7 close + 10
-  session-8 tests: two-mod `parseDamageFormula` sums,
-  `extractWeaponMagicBonus` positive / missing / dice / cursed /
-  unparsable branches, `buildDamageInput` magic+npcAdj
-  co-existence, gate acceptance for +1 weapons, gate rejection
-  for dice/cursed, +1-weapon dispatch breakdown assertion) + 71
-  Playwright e2e tests pass against live v14 Foundry (70 prior +
-  1 new — `PC with +1 magic weapon routes via adapter + magic
-  breakdown entry`), verified 2026-04-19. Full e2e suite runs in
-  ~8 min; dispatch-spec tests alone run in ~30 s because the
-  worker-scoped login is amortized across the spec's 35 tests.
+- **Baseline:** 868 Vitest tests pass (866 at session 8 close + 2
+  session-9 net new: backstab adapter-path dispatch + class:backstab
+  RollBonus attribution; two legacy-backstab assertions rewritten
+  for the new gate). 71 Playwright e2e tests pass against live v14
+  Foundry (70 prior + 2 new session-9 — backstab adapter dispatch +
+  libResult backstab-auto attribution; one legacy-backstab crit
+  test removed, its gate coverage already lived in
+  `_canRouteCritViaAdapter` unit tests). Dispatch-spec subset runs
+  in ~40 s thanks to the session-reuse fixture.
 
-**This session's goal:** **Phase 3 session 9 — next attack-migration
+**This session's goal:** **Phase 3 session 10 — next attack-migration
 slice.**
 
-Sessions 2–8 landed the simplest-weapon-attack happy-path + its
+Sessions 2–9 landed the simplest-weapon-attack happy-path + its
 damage / crit / fumble tails through the adapter, plus the full
-attack-side hook bridge, the NPC damage-bonus attribution, and
-the PC magic-weapon-bonus attribution. Every chained call in a
-simplest-weapon attack now surfaces a lib-native result on chat
-flags (`dcc.libResult` / `dcc.libDamageResult` / `dcc.libCritResult`
-/ `dcc.libFumbleResult`). Session 9 picks up one of the remaining
-gate-broadening slices in `00-progress.md §Next steps`. A2
-(backstab) is blocked on an in-flight `dcc-core-lib` backstab fix
-(see `memory/project_dcc_core_lib_backstab_fix_inflight.md`).
-Candidates: (a) deed-die adapter (leaning choice — clean attack-gate
-extension, no RAW-divergence concerns, exercises `onDeedAttempt`),
-(b) attack-modifier dialog (open question #7), (c) two-weapon
+attack-side hook bridge, the NPC damage-bonus attribution, the PC
+magic-weapon-bonus attribution, and thief backstab (A2 closed
+after the lib fix merged). Every chained call in a simplest-weapon
+attack — and now a thief backstab — surfaces a lib-native result
+on chat flags (`dcc.libResult` / `dcc.libDamageResult` /
+`dcc.libCritResult` / `dcc.libFumbleResult`). Session 10 picks up
+one of the remaining gate-broadening slices in `00-progress.md
+§Next steps`. Candidates: (a) deed-die adapter (leaning choice —
+clean attack-gate extension, exercises `onDeedAttempt`), (b)
+attack-modifier dialog (open question #7), (c) two-weapon
 fighting, (d) crit-result lookup in the lib (lib's
 `parseCritExtraDamage`), (e) dice-bearing / cursed
-`damageWeaponBonus` (session 8 left these on legacy).
+`damageWeaponBonus` (session 8 left these on legacy), (f) NPC
+attack-hit adjustment through lib bonuses (pre-existing divergence
+surfaced by session 9).
 
 Phase 3 as a whole is the largest migration so far:
 `rollWeaponAttack` → `makeAttackRoll` + `rollDamage` + `rollCritical`
@@ -211,9 +226,9 @@ aggregate on `libResult.modifiers`), and in-place mutations of
 `../../modules/dcc-qol/scripts/hooks/listeners.js:25-27`) are both
 now observationally faithful through the adapter path.
 
-### Session slice — Phase 3, session 9 (next attack slice)
+### Session slice — Phase 3, session 10 (next attack slice)
 
-1. **Read first** — `docs/00-progress.md` (Phase 3 session 8 entry +
+1. **Read first** — `docs/00-progress.md` (Phase 3 session 9 entry +
    Next steps options + Blockers / open questions),
    `docs/dev/ARCHITECTURE_REIMAGINED.md §7 Phase 3`, `module/actor.js`
    `rollToHit` dispatcher, `_rollToHit{ViaAdapter,Legacy}`,
@@ -221,32 +236,30 @@ now observationally faithful through the adapter path.
    their adapter + legacy bodies, `module/adapter/{attack,damage,
    crit-fumble}-input.mjs`. Check
    `module/vendor/dcc-core-lib/VERSION.json` — if wave-3 lib support
-   or the in-flight backstab fix has landed, sync + refactor
-   accordingly.
+   has landed, sync + refactor accordingly.
 
 2. **Pick the session slice** (per `00-progress.md §Next steps`).
-   A2 backstab is blocked on the in-flight lib fix. Leaning
-   (a) deed-die adapter — `_rollToHitViaAdapter` plumbs `deedDie`
-   into `AttackInput`, extracts the rolled deed from Foundry's
-   attack roll's `dice[1]`, exercises lib's `onDeedAttempt`.
-   Alternatives: (b) attack-modifier dialog, (c) two-weapon
-   fighting, (d) crit-result lookup in the lib, (e) dice-bearing /
-   cursed `damageWeaponBonus` handling.
+   Leaning (a) deed-die adapter — `_rollToHitViaAdapter` plumbs
+   `deedDie` into `AttackInput`, extracts the rolled deed from
+   Foundry's attack roll's `dice[1]`, exercises lib's
+   `onDeedAttempt`. Alternatives: (b) attack-modifier dialog,
+   (c) two-weapon fighting, (d) crit-result lookup in the lib,
+   (e) dice-bearing / cursed `damageWeaponBonus` handling,
+   (f) NPC attack-hit adjustment through lib bonuses (pre-existing
+   divergence — session 9's backstab fix is the template).
 
 3. **Dispatch logging.** Every `_rollXxxViaAdapter` /
    `_rollXxxLegacy` must call `logDispatch` as first line
    (permanent infrastructure). Extend the Playwright spec to
-   validate any new branches session 9 opens up.
+   validate any new branches session 10 opens up.
 
 4. **Integration testing.** Playwright against live v14 Foundry is
-   the gold standard for dispatcher validation. The 35-test dispatch
-   spec + full 71-test e2e suite was last run green at session 8
-   close (2026-04-19). If session 9 changes dispatch behavior,
-   re-run before claiming complete. Session-reuse fixture is in
-   place — dispatch-spec tests run in ~0.5-1 s each instead of
-   7-13 s.
+   the gold standard for dispatcher validation. Session-reuse fixture
+   is in place — dispatch-spec tests run in ~0.5-1 s each instead of
+   7-13 s. Re-run the full e2e suite before claiming complete if
+   dispatch behavior changes.
 
-Do NOT in session 9: touch data-model slimming (Phase 4) or sheet
+Do NOT in session 10: touch data-model slimming (Phase 4) or sheet
 composition (Phase 5). Do NOT break `dcc.modifyAttackRollTerms` — it
 has external consumers. Do NOT touch any Phase 3 gate
 (`_canRouteAttackViaAdapter`, `_canRouteDamageViaAdapter`,
@@ -255,7 +268,7 @@ mirroring changes to the test truth-tables.
 
 **Before touching Phase 3 code, confirm the repo is green:**
 
-- `npm test` — 866 Vitest tests + dice-gated integration. Final
+- `npm test` — 868 Vitest tests + dice-gated integration. Final
   check before any commit.
 - `npm run test:unit` — mock-only; runs in every environment.
 - `npm run test:integration` — integration project. Skips if Foundry

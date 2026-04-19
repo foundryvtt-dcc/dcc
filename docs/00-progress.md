@@ -84,7 +84,46 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 8 (2026-04-19) broadened the damage
+**Phase 3 — ACTIVE. Session 9 (2026-04-19) routed thief backstab
+attacks through the adapter.** Followed on from the
+`dcc-core-lib@0.4.1` sync (commit `58d9621`), which brought in the
+RAW backstab rewrite: `AttackInput.isBackstab: true` drives an
+auto-crit inside `makeAttackRoll` (matches legacy Foundry behavior),
+`DamageResult.subtotal` + `.multiplier` removed (the new damage
+pipeline has no multiplier concept), `AttackResult.critSource`
+added (`"threat-range" | "backstab-auto" | "natural-max"`).
+
+Both Phase 3 attack-gate + damage-gate now accept `options.backstab`.
+`_rollToHitViaAdapter` pushes the Table 1-9 bonus term identically
+to legacy (chat-render consistency + hook-visibility), then surfaces
+the bonus as a `RollBonus` with `id: 'class:backstab'`,
+`source: { type: 'class', id: 'thief' }` on `attackInput.bonuses`
+so `libResult.total` matches the Foundry Roll. `attackInput.isBackstab`
+triggers the lib's auto-crit. `rollWeaponAttack` already swaps
+`damageRollFormula` to `weapon.system.backstabDamage` (legacy
+behavior) before reaching `_rollDamage`, so the damage adapter sees
+the alternate die as a normal formula and routes it via
+`parseDamageFormula` with no additional translation. Chat flag:
+`libResult.bonuses` now carries the full bonuses list (previously
+hook-added only) so the backstab RollBonus is attributable to
+downstream consumers; `libResult.critSource` is surfaced for
+crit-table selection. 868 Vitest tests pass (up from 866 — +2
+new in `adapter-weapon-attack.test.js` for the session-9 gate flip +
+RollBonus attribution; -2 old gate assertions rewritten in
+`adapter-weapon-{attack,damage}.test.js`).
+
+**Vendor sync (2026-04-19, `58d9621`) — dcc-core-lib 0.4.1
+(`2db7e19`).** Brought in backstab fix + post-review API cleanup
+(`canBackstab` / `isBackstabTriggeredRaw` split, `critSource`
+tag, `getBackstabAttackBonus` returns `number | undefined`).
+Adapter-side minimal cleanup: `_rollDamageViaAdapter` dropped
+`subtotal` + `multiplier` from `libDamageResult` (lib fields
+removed); Playwright "populates dcc.libDamageResult" assertion
+rewritten to the equivalent `total === Math.max(1, baseDamage +
+modifierDamage)`; stale `backstabMultiplier` docstring reference
+cleared.
+
+**Phase 3 — session 8 (2026-04-19) broadened the damage
 gate to route PC magic weapon bonuses through the adapter with
 correct attribution.** `item.js` appends the weapon's
 `damageWeaponBonus` (e.g. `'+1'` for a +1 sword) onto the derived
@@ -2062,9 +2101,9 @@ and should be scheduled into Phase 4+ work.
 
 ## Next steps
 
-**Phase 3 — session 8 (magic-bonus damage) complete.** PC magic
-weapons route through the adapter with correct breakdown
-attribution. Session 9 picks up the next slice.
+**Phase 3 — session 9 (backstab adapter route) complete.** Thief
+backstab attacks (and their damage / crit / fumble tails) now flow
+through the adapter end-to-end. Session 10 picks up the next slice.
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
@@ -2088,9 +2127,7 @@ attribution. Session 9 picks up the next slice.
   Flag lib-side gaps early; sync via `npm run sync-core-lib` when
   the lib ships a wave-3 release.
 
-**Session 9 pick-up** — Options (backstab deferred until the
-in-flight `dcc-core-lib` backstab fix lands; see
-`memory/project_dcc_core_lib_backstab_fix_inflight.md`):
+**Session 10 pick-up** — Options:
 (a) **Deed-die adapter path** (warriors / dwarves). Plumbs `deedDie`
    into `AttackInput` and extracts the rolled deed from Foundry's
    attack roll's `dice[1]`. Exercises the lib's `onDeedAttempt`.
@@ -2104,17 +2141,22 @@ in-flight `dcc-core-lib` backstab fix lands; see
    delegates crit-table lookups to Foundry's `getCritTableResult`;
    lib's `parseCritExtraDamage` could classify the table result
    into extra damage, letting `libCritResult` carry a fully
-   structured breakdown instead of just natural/total.
+   structured breakdown instead of just natural/total. Session 9
+   added `critSource: 'backstab-auto'` to `libResult` — the
+   natural anchor for routing backstab auto-crits to Crit Table II
+   lib-side.
 (e) **Dice-bearing / cursed damageWeaponBonus.** Session 8 handles
    positive integer bonuses; dice-bearing (e.g. `+1d4` fire rider)
-   and cursed (negative) still fall to legacy. Dice-bearing needs
-   a new `bonuses[]` shape for per-term dice; cursed wants lib
-   support for negative `magicBonus` (lib currently gates on
-   `> 0`).
+   and cursed (negative) still fall to legacy.
+(f) **NPC attack-hit adjustment through lib bonuses.** Pre-existing
+   divergence: NPC `attackHitBonus.melee.adjustment` is pushed as
+   a pre-hook `Modifier` term (so Foundry Roll sees it) but NOT
+   translated into `attackInput.bonuses` (lib total misses it).
+   Session 9 fixed this for the Backstab case; NPC attack-hit is
+   the same pattern. Cheap follow-up.
 
-Lean (a) deed-die: clean attack-gate extension, no RAW-divergence
-concerns, exercises a lib event (`onDeedAttempt`) not yet touched
-by the adapter.
+Lean (a) deed-die: clean attack-gate extension, exercises a lib
+event (`onDeedAttempt`) not yet touched by the adapter.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

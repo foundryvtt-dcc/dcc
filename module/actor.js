@@ -2695,9 +2695,12 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Gate for the Phase 3 session 2 happy-path adapter. Routes only the
-   * simplest weapon attack — no deed die, no backstab, no two-weapon,
-   * no roll-modifier dialog, no dice-bearing to-hit / attack-bonus.
+   * Gate for the Phase 3 adapter. Routes the simplest weapon attack —
+   * no deed die, no two-weapon, no roll-modifier dialog, no
+   * dice-bearing to-hit / attack-bonus. Session 9 broadened the gate
+   * to accept `options.backstab`: the lib's `isBackstab: true` drives
+   * the auto-crit (matches DCC RAW + the legacy Foundry behavior),
+   * and the Table 1-9 attack bonus flows through as a `RollBonus`.
    *
    * The `automateDamageFumblesCrits` requirement is paired with the
    * session-prompt happy-path definition so the first bridge is
@@ -2711,7 +2714,6 @@ class DCCActor extends Actor {
    */
   _canRouteAttackViaAdapter (weapon, options = {}) {
     if (options.showModifierDialog) return false
-    if (options.backstab) return false
     if (weapon?.system?.twoWeaponPrimary || weapon?.system?.twoWeaponSecondary) return false
     const attackBonus = String(this.system.details?.attackBonus ?? '')
     if (attackBonus.includes('d')) return false
@@ -2768,6 +2770,22 @@ class DCCActor extends Actor {
       }
     ]
 
+    // Session 9: thief backstab — push the Table 1-9 bonus term
+    // identically to the legacy path, then surface the bonus to the
+    // lib via `attackInput.bonuses` below so `libResult.total` matches
+    // the Foundry Roll total.
+    const backstabBonus = options.backstab
+      ? (parseInt(this.system?.class?.backstab || '0') || 0)
+      : 0
+    if (options.backstab) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.Backstab'),
+        presets: [],
+        formula: backstabBonus
+      })
+    }
+
     if (this.isNPC) {
       const isMelee = weapon.system?.melee !== false
       const attackAdjustment = isMelee
@@ -2820,8 +2838,22 @@ class DCCActor extends Actor {
     if (dieAfterHook && dieAfterHook !== die) {
       attackInput.actionDie = normalizeLibDie(dieAfterHook)
     }
+    const bonuses = []
+    if (options.backstab) {
+      attackInput.isBackstab = true
+      if (backstabBonus !== 0) {
+        bonuses.push({
+          id: 'class:backstab',
+          label: game.i18n.localize('DCC.Backstab'),
+          source: { type: 'class', id: 'thief' },
+          category: 'inherent',
+          effect: { type: 'modifier', value: backstabBonus }
+        })
+      }
+    }
     const hookBonuses = hookTermsToBonuses(hookAddedTerms)
-    if (hookBonuses.length > 0) attackInput.bonuses = hookBonuses
+    if (hookBonuses.length > 0) bonuses.push(...hookBonuses)
+    if (bonuses.length > 0) attackInput.bonuses = bonuses
     const libResult = libMakeAttackRoll(attackInput, () => d20RollResult)
 
     // `hookTermsToBonuses` silently drops dice-bearing hook terms
@@ -2859,9 +2891,10 @@ class DCCActor extends Actor {
         totalBonus: libResult.totalBonus,
         isHit: libResult.isHit,
         isCriticalThreat: libResult.isCriticalThreat,
+        critSource: libResult.critSource,
         isFumble: libResult.isFumble,
         modifiers: libResult.appliedModifiers,
-        bonuses: hookBonuses
+        bonuses: attackInput.bonuses || []
       }
     }
   }
@@ -3078,7 +3111,6 @@ class DCCActor extends Actor {
    */
   _canRouteDamageViaAdapter (weapon, damageRollFormula, attackRollResult, options = {}) {
     if (!attackRollResult?.libResult) return false
-    if (options.backstab) return false
     if (typeof damageRollFormula !== 'string') return false
     if (damageRollFormula.includes('[')) return false
     if (parseDamageFormula(damageRollFormula) === null) return false
