@@ -6,8 +6,21 @@
 
 ## Current phase
 
-**Phase 3 — ACTIVE. Session 3 (2026-04-18) added the hook-translation
-bridge.** `_rollToHitViaAdapter` now captures terms pushed by
+**Phase 3 — ACTIVE. Session 4 (2026-04-18) added the long-range
+dice-chain translation.** `_rollToHitViaAdapter` now re-reads
+`terms[0].formula` after `dcc.modifyAttackRollTerms` fires and, when
+a listener mutated the action die in place (dcc-qol's long-range
+`DiceChain.bumpDie('1d20') === '1d16'`), normalizes it via
+`normalizeLibDie` and assigns to `attackInput.actionDie` before
+calling `makeAttackRoll`. Result: `libResult.die` now agrees with the
+die the Foundry Roll actually evaluated on, closing the divergence
+session 3 noted but didn't fix. 811 Vitest tests pass (up from 808 —
+3 new: `normalizeLibDie` unit, post-hook bump round-trip, no-op when
+the hook leaves `terms[0]` alone); Playwright dispatch suite unchanged
+(observational change to a flag field, no new dispatch branches).
+
+**Phase 3 — session 3 (2026-04-18) added the hook-translation
+bridge.** `_rollToHitViaAdapter` captures terms pushed by
 `dcc.modifyAttackRollTerms` listeners (snapshotting `terms.length`
 before the hook and slicing after), translates pure signed-integer
 `Modifier` terms into lib `RollBonus[]` via `hookTermsToBonuses`, and
@@ -15,12 +28,8 @@ assigns them to `attackInput.bonuses`. The lib's `makeAttackRoll`
 aggregates them into `totalBonus` + emits a `{source: 'bonuses',
 …}` entry in `appliedModifiers`; the per-bonus breakdown is
 preserved as `libResult.bonuses` on the chat flag. dcc-qol's
-firing-into-melee / medium-range penalties now appear in the lib
-result alongside the base attack bonus. In-place mutations of
-`terms[0].formula` (dcc-qol's long-range dice-chain bump) are NOT
-yet translated — session 4 work. 808 Vitest tests pass (up from 803);
-Playwright dispatch suite unchanged (observational bridge, no new
-dispatch branches).
+firing-into-melee / medium-range penalties surface in the lib result
+alongside the base attack bonus.
 
 **Phase 3 — session 2 (2026-04-18) landed the first attack-migration
 slice.** `DCCActor.rollToHit` is a dispatcher: simplest-weapon
@@ -342,16 +351,53 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 3 — attack / damage / crit / fumble migration. Session 3
-(2026-04-18) added the hook-translation bridge: hook-injected
-`Modifier` terms now flow into the lib's `bonuses[]` so dcc-qol's
-firing-into-melee / range penalties participate in the lib's
-`totalBonus` / `appliedModifiers`. See the fourteenth-session entry
-below. Session 4 options (per `§Next steps`): broaden the happy-path
-gate (simplest-weapon + automate-off, or backstab), deed-die migration
-(warriors / dwarves), attack-modifier dialog-adapter extension (open
-question #7), or long-range dice-chain translation (in-place mutation
-of `terms[0].formula` — currently unbridged).
+Phase 3 — attack / damage / crit / fumble migration. Session 4
+(2026-04-18) closed the long-range dice-chain gap that session 3
+called out: in-place mutations of `terms[0].formula` by hook
+listeners (dcc-qol's `DiceChain.bumpDie` on long range) now feed
+through to `attackInput.actionDie` so `libResult.die` matches the
+die the Foundry Roll actually evaluated on. See the
+fifteenth-session entry below. Session 5 options (per `§Next
+steps`): broaden the happy-path gate (simplest-weapon + automate-off,
+or backstab), deed-die migration (warriors / dwarves), attack-modifier
+dialog-adapter extension (open question #7), or start the damage /
+crit / fumble migration now that the attack-roll bridge is
+observationally faithful for every dcc-qol injection it sees.
+
+### Session 2026-04-18 (fifteenth session — Phase 3, session 4)
+
+Phase 3 session 4 — long-range dice-chain translation landed.
+
+- **Post-hook re-read of `terms[0].formula` in `_rollToHitViaAdapter`.**
+  After `dcc.modifyAttackRollTerms` fires, captures the action-die
+  term's current `formula`. If a listener rewrote it (e.g. dcc-qol's
+  long-range `DiceChain.bumpDie('1d20') === '1d16'`), normalizes via
+  `normalizeLibDie` and assigns to `attackInput.actionDie` before
+  invoking `makeAttackRoll`. The Foundry `Roll` already used the
+  bumped die; this just keeps the lib's view in sync.
+- **`normalizeLibDie` exported** from `module/adapter/attack-input.mjs`
+  (was a local helper). The dispatcher calls it directly so the same
+  Foundry → lib die-shape conversion is used for both the initial
+  build (`buildAttackInput`) and the post-hook re-read.
+- **Closes session 3's observational divergence.** Previously
+  `libResult.die` could report `'d20'` while the Foundry roll
+  evaluated on `d16`; now both agree. The `strictCriticalHits`
+  branch already adjusts `critRange` from the post-evaluate
+  `attackRoll.formula` so threat-range math is unaffected.
+- **Tests** (`module/__tests__/adapter-weapon-attack.test.js` —
+  3 new cases, 17 total):
+  - `normalizeLibDie` unit coverage for `'1d20'`, `'1d16'`, `'d24'`,
+    `''`, `null`.
+  - Adapter path with a hook that mutates `terms[0].formula = '1d16'`:
+    `libResult.die === 'd16'` (was `'d20'` pre-fix).
+  - Adapter path with a hook that only pushes a flat penalty: action
+    die untouched, `libResult.die === 'd20'`.
+  - 811 Vitest tests pass (up from 808). `npm run format` +
+    `npm run compare-lang` clean.
+- **Browser test status.** Session 3's 4 weapon-attack Playwright
+  cases stay green — the post-hook re-read is observational on the
+  adapter-result `libResult.die` flag only; no new dispatch branches,
+  no new log lines. Not re-run this session.
 
 ### Session 2026-04-18 (fourteenth session — Phase 3, session 3)
 
@@ -1452,54 +1498,55 @@ Actions taken:
 
 ## Next steps
 
-**Phase 3 — session 3 (hook-translation bridge) complete.**
-Session 4 picks up the next slice.
+**Phase 3 — session 4 (long-range dice-chain translation) complete.**
+The simplest-weapon adapter path is now observationally faithful for
+every dcc-qol injection it sees: hook-pushed `Modifier` terms flow
+into `bonuses[]` (session 3) and in-place action-die mutations flow
+into `actionDie` (session 4). Session 5 picks up the next slice.
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
   from the lib. Attack → damage → crit → fumble is chained; pick a
   session slice that can ship independently.
 - Preserve `dcc.modifyAttackRollTerms` (dcc-qol's main hook integration
-  point). Session 3 added `hookTermsToBonuses` — hook-pushed `Modifier`
-  terms with pure signed-integer formulas flow into the lib's
-  `bonuses[]` and surface as `libResult.bonuses` + the aggregate
-  `{source: 'bonuses', …}` entry in `libResult.modifiers`. In-place
-  mutations of `terms[0].formula` (dcc-qol long-range dice-chain bump)
-  are not yet translated — session 4+ work.
+  point). Sessions 3–4 fully bridged it for the simplest-weapon
+  happy-path: pushed `Modifier` terms → `libResult.bonuses` +
+  `{source:'bonuses',…}` aggregate; in-place `terms[0].formula`
+  mutations → `libResult.die`. Action-die threat-range math already
+  lives in the existing `strictCriticalHits` / `calculateCritAdjustment`
+  branches (re-read from `attackRoll.formula` post-evaluate).
 - Wave 3 modifier migration on the lib side (combat subsystems) lands
   alongside Phase 3 sessions. Session 2's attack bridge emits
   `LegacyRollModifier[]` (Phase 2 precedent). Flag lib-side gaps
   early; sync via `npm run sync-core-lib` when the lib ships a wave-3
   release.
 
-**Session 4 pick-up** — Options:
-(a) **Long-range dice-chain translation.** dcc-qol's range handler
-   mutates `terms[0].formula` via `DiceChain.bumpDie` for long range
-   (d20 → d16). Session 3 translates pushed `Modifier` terms only;
-   in-place bumps to the action die still let the lib's
-   `attackInput.actionDie` go stale. Fix: re-read `terms[0].formula`
-   post-hook and update `attackInput.actionDie` (cheap) OR emit a
-   `BonusDiceChain` on the lib side (requires wave-3 shape).
-(b) **Broaden the happy-path gate**: pick ONE excluded case
+**Session 5 pick-up** — Options:
+(a) **Broaden the happy-path gate**: pick ONE excluded case
    (backstab, or simplest weapon with automate=off) and drive it
    through the adapter. Backstab is attractive because the lib has
    `isBackstab` / `getBackstabMultiplier` but the legacy code treats
    backstab as an auto-crit (see `rollToHit:2855`), which diverges
    from RAW. Resolving that is a design call.
-(c) **Deed-die adapter path** (warriors / dwarves). Requires plumbing
+(b) **Deed-die adapter path** (warriors / dwarves). Requires plumbing
    `deedDie` into `AttackInput` and extracting the rolled deed from
    Foundry's attack roll's `dice[1]`. Non-trivial but high-value —
    exercises the lib's `onDeedAttempt` callback.
-(d) **Attack-modifier dialog** (open question #7 tie-in): extend
+(c) **Attack-modifier dialog** (open question #7 tie-in): extend
    `module/adapter/roll-dialog.mjs` with an attack-modifier prompt
    before driving a broader adapter path. The Spellburn dialog is
    the only current consumer; generalizing the scaffold ahead of a
    second consumer keeps the design grounded.
+(d) **Damage / crit / fumble migration.** The attack-roll bridge is
+   now stable; the next chained call (`rollDamage` →
+   `weapon.system.damage`) is the natural follow-on. Lib has
+   `rollDamage` / `rollCritical` / `rollFumble` ready. Slice-able by
+   migrating one tail at a time (damage first, crit/fumble layered
+   on after).
 
-Lean (a) for session 4 — the long-range case is the remaining gap
-the hook-translation bridge doesn't cover, and the fix is small
-(re-read post-hook). After that, the adapter path is observationally
-faithful for every dcc-qol injection in the simplest-weapon slice.
+Lean (d) for session 5 if there's appetite for the next chained call;
+otherwise (a) backstab is the smallest gate-broadening that exercises
+a lib feature (`isBackstab` / `getBackstabMultiplier`).
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

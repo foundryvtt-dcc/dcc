@@ -21,7 +21,7 @@ import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
-import { buildAttackInput, hookTermsToBonuses } from '../adapter/attack-input.mjs'
+import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -309,4 +309,69 @@ test('adapter path leaves libResult.bonuses empty when no hook pushes terms', as
   }
 
   expect(result.libResult.bonuses).toEqual([])
+})
+
+test('normalizeLibDie strips the leading count from Foundry-style die strings', () => {
+  expect(normalizeLibDie('1d20')).toBe('d20')
+  expect(normalizeLibDie('1d16')).toBe('d16')
+  expect(normalizeLibDie('d24')).toBe('d24')
+  expect(normalizeLibDie('')).toBe('d20')
+  expect(normalizeLibDie(null)).toBe('d20')
+})
+
+test('adapter path reflects in-place dice-chain bump of terms[0].formula', async () => {
+  logDispatch.mockClear()
+  const originalCall = Hooks.call
+  Hooks.call = (hook, terms) => {
+    if (hook === 'dcc.modifyAttackRollTerms') {
+      // Simulate dcc-qol long-range: rewrite the action die in place
+      // (DiceChain.bumpDie('1d20') === '1d16').
+      terms[0].formula = '1d16'
+    }
+    return true
+  }
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+    Hooks.call = originalCall
+  }
+
+  // Pre-fix: stuck on 'd20'. Post-fix: matches the bumped die.
+  expect(result.libResult.die).toBe('d16')
+})
+
+test('adapter path keeps libResult.die on the original action die when the hook leaves terms[0] alone', async () => {
+  logDispatch.mockClear()
+  const originalCall = Hooks.call
+  Hooks.call = (hook, terms) => {
+    if (hook === 'dcc.modifyAttackRollTerms') {
+      // Hook listener that only adds a flat penalty — does not touch
+      // the action die. The post-hook re-read should be a no-op.
+      terms.push({ type: 'Modifier', label: 'Cover', formula: '-1' })
+    }
+    return true
+  }
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+    Hooks.call = originalCall
+  }
+
+  expect(result.libResult.die).toBe('d20')
 })

@@ -22,7 +22,7 @@
  * @param {string} foundryDie
  * @returns {string}
  */
-function normalizeLibDie (foundryDie) {
+export function normalizeLibDie (foundryDie) {
   if (!foundryDie) return 'd20'
   const match = String(foundryDie).match(/\d*d(\d+)/i)
   return match ? `d${match[1]}` : String(foundryDie)

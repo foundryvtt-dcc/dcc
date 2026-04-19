@@ -19,7 +19,7 @@ import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellChe
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
-import { buildAttackInput, hookTermsToBonuses } from './adapter/attack-input.mjs'
+import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -2855,6 +2855,14 @@ class DCCActor extends Actor {
 
     const attackInput = buildAttackInput(this, weapon)
     attackInput.threatRange = critRange
+    // Reflect in-place mutations of the action-die term (e.g. dcc-qol's
+    // long-range `DiceChain.bumpDie` rewriting `terms[0].formula` from
+    // 1d20 to 1d16). Without this the lib's `actionDie` stays on the
+    // pre-hook die while the Foundry Roll evaluates on the bumped one.
+    const dieAfterHook = terms[0]?.formula
+    if (dieAfterHook && dieAfterHook !== die) {
+      attackInput.actionDie = normalizeLibDie(dieAfterHook)
+    }
     const hookBonuses = hookTermsToBonuses(hookAddedTerms)
     if (hookBonuses.length > 0) attackInput.bonuses = hookBonuses
     const libResult = libMakeAttackRoll(attackInput, () => d20RollResult)
