@@ -6,6 +6,10 @@
 
 ## Current phase
 
+**Phase 2 — CLOSED 2026-04-18.** Both gates resolved. Phase 3 (attack /
+damage / crit / fumble migration) is now the active phase; see the
+close-out section below for decisions + hand-off.
+
 **Phase 2 — Spell checks — session 5 complete.** Spellburn + mercurial
 magic now flow through the adapter for wizard / elf casts.
 `buildSpellCheckArgs` forwards `options.spellburn` (a lib
@@ -863,6 +867,114 @@ question #5 (patron-taint RAW alignment) is resolved.
   Not ideal long-term, but matches today's behavior; a later
   session can audit whether the swallow is safe.
 
+### Session 2026-04-18 (eleventh session — Phase 2 CLOSE)
+
+Doc-only session. No code changed. Closes both Phase 2 gate items.
+
+**Gate 1 — `game.dcc.processSpellCheck` consumer audit.**
+
+Inventoried all 5 call sites across DCC + XCC:
+
+| # | Caller | File:line | Options passed | Adapter covers today? |
+|---|---|---|---|---|
+| 1 | DCC `rollSkillCheck` cleric/skill-table route (Turn Unholy, Lay on Hands, Divine Aid) | `module/actor.js:1757` | `{ rollTable, roll, item, flavor }` | **No** — needs RollTable lookup + level-added crit totals |
+| 2 | DCC `_rollSpellCheckLegacy` naked path | `module/actor.js:2371` | `{ rollTable: null, roll, item: null, flavor, forceCrit }` | **Partial** — naked case (no item) needs pre-built-Roll handoff path the adapter doesn't expose |
+| 3 | DCC `DCCItem.rollSpellCheck` | `module/item.js:376` | `{ rollTable, roll, item, flavor, manifestation, mercurial, forceCrit }` | **No** — RollTable + manifestation + forceCrit all absent from adapter |
+| 4 | XCC naked path (copy of #2) | `xcc/module/xcc-actor-sheet.js:471` | `{ rollTable: null, roll, item: null, flavor }` | Partial (same as #2) |
+| 5 | XCC item path (copy of #3 + elf-trickster no-spellburn + blaster die label) | `xcc/module/xcc-actor-sheet.js:597` | `{ rollTable, roll, item, flavor, manifestation, mercurial }` | No (same as #3) |
+
+**Key finding:** XCC's two call sites are structurally identical peers
+of DCC's own internal callers, not public-API consumers. They do the
+same thing DCC does (construct pre-built Foundry Roll → hand off to
+orchestrator) with XCC-specific term tweaks. A deprecation would force
+XCC to reinvent the orchestrator; a shim-to-adapter rewrite would break
+DCC's own still-legacy paths (`actor.js:1757`, `actor.js:2371`,
+`item.js:376`).
+
+**Decision — Option (d): `processSpellCheck` is permanent stable API.**
+Don't deprecate. Don't shim. Don't publish a new parallel entry. The
+adapter dispatcher (`DCCActor.rollSpellCheck`, sessions 1–5) routes
+narrow happy-paths through `_castViaCastSpell` /
+`_castViaCalculateSpellCheck`; everything else stays on
+`processSpellCheck`. Future adapter capability growth (result-table
+rendering, manifestation display, forceCrit, mercurial-chat-without-
+race) migrates routes one at a time.
+
+Options (a)–(c) from the session prompt considered and rejected:
+- **(a) Shim-to-adapter**: the five call sites all pass a pre-built
+  Foundry `Roll` that the adapter's two-pass pipeline doesn't consume.
+  Rewriting the shim to construct a `SpellCastInput` from a pre-built
+  Roll would require inventing new adapter machinery just to satisfy
+  the shim. High blast radius, zero user benefit.
+- **(b) Deprecate with 1-version warning**: XCC maintainer would have
+  to refactor sheets to stop pre-building terms. No user benefit;
+  adversarial to a sibling module.
+- **(c) New public `game.dcc.adapter.castSpell` entry**: if it accepts
+  a `SpellCastInput`, it's `actor.rollSpellCheck(...)` renamed; if it
+  accepts a pre-built Roll, it's `processSpellCheck` renamed. Nothing
+  gained.
+
+Actions taken:
+- Updated `docs/dev/EXTENSION_API.md` `processSpellCheck` row to
+  reflect permanent-stable designation + orchestrator semantics.
+- Updated `EXTENSION_API.md` recommendation #5 from "begin deprecating"
+  to "permanent stable API".
+- Updated `docs/dev/ARCHITECTURE_REIMAGINED.md §7 Phase 2` to remove
+  the "Delete `processSpellCheck` from dcc.js" goal and document the
+  incremental-route-migration approach.
+
+**Gate 2 — Open question #5 (patron-taint RAW alignment).**
+
+Re-read legacy `module/dcc.js:623-660` (creeping d100-vs-chance
+mechanic) and lib RAW (`spells/spell-check.js:241` `handleWizardFumble`
++ `spells/fumble.js:46` `fumbleRequiresPatronTaint`).
+
+**Decision — Option (a): keep `_runLegacyPatronTaint` as permanent
+adapter infrastructure.** Document the RAW divergence. RAW alignment
+becomes a backlog project (not a Phase 2 gate).
+
+Rationale:
+- Legacy creeping-chance is user-facing established behavior across
+  every DCC Foundry world since the system was written. Changing to
+  RAW would be a silent behavioral regression for every actor with a
+  non-1% `patronTaintChance`.
+- RAW alignment would touch sibling content modules
+  (`dcc-core-book`, `xcc-core-book`) by demanding fumble-table
+  effect-tag migration, plus per-patron taint-table resolution
+  (Foundry has `spellSideEffectsCompendium` but no taint-table
+  setting; likely name-convention lookup). Multi-session, multi-repo
+  project.
+- `_runLegacyPatronTaint` is already minimal (15 lines), tested (5
+  Vitest cases + 1 Playwright case), and works against live v14
+  Foundry. Zero incremental cost.
+
+Actions taken:
+- Clarified `_runLegacyPatronTaint` JSDoc to explicitly mark it as
+  permanent (not a phase scaffold) with the Phase 2 close decision
+  date. (Existing JSDoc already captured the divergence; the update
+  removes the "defer to a future session" hedge and pins the decision.)
+- Moved open question #5 from "Blockers / open questions" to "Closed
+  questions" below.
+
+**Phase 2 close-out summary:**
+- All 5 spell-check sessions landed (dispatcher + generic + wizard +
+  cleric + patron + spellburn + mercurial).
+- 790 Vitest tests pass + 22 Playwright dispatch tests pass against
+  live v14 Foundry (verified 2026-04-18).
+- `processSpellCheck` stays exported; dispatcher fall-through preserves
+  all non-covered routes verbatim. No behavioral regressions.
+- Sibling modules untouched. XCC works as-is.
+- Phase 3 (attack / damage / crit / fumble) is the next active phase;
+  open question #6 (spellburn dialog) is the early Phase 3 pick-up.
+
+## Closed questions
+
+5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-18 at
+   Phase 2 close: keep `_runLegacyPatronTaint` as permanent adapter
+   infrastructure, defer RAW alignment indefinitely.** See Phase 2
+   close session above. RAW alignment remains possible as a future
+   backlog project but is not gated on Phase 3 or later.
+
 ## Blockers / open questions
 
 1. ~~**Runtime loading strategy.**~~ **Resolved 2026-04-17: vendor
@@ -903,23 +1015,9 @@ question #5 (patron-taint RAW alignment) is resolved.
    (attack/crit migration) is required because that's where those
    utilities are implicated.
 
-5. **Patron-taint mechanic alignment (legacy creeping-chance vs lib
-   RAW).** Session 4 chose option 1 (adapter-side legacy preservation
-   via `_runLegacyPatronTaint`). The Foundry system ships a non-RAW
-   creeping-chance mechanic (`processSpellCheck:623-660`: every
-   patron-related cast bumps `system.class.patronTaintChance` by 1%,
-   no actual taint effect applied beyond the display). The lib follows
-   RAW: taint only on fumble, only when the fumble-table entry has
-   `effect.type === 'patron-taint'`. Aligning them needs:
-   (a) decision on whether DCC keeps the creeping mechanic or moves to
-   RAW; (b) if RAW: a fumble-table effect-tag migration (or a Foundry-
-   side adapter that infers `patronTaint: true` from fumble-table row
-   text); (c) per-patron taint table resolution (Foundry has
-   `spellSideEffectsCompendium` but no setting for taint tables
-   specifically — likely a name-convention lookup like
-   `${patronName} Taint` inside the side-effects compendium, similar
-   to `module/item.js:436` manifestation lookup). Defer until after
-   Phase 2 closes.
+5. ~~**Patron-taint mechanic alignment.**~~ **Resolved at Phase 2
+   close, 2026-04-18.** See "Closed questions" section above. RAW
+   alignment is backlog, not a phase gate.
 
 6. **Spellburn dialog integration.** Session 5 wired `options.spellburn`
    plumbing but did NOT integrate the legacy roll-modifier Spellburn
@@ -986,28 +1084,29 @@ question #5 (patron-taint RAW alignment) is resolved.
 
 ## Next steps
 
-Phase 2 close audit. Sessions 1–5 are in. Two blockers remain:
+**Phase 2 is closed.** Phase 3 — attack / damage / crit / fumble
+migration — is the active phase.
 
-1. **Audit `game.dcc.processSpellCheck` consumers** across the
-   sibling modules, particularly XCC (which has the heaviest
-   consumption — its custom wizard / cleric sheets invoke
-   `processSpellCheck` from overridden `rollSpellCheck` methods).
-   Coordinate with the XCC maintainer on a migration plan:
-   (a) deprecate the export with a 1-version warning, (b) ship a
-   per-cast adapter call path that XCC can import / invoke. Could be
-   a standalone PR landing before Phase 3. `EXTENSION_API.md` marks
-   `processSpellCheck` as stable — removing it without a migration
-   plan breaks XCC.
-2. **Resolve open question #5** (patron-taint RAW alignment). Either
-   keep the creeping-chance mechanic (`_runLegacyPatronTaint` stays)
-   or migrate to the lib's RAW model (fumble-table effect-tag
-   migration + per-patron taint table resolution needed). Phase 2
-   doesn't close without a decision.
+**Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
+- Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
+  from the lib. Attack → damage → crit → fumble is chained; pick a
+  session slice that can ship independently.
+- Preserve `dcc.modifyAttackRollTerms` (dcc-qol's main hook integration
+  point) by translating from the lib's modifier list.
+- Wave 3 modifier migration on the lib side (combat subsystems) lands
+  alongside Phase 3 sessions. Flag lib-side gaps early; sync via
+  `npm run sync-core-lib` when the lib ships a wave-3 release.
 
-Phase 3 — attack / damage / crit / fumble migration — starts after
-the close. Early Phase 3 work should also pick up open question #6
-(spellburn dialog integration) since the attack/damage dialogs share
-the same pattern.
+**Early Phase 3 pick-up — open question #6 (spellburn dialog):**
+session 5 wired `options.spellburn` plumbing but not the dialog.
+Attack / damage dialogs share the same pattern; pick a dialog-adapter
+approach (carve-out vs. standalone) in the first Phase 3 session and
+apply the same answer to both spellburn and attack dialogs.
+
+**Cross-repo coordination:** if any migration uncovers a missing
+feature in the lib's tagged-union modifier (e.g. skill items with
+`allowLuck` needing dice-chain bumps), land the lib change first in
+its own PR in `dcc-core-lib`, then sync via `npm run sync-core-lib`.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

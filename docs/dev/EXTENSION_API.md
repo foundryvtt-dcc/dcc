@@ -74,7 +74,7 @@ Set in `module/dcc.js:108–121`.
 | `game.dcc.DCCRoll` | class | `dcc-qol` (`createRoll`), `xcc` (`createRoll`, `cleanFormula`) | The unified roll abstraction. `createRoll(terms, data, options)` and `cleanFormula(terms)` are load-bearing. |
 | `game.dcc.DiceChain` | object | `dcc-qol` (`bumpDie`), `xcc` (`bumpDie`, `calculateCritAdjustment`, `calculateProportionalCritRange`) | Dice-chain utility. Every XCC class sheet's attack/crit code calls these. |
 | `game.dcc.FleetingLuck` | class | `xcc` (`init`, `updateFlags`, `give`, `enabled`, `automationEnabled`) | XCC uses `Object.defineProperty` on `enabled` and `automationEnabled` — so those must remain configurable properties, not frozen. |
-| `game.dcc.processSpellCheck` | function | `xcc` (`xcc-actor-sheet.js` for wizard + cleric spells) | ~200 lines of wizard / cleric / patron / mercurial orchestration. Phase 2 migrates this to the lib but must keep the shim signature for XCC. |
+| `game.dcc.processSpellCheck` | function | `xcc` (`xcc-actor-sheet.js` for wizard + cleric spells) | Post-roll spell-check orchestrator: pre-built `Roll` + optional `RollTable` → patron taint check + crit/fumble classification + result-table lookup + level-added crit totaling + `SpellResult` chat render + wizard spell loss / cleric disapproval gating. **Phase 2 close (2026-04-18) finalized this as a permanent stable API** — not a deprecation target. The adapter dispatcher (`DCCActor.rollSpellCheck`) routes the happy-path generic / wizard / cleric / patron-bound casts through `_castViaCastSpell` / `_castViaCalculateSpellCheck`; everything else (result-table spells, naked pre-built-Roll calls, skill-table spells like Turn Unholy, XCC sheet paths with elf-trickster / blaster tweaks) continues to invoke `processSpellCheck`. Future adapter capability growth (result-table rendering, manifestation, forceCrit, mercurial display w/o race condition) can progressively migrate routes; `processSpellCheck` stays as the fallback orchestrator indefinitely. See `docs/00-progress.md` Phase 2 close-out for the inventory and rationale. |
 
 ### Internal
 
@@ -116,6 +116,10 @@ None identified.
    utilities** as the de-facto API surface XCC depends on. They're
    currently undocumented; the refactor should add JSDoc treating them
    as a public contract.
-5. **Begin deprecating `game.dcc.processSpellCheck`** in Phase 2 but
-   keep a shim that calls the lib's `calculateSpellCheck` so XCC's
-   cleric/wizard sheets keep working.
+5. **`game.dcc.processSpellCheck` is a permanent stable API** (decision
+   at Phase 2 close, 2026-04-18). The earlier plan to deprecate-and-shim
+   was abandoned once the audit showed XCC's two call sites are
+   structurally identical peers of DCC's own internal callers (not
+   public-API consumers). Keep the export, keep the implementation, grow
+   the adapter alongside it. Route migration is per-call-site and
+   incremental — no global deprecation.

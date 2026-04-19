@@ -286,20 +286,19 @@ Keep the existing methods as thin wrappers around the new adapter call so extern
 
 **Ships as:** minor release. User-visible change: *nothing*. Maintenance burden: drops immediately.
 
-### Phase 2 — Migrate spell checks (3–4 weeks)
-Spell checks are harder because of the spell-loss / disapproval / patron-taint interplay. But the lib already handles all of that in `calculateSpellCheck` + event callbacks.
-- Build a `SpellCastInput` from the actor + spell item
-- Provide a Foundry-flavored `SpellEvents` implementation that:
-  - Creates ChatMessages on success/failure
-  - Updates the actor's disapproval range
-  - Marks wizard spells as lost
-  - Triggers patron taint rolls
-  - Applies spellburn ability changes
-- Delete `processSpellCheck` from `dcc.js` after spells are ported
+### Phase 2 — Migrate spell checks — **CLOSED 2026-04-18**
 
-**Ships as:** minor release. Behavior: should be identical (the lib's tests are already regression coverage for the DCC rules).
+Spell-check dispatcher lands on the adapter across five sessions. `DCCActor.rollSpellCheck` now routes generic / wizard / cleric / patron-bound wizard-elf casts through the adapter (`_castViaCastSpell` for the generic side-effect-free path, `_castViaCalculateSpellCheck` for wizard spell loss + cleric disapproval + patron-taint + spellburn + mercurial). The lib's `calculateSpellCheck` drives the rolls; a Foundry-side `createSpellEvents` bridge applies side effects (`onSpellLost`, `onDisapprovalIncreased`, `onSpellburnApplied`); mercurial and disapproval chats render directly from the lib result via `renderMercurialEffect` / `renderDisapprovalRoll`. See `docs/00-progress.md` for session-by-session detail.
 
-### Phase 3 — Migrate attacks, damage, crits, fumbles (4–6 weeks)
+**`processSpellCheck` is NOT deleted.** Close-out decision (2026-04-18): the post-roll orchestrator stays as a permanent stable API. Audit showed the five call sites (3 DCC-internal + 2 XCC) all pass a pre-built Foundry `Roll` plus optional `RollTable`, a shape the adapter's two-pass pipeline doesn't consume. Routes that the adapter's current capabilities cover are dispatched there; everything else (result-table spells, manifestation, forceCrit, naked pre-built-Roll, skill-table spells like Turn Unholy, XCC sheets) continues through `processSpellCheck`. Incremental per-route migration replaces the earlier delete-after-migration plan. See `EXTENSION_API.md` for the formal stability note.
+
+**Patron-taint (open question #5): legacy mechanic preserved verbatim adapter-side.** `_runLegacyPatronTaint` (in `DCCActor`) stays as permanent adapter infrastructure. The lib's RAW patron-taint (fumble + fumble-table `effect.type === 'patron-taint'` tag) stays dormant. RAW alignment is tracked as a future project — it would require fumble-table effect-tag migration across sibling content modules (`dcc-core-book`, `xcc-core-book`) and per-patron taint-table resolution, both out of scope for a phase close.
+
+**Deferred to Phase 3 early sessions:** spellburn dialog integration (open question #6) — the legacy roll-modifier Spellburn term doesn't appear on adapter casts today. Share the dialog-adapter pattern with attack / damage dialogs in Phase 3.
+
+**Ships as:** minor release. Behavior: parity maintained on all routes (dispatcher fall-through preserves non-covered paths verbatim).
+
+### Phase 3 — Migrate attacks, damage, crits, fumbles (4–6 weeks) — **ACTIVE**
 The hardest one. Attack → damage → crit → fumble is chained and has the most caller-specific glue (weapon types, two-weapon rules, backstab multipliers, deed dice). But the lib has `makeAttackRoll`, `rollDamage`, `rollCritical`, `rollFumble`, `getTwoWeaponPenalty`, `getBackstabMultiplier` — it's all there.
 
 Port carefully and keep `dcc.modifyAttackRollTerms` working (it's dcc-qol's main integration point) by translating from the lib's modifier list.

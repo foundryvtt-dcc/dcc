@@ -2160,15 +2160,18 @@ class DCCActor extends Actor {
    * for table-less spells (the adapter's current scope) the chance bump
    * is silent — exactly mirroring the legacy no-table fallback.
    *
-   * The lib's RAW model (`spells/spell-check.js:241` `handleWizardFumble`)
-   * is gated on a fumble (natural 1) AND a fumble-table entry tagged
-   * with `effect.type === 'patron-taint'` — the Foundry-side fumble
-   * tables don't carry those tags, so the mechanics diverge in real
-   * worlds. Session 4 chose to preserve the legacy mechanic verbatim
-   * (option 1 in the session-start scope discussion) and defer the RAW
-   * alignment to a future session that figures out the fumble-table
-   * effect-tag migration. See `00-progress.md` open question on RAW
-   * patron-taint alignment.
+   * **Permanent adapter infrastructure** (Phase 2 close decision,
+   * 2026-04-18). The lib's RAW model (`spells/spell-check.js:241`
+   * `handleWizardFumble`) is gated on a fumble (natural 1) AND a
+   * fumble-table entry tagged with `effect.type === 'patron-taint'` —
+   * Foundry-side fumble tables don't carry those tags, so the lib's
+   * pipeline stays dormant for this system. RAW alignment would
+   * require fumble-table effect-tag migration across sibling content
+   * modules (`dcc-core-book`, `xcc-core-book`) plus per-patron taint-
+   * table resolution; tracked as backlog, not a phase gate. This
+   * method is the authoritative patron-taint implementation for
+   * wizard / elf adapter casts indefinitely. See `00-progress.md`
+   * Phase 2 close-out (Gate 2) for the full rationale.
    *
    * @private
    */
