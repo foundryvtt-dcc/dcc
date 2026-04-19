@@ -6,6 +6,26 @@
 
 ## Current phase
 
+**Extension API (2026-04-19) — `dcc.afterComputeSpellCheck` hook
+shipped to retire XCC's `XCCActor` subclass + global
+`CONFIG.Actor.documentClass` replacement.** XCC's
+`xcc/module/xcc-actor.js` is 15 lines that exist solely to override
+one method (`computeSpellCheck`) with purely additive logic. The
+new post-hook fires at the end of `DCCActor.computeSpellCheck()`
+with `(actor)`, after `system.class.spellCheck` has been populated
+by the default DCC computation; listeners can either observe or
+overwrite the result. Only fires when DCC actually computed
+something (the `!this.system.class` early-return path skips the
+hook so listeners don't have to defensively re-check). 856 Vitest
+tests pass (was 854, +2 in `actor.test.js`: hook fires with the
+actor, hook does NOT fire on the early-return path) + 70
+Playwright e2e (was 69, +1 in `extension-api.spec.js`:
+hook-fires-with-correct-shape + listener-can-overwrite). XCC
+migration is documented as a per-step recipe in
+`EXTENSION_API.md`'s new "Sibling-module migration recipes"
+section — XCC maintainer can land it on their own schedule, no
+DCC change required.
+
 **Extension API (2026-04-19) — `dcc.registerActorSheet(types,
 SheetClass, options?)` shipped as the Actor-side mirror of
 `registerItemSheet`.** Same signature shape, same dogfooding pattern

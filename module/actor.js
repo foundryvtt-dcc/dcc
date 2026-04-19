@@ -783,6 +783,13 @@ class DCCActor extends Actor {
       this.system.skills.layOnHands.value = this.system.class.spellCheck
       this.system.skills.layOnHands.ability = ''
     }
+
+    // Stable extension hook — modules can adjust `system.class.spellCheck`
+    // (and any related skill mirror fields) here without subclassing
+    // DCCActor. Closes ARCHITECTURE_REIMAGINED.md §2.5 "Actor document
+    // class customization" for XCC's blaster-die / elf-trickster
+    // computation. See docs/dev/EXTENSION_API.md.
+    Hooks.callAll('dcc.afterComputeSpellCheck', this)
   }
 
   /**

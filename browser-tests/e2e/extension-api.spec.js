@@ -175,6 +175,64 @@ test.describe('DCC Extension API', () => {
     expect(result.ourEntry.default).toBe(false)
   })
 
+  test('dcc.afterComputeSpellCheck hook fires with the actor after computeSpellCheck runs', async ({ page }) => {
+    // Closes ARCHITECTURE_REIMAGINED.md §2.5 "Actor document class
+    // customization" — XCC's xcc-actor.js exists solely to override
+    // computeSpellCheck. Post-hook lets sibling modules adjust
+    // `system.class.spellCheck` without subclassing DCCActor +
+    // replacing CONFIG.Actor.documentClass globally.
+    const result = await page.evaluate(async () => {
+      const calls = []
+      const handlerId = Hooks.on('dcc.afterComputeSpellCheck', (actor) => {
+        calls.push({
+          actorName: actor?.name,
+          spellCheck: actor?.system?.class?.spellCheck
+        })
+      })
+
+      try {
+        const wizard = await Actor.create({
+          name: 'P1 SpellCheckHookProbe',
+          type: 'Player',
+          system: { class: { className: 'Wizard', spellCheckAbility: 'int' } }
+        })
+        // Force a recompute. Foundry already called computeSpellCheck
+        // during prepareData on create, so we should already see one
+        // call; running it again confirms the hook is reusable.
+        wizard.computeSpellCheck()
+
+        // Demonstrate the override use-case (what XCC does today via
+        // its subclass): a listener can safely overwrite the result.
+        const overrideHandlerId = Hooks.on('dcc.afterComputeSpellCheck', (actor) => {
+          if (actor.name === 'P1 SpellCheckHookProbe') {
+            actor.system.class.spellCheck = '+99'
+          }
+        })
+        wizard.computeSpellCheck()
+        const overriddenSpellCheck = wizard.system.class.spellCheck
+
+        Hooks.off('dcc.afterComputeSpellCheck', overrideHandlerId)
+        await wizard.delete()
+
+        return {
+          callCount: calls.length,
+          firstCallShape: calls[0] ?? null,
+          overriddenSpellCheck
+        }
+      } finally {
+        Hooks.off('dcc.afterComputeSpellCheck', handlerId)
+      }
+    })
+
+    expect(result.callCount, 'hook should fire on every computeSpellCheck').toBeGreaterThanOrEqual(2)
+    expect(result.firstCallShape).not.toBeNull()
+    expect(result.firstCallShape.actorName).toBe('P1 SpellCheckHookProbe')
+    expect(typeof result.firstCallShape.spellCheck).toBe('string')
+    // Listener should be able to overwrite — proves the post-hook
+    // semantics, which is XCC's actual need.
+    expect(result.overriddenSpellCheck).toBe('+99')
+  })
+
   test('registerActorSheet with makeDefault unregisters core ActorSheetV2 for that type', async ({ page }) => {
     const result = await page.evaluate(() => {
       class TestDefaultMonsterSheet extends foundry.applications.api.DocumentSheetV2 {

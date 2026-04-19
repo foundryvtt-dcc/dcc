@@ -860,6 +860,39 @@ test('computeSpellCheck sets correct values', () => {
   expect(actor.system.class.spellCheck).toEqual('+10')
 })
 
+test('computeSpellCheck fires the dcc.afterComputeSpellCheck extension hook', () => {
+  // Stable extension hook for sibling modules (closes XCC's monkey-
+  // patch on `CONFIG.Actor.documentClass`). Hook runs AFTER DCC has
+  // populated `system.class.spellCheck` so listeners can either
+  // observe or overwrite the result.
+  const callAllSpy = vi.spyOn(global.Hooks, 'callAll')
+  callAllSpy.mockClear()
+
+  actor.computeSpellCheck()
+
+  const afterComputeCalls = callAllSpy.mock.calls.filter(c => c[0] === 'dcc.afterComputeSpellCheck')
+  expect(afterComputeCalls).toHaveLength(1)
+  expect(afterComputeCalls[0][1]).toBe(actor)
+
+  callAllSpy.mockRestore()
+})
+
+test('computeSpellCheck early-return path (no class) skips the hook', () => {
+  // Only fire the extension hook when DCC actually computed something
+  // — otherwise listeners would have to defensively re-check.
+  const callAllSpy = vi.spyOn(global.Hooks, 'callAll')
+  callAllSpy.mockClear()
+
+  const noClassActor = new DCCActor()
+  noClassActor.system = { ...noClassActor.system, class: null }
+  noClassActor.computeSpellCheck()
+
+  const afterComputeCalls = callAllSpy.mock.calls.filter(c => c[0] === 'dcc.afterComputeSpellCheck')
+  expect(afterComputeCalls).toHaveLength(0)
+
+  callAllSpy.mockRestore()
+})
+
 test('computeSavingThrows calculates correct values', () => {
   actor.system.config.computeSavingThrows = true
   actor.computeSavingThrows()

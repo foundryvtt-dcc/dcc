@@ -71,6 +71,7 @@ audited sibling modules for the path before slimming.
 | `dcc.setLayOnHandsTable` | `module/settings.js:156` | `dcc-core-book` (emitter) | §2.10 | |
 | `dcc.setMercurialMagicTable` | `module/settings.js:188` | `dcc-core-book` (emitter); XCC explicitly cannot use this (see ARCHITECTURE_REIMAGINED.md §2.4) | §2.4 (hardcoded wizard/cleric magic system), §2.11 | Phase 2 needs to generalize this so XCC's two mercurial tables work without fighting the hook. |
 | `dcc.setTurnUnholyTable` | `module/settings.js:140` | `dcc-core-book` (emitter) | §2.10 | |
+| `dcc.afterComputeSpellCheck` | `module/actor.js:786` | (none yet — replaces XCC's `XCCActor` subclass once its maintainer migrates; see "XCC migration: retiring `xcc-actor.js`" below) | §2.5 (Actor document class customization) | Fires at the end of `DCCActor.computeSpellCheck()` with `(actor)` after `system.class.spellCheck` has been populated by the default DCC computation. Listeners can observe or overwrite the result. Only fires when DCC actually computed something (the `!this.system.class` early-return path skips the hook so listeners don't have to defensively re-check). Stable from day one. |
 
 ### Internal
 
@@ -164,3 +165,114 @@ None identified.
    `dcc.registerSheetPart` + `dcc.registerVariant` (Phase 5/6). Each
    ships **stable** the moment it lands; document under the table above
    rather than waiting for downstream consumers to materialize.
+
+---
+
+## Sibling-module migration recipes
+
+Concrete step-by-step migrations for downstream modules. **The DCC
+system never modifies sibling modules directly** — these recipes are
+notes for the sibling maintainers (or whoever is coordinating the
+multi-repo change) so they can land the migration on their own
+timeline. The system stays backward-compatible: nothing here is
+required for a sibling module to keep working.
+
+### XCC migration: retiring `xcc-actor.js`
+
+**Goal:** Drop the `XCCActor` subclass + the global
+`CONFIG.Actor.documentClass = XCCActor` replacement in
+`xcc/module/xcc.js:171`. Before this migration, XCC pays for one
+method override (`computeSpellCheck`) by replacing the entire actor
+document class globally — a textbook §2.5 monkey-patch.
+
+**Why it's safe to retire:** `xcc-actor.js` overrides exactly one
+method, and that override is purely additive (calls `super` first,
+then conditionally overwrites `system.class.spellCheck`). The new
+`dcc.afterComputeSpellCheck` hook fires at the same point with
+identical pre-/post-state.
+
+**Step 1 — register the listener.** In `xcc/module/xcc.js` (any
+`Hooks.once('init', …)` block, before any actor is rendered):
+
+```js
+import { calculateSpellCheckBonus } from './xcc-utils.js'
+
+Hooks.on('dcc.afterComputeSpellCheck', (actor) => {
+  // DCC has already run; `actor.system.class.spellCheck` reflects the
+  // default computation (with `spellCheckOverride` already applied).
+  // Only override the fallback path — XCC's blaster-die /
+  // elf-trickster math wins when no explicit override is set.
+  if (!actor.system.class.spellCheckOverride) {
+    actor.system.class.spellCheck = calculateSpellCheckBonus(actor)
+  }
+})
+```
+
+**Step 2 — delete the subclass.**
+
+- Delete `xcc/module/xcc-actor.js` entirely.
+- Remove `import XCCActor from './xcc-actor.js'` from `xcc.js`.
+- Remove the `CONFIG.Actor.documentClass = XCCActor` line at
+  `xcc/module/xcc.js:171`.
+
+**Step 3 — verify.** Open an XCC PC, confirm `system.class.spellCheck`
+matches the pre-migration value (DCC computes first, XCC's hook
+adjusts second). Specifically check: blaster-die actors, sp-elf-
+trickster actors (luck mod folded in), actors with a string
+`spellCheckOtherMod`. The XCC test suite (if present) should pass
+unchanged.
+
+**No DCC system change required for this migration** — the hook is
+already shipped (2026-04-19, see the "Stable" hooks table). The XCC
+maintainer can land all three steps in a single XCC PR on their own
+schedule.
+
+### XCC / MCC / dcc-crawl-classes migration: actor-sheet boilerplate
+
+**Goal:** Collapse each `Actors.registerSheet('<scope>', SheetClass,
+{ types: ['Player'], label: '…' })` call into
+`game.dcc.registerActorSheet('Player', SheetClass, { scope: '<scope>',
+label: '…' })`. Identical behavior; one line shorter; no need to
+import `Actors` from `foundry.documents.collections`.
+
+**Per-module call counts (audited 2026-04-19):**
+- XCC: 19 call sites in `xcc/module/xcc.js` (lines 174–286)
+- MCC: 7 call sites in `mcc-classes/module/mcc-classes.js` (lines
+  122–146)
+- dcc-crawl-classes: 9 call sites in
+  `dcc-crawl-classes/module/dcc-crawl-classes.js` (lines 137–145)
+
+**Recipe (per call site):**
+
+```js
+// Before
+Actors.registerSheet('xcc', XCCActorSheetAthlete, {
+  types: ['Player'],
+  label: 'XCC.Athlete.DropdownLabel'
+})
+
+// After
+game.dcc.registerActorSheet('Player', XCCActorSheetAthlete, {
+  scope: 'xcc',
+  label: 'XCC.Athlete.DropdownLabel'
+})
+```
+
+`addHooksAndHelpers()` calls (or any other post-register
+side-effects) stay verbatim.
+
+**Optional: drop the `Actors` import.** Once every `Actors.*` call
+in the module has migrated, the `const { Actors } =
+foundry.documents.collections` declaration at the top of the file
+can be removed.
+
+**No DCC system change required** — `game.dcc.registerActorSheet`
+ships stable.
+
+### XCC item-sheet helper
+
+XCC currently does not register custom item sheets, so
+`game.dcc.registerItemSheet` has no XCC migration today. If XCC
+adds a future item sheet, the recipe mirrors the actor-sheet one
+above (substitute `registerItemSheet` for `registerActorSheet` and
+the appropriate item sub-types).

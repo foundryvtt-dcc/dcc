@@ -249,6 +249,13 @@ See `docs/00-progress.md` for details. Summary:
   pain points. Helper at `module/extension-api.mjs`; DCC's own
   `DCCItemSheet` registration migrated to dogfood it. 9 unit tests
   + 3 Playwright e2e cases.
+- B1-followup-2 (2026-04-19): `dcc.afterComputeSpellCheck` post-hook
+  on `DCCActor.computeSpellCheck`. Retires XCC's `XCCActor`
+  subclass + the `CONFIG.Actor.documentClass = XCCActor` global
+  replacement at `xcc/module/xcc.js:171`. XCC migration recipe
+  added to `EXTENSION_API.md` for the maintainer to consume.
+  +2 unit tests + 1 Playwright case.
+
 - B1-followup (2026-04-19): `game.dcc.registerActorSheet(types,
   SheetClass, options?)` Actor-side mirror. DCC's own 11 actor-sheet
   registrations migrated to dogfood the helper. Sibling-module
