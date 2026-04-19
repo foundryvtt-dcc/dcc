@@ -1715,6 +1715,172 @@ Actions taken:
    generalize `module/adapter/roll-dialog.mjs` after the attack /
    damage dialog lands, once the two dialogs share a common scaffold.
 
+## PR #720 review backlog (2026-04-19)
+
+PR #720 (the merge of Phases 0-3 into `main`) triggered a full
+8-agent review. Safe auto-fixes landed in the PR as follow-up
+commits; the items below are the deferred findings — real issues or
+design calls — that are out of scope for a "review cleanup" commit
+and should be scheduled into Phase 4+ work.
+
+**Blocking for Phase 4 start (pick up before broadening the adapter):**
+
+- **Silent adapter→legacy fallbacks missing a logged reason.** When
+  `buildSpellCheckArgs` returns `null` (custom-class caster with no
+  lib profile), or when `loadDisapprovalTable` /
+  `loadMercurialMagicTable` silently return `null` (unconfigured
+  setting, missing pack), the dispatcher falls through to the legacy
+  body with no indication *why*. Fix requires a coordinated
+  Playwright-spec + adapter-code change — the spec currently asserts
+  on a specific log shape per dispatch, so inserting a new
+  `logDispatch(rollType, 'legacy', { reason })` line at the fallback
+  site needs the spec updated in the same commit.
+  Locations: `module/actor.js:1980-1982` (spell-check), `module/
+  adapter/spell-input.mjs:386, 440`, `module/actor.js:2067-2069,
+  2048-2051`.
+- **Partial-failure state when `_castViaCalculateSpellCheck`'s pass-2
+  returns `result.error`** (`module/actor.js:2122-2126`). Events
+  already fired during pass 2 (`onSpellLost`, `onDisapprovalIncreased`,
+  `onSpellburnApplied` have mutated actor/item state), but the chat
+  message never posts. Review cleanup added a `console.error` for
+  diagnostics; full rollback needs a design decision — probably
+  run pass-2 once WITHOUT events to detect the error, then replay
+  WITH events only when the result is clean.
+- **Spellburn dialog prompts before the adapter knows it can handle
+  the cast.** `rollSpellCheck` (`module/actor.js:1914-1940`) calls
+  `promptSpellburnCommitment` before `_rollSpellCheckViaAdapter` tries
+  `buildSpellCheckArgs` — when the actor's class has no lib caster
+  profile the adapter falls back to `_rollSpellCheckLegacy`, which
+  ignores `options.spellburn`, silently dropping the user's
+  commitment. Scope is narrow (custom-class wizards / elves with
+  spellburn) but user-visible. Fix: a cheap `resolveCasterProfile`
+  pre-check before the dialog, or have legacy honor `options.spellburn`.
+
+**Design calls (need a deliberate decision, not a silent fix):**
+
+- **Spellburn clamp: `1` vs `0`.** `onSpellburnApplied`
+  (`module/adapter/spell-events.mjs:124`) clamps ability scores at
+  1; legacy `DCCSpellburnTerm` allowed 0 (RAW permits a wizard dying
+  from Stamina burn). The docstring acknowledges the adapter's
+  choice. Decide: preserve legacy (allow 0) or keep the safer
+  adapter floor (1) and document it as a house-rules change.
+- **Damage `_total` clamp divergence** (`module/actor.js:3096`).
+  Foundry clamps `damageRoll._total = 1` when below; the lib
+  doesn't. Review cleanup added `warnIfDivergent` with post-clamp
+  normalization, so no more false-positive warns — but the
+  `dcc.libDamageResult.total` flag can still carry `0` or a negative
+  while chat shows `1`. Decide: mirror the clamp on the flag
+  (`libDamageResult.total = Math.max(1, libResult.total)`) or
+  document that the flag is "lib-native, pre-clamp" and let
+  consumers clamp.
+- **Error boundaries around `_xxxViaAdapter`.** A lib throw currently
+  becomes an unhandled rejection → the cast silently fails, broken UX.
+  Wrapping every adapter path in `try/catch` with legacy fallback
+  would make the system more forgiving, but risks masking the very
+  lib bugs the observational refactor is designed to surface. Right
+  answer is probably: add the fallback *after* Phase 4-5 prove the
+  adapter paths stable.
+- **`createFoundryRoller` — delete or wire.** Review cleanup updated
+  the docstring to reflect that no dispatcher path currently consumes
+  it. Phase 4 should either adopt it (replacing the inline `new Roll`
+  + `evaluate()` scattered across dispatchers) or delete the file.
+
+**Resilience (low-risk, nice-to-have):**
+
+- **Dispatcher gate style inconsistency.** Attack / damage / crit /
+  fumble use named `_canRouteXxxViaAdapter` predicates; ability /
+  save / skill / spell / init inline their gates as
+  `const needsLegacyPath = …`. Pick one convention and retrofit —
+  the named predicate form scales better as gates grow.
+- **Unused `weapon` / `attackRollResult` parameters** on
+  `_canRouteCritViaAdapter` / `_canRouteFumbleViaAdapter`
+  (`weapon` unused) and `_rollCriticalLegacy` / `_rollFumbleLegacy`
+  (`attackRollResult` unused). Dropping them touches test call
+  sites that pass positional args (`__tests__/adapter-weapon-crit-fumble.test.js`
+  uses `actor._canRouteCritViaAdapter({}, attackRollResult, ctx)`);
+  clean as a pair of coordinated edits but out of scope for the
+  review cleanup. Tracker: do this with the gate-style unification
+  above.
+- **Three copies of "strip die count" normalization:**
+  `module/adapter/attack-input.mjs:normalizeLibDie`,
+  `module/adapter/spell-input.mjs:normalizeLibDie` (private), and
+  `module/actor.js:_stripDieCount`. Pick one canonical
+  `normalizeLibDie` (probably `attack-input.mjs`'s, it's already
+  exported) and consolidate.
+- **Four near-identical `dcc.libResult` flag payloads** in
+  `module/adapter/chat-renderer.mjs` — every renderer hand-rolls
+  the same projection plus the `FleetingLuck.updateFlags` guard.
+  Extract a `buildLibResultFlag(result, extras)` + `applyFleetingLuck(flags, roll)`
+  helper; renderers keep per-type extras only.
+- **Uncached compendium walks.**
+  `loadDisapprovalTable` + `loadMercurialMagicTable`
+  (`module/adapter/spell-input.mjs`) walk packs on every cleric
+  disapproval / wizard first-cast. `getCritTableLink` +
+  `getCritTableResult` (`module/utilities.js`, reached from
+  `_rollCriticalViaAdapter`) do two independent pack walks per
+  crit. Module-level `Map` cache keyed on `tableName`, cleared on
+  world reload, is plenty. The caching opportunity was already
+  flagged in `spell-input.mjs:399`.
+
+**Test coverage gaps (pr-test-analyzer severity ≥ 6):**
+
+- `renderDisapprovalRoll` has no unit/integration test — only covered
+  transitively via the cleric disapproval browser-test case.
+- `promptSpellburnCommitment` + `clampBurn` are entirely mocked
+  across every caller; `roll-dialog.mjs` has no direct coverage.
+- `onSpellLost` is tested as a direct callback but never verified to
+  *actually fire* during a real adapter cast — regression surface if
+  `createSpellEvents` wiring drifts.
+- Two-pass divergence (hook mutates terms *after* pass 1) only has
+  coverage for the `terms[0]` die-bump case; `terms[N]` Compound /
+  Modifier in-place mutations are uncovered.
+- `_canRouteAttackViaAdapter` untested branches: dice-bearing
+  `weapon.toHit` (e.g. `+1d4` magic), `twoWeaponSecondary: true`,
+  and the `game.settings.get` try/catch fallback.
+- `_rollToHitViaAdapter` NPC `attackHitBonus.melee.adjustment`
+  Modifier injection block is uncovered (PC-only tests).
+- `_rollToHitViaAdapter` `Roll.validate(toHit) === false` early
+  return path is untested.
+- `loadDisapprovalTable` / `loadMercurialMagicTable` isolated
+  fallback-order tests (compendium hit / world fallback / both miss)
+  are missing.
+- `createFoundryRoller` has no direct unit test (ties to the
+  delete-or-wire decision above).
+- `__mocks__/dcc-roll.js` declares `createRoll` as `static async`
+  while production is sync; tests install local sync stubs to
+  paper over the mismatch — fix the shared mock, delete the stubs.
+
+**Documentation / comment hygiene:**
+
+- `docs/dev/ARCHITECTURE_REIMAGINED.md` §7 Phase-1 bullets reference
+  lib APIs `rollCheck('ability:str', …)` / `resolveSkillCheck(…)` /
+  `rollInitiative(…)` but the adapter landed `rollAbilityCheck` /
+  `rollSavingThrow` / `rollCheck` (subsumed skill + init). Annotate
+  the bullets with landed names.
+- ARCHITECTURE_REIMAGINED.md §2.7 file-size snapshot is pinned to
+  branch start; prefix with a `(Snapshot at main @ 2337ec0)` note
+  so readers don't mistake it for current state.
+- `module/actor.js:2136-2138` ("post the disapproval roll chat
+  after the main spell-check chat, mirroring the legacy two-message
+  ordering") overstates ordering guarantees — `onDisapprovalIncreased`
+  fires fire-and-forget inside pass 2, actual interleaving is at
+  the mercy of Foundry's chat-message pipeline. Soften the claim or
+  `await` the chat-message creation inside the event.
+- `_getInitiativeRollViaAdapter` accepts an `options = {}` parameter
+  it never reads — drop, or document "reserved for future
+  modifier-dialog bridge."
+
+**Performance (below measurement threshold; document only):**
+
+- `getActionDice` called 3× per `_rollToHitViaAdapter`
+  (`module/actor.js:2735-2752`). Hoist to a single `const dice = ...`.
+- `items.find` called 2× per `_getInitiativeRollViaAdapter`
+  (`module/actor.js:1065, 1070, 1129, 1133`). Fold into one iteration.
+- `renderDisapprovalRoll` / `renderMercurialEffect` use
+  `new Roll('${N}d1')` for deterministic chat. Use
+  `Roll.fromTerms([new NumericTerm({ number: total })])` — no
+  measurable win, but reads cleaner.
+
 ## Decisions made
 
 0. **Runtime loading: vendor the lib's built `dist/`.** See open

@@ -25,3 +25,25 @@ export function logDispatch (rollType, path, details = {}) {
     `[DCC adapter] ${rollType} \u2192 ${tag}${extras ? ' ' + extras : ''}`
   )
 }
+
+/**
+ * Observational divergence check for the adapter two-pass pattern.
+ * When the lib's classification total disagrees with the Foundry
+ * Roll's total, emit a console warn so a lib-version bump or a
+ * silently-dropped hook term is caught immediately instead of
+ * drifting undetected into chat flags. The PR body for Phase 3
+ * claims "no divergence with the displayed total"; this enforces
+ * it observationally.
+ *
+ * @param {string} rollType - e.g. 'rollToHit', 'rollDamage', 'rollCritical'
+ * @param {number} foundryTotal - Foundry Roll's final total
+ * @param {number} libTotal - lib result's total
+ * @param {Object} [context] - small extra context (actor, weapon, etc.)
+ */
+export function warnIfDivergent (rollType, foundryTotal, libTotal, context = {}) {
+  if (foundryTotal === libTotal) return
+  console.warn(
+    `[DCC adapter] ${rollType} lib/foundry total divergence`,
+    { foundry: foundryTotal, lib: libTotal, ...context }
+  )
+}

@@ -57,10 +57,14 @@ export function createSpellEvents ({ actor, spellItem }) {
      * `processSpellCheck` performs on the legacy path.
      *
      * Fire-and-forget: the lib's callback protocol doesn't await the
-     * returned promise. Errors bubble to the Foundry console.
+     * returned promise. Attach a `.catch` so a rejection (permission
+     * error, validation failure in a `preUpdateItem` hook) is logged
+     * instead of silently creating a chat-vs-item divergence.
      */
     events.onSpellLost = (_result) => {
-      spellItem.update({ 'system.lost': true })
+      Promise.resolve(spellItem.update({ 'system.lost': true })).catch((err) => {
+        console.error('[DCC adapter] onSpellLost: spellItem.update rejected', { spell: spellItem?.name, err })
+      })
     }
   }
 
@@ -82,7 +86,9 @@ export function createSpellEvents ({ actor, spellItem }) {
       // actors bail before updating or posting chat.
       if (actor.isNPC) return
 
-      actor.update({ 'system.class.disapproval': newRange })
+      Promise.resolve(actor.update({ 'system.class.disapproval': newRange })).catch((err) => {
+        console.error('[DCC adapter] onDisapprovalIncreased: actor.update rejected', { actor: actor?.name, newRange, err })
+      })
 
       // Chat rendering is skipped when the Foundry globals aren't
       // present (unit tests). The actor update is still asserted.
@@ -97,7 +103,9 @@ export function createSpellEvents ({ actor, spellItem }) {
         sound: CONFIG.sounds?.notification
       }
       ChatMessage.applyMode?.(messageData, game.settings?.get?.('core', 'messageMode'))
-      CONFIG.ChatMessage.documentClass.create(messageData)
+      Promise.resolve(CONFIG.ChatMessage.documentClass.create(messageData)).catch((err) => {
+        console.error('[DCC adapter] onDisapprovalIncreased: ChatMessage.create rejected', { err })
+      })
     }
 
     /**
@@ -125,7 +133,9 @@ export function createSpellEvents ({ actor, spellItem }) {
       }
 
       if (Object.keys(updates).length > 0) {
-        actor.update(updates)
+        Promise.resolve(actor.update(updates)).catch((err) => {
+          console.error('[DCC adapter] onSpellburnApplied: actor.update rejected', { actor: actor?.name, updates, err })
+        })
       }
     }
   }

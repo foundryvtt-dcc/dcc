@@ -32,7 +32,8 @@ import { logDispatch } from '../adapter/debug.mjs'
 vi.mock('../actor-level-change.js')
 
 vi.mock('../adapter/debug.mjs', () => ({
-  logDispatch: vi.fn()
+  logDispatch: vi.fn(),
+  warnIfDivergent: vi.fn()
 }))
 
 vi.mock('../utilities.js', async () => {

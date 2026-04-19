@@ -30,7 +30,8 @@ vi.mock('../actor-level-change.js')
 // deterministically (vitest's reporter intercepts console.log before
 // spies see it).
 vi.mock('../adapter/debug.mjs', () => ({
-  logDispatch: vi.fn()
+  logDispatch: vi.fn(),
+  warnIfDivergent: vi.fn()
 }))
 
 function makeSimpleWeapon (overrides = {}) {

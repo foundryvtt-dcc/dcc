@@ -103,9 +103,14 @@ export async function promptSpellburnCommitment (actor, spellItem) {
     })
 
     return result ?? null
-  } catch {
-    // `rejectClose: false` usually returns `null` on close, but fall
-    // through defensively — a cancel is equivalent to no commitment.
+  } catch (err) {
+    // `rejectClose: false` usually resolves to `null` on close instead
+    // of throwing — an actual exception here is unexpected (DialogV2
+    // API change, malformed template, localization error in a button
+    // callback). Log before returning `null` so broken-build failures
+    // don't present as indistinguishable "user cancelled the dialog"
+    // no-ops.
+    console.warn('[DCC adapter] promptSpellburnCommitment: dialog threw', { actor: actor?.name, spell: spellItem?.name, err })
     return null
   }
 }

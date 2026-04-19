@@ -25,7 +25,7 @@ import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
 import { buildDamageInput, parseDamageFormula } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
-import { logDispatch } from './adapter/debug.mjs'
+import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -2121,9 +2121,12 @@ class DCCActor extends Actor {
       events
     )
     if (result.error) {
+      console.error('[DCC adapter] calculateSpellCheck pass-2 error', { actor: this.name, spell: spellItem?.name, error: result.error })
       ui.notifications.warn(result.error)
       return
     }
+
+    warnIfDivergent('rollSpellCheck', foundryRoll.total, result.total, { actor: this.name, spell: spellItem?.name })
 
     const flavor = this._buildSpellCheckFlavor(spellItem, options, profile)
     await renderSpellCheck({
@@ -2813,6 +2816,14 @@ class DCCActor extends Actor {
     if (hookBonuses.length > 0) attackInput.bonuses = hookBonuses
     const libResult = libMakeAttackRoll(attackInput, () => d20RollResult)
 
+    // `hookTermsToBonuses` silently drops dice-bearing hook terms
+    // (documented in `attack-input.mjs`), so divergence here is
+    // expected when a hook injects a bonus die (e.g. dcc-qol's
+    // stressful-range `-1d2`). Warn so the case is visible rather
+    // than hidden in chat flags — and so a genuine lib-version
+    // regression shows up immediately.
+    warnIfDivergent('rollToHit', attackRoll.total, libResult.total, { weapon: weapon?.name })
+
     const fumble = libResult.isFumble
     const naturalCrit = libResult.isCriticalThreat
     const crit = !fumble && naturalCrit
@@ -3099,6 +3110,11 @@ class DCCActor extends Actor {
     const naturalDamage = damageRoll.dice[0]?.total ?? damageRoll.total
     const libResult = libRollDamage(damageInput, () => naturalDamage)
 
+    // Foundry clamps `damageRoll.total` at 1 (line above); lib doesn't,
+    // so compare post-clamp on both sides to avoid a spurious warn on
+    // negative-modifier damage that's just riding the floor.
+    warnIfDivergent('rollDamage', damageRoll.total, Math.max(1, libResult.total), { weapon: weapon?.name })
+
     let damageInlineRoll = damageRoll.toAnchor({
       classes: ['damage-applyable', 'inline-dsn-hidden'],
       dataset: { damage: damageRoll.total }
@@ -3271,6 +3287,8 @@ class DCCActor extends Actor {
     })
     const libResult = libRollCritical(critInput, () => naturalCrit)
 
+    warnIfDivergent('rollCritical', critRoll.total, libResult.total, { weapon: weapon?.name })
+
     let critResult = ''
     const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
     if (critResultObj) {
@@ -3437,6 +3455,8 @@ class DCCActor extends Actor {
       luckModifier: parseInt(this.system.abilities.lck.mod) || 0
     })
     const libResult = libRollFumble(fumbleInput, () => naturalFumble)
+
+    warnIfDivergent('rollFumble', fumbleRoll.total, libResult.total, { weapon: weapon?.name })
 
     let isNPCFumble = false
     let fumbleResultObj

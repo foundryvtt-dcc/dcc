@@ -19,6 +19,20 @@
 import { normalizeLibDie } from './attack-input.mjs'
 
 /**
+ * Fallback crit-table id when the actor's `attributes.critical.table` and
+ * the weapon's `system.critTable` are both empty. Matches the legacy
+ * `rollWeaponAttack` default.
+ */
+const DEFAULT_CRIT_TABLE = 'I'
+
+/**
+ * Armor-type placeholder the lib requires on `FumbleInput` but ignores
+ * whenever `fumbleDieOverride` is set (which the adapter always does —
+ * see `buildFumbleInput` for the rationale).
+ */
+const FUMBLE_ARMOR_TYPE_PLACEHOLDER = 'unarmored'
+
+/**
  * Build a lib `CriticalInput` for a weapon crit.
  *
  * The caller passes the resolved crit die (Foundry-style, e.g. `'1d10'`)
@@ -32,7 +46,7 @@ import { normalizeLibDie } from './attack-input.mjs'
  */
 export function buildCriticalInput ({ critDie, luckModifier, critTableName }) {
   return {
-    critTable: critTableName || 'I',
+    critTable: critTableName || DEFAULT_CRIT_TABLE,
     critDie: normalizeLibDie(critDie),
     luckModifier
   }
@@ -46,7 +60,7 @@ export function buildCriticalInput ({ critDie, luckModifier, critTableName }) {
  * `this.system.attributes.fumble.die`, or the fixed `'1d10'` NPC fumble
  * table die). The `armorType` field is still required by the lib's
  * `FumbleInput` type but is ignored when `fumbleDieOverride` is set;
- * we pass `'unarmored'` as a stable placeholder.
+ * we pass `FUMBLE_ARMOR_TYPE_PLACEHOLDER` as a stable placeholder.
  *
  * The lib subtracts `luckModifier` from the fumble total (positive luck
  * → lower, better result). That matches the Foundry-side formula
@@ -57,7 +71,7 @@ export function buildCriticalInput ({ critDie, luckModifier, critTableName }) {
  */
 export function buildFumbleInput ({ fumbleDie, luckModifier }) {
   return {
-    armorType: 'unarmored',
+    armorType: FUMBLE_ARMOR_TYPE_PLACEHOLDER,
     luckModifier,
     fumbleDieOverride: normalizeLibDie(fumbleDie)
   }

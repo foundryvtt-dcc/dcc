@@ -416,7 +416,17 @@ export async function loadDisapprovalTable (actor) {
     if (!pack) continue
     const entry = pack.index?.find?.((e) => `${packName}.${e.name}` === tableName)
     if (!entry) continue
-    const doc = await pack.getDocument(entry._id)
+    let doc
+    try {
+      doc = await pack.getDocument(entry._id)
+    } catch (err) {
+      // Corrupted pack entry, permission error, or socket failure —
+      // continue the walk so the world-table fallback (and, failing
+      // that, the null return) can take over instead of crashing the
+      // cast with an unhandled rejection.
+      console.warn('[DCC adapter] loadDisapprovalTable: pack.getDocument rejected', { packName, entryId: entry._id, err })
+      continue
+    }
     const libTable = toLibSimpleTable(doc)
     if (libTable) return libTable
   }
@@ -461,9 +471,18 @@ export async function loadMercurialMagicTable () {
     if (pack) {
       const entry = pack.index?.find?.((e) => e.name === parts[2])
       if (entry) {
-        const doc = await pack.getDocument(entry._id)
-        const libTable = toLibMercurialTable(doc)
-        if (libTable) return libTable
+        let doc
+        try {
+          doc = await pack.getDocument(entry._id)
+        } catch (err) {
+          // Fall through to the world-table branch rather than crash
+          // the cast on a corrupted pack / permission / socket error.
+          console.warn('[DCC adapter] loadMercurialMagicTable: pack.getDocument rejected', { pack: `${parts[0]}.${parts[1]}`, entryId: entry._id, err })
+        }
+        if (doc) {
+          const libTable = toLibMercurialTable(doc)
+          if (libTable) return libTable
+        }
       }
     }
   }
