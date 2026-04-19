@@ -79,7 +79,7 @@ don't commit.
   spec (`v14-features.spec.js`, `data-models.spec.js`, or a new
   spec file if the surface area warrants one). The adapter-dispatch
   test count has climbed with each session (26 at Phase 3 session 2
-  close → 27 at session 5 close); that trajectory is expected and
+  close → 33 at session 6 close); that trajectory is expected and
   intentional — the suite IS the regression net for the refactor.
 
 ## Documentation

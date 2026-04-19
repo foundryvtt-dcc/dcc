@@ -9,8 +9,12 @@
  * preserving the flag contract that downstream modules
  * (dcc-qol, token-action-hud-dcc) parse.
  *
- * Phase 1 scope: ability checks + saving throws. Skill / init
- * renderers follow the same shape and will land as they migrate.
+ * Covers Phase 1-2 flows: ability check, save, skill, spell check,
+ * disapproval roll, mercurial effect. Initiative has no renderer
+ * here — Foundry's `Combat#rollInitiative` posts the init chat with
+ * the `flags.core.initiativeRoll` the `emoteInitiativeRoll` handler
+ * gates on; bypassing that would break the emote integration (see
+ * `_getInitiativeRollViaAdapter`'s Path-A rationale in `actor.js`).
  */
 
 /**
@@ -236,15 +240,17 @@ export async function renderSkillCheck ({
 /**
  * Render a spell-check result as a Foundry ChatMessage.
  *
- * Phase 2 session-1 scaffold: minimal rendering for the generic
- * casting path. Preserves the `dcc.RollType: 'SpellCheck'` /
+ * Renders a lib `SpellCheckResult` for all currently-migrated casting
+ * modes (generic / wizard / cleric / patron-bound wizard-elf) into a
+ * Foundry chat message. Preserves the `dcc.RollType: 'SpellCheck'` /
  * `dcc.isSpellCheck` flag contract the legacy `processSpellCheck`
  * path emits (so downstream consumers keep working), plus a
  * structured `dcc.libResult` payload carrying the lib's spell-check
- * outcome. Side effects (spell loss, disapproval, patron taint,
- * mercurial magic) are NOT applied here — they live on the legacy
- * path this session and migrate into `spell-events.mjs` in later
- * sessions.
+ * outcome. Side effects (spell loss, cleric disapproval, spellburn,
+ * mercurial magic) land via `createSpellEvents` in `spell-events.mjs`
+ * and are not re-applied here. Patron-taint is preserved adapter-side
+ * via `_runLegacyPatronTaint` in `actor.js` (permanent — see Phase 2
+ * close-out).
  *
  * @param {Object} params
  * @param {Object} params.actor - The DCCActor that cast.

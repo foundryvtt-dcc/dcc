@@ -3,20 +3,15 @@
 /**
  * Foundry-backed async roller for dcc-core-lib.
  *
- * The lib's async pipeline (`evaluateRollAsync`, `resolveSkillCheckAsync`,
- * `rollCheckAsync` and siblings — see dcc-core-lib/docs/MODIFIERS.md)
- * accepts an async custom roller with the signature
- *   (expression: string) => Promise<number>
+ * Reserved infrastructure — wraps Foundry's `Roll` as the lib's
+ * async `RollOptionsAsync.roller` shape `(expression) => Promise<number>`.
  *
- * We create a Foundry `Roll` from the expression, await `.evaluate()`,
- * and return `roll.total`. The Foundry Roll instance itself is stashed
- * on a context object supplied by the caller, so downstream adapter
- * code (chat-renderer) can attach the same Roll to the ChatMessage
- * for DSN animation and breakdown display.
- *
- * This single integration point keeps the lib's "what formula?"
- * calculation pure, while Foundry's async dice pipeline stays the
- * source of truth for actual dice rolls.
+ * Not consumed by any adapter path in Phases 0-3: dispatchers use the
+ * two-pass sync formula / evaluate pattern (`{mode:'formula'}` →
+ * Foundry `Roll.evaluate()` → `{mode:'evaluate', roller: () => natural}`)
+ * in `actor.js` instead, so Foundry owns the dice engine and the lib
+ * stays pure. Kept because later phases (wave-3 modifier migration,
+ * attack-modifier dialog) may prefer the lib's async roller entry points.
  */
 
 /**

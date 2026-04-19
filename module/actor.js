@@ -808,10 +808,11 @@ class DCCActor extends Actor {
    *
    * Phase 1 of the adapter refactor: the simple path (no dialog,
    * no rollUnder) flows through the lib via character-accessors →
-   * foundry-roller → rollAbilityCheckAsync → chat-renderer. The
-   * dialog / rollUnder / CheckPenalty-display paths fall through to
-   * the legacy implementation below, which remains the source of
-   * truth for those UX flows until later phases migrate them.
+   * two-pass `libRollAbilityCheck` (mode: 'formula' / 'evaluate') →
+   * chat-renderer. The dialog / rollUnder / CheckPenalty-display
+   * paths fall through to the legacy implementation below, which
+   * remains the source of truth for those UX flows until later
+   * phases migrate them.
    *
    * Signature and emitted chat-message flags are preserved — dcc-qol
    * and token-action-hud-dcc depend on the public shape of this
@@ -842,9 +843,10 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Adapter path for ability checks. Single-pass async flow:
-   * actor → Character shape → lib's rollAbilityCheckAsync (which
-   * awaits the Foundry Roll via the injected roller) → chat renderer.
+   * Adapter path for ability checks. Two-pass sync flow:
+   * pass 1 asks the lib for the formula (no evaluation), Foundry
+   * rolls it, pass 2 classifies against the same natural for crit
+   * / fumble and emits the chat message via the renderer.
    * @private
    */
   async _rollAbilityCheckViaAdapter (abilityId, options) {
@@ -1529,8 +1531,7 @@ class DCCActor extends Actor {
       abilityLabel,
       skillItem,
       result,
-      foundryRoll,
-      die
+      foundryRoll
     })
 
     if (skillItem && skillItem.system.config.showLastResult) {
@@ -2207,9 +2208,6 @@ class DCCActor extends Actor {
     const associatedPatron = spellItem.system?.associatedPatron || ''
     if (!spellName.includes('Patron') && !associatedPatron) return
 
-    const patronTaintRoll = new Roll('1d100')
-    await patronTaintRoll.evaluate()
-
     const currentChance = parseInt(this.system.class?.patronTaintChance) || 1
     const newChance = currentChance + 1
 
@@ -2735,7 +2733,7 @@ class DCCActor extends Actor {
   async _rollToHitViaAdapter (weapon, options = {}) {
     logDispatch('rollWeaponAttack', 'adapter', { weapon: weapon?.name || 'unknown' })
 
-    const toHit = weapon.system?.toHit.replaceAll('@ab', this.system.details.attackBonus)
+    const toHit = (weapon.system?.toHit ?? '').replaceAll('@ab', this.system.details.attackBonus)
     const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
     const die = weapon.system?.actionDie || actorActionDice
     let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
@@ -2863,7 +2861,7 @@ class DCCActor extends Actor {
   async _rollToHitLegacy (weapon, options = {}) {
     logDispatch('rollWeaponAttack', 'legacy', { weapon: weapon?.name || 'unknown' })
     /* Grab the To Hit modifier */
-    const toHit = weapon.system?.toHit.replaceAll('@ab', this.system.details.attackBonus)
+    const toHit = (weapon.system?.toHit ?? '').replaceAll('@ab', this.system.details.attackBonus)
 
     const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
 

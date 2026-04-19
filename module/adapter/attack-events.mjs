@@ -1,18 +1,17 @@
 /**
- * Attack-events adapter (Phase 3 session 2 — stub).
+ * Attack-events adapter — reserved for lib `CombatEvents` bridges.
  *
- * Mirrors `spell-events.mjs`. Future sessions will wire Foundry-side
- * side effects to the lib's `CombatEvents`:
- *   - `onAttackRoll` — no-op for now (attack chat is produced by
- *     `rollWeaponAttack` tail post-adapter).
- *   - `onCriticalThreat` — eventually drives crit-table lookup when
- *     crit rolls migrate off of `getCritTableResult`.
- *   - `onFumbleRoll` — fumble-table lookup analog of the above.
- *   - `onDamageRoll` — when damage migrates to `rollDamage`.
- *   - `onDeedAttempt` — deed-die migration.
- *
- * Session 2 exports nothing — the simplest-weapon happy-path doesn't
- * need side effects.
+ * Phase 3 sessions 5-6 migrated damage / crit / fumble without wiring
+ * combat events: those paths use the two-pass observational pattern
+ * (see `_rollDamageViaAdapter` / `_rollCriticalViaAdapter` /
+ * `_rollFumbleViaAdapter` in `actor.js`) where Foundry's
+ * `DCCRoll.createRoll` remains the source of truth for chat + anchor
+ * totals, and the lib is called purely to populate
+ * `dcc.libDamageResult` / `dcc.libCritResult` / `dcc.libFumbleResult`
+ * flags. Events (`onCriticalThreat`, `onFumbleRoll`, `onDamageRoll`,
+ * `onAttackRoll`, `onDeedAttempt`) will be wired here only when a
+ * later slice needs lib-driven side effects — e.g. lib-native
+ * crit-table lookup replacing `getCritTableResult`.
  */
 
 export {}
