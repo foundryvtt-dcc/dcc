@@ -112,22 +112,6 @@ paths no longer use them. This unblocks Group D.
 
 ### Group B — Phase 3 XCC-win deliverable (✅ parallel-safe with Group A)
 
-#### B1. `dcc.registerItemSheet(types, SheetClass)` hook
-- **Scope:** Add the `registerItemSheet` extension hook listed in
-  `ARCHITECTURE_REIMAGINED.md §7 Phase 3` and Appendix B. Eliminates
-  XCC's `unregisterSheet` + `registerSheet` dance (`ARCHITECTURE_REIMAGINED §2.5 + §6`).
-- **Files:** `module/dcc.js` (hook emission in init or ready),
-  `module/__tests__/extension-hooks.test.js` (new file or extend),
-  `docs/dev/EXTENSION_API.md` (document as **stable**).
-- **Parallel-safe:** doesn't touch `module/actor.js` or `module/adapter/`
-  — safe to run alongside a Group A slice via worktree-isolated agent.
-- **XCC migration:** record in the commit message what XCC needs to
-  change (don't modify `../../modules/xcc` without explicit user
-  approval — that's a separate coordination step).
-- **Browser tests:** new spec or extend existing — register a test
-  sheet via the hook, verify Foundry picks it up for the item type.
-- **Commit:** `feat(ext-api): add dcc.registerItemSheet hook (closes §2.5 XCC hack)`
-
 ---
 
 ### Group C — Parallel cruft removal (✅ parallel-safe, independent)
@@ -257,3 +241,11 @@ See `docs/00-progress.md` for details. Summary:
   to both surface tables; §2.12 Foundry-smelling-surface contract
   stated explicitly; recommendations grew schema-shape + future-hook
   guidance.
+
+### Extension API slices
+
+- B1 (2026-04-19): `game.dcc.registerItemSheet(types, SheetClass,
+  options?)` shipped as stable extension API. Closes §2.5 / §2.11
+  pain points. Helper at `module/extension-api.mjs`; DCC's own
+  `DCCItemSheet` registration migrated to dogfood it. 9 unit tests
+  + 3 Playwright e2e cases.

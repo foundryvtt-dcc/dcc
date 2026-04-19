@@ -6,6 +6,32 @@
 
 ## Current phase
 
+**Extension API (2026-04-19) — `dcc.registerItemSheet(types,
+SheetClass, options?)` shipped** (Group B1 from
+`02-slice-backlog.md`). Folds the
+`Items.unregisterSheet('core', ItemSheetV2) +
+Items.registerSheet('dcc', SheetClass, {…})` two-call dance into a
+single declarative call. Closes the §2.5 / §2.11 pain point about
+modules having to know Foundry's exact incantation and ordering for
+"replace the default sheet". Helper lives in
+`module/extension-api.mjs`; `game.dcc.registerItemSheet` exposed at
+init time alongside the other stable exports. DCC's own
+`DCCItemSheet` registration in `module/dcc.js` was migrated to
+dogfood the helper — proves the API works for the existing
+high-traffic call site, not just future module callers. 847 Vitest
+tests pass (was 838, +9 in `extension-api.test.js`: type
+normalization (string / array / undefined), `makeDefault: false`
+preserves existing default, `makeDefault: true` triggers
+unregister-first with correct call order, custom scope honored,
+defensive missing-`SheetClass` + missing-`Items` errors,
+defensive missing-`ItemSheetV2` skip-unregister) + 66 Playwright
+e2e tests pass against live v14 (was 63, +3 in new
+`extension-api.spec.js`: helper exposed on `game.dcc`,
+register-without-default keeps the existing default sheet,
+register-with-default unseats the prior default). Documented in
+`EXTENSION_API.md` as **stable** with §2.5 / §2.11 pain-point
+references.
+
 **Docs (2026-04-19) — `EXTENSION_API.md` cross-referenced against
 `ARCHITECTURE_REIMAGINED.md §2.8–§2.12` pain points** (Group B2 from
 `02-slice-backlog.md`). New "Stated contract: Foundry-smelling

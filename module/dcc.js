@@ -31,6 +31,7 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
+import { registerItemSheet } from './extension-api.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -56,8 +57,6 @@ import {
 const { Actors } = foundry.documents.collections
 const { ActorSheetV2 } = foundry.applications.sheets
 const { loadTemplates } = foundry.applications.handlebars
-const { Items } = foundry.documents.collections
-const { ItemSheetV2 } = foundry.applications.sheets
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -115,6 +114,7 @@ Hooks.once('init', async function () {
     TableResult,
     getSkillTable,
     processSpellCheck,
+    registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove
     getMacroOptions // This is called from macros, don't remove
@@ -176,14 +176,15 @@ Hooks.once('init', async function () {
     label: 'DCC.DCCActorSheetGeneric'
   })
 
-  Items.unregisterSheet('core', ItemSheetV2)
   Actors.registerSheet('dcc', DCCPartySheet, {
     makeDefault: true,
     types: ['Party'],
     label: 'DCC.DCCPartySheet'
   })
 
-  Items.registerSheet('dcc', DCCItemSheet, {
+  // Use the stable extension API we expose to modules — folds the
+  // unregister-default + register dance into a single call.
+  registerItemSheet(undefined, DCCItemSheet, {
     label: 'DCC.DCCItemSheet',
     makeDefault: true
   })
