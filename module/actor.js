@@ -2468,20 +2468,21 @@ class DCCActor extends Actor {
 
     // Add damage bonus adjustment for NPCs (from Active Effects)
     // For PCs, this is already incorporated via computeMeleeAndMissileAttackAndDamage()
+    let npcDamageAdjustment = 0
     if (this.isNPC && damageRollFormula) {
       const isMeleeWeapon = weapon.system?.melee !== false
-      const damageAdjustment = isMeleeWeapon
+      npcDamageAdjustment = isMeleeWeapon
         ? parseInt(this.system.details.attackDamageBonus?.melee?.adjustment) || 0
         : parseInt(this.system.details.attackDamageBonus?.missile?.adjustment) || 0
-      if (damageAdjustment !== 0) {
-        damageRollFormula = `${damageRollFormula}${damageAdjustment >= 0 ? '+' : ''}${damageAdjustment}`
+      if (npcDamageAdjustment !== 0) {
+        damageRollFormula = `${damageRollFormula}${npcDamageAdjustment >= 0 ? '+' : ''}${npcDamageAdjustment}`
       }
     }
 
     let damageRoll, damageInlineRoll, damagePrompt, libDamageResult
     let libCritResult, libFumbleResult
     if (automateDamageFumblesCrits && damageRollFormula) {
-      const damageDispatch = await this._rollDamage(weapon, damageRollFormula, attackRollResult, options)
+      const damageDispatch = await this._rollDamage(weapon, damageRollFormula, attackRollResult, { ...options, npcDamageAdjustment })
       damageRoll = damageDispatch.damageRoll
       damageInlineRoll = damageDispatch.damageInlineRoll
       damagePrompt = damageDispatch.damagePrompt
@@ -3106,7 +3107,7 @@ class DCCActor extends Actor {
     }
 
     const parsed = parseDamageFormula(damageRollFormula)
-    const damageInput = buildDamageInput(parsed)
+    const damageInput = buildDamageInput(parsed, { npcDamageAdjustment: options.npcDamageAdjustment })
     const naturalDamage = damageRoll.dice[0]?.total ?? damageRoll.total
     const libResult = libRollDamage(damageInput, () => naturalDamage)
 

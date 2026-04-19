@@ -49,17 +49,35 @@ export function parseDamageFormula (formula) {
  * strength modifier + any other Foundry-side derivations from
  * `computeMeleeAndMissileAttackAndDamage`. We pass the flat modifier
  * as `strengthModifier` and leave `deedDieResult` / `magicBonus` /
- * `backstabMultiplier` / `bonuses` absent — the gate ensures those
- * cases don't reach here. A later slice that splits apart class/str
- * contributions can broaden this.
+ * `backstabMultiplier` absent — the gate ensures those cases don't
+ * reach here.
+ *
+ * NPC damage-bonus adjustment (Phase 3 session 7): when present, the
+ * `rollWeaponAttack` body baked it into the formula's flat modifier
+ * (so the legacy path keeps working). For the adapter path we peel it
+ * back off and surface it as a `RollBonus` on `bonuses[]` so the lib's
+ * breakdown attributes it correctly (`source: 'NPC attack damage bonus'`)
+ * instead of misattributing as Strength.
  *
  * @param {{diceCount: number, die: string, modifier: number}} parsed
+ * @param {{npcDamageAdjustment?: number}} [opts]
  * @returns {import('../vendor/dcc-core-lib/types/combat.js').DamageInput}
  */
-export function buildDamageInput (parsed) {
-  return {
+export function buildDamageInput (parsed, opts = {}) {
+  const npcAdj = Number.isFinite(opts.npcDamageAdjustment) ? opts.npcDamageAdjustment : 0
+  const input = {
     damageDie: parsed.die,
     diceCount: parsed.diceCount,
-    strengthModifier: parsed.modifier
+    strengthModifier: parsed.modifier - npcAdj
   }
+  if (npcAdj !== 0) {
+    input.bonuses = [{
+      id: 'npc:attack-damage-bonus',
+      label: 'NPC attack damage bonus',
+      source: { type: 'other', id: 'npc-attack-damage-bonus' },
+      category: 'inherent',
+      effect: { type: 'modifier', value: npcAdj }
+    }]
+  }
+  return input
 }

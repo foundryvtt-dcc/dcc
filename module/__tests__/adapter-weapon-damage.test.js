@@ -94,6 +94,34 @@ test('buildDamageInput folds the flat modifier into strengthModifier', () => {
   expect(input).toEqual({ damageDie: 'd8', diceCount: 1, strengthModifier: 3 })
 })
 
+test('buildDamageInput peels NPC adjustment off strengthModifier into bonuses', () => {
+  // Goblin's `1d4` weapon with +2 NPC adjustment → formula `1d4+2`,
+  // parsed `modifier: 2`. The +2 belongs to the NPC adjustment, not
+  // Strength; the lib breakdown should show that.
+  const input = buildDamageInput({ diceCount: 1, die: 'd4', modifier: 2 }, { npcDamageAdjustment: 2 })
+  expect(input.strengthModifier).toBe(0)
+  expect(input.bonuses).toHaveLength(1)
+  expect(input.bonuses[0]).toMatchObject({
+    id: 'npc:attack-damage-bonus',
+    label: 'NPC attack damage bonus',
+    source: { type: 'other', id: 'npc-attack-damage-bonus' },
+    category: 'inherent',
+    effect: { type: 'modifier', value: 2 }
+  })
+})
+
+test('buildDamageInput surfaces a negative NPC adjustment as a negative bonus', () => {
+  const input = buildDamageInput({ diceCount: 1, die: 'd6', modifier: -1 }, { npcDamageAdjustment: -1 })
+  expect(input.strengthModifier).toBe(0)
+  expect(input.bonuses[0].effect).toEqual({ type: 'modifier', value: -1 })
+})
+
+test('buildDamageInput leaves strengthModifier intact when no NPC adjustment', () => {
+  const input = buildDamageInput({ diceCount: 1, die: 'd8', modifier: 3 }, { npcDamageAdjustment: 0 })
+  expect(input).toEqual({ damageDie: 'd8', diceCount: 1, strengthModifier: 3 })
+  expect(input.bonuses).toBeUndefined()
+})
+
 test('_canRouteDamageViaAdapter rejects when the attack went through legacy', () => {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -199,6 +227,42 @@ test('legacy path fires for multi-damage-type (per-term flavors) formulas', asyn
 
   expect(assertDispatched('legacy')).toBe(true)
   expect(assertDispatched('adapter')).toBe(false)
+})
+
+test('adapter path attributes NPC damage adjustment as a bonus, not Strength', async () => {
+  logDispatch.mockClear()
+  // Goblin's club rolls a natural 3 on `1d4`; +1 NPC adjustment baked
+  // into `1d4+1` → Foundry total 4. The lib result should attribute
+  // the +1 to the NPC bonus breakdown, not Strength.
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 4, natural: 3 }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'goblin club' }
+  const attackRollResult = { libResult: { total: 12 } }
+
+  let result
+  try {
+    result = await actor._rollDamage(weapon, '1d4+1', attackRollResult, { npcDamageAdjustment: 1 })
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(result.libDamageResult).toBeDefined()
+  expect(result.libDamageResult.baseDamage).toBe(3)
+  expect(result.libDamageResult.modifierDamage).toBe(1)
+  expect(result.libDamageResult.total).toBe(4)
+  // Breakdown should NOT credit Strength (NPC has no rolled-up STR mod
+  // baked in by computeMeleeAndMissileAttackAndDamage); the +1 should
+  // ride on the bonuses entry.
+  const strEntry = result.libDamageResult.breakdown.find(b => b.source === 'Strength')
+  expect(strEntry).toBeUndefined()
+  const bonusEntry = result.libDamageResult.breakdown.find(b => b.source === 'bonuses')
+  expect(bonusEntry).toBeDefined()
+  expect(bonusEntry.amount).toBe(1)
 })
 
 test('adapter path clamps damage minimum to 1', async () => {

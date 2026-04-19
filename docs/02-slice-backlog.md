@@ -64,22 +64,6 @@ for simplest-weapon, two-weapon, backstab, and deed-die paths.
 Completion unblocks Group D retirement slices. Must serialize — all
 touch `module/actor.js` dispatchers.
 
-#### A1. NPC damage-bonus adjustment through adapter (in progress — current Phase 3 session 7)
-- **Scope:** Broaden `_canRouteDamageViaAdapter` to allow NPC
-  `system.config.attackDamageBonus`; translate the bonus into
-  `DamageInput.strengthModifier` (fold with PC `strengthModifier`) OR
-  add a `DamageInput.flatBonus` field if the lib supports it.
-- **Files:** `module/actor.js` (`_canRouteDamageViaAdapter`,
-  `_rollDamageViaAdapter`), `module/adapter/damage-input.mjs`
-  (`buildDamageInput`), `module/__tests__/adapter-weapon-damage.test.js`.
-- **Lib check:** confirm wave-3 hasn't landed (see
-  `module/vendor/dcc-core-lib/VERSION.json` + `MODIFIERS.md §9`). If
-  it has, sync vendored copy first.
-- **Browser tests:** extend `phase1-adapter-dispatch.spec.js` with
-  an NPC-with-damage-bonus case asserting the adapter log and the
-  resulting `libDamageResult.flatBonus` (or equivalent) on chat flags.
-- **Commit:** `feat(adapter): Phase 3 session 7 — NPC damage-bonus adapter route`
-
 #### A2. Backstab attack + damage through adapter
 - **Scope:** Broaden attack + damage gates to allow backstab. Lib has
   `getBackstabMultiplier`; surface it as a `MultiplyModifier` on the
@@ -263,7 +247,7 @@ explicit user decision before drafting its concrete slice list.
 
 Move entries here as they land; keep the active queue scannable.
 
-### Phase 3 sessions 1–6 (2026-04-18 → 2026-04-19)
+### Phase 3 sessions 1–7 (2026-04-18 → 2026-04-19)
 
 See `docs/00-progress.md` for details. Summary:
 - Phase 3 session 1: Spellburn dialog-adapter
@@ -272,3 +256,6 @@ See `docs/00-progress.md` for details. Summary:
 - Phase 3 session 4: long-range dice-chain translation (`normalizeLibDie`)
 - Phase 3 session 5: first damage-migration slice (simplest happy-path)
 - Phase 3 session 6: crit + fumble migration (both adapter routes)
+- Phase 3 session 7: NPC damage-bonus adjustment threaded through the
+  adapter as a `RollBonus` so the lib breakdown attributes it correctly
+  (was previously misattributed to Strength)

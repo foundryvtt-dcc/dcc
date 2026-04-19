@@ -32,8 +32,11 @@ pins Node 24.
 sessions 1 (dialog-adapter), 2 (first attack-migration slice), 3
 (hook-translation bridge), and 4 (long-range dice-chain translation)
 all CLOSED 2026-04-18. Phase 3 sessions 5 (first damage-migration
-slice) and 6 (crit + fumble migration) CLOSED 2026-04-19. Phase 3
-session 7 is the active work.** Phase 2 close-out pinned two
+slice), 6 (crit + fumble migration), and 7 (NPC damage-bonus
+adapter route with proper attribution) all CLOSED 2026-04-19. Phase
+3 session 8 is the active work — pick up the next attack-side slice
+from `docs/02-slice-backlog.md` (top of Group A: backstab adapter
+route, gated on RAW-divergence stop-and-ask).** Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and
 incremental; (b) `_runLegacyPatronTaint` is permanent adapter

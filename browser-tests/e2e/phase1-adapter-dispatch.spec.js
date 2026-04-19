@@ -796,6 +796,74 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(weaponEntry, 'breakdown must include weapon entry').toBeDefined()
       expect(weaponEntry.amount).toBe(flag.baseDamage)
     })
+
+    test('NPC with attackDamageBonus.melee.adjustment routes via adapter + bonus breakdown', async ({ page }) => {
+      // Phase 3 session 7. NPC damage adjustments live on
+      // `system.details.attackDamageBonus.{melee,missile}.adjustment` and
+      // are baked into the damage formula by `rollWeaponAttack`. The
+      // adapter peels the adjustment back off `strengthModifier` and
+      // surfaces it as a `RollBonus` in the lib breakdown so the chat
+      // flag attributes it correctly (rather than misattributing it as
+      // Strength like a flat-fold would).
+      await page.evaluate(async () => {
+        const npc = await Actor.create({
+          name: 'P1 NPC DamageBonus',
+          type: 'NPC',
+          system: { details: { attackDamageBonus: { melee: { adjustment: '+2' } } } }
+        })
+        await npc.createEmbeddedDocuments('Item', [{
+          name: 'P1-NpcClub',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+1',
+            critRange: 20,
+            damage: '1d4',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 NPC DamageBonus').items.getName('P1-NpcClub').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 NPC DamageBonus').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-NpcClub' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-NpcClub' })
+
+      const flag = await page.evaluate(async () => {
+        // Chat messages persist across tests in the session-reuse fixture;
+        // scope to our NPC by speaker.alias so we don't pick up a prior
+        // test's libDamageResult.
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 NPC DamageBonus' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libDamageResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'NPC adapter-path damage roll must set dcc.libDamageResult').not.toBeNull()
+      expect(flag.modifierDamage).toBe(2)
+      const strEntry = flag.breakdown.find(b => b.source === 'Strength')
+      expect(strEntry, 'NPC damage breakdown must NOT credit Strength').toBeUndefined()
+      const bonusEntry = flag.breakdown.find(b => b.source === 'bonuses')
+      expect(bonusEntry, 'NPC adjustment must surface as a bonus breakdown entry').toBeDefined()
+      expect(bonusEntry.amount).toBe(2)
+    })
   })
 
   // ── rollCritical + rollFumble (Phase 3 session 6) ──────────────────

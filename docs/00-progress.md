@@ -6,7 +6,33 @@
 
 ## Current phase
 
-**Phase 3 — ACTIVE. Session 6 (2026-04-19) completed the first
+**Phase 3 — ACTIVE. Session 7 (2026-04-19) routed the NPC
+damage-bonus adjustment through the adapter with correct
+attribution.** The dispatcher previously folded the appended
+`±N` adjustment into `strengthModifier` (silently misattributed
+to Strength in the lib breakdown). Session 7 keeps
+`rollWeaponAttack` baking the adjustment into the formula (so
+`_rollDamageLegacy` keeps working unchanged) but threads the raw
+`npcDamageAdjustment` as an option into `_rollDamage`. The adapter
+path's `buildDamageInput(parsed, { npcDamageAdjustment })` now
+peels the adjustment off `strengthModifier` and surfaces it as a
+`RollBonus` (`source: { type: 'other', id: 'npc-attack-damage-bonus' }`)
+on `bonuses[]`. The lib's `rollDamage` aggregates that into a
+`{ source: 'bonuses', amount: N }` breakdown entry on
+`flags['dcc.libDamageResult']` instead of crediting Strength. PCs
+unaffected (their damage formula already bakes Strength via
+`computeMeleeAndMissileAttackAndDamage`; `npcDamageAdjustment` is
+0 for non-NPCs). 838 Vitest tests pass (up from 834 — 4 new in
+`adapter-weapon-damage.test.js` covering `buildDamageInput` with
+positive / negative / zero NPC adjustments, plus the
+`_rollDamage` dispatch with the breakdown attribution check) + 34
+Playwright dispatch tests pass against live v14 Foundry (33
+prior + 1 new — `NPC with attackDamageBonus.melee.adjustment`
+asserts both dispatch lines are `adapter` and reads the chat
+flag's breakdown to confirm the `bonuses` entry exists with
+`amount === 2` while no `Strength` entry appears).
+
+**Phase 3 — session 6 (2026-04-19) completed the first
 crit + fumble migration slice.** `DCCActor.rollWeaponAttack`'s inline
 crit and fumble blocks are now dispatchers: `_rollCritical` /
 `_rollFumble` gates route through the adapter when the attack itself
