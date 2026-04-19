@@ -23,7 +23,7 @@ import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMer
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
-import { buildDamageInput, parseDamageFormula } from './adapter/damage-input.mjs'
+import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
 
@@ -3059,11 +3059,15 @@ class DCCActor extends Actor {
 
   /**
    * Gate for the Phase 3 session 5 happy-path damage adapter. Routes
-   * only the simplest damage — a single-die + optional flat-modifier
+   * only the simplest damage — a single-die + flat-modifier(s)
    * formula, no per-term flavors, no backstab damage swap, and only
    * when the attack itself was routed via the adapter. Anything else
    * (multi-type damage like `1d6[fire]+1d6[cold]`, backstab damage,
-   * deed-die-injected formulas) stays on legacy.
+   * deed-die-injected formulas) stays on legacy. Session 8 broadened
+   * the gate to accept magic weapon bonuses — a positive integer
+   * `damageWeaponBonus` flows through `DamageInput.magicBonus` for
+   * correct breakdown attribution; dice-bearing or cursed (negative)
+   * magic bonuses still fall to legacy.
    *
    * @param {Object} weapon
    * @param {string} damageRollFormula
@@ -3078,6 +3082,7 @@ class DCCActor extends Actor {
     if (typeof damageRollFormula !== 'string') return false
     if (damageRollFormula.includes('[')) return false
     if (parseDamageFormula(damageRollFormula) === null) return false
+    if (extractWeaponMagicBonus(weapon) === null) return false
     return true
   }
 
@@ -3114,7 +3119,11 @@ class DCCActor extends Actor {
     }
 
     const parsed = parseDamageFormula(damageRollFormula)
-    const damageInput = buildDamageInput(parsed, { npcDamageAdjustment: options.npcDamageAdjustment })
+    const magicBonus = extractWeaponMagicBonus(weapon) ?? 0
+    const damageInput = buildDamageInput(parsed, {
+      npcDamageAdjustment: options.npcDamageAdjustment,
+      magicBonus
+    })
     const naturalDamage = damageRoll.dice[0]?.total ?? damageRoll.total
     const libResult = libRollDamage(damageInput, () => naturalDamage)
 

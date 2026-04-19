@@ -864,6 +864,68 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(bonusEntry, 'NPC adjustment must surface as a bonus breakdown entry').toBeDefined()
       expect(bonusEntry.amount).toBe(2)
     })
+
+    test('PC with +1 magic weapon routes via adapter + magic breakdown entry', async ({ page }) => {
+      // Phase 3 session 8. A weapon with `damageWeaponBonus: '+1'` flows
+      // through the adapter's expanded gate. `item.js` bakes the magic
+      // bonus into the damage formula as a second trailing modifier
+      // (e.g. `1d8+2+1`); the adapter peels it back off strengthModifier
+      // and sets `DamageInput.magicBonus`, so the lib breakdown carries
+      // separate `Strength` and `magic` entries.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 PC MagicSword',
+          type: 'Player',
+          system: { abilities: { str: { value: 13, mod: 1 } } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-MagicSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+1',
+            critRange: 20,
+            damageWeapon: '1d8',
+            damageWeaponBonus: '+1',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 PC MagicSword').items.getName('P1-MagicSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 PC MagicSword').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-MagicSword' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-MagicSword' })
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 PC MagicSword' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libDamageResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'PC +1 weapon adapter-path damage roll must set dcc.libDamageResult').not.toBeNull()
+      const magicEntry = flag.breakdown.find(b => b.source === 'magic')
+      expect(magicEntry, 'magic weapon bonus must surface as a breakdown entry').toBeDefined()
+      expect(magicEntry.amount).toBe(1)
+    })
   })
 
   // ── rollCritical + rollFumble (Phase 3 session 6) ──────────────────

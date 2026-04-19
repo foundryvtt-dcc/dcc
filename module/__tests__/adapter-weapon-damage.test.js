@@ -27,7 +27,7 @@
 import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
-import { buildDamageInput, parseDamageFormula } from '../adapter/damage-input.mjs'
+import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula } from '../adapter/damage-input.mjs'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -80,6 +80,15 @@ test('parseDamageFormula extracts die + modifier from simple formulas', () => {
   expect(parseDamageFormula('1d6 + 3')).toEqual({ diceCount: 1, die: 'd6', modifier: 3 })
 })
 
+test('parseDamageFormula sums multiple trailing integer modifiers', () => {
+  // PC with strength +2 + magic weapon +1 — item.js produces `1d8+2+1`.
+  expect(parseDamageFormula('1d8+2+1')).toEqual({ diceCount: 1, die: 'd8', modifier: 3 })
+  // NPC with baked-in adjustment on a magic weapon: `1d6+1+3` (str +1, npc adj +3).
+  expect(parseDamageFormula('1d6+1+3')).toEqual({ diceCount: 1, die: 'd6', modifier: 4 })
+  // Mixed signs: `1d8-1+2` (penalty + bonus).
+  expect(parseDamageFormula('1d8-1+2')).toEqual({ diceCount: 1, die: 'd8', modifier: 1 })
+})
+
 test('parseDamageFormula returns null for non-simple formulas', () => {
   expect(parseDamageFormula('1d6[fire]')).toBeNull()
   expect(parseDamageFormula('1d6+1d4')).toBeNull()
@@ -122,6 +131,56 @@ test('buildDamageInput leaves strengthModifier intact when no NPC adjustment', (
   expect(input.bonuses).toBeUndefined()
 })
 
+test('buildDamageInput peels positive magicBonus off strengthModifier', () => {
+  // PC with strength +2 wielding a +1 sword → formula `1d8+2+1`, parsed
+  // `modifier: 3`. Magic bonus should attribute as `magicBonus: 1`, not
+  // a fake +3 Strength.
+  const input = buildDamageInput({ diceCount: 1, die: 'd8', modifier: 3 }, { magicBonus: 1 })
+  expect(input).toEqual({ damageDie: 'd8', diceCount: 1, strengthModifier: 2, magicBonus: 1 })
+})
+
+test('buildDamageInput ignores zero magicBonus (non-magical weapons)', () => {
+  const input = buildDamageInput({ diceCount: 1, die: 'd8', modifier: 3 }, { magicBonus: 0 })
+  expect(input).toEqual({ damageDie: 'd8', diceCount: 1, strengthModifier: 3 })
+  expect(input.magicBonus).toBeUndefined()
+})
+
+test('buildDamageInput splits magicBonus + npcDamageAdjustment cleanly', () => {
+  // NPC goblin with a +1 magic club: `1d4+1+3` (magic +1, npc adj +3).
+  // Parsed modifier: 4. Expected: magicBonus 1, bonuses[+3], strength 0.
+  const input = buildDamageInput(
+    { diceCount: 1, die: 'd4', modifier: 4 },
+    { magicBonus: 1, npcDamageAdjustment: 3 }
+  )
+  expect(input.strengthModifier).toBe(0)
+  expect(input.magicBonus).toBe(1)
+  expect(input.bonuses).toHaveLength(1)
+  expect(input.bonuses[0].effect).toEqual({ type: 'modifier', value: 3 })
+})
+
+test('extractWeaponMagicBonus parses positive-integer damageWeaponBonus', () => {
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '+1' } })).toBe(1)
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '+3' } })).toBe(3)
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '2' } })).toBe(2)
+})
+
+test('extractWeaponMagicBonus returns 0 for missing or empty bonus', () => {
+  expect(extractWeaponMagicBonus({})).toBe(0)
+  expect(extractWeaponMagicBonus({ system: {} })).toBe(0)
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '' } })).toBe(0)
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '   ' } })).toBe(0)
+})
+
+test('extractWeaponMagicBonus returns null for dice-bearing or negative bonuses', () => {
+  // Dice-bearing magic bonus (e.g. `+1d4 fire damage` style) — legacy only.
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '+1d4' } })).toBeNull()
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '1d6' } })).toBeNull()
+  // Cursed weapons — legacy only for this slice.
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '-1' } })).toBeNull()
+  // Unparsable.
+  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: 'wat' } })).toBeNull()
+})
+
 test('_canRouteDamageViaAdapter rejects when the attack went through legacy', () => {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -149,6 +208,27 @@ test('_canRouteDamageViaAdapter accepts simple formulas when attack was adapter'
   expect(actor._canRouteDamageViaAdapter(weapon, '1d8', attackRollResult, {})).toBe(true)
   expect(actor._canRouteDamageViaAdapter(weapon, '1d6+2', attackRollResult, {})).toBe(true)
   expect(actor._canRouteDamageViaAdapter(weapon, 'd8-1', attackRollResult, {})).toBe(true)
+})
+
+test('_canRouteDamageViaAdapter accepts +1 weapon with two-mod formula', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: '+1 longsword', system: { damageWeaponBonus: '+1' } }
+  const attackRollResult = { libResult: { total: 15 } }
+
+  expect(actor._canRouteDamageViaAdapter(weapon, '1d8+2+1', attackRollResult, {})).toBe(true)
+  expect(actor._canRouteDamageViaAdapter(weapon, '1d8+1', attackRollResult, {})).toBe(true)
+})
+
+test('_canRouteDamageViaAdapter rejects dice-bearing or cursed magic bonuses', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const attackRollResult = { libResult: { total: 15 } }
+  const diceBonusWeapon = { name: 'flaming sword', system: { damageWeaponBonus: '+1d4' } }
+  const cursedWeapon = { name: 'cursed blade', system: { damageWeaponBonus: '-1' } }
+
+  expect(actor._canRouteDamageViaAdapter(diceBonusWeapon, '1d8+2+1d4', attackRollResult, {})).toBe(false)
+  expect(actor._canRouteDamageViaAdapter(cursedWeapon, '1d8+2-1', attackRollResult, {})).toBe(false)
 })
 
 test('adapter path logs rollDamage dispatch + returns libDamageResult', async () => {
@@ -263,6 +343,41 @@ test('adapter path attributes NPC damage adjustment as a bonus, not Strength', a
   const bonusEntry = result.libDamageResult.breakdown.find(b => b.source === 'bonuses')
   expect(bonusEntry).toBeDefined()
   expect(bonusEntry.amount).toBe(1)
+})
+
+test('adapter path attributes +1 weapon bonus as magic, not Strength', async () => {
+  logDispatch.mockClear()
+  // PC with Str +2 wielding a +1 longsword — formula `1d8+2+1`, natural 5.
+  // Total 5 + 2 (str) + 1 (magic) = 8. Breakdown should have separate
+  // `Strength` and `magic` entries — no bogus +3 Strength.
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 8, natural: 5 }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: '+1 longsword', system: { damageWeaponBonus: '+1' } }
+  const attackRollResult = { libResult: { total: 20 } }
+
+  let result
+  try {
+    result = await actor._rollDamage(weapon, '1d8+2+1', attackRollResult, {})
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(result.libDamageResult).toBeDefined()
+  expect(result.libDamageResult.baseDamage).toBe(5)
+  expect(result.libDamageResult.modifierDamage).toBe(3)
+  expect(result.libDamageResult.total).toBe(8)
+
+  const strEntry = result.libDamageResult.breakdown.find(b => b.source === 'Strength')
+  expect(strEntry).toBeDefined()
+  expect(strEntry.amount).toBe(2)
+  const magicEntry = result.libDamageResult.breakdown.find(b => b.source === 'magic')
+  expect(magicEntry).toBeDefined()
+  expect(magicEntry.amount).toBe(1)
 })
 
 test('adapter path clamps damage minimum to 1', async () => {

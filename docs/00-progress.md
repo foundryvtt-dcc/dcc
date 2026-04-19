@@ -84,7 +84,37 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 7 (2026-04-19) routed the NPC
+**Phase 3 — ACTIVE. Session 8 (2026-04-19) broadened the damage
+gate to route PC magic weapon bonuses through the adapter with
+correct attribution.** `item.js` appends the weapon's
+`damageWeaponBonus` (e.g. `'+1'` for a +1 sword) onto the derived
+damage formula, producing two trailing integer modifiers (`1d8+2+1`
+= str +2, magic +1). Session 5's `parseDamageFormula` only accepted
+a single modifier, bouncing magic weapons to legacy. Session 8
+extends the parser to sum any number of flat integer modifiers, and
+adds `extractWeaponMagicBonus(weapon)` — returns a non-negative
+integer (0 for non-magical weapons), `null` for dice-bearing
+(`+1d4`) or cursed (negative) bonuses. `_canRouteDamageViaAdapter`
+adds the magic-bonus check; `_rollDamageViaAdapter` forwards the
+bonus as an option into `buildDamageInput`, which peels the
+positive bonus off `strengthModifier` and sets `input.magicBonus`.
+The lib's `rollDamage` surfaces the bonus as
+`{ source: 'magic', amount: N }` on `libDamageResult.breakdown`,
+alongside (not folded into) the Strength entry. Dice-bearing +
+cursed weapon bonuses continue to fall to legacy until later
+slices broaden that surface. RAW unchanged. 866 Vitest tests pass
+(up from 856 — 10 new in `adapter-weapon-damage.test.js`:
+two-modifier `parseDamageFormula` sums, `extractWeaponMagicBonus`
+positive / missing / dice / cursed / unparsable branches,
+`buildDamageInput` magic+npcAdj co-existence, gate acceptance for
++1 weapons, gate rejection for dice/cursed, +1-weapon dispatch
+breakdown assertion) + 71 Playwright tests pass against live v14
+Foundry (70 prior + 1 new — `PC with +1 magic weapon routes via
+adapter + magic breakdown entry` asserts both dispatch lines are
+`adapter` and reads the chat flag's breakdown to confirm the
+`magic` entry exists with `amount === 1`).
+
+**Phase 3 — session 7 (2026-04-19) routed the NPC
 damage-bonus adjustment through the adapter with correct
 attribution.** The dispatcher previously folded the appended
 `±N` adjustment into `strengthModifier` (silently misattributed
@@ -2032,12 +2062,9 @@ and should be scheduled into Phase 4+ work.
 
 ## Next steps
 
-**Phase 3 — session 6 (crit + fumble migration) complete.** Both
-finishers now surface lib-native results on chat flags when the
-attack went through the adapter + automate is on. Every chained
-call in a simplest-weapon attack now has a lib-native result
-(`dcc.libResult` / `dcc.libDamageResult` / `dcc.libCritResult` /
-`dcc.libFumbleResult`). Session 7 picks up the next slice.
+**Phase 3 — session 8 (magic-bonus damage) complete.** PC magic
+weapons route through the adapter with correct breakdown
+attribution. Session 9 picks up the next slice.
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
@@ -2061,36 +2088,33 @@ call in a simplest-weapon attack now has a lib-native result
   Flag lib-side gaps early; sync via `npm run sync-core-lib` when
   the lib ships a wave-3 release.
 
-**Session 7 pick-up** — Options:
-(a) **Broaden the damage gate.** Pick one excluded damage case:
-   magic weapon bonus (lib's `DamageInput.magicBonus`) or NPC
-   damage adjustment (currently inlined as `damageRollFormula +=
-   ±N`). Low-risk, high-coverage — extends session 5's adapter.
-(b) **Backstab attack + damage.** Broaden the attack gate to accept
-   `options.backstab`, plumb `isBackstab` into `AttackInput`, and
-   use `getBackstabMultiplier` on the damage side. Design call: the
-   legacy code treats backstab as auto-crit
-   (`_rollToHitLegacy`), which diverges from the lib's RAW
-   behavior — may want a decision doc before implementing.
-(c) **Deed-die adapter path** (warriors / dwarves). Plumbs `deedDie`
+**Session 9 pick-up** — Options (backstab deferred until the
+in-flight `dcc-core-lib` backstab fix lands; see
+`memory/project_dcc_core_lib_backstab_fix_inflight.md`):
+(a) **Deed-die adapter path** (warriors / dwarves). Plumbs `deedDie`
    into `AttackInput` and extracts the rolled deed from Foundry's
    attack roll's `dice[1]`. Exercises the lib's `onDeedAttempt`.
-(d) **Attack-modifier dialog** (open question #7 tie-in): extend
+(b) **Attack-modifier dialog** (open question #7 tie-in): extend
    `module/adapter/roll-dialog.mjs` with an attack-modifier prompt
    before driving a broader adapter path.
-(e) **Two-weapon fighting.** Broaden the attack gate to accept
+(c) **Two-weapon fighting.** Broaden the attack gate to accept
    `twoWeaponPrimary` / `twoWeaponSecondary`; lib has
    `getTwoWeaponPenalty` + `getTwoWeaponInitiativeBonus`.
-(f) **Crit-result lookup in the lib.** The adapter currently
+(d) **Crit-result lookup in the lib.** The adapter currently
    delegates crit-table lookups to Foundry's `getCritTableResult`;
    lib's `parseCritExtraDamage` could classify the table result
    into extra damage, letting `libCritResult` carry a fully
    structured breakdown instead of just natural/total.
+(e) **Dice-bearing / cursed damageWeaponBonus.** Session 8 handles
+   positive integer bonuses; dice-bearing (e.g. `+1d4` fire rider)
+   and cursed (negative) still fall to legacy. Dice-bearing needs
+   a new `bonuses[]` shape for per-term dice; cursed wants lib
+   support for negative `magicBonus` (lib currently gates on
+   `> 0`).
 
-Lean (a) as the natural session 7 slice: the cleanest extension of
-session 5's damage-adapter gate, no RAW-divergence decisions, and
-immediately useful for NPC attacks which rarely crit but frequently
-have damage-bonus adjustments.
+Lean (a) deed-die: clean attack-gate extension, no RAW-divergence
+concerns, exercises a lib event (`onDeedAttempt`) not yet touched
+by the adapter.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

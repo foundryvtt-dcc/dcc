@@ -64,7 +64,13 @@ for simplest-weapon, two-weapon, backstab, and deed-die paths.
 Completion unblocks Group D retirement slices. Must serialize — all
 touch `module/actor.js` dispatchers.
 
-#### A2. Backstab attack + damage through adapter
+#### A2. Backstab attack + damage through adapter — **BLOCKED**
+- **Blocked on:** in-flight `dcc-core-lib` backstab fix. User is
+  correcting the lib's backstab semantics to match DCC RAW + the
+  legacy DCC Foundry behavior. Do not start this slice until the
+  vendored lib version (`module/vendor/dcc-core-lib/VERSION.json`)
+  reflects a post-fix commit. See
+  `memory/project_dcc_core_lib_backstab_fix_inflight.md`.
 - **Scope:** Broaden attack + damage gates to allow backstab. Lib has
   `getBackstabMultiplier`; surface it as a `MultiplyModifier` on the
   damage `modifiers` list when wave 3 is in, or translate to the
@@ -73,9 +79,6 @@ touch `module/actor.js` dispatchers.
   `_canRouteDamageViaAdapter` + their adapter branches),
   `module/adapter/damage-input.mjs`,
   `module/__tests__/adapter-weapon-{attack,damage}.test.js`.
-- **Stop-and-ask trigger:** if RAW divergence surfaces (backstab
-  multiplier semantics differ between lib and legacy), pause — this
-  is a design decision, not a translation choice.
 - **Browser tests:** extend dispatch spec with a thief-backstab scenario
   asserting the adapter path for both attack and damage, validating the
   `libDamageResult` breakdown includes the multiplier.
@@ -221,7 +224,7 @@ explicit user decision before drafting its concrete slice list.
 
 Move entries here as they land; keep the active queue scannable.
 
-### Phase 3 sessions 1–7 (2026-04-18 → 2026-04-19)
+### Phase 3 sessions 1–8 (2026-04-18 → 2026-04-19)
 
 See `docs/00-progress.md` for details. Summary:
 - Phase 3 session 1: Spellburn dialog-adapter
@@ -233,6 +236,11 @@ See `docs/00-progress.md` for details. Summary:
 - Phase 3 session 7: NPC damage-bonus adjustment threaded through the
   adapter as a `RollBonus` so the lib breakdown attributes it correctly
   (was previously misattributed to Strength)
+- Phase 3 session 8: PC magic weapon bonus (`damageWeaponBonus: '+N'`)
+  threaded through the adapter as `DamageInput.magicBonus` so the lib
+  breakdown carries a separate `source: 'magic'` entry; parser extended
+  to sum multiple flat modifiers, new `extractWeaponMagicBonus` helper
+  gates dice-bearing / cursed bonuses to legacy
 
 ### Docs slices
 
