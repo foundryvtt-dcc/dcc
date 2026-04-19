@@ -12,7 +12,8 @@ import {
   castSpell as libCastSpell,
   calculateSpellCheck as libCalculateSpellCheck,
   rollMercurialMagic as libRollMercurialMagic,
-  makeAttackRoll as libMakeAttackRoll
+  makeAttackRoll as libMakeAttackRoll,
+  rollDamage as libRollDamage
 } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
 import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
@@ -20,6 +21,7 @@ import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMer
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
+import { buildDamageInput, parseDamageFormula } from './adapter/damage-input.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -2472,51 +2474,14 @@ class DCCActor extends Actor {
       }
     }
 
-    let damageRoll, damageInlineRoll, damagePrompt
+    let damageRoll, damageInlineRoll, damagePrompt, libDamageResult
     if (automateDamageFumblesCrits && damageRollFormula) {
-      // Check if the formula has per-term flavors like 1d6[fire] or 1d6+1d6[cold]
-      // Per-term flavors have brackets immediately after a die expression
-      const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
-
-      if (hasPerTermFlavors) {
-        // Use Foundry's native Roll to preserve per-term flavors
-        damageRoll = new Roll(damageRollFormula, this.getRollData())
-        await damageRoll.evaluate()
-      } else {
-        // Use DCCRoll for simple formulas (may have a single trailing flavor)
-        const flavorMatch = damageRollFormula.match(/\[(.*)]/)
-        let flavor = ''
-        if (flavorMatch) {
-          flavor = flavorMatch[1]
-          damageRollFormula = damageRollFormula.replace(/\[.*]/, '')
-        }
-        damageRoll = game.dcc.DCCRoll.createRoll([
-          {
-            type: 'Compound',
-            dieLabel: game.i18n.localize('DCC.Damage'),
-            flavor,
-            formula: damageRollFormula
-          }
-        ])
-        await damageRoll.evaluate()
-      }
-      foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
-      if (damageRoll.total < 1) {
-        damageRoll._total = 1
-      }
+      const damageDispatch = await this._rollDamage(weapon, damageRollFormula, attackRollResult, options)
+      damageRoll = damageDispatch.damageRoll
+      damageInlineRoll = damageDispatch.damageInlineRoll
+      damagePrompt = damageDispatch.damagePrompt
+      libDamageResult = damageDispatch.libDamageResult
       rolls.push(damageRoll)
-      damageInlineRoll = damageRoll.toAnchor({
-        classes: ['damage-applyable', 'inline-dsn-hidden'],
-        dataset: { damage: damageRoll.total }
-      }).outerHTML
-
-      // Build damage breakdown if there are multiple damage types
-      const damageBreakdown = this._buildDamageBreakdown(damageRoll)
-      if (damageBreakdown) {
-        damageInlineRoll += ` <span class="damage-breakdown">(${damageBreakdown})</span>`
-      }
-
-      damagePrompt = game.i18n.localize('DCC.Damage')
     } else if (damageRollFormula) {
       damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
       damagePrompt = game.i18n.localize('DCC.RollDamage')
@@ -2632,6 +2597,9 @@ class DCCActor extends Actor {
     }
     if (attackRollResult.libResult) {
       flags['dcc.libResult'] = attackRollResult.libResult
+    }
+    if (libDamageResult) {
+      flags['dcc.libDamageResult'] = libDamageResult
     }
     game.dcc.FleetingLuck.updateFlags(flags, attackRollResult.roll)
 
@@ -3066,6 +3034,178 @@ class DCCActor extends Actor {
       roll: attackRoll,
       rolled: true,
       weaponDamageFormula: modifiedDamageFormula || weapon.system?.damage || weapon.damage
+    }
+  }
+
+  /**
+   * Dispatcher: route the simplest-damage happy-path through the lib
+   * adapter (Phase 3 session 5), everything else through the legacy
+   * body verbatim. See `_canRouteDamageViaAdapter` for the gate.
+   *
+   * Both branches return `{ damageRoll, damageInlineRoll, damagePrompt }`
+   * for `rollWeaponAttack` to stitch into the chat message. The adapter
+   * path additionally returns `libDamageResult`, which `rollWeaponAttack`
+   * surfaces as `dcc.libDamageResult` on the chat flags.
+   *
+   * @param {Object} weapon
+   * @param {string} damageRollFormula
+   * @param {Object} attackRollResult
+   * @param {Object} options
+   * @private
+   */
+  async _rollDamage (weapon, damageRollFormula, attackRollResult, options = {}) {
+    if (this._canRouteDamageViaAdapter(weapon, damageRollFormula, attackRollResult, options)) {
+      return this._rollDamageViaAdapter(weapon, damageRollFormula, attackRollResult, options)
+    }
+    return this._rollDamageLegacy(weapon, damageRollFormula, options)
+  }
+
+  /**
+   * Gate for the Phase 3 session 5 happy-path damage adapter. Routes
+   * only the simplest damage — a single-die + optional flat-modifier
+   * formula, no per-term flavors, no backstab damage swap, and only
+   * when the attack itself was routed via the adapter. Anything else
+   * (multi-type damage like `1d6[fire]+1d6[cold]`, backstab damage,
+   * deed-die-injected formulas) stays on legacy.
+   *
+   * @param {Object} weapon
+   * @param {string} damageRollFormula
+   * @param {Object} attackRollResult
+   * @param {Object} options
+   * @returns {boolean}
+   * @private
+   */
+  _canRouteDamageViaAdapter (weapon, damageRollFormula, attackRollResult, options = {}) {
+    if (!attackRollResult?.libResult) return false
+    if (options.backstab) return false
+    if (typeof damageRollFormula !== 'string') return false
+    if (damageRollFormula.includes('[')) return false
+    if (parseDamageFormula(damageRollFormula) === null) return false
+    return true
+  }
+
+  /**
+   * Adapter path for the damage roll. Evaluates the Foundry `Roll`
+   * (same shape as legacy — `DCCRoll.createRoll` Compound term, chat
+   * anchor + breakdown) so chat rendering and the existing
+   * `damage-applyable` hooks keep working verbatim. After evaluation,
+   * feeds the natural die result into the lib's `rollDamage` so the
+   * lib owns the breakdown + totals that surface on chat flags as
+   * `dcc.libDamageResult`.
+   *
+   * @param {Object} weapon
+   * @param {string} damageRollFormula
+   * @param {Object} attackRollResult
+   * @param {Object} options
+   * @private
+   */
+  async _rollDamageViaAdapter (weapon, damageRollFormula, attackRollResult, options = {}) {
+    logDispatch('rollDamage', 'adapter', { weapon: weapon?.name || 'unknown' })
+
+    const damageRoll = game.dcc.DCCRoll.createRoll([
+      {
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.Damage'),
+        flavor: '',
+        formula: damageRollFormula
+      }
+    ])
+    await damageRoll.evaluate()
+    foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
+    if (damageRoll.total < 1) {
+      damageRoll._total = 1
+    }
+
+    const parsed = parseDamageFormula(damageRollFormula)
+    const damageInput = buildDamageInput(parsed)
+    const naturalDamage = damageRoll.dice[0]?.total ?? damageRoll.total
+    const libResult = libRollDamage(damageInput, () => naturalDamage)
+
+    let damageInlineRoll = damageRoll.toAnchor({
+      classes: ['damage-applyable', 'inline-dsn-hidden'],
+      dataset: { damage: damageRoll.total }
+    }).outerHTML
+
+    const damageBreakdown = this._buildDamageBreakdown(damageRoll)
+    if (damageBreakdown) {
+      damageInlineRoll += ` <span class="damage-breakdown">(${damageBreakdown})</span>`
+    }
+
+    return {
+      damageRoll,
+      damageInlineRoll,
+      damagePrompt: game.i18n.localize('DCC.Damage'),
+      libDamageResult: {
+        damageDie: libResult.roll.formula,
+        natural: naturalDamage,
+        baseDamage: libResult.baseDamage,
+        modifierDamage: libResult.modifierDamage,
+        subtotal: libResult.subtotal,
+        multiplier: libResult.multiplier,
+        total: libResult.total,
+        breakdown: libResult.breakdown
+      }
+    }
+  }
+
+  /**
+   * Legacy damage path. Preserved verbatim from the original inline body
+   * in `rollWeaponAttack`; any change here should be mirrored in
+   * `_rollDamageViaAdapter` where applicable. Multi-damage-type formulas
+   * (per-term flavors), backstab damage, and non-adapter-routed attacks
+   * continue to execute this path.
+   *
+   * @param {Object} weapon
+   * @param {string} damageRollFormula
+   * @param {Object} options
+   * @private
+   */
+  async _rollDamageLegacy (weapon, damageRollFormula, options = {}) {
+    logDispatch('rollDamage', 'legacy', { weapon: weapon?.name || 'unknown' })
+
+    const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
+
+    let damageRoll
+    if (hasPerTermFlavors) {
+      damageRoll = new Roll(damageRollFormula, this.getRollData())
+      await damageRoll.evaluate()
+    } else {
+      const flavorMatch = damageRollFormula.match(/\[(.*)]/)
+      let flavor = ''
+      let formula = damageRollFormula
+      if (flavorMatch) {
+        flavor = flavorMatch[1]
+        formula = formula.replace(/\[.*]/, '')
+      }
+      damageRoll = game.dcc.DCCRoll.createRoll([
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.Damage'),
+          flavor,
+          formula
+        }
+      ])
+      await damageRoll.evaluate()
+    }
+    foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
+    if (damageRoll.total < 1) {
+      damageRoll._total = 1
+    }
+
+    let damageInlineRoll = damageRoll.toAnchor({
+      classes: ['damage-applyable', 'inline-dsn-hidden'],
+      dataset: { damage: damageRoll.total }
+    }).outerHTML
+
+    const damageBreakdown = this._buildDamageBreakdown(damageRoll)
+    if (damageBreakdown) {
+      damageInlineRoll += ` <span class="damage-breakdown">(${damageBreakdown})</span>`
+    }
+
+    return {
+      damageRoll,
+      damageInlineRoll,
+      damagePrompt: game.i18n.localize('DCC.Damage')
     }
   }
 

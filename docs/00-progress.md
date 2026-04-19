@@ -6,7 +6,31 @@
 
 ## Current phase
 
-**Phase 3 — ACTIVE. Session 4 (2026-04-18) added the long-range
+**Phase 3 — ACTIVE. Session 5 (2026-04-19) started the damage
+migration.** `DCCActor.rollWeaponAttack`'s inline damage block is now
+a dispatcher: `_rollDamage` gate routes the simplest-damage happy-path
+through `_rollDamageViaAdapter` (attack already went through the
+adapter + single-die `NdM[+K]` formula + no backstab + no per-term
+flavors); everything else through `_rollDamageLegacy` (the pre-split
+body verbatim). The adapter path uses the same two-pass pattern
+session 2 used for attacks: Foundry's `DCCRoll.createRoll` still
+evaluates and remains the source of truth for chat rendering + the
+damage-applyable anchor; the lib's `rollDamage` is then called with a
+deterministic sync roller returning the natural die value, populating
+`flags['dcc.libDamageResult']` on the chat message. No divergence
+with the displayed total this session — observational only.
+Dispatch: `logDispatch('rollDamage', 'adapter'|'legacy', …)` fires
+first line in each branch. 821 Vitest tests pass (up from 811 — 10
+new in `adapter-weapon-damage.test.js`: `parseDamageFormula` +
+`buildDamageInput` unit coverage, gate truth-table, both dispatch
+branches, minimum-1-damage clamp, per-term-flavor legacy routing) +
+27 Playwright dispatch tests pass against live v14 Foundry (26 prior
++ 1 new — multi-damage-type `1d6[fire]+1d6[cold]` routes attack via
+adapter + damage via legacy, validating the per-term-flavor gate
+end-to-end; the happy-path + backstab weapon-attack cases now
+additionally assert the `rollDamage` log line).
+
+**Phase 3 — session 4 (2026-04-18) added the long-range
 dice-chain translation.** `_rollToHitViaAdapter` now re-reads
 `terms[0].formula` after `dcc.modifyAttackRollTerms` fires and, when
 a listener mutated the action die in place (dcc-qol's long-range
@@ -351,18 +375,110 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 3 — attack / damage / crit / fumble migration. Session 4
-(2026-04-18) closed the long-range dice-chain gap that session 3
-called out: in-place mutations of `terms[0].formula` by hook
-listeners (dcc-qol's `DiceChain.bumpDie` on long range) now feed
-through to `attackInput.actionDie` so `libResult.die` matches the
-die the Foundry Roll actually evaluated on. See the
-fifteenth-session entry below. Session 5 options (per `§Next
-steps`): broaden the happy-path gate (simplest-weapon + automate-off,
-or backstab), deed-die migration (warriors / dwarves), attack-modifier
-dialog-adapter extension (open question #7), or start the damage /
-crit / fumble migration now that the attack-roll bridge is
-observationally faithful for every dcc-qol injection it sees.
+Phase 3 — attack / damage / crit / fumble migration. Session 5
+(2026-04-19) picked option (d) from the session 4 close-out — damage
+migration off the now-stable attack-roll bridge. The simplest-damage
+happy-path (single-die `NdM[+K]` formula + adapter-routed attack + no
+backstab + no per-term flavors) now flows through
+`_rollDamageViaAdapter` → lib's `rollDamage`, surfacing a
+`flags['dcc.libDamageResult']` chat-flag breakdown. Session 6 options:
+crit migration (attack-roll bridge now covers crit detection; the lib
+has `rollCritical`), fumble migration (same shape — lib has
+`rollFumble`), broaden the damage gate (magic bonus, NPC damage
+adjustment), or backstab damage via `getBackstabMultiplier`. See the
+sixteenth-session entry below and `§Next steps` for the full option
+set.
+
+### Session 2026-04-19 (sixteenth session — Phase 3, session 5)
+
+Phase 3 session 5 — first damage-migration slice landed.
+
+- **Dispatcher in `DCCActor.rollWeaponAttack`.** The inline damage
+  block is now a one-liner `const damageDispatch = await this._rollDamage(...)` that destructures `damageRoll` / `damageInlineRoll` / `damagePrompt` / `libDamageResult` back into the caller. `_rollDamage` is the dispatcher; `_canRouteDamageViaAdapter` is the gate.
+- **Gate (`_canRouteDamageViaAdapter`).** Routes through the adapter
+  when ALL of:
+  - `attackRollResult.libResult` is present (the attack itself went
+    through `_rollToHitViaAdapter`)
+  - `options.backstab` falsy (backstab-damage swap stays legacy)
+  - damage formula is a string that doesn't contain `[` (skips
+    per-term flavors like `1d6[fire]+1d6[cold]`)
+  - `parseDamageFormula(formula)` returns non-null (single die +
+    optional flat modifier, e.g. `1d8`, `1d6+2`, `d4-1`)
+
+  Any failure → `_rollDamageLegacy` (the pre-split body verbatim).
+  Both branches call `logDispatch('rollDamage', ...)` as the first
+  line (same permanent-infrastructure contract as earlier phases).
+- **`_rollDamageViaAdapter`.** Structurally mirrors legacy for
+  Foundry compatibility: builds a `Compound` DCC term, evaluates via
+  `game.dcc.DCCRoll.createRoll`, clamps minimum to 1, builds the
+  `damage-applyable` anchor + breakdown span exactly like legacy.
+  After evaluation, extracts the natural die result from
+  `damageRoll.dice[0].total`, wraps it in a sync roller
+  (`() => naturalDamage`), and calls the lib's `rollDamage` with a
+  `DamageInput` built from `buildDamageInput(parseDamageFormula(formula))`.
+  The lib owns the classification / breakdown; the adapter exposes
+  the result as `libDamageResult` on the return shape, which
+  `rollWeaponAttack` surfaces as `flags['dcc.libDamageResult']` on
+  the chat flags.
+- **`module/adapter/damage-input.mjs`** — new file.
+  - `parseDamageFormula(formula)` extracts `{diceCount, die, modifier}`
+    from simple `NdM[+K]` strings; returns `null` for multi-die,
+    per-term flavors, `@ab` substitutions, or empty input. Regex:
+    `/^\s*(\d*)d(\d+)\s*([+-]\s*\d+)?\s*$/i`.
+  - `buildDamageInput(parsed)` folds the flat modifier into
+    `strengthModifier` — for the simplest-damage slice, the damage
+    formula already bakes in the strength modifier (via
+    `computeMeleeAndMissileAttackAndDamage`), so we pass the single
+    combined value as `strengthModifier` and leave
+    `deedDieResult` / `magicBonus` / `backstabMultiplier` unset. A
+    later slice that splits str/class contributions apart can
+    broaden this.
+- **`_rollDamageLegacy`.** Preserved verbatim from the pre-split
+  inline body: handles the two legacy sub-cases (per-term flavors
+  via Foundry native `Roll`; simple formulas via
+  `DCCRoll.createRoll`), clamps minimum 1, builds the same anchor
+  and breakdown.
+- **Pre-existing test-mock quirk (discovered).** The shared
+  `__mocks__/dcc-roll.js` declares `createRoll` as `static async`,
+  but production `module/dcc-roll.js:17` is sync (returns the Roll
+  directly). The `rollWeaponAttack` damage block uses
+  `damageRoll = DCCRoll.createRoll(...)` without awaiting, relying
+  on production's sync behavior. No existing test hits this because
+  `automateDamageFumblesCrits` defaults to `undefined` in the mock.
+  Session 5 tests install sync stubs on
+  `game.dcc.DCCRoll.createRoll` rather than touch the shared mock;
+  see the test-file docstring for the rationale.
+- **Tests** (`module/__tests__/adapter-weapon-damage.test.js` — 10
+  cases):
+  - `parseDamageFormula` unit: accepts `1d8`, `d8`, `1d6+2`,
+    `2d4-1`, `1d6 + 3`; rejects per-term flavors, multi-die,
+    `@ab`, empty, null.
+  - `buildDamageInput` unit: folds modifier into `strengthModifier`.
+  - `_canRouteDamageViaAdapter` gate truth-table: rejects when
+    attack was legacy; rejects on backstab, per-term flavors,
+    multi-die; accepts on simple formulas.
+  - Dispatch: adapter path for `1d8+2` + libResult attack emits
+    `logDispatch('rollDamage', 'adapter', …)`, returns populated
+    `libDamageResult` with `baseDamage:3 / modifierDamage:2 /
+    total:5` + non-empty `breakdown[]`.
+  - Dispatch: legacy path when attack went through legacy.
+  - Dispatch: legacy path for per-term-flavor formula
+    `1d6[fire]+1d6[cold]` even when attack went through adapter.
+  - Clamp: adapter path forces `damageRoll._total = 1` when
+    `damageRoll.total < 1` (e.g. `1d4-5` rolling 1).
+  - 821 Vitest tests pass (up from 811). `npm run format` +
+    `npm run compare-lang` clean.
+- **Browser test status.** Playwright
+  `phase1-adapter-dispatch.spec.js` extended with `rollDamage`
+  assertions: the happy-path + backstab weapon-attack tests now
+  additionally `waitForAdapterLog('rollDamage')` and assert path
+  (adapter / legacy respectively); a new `rollDamage › multi-damage-
+  type formula → legacy (even when attack via adapter)` test drives
+  a `1d6[fire]+1d6[cold]` weapon to validate the per-term-flavor
+  gate end-to-end. All 27 tests pass against live v14 Foundry
+  (verified 2026-04-19, 3.2 min run).
+
+
 
 ### Session 2026-04-18 (fifteenth session — Phase 3, session 4)
 
@@ -1498,16 +1614,16 @@ Actions taken:
 
 ## Next steps
 
-**Phase 3 — session 4 (long-range dice-chain translation) complete.**
-The simplest-weapon adapter path is now observationally faithful for
-every dcc-qol injection it sees: hook-pushed `Modifier` terms flow
-into `bonuses[]` (session 3) and in-place action-die mutations flow
-into `actionDie` (session 4). Session 5 picks up the next slice.
+**Phase 3 — session 5 (damage migration, first slice) complete.** The
+simplest-damage happy-path flows through the adapter; Foundry keeps
+the Roll + chat total, the lib owns the breakdown on
+`flags['dcc.libDamageResult']`. Session 6 picks up the next slice.
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
-  from the lib. Attack → damage → crit → fumble is chained; pick a
-  session slice that can ship independently.
+  + `rollCritical` + `rollFumble` from the lib. Attack → damage →
+  crit → fumble is chained; pick a session slice that can ship
+  independently.
 - Preserve `dcc.modifyAttackRollTerms` (dcc-qol's main hook integration
   point). Sessions 3–4 fully bridged it for the simplest-weapon
   happy-path: pushed `Modifier` terms → `libResult.bonuses` +
@@ -1517,36 +1633,45 @@ into `actionDie` (session 4). Session 5 picks up the next slice.
   branches (re-read from `attackRoll.formula` post-evaluate).
 - Wave 3 modifier migration on the lib side (combat subsystems) lands
   alongside Phase 3 sessions. Session 2's attack bridge emits
-  `LegacyRollModifier[]` (Phase 2 precedent). Flag lib-side gaps
-  early; sync via `npm run sync-core-lib` when the lib ships a wave-3
-  release.
+  `LegacyRollModifier[]` (Phase 2 precedent); session 5's damage
+  bridge uses `DamageResult.breakdown[]` (the lib's native shape).
+  Flag lib-side gaps early; sync via `npm run sync-core-lib` when
+  the lib ships a wave-3 release.
 
-**Session 5 pick-up** — Options:
-(a) **Broaden the happy-path gate**: pick ONE excluded case
-   (backstab, or simplest weapon with automate=off) and drive it
-   through the adapter. Backstab is attractive because the lib has
-   `isBackstab` / `getBackstabMultiplier` but the legacy code treats
-   backstab as an auto-crit (see `rollToHit:2855`), which diverges
-   from RAW. Resolving that is a design call.
-(b) **Deed-die adapter path** (warriors / dwarves). Requires plumbing
-   `deedDie` into `AttackInput` and extracting the rolled deed from
-   Foundry's attack roll's `dice[1]`. Non-trivial but high-value —
-   exercises the lib's `onDeedAttempt` callback.
-(c) **Attack-modifier dialog** (open question #7 tie-in): extend
+**Session 6 pick-up** — Options:
+(a) **Crit migration.** The attack-roll bridge already returns
+   `libResult.isCriticalThreat`, so `rollWeaponAttack`'s `if
+   (attackRollResult.crit)` block can dispatch to a
+   `_rollCriticalViaAdapter` that drives the lib's `rollCritical`.
+   Preserves the existing crit-table lookup via Foundry's
+   `getCritTableResult` — the lib result is surfaced additively
+   alongside. Same two-pass pattern session 5 used for damage.
+(b) **Fumble migration** (parallel to (a)). Lib has `rollFumble`;
+   legacy path uses `getFumbleTableResult` / `getNPCFumbleTableResult`.
+   Can be done together with crits or as its own slice.
+(c) **Broaden the damage gate.** Pick one excluded damage case:
+   magic weapon bonus (lib's `DamageInput.magicBonus`), NPC damage
+   adjustment (currently inlined as `damageRollFormula += ±N`), or
+   backstab-damage multiplier (requires attack-side backstab gate
+   broadening too — see (d)).
+(d) **Backstab attack + damage.** Broaden the attack gate to accept
+   `options.backstab`, plumb `isBackstab` into `AttackInput`, and
+   use `getBackstabMultiplier` on the damage side. Design call: the
+   legacy code treats backstab as auto-crit
+   (`_rollToHitLegacy`:2855), which diverges from the lib's RAW
+   behavior.
+(e) **Deed-die adapter path** (warriors / dwarves). Plumbs `deedDie`
+   into `AttackInput` and extracts the rolled deed from Foundry's
+   attack roll's `dice[1]`. Exercises the lib's `onDeedAttempt`.
+(f) **Attack-modifier dialog** (open question #7 tie-in): extend
    `module/adapter/roll-dialog.mjs` with an attack-modifier prompt
-   before driving a broader adapter path. The Spellburn dialog is
-   the only current consumer; generalizing the scaffold ahead of a
-   second consumer keeps the design grounded.
-(d) **Damage / crit / fumble migration.** The attack-roll bridge is
-   now stable; the next chained call (`rollDamage` →
-   `weapon.system.damage`) is the natural follow-on. Lib has
-   `rollDamage` / `rollCritical` / `rollFumble` ready. Slice-able by
-   migrating one tail at a time (damage first, crit/fumble layered
-   on after).
+   before driving a broader adapter path.
 
-Lean (d) for session 5 if there's appetite for the next chained call;
-otherwise (a) backstab is the smallest gate-broadening that exercises
-a lib feature (`isBackstab` / `getBackstabMultiplier`).
+Lean (a) + (b) as a combined session 6 (crit + fumble migration):
+they're structurally parallel, both off the now-stable attack bridge,
+and close the immediate "what does the lib own on this chat card?"
+story — after session 6, every chained call in a simplest-weapon
+attack has a lib-native result surfaced on chat flags.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

@@ -587,8 +587,10 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       await page.evaluate(async (id) => {
         await game.actors.getName('P1 Weapon Happy').rollWeaponAttack(id)
       }, weaponId)
-      const line = await waitForAdapterLog('rollWeaponAttack')
-      assertPath(line, 'adapter', { weapon: 'P1-Longsword' })
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-Longsword' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-Longsword' })
     })
 
     test('options.backstab → legacy', async ({ page }) => {
@@ -615,8 +617,10 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       await page.evaluate(async (id) => {
         await game.actors.getName('P1 Weapon Backstab').rollWeaponAttack(id, { backstab: true })
       }, weaponId)
-      const line = await waitForAdapterLog('rollWeaponAttack')
-      assertPath(line, 'legacy', { weapon: 'P1-BackstabDagger' })
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'legacy', { weapon: 'P1-BackstabDagger' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'legacy', { weapon: 'P1-BackstabDagger' })
     })
 
     test('showModifierDialog flag → legacy', async ({ page }) => {
@@ -671,6 +675,102 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       }, weaponId)
       const line = await waitForAdapterLog('rollWeaponAttack')
       assertPath(line, 'legacy', { weapon: 'P1-NoAutomateSword' })
+    })
+  })
+
+  // ── rollDamage (Phase 3 session 5) ─────────────────────────────────
+
+  test.describe('rollDamage', () => {
+    test('multi-damage-type formula → legacy (even when attack via adapter)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Damage MultiType', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-FlamingBlade',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d6[fire]+1d6[cold]',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Damage MultiType').items.getName('P1-FlamingBlade').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Damage MultiType').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-FlamingBlade' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'legacy', { weapon: 'P1-FlamingBlade' })
+    })
+
+    test('adapter path populates dcc.libDamageResult chat flag', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Damage LibFlag', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-LibFlagSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damage: '1d8+1',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Damage LibFlag').items.getName('P1-LibFlagSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Damage LibFlag').rollWeaponAttack(id)
+      }, weaponId)
+
+      // Wait for the chat message that rollWeaponAttack created and read
+      // back its `flags['dcc.libDamageResult']` structure.
+      const flag = await page.evaluate(async () => {
+        // Poll briefly — ChatMessage.create is async; the message may
+        // appear a tick or two after rollWeaponAttack resolves.
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m => m.getFlag('dcc', 'isToHit') && m.getFlag('dcc', 'libDamageResult'))
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      // Assert on lib-result invariants rather than concrete numeric
+      // values — a fresh Player's ability scores randomize each session,
+      // which can rewrite `weapon.system.damage` through item prepareData
+      // (str mod folding into the override). The invariants below hold
+      // regardless of what specific formula reaches the adapter.
+      expect(flag, 'adapter-path damage roll must set dcc.libDamageResult').not.toBeNull()
+      expect(typeof flag.damageDie).toBe('string')
+      expect(flag.damageDie).toMatch(/d\d+/)
+      expect(typeof flag.natural).toBe('number')
+      expect(flag.natural).toBeGreaterThanOrEqual(1)
+      expect(flag.baseDamage).toBe(flag.natural)
+      expect(typeof flag.modifierDamage).toBe('number')
+      expect(flag.subtotal).toBe(flag.baseDamage + flag.modifierDamage)
+      expect(flag.multiplier).toBe(1)
+      expect(flag.total).toBe(Math.max(1, flag.subtotal * flag.multiplier))
+      expect(Array.isArray(flag.breakdown)).toBe(true)
+      expect(flag.breakdown.length).toBeGreaterThan(0)
+      const weaponEntry = flag.breakdown.find(b => b.source === 'weapon')
+      expect(weaponEntry, 'breakdown must include weapon entry').toBeDefined()
+      expect(weaponEntry.amount).toBe(flag.baseDamage)
     })
   })
 })
