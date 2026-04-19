@@ -128,16 +128,6 @@ paths no longer use them. This unblocks Group D.
   sheet via the hook, verify Foundry picks it up for the item type.
 - **Commit:** `feat(ext-api): add dcc.registerItemSheet hook (closes §2.5 XCC hack)`
 
-#### B2. `EXTENSION_API.md` pain-point cross-reference pass
-- **Scope:** Audit `EXTENSION_API.md` against the newly-documented
-  `ARCHITECTURE_REIMAGINED §2.8 – §2.12` pain points. For each
-  Foundry-facing API, tag it as **stable** / **internal** / **dead**
-  and note which pain point it addresses. Add §2.12's
-  "Foundry-smelling surface" constraint as a stated contract.
-- **Files:** `docs/dev/EXTENSION_API.md` only.
-- **Parallel-safe:** docs only.
-- **Commit:** `docs(ext-api): cross-reference stable surface to §2 pain points`
-
 ---
 
 ### Group C — Parallel cruft removal (✅ parallel-safe, independent)
@@ -259,3 +249,11 @@ See `docs/00-progress.md` for details. Summary:
 - Phase 3 session 7: NPC damage-bonus adjustment threaded through the
   adapter as a `RollBonus` so the lib breakdown attributes it correctly
   (was previously misattributed to Strength)
+
+### Docs slices
+
+- B2 (2026-04-19): `EXTENSION_API.md` cross-referenced against
+  `ARCHITECTURE_REIMAGINED.md §2.8–§2.12`; pain-point columns added
+  to both surface tables; §2.12 Foundry-smelling-surface contract
+  stated explicitly; recommendations grew schema-shape + future-hook
+  guidance.

@@ -6,6 +6,20 @@
 
 ## Current phase
 
+**Docs (2026-04-19) — `EXTENSION_API.md` cross-referenced against
+`ARCHITECTURE_REIMAGINED.md §2.8–§2.12` pain points** (Group B2 from
+`02-slice-backlog.md`). New "Stated contract: Foundry-smelling
+surface (§2.12)" section codifies the schema-shape constraint that
+bounds Phase 4. Both surface tables (hooks emitted by the system,
+`game.dcc.*` exports) gained a "Pain points it addresses" column so
+each stable item is traceable to the §2 motivation it serves.
+Recommendations section grew two entries: (6) honor the §2.12
+contract during schema slimming, (7) plan future extension-hook
+additions (`dcc.registerItemSheet`, `registerClassMixin`,
+`registerSheetPart`, `registerVariant`) as stable-from-day-one to
+relieve §2.11 module-extension pressure. Pure-docs slice; no test
+changes.
+
 **Phase 3 — ACTIVE. Session 7 (2026-04-19) routed the NPC
 damage-bonus adjustment through the adapter with correct
 attribution.** The dispatcher previously folded the appended
