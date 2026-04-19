@@ -21,7 +21,7 @@ import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
-import { buildAttackInput } from '../adapter/attack-input.mjs'
+import { buildAttackInput, hookTermsToBonuses } from '../adapter/attack-input.mjs'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -226,4 +226,87 @@ test('buildAttackInput marks missile weapons correctly', () => {
 
   expect(input.attackType).toBe('missile')
   expect(input.attackBonus).toBe(-1)
+})
+
+test('hookTermsToBonuses translates Modifier-kind terms with parseable formulas', () => {
+  const bonuses = hookTermsToBonuses([
+    { type: 'Modifier', label: 'Firing Into Melee', formula: '-1' },
+    { type: 'Modifier', label: 'Medium Range', formula: '-2' },
+    { type: 'Modifier', label: 'Whole Number', formula: 3 }
+  ])
+
+  expect(bonuses).toHaveLength(3)
+  expect(bonuses[0].effect).toEqual({ type: 'modifier', value: -1 })
+  expect(bonuses[0].category).toBe('circumstance')
+  expect(bonuses[0].label).toBe('Firing Into Melee')
+  expect(bonuses[1].effect.value).toBe(-2)
+  expect(bonuses[2].effect.value).toBe(3)
+})
+
+test('hookTermsToBonuses skips non-Modifier terms and unparseable formulas', () => {
+  const bonuses = hookTermsToBonuses([
+    { type: 'Die', formula: '1d20' },
+    { type: 'Compound', formula: '+2' },
+    { type: 'Modifier', label: 'Dice Bump', formula: '1d3' },
+    { type: 'Modifier', label: 'Empty', formula: '' }
+  ])
+
+  expect(bonuses).toEqual([])
+})
+
+test('hookTermsToBonuses handles empty / missing input safely', () => {
+  expect(hookTermsToBonuses([])).toEqual([])
+  expect(hookTermsToBonuses(null)).toEqual([])
+  expect(hookTermsToBonuses(undefined)).toEqual([])
+})
+
+test('adapter path surfaces hook-injected Modifier terms via libResult.bonuses', async () => {
+  logDispatch.mockClear()
+  const originalCall = Hooks.call
+  Hooks.call = (hook, terms) => {
+    if (hook === 'dcc.modifyAttackRollTerms') {
+      terms.push({ type: 'Modifier', label: 'QoL Penalty', formula: '-1' })
+    }
+    return true
+  }
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+    Hooks.call = originalCall
+  }
+
+  expect(result.libResult.bonuses).toHaveLength(1)
+  expect(result.libResult.bonuses[0].label).toBe('QoL Penalty')
+  expect(result.libResult.bonuses[0].effect.value).toBe(-1)
+  // The lib aggregates the hook bonus into `totalBonus` alongside the
+  // +2 toHit; assert on the single aggregated `bonuses` modifier the
+  // lib emits so the translator's contribution is observable.
+  const bonusAggregate = result.libResult.modifiers.find(m => m.source === 'bonuses')
+  expect(bonusAggregate).toBeDefined()
+  expect(bonusAggregate.value).toBe(-1)
+})
+
+test('adapter path leaves libResult.bonuses empty when no hook pushes terms', async () => {
+  logDispatch.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
+
+  expect(result.libResult.bonuses).toEqual([])
 })

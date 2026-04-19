@@ -75,3 +75,52 @@ export function buildAttackInput (actor, weapon) {
     abilityModifier: 0
   }
 }
+
+/**
+ * Convert hook-injected `dcc.modifyAttackRollTerms` terms into lib
+ * `RollBonus[]` entries so they participate in `makeAttackRoll`'s
+ * `totalBonus` and `appliedModifiers` aggregation. Phase 3 session 3
+ * bridge expansion — lets dcc-qol's firing-into-melee / range penalties
+ * surface through `libResult` alongside the base attack bonus.
+ *
+ * Only `type === 'Modifier'` terms with a parseable signed-integer
+ * `formula` are translated. `Die` / `Compound` / `Term` entries
+ * (action die, deed dice, custom subclasses) are skipped — the lib's
+ * flat-modifier bonus kind can't represent dice-bearing terms today.
+ * In-place mutations of existing terms (e.g. a long-range dice-chain
+ * bump of `terms[0].formula`) are NOT detected here — those flow
+ * through the Foundry `Roll` natively; capturing them on the lib side
+ * is a future slice.
+ *
+ * @param {Array<{type: string, label?: string, formula?: string|number}>} addedTerms
+ *   Terms appended by hook listeners (i.e. `terms.slice(termsLengthBefore)`).
+ * @returns {Array<import('../vendor/dcc-core-lib/types/bonuses.js').RollBonus>}
+ */
+export function hookTermsToBonuses (addedTerms) {
+  if (!Array.isArray(addedTerms) || addedTerms.length === 0) return []
+  const bonuses = []
+  for (let i = 0; i < addedTerms.length; i++) {
+    const term = addedTerms[i]
+    if (!term || term.type !== 'Modifier') continue
+    const value = parseIntegerFormula(term.formula)
+    if (value === null) continue
+    const label = term.label || 'Hook-injected modifier'
+    bonuses.push({
+      id: `hook:${i}:${label}`,
+      label,
+      source: { type: 'other', name: label },
+      category: 'circumstance',
+      effect: { type: 'modifier', value }
+    })
+  }
+  return bonuses
+}
+
+function parseIntegerFormula (raw) {
+  if (typeof raw === 'number') return Number.isInteger(raw) ? raw : null
+  if (raw == null) return null
+  const s = String(raw).trim()
+  if (!/^[+-]?\d+$/.test(s)) return null
+  const n = parseInt(s, 10)
+  return Number.isFinite(n) ? n : null
+}

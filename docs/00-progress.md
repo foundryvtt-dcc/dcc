@@ -6,9 +6,25 @@
 
 ## Current phase
 
-**Phase 3 — ACTIVE. Session 2 (2026-04-18) landed the first attack-
-migration slice.** `DCCActor.rollToHit` is now a dispatcher:
-simplest-weapon happy-path (no deed, no backstab, no two-weapon, no
+**Phase 3 — ACTIVE. Session 3 (2026-04-18) added the hook-translation
+bridge.** `_rollToHitViaAdapter` now captures terms pushed by
+`dcc.modifyAttackRollTerms` listeners (snapshotting `terms.length`
+before the hook and slicing after), translates pure signed-integer
+`Modifier` terms into lib `RollBonus[]` via `hookTermsToBonuses`, and
+assigns them to `attackInput.bonuses`. The lib's `makeAttackRoll`
+aggregates them into `totalBonus` + emits a `{source: 'bonuses',
+…}` entry in `appliedModifiers`; the per-bonus breakdown is
+preserved as `libResult.bonuses` on the chat flag. dcc-qol's
+firing-into-melee / medium-range penalties now appear in the lib
+result alongside the base attack bonus. In-place mutations of
+`terms[0].formula` (dcc-qol's long-range dice-chain bump) are NOT
+yet translated — session 4 work. 808 Vitest tests pass (up from 803);
+Playwright dispatch suite unchanged (observational bridge, no new
+dispatch branches).
+
+**Phase 3 — session 2 (2026-04-18) landed the first attack-migration
+slice.** `DCCActor.rollToHit` is a dispatcher: simplest-weapon
+happy-path (no deed, no backstab, no two-weapon, no
 `showModifierDialog`, `automateDamageFumblesCrits` on, simple numeric
 `weapon.system.toHit`) routes through `_rollToHitViaAdapter`;
 everything else through `_rollToHitLegacy` (pre-dispatcher body
@@ -19,9 +35,8 @@ natural d20 into the lib's `makeAttackRoll` so the lib owns classification
 + the `appliedModifiers` list that surfaces as `dcc.libResult` on the
 chat flags. dcc-qol's `applyFiringIntoMeleePenalty` and
 `applyRangeChecksAndPenalties` keep working unchanged (same hook, same
-`terms` shape). 803 Vitest tests pass (up from 794); all 26 Playwright
-dispatch tests pass against live v14 Foundry (verified 2026-04-18,
-3.0 min run).
+`terms` shape). 26 Playwright dispatch tests passed against live v14
+Foundry (verified 2026-04-18, 3.0 min run).
 
 **Phase 3 — session 1 (2026-04-18) shipped the Spellburn
 dialog-adapter scaffold.** Open question #6 resolved: the adapter path
@@ -327,17 +342,86 @@ Per the 7-phase plan in `docs/dev/ARCHITECTURE_REIMAGINED.md §7`:
 
 ## In progress
 
-Phase 3 — attack / damage / crit / fumble migration. Session 2
-(2026-04-18) landed the first attack-migration slice (simplest-weapon
-happy-path through `rollToHit`); see the thirteenth-session entry
-below for detail. Session 3 picks up the next slice — candidates
-include deed-die migration (warriors / dwarves), hook-translator
-upgrade for `dcc.modifyAttackRollTerms` (so the adapter can map
-injected `Modifier` terms to lib `bonuses`), or attack-modifier
-dialog-adapter extension (open question #7). Lib-side wave-3 combat
-modifier migration remains pending — session 2's implementation
-carries the Phase 2 precedent (emit/consume `LegacyRollModifier[]`
-until wave 3 ships).
+Phase 3 — attack / damage / crit / fumble migration. Session 3
+(2026-04-18) added the hook-translation bridge: hook-injected
+`Modifier` terms now flow into the lib's `bonuses[]` so dcc-qol's
+firing-into-melee / range penalties participate in the lib's
+`totalBonus` / `appliedModifiers`. See the fourteenth-session entry
+below. Session 4 options (per `§Next steps`): broaden the happy-path
+gate (simplest-weapon + automate-off, or backstab), deed-die migration
+(warriors / dwarves), attack-modifier dialog-adapter extension (open
+question #7), or long-range dice-chain translation (in-place mutation
+of `terms[0].formula` — currently unbridged).
+
+### Session 2026-04-18 (fourteenth session — Phase 3, session 3)
+
+Phase 3 session 3 — hook-translation bridge landed.
+
+- **`hookTermsToBonuses(addedTerms)`** in `module/adapter/attack-input.mjs`.
+  Converts `dcc.modifyAttackRollTerms`-injected terms into lib
+  `RollBonus[]` entries. Only `type === 'Modifier'` terms with a
+  pure signed-integer `formula` (regex `/^[+-]?\d+$/`) are translated;
+  `Die` / `Compound` entries and dice-bearing formulas (`'1d3'`) are
+  skipped — the lib's flat-modifier bonus kind can't represent them.
+  Each emitted bonus has `category: 'circumstance'`, `source.type:
+  'other'`, no `condition` (always applies), and the hook-provided
+  label as `source.name`.
+- **Dispatcher wiring in `_rollToHitViaAdapter`.** Snapshots
+  `terms.length` before `Hooks.call('dcc.modifyAttackRollTerms', …)`,
+  slices `terms.slice(termsLengthBefore)` after, translates via
+  `hookTermsToBonuses`, and assigns `attackInput.bonuses` when the
+  translator emits anything. The Foundry `Roll` still rolls the
+  original + hook-mutated terms end-to-end (chat total is unchanged);
+  the bridge is additive — it gives the lib enough context to sum
+  `totalBonus` to match.
+- **`libResult.bonuses` flag field added.** `_rollToHitViaAdapter`
+  now attaches the translated bonus list as `libResult.bonuses`
+  alongside `libResult.modifiers`. `modifiers` is the lib's
+  aggregate `appliedModifiers` (a single `{source: 'bonuses',
+  value: N}` entry collapses all computed bonuses); `bonuses` is
+  the per-term breakdown preserved with labels. When wave-3
+  modifier migration lands and the lib emits tagged-union
+  modifiers natively, consumers can move from the aggregate to the
+  per-bonus shape without an adapter change.
+- **Scope decisions:**
+  - **In-place mutations of `terms[0].formula`** (dcc-qol long-range
+    `DiceChain.bumpDie`) are NOT translated. The Foundry `Roll`
+    still uses the bumped die — only the lib-side `actionDie`
+    + threat math stay on the pre-hook value. Observable
+    divergence: `libResult.die` may report `d20` when the Foundry
+    roll actually evaluated on `d16`. The Foundry total remains
+    the source of truth for chat; addressing this cleanly requires
+    post-hook re-reading of `terms[0].formula` + a dice-chain
+    bonus (`BonusDiceChain`), which is a separate slice.
+  - **Module attribution.** Hook-added terms carry no `moduleId`,
+    so all translated bonuses are emitted with `source: { type:
+    'other', name: <label> }`. When the wave-3 modifier redesign
+    ships, session-N can upgrade this to `category: 'module'` /
+    `moduleId` on the tagged union — the current flat-bonus shape
+    has no field for it.
+  - **Non-happy-path routing unchanged.** `_rollToHitLegacy` still
+    handles backstab / two-weapon / deed / automate-off cases
+    verbatim; session 3 only expands what the adapter path
+    captures, not the gate.
+- **Tests** (`module/__tests__/adapter-weapon-attack.test.js` — 5
+  new cases, 14 total):
+  - `hookTermsToBonuses` unit coverage: translates Modifier-kind
+    terms with signed-int formulas; skips Die / Compound / dice-
+    bearing formulas / empty strings; handles null / undefined /
+    empty input safely.
+  - Adapter path surfaces a pushed `{type: 'Modifier', formula:
+    '-1'}` term as `libResult.bonuses[0]` with matching label +
+    `effect.value`, and as a `{source: 'bonuses', value: -1}`
+    entry in `libResult.modifiers` (the lib's aggregate).
+  - Adapter path with no hook push emits `libResult.bonuses:
+    []`.
+  - 808 Vitest tests pass (up from 803). `npm run format` +
+    `npm run compare-lang` clean.
+- **Browser test status.** Session 2's 4 weapon-attack Playwright
+  cases stay green — the hook-translation change is observational
+  on the adapter-result flag only; no new dispatch branches, no
+  new log lines. Not re-run this session (no change to dispatch
+  behavior).
 
 ### Session 2026-04-18 (thirteenth session — Phase 3, session 2)
 
@@ -1368,52 +1452,54 @@ Actions taken:
 
 ## Next steps
 
-**Phase 3 — session 2 (first attack migration slice) complete.**
-Session 3 picks up the next slice.
+**Phase 3 — session 3 (hook-translation bridge) complete.**
+Session 4 picks up the next slice.
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
   from the lib. Attack → damage → crit → fumble is chained; pick a
   session slice that can ship independently.
 - Preserve `dcc.modifyAttackRollTerms` (dcc-qol's main hook integration
-  point) by translating from the lib's modifier list. Emit site in
-  `actor.js` at the `rollToHit` path; dcc-qol's active handlers
-  (`applyFiringIntoMeleePenalty`, `applyRangeChecksAndPenalties`)
-  read / mutate the `terms` array. Session 2 kept the hook firing
-  with the legacy `terms` shape; later slices need to reflect any
-  hook-injected `Modifier` terms into the lib's `bonuses[]` so
-  `libResult.total` agrees with the Foundry Roll.
+  point). Session 3 added `hookTermsToBonuses` — hook-pushed `Modifier`
+  terms with pure signed-integer formulas flow into the lib's
+  `bonuses[]` and surface as `libResult.bonuses` + the aggregate
+  `{source: 'bonuses', …}` entry in `libResult.modifiers`. In-place
+  mutations of `terms[0].formula` (dcc-qol long-range dice-chain bump)
+  are not yet translated — session 4+ work.
 - Wave 3 modifier migration on the lib side (combat subsystems) lands
   alongside Phase 3 sessions. Session 2's attack bridge emits
   `LegacyRollModifier[]` (Phase 2 precedent). Flag lib-side gaps
   early; sync via `npm run sync-core-lib` when the lib ships a wave-3
   release.
 
-**Session 3 pick-up** — Options (session 2 Playwright validation is
-already green, so session 3 can widen the adapter):
-(b) **Hook-translation infrastructure**: teach the adapter to map
-   `dcc.modifyAttackRollTerms`-injected `Modifier` terms into the
-   lib's `bonuses[]`. Once this lands, dcc-qol's firing-into-melee /
-   range penalties appear in `libResult.appliedModifiers` — one step
-   closer to wave-3 readiness.
-(c) **Broaden the happy-path gate**: pick ONE excluded case
+**Session 4 pick-up** — Options:
+(a) **Long-range dice-chain translation.** dcc-qol's range handler
+   mutates `terms[0].formula` via `DiceChain.bumpDie` for long range
+   (d20 → d16). Session 3 translates pushed `Modifier` terms only;
+   in-place bumps to the action die still let the lib's
+   `attackInput.actionDie` go stale. Fix: re-read `terms[0].formula`
+   post-hook and update `attackInput.actionDie` (cheap) OR emit a
+   `BonusDiceChain` on the lib side (requires wave-3 shape).
+(b) **Broaden the happy-path gate**: pick ONE excluded case
    (backstab, or simplest weapon with automate=off) and drive it
    through the adapter. Backstab is attractive because the lib has
    `isBackstab` / `getBackstabMultiplier` but the legacy code treats
    backstab as an auto-crit (see `rollToHit:2855`), which diverges
    from RAW. Resolving that is a design call.
-(d) **Deed-die adapter path** (warriors / dwarves). Requires plumbing
+(c) **Deed-die adapter path** (warriors / dwarves). Requires plumbing
    `deedDie` into `AttackInput` and extracting the rolled deed from
    Foundry's attack roll's `dice[1]`. Non-trivial but high-value —
    exercises the lib's `onDeedAttempt` callback.
-(e) **Attack-modifier dialog** (open question #7 tie-in): extend
+(d) **Attack-modifier dialog** (open question #7 tie-in): extend
    `module/adapter/roll-dialog.mjs` with an attack-modifier prompt
    before driving a broader adapter path. The Spellburn dialog is
    the only current consumer; generalizing the scaffold ahead of a
    second consumer keeps the design grounded.
 
-Lean (b) for session 3 — hook-translation is the cleanest next
-bridge expansion now that the happy-path is green against live v14.
+Lean (a) for session 4 — the long-range case is the remaining gap
+the hook-translation bridge doesn't cover, and the fix is small
+(re-read post-hook). After that, the adapter path is observationally
+faithful for every dcc-qol injection in the simplest-weapon slice.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

@@ -19,7 +19,7 @@ import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellChe
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
-import { buildAttackInput } from './adapter/attack-input.mjs'
+import { buildAttackInput, hookTermsToBonuses } from './adapter/attack-input.mjs'
 import { logDispatch } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
@@ -2825,8 +2825,10 @@ class DCCActor extends Actor {
       }
     }
 
+    const termsLengthBefore = terms.length
     const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options)
     if (!proceed) return
+    const hookAddedTerms = terms.slice(termsLengthBefore)
 
     const rollOptions = Object.assign({ title: game.i18n.localize('DCC.ToHit') }, options)
 
@@ -2853,6 +2855,8 @@ class DCCActor extends Actor {
 
     const attackInput = buildAttackInput(this, weapon)
     attackInput.threatRange = critRange
+    const hookBonuses = hookTermsToBonuses(hookAddedTerms)
+    if (hookBonuses.length > 0) attackInput.bonuses = hookBonuses
     const libResult = libMakeAttackRoll(attackInput, () => d20RollResult)
 
     const fumble = libResult.isFumble
@@ -2883,7 +2887,8 @@ class DCCActor extends Actor {
         isHit: libResult.isHit,
         isCriticalThreat: libResult.isCriticalThreat,
         isFumble: libResult.isFumble,
-        modifiers: libResult.appliedModifiers
+        modifiers: libResult.appliedModifiers,
+        bonuses: hookBonuses
       }
     }
   }
