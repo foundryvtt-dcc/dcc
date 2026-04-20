@@ -197,111 +197,140 @@ is surfaced for downstream crit-table routing.
   `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
   ...)`, and `logDispatch('rollFumble', ...)` in both branches.
   Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
-- **Baseline:** 875 Vitest tests pass (874 at session 10 close + 1
-  session-11 net new in `adapter-weapon-attack.test.js`: two-weapon
-  adapter dispatch + libResult flag shape; one prior "legacy fires
-  for two-weapon" assertion was rewritten to expect adapter
-  dispatch). 75 Playwright e2e tests pass against live v14 Foundry
-  (73 prior + 2 new session-11 — two-weapon-primary routes both
-  attack + damage via adapter, two-weapon-secondary libResult
-  populates `die` / `isTwoWeaponSecondary` and asserts NO flat
-  `two-weapon fighting` modifier source). Dispatch-spec subset
-  runs in ~40 s thanks to the session-reuse fixture.
+- **Baseline (post-session-16 / C3):** 875 Vitest tests pass, 81
+  Playwright e2e tests pass against live v14 Foundry. Dispatch-spec
+  subset runs in ~40 s thanks to the session-reuse fixture; full
+  Playwright suite runs in ~8 min.
 
-**This session's goal:** **Phase 3 session 12 — Group D retirement
-of `_rollToHitLegacy` (or pick another slice from the backlog).**
+**This session's goal:** **Phase 3 D2 damage — retire
+`_rollDamageLegacy` by broadening the damage gate to exhaustive
+(the last of the three D2 retirements).**
 
-Sessions 2–11 landed all of Group A: simplest-weapon (A1), thief
-backstab (A2), warrior / dwarf deed dice (A3), two-weapon
-fighting (A4). Plus the full attack-side hook bridge, the NPC
-damage-bonus attribution, and the PC magic-weapon-bonus
-attribution. Every common-case attack now surfaces a lib-native
-result on chat flags (`dcc.libResult` / `dcc.libDamageResult` /
-`dcc.libCritResult` / `dcc.libFumbleResult`). Session 12 should
-lean Group D retirement (`_rollToHitLegacy`) — Group A's exit
-criterion is met and the legacy branch is dead weight. Other
-candidates: (a) attack-modifier dialog (open question #7), (b)
-crit-result lookup in the lib (lib's `parseCritExtraDamage`), (c)
-dice-bearing / cursed `damageWeaponBonus` (session 8 left these
-on legacy), (d) NPC attack-hit adjustment through lib bonuses
-(pre-existing divergence surfaced by session 9; session 10's
-sequenced-roller scaffold is reusable).
+Sessions 2–14 landed all of Group A (simplest-weapon, backstab,
+deed dice, two-weapon, automate-off, modifier dialog, dice-bearing
+toHit). Every common-case attack surfaces a lib-native result on
+chat flags (`dcc.libResult` / `dcc.libDamageResult` /
+`dcc.libCritResult` / `dcc.libFumbleResult`). Sessions 15 (D1) +
+16 (D2 crit + fumble) retired the attack / crit / fumble legacy
+branches and collapsed their dispatchers into single paths.
 
-**A4 design note (lib-vs-rules):** the lib's `getTwoWeaponPenalty`
-returns flat `-1`/`-2`, but DCC RAW uses dice-chain reductions
-on the action die instead. We deliberately do NOT set
-`AttackInput.twoWeaponPenalty`; the bumped `actionDie` from
-`item.js:prepareBaseData` flows through, and the lib computes the
-attack on the bumped die. Session 11 surfaces `isTwoWeaponPrimary`
-and `isTwoWeaponSecondary` on `dcc.libResult` for downstream
-attribution. A future lib enhancement could add a dice-chain mode
-for full DCC parity; the simpler-mode helper stays unused.
+**The damage gate is now the only one left.** Unlike crit / fumble
+(whose gates were defensive-only), `_canRouteDamageViaAdapter`
+makes real per-case rejections — multi-type `[fire]+1d6[cold]`,
+bracket flavors, unparseable formulas, dice-bearing or cursed
+magic bonuses. See the "Session slice — D2 damage" section below
+for the per-rejection breakdown + stop-and-ask triggers. Each
+sub-slice is potentially its own session; don't try to batch them
+all at once.
+
+**A4 design note (lib-vs-rules, relevant precedent):** the lib's
+`getTwoWeaponPenalty` returns flat `-1`/`-2`, but DCC RAW uses
+dice-chain reductions on the action die instead. We deliberately
+do NOT set `AttackInput.twoWeaponPenalty`; the bumped `actionDie`
+from `item.js:prepareBaseData` flows through, and the lib computes
+the attack on the bumped die. This is the canonical example of the
+"don't silently translate divergence" rule. The D2 damage slice has
+several similar forks — surface each one.
 
 Phase 3 as a whole is the largest migration so far:
 `rollWeaponAttack` → `makeAttackRoll` + `rollDamage` + `rollCritical`
-+ `rollFumble`, with the interleaving crit-range-scaling, two-weapon
-penalty, backstab multiplier, deed-die, and weapon-type logic all
-needing the adapter bridge. **All four core lib calls now have
-adapter paths**; remaining sessions broaden the happy-path gate
-to cover additional weapon-attack variants.
++ `rollFumble`. All four core lib calls have adapter paths.
+`rollToHit` / `_rollCritical` / `_rollFumble` are **single paths**
+(legacy retired). `_rollDamage` is the last dispatcher pending
+collapse.
 
 **Critical integration point:** `dcc.modifyAttackRollTerms` is
-dcc-qol's main hook. It fires inside `_rollToHitViaAdapter` and again
-inside `_rollToHitLegacy`, before each branch's Roll evaluates. Phase
-3 must preserve this hook — sessions 3–4 fully bridged it for the
-simplest-weapon adapter path: pushed `Modifier` terms reflect into
+dcc-qol's main hook. Since D1 it fires only inside `rollToHit`
+(the single-path adapter body), before the Roll evaluates. Phase 3
+has fully bridged it: pushed `Modifier` terms reflect into
 `attackInput.bonuses` (`libResult.bonuses` + the `{source:'bonuses',…}`
 aggregate on `libResult.modifiers`), and in-place mutations of
 `terms[0].formula` reflect into `attackInput.actionDie`
 (`libResult.die`). dcc-qol's two active handlers
 (`applyFiringIntoMeleePenalty`, `applyRangeChecksAndPenalties` at
 `../../modules/dcc-qol/scripts/hooks/listeners.js:25-27`) are both
-now observationally faithful through the adapter path.
+observationally faithful through the adapter path.
 
-### Session slice — Phase 3, session 10 (next attack slice)
+### Session slice — D2 damage (`_rollDamageLegacy` retirement)
 
-1. **Read first** — `docs/00-progress.md` (Phase 3 session 9 entry +
-   Next steps options + Blockers / open questions),
-   `docs/dev/ARCHITECTURE_REIMAGINED.md §7 Phase 3`, `module/actor.js`
-   `rollToHit` dispatcher, `_rollToHit{ViaAdapter,Legacy}`,
-   `_rollDamage` / `_rollCritical` / `_rollFumble` dispatchers +
-   their adapter + legacy bodies, `module/adapter/{attack,damage,
-   crit-fumble}-input.mjs`. Check
-   `module/vendor/dcc-core-lib/VERSION.json` — if wave-3 lib support
-   has landed, sync + refactor accordingly.
+**The next Phase 3 slice.** Damage is the last of the three D2
+legacy-branch retirements (attack D1 landed session 15, crit +
+fumble D2 landed session 16). Unlike those two, the damage gate
+has real per-case rejections — it's NOT a mechanical collapse.
 
-2. **Pick the session slice** (per `00-progress.md §Next steps`).
-   Leaning (a) deed-die adapter — `_rollToHitViaAdapter` plumbs
-   `deedDie` into `AttackInput`, extracts the rolled deed from
-   Foundry's attack roll's `dice[1]`, exercises lib's
-   `onDeedAttempt`. Alternatives: (b) attack-modifier dialog,
-   (c) two-weapon fighting, (d) crit-result lookup in the lib,
-   (e) dice-bearing / cursed `damageWeaponBonus` handling,
-   (f) NPC attack-hit adjustment through lib bonuses (pre-existing
-   divergence — session 9's backstab fix is the template).
+**Read first:**
 
-3. **Dispatch logging.** Every `_rollXxxViaAdapter` /
-   `_rollXxxLegacy` must call `logDispatch` as first line
-   (permanent infrastructure). Extend the Playwright spec to
-   validate any new branches session 10 opens up.
+1. `docs/00-progress.md` — Phase 3 session 16 entry (D2 crit +
+   fumble context), C3 audit entry, baseline test counts (875
+   Vitest, 81 Playwright e2e at session 16 / C3 close).
+2. `docs/02-slice-backlog.md` "D2 damage. Retire `_rollDamageLegacy`
+   — pending gate-broadening" entry — lists the real rejections the
+   gate still makes (multi-type `[fire]+1d6[cold]` formulas,
+   `damageRollFormula.includes('[')` bracket flavors, unparseable
+   `parseDamageFormula(...) === null` formulas, dice-bearing or
+   cursed `damageWeaponBonus` via `extractWeaponMagicBonus(...) ===
+   null`) — each routes a real class of runtime inputs to legacy.
+3. `module/actor.js` `_rollDamage` / `_canRouteDamageViaAdapter` /
+   `_rollDamageViaAdapter` / `_rollDamageLegacy`.
+4. `module/adapter/damage-input.mjs` — `parseDamageFormula`,
+   `buildDamageInput`, `extractWeaponMagicBonus`.
+5. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md`
+   — if RAW alignment questions surface for specific damage
+   cases (e.g. multi-type), check whether lib already supports them.
 
-4. **Integration testing.** Playwright against live v14 Foundry is
-   the gold standard for dispatcher validation. Session-reuse fixture
-   is in place — dispatch-spec tests run in ~0.5-1 s each instead of
-   7-13 s. Re-run the full e2e suite before claiming complete if
-   dispatch behavior changes.
+**The work:**
 
-Do NOT in session 10: touch data-model slimming (Phase 4) or sheet
-composition (Phase 5). Do NOT break `dcc.modifyAttackRollTerms` — it
-has external consumers. Do NOT touch any Phase 3 gate
-(`_canRouteAttackViaAdapter`, `_canRouteDamageViaAdapter`,
-`_canRouteCritViaAdapter`, `_canRouteFumbleViaAdapter`) without
-mirroring changes to the test truth-tables.
+This slice is a *batch* — each real gate rejection is its own
+sub-slice. The batch order (easiest → hardest per the backlog
+entry):
+
+a) **Unparseable `parseDamageFormula(...) === null` formulas** —
+   extend the parser, or accept the formula as a lossless
+   passthrough (lib's `libDamageResult.breakdown` may be empty /
+   lossy but `libDamageResult.total` matches Foundry's Roll).
+b) **Bracket-flavor formulas** (`1d6+2[Slashing]`) — the trailing
+   single-flavor bracket is cosmetic; strip for `parseDamageFormula`
+   purposes, preserve for the Foundry Roll.
+c) **Multi-type per-term formulas** (`1d6[fire]+1d6[cold]`) —
+   **STOP AND ASK before silently translating.** The lib's
+   `DamageInput` shape may or may not support multi-typed rolls;
+   per the `feedback_lib_vs_rules_stop_and_verify.md` memory, don't
+   paper over divergence with adapter translation. Surface what
+   you find to Tim.
+d) **Dice-bearing / cursed `damageWeaponBonus`** — lib's
+   `DamageInput.magicBonus` is an integer; extending to dice or
+   negative values is a lib-shape decision. **STOP AND ASK** before
+   changing either side.
+
+Once each rejection is broadened OR accepted-as-passthrough, the
+gate is exhaustive (always returns true when the defensive
+`attackRollResult?.libResult` check passes). At that point, the
+D2 damage collapse runs on the same pattern as D1 / D2 crit-fumble:
+delete gate + legacy body + adapter alias, fold the adapter body
+into `_rollDamage`, delete `_canRouteDamageViaAdapter`.
+
+**Per-slice dispatch logging.** Every `_rollXxxViaAdapter` call
+invokes `logDispatch('rollDamage', 'adapter', …)` (permanent
+per `project_dcc_phase1_dispatch_logging.md` memory + the
+Playwright adapter-dispatch spec's assertions). Don't remove.
+
+**Per-slice browser test extension.** Per CLAUDE.md refactor-slice
+rules, every slice adds at least one new Playwright assertion —
+for damage gate broadening, extend `phase1-adapter-dispatch.spec.js`
+`rollDamage` describe block with a new case per sub-slice. The
+existing "multi-damage-type formula → legacy" test at
+`phase1-adapter-dispatch.spec.js:1330` becomes the first one
+rewritten when sub-slice (c) lands.
+
+Do NOT: touch data-model slimming (Phase 4) or sheet composition
+(Phase 5). Do NOT break `dcc.modifyAttackRollTerms` — it has
+external consumers in dcc-qol. Do NOT silently translate lib-vs-
+rules divergence — surface it instead.
 
 **Before touching Phase 3 code, confirm the repo is green:**
 
-- `npm test` — 868 Vitest tests + dice-gated integration. Final
-  check before any commit.
+- `npm test` — 875 Vitest tests + dice-gated integration at
+  session 16 / C3 close. Final check before any commit.
 - `npm run test:unit` — mock-only; runs in every environment.
 - `npm run test:integration` — integration project. Skips if Foundry
   isn't detected (via `FOUNDRY_PATH`, `.foundry-dev/`, or
@@ -311,17 +340,18 @@ mirroring changes to the test truth-tables.
   `npm run setup:foundry` once. Otherwise the dice cases **skip**
   (not fail); the status line shows `N passed | M skipped`.
 
-**Browser tests (optional — dispatch spec already validated against
-v14 as of 2026-04-18):** see `docs/dev/TESTING.md#browser-tests-playwright`
-for the full recipe. TL;DR — with the fvtt CLI's `installPath` /
-`dataPath` pointed at `foundry-14` / `FoundryVTT-Next` (verify via
+**Browser tests (required for refactor slices — 81 Playwright
+e2e pass at session 16 / C3 close):** see
+`docs/dev/TESTING.md#browser-tests-playwright` for the full recipe.
+TL;DR — with the fvtt CLI's `installPath` / `dataPath` pointed at
+`foundry-14` / `FoundryVTT-Next` (verify via
 `npx @foundryvtt/foundryvtt-cli configure view`):
 
 ```
 nvm use 24
 nohup npx @foundryvtt/foundryvtt-cli launch --world=v14 \
   >/tmp/foundry-v14.log 2>&1 & disown
-cd browser-tests/e2e && npm test -- phase1-adapter-dispatch.spec.js
+cd browser-tests/e2e && npm test
 ```
 
 Close any manual Foundry browser tab first — a logged-in Gamemaster
@@ -337,6 +367,11 @@ disables the Playwright login and tests hang for 11 s each.
   `game.dcc.DCCRoll.cleanFormula` + `game.dcc.DiceChain.{bumpDie,
   calculateCritAdjustment, calculateProportionalCritRange}` are
   XCC's attack/crit scaffolding. Preserve all of it.
+- Attack / crit / fumble gates + legacy bodies are **already
+  retired** (sessions 15 + 16). `_canRouteDamageViaAdapter` is
+  the only gate still present; mirror any truth-table changes into
+  `module/__tests__/adapter-weapon-damage.test.js` +
+  `browser-tests/e2e/phase1-adapter-dispatch.spec.js`.
 - The pre-commit hook runs `npm run format && git add . && npm test`
   — the `git add .` sweeps untracked files; stash or `.gitignore`
   them first.
