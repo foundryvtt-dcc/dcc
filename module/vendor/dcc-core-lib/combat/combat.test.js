@@ -714,6 +714,114 @@ describe("Damage System", () => {
             const result = rollDamage(input, roller);
             expect(result.total).toBe(1); // Minimum 1 (1 - 3 would be -2)
         });
+        it("should subtract cursed magic bonus and label breakdown 'cursed'", () => {
+            const roller = createMockRoller(6);
+            const input = {
+                damageDie: "d8",
+                strengthModifier: 1,
+                magicBonus: -1,
+            };
+            const result = rollDamage(input, roller);
+            expect(result.baseDamage).toBe(6);
+            expect(result.modifierDamage).toBe(0); // 1 + (-1)
+            expect(result.total).toBe(6);
+            expect(result.breakdown).toEqual([
+                { source: "weapon", amount: 6 },
+                { source: "Strength", amount: 1 },
+                { source: "cursed", amount: -1 },
+            ]);
+        });
+        it("should still label positive magic bonus 'magic'", () => {
+            const roller = createMockRoller(4);
+            const input = {
+                damageDie: "d6",
+                strengthModifier: 0,
+                magicBonus: 1,
+            };
+            const result = rollDamage(input, roller);
+            const magicEntry = result.breakdown.find((b) => b.source === "magic");
+            expect(magicEntry?.amount).toBe(1);
+        });
+        it("should skip magic bonus breakdown entry when zero", () => {
+            const roller = createMockRoller(3);
+            const input = {
+                damageDie: "d6",
+                strengthModifier: 0,
+                magicBonus: 0,
+            };
+            const result = rollDamage(input, roller);
+            expect(result.breakdown.some((b) => b.source === "magic" || b.source === "cursed")).toBe(false);
+        });
+        it("should roll extra damage dice and add a per-term breakdown entry", () => {
+            // Base d8 rolls 5; extra 1d4 rolls 3.
+            const roller = createSequenceRoller([5, 3]);
+            const input = {
+                damageDie: "d8",
+                strengthModifier: 2,
+                extraDamageDice: [
+                    { count: 1, die: "d4", source: "magic" },
+                ],
+            };
+            const result = rollDamage(input, roller);
+            expect(result.baseDamage).toBe(5);
+            expect(result.modifierDamage).toBe(5); // 2 (str) + 3 (extra)
+            expect(result.total).toBe(10);
+            expect(result.breakdown).toEqual([
+                { source: "weapon", amount: 5 },
+                { source: "Strength", amount: 2 },
+                { source: "magic", amount: 3 },
+            ]);
+        });
+        it("should label extra dice by flavor when source is absent", () => {
+            // Base d6 rolls 2; extra 1d6 rolls 4.
+            const roller = createSequenceRoller([2, 4]);
+            const input = {
+                damageDie: "d6",
+                strengthModifier: 0,
+                extraDamageDice: [
+                    { count: 1, die: "d6", flavor: "cold" },
+                ],
+            };
+            const result = rollDamage(input, roller);
+            expect(result.breakdown).toEqual([
+                { source: "weapon", amount: 2 },
+                { source: "cold", amount: 4 },
+            ]);
+        });
+        it("should fall back to 'extra' label when neither source nor flavor given", () => {
+            const roller = createSequenceRoller([3, 2]);
+            const input = {
+                damageDie: "d4",
+                strengthModifier: 0,
+                extraDamageDice: [
+                    { count: 1, die: "d4" },
+                ],
+            };
+            const result = rollDamage(input, roller);
+            expect(result.breakdown).toEqual([
+                { source: "weapon", amount: 3 },
+                { source: "extra", amount: 2 },
+            ]);
+        });
+        it("should roll multiple extra dice terms independently", () => {
+            // Base d6 rolls 3; first extra 1d6 rolls 4; second extra 1d6 rolls 1.
+            const roller = createSequenceRoller([3, 4, 1]);
+            const input = {
+                damageDie: "d6",
+                strengthModifier: 0,
+                extraDamageDice: [
+                    { count: 1, die: "d6", flavor: "fire" },
+                    { count: 1, die: "d6", flavor: "cold" },
+                ],
+            };
+            const result = rollDamage(input, roller);
+            expect(result.total).toBe(8); // 3 + 4 + 1
+            expect(result.breakdown).toEqual([
+                { source: "weapon", amount: 3 },
+                { source: "fire", amount: 4 },
+                { source: "cold", amount: 1 },
+            ]);
+        });
     });
     describe("getWeaponDamage (backstab-friendly weapons)", () => {
         it("returns normal damage when isBackstab is false", () => {

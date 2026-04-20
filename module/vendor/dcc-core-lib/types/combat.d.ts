@@ -159,8 +159,28 @@ export interface DamageInput {
     strengthModifier: number;
     /** Deed die result (added to damage for warriors) */
     deedDieResult?: number | undefined;
-    /** Magic weapon bonus */
+    /**
+     * Magic weapon bonus (positive) or cursed penalty (negative).
+     * Surfaced in `breakdown` as `source: "magic"` when positive and
+     * `source: "cursed"` when negative.
+     */
     magicBonus?: number | undefined;
+    /**
+     * Extra dice beyond the base weapon die. Each term is rolled
+     * separately and added to `modifierDamage`, with its own
+     * `breakdown` entry labelled by `source ?? flavor ?? "extra"`.
+     *
+     * Covers dice-bearing magic weapon bonuses (e.g. `+1d4 fire`) and
+     * multi-type per-term damage formulas (e.g. `1d6[fire]+1d6[cold]`
+     * splits as base `d6` + one extra term `{count:1, die:"d6",
+     * flavor:"cold"}`).
+     */
+    extraDamageDice?: {
+        count: number;
+        die: DieType;
+        flavor?: string;
+        source?: string;
+    }[] | undefined;
     /** Additional bonuses */
     bonuses?: RollBonus[] | undefined;
 }

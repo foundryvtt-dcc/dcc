@@ -61,10 +61,26 @@ export function rollDamage(input, roller, events) {
         modifierDamage += input.deedDieResult;
         breakdown.push({ source: "deed", amount: input.deedDieResult });
     }
-    // Magic bonus
-    if (input.magicBonus !== undefined && input.magicBonus > 0) {
+    // Magic bonus (positive = magic, negative = cursed)
+    if (input.magicBonus !== undefined && input.magicBonus !== 0) {
         modifierDamage += input.magicBonus;
-        breakdown.push({ source: "magic", amount: input.magicBonus });
+        breakdown.push({
+            source: input.magicBonus > 0 ? "magic" : "cursed",
+            amount: input.magicBonus,
+        });
+    }
+    // Extra damage dice (dice-bearing magic, multi-type per-term, etc.)
+    if (input.extraDamageDice !== undefined && input.extraDamageDice.length > 0) {
+        for (const term of input.extraDamageDice) {
+            const extraFormula = `${String(term.count)}${term.die}`;
+            const extraRoll = evaluateRoll(extraFormula, rollOptions);
+            const amount = extraRoll.natural ?? 0;
+            modifierDamage += amount;
+            breakdown.push({
+                source: term.source ?? term.flavor ?? "extra",
+                amount,
+            });
+        }
     }
     // Compute additional bonuses
     if (input.bonuses !== undefined && input.bonuses.length > 0) {
