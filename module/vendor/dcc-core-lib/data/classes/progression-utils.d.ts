@@ -142,4 +142,14 @@ export declare function hasDeedDie(classId: string): boolean;
  * @returns The hit die (e.g., "d8", "d10")
  */
 export declare function getHitDie(classId: string): string;
+/**
+ * Get the luck die for a class at a specific level (used by thieves and
+ * halflings). Returns `undefined` for classes without a luck die, or when no
+ * progression is registered.
+ *
+ * @param classId - The class ID
+ * @param level - The character level
+ * @returns The luck die (e.g., "d3", "d14") or undefined
+ */
+export declare function getLuckDie(classId: string, level: number): string | undefined;
 //# sourceMappingURL=progression-utils.d.ts.map

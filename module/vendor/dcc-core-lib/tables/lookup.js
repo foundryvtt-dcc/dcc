@@ -162,6 +162,10 @@ export function lookup(table, roll, column) {
             return lookupMultiColumn(table, roll, column);
         case "tiered":
             return lookupTiered(table, roll);
+        case "lay-on-hands":
+            // Lay-on-Hands tables are consumed directly by `layOnHands()` in the
+            // cleric module (they're 3-column by alignment, not roll-indexed).
+            return undefined;
     }
 }
 // =============================================================================
@@ -196,6 +200,14 @@ export function getTableRange(table) {
                 max: Math.max(...maxs),
             };
         }
+        case "lay-on-hands": {
+            const mins = table.rows.map((r) => r.min);
+            const maxs = table.rows.map((r) => r.max);
+            return {
+                min: Math.min(...mins),
+                max: Math.max(...maxs),
+            };
+        }
     }
 }
 /**
@@ -207,7 +219,9 @@ export function validateTable(table) {
         ? table.rows.map((r) => ({ min: r.min, max: r.max }))
         : table.type === "tiered"
             ? table.entries.map((e) => ({ min: e.min, max: e.max ?? e.min }))
-            : table.entries.map((e) => ({ min: e.min, max: e.max }));
+            : table.type === "lay-on-hands"
+                ? table.rows.map((r) => ({ min: r.min, max: r.max }))
+                : table.entries.map((e) => ({ min: e.min, max: e.max }));
     // Sort by min
     const sorted = [...ranges].sort((a, b) => a.min - b.min);
     // Check for gaps and overlaps

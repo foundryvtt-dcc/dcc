@@ -3,11 +3,23 @@
  *
  * Tests for attack rolls, damage, critical hits, fumbles, and initiative
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { COMMON_WEAPONS } from "../types/combat.js";
+import { registerClassProgression, clearClassProgressions, } from "../data/classes/progression-utils.js";
+function makeLevel(overrides) {
+    return {
+        attackBonus: 0,
+        criticalDie: "1d4",
+        criticalTable: "I",
+        actionDice: ["1d20"],
+        hitDie: "d4",
+        saves: { ref: 0, frt: 0, wil: 0 },
+        ...overrides,
+    };
+}
 import { 
 // Attack
-makeAttackRoll, calculateAttackBonus, doesAttackHit, getAttackAbility, getTwoWeaponPenalty, isDeedSuccessful, 
+makeAttackRoll, calculateAttackBonus, doesAttackHit, getAttackAbility, getTwoWeaponDice, rollTwoWeaponAttack, isDeedSuccessful, 
 // Damage
 rollDamage, getTwoHandedDamageDie, getWeaponDamage, buildDamageFormula, applyMinimumDamage, 
 // Crits
@@ -15,7 +27,7 @@ rollCritical, determineCritTable, getCritTable, getCritDie, buildCritFormula, pa
 // Fumbles
 rollFumble, buildFumbleFormula, isFumble, getFumbleDie, getArmorType, getArmorCheckPenalty, getArmorSpeedPenalty, 
 // Initiative
-rollInitiative, calculateInitiativeModifier, buildInitiativeFormula, getInitiativeDie, sortByInitiative, isInitiativeTied, getTwoWeaponInitiativeBonus, } from "./index.js";
+rollInitiative, calculateInitiativeModifier, buildInitiativeFormula, getInitiativeDie, sortByInitiative, isInitiativeTied, } from "./index.js";
 // =============================================================================
 // Test Helpers
 // =============================================================================
@@ -358,20 +370,6 @@ describe("Attack System", () => {
             expect(result.isCriticalThreat).toBe(true);
             expect(result.critSource).toBe("backstab-auto");
         });
-        it("should apply two-weapon fighting penalty", () => {
-            const roller = createMockRoller(15);
-            const input = {
-                attackType: "melee",
-                attackBonus: 3,
-                actionDie: "d20",
-                threatRange: 20,
-                abilityModifier: 2,
-                twoWeaponPenalty: -2,
-            };
-            const result = makeAttackRoll(input, roller);
-            expect(result.totalBonus).toBe(3); // 3 + 2 - 2
-            expect(result.total).toBe(18); // 15 + 3
-        });
         // Tests for larger dice (d24, etc.)
         describe("larger dice critical hits", () => {
             it("should crit on natural 24 with d24 (threat 20)", () => {
@@ -492,12 +490,168 @@ describe("Attack System", () => {
             expect(getAttackAbility("special")).toBe("str");
         });
     });
-    describe("getTwoWeaponPenalty", () => {
-        it("should return -2 for non-halflings", () => {
-            expect(getTwoWeaponPenalty(false)).toBe(-2);
+    describe("getTwoWeaponDice (Table 4-3)", () => {
+        it("Agl 8 or less: -3/-4 dice, no crits", () => {
+            const cfg = getTwoWeaponDice(8);
+            expect(cfg.primaryDieReduction).toBe(3);
+            expect(cfg.offHandDieReduction).toBe(4);
+            expect(cfg.primaryCanCrit).toBe(false);
+            expect(cfg.offHandCanCrit).toBe(false);
         });
-        it("should return -1 for halflings", () => {
-            expect(getTwoWeaponPenalty(true)).toBe(-1);
+        it("Agl 9-11: -2/-3 dice, no crits", () => {
+            const cfg = getTwoWeaponDice(10);
+            expect(cfg.primaryDieReduction).toBe(2);
+            expect(cfg.offHandDieReduction).toBe(3);
+            expect(cfg.primaryCanCrit).toBe(false);
+        });
+        it("Agl 12-15: -1/-2 dice, no crits", () => {
+            const cfg = getTwoWeaponDice(13);
+            expect(cfg.primaryDieReduction).toBe(1);
+            expect(cfg.offHandDieReduction).toBe(2);
+            expect(cfg.primaryCanCrit).toBe(false);
+        });
+        it("Agl 16-17: -1/-1 dice; primary crits on max die that beats AC (no auto-hit)", () => {
+            const cfg = getTwoWeaponDice(17);
+            expect(cfg.primaryDieReduction).toBe(1);
+            expect(cfg.offHandDieReduction).toBe(1);
+            expect(cfg.primaryCanCrit).toBe(true);
+            expect(cfg.offHandCanCrit).toBe(false);
+            expect(cfg.primaryCritRequiresBeatAC).toBe(true);
+            expect(cfg.halflingAutoCritOnMax).toBe(false);
+        });
+        it("Agl 18+: 0/-1 dice; primary crits as normal", () => {
+            const cfg = getTwoWeaponDice(18);
+            expect(cfg.primaryDieReduction).toBe(0);
+            expect(cfg.offHandDieReduction).toBe(1);
+            expect(cfg.primaryCanCrit).toBe(true);
+            expect(cfg.offHandCanCrit).toBe(false);
+            expect(cfg.primaryCritRequiresBeatAC).toBe(false);
+        });
+        describe("halfling overrides", () => {
+            it("clamps Agl ≤ 16 to the 16-17 row", () => {
+                const cfg = getTwoWeaponDice(8, { isHalfling: true });
+                expect(cfg.primaryDieReduction).toBe(1);
+                expect(cfg.offHandDieReduction).toBe(1);
+            });
+            it("uses normal 18+ row when natural Agl ≥ 18", () => {
+                const cfg = getTwoWeaponDice(18, { isHalfling: true });
+                expect(cfg.primaryDieReduction).toBe(0);
+                expect(cfg.offHandDieReduction).toBe(1);
+            });
+            it("clamped Agl: auto-crit on natural max replaces beat-AC requirement (both hands)", () => {
+                const cfg = getTwoWeaponDice(12, { isHalfling: true });
+                expect(cfg.halflingAutoCritOnMax).toBe(true);
+                expect(cfg.primaryCritRequiresBeatAC).toBe(false);
+                expect(cfg.primaryCanCrit).toBe(true);
+                expect(cfg.offHandCanCrit).toBe(true);
+            });
+            it("always sets the both-1s fumble rule", () => {
+                expect(getTwoWeaponDice(8, { isHalfling: true }).halflingFumbleRequiresBoth1s).toBe(true);
+                expect(getTwoWeaponDice(20, { isHalfling: true }).halflingFumbleRequiresBoth1s).toBe(true);
+            });
+        });
+    });
+    describe("rollTwoWeaponAttack", () => {
+        it("Agl 18+: primary rolls full d20, off-hand rolls d16", () => {
+            const roller = createSequenceRoller([15, 12]); // primary, off-hand
+            const result = rollTwoWeaponAttack({
+                agility: 18,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 1, threatRange: 20, abilityModifier: 0, targetAC: 13 },
+                offHand: { attackType: "melee", attackBonus: 1, threatRange: 20, abilityModifier: 0, targetAC: 13 },
+            }, roller);
+            expect(result.primary.roll.die).toBe("d20");
+            expect(result.offHand.roll.die).toBe("d16");
+            expect(result.primary.isHit).toBe(true);
+            expect(result.offHand.isHit).toBe(true);
+        });
+        it("Agl ≤ 15: rolls cannot crit (strips crit threat)", () => {
+            // Agl 13 → primary -1 (d20 → d16), off -2 (d20 → d14).
+            // Roll natural max on the primary d16 — which would normally crit but should be stripped.
+            const roller = createSequenceRoller([16, 1]);
+            const result = rollTwoWeaponAttack({
+                agility: 13,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0 },
+                offHand: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0 },
+            }, roller);
+            expect(result.primary.roll.die).toBe("d16");
+            expect(result.offHand.roll.die).toBe("d14");
+            expect(result.primary.isCriticalThreat).toBe(false);
+        });
+        it("warriors lose improved threat range when two-weapon fighting", () => {
+            // Warrior with 19-20 threat (normally crits on 19 or 20).
+            // Two-weapon Agl 18+: primary still on d20, but threat range clamped to 20.
+            const roller = createSequenceRoller([19, 1]);
+            const result = rollTwoWeaponAttack({
+                agility: 18,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 0, threatRange: 19, abilityModifier: 0, targetAC: 15 },
+                offHand: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0 },
+            }, roller);
+            expect(result.primary.isCriticalThreat).toBe(false); // 19 no longer threats
+            expect(result.primary.isHit).toBe(true); // still hits AC 15
+        });
+        it("Agl 16-17 non-halfling: natural max requires beating AC to crit (no auto-hit)", () => {
+            // d16 natural 16: max die. With targetAC 25, total is 16 < 25 → no hit, no crit.
+            const roller = createSequenceRoller([16, 1]);
+            const result = rollTwoWeaponAttack({
+                agility: 16,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0, targetAC: 25 },
+                offHand: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0, targetAC: 25 },
+            }, roller);
+            expect(result.primary.roll.natural).toBe(16);
+            expect(result.primary.isHit).toBe(false); // no auto-hit on natural max
+            expect(result.primary.isCriticalThreat).toBe(false);
+        });
+        it("Agl 16-17 non-halfling: natural max that beats AC crits", () => {
+            const roller = createSequenceRoller([16, 1]);
+            const result = rollTwoWeaponAttack({
+                agility: 17,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0, targetAC: 12 },
+                offHand: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0, targetAC: 12 },
+            }, roller);
+            expect(result.primary.isHit).toBe(true);
+            expect(result.primary.isCriticalThreat).toBe(true);
+            expect(result.primary.critSource).toBe("natural-max");
+        });
+        it("halfling: natural max on reduced die auto-hits + auto-crits regardless of AC", () => {
+            const roller = createSequenceRoller([16, 1]);
+            const result = rollTwoWeaponAttack({
+                agility: 12,
+                isHalfling: true,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0, targetAC: 30 },
+                offHand: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0, targetAC: 30 },
+            }, roller);
+            expect(result.primary.isHit).toBe(true);
+            expect(result.primary.isCriticalThreat).toBe(true);
+        });
+        it("halfling: single natural 1 is NOT a fumble", () => {
+            const roller = createSequenceRoller([1, 8]); // primary 1, off-hand 8
+            const result = rollTwoWeaponAttack({
+                agility: 14,
+                isHalfling: true,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0 },
+                offHand: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0 },
+            }, roller);
+            expect(result.primary.isFumble).toBe(false);
+            expect(result.offHand.isFumble).toBe(false);
+        });
+        it("halfling: both natural 1s IS a fumble", () => {
+            const roller = createSequenceRoller([1, 1]);
+            const result = rollTwoWeaponAttack({
+                agility: 14,
+                isHalfling: true,
+                baseActionDie: "d20",
+                primary: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0 },
+                offHand: { attackType: "melee", attackBonus: 0, threatRange: 20, abilityModifier: 0 },
+            }, roller);
+            expect(result.primary.isFumble).toBe(true);
+            expect(result.offHand.isFumble).toBe(true);
         });
     });
     describe("isDeedSuccessful", () => {
@@ -681,43 +835,49 @@ describe("Critical Hit System", () => {
             expect(result.total).toBe(1); // Minimum 1
         });
     });
-    describe("getCritTable", () => {
-        it("should return correct table for each class", () => {
-            expect(getCritTable("warrior")).toBe("III");
-            expect(getCritTable("dwarf")).toBe("III");
-            expect(getCritTable("thief")).toBe("II");
-            expect(getCritTable("elf")).toBe("II");
-            expect(getCritTable("cleric")).toBe("II");
-            expect(getCritTable("wizard")).toBe("I");
-            expect(getCritTable("halfling")).toBe("II");
+    describe("getCritTable / getCritDie (registry-backed)", () => {
+        // Minimal synthetic progression to exercise the registry delegation.
+        // Real class data lives in dcc-official-data and is registered by apps
+        // at startup; tests use synthetic classes to stay hermetic.
+        const TEST_CLASS = {
+            classId: "test-fighter",
+            name: "Test Fighter",
+            skills: [],
+            levels: {
+                1: makeLevel({ criticalDie: "1d12", criticalTable: "III" }),
+                2: makeLevel({ criticalDie: "1d14", criticalTable: "III" }),
+                3: makeLevel({ criticalDie: "1d16", criticalTable: "IV" }),
+                8: makeLevel({ criticalDie: "2d20", criticalTable: "V" }),
+                9: makeLevel({ criticalDie: "1d30+2", criticalTable: "V" }),
+            },
+        };
+        beforeAll(() => {
+            registerClassProgression(TEST_CLASS);
         });
-        it("should default to I for unknown classes", () => {
-            expect(getCritTable("unknown")).toBe("I");
+        afterAll(() => {
+            clearClassProgressions();
         });
-    });
-    describe("getCritDie", () => {
-        it("should return correct warrior crit die by level", () => {
-            expect(getCritDie("warrior", 1)).toBe("d12");
-            expect(getCritDie("warrior", 2)).toBe("d14");
-            expect(getCritDie("warrior", 3)).toBe("d16");
-            expect(getCritDie("warrior", 4)).toBe("d20");
+        it("returns the registered crit table at the requested level", () => {
+            expect(getCritTable("test-fighter", 1)).toBe("III");
+            expect(getCritTable("test-fighter", 3)).toBe("IV");
+            expect(getCritTable("test-fighter", 8)).toBe("V");
         });
-        it("should return correct thief crit die by level", () => {
-            expect(getCritDie("thief", 1)).toBe("d10");
-            expect(getCritDie("thief", 2)).toBe("d12");
-            expect(getCritDie("thief", 5)).toBe("d20");
+        it("returns bare dice for single-die formulas and full formulas otherwise", () => {
+            expect(getCritDie("test-fighter", 1)).toBe("d12");
+            expect(getCritDie("test-fighter", 8)).toBe("2d20");
+            expect(getCritDie("test-fighter", 9)).toBe("1d30+2");
         });
-        it("should return default die for other classes", () => {
-            expect(getCritDie("wizard", 1)).toBe("d8");
-            expect(getCritDie("cleric", 3)).toBe("d10");
+        it("falls back to defaults when no progression is registered", () => {
+            expect(getCritTable("unknown-class", 1)).toBe("I");
+            expect(getCritDie("unknown-class", 1)).toBe("d4");
         });
     });
     describe("determineCritTable", () => {
         it("should use weapon table when provided", () => {
             expect(determineCritTable("wizard", "IV")).toBe("IV");
         });
-        it("should use class table when no weapon table", () => {
-            expect(determineCritTable("warrior")).toBe("III");
+        it("falls back to the registry-backed class table otherwise", () => {
+            expect(determineCritTable("unknown-class")).toBe("I");
         });
     });
     describe("buildCritFormula", () => {
@@ -792,6 +952,7 @@ describe("Fumble System", () => {
             expect(getFumbleDie("unarmored")).toBe("d4");
             expect(getFumbleDie("padded")).toBe("d8");
             expect(getFumbleDie("leather")).toBe("d8");
+            expect(getFumbleDie("studded-leather")).toBe("d8");
             expect(getFumbleDie("hide")).toBe("d12");
             expect(getFumbleDie("scale")).toBe("d12");
             expect(getFumbleDie("chainmail")).toBe("d12");
@@ -808,6 +969,7 @@ describe("Fumble System", () => {
             expect(getArmorType("Chainmail")).toBe("chainmail");
             expect(getArmorType("Scale Armor")).toBe("scale");
             expect(getArmorType("Hide Armor")).toBe("hide");
+            expect(getArmorType("Studded Leather Armor")).toBe("studded-leather");
             expect(getArmorType("Leather Armor")).toBe("leather");
             expect(getArmorType("Padded Armor")).toBe("padded");
             expect(getArmorType("Robes")).toBe("unarmored");
@@ -830,15 +992,19 @@ describe("Fumble System", () => {
         });
     });
     describe("armor penalties", () => {
-        it("should return correct check penalties", () => {
+        it("should return correct check penalties (Table 3-3)", () => {
             expect(getArmorCheckPenalty("unarmored")).toBe(0);
-            expect(getArmorCheckPenalty("leather")).toBe(-2);
+            expect(getArmorCheckPenalty("padded")).toBe(0);
+            expect(getArmorCheckPenalty("leather")).toBe(-1);
+            expect(getArmorCheckPenalty("studded-leather")).toBe(-2);
+            expect(getArmorCheckPenalty("hide")).toBe(-3);
             expect(getArmorCheckPenalty("chainmail")).toBe(-5);
             expect(getArmorCheckPenalty("full-plate")).toBe(-8);
         });
         it("should return correct speed penalties", () => {
             expect(getArmorSpeedPenalty("unarmored")).toBe(0);
             expect(getArmorSpeedPenalty("leather")).toBe(0);
+            expect(getArmorSpeedPenalty("studded-leather")).toBe(0);
             expect(getArmorSpeedPenalty("chainmail")).toBe(-5);
             expect(getArmorSpeedPenalty("full-plate")).toBe(-10);
         });
@@ -849,58 +1015,66 @@ describe("Fumble System", () => {
 // =============================================================================
 describe("Initiative System", () => {
     describe("rollInitiative", () => {
-        it("should roll basic initiative", () => {
+        it("should roll basic initiative on d20", () => {
             const roller = createMockRoller(12);
             const input = {
-                initiativeDie: "d16",
+                initiativeDie: "d20",
                 agilityModifier: 2,
             };
             const result = rollInitiative(input, roller);
             expect(result.roll.natural).toBe(12);
             expect(result.total).toBe(14); // 12 + 2
         });
-        it("should add class modifier", () => {
+        it("should add warrior class level via classModifier", () => {
             const roller = createMockRoller(10);
             const input = {
-                initiativeDie: "d16",
+                initiativeDie: "d20",
                 agilityModifier: 1,
-                classModifier: 2,
+                classModifier: 3, // warrior level 3
             };
             const result = rollInitiative(input, roller);
-            expect(result.total).toBe(13); // 10 + 1 + 2
+            expect(result.total).toBe(14); // 10 + 1 + 3
         });
-        it("should add two-weapon bonus", () => {
+        it("should roll d16 when wielding a two-handed weapon", () => {
             const roller = createMockRoller(8);
             const input = {
                 initiativeDie: "d16",
                 agilityModifier: 2,
-                twoWeaponBonus: 1,
             };
             const result = rollInitiative(input, roller);
-            expect(result.total).toBe(11); // 8 + 2 + 1
+            expect(result.roll.natural).toBe(8);
+            expect(result.total).toBe(10); // 8 + 2
+        });
+        it("should stack two-handed d16 with warrior class level", () => {
+            const roller = createMockRoller(8);
+            const input = {
+                initiativeDie: "d16",
+                agilityModifier: 1,
+                classModifier: 5, // warrior level 5, two-handing
+            };
+            const result = rollInitiative(input, roller);
+            expect(result.total).toBe(14); // 8 + 1 + 5
         });
     });
     describe("getInitiativeDie", () => {
-        it("should return correct warrior initiative die by level", () => {
-            expect(getInitiativeDie("warrior", 1)).toBe("d16");
-            expect(getInitiativeDie("warrior", 5)).toBe("d20");
-            expect(getInitiativeDie("warrior", 8)).toBe("d24");
+        it("should return d20 by default", () => {
+            expect(getInitiativeDie()).toBe("d20");
+            expect(getInitiativeDie(false)).toBe("d20");
         });
-        it("should return d16 for non-warrior classes", () => {
-            expect(getInitiativeDie("wizard", 5)).toBe("d16");
-            expect(getInitiativeDie("thief", 10)).toBe("d16");
+        it("should return d16 when wielding a two-handed weapon", () => {
+            expect(getInitiativeDie(true)).toBe("d16");
         });
     });
     describe("calculateInitiativeModifier", () => {
         it("should sum all modifiers", () => {
             expect(calculateInitiativeModifier(2)).toBe(2);
             expect(calculateInitiativeModifier(2, 1)).toBe(3);
-            expect(calculateInitiativeModifier(2, 1, 1)).toBe(4);
+            expect(calculateInitiativeModifier(2, 5)).toBe(7); // warrior lvl 5 + agl 2
         });
     });
     describe("buildInitiativeFormula", () => {
         it("should build formula correctly", () => {
-            expect(buildInitiativeFormula("d16", 2, 1)).toBe("1d16+3");
+            expect(buildInitiativeFormula("d20", 2, 1)).toBe("1d20+3");
             expect(buildInitiativeFormula("d20", -1, 0)).toBe("1d20-1");
             expect(buildInitiativeFormula("d16", 0, 0)).toBe("1d16");
         });
@@ -928,22 +1102,11 @@ describe("Initiative System", () => {
     });
     describe("isInitiativeTied", () => {
         it("should detect tied initiatives", () => {
-            const a = { roll: { formula: "1d16", die: "d16", diceCount: 1, modifiers: [] }, total: 15, modifiers: [] };
-            const b = { roll: { formula: "1d16", die: "d16", diceCount: 1, modifiers: [] }, total: 15, modifiers: [] };
-            const c = { roll: { formula: "1d16", die: "d16", diceCount: 1, modifiers: [] }, total: 12, modifiers: [] };
+            const a = { roll: { formula: "1d20", die: "d20", diceCount: 1, modifiers: [] }, total: 15, modifiers: [] };
+            const b = { roll: { formula: "1d20", die: "d20", diceCount: 1, modifiers: [] }, total: 15, modifiers: [] };
+            const c = { roll: { formula: "1d20", die: "d20", diceCount: 1, modifiers: [] }, total: 12, modifiers: [] };
             expect(isInitiativeTied(a, b)).toBe(true);
             expect(isInitiativeTied(a, c)).toBe(false);
-        });
-    });
-    describe("getTwoWeaponInitiativeBonus", () => {
-        it("should return +1 for halflings with two weapons", () => {
-            expect(getTwoWeaponInitiativeBonus(true, true)).toBe(1);
-        });
-        it("should return 0 for non-halflings", () => {
-            expect(getTwoWeaponInitiativeBonus(false, true)).toBe(0);
-        });
-        it("should return 0 when not two-weapon fighting", () => {
-            expect(getTwoWeaponInitiativeBonus(true, false)).toBe(0);
         });
     });
 });

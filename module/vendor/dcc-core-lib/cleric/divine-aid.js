@@ -9,6 +9,11 @@ import { resolveSkillCheck } from "../skills/resolve.js";
 import { lookupSimple } from "../tables/lookup.js";
 import { getAbilityModifier } from "../data/ability-modifiers.js";
 import { rollTriggersDisapproval, increaseDisapprovalRange, } from "../spells/disapproval.js";
+/**
+ * RAW DCC p.31: each Divine Aid request accrues a cumulative +10 to the
+ * cleric's disapproval range, regardless of whether the check succeeds.
+ */
+export const DIVINE_AID_DISAPPROVAL_COST = 10;
 // =============================================================================
 // Divine Aid Skill Definition
 // =============================================================================
@@ -70,11 +75,14 @@ export function divineAid(input, aidTable, options = {}) {
     const check = resolveSkillCheck(checkInput, options);
     // Get natural roll for disapproval check
     const natural = check.natural ?? 1;
-    // Check for disapproval
+    // RAW DCC p.31: "This extraordinary act imparts a cumulative +10 penalty
+    // to future disapproval range." The +10 applies to every Divine Aid
+    // request, regardless of success. Normal disapproval-range hits still
+    // stack on top.
+    let newDisapprovalRange = input.disapprovalRange + DIVINE_AID_DISAPPROVAL_COST;
     const disapprovalTriggered = rollTriggersDisapproval(natural, input.disapprovalRange);
-    let newDisapprovalRange = input.disapprovalRange;
     if (disapprovalTriggered) {
-        newDisapprovalRange = increaseDisapprovalRange(input.disapprovalRange);
+        newDisapprovalRange = increaseDisapprovalRange(newDisapprovalRange);
     }
     // Look up the result in the aid table
     const total = check.total ?? 0;

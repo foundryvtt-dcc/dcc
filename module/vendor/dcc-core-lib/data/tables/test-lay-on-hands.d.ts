@@ -1,16 +1,13 @@
 /**
  * Fan-Made Lay on Hands Table (For Testing)
  *
- * This is a simplified fan-made table for testing purposes.
- * It follows the same structure as the official table but with
- * different values to avoid copyright issues.
- *
- * Licensed under MIT - safe for open source distribution.
+ * Mirrors the RAW 3-column (same/adjacent/opposed) structure but uses
+ * fan-made values to avoid copyright issues. Licensed under MIT.
  */
-import type { SimpleTable } from "../../tables/types.js";
+import type { LayOnHandsTable } from "../../tables/types.js";
 /**
- * Fan-made Lay on Hands result table for testing.
- * Simplified version with fewer entries for test coverage.
+ * Fan-made Lay on Hands table for testing. Structure matches RAW (3 alignment
+ * columns, dice-count cells), values are original.
  */
-export declare const TEST_LAY_ON_HANDS_TABLE: SimpleTable;
+export declare const TEST_LAY_ON_HANDS_TABLE: LayOnHandsTable;
 //# sourceMappingURL=test-lay-on-hands.d.ts.map

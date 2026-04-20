@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { turnUnholy, getTurnUnholyModifier, getTurnUnholyDie, resolveHDExpression, calculateAverageHD, TURN_UNHOLY_SKILL, } from "./turn-unholy.js";
-import { layOnHands, getLayOnHandsModifier, getLayOnHandsDie, calculateHPHealed, getMaxHealing, LAY_ON_HANDS_SKILL, } from "./lay-on-hands.js";
+import { layOnHands, getLayOnHandsModifier, getLayOnHandsDie, LAY_ON_HANDS_SKILL, } from "./lay-on-hands.js";
 import { divineAid, getDivineAidModifier, getDivineAidDie, getMinimumCheckForSpellLevel, estimateAidSpellLevel, describePotentialAid, DIVINE_AID_SKILL, } from "./divine-aid.js";
 import { TEST_TURN_UNHOLY_TABLE } from "../data/tables/test-turn-unholy.js";
 import { TEST_LAY_ON_HANDS_TABLE } from "../data/tables/test-lay-on-hands.js";
@@ -131,65 +131,97 @@ describe("Lay on Hands", () => {
         });
     });
     describe("layOnHands", () => {
-        it("performs a skill check with level and personality", () => {
-            const result = layOnHands({ level: 3, personality: 16 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
-            // With d20=10, level=3, PER 16 (+2), total = 15
+        // A thief target: d6 HD, 3rd level (HD cap = 3).
+        const TARGET_THIEF_3 = { hitDie: "d6", hitDice: 3 };
+        // A 1st-level warrior: d12 HD, HD cap = 1.
+        const TARGET_WARRIOR_1 = { hitDie: "d12", hitDice: 1 };
+        it("performs the spell check without alignment on the roll", () => {
+            const result = layOnHands({ level: 3, personality: 16, alignment: "same", target: TARGET_THIEF_3 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+            // d20=10, level=3, PER 16 (+2), NO alignment bonus → total = 15
             expect(result.check.total).toBe(15);
-            expect(result.check.modifiers).toHaveLength(2);
+            expect(result.check.modifiers.some((m) => m.origin.id.startsWith("alignment"))).toBe(false);
         });
         it("returns failure for low rolls", () => {
-            const result = layOnHands({ level: 1, personality: 10 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(5) });
-            // With d20=5, level=1, PER 10 (+0), total = 6
+            const result = layOnHands({ level: 1, personality: 10, alignment: "same", target: TARGET_THIEF_3 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(5) });
+            // d20=5, level=1, PER 10 (+0) → total = 6 (below the first healing row)
             expect(result.check.total).toBe(6);
             expect(result.success).toBe(false);
-            expect(result.effect.type).toBe("none");
+            expect(result.rawDiceCount).toBe(0);
         });
-        it("returns healing for moderate rolls", () => {
-            const result = layOnHands({ level: 3, personality: 14 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
-            // With d20=10, level=3, PER 14 (+1), total = 14
-            expect(result.check.total).toBe(14);
-            expect(result.success).toBe(true);
-            expect(result.effect.type).toBe("heal");
+        it("picks the correct column by alignment", () => {
+            // Roll lands in the 13–18 row → same=3, adjacent=2, opposed=1.
+            const same = layOnHands({ level: 3, personality: 14, alignment: "same", target: TARGET_THIEF_3 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+            const adjacent = layOnHands({ level: 3, personality: 14, alignment: "adjacent", target: TARGET_THIEF_3 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+            const opposed = layOnHands({ level: 3, personality: 14, alignment: "opposed", target: TARGET_THIEF_3 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+            expect(same.rawDiceCount).toBe(3);
+            expect(adjacent.rawDiceCount).toBe(2);
+            expect(opposed.rawDiceCount).toBe(1);
         });
-        it("returns cure effects for high rolls", () => {
-            const result = layOnHands({ level: 5, personality: 18 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(15) });
-            // With d20=15, level=5, PER 18 (+3), total = 23
-            expect(result.check.total).toBe(23);
-            expect(result.success).toBe(true);
-            expect(result.effect.type).toBe("heal-cure");
-        });
-        it("includes HP healed in result", () => {
-            const result = layOnHands({ level: 3, personality: 16 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+        it("caps dice at target's hit dice / class level", () => {
+            // Check total 15 → same column = 3 dice, but target has HD 1 → capped to 1.
+            const result = layOnHands({ level: 3, personality: 16, alignment: "same", target: TARGET_WARRIOR_1 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+            expect(result.rawDiceCount).toBe(3);
+            expect(result.diceCount).toBe(1);
             expect(result.hpHealed).toBeDefined();
         });
-        it("applies self-healing penalty", () => {
-            const result = layOnHands({ level: 3, personality: 16, healingSelf: true }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
-            // With d20=10, level=3, PER 16 (+2), self-heal -4, total = 11
+        it("rolls healing with the target's hit die", () => {
+            // Force the healing roll to hit the max of a 3d6 (hitDice=3, cap=3, hitDie=d6).
+            // The healing roller is the SAME roller instance; it first satisfies the
+            // d20 spell check, then the healing formula.
+            const roller = vi
+                .fn()
+                .mockReturnValueOnce(10) // spell check d20
+                .mockReturnValueOnce(18); // healing 3d6 (max)
+            const result = layOnHands({ level: 3, personality: 16, alignment: "same", target: TARGET_THIEF_3 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller });
+            expect(result.diceCount).toBe(3);
+            expect(result.hpHealed).toBe(18);
+        });
+        it("heals a condition without HP when threshold is met", () => {
+            const result = layOnHands({
+                level: 3,
+                personality: 16,
+                alignment: "same",
+                target: TARGET_THIEF_3,
+                healingCondition: "disease",
+            }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+            expect(result.rawDiceCount).toBe(3);
+            expect(result.condition).toEqual({ id: "disease", cured: true, threshold: 2 });
+            expect(result.hpHealed).toBeUndefined();
+        });
+        it("fails a condition when threshold is not met", () => {
+            const result = layOnHands({
+                level: 1,
+                personality: 10,
+                alignment: "opposed",
+                target: TARGET_THIEF_3,
+                healingCondition: "blindness",
+            }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(12) } // total 13, opposed col = 1, blindness needs 4
+            );
+            expect(result.rawDiceCount).toBe(1);
+            expect(result.condition).toEqual({ id: "blindness", cured: false, threshold: 4 });
+        });
+        it("applies self-healing penalty to the check (judge discretion)", () => {
+            const result = layOnHands({
+                level: 3,
+                personality: 16,
+                alignment: "same",
+                target: TARGET_THIEF_3,
+                healingSelf: true,
+            }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
+            // d20=10, level=3, PER 16 (+2), self-heal -4 → total = 11
             expect(result.check.total).toBe(11);
             expect(result.check.modifiers.some((m) => m.origin.id === "self-healing")).toBe(true);
         });
-        it("applies same alignment bonus", () => {
+        it("applies luck burn to the check", () => {
             const result = layOnHands({
-                level: 3,
-                personality: 16,
-                alignmentMod: { sameAlignment: true, oppositeAlignment: false },
+                level: 1,
+                personality: 10,
+                alignment: "same",
+                target: TARGET_THIEF_3,
+                luck: 14,
+                luckBurn: 2,
             }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
-            // With d20=10, level=3, PER 16 (+2), same alignment +2, total = 17
-            expect(result.check.total).toBe(17);
-            expect(result.check.modifiers.some((m) => m.origin.category === "situational" && m.origin.id.startsWith("alignment-"))).toBe(true);
-        });
-        it("applies opposite alignment penalty", () => {
-            const result = layOnHands({
-                level: 3,
-                personality: 16,
-                alignmentMod: { sameAlignment: false, oppositeAlignment: true },
-            }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
-            // With d20=10, level=3, PER 16 (+2), opposite alignment -2, total = 13
-            expect(result.check.total).toBe(13);
-        });
-        it("applies luck burn", () => {
-            const result = layOnHands({ level: 1, personality: 10, luck: 14, luckBurn: 2 }, TEST_LAY_ON_HANDS_TABLE, { mode: "evaluate", roller: mockRoller(10) });
-            // With d20=10, level=1, PER 10 (+0), luck burn 2, total = 13
+            // d20=10, level=1, PER 10 (+0), luck burn +2 → total = 13
             expect(result.check.total).toBe(13);
         });
     });
@@ -207,31 +239,6 @@ describe("Lay on Hands", () => {
     describe("getLayOnHandsDie", () => {
         it("returns d20", () => {
             expect(getLayOnHandsDie()).toBe("d20");
-        });
-    });
-    describe("calculateHPHealed", () => {
-        it("handles CL multiplier format", () => {
-            expect(calculateHPHealed("1*CL", 5)).toBe(5);
-            expect(calculateHPHealed("2*CL", 5)).toBe(10);
-            expect(calculateHPHealed("3*CL", 5)).toBe(15);
-        });
-        it("handles dice expressions (returns average)", () => {
-            expect(calculateHPHealed("1d6", 5)).toBe(3); // floor(3.5)
-            expect(calculateHPHealed("2d6", 5)).toBe(7);
-        });
-        it("handles plain numbers", () => {
-            expect(calculateHPHealed("5", 3)).toBe(5);
-            expect(calculateHPHealed("10", 3)).toBe(10);
-        });
-    });
-    describe("getMaxHealing", () => {
-        it("returns level times max multiplier", () => {
-            expect(getMaxHealing(5)).toBe(40); // 5 * 8
-            expect(getMaxHealing(3)).toBe(24); // 3 * 8
-            expect(getMaxHealing(10)).toBe(80); // 10 * 8
-        });
-        it("accepts custom max multiplier", () => {
-            expect(getMaxHealing(5, 10)).toBe(50); // 5 * 10
         });
     });
 });
@@ -297,25 +304,28 @@ describe("Divine Aid", () => {
             expect(result.success).toBe(true);
             expect(result.effect.type).toBe("miraculous-aid");
         });
-        it("triggers disapproval on natural 1", () => {
+        it("accrues the RAW +10 disapproval cost on a natural 1, plus the range-hit bump", () => {
             const result = divineAid({ level: 5, personality: 18, disapprovalRange: 1 }, TEST_DIVINE_AID_TABLE, { mode: "evaluate", roller: mockRoller(1) });
             expect(result.natural).toBe(1);
             expect(result.disapprovalTriggered).toBe(true);
             expect(result.success).toBe(false);
-            expect(result.newDisapprovalRange).toBe(2);
+            // Start 1 → +10 (Divine Aid cost) → 11 → +1 (natural-1 in-range bump) → 12
+            expect(result.newDisapprovalRange).toBe(12);
         });
-        it("triggers disapproval within extended range", () => {
+        it("accrues the RAW +10 on an in-range non-1 roll plus the range-hit bump", () => {
             const result = divineAid({ level: 5, personality: 18, disapprovalRange: 3 }, TEST_DIVINE_AID_TABLE, { mode: "evaluate", roller: mockRoller(3) });
             expect(result.natural).toBe(3);
             expect(result.disapprovalTriggered).toBe(true);
             expect(result.success).toBe(false);
-            expect(result.newDisapprovalRange).toBe(4);
+            // Start 3 → +10 → 13 → +1 → 14
+            expect(result.newDisapprovalRange).toBe(14);
         });
-        it("does not trigger disapproval outside range", () => {
+        it("accrues the RAW +10 even when the roll is outside the disapproval range", () => {
             const result = divineAid({ level: 5, personality: 18, disapprovalRange: 2 }, TEST_DIVINE_AID_TABLE, { mode: "evaluate", roller: mockRoller(3) });
             expect(result.natural).toBe(3);
             expect(result.disapprovalTriggered).toBe(false);
-            expect(result.newDisapprovalRange).toBe(2);
+            // Start 2 → +10 → 12 (no extra bump, since not in range)
+            expect(result.newDisapprovalRange).toBe(12);
         });
         it("applies luck burn", () => {
             const result = divineAid({ level: 1, personality: 10, disapprovalRange: 1, luck: 14, luckBurn: 2 }, TEST_DIVINE_AID_TABLE, { mode: "evaluate", roller: mockRoller(10) });

@@ -13,13 +13,14 @@ export { FUMBLE_DICE } from "../types/combat.js";
 // Armor Check Penalties
 // =============================================================================
 /**
- * Armor check penalty by armor type
- * This penalty applies to certain skill checks
+ * Armor check penalty by armor type (DCC core rules Table 3-3)
+ * This penalty applies to certain skill checks.
  */
 export const ARMOR_CHECK_PENALTY = {
     unarmored: 0,
-    padded: -1,
-    leather: -2,
+    padded: 0,
+    leather: -1,
+    "studded-leather": -2,
     hide: -3,
     scale: -4,
     chainmail: -5,
@@ -28,12 +29,13 @@ export const ARMOR_CHECK_PENALTY = {
     "full-plate": -8,
 };
 /**
- * Speed reduction by armor type (in feet)
+ * Speed reduction by armor type, in feet (DCC core rules Table 3-3).
  */
 export const ARMOR_SPEED_PENALTY = {
     unarmored: 0,
     padded: 0,
     leather: 0,
+    "studded-leather": 0,
     hide: 0,
     scale: -5,
     chainmail: -5,
@@ -51,11 +53,11 @@ export const ARMOR_SPEED_PENALTY = {
  * @returns Fumble die type
  */
 export function getFumbleDie(armorType) {
-    // Import the constant value from types
     const FUMBLE_DICE_MAP = {
         unarmored: "d4",
         padded: "d8",
         leather: "d8",
+        "studded-leather": "d8",
         hide: "d12",
         scale: "d12",
         chainmail: "d12",
@@ -90,6 +92,10 @@ export function getArmorType(armorName) {
     }
     if (lower.includes("hide")) {
         return "hide";
+    }
+    // "studded" must be checked before "leather" — "studded leather" contains "leather".
+    if (lower.includes("studded")) {
+        return "studded-leather";
     }
     if (lower.includes("leather")) {
         return "leather";

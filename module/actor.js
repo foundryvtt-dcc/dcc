@@ -2710,10 +2710,10 @@ class DCCActor extends Actor {
    * reduction into `weapon.system.actionDie` (e.g. `1d16[2w-off-hand]`)
    * and adjusts `weapon.system.critRange` per the agility-tier
    * matrix; `normalizeLibDie` strips the tag and the lib computes
-   * the attack on the bumped die. We deliberately do NOT set
-   * `AttackInput.twoWeaponPenalty` — that field models the flat
-   * `-1`/`-2` ruleset returned by the lib's `getTwoWeaponPenalty`,
-   * which does not match DCC RAW (DCC uses dice-chain reductions).
+   * the attack on the bumped die. (`dcc-core-lib@0.5.0` adopted the
+   * dice-chain model — `AttackInput.twoWeaponPenalty` and
+   * `getTwoWeaponPenalty` were removed; DCC's prior integration
+   * choice is now the lib's canonical shape.)
    *
    * Session 12 (A5) dropped the `automateDamageFumblesCrits`
    * requirement: that setting gates whether `rollWeaponAttack`

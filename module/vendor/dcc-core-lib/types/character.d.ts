@@ -6,7 +6,7 @@
  * Class-specific data is only present when relevant.
  */
 import type { Alignment, DCCAbilityId } from "./system.js";
-import type { DieType } from "./dice.js";
+import type { CritDieFormula, DieType } from "./dice.js";
 import type { Spellbook } from "./spells.js";
 /**
  * Deep readonly utility for immutable function inputs
@@ -95,8 +95,8 @@ export interface CombatStats {
     attackBonus: number;
     /** Action dice available (e.g., ["1d20"] or ["1d20", "1d14"]) */
     actionDice: DieType[];
-    /** Critical hit die */
-    critDie: DieType;
+    /** Critical hit die formula (e.g., "d12", "2d20", "d30+2") */
+    critDie: CritDieFormula;
     /** Critical hit table (I-V or custom ID) */
     critTable: string;
     /** Threat range (20 = only nat 20, 19 = 19-20, etc.) */

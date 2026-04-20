@@ -20,10 +20,6 @@ import type { ClassProgression, ProgressionAlignment } from "../../types/class-p
  */
 export declare const MIGHTY_DEED: SkillDefinition;
 /**
- * Get the deed die for a given level from the skill definition
- */
-export declare function getDeedDieFromSkill(level: number): DieType;
-/**
  * Get the deed success threshold from the skill definition
  */
 export declare function getDeedSuccessThreshold(): number;
@@ -140,10 +136,6 @@ export declare function getTwoWeaponInitBonus(classId: string): number;
  * their luck recovery with nearby allies.
  */
 export declare const LUCK_RECOVERY: SkillDefinition;
-/**
- * Get the luck die for a thief at a given level from the skill definition
- */
-export declare function getLuckDieFromSkill(level: number): DieType;
 /**
  * Check if a character can recover luck
  */

@@ -21,7 +21,7 @@
  * ```
  */
 import { getAbilityModifier } from "../data/ability-modifiers.js";
-import { getClassProgression, getSavingThrows, getAttackBonus, getActionDice, getCriticalHitData, getTitle, hasDeedDie, getHitDie, } from "../data/classes/progression-utils.js";
+import { getClassProgression, getSavingThrows, getAttackBonus, getActionDice, getCriticalHitData, getTitle, hasDeedDie, getHitDie, getLuckDie, } from "../data/classes/progression-utils.js";
 // =============================================================================
 // XP Threshold Registry
 // =============================================================================
@@ -525,26 +525,10 @@ function updateClassState(character, classId, level, attackBonus) {
         case "thief":
             classState.thief = {
                 ...classState.thief,
-                luckDie: getThiefLuckDie(level),
+                luckDie: getLuckDie("thief", level) ?? "d3",
             };
             break;
     }
     character.state.classState = classState;
-}
-/**
- * Get thief luck die by level
- */
-function getThiefLuckDie(level) {
-    if (level >= 9)
-        return "d8";
-    if (level >= 7)
-        return "d7";
-    if (level >= 5)
-        return "d6";
-    if (level >= 3)
-        return "d5";
-    if (level >= 2)
-        return "d4";
-    return "d3";
 }
 //# sourceMappingURL=level-up.js.map

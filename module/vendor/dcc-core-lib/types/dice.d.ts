@@ -15,6 +15,13 @@ export type DiceChainFaces = (typeof DEFAULT_DICE_CHAIN)[number];
  */
 export type DieType = `d${number}`;
 /**
+ * A crit-die formula. Covers single dice ("d12"), multi-dice ("2d20"),
+ * and dice-plus-modifier ("d30+2"). The DCC crit die progressions for
+ * high-level warriors and thieves outgrow a single die, so this type is
+ * used wherever a crit die value is stored or rolled.
+ */
+export type CritDieFormula = string;
+/**
  * How a roll should be handled
  */
 export type RollMode = 'formula' | 'evaluate';

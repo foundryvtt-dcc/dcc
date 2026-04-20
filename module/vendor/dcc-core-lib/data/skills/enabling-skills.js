@@ -36,42 +36,9 @@ export const MIGHTY_DEED = {
             allowsManeuver: true,
         },
     },
-    progression: {
-        1: { data: { deedDie: "d3" } },
-        2: { data: { deedDie: "d3" } },
-        3: { data: { deedDie: "d4" } },
-        4: { data: { deedDie: "d4" } },
-        5: { data: { deedDie: "d5" } },
-        6: { data: { deedDie: "d5" } },
-        7: { data: { deedDie: "d6" } },
-        8: { data: { deedDie: "d6" } },
-        9: { data: { deedDie: "d7" } },
-        10: { data: { deedDie: "d7" } },
-    },
     tags: ["combat", "melee"],
     classes: ["warrior", "dwarf"],
 };
-/**
- * Get the deed die for a given level from the skill definition
- */
-export function getDeedDieFromSkill(level) {
-    if (level <= 0)
-        return "d3";
-    const progression = MIGHTY_DEED.progression?.[level];
-    if (progression?.data) {
-        const deedDie = progression.data["deedDie"];
-        if (typeof deedDie === "string") {
-            return deedDie;
-        }
-    }
-    // For levels beyond 10, extrapolate
-    if (level > 10) {
-        const bonus = Math.floor((level - 7) / 2);
-        const dieNum = Math.min(7 + bonus, 12); // Cap at d12
-        return `d${String(dieNum)}`;
-    }
-    return "d3";
-}
 /**
  * Get the deed success threshold from the skill definition
  */
@@ -327,40 +294,9 @@ export const LUCK_RECOVERY = {
             halflingCanShareLuck: true,
         },
     },
-    progression: {
-        // Thief luck die progression
-        1: { die: "d3" },
-        2: { die: "d3" },
-        3: { die: "d4" },
-        4: { die: "d4" },
-        5: { die: "d5" },
-        6: { die: "d5" },
-        7: { die: "d6" },
-        8: { die: "d6" },
-        9: { die: "d7" },
-        10: { die: "d7" },
-    },
     tags: ["luck"],
     classes: ["thief", "halfling"],
 };
-/**
- * Get the luck die for a thief at a given level from the skill definition
- */
-export function getLuckDieFromSkill(level) {
-    if (level <= 0)
-        return "d3";
-    const progression = LUCK_RECOVERY.progression?.[level];
-    if (progression?.die) {
-        return progression.die;
-    }
-    // For levels beyond 10, extrapolate
-    if (level > 10) {
-        const bonus = Math.floor((level - 7) / 2);
-        const dieNum = Math.min(7 + bonus, 12); // Cap at d12
-        return `d${String(dieNum)}`;
-    }
-    return "d3";
-}
 /**
  * Check if a character can recover luck
  */

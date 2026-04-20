@@ -1,123 +1,88 @@
 /**
- * Lay on Hands
+ * Lay on Hands (RAW DCC p.31)
  *
- * Pure functions for the cleric's Lay on Hands ability.
- * Clerics can channel divine healing power to restore hit points
- * and cure ailments.
+ * Pure functions for the cleric's Lay on Hands ability. Implements the
+ * rules-as-written mechanic:
+ *
+ *   1. Cleric declares alignment relationship (same/adjacent/opposed) and
+ *      optionally a condition to heal instead of HP.
+ *   2. Spell check = d20 + Personality mod + caster level + luck burn.
+ *      Alignment does NOT modify the roll — it selects a column on the
+ *      result table (see `LayOnHandsTable`).
+ *   3. (check total, alignment) → dice count.
+ *   4. If healing HP: roll `diceCount × target.hitDie`, but the dice count is
+ *      capped at `min(diceCount, target.hitDice)`. Dice type matches the
+ *      subject's hit die.
+ *   5. If healing a condition: no cap; if dice count ≥ threshold, condition
+ *      is cured (no "overflow" HP).
+ *   6. Natural 1 triggers disapproval (handled by the caller via the
+ *      spell-check pipeline).
  */
 import type { DieType, RollModifier, RollOptions } from "../types/dice.js";
 import type { SkillDefinition, SkillCheckResult } from "../types/skills.js";
-import type { SimpleTable, TableEffect } from "../tables/types.js";
-/**
- * Lay on Hands skill definition.
- * Clerics roll d20 + Personality modifier + level.
- */
+import type { LayOnHandsAlignment, LayOnHandsExtraEffects, LayOnHandsRow, LayOnHandsTable } from "../tables/types.js";
 export declare const LAY_ON_HANDS_SKILL: SkillDefinition;
-/**
- * Alignment modifier for Lay on Hands
- */
-export interface LayOnHandsAlignmentMod {
-    /** Is the target the same alignment as the cleric? */
-    sameAlignment: boolean;
-    /** Is the target the opposite alignment? */
-    oppositeAlignment: boolean;
+export interface LayOnHandsTarget {
+    /** Target's hit die (d4, d6, d8, d10, d12). Dice type for HP healing. */
+    hitDie: DieType;
+    /** Target's hit dice or class level. Caps the dice count when healing HP. */
+    hitDice: number;
 }
-/**
- * Input for a Lay on Hands check
- */
 export interface LayOnHandsInput {
-    /** Cleric's level */
+    /** Cleric level */
     level: number;
-    /** Cleric's Personality score */
+    /** Cleric Personality score */
     personality: number;
-    /** Optional luck score (for burning) */
+    /** Cleric–subject alignment relationship */
+    alignment: LayOnHandsAlignment;
+    /** Healing target (HD type + HD count for the cap) */
+    target: LayOnHandsTarget;
+    /**
+     * If set, heal a condition instead of HP. The value is a condition id
+     * matched against `LayOnHandsTable.conditions` thresholds. RAW examples:
+     * "broken-limb", "organ-damage", "disease", "paralysis", "poison",
+     * "blindness". Declared BEFORE rolling per RAW.
+     */
+    healingCondition?: string | undefined;
+    /** Optional Luck score */
     luck?: number | undefined;
-    /** Luck points to burn on this roll */
+    /** Luck points burned on this check */
     luckBurn?: number | undefined;
-    /** Situational modifiers */
-    situationalModifiers?: RollModifier[] | undefined;
-    /** Whether the cleric is healing themselves */
+    /** Judge-discretion self-healing penalty (common house rule: -4) */
     healingSelf?: boolean | undefined;
-    /** Alignment relationship to target */
-    alignmentMod?: LayOnHandsAlignmentMod | undefined;
+    /** Extra situational modifiers on the spell check (NOT alignment) */
+    situationalModifiers?: RollModifier[] | undefined;
 }
-/**
- * Effect type for Lay on Hands results
- */
-export type HealEffectType = "none" | "heal" | "heal-cure" | "heal-restore";
-/**
- * Structured Lay on Hands effect data
- */
-export interface HealEffect {
-    /** Type of healing effect */
-    type: HealEffectType;
-    /** HP healed (dice expression or formula) */
-    hpHealed?: string | undefined;
-    /** Whether diseases are cured */
-    curesDisease?: boolean | undefined;
-    /** Whether all ailments are cured */
-    curesAllAilments?: boolean | undefined;
-    /** Whether a lost limb is restored */
-    restoresLimb?: boolean | undefined;
-    /** Whether poison is neutralized */
-    neutralizesPoison?: boolean | undefined;
-}
-/**
- * Result of a Lay on Hands check
- */
 export interface LayOnHandsResult {
-    /** The skill check result */
+    /** The underlying spell-check roll */
     check: SkillCheckResult;
-    /** Whether the healing was successful */
+    /** True if at least 1 die was granted (check total met the minimum row) */
     success: boolean;
-    /** Description of the result */
-    description: string;
-    /** Structured effect data */
-    effect: HealEffect;
-    /** Calculated HP healed (if applicable) */
+    /** Dice count from the (total, alignment) lookup, before HP cap */
+    rawDiceCount: number;
+    /** Dice actually rolled — min(rawDiceCount, target.hitDice) for HP; rawDiceCount for conditions */
+    diceCount: number;
+    /** HP restored (only when healing HP, not conditions) */
     hpHealed?: number | undefined;
-    /** The raw table effect (if available) */
-    tableEffect?: TableEffect | undefined;
+    /** If condition healing was requested, the id, and whether it was cured */
+    condition?: {
+        id: string;
+        cured: boolean;
+        threshold: number;
+    } | undefined;
+    /** Extra row-level effects (disease cure, limb restore, etc.) */
+    extraEffects?: LayOnHandsExtraEffects | undefined;
+    /** The matched row (for UI display / debugging) */
+    row?: LayOnHandsRow | undefined;
+    /** Human-readable description */
+    description: string;
 }
+export declare function layOnHands(input: LayOnHandsInput, table: LayOnHandsTable, options?: RollOptions): LayOnHandsResult;
 /**
- * Perform a Lay on Hands check.
- *
- * @param input - Lay on Hands input
- * @param healTable - The Lay on Hands result table
- * @param options - Roll options
- * @returns Lay on Hands result
- */
-export declare function layOnHands(input: LayOnHandsInput, healTable: SimpleTable, options?: RollOptions): LayOnHandsResult;
-/**
- * Calculate the Lay on Hands modifier without rolling.
- * Useful for displaying to players before they commit to the action.
- *
- * @param level - Cleric level
- * @param personality - Personality score
- * @param healingSelf - Whether healing self (-4)
- * @returns Total modifier
+ * Lay on Hands check-only modifier, useful for showing players before rolling.
+ * Note: alignment is NOT a roll modifier (RAW); it only affects the result
+ * lookup.
  */
 export declare function getLayOnHandsModifier(level: number, personality: number, healingSelf?: boolean): number;
-/**
- * Get the die used for Lay on Hands.
- * Always d20 for standard clerics.
- */
 export declare function getLayOnHandsDie(): DieType;
-/**
- * Calculate HP healed from a dice/formula expression.
- *
- * @param expression - HP expression (e.g., "1*CL", "2*CL", "3d6")
- * @param level - Cleric level
- * @returns Calculated HP (using formula, not rolling)
- */
-export declare function calculateHPHealed(expression: string, level: number): number;
-/**
- * Get the maximum possible healing for a given level.
- * Useful for displaying healing potential.
- *
- * @param level - Cleric level
- * @param maxMultiplier - Maximum HP multiplier from the table (default 8)
- * @returns Maximum HP that can be healed
- */
-export declare function getMaxHealing(level: number, maxMultiplier?: number): number;
 //# sourceMappingURL=lay-on-hands.d.ts.map

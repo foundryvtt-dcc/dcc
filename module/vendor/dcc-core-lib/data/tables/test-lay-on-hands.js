@@ -1,61 +1,40 @@
 /**
  * Fan-Made Lay on Hands Table (For Testing)
  *
- * This is a simplified fan-made table for testing purposes.
- * It follows the same structure as the official table but with
- * different values to avoid copyright issues.
- *
- * Licensed under MIT - safe for open source distribution.
+ * Mirrors the RAW 3-column (same/adjacent/opposed) structure but uses
+ * fan-made values to avoid copyright issues. Licensed under MIT.
  */
 /**
- * Fan-made Lay on Hands result table for testing.
- * Simplified version with fewer entries for test coverage.
+ * Fan-made Lay on Hands table for testing. Structure matches RAW (3 alignment
+ * columns, dice-count cells), values are original.
  */
 export const TEST_LAY_ON_HANDS_TABLE = {
     id: "test-lay-on-hands",
     name: "Lay on Hands (Test)",
-    type: "simple",
+    type: "lay-on-hands",
     description: "Fan-made lay on hands table for testing",
     source: "Fan-made for dcc-core-lib tests",
     tags: ["cleric", "lay-on-hands", "healing", "test", "fan-made"],
-    die: "d20",
-    entries: [
+    rows: [
+        { min: 1, max: 10, dice: { same: 0, adjacent: 0, opposed: 0 }, text: "Failure." },
+        { min: 11, max: 12, dice: { same: 2, adjacent: 1, opposed: 1 }, text: "Minor healing." },
+        { min: 13, max: 18, dice: { same: 3, adjacent: 2, opposed: 1 }, text: "Healing." },
+        { min: 19, max: 20, dice: { same: 4, adjacent: 3, opposed: 2 }, text: "Greater healing." },
         {
-            min: 1,
-            max: 10,
-            text: "Failure. Divine healing does not flow through you.",
-            effect: { type: "none" },
-        },
-        {
-            min: 11,
-            max: 14,
-            text: "Minor healing. Restore 1 hit point per caster level.",
-            effect: { type: "heal", dice: "1*CL" },
-        },
-        {
-            min: 15,
-            max: 18,
-            text: "Healing. Restore 2 hit points per caster level.",
-            effect: { type: "heal", dice: "2*CL" },
-        },
-        {
-            min: 19,
-            max: 22,
-            text: "Greater healing. Restore 3 hit points per caster level.",
-            effect: { type: "heal", dice: "3*CL" },
-        },
-        {
-            min: 23,
-            max: 26,
-            text: "Miraculous healing. Restore 5 hit points per caster level and cure one ailment.",
-            effect: { type: "heal-cure", dice: "5*CL", data: { cureDisease: true } },
-        },
-        {
-            min: 27,
+            min: 21,
             max: 999,
-            text: "Divine intervention. Restore 8 hit points per caster level, cure all ailments, and restore one lost limb.",
-            effect: { type: "heal-restore", dice: "8*CL", data: { cureAllDiseases: true, restoreLimb: true } },
+            dice: { same: 5, adjacent: 4, opposed: 3 },
+            text: "Miraculous healing.",
+            extra: { curesDisease: true, neutralizesPoison: true },
         },
     ],
+    conditions: {
+        "broken-limb": 1,
+        "organ-damage": 2,
+        "disease": 2,
+        "paralysis": 3,
+        "poison": 3,
+        "blindness": 4,
+    },
 };
 //# sourceMappingURL=test-lay-on-hands.js.map

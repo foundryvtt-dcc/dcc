@@ -194,6 +194,7 @@ describe("createArmorStats", () => {
             "unarmored",
             "padded",
             "leather",
+            "studded-leather",
             "hide",
             "scale",
             "chainmail",
@@ -244,12 +245,12 @@ describe("createMagicArmorStats", () => {
         expect(magicChainmail.checkPenalty).toBe(-3);
     });
     it("check penalty cannot go above 0", () => {
-        // Padded has -1 check penalty
-        const normalPadded = createArmorStats("padded");
-        expect(normalPadded.checkPenalty).toBe(-1);
-        // +3 padded would be +2, but capped at 0
-        const magicPadded = createMagicArmorStats("padded", 3);
-        expect(magicPadded.checkPenalty).toBe(0);
+        // Leather has -1 check penalty (Table 3-3)
+        const normalLeather = createArmorStats("leather");
+        expect(normalLeather.checkPenalty).toBe(-1);
+        // +3 leather would be +2, but capped at 0
+        const magicLeather = createMagicArmorStats("leather", 3);
+        expect(magicLeather.checkPenalty).toBe(0);
     });
     it("allows custom name for magic armor", () => {
         const armor = createMagicArmorStats("chainmail", 2, "Elven Chain");
@@ -313,14 +314,14 @@ describe("getArmorDetails", () => {
     });
 });
 describe("getAllArmorStats", () => {
-    it("returns all 9 armor types", () => {
+    it("returns all 10 armor types (Table 3-3 incl. studded leather)", () => {
         const all = getAllArmorStats();
-        expect(all.length).toBe(9);
+        expect(all.length).toBe(10);
     });
     it("returns armor types in order", () => {
         const all = getAllArmorStats();
         expect(all[0]?.type).toBe("unarmored");
-        expect(all[8]?.type).toBe("full-plate");
+        expect(all[9]?.type).toBe("full-plate");
     });
     it("includes all required properties", () => {
         const all = getAllArmorStats();

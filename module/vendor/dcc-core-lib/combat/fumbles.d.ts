@@ -10,12 +10,12 @@ import type { DieType, DiceRoller } from "../types/dice.js";
 import type { FumbleInput, FumbleResult, ArmorType, CombatEvents } from "../types/combat.js";
 export { FUMBLE_DICE } from "../types/combat.js";
 /**
- * Armor check penalty by armor type
- * This penalty applies to certain skill checks
+ * Armor check penalty by armor type (DCC core rules Table 3-3)
+ * This penalty applies to certain skill checks.
  */
 export declare const ARMOR_CHECK_PENALTY: Record<ArmorType, number>;
 /**
- * Speed reduction by armor type (in feet)
+ * Speed reduction by armor type, in feet (DCC core rules Table 3-3).
  */
 export declare const ARMOR_SPEED_PENALTY: Record<ArmorType, number>;
 /**

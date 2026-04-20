@@ -9,93 +9,60 @@
  */
 import { computeBonuses } from "../types/bonuses.js";
 import { evaluateRoll } from "../dice/roll.js";
+import { getCriticalHitData } from "../data/classes/progression-utils.js";
 // =============================================================================
-// Crit Die by Class Level
+// Crit Die / Table Resolution
 // =============================================================================
+//
+// Per-class crit die and crit table progressions are rulebook data and live in
+// the companion `dcc-official-data` package. At runtime, callers register that
+// data via `registerClassProgression()`; the lookups below read from the
+// registry via `getCriticalHitData()`.
+//
+// If no progression is registered for a class (e.g., homebrew class, or tests
+// that skip registration), the lookups fall back to defaults.
 /**
- * Warrior crit die progression by level
- */
-export const WARRIOR_CRIT_DIE = {
-    1: "d12",
-    2: "d14",
-    3: "d16",
-    4: "d20",
-    5: "d20",
-    6: "d24",
-    7: "d24",
-    8: "d30",
-    9: "d30",
-    10: "d30",
-};
-/**
- * Thief crit die progression by level
- */
-export const THIEF_CRIT_DIE = {
-    1: "d10",
-    2: "d12",
-    3: "d14",
-    4: "d16",
-    5: "d20",
-    6: "d24",
-    7: "d30",
-    8: "d30",
-    9: "d30",
-    10: "d30",
-};
-/**
- * Default crit die for classes without special progression
+ * Default crit die when no class progression is registered
  */
 export const DEFAULT_CRIT_DIE = "d8";
-// =============================================================================
-// Crit Table by Class
-// =============================================================================
-/**
- * Map of class to crit table
- */
-export const CLASS_CRIT_TABLE = {
-    warrior: "III",
-    dwarf: "III",
-    elf: "II",
-    thief: "II",
-    cleric: "II",
-    wizard: "I",
-    halfling: "II",
-};
-/**
- * Get the crit table for a class
- *
- * @param classId - Class identifier
- * @returns Crit table ID
- */
-export function getCritTable(classId) {
-    return CLASS_CRIT_TABLE[classId.toLowerCase()] ?? "I";
+const VALID_CRIT_TABLES = ["I", "II", "III", "IV", "V"];
+function asCritTableId(raw) {
+    const upper = raw.toUpperCase();
+    return VALID_CRIT_TABLES.includes(upper)
+        ? upper
+        : "I";
 }
 /**
- * Get crit die for a class at a level
+ * Get the crit table for a class at a level. Crit tables can vary by level
+ * (e.g., warriors use III at L1-2, IV at L3-4, V at L5+), so prefer passing
+ * the character's current level. If omitted, defaults to level 1.
+ *
+ * @param classId - Class identifier
+ * @param level - Character level (default 1)
+ * @returns Crit table ID
+ */
+export function getCritTable(classId, level = 1) {
+    const data = getCriticalHitData(classId, level);
+    return asCritTableId(data.table);
+}
+/**
+ * Get crit die for a class at a level. Reads from the registered class
+ * progression data (see `registerClassProgression`). Returns the `DEFAULT_CRIT_DIE`
+ * when no progression is registered for the class.
  *
  * @param classId - Class identifier
  * @param level - Character level
- * @returns Crit die type
+ * @returns Crit die formula (e.g., "d12", "2d20", "d30+2")
  */
 export function getCritDie(classId, level) {
-    const lowerClass = classId.toLowerCase();
-    if (lowerClass === "warrior" || lowerClass === "dwarf") {
-        return WARRIOR_CRIT_DIE[Math.min(level, 10)] ?? "d12";
+    const data = getCriticalHitData(classId, level);
+    // The registry stores formulas as "1d12" / "2d20" / "1d30+2". Callers here
+    // historically expect bare dice where possible ("d12"), so strip a single
+    // leading "1d" → "d" but leave multi-dice / mod formulas alone.
+    if (/^1d\d+$/.test(data.die)) {
+        return data.die.slice(1);
     }
-    if (lowerClass === "thief") {
-        return THIEF_CRIT_DIE[Math.min(level, 10)] ?? "d10";
-    }
-    // Default progression for other classes
-    // Most classes use d8 at level 1, increasing slowly
-    if (level >= 9)
-        return "d16";
-    if (level >= 7)
-        return "d14";
-    if (level >= 5)
-        return "d12";
-    if (level >= 3)
-        return "d10";
-    return DEFAULT_CRIT_DIE;
+    return data.die;
 }
 // =============================================================================
 // Critical Hit Functions
@@ -126,8 +93,10 @@ export function getCritDie(classId, level) {
  * });
  */
 export function rollCritical(input, roller, events) {
-    // Roll the crit die
-    const formula = `1${input.critDie}`;
+    // Normalise the crit die to a full formula. Bare dice like "d12" get a
+    // leading "1"; multi-dice and dice+mod formulas ("2d20", "d30+2") pass
+    // through unchanged.
+    const formula = /^\d/.test(input.critDie) ? input.critDie : `1${input.critDie}`;
     const rollOptions = roller !== undefined
         ? { mode: "evaluate", roller }
         : { mode: "evaluate" };
@@ -207,7 +176,9 @@ export function determineCritTable(classId, weaponCritTable) {
  * @returns Formatted crit formula
  */
 export function buildCritFormula(critDie, luckModifier, level) {
-    let formula = `1${critDie}`;
+    // Normalise bare dice ("d12") to "1d12"; leave formulas like "2d20" or
+    // "d30+2" intact so we don't produce strings like "12d20".
+    let formula = /^\d/.test(critDie) ? critDie : `1${critDie}`;
     const totalMod = luckModifier + (level ?? 0);
     if (totalMod > 0) {
         formula += `+${String(totalMod)}`;

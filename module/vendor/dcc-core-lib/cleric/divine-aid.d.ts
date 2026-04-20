@@ -9,6 +9,11 @@ import type { DieType, RollModifier, RollOptions } from "../types/dice.js";
 import type { SkillDefinition, SkillCheckResult } from "../types/skills.js";
 import type { SimpleTable, TableEffect } from "../tables/types.js";
 /**
+ * RAW DCC p.31: each Divine Aid request accrues a cumulative +10 to the
+ * cleric's disapproval range, regardless of whether the check succeeds.
+ */
+export declare const DIVINE_AID_DISAPPROVAL_COST = 10;
+/**
  * Divine Aid skill definition.
  * Clerics roll d20 + Personality modifier + level (spell check).
  */

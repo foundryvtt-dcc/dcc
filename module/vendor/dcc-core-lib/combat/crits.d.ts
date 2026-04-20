@@ -7,40 +7,33 @@
  * - Luck modifier application
  * - Level-based crit bonuses
  */
-import type { DieType, DiceRoller } from "../types/dice.js";
+import type { CritDieFormula, DieType, DiceRoller } from "../types/dice.js";
 import type { CriticalInput, CriticalResult, CritTableId, CombatEvents } from "../types/combat.js";
 import type { RollBonus } from "../types/bonuses.js";
 /**
- * Warrior crit die progression by level
- */
-export declare const WARRIOR_CRIT_DIE: Record<number, DieType>;
-/**
- * Thief crit die progression by level
- */
-export declare const THIEF_CRIT_DIE: Record<number, DieType>;
-/**
- * Default crit die for classes without special progression
+ * Default crit die when no class progression is registered
  */
 export declare const DEFAULT_CRIT_DIE: DieType;
 /**
- * Map of class to crit table
- */
-export declare const CLASS_CRIT_TABLE: Record<string, CritTableId>;
-/**
- * Get the crit table for a class
+ * Get the crit table for a class at a level. Crit tables can vary by level
+ * (e.g., warriors use III at L1-2, IV at L3-4, V at L5+), so prefer passing
+ * the character's current level. If omitted, defaults to level 1.
  *
  * @param classId - Class identifier
+ * @param level - Character level (default 1)
  * @returns Crit table ID
  */
-export declare function getCritTable(classId: string): CritTableId;
+export declare function getCritTable(classId: string, level?: number): CritTableId;
 /**
- * Get crit die for a class at a level
+ * Get crit die for a class at a level. Reads from the registered class
+ * progression data (see `registerClassProgression`). Returns the `DEFAULT_CRIT_DIE`
+ * when no progression is registered for the class.
  *
  * @param classId - Class identifier
  * @param level - Character level
- * @returns Crit die type
+ * @returns Crit die formula (e.g., "d12", "2d20", "d30+2")
  */
-export declare function getCritDie(classId: string, level: number): DieType;
+export declare function getCritDie(classId: string, level: number): CritDieFormula;
 /**
  * Roll a critical hit
  *
@@ -92,7 +85,7 @@ export declare function determineCritTable(classId: string, weaponCritTable?: Cr
  * @param level - Optional level modifier
  * @returns Formatted crit formula
  */
-export declare function buildCritFormula(critDie: DieType, luckModifier: number, level?: number): string;
+export declare function buildCritFormula(critDie: CritDieFormula, luckModifier: number, level?: number): string;
 /**
  * Parse crit table result into extra damage
  *

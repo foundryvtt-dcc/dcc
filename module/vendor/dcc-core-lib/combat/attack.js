@@ -10,6 +10,7 @@
  */
 import { computeBonuses } from "../types/bonuses.js";
 import { evaluateRoll, meetsThreatRange, isNatural1, isAutoHit } from "../dice/roll.js";
+import { bumpDie, getPrimaryDie } from "./../dice/dice-chain.js";
 // =============================================================================
 // Attack Roll Functions
 // =============================================================================
@@ -32,13 +33,6 @@ function buildAttackModifiers(input, computedBonuses) {
             value: input.abilityModifier,
         });
     }
-    // Two-weapon fighting penalty
-    if (input.twoWeaponPenalty !== undefined && input.twoWeaponPenalty !== 0) {
-        modifiers.push({
-            source: "two-weapon fighting",
-            value: input.twoWeaponPenalty,
-        });
-    }
     // Bonuses from equipment, spells, luck, etc.
     if (computedBonuses.totalModifier !== 0) {
         modifiers.push({
@@ -52,14 +46,7 @@ function buildAttackModifiers(input, computedBonuses) {
  * Calculate total attack modifier
  */
 function calculateTotalBonus(input, computedBonuses) {
-    let total = input.attackBonus + input.abilityModifier;
-    // Two-weapon penalty
-    if (input.twoWeaponPenalty !== undefined) {
-        total += input.twoWeaponPenalty;
-    }
-    // Computed bonuses
-    total += computedBonuses.totalModifier;
-    return total;
+    return input.attackBonus + input.abilityModifier + computedBonuses.totalModifier;
 }
 /**
  * Roll a deed die for warriors/dwarves
@@ -270,16 +257,196 @@ export function getAttackAbility(attackType) {
     return attackType === "missile" ? "agl" : "str";
 }
 /**
- * Calculate two-weapon fighting penalty
+ * Compute the two-weapon-fighting dice configuration for a given Agility
+ * (Table 4-3, with halfling class overrides applied when `isHalfling`).
  *
- * In DCC, two-weapon fighting typically has a -2 penalty to each attack,
- * except for halflings who have a reduced penalty.
- *
- * @param isHalfling - Whether the attacker is a halfling
- * @returns The attack penalty
+ * Halflings use an effective Agility of `max(agility, 16)` for row
+ * lookup; if their natural Agility is ≥18, the normal 18+ row applies.
+ * Halflings also gain auto-crit/auto-hit on a natural max of the
+ * reduced die (replacing the 16-17 "no auto-hit" rule), and only fumble
+ * when both hands roll a natural 1.
  */
-export function getTwoWeaponPenalty(isHalfling) {
-    return isHalfling ? -1 : -2;
+export function getTwoWeaponDice(agility, options) {
+    const isHalfling = options?.isHalfling === true;
+    const effectiveAgl = isHalfling ? Math.max(agility, 16) : agility;
+    const halflingFumbleRequiresBoth1s = isHalfling;
+    if (effectiveAgl <= 8) {
+        return {
+            primaryDieReduction: 3,
+            offHandDieReduction: 4,
+            primaryCanCrit: false,
+            offHandCanCrit: false,
+            primaryCritRequiresBeatAC: false,
+            halflingAutoCritOnMax: false,
+            halflingFumbleRequiresBoth1s,
+        };
+    }
+    if (effectiveAgl <= 11) {
+        return {
+            primaryDieReduction: 2,
+            offHandDieReduction: 3,
+            primaryCanCrit: false,
+            offHandCanCrit: false,
+            primaryCritRequiresBeatAC: false,
+            halflingAutoCritOnMax: false,
+            halflingFumbleRequiresBoth1s,
+        };
+    }
+    if (effectiveAgl <= 15) {
+        return {
+            primaryDieReduction: 1,
+            offHandDieReduction: 2,
+            primaryCanCrit: false,
+            offHandCanCrit: false,
+            primaryCritRequiresBeatAC: false,
+            halflingAutoCritOnMax: false,
+            halflingFumbleRequiresBoth1s,
+        };
+    }
+    if (effectiveAgl <= 17) {
+        return {
+            primaryDieReduction: 1,
+            offHandDieReduction: 1,
+            primaryCanCrit: true,
+            // Halflings can crit with either hand on natural max; non-halflings can only crit primary.
+            offHandCanCrit: isHalfling,
+            primaryCritRequiresBeatAC: !isHalfling,
+            halflingAutoCritOnMax: isHalfling,
+            halflingFumbleRequiresBoth1s,
+        };
+    }
+    // 18+
+    return {
+        primaryDieReduction: 0,
+        offHandDieReduction: 1,
+        primaryCanCrit: true,
+        offHandCanCrit: false,
+        primaryCritRequiresBeatAC: false,
+        halflingAutoCritOnMax: false,
+        halflingFumbleRequiresBoth1s,
+    };
+}
+/**
+ * Step a die down the dice chain by `reduction` steps.
+ * Falls back to the input die if the result would fall off the chain.
+ */
+function reduceActionDie(base, reduction) {
+    if (reduction <= 0) {
+        return base;
+    }
+    const reduced = bumpDie(`1${base}`, -reduction);
+    return getPrimaryDie(reduced) ?? base;
+}
+/**
+ * Roll a full two-weapon attack round (both hands).
+ *
+ * Computes each hand's reduced action die from `baseActionDie` per
+ * Table 4-3, clamps any improved threat range to 20 (warriors lose
+ * their improved threat range when two-weapon fighting), then rolls
+ * each hand and applies the two-weapon-specific overrides:
+ *  - non-crittable rows strip any threatened crit;
+ *  - the Agl-16-17 row (non-halfling) requires the natural max to
+ *    actually beat AC to count as a hit/crit (no auto-hit);
+ *  - the halfling 16-17 override restores auto-hit + auto-crit on
+ *    the reduced die's natural max for either hand;
+ *  - the halfling fumble rule clears `isFumble` unless both hands
+ *    rolled a natural 1.
+ *
+ * Combat events (`onAttackRoll`, `onCriticalThreat`, `onFumbleRoll`,
+ * `onDeedAttempt`) are emitted for each hand AFTER overrides are
+ * applied, so listeners observe the post-RAW state.
+ */
+export function rollTwoWeaponAttack(input, roller, events) {
+    const config = getTwoWeaponDice(input.agility, { isHalfling: input.isHalfling });
+    const primaryDie = reduceActionDie(input.baseActionDie, config.primaryDieReduction);
+    const offHandDie = reduceActionDie(input.baseActionDie, config.offHandDieReduction);
+    // Warriors lose their improved threat range when two-weapon fighting.
+    const clampThreat = (tr) => Math.max(tr, 20);
+    const primaryAttack = {
+        ...input.primary,
+        actionDie: primaryDie,
+        threatRange: clampThreat(input.primary.threatRange),
+    };
+    const offHandAttack = {
+        ...input.offHand,
+        actionDie: offHandDie,
+        threatRange: clampThreat(input.offHand.threatRange),
+    };
+    // Pass `events: undefined` so we can emit them after applying overrides.
+    const primary = makeAttackRoll(primaryAttack, roller);
+    const offHand = makeAttackRoll(offHandAttack, roller);
+    applyHandOverrides(primary, config, "primary", primaryAttack.targetAC);
+    applyHandOverrides(offHand, config, "offHand", offHandAttack.targetAC);
+    applyHalflingFumbleRule(primary, offHand, config);
+    emitTwoWeaponEvents(primary, events);
+    emitTwoWeaponEvents(offHand, events);
+    return { primary, offHand, config };
+}
+function applyHandOverrides(result, config, hand, targetAC) {
+    const canCrit = hand === "primary" ? config.primaryCanCrit : config.offHandCanCrit;
+    if (!canCrit && result.isCriticalThreat) {
+        result.isCriticalThreat = false;
+        result.critSource = undefined;
+    }
+    // Halfling override: natural max on reduced die = auto-hit + auto-crit
+    // (overrides the 16-17 "no auto-hit" rule). Applies to either hand
+    // when the rule is active and that hand is allowed to crit.
+    if (config.halflingAutoCritOnMax &&
+        canCrit &&
+        isAutoHit(result.roll)) {
+        result.isHit = true;
+        result.isCriticalThreat = true;
+        result.critSource = "natural-max";
+        return;
+    }
+    // Non-halfling 16-17 row: primary crits only on natural max that
+    // also beats AC. The natural max does NOT auto-hit. Off-hand cannot
+    // crit (already handled by `canCrit`).
+    if (config.primaryCritRequiresBeatAC &&
+        hand === "primary" &&
+        isAutoHit(result.roll)) {
+        if (targetAC === undefined) {
+            // Without an AC, we cannot judge "beats AC" — the result already
+            // shows isHit undefined; leave the crit flag as-is for callers
+            // that want to resolve it themselves.
+            return;
+        }
+        const beatsAC = result.total >= targetAC;
+        result.isHit = beatsAC;
+        if (!beatsAC) {
+            result.isCriticalThreat = false;
+            result.critSource = undefined;
+        }
+        else {
+            result.isCriticalThreat = true;
+            result.critSource = "natural-max";
+        }
+    }
+}
+function applyHalflingFumbleRule(primary, offHand, config) {
+    if (!config.halflingFumbleRequiresBoth1s) {
+        return;
+    }
+    const bothFumbled = primary.isFumble && offHand.isFumble;
+    if (!bothFumbled) {
+        primary.isFumble = false;
+        offHand.isFumble = false;
+    }
+}
+function emitTwoWeaponEvents(result, events) {
+    if (events === undefined) {
+        return;
+    }
+    events.onAttackRoll?.(result);
+    if (result.isCriticalThreat) {
+        events.onCriticalThreat?.(result);
+    }
+    if (result.isFumble) {
+        events.onFumbleRoll?.(result);
+    }
+    if (result.deedRoll !== undefined && result.deedSuccess !== undefined) {
+        events.onDeedAttempt?.(result.deedRoll, result.deedSuccess);
+    }
 }
 /**
  * Check if a deed die roll is successful

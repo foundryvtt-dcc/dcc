@@ -1,117 +1,82 @@
 /**
  * Initiative System
  *
- * Handles initiative roll calculations including:
- * - Base initiative rolls
- * - Agility modifier
- * - Class-based initiative dice (warriors use different dice by level)
- * - Two-weapon fighting bonus (halflings)
+ * RAW (Core Book Ch. 4 — Initiative):
+ *   "An initiative check is conducted by rolling 1d20 and adding the
+ *    appropriate modifier: Agility modifier, and, for warriors, class
+ *    level."
+ *   "A d16 is used instead of a d20 for characters wielding two-handed
+ *    weapons."
+ *
+ * There is no per-class initiative die scaling; warriors get a flat
+ * class-level modifier instead. Halflings have no special initiative
+ * rule (their two-weapon advantages are die-chain reductions only).
  */
 import { computeBonuses } from "../types/bonuses.js";
 import { evaluateRoll } from "../dice/roll.js";
 // =============================================================================
-// Initiative Die by Class
+// Initiative Dice
 // =============================================================================
+/** Standard initiative die for all classes (RAW). */
+export const DEFAULT_INITIATIVE_DIE = "d20";
+/** Initiative die when wielding a two-handed weapon (RAW). */
+export const TWO_HANDED_INITIATIVE_DIE = "d16";
 /**
- * Warrior initiative die progression by level
- * Warriors roll higher dice as they level up
- */
-export const WARRIOR_INITIATIVE_DIE = {
-    1: "d16",
-    2: "d16",
-    3: "d16",
-    4: "d16",
-    5: "d20",
-    6: "d20",
-    7: "d20",
-    8: "d24",
-    9: "d24",
-    10: "d24",
-};
-/**
- * Default initiative die for most classes
- */
-export const DEFAULT_INITIATIVE_DIE = "d16";
-/**
- * Get initiative die for a class at a level
+ * Get the initiative die a character should roll.
  *
- * @param classId - Class identifier
- * @param level - Character level
- * @returns Initiative die type
+ * @param isWieldingTwoHanded - True if the character is wielding a
+ *   two-handed weapon. Defaults to false.
+ * @returns `d16` when two-handing, `d20` otherwise.
  */
-export function getInitiativeDie(classId, level) {
-    const lowerClass = classId.toLowerCase();
-    // Warriors get better initiative dice
-    if (lowerClass === "warrior") {
-        return WARRIOR_INITIATIVE_DIE[Math.min(level, 10)] ?? "d16";
-    }
-    // Dwarves also use warrior-style initiative
-    if (lowerClass === "dwarf") {
-        return WARRIOR_INITIATIVE_DIE[Math.min(level, 10)] ?? "d16";
-    }
-    // All other classes use d16
-    return DEFAULT_INITIATIVE_DIE;
+export function getInitiativeDie(isWieldingTwoHanded = false) {
+    return isWieldingTwoHanded ? TWO_HANDED_INITIATIVE_DIE : DEFAULT_INITIATIVE_DIE;
 }
 // =============================================================================
 // Initiative Roll Functions
 // =============================================================================
 /**
- * Roll initiative
+ * Roll initiative.
  *
- * @param input - Initiative input parameters
- * @param roller - Optional custom dice roller
- * @param events - Optional event callbacks
- * @returns Initiative result
+ * Callers are responsible for selecting the right die (use
+ * `getInitiativeDie`) and supplying any class-level modifier
+ * (warriors add their class level via `classModifier`).
  *
  * @example
- * // Standard initiative roll
- * const result = rollInitiative({
- *   initiativeDie: "d16",
- *   agilityModifier: 2,
+ * // Standard PC
+ * rollInitiative({ initiativeDie: "d20", agilityModifier: 2 });
+ *
+ * @example
+ * // Warrior level 3 with Agl +1
+ * rollInitiative({
+ *   initiativeDie: "d20",
+ *   agilityModifier: 1,
+ *   classModifier: 3, // class level
  * });
  *
  * @example
- * // Halfling with two-weapon fighting
- * const result = rollInitiative({
+ * // Two-handing fighter (warrior level 3 still adds level)
+ * rollInitiative({
  *   initiativeDie: "d16",
  *   agilityModifier: 1,
- *   twoWeaponBonus: 1,
- * });
- *
- * @example
- * // Warrior with improved initiative die
- * const result = rollInitiative({
- *   initiativeDie: "d20",
- *   agilityModifier: 0,
- *   classModifier: 0,
+ *   classModifier: 3,
  * });
  */
 export function rollInitiative(input, roller, events) {
-    // Roll the initiative die
     const formula = `1${input.initiativeDie}`;
     const rollOptions = roller !== undefined
         ? { mode: "evaluate", roller }
         : { mode: "evaluate" };
     const roll = evaluateRoll(formula, rollOptions);
-    // Build modifiers
     const modifiers = [];
     let total = roll.natural ?? 0;
-    // Agility modifier
     if (input.agilityModifier !== 0) {
         modifiers.push({ source: "Agility", value: input.agilityModifier });
         total += input.agilityModifier;
     }
-    // Class modifier (if any)
     if (input.classModifier !== undefined && input.classModifier !== 0) {
         modifiers.push({ source: "class", value: input.classModifier });
         total += input.classModifier;
     }
-    // Two-weapon fighting bonus
-    if (input.twoWeaponBonus !== undefined && input.twoWeaponBonus !== 0) {
-        modifiers.push({ source: "two-weapon", value: input.twoWeaponBonus });
-        total += input.twoWeaponBonus;
-    }
-    // Additional bonuses
     if (input.bonuses !== undefined && input.bonuses.length > 0) {
         const computed = computeBonuses(input.bonuses);
         if (computed.totalModifier !== 0) {
@@ -131,33 +96,23 @@ export function rollInitiative(input, roller, events) {
     return result;
 }
 /**
- * Calculate total initiative modifier
+ * Calculate total initiative modifier (no die roll).
  *
  * @param agilityModifier - Agility modifier
- * @param classModifier - Class-based modifier (if any)
- * @param twoWeaponBonus - Two-weapon fighting bonus (if any)
+ * @param classModifier - Class-based modifier (warrior level)
  * @param bonuses - Additional bonuses
- * @returns Total initiative modifier
  */
-export function calculateInitiativeModifier(agilityModifier, classModifier, twoWeaponBonus, bonuses = []) {
+export function calculateInitiativeModifier(agilityModifier, classModifier, bonuses = []) {
     let total = agilityModifier;
     if (classModifier !== undefined) {
         total += classModifier;
-    }
-    if (twoWeaponBonus !== undefined) {
-        total += twoWeaponBonus;
     }
     const computed = computeBonuses(bonuses);
     total += computed.totalModifier;
     return total;
 }
 /**
- * Build initiative formula string for display
- *
- * @param initiativeDie - Initiative die type
- * @param agilityModifier - Agility modifier
- * @param otherModifiers - Other modifiers
- * @returns Formatted initiative formula
+ * Build initiative formula string for display.
  */
 export function buildInitiativeFormula(initiativeDie, agilityModifier, otherModifiers = 0) {
     let formula = `1${initiativeDie}`;
@@ -171,37 +126,15 @@ export function buildInitiativeFormula(initiativeDie, agilityModifier, otherModi
     return formula;
 }
 /**
- * Sort combatants by initiative (highest first)
- *
- * @param initiatives - Array of initiative results with identifiers
- * @returns Sorted array (highest initiative first)
+ * Sort combatants by initiative (highest first).
  */
 export function sortByInitiative(combatants) {
     return [...combatants].sort((a, b) => b.initiative - a.initiative);
 }
 /**
- * Check for tied initiatives
- *
- * @param a - First initiative result
- * @param b - Second initiative result
- * @returns True if the initiatives are tied
+ * Check for tied initiatives.
  */
 export function isInitiativeTied(a, b) {
     return a.total === b.total;
-}
-/**
- * Get two-weapon initiative bonus
- *
- * Halflings get +1 to initiative when fighting with two weapons.
- *
- * @param isHalfling - Whether the character is a halfling
- * @param isTwoWeaponFighting - Whether fighting with two weapons
- * @returns Initiative bonus
- */
-export function getTwoWeaponInitiativeBonus(isHalfling, isTwoWeaponFighting) {
-    if (isHalfling && isTwoWeaponFighting) {
-        return 1;
-    }
-    return 0;
 }
 //# sourceMappingURL=initiative.js.map

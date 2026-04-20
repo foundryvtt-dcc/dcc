@@ -25,7 +25,65 @@ export interface TableMetadata {
 /**
  * The type of table structure
  */
-export type TableType = "simple" | "multi-column" | "tiered";
+export type TableType = "simple" | "multi-column" | "tiered" | "lay-on-hands";
+/**
+ * Cleric–subject alignment relationship used to pick a column on the
+ * RAW Lay on Hands table.
+ *
+ * - "same":      cleric and subject share an alignment
+ * - "adjacent":  one-step difference (e.g., lawful vs neutral)
+ * - "opposed":   antithetical alignment (lawful vs chaotic)
+ */
+export type LayOnHandsAlignment = "same" | "adjacent" | "opposed";
+/**
+ * Extra, non-healing effects that some RAW rows grant (e.g., cure disease,
+ * neutralise poison, restore limb). Rulebook specifies these are discretionary
+ * judge effects at high check totals; the table row carries the flags.
+ */
+export interface LayOnHandsExtraEffects {
+    curesDisease?: boolean;
+    curesAllDiseases?: boolean;
+    neutralizesPoison?: boolean;
+    neutralizesAllPoisons?: boolean;
+    restoresLimb?: boolean;
+}
+/**
+ * One row of the Lay on Hands table. The check total (roll + Per mod + level)
+ * picks the row; the cleric-subject alignment picks the dice count column.
+ * A dice count of 0 means the check fails (below the healing threshold).
+ */
+export interface LayOnHandsRow {
+    /** Minimum check total (inclusive) */
+    min: number;
+    /** Maximum check total (inclusive) */
+    max: number;
+    /** Dice count by alignment; 0 = failure on that column */
+    dice: Record<LayOnHandsAlignment, number>;
+    /** Optional extra discretionary effects granted at this row */
+    extra?: LayOnHandsExtraEffects;
+    /** Optional display text for this row */
+    text?: string;
+}
+/**
+ * Dice thresholds for alleviating specific conditions instead of HP (RAW p.31).
+ * If the cleric declares a condition before rolling and the resolved dice count
+ * meets or exceeds the threshold, the condition is cured — no HP overflow.
+ * Keys are condition ids chosen by the data author (e.g., "broken-limb",
+ * "organ-damage", "disease", "paralysis", "poison", "blindness").
+ */
+export type LayOnHandsConditionThresholds = Record<string, number>;
+/**
+ * RAW Lay on Hands table (Table 4-2, DCC core p.31). Rulebook data values
+ * belong in the companion `dcc-official-data` package; this type is the shape
+ * core-lib expects.
+ */
+export interface LayOnHandsTable extends TableMetadata {
+    type: "lay-on-hands";
+    /** Rows ordered by min check total */
+    rows: LayOnHandsRow[];
+    /** Optional per-condition dice thresholds (for condition healing) */
+    conditions?: LayOnHandsConditionThresholds;
+}
 /**
  * A single entry in a simple range table.
  * Matched when roll >= min AND roll <= max.
@@ -208,7 +266,7 @@ export interface TableEffect {
 /**
  * Any type of lookup table
  */
-export type LookupTable = SimpleTable | MultiColumnTable | TieredTable;
+export type LookupTable = SimpleTable | MultiColumnTable | TieredTable | LayOnHandsTable;
 /**
  * Result from a simple table lookup
  */

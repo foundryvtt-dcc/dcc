@@ -6,7 +6,7 @@ import {
 // Skill definitions
 MIGHTY_DEED, SHIELD_BASH, BACKSTAB, TWO_WEAPON_FIGHTING, LUCK_RECOVERY, LUCK_SHARING, ENABLING_SKILLS, ENABLING_SKILL_IDS, 
 // Mighty Deed functions
-getDeedDieFromSkill, getDeedSuccessThreshold, 
+getDeedSuccessThreshold, 
 // Shield Bash functions
 canShieldBash, getShieldBashDamageDie, 
 // Backstab functions
@@ -14,7 +14,7 @@ getBackstabAttackBonus, canBackstab, isBackstabTriggeredRaw,
 // Two-Weapon Fighting functions
 hasTwoWeaponFighting, getTwoWeaponAttackPenalty, getTwoWeaponInitBonus, 
 // Luck Recovery functions
-getLuckDieFromSkill, canRecoverLuck, getHalflingDailyLuckRecovery, thiefShouldRecoverLuck, 
+canRecoverLuck, getHalflingDailyLuckRecovery, thiefShouldRecoverLuck, 
 // Luck Sharing functions
 canShareLuck, 
 // Registry functions
@@ -28,44 +28,6 @@ describe("Enabling Skills", () => {
             expect(MIGHTY_DEED.enables?.action).toBe("deed-attempt");
             expect(MIGHTY_DEED.classes).toContain("warrior");
             expect(MIGHTY_DEED.classes).toContain("dwarf");
-        });
-        it("has progression data for all 10 levels", () => {
-            expect(MIGHTY_DEED.progression).toBeDefined();
-            for (let level = 1; level <= 10; level++) {
-                expect(MIGHTY_DEED.progression?.[level]).toBeDefined();
-            }
-        });
-    });
-    describe("getDeedDieFromSkill", () => {
-        it("returns d3 for level 0", () => {
-            expect(getDeedDieFromSkill(0)).toBe("d3");
-        });
-        it("returns d3 for levels 1-2", () => {
-            expect(getDeedDieFromSkill(1)).toBe("d3");
-            expect(getDeedDieFromSkill(2)).toBe("d3");
-        });
-        it("returns d4 for levels 3-4", () => {
-            expect(getDeedDieFromSkill(3)).toBe("d4");
-            expect(getDeedDieFromSkill(4)).toBe("d4");
-        });
-        it("returns d5 for levels 5-6", () => {
-            expect(getDeedDieFromSkill(5)).toBe("d5");
-            expect(getDeedDieFromSkill(6)).toBe("d5");
-        });
-        it("returns d6 for levels 7-8", () => {
-            expect(getDeedDieFromSkill(7)).toBe("d6");
-            expect(getDeedDieFromSkill(8)).toBe("d6");
-        });
-        it("returns d7 for levels 9-10", () => {
-            expect(getDeedDieFromSkill(9)).toBe("d7");
-            expect(getDeedDieFromSkill(10)).toBe("d7");
-        });
-        it("extrapolates for levels beyond 10", () => {
-            // Formula: d(7 + floor((level - 7) / 2)), capped at d12
-            // Level 11: 7 + floor(4/2) = 7 + 2 = 9 → d9
-            // Level 13: 7 + floor(6/2) = 7 + 3 = 10 → d10
-            expect(getDeedDieFromSkill(11)).toBe("d9");
-            expect(getDeedDieFromSkill(13)).toBe("d10");
         });
     });
     describe("getDeedSuccessThreshold", () => {
@@ -260,42 +222,6 @@ describe("Enabling Skills", () => {
             expect(LUCK_RECOVERY.type).toBe("passive");
             expect(LUCK_RECOVERY.classes).toContain("thief");
             expect(LUCK_RECOVERY.classes).toContain("halfling");
-        });
-        it("has progression data for luck die", () => {
-            expect(LUCK_RECOVERY.progression).toBeDefined();
-            for (let level = 1; level <= 10; level++) {
-                expect(LUCK_RECOVERY.progression?.[level]?.die).toBeDefined();
-            }
-        });
-    });
-    describe("getLuckDieFromSkill", () => {
-        it("returns d3 for level 0", () => {
-            expect(getLuckDieFromSkill(0)).toBe("d3");
-        });
-        it("returns d3 for levels 1-2", () => {
-            expect(getLuckDieFromSkill(1)).toBe("d3");
-            expect(getLuckDieFromSkill(2)).toBe("d3");
-        });
-        it("returns d4 for levels 3-4", () => {
-            expect(getLuckDieFromSkill(3)).toBe("d4");
-            expect(getLuckDieFromSkill(4)).toBe("d4");
-        });
-        it("returns d5 for levels 5-6", () => {
-            expect(getLuckDieFromSkill(5)).toBe("d5");
-            expect(getLuckDieFromSkill(6)).toBe("d5");
-        });
-        it("returns d6 for levels 7-8", () => {
-            expect(getLuckDieFromSkill(7)).toBe("d6");
-            expect(getLuckDieFromSkill(8)).toBe("d6");
-        });
-        it("returns d7 for levels 9-10", () => {
-            expect(getLuckDieFromSkill(9)).toBe("d7");
-            expect(getLuckDieFromSkill(10)).toBe("d7");
-        });
-        it("extrapolates for levels beyond 10", () => {
-            // Formula: d(7 + floor((level - 7) / 2)), capped at d12
-            // Level 11: 7 + floor(4/2) = 7 + 2 = 9 → d9
-            expect(getLuckDieFromSkill(11)).toBe("d9");
         });
     });
     describe("canRecoverLuck", () => {

@@ -32,7 +32,7 @@
 // Turn Unholy
 export { turnUnholy, getTurnUnholyModifier, getTurnUnholyDie, resolveHDExpression, calculateAverageHD, TURN_UNHOLY_SKILL, } from "./turn-unholy.js";
 // Lay on Hands
-export { layOnHands, getLayOnHandsModifier, getLayOnHandsDie, calculateHPHealed, getMaxHealing, LAY_ON_HANDS_SKILL, } from "./lay-on-hands.js";
+export { layOnHands, getLayOnHandsModifier, getLayOnHandsDie, LAY_ON_HANDS_SKILL, } from "./lay-on-hands.js";
 // Divine Aid
 export { divineAid, getDivineAidModifier, getDivineAidDie, getMinimumCheckForSpellLevel, estimateAidSpellLevel, describePotentialAid, DIVINE_AID_SKILL, } from "./divine-aid.js";
 //# sourceMappingURL=index.js.map

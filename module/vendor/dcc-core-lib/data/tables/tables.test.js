@@ -92,8 +92,7 @@ describe("Test Lay on Hands Table", () => {
         });
         it("has correct metadata", () => {
             expect(TEST_LAY_ON_HANDS_TABLE.id).toBe("test-lay-on-hands");
-            expect(TEST_LAY_ON_HANDS_TABLE.type).toBe("simple");
-            expect(TEST_LAY_ON_HANDS_TABLE.die).toBe("d20");
+            expect(TEST_LAY_ON_HANDS_TABLE.type).toBe("lay-on-hands");
             expect(TEST_LAY_ON_HANDS_TABLE.tags).toContain("healing");
             expect(TEST_LAY_ON_HANDS_TABLE.tags).toContain("fan-made");
         });
@@ -102,57 +101,23 @@ describe("Test Lay on Hands Table", () => {
             expect(range.min).toBe(1);
             expect(range.max).toBe(999);
         });
-    });
-    describe("lookups", () => {
-        it("returns failure for low rolls", () => {
-            const result = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 5);
-            expect(result).toBeDefined();
-            expect(result?.effect?.type).toBe("none");
-            expect(result?.text).toContain("Failure");
+        it("row dice counts are non-decreasing across rolls for each alignment", () => {
+            const rows = TEST_LAY_ON_HANDS_TABLE.rows;
+            for (let i = 1; i < rows.length; i++) {
+                const prev = rows[i - 1];
+                const curr = rows[i];
+                if (!prev || !curr)
+                    continue;
+                for (const col of ["same", "adjacent", "opposed"]) {
+                    expect(curr.dice[col]).toBeGreaterThanOrEqual(prev.dice[col]);
+                }
+            }
         });
-        it("returns minor healing for medium rolls", () => {
-            const result = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 12);
-            expect(result).toBeDefined();
-            expect(result?.effect?.type).toBe("heal");
-            expect(result?.effect?.dice).toBe("1*CL");
-        });
-        it("returns standard healing for good rolls", () => {
-            const result = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 16);
-            expect(result).toBeDefined();
-            expect(result?.effect?.type).toBe("heal");
-            expect(result?.effect?.dice).toBe("2*CL");
-        });
-        it("returns greater healing for great rolls", () => {
-            const result = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 20);
-            expect(result).toBeDefined();
-            expect(result?.effect?.type).toBe("heal");
-            expect(result?.effect?.dice).toBe("3*CL");
-        });
-        it("returns miraculous healing with cure for high rolls", () => {
-            const result = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 24);
-            expect(result).toBeDefined();
-            expect(result?.effect?.type).toBe("heal-cure");
-            expect(result?.effect?.dice).toBe("5*CL");
-            expect(result?.effect?.data?.["cureDisease"]).toBe(true);
-        });
-        it("returns divine intervention for critical rolls", () => {
-            const result = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 30);
-            expect(result).toBeDefined();
-            expect(result?.effect?.type).toBe("heal-restore");
-            expect(result?.effect?.dice).toBe("8*CL");
-            expect(result?.effect?.data?.["restoreLimb"]).toBe(true);
-        });
-    });
-    describe("healing progression", () => {
-        it("healing increases with roll result", () => {
-            const roll11 = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 11);
-            const roll15 = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 15);
-            const roll19 = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 19);
-            const roll27 = lookupSimple(TEST_LAY_ON_HANDS_TABLE, 27);
-            expect(roll11?.effect?.dice).toBe("1*CL");
-            expect(roll15?.effect?.dice).toBe("2*CL");
-            expect(roll19?.effect?.dice).toBe("3*CL");
-            expect(roll27?.effect?.dice).toBe("8*CL");
+        it("same ≥ adjacent ≥ opposed within each row", () => {
+            for (const row of TEST_LAY_ON_HANDS_TABLE.rows) {
+                expect(row.dice.same).toBeGreaterThanOrEqual(row.dice.adjacent);
+                expect(row.dice.adjacent).toBeGreaterThanOrEqual(row.dice.opposed);
+            }
         });
     });
     describe("registry integration", () => {
@@ -183,9 +148,11 @@ describe("Both tables together", () => {
         expect(healTable).toBeDefined();
         if (turnTable && healTable) {
             const turnResult = lookup(turnTable, 15);
-            const healResult = lookup(healTable, 15);
             expect(turnResult?.text).toContain("Turn");
-            expect(healResult?.text).toContain("Restore");
+            // Lay-on-hands tables aren't roll-indexed in isolation; they're
+            // consumed by `layOnHands()` with an alignment column. Just confirm
+            // the registered shape is intact.
+            expect(healTable.type).toBe("lay-on-hands");
         }
     });
 });

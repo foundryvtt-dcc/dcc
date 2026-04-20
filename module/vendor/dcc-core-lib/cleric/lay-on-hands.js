@@ -1,20 +1,29 @@
 /**
- * Lay on Hands
+ * Lay on Hands (RAW DCC p.31)
  *
- * Pure functions for the cleric's Lay on Hands ability.
- * Clerics can channel divine healing power to restore hit points
- * and cure ailments.
+ * Pure functions for the cleric's Lay on Hands ability. Implements the
+ * rules-as-written mechanic:
+ *
+ *   1. Cleric declares alignment relationship (same/adjacent/opposed) and
+ *      optionally a condition to heal instead of HP.
+ *   2. Spell check = d20 + Personality mod + caster level + luck burn.
+ *      Alignment does NOT modify the roll — it selects a column on the
+ *      result table (see `LayOnHandsTable`).
+ *   3. (check total, alignment) → dice count.
+ *   4. If healing HP: roll `diceCount × target.hitDie`, but the dice count is
+ *      capped at `min(diceCount, target.hitDice)`. Dice type matches the
+ *      subject's hit die.
+ *   5. If healing a condition: no cap; if dice count ≥ threshold, condition
+ *      is cured (no "overflow" HP).
+ *   6. Natural 1 triggers disapproval (handled by the caller via the
+ *      spell-check pipeline).
  */
 import { resolveSkillCheck } from "../skills/resolve.js";
-import { lookupSimple } from "../tables/lookup.js";
 import { getAbilityModifier } from "../data/ability-modifiers.js";
+import { evaluateRoll } from "../dice/roll.js";
 // =============================================================================
-// Lay on Hands Skill Definition
+// Skill Definition
 // =============================================================================
-/**
- * Lay on Hands skill definition.
- * Clerics roll d20 + Personality modifier + level.
- */
 export const LAY_ON_HANDS_SKILL = {
     id: "lay-on-hands",
     name: "Lay on Hands",
@@ -27,64 +36,22 @@ export const LAY_ON_HANDS_SKILL = {
         allowLuck: true,
         luckMultiplier: 1,
     },
-    resultTable: {
-        tableId: "lay-on-hands",
-    },
     tags: ["cleric", "divine", "healing", "lay-on-hands"],
     classes: ["cleric"],
 };
 // =============================================================================
-// Lay on Hands Functions
+// Core function
 // =============================================================================
-/**
- * Perform a Lay on Hands check.
- *
- * @param input - Lay on Hands input
- * @param healTable - The Lay on Hands result table
- * @param options - Roll options
- * @returns Lay on Hands result
- */
-export function layOnHands(input, healTable, options = {}) {
-    // Build situational modifiers
+export function layOnHands(input, table, options = {}) {
+    // Build situational modifiers — NO alignment modifier here (RAW).
     const modifiers = [...(input.situationalModifiers ?? [])];
-    // Self-healing penalty (typically -4 in DCC)
     if (input.healingSelf) {
         modifiers.push({
             kind: "add",
             value: -4,
-            origin: {
-                category: "situational",
-                id: "self-healing",
-                label: "Healing self",
-            },
+            origin: { category: "situational", id: "self-healing", label: "Healing self" },
         });
     }
-    // Alignment modifiers
-    if (input.alignmentMod) {
-        if (input.alignmentMod.sameAlignment) {
-            modifiers.push({
-                kind: "add",
-                value: 2,
-                origin: {
-                    category: "situational",
-                    id: "alignment-same",
-                    label: "Same alignment",
-                },
-            });
-        }
-        else if (input.alignmentMod.oppositeAlignment) {
-            modifiers.push({
-                kind: "add",
-                value: -2,
-                origin: {
-                    category: "situational",
-                    id: "alignment-opposite",
-                    label: "Opposite alignment",
-                },
-            });
-        }
-    }
-    // Build skill check input, only including optional properties when defined
     const checkInput = {
         skill: LAY_ON_HANDS_SKILL,
         abilities: { per: input.personality },
@@ -92,156 +59,90 @@ export function layOnHands(input, healTable, options = {}) {
         classId: "cleric",
         situationalModifiers: modifiers,
     };
-    if (input.luck !== undefined) {
+    if (input.luck !== undefined)
         checkInput.luck = input.luck;
-    }
-    if (input.luckBurn !== undefined) {
+    if (input.luckBurn !== undefined)
         checkInput.luckBurn = input.luckBurn;
-    }
-    // Resolve the skill check
     const check = resolveSkillCheck(checkInput, options);
-    // Look up the result in the heal table
     const total = check.total ?? 0;
-    const tableResult = lookupSimple(healTable, total);
-    // Parse the effect
-    const effect = parseTableEffect(tableResult?.effect);
-    const success = effect.type !== "none";
-    // Calculate HP healed
-    let hpHealed;
-    if (effect.hpHealed) {
-        hpHealed = calculateHPHealed(effect.hpHealed, input.level);
-    }
+    const row = findRow(table, total);
+    const rawDiceCount = row?.dice[input.alignment] ?? 0;
+    const success = rawDiceCount > 0;
     const result = {
         check,
         success,
-        description: tableResult?.text ?? getDefaultDescription(total),
-        effect,
-        tableEffect: tableResult?.effect,
+        rawDiceCount,
+        diceCount: 0,
+        row,
+        description: describe(success, input, rawDiceCount, row),
     };
-    if (hpHealed !== undefined) {
-        result.hpHealed = hpHealed;
+    if (row?.extra !== undefined)
+        result.extraEffects = row.extra;
+    if (!success)
+        return result;
+    if (input.healingCondition !== undefined) {
+        // Condition healing: no HP cap; dice must meet threshold.
+        const threshold = table.conditions?.[input.healingCondition];
+        if (threshold === undefined) {
+            // Condition not defined in this table — treat as non-curable here.
+            result.condition = { id: input.healingCondition, cured: false, threshold: Infinity };
+            result.diceCount = rawDiceCount;
+            return result;
+        }
+        result.diceCount = rawDiceCount;
+        result.condition = {
+            id: input.healingCondition,
+            cured: rawDiceCount >= threshold,
+            threshold,
+        };
+        return result;
+    }
+    // HP healing: cap dice at target HD/level, then roll `diceCount × target.hitDie`.
+    const capped = Math.min(rawDiceCount, input.target.hitDice);
+    result.diceCount = capped;
+    if (capped > 0) {
+        const formula = `${String(capped)}${input.target.hitDie}`;
+        const rollOpt = { mode: "evaluate" };
+        if (options.roller !== undefined)
+            rollOpt.roller = options.roller;
+        const heal = evaluateRoll(formula, rollOpt);
+        result.hpHealed = heal.total ?? 0;
+    }
+    else {
+        result.hpHealed = 0;
     }
     return result;
 }
+// =============================================================================
+// Utilities
+// =============================================================================
 /**
- * Calculate the Lay on Hands modifier without rolling.
- * Useful for displaying to players before they commit to the action.
- *
- * @param level - Cleric level
- * @param personality - Personality score
- * @param healingSelf - Whether healing self (-4)
- * @returns Total modifier
+ * Lay on Hands check-only modifier, useful for showing players before rolling.
+ * Note: alignment is NOT a roll modifier (RAW); it only affects the result
+ * lookup.
  */
 export function getLayOnHandsModifier(level, personality, healingSelf = false) {
     let mod = level + getAbilityModifier(personality);
-    if (healingSelf) {
+    if (healingSelf)
         mod -= 4;
-    }
     return mod;
 }
-/**
- * Get the die used for Lay on Hands.
- * Always d20 for standard clerics.
- */
 export function getLayOnHandsDie() {
     return "d20";
 }
-// =============================================================================
-// Helper Functions
-// =============================================================================
-/**
- * Parse a table effect into a structured HealEffect
- */
-function parseTableEffect(effect) {
-    if (!effect) {
-        return { type: "none" };
+function findRow(table, total) {
+    for (const row of table.rows) {
+        if (total >= row.min && total <= row.max)
+            return row;
     }
-    const effectType = effect.type;
-    const result = {
-        type: effectType === "none" ? "none" : effectType,
-    };
-    // Extract HP healed from dice field
-    if (effect.dice) {
-        result.hpHealed = effect.dice;
-    }
-    // Extract additional data
-    if (effect.data) {
-        if (effect.data["cureDisease"] === true) {
-            result.curesDisease = true;
-        }
-        if (effect.data["cureAllDiseases"] === true) {
-            result.curesAllAilments = true;
-        }
-        if (effect.data["restoreLimb"] === true) {
-            result.restoresLimb = true;
-        }
-        if (effect.data["neutralizePoison"] === true) {
-            result.neutralizesPoison = true;
-        }
-    }
-    return result;
+    return undefined;
 }
-/**
- * Get a default description based on total
- */
-function getDefaultDescription(total) {
-    if (total <= 10) {
-        return "Divine healing does not flow through you.";
+function describe(success, input, dice, row) {
+    if (!success)
+        return row?.text ?? "Divine healing does not flow through you.";
+    if (input.healingCondition !== undefined) {
+        return row?.text ?? `Channelled ${String(dice)} healing dice toward the subject's condition.`;
     }
-    if (total <= 14) {
-        return "A minor healing warmth passes through your hands.";
-    }
-    if (total <= 18) {
-        return "Divine energy flows through you, mending wounds.";
-    }
-    if (total <= 22) {
-        return "Powerful healing energy restores the target!";
-    }
-    return "Miraculous divine healing restores the target to full health!";
-}
-/**
- * Calculate HP healed from a dice/formula expression.
- *
- * @param expression - HP expression (e.g., "1*CL", "2*CL", "3d6")
- * @param level - Cleric level
- * @returns Calculated HP (using formula, not rolling)
- */
-export function calculateHPHealed(expression, level) {
-    // Handle CL multiplier format (e.g., "3*CL")
-    const clMatch = /(\d+)\*CL/.exec(expression);
-    if (clMatch) {
-        const multiplier = parseInt(clMatch[1] ?? "1", 10);
-        return multiplier * level;
-    }
-    // Handle dice expression (return average)
-    const diceMatch = /(\d+)d(\d+)/.exec(expression);
-    if (diceMatch) {
-        const count = parseInt(diceMatch[1] ?? "1", 10);
-        const sides = parseInt(diceMatch[2] ?? "6", 10);
-        const modMatch = /[+-](\d+)$/.exec(expression);
-        let average = count * ((sides + 1) / 2);
-        if (modMatch) {
-            const mod = parseInt(modMatch[1] ?? "0", 10);
-            average += expression.includes("-") ? -mod : mod;
-        }
-        return Math.floor(average);
-    }
-    // Just a number
-    const num = parseInt(expression, 10);
-    if (!isNaN(num)) {
-        return num;
-    }
-    return 0;
-}
-/**
- * Get the maximum possible healing for a given level.
- * Useful for displaying healing potential.
- *
- * @param level - Cleric level
- * @param maxMultiplier - Maximum HP multiplier from the table (default 8)
- * @returns Maximum HP that can be healed
- */
-export function getMaxHealing(level, maxMultiplier = 8) {
-    return level * maxMultiplier;
+    return row?.text ?? `Channelled ${String(dice)} healing dice into the subject.`;
 }
 //# sourceMappingURL=lay-on-hands.js.map

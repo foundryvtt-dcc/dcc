@@ -325,8 +325,10 @@ test('adapter path surfaces twoWeapon flags on libResult', async () => {
   expect(result.libResult.die).toBe('d14')
   expect(result.libResult.isTwoWeaponSecondary).toBe(true)
   expect(result.libResult.isTwoWeaponPrimary).toBe(false)
-  // Sanity: no `two-weapon fighting` source on the lib's modifier list
-  // (we deliberately don't set `AttackInput.twoWeaponPenalty`).
+  // Sanity: no `two-weapon fighting` source on the lib's modifier list.
+  // (Pre-0.5.0 the lib had `AttackInput.twoWeaponPenalty` for a flat
+  // -1/-2 ruleset we deliberately didn't use; 0.5.0 removed that field
+  // and adopted DCC's dice-chain model natively.)
   const flatTwoWeaponMod = result.libResult.modifiers.find(m => m.source === 'two-weapon fighting')
   expect(flatTwoWeaponMod).toBeUndefined()
 })

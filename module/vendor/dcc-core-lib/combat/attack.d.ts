@@ -9,7 +9,7 @@
  * - Bonus aggregation from multiple sources
  */
 import type { DiceRoller } from "../types/dice.js";
-import type { AttackInput, AttackResult, CombatEvents } from "../types/combat.js";
+import type { AttackInput, AttackResult, CombatEvents, TwoWeaponDiceConfig, TwoWeaponAttackInput, TwoWeaponAttackResult } from "../types/combat.js";
 import type { RollBonus } from "../types/bonuses.js";
 /**
  * Make an attack roll
@@ -94,15 +94,38 @@ export declare function doesAttackHit(attackTotal: number, targetAC: number, isN
  */
 export declare function getAttackAbility(attackType: "melee" | "missile" | "special"): "str" | "agl";
 /**
- * Calculate two-weapon fighting penalty
+ * Compute the two-weapon-fighting dice configuration for a given Agility
+ * (Table 4-3, with halfling class overrides applied when `isHalfling`).
  *
- * In DCC, two-weapon fighting typically has a -2 penalty to each attack,
- * except for halflings who have a reduced penalty.
- *
- * @param isHalfling - Whether the attacker is a halfling
- * @returns The attack penalty
+ * Halflings use an effective Agility of `max(agility, 16)` for row
+ * lookup; if their natural Agility is ≥18, the normal 18+ row applies.
+ * Halflings also gain auto-crit/auto-hit on a natural max of the
+ * reduced die (replacing the 16-17 "no auto-hit" rule), and only fumble
+ * when both hands roll a natural 1.
  */
-export declare function getTwoWeaponPenalty(isHalfling: boolean): number;
+export declare function getTwoWeaponDice(agility: number, options?: {
+    isHalfling?: boolean | undefined;
+}): TwoWeaponDiceConfig;
+/**
+ * Roll a full two-weapon attack round (both hands).
+ *
+ * Computes each hand's reduced action die from `baseActionDie` per
+ * Table 4-3, clamps any improved threat range to 20 (warriors lose
+ * their improved threat range when two-weapon fighting), then rolls
+ * each hand and applies the two-weapon-specific overrides:
+ *  - non-crittable rows strip any threatened crit;
+ *  - the Agl-16-17 row (non-halfling) requires the natural max to
+ *    actually beat AC to count as a hit/crit (no auto-hit);
+ *  - the halfling 16-17 override restores auto-hit + auto-crit on
+ *    the reduced die's natural max for either hand;
+ *  - the halfling fumble rule clears `isFumble` unless both hands
+ *    rolled a natural 1.
+ *
+ * Combat events (`onAttackRoll`, `onCriticalThreat`, `onFumbleRoll`,
+ * `onDeedAttempt`) are emitted for each hand AFTER overrides are
+ * applied, so listeners observe the post-RAW state.
+ */
+export declare function rollTwoWeaponAttack(input: TwoWeaponAttackInput, roller?: DiceRoller, events?: CombatEvents): TwoWeaponAttackResult;
 /**
  * Check if a deed die roll is successful
  *

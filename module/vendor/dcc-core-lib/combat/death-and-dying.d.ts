@@ -66,8 +66,11 @@ export interface BodyRecoveryResult {
     success: boolean;
     /** The Luck roll made */
     luckRoll: number;
-    /** Target number needed */
-    targetDC: number;
+    /**
+     * The character's Luck score — the roll-under target. Body recovery is
+     * a roll-under-Luck check, not a meet-or-exceed DC.
+     */
+    luckTarget: number;
     /** If success, the character recovers to this HP */
     newHP?: number | undefined;
     /** Penalty duration (-4 to all rolls for 1 hour) */
@@ -167,8 +170,10 @@ export declare function applyBleedOutTrauma(character: Character, newHP: number,
  * Attempt to recover a dead character's body
  *
  * Per DCC rules: If body is recovered within 1 hour, character makes a Luck
- * check. On success, they were just unconscious and recover to 1 HP with
- * -4 penalty for 1 hour and permanent -1 to STR/AGL/STA.
+ * check — roll d20 and succeed if the result is ≤ Luck score (roll-under
+ * Luck check, not a meet-or-exceed DC). On success, they were just
+ * unconscious and recover to 1 HP with -4 penalty for 1 hour and
+ * permanent -1 to STR/AGL/STA.
  *
  * @param luckScore - Character's current Luck score
  * @param roller - Dice roller function

@@ -8,7 +8,7 @@
  * should be loaded from dcc-official-data and registered using
  * registerClassProgression() from data/classes/progression-utils.
  */
-import type { DieType } from "./dice.js";
+import type { CritDieFormula, DieType } from "./dice.js";
 import type { Alignment, SaveType } from "./system.js";
 /**
  * Attack bonus progression type
@@ -30,8 +30,8 @@ export interface ClassLevelData {
     attackBonus?: number;
     /** Action dice at this level (e.g., "1d20", "1d20+1d14") */
     actionDice?: string;
-    /** Crit die at this level */
-    critDie?: DieType;
+    /** Crit die formula at this level (e.g., "d12", "2d20", "d30+2") */
+    critDie?: CritDieFormula;
     /** Threat range at this level (e.g., 19 for 19-20) */
     threatRange?: number;
     /** Saves at this level */
