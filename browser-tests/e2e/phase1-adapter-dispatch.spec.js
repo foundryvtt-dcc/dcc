@@ -1546,6 +1546,69 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(magicEntry, 'magic weapon bonus must surface as a breakdown entry').toBeDefined()
       expect(magicEntry.amount).toBe(1)
     })
+
+    test('trailing bracket-flavor formula (`1d6+2[Slashing]`) routes via adapter (D2 damage sub-slice b)', async ({ page }) => {
+      // D2 damage sub-slice (b). A flat-modifier-then-flavor formula
+      // (`1d6+2[Slashing]`) is not per-term-flavored — legacy peels the
+      // bracket into the `Compound` term's `flavor` field and feeds the
+      // cleaned formula to DCCRoll.createRoll. The adapter does the same
+      // so the flavor label still renders in chat, and `parseDamageFormula`
+      // sees only the clean `1d6+2` and builds a valid `DamageInput`. This
+      // formerly fell to legacy via the `includes('[')` gate rejection;
+      // sub-slice (b) removes that rejection and peels the flavor first.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Damage BracketFlavor', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-FlavorBlade',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            // Baked-in trailing flavor — simulates homebrew content or
+            // modules that annotate damage type inline.
+            damage: '1d6+2[Slashing]',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Damage BracketFlavor').items.getName('P1-FlavorBlade').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Damage BracketFlavor').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-FlavorBlade' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-FlavorBlade' })
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Damage BracketFlavor' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libDamageResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      // libDamageResult populated — parser saw the cleaned `1d6+2` after
+      // `peelTrailingFlavor` stripped `[Slashing]`.
+      expect(flag, 'bracket-flavor damage must set dcc.libDamageResult').not.toBeNull()
+      expect(typeof flag.damageDie).toBe('string')
+      expect(flag.damageDie).toMatch(/d\d+/)
+      expect(flag.total).toBe(Math.max(1, flag.baseDamage + flag.modifierDamage))
+    })
   })
 
   // ── rollCritical + rollFumble (Phase 3 session 6) ──────────────────

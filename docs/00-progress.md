@@ -104,7 +104,60 @@ the anti-pattern example and the regression-guard reference. 875
 Vitest tests pass (was 874, +1 new guard test). Playwright suite
 unchanged — pure-source-audit slice, no runtime behavior change.
 
-**Phase 3 — ACTIVE. Session 16 (2026-04-20, D2 crit + fumble)
+**Phase 3 — ACTIVE. Session 17 (2026-04-20, D2 damage sub-slice b)
+broadened the damage gate to route trailing bracket-flavor formulas
+(`1d6+2[Slashing]`, `2d4-1[Piercing]`) through the adapter.** First
+of the three D2 damage gate-broadening sub-slices before the damage
+gate is exhaustive enough for collapse. Previously,
+`damageRollFormula.includes('[')` rejected every formula with a
+bracket — blanket, regardless of position. That caught both per-term
+flavor patterns (`1d6[fire]+1d6[cold]` — which genuinely need legacy
+because the lib's `DamageInput` shape is single-typed) and trailing
+single-bracket patterns (which only differ from plain formulas in
+that the chat renderer should display the flavor label).
+
+The gate now rejects only the real per-term case via
+`/\d+d\d+\[/.test(...)` (die-immediately-followed-by-bracket —
+matches legacy's `hasPerTermFlavors` branch), then peels any trailing
+`[flavor]` via the new `peelTrailingFlavor` helper in
+`module/adapter/damage-input.mjs` before calling
+`parseDamageFormula`. `_rollDamageViaAdapter` uses the same peel to
+split the cleaned formula + flavor before feeding them into
+`DCCRoll.createRoll`'s `Compound` term's `formula` / `flavor` fields
+— identical shape to what `_rollDamageLegacy` produces for the same
+input, so chat rendering is unchanged. Sub-slice scope deliberately
+stops at the `1d8[Slashing]` case (die immediately followed by
+`[`) — that still falls to legacy's native-Roll branch; folding it
+in would require a separate decision about whether the legacy
+native-Roll path's term-flavor rendering differs materially from
+the Compound-term path's, which is a rendering question not a data
+one.
+
+879 Vitest tests pass (was 875 at session 16 / C3 close, +4 in
+`adapter-weapon-damage.test.js`: `peelTrailingFlavor` strip-and-
+preserve, `peelTrailingFlavor` naive-peel behavior on non-trailing
+brackets, gate acceptance for `1d6+2[Slashing]` / `2d4-1[Piercing]`
++ rejection for `1d8[Slashing]`, dispatch asserting the Compound
+term receives `formula: '1d6+2', flavor: 'Slashing'` + libDamageResult
+parses correctly). 82 Playwright e2e tests pass against live v14
+Foundry (was 81, +1 new in `phase1-adapter-dispatch.spec.js` under
+the `rollDamage` describe: `trailing bracket-flavor formula → routes
+via adapter` — sets up a Player with `damage: '1d6+2[Slashing]'`,
+asserts both `rollWeaponAttack` and `rollDamage` log `adapter`, and
+confirms `dcc.libDamageResult` is populated with matching total).
+
+**Remaining D2 damage sub-slices** (per
+`02-slice-backlog.md` entry): (a) unparseable
+`parseDamageFormula(...) === null` formulas — extend the parser or
+accept lossless passthrough; (c) multi-type per-term formulas
+(`1d6[fire]+1d6[cold]`) — STOP AND ASK (lib's DamageInput is
+single-typed); (d) dice-bearing / cursed `damageWeaponBonus` — STOP
+AND ASK (lib's magicBonus is a non-negative integer). Only after
+all live rejections are broadened OR explicitly accepted as
+passthrough can the gate be made exhaustive and the damage
+retirement run as a mechanical collapse.
+
+**Phase 3 — Session 16 (2026-04-20, D2 crit + fumble)
 retired `_rollCriticalLegacy` + `_rollFumbleLegacy`.** Paired
 retirement: the `_canRouteCritViaAdapter` / `_canRouteFumbleViaAdapter`
 gates only disqualified the `!automate` case (the `libResult` check

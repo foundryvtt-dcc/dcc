@@ -17,6 +17,29 @@
  */
 
 const SIMPLE_DAMAGE_PATTERN = /^\s*(\d*)d(\d+)\s*((?:[+-]\s*\d+\s*)*)$/i
+const TRAILING_FLAVOR_PATTERN = /^(.+?)\s*\[([^[\]]*)\]\s*$/
+
+/**
+ * Peel a trailing `[flavor]` bracket off a damage formula, returning the
+ * cleaned formula + flavor label. Legacy `_rollDamageLegacy` strips the
+ * trailing bracket the same way (see `damageRollFormula.match(/\[(.*)]/)`
+ * in `actor.js`) and feeds `flavor` into `DCCRoll.createRoll`'s
+ * `Compound` term so chat rendering shows the damage type tag.
+ *
+ * Per-term flavor formulas (`1d6[fire]+1d6[cold]`) — where a die is
+ * immediately followed by `[` — are left to the gate to reject; this
+ * helper only peels a single trailing bracket and does not attempt to
+ * splice multiple labels.
+ *
+ * @param {string} formula
+ * @returns {{formula: string, flavor: string}}
+ */
+export function peelTrailingFlavor (formula) {
+  if (typeof formula !== 'string') return { formula: '', flavor: '' }
+  const match = formula.match(TRAILING_FLAVOR_PATTERN)
+  if (!match) return { formula, flavor: '' }
+  return { formula: match[1].trim(), flavor: match[2] }
+}
 
 /**
  * Parse a simple Foundry damage formula into its constituent parts.

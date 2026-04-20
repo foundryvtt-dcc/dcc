@@ -23,7 +23,7 @@ import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMer
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
-import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula } from './adapter/damage-input.mjs'
+import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula, peelTrailingFlavor } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
 
@@ -2945,7 +2945,12 @@ class DCCActor extends Actor {
    * the gate to accept magic weapon bonuses — a positive integer
    * `damageWeaponBonus` flows through `DamageInput.magicBonus` for
    * correct breakdown attribution; dice-bearing or cursed (negative)
-   * magic bonuses still fall to legacy.
+   * magic bonuses still fall to legacy. D2 damage sub-slice (b) peels
+   * a single trailing `[flavor]` bracket (e.g. `1d6+2[Slashing]`) so
+   * bracket-flavored formulas route via adapter; the flavor still flows
+   * into `DCCRoll.createRoll`'s `Compound` term for chat rendering
+   * parity with legacy. Per-term flavors (`1d6[fire]+1d6[cold]`) —
+   * where a die is immediately followed by `[` — still fall to legacy.
    *
    * @param {Object} weapon
    * @param {string} damageRollFormula
@@ -2957,8 +2962,9 @@ class DCCActor extends Actor {
   _canRouteDamageViaAdapter (weapon, damageRollFormula, attackRollResult, options = {}) {
     if (!attackRollResult?.libResult) return false
     if (typeof damageRollFormula !== 'string') return false
-    if (damageRollFormula.includes('[')) return false
-    if (parseDamageFormula(damageRollFormula) === null) return false
+    if (/\d+d\d+\[/.test(damageRollFormula)) return false
+    const { formula } = peelTrailingFlavor(damageRollFormula)
+    if (parseDamageFormula(formula) === null) return false
     if (extractWeaponMagicBonus(weapon) === null) return false
     return true
   }
@@ -2981,12 +2987,14 @@ class DCCActor extends Actor {
   async _rollDamageViaAdapter (weapon, damageRollFormula, attackRollResult, options = {}) {
     logDispatch('rollDamage', 'adapter', { weapon: weapon?.name || 'unknown' })
 
+    const { formula: peeledFormula, flavor } = peelTrailingFlavor(damageRollFormula)
+
     const damageRoll = game.dcc.DCCRoll.createRoll([
       {
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.Damage'),
-        flavor: '',
-        formula: damageRollFormula
+        flavor,
+        formula: peeledFormula
       }
     ])
     await damageRoll.evaluate()
@@ -2995,7 +3003,7 @@ class DCCActor extends Actor {
       damageRoll._total = 1
     }
 
-    const parsed = parseDamageFormula(damageRollFormula)
+    const parsed = parseDamageFormula(peeledFormula)
     const magicBonus = extractWeaponMagicBonus(weapon) ?? 0
     const damageInput = buildDamageInput(parsed, {
       npcDamageAdjustment: options.npcDamageAdjustment,

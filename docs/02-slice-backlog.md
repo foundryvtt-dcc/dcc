@@ -236,16 +236,25 @@ single-path inline-template assertions, +1 retirement guard).
 #### D2 damage. Retire `_rollDamageLegacy` — pending gate-broadening
 - **Scope:** Unlike crit / fumble, the damage gate has real
   per-case rejections beyond the `attackRollResult?.libResult`
-  defensive check: `damageRollFormula.includes('[')` (per-term +
-  bracket flavors) and `parseDamageFormula(damageRollFormula) ===
-  null` (unparseable formulas) each route a live class of runtime
-  inputs to legacy. Before D2 damage can retire, each of these
+  defensive check. Before D2 damage can retire, each rejection
   needs broadening — teach `parseDamageFormula` / `buildDamageInput`
   to handle the additional shapes, or accept that they translate to
   no-op passthroughs (lib total = Foundry total, `libDamageResult`
-  still surfaces but `breakdown` may be empty / lossy). Plus
-  `extractWeaponMagicBonus(weapon) === null` for dice-bearing
-  `damageWeaponBonus` or cursed (negative) bonuses.
+  still surfaces but `breakdown` may be empty / lossy).
+  - ~~**Bracket flavors** (`1d6+2[Slashing]`)~~ — DONE session 17.
+    `peelTrailingFlavor` splits the trailing `[...]` off the formula
+    before parsing; `_rollDamageViaAdapter` plumbs the flavor into
+    the `Compound` term. Gate rejects only the genuine per-term case
+    via `/\d+d\d+\[/`. Die-immediately-followed-by-bracket
+    (`1d8[Slashing]`) still falls to legacy (matches legacy's
+    `hasPerTermFlavors` native-Roll branch; folding would require a
+    separate rendering-parity decision).
+  - **Unparseable `parseDamageFormula(...) === null` formulas** —
+    extend the parser, or accept lossless passthrough.
+  - **Multi-type per-term flavors** (`1d6[fire]+1d6[cold]`) — STOP
+    AND ASK. Lib's `DamageInput` is single-typed.
+  - **Dice-bearing / cursed `damageWeaponBonus`** — STOP AND ASK.
+    Lib's `magicBonus` is a non-negative integer.
 - **Stop-and-ask trigger:** each new shape is potentially a new
   `buildDamageInput` branch kind; pause and surface the lib-vs-rules
   question per the `feedback_lib_vs_rules_stop_and_verify.md` memory
@@ -358,6 +367,19 @@ See `docs/00-progress.md` for details. Summary:
   body folded into `rollToHit`. First Group-D retirement. +1
   Playwright regression guard asserting the retired methods are
   absent from the actor prototype.
+- Phase 3 session 17 (D2 damage sub-slice b): broadened damage gate
+  to accept trailing bracket-flavor formulas (`1d6+2[Slashing]`,
+  `2d4-1[Piercing]`). New `peelTrailingFlavor` helper in
+  `module/adapter/damage-input.mjs` splits the trailing `[...]`
+  label before parsing; `_rollDamageViaAdapter` plumbs the flavor
+  into `DCCRoll.createRoll`'s `Compound` term for chat-rendering
+  parity with legacy. Gate now rejects only the genuine per-term
+  case via `/\d+d\d+\[/` (die-immediately-followed-by-bracket —
+  matches legacy's `hasPerTermFlavors` branch). 879 Vitest tests
+  pass (was 875, +4) + 82 Playwright e2e (was 81, +1). Three more
+  D2 damage sub-slices remain before retirement: (a) unparseable
+  formulas, (c) multi-type per-term flavors — STOP AND ASK, (d)
+  dice-bearing / cursed magic bonuses — STOP AND ASK.
 - Phase 3 session 16 (D2 crit + fumble): retired
   `_rollCriticalLegacy` + `_rollFumbleLegacy` together. Both
   gates were defensive-only (the real non-adapter branch was

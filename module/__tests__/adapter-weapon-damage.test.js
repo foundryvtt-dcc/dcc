@@ -27,7 +27,7 @@
 import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
-import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula } from '../adapter/damage-input.mjs'
+import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula, peelTrailingFlavor } from '../adapter/damage-input.mjs'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -96,6 +96,22 @@ test('parseDamageFormula returns null for non-simple formulas', () => {
   expect(parseDamageFormula('')).toBeNull()
   expect(parseDamageFormula(null)).toBeNull()
   expect(parseDamageFormula(undefined)).toBeNull()
+})
+
+test('peelTrailingFlavor strips a single trailing bracket, preserving the formula', () => {
+  expect(peelTrailingFlavor('1d8')).toEqual({ formula: '1d8', flavor: '' })
+  expect(peelTrailingFlavor('1d8[Slashing]')).toEqual({ formula: '1d8', flavor: 'Slashing' })
+  expect(peelTrailingFlavor('1d6+2[Slashing]')).toEqual({ formula: '1d6+2', flavor: 'Slashing' })
+  expect(peelTrailingFlavor('2d4-1[Piercing]')).toEqual({ formula: '2d4-1', flavor: 'Piercing' })
+  expect(peelTrailingFlavor('1d8 [ Slashing ]')).toEqual({ formula: '1d8', flavor: ' Slashing ' })
+})
+
+test('peelTrailingFlavor returns the input unchanged when no trailing bracket', () => {
+  // Per-term flavor patterns have the bracket MID-formula, not trailing —
+  // peel leaves them alone so the gate's per-term-flavor check can reject.
+  expect(peelTrailingFlavor('1d6[fire]+1d6[cold]')).toEqual({ formula: '1d6[fire]+1d6', flavor: 'cold' })
+  expect(peelTrailingFlavor('')).toEqual({ formula: '', flavor: '' })
+  expect(peelTrailingFlavor(null)).toEqual({ formula: '', flavor: '' })
 })
 
 test('buildDamageInput folds the flat modifier into strengthModifier', () => {
@@ -196,6 +212,23 @@ test('_canRouteDamageViaAdapter rejects per-term flavors + multi-dice formulas',
 
   expect(actor._canRouteDamageViaAdapter(weapon, '1d6[fire]+1d6[cold]', attackRollResult, {})).toBe(false)
   expect(actor._canRouteDamageViaAdapter(weapon, '1d6+1d4', attackRollResult, {})).toBe(false)
+})
+
+test('_canRouteDamageViaAdapter accepts trailing bracket-flavor formulas (sub-slice b)', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'sword' }
+  const attackRollResult = { libResult: { total: 15 } }
+
+  // Single-die + flat modifier + trailing flavor — routes via adapter.
+  expect(actor._canRouteDamageViaAdapter(weapon, '1d6+2[Slashing]', attackRollResult, {})).toBe(true)
+  // Multi-die + modifier + trailing flavor — routes via adapter.
+  expect(actor._canRouteDamageViaAdapter(weapon, '2d4-1[Piercing]', attackRollResult, {})).toBe(true)
+  // Die-immediately-followed-by-bracket (`1d8[Slashing]`) still falls to
+  // legacy — matches legacy's `/\d+d\d+\[/` `hasPerTermFlavors` branch
+  // which routes through Foundry's native `Roll` rather than the
+  // Compound term. Fold-in of that case is a separate sub-slice.
+  expect(actor._canRouteDamageViaAdapter(weapon, '1d8[Slashing]', attackRollResult, {})).toBe(false)
 })
 
 test('_canRouteDamageViaAdapter accepts backstab (session 9)', () => {
@@ -390,6 +423,52 @@ test('adapter path attributes +1 weapon bonus as magic, not Strength', async () 
   const magicEntry = result.libDamageResult.breakdown.find(b => b.source === 'magic')
   expect(magicEntry).toBeDefined()
   expect(magicEntry.amount).toBe(1)
+})
+
+test('adapter path peels trailing flavor bracket into Compound term + libDamageResult', async () => {
+  logDispatch.mockClear()
+  const createRollCalls = []
+  const restoreRoll = (() => {
+    const original = global.game.dcc.DCCRoll.createRoll
+    global.game.dcc.DCCRoll.createRoll = vi.fn((termSpecs) => {
+      createRollCalls.push(termSpecs)
+      return makeStubRoll({ total: 6, natural: 4 })
+    })
+    return () => { global.game.dcc.DCCRoll.createRoll = original }
+  })()
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'longsword' }
+  const attackRollResult = { libResult: { total: 18 } }
+
+  let result
+  try {
+    result = await actor._rollDamage(weapon, '1d6+2[Slashing]', attackRollResult, {})
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  // Adapter dispatches (bracket-flavored formula no longer falls to legacy).
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
+
+  // The Compound term fed to DCCRoll.createRoll splits the flavor off the
+  // formula — chat rendering parity with the legacy path's same behavior.
+  expect(createRollCalls).toHaveLength(1)
+  expect(createRollCalls[0]).toMatchObject([{
+    type: 'Compound',
+    formula: '1d6+2',
+    flavor: 'Slashing'
+  }])
+
+  // libDamageResult parses the cleaned formula: natural 4 + mod 2 = 6.
+  expect(result.libDamageResult).toBeDefined()
+  expect(result.libDamageResult.baseDamage).toBe(4)
+  expect(result.libDamageResult.modifierDamage).toBe(2)
+  expect(result.libDamageResult.total).toBe(6)
 })
 
 test('adapter path clamps damage minimum to 1', async () => {

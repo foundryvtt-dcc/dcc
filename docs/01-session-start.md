@@ -58,11 +58,23 @@ branch, and it had no lib call to do), so both legacy bodies +
 both `_canRoute…` gates + both `_rollXxxViaAdapter` aliases folded
 into unified `_rollCritical` / `_rollFumble` methods that branch
 on `ctx.automate` internally. Second Group-D retirement landed.
-**Crit + fumble are single paths; `_rollDamageLegacy` (D2 residual)
-still awaits gate-broadening for multi-type formulas / bracket
-flavors / unparseable formulas before it can collapse the same
-way. Candidates for next session: D2 damage gate-broadening
-slices, or another slice from the backlog.**
+Phase 3 session 17 (D2 damage sub-slice b, 2026-04-20) **broadened
+the damage gate to accept trailing bracket-flavor formulas**
+(`1d6+2[Slashing]`, `2d4-1[Piercing]`). New `peelTrailingFlavor`
+helper in `module/adapter/damage-input.mjs` splits the trailing
+`[flavor]` off the formula before parsing; `_rollDamageViaAdapter`
+feeds the stripped formula + flavor into `DCCRoll.createRoll`'s
+`Compound` term for chat-rendering parity with legacy. Gate now
+rejects only the genuine per-term-flavor case (`/\d+d\d+\[/`) —
+`damageRollFormula.includes('[')` blanket check removed. Die-
+immediately-followed-by-bracket (`1d8[Slashing]`) still falls to
+legacy (matches legacy's `hasPerTermFlavors` native-Roll branch;
+folding would require a separate call about Compound-vs-native
+rendering equivalence). **Candidates for next session: D2 damage
+sub-slice (a) — unparseable formulas (extend parser or lossless
+passthrough); or (c) multi-type per-term formulas and (d) dice-
+bearing / cursed magic bonuses (both STOP AND ASK for lib-vs-rules
+design surfacing).**
 Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and
@@ -197,14 +209,18 @@ is surfaced for downstream crit-table routing.
   `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
   ...)`, and `logDispatch('rollFumble', ...)` in both branches.
   Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
-- **Baseline (post-session-16 / C3):** 875 Vitest tests pass, 81
-  Playwright e2e tests pass against live v14 Foundry. Dispatch-spec
-  subset runs in ~40 s thanks to the session-reuse fixture; full
-  Playwright suite runs in ~8 min.
+- **Baseline (post-session-17 / D2 sub-slice b):** 879 Vitest tests
+  pass, 82 Playwright e2e tests pass against live v14 Foundry.
+  Dispatch-spec subset runs in ~40 s thanks to the session-reuse
+  fixture; full Playwright suite runs in ~8 min.
 
-**This session's goal:** **Phase 3 D2 damage — retire
-`_rollDamageLegacy` by broadening the damage gate to exhaustive
-(the last of the three D2 retirements).**
+**This session's goal:** **Phase 3 D2 damage — continue broadening
+the damage gate toward exhaustive so `_rollDamageLegacy` can
+retire (the last of the three D2 retirements). Sub-slice (b) —
+trailing bracket flavors — landed in session 17. Next up: (a)
+unparseable formulas (mechanical), (c) multi-type per-term
+flavors (STOP AND ASK), or (d) dice-bearing / cursed
+`damageWeaponBonus` (STOP AND ASK).**
 
 Sessions 2–14 landed all of Group A (simplest-weapon, backstab,
 deed dice, two-weapon, automate-off, modifier dialog, dice-bearing
@@ -212,16 +228,20 @@ toHit). Every common-case attack surfaces a lib-native result on
 chat flags (`dcc.libResult` / `dcc.libDamageResult` /
 `dcc.libCritResult` / `dcc.libFumbleResult`). Sessions 15 (D1) +
 16 (D2 crit + fumble) retired the attack / crit / fumble legacy
-branches and collapsed their dispatchers into single paths.
+branches and collapsed their dispatchers into single paths. Session
+17 (D2 damage sub-slice b) broadened the damage gate to accept
+trailing bracket-flavor formulas via the new `peelTrailingFlavor`
+helper in `module/adapter/damage-input.mjs`.
 
-**The damage gate is now the only one left.** Unlike crit / fumble
-(whose gates were defensive-only), `_canRouteDamageViaAdapter`
-makes real per-case rejections — multi-type `[fire]+1d6[cold]`,
-bracket flavors, unparseable formulas, dice-bearing or cursed
-magic bonuses. See the "Session slice — D2 damage" section below
-for the per-rejection breakdown + stop-and-ask triggers. Each
-sub-slice is potentially its own session; don't try to batch them
-all at once.
+**The damage gate is still the only one left.** Unlike crit /
+fumble (whose gates were defensive-only),
+`_canRouteDamageViaAdapter` makes real per-case rejections —
+multi-type `[fire]+1d6[cold]`, unparseable formulas, dice-bearing
+or cursed magic bonuses. Sub-slice (b) (trailing bracket flavors)
+landed session 17; sub-slices (a), (c), (d) remain. See the
+"Session slice — D2 damage" section below for the per-rejection
+breakdown + stop-and-ask triggers. Each sub-slice is potentially
+its own session; don't try to batch them all at once.
 
 **A4 design note (lib-vs-rules, relevant precedent):** the lib's
 `getTwoWeaponPenalty` returns flat `-1`/`-2`, but DCC RAW uses
@@ -260,20 +280,22 @@ has real per-case rejections — it's NOT a mechanical collapse.
 
 **Read first:**
 
-1. `docs/00-progress.md` — Phase 3 session 16 entry (D2 crit +
-   fumble context), C3 audit entry, baseline test counts (875
-   Vitest, 81 Playwright e2e at session 16 / C3 close).
+1. `docs/00-progress.md` — Phase 3 session 17 entry (D2 damage
+   sub-slice b — bracket flavors), session 16 entry (D2 crit +
+   fumble context), C3 audit entry, baseline test counts (879
+   Vitest, 82 Playwright e2e at session 17 close).
 2. `docs/02-slice-backlog.md` "D2 damage. Retire `_rollDamageLegacy`
    — pending gate-broadening" entry — lists the real rejections the
-   gate still makes (multi-type `[fire]+1d6[cold]` formulas,
-   `damageRollFormula.includes('[')` bracket flavors, unparseable
+   gate still makes after sub-slice (b) (multi-type
+   `[fire]+1d6[cold]` formulas, unparseable
    `parseDamageFormula(...) === null` formulas, dice-bearing or
    cursed `damageWeaponBonus` via `extractWeaponMagicBonus(...) ===
    null`) — each routes a real class of runtime inputs to legacy.
 3. `module/actor.js` `_rollDamage` / `_canRouteDamageViaAdapter` /
    `_rollDamageViaAdapter` / `_rollDamageLegacy`.
 4. `module/adapter/damage-input.mjs` — `parseDamageFormula`,
-   `buildDamageInput`, `extractWeaponMagicBonus`.
+   `buildDamageInput`, `extractWeaponMagicBonus`,
+   `peelTrailingFlavor`.
 5. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md`
    — if RAW alignment questions surface for specific damage
    cases (e.g. multi-type), check whether lib already supports them.
@@ -288,9 +310,13 @@ a) **Unparseable `parseDamageFormula(...) === null` formulas** —
    extend the parser, or accept the formula as a lossless
    passthrough (lib's `libDamageResult.breakdown` may be empty /
    lossy but `libDamageResult.total` matches Foundry's Roll).
-b) **Bracket-flavor formulas** (`1d6+2[Slashing]`) — the trailing
-   single-flavor bracket is cosmetic; strip for `parseDamageFormula`
-   purposes, preserve for the Foundry Roll.
+~~b) **Bracket-flavor formulas** (`1d6+2[Slashing]`)~~ —
+   **DONE (session 17)**: `peelTrailingFlavor` in
+   `module/adapter/damage-input.mjs` peels the trailing `[...]` off
+   before parsing; `_rollDamageViaAdapter` plumbs the flavor into
+   `DCCRoll.createRoll`'s `Compound` term. Gate rejects only the
+   genuine per-term case (`/\d+d\d+\[/`). Die-immediately-followed-
+   by-bracket (`1d8[Slashing]`) still falls to legacy.
 c) **Multi-type per-term formulas** (`1d6[fire]+1d6[cold]`) —
    **STOP AND ASK before silently translating.** The lib's
    `DamageInput` shape may or may not support multi-typed rolls;
@@ -317,10 +343,11 @@ Playwright adapter-dispatch spec's assertions). Don't remove.
 **Per-slice browser test extension.** Per CLAUDE.md refactor-slice
 rules, every slice adds at least one new Playwright assertion —
 for damage gate broadening, extend `phase1-adapter-dispatch.spec.js`
-`rollDamage` describe block with a new case per sub-slice. The
-existing "multi-damage-type formula → legacy" test at
-`phase1-adapter-dispatch.spec.js:1330` becomes the first one
-rewritten when sub-slice (c) lands.
+`rollDamage` describe block with a new case per sub-slice. Sub-slice
+(b) added `trailing bracket-flavor formula → routes via adapter` at
+`phase1-adapter-dispatch.spec.js:1550`. The existing "multi-damage-
+type formula → legacy" test at `phase1-adapter-dispatch.spec.js:1330`
+becomes the first one rewritten when sub-slice (c) lands.
 
 Do NOT: touch data-model slimming (Phase 4) or sheet composition
 (Phase 5). Do NOT break `dcc.modifyAttackRollTerms` — it has
@@ -329,8 +356,8 @@ rules divergence — surface it instead.
 
 **Before touching Phase 3 code, confirm the repo is green:**
 
-- `npm test` — 875 Vitest tests + dice-gated integration at
-  session 16 / C3 close. Final check before any commit.
+- `npm test` — 879 Vitest tests + dice-gated integration at
+  session 17 close. Final check before any commit.
 - `npm run test:unit` — mock-only; runs in every environment.
 - `npm run test:integration` — integration project. Skips if Foundry
   isn't detected (via `FOUNDRY_PATH`, `.foundry-dev/`, or
@@ -340,8 +367,8 @@ rules divergence — surface it instead.
   `npm run setup:foundry` once. Otherwise the dice cases **skip**
   (not fail); the status line shows `N passed | M skipped`.
 
-**Browser tests (required for refactor slices — 81 Playwright
-e2e pass at session 16 / C3 close):** see
+**Browser tests (required for refactor slices — 82 Playwright
+e2e pass at session 17 close):** see
 `docs/dev/TESTING.md#browser-tests-playwright` for the full recipe.
 TL;DR — with the fvtt CLI's `installPath` / `dataPath` pointed at
 `foundry-14` / `FoundryVTT-Next` (verify via
