@@ -165,7 +165,7 @@ die naturally. Chat flag: `libResult.bonuses` now carries the
 full bonuses list (was hook-added only); `libResult.critSource`
 is surfaced for downstream crit-table routing.
 
-**Phase 2 + 3 sessions 1–9 infrastructure session 10 builds on:**
+**Standing infrastructure the next session builds on:**
 
 - `DCCActor.rollSpellCheck` + `DCCActor.rollToHit` +
   `DCCActor._rollDamage` + `DCCActor._rollCritical` +
@@ -257,10 +257,11 @@ several similar forks — surface each one.
 
 Phase 3 as a whole is the largest migration so far:
 `rollWeaponAttack` → `makeAttackRoll` + `rollDamage` + `rollCritical`
-+ `rollFumble`. All four core lib calls have adapter paths.
-`rollToHit` / `_rollCritical` / `_rollFumble` are **single paths**
-(legacy retired). `_rollDamage` is the last dispatcher pending
-collapse.
++ `rollFumble`. All four core lib calls have adapter paths, AND all
+four are now **single paths** (legacy retired at sessions 15 / 16 /
+19). Session 20 (C1) then dropped the `critText` / `fumbleText`
+dcc-qol-compat shims — the messageData shape is now slimmed to its
+canonical field set on both `rollWeaponAttack` and `rollCritical`.
 
 **Critical integration point:** `dcc.modifyAttackRollTerms` is
 dcc-qol's main hook. Since D1 it fires only inside `rollToHit`
@@ -276,15 +277,18 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**Group D `rollWeaponAttack` retirements are fully complete.**
-Pick the next slice from `docs/02-slice-backlog.md`; the natural
-candidates are:
+**Group D `rollWeaponAttack` retirements are fully complete AND C1
+cruft landed (session 20).** Pick the next slice from
+`docs/02-slice-backlog.md`; the remaining candidates are:
 
-1. **C1 / C2 cruft slices** (parallel-safe, independent) —
-   `critText` / `fumbleText` compatibility-shim removal (coordinate
-   with dcc-qol maintainer if any live callers remain), or
-   pre-V14 migration pruning. Both mechanical once their
-   stop-and-ask triggers clear.
+1. **C2 prune pre-V14 migrations** (cruft, parallel-safe) — review
+   the `module/dcc.js` migration block (referenced as "418 lines of
+   cumulative migrations" in §2.7). Identify migrations that ran
+   before a minimum data version we can now require; delete them;
+   bump the minimum-data-version constant. **STOP AND ASK** before
+   deleting: confirm with Tim which minimum data version is safe
+   (tied to the earliest world he'd still expect to upgrade).
+   Mechanical once that decision lands.
 2. **D3 patron-taint RAW alignment** — cross-repo design decision
    requiring coordination with `dcc-core-book` + `xcc-core-book`
    for fumble-table `effect.type === 'patron-taint'` tagging. The
@@ -296,6 +300,18 @@ candidates are:
 4. **Group E vertical slice** (placeholder — needs explicit pick):
    halfling, mercurial-magic, or homebrew single-class. Would
    exercise Phase 4 + 5 + 6 end-to-end.
+
+**Also pending — dcc-qol sibling-fix coordination.** Session 20's
+shim removal on the DCC side leaves dcc-qol's
+`scripts/hooks/attackRollHooks.js:283-284` reading fields that no
+longer emit. A 2-line rename (`critText`→`critResult`,
+`fumbleText`→`fumbleResult`) is documented as a migration recipe in
+`EXTENSION_API.md` under "Sibling-module migration recipes →
+dcc-qol migration". Tim is landing the dcc-qol PR on his schedule;
+do NOT edit that repo from this session. If Tim signals it's landed,
+next slice can optionally include a follow-up assertion in
+`../../modules/dcc-qol` verifying the rename (observational only —
+no DCC-side change needed).
 
 Ask Tim which to pick.
 
