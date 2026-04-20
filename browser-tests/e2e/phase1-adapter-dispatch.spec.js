@@ -734,7 +734,12 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(backstabEntry.effect.value).toBe(7)
     })
 
-    test('showModifierDialog flag → legacy', async ({ page }) => {
+    test('showModifierDialog flag → adapter (session 13 / A6)', async ({ page }) => {
+      // A6: modifier-dialog case now routes via adapter with
+      // `damageTerms` threaded into `DCCRoll.createRoll`. Dispatch log
+      // fires at the start of `_rollToHitViaAdapter` before the
+      // (blocking) dialog shows — fireAndForget dismisses the dialog
+      // with Escape so the test run continues.
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Weapon Dialog', type: 'Player' })
         await actor.createEmbeddedDocuments('Item', [{
@@ -758,7 +763,7 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
         game.actors.getName('P1 Weapon Dialog').rollWeaponAttack(id, { showModifierDialog: true })
       }, weaponId)
       const line = await waitForAdapterLog('rollWeaponAttack')
-      assertPath(line, 'legacy', { weapon: 'P1-DialogSword' })
+      assertPath(line, 'adapter', { weapon: 'P1-DialogSword' })
     })
 
     test('warrior deed die → adapter (session 10 / A3)', async ({ page }) => {

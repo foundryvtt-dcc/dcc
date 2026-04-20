@@ -6,7 +6,8 @@
  *   DCCActor.rollToHit →
  *     (happy path — automate on or off) → _rollToHitViaAdapter
  *     (backstab on a thief — session 9) → _rollToHitViaAdapter with isBackstab
- *     (showModifierDialog | non-deed dice in bonus) → _rollToHitLegacy
+ *     (showModifierDialog — session 13 / A6) → _rollToHitViaAdapter with damageTerms
+ *     (non-deed dice in bonus) → _rollToHitLegacy
  *
  * Adapter-path validation points:
  *   - `dcc.modifyAttackRollTerms` hook still fires with the legacy-shape
@@ -220,8 +221,13 @@ test('adapter path with backstab sets isBackstab + class:backstab RollBonus', as
   expect(backstabEntry.source).toEqual({ type: 'class', id: 'thief' })
 })
 
-test('legacy path fires when options.showModifierDialog is set', async () => {
+test('adapter path fires when options.showModifierDialog is set (session 13 / A6)', async () => {
+  // A6: modifier-dialog case now routes via adapter with `damageTerms`
+  // threaded into `DCCRoll.createRoll` so the dialog can modify both
+  // attack and damage in one step. `modifiedDamageFormula` from the
+  // dialog result flows through identically to legacy.
   logDispatch.mockClear()
+  dccRollCreateRollMock.mockClear()
   const restore = withAutomate(true)
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -233,8 +239,40 @@ test('legacy path fires when options.showModifierDialog is set', async () => {
     restore()
   }
 
-  expect(assertDispatched('legacy')).toBe(true)
-  expect(assertDispatched('adapter')).toBe(false)
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
+  // Verify the adapter passed damageTerms through when the dialog is
+  // requested (legacy parity — dialog needs damage terms to render the
+  // damage-modification fields).
+  const createRollCall = dccRollCreateRollMock.mock.calls.at(-1)
+  expect(createRollCall).toBeDefined()
+  const createRollOptions = createRollCall[2]
+  expect(createRollOptions.showModifierDialog).toBe(true)
+  expect(Array.isArray(createRollOptions.damageTerms)).toBe(true)
+  expect(createRollOptions.damageTerms).toHaveLength(1)
+  expect(createRollOptions.damageTerms[0].formula).toBe('1d8')
+})
+
+test('adapter path skips damageTerms when dialog shown but weapon has no damage', async () => {
+  // Gate defensive: `rollOptions.damageTerms` should NOT be set if the
+  // weapon lacks a damage formula — mirrors legacy branch at
+  // `if (options.showModifierDialog && weapon.system?.damage)`.
+  logDispatch.mockClear()
+  dccRollCreateRollMock.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon({ damage: '' })
+
+  try {
+    await actor.rollToHit(weapon, { showModifierDialog: true })
+  } finally {
+    restore()
+  }
+
+  const createRollCall = dccRollCreateRollMock.mock.calls.at(-1)
+  const createRollOptions = createRollCall[2]
+  expect(createRollOptions.damageTerms).toBeUndefined()
 })
 
 test('adapter path fires for two-weapon primary weapons (session 11 / A4)', async () => {

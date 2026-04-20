@@ -2724,13 +2724,21 @@ class DCCActor extends Actor {
    * defensively, so with automate off the attack routes via adapter
    * while downstream stays on the inline-roll-text fallback.
    *
+   * Session 13 (A6) dropped the `options.showModifierDialog`
+   * exclusion. The adapter now threads `damageTerms` into
+   * `DCCRoll.createRoll` when the dialog is requested (mirroring
+   * legacy), and `modifiedDamageFormula` flows through identically.
+   * Dialog-modified attack-term values (e.g. user bumps a Modifier
+   * from `+0` to `+2`) affect `attackRoll.total` but are not
+   * reflected in `libResult.bonuses` — `warnIfDivergent` surfaces
+   * the mismatch; Foundry's total remains authoritative for chat.
+   *
    * @param {Object} weapon
    * @param {Object} options
    * @returns {boolean}
    * @private
    */
   _canRouteAttackViaAdapter (weapon, options = {}) {
-    if (options.showModifierDialog) return false
     const attackBonus = String(this.system.details?.attackBonus ?? '')
     if (attackBonus.includes('d') && parseDeedAttackBonus(attackBonus) === null) return false
     const weaponToHit = String(weapon?.system?.toHit ?? '')
@@ -2815,6 +2823,23 @@ class DCCActor extends Actor {
     const hookAddedTerms = terms.slice(termsLengthBefore)
 
     const rollOptions = Object.assign({ title: game.i18n.localize('DCC.ToHit') }, options)
+
+    // Session 13 (A6): when the modifier dialog is shown, pass the
+    // damage terms through so the user can modify both attack and
+    // damage in one dialog. Legacy parity — same shape, same fields.
+    // `modifiedDamageFormula` lands on `attackRoll.options` after the
+    // dialog resolves; the `modifiedDamageFormula` read below picks it
+    // up identically to legacy.
+    if (options.showModifierDialog && weapon.system?.damage) {
+      rollOptions.damageTerms = [
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.DamageDie'),
+          modifierLabel: game.i18n.localize('DCC.DamageModifier'),
+          formula: weapon.system.damage
+        }
+      ]
+    }
 
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
     await attackRoll.evaluate()

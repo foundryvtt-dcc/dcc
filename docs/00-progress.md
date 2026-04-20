@@ -84,7 +84,29 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 12 (2026-04-19, A5) dropped the
+**Phase 3 — ACTIVE. Session 13 (2026-04-19, A6) routed the
+`options.showModifierDialog` path through the adapter.**
+`_canRouteAttackViaAdapter` dropped its
+`if (options.showModifierDialog) return false` exclusion.
+`_rollToHitViaAdapter` now threads `damageTerms` into
+`DCCRoll.createRoll` (mirroring the legacy branch at
+`if (options.showModifierDialog && weapon.system?.damage)`) so the
+dialog can modify both attack and damage in one step. The
+`attackRoll.options.modifiedDamageFormula` extraction already lived
+in the adapter body unchanged, so the dialog's user-modified damage
+formula flows through to `rollWeaponAttack` identically to legacy.
+Dialog-modified attack-term values (e.g. user bumps a Modifier from
+`+0` to `+2`) affect `attackRoll.total` but aren't reflected in
+`libResult.bonuses`; `warnIfDivergent` surfaces the mismatch and
+Foundry's total remains authoritative for chat. 878 Vitest tests
+pass (was 877, +2 in `adapter-weapon-attack.test.js`: adapter
+dispatches with dialog + `damageTerms` passed through, adapter
+omits `damageTerms` when weapon lacks damage; -1 prior "legacy
+fires when showModifierDialog" assertion rewritten). 77 Playwright
+e2e tests pass against live v14 (unchanged count — "showModifierDialog
+flag → legacy" rewritten to "→ adapter").
+
+**Phase 3 — Session 12 (2026-04-19, A5) dropped the
 `automateDamageFumblesCrits` gate check on `_canRouteAttackViaAdapter`.**
 That setting gates whether `rollWeaponAttack` dispatches downstream
 damage / crit / fumble rolls — not the attack-side adapter's

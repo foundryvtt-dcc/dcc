@@ -124,23 +124,17 @@ roll-text fallback. One prior vitest + one prior Playwright
 "legacy fires when automate off" assertion rewritten to expect
 adapter dispatch.
 
-#### A6. Route `options.showModifierDialog: true` through adapter
-- **Scope:** The modifier dialog case (ctrl/cmd-click on attack,
-  fleeting-luck flow) currently falls to legacy. Thread
-  `damageTerms` into `_rollToHitViaAdapter`'s
-  `DCCRoll.createRoll` call; dialog-added Modifier terms flow
-  through the existing `hookTermsToBonuses` bridge same as
-  hook-added. Handle `attackRoll.options.modifiedDamageFormula`
-  override identically to legacy. Drop the
-  `if (options.showModifierDialog) return false` line from
-  `_canRouteAttackViaAdapter`.
-- **Files:** `module/actor.js`,
-  `module/__tests__/adapter-weapon-attack.test.js`,
-  `browser-tests/e2e/phase1-adapter-dispatch.spec.js`.
-- **Risk:** the dialog's `damageTerms` are a legacy
-  shape — verify hookTermsToBonuses doesn't double-count when the
-  dialog also adds terms hooks would add.
-- **Commit:** `feat(adapter): Phase 3 session 13 — modifier dialog route (A6)`
+#### ~~A6. Route `options.showModifierDialog: true` through adapter~~ — **DONE 2026-04-19**
+Landed as Phase 3 session 13. `_canRouteAttackViaAdapter` dropped
+the `showModifierDialog` exclusion; `_rollToHitViaAdapter`
+threads `damageTerms` into `DCCRoll.createRoll` (mirroring the
+legacy branch at `if (options.showModifierDialog &&
+weapon.system?.damage)`). The dialog can modify attack + damage in
+one step; `attackRoll.options.modifiedDamageFormula` extraction
+already lived in the adapter body unchanged. Dialog-modified
+attack-term values affect `attackRoll.total` but aren't reflected
+in `libResult.bonuses`; `warnIfDivergent` surfaces the mismatch
+and Foundry's total remains authoritative for chat.
 
 #### A7. Route dice-bearing attack bonus / toHit through adapter
 - **Scope:** Drop the non-deed dice rejection on `attackBonus`
@@ -160,11 +154,11 @@ adapter dispatch.
   permanent divergence.
 - **Commit:** `feat(adapter): Phase 3 session 14 — dice-bearing attack bonus route (A7)`
 
-**Exit criterion for Group A: MET 2026-04-19 for A1–A4; A5 MET
-2026-04-19. A6 + A7 remain before Group D's `_rollToHitLegacy`
-retirement becomes a mechanical collapse. Until then, the
-dispatcher gate is non-exhaustive and legacy branches cover the
-uncovered cases.**
+**Exit criterion for Group A: MET 2026-04-19 for A1–A6. A7
+remains before Group D's `_rollToHitLegacy` retirement becomes a
+mechanical collapse. Until then, the dispatcher gate is
+non-exhaustive (dice-bearing `attackBonus` / `toHit` still falls
+to legacy) and `_rollToHitLegacy` covers those cases.**
 
 ---
 
@@ -311,6 +305,12 @@ See `docs/00-progress.md` for details. Summary:
   attack-gate check. Downstream gates already check automate; attack-
   side adapter correctness is independent. First of three gate-
   broadening slices before D1 becomes a mechanical collapse.
+- Phase 3 session 13 (A6): routed `options.showModifierDialog`
+  through adapter. `damageTerms` thread into `DCCRoll.createRoll`
+  (mirrors legacy when `showModifierDialog && weapon.system?.damage`).
+  `modifiedDamageFormula` extraction already lived in the adapter
+  body unchanged. `warnIfDivergent` handles user-modified term
+  values; Foundry's total authoritative for chat.
 
 ### Docs slices
 
