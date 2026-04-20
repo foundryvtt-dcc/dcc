@@ -2675,96 +2675,23 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Dispatcher: route the simplest-weapon happy-path through the lib
-   * adapter (Phase 3 session 2), everything else through the legacy
-   * body verbatim. See `_canRouteAttackViaAdapter` for the gate.
+   * Roll a weapon attack through the lib's `makeAttackRoll`. Foundry's
+   * `DCCRoll.createRoll` owns the chat render + the `dcc.modifyAttackRollTerms`
+   * hook contract verbatim; after the Roll evaluates, the natural d20
+   * (and deed die when present) feed the lib via a sequenced roller so
+   * the lib owns the classification + `appliedModifiers` list that
+   * downstream chat flags surface as `dcc.libResult`.
    *
-   * Both branches return the same result shape (see `_rollToHitLegacy`).
-   * The adapter path adds an optional `libResult` field consumed by
-   * `rollWeaponAttack` to populate `dcc.libResult` on the chat flags.
+   * D1 (Phase 3 session 15) retired the `_rollToHitLegacy` branch —
+   * the Phase 3 gate (`_canRouteAttackViaAdapter`) had already reached
+   * exhaustiveness at A7 (session 14), and the legacy body became dead
+   * code. This is the single path now.
    *
    * @param {Object} weapon      The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
   async rollToHit (weapon, options = {}) {
-    if (this._canRouteAttackViaAdapter(weapon, options)) {
-      return this._rollToHitViaAdapter(weapon, options)
-    }
-    return this._rollToHitLegacy(weapon, options)
-  }
-
-  /**
-   * Gate for the Phase 3 adapter. Routes the simplest weapon attack —
-   * no roll-modifier dialog, no non-deed-die dice-bearing to-hit /
-   * attack-bonus. Session 9 broadened the gate to accept
-   * `options.backstab`: the lib's `isBackstab: true` drives the
-   * auto-crit (matches DCC RAW + the legacy Foundry behavior), and the
-   * Table 1-9 attack bonus flows through as a `RollBonus`. Session 10
-   * (A3) broadened the gate to accept warrior / dwarf deed dice: a
-   * toHit / attackBonus matching `parseDeedAttackBonus` (e.g. `+1d3+2`)
-   * routes through with `AttackInput.deedDie` set, exercising the
-   * lib's `onDeedAttempt`. Session 11 (A4) broadened the gate to
-   * accept `twoWeaponPrimary` / `twoWeaponSecondary` weapons —
-   * `item.js:prepareBaseData` already bakes DCC's dice-chain
-   * reduction into `weapon.system.actionDie` (e.g. `1d16[2w-off-hand]`)
-   * and adjusts `weapon.system.critRange` per the agility-tier
-   * matrix; `normalizeLibDie` strips the tag and the lib computes
-   * the attack on the bumped die. (`dcc-core-lib@0.5.0` adopted the
-   * dice-chain model — `AttackInput.twoWeaponPenalty` and
-   * `getTwoWeaponPenalty` were removed; DCC's prior integration
-   * choice is now the lib's canonical shape.)
-   *
-   * Session 12 (A5) dropped the `automateDamageFumblesCrits`
-   * requirement: that setting gates whether `rollWeaponAttack`
-   * dispatches downstream damage / crit / fumble rolls, not the
-   * attack-side adapter's correctness. The downstream gates
-   * (`_canRouteDamageViaAdapter`, `_canRouteCritViaAdapter`,
-   * `_canRouteFumbleViaAdapter`) already check `ctx.automate`
-   * defensively, so with automate off the attack routes via adapter
-   * while downstream stays on the inline-roll-text fallback.
-   *
-   * Session 13 (A6) dropped the `options.showModifierDialog`
-   * exclusion. The adapter now threads `damageTerms` into
-   * `DCCRoll.createRoll` when the dialog is requested (mirroring
-   * legacy), and `modifiedDamageFormula` flows through identically.
-   * Dialog-modified attack-term values (e.g. user bumps a Modifier
-   * from `+0` to `+2`) affect `attackRoll.total` but are not
-   * reflected in `libResult.bonuses` — `warnIfDivergent` surfaces
-   * the mismatch; Foundry's total remains authoritative for chat.
-   *
-   * Session 14 (A7) dropped the non-deed dice-bearing
-   * `attackBonus` / `toHit` exclusion. Foundry's Roll evaluates
-   * dice portions natively; `buildAttackInput` falls back to
-   * `parseToHitBonus` which takes the leading integer, dropping
-   * trailing dice — consistent with `hookTermsToBonuses`'s
-   * documented drop of dice-bearing hook terms. `warnIfDivergent`
-   * surfaces the mismatch; chat total comes from the Foundry Roll.
-   *
-   * @param {Object} weapon
-   * @param {Object} options
-   * @returns {boolean}
-   * @private
-   */
-  _canRouteAttackViaAdapter (weapon, options = {}) {
-    return true
-  }
-
-  /**
-   * Adapter path for `rollToHit`. Structurally mirrors the legacy body
-   * (same terms / hook / Roll construction) so the Foundry chat render
-   * and the `dcc.modifyAttackRollTerms` contract are preserved verbatim.
-   * After the Foundry `Roll` evaluates, feeds the natural d20 into the
-   * lib's `makeAttackRoll` so the lib owns the classification +
-   * `appliedModifiers` list that downstream chat flags surface as
-   * `dcc.libResult`.
-   *
-   * @param {Object} weapon
-   * @param {Object} options
-   * @returns {Object}
-   * @private
-   */
-  async _rollToHitViaAdapter (weapon, options = {}) {
     logDispatch('rollWeaponAttack', 'adapter', { weapon: weapon?.name || 'unknown' })
 
     const toHit = (weapon.system?.toHit ?? '').replaceAll('@ab', this.system.details.attackBonus)
@@ -2982,174 +2909,6 @@ class DCCActor extends Actor {
         isTwoWeaponPrimary: !!weapon.system?.twoWeaponPrimary,
         isTwoWeaponSecondary: !!weapon.system?.twoWeaponSecondary
       }
-    }
-  }
-
-  /**
-   * Legacy rollToHit body. Preserved verbatim; any change here should
-   * be mirrored in `_rollToHitViaAdapter` where applicable. Non-happy-
-   * path cases (deed die, backstab, two-weapon, modifier dialog,
-   * automate off) continue to execute this path.
-   *
-   * @param {Object} weapon      The weapon object being used for the roll
-   * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
-   * @return {Object}            Object representing the results of the attack roll
-   * @private
-   */
-  async _rollToHitLegacy (weapon, options = {}) {
-    logDispatch('rollWeaponAttack', 'legacy', { weapon: weapon?.name || 'unknown' })
-    /* Grab the To Hit modifier */
-    const toHit = (weapon.system?.toHit ?? '').replaceAll('@ab', this.system.details.attackBonus)
-
-    const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
-
-    const die = weapon.system?.actionDie || actorActionDice
-
-    let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
-
-    /* If we don't have a valid formula, bail out here */
-    if (!Roll.validate(toHit)) {
-      return {
-        rolled: false,
-        formula: toHit
-      }
-    }
-
-    // Collate terms for the roll
-    const terms = [
-      {
-        type: 'Die',
-        label: game.i18n.localize('DCC.ActionDie'),
-        formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
-      },
-      {
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.DeedDie'),
-        modifierLabel: game.i18n.localize('DCC.ToHit'),
-        formula: toHit
-      }
-    ]
-
-    // Add backstab bonus if required
-    if (options.backstab) {
-      terms.push({
-        type: 'Modifier',
-        label: game.i18n.localize('DCC.Backstab'),
-        presets: [],
-        formula: parseInt(this.system?.class?.backstab || '0')
-      })
-    }
-
-    // Add attack hit bonus adjustment for NPCs (from Active Effects)
-    // For PCs, this is already incorporated via computeMeleeAndMissileAttackAndDamage()
-    if (this.isNPC) {
-      const isMelee = weapon.system?.melee !== false
-      const attackAdjustment = isMelee
-        ? parseInt(this.system.details.attackHitBonus?.melee?.adjustment) || 0
-        : parseInt(this.system.details.attackHitBonus?.missile?.adjustment) || 0
-      if (attackAdjustment !== 0) {
-        terms.push({
-          type: 'Modifier',
-          label: game.i18n.localize(isMelee ? 'DCC.MeleeAttackAdjustment' : 'DCC.MissileAttackAdjustment'),
-          formula: attackAdjustment
-        })
-      }
-    }
-
-    // Allow modules to modify the terms before the roll is created
-    const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options)
-    if (!proceed) return // Cancel the attack roll if any listener returns false
-
-    /* Roll the Attack */
-    const rollOptions = Object.assign(
-      {
-        title: game.i18n.localize('DCC.ToHit')
-      },
-      options
-    )
-
-    // Add damage terms if showing the modifier dialog
-    if (options.showModifierDialog && weapon.system?.damage) {
-      rollOptions.damageTerms = [
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.DamageDie'),
-          modifierLabel: game.i18n.localize('DCC.DamageModifier'),
-          formula: weapon.system.damage
-        }
-      ]
-    }
-
-    const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
-    await attackRoll.evaluate()
-
-    // Adjust crit range if the die size was adjusted
-    const strictCrits = game.settings.get('dcc', 'strictCriticalHits')
-    if (strictCrits) {
-      // Extract die sizes from the original and adjusted formulas
-      const originalDieMatch = die.match(/(\d+)d(\d+)/)
-      const adjustedDieMatch = attackRoll.formula.match(/(\d+)d(\d+)/)
-      if (originalDieMatch && adjustedDieMatch) {
-        const originalDieSize = parseInt(originalDieMatch[2])
-        const adjustedDieSize = parseInt(adjustedDieMatch[2])
-        if (originalDieSize !== adjustedDieSize) {
-          // Use proportional crit range calculation
-          critRange = game.dcc.DiceChain.calculateProportionalCritRange(critRange, originalDieSize, adjustedDieSize)
-        }
-      }
-    } else {
-      // Use the original logic (expand crit range)
-      critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
-    }
-
-    const d20RollResult = attackRoll.dice[0].total
-    attackRoll.dice[0].options.dcc = {
-      upperThreshold: critRange
-    }
-    let deedDieRoll
-    let deedDieRollResult = ''
-    let deedDieFormula = ''
-    let deedSucceed = false
-    if (attackRoll.dice.length > 1) {
-      attackRoll.dice[1].options.dcc = {
-        lowerThreshold: 2,
-        upperThreshold: 3
-      }
-      deedDieFormula = attackRoll.dice[1].formula
-      if (!this.system.details.attackBonus.startsWith('+1')) {
-        deedDieFormula = deedDieFormula.replace(/^1/, '')
-      }
-      // Create a proper Roll object for the deed die
-      deedDieRoll = Roll.fromTerms([attackRoll.dice[1]])
-      deedDieRoll._total = attackRoll.dice[1].total
-      deedDieRoll._evaluated = true
-      deedDieRollResult = attackRoll.dice[1].total
-      deedSucceed = deedDieRollResult > 2
-    }
-
-    /* Check for crit or fumble */
-    const fumble = (d20RollResult === 1)
-    const naturalCrit = d20RollResult >= critRange
-    const crit = !fumble && (naturalCrit || options.backstab)
-
-    // Use modified damage formula from roll modifier dialog if available
-    const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
-
-    return {
-      d20RollResult,
-      deedDieFormula,
-      deedDieRollResult,
-      deedDieRoll,
-      deedSucceed,
-      crit,
-      formula: game.dcc.DCCRoll.cleanFormula(attackRoll.terms),
-      fumble,
-      hitsAc: attackRoll.total,
-      naturalCrit,
-      roll: attackRoll,
-      rolled: true,
-      weaponDamageFormula: modifiedDamageFormula || weapon.system?.damage || weapon.damage
     }
   }
 

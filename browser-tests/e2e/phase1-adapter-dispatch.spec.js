@@ -737,9 +737,9 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
     test('showModifierDialog flag → adapter (session 13 / A6)', async ({ page }) => {
       // A6: modifier-dialog case now routes via adapter with
       // `damageTerms` threaded into `DCCRoll.createRoll`. Dispatch log
-      // fires at the start of `_rollToHitViaAdapter` before the
-      // (blocking) dialog shows — fireAndForget dismisses the dialog
-      // with Escape so the test run continues.
+      // fires at the start of `rollToHit` before the (blocking) dialog
+      // shows — fireAndForget dismisses the dialog with Escape so the
+      // test run continues.
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Weapon Dialog', type: 'Player' })
         await actor.createEmbeddedDocuments('Item', [{
@@ -1300,6 +1300,27 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       // two-handed weapon (distinct mechanic from two-weapon fighting).
       expect(flag.isTwoWeaponPrimary).toBe(false)
       expect(flag.isTwoWeaponSecondary).toBe(false)
+    })
+
+    test('D1 retirement: _rollToHitLegacy + _canRouteAttackViaAdapter are gone (session 15)', async ({ page }) => {
+      // A7 closed the attack gate (always true); D1 collapsed the
+      // dispatcher + legacy body. `rollToHit` is now a single path.
+      // Guard against regressions that reintroduce the dispatcher
+      // scaffold.
+      const surface = await page.evaluate(() => {
+        const proto = Object.getPrototypeOf(game.actors.contents.find(a => a.type === 'Player')) ||
+          CONFIG.Actor.documentClass?.prototype
+        return {
+          hasRollToHit: typeof proto.rollToHit === 'function',
+          hasLegacy: typeof proto._rollToHitLegacy === 'function',
+          hasGate: typeof proto._canRouteAttackViaAdapter === 'function',
+          hasAdapterAlias: typeof proto._rollToHitViaAdapter === 'function'
+        }
+      })
+      expect(surface.hasRollToHit, 'rollToHit remains the public method').toBe(true)
+      expect(surface.hasLegacy, '_rollToHitLegacy retired in D1').toBe(false)
+      expect(surface.hasGate, '_canRouteAttackViaAdapter retired in D1').toBe(false)
+      expect(surface.hasAdapterAlias, '_rollToHitViaAdapter folded into rollToHit').toBe(false)
     })
   })
 

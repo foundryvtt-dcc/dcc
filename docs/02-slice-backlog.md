@@ -197,16 +197,20 @@ waiting for Phase 7.
 
 ### Group D — Legacy-branch retirements
 
-Per the §8.6 retirement principle. D1 is unblocked —
-`_canRouteAttackViaAdapter` returns `true` unconditionally.
+Per the §8.6 retirement principle. D1 landed 2026-04-19; D2+ remain.
 
-#### D1. Retire `_rollToHitLegacy` — **READY**
-- **Scope:** Mechanical collapse. Delete `_rollToHitLegacy` +
-  `_canRouteAttackViaAdapter`; inline `_rollToHitViaAdapter` body
-  into `rollToHit` (or rename / merge, pick the cleaner shape).
-- **Test regression:** every existing `_rollToHitLegacy` assertion
-  either moves to the adapter path or gets deleted.
-- **Commit:** `refactor(adapter): retire _rollToHitLegacy (gate exhaustive)`
+#### ~~D1. Retire `_rollToHitLegacy`~~ — **DONE 2026-04-19**
+Landed as Phase 3 session 15. Mechanical collapse:
+`_canRouteAttackViaAdapter` (always `true` post-A7) and
+`_rollToHitLegacy` (dead code post-A7) deleted;
+`_rollToHitViaAdapter`'s body folded into `rollToHit`.
+`logDispatch('rollWeaponAttack', 'adapter', …)` stays (permanent
+per Playwright adapter-dispatch spec). Downstream gates still
+check `attackRollResult?.libResult`, which remains meaningful for
+the early-return `{rolled:false}` path + hook-cancelled
+`proceed === false` path. +1 new Playwright regression guard
+asserting `_rollToHitLegacy` / `_canRouteAttackViaAdapter` /
+`_rollToHitViaAdapter` are absent from the actor prototype.
 
 #### D2. Retire `_rollDamageLegacy`, `_rollCriticalLegacy`, `_rollFumbleLegacy`
 - Same pattern as D1, once each gate is exhaustive.
@@ -309,6 +313,12 @@ See `docs/00-progress.md` for details. Summary:
   evaluating the dice natively; lib sees the flat leading
   integer. `_rollToHitLegacy` is dead code pending D1. Added
   two-handed weapon attack Playwright coverage along the way.
+- Phase 3 session 15 (D1): retired `_rollToHitLegacy`. Mechanical
+  collapse — gate (`_canRouteAttackViaAdapter`, always `true`
+  post-A7) and legacy body both deleted; `_rollToHitViaAdapter`'s
+  body folded into `rollToHit`. First Group-D retirement. +1
+  Playwright regression guard asserting the retired methods are
+  absent from the actor prototype.
 
 ### Docs slices
 

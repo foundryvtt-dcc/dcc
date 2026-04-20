@@ -5,9 +5,10 @@
  * `rollCritical` and `rollFumble` consume (`CriticalInput` / `FumbleInput`
  * in `vendor/dcc-core-lib/types/combat.d.ts`). Narrow slice — only the
  * "simplest-weapon happy-path" finisher rolls: the attack itself must
- * have gone through `_rollToHitViaAdapter` (i.e. `attackRollResult.libResult`
- * is present), and `automateDamageFumblesCrits` must be on so the
- * Foundry Roll actually evaluates.
+ * have produced a `libResult` (i.e. `attackRollResult.libResult` is
+ * present — post-D1 that's every attack that rolled), and
+ * `automateDamageFumblesCrits` must be on so the Foundry Roll
+ * actually evaluates.
  *
  * Same two-pass pattern session 5 used for damage: Foundry's
  * `DCCRoll.createRoll` owns the chat render + the visible total; the

@@ -84,7 +84,31 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 14 (2026-04-19, A7) dropped the
+**Phase 3 — ACTIVE. Session 15 (2026-04-19, D1) retired
+`_rollToHitLegacy`.** Mechanical collapse: `_canRouteAttackViaAdapter`
+(always `true` post-A7) and `_rollToHitLegacy` (dead code post-A7)
+both deleted; `_rollToHitViaAdapter`'s body folded into `rollToHit`.
+The adapter body is now the one and only path — Foundry's
+`DCCRoll.createRoll` owns chat rendering + `dcc.modifyAttackRollTerms`
+verbatim, the lib's `makeAttackRoll` owns classification +
+`appliedModifiers`. `logDispatch('rollWeaponAttack', 'adapter', …)`
+stays (permanent per memory note + Playwright adapter-dispatch spec).
+First Group-D retirement. Downstream gates
+(`_canRouteDamageViaAdapter`, `_canRouteCritViaAdapter`,
+`_canRouteFumbleViaAdapter`) are unchanged — they still gate on
+`attackRollResult?.libResult` which remains meaningful for the
+early-return `{rolled:false}` case + hook-cancelled
+`proceed === false` return. 878 Vitest tests pass (unchanged — test
+file header rewritten to reflect single-path state; internal body
+references to `_rollToHitViaAdapter` renamed to `rollToHit` where
+mentioned). 80 Playwright e2e tests pass against live v14 (was 79,
++1 new in `phase1-adapter-dispatch.spec.js`: D1 retirement
+regression guard — asserts `_rollToHitLegacy`,
+`_canRouteAttackViaAdapter`, and `_rollToHitViaAdapter` are all
+absent from the actor prototype, guarding against a regression that
+reintroduces the dispatcher scaffold).
+
+**Phase 3 — Session 14 (2026-04-19, A7) dropped the
 non-deed dice-bearing `attackBonus` / `toHit` exclusion.**
 `_canRouteAttackViaAdapter` now returns `true` unconditionally —
 the gate is exhaustive; every runtime input routes via adapter.

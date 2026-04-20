@@ -1,22 +1,18 @@
 /* global Hooks, gameSettingsGetMock, dccRollCreateRollMock */
 /**
- * Adapter round-trip test — Phase 3 session 2 (weapon attack).
+ * Adapter round-trip test — weapon attack (Phase 3 sessions 2–14,
+ * D1 session 15).
  *
- * Dispatcher + adapter coverage:
- *   DCCActor.rollToHit →
- *     (happy path — automate on or off) → _rollToHitViaAdapter
- *     (backstab on a thief — session 9) → _rollToHitViaAdapter with isBackstab
- *     (showModifierDialog — session 13 / A6) → _rollToHitViaAdapter with damageTerms
- *     (non-deed dice in bonus — session 14 / A7) → _rollToHitViaAdapter (Foundry total authoritative)
+ * `DCCActor.rollToHit` is a single path post-D1: gate exhaustiveness
+ * was reached at A7 (session 14), and `_rollToHitLegacy` was retired
+ * at D1 (session 15). Every runtime input — happy path, backstab on
+ * a thief, showModifierDialog with damageTerms, non-deed dice in
+ * bonus, deed die, two-weapon, automate off — flows through the
+ * lib's `makeAttackRoll`.
  *
- * A7 closes gate exhaustiveness: every runtime input now routes via
- * adapter. `_rollToHitLegacy` is dead code pending D1 retirement.
- *
- * Adapter-path validation points:
- *   - `dcc.modifyAttackRollTerms` hook still fires with the legacy-shape
- *     terms array.
- *   - `DCCRoll.createRoll` is still invoked for chat rendering (same
- *     shape as legacy).
+ * Validation points:
+ *   - `dcc.modifyAttackRollTerms` hook fires with the terms array.
+ *   - `DCCRoll.createRoll` is invoked for chat rendering.
  *   - The result carries `libResult` populated from the lib's
  *     `makeAttackRoll` so `rollWeaponAttack` can surface it as
  *     `dcc.libResult` chat flags.
@@ -77,8 +73,8 @@ function assertDispatched (path, rollType = 'rollWeaponAttack') {
 /**
  * Mock `DCCRoll.createRoll` to return a Roll with two dice terms — the
  * action die at `dice[0]` and a deed die at `dice[1]`. Required for the
- * deed-die adapter path: `_rollToHitViaAdapter` throws if `deedDie` is
- * set on the input but the Roll only produced one dice term.
+ * deed-die adapter path: `rollToHit` throws if `deedDie` is set on the
+ * input but the Roll only produced one dice term.
  *
  * Returns a restore function that reverts the mock.
  */

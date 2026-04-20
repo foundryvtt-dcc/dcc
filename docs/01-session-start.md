@@ -47,9 +47,14 @@ check. Phase 3 session 13 (A6, 2026-04-19) routed the
 dialog can modify attack + damage in one step. Phase 3 session 14
 (A7, 2026-04-19) dropped the non-deed dice-bearing
 `attackBonus` / `toHit` exclusion: `_canRouteAttackViaAdapter`
-returns `true` unconditionally. **Gate is exhaustive; D1
-(`_rollToHitLegacy` retirement) is the next work — mechanical
-collapse.**
+returns `true` unconditionally. Phase 3 session 15 (D1,
+2026-04-19) **retired `_rollToHitLegacy`** — mechanical collapse:
+gate + legacy body deleted; `_rollToHitViaAdapter`'s body folded
+into `rollToHit`. First Group-D retirement landed. **Attack-side
+is a single path; candidates for next session: D2 retirements
+(`_rollDamageLegacy` / `_rollCriticalLegacy` / `_rollFumbleLegacy`
+— each needs its gate broadened to exhaustive first), or another
+slice from the backlog.**
 Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and
