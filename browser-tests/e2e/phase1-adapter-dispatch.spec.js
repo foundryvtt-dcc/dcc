@@ -1324,10 +1324,18 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
     })
   })
 
-  // ── rollDamage (Phase 3 session 5) ─────────────────────────────────
+  // ── rollDamage (Phase 3 session 5, single-path post-session-19) ────
 
   test.describe('rollDamage', () => {
-    test('multi-damage-type formula → legacy (even when attack via adapter)', async ({ page }) => {
+    test('multi-damage-type formula (`1d6[fire]+1d6[cold]`) routes via adapter (D2 damage sub-slice c)', async ({ page }) => {
+      // Phase 3 session 19 broadened the gate to route per-term-flavor
+      // formulas. The adapter uses native `new Roll` (not DCCRoll) so
+      // Foundry preserves the per-term flavor labels in chat rendering,
+      // exactly as legacy did via its `hasPerTermFlavors` branch. The
+      // lib sees base `d6` + one `extraDamageDice` entry `{count: 1,
+      // die: 'd6', flavor: 'cold'}`; the first term's flavor is dropped
+      // for the lib's base breakdown (hardcoded `source: 'weapon'`) but
+      // preserved visually in Foundry's chat breakdown.
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Damage MultiType', type: 'Player' })
         await actor.createEmbeddedDocuments('Item', [{
@@ -1353,7 +1361,37 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       const attackLine = await waitForAdapterLog('rollWeaponAttack')
       assertPath(attackLine, 'adapter', { weapon: 'P1-FlamingBlade' })
       const damageLine = await waitForAdapterLog('rollDamage')
-      assertPath(damageLine, 'legacy', { weapon: 'P1-FlamingBlade' })
+      assertPath(damageLine, 'adapter', { weapon: 'P1-FlamingBlade' })
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Damage MultiType' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libDamageResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'multi-type damage must set dcc.libDamageResult').not.toBeNull()
+      expect(flag.passthrough).toBeUndefined()
+      // Base d6 (fire) + extra d6 (cold). Both naturals in [1,6].
+      expect(Array.isArray(flag.breakdown)).toBe(true)
+      const weaponEntry = flag.breakdown.find(b => b.source === 'weapon')
+      expect(weaponEntry, 'base-die breakdown entry').toBeDefined()
+      expect(weaponEntry.amount).toBeGreaterThanOrEqual(1)
+      expect(weaponEntry.amount).toBeLessThanOrEqual(6)
+      const coldEntry = flag.breakdown.find(b => b.source === 'cold')
+      expect(coldEntry, 'cold-flavored extra die must surface under its flavor').toBeDefined()
+      expect(coldEntry.amount).toBeGreaterThanOrEqual(1)
+      expect(coldEntry.amount).toBeLessThanOrEqual(6)
     })
 
     test('adapter path populates dcc.libDamageResult chat flag', async ({ page }) => {
@@ -1683,6 +1721,134 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(flag.damageDie).toBeNull()
       expect(flag.natural).toBeNull()
     })
+
+    test('cursed weapon (`damageWeaponBonus: "-1"`) routes via adapter with negative magicBonus (D2 damage sub-slice d)', async ({ page }) => {
+      // Phase 3 session 19 broadened the gate to accept negative
+      // `damageWeaponBonus`. `item.js` flattens a cursed flat bonus into
+      // the damage formula via `Roll.safeEval` (e.g. str +3 + cursed -1
+      // → `1d8+2`); the adapter reads `weapon.system.damageWeaponBonus`
+      // directly, sets `DamageInput.magicBonus: -1`, and the lib
+      // surfaces it as `breakdown[].source === 'cursed'` with a negative
+      // amount. Strength is attributed correctly (not silently folded).
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 PC CursedBlade',
+          type: 'Player',
+          system: { abilities: { str: { value: 16, mod: 2 } } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-CursedBlade',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+1',
+            critRange: 20,
+            damageWeapon: '1d8',
+            damageWeaponBonus: '-1',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 PC CursedBlade').items.getName('P1-CursedBlade').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 PC CursedBlade').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-CursedBlade' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-CursedBlade' })
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 PC CursedBlade' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libDamageResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'cursed weapon adapter-path damage must set dcc.libDamageResult').not.toBeNull()
+      expect(flag.passthrough).toBeUndefined()
+      const cursedEntry = flag.breakdown.find(b => b.source === 'cursed')
+      expect(cursedEntry, 'cursed bonus must surface as its own breakdown entry').toBeDefined()
+      expect(cursedEntry.amount).toBe(-1)
+    })
+
+    test('dice-bearing magic bonus (`damageWeaponBonus: "+1d4"`) routes via adapter with extraDamageDice (D2 damage sub-slice d)', async ({ page }) => {
+      // Phase 3 session 19 broadened the gate to accept dice-bearing
+      // `damageWeaponBonus`. `item.js` concatenates the raw bonus onto
+      // the derived damage formula (str +3 + `+1d4` magic → `1d8+3+1d4`);
+      // the adapter strips the suffix, parses the base, and feeds the
+      // dice as a single `extraDamageDice[]` entry (`source: 'magic'`).
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 PC FlamingBlade',
+          type: 'Player',
+          system: { abilities: { str: { value: 16, mod: 2 } } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-FlamingDiceBlade',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+1',
+            critRange: 20,
+            damageWeapon: '1d8',
+            damageWeaponBonus: '+1d4',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 PC FlamingBlade').items.getName('P1-FlamingDiceBlade').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 PC FlamingBlade').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-FlamingDiceBlade' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-FlamingDiceBlade' })
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 PC FlamingBlade' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libDamageResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'dice-bearing magic adapter-path damage must set dcc.libDamageResult').not.toBeNull()
+      expect(flag.passthrough).toBeUndefined()
+      const magicEntry = flag.breakdown.find(b => b.source === 'magic')
+      expect(magicEntry, 'dice-bearing magic bonus must surface as magic breakdown entry').toBeDefined()
+      // Extra d4 natural in [1, 4].
+      expect(magicEntry.amount).toBeGreaterThanOrEqual(1)
+      expect(magicEntry.amount).toBeLessThanOrEqual(4)
+    })
   })
 
   // ── rollCritical + rollFumble (Phase 3 session 6) ──────────────────
@@ -1897,6 +2063,32 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(surface.hasFumbleLegacy, '_rollFumbleLegacy retired in D2').toBe(false)
       expect(surface.hasCritAdapterAlias, '_rollCriticalViaAdapter folded into _rollCritical').toBe(false)
       expect(surface.hasFumbleAdapterAlias, '_rollFumbleViaAdapter folded into _rollFumble').toBe(false)
+    })
+
+    test('D2 damage retirement: gate/legacy/adapter-alias methods are gone (session 19)', async ({ page }) => {
+      // Session 19 broadened the damage gate to exhaustion (multi-type,
+      // dice-bearing, cursed, passthrough for unparseable) and collapsed
+      // the dispatcher. `_rollDamage` is a single path whose body is the
+      // former `_rollDamageViaAdapter`; the gate / legacy / via-adapter
+      // alias are all deleted. Guard against regressions.
+      const surface = await page.evaluate(() => {
+        const proto = Object.getPrototypeOf(game.actors.contents.find(a => a.type === 'Player')) ||
+          CONFIG.Actor.documentClass?.prototype
+        return {
+          hasDamage: typeof proto._rollDamage === 'function',
+          hasBuildLibDamage: typeof proto._buildLibDamageResult === 'function',
+          hasStructure: typeof proto._structureDamageInput === 'function',
+          hasDamageGate: typeof proto._canRouteDamageViaAdapter === 'function',
+          hasDamageLegacy: typeof proto._rollDamageLegacy === 'function',
+          hasDamageAdapterAlias: typeof proto._rollDamageViaAdapter === 'function'
+        }
+      })
+      expect(surface.hasDamage, '_rollDamage remains the single path').toBe(true)
+      expect(surface.hasBuildLibDamage, '_buildLibDamageResult helper remains').toBe(true)
+      expect(surface.hasStructure, '_structureDamageInput helper remains').toBe(true)
+      expect(surface.hasDamageGate, '_canRouteDamageViaAdapter retired in D2 damage').toBe(false)
+      expect(surface.hasDamageLegacy, '_rollDamageLegacy retired in D2 damage').toBe(false)
+      expect(surface.hasDamageAdapterAlias, '_rollDamageViaAdapter folded into _rollDamage').toBe(false)
     })
   })
 })

@@ -104,7 +104,92 @@ the anti-pattern example and the regression-guard reference. 875
 Vitest tests pass (was 874, +1 new guard test). Playwright suite
 unchanged — pure-source-audit slice, no runtime behavior change.
 
-**Phase 3 — ACTIVE. Session 18 (2026-04-20, D2 damage sub-slice a)
+**Phase 3 — ACTIVE. Session 19 (2026-04-20, D2 damage) retired
+`_rollDamageLegacy` + `_canRouteDamageViaAdapter` + `_rollDamageViaAdapter`
+by broadening the gate to exhaust the remaining sub-slices (c) + (d)
+in one combined slice.** The session-start prompt framed both as
+"STOP AND ASK" on the lib shape, but the
+`@moonloch/dcc-core-lib@0.6.0` vendor sync (two commits prior) had
+already extended `DamageInput`:
+  - `magicBonus` explicitly documented as "positive (magic) or negative
+    (cursed) — surfaced in breakdown as `source: 'magic' | 'cursed'`".
+  - New `extraDamageDice[{count, die, flavor?, source?}]` slot covering
+    both dice-bearing magic weapon bonuses (e.g. `+1d4`, `+1d6[fire]`)
+    and multi-type per-term damage formulas (e.g.
+    `1d6[fire]+1d6[cold]` splits as base `d6` + extra
+    `{count:1, die:'d6', flavor:'cold'}`).
+
+Adapter changes:
+  - New `parseMultiTypeFormula(formula)` helper tokenizes per-term
+    flavored formulas into a base + `extras[]` array. The first
+    positive-sign dice term becomes the base (flavor dropped since the
+    lib breakdown hardcodes `source: 'weapon'`); subsequent dice terms
+    feed `extraDamageDice`. Integer terms sum into `modifier`.
+  - `extractWeaponMagicBonus` replaced by `parseWeaponMagicBonus` —
+    same `weapon.system.damageWeaponBonus` input, new structured output:
+    `{ kind: 'none' | 'flat' | 'dice', ... }` or `null` for
+    unrecognized shapes. Positive flat maps to `magicBonus > 0`;
+    negative flat (cursed) maps to `magicBonus < 0`; dice-bearing
+    maps to a single `extraDamageDice[]` entry. Unrecognized shapes
+    fall to the passthrough path, no more hard rejection.
+  - `buildDamageInput(parsed, opts)` extended: negative `magicBonus`
+    now passes through unchanged (was dropped via `> 0` guard);
+    `opts.extraDamageDice` passes through verbatim into the DamageInput.
+  - `_rollDamage` consolidated into a single path whose body is the
+    former `_rollDamageViaAdapter` plus the multi-type branch.
+    Rendering forks on `/\d+d\d+\[/`: per-term flavors → native
+    `new Roll(formula, getRollData())` (matches legacy's
+    `hasPerTermFlavors` path, preserves per-term flavor labels in
+    chat); else → `DCCRoll.createRoll([{type:'Compound', flavor,
+    formula}])` with `peelTrailingFlavor` for single trailing
+    bracket.
+  - New private `_structureDamageInput(weapon, formula, options)`
+    helper picks between three structurers (multi-type → base +
+    extras; simple + dice-bearing magic → strip suffix, parse base,
+    add extras; simple + flat magic → `buildDamageInput` with
+    positive / negative magicBonus) or returns `null` so the caller
+    falls back to `buildPassthroughDamageResult`.
+  - `_buildLibDamageResult` now uses a sequenced-natural roller
+    closure (`let idx = 0; naturals[idx++] ?? 0`) rather than a
+    constant-returning closure, so multi-die damage formulas line up
+    each lib `evaluateRoll` call with its corresponding
+    `damageRoll.dice[i].total`.
+
+Collapse:
+  - `_canRouteDamageViaAdapter`, `_rollDamageLegacy`, and
+    `_rollDamageViaAdapter` all deleted.
+  - `logDispatch('rollDamage', 'adapter', ...)` stays (permanent per
+    the Playwright adapter-dispatch spec's assertion; session 19
+    removes the 'legacy' emit site entirely).
+
+Tests:
+  - Vitest: 883 pass (was 882 at session 18, +1 net — added
+    `parseMultiTypeFormula` coverage, new cursed / dice-bearing
+    `parseWeaponMagicBonus` cases, new adapter-path tests for
+    multi-type / cursed / dice-bearing routing, new "passthrough on
+    unrecognized weapon bonus" case, + the D2-damage retirement
+    guard; removed the gate-specific tests, the "legacy fires when
+    attack went legacy" test, the "legacy fires for per-term
+    flavors" test, and the `extractWeaponMagicBonus === null`
+    assertion since that helper no longer exists). File header
+    rewritten to reflect single-path state.
+  - Playwright: 86 pass against live v14 Foundry (was 83, +3 net —
+    added `cursed weapon routes via adapter`, `dice-bearing magic
+    bonus routes via adapter`, and `D2 damage retirement guard`;
+    rewrote `multi-damage-type formula → legacy` as
+    `multi-damage-type formula routes via adapter` with
+    per-term-flavor breakdown assertions). Third Group-D retirement
+    lands; **all three D2 retirements are complete**.
+
+`rollDamage` single-path now has feature parity + lib-attributable
+breakdown for every common DCC weapon shape that prior sessions ever
+dispatched through legacy. The only route that still falls through
+to the passthrough shape is truly unparseable formulas (mounted
+lance `doubleIfMounted`, homebrew `damageOverride`, mixed
+flat+dice bonuses like `+1+1d4`) — they route via adapter but with
+`libDamageResult.passthrough: true` + empty breakdown.
+
+**Phase 3 — Session 18 (2026-04-20, D2 damage sub-slice a)
 accepted unparseable formulas as a lossless passthrough through
 the adapter.** Second of the D2 damage gate-broadening sub-slices.
 Previously `parseDamageFormula(...) === null` rejected every formula

@@ -1,19 +1,26 @@
 /* global gameSettingsGetMock */
 /**
- * Adapter round-trip test — Phase 3 session 5 (weapon damage).
+ * Adapter round-trip test — weapon damage.
  *
- * Dispatcher + adapter coverage:
- *   DCCActor._rollDamage →
- *     (attack went via adapter + simple single-die formula + no backstab
- *      + no per-term flavors) → _rollDamageViaAdapter
- *     (otherwise) → _rollDamageLegacy
+ * Phase 3 session 19 retired `_rollDamageLegacy` + `_canRouteDamageViaAdapter`
+ * + `_rollDamageViaAdapter`. `_rollDamage` is a single path whose body
+ * is the former via-adapter branch, now broadened with:
+ *   - Multi-type per-term flavor formulas via `parseMultiTypeFormula`
+ *     (base + `extraDamageDice[]` with per-term flavors).
+ *   - Dice-bearing `damageWeaponBonus: '+1d4'` via `parseWeaponMagicBonus`
+ *     → `extraDamageDice[]`.
+ *   - Cursed `damageWeaponBonus: '-1'` via `parseWeaponMagicBonus`
+ *     → negative `DamageInput.magicBonus`.
+ *   - Unparseable formulas fall back to `buildPassthroughDamageResult`.
  *
  * Adapter-path validation points:
- *   - `DCCRoll.createRoll` is still invoked for chat rendering (same
- *     shape as legacy).
+ *   - `DCCRoll.createRoll` (or native `Roll` for per-term flavors) is
+ *     invoked for chat rendering with the same shape the legacy body
+ *     produced.
  *   - `libDamageResult` is populated from the lib's `rollDamage` so
  *     `rollWeaponAttack` can surface it as `dcc.libDamageResult` chat
- *     flags.
+ *     flags. For passthrough inputs, `libDamageResult.passthrough` is
+ *     `true` and the breakdown is deliberately empty.
  *
  * Note on the mock: `__mocks__/dcc-roll.js` declares `createRoll` as
  * `static async`, but production `module/dcc-roll.js:17` is sync (returns
@@ -27,7 +34,14 @@
 import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
-import { buildDamageInput, buildPassthroughDamageResult, extractWeaponMagicBonus, parseDamageFormula, peelTrailingFlavor } from '../adapter/damage-input.mjs'
+import {
+  buildDamageInput,
+  buildPassthroughDamageResult,
+  parseDamageFormula,
+  parseMultiTypeFormula,
+  parseWeaponMagicBonus,
+  peelTrailingFlavor
+} from '../adapter/damage-input.mjs'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -48,11 +62,12 @@ function withAutomate (enabled) {
   return () => gameSettingsGetMock.mockImplementation(original)
 }
 
-function makeStubRoll ({ total = 4, natural = 4 } = {}) {
+function makeStubRoll ({ total = 4, dice = null, natural = 4 } = {}) {
+  const diceList = dice || [{ total: natural, options: {} }]
   return {
     total,
     _total: total,
-    dice: [{ total: natural, options: {} }],
+    dice: diceList,
     terms: [],
     options: { dcc: {} },
     evaluate: async () => {},
@@ -62,7 +77,7 @@ function makeStubRoll ({ total = 4, natural = 4 } = {}) {
 
 function withSyncCreateRoll (rollFactory) {
   const original = global.game.dcc.DCCRoll.createRoll
-  global.game.dcc.DCCRoll.createRoll = vi.fn(() => rollFactory())
+  global.game.dcc.DCCRoll.createRoll = vi.fn((...args) => rollFactory(...args))
   return () => { global.game.dcc.DCCRoll.createRoll = original }
 }
 
@@ -107,11 +122,84 @@ test('peelTrailingFlavor strips a single trailing bracket, preserving the formul
 })
 
 test('peelTrailingFlavor returns the input unchanged when no trailing bracket', () => {
-  // Per-term flavor patterns have the bracket MID-formula, not trailing —
-  // peel leaves them alone so the gate's per-term-flavor check can reject.
+  // Per-term flavor patterns are handled by parseMultiTypeFormula, not this.
   expect(peelTrailingFlavor('1d6[fire]+1d6[cold]')).toEqual({ formula: '1d6[fire]+1d6', flavor: 'cold' })
   expect(peelTrailingFlavor('')).toEqual({ formula: '', flavor: '' })
   expect(peelTrailingFlavor(null)).toEqual({ formula: '', flavor: '' })
+})
+
+test('parseMultiTypeFormula splits per-term flavors into base + extras', () => {
+  // Canonical case: two flavored dice. First becomes base, second extra.
+  expect(parseMultiTypeFormula('1d6[fire]+1d6[cold]')).toEqual({
+    base: { diceCount: 1, die: 'd6' },
+    modifier: 0,
+    extras: [{ count: 1, die: 'd6', flavor: 'cold' }]
+  })
+  // Base without flavor, flavored extra — common for a weapon whose
+  // magic bonus happens to be flavored (`damageWeaponBonus: '+1d6[fire]'`).
+  expect(parseMultiTypeFormula('1d8+2+1d6[fire]')).toEqual({
+    base: { diceCount: 1, die: 'd8' },
+    modifier: 2,
+    extras: [{ count: 1, die: 'd6', flavor: 'fire' }]
+  })
+  // Three-term fire/cold/acid.
+  expect(parseMultiTypeFormula('1d4[fire]+1d4[cold]+1d4[acid]')).toEqual({
+    base: { diceCount: 1, die: 'd4' },
+    modifier: 0,
+    extras: [
+      { count: 1, die: 'd4', flavor: 'cold' },
+      { count: 1, die: 'd4', flavor: 'acid' }
+    ]
+  })
+})
+
+test('parseMultiTypeFormula returns null for non-per-term formulas + unrecognized shapes', () => {
+  expect(parseMultiTypeFormula('1d8')).toBeNull()
+  expect(parseMultiTypeFormula('1d8+2')).toBeNull()
+  expect(parseMultiTypeFormula('1d6+2[Slashing]')).toBeNull() // trailing, not per-term
+  expect(parseMultiTypeFormula('1d8+@ab[fire]')).toBeNull()
+  expect(parseMultiTypeFormula('')).toBeNull()
+  expect(parseMultiTypeFormula(null)).toBeNull()
+})
+
+test('parseWeaponMagicBonus parses flat integer bonuses (positive + negative)', () => {
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '+1' } })).toEqual({ kind: 'flat', value: 1 })
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '+3' } })).toEqual({ kind: 'flat', value: 3 })
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '2' } })).toEqual({ kind: 'flat', value: 2 })
+  // Cursed — negative flat.
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '-1' } })).toEqual({ kind: 'flat', value: -1 })
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '-2' } })).toEqual({ kind: 'flat', value: -2 })
+})
+
+test('parseWeaponMagicBonus returns { kind: "none" } for missing or empty bonus', () => {
+  expect(parseWeaponMagicBonus({})).toEqual({ kind: 'none' })
+  expect(parseWeaponMagicBonus({ system: {} })).toEqual({ kind: 'none' })
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '' } })).toEqual({ kind: 'none' })
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '   ' } })).toEqual({ kind: 'none' })
+})
+
+test('parseWeaponMagicBonus parses dice-bearing bonuses with optional flavor', () => {
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '+1d4' } })).toEqual({
+    kind: 'dice', count: 1, die: 'd4'
+  })
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '1d6' } })).toEqual({
+    kind: 'dice', count: 1, die: 'd6'
+  })
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '+2d4' } })).toEqual({
+    kind: 'dice', count: 2, die: 'd4'
+  })
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '+1d6[fire]' } })).toEqual({
+    kind: 'dice', count: 1, die: 'd6', flavor: 'fire'
+  })
+})
+
+test('parseWeaponMagicBonus returns null for unrecognized shapes', () => {
+  // Mixed flat + dice — not supported as a single bonus.
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '+1+1d4' } })).toBeNull()
+  // Gibberish.
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: 'wat' } })).toBeNull()
+  // Negative dice count — unsupported.
+  expect(parseWeaponMagicBonus({ system: { damageWeaponBonus: '-1d4' } })).toBeNull()
 })
 
 test('buildDamageInput folds the flat modifier into strengthModifier', () => {
@@ -120,9 +208,6 @@ test('buildDamageInput folds the flat modifier into strengthModifier', () => {
 })
 
 test('buildDamageInput peels NPC adjustment off strengthModifier into bonuses', () => {
-  // Goblin's `1d4` weapon with +2 NPC adjustment → formula `1d4+2`,
-  // parsed `modifier: 2`. The +2 belongs to the NPC adjustment, not
-  // Strength; the lib breakdown should show that.
   const input = buildDamageInput({ diceCount: 1, die: 'd4', modifier: 2 }, { npcDamageAdjustment: 2 })
   expect(input.strengthModifier).toBe(0)
   expect(input.bonuses).toHaveLength(1)
@@ -148,17 +233,28 @@ test('buildDamageInput leaves strengthModifier intact when no NPC adjustment', (
 })
 
 test('buildDamageInput peels positive magicBonus off strengthModifier', () => {
-  // PC with strength +2 wielding a +1 sword → formula `1d8+2+1`, parsed
-  // `modifier: 3`. Magic bonus should attribute as `magicBonus: 1`, not
-  // a fake +3 Strength.
   const input = buildDamageInput({ diceCount: 1, die: 'd8', modifier: 3 }, { magicBonus: 1 })
   expect(input).toEqual({ damageDie: 'd8', diceCount: 1, strengthModifier: 2, magicBonus: 1 })
+})
+
+test('buildDamageInput surfaces a negative magicBonus for cursed weapons', () => {
+  // Cursed -1 weapon + Str +3 → formula `1d8+2` (`Roll.safeEval` flattens
+  // str + cursed flat). Parsed modifier 2. To attribute correctly:
+  // magicBonus: -1, strengthModifier: 2 - (-1) = 3.
+  const input = buildDamageInput({ diceCount: 1, die: 'd8', modifier: 2 }, { magicBonus: -1 })
+  expect(input).toEqual({ damageDie: 'd8', diceCount: 1, strengthModifier: 3, magicBonus: -1 })
 })
 
 test('buildDamageInput ignores zero magicBonus (non-magical weapons)', () => {
   const input = buildDamageInput({ diceCount: 1, die: 'd8', modifier: 3 }, { magicBonus: 0 })
   expect(input).toEqual({ damageDie: 'd8', diceCount: 1, strengthModifier: 3 })
   expect(input.magicBonus).toBeUndefined()
+})
+
+test('buildDamageInput accepts extraDamageDice[] verbatim', () => {
+  const extras = [{ count: 1, die: 'd4', source: 'magic' }]
+  const input = buildDamageInput({ diceCount: 1, die: 'd8', modifier: 3 }, { extraDamageDice: extras })
+  expect(input.extraDamageDice).toBe(extras)
 })
 
 test('buildDamageInput splits magicBonus + npcDamageAdjustment cleanly', () => {
@@ -174,33 +270,7 @@ test('buildDamageInput splits magicBonus + npcDamageAdjustment cleanly', () => {
   expect(input.bonuses[0].effect).toEqual({ type: 'modifier', value: 3 })
 })
 
-test('extractWeaponMagicBonus parses positive-integer damageWeaponBonus', () => {
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '+1' } })).toBe(1)
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '+3' } })).toBe(3)
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '2' } })).toBe(2)
-})
-
-test('extractWeaponMagicBonus returns 0 for missing or empty bonus', () => {
-  expect(extractWeaponMagicBonus({})).toBe(0)
-  expect(extractWeaponMagicBonus({ system: {} })).toBe(0)
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '' } })).toBe(0)
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '   ' } })).toBe(0)
-})
-
-test('extractWeaponMagicBonus returns null for dice-bearing or negative bonuses', () => {
-  // Dice-bearing magic bonus (e.g. `+1d4 fire damage` style) — legacy only.
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '+1d4' } })).toBeNull()
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '1d6' } })).toBeNull()
-  // Cursed weapons — legacy only for this slice.
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: '-1' } })).toBeNull()
-  // Unparsable.
-  expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: 'wat' } })).toBeNull()
-})
-
-test('buildPassthroughDamageResult mirrors the parseable shape with null slots (sub-slice a)', () => {
-  // Sub-slice (a) accepts unparseable formulas as a lossless passthrough
-  // so the damage gate can be broadened. The passthrough shape matches
-  // the parseable case's fields so downstream consumers read uniformly.
+test('buildPassthroughDamageResult mirrors the parseable shape with null slots', () => {
   const result = buildPassthroughDamageResult({ total: 17 })
   expect(result).toEqual({
     damageDie: null,
@@ -213,98 +283,19 @@ test('buildPassthroughDamageResult mirrors the parseable shape with null slots (
   })
 })
 
-test('_canRouteDamageViaAdapter rejects when the attack went through legacy', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const weapon = { name: 'sword' }
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d8', {}, {})).toBe(false)
-})
-
-test('_canRouteDamageViaAdapter rejects per-term flavors', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const weapon = { name: 'sword' }
-  const attackRollResult = { libResult: { total: 15 } }
-
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d6[fire]+1d6[cold]', attackRollResult, {})).toBe(false)
-})
-
-test('_canRouteDamageViaAdapter accepts unparseable formulas as passthrough (sub-slice a)', () => {
-  // Previously rejected via `parseDamageFormula === null`. Sub-slice (a)
-  // drops that rejection so unparseable formulas route via adapter with
-  // a lossless passthrough libDamageResult. Lance's `doubleIfMounted`
-  // produces `(1d8)*2+3`; exotic multi-die weapons produce `1d8+1d4`;
-  // homebrew `damageOverride` can produce arbitrary formulas.
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const weapon = { name: 'mounted lance' }
-  const attackRollResult = { libResult: { total: 15 } }
-
-  expect(actor._canRouteDamageViaAdapter(weapon, '(1d8)*2+3', attackRollResult, {})).toBe(true)
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d8+1d4', attackRollResult, {})).toBe(true)
-  expect(actor._canRouteDamageViaAdapter(weapon, 'max(1d4,2)', attackRollResult, {})).toBe(true)
-})
-
-test('_canRouteDamageViaAdapter accepts trailing bracket-flavor formulas (sub-slice b)', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const weapon = { name: 'sword' }
-  const attackRollResult = { libResult: { total: 15 } }
-
-  // Single-die + flat modifier + trailing flavor — routes via adapter.
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d6+2[Slashing]', attackRollResult, {})).toBe(true)
-  // Multi-die + modifier + trailing flavor — routes via adapter.
-  expect(actor._canRouteDamageViaAdapter(weapon, '2d4-1[Piercing]', attackRollResult, {})).toBe(true)
-  // Die-immediately-followed-by-bracket (`1d8[Slashing]`) still falls to
-  // legacy — matches legacy's `/\d+d\d+\[/` `hasPerTermFlavors` branch
-  // which routes through Foundry's native `Roll` rather than the
-  // Compound term. Fold-in of that case is a separate sub-slice.
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d8[Slashing]', attackRollResult, {})).toBe(false)
-})
-
-test('_canRouteDamageViaAdapter accepts backstab (session 9)', () => {
-  // Session 9 dropped the `options.backstab → false` gate. `rollWeaponAttack`
-  // already swaps the formula to `weapon.system.backstabDamage` BEFORE
-  // reaching `_rollDamage`, so by the time the adapter sees it, it's the
-  // alternate die; no separate translation is needed.
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const weapon = { name: 'dagger' }
-  const attackRollResult = { libResult: { total: 15 } }
-
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d10', attackRollResult, { backstab: true })).toBe(true)
-})
-
-test('_canRouteDamageViaAdapter accepts simple formulas when attack was adapter', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const weapon = { name: 'sword' }
-  const attackRollResult = { libResult: { total: 15 } }
-
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d8', attackRollResult, {})).toBe(true)
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d6+2', attackRollResult, {})).toBe(true)
-  expect(actor._canRouteDamageViaAdapter(weapon, 'd8-1', attackRollResult, {})).toBe(true)
-})
-
-test('_canRouteDamageViaAdapter accepts +1 weapon with two-mod formula', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const weapon = { name: '+1 longsword', system: { damageWeaponBonus: '+1' } }
-  const attackRollResult = { libResult: { total: 15 } }
-
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d8+2+1', attackRollResult, {})).toBe(true)
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d8+1', attackRollResult, {})).toBe(true)
-})
-
-test('_canRouteDamageViaAdapter rejects dice-bearing or cursed magic bonuses', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const attackRollResult = { libResult: { total: 15 } }
-  const diceBonusWeapon = { name: 'flaming sword', system: { damageWeaponBonus: '+1d4' } }
-  const cursedWeapon = { name: 'cursed blade', system: { damageWeaponBonus: '-1' } }
-
-  expect(actor._canRouteDamageViaAdapter(diceBonusWeapon, '1d8+2+1d4', attackRollResult, {})).toBe(false)
-  expect(actor._canRouteDamageViaAdapter(cursedWeapon, '1d8+2-1', attackRollResult, {})).toBe(false)
+test('D2 damage retirement guard — gate + legacy + via-adapter aliases absent', () => {
+  // Phase 3 session 19 collapse. `_rollDamage` is a single path; the gate
+  // helper, legacy body, and via-adapter alias are all gone. Guard against
+  // a regression that reintroduces the dispatcher scaffold.
+  const proto = DCCActor.prototype
+  expect(proto._canRouteDamageViaAdapter).toBeUndefined()
+  expect(proto._rollDamageLegacy).toBeUndefined()
+  expect(proto._rollDamageViaAdapter).toBeUndefined()
+  // `_rollDamage` + `_buildLibDamageResult` + `_structureDamageInput`
+  // remain as the single path.
+  expect(typeof proto._rollDamage).toBe('function')
+  expect(typeof proto._buildLibDamageResult).toBe('function')
+  expect(typeof proto._structureDamageInput).toBe('function')
 })
 
 test('adapter path logs rollDamage dispatch + returns libDamageResult', async () => {
@@ -326,6 +317,7 @@ test('adapter path logs rollDamage dispatch + returns libDamageResult', async ()
   }
 
   expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
   expect(result.damageRoll).toBeDefined()
   expect(result.damagePrompt).toBeDefined()
   expect(result.libDamageResult).toBeDefined()
@@ -335,7 +327,12 @@ test('adapter path logs rollDamage dispatch + returns libDamageResult', async ()
   expect(Array.isArray(result.libDamageResult.breakdown)).toBe(true)
 })
 
-test('legacy path logs rollDamage dispatch when attack went through legacy', async () => {
+test('adapter path routes regardless of attack route (single-path post-retirement)', async () => {
+  // Pre-retirement, a legacy attack forced the damage side to legacy too
+  // (defensive `attackRollResult?.libResult` check). Post-session-19 the
+  // damage body no longer gates on that — `rollWeaponAttack` only invokes
+  // `_rollDamage` when a Roll is actually produced, and that scenario
+  // is covered by the existing test.
   logDispatch.mockClear()
   const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 4, natural: 4 }))
 
@@ -349,12 +346,14 @@ test('legacy path logs rollDamage dispatch when attack went through legacy', asy
     restoreRoll()
   }
 
-  expect(assertDispatched('legacy')).toBe(true)
-  expect(assertDispatched('adapter')).toBe(false)
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
 })
 
-test('legacy path fires for multi-damage-type (per-term flavors) formulas', async () => {
+test('adapter path routes multi-type per-term formulas via native Roll', async () => {
   logDispatch.mockClear()
+  // `1d6[fire]+1d6[cold]` → native `new Roll` (so Foundry preserves the
+  // per-term flavors in chat) → lib sees base d6 + extra d6[cold].
   const attackRollResult = { libResult: { total: 18 } }
 
   // noinspection JSCheckFunctionSignatures
@@ -363,9 +362,11 @@ test('legacy path fires for multi-damage-type (per-term flavors) formulas', asyn
   actor.getRollData = () => ({})
 
   const originalRoll = global.Roll
+  let constructedFormula = null
   class RollStub extends originalRoll {
     constructor (formula, data) {
       super(formula, data)
+      constructedFormula = formula
       this.total = 7
       this.dice = [{ total: 4, options: {} }, { total: 3, options: {} }]
       this.terms = []
@@ -375,21 +376,99 @@ test('legacy path fires for multi-damage-type (per-term flavors) formulas', asyn
   RollStub.prototype.toAnchor = () => ({ outerHTML: '<a>dmg</a>' })
   global.Roll = RollStub
 
+  let result
   try {
-    await actor._rollDamage(weapon, '1d6[fire]+1d6[cold]', attackRollResult, {})
+    result = await actor._rollDamage(weapon, '1d6[fire]+1d6[cold]', attackRollResult, {})
   } finally {
     global.Roll = originalRoll
   }
 
-  expect(assertDispatched('legacy')).toBe(true)
-  expect(assertDispatched('adapter')).toBe(false)
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
+  expect(constructedFormula).toBe('1d6[fire]+1d6[cold]')
+  // libDamageResult: base d6 rolled 4 + extra d6 cold rolled 3 → total 7.
+  expect(result.libDamageResult).toBeDefined()
+  expect(result.libDamageResult.baseDamage).toBe(4)
+  expect(result.libDamageResult.modifierDamage).toBe(3)
+  expect(result.libDamageResult.total).toBe(7)
+  const coldEntry = result.libDamageResult.breakdown.find(b => b.source === 'cold')
+  expect(coldEntry).toBeDefined()
+  expect(coldEntry.amount).toBe(3)
+})
+
+test('adapter path routes dice-bearing magic bonus as extraDamageDice', async () => {
+  logDispatch.mockClear()
+  // PC with Str +3 wielding a flaming sword (`damageWeaponBonus: '+1d4'`):
+  // item.js concatenates to `1d8+3+1d4` → Foundry rolls 5 on d8, 2 on d4
+  // → total 10. Lib sees base d8 + extra d4, strength +3.
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({
+    total: 10,
+    dice: [{ total: 5, options: {} }, { total: 2, options: {} }]
+  }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: '+1d4 flaming sword', system: { damageWeaponBonus: '+1d4' } }
+  const attackRollResult = { libResult: { total: 19 } }
+
+  let result
+  try {
+    result = await actor._rollDamage(weapon, '1d8+3+1d4', attackRollResult, {})
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(result.libDamageResult).toBeDefined()
+  expect(result.libDamageResult.passthrough).toBeUndefined()
+  expect(result.libDamageResult.baseDamage).toBe(5)
+  expect(result.libDamageResult.total).toBe(10)
+  const strEntry = result.libDamageResult.breakdown.find(b => b.source === 'Strength')
+  expect(strEntry).toBeDefined()
+  expect(strEntry.amount).toBe(3)
+  // Lib attributes extraDamageDice as `source: 'magic'` when no flavor.
+  const magicEntry = result.libDamageResult.breakdown.find(b => b.source === 'magic')
+  expect(magicEntry).toBeDefined()
+  expect(magicEntry.amount).toBe(2)
+})
+
+test('adapter path routes cursed weapon as negative magicBonus', async () => {
+  logDispatch.mockClear()
+  // Cursed -1 sword + Str +3 → item.js Roll.safeEval flattens to `1d8+2`.
+  // Foundry rolls 5 → total 7. Lib sees str +3, magicBonus -1.
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 7, natural: 5 }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'cursed blade', system: { damageWeaponBonus: '-1' } }
+  const attackRollResult = { libResult: { total: 15 } }
+
+  let result
+  try {
+    result = await actor._rollDamage(weapon, '1d8+2', attackRollResult, {})
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(result.libDamageResult).toBeDefined()
+  expect(result.libDamageResult.passthrough).toBeUndefined()
+  expect(result.libDamageResult.baseDamage).toBe(5)
+  expect(result.libDamageResult.total).toBe(7)
+  const strEntry = result.libDamageResult.breakdown.find(b => b.source === 'Strength')
+  expect(strEntry).toBeDefined()
+  expect(strEntry.amount).toBe(3)
+  const cursedEntry = result.libDamageResult.breakdown.find(b => b.source === 'cursed')
+  expect(cursedEntry).toBeDefined()
+  expect(cursedEntry.amount).toBe(-1)
 })
 
 test('adapter path attributes NPC damage adjustment as a bonus, not Strength', async () => {
   logDispatch.mockClear()
-  // Goblin's club rolls a natural 3 on `1d4`; +1 NPC adjustment baked
-  // into `1d4+1` → Foundry total 4. The lib result should attribute
-  // the +1 to the NPC bonus breakdown, not Strength.
   const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 4, natural: 3 }))
   const restore = withAutomate(true)
 
@@ -411,9 +490,6 @@ test('adapter path attributes NPC damage adjustment as a bonus, not Strength', a
   expect(result.libDamageResult.baseDamage).toBe(3)
   expect(result.libDamageResult.modifierDamage).toBe(1)
   expect(result.libDamageResult.total).toBe(4)
-  // Breakdown should NOT credit Strength (NPC has no rolled-up STR mod
-  // baked in by computeMeleeAndMissileAttackAndDamage); the +1 should
-  // ride on the bonuses entry.
   const strEntry = result.libDamageResult.breakdown.find(b => b.source === 'Strength')
   expect(strEntry).toBeUndefined()
   const bonusEntry = result.libDamageResult.breakdown.find(b => b.source === 'bonuses')
@@ -423,9 +499,6 @@ test('adapter path attributes NPC damage adjustment as a bonus, not Strength', a
 
 test('adapter path attributes +1 weapon bonus as magic, not Strength', async () => {
   logDispatch.mockClear()
-  // PC with Str +2 wielding a +1 longsword — formula `1d8+2+1`, natural 5.
-  // Total 5 + 2 (str) + 1 (magic) = 8. Breakdown should have separate
-  // `Strength` and `magic` entries — no bogus +3 Strength.
   const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 8, natural: 5 }))
   const restore = withAutomate(true)
 
@@ -482,12 +555,9 @@ test('adapter path peels trailing flavor bracket into Compound term + libDamageR
     restoreRoll()
   }
 
-  // Adapter dispatches (bracket-flavored formula no longer falls to legacy).
   expect(assertDispatched('adapter')).toBe(true)
   expect(assertDispatched('legacy')).toBe(false)
 
-  // The Compound term fed to DCCRoll.createRoll splits the flavor off the
-  // formula — chat rendering parity with the legacy path's same behavior.
   expect(createRollCalls).toHaveLength(1)
   expect(createRollCalls[0]).toMatchObject([{
     type: 'Compound',
@@ -495,19 +565,16 @@ test('adapter path peels trailing flavor bracket into Compound term + libDamageR
     flavor: 'Slashing'
   }])
 
-  // libDamageResult parses the cleaned formula: natural 4 + mod 2 = 6.
   expect(result.libDamageResult).toBeDefined()
   expect(result.libDamageResult.baseDamage).toBe(4)
   expect(result.libDamageResult.modifierDamage).toBe(2)
   expect(result.libDamageResult.total).toBe(6)
 })
 
-test('adapter path falls back to passthrough libDamageResult for unparseable formulas (sub-slice a)', async () => {
+test('adapter path falls back to passthrough libDamageResult for unparseable formulas', async () => {
   logDispatch.mockClear()
-  // Lance's doubleIfMounted produces `(1d8)*2+3`. parseDamageFormula
-  // can't digest the parens / multiplier shape. Previously routed to
-  // legacy via the `parseDamageFormula === null` gate rejection; now
-  // routes via adapter as a lossless passthrough.
+  // Lance's doubleIfMounted produces `(1d8)*2+3` — parser can't digest
+  // the parens/multiplier shape → lossless passthrough.
   const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 13, natural: 5 }))
   const restore = withAutomate(true)
 
@@ -530,12 +597,35 @@ test('adapter path falls back to passthrough libDamageResult for unparseable for
   expect(result.libDamageResult.passthrough).toBe(true)
   expect(result.libDamageResult.total).toBe(13)
   expect(result.libDamageResult.breakdown).toEqual([])
-  // Fields the lib would populate are null — callers check `passthrough`
-  // before trusting them.
   expect(result.libDamageResult.damageDie).toBeNull()
   expect(result.libDamageResult.natural).toBeNull()
   expect(result.libDamageResult.baseDamage).toBeNull()
   expect(result.libDamageResult.modifierDamage).toBeNull()
+})
+
+test('adapter path falls back to passthrough when weapon magic bonus is unrecognized', async () => {
+  logDispatch.mockClear()
+  // Weapon with unparseable `damageWeaponBonus` (e.g. `'+1+1d4'` mixed
+  // shape) can't be structured — passthrough keeps the damage rolling
+  // without a lib-attributable breakdown.
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 10, natural: 5 }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'weird weapon', system: { damageWeaponBonus: '+1+1d4' } }
+  const attackRollResult = { libResult: { total: 15 } }
+
+  let result
+  try {
+    result = await actor._rollDamage(weapon, '1d8+3+1+1d4', attackRollResult, {})
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(result.libDamageResult.passthrough).toBe(true)
 })
 
 test('adapter path clamps damage minimum to 1', async () => {

@@ -23,7 +23,7 @@ import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMer
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
-import { buildDamageInput, buildPassthroughDamageResult, extractWeaponMagicBonus, parseDamageFormula, peelTrailingFlavor } from './adapter/damage-input.mjs'
+import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
 
@@ -2913,105 +2913,60 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Dispatcher: route the simplest-damage happy-path through the lib
-   * adapter (Phase 3 session 5), everything else through the legacy
-   * body verbatim. See `_canRouteDamageViaAdapter` for the gate.
+   * Damage-roll route. Single path after Phase 3 session 19 (D2 damage
+   * retirement): the gate is exhaustive thanks to multi-type /
+   * dice-bearing / cursed support plus passthrough fallback for
+   * unparseable formulas.
    *
-   * Both branches return `{ damageRoll, damageInlineRoll, damagePrompt }`
-   * for `rollWeaponAttack` to stitch into the chat message. The adapter
-   * path additionally returns `libDamageResult`, which `rollWeaponAttack`
-   * surfaces as `dcc.libDamageResult` on the chat flags.
+   * Rendering branches on whether the formula has per-term flavors
+   * (`1d6[fire]+1d6[cold]`):
+   *   - Per-term flavor → native `new Roll` so Foundry preserves the
+   *     per-term labels in the chat breakdown (matches legacy's
+   *     `hasPerTermFlavors` branch).
+   *   - Otherwise → `DCCRoll.createRoll` with a Compound term, peeling
+   *     any single trailing `[flavor]` off the formula.
+   *
+   * After evaluation, `_buildLibDamageResult` structures the input for
+   * the lib (multi-type split, dice-bearing magic-bonus strip, cursed
+   * flat negative, or simple flat) or falls back to a lossless
+   * passthrough. Foundry remains authoritative for the displayed total
+   * + chat anchor — `libDamageResult` only populates `dcc.libDamageResult`
+   * on chat flags.
    *
    * @param {Object} weapon
    * @param {string} damageRollFormula
-   * @param {Object} attackRollResult
+   * @param {Object} attackRollResult unused post-session-19 but kept for
+   *   API stability with `rollWeaponAttack` + external callers.
    * @param {Object} options
    * @private
    */
   async _rollDamage (weapon, damageRollFormula, attackRollResult, options = {}) {
-    if (this._canRouteDamageViaAdapter(weapon, damageRollFormula, attackRollResult, options)) {
-      return this._rollDamageViaAdapter(weapon, damageRollFormula, attackRollResult, options)
-    }
-    return this._rollDamageLegacy(weapon, damageRollFormula, options)
-  }
-
-  /**
-   * Gate for the Phase 3 session 5 happy-path damage adapter. Routes
-   * only the simplest damage — a single-die + flat-modifier(s)
-   * formula, no per-term flavors, no backstab damage swap, and only
-   * when the attack itself was routed via the adapter. Anything else
-   * (multi-type damage like `1d6[fire]+1d6[cold]`, backstab damage,
-   * deed-die-injected formulas) stays on legacy. Session 8 broadened
-   * the gate to accept magic weapon bonuses — a positive integer
-   * `damageWeaponBonus` flows through `DamageInput.magicBonus` for
-   * correct breakdown attribution; dice-bearing or cursed (negative)
-   * magic bonuses still fall to legacy. D2 damage sub-slice (b) peels
-   * a single trailing `[flavor]` bracket (e.g. `1d6+2[Slashing]`) so
-   * bracket-flavored formulas route via adapter; the flavor still flows
-   * into `DCCRoll.createRoll`'s `Compound` term for chat rendering
-   * parity with legacy. Per-term flavors (`1d6[fire]+1d6[cold]`) —
-   * where a die is immediately followed by `[` — still fall to legacy.
-   * D2 damage sub-slice (a) accepts unparseable formulas (e.g. lance
-   * `(1d8)*2+3` with `doubleIfMounted`, custom `damageOverride`
-   * formulas, multi-die `1d8+1d4`) as a lossless passthrough —
-   * `_rollDamageViaAdapter` evaluates the Foundry Roll normally but
-   * skips the lib call and surfaces a passthrough `libDamageResult`
-   * carrying just `total` + `passthrough: true`.
-   *
-   * @param {Object} weapon
-   * @param {string} damageRollFormula
-   * @param {Object} attackRollResult
-   * @param {Object} options
-   * @returns {boolean}
-   * @private
-   */
-  _canRouteDamageViaAdapter (weapon, damageRollFormula, attackRollResult, options = {}) {
-    if (!attackRollResult?.libResult) return false
-    if (typeof damageRollFormula !== 'string') return false
-    if (damageRollFormula.trim() === '') return false
-    if (/\d+d\d+\[/.test(damageRollFormula)) return false
-    if (extractWeaponMagicBonus(weapon) === null) return false
-    return true
-  }
-
-  /**
-   * Adapter path for the damage roll. Evaluates the Foundry `Roll`
-   * (same shape as legacy — `DCCRoll.createRoll` Compound term, chat
-   * anchor + breakdown) so chat rendering and the existing
-   * `damage-applyable` hooks keep working verbatim. After evaluation,
-   * feeds the natural die result into the lib's `rollDamage` so the
-   * lib owns the breakdown + totals that surface on chat flags as
-   * `dcc.libDamageResult`.
-   *
-   * @param {Object} weapon
-   * @param {string} damageRollFormula
-   * @param {Object} attackRollResult
-   * @param {Object} options
-   * @private
-   */
-  async _rollDamageViaAdapter (weapon, damageRollFormula, attackRollResult, options = {}) {
     logDispatch('rollDamage', 'adapter', { weapon: weapon?.name || 'unknown' })
 
-    const { formula: peeledFormula, flavor } = peelTrailingFlavor(damageRollFormula)
+    const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
 
-    const damageRoll = game.dcc.DCCRoll.createRoll([
-      {
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.Damage'),
-        flavor,
-        formula: peeledFormula
-      }
-    ])
-    await damageRoll.evaluate()
+    let damageRoll
+    if (hasPerTermFlavors) {
+      damageRoll = new Roll(damageRollFormula, this.getRollData())
+      await damageRoll.evaluate()
+    } else {
+      const { formula: peeledFormula, flavor } = peelTrailingFlavor(damageRollFormula)
+      damageRoll = game.dcc.DCCRoll.createRoll([
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.Damage'),
+          flavor,
+          formula: peeledFormula
+        }
+      ])
+      await damageRoll.evaluate()
+    }
     foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
     if (damageRoll.total < 1) {
       damageRoll._total = 1
     }
 
-    const parsed = parseDamageFormula(peeledFormula)
-    const libDamageResult = parsed === null
-      ? buildPassthroughDamageResult(damageRoll)
-      : this._buildLibDamageResult(parsed, weapon, damageRoll, options)
+    const libDamageResult = this._buildLibDamageResult(weapon, damageRollFormula, damageRoll, options)
 
     let damageInlineRoll = damageRoll.toAnchor({
       classes: ['damage-applyable', 'inline-dsn-hidden'],
@@ -3032,23 +2987,28 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Build a lib-native `libDamageResult` from a parsed formula. Extracted
-   * from `_rollDamageViaAdapter` so the passthrough branch (sub-slice a)
-   * can skip the lib call cleanly without duplicating the anchor-build
-   * logic. Any weapon with dice-bearing / cursed `damageWeaponBonus`
-   * can't reach here — the gate (`extractWeaponMagicBonus === null`)
-   * still rejects that case.
+   * Build a lib-native `libDamageResult` from a Foundry-evaluated
+   * damage Roll. Routes the raw formula + weapon through the
+   * appropriate structurer (multi-type, dice-bearing magic, simple
+   * flat) and feeds a sequenced-natural roller into the lib's
+   * `rollDamage`. Falls back to a passthrough shape when no
+   * structurer can digest the inputs.
    *
    * @private
    */
-  _buildLibDamageResult (parsed, weapon, damageRoll, options) {
-    const magicBonus = extractWeaponMagicBonus(weapon) ?? 0
-    const damageInput = buildDamageInput(parsed, {
-      npcDamageAdjustment: options.npcDamageAdjustment,
-      magicBonus
-    })
-    const naturalDamage = damageRoll.dice[0]?.total ?? damageRoll.total
-    const libResult = libRollDamage(damageInput, () => naturalDamage)
+  _buildLibDamageResult (weapon, damageRollFormula, damageRoll, options) {
+    const structured = this._structureDamageInput(weapon, damageRollFormula, options)
+    if (!structured) return buildPassthroughDamageResult(damageRoll)
+
+    // Sequence the naturals from Foundry's evaluated dice so the lib's
+    // evaluateRoll calls (one per extraDamageDice term, plus the base)
+    // line up with what Foundry rolled. For single-die formulas,
+    // `naturals` has one entry and the closure returns it once.
+    const naturals = damageRoll.dice.map(d => d?.total ?? 0)
+    let idx = 0
+    const sequencedRoller = () => naturals[idx++] ?? 0
+
+    const libResult = libRollDamage(structured, sequencedRoller)
 
     // Foundry clamps `damageRoll.total` at 1 above; lib doesn't, so
     // compare post-clamp on both sides to avoid a spurious warn on
@@ -3057,7 +3017,7 @@ class DCCActor extends Actor {
 
     return {
       damageDie: libResult.roll.formula,
-      natural: naturalDamage,
+      natural: naturals[0] ?? null,
       baseDamage: libResult.baseDamage,
       modifierDamage: libResult.modifierDamage,
       total: libResult.total,
@@ -3066,64 +3026,87 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Legacy damage path. Preserved verbatim from the original inline body
-   * in `rollWeaponAttack`; any change here should be mirrored in
-   * `_rollDamageViaAdapter` where applicable. Multi-damage-type formulas
-   * (per-term flavors), backstab damage, and non-adapter-routed attacks
-   * continue to execute this path.
+   * Choose a parsing strategy for a Foundry damage formula + weapon and
+   * return a lib `DamageInput`, or `null` when no strategy applies and
+   * the caller should fall back to the passthrough shape.
    *
-   * @param {Object} weapon
-   * @param {string} damageRollFormula
-   * @param {Object} options
+   * Strategies tried in order:
+   *   1. Multi-type per-term flavor formula (`1d6[fire]+1d6[cold]`) →
+   *      `parseMultiTypeFormula` splits into base + extras. The base
+   *      term's flavor is dropped (lib breakdown hardcodes
+   *      `source: 'weapon'`); Foundry's chat render preserves it.
+   *   2. Simple formula + dice-bearing magic bonus (`damageWeaponBonus:
+   *      '+1d4'`) → strip the suffix item.js appended, parse the base
+   *      via `parseDamageFormula`, feed the dice as `extraDamageDice[]`.
+   *   3. Simple formula + flat magic bonus (positive = magic, negative
+   *      = cursed) → `parseDamageFormula` + `buildDamageInput` with
+   *      `magicBonus`.
+   *   4. Simple formula, non-magical → same as 3 with `magicBonus: 0`.
+   *
    * @private
    */
-  async _rollDamageLegacy (weapon, damageRollFormula, options = {}) {
-    logDispatch('rollDamage', 'legacy', { weapon: weapon?.name || 'unknown' })
-
-    const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
-
-    let damageRoll
-    if (hasPerTermFlavors) {
-      damageRoll = new Roll(damageRollFormula, this.getRollData())
-      await damageRoll.evaluate()
-    } else {
-      const flavorMatch = damageRollFormula.match(/\[(.*)]/)
-      let flavor = ''
-      let formula = damageRollFormula
-      if (flavorMatch) {
-        flavor = flavorMatch[1]
-        formula = formula.replace(/\[.*]/, '')
+  _structureDamageInput (weapon, damageRollFormula, options) {
+    if (/\d+d\d+\[/.test(damageRollFormula)) {
+      const parsed = parseMultiTypeFormula(damageRollFormula)
+      if (!parsed) return null
+      const input = {
+        damageDie: parsed.base.die,
+        diceCount: parsed.base.diceCount,
+        strengthModifier: parsed.modifier || 0
       }
-      damageRoll = game.dcc.DCCRoll.createRoll([
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.Damage'),
-          flavor,
-          formula
-        }
-      ])
-      await damageRoll.evaluate()
-    }
-    foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
-    if (damageRoll.total < 1) {
-      damageRoll._total = 1
+      if (parsed.extras.length > 0) {
+        input.extraDamageDice = parsed.extras.map(e => {
+          const entry = { count: e.count, die: e.die }
+          if (e.flavor !== undefined) {
+            entry.flavor = e.flavor
+            entry.source = e.flavor
+          }
+          return entry
+        })
+      }
+      return input
     }
 
-    let damageInlineRoll = damageRoll.toAnchor({
-      classes: ['damage-applyable', 'inline-dsn-hidden'],
-      dataset: { damage: damageRoll.total }
-    }).outerHTML
+    const { formula: peeledFormula } = peelTrailingFlavor(damageRollFormula)
 
-    const damageBreakdown = this._buildDamageBreakdown(damageRoll)
-    if (damageBreakdown) {
-      damageInlineRoll += ` <span class="damage-breakdown">(${damageBreakdown})</span>`
+    const magic = parseWeaponMagicBonus(weapon)
+    let baseFormula = peeledFormula
+    let extraFromMagic = null
+    let flatMagicBonus = 0
+
+    if (magic === null) return null
+    if (magic.kind === 'dice') {
+      // item.js concatenates the raw damageWeaponBonus onto the derived
+      // damage formula verbatim for dice-bearing bonuses. Strip that
+      // exact suffix so the remaining formula parses via parseDamageFormula.
+      const raw = weapon.system.damageWeaponBonus.trim()
+      const suffix = /^[+-]/.test(raw) ? raw : `+${raw}`
+      if (peeledFormula.endsWith(suffix)) {
+        baseFormula = peeledFormula.slice(0, peeledFormula.length - suffix.length)
+      } else if (peeledFormula.endsWith(raw)) {
+        baseFormula = peeledFormula.slice(0, peeledFormula.length - raw.length)
+      }
+      const entry = { count: magic.count, die: magic.die, source: 'magic' }
+      if (magic.flavor !== undefined) {
+        entry.flavor = magic.flavor
+        entry.source = magic.flavor
+      }
+      extraFromMagic = entry
+    } else if (magic.kind === 'flat') {
+      flatMagicBonus = magic.value
     }
 
-    return {
-      damageRoll,
-      damageInlineRoll,
-      damagePrompt: game.i18n.localize('DCC.Damage')
+    const parsed = parseDamageFormula(baseFormula)
+    if (!parsed) return null
+
+    const input = buildDamageInput(parsed, {
+      npcDamageAdjustment: options.npcDamageAdjustment,
+      magicBonus: flatMagicBonus
+    })
+    if (extraFromMagic) {
+      input.extraDamageDice = [extraFromMagic]
     }
+    return input
   }
 
   /**

@@ -233,41 +233,24 @@ guard + rewritten vitest coverage (-4 gate tests + -1 "legacy
 fires" test + rewrote 2 "legacy fires when automate off" tests as
 single-path inline-template assertions, +1 retirement guard).
 
-#### D2 damage. Retire `_rollDamageLegacy` — pending gate-broadening
-- **Scope:** Unlike crit / fumble, the damage gate has real
-  per-case rejections beyond the `attackRollResult?.libResult`
-  defensive check. Before D2 damage can retire, each rejection
-  needs broadening — teach `parseDamageFormula` / `buildDamageInput`
-  to handle the additional shapes, or accept that they translate to
-  no-op passthroughs (lib total = Foundry total, `libDamageResult`
-  still surfaces but `breakdown` may be empty / lossy).
-  - ~~**Bracket flavors** (`1d6+2[Slashing]`)~~ — DONE session 17.
-    `peelTrailingFlavor` splits the trailing `[...]` off the formula
-    before parsing; `_rollDamageViaAdapter` plumbs the flavor into
-    the `Compound` term. Gate rejects only the genuine per-term case
-    via `/\d+d\d+\[/`. Die-immediately-followed-by-bracket
-    (`1d8[Slashing]`) still falls to legacy (matches legacy's
-    `hasPerTermFlavors` native-Roll branch; folding would require a
-    separate rendering-parity decision).
-  - ~~**Unparseable `parseDamageFormula(...) === null` formulas**~~
-    — DONE session 18. `buildPassthroughDamageResult(damageRoll)`
-    in `module/adapter/damage-input.mjs` produces a minimal
-    `libDamageResult` with just `total` + `passthrough: true` +
-    empty `breakdown`. `_rollDamageViaAdapter` branches on parse
-    result; gate dropped the `parseDamageFormula === null`
-    rejection. Lance `(1d8)*2+3`, multi-die `1d8+1d4`, homebrew
-    `damageOverride` formulas all route via adapter now.
-  - **Multi-type per-term flavors** (`1d6[fire]+1d6[cold]`) — STOP
-    AND ASK. Lib's `DamageInput` is single-typed.
-  - **Dice-bearing / cursed `damageWeaponBonus`** — STOP AND ASK.
-    Lib's `magicBonus` is a non-negative integer.
-- **Stop-and-ask trigger:** each new shape is potentially a new
-  `buildDamageInput` branch kind; pause and surface the lib-vs-rules
-  question per the `feedback_lib_vs_rules_stop_and_verify.md` memory
-  before silently translating. Especially for negative / cursed
-  magic bonuses and multi-type per-term flavors — RAW semantics
-  may diverge from the lib's current DamageInput shape.
-- **Commit:** `refactor(adapter): Phase 3 session N — retire _rollDamageLegacy (D2 damage)`
+#### ~~D2 damage. Retire `_rollDamageLegacy`~~ — **DONE 2026-04-20**
+Landed as Phase 3 session 19. Combined slice for sub-slices (c)
+and (d): `@moonloch/dcc-core-lib@0.6.0` had already extended
+`DamageInput` (negative `magicBonus` for cursed + new
+`extraDamageDice[{count, die, flavor?, source?}]` for dice-bearing
++ multi-type per-term) — the session-start "STOP AND ASK" framing
+was resolved lib-side. Adapter changes: new `parseMultiTypeFormula`
+splits `1d6[fire]+1d6[cold]` into base + extras; `parseWeaponMagicBonus`
+replaces `extractWeaponMagicBonus` with structured
+`{ kind: 'none' | 'flat' | 'dice', ... }`; `buildDamageInput`
+extended for negative `magicBonus` + `extraDamageDice` passthrough.
+`_rollDamage` collapsed to single path with per-term-flavor native
+`new Roll` branching + sequenced-natural roller closure for
+multi-die. Third Group-D retirement; **Group D attack /
+crit / fumble / damage retirements all complete**. Vitest 883
+(was 882, +1 net). Playwright 86 (was 83, +3 net: multi-type,
+cursed, dice-bearing, D2 damage retirement guard; rewrote
+`multi-damage-type → legacy` test).
 
 #### D3. Resolve RAW patron-taint alignment → retire `_runLegacyPatronTaint`
 - **Scope:** The Phase 2 close-out deferred RAW alignment for patron
@@ -373,6 +356,19 @@ See `docs/00-progress.md` for details. Summary:
   body folded into `rollToHit`. First Group-D retirement. +1
   Playwright regression guard asserting the retired methods are
   absent from the actor prototype.
+- Phase 3 session 19 (D2 damage c + d, combined slice): retired
+  `_rollDamageLegacy` + `_canRouteDamageViaAdapter` +
+  `_rollDamageViaAdapter`. Session-start prompt framed
+  sub-slices (c) + (d) as "STOP AND ASK" on the lib shape, but
+  `@moonloch/dcc-core-lib@0.6.0` had already extended
+  `DamageInput` — explicit negative `magicBonus` (cursed) + new
+  `extraDamageDice[{count, die, flavor?, source?}]` for
+  dice-bearing magic + multi-type per-term. Adapter caught up:
+  new `parseMultiTypeFormula` + `parseWeaponMagicBonus` (replaces
+  `extractWeaponMagicBonus`) + extended `buildDamageInput`;
+  `_rollDamage` collapsed to single path with per-term-flavor
+  native `new Roll` branching. **All three D2 retirements are
+  now complete.** 883 Vitest + 86 Playwright e2e pass.
 - Phase 3 session 18 (D2 damage sub-slice a): accepted unparseable
   formulas as lossless passthrough. New
   `buildPassthroughDamageResult(damageRoll)` helper in

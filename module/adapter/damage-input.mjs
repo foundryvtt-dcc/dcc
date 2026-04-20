@@ -1,35 +1,40 @@
 /**
- * Damage-input adapter (Phase 3 session 5).
+ * Damage-input adapter. Translates Foundry weapon damage formulas + the
+ * resolved attack result into the lib's `DamageInput` shape
+ * (`vendor/dcc-core-lib/types/combat.d.ts`).
  *
- * Translates a Foundry weapon damage formula + the resolved attack result
- * into the shape the lib's `rollDamage` consumes (`DamageInput` in
- * `vendor/dcc-core-lib/types/combat.d.ts`). Narrow slice — only the
- * "simplest damage happy-path": a single die plus an optional flat
- * modifier, no per-term flavors, no backstab damage swap, no deed die
- * injection. The dispatcher in `rollWeaponAttack` enforces the gate
- * (`_canRouteDamageViaAdapter`) before calling `buildDamageInput`.
+ * Phase 3 session 19 broadened coverage to exhaust the damage gate so
+ * `_rollDamageLegacy` could retire:
+ *   - Multi-type per-term formulas (`1d6[fire]+1d6[cold]`) split into a
+ *     base die + `extraDamageDice[]` entries with per-term flavors.
+ *   - Dice-bearing magic weapon bonuses (`damageWeaponBonus: '+1d4'`)
+ *     surface as `extraDamageDice[]` with `source: 'magic'`.
+ *   - Cursed weapons (`damageWeaponBonus: '-1'`) surface as a negative
+ *     `DamageInput.magicBonus` so the lib tags the breakdown
+ *     `source: 'cursed'`.
+ *   - Anything else the parser can't digest (lance `(1d8)*2+3`, homebrew
+ *     `damageOverride` shapes) falls to a lossless passthrough via
+ *     `buildPassthroughDamageResult`.
  *
- * Phase 3 session 5 keeps the Foundry `Roll` as the source of truth for
- * chat rendering + the damage total (same two-pass pattern session 2
- * used for attacks). The lib result is called AFTER Foundry evaluates,
- * purely to populate `libDamageResult` on chat flags. No divergence
- * with the displayed total this session.
+ * Foundry keeps ownership of the displayed damage total + chat rendering
+ * — the lib result only populates `libDamageResult` on chat flags.
  */
 
 const SIMPLE_DAMAGE_PATTERN = /^\s*(\d*)d(\d+)\s*((?:[+-]\s*\d+\s*)*)$/i
 const TRAILING_FLAVOR_PATTERN = /^(.+?)\s*\[([^[\]]*)\]\s*$/
+const DAMAGE_WEAPON_BONUS_DICE_PATTERN = /^([+-]?)(\d*)d(\d+)(?:\[([^\]]+)\])?$/i
+const DAMAGE_WEAPON_BONUS_FLAT_PATTERN = /^([+-]?)(\d+)$/
+const MULTI_TERM_PATTERN = /([+-]?)\s*(?:(\d*)d(\d+)|(\d+))(?:\[([^\]]+)\])?/gi
 
 /**
  * Peel a trailing `[flavor]` bracket off a damage formula, returning the
- * cleaned formula + flavor label. Legacy `_rollDamageLegacy` strips the
- * trailing bracket the same way (see `damageRollFormula.match(/\[(.*)]/)`
- * in `actor.js`) and feeds `flavor` into `DCCRoll.createRoll`'s
- * `Compound` term so chat rendering shows the damage type tag.
+ * cleaned formula + flavor label. Legacy `_rollDamageLegacy` stripped the
+ * trailing bracket the same way and fed `flavor` into `DCCRoll.createRoll`'s
+ * `Compound` term so chat rendering showed the damage type tag.
  *
- * Per-term flavor formulas (`1d6[fire]+1d6[cold]`) — where a die is
- * immediately followed by `[` — are left to the gate to reject; this
- * helper only peels a single trailing bracket and does not attempt to
- * splice multiple labels.
+ * Per-term flavor formulas (`1d6[fire]+1d6[cold]`) are handled by
+ * `parseMultiTypeFormula` — this helper only peels a single trailing
+ * bracket and doesn't attempt to splice multiple labels.
  *
  * @param {string} formula
  * @returns {{formula: string, flavor: string}}
@@ -50,10 +55,9 @@ export function peelTrailingFlavor (formula) {
  * damageBonus + damageWeaponBonus stack (item.js concatenates them as
  * `NdM+strMod+magicMod`).
  *
- * Returns `null` for per-term flavors, dice-bearing modifiers (e.g.
- * `+1d4`), `@ab`-style substitutions, or sub-expressions — the gate
- * rejects those before `buildDamageInput` runs, so reaching `null` here
- * is a bug / unexpected input.
+ * Returns `null` for per-term flavors, multi-die, `@ab`-style
+ * substitutions, or sub-expressions — the caller picks an alternate
+ * parser (`parseMultiTypeFormula`) or falls back to passthrough.
  *
  * @param {string} formula
  * @returns {{diceCount: number, die: string, modifier: number} | null}
@@ -76,52 +80,132 @@ export function parseDamageFormula (formula) {
 }
 
 /**
- * Extract the magic weapon bonus from a weapon item, if any, as a
- * non-negative integer. Returns `0` when the weapon has no bonus,
- * and `null` when the bonus is dice-bearing (e.g. `+1d4`) or negative
- * (cursed) — both cases the damage-adapter gate bounces to legacy
- * until a later slice broadens support.
+ * Parse a per-term-flavor damage formula (`1d6[fire]+1d6[cold]`,
+ * `1d8+2+1d6[fire]`, etc.) into a base term + extras.
  *
- * Positive magic bonuses flow into the lib's native
- * `DamageInput.magicBonus` slot so the breakdown attributes them as
- * `source: 'magic'` rather than silently folding into Strength.
+ * The first positive-sign dice term becomes the base; subsequent dice
+ * terms become `extraDamageDice[]` entries. Integer terms sum into the
+ * modifier (fed to the lib as `strengthModifier`). The base term's
+ * flavor, if any, is dropped for the lib (its breakdown hardcodes
+ * `source: 'weapon'`) — Foundry's chat rendering preserves it via
+ * the native `Roll` path.
+ *
+ * Only applies to formulas containing a die immediately followed by
+ * `[` (the `/\d+d\d+\[/` pattern). Returns `null` for non-per-term
+ * inputs or shapes with unrecognized tokens / negative-count extras.
+ *
+ * @param {string} formula
+ * @returns {{base: {diceCount: number, die: string}, modifier: number, extras: Array<{count: number, die: string, flavor?: string}>} | null}
+ */
+export function parseMultiTypeFormula (formula) {
+  if (typeof formula !== 'string') return null
+  if (!/\d+d\d+\[/.test(formula)) return null
+
+  const re = new RegExp(MULTI_TERM_PATTERN.source, MULTI_TERM_PATTERN.flags)
+  const terms = []
+  let consumed = 0
+  let match
+  while ((match = re.exec(formula)) !== null) {
+    if (match[0] === '') break
+    if (match.index > consumed) {
+      const gap = formula.substring(consumed, match.index).trim()
+      if (gap !== '') return null
+    }
+    consumed = match.index + match[0].length
+    const sign = match[1] === '-' ? -1 : 1
+    if (match[4] !== undefined) {
+      terms.push({ kind: 'int', value: sign * parseInt(match[4], 10) })
+    } else {
+      const count = match[2] ? parseInt(match[2], 10) : 1
+      const term = {
+        kind: 'dice',
+        sign,
+        count,
+        die: `d${match[3]}`
+      }
+      if (match[5] !== undefined) term.flavor = match[5]
+      terms.push(term)
+    }
+  }
+  if (formula.substring(consumed).trim() !== '') return null
+  if (terms.length === 0) return null
+
+  let base = null
+  let modifier = 0
+  const extras = []
+  for (const t of terms) {
+    if (t.kind === 'int') {
+      modifier += t.value
+      continue
+    }
+    if (base === null && t.sign === 1) {
+      base = { diceCount: t.count, die: t.die }
+      continue
+    }
+    if (t.sign < 0) return null
+    const extra = { count: t.count, die: t.die }
+    if (t.flavor !== undefined) extra.flavor = t.flavor
+    extras.push(extra)
+  }
+  if (base === null) return null
+  return { base, modifier, extras }
+}
+
+/**
+ * Parse a weapon's `damageWeaponBonus` field into a structured shape
+ * for the lib's `DamageInput`.
+ *
+ * Returns:
+ *   - `{ kind: 'none' }` for empty / missing bonuses (non-magical weapons).
+ *   - `{ kind: 'flat', value: number }` for integer bonuses. Positive
+ *     values map to `DamageInput.magicBonus` (breakdown `source: 'magic'`);
+ *     negative values map to cursed bonuses (breakdown `source: 'cursed'`).
+ *   - `{ kind: 'dice', count, die, flavor? }` for dice-bearing bonuses
+ *     (`+1d4`, `+1d6[fire]`) — route through `DamageInput.extraDamageDice`.
+ *   - `null` for shapes this parser can't digest (mixed flat + dice,
+ *     etc.). Caller falls back to the passthrough path.
+ *
+ * Replaces the Phase 3 session 8 helper `extractWeaponMagicBonus` which
+ * returned `null` for dice-bearing + cursed bonuses to force them to
+ * legacy.
  *
  * @param {Object} weapon
- * @returns {number | null}
+ * @returns {{kind: 'none'} | {kind: 'flat', value: number} | {kind: 'dice', count: number, die: string, flavor?: string} | null}
  */
-export function extractWeaponMagicBonus (weapon) {
+export function parseWeaponMagicBonus (weapon) {
   const raw = weapon?.system?.damageWeaponBonus
-  if (typeof raw !== 'string' || raw.trim() === '') return 0
-  if (raw.includes('d')) return null
+  if (typeof raw !== 'string' || raw.trim() === '') return { kind: 'none' }
   const trimmed = raw.trim()
-  const match = trimmed.match(/^([+-]?)(\d+)$/)
-  if (!match) return null
-  const sign = match[1] === '-' ? -1 : 1
-  const value = parseInt(match[2], 10)
-  if (!Number.isFinite(value)) return null
-  const signed = sign * value
-  if (signed < 0) return null
-  return signed
+  const diceMatch = trimmed.match(DAMAGE_WEAPON_BONUS_DICE_PATTERN)
+  if (diceMatch) {
+    const sign = diceMatch[1] === '-' ? -1 : 1
+    const count = (diceMatch[2] ? parseInt(diceMatch[2], 10) : 1) * sign
+    if (count <= 0) return null
+    const result = { kind: 'dice', count, die: `d${diceMatch[3]}` }
+    if (diceMatch[4] !== undefined) result.flavor = diceMatch[4]
+    return result
+  }
+  const flatMatch = trimmed.match(DAMAGE_WEAPON_BONUS_FLAT_PATTERN)
+  if (flatMatch) {
+    const sign = flatMatch[1] === '-' ? -1 : 1
+    return { kind: 'flat', value: sign * parseInt(flatMatch[2], 10) }
+  }
+  return null
 }
 
 /**
  * Build a passthrough `libDamageResult` for damage formulas the parser
  * can't digest into a lib-native `DamageInput` (e.g. lance
- * `(1d8)*2+3` with `doubleIfMounted`, custom `damageOverride` formulas,
- * multi-die `1d8+1d4`). Foundry's Roll remains authoritative for chat
- * rendering + the damage total; the lib call is skipped since
- * `DamageInput` only has slots for a single die + flat modifier.
+ * `(1d8)*2+3` with `doubleIfMounted`, custom `damageOverride` formulas).
+ * Foundry's Roll remains authoritative for chat rendering + the damage
+ * total; the lib call is skipped.
  *
  * The result shape matches the parseable case's fields so downstream
- * consumers read it uniformly — unknown slots are `null`, and the
- * `passthrough: true` marker tells consumers the breakdown is
- * deliberately empty (not an adapter bug).
+ * consumers read it uniformly — unknown slots are `null`, and
+ * `passthrough: true` marks the breakdown as deliberately empty.
  *
  * @param {{total: number}} damageRoll
- * @returns {{
- *   damageDie: null, natural: null, baseDamage: null, modifierDamage: null,
- *   total: number, breakdown: Array, passthrough: true
- * }}
+ * @returns {{damageDie: null, natural: null, baseDamage: null, modifierDamage: null, total: number, breakdown: Array, passthrough: true}}
  */
 export function buildPassthroughDamageResult (damageRoll) {
   return {
@@ -136,41 +220,38 @@ export function buildPassthroughDamageResult (damageRoll) {
 }
 
 /**
- * Build a lib `DamageInput` from a parsed damage formula.
+ * Build a lib `DamageInput` from a parsed simple-formula + optional
+ * NPC / magic / extra-dice modifiers.
  *
- * For the simplest-damage slice, the formula already bakes in the
- * strength modifier + any other Foundry-side derivations from
- * `computeMeleeAndMissileAttackAndDamage`. We pass the flat modifier
- * as `strengthModifier` and leave `deedDieResult` absent — the gate
- * ensures those cases don't reach here.
- *
- * NPC damage-bonus adjustment (Phase 3 session 7): when present, the
- * `rollWeaponAttack` body baked it into the formula's flat modifier
- * (so the legacy path keeps working). For the adapter path we peel it
- * back off and surface it as a `RollBonus` on `bonuses[]` so the lib's
- * breakdown attributes it correctly (`source: 'NPC attack damage bonus'`)
- * instead of misattributing as Strength.
- *
- * Magic weapon bonus (Phase 3 session 8): `item.js` appends the
- * `damageWeaponBonus` (e.g. `'+1'` for a +1 sword) onto the derived
- * `damage` formula. For the adapter path we peel the positive integer
- * bonus back off `strengthModifier` and set it on `input.magicBonus`
- * so the lib's breakdown attributes it as `source: 'magic'`.
+ * For the single-die happy path, `parsed.modifier` already sums every
+ * flat adjustment baked into the Foundry formula (strength + NPC
+ * adjustment + flat magic bonus). This helper peels the named
+ * contributions back off so the lib breakdown attributes each one
+ * correctly:
+ *   - `opts.npcDamageAdjustment` → `bonuses[]` entry
+ *     (`source: 'NPC attack damage bonus'`).
+ *   - `opts.magicBonus` (positive or negative) → `DamageInput.magicBonus`
+ *     (breakdown tag `magic` / `cursed`).
+ *   - `opts.extraDamageDice` → `DamageInput.extraDamageDice` verbatim
+ *     (dice-bearing magic bonuses or per-term flavor extras).
  *
  * @param {{diceCount: number, die: string, modifier: number}} parsed
- * @param {{npcDamageAdjustment?: number, magicBonus?: number}} [opts]
+ * @param {{npcDamageAdjustment?: number, magicBonus?: number, extraDamageDice?: Array}} [opts]
  * @returns {import('../vendor/dcc-core-lib/types/combat.js').DamageInput}
  */
 export function buildDamageInput (parsed, opts = {}) {
   const npcAdj = Number.isFinite(opts.npcDamageAdjustment) ? opts.npcDamageAdjustment : 0
-  const magicBonus = Number.isFinite(opts.magicBonus) && opts.magicBonus > 0 ? opts.magicBonus : 0
+  const magicBonus = Number.isFinite(opts.magicBonus) ? opts.magicBonus : 0
   const input = {
     damageDie: parsed.die,
     diceCount: parsed.diceCount,
     strengthModifier: parsed.modifier - npcAdj - magicBonus
   }
-  if (magicBonus > 0) {
+  if (magicBonus !== 0) {
     input.magicBonus = magicBonus
+  }
+  if (Array.isArray(opts.extraDamageDice) && opts.extraDamageDice.length > 0) {
+    input.extraDamageDice = opts.extraDamageDice
   }
   if (npcAdj !== 0) {
     input.bonuses = [{
