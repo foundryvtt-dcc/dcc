@@ -22,7 +22,7 @@ import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellChe
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
-import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
+import { buildAttackInput, hookTermsToBonuses, normalizeLibDie, parseDeedAttackBonus } from './adapter/attack-input.mjs'
 import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
@@ -2696,11 +2696,15 @@ class DCCActor extends Actor {
 
   /**
    * Gate for the Phase 3 adapter. Routes the simplest weapon attack —
-   * no deed die, no two-weapon, no roll-modifier dialog, no
-   * dice-bearing to-hit / attack-bonus. Session 9 broadened the gate
-   * to accept `options.backstab`: the lib's `isBackstab: true` drives
-   * the auto-crit (matches DCC RAW + the legacy Foundry behavior),
-   * and the Table 1-9 attack bonus flows through as a `RollBonus`.
+   * no two-weapon, no roll-modifier dialog, no dice-bearing to-hit /
+   * attack-bonus. Session 9 broadened the gate to accept
+   * `options.backstab`: the lib's `isBackstab: true` drives the
+   * auto-crit (matches DCC RAW + the legacy Foundry behavior), and the
+   * Table 1-9 attack bonus flows through as a `RollBonus`. Session 10
+   * (A3) broadened the gate to accept warrior / dwarf deed dice: a
+   * toHit / attackBonus matching `parseDeedAttackBonus` (e.g. `+1d3+2`)
+   * routes through with `AttackInput.deedDie` set, exercising the
+   * lib's `onDeedAttempt`.
    *
    * The `automateDamageFumblesCrits` requirement is paired with the
    * session-prompt happy-path definition so the first bridge is
@@ -2716,9 +2720,9 @@ class DCCActor extends Actor {
     if (options.showModifierDialog) return false
     if (weapon?.system?.twoWeaponPrimary || weapon?.system?.twoWeaponSecondary) return false
     const attackBonus = String(this.system.details?.attackBonus ?? '')
-    if (attackBonus.includes('d')) return false
+    if (attackBonus.includes('d') && parseDeedAttackBonus(attackBonus) === null) return false
     const weaponToHit = String(weapon?.system?.toHit ?? '')
-    if (weaponToHit.includes('d')) return false
+    if (weaponToHit.includes('d') && parseDeedAttackBonus(weaponToHit) === null) return false
     let automate = false
     try {
       automate = !!game.settings.get('dcc', 'automateDamageFumblesCrits')
@@ -2854,7 +2858,34 @@ class DCCActor extends Actor {
     const hookBonuses = hookTermsToBonuses(hookAddedTerms)
     if (hookBonuses.length > 0) bonuses.push(...hookBonuses)
     if (bonuses.length > 0) attackInput.bonuses = bonuses
-    const libResult = libMakeAttackRoll(attackInput, () => d20RollResult)
+
+    // Session 10 (A3): warrior / dwarf deed die. Foundry's Roll already
+    // evaluated both the action die (`dice[0]`) and the deed die
+    // (`dice[1]`); build a roller closure that hands those naturals to
+    // the lib in order — `evaluateRoll` consumes the first call (action
+    // die), `rollDeedDie` consumes the second.
+    let deedDieRoll
+    let deedDieFormula = ''
+    let deedDieRollResult = ''
+    let deedSucceed = false
+    const naturals = [d20RollResult]
+    if (attackInput.deedDie && attackRoll.dice.length > 1) {
+      const deedTotal = attackRoll.dice[1].total
+      naturals.push(deedTotal)
+      attackRoll.dice[1].options.dcc = { lowerThreshold: 2, upperThreshold: 3 }
+      deedDieRollResult = deedTotal
+      deedDieFormula = attackRoll.dice[1].formula
+      if (!String(this.system.details.attackBonus).startsWith('+1')) {
+        deedDieFormula = deedDieFormula.replace(/^1/, '')
+      }
+      deedDieRoll = Roll.fromTerms([attackRoll.dice[1]])
+      deedDieRoll._total = deedTotal
+      deedDieRoll._evaluated = true
+      deedSucceed = deedTotal > 2
+    }
+    let rollerIdx = 0
+    const sequencedRoller = () => naturals[rollerIdx++] ?? 0
+    const libResult = libMakeAttackRoll(attackInput, sequencedRoller)
 
     // `hookTermsToBonuses` silently drops dice-bearing hook terms
     // (documented in `attack-input.mjs`), so divergence here is
@@ -2872,10 +2903,10 @@ class DCCActor extends Actor {
 
     return {
       d20RollResult,
-      deedDieFormula: '',
-      deedDieRollResult: '',
-      deedDieRoll: undefined,
-      deedSucceed: false,
+      deedDieFormula,
+      deedDieRollResult,
+      deedDieRoll,
+      deedSucceed,
       crit,
       formula: game.dcc.DCCRoll.cleanFormula(attackRoll.terms),
       fumble,
@@ -2894,7 +2925,10 @@ class DCCActor extends Actor {
         critSource: libResult.critSource,
         isFumble: libResult.isFumble,
         modifiers: libResult.appliedModifiers,
-        bonuses: attackInput.bonuses || []
+        bonuses: attackInput.bonuses || [],
+        deedDie: attackInput.deedDie,
+        deedNatural: libResult.deedRoll?.natural,
+        deedSuccess: libResult.deedSuccess
       }
     }
   }

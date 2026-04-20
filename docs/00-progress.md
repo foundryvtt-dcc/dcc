@@ -84,7 +84,45 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 9 (2026-04-19) routed thief backstab
+**Phase 3 — ACTIVE. Session 10 (2026-04-19, A3) routed warrior /
+dwarf deed-die attacks through the adapter.** New
+`parseDeedAttackBonus` helper in `module/adapter/attack-input.mjs`
+recognizes deed-die-bearing toHit / attackBonus strings (e.g.
+`+1d3+0`, `+d4-1`, `1d3+2+1`) — a single die expression at the
+start, optionally followed by any number of flat integer modifiers.
+`buildAttackInput` uses it to populate `AttackInput.deedDie` (lib
+normalized: `d3`) and the flat `attackBonus` separately.
+`_canRouteAttackViaAdapter` was relaxed: dice in actor `attackBonus`
+or weapon `toHit` are now permitted as long as `parseDeedAttackBonus`
+matches them; pathological / mixed-dice / weapon-side die patterns
+(e.g. `+2+1d3` from luck augur dice mid-string, or `+1d3+1d4`) still
+fall to legacy. `_rollToHitViaAdapter` builds a sequenced roller
+closure that returns `attackRoll.dice[0].total` first (the lib's
+`evaluateRoll` for the d20) then `attackRoll.dice[1].total` (the
+lib's `rollDeedDie` for the deed) — Foundry's Roll already evaluated
+both dice together via the existing Compound term, so we feed the
+naturals back through deterministically. Deed-die return fields
+(`deedDieFormula`, `deedDieRollResult`, `deedDieRoll`,
+`deedSucceed`) populate identically to the legacy path so
+`rollWeaponAttack` stitches the deed into chat / damage / crit /
+fumble flows verbatim. New chat-flag fields on `dcc.libResult`:
+`deedDie`, `deedNatural`, `deedSuccess` (mirrors
+`AttackResult.deedRoll` / `deedSuccess`). Lib's `onDeedAttempt`
+event fires when the deed is rolled. 874 Vitest tests pass (up
+from 868 — +6 net in `adapter-weapon-attack.test.js`:
+`parseDeedAttackBonus` accept + reject patterns, `buildAttackInput`
+deed-die populate / omit, gate-acceptance for warrior toHit, gate-
+rejection for mismatched-dice / suffix-die patterns; the prior
+"legacy fires for deed-die actor" assertion was rewritten to expect
+adapter dispatch). 73 Playwright e2e tests pass against live v14
+Foundry (was 71, +2 new in `phase1-adapter-dispatch.spec.js`:
+warrior-deed-die routes both attack + damage via adapter,
+warrior-deed-die libResult populates deedDie / deedNatural /
+deedSuccess + appliedModifiers carries `{source: 'deed die', value}`).
+A3 closes — backstab + NPC + magic-weapon + deed-die attack paths
+all route via adapter for the common case.
+
+**Phase 3 session 9 (2026-04-19) routed thief backstab
 attacks through the adapter.** Followed on from the
 `dcc-core-lib@0.4.1` sync (commit `58d9621`), which brought in the
 RAW backstab rewrite: `AttackInput.isBackstab: true` drives an
@@ -2101,9 +2139,13 @@ and should be scheduled into Phase 4+ work.
 
 ## Next steps
 
-**Phase 3 — session 9 (backstab adapter route) complete.** Thief
-backstab attacks (and their damage / crit / fumble tails) now flow
-through the adapter end-to-end. Session 10 picks up the next slice.
+**Phase 3 — session 10 (deed-die adapter route, A3) complete.**
+Warrior / dwarf deed-die attacks (and their damage / crit / fumble
+tails) now flow through the adapter for the common case. Session
+11 picks up the next slice — A4 (two-weapon fighting) is the only
+remaining attack-gate broadening from Group A and the most complex
+of the lot (multiple lib calls per user action, two-result chat-
+rendering path).
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
@@ -2127,17 +2169,16 @@ through the adapter end-to-end. Session 10 picks up the next slice.
   Flag lib-side gaps early; sync via `npm run sync-core-lib` when
   the lib ships a wave-3 release.
 
-**Session 10 pick-up** — Options:
-(a) **Deed-die adapter path** (warriors / dwarves). Plumbs `deedDie`
-   into `AttackInput` and extracts the rolled deed from Foundry's
-   attack roll's `dice[1]`. Exercises the lib's `onDeedAttempt`.
+**Session 11 pick-up** — Options:
+(a) **Two-weapon fighting (A4).** The hardest remaining attack-side
+   slice — multiple lib calls per user action plus the two-result
+   chat-rendering path. Lib has `getTwoWeaponPenalty` /
+   `getTwoWeaponInitiativeBonus`. Stop-and-ask trigger if chat
+   rendering needs to change shape (one combined message vs. two).
 (b) **Attack-modifier dialog** (open question #7 tie-in): extend
    `module/adapter/roll-dialog.mjs` with an attack-modifier prompt
    before driving a broader adapter path.
-(c) **Two-weapon fighting.** Broaden the attack gate to accept
-   `twoWeaponPrimary` / `twoWeaponSecondary`; lib has
-   `getTwoWeaponPenalty` + `getTwoWeaponInitiativeBonus`.
-(d) **Crit-result lookup in the lib.** The adapter currently
+(c) **Crit-result lookup in the lib.** The adapter currently
    delegates crit-table lookups to Foundry's `getCritTableResult`;
    lib's `parseCritExtraDamage` could classify the table result
    into extra damage, letting `libCritResult` carry a fully
@@ -2145,18 +2186,23 @@ through the adapter end-to-end. Session 10 picks up the next slice.
    added `critSource: 'backstab-auto'` to `libResult` — the
    natural anchor for routing backstab auto-crits to Crit Table II
    lib-side.
-(e) **Dice-bearing / cursed damageWeaponBonus.** Session 8 handles
+(d) **Dice-bearing / cursed damageWeaponBonus.** Session 8 handles
    positive integer bonuses; dice-bearing (e.g. `+1d4` fire rider)
    and cursed (negative) still fall to legacy.
-(f) **NPC attack-hit adjustment through lib bonuses.** Pre-existing
+(e) **NPC attack-hit adjustment through lib bonuses.** Pre-existing
    divergence: NPC `attackHitBonus.melee.adjustment` is pushed as
    a pre-hook `Modifier` term (so Foundry Roll sees it) but NOT
    translated into `attackInput.bonuses` (lib total misses it).
-   Session 9 fixed this for the Backstab case; NPC attack-hit is
-   the same pattern. Cheap follow-up.
+   Session 9 fixed this for the Backstab case; session 10's
+   sequenced-roller scaffold is reusable for any future multi-die
+   attack flows. Cheap follow-up.
+(f) **Group D retirement (`_rollToHitLegacy`).** A1–A3 are done; A4
+   remains. Once A4 lands, the dispatcher gate covers every
+   high-traffic path and the legacy branch can be retired per the
+   §8.6 retirement principle.
 
-Lean (a) deed-die: clean attack-gate extension, exercises a lib
-event (`onDeedAttempt`) not yet touched by the adapter.
+Lean (a) two-weapon to close out Group A so the Group D
+retirement slices unblock.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

@@ -22,7 +22,7 @@ import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
-import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from '../adapter/attack-input.mjs'
+import { buildAttackInput, hookTermsToBonuses, normalizeLibDie, parseDeedAttackBonus } from '../adapter/attack-input.mjs'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -212,13 +212,55 @@ test('legacy path fires for two-weapon primary weapons', async () => {
   expect(assertDispatched('adapter')).toBe(false)
 })
 
-test('legacy path fires when the actor has a deed-die attackBonus', async () => {
+test('adapter path fires when actor + weapon both carry a deed-die formula (session 10)', async () => {
   logDispatch.mockClear()
   const restore = withAutomate(true)
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
+  // L1 warrior: +1d3 attack bonus (deed die). The weapon's toHit gets
+  // built from this in real Foundry via prepareBaseData; the unit mock
+  // requires us to set both.
   actor.system.details.attackBonus = '+1d3'
+  const weapon = makeSimpleWeapon({ toHit: '+1d3+0' })
+
+  try {
+    await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
+
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
+})
+
+test('legacy path fires when the actor attackBonus has dice but does not match the deed-die pattern', async () => {
+  logDispatch.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  // Pathological / unsupported: two separate dice expressions.
+  actor.system.details.attackBonus = '+1d3+1d4'
   const weapon = makeSimpleWeapon()
+
+  try {
+    await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
+
+  expect(assertDispatched('legacy')).toBe(true)
+  expect(assertDispatched('adapter')).toBe(false)
+})
+
+test('legacy path fires when the weapon toHit has dice that are not a deed-die pattern', async () => {
+  logDispatch.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  // Lucky augur weapon-side die that isn't a deed die pattern (flat
+  // before the die). Stays on legacy because the parser anchors at the
+  // start.
+  const weapon = makeSimpleWeapon({ toHit: '+2+1d3' })
 
   try {
     await actor.rollToHit(weapon, {})
@@ -402,4 +444,45 @@ test('adapter path keeps libResult.die on the original action die when the hook 
   }
 
   expect(result.libResult.die).toBe('d20')
+})
+
+test('parseDeedAttackBonus matches deed-die formulas with optional count + multiple flat mods', () => {
+  expect(parseDeedAttackBonus('+1d3+0')).toEqual({ deedDie: 'd3', attackBonus: 0 })
+  expect(parseDeedAttackBonus('+1d3+2')).toEqual({ deedDie: 'd3', attackBonus: 2 })
+  expect(parseDeedAttackBonus('+d4-1')).toEqual({ deedDie: 'd4', attackBonus: -1 })
+  expect(parseDeedAttackBonus('1d3+2+1')).toEqual({ deedDie: 'd3', attackBonus: 3 })
+  expect(parseDeedAttackBonus('+1d5')).toEqual({ deedDie: 'd5', attackBonus: 0 })
+})
+
+test('parseDeedAttackBonus rejects non-deed-die / mixed-dice / negative-die inputs', () => {
+  expect(parseDeedAttackBonus('+3')).toBeNull()
+  expect(parseDeedAttackBonus('+1d3+1d4')).toBeNull()
+  expect(parseDeedAttackBonus('+2+1d3')).toBeNull()
+  expect(parseDeedAttackBonus('-1d3')).toBeNull()
+  expect(parseDeedAttackBonus('')).toBeNull()
+  expect(parseDeedAttackBonus(null)).toBeNull()
+  expect(parseDeedAttackBonus(undefined)).toBeNull()
+})
+
+test('buildAttackInput surfaces deedDie + flat attackBonus when toHit has a deed pattern', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon({ toHit: '+1d3+2' })
+
+  const input = buildAttackInput(actor, weapon)
+
+  expect(input.deedDie).toBe('d3')
+  expect(input.attackBonus).toBe(2)
+  expect(input.actionDie).toBe('d20')
+})
+
+test('buildAttackInput omits deedDie for plain numeric toHits', () => {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon({ toHit: '+3' })
+
+  const input = buildAttackInput(actor, weapon)
+
+  expect('deedDie' in input).toBe(false)
+  expect(input.attackBonus).toBe(3)
 })

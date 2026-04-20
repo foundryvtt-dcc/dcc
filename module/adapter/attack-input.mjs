@@ -45,6 +45,37 @@ function parseToHitBonus (toHit) {
 }
 
 /**
+ * Detect a warrior / dwarf deed-die-bearing toHit / attackBonus string.
+ * Accepts patterns like `+1d3+2`, `+d4-1`, `1d3+2+1`, etc. — i.e. a
+ * single die expression optionally preceded by a sign and followed by
+ * any number of flat integer modifiers. Returns `null` for non-matching
+ * inputs (rolled into the legacy gate fallback by callers).
+ *
+ * Negative deed dice (`-1d3+0`) are rejected — there's no DCC mechanic
+ * that emits one, and treating it as a positive die would silently
+ * change the lib's deed-success math.
+ *
+ * @param {string|number} toHit
+ * @returns {{ deedDie: string, attackBonus: number } | null}
+ */
+export function parseDeedAttackBonus (toHit) {
+  if (typeof toHit !== 'string') return null
+  const s = toHit.trim()
+  if (!s) return null
+  const m = s.match(/^([+-]?)(\d*)d(\d+)((?:[+-]\d+)*)$/)
+  if (!m) return null
+  const [, sign, , faces, mods] = m
+  if (sign === '-') return null
+  const deedDie = `d${faces}`
+  let attackBonus = 0
+  if (mods) {
+    const tokens = mods.match(/[+-]\d+/g) || []
+    for (const t of tokens) attackBonus += parseInt(t, 10)
+  }
+  return { deedDie, attackBonus }
+}
+
+/**
  * Build a lib `AttackInput` from a Foundry actor + weapon, for the
  * simplest-weapon happy-path slice.
  *
@@ -63,17 +94,20 @@ export function buildAttackInput (actor, weapon) {
   const isMelee = weapon.system?.melee !== false
   const attackType = isMelee ? 'melee' : 'missile'
   const toHitText = weapon.system?.toHit ?? '+0'
-  const attackBonus = parseToHitBonus(toHitText)
+  const deed = parseDeedAttackBonus(toHitText)
+  const attackBonus = deed ? deed.attackBonus : parseToHitBonus(toHitText)
   const actorActionDice = actor.getActionDice({ includeUntrained: true })[0]?.formula || '1d20'
   const actionDie = normalizeLibDie(weapon.system?.actionDie || actorActionDice)
   const threatRange = parseInt(weapon.system?.critRange || actor.system.details?.critRange || 20) || 20
-  return {
+  const input = {
     attackType,
     attackBonus,
     actionDie,
     threatRange,
     abilityModifier: 0
   }
+  if (deed) input.deedDie = deed.deedDie
+  return input
 }
 
 /**

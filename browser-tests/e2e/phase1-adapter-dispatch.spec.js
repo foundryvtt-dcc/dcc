@@ -750,6 +750,116 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(line, 'legacy', { weapon: 'P1-DialogSword' })
     })
 
+    test('warrior deed die → adapter (session 10 / A3)', async ({ page }) => {
+      // Phase 3 session 10 (A3): warrior / dwarf deed dice route through
+      // the adapter. The actor's `+1d3` attackBonus + the weapon's
+      // computed `+1d3+0` toHit both pass `parseDeedAttackBonus`; the
+      // adapter feeds `AttackInput.deedDie: 'd3'` to the lib, which
+      // rolls the deed via the sequenced roller and emits
+      // `onDeedAttempt` with the natural + success flag.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Weapon Warrior',
+          type: 'Player',
+          // L1 warrior: +1d3 deed die, no flat attack bonus.
+          system: { details: { attackBonus: '+1d3' } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-WarriorSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            // Pre-bake the deed-die toHit; in real Foundry
+            // computeMeleeAndMissileAttackAndDamage wires this for us
+            // off the actor's `+1d3` attackBonus + str mod.
+            toHit: '+1d3+0',
+            critRange: 20,
+            damageWeapon: '1d8',
+            damage: '1d8',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Weapon Warrior').items.getName('P1-WarriorSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Weapon Warrior').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-WarriorSword' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-WarriorSword' })
+    })
+
+    test('warrior deed die populates libResult.deedDie + deedNatural + deedSuccess', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Deed LibFlag',
+          type: 'Player',
+          system: { details: { attackBonus: '+1d3' } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-DeedSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+1d3+0',
+            critRange: 20,
+            damageWeapon: '1d8',
+            damage: '1d8',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        // Force every die to land on its midpoint (Foundry rounds up):
+        // d20 → 10, d3 → 2 (deed fail). Lets us assert deedSuccess === false
+        // while keeping the natural visible.
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.5
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Deed LibFlag').items.getName('P1-DeedSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Deed LibFlag').rollWeaponAttack(id)
+      }, weaponId)
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Deed LibFlag' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'deed-die adapter-path attack must set dcc.libResult').not.toBeNull()
+      expect(flag.deedDie).toBe('d3')
+      expect(flag.deedNatural).toBe(2)
+      expect(flag.deedSuccess).toBe(false)
+      // The lib emits a `{ source: 'deed die', value: <natural> }`
+      // entry on appliedModifiers when a deed is rolled.
+      const deedMod = flag.modifiers.find(m => m.source === 'deed die')
+      expect(deedMod, 'deed-die modifier must surface on libResult.modifiers').toBeDefined()
+      expect(deedMod.value).toBe(2)
+
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+    })
+
     test('automate off → legacy', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Weapon NoAutomate', type: 'Player' })

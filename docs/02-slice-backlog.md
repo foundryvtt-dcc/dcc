@@ -76,16 +76,22 @@ approach with alternate damage dies on backstab-friendly weapons
 needed since `rollWeaponAttack` already swaps
 `damageRollFormula = weapon.system.backstabDamage` pre-gate.
 
-#### A3. Deed-die adapter route (warrior + dwarf)
-- **Scope:** Broaden attack gate to allow deed-die weapons. Lib has
-  `isDeedSuccessful` + Mighty Deed skill definition (`add-dice` shape in
-  MODIFIERS.md §4 once wave 3 lands; custom field pre-wave-3).
-- **Files:** `module/actor.js` dispatchers,
-  `module/adapter/attack-input.mjs`,
-  `module/__tests__/adapter-weapon-attack.test.js`.
-- **Browser tests:** warrior-with-deed-die case asserting dispatch and
-  deed success threshold.
-- **Commit:** `feat(adapter): Phase 3 session <M> — deed-die adapter route`
+#### ~~A3. Deed-die adapter route (warrior + dwarf)~~ — **DONE 2026-04-19**
+Landed as Phase 3 session 10. New `parseDeedAttackBonus` helper in
+`module/adapter/attack-input.mjs` recognizes deed-die-bearing toHit /
+attackBonus strings (single die at start + any number of flat mods);
+`buildAttackInput` populates `AttackInput.deedDie` (lib normalized:
+`d3`) and the flat `attackBonus` separately. `_canRouteAttackViaAdapter`
+relaxed to allow dice that match the parser; mismatched / mixed-dice /
+weapon-side dice patterns still fall to legacy.
+`_rollToHitViaAdapter` builds a sequenced roller closure that returns
+the d20 first then the deed natural — Foundry's existing Compound term
+already evaluates both dice together. Deed-die return fields populate
+identically to legacy (`deedDieFormula`, `deedDieRollResult`,
+`deedDieRoll`, `deedSucceed`); chat flag `libResult` gains `deedDie`,
+`deedNatural`, `deedSuccess`. Lib's `onDeedAttempt` event fires.
+6 new vitest tests (24 total in `adapter-weapon-attack.test.js`) +
+2 new Playwright cases (warrior dispatch + libResult shape).
 
 #### A4. Two-weapon fighting through adapter
 - **Scope:** Both attacks + both damage rolls + penalty computation

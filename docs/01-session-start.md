@@ -32,15 +32,17 @@ pins Node 24.
 sessions 1–4 all CLOSED 2026-04-18. Phase 3 sessions 5 (first
 damage-migration slice), 6 (crit + fumble migration), 7 (NPC
 damage-bonus adapter route with proper attribution), 8 (PC magic-
-weapon-bonus damage adapter route), and 9 (thief backstab adapter
-route — A2) all CLOSED 2026-04-19. Vendor sync to
+weapon-bonus damage adapter route), 9 (thief backstab adapter
+route — A2), and 10 (warrior / dwarf deed-die adapter route — A3)
+all CLOSED 2026-04-19. Vendor sync to
 `@moonloch/dcc-core-lib@0.4.1` (backstab fix + post-review API
 cleanup) landed 2026-04-19. Group B1 (`dcc.registerItemSheet`
 extension hook) + B2 (`EXTENSION_API.md` pain-point cross-reference
-+ §2.12 stated contract) CLOSED 2026-04-19. Phase 3 session 10 is
++ §2.12 stated contract) CLOSED 2026-04-19. Phase 3 session 11 is
 the active work — pick up the next slice from
 `docs/02-slice-backlog.md` / `00-progress.md §Next steps`; lean
-deed-die (A3).** Phase 2 close-out pinned two
+two-weapon (A4) to close out Group A and unblock Group D
+retirements.** Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and
 incremental; (b) `_runLegacyPatronTaint` is permanent adapter
@@ -174,36 +176,40 @@ is surfaced for downstream crit-table routing.
   `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
   ...)`, and `logDispatch('rollFumble', ...)` in both branches.
   Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
-- **Baseline:** 868 Vitest tests pass (866 at session 8 close + 2
-  session-9 net new: backstab adapter-path dispatch + class:backstab
-  RollBonus attribution; two legacy-backstab assertions rewritten
-  for the new gate). 71 Playwright e2e tests pass against live v14
-  Foundry (70 prior + 2 new session-9 — backstab adapter dispatch +
-  libResult backstab-auto attribution; one legacy-backstab crit
-  test removed, its gate coverage already lived in
-  `_canRouteCritViaAdapter` unit tests). Dispatch-spec subset runs
-  in ~40 s thanks to the session-reuse fixture.
+- **Baseline:** 874 Vitest tests pass (868 at session 9 close + 6
+  session-10 net new in `adapter-weapon-attack.test.js`:
+  `parseDeedAttackBonus` accept + reject patterns, `buildAttackInput`
+  deed-die populate / omit, gate-acceptance for warrior toHit,
+  gate-rejection for mismatched-dice / suffix-die patterns; one
+  prior "legacy fires for deed-die actor" assertion was rewritten
+  to expect adapter dispatch). 73 Playwright e2e tests pass against
+  live v14 Foundry (71 prior + 2 new session-10 — warrior deed-die
+  routes both attack + damage via adapter, deed-die libResult
+  populates `deedDie` / `deedNatural` / `deedSuccess` +
+  `appliedModifiers` carries the lib's `{source: 'deed die', value}`
+  entry). Dispatch-spec subset runs in ~40 s thanks to the
+  session-reuse fixture.
 
-**This session's goal:** **Phase 3 session 10 — next attack-migration
+**This session's goal:** **Phase 3 session 11 — next attack-migration
 slice.**
 
-Sessions 2–9 landed the simplest-weapon-attack happy-path + its
+Sessions 2–10 landed the simplest-weapon-attack happy-path + its
 damage / crit / fumble tails through the adapter, plus the full
 attack-side hook bridge, the NPC damage-bonus attribution, the PC
-magic-weapon-bonus attribution, and thief backstab (A2 closed
-after the lib fix merged). Every chained call in a simplest-weapon
-attack — and now a thief backstab — surfaces a lib-native result
-on chat flags (`dcc.libResult` / `dcc.libDamageResult` /
-`dcc.libCritResult` / `dcc.libFumbleResult`). Session 10 picks up
-one of the remaining gate-broadening slices in `00-progress.md
-§Next steps`. Candidates: (a) deed-die adapter (leaning choice —
-clean attack-gate extension, exercises `onDeedAttempt`), (b)
-attack-modifier dialog (open question #7), (c) two-weapon
-fighting, (d) crit-result lookup in the lib (lib's
-`parseCritExtraDamage`), (e) dice-bearing / cursed
-`damageWeaponBonus` (session 8 left these on legacy), (f) NPC
+magic-weapon-bonus attribution, thief backstab (A2), and
+warrior / dwarf deed dice (A3). Every chained call in a
+simplest-weapon attack — and now a thief backstab + a warrior
+deed-die attack — surfaces a lib-native result on chat flags
+(`dcc.libResult` / `dcc.libDamageResult` / `dcc.libCritResult` /
+`dcc.libFumbleResult`). Session 11 picks up the last remaining
+Group A slice (A4 — two-weapon fighting) so Group D retirement of
+`_rollToHitLegacy` unblocks. Other candidates: (a) attack-modifier
+dialog (open question #7), (b) crit-result lookup in the lib (lib's
+`parseCritExtraDamage`), (c) dice-bearing / cursed
+`damageWeaponBonus` (session 8 left these on legacy), (d) NPC
 attack-hit adjustment through lib bonuses (pre-existing divergence
-surfaced by session 9).
+surfaced by session 9; session 10's sequenced-roller scaffold is
+reusable).
 
 Phase 3 as a whole is the largest migration so far:
 `rollWeaponAttack` → `makeAttackRoll` + `rollDamage` + `rollCritical`
