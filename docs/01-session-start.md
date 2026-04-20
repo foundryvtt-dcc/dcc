@@ -50,11 +50,19 @@ dialog can modify attack + damage in one step. Phase 3 session 14
 returns `true` unconditionally. Phase 3 session 15 (D1,
 2026-04-19) **retired `_rollToHitLegacy`** — mechanical collapse:
 gate + legacy body deleted; `_rollToHitViaAdapter`'s body folded
-into `rollToHit`. First Group-D retirement landed. **Attack-side
-is a single path; candidates for next session: D2 retirements
-(`_rollDamageLegacy` / `_rollCriticalLegacy` / `_rollFumbleLegacy`
-— each needs its gate broadened to exhaustive first), or another
-slice from the backlog.**
+into `rollToHit`. First Group-D retirement landed. Phase 3 session
+16 (D2 crit + fumble, 2026-04-20) **retired `_rollCriticalLegacy`
++ `_rollFumbleLegacy`** — paired collapse: both gates were
+defensive-only (the `!automate` case was the real non-adapter
+branch, and it had no lib call to do), so both legacy bodies +
+both `_canRoute…` gates + both `_rollXxxViaAdapter` aliases folded
+into unified `_rollCritical` / `_rollFumble` methods that branch
+on `ctx.automate` internally. Second Group-D retirement landed.
+**Crit + fumble are single paths; `_rollDamageLegacy` (D2 residual)
+still awaits gate-broadening for multi-type formulas / bracket
+flavors / unparseable formulas before it can collapse the same
+way. Candidates for next session: D2 damage gate-broadening
+slices, or another slice from the backlog.**
 Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and

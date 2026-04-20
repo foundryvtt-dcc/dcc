@@ -3,10 +3,10 @@
  *
  * Phase 3 sessions 5-6 migrated damage / crit / fumble without wiring
  * combat events: those paths use the two-pass observational pattern
- * (see `_rollDamageViaAdapter` / `_rollCriticalViaAdapter` /
- * `_rollFumbleViaAdapter` in `actor.js`) where Foundry's
- * `DCCRoll.createRoll` remains the source of truth for chat + anchor
- * totals, and the lib is called purely to populate
+ * (see `_rollDamageViaAdapter` for damage, and `_rollCritical` /
+ * `_rollFumble` in `actor.js` post-D2 single-path retirement) where
+ * Foundry's `DCCRoll.createRoll` remains the source of truth for chat +
+ * anchor totals, and the lib is called purely to populate
  * `dcc.libDamageResult` / `dcc.libCritResult` / `dcc.libFumbleResult`
  * flags. Events (`onCriticalThreat`, `onFumbleRoll`, `onDamageRoll`,
  * `onAttackRoll`, `onDeedAttempt`) will be wired here only when a

@@ -3096,15 +3096,20 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Dispatcher: route the simplest-weapon crit-finisher through the lib
-   * adapter (Phase 3 session 6), everything else through the legacy body
-   * verbatim. See `_canRouteCritViaAdapter` for the gate.
+   * Crit-finisher route. Builds the Foundry Roll (when `automate` is on),
+   * feeds the natural die into the lib's `rollCritical`, and returns the
+   * chat-ready shape for `rollWeaponAttack` to stitch into the message.
    *
-   * Both branches return the same shape for `rollWeaponAttack` to stitch
-   * into the chat message (`critRollFormula` / `critInlineRoll` /
-   * `critPrompt` / `critRoll` / `critResult` / `critRollTotal`). The
-   * adapter path additionally returns `libCritResult`, which
-   * `rollWeaponAttack` surfaces as `dcc.libCritResult` on the chat flags.
+   * With `automate` off, no Roll is evaluated — the caller renders an
+   * inline `[[/r ...]]` template the user clicks to roll manually. No
+   * `libCritResult` is produced in that mode (nothing rolled to feed the
+   * lib). Otherwise the lib owns classification + total that surface as
+   * `dcc.libCritResult` on the chat flags.
+   *
+   * D2 (Phase 3 session 16) retired the `_rollCriticalLegacy` branch
+   * when the crit gate went exhaustive — the `!automate` path was the
+   * only remaining non-adapter case and it had no lib work to do, so it
+   * folded into this body directly.
    *
    * @param {Object} weapon
    * @param {Object} attackRollResult
@@ -3112,58 +3117,33 @@ class DCCActor extends Actor {
    * @private
    */
   async _rollCritical (weapon, attackRollResult, ctx) {
-    if (this._canRouteCritViaAdapter(weapon, attackRollResult, ctx)) {
-      return this._rollCriticalViaAdapter(weapon, attackRollResult, ctx)
-    }
-    return this._rollCriticalLegacy(weapon, attackRollResult, ctx)
-  }
-
-  /**
-   * Gate for the Phase 3 session 6 happy-path crit adapter. Routes only
-   * when the attack itself was routed via the adapter AND
-   * `automateDamageFumblesCrits` is on (so the Foundry Roll actually
-   * evaluates — the lib call is a two-pass replay of the natural die).
-   *
-   * @param {Object} weapon
-   * @param {Object} attackRollResult
-   * @param {{automate: boolean}} ctx
-   * @returns {boolean}
-   * @private
-   */
-  _canRouteCritViaAdapter (weapon, attackRollResult, ctx) {
-    if (!attackRollResult?.libResult) return false
-    if (!ctx?.automate) return false
-    return true
-  }
-
-  /**
-   * Adapter path for the crit roll. Structurally mirrors legacy for
-   * Foundry compatibility: builds a `Compound` DCC term, evaluates via
-   * `game.dcc.DCCRoll.createRoll`, looks up the crit-table entry, builds
-   * the anchor. After evaluation, feeds the natural die into the lib's
-   * `rollCritical` so the lib owns classification + the result that
-   * surfaces on chat flags as `dcc.libCritResult`.
-   *
-   * @param {Object} weapon
-   * @param {Object} attackRollResult
-   * @param {{automate: boolean, luckMod: string, critTableName: string}} ctx
-   * @private
-   */
-  async _rollCriticalViaAdapter (weapon, attackRollResult, ctx) {
     logDispatch('rollCritical', 'adapter', { weapon: weapon?.name || 'unknown' })
 
-    const { luckMod, critTableName } = ctx
+    const { automate, luckMod, critTableName } = ctx
     const critDie = weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'
     const critRollFormula = `${critDie}${luckMod}`
+    const criticalText = game.i18n.localize('DCC.Critical')
     const critTableText = game.i18n.localize('DCC.CritTable')
     const critTableDisplayText = `${critTableText} ${critTableName}`
     const critTableLink = await getCritTableLink(critTableName, critTableDisplayText)
 
-    const critPrompt = game.i18n.localize('DCC.Critical')
+    if (!automate) {
+      const critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableDisplayText})]] (${critTableLink})`)
+      return {
+        critRollFormula,
+        critInlineRoll,
+        critPrompt: game.i18n.localize('DCC.RollCritical'),
+        critRoll: undefined,
+        critResult: '',
+        critRollTotal: null
+      }
+    }
+
+    const critPrompt = criticalText
     const critRoll = game.dcc.DCCRoll.createRoll([
       {
         type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.Critical'),
+        dieLabel: criticalText,
         formula: critRollFormula
       }
     ])
@@ -3208,72 +3188,19 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Legacy crit path. Preserved verbatim from the original inline body in
-   * `rollWeaponAttack`; any change here should be mirrored in
-   * `_rollCriticalViaAdapter` where applicable. Legacy-routed attacks
-   * and `automateDamageFumblesCrits=false` continue to execute this
-   * path.
+   * Fumble-finisher route. Builds the Foundry Roll (when `automate` is
+   * on), feeds the natural die into the lib's `rollFumble`, and returns
+   * the chat-ready shape for `rollWeaponAttack` to stitch into the
+   * message.
    *
-   * @param {Object} weapon
-   * @param {Object} attackRollResult
-   * @param {{automate: boolean, luckMod: string, critTableName: string}} ctx
-   * @private
-   */
-  async _rollCriticalLegacy (weapon, attackRollResult, ctx) {
-    logDispatch('rollCritical', 'legacy', { weapon: weapon?.name || 'unknown' })
-
-    const { automate, luckMod, critTableName } = ctx
-    const critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'}${luckMod}`
-    const criticalText = game.i18n.localize('DCC.Critical')
-    const critTableText = game.i18n.localize('DCC.CritTable')
-    const critTableDisplayText = `${critTableText} ${critTableName}`
-    const critTableLink = await getCritTableLink(critTableName, critTableDisplayText)
-    let critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableDisplayText})]] (${critTableLink})`)
-    let critPrompt = game.i18n.localize('DCC.RollCritical')
-    let critRoll
-    let critResult = ''
-    let critRollTotal = null
-
-    if (automate) {
-      critPrompt = game.i18n.localize('DCC.Critical')
-      critRoll = game.dcc.DCCRoll.createRoll([
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.Critical'),
-          formula: critRollFormula
-        }
-      ])
-      await critRoll.evaluate()
-      foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
-      critRollTotal = critRoll.total
-      const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
-      if (critResultObj) {
-        critResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResultObj.description))
-      }
-      const critResultPrompt = game.i18n.localize('DCC.CritResult')
-      const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
-      critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableLink})`)
-    }
-
-    return {
-      critRollFormula,
-      critInlineRoll,
-      critPrompt,
-      critRoll,
-      critResult,
-      critRollTotal
-    }
-  }
-
-  /**
-   * Dispatcher: route the simplest-weapon fumble-finisher through the lib
-   * adapter (Phase 3 session 6), everything else through the legacy body
-   * verbatim. See `_canRouteFumbleViaAdapter` for the gate.
+   * With `automate` off, no Roll is evaluated — the caller renders an
+   * inline `[[/r ...]]` template the user clicks to roll manually. No
+   * `libFumbleResult` is produced in that mode. Otherwise the lib owns
+   * the result that surfaces as `dcc.libFumbleResult` on the chat flags.
    *
-   * Both branches return the same shape for `rollWeaponAttack` to stitch
-   * into the chat message. The adapter path additionally returns
-   * `libFumbleResult`, which `rollWeaponAttack` surfaces as
-   * `dcc.libFumbleResult` on the chat flags.
+   * D2 (Phase 3 session 16) retired the `_rollFumbleLegacy` branch when
+   * the fumble gate went exhaustive — same rationale as the crit route
+   * above.
    *
    * @param {Object} weapon
    * @param {Object} attackRollResult
@@ -3281,58 +3208,34 @@ class DCCActor extends Actor {
    * @private
    */
   async _rollFumble (weapon, attackRollResult, ctx) {
-    if (this._canRouteFumbleViaAdapter(weapon, attackRollResult, ctx)) {
-      return this._rollFumbleViaAdapter(weapon, attackRollResult, ctx)
-    }
-    return this._rollFumbleLegacy(weapon, attackRollResult, ctx)
-  }
-
-  /**
-   * Gate for the Phase 3 session 6 happy-path fumble adapter. Routes only
-   * when the attack itself was routed via the adapter AND
-   * `automateDamageFumblesCrits` is on (so the Foundry Roll actually
-   * evaluates).
-   *
-   * @param {Object} weapon
-   * @param {Object} attackRollResult
-   * @param {{automate: boolean}} ctx
-   * @returns {boolean}
-   * @private
-   */
-  _canRouteFumbleViaAdapter (weapon, attackRollResult, ctx) {
-    if (!attackRollResult?.libResult) return false
-    if (!ctx?.automate) return false
-    return true
-  }
-
-  /**
-   * Adapter path for the fumble roll. Structurally mirrors legacy for
-   * Foundry compatibility: builds a `Compound` DCC term, evaluates via
-   * `game.dcc.DCCRoll.createRoll`, looks up the fumble-table entry. After
-   * evaluation, feeds the natural die into the lib's `rollFumble` so the
-   * lib owns the result that surfaces on chat flags as
-   * `dcc.libFumbleResult`.
-   *
-   * @param {Object} weapon
-   * @param {Object} attackRollResult
-   * @param {Object} ctx
-   * @private
-   */
-  async _rollFumbleViaAdapter (weapon, attackRollResult, ctx) {
     logDispatch('rollFumble', 'adapter', { weapon: weapon?.name || 'unknown' })
 
-    const { inverseLuckMod, useNPCFumbles, originalFumbleTableName } = ctx
+    const { automate, inverseLuckMod, useNPCFumbles, originalFumbleTableName } = ctx
     let fumbleTableName = ctx.fumbleTableName
     let fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
     if (this.isNPC && useNPCFumbles) {
       fumbleRollFormula = '1d10'
     }
 
+    if (!automate) {
+      const fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble (${fumbleTableName})]] (${fumbleTableName})`)
+      return {
+        fumbleRollFormula,
+        fumbleInlineRoll,
+        fumblePrompt: game.i18n.localize('DCC.RollFumble'),
+        fumbleRoll: undefined,
+        fumbleResult: '',
+        fumbleRollTotal: null,
+        fumbleTableName,
+        isNPCFumble: false
+      }
+    }
+
     const fumblePrompt = game.i18n.localize('DCC.Fumble')
     const fumbleRoll = game.dcc.DCCRoll.createRoll([
       {
         type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.Fumble'),
+        dieLabel: fumblePrompt,
         formula: fumbleRollFormula
       }
     ])
@@ -3382,72 +3285,6 @@ class DCCActor extends Actor {
         total: libResult.total,
         modifiers: libResult.roll.modifiers
       }
-    }
-  }
-
-  /**
-   * Legacy fumble path. Preserved verbatim from the original inline body in
-   * `rollWeaponAttack`; any change here should be mirrored in
-   * `_rollFumbleViaAdapter` where applicable.
-   *
-   * @param {Object} weapon
-   * @param {Object} attackRollResult
-   * @param {Object} ctx
-   * @private
-   */
-  async _rollFumbleLegacy (weapon, attackRollResult, ctx) {
-    logDispatch('rollFumble', 'legacy', { weapon: weapon?.name || 'unknown' })
-
-    const { automate, inverseLuckMod, useNPCFumbles, originalFumbleTableName } = ctx
-    let fumbleTableName = ctx.fumbleTableName
-    let fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
-    if (this.isNPC && useNPCFumbles) {
-      fumbleRollFormula = '1d10'
-    }
-    let fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble (${fumbleTableName})]] (${fumbleTableName})`)
-    let fumblePrompt = game.i18n.localize('DCC.RollFumble')
-    let fumbleRoll
-    let fumbleResult = ''
-    let fumbleRollTotal = null
-    let isNPCFumble = false
-
-    if (automate) {
-      fumblePrompt = game.i18n.localize('DCC.Fumble')
-      fumbleRoll = game.dcc.DCCRoll.createRoll([
-        {
-          type: 'Compound',
-          dieLabel: game.i18n.localize('DCC.Fumble'),
-          formula: fumbleRollFormula
-        }
-      ])
-      await fumbleRoll.evaluate()
-      foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
-      fumbleRollTotal = fumbleRoll.total
-      let fumbleResultObj
-      if (this.isPC || !useNPCFumbles) {
-        fumbleResultObj = await getFumbleTableResult(fumbleRoll)
-      } else {
-        isNPCFumble = true
-        fumbleResultObj = await getNPCFumbleTableResult(fumbleRoll, originalFumbleTableName)
-      }
-      if (fumbleResultObj) {
-        fumbleTableName = `${fumbleResultObj?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
-        fumbleResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResultObj.description))
-      }
-      const onPrep = game.i18n.localize('DCC.on')
-      const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
-      fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor} ${onPrep} ${fumbleTableName}`)
-    }
-
-    return {
-      fumbleRollFormula,
-      fumbleInlineRoll,
-      fumblePrompt,
-      fumbleRoll,
-      fumbleResult,
-      fumbleRollTotal,
-      fumbleTableName,
-      isNPCFumble
     }
   }
 

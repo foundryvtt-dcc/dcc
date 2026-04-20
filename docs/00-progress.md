@@ -84,7 +84,40 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 15 (2026-04-19, D1) retired
+**Phase 3 — ACTIVE. Session 16 (2026-04-20, D2 crit + fumble)
+retired `_rollCriticalLegacy` + `_rollFumbleLegacy`.** Paired
+retirement: the `_canRouteCritViaAdapter` / `_canRouteFumbleViaAdapter`
+gates only disqualified the `!automate` case (the `libResult` check
+was defensive — `_rollCritical` / `_rollFumble` are only reached
+when `attackRollResult.crit` / `.fumble` is set, which post-D1
+implies a populated `libResult`). The `!automate` branch had no lib
+work to do (nothing rolls, so nothing to feed `rollCritical` /
+`rollFumble`), so both gates + both legacy bodies + both
+`_rollXxxViaAdapter` aliases collapsed into unified single-path
+`_rollCritical` / `_rollFumble` methods that branch on `ctx.automate`
+internally:
+- `automate` on → build Foundry Roll, feed natural die into lib,
+  surface `libCritResult` / `libFumbleResult` as before.
+- `automate` off → render `[[/r formula # …]]` inline-roll template,
+  no Roll evaluated, no lib call, no libXResult in the return shape.
+
+`logDispatch('rollCritical', 'adapter', …)` + `logDispatch('rollFumble',
+'adapter', …)` stay (permanent per the memory note + Playwright
+adapter-dispatch spec). Second Group-D retirement; damage (D2c
+residual) still awaits a gate-broadening slice (multi-type formulas,
+bracket flavors, unparseable formulas) before it can collapse the
+same way. 874 Vitest tests pass (was 878 at session 15 close, -4
+net: deleted 4 gate-specific tests + 1 "legacy fires when attack
+went legacy" test + rewrote 2 "legacy fires when automate off"
+tests as single-path inline-template assertions, added 1 D2
+retirement guard). 81 Playwright e2e tests pass against live v14
+(was 80, +1 new in `phase1-adapter-dispatch.spec.js`: D2 retirement
+regression guard — asserts `_canRouteCritViaAdapter`,
+`_rollCriticalLegacy`, `_rollCriticalViaAdapter`,
+`_canRouteFumbleViaAdapter`, `_rollFumbleLegacy`, and
+`_rollFumbleViaAdapter` are all absent from the actor prototype).
+
+**Phase 3 — Session 15 (2026-04-19, D1) retired
 `_rollToHitLegacy`.** Mechanical collapse: `_canRouteAttackViaAdapter`
 (always `true` post-A7) and `_rollToHitLegacy` (dead code post-A7)
 both deleted; `_rollToHitViaAdapter`'s body folded into `rollToHit`.

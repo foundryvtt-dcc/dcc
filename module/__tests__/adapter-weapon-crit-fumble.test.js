@@ -1,21 +1,26 @@
 /* global gameSettingsGetMock */
 /**
- * Adapter round-trip test — Phase 3 session 6 (crit + fumble finishers).
+ * Adapter round-trip test — Phase 3 session 16 (D2 crit + fumble
+ * retirement).
  *
- * Dispatcher + adapter coverage:
+ * Single-path coverage:
  *   DCCActor._rollCritical →
- *     (attack went via adapter + automate on) → _rollCriticalViaAdapter
- *     (otherwise) → _rollCriticalLegacy
- *   DCCActor._rollFumble →
- *     (attack went via adapter + automate on) → _rollFumbleViaAdapter
- *     (otherwise) → _rollFumbleLegacy
+ *     (automate on) builds a real crit roll + surfaces libCritResult
+ *     (automate off) returns inline-roll template, no libCritResult
+ *   DCCActor._rollFumble → mirror of the crit route
+ *
+ * D2 (Phase 3 session 16) retired `_rollCriticalLegacy` and
+ * `_rollFumbleLegacy` — the `!automate` branch folded directly into
+ * the adapter body (no lib call when no roll evaluated).
  *
  * Adapter-path validation points:
- *   - `DCCRoll.createRoll` is still invoked for chat rendering (same
- *     shape as legacy).
+ *   - `DCCRoll.createRoll` is invoked for chat rendering when automate
+ *     is on.
  *   - `libCritResult` / `libFumbleResult` is populated from the lib's
  *     `rollCritical` / `rollFumble` so `rollWeaponAttack` can surface
  *     them as `dcc.libCritResult` / `dcc.libFumbleResult` chat flags.
+ *   - With `automate` off, neither lib result nor Foundry Roll is
+ *     produced — caller falls back to inline-roll-template chat.
  *
  * Note on the mock: see `adapter-weapon-damage.test.js` docstring for
  * the sync-stub rationale — the shared `__mocks__/dcc-roll.js` declares
@@ -122,36 +127,19 @@ test('buildFumbleInput passes the exact die through as fumbleDieOverride', () =>
 })
 
 // ============================================================================
-// Dispatcher gate tests
+// D2 retirement guard — _canRoute / legacy / adapter-alias are gone
 // ============================================================================
 
-test('_canRouteCritViaAdapter rejects when the attack went through legacy', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  expect(actor._canRouteCritViaAdapter({}, {}, { automate: true })).toBe(false)
-})
-
-test('_canRouteCritViaAdapter rejects when automate is off', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const attackRollResult = { libResult: { total: 20 } }
-  expect(actor._canRouteCritViaAdapter({}, attackRollResult, { automate: false })).toBe(false)
-})
-
-test('_canRouteCritViaAdapter accepts when attack was adapter + automate on', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const attackRollResult = { libResult: { total: 20 } }
-  expect(actor._canRouteCritViaAdapter({}, attackRollResult, { automate: true })).toBe(true)
-})
-
-test('_canRouteFumbleViaAdapter gate mirrors crit gate', () => {
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  const attackRollResult = { libResult: { total: 5 } }
-  expect(actor._canRouteFumbleViaAdapter({}, {}, { automate: true })).toBe(false)
-  expect(actor._canRouteFumbleViaAdapter({}, attackRollResult, { automate: false })).toBe(false)
-  expect(actor._canRouteFumbleViaAdapter({}, attackRollResult, { automate: true })).toBe(true)
+test('D2 retirement: crit + fumble gate/legacy/adapter-alias methods are absent from the prototype', () => {
+  const proto = DCCActor.prototype
+  expect(typeof proto._canRouteCritViaAdapter, '_canRouteCritViaAdapter retired in D2').toBe('undefined')
+  expect(typeof proto._rollCriticalLegacy, '_rollCriticalLegacy retired in D2').toBe('undefined')
+  expect(typeof proto._rollCriticalViaAdapter, '_rollCriticalViaAdapter folded into _rollCritical').toBe('undefined')
+  expect(typeof proto._canRouteFumbleViaAdapter, '_canRouteFumbleViaAdapter retired in D2').toBe('undefined')
+  expect(typeof proto._rollFumbleLegacy, '_rollFumbleLegacy retired in D2').toBe('undefined')
+  expect(typeof proto._rollFumbleViaAdapter, '_rollFumbleViaAdapter folded into _rollFumble').toBe('undefined')
+  expect(typeof proto._rollCritical, '_rollCritical remains the single path').toBe('function')
+  expect(typeof proto._rollFumble, '_rollFumble remains the single path').toBe('function')
 })
 
 // ============================================================================
@@ -192,32 +180,7 @@ test('adapter path logs rollCritical dispatch + returns libCritResult', async ()
   expect(result.libCritResult.critTable).toBe('III')
 })
 
-test('legacy crit path logs dispatch when attack went through legacy', async () => {
-  logDispatch.mockClear()
-  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 5, natural: 5 }))
-  const restore = withAutomate(true)
-
-  // noinspection JSCheckFunctionSignatures
-  const actor = new DCCActor()
-  actor.system.attributes = { critical: { die: '1d10', table: 'III' } }
-  actor.system.abilities = { lck: { mod: '+0' } }
-
-  try {
-    await actor._rollCritical({ name: 'sword' }, {}, {
-      automate: true,
-      luckMod: '+0',
-      critTableName: 'III'
-    })
-  } finally {
-    restore()
-    restoreRoll()
-  }
-
-  expect(assertDispatched('rollCritical', 'legacy')).toBe(true)
-  expect(assertDispatched('rollCritical', 'adapter')).toBe(false)
-})
-
-test('legacy crit path fires when automate is off even with libResult attack', async () => {
+test('crit path returns inline-roll template (no lib result, no Roll) when automate is off', async () => {
   logDispatch.mockClear()
 
   // noinspection JSCheckFunctionSignatures
@@ -232,9 +195,12 @@ test('legacy crit path fires when automate is off even with libResult attack', a
     critTableName: 'III'
   })
 
-  expect(assertDispatched('rollCritical', 'legacy')).toBe(true)
+  expect(assertDispatched('rollCritical', 'adapter')).toBe(true)
   expect(result.critRoll).toBeUndefined()
+  expect(result.critRollTotal).toBeNull()
   expect(result.libCritResult).toBeUndefined()
+  expect(result.critInlineRoll).toContain('[[/r 1d10+0')
+  expect(result.critRollFormula).toBe('1d10+0')
 })
 
 // ============================================================================
@@ -282,7 +248,7 @@ test('adapter path logs rollFumble dispatch + returns libFumbleResult', async ()
   expect(result.libFumbleResult.fumbleDie).toBe('d8')
 })
 
-test('legacy fumble path logs dispatch when automate is off', async () => {
+test('fumble path returns inline-roll template (no lib result, no Roll) when automate is off', async () => {
   logDispatch.mockClear()
 
   // noinspection JSCheckFunctionSignatures
@@ -305,9 +271,13 @@ test('legacy fumble path logs dispatch when automate is off', async () => {
     originalFumbleTableName: 'Table 4-2: Fumbles'
   })
 
-  expect(assertDispatched('rollFumble', 'legacy')).toBe(true)
+  expect(assertDispatched('rollFumble', 'adapter')).toBe(true)
   expect(result.fumbleRoll).toBeUndefined()
+  expect(result.fumbleRollTotal).toBeNull()
   expect(result.libFumbleResult).toBeUndefined()
+  expect(result.isNPCFumble).toBe(false)
+  expect(result.fumbleInlineRoll).toContain('[[/r 1d8+0 # Fumble')
+  expect(result.fumbleRollFormula).toBe('1d8+0')
 })
 
 test('adapter fumble path swaps to NPC fumble die when actor is NPC + useNPCFumbles', async () => {

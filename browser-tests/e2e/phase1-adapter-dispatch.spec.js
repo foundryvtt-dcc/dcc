@@ -1733,5 +1733,33 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(typeof flag.total).toBe('number')
       expect(Array.isArray(flag.modifiers)).toBe(true)
     })
+
+    test('D2 retirement: crit + fumble gate/legacy/adapter-alias methods are gone (session 16)', async ({ page }) => {
+      // Session 16 folded the `!automate` branch into the adapter
+      // path and deleted the legacy bodies. Guard against regressions
+      // that reintroduce the dispatcher scaffold.
+      const surface = await page.evaluate(() => {
+        const proto = Object.getPrototypeOf(game.actors.contents.find(a => a.type === 'Player')) ||
+          CONFIG.Actor.documentClass?.prototype
+        return {
+          hasCrit: typeof proto._rollCritical === 'function',
+          hasFumble: typeof proto._rollFumble === 'function',
+          hasCritGate: typeof proto._canRouteCritViaAdapter === 'function',
+          hasFumbleGate: typeof proto._canRouteFumbleViaAdapter === 'function',
+          hasCritLegacy: typeof proto._rollCriticalLegacy === 'function',
+          hasFumbleLegacy: typeof proto._rollFumbleLegacy === 'function',
+          hasCritAdapterAlias: typeof proto._rollCriticalViaAdapter === 'function',
+          hasFumbleAdapterAlias: typeof proto._rollFumbleViaAdapter === 'function'
+        }
+      })
+      expect(surface.hasCrit, '_rollCritical remains the public method').toBe(true)
+      expect(surface.hasFumble, '_rollFumble remains the public method').toBe(true)
+      expect(surface.hasCritGate, '_canRouteCritViaAdapter retired in D2').toBe(false)
+      expect(surface.hasFumbleGate, '_canRouteFumbleViaAdapter retired in D2').toBe(false)
+      expect(surface.hasCritLegacy, '_rollCriticalLegacy retired in D2').toBe(false)
+      expect(surface.hasFumbleLegacy, '_rollFumbleLegacy retired in D2').toBe(false)
+      expect(surface.hasCritAdapterAlias, '_rollCriticalViaAdapter folded into _rollCritical').toBe(false)
+      expect(surface.hasFumbleAdapterAlias, '_rollFumbleViaAdapter folded into _rollFumble').toBe(false)
+    })
   })
 })

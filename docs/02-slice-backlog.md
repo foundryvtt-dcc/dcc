@@ -212,8 +212,42 @@ the early-return `{rolled:false}` path + hook-cancelled
 asserting `_rollToHitLegacy` / `_canRouteAttackViaAdapter` /
 `_rollToHitViaAdapter` are absent from the actor prototype.
 
-#### D2. Retire `_rollDamageLegacy`, `_rollCriticalLegacy`, `_rollFumbleLegacy`
-- Same pattern as D1, once each gate is exhaustive.
+#### D2 crit + fumble. ~~Retire `_rollCriticalLegacy` + `_rollFumbleLegacy`~~ — **DONE 2026-04-20**
+Landed as Phase 3 session 16. Paired collapse: both gates
+(`_canRouteCritViaAdapter` / `_canRouteFumbleViaAdapter`) were
+defensive — `_rollCritical` / `_rollFumble` are only reached when
+`attackRollResult.crit` / `.fumble` is set, which post-D1 implies a
+populated `libResult`. The real non-adapter branch was `!automate`,
+and it had no lib work (nothing rolls, so nothing to feed the lib).
+Both legacy bodies + both gates + both `_rollXxxViaAdapter` aliases
+folded into unified `_rollCritical` / `_rollFumble` methods that
+branch on `ctx.automate` internally: automate on → lib call +
+`libXResult` populated; automate off → inline-roll template, no
+lib, no `libXResult` in the return shape. +1 Playwright regression
+guard + rewritten vitest coverage (-4 gate tests + -1 "legacy
+fires" test + rewrote 2 "legacy fires when automate off" tests as
+single-path inline-template assertions, +1 retirement guard).
+
+#### D2 damage. Retire `_rollDamageLegacy` — pending gate-broadening
+- **Scope:** Unlike crit / fumble, the damage gate has real
+  per-case rejections beyond the `attackRollResult?.libResult`
+  defensive check: `damageRollFormula.includes('[')` (per-term +
+  bracket flavors) and `parseDamageFormula(damageRollFormula) ===
+  null` (unparseable formulas) each route a live class of runtime
+  inputs to legacy. Before D2 damage can retire, each of these
+  needs broadening — teach `parseDamageFormula` / `buildDamageInput`
+  to handle the additional shapes, or accept that they translate to
+  no-op passthroughs (lib total = Foundry total, `libDamageResult`
+  still surfaces but `breakdown` may be empty / lossy). Plus
+  `extractWeaponMagicBonus(weapon) === null` for dice-bearing
+  `damageWeaponBonus` or cursed (negative) bonuses.
+- **Stop-and-ask trigger:** each new shape is potentially a new
+  `buildDamageInput` branch kind; pause and surface the lib-vs-rules
+  question per the `feedback_lib_vs_rules_stop_and_verify.md` memory
+  before silently translating. Especially for negative / cursed
+  magic bonuses and multi-type per-term flavors — RAW semantics
+  may diverge from the lib's current DamageInput shape.
+- **Commit:** `refactor(adapter): Phase 3 session N — retire _rollDamageLegacy (D2 damage)`
 
 #### D3. Resolve RAW patron-taint alignment → retire `_runLegacyPatronTaint`
 - **Scope:** The Phase 2 close-out deferred RAW alignment for patron
@@ -319,6 +353,15 @@ See `docs/00-progress.md` for details. Summary:
   body folded into `rollToHit`. First Group-D retirement. +1
   Playwright regression guard asserting the retired methods are
   absent from the actor prototype.
+- Phase 3 session 16 (D2 crit + fumble): retired
+  `_rollCriticalLegacy` + `_rollFumbleLegacy` together. Both
+  gates were defensive-only (the real non-adapter branch was
+  `!automate`, and it had no lib work since nothing rolls); both
+  legacy bodies + both gates + both `_rollXxxViaAdapter` aliases
+  folded into unified `_rollCritical` / `_rollFumble` methods
+  that branch on `ctx.automate` internally. Second Group-D
+  retirement. +1 Playwright regression guard covering all six
+  retired symbols.
 
 ### Docs slices
 
