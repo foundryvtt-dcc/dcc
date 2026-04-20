@@ -860,6 +860,115 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       })
     })
 
+    test('two-weapon primary → adapter (session 11 / A4)', async ({ page }) => {
+      // Phase 3 session 11 (A4): two-weapon fighting routes through
+      // the adapter. DCC's mechanic is a dice-chain reduction baked
+      // into `weapon.system.actionDie` at prepareBaseData time
+      // (e.g. d20 → d16 with the off-hand label appended); the
+      // adapter strips the tag via `normalizeLibDie` and the lib
+      // computes the attack on the bumped die. We deliberately do
+      // NOT plumb the lib's flat `getTwoWeaponPenalty` — DCC RAW
+      // uses dice-chain, not flat mods, so adding a -2 here would
+      // double-count.
+      //
+      // Pre-baking `actionDie: '1d16[2w-primary]'` directly fails
+      // schema validation (dice notation field rejects bracket tags
+      // on write); set `twoWeaponPrimary: true` and let
+      // item.js:prepareBaseData compute the bumped die in-memory.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 TwoWeapon',
+          type: 'Player',
+          // Agility 12-15 → primary -1 die (1d20 → 1d16).
+          system: { abilities: { agl: { value: 13 } } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-PrimaryDagger',
+          type: 'weapon',
+          system: {
+            toHit: '+1',
+            critRange: 20,
+            damageWeapon: '1d4',
+            damage: '1d4',
+            melee: true,
+            equipped: true,
+            twoWeaponPrimary: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 TwoWeapon').items.getName('P1-PrimaryDagger').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 TwoWeapon').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-PrimaryDagger' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-PrimaryDagger' })
+    })
+
+    test('two-weapon secondary populates libResult.die + isTwoWeaponSecondary', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 OffHand LibFlag',
+          type: 'Player',
+          // Agility 13 → off-hand -2 dice (1d20 → 1d14 via DiceChain).
+          system: { abilities: { agl: { value: 13 } } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-OffHandHatchet',
+          type: 'weapon',
+          system: {
+            toHit: '+0',
+            critRange: 20,
+            damageWeapon: '1d6',
+            damage: '1d6',
+            melee: true,
+            equipped: true,
+            twoWeaponSecondary: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 OffHand LibFlag').items.getName('P1-OffHandHatchet').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 OffHand LibFlag').rollWeaponAttack(id)
+      }, weaponId)
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 OffHand LibFlag' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'two-weapon adapter-path attack must set dcc.libResult').not.toBeNull()
+      // Die was bumped down from d20 — exact face count depends on
+      // DiceChain.bumpDie semantics, but it must NOT be d20.
+      expect(flag.die).toMatch(/^d\d+$/)
+      expect(flag.die).not.toBe('d20')
+      expect(flag.isTwoWeaponSecondary).toBe(true)
+      expect(flag.isTwoWeaponPrimary).toBe(false)
+      // Sanity: the lib's flat `two-weapon fighting` modifier source
+      // must NOT appear — DCC uses dice-chain reductions, not flat mods.
+      const flatTwoWeaponMod = flag.modifiers.find(m => m.source === 'two-weapon fighting')
+      expect(flatTwoWeaponMod, 'must not introduce flat two-weapon penalty').toBeUndefined()
+    })
+
     test('automate off → legacy', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Weapon NoAutomate', type: 'Player' })

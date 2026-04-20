@@ -2696,7 +2696,7 @@ class DCCActor extends Actor {
 
   /**
    * Gate for the Phase 3 adapter. Routes the simplest weapon attack —
-   * no two-weapon, no roll-modifier dialog, no dice-bearing to-hit /
+   * no roll-modifier dialog, no non-deed-die dice-bearing to-hit /
    * attack-bonus. Session 9 broadened the gate to accept
    * `options.backstab`: the lib's `isBackstab: true` drives the
    * auto-crit (matches DCC RAW + the legacy Foundry behavior), and the
@@ -2704,7 +2704,16 @@ class DCCActor extends Actor {
    * (A3) broadened the gate to accept warrior / dwarf deed dice: a
    * toHit / attackBonus matching `parseDeedAttackBonus` (e.g. `+1d3+2`)
    * routes through with `AttackInput.deedDie` set, exercising the
-   * lib's `onDeedAttempt`.
+   * lib's `onDeedAttempt`. Session 11 (A4) broadened the gate to
+   * accept `twoWeaponPrimary` / `twoWeaponSecondary` weapons —
+   * `item.js:prepareBaseData` already bakes DCC's dice-chain
+   * reduction into `weapon.system.actionDie` (e.g. `1d16[2w-off-hand]`)
+   * and adjusts `weapon.system.critRange` per the agility-tier
+   * matrix; `normalizeLibDie` strips the tag and the lib computes
+   * the attack on the bumped die. We deliberately do NOT set
+   * `AttackInput.twoWeaponPenalty` — that field models the flat
+   * `-1`/`-2` ruleset returned by the lib's `getTwoWeaponPenalty`,
+   * which does not match DCC RAW (DCC uses dice-chain reductions).
    *
    * The `automateDamageFumblesCrits` requirement is paired with the
    * session-prompt happy-path definition so the first bridge is
@@ -2718,7 +2727,6 @@ class DCCActor extends Actor {
    */
   _canRouteAttackViaAdapter (weapon, options = {}) {
     if (options.showModifierDialog) return false
-    if (weapon?.system?.twoWeaponPrimary || weapon?.system?.twoWeaponSecondary) return false
     const attackBonus = String(this.system.details?.attackBonus ?? '')
     if (attackBonus.includes('d') && parseDeedAttackBonus(attackBonus) === null) return false
     const weaponToHit = String(weapon?.system?.toHit ?? '')
@@ -2928,7 +2936,9 @@ class DCCActor extends Actor {
         bonuses: attackInput.bonuses || [],
         deedDie: attackInput.deedDie,
         deedNatural: libResult.deedRoll?.natural,
-        deedSuccess: libResult.deedSuccess
+        deedSuccess: libResult.deedSuccess,
+        isTwoWeaponPrimary: !!weapon.system?.twoWeaponPrimary,
+        isTwoWeaponSecondary: !!weapon.system?.twoWeaponSecondary
       }
     }
   }

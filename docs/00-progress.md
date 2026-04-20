@@ -84,7 +84,45 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 10 (2026-04-19, A3) routed warrior /
+**Phase 3 — ACTIVE. Session 11 (2026-04-19, A4) routed two-weapon
+fighting through the adapter.** `_canRouteAttackViaAdapter`
+dropped the `twoWeaponPrimary || twoWeaponSecondary` exclusion;
+the adapter inherits the dice-chain-bumped `weapon.system.actionDie`
+(e.g. `1d16[2w-primary]`) that `item.js:prepareBaseData` already
+computes per the agility-tier matrix, plus the adjusted
+`weapon.system.critRange`. `normalizeLibDie` strips the bracket
+flavor tag so the lib's `actionDie` is `'d16'` and
+`makeAttackRoll` computes the attack on the bumped die.
+
+**Design choice (lib-vs-rules):** we deliberately do NOT set
+`AttackInput.twoWeaponPenalty`. The lib's `getTwoWeaponPenalty`
+returns flat `-1` (halfling) / `-2` (other) — that's a different
+ruleset than DCC RAW, which uses dice-chain reductions on the
+action die instead of flat penalties. Setting both would double-
+count. The lib's `twoWeaponPenalty` field is OPTIONAL; omitting
+it is the correct integration. Future lib enhancement could add a
+dice-chain mode for full DCC parity, but the current simpler-mode
+helper stays unused.
+
+New chat-flag fields on `dcc.libResult`: `isTwoWeaponPrimary`,
+`isTwoWeaponSecondary` — observability for downstream consumers
+(dcc-qol's combat handlers can attribute the bumped die without
+re-reading the weapon flags). Halfling fumble note in
+`rollWeaponAttack` already triggers off `attackRollResult.fumble`
+which the adapter populates correctly — no additional bridge
+needed. 875 Vitest tests pass (up from 874 — +2 new in
+`adapter-weapon-attack.test.js`: two-weapon adapter dispatch, lib
+flag shape; -1 prior "legacy fires for two-weapon" assertion
+rewritten). 75 Playwright e2e tests pass against live v14
+Foundry (was 73, +2 new in `phase1-adapter-dispatch.spec.js`:
+two-weapon-primary routes attack + damage via adapter, two-
+weapon-secondary libResult populates die / isTwoWeaponSecondary
+flags, asserting no flat `two-weapon fighting` modifier source).
+**Group A is closed** — A1 (simplest weapon), A2 (backstab), A3
+(deed die), A4 (two-weapon) all route via adapter for the common
+case. Group D (`_rollToHitLegacy` retirement) unblocks.
+
+**Phase 3 — session 10 (2026-04-19, A3) routed warrior /
 dwarf deed-die attacks through the adapter.** New
 `parseDeedAttackBonus` helper in `module/adapter/attack-input.mjs`
 recognizes deed-die-bearing toHit / attackBonus strings (e.g.
@@ -2139,13 +2177,13 @@ and should be scheduled into Phase 4+ work.
 
 ## Next steps
 
-**Phase 3 — session 10 (deed-die adapter route, A3) complete.**
-Warrior / dwarf deed-die attacks (and their damage / crit / fumble
-tails) now flow through the adapter for the common case. Session
-11 picks up the next slice — A4 (two-weapon fighting) is the only
-remaining attack-gate broadening from Group A and the most complex
-of the lot (multiple lib calls per user action, two-result chat-
-rendering path).
+**Phase 3 — session 11 (two-weapon adapter route, A4) complete.**
+Two-weapon fighting routes via the adapter for both primary and
+off-hand weapons. **Group A is closed.** Session 12 picks up
+either Group D (`_rollToHitLegacy` retirement, now unblocked) or
+one of the remaining attack-side enhancements (attack-modifier
+dialog, crit-result lookup in lib, dice-bearing damageWeaponBonus,
+NPC attack-hit lib bonus).
 
 **Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
 - Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
@@ -2169,16 +2207,26 @@ rendering path).
   Flag lib-side gaps early; sync via `npm run sync-core-lib` when
   the lib ships a wave-3 release.
 
-**Session 11 pick-up** — Options:
-(a) **Two-weapon fighting (A4).** The hardest remaining attack-side
-   slice — multiple lib calls per user action plus the two-result
-   chat-rendering path. Lib has `getTwoWeaponPenalty` /
-   `getTwoWeaponInitiativeBonus`. Stop-and-ask trigger if chat
-   rendering needs to change shape (one combined message vs. two).
-(b) **Attack-modifier dialog** (open question #7 tie-in): extend
+**Session 12 pick-up** — Options:
+(a) **Group D retirement — `_rollToHitLegacy`.** Group A is closed
+   (A1–A4 all route via adapter for the common case). The
+   dispatcher gate now returns `true` for every high-traffic
+   attack path — backstab, deed die, two-weapon, simplest weapon.
+   Per §8.6 retirement principle, `_rollToHitLegacy` can collapse
+   into a single adapter call. Test regressions: every existing
+   `_rollToHitLegacy` assertion either moves to the adapter path
+   or gets deleted. **Recommended next slice** — closes the
+   biggest legacy branch on actor.js.
+(b) **Group D retirement — `_rollDamageLegacy`,
+   `_rollCriticalLegacy`, `_rollFumbleLegacy`.** Same pattern as
+   (a) once each gate is exhaustive. Damage gate excludes per-term
+   flavors (`1d6[fire]+1d6[cold]`) and dice-bearing magic bonuses
+   — those need broadening or formal acceptance as edge cases
+   before retirement.
+(c) **Attack-modifier dialog** (open question #7 tie-in): extend
    `module/adapter/roll-dialog.mjs` with an attack-modifier prompt
    before driving a broader adapter path.
-(c) **Crit-result lookup in the lib.** The adapter currently
+(d) **Crit-result lookup in the lib.** The adapter currently
    delegates crit-table lookups to Foundry's `getCritTableResult`;
    lib's `parseCritExtraDamage` could classify the table result
    into extra damage, letting `libCritResult` carry a fully
@@ -2186,23 +2234,19 @@ rendering path).
    added `critSource: 'backstab-auto'` to `libResult` — the
    natural anchor for routing backstab auto-crits to Crit Table II
    lib-side.
-(d) **Dice-bearing / cursed damageWeaponBonus.** Session 8 handles
+(e) **Dice-bearing / cursed damageWeaponBonus.** Session 8 handles
    positive integer bonuses; dice-bearing (e.g. `+1d4` fire rider)
    and cursed (negative) still fall to legacy.
-(e) **NPC attack-hit adjustment through lib bonuses.** Pre-existing
+(f) **NPC attack-hit adjustment through lib bonuses.** Pre-existing
    divergence: NPC `attackHitBonus.melee.adjustment` is pushed as
    a pre-hook `Modifier` term (so Foundry Roll sees it) but NOT
    translated into `attackInput.bonuses` (lib total misses it).
    Session 9 fixed this for the Backstab case; session 10's
    sequenced-roller scaffold is reusable for any future multi-die
    attack flows. Cheap follow-up.
-(f) **Group D retirement (`_rollToHitLegacy`).** A1–A3 are done; A4
-   remains. Once A4 lands, the dispatcher gate covers every
-   high-traffic path and the legacy branch can be retired per the
-   §8.6 retirement principle.
 
-Lean (a) two-weapon to close out Group A so the Group D
-retirement slices unblock.
+Lean (a) Group D `_rollToHitLegacy` retirement — Group A's
+exit criterion is met and the legacy branch is now dead weight.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

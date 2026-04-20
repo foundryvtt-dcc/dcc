@@ -93,21 +93,31 @@ identically to legacy (`deedDieFormula`, `deedDieRollResult`,
 6 new vitest tests (24 total in `adapter-weapon-attack.test.js`) +
 2 new Playwright cases (warrior dispatch + libResult shape).
 
-#### A4. Two-weapon fighting through adapter
-- **Scope:** Both attacks + both damage rolls + penalty computation
-  through adapter. Lib has `getTwoWeaponPenalty`. This is the hardest
-  remaining attack-side slice — exercises multiple lib calls per user
-  action and the two-result chat-rendering path.
-- **Stop-and-ask trigger:** if the Foundry-side chat rendering for
-  two-weapon requires a new shape (e.g., two separate chat messages
-  vs. one combined), pause — that's an architecture decision.
-- **Commit:** `feat(adapter): Phase 3 session <M> — two-weapon adapter route`
+#### ~~A4. Two-weapon fighting through adapter~~ — **DONE 2026-04-19**
+Landed as Phase 3 session 11. Far simpler than the backlog entry
+suggested — turned out two-weapon attacks are NOT paired calls;
+each weapon's `rollWeaponAttack` is invoked independently with the
+weapon's `twoWeaponPrimary` / `twoWeaponSecondary` flag. The chat
+rendering already produces one message per call (no shape change
+needed). The penalty computation lives in
+`item.js:prepareBaseData` — a dice-chain reduction on
+`weapon.system.actionDie` plus complex crit-range adjustments per
+agility tier. We dropped the gate exclusion; the bumped action die
+flows through naturally and `normalizeLibDie` strips the bracket
+flavor tag. **Lib-vs-rules design choice:** `getTwoWeaponPenalty`
+returns flat `-1`/`-2` (different ruleset than DCC RAW); we
+deliberately do NOT set `AttackInput.twoWeaponPenalty` — it
+would double-count with the dice-chain reduction. New chat-flag
+fields `isTwoWeaponPrimary`, `isTwoWeaponSecondary` for downstream
+attribution. 1 new vitest test (added) + 1 rewritten ("legacy
+fires" → "adapter fires") + 2 new Playwright cases.
 
-**Exit criterion for Group A:** simplest + NPC-adjusted + backstab +
-deed-die + two-weapon all route via adapter; `_canRouteXxxViaAdapter`
-returns `true` for the common-case paths. Legacy branches remain
-(non-exhaustive edge cases still fall through), but the high-traffic
-paths no longer use them. This unblocks Group D.
+**Exit criterion for Group A: MET 2026-04-19.** A1 simplest +
+NPC-adjusted + A2 backstab + A3 deed-die + A4 two-weapon all
+route via adapter; `_canRouteAttackViaAdapter` returns `true` for
+the common-case paths. Legacy branches remain (non-exhaustive
+edge cases still fall through), but the high-traffic paths no
+longer use them. **Group D unblocks.**
 
 ---
 

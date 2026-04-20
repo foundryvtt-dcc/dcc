@@ -195,12 +195,18 @@ test('legacy path fires when options.showModifierDialog is set', async () => {
   expect(assertDispatched('adapter')).toBe(false)
 })
 
-test('legacy path fires for two-weapon primary weapons', async () => {
+test('adapter path fires for two-weapon primary weapons (session 11 / A4)', async () => {
   logDispatch.mockClear()
   const restore = withAutomate(true)
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
-  const weapon = makeSimpleWeapon({ twoWeaponPrimary: true })
+  // item.js:prepareBaseData would normally bake this — mirror the
+  // post-prepare state here: action die bumped from d20 to d16,
+  // tagged with the off-hand label.
+  const weapon = makeSimpleWeapon({
+    twoWeaponPrimary: true,
+    actionDie: '1d16[2w-primary]'
+  })
 
   try {
     await actor.rollToHit(weapon, {})
@@ -208,8 +214,38 @@ test('legacy path fires for two-weapon primary weapons', async () => {
     restore()
   }
 
-  expect(assertDispatched('legacy')).toBe(true)
-  expect(assertDispatched('adapter')).toBe(false)
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
+})
+
+test('adapter path surfaces twoWeapon flags on libResult', async () => {
+  logDispatch.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon({
+    twoWeaponSecondary: true,
+    actionDie: '1d14[2w-off-hand]'
+  })
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
+
+  expect(result.libResult).toBeDefined()
+  // Lib die is the bumped die (the `[tag]` flavor stripped by
+  // normalizeLibDie). DCC's two-weapon mechanic is a dice-chain
+  // reduction — no flat penalty in the modifiers list.
+  expect(result.libResult.die).toBe('d14')
+  expect(result.libResult.isTwoWeaponSecondary).toBe(true)
+  expect(result.libResult.isTwoWeaponPrimary).toBe(false)
+  // Sanity: no `two-weapon fighting` source on the lib's modifier list
+  // (we deliberately don't set `AttackInput.twoWeaponPenalty`).
+  const flatTwoWeaponMod = result.libResult.modifiers.find(m => m.source === 'two-weapon fighting')
+  expect(flatTwoWeaponMod).toBeUndefined()
 })
 
 test('adapter path fires when actor + weapon both carry a deed-die formula (session 10)', async () => {
