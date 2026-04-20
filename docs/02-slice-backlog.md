@@ -136,29 +136,22 @@ attack-term values affect `attackRoll.total` but aren't reflected
 in `libResult.bonuses`; `warnIfDivergent` surfaces the mismatch
 and Foundry's total remains authoritative for chat.
 
-#### A7. Route dice-bearing attack bonus / toHit through adapter
-- **Scope:** Drop the non-deed dice rejection on `attackBonus`
-  / `weaponToHit` from `_canRouteAttackViaAdapter`. Foundry's
-  Roll evaluates dice-bearing `+1d4` style bonuses naturally; the
-  lib only sees the flat portion. Two options:
-  (a) extend `hookTermsToBonuses` to emit dice-bearing
-  `RollBonus` entries so `libResult.total` matches Foundry's Roll;
-  (b) document the divergence and rely on `warnIfDivergent` to
-  surface regressions while accepting lib totals reflect flat
-  bonuses only.
-- **Files:** `module/adapter/attack-input.mjs`, `module/actor.js`,
-  tests (unit + e2e).
-- **Risk:** lib's `RollBonus` effect types — if dice-bearing
-  modifiers aren't a first-class effect kind, option (a) may
-  require a lib change. Route (b) is lower-risk but leaves a
-  permanent divergence.
-- **Commit:** `feat(adapter): Phase 3 session 14 — dice-bearing attack bonus route (A7)`
+#### ~~A7. Route dice-bearing attack bonus / toHit through adapter~~ — **DONE 2026-04-19**
+Landed as Phase 3 session 14. `_canRouteAttackViaAdapter` now
+returns `true` unconditionally — the gate is exhaustive.
+Dice-bearing `attackBonus` / `toHit` patterns that the deed
+parser can't handle (leading flat + trailing die, multiple dice)
+flow through the adapter with Foundry's Roll evaluating the dice
+natively; `buildAttackInput` takes the leading integer via
+`parseToHitBonus`, dropping trailing dice — consistent with
+`hookTermsToBonuses`'s documented drop of dice-bearing hook
+terms. `warnIfDivergent` surfaces the mismatch; Foundry's
+`attackRoll.total` remains chat-authoritative.
 
-**Exit criterion for Group A: MET 2026-04-19 for A1–A6. A7
-remains before Group D's `_rollToHitLegacy` retirement becomes a
-mechanical collapse. Until then, the dispatcher gate is
-non-exhaustive (dice-bearing `attackBonus` / `toHit` still falls
-to legacy) and `_rollToHitLegacy` covers those cases.**
+**Exit criterion for Group A: MET 2026-04-19 for A1–A7.**
+`_canRouteAttackViaAdapter` returns `true` unconditionally —
+the gate is exhaustive. `_rollToHitLegacy` is dead code; **D1
+unblocks as a mechanical collapse**.
 
 ---
 
@@ -202,17 +195,15 @@ waiting for Phase 7.
 
 ---
 
-### Group D — Legacy-branch retirements (depends on Group A completion)
+### Group D — Legacy-branch retirements
 
-Per the §8.6 retirement principle. Do NOT start these until the
-gate is exhaustive (A1–A4 + A5 done; A6 + A7 still outstanding
-for `_rollToHitLegacy`).
+Per the §8.6 retirement principle. D1 is unblocked —
+`_canRouteAttackViaAdapter` returns `true` unconditionally.
 
-#### D1. Retire `_rollToHitLegacy`
-- **Scope:** After A6 + A7 land (A1–A5 already done), verify the
-  dispatcher gate returns `true` for every runtime input. Delete
-  `_rollToHitLegacy` + collapse `rollToHit` dispatcher to single
-  adapter call.
+#### D1. Retire `_rollToHitLegacy` — **READY**
+- **Scope:** Mechanical collapse. Delete `_rollToHitLegacy` +
+  `_canRouteAttackViaAdapter`; inline `_rollToHitViaAdapter` body
+  into `rollToHit` (or rename / merge, pick the cleaner shape).
 - **Test regression:** every existing `_rollToHitLegacy` assertion
   either moves to the adapter path or gets deleted.
 - **Commit:** `refactor(adapter): retire _rollToHitLegacy (gate exhaustive)`
@@ -311,6 +302,13 @@ See `docs/00-progress.md` for details. Summary:
   `modifiedDamageFormula` extraction already lived in the adapter
   body unchanged. `warnIfDivergent` handles user-modified term
   values; Foundry's total authoritative for chat.
+- Phase 3 session 14 (A7): dropped non-deed dice-bearing
+  `attackBonus` / `toHit` exclusion. `_canRouteAttackViaAdapter`
+  returns `true` unconditionally — the gate is exhaustive.
+  Patterns the deed parser can't handle flow through with Foundry
+  evaluating the dice natively; lib sees the flat leading
+  integer. `_rollToHitLegacy` is dead code pending D1. Added
+  two-handed weapon attack Playwright coverage along the way.
 
 ### Docs slices
 

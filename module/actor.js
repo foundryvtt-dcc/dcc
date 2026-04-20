@@ -22,7 +22,7 @@ import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellChe
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
-import { buildAttackInput, hookTermsToBonuses, normalizeLibDie, parseDeedAttackBonus } from './adapter/attack-input.mjs'
+import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
 import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
@@ -2733,16 +2733,20 @@ class DCCActor extends Actor {
    * reflected in `libResult.bonuses` — `warnIfDivergent` surfaces
    * the mismatch; Foundry's total remains authoritative for chat.
    *
+   * Session 14 (A7) dropped the non-deed dice-bearing
+   * `attackBonus` / `toHit` exclusion. Foundry's Roll evaluates
+   * dice portions natively; `buildAttackInput` falls back to
+   * `parseToHitBonus` which takes the leading integer, dropping
+   * trailing dice — consistent with `hookTermsToBonuses`'s
+   * documented drop of dice-bearing hook terms. `warnIfDivergent`
+   * surfaces the mismatch; chat total comes from the Foundry Roll.
+   *
    * @param {Object} weapon
    * @param {Object} options
    * @returns {boolean}
    * @private
    */
   _canRouteAttackViaAdapter (weapon, options = {}) {
-    const attackBonus = String(this.system.details?.attackBonus ?? '')
-    if (attackBonus.includes('d') && parseDeedAttackBonus(attackBonus) === null) return false
-    const weaponToHit = String(weapon?.system?.toHit ?? '')
-    if (weaponToHit.includes('d') && parseDeedAttackBonus(weaponToHit) === null) return false
     return true
   }
 

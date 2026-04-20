@@ -44,9 +44,12 @@ extension hook) + B2 (`EXTENSION_API.md` pain-point cross-reference
 check. Phase 3 session 13 (A6, 2026-04-19) routed the
 `options.showModifierDialog` path through the adapter —
 `damageTerms` now thread through to `DCCRoll.createRoll` so the
-dialog can modify attack + damage in one step. Session 14 (A7,
-dice-bearing attack bonus / toHit route) is the next work; after
-A7 lands D1 becomes a mechanical collapse.**
+dialog can modify attack + damage in one step. Phase 3 session 14
+(A7, 2026-04-19) dropped the non-deed dice-bearing
+`attackBonus` / `toHit` exclusion: `_canRouteAttackViaAdapter`
+returns `true` unconditionally. **Gate is exhaustive; D1
+(`_rollToHitLegacy` retirement) is the next work — mechanical
+collapse.**
 Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and

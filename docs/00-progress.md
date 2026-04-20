@@ -84,7 +84,30 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 13 (2026-04-19, A6) routed the
+**Phase 3 — ACTIVE. Session 14 (2026-04-19, A7) dropped the
+non-deed dice-bearing `attackBonus` / `toHit` exclusion.**
+`_canRouteAttackViaAdapter` now returns `true` unconditionally —
+the gate is exhaustive; every runtime input routes via adapter.
+`_rollToHitLegacy` is dead code pending D1 retirement. Patterns
+the deed parser can't handle (leading flat + trailing die like
+`+2+1d3`, multiple dice like `+1d3+1d4`) flow through the adapter
+with Foundry's Roll evaluating the dice natively;
+`buildAttackInput` takes the leading integer via `parseToHitBonus`
+for the lib's flat `attackBonus`, dropping trailing dice —
+consistent with `hookTermsToBonuses`'s documented drop of
+dice-bearing hook terms. `warnIfDivergent` surfaces the mismatch;
+Foundry's `attackRoll.total` remains chat-authoritative. Third of
+three gate-broadening slices (A5 / A6 / A7); **D1 unblocks as a
+mechanical collapse**. 878 Vitest tests pass (unchanged — two
+prior "legacy fires when actor/weapon has non-deed dice"
+assertions rewritten to expect adapter dispatch). 79 Playwright
+e2e tests pass against live v14 (was 77, +2 new in
+`phase1-adapter-dispatch.spec.js`: dice-mid-string toHit routes
+via adapter with `dcc.libResult` populated; two-handed weapon
+attack routes via adapter — explicit coverage for a weapon kind
+the dispatch spec hadn't exercised on the attack side).
+
+**Phase 3 — Session 13 (2026-04-19, A6) routed the
 `options.showModifierDialog` path through the adapter.**
 `_canRouteAttackViaAdapter` dropped its
 `if (options.showModifierDialog) return false` exclusion.

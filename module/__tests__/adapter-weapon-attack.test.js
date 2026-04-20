@@ -7,7 +7,10 @@
  *     (happy path — automate on or off) → _rollToHitViaAdapter
  *     (backstab on a thief — session 9) → _rollToHitViaAdapter with isBackstab
  *     (showModifierDialog — session 13 / A6) → _rollToHitViaAdapter with damageTerms
- *     (non-deed dice in bonus) → _rollToHitLegacy
+ *     (non-deed dice in bonus — session 14 / A7) → _rollToHitViaAdapter (Foundry total authoritative)
+ *
+ * A7 closes gate exhaustiveness: every runtime input now routes via
+ * adapter. `_rollToHitLegacy` is dead code pending D1 retirement.
  *
  * Adapter-path validation points:
  *   - `dcc.modifyAttackRollTerms` hook still fires with the legacy-shape
@@ -398,12 +401,19 @@ test('adapter path consumes exactly one natural for non-deed weapons (sequenced-
   expect(result.libResult).toBeDefined()
 })
 
-test('legacy path fires when the actor attackBonus has dice but does not match the deed-die pattern', async () => {
+test('adapter path fires when the actor attackBonus has dice that do not match the deed-die pattern (session 14 / A7)', async () => {
+  // A7: multi-dice or mid-string dice patterns no longer fall to
+  // legacy. Foundry's Roll evaluates the dice portion natively;
+  // `buildAttackInput` takes the leading integer for the lib's flat
+  // `attackBonus` and drops the trailing dice — consistent with
+  // `hookTermsToBonuses`'s documented drop of dice-bearing hook
+  // terms. `warnIfDivergent` surfaces the mismatch; chat total comes
+  // from the Foundry Roll.
   logDispatch.mockClear()
   const restore = withAutomate(true)
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
-  // Pathological / unsupported: two separate dice expressions.
+  // Pathological / unsupported by the deed parser: two separate dice.
   actor.system.details.attackBonus = '+1d3+1d4'
   const weapon = makeSimpleWeapon()
 
@@ -413,18 +423,19 @@ test('legacy path fires when the actor attackBonus has dice but does not match t
     restore()
   }
 
-  expect(assertDispatched('legacy')).toBe(true)
-  expect(assertDispatched('adapter')).toBe(false)
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
 })
 
-test('legacy path fires when the weapon toHit has dice that are not a deed-die pattern', async () => {
+test('adapter path fires when the weapon toHit has dice mid-string (session 14 / A7)', async () => {
+  // A7: leading flat + trailing die (`+2+1d3`) is a legitimate
+  // pattern from magical weapons that grant deed-die-style bonuses
+  // on top of a base. Routes via adapter; the lib sees the flat
+  // portion, Foundry handles the dice.
   logDispatch.mockClear()
   const restore = withAutomate(true)
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
-  // Lucky augur weapon-side die that isn't a deed die pattern (flat
-  // before the die). Stays on legacy because the parser anchors at the
-  // start.
   const weapon = makeSimpleWeapon({ toHit: '+2+1d3' })
 
   try {
@@ -433,8 +444,8 @@ test('legacy path fires when the weapon toHit has dice that are not a deed-die p
     restore()
   }
 
-  expect(assertDispatched('legacy')).toBe(true)
-  expect(assertDispatched('adapter')).toBe(false)
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
 })
 
 test('buildAttackInput translates weapon + actor to the lib AttackInput shape', () => {

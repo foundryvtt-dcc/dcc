@@ -1190,6 +1190,117 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       // automate off, so no libDamageResult flag.
       expect(libDamageResult).toBeNull()
     })
+
+    test('non-deed dice in toHit → adapter (session 14 / A7)', async ({ page }) => {
+      // A7: dice-bearing `attackBonus` / `toHit` patterns that don't
+      // match `parseDeedAttackBonus` (e.g. leading flat + trailing
+      // die, multiple dice) no longer fall to legacy. Foundry's Roll
+      // evaluates the dice portion natively; the lib sees the flat
+      // portion via `parseToHitBonus`. `warnIfDivergent` surfaces the
+      // mismatch; `attackRoll.total` remains the chat-authoritative
+      // total. Closes gate exhaustiveness for D1.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Weapon DiceMid', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-DiceMidSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            // Leading flat + trailing die — legitimate shape for a
+            // magical weapon that grants a deed-die-style bonus on
+            // top of a base. parseDeedAttackBonus anchors at start
+            // and rejects this.
+            toHit: '+2+1d3',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Weapon DiceMid').items.getName('P1-DiceMidSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Weapon DiceMid').rollWeaponAttack(id)
+      }, weaponId)
+      const line = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(line, 'adapter', { weapon: 'P1-DiceMidSword' })
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Weapon DiceMid' &&
+              m.getFlag('dcc', 'isToHit')
+            )
+          if (msg) return msg.getFlag('dcc', 'libResult') ?? null
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+      expect(flag, 'dice-bearing toHit still surfaces lib libResult').not.toBeNull()
+      expect(flag.die).toBe('d20')
+    })
+
+    test('two-handed weapon attack → adapter (session 14 / A7 coverage)', async ({ page }) => {
+      // Two-handed weapons affect initiative die (bumped down one
+      // step) but not the attack formula itself. Adapter coverage
+      // here confirms the attack routes identically to a one-handed
+      // weapon, closing an explicit gap in dispatch-spec coverage.
+      // Initiative-side two-handed coverage lives in the
+      // `getInitiativeRoll` section above.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Weapon TwoHanded', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Greatsword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+1',
+            critRange: 20,
+            damage: '1d10',
+            damageWeapon: '1d10',
+            melee: true,
+            equipped: true,
+            twoHanded: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Weapon TwoHanded').items.getName('P1-Greatsword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Weapon TwoHanded').rollWeaponAttack(id)
+      }, weaponId)
+      const line = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(line, 'adapter', { weapon: 'P1-Greatsword' })
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Weapon TwoHanded' &&
+              m.getFlag('dcc', 'isToHit')
+            )
+          if (msg) return msg.getFlag('dcc', 'libResult') ?? null
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+      expect(flag, 'two-handed weapon attack surfaces libResult').not.toBeNull()
+      expect(flag.die).toBe('d20')
+      // twoWeaponPrimary / twoWeaponSecondary should NOT be set on a
+      // two-handed weapon (distinct mechanic from two-weapon fighting).
+      expect(flag.isTwoWeaponPrimary).toBe(false)
+      expect(flag.isTwoWeaponSecondary).toBe(false)
+    })
   })
 
   // ── rollDamage (Phase 3 session 5) ─────────────────────────────────
