@@ -1129,7 +1129,12 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(flag.critSource).toBe('natural-max')
     })
 
-    test('automate off → legacy', async ({ page }) => {
+    test('automate off → adapter (session 12 / A5)', async ({ page }) => {
+      // A5: `automateDamageFumblesCrits` gates the downstream damage /
+      // crit / fumble chain inside `rollWeaponAttack`, not the attack
+      // adapter itself. Attack should still route via adapter and
+      // populate `dcc.libResult` on the chat flags; downstream damage
+      // falls back to the inline-roll-text prompt with no lib call.
       await page.evaluate(async () => {
         const actor = await Actor.create({ name: 'P1 Weapon NoAutomate', type: 'Player' })
         await actor.createEmbeddedDocuments('Item', [{
@@ -1153,7 +1158,32 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
         await game.actors.getName('P1 Weapon NoAutomate').rollWeaponAttack(id)
       }, weaponId)
       const line = await waitForAdapterLog('rollWeaponAttack')
-      assertPath(line, 'legacy', { weapon: 'P1-NoAutomateSword' })
+      assertPath(line, 'adapter', { weapon: 'P1-NoAutomateSword' })
+      const { libResult, libDamageResult } = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Weapon NoAutomate' &&
+              m.getFlag('dcc', 'isToHit')
+            )
+          if (msg) {
+            return {
+              libResult: msg.getFlag('dcc', 'libResult') ?? null,
+              libDamageResult: msg.getFlag('dcc', 'libDamageResult') ?? null
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return { libResult: null, libDamageResult: null }
+      })
+      expect(libResult, 'attack routes via adapter → dcc.libResult set').not.toBeNull()
+      expect(libResult.die).toBe('d20')
+      // Downstream damage path stays on inline-roll-text fallback with
+      // automate off, so no libDamageResult flag.
+      expect(libDamageResult).toBeNull()
     })
   })
 

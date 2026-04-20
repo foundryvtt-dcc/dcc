@@ -84,7 +84,25 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
-**Phase 3 — ACTIVE. Session 11 (2026-04-19, A4) routed two-weapon
+**Phase 3 — ACTIVE. Session 12 (2026-04-19, A5) dropped the
+`automateDamageFumblesCrits` gate check on `_canRouteAttackViaAdapter`.**
+That setting gates whether `rollWeaponAttack` dispatches downstream
+damage / crit / fumble rolls — not the attack-side adapter's
+correctness. The downstream gates (`_canRouteDamageViaAdapter`,
+`_canRouteCritViaAdapter`, `_canRouteFumbleViaAdapter`) already
+check `ctx.automate` defensively, so with the setting off the attack
+routes via adapter (populating `dcc.libResult`) while downstream
+falls back to the inline-roll-text prompt with no lib call. First of
+three slices (A5 / A6 / A7) broadening the attack gate toward
+exhaustiveness so D1 (`_rollToHitLegacy` retirement) is a mechanical
+collapse. 877 Vitest tests pass (unchanged count — one prior "legacy
+fires when automate off" assertion rewritten to expect adapter
+dispatch + `libResult` populated). 77 Playwright e2e tests pass
+against live v14 Foundry (unchanged count — one prior "automate off
+→ legacy" case rewritten to "automate off → adapter" with
+`dcc.libResult` assertion and `dcc.libDamageResult` null-assertion).
+
+**Phase 3 — Session 11 (2026-04-19, A4) routed two-weapon
 fighting through the adapter.** `_canRouteAttackViaAdapter`
 dropped the `twoWeaponPrimary || twoWeaponSecondary` exclusion;
 the adapter inherits the dice-chain-bumped `weapon.system.actionDie`

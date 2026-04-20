@@ -39,10 +39,11 @@ CLOSED 2026-04-19. Vendor sync to
 `@moonloch/dcc-core-lib@0.4.1` (backstab fix + post-review API
 cleanup) landed 2026-04-19. Group B1 (`dcc.registerItemSheet`
 extension hook) + B2 (`EXTENSION_API.md` pain-point cross-reference
-+ §2.12 stated contract) CLOSED 2026-04-19. Phase 3 session 12 is
-the active work — Group A closed, Group D retirement
-(`_rollToHitLegacy`) is now unblocked and is the recommended
-next slice; see `docs/02-slice-backlog.md` for alternatives.**
++ §2.12 stated contract) CLOSED 2026-04-19. Phase 3 session 12
+(A5, 2026-04-19) dropped the `automateDamageFumblesCrits` gate
+check — first of three gate-broadening slices (A5 / A6 / A7)
+before D1 becomes a mechanical collapse. Session 13 (A6, modifier
+dialog route) is the next work.**
 Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and

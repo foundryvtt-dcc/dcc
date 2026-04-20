@@ -2715,10 +2715,14 @@ class DCCActor extends Actor {
    * `-1`/`-2` ruleset returned by the lib's `getTwoWeaponPenalty`,
    * which does not match DCC RAW (DCC uses dice-chain reductions).
    *
-   * The `automateDamageFumblesCrits` requirement is paired with the
-   * session-prompt happy-path definition so the first bridge is
-   * exercised end-to-end (damage + crit + fumble rolls all fire) when
-   * the adapter path runs. Later slices can broaden the gate.
+   * Session 12 (A5) dropped the `automateDamageFumblesCrits`
+   * requirement: that setting gates whether `rollWeaponAttack`
+   * dispatches downstream damage / crit / fumble rolls, not the
+   * attack-side adapter's correctness. The downstream gates
+   * (`_canRouteDamageViaAdapter`, `_canRouteCritViaAdapter`,
+   * `_canRouteFumbleViaAdapter`) already check `ctx.automate`
+   * defensively, so with automate off the attack routes via adapter
+   * while downstream stays on the inline-roll-text fallback.
    *
    * @param {Object} weapon
    * @param {Object} options
@@ -2731,13 +2735,6 @@ class DCCActor extends Actor {
     if (attackBonus.includes('d') && parseDeedAttackBonus(attackBonus) === null) return false
     const weaponToHit = String(weapon?.system?.toHit ?? '')
     if (weaponToHit.includes('d') && parseDeedAttackBonus(weaponToHit) === null) return false
-    let automate = false
-    try {
-      automate = !!game.settings.get('dcc', 'automateDamageFumblesCrits')
-    } catch {
-      automate = false
-    }
-    if (!automate) return false
     return true
   }
 

@@ -4,9 +4,9 @@
  *
  * Dispatcher + adapter coverage:
  *   DCCActor.rollToHit →
- *     (happy path + automate on) → _rollToHitViaAdapter
+ *     (happy path — automate on or off) → _rollToHitViaAdapter
  *     (backstab on a thief — session 9) → _rollToHitViaAdapter with isBackstab
- *     (showModifierDialog | two-weapon | deed die | automate off) → _rollToHitLegacy
+ *     (showModifierDialog | non-deed dice in bonus) → _rollToHitLegacy
  *
  * Adapter-path validation points:
  *   - `dcc.modifyAttackRollTerms` hook still fires with the legacy-shape
@@ -154,16 +154,27 @@ test('adapter path result carries lib classification + modifier list', async () 
   expect(typeof result.libResult.isFumble).toBe('boolean')
 })
 
-test('legacy path fires when automate off', async () => {
+test('adapter path fires when automate off (session 12 / A5)', async () => {
+  // A5: `automateDamageFumblesCrits` gates the downstream damage /
+  // crit / fumble chain inside `rollWeaponAttack`, not the attack-side
+  // adapter. Verify the attack routes via adapter regardless, with
+  // `libResult` populated so the chat flags still surface lib data.
   logDispatch.mockClear()
+  const restore = withAutomate(false)
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = makeSimpleWeapon()
 
-  await actor.rollToHit(weapon, {})
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
 
-  expect(assertDispatched('legacy')).toBe(true)
-  expect(assertDispatched('adapter')).toBe(false)
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
+  expect(result.libResult).toBeDefined()
 })
 
 test('adapter path fires when options.backstab is set (session 9)', async () => {

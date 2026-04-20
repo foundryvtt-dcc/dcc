@@ -112,12 +112,59 @@ fields `isTwoWeaponPrimary`, `isTwoWeaponSecondary` for downstream
 attribution. 1 new vitest test (added) + 1 rewritten ("legacy
 fires" → "adapter fires") + 2 new Playwright cases.
 
-**Exit criterion for Group A: MET 2026-04-19.** A1 simplest +
-NPC-adjusted + A2 backstab + A3 deed-die + A4 two-weapon all
-route via adapter; `_canRouteAttackViaAdapter` returns `true` for
-the common-case paths. Legacy branches remain (non-exhaustive
-edge cases still fall through), but the high-traffic paths no
-longer use them. **Group D unblocks.**
+#### ~~A5. Drop `automateDamageFumblesCrits` gate check~~ — **DONE 2026-04-19**
+Landed as Phase 3 session 12. That setting gates whether
+`rollWeaponAttack` dispatches downstream damage / crit / fumble
+rolls, not the attack-side adapter's correctness. Downstream gates
+(`_canRouteDamageViaAdapter`, `_canRouteCritViaAdapter`,
+`_canRouteFumbleViaAdapter`) already check `ctx.automate`
+defensively; with automate off, the attack routes via adapter
+(populating `dcc.libResult`) while downstream stays on the inline-
+roll-text fallback. One prior vitest + one prior Playwright
+"legacy fires when automate off" assertion rewritten to expect
+adapter dispatch.
+
+#### A6. Route `options.showModifierDialog: true` through adapter
+- **Scope:** The modifier dialog case (ctrl/cmd-click on attack,
+  fleeting-luck flow) currently falls to legacy. Thread
+  `damageTerms` into `_rollToHitViaAdapter`'s
+  `DCCRoll.createRoll` call; dialog-added Modifier terms flow
+  through the existing `hookTermsToBonuses` bridge same as
+  hook-added. Handle `attackRoll.options.modifiedDamageFormula`
+  override identically to legacy. Drop the
+  `if (options.showModifierDialog) return false` line from
+  `_canRouteAttackViaAdapter`.
+- **Files:** `module/actor.js`,
+  `module/__tests__/adapter-weapon-attack.test.js`,
+  `browser-tests/e2e/phase1-adapter-dispatch.spec.js`.
+- **Risk:** the dialog's `damageTerms` are a legacy
+  shape — verify hookTermsToBonuses doesn't double-count when the
+  dialog also adds terms hooks would add.
+- **Commit:** `feat(adapter): Phase 3 session 13 — modifier dialog route (A6)`
+
+#### A7. Route dice-bearing attack bonus / toHit through adapter
+- **Scope:** Drop the non-deed dice rejection on `attackBonus`
+  / `weaponToHit` from `_canRouteAttackViaAdapter`. Foundry's
+  Roll evaluates dice-bearing `+1d4` style bonuses naturally; the
+  lib only sees the flat portion. Two options:
+  (a) extend `hookTermsToBonuses` to emit dice-bearing
+  `RollBonus` entries so `libResult.total` matches Foundry's Roll;
+  (b) document the divergence and rely on `warnIfDivergent` to
+  surface regressions while accepting lib totals reflect flat
+  bonuses only.
+- **Files:** `module/adapter/attack-input.mjs`, `module/actor.js`,
+  tests (unit + e2e).
+- **Risk:** lib's `RollBonus` effect types — if dice-bearing
+  modifiers aren't a first-class effect kind, option (a) may
+  require a lib change. Route (b) is lower-risk but leaves a
+  permanent divergence.
+- **Commit:** `feat(adapter): Phase 3 session 14 — dice-bearing attack bonus route (A7)`
+
+**Exit criterion for Group A: MET 2026-04-19 for A1–A4; A5 MET
+2026-04-19. A6 + A7 remain before Group D's `_rollToHitLegacy`
+retirement becomes a mechanical collapse. Until then, the
+dispatcher gate is non-exhaustive and legacy branches cover the
+uncovered cases.**
 
 ---
 
@@ -163,13 +210,15 @@ waiting for Phase 7.
 
 ### Group D — Legacy-branch retirements (depends on Group A completion)
 
-Per the §8.6 retirement principle. Do NOT start these until Group A
-marks the gate exhaustive.
+Per the §8.6 retirement principle. Do NOT start these until the
+gate is exhaustive (A1–A4 + A5 done; A6 + A7 still outstanding
+for `_rollToHitLegacy`).
 
 #### D1. Retire `_rollToHitLegacy`
-- **Scope:** After A1–A4 complete, verify the dispatcher gate returns
-  `true` for every call site. Delete `_rollToHitLegacy` + collapse
-  `rollToHit` dispatcher to single adapter call.
+- **Scope:** After A6 + A7 land (A1–A5 already done), verify the
+  dispatcher gate returns `true` for every runtime input. Delete
+  `_rollToHitLegacy` + collapse `rollToHit` dispatcher to single
+  adapter call.
 - **Test regression:** every existing `_rollToHitLegacy` assertion
   either moves to the adapter path or gets deleted.
 - **Commit:** `refactor(adapter): retire _rollToHitLegacy (gate exhaustive)`
@@ -255,6 +304,13 @@ See `docs/00-progress.md` for details. Summary:
   flows as a `class:backstab` RollBonus; `libResult.critSource`
   surfaced on chat flags; `libResult.bonuses` expanded to carry the
   full bonus list (not just hook-added).
+- Phase 3 session 10 (A3): warrior / dwarf deed-die adapter route.
+- Phase 3 session 11 (A4): two-weapon fighting adapter route (closes
+  Group A's high-traffic paths).
+- Phase 3 session 12 (A5): dropped `automateDamageFumblesCrits`
+  attack-gate check. Downstream gates already check automate; attack-
+  side adapter correctness is independent. First of three gate-
+  broadening slices before D1 becomes a mechanical collapse.
 
 ### Docs slices
 
