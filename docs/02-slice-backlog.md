@@ -185,13 +185,18 @@ waiting for Phase 7.
   a migration, do NOT delete — pause and ask.
 - **Commit:** `chore(cruft): prune pre-V14 migrations`
 
-#### C3. Delete halfling i18n-localize dispatch remnants
-- **Scope:** `actor.js:1725` is fixed per earlier audit — but grep
-  for any residual `game.i18n.localize('DCC.Halfling')` equality
-  checks elsewhere, and document in `EXTENSION_API.md` that class
-  dispatch uses internal class IDs, not localized labels.
-- **Files:** search-driven.
-- **Commit:** `chore(cruft): audit + remove residual halfling i18n equality checks`
+#### ~~C3. Delete halfling i18n-localize dispatch remnants~~ — **DONE 2026-04-20**
+Landed as a chore(cruft) slice. Audit confirmed zero residual
+`X === game.i18n.localize('DCC.<Class>')` dispatch patterns in
+`module/` source (the single match in `module/migrations.js:235`
+is the legitimate inverse-direction helper that maps localized
+legacy `className` data back to internal class IDs during world
+migration). EXTENSION_API.md gained a "Conventions for modules
+reading actor data" section documenting the
+`system.details.sheetClass` → canonical English ID rule, with the
+anti-pattern example and the regression-guard reference. New
+vitest `class-dispatch-i18n-guard.test.js` greps module source for
+the anti-pattern and fails the suite if it reappears.
 
 ---
 

@@ -84,6 +84,26 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
+**Cruft (2026-04-20, C3) — audited + closed the halfling
+i18n-localize dispatch remnants.** The historical bug
+(`actor.js:1725` per `ARCHITECTURE_REIMAGINED.md §2`) had
+`actor.system.class.className === game.i18n.localize('DCC.Halfling')`
+which silently breaks in non-English locales (className is the
+localized display label). That site was fixed pre-refactor; C3's
+audit confirmed **zero** residual `X === game.i18n.localize(...)`
+dispatch patterns in `module/` source. The single match in
+`module/migrations.js:235` is the legitimate inverse-direction
+helper (localize on the LEFT — maps legacy localized className
+data back to internal class IDs during world migration). New
+vitest `class-dispatch-i18n-guard.test.js` greps source for the
+anti-pattern and fails the suite if it reappears. `EXTENSION_API.md`
+gained a "Conventions for modules reading actor data" section
+documenting the `system.details.sheetClass` → canonical English ID
+rule (halfling, warrior, cleric, thief, wizard, elf, dwarf), with
+the anti-pattern example and the regression-guard reference. 875
+Vitest tests pass (was 874, +1 new guard test). Playwright suite
+unchanged — pure-source-audit slice, no runtime behavior change.
+
 **Phase 3 — ACTIVE. Session 16 (2026-04-20, D2 crit + fumble)
 retired `_rollCriticalLegacy` + `_rollFumbleLegacy`.** Paired
 retirement: the `_canRouteCritViaAdapter` / `_canRouteFumbleViaAdapter`

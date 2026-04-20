@@ -168,6 +168,42 @@ None identified.
 
 ---
 
+## Conventions for modules reading actor data
+
+### Class dispatch uses internal class IDs, not localized labels
+
+When branching on an actor's class, **read `system.details.sheetClass`**
+(or the lib's class-ID registry) and compare against the canonical
+English ID (`'halfling'`, `'warrior'`, `'cleric'`, `'thief'`, `'wizard'`,
+`'elf'`, `'dwarf'`).
+
+**Don't dispatch on `system.class.className`.** That field is the
+*localized* display label populated by the sheet at init time — its
+value depends on the GM's locale, so equality checks break silently in
+non-English games. The anti-pattern looks like:
+
+```js
+// 🚫 breaks on any non-English locale
+if (actor.system?.class?.className === game.i18n.localize('DCC.Halfling')) { … }
+```
+
+Correct form:
+
+```js
+// ✅ locale-independent
+if (actor.system?.details?.sheetClass === 'halfling') { … }
+```
+
+A vitest regression guard
+(`module/__tests__/class-dispatch-i18n-guard.test.js`) greps module
+source for `X === game.i18n.localize(...)` and fails the suite if the
+anti-pattern reappears. `module/migrations.js:235` intentionally uses
+the *inverse* direction (`game.i18n.localize(…) === className`) to map
+legacy localized `className` data back to internal IDs during world
+migration — that's legitimate and not caught by the guard.
+
+---
+
 ## Sibling-module migration recipes
 
 Concrete step-by-step migrations for downstream modules. **The DCC
