@@ -2877,7 +2877,14 @@ class DCCActor extends Actor {
     let deedDieRollResult = ''
     let deedSucceed = false
     const naturals = [d20RollResult]
-    if (attackInput.deedDie && attackRoll.dice.length > 1) {
+    if (attackInput.deedDie) {
+      // Gate said deedDie applies; the Foundry Roll's Compound term
+      // must have produced a second dice entry. If it didn't (parser
+      // regression, hook removed the deed term, lib formula change),
+      // failing loud beats silently failing every deed forever.
+      if (attackRoll.dice.length <= 1) {
+        throw new Error(`[DCC adapter] deed-die expected on attackRoll.dice[1] but only ${attackRoll.dice.length} dice term(s) present (weapon=${weapon?.name})`)
+      }
       const deedTotal = attackRoll.dice[1].total
       naturals.push(deedTotal)
       attackRoll.dice[1].options.dcc = { lowerThreshold: 2, upperThreshold: 3 }
@@ -2892,7 +2899,16 @@ class DCCActor extends Actor {
       deedSucceed = deedTotal > 2
     }
     let rollerIdx = 0
-    const sequencedRoller = () => naturals[rollerIdx++] ?? 0
+    // Throw on over-consumption rather than silently feeding 0 — a future
+    // lib that adds a third internal roll would otherwise silently get a
+    // nat-1 (deterministic fumble) and `warnIfDivergent` might miss it
+    // if the totals coincidentally agree.
+    const sequencedRoller = () => {
+      if (rollerIdx >= naturals.length) {
+        throw new Error(`[DCC adapter] sequencedRoller exhausted: lib requested ${rollerIdx + 1} rolls, ${naturals.length} natural(s) available (weapon=${weapon?.name})`)
+      }
+      return naturals[rollerIdx++]
+    }
     const libResult = libMakeAttackRoll(attackInput, sequencedRoller)
 
     // `hookTermsToBonuses` silently drops dice-bearing hook terms

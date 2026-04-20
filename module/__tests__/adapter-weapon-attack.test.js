@@ -70,6 +70,37 @@ function assertDispatched (path, rollType = 'rollWeaponAttack') {
   )
 }
 
+/**
+ * Mock `DCCRoll.createRoll` to return a Roll with two dice terms — the
+ * action die at `dice[0]` and a deed die at `dice[1]`. Required for the
+ * deed-die adapter path: `_rollToHitViaAdapter` throws if `deedDie` is
+ * set on the input but the Roll only produced one dice term.
+ *
+ * Returns a restore function that reverts the mock.
+ */
+function withDeedDiceRoll (d20Natural = 10, deedNatural = 2) {
+  const previous = dccRollCreateRollMock.getMockImplementation()
+  dccRollCreateRollMock.mockImplementation(() => ({
+    total: d20Natural + deedNatural,
+    formula: '1d20+1d3+0',
+    options: { dcc: {} },
+    dice: [
+      { total: d20Natural, formula: '1d20', options: {} },
+      { total: deedNatural, formula: '1d3', options: {} }
+    ],
+    terms: [
+      { apply: false, class: 'Die', options: { flavor: null }, evaluated: false, number: 1, faces: 20, modifiers: [], results: [] }
+    ],
+    evaluate: async () => {},
+    render: async () => '',
+    toAnchor: () => ({ outerHTML: '' })
+  }))
+  return () => {
+    if (previous) dccRollCreateRollMock.mockImplementation(previous)
+    else dccRollCreateRollMock.mockReset()
+  }
+}
+
 test('adapter path fires for simplest weapon with automate on', async () => {
   logDispatch.mockClear()
   dccRollCreateRollMock.mockClear()
@@ -251,6 +282,7 @@ test('adapter path surfaces twoWeapon flags on libResult', async () => {
 test('adapter path fires when actor + weapon both carry a deed-die formula (session 10)', async () => {
   logDispatch.mockClear()
   const restore = withAutomate(true)
+  const restoreRoll = withDeedDiceRoll()
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   // L1 warrior: +1d3 attack bonus (deed die). The weapon's toHit gets
@@ -262,11 +294,59 @@ test('adapter path fires when actor + weapon both carry a deed-die formula (sess
   try {
     await actor.rollToHit(weapon, {})
   } finally {
+    restoreRoll()
     restore()
   }
 
   expect(assertDispatched('adapter')).toBe(true)
   expect(assertDispatched('legacy')).toBe(false)
+})
+
+test('adapter path throws when deedDie is set but Roll has no dice[1] (session 11 hardening)', async () => {
+  logDispatch.mockClear()
+  const restore = withAutomate(true)
+  // Default mock: dccRollCreateRollMock returns a Roll with only one
+  // dice term. With deedDie set on the lib input, the mismatch should
+  // surface immediately rather than silently producing deedSucceed=false
+  // every time.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.details.attackBonus = '+1d3'
+  const weapon = makeSimpleWeapon({ toHit: '+1d3+0' })
+
+  let caught
+  try {
+    await actor.rollToHit(weapon, {})
+  } catch (err) {
+    caught = err
+  } finally {
+    restore()
+  }
+
+  expect(caught).toBeDefined()
+  expect(String(caught?.message)).toMatch(/deed-die expected on attackRoll\.dice\[1\]/)
+})
+
+test('adapter path consumes exactly one natural for non-deed weapons (sequenced-roller contract)', async () => {
+  // The sequenced roller throws on over-consumption rather than
+  // silently feeding 0 (a future lib version that adds a third
+  // internal roll would otherwise silently turn it into a fumble).
+  // The closure is internal — this test exercises the simple-weapon
+  // path end-to-end and asserts no throw fires when the lib's call
+  // count matches the naturals length.
+  logDispatch.mockClear()
+  const restore = withAutomate(true)
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = makeSimpleWeapon()
+
+  let result
+  try {
+    result = await actor.rollToHit(weapon, {})
+  } finally {
+    restore()
+  }
+  expect(result.libResult).toBeDefined()
 })
 
 test('legacy path fires when the actor attackBonus has dice but does not match the deed-die pattern', async () => {

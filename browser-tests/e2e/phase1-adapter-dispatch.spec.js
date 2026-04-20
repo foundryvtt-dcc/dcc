@@ -109,6 +109,14 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
     await page.evaluate(async () => {
       for (const app of Object.values(ui.windows)) { await app.close() }
       for (const actor of game.actors.filter(a => a.name.startsWith('P1 '))) { await actor.delete() }
+      // Purge accumulated chat messages from prior tests so `find(m => …)`
+      // scans don't grow O(N) with suite size — Foundry doesn't prune
+      // them automatically and the session-reuse fixture preserves them
+      // across all 70+ tests in the spec.
+      const stale = game.messages.contents
+        .filter(m => m.speaker?.alias?.startsWith('P1 '))
+        .map(m => m.id)
+      if (stale.length > 0) await ChatMessage.deleteDocuments(stale)
       document.querySelectorAll('#notifications .notification').forEach(n => n.remove())
     }).catch(() => {})
   })
@@ -126,7 +134,7 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
    * Await the logDispatch line for a given rollType, up to `timeoutMs`.
    * Returns the first matching log, or throws with a diagnostic dump.
    */
-  async function waitForAdapterLog (rollType, { timeoutMs = 3000, pollMs = 50 } = {}) {
+  async function waitForAdapterLog (rollType, { timeoutMs = 6000, pollMs = 50 } = {}) {
     const deadline = Date.now() + timeoutMs
     const tag = `${ADAPTER_TAG} ${rollType}`
     while (Date.now() < deadline) {
@@ -710,6 +718,13 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
         return null
       })
 
+      // Restore randomUniform BEFORE asserting — if any assertion throws
+      // and the deferred restore is skipped, the stub leaks across the
+      // session-reuse fixture and downstream tests roll deterministically.
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
       expect(flag, 'backstab adapter-path attack must set dcc.libResult').not.toBeNull()
       expect(flag.natural).toBe(10)
       expect(flag.isCriticalThreat).toBe(true)
@@ -717,10 +732,6 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       const backstabEntry = flag.bonuses.find(b => b.id === 'class:backstab')
       expect(backstabEntry, 'class:backstab RollBonus must surface on libResult.bonuses').toBeDefined()
       expect(backstabEntry.effect.value).toBe(7)
-
-      await page.evaluate(() => {
-        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
-      })
     })
 
     test('showModifierDialog flag → legacy', async ({ page }) => {
@@ -849,15 +860,16 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(flag.deedDie).toBe('d3')
       expect(flag.deedNatural).toBe(2)
       expect(flag.deedSuccess).toBe(false)
+      // Restore randomUniform BEFORE asserting — see backstab libResult test.
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
       // The lib emits a `{ source: 'deed die', value: <natural> }`
       // entry on appliedModifiers when a deed is rolled.
       const deedMod = flag.modifiers.find(m => m.source === 'deed die')
       expect(deedMod, 'deed-die modifier must surface on libResult.modifiers').toBeDefined()
       expect(deedMod.value).toBe(2)
-
-      await page.evaluate(() => {
-        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
-      })
     })
 
     test('two-weapon primary → adapter (session 11 / A4)', async ({ page }) => {
@@ -967,6 +979,154 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       // must NOT appear — DCC uses dice-chain reductions, not flat mods.
       const flatTwoWeaponMod = flag.modifiers.find(m => m.source === 'two-weapon fighting')
       expect(flatTwoWeaponMod, 'must not introduce flat two-weapon penalty').toBeUndefined()
+    })
+
+    test('halfling two-weapon fumble note round-trips through adapter', async ({ page }) => {
+      // Halfling RAW: a two-weapon fumble is only "real" if BOTH dice
+      // came up natural 1. The chat card embeds a localized note in
+      // that state so the player can decide. The note triggers off
+      // `attackRollResult.fumble` + `weapon.system.twoWeapon*` +
+      // `actor.system.details.sheetClass === 'Halfling'`. This e2e
+      // verifies the adapter's `libResult.isFumble → fumble` round-trip
+      // doesn't drop the note for the now-adapter-routed two-weapon
+      // path.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Halfling Fumble',
+          type: 'Player',
+          system: {
+            abilities: { agl: { value: 13 } },
+            details: { sheetClass: 'Halfling' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-HalflingDagger',
+          type: 'weapon',
+          system: {
+            toHit: '+0',
+            critRange: 20,
+            damageWeapon: '1d4',
+            damage: '1d4',
+            melee: true,
+            equipped: true,
+            twoWeaponPrimary: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        // Force natural 1 on the action die so the lib classifies a fumble.
+        // Foundry: Math.ceil((1 - randomUniform) * faces); 0.99 → 1 on any die.
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.99
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Halfling Fumble').items.getName('P1-HalflingDagger').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Halfling Fumble').rollWeaponAttack(id)
+      }, weaponId)
+
+      const noteHtml = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Halfling Fumble' &&
+              m.getFlag('dcc', 'isToHit')
+            )
+          if (msg) return msg.content || ''
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      // Restore randomUniform BEFORE asserting — if an assertion throws,
+      // a deferred restore would leave the global stub in place and
+      // pollute subsequent tests via the session-reuse fixture.
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
+      expect(noteHtml, 'halfling two-weapon fumble must produce chat card').not.toBeNull()
+      expect(noteHtml).toContain('Fumble only applies if both attack rolls were a natural 1')
+    })
+
+    test('halfling two-weapon crit range survives the adapter (1d16, threatRange 16)', async ({ page }) => {
+      // Halfling RAW (DCC core): when fighting two-weapon at agl ≤17,
+      // halflings score crits AND auto-hit on natural 16. item.js
+      // prepareBaseData sets `weapon.system.critRange = 16` on the
+      // pre-bumped weapon. The adapter passes that through as
+      // `AttackInput.threatRange`. We force a natural 16 (mid-range
+      // for a d16) and assert the lib classifies it as a crit.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Halfling Crit',
+          type: 'Player',
+          system: {
+            abilities: { agl: { value: 13 } },
+            details: { sheetClass: 'Halfling' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-HalflingHatchet',
+          type: 'weapon',
+          system: {
+            toHit: '+0',
+            // critRange omitted — item.js prepareBaseData sets 16 from
+            // the halfling-two-weapon branch.
+            damageWeapon: '1d4',
+            damage: '1d4',
+            melee: true,
+            equipped: true,
+            twoWeaponPrimary: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        // Force natural max on a d16: ceil((1 - 0.001) * 16) = 16.
+        globalThis.__origRandomUniform = CONFIG.Dice.randomUniform
+        CONFIG.Dice.randomUniform = () => 0.001
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Halfling Crit').items.getName('P1-HalflingHatchet').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Halfling Crit').rollWeaponAttack(id)
+      }, weaponId)
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Halfling Crit' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      // Restore randomUniform BEFORE asserting — see fumble-note test.
+      // randomUniform = 0.001 (always-max-die) leaks catastrophically
+      // into downstream tests if a deferred restore is skipped.
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
+      expect(flag, 'halfling two-weapon crit-on-16 must set dcc.libResult').not.toBeNull()
+      expect(flag.die).toBe('d16')
+      expect(flag.natural).toBe(16)
+      // A natural 16 on a d16 is auto-hit (max-on-die) — and the
+      // halfling two-weapon critRange was set to 16 by prepareBaseData,
+      // so this should classify as a crit. critSource will be
+      // 'natural-max' since 16 IS the max on this die.
+      expect(flag.isCriticalThreat).toBe(true)
+      expect(flag.critSource).toBe('natural-max')
     })
 
     test('automate off → legacy', async ({ page }) => {
@@ -1252,14 +1412,15 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       await page.evaluate(async (id) => {
         await game.actors.getName('P1 Crit Adapter').rollWeaponAttack(id)
       }, weaponId)
+      // Restore randomUniform BEFORE asserting — see backstab libResult test.
+      await page.evaluate(() => {
+        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
+      })
+
       const attackLine = await waitForAdapterLog('rollWeaponAttack')
       assertPath(attackLine, 'adapter', { weapon: 'P1-CritSword' })
       const critLine = await waitForAdapterLog('rollCritical')
       assertPath(critLine, 'adapter', { weapon: 'P1-CritSword' })
-
-      await page.evaluate(() => {
-        CONFIG.Dice.randomUniform = globalThis.__origRandomUniform
-      })
     })
 
     test('adapter path populates dcc.libCritResult chat flag', async ({ page }) => {
