@@ -312,3 +312,50 @@ XCC currently does not register custom item sheets, so
 adds a future item sheet, the recipe mirrors the actor-sheet one
 above (substitute `registerItemSheet` for `registerActorSheet` and
 the appropriate item sub-types).
+
+### dcc-qol migration: `critText` / `fumbleText` → `critResult` / `fumbleResult`
+
+**Goal:** Read the canonical crit / fumble detail fields on the
+weapon-attack chat `messageData.system` instead of the
+`critText` / `fumbleText` legacy aliases.
+
+**Why:** DCC's `rollWeaponAttack` previously emitted both
+`critResult` / `fumbleResult` (the canonical names) AND
+`critText` / `fumbleText` (duplicate aliases carrying the same
+values, labeled "Legacy name for dcc-qol compatibility" in
+`module/actor.js`). The aliases are a §2.7 cruft shim from before
+`critResult` / `fumbleResult` stabilized as names. Retiring them
+slims the messageData shape without changing any emitted values.
+
+**Scope:** two lines in
+`dcc-qol/scripts/hooks/attackRollHooks.js`.
+
+```js
+// Before (lines 283–284)
+const automatedCritDetails = messageData.system.critText || "";
+const automatedFumbleDetails = messageData.system.fumbleText || "";
+
+// After
+const automatedCritDetails = messageData.system.critResult || "";
+const automatedFumbleDetails = messageData.system.fumbleResult || "";
+```
+
+The enriched-HTML comment at line 282 ("critText and fumbleText are
+already enriched HTML by the DCC system if automated") stays
+accurate — the post-rename field names are the ones the DCC system
+already enriches. Update the comment in the same diff if desired:
+"critResult and fumbleResult are already enriched HTML …".
+
+**Timing:** dcc-qol should land this fix **before or alongside** the
+DCC system's shim removal. DCC removed the shim on the
+`refactor/dcc-core-lib-adapter` branch (2026-04-20, C1 cruft slice);
+a dcc-qol version built against a DCC release that still emits the
+shim continues to work unchanged until the shim removal ships.
+A dcc-qol version still reading `critText` / `fumbleText` after the
+shim removal ships will silently display empty strings for the
+"automated crit/fumble details" section of the chat card until
+updated.
+
+**No DCC system change required after this slice** — `critResult`
+and `fumbleResult` have always been emitted alongside the shim
+aliases; this migration just flips the reader.

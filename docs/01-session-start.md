@@ -81,6 +81,12 @@ roller closure so multi-die damage formulas map each lib
 `evaluateRoll` call to its corresponding `damageRoll.dice[i]`.
 **All three D2 retirements are now complete** — Group D legacy-
 branch retirement for attack / crit / fumble / damage landed.
+Phase 3 session 20 (C1, 2026-04-20) **retired the `critText` /
+`fumbleText` compatibility shims** on `rollWeaponAttack` /
+`rollCritical` messageData — 3 lines dropped from
+`module/actor.js`; the canonical `critResult` / `fumbleResult`
+fields stay emitted. dcc-qol fix (2-line rename, documented as a
+migration recipe in `EXTENSION_API.md`) pending dcc-qol release.
 Phase 2 close-out pinned two
 decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
 — no deprecation, no shim, route migration is per-call-site and
@@ -215,22 +221,20 @@ is surfaced for downstream crit-table routing.
   `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
   ...)`, and `logDispatch('rollFumble', ...)` in both branches.
   Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
-- **Baseline (post-session-19 / D2 damage retirement):** 883 Vitest
-  tests pass, 86 Playwright e2e tests pass against live v14 Foundry.
+- **Baseline (post-session-20 / C1 cruft):** 883 Vitest tests
+  pass, 87 Playwright e2e tests pass against live v14 Foundry.
   Dispatch-spec subset runs in ~40 s thanks to the session-reuse
-  fixture; full Playwright suite runs in ~8 min.
+  fixture; full Playwright suite runs in ~8.5 min.
 
-**This session's goal:** **Group D legacy-branch retirement for
-`rollWeaponAttack` is fully complete. D1 (attack, session 15),
-D2 crit + fumble (session 16), D2 damage (session 19) all
-landed. Next candidates from the backlog are: D3 patron-taint
+**This session's goal:** **Group D retirements complete (attack /
+crit / fumble / damage) AND C1 cruft landed (session 20, shim
+removal). Next candidates from the backlog are: D3 patron-taint
 RAW alignment (STOP AND ASK — cross-repo design decision); D4
 fold direct-reimpl spell-check branches (STOP AND ASK per branch);
-C1 retire `critText` / `fumbleText` compatibility shims (cruft,
-parallel-safe); C2 prune pre-V14 migrations (cruft, parallel-safe);
-Group E vertical slice for XCC/MCC validation (requires explicit
-pick). `docs/02-slice-backlog.md` has the full inventory.** Ask
-Tim which to pick before executing.
+C2 prune pre-V14 migrations (cruft, parallel-safe); Group E
+vertical slice for XCC/MCC validation (requires explicit pick).
+`docs/02-slice-backlog.md` has the full inventory.** Ask Tim
+which to pick before executing.
 
 Sessions 2–14 landed all of Group A (simplest-weapon, backstab,
 deed dice, two-weapon, automate-off, modifier dialog, dice-bearing
@@ -303,7 +307,7 @@ rules divergence — surface it instead.
 **Before touching Phase 3 code, confirm the repo is green:**
 
 - `npm test` — 883 Vitest tests + dice-gated integration at
-  session 19 close. Final check before any commit.
+  session 20 close. Final check before any commit.
 - `npm run test:unit` — mock-only; runs in every environment.
 - `npm run test:integration` — integration project. Skips if Foundry
   isn't detected (via `FOUNDRY_PATH`, `.foundry-dev/`, or
@@ -313,8 +317,8 @@ rules divergence — surface it instead.
   `npm run setup:foundry` once. Otherwise the dice cases **skip**
   (not fail); the status line shows `N passed | M skipped`.
 
-**Browser tests (required for refactor slices — 86 Playwright
-e2e pass at session 19 close):** see
+**Browser tests (required for refactor slices — 87 Playwright
+e2e pass at session 20 close):** see
 `docs/dev/TESTING.md#browser-tests-playwright` for the full recipe.
 TL;DR — with the fvtt CLI's `installPath` / `dataPath` pointed at
 `foundry-14` / `FoundryVTT-Next` (verify via

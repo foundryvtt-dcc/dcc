@@ -84,6 +84,42 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
+**Cruft (2026-04-20, C1) — retired `critText` / `fumbleText`
+compatibility shims on `rollWeaponAttack` / `rollCritical`
+messageData.** Three lines in `module/actor.js` (2 in
+`rollWeaponAttack`'s main messageData block + 1 in `rollCritical`'s
+standalone messageData block) emitted `critText: critResult` +
+`fumbleText: fumbleResult` as "Legacy name for dcc-qol
+compatibility" aliases of the canonical `critResult` / `fumbleResult`
+fields. Audit (`module/`, `templates/`, schemas, vitest, Playwright,
+sibling modules at `../../modules/`) confirmed only one external
+live consumer: `dcc-qol/scripts/hooks/attackRollHooks.js:283-284`,
+which reads `messageData.system.critText` / `fumbleText` verbatim
+into `automatedCritDetails` / `automatedFumbleDetails` for chat-card
+rendering. XCC's `critText` / `fumbleText` occurrences are
+unrelated local variable names in `xcc-actor-sheet-*.js`.
+`module/chat.js`'s uses are also local variable names reading from
+`message.system.critResult` / `.fumbleResult` (canonical).
+Shim deletion: 3 lines dropped from `module/actor.js`; no other
+DCC-side changes. dcc-qol fix (2-line rename:
+`critText`→`critResult`, `fumbleText`→`fumbleResult`) documented
+as a sibling-module migration recipe in `EXTENSION_API.md` for the
+dcc-qol maintainer to land on their schedule. The recipe spells
+out the timing constraint: dcc-qol versions built before this
+migration continue to work against DCC releases that still emit
+the shims, but after the shim removal ships (this slice on
+`refactor/dcc-core-lib-adapter`) a still-reading-`critText`
+dcc-qol would silently display empty strings in the "automated
+crit/fumble details" chat-card section until updated. 883 Vitest
+tests pass (unchanged — no vitest referenced the shim fields). 87
+Playwright e2e pass against live v14 Foundry (was 86, +1 new in
+`phase1-adapter-dispatch.spec.js`: `C1 cruft: critText/fumbleText
+shims retired from rollWeaponAttack messageData` — hooks
+`dcc.rollWeaponAttack`, captures `messageData.system`, asserts
+`'critResult' in system` + `'fumbleResult' in system` stay `true`
+while `'critText' in system` + `'fumbleText' in system` flip to
+`false`).
+
 **Cruft (2026-04-20, C3) — audited + closed the halfling
 i18n-localize dispatch remnants.** The historical bug
 (`actor.js:1725` per `ARCHITECTURE_REIMAGINED.md §2`) had

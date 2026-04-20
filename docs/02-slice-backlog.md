@@ -165,16 +165,31 @@ Cheap Phase 7 wins per §2.7. Each is self-contained, touches files
 unrelated to adapter work, and benefits from landing now rather than
 waiting for Phase 7.
 
-#### C1. Retire `critText` / `fumbleText` compatibility shims
-- **Scope:** Audit callers of `critText` / `fumbleText` (the "Legacy
-  name for dcc-qol compatibility" shims in chat templates / item
-  data). Verify `../../modules/dcc-qol` no longer reads them;
-  coordinate with dcc-qol maintainer if any live callers remain.
-- **Stop-and-ask trigger:** if `dcc-qol` still uses them, do NOT
-  remove — pause and ask.
-- **Files:** grep-driven — chat templates, `item.js`, schema
-  migrations.
-- **Commit:** `chore(cruft): retire critText/fumbleText legacy shims`
+#### ~~C1. Retire `critText` / `fumbleText` compatibility shims~~ — **DONE 2026-04-20**
+Landed as Phase 3 session 20 (chore-cruft slice). Audit found
+three emit sites in `module/actor.js` (2 in `rollWeaponAttack`'s
+messageData, 1 in `rollCritical`'s standalone messageData) and
+exactly one live external consumer:
+`dcc-qol/scripts/hooks/attackRollHooks.js:283-284`, which reads
+`messageData.system.critText` / `fumbleText` verbatim. XCC's
+`critText` / `fumbleText` occurrences are unrelated local variable
+names. `module/chat.js`'s uses are also local variable names
+reading from the canonical `message.system.critResult` /
+`.fumbleResult`. The coordinated fix was resolved by Tim's
+explicit direction: land the DCC shim removal + document the
+dcc-qol migration recipe; dcc-qol ships the rename on its own
+schedule. EXTENSION_API.md's sibling-module migration recipes
+section gained a dcc-qol entry spelling out the 2-line rename
+(`critText`→`critResult`, `fumbleText`→`fumbleResult`) plus the
+timing constraint (pre-shim-removal dcc-qol versions keep
+working; post-shim-removal dcc-qol needs the rename to avoid
+empty crit/fumble details). +1 Playwright regression guard
+(`C1 cruft: critText/fumbleText shims retired from
+rollWeaponAttack messageData`) hooks `dcc.rollWeaponAttack`,
+captures the `messageData.system` field presence, and asserts
+the shims are absent while the canonical fields remain. 883
+Vitest (unchanged — no vitest referenced the shim fields) +
+87 Playwright (was 86, +1 regression guard).
 
 #### C2. Prune pre-V14 migrations
 - **Scope:** Review `module/dcc.js` migration block (referenced as
@@ -416,6 +431,19 @@ See `docs/00-progress.md` for details. Summary:
   to both surface tables; §2.12 Foundry-smelling-surface contract
   stated explicitly; recommendations grew schema-shape + future-hook
   guidance.
+
+### Cruft slices
+
+- C1 (2026-04-20): retired `critText` / `fumbleText` compatibility
+  shims on `rollWeaponAttack` / `rollCritical` messageData.
+  Canonical `critResult` / `fumbleResult` fields stay as the sole
+  emit. Only external consumer was
+  `dcc-qol/scripts/hooks/attackRollHooks.js:283-284`; a 2-line
+  rename (`critText`→`critResult`, `fumbleText`→`fumbleResult`)
+  documented as a sibling-module migration recipe in
+  `EXTENSION_API.md`. +1 Playwright regression guard hooking
+  `dcc.rollWeaponAttack` and asserting the shims are absent from
+  `messageData.system`.
 
 ### Extension API slices
 

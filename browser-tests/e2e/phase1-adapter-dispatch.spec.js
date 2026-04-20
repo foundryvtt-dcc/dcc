@@ -2090,5 +2090,56 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(surface.hasDamageLegacy, '_rollDamageLegacy retired in D2 damage').toBe(false)
       expect(surface.hasDamageAdapterAlias, '_rollDamageViaAdapter folded into _rollDamage').toBe(false)
     })
+
+    test('C1 cruft: critText/fumbleText shims retired from rollWeaponAttack messageData', async ({ page }) => {
+      // C1 cruft slice: the DCC system previously emitted both the
+      // canonical `critResult` / `fumbleResult` AND the legacy aliases
+      // `critText` / `fumbleText` on the weapon-attack chat
+      // `messageData.system`. The aliases were labeled "Legacy name for
+      // dcc-qol compatibility" and are now retired. Guard that the
+      // canonical fields are still emitted and the shim aliases are not.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 C1 Shim Guard', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-ShimGuardSword',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+0',
+            critRange: 20,
+            damage: '1d6',
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+        globalThis.__c1CapturedSystem = null
+        globalThis.__c1HookId = Hooks.on('dcc.rollWeaponAttack', (rolls, messageData) => {
+          globalThis.__c1CapturedSystem = {
+            hasCritResult: 'critResult' in messageData.system,
+            hasFumbleResult: 'fumbleResult' in messageData.system,
+            hasCritText: 'critText' in messageData.system,
+            hasFumbleText: 'fumbleText' in messageData.system
+          }
+        })
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 C1 Shim Guard').items.getName('P1-ShimGuardSword').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 C1 Shim Guard').rollWeaponAttack(id)
+      }, weaponId)
+
+      const captured = await page.evaluate(() => {
+        Hooks.off('dcc.rollWeaponAttack', globalThis.__c1HookId)
+        return globalThis.__c1CapturedSystem
+      })
+
+      expect(captured, 'dcc.rollWeaponAttack hook must have fired').not.toBeNull()
+      expect(captured.hasCritResult, 'messageData.system.critResult stays as the canonical field').toBe(true)
+      expect(captured.hasFumbleResult, 'messageData.system.fumbleResult stays as the canonical field').toBe(true)
+      expect(captured.hasCritText, 'messageData.system.critText shim retired in C1').toBe(false)
+      expect(captured.hasFumbleText, 'messageData.system.fumbleText shim retired in C1').toBe(false)
+    })
   })
 })
