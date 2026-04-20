@@ -105,6 +105,37 @@ export function extractWeaponMagicBonus (weapon) {
 }
 
 /**
+ * Build a passthrough `libDamageResult` for damage formulas the parser
+ * can't digest into a lib-native `DamageInput` (e.g. lance
+ * `(1d8)*2+3` with `doubleIfMounted`, custom `damageOverride` formulas,
+ * multi-die `1d8+1d4`). Foundry's Roll remains authoritative for chat
+ * rendering + the damage total; the lib call is skipped since
+ * `DamageInput` only has slots for a single die + flat modifier.
+ *
+ * The result shape matches the parseable case's fields so downstream
+ * consumers read it uniformly — unknown slots are `null`, and the
+ * `passthrough: true` marker tells consumers the breakdown is
+ * deliberately empty (not an adapter bug).
+ *
+ * @param {{total: number}} damageRoll
+ * @returns {{
+ *   damageDie: null, natural: null, baseDamage: null, modifierDamage: null,
+ *   total: number, breakdown: Array, passthrough: true
+ * }}
+ */
+export function buildPassthroughDamageResult (damageRoll) {
+  return {
+    damageDie: null,
+    natural: null,
+    baseDamage: null,
+    modifierDamage: null,
+    total: damageRoll.total,
+    breakdown: [],
+    passthrough: true
+  }
+}
+
+/**
  * Build a lib `DamageInput` from a parsed damage formula.
  *
  * For the simplest-damage slice, the formula already bakes in the

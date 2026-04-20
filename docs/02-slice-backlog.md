@@ -249,8 +249,14 @@ single-path inline-template assertions, +1 retirement guard).
     (`1d8[Slashing]`) still falls to legacy (matches legacy's
     `hasPerTermFlavors` native-Roll branch; folding would require a
     separate rendering-parity decision).
-  - **Unparseable `parseDamageFormula(...) === null` formulas** —
-    extend the parser, or accept lossless passthrough.
+  - ~~**Unparseable `parseDamageFormula(...) === null` formulas**~~
+    — DONE session 18. `buildPassthroughDamageResult(damageRoll)`
+    in `module/adapter/damage-input.mjs` produces a minimal
+    `libDamageResult` with just `total` + `passthrough: true` +
+    empty `breakdown`. `_rollDamageViaAdapter` branches on parse
+    result; gate dropped the `parseDamageFormula === null`
+    rejection. Lance `(1d8)*2+3`, multi-die `1d8+1d4`, homebrew
+    `damageOverride` formulas all route via adapter now.
   - **Multi-type per-term flavors** (`1d6[fire]+1d6[cold]`) — STOP
     AND ASK. Lib's `DamageInput` is single-typed.
   - **Dice-bearing / cursed `damageWeaponBonus`** — STOP AND ASK.
@@ -367,6 +373,23 @@ See `docs/00-progress.md` for details. Summary:
   body folded into `rollToHit`. First Group-D retirement. +1
   Playwright regression guard asserting the retired methods are
   absent from the actor prototype.
+- Phase 3 session 18 (D2 damage sub-slice a): accepted unparseable
+  formulas as lossless passthrough. New
+  `buildPassthroughDamageResult(damageRoll)` helper in
+  `module/adapter/damage-input.mjs` produces
+  `libDamageResult: { total, breakdown: [], passthrough: true,
+  damageDie: null, natural: null, baseDamage: null, modifierDamage:
+  null }` for formulas the parser can't digest. Gate drops the
+  `parseDamageFormula === null` rejection; `_rollDamageViaAdapter`
+  branches on parse result and skips the lib call for passthrough
+  inputs. Lance `(1d8)*2+3`, multi-die `1d8+1d4`, custom
+  `damageOverride` homebrew formulas now all route via adapter.
+  `_buildLibDamageResult` extracted from the via-adapter body so
+  the parseable branch stays compact. 882 Vitest tests pass (was
+  879, +3) + 83 Playwright e2e (was 82, +1). Only sub-slice (d)
+  dice-bearing / cursed magic bonuses remains before damage-gate
+  exhaustiveness + D2 damage retirement — STOP AND ASK because
+  lib's `DamageInput.magicBonus` is a non-negative integer.
 - Phase 3 session 17 (D2 damage sub-slice b): broadened damage gate
   to accept trailing bracket-flavor formulas (`1d6+2[Slashing]`,
   `2d4-1[Piercing]`). New `peelTrailingFlavor` helper in

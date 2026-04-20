@@ -27,7 +27,7 @@
 import { expect, test, vi } from 'vitest'
 import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
-import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula, peelTrailingFlavor } from '../adapter/damage-input.mjs'
+import { buildDamageInput, buildPassthroughDamageResult, extractWeaponMagicBonus, parseDamageFormula, peelTrailingFlavor } from '../adapter/damage-input.mjs'
 import { logDispatch } from '../adapter/debug.mjs'
 
 vi.mock('../actor-level-change.js')
@@ -197,6 +197,22 @@ test('extractWeaponMagicBonus returns null for dice-bearing or negative bonuses'
   expect(extractWeaponMagicBonus({ system: { damageWeaponBonus: 'wat' } })).toBeNull()
 })
 
+test('buildPassthroughDamageResult mirrors the parseable shape with null slots (sub-slice a)', () => {
+  // Sub-slice (a) accepts unparseable formulas as a lossless passthrough
+  // so the damage gate can be broadened. The passthrough shape matches
+  // the parseable case's fields so downstream consumers read uniformly.
+  const result = buildPassthroughDamageResult({ total: 17 })
+  expect(result).toEqual({
+    damageDie: null,
+    natural: null,
+    baseDamage: null,
+    modifierDamage: null,
+    total: 17,
+    breakdown: [],
+    passthrough: true
+  })
+})
+
 test('_canRouteDamageViaAdapter rejects when the attack went through legacy', () => {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -204,14 +220,29 @@ test('_canRouteDamageViaAdapter rejects when the attack went through legacy', ()
   expect(actor._canRouteDamageViaAdapter(weapon, '1d8', {}, {})).toBe(false)
 })
 
-test('_canRouteDamageViaAdapter rejects per-term flavors + multi-dice formulas', () => {
+test('_canRouteDamageViaAdapter rejects per-term flavors', () => {
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
   const weapon = { name: 'sword' }
   const attackRollResult = { libResult: { total: 15 } }
 
   expect(actor._canRouteDamageViaAdapter(weapon, '1d6[fire]+1d6[cold]', attackRollResult, {})).toBe(false)
-  expect(actor._canRouteDamageViaAdapter(weapon, '1d6+1d4', attackRollResult, {})).toBe(false)
+})
+
+test('_canRouteDamageViaAdapter accepts unparseable formulas as passthrough (sub-slice a)', () => {
+  // Previously rejected via `parseDamageFormula === null`. Sub-slice (a)
+  // drops that rejection so unparseable formulas route via adapter with
+  // a lossless passthrough libDamageResult. Lance's `doubleIfMounted`
+  // produces `(1d8)*2+3`; exotic multi-die weapons produce `1d8+1d4`;
+  // homebrew `damageOverride` can produce arbitrary formulas.
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'mounted lance' }
+  const attackRollResult = { libResult: { total: 15 } }
+
+  expect(actor._canRouteDamageViaAdapter(weapon, '(1d8)*2+3', attackRollResult, {})).toBe(true)
+  expect(actor._canRouteDamageViaAdapter(weapon, '1d8+1d4', attackRollResult, {})).toBe(true)
+  expect(actor._canRouteDamageViaAdapter(weapon, 'max(1d4,2)', attackRollResult, {})).toBe(true)
 })
 
 test('_canRouteDamageViaAdapter accepts trailing bracket-flavor formulas (sub-slice b)', () => {
@@ -469,6 +500,42 @@ test('adapter path peels trailing flavor bracket into Compound term + libDamageR
   expect(result.libDamageResult.baseDamage).toBe(4)
   expect(result.libDamageResult.modifierDamage).toBe(2)
   expect(result.libDamageResult.total).toBe(6)
+})
+
+test('adapter path falls back to passthrough libDamageResult for unparseable formulas (sub-slice a)', async () => {
+  logDispatch.mockClear()
+  // Lance's doubleIfMounted produces `(1d8)*2+3`. parseDamageFormula
+  // can't digest the parens / multiplier shape. Previously routed to
+  // legacy via the `parseDamageFormula === null` gate rejection; now
+  // routes via adapter as a lossless passthrough.
+  const restoreRoll = withSyncCreateRoll(() => makeStubRoll({ total: 13, natural: 5 }))
+  const restore = withAutomate(true)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  const weapon = { name: 'mounted lance' }
+  const attackRollResult = { libResult: { total: 18 } }
+
+  let result
+  try {
+    result = await actor._rollDamage(weapon, '(1d8)*2+3', attackRollResult, {})
+  } finally {
+    restore()
+    restoreRoll()
+  }
+
+  expect(assertDispatched('adapter')).toBe(true)
+  expect(assertDispatched('legacy')).toBe(false)
+  expect(result.libDamageResult).toBeDefined()
+  expect(result.libDamageResult.passthrough).toBe(true)
+  expect(result.libDamageResult.total).toBe(13)
+  expect(result.libDamageResult.breakdown).toEqual([])
+  // Fields the lib would populate are null — callers check `passthrough`
+  // before trusting them.
+  expect(result.libDamageResult.damageDie).toBeNull()
+  expect(result.libDamageResult.natural).toBeNull()
+  expect(result.libDamageResult.baseDamage).toBeNull()
+  expect(result.libDamageResult.modifierDamage).toBeNull()
 })
 
 test('adapter path clamps damage minimum to 1', async () => {

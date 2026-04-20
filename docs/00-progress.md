@@ -104,7 +104,66 @@ the anti-pattern example and the regression-guard reference. 875
 Vitest tests pass (was 874, +1 new guard test). Playwright suite
 unchanged — pure-source-audit slice, no runtime behavior change.
 
-**Phase 3 — ACTIVE. Session 17 (2026-04-20, D2 damage sub-slice b)
+**Phase 3 — ACTIVE. Session 18 (2026-04-20, D2 damage sub-slice a)
+accepted unparseable formulas as a lossless passthrough through
+the adapter.** Second of the D2 damage gate-broadening sub-slices.
+Previously `parseDamageFormula(...) === null` rejected every formula
+the parser couldn't digest into `{diceCount, die, modifier}`. That
+caught a handful of real runtime cases: lance's `doubleIfMounted`
+which produces `(1d8)*2+3` via `item.js:prepareBaseData`; homebrew
+weapons with custom `config.damageOverride` formulas; exotic multi-
+die weapons with native `1d8+1d4` shape. None of these have a
+lossless translation to the lib's single-die-plus-flat-modifier
+`DamageInput` shape, so the gate rejection forced them to legacy.
+
+Sub-slice (a) drops that rejection + handles the parse-null case
+in `_rollDamageViaAdapter` with a lossless passthrough: the
+Foundry Roll still evaluates via `DCCRoll.createRoll` (same
+anchor, same chat rendering), but the lib call is skipped and
+`libDamageResult` is populated with a passthrough shape —
+`{ damageDie: null, natural: null, baseDamage: null, modifierDamage:
+null, total: damageRoll.total, breakdown: [], passthrough: true }`.
+The `passthrough: true` marker tells downstream consumers the
+breakdown is deliberately empty (not a bug); `total` still matches
+Foundry's authoritative total.
+
+New `buildPassthroughDamageResult(damageRoll)` helper in
+`module/adapter/damage-input.mjs` produces the shape; the branch
+in `_rollDamageViaAdapter` picks between it and the existing
+parseable path via the parse-null check. Extracted
+`_buildLibDamageResult` out of the via-adapter body so the
+parseable branch stays compact and the diff reads as a split, not
+a duplicate. Gate simplified: removed `parseDamageFormula === null`
+rejection; kept defensive `damageRollFormula.trim() === ''`
+rejection for empty strings (which the passthrough shouldn't
+receive — they shouldn't reach `_rollDamage` at all, but the
+legacy body would silently produce a broken Roll for them).
+
+Only one D2 damage rejection now remains: the
+`extractWeaponMagicBonus === null` branch for dice-bearing /
+cursed `damageWeaponBonus`. That's sub-slice (d) — STOP AND ASK,
+because the lib's `DamageInput.magicBonus` shape is a non-negative
+integer and extending it is a lib-side design decision. After
+that's resolved, the damage gate is exhaustive and the D2 damage
+retirement can run as a mechanical collapse (delete gate + legacy
+body, fold via-adapter body into `_rollDamage`).
+
+882 Vitest tests pass (was 879 at session 17 close, +3 in
+`adapter-weapon-damage.test.js`: `buildPassthroughDamageResult`
+unit, gate acceptance for `(1d8)*2+3` / `1d8+1d4` /
+`max(1d4,2)`, dispatch asserting passthrough path fires with
+`passthrough: true` + null lib-populated fields + Foundry total
+preserved; +1 `_canRouteDamageViaAdapter rejects per-term flavors`
+test renamed from combined per-term/multi-die rejection since
+multi-die now passes via passthrough). 83 Playwright e2e tests
+pass against live v14 Foundry (was 82, +1 new in
+`phase1-adapter-dispatch.spec.js` under `rollDamage`:
+`(1d8)*2+3` via `damageOverride` routes via adapter, both
+dispatch lines log `adapter`, `dcc.libDamageResult.passthrough`
+is `true`, `breakdown` is empty, `total >= 5` (the minimum for
+the formula).
+
+**Phase 3 — Session 17 (2026-04-20, D2 damage sub-slice b)
 broadened the damage gate to route trailing bracket-flavor formulas
 (`1d6+2[Slashing]`, `2d4-1[Piercing]`) through the adapter.** First
 of the three D2 damage gate-broadening sub-slices before the damage

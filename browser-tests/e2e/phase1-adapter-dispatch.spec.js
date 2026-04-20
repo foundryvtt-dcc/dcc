@@ -1609,6 +1609,80 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(flag.damageDie).toMatch(/d\d+/)
       expect(flag.total).toBe(Math.max(1, flag.baseDamage + flag.modifierDamage))
     })
+
+    test('unparseable formula (`(1d8)*2+3`) routes via adapter as lossless passthrough (D2 damage sub-slice a)', async ({ page }) => {
+      // D2 damage sub-slice (a). A lance with `doubleIfMounted` produces
+      // the formula `(1d8)*2+3` via `item.js:prepareBaseData`, which
+      // `parseDamageFormula` can't digest (parens + multiplier). Before
+      // this sub-slice the gate rejected on `parseDamageFormula === null`
+      // and the damage fell to legacy. The passthrough now routes it via
+      // adapter: Foundry evaluates the Roll normally, the lib call is
+      // skipped, and `dcc.libDamageResult` carries just `total` with a
+      // `passthrough: true` marker so downstream consumers know the
+      // breakdown is deliberately empty (not an adapter bug).
+      //
+      // Note: a real mounted lance needs its rider mounted, which
+      // adds setup we don't need — we reproduce the shape directly by
+      // overriding `damage` with an unparseable formula via
+      // `damageOverride`. That's the other class of unparseable
+      // formulas this sub-slice enables (homebrew damage formulas).
+      await page.evaluate(async () => {
+        const actor = await Actor.create({ name: 'P1 Damage Passthrough', type: 'Player' })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-PassthroughWeapon',
+          type: 'weapon',
+          system: {
+            actionDie: '1d20',
+            toHit: '+2',
+            critRange: 20,
+            damageWeapon: '1d6',
+            // damageOverride forces the final damage formula verbatim,
+            // bypassing the str-mod fold + magic-bonus stack. Exactly
+            // how homebrew / custom content produces arbitrary formulas.
+            config: { damageOverride: '(1d8)*2+3' },
+            melee: true,
+            equipped: true
+          }
+        }])
+        await game.settings.set('dcc', 'automateDamageFumblesCrits', true)
+      })
+      const weaponId = await page.evaluate(() => {
+        return game.actors.getName('P1 Damage Passthrough').items.getName('P1-PassthroughWeapon').id
+      })
+      await page.evaluate(async (id) => {
+        await game.actors.getName('P1 Damage Passthrough').rollWeaponAttack(id)
+      }, weaponId)
+      const attackLine = await waitForAdapterLog('rollWeaponAttack')
+      assertPath(attackLine, 'adapter', { weapon: 'P1-PassthroughWeapon' })
+      const damageLine = await waitForAdapterLog('rollDamage')
+      assertPath(damageLine, 'adapter', { weapon: 'P1-PassthroughWeapon' })
+
+      const flag = await page.evaluate(async () => {
+        const deadline = Date.now() + 3000
+        while (Date.now() < deadline) {
+          const msg = game.messages.contents
+            .slice()
+            .reverse()
+            .find(m =>
+              m.speaker?.alias === 'P1 Damage Passthrough' &&
+              m.getFlag('dcc', 'isToHit') &&
+              m.getFlag('dcc', 'libDamageResult')
+            )
+          if (msg) return msg.getFlag('dcc', 'libDamageResult')
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+        return null
+      })
+
+      expect(flag, 'passthrough damage must set dcc.libDamageResult').not.toBeNull()
+      expect(flag.passthrough, 'passthrough marker must be set for unparseable formulas').toBe(true)
+      expect(flag.breakdown).toEqual([])
+      expect(typeof flag.total).toBe('number')
+      expect(flag.total).toBeGreaterThanOrEqual(5) // (1d8 min 1)*2 + 3 = 5 min
+      // Fields the lib would populate are null — passthrough contract.
+      expect(flag.damageDie).toBeNull()
+      expect(flag.natural).toBeNull()
+    })
   })
 
   // ── rollCritical + rollFumble (Phase 3 session 6) ──────────────────

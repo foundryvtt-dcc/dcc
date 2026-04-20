@@ -23,7 +23,7 @@ import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMer
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
-import { buildDamageInput, extractWeaponMagicBonus, parseDamageFormula, peelTrailingFlavor } from './adapter/damage-input.mjs'
+import { buildDamageInput, buildPassthroughDamageResult, extractWeaponMagicBonus, parseDamageFormula, peelTrailingFlavor } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
 import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
 
@@ -2951,6 +2951,12 @@ class DCCActor extends Actor {
    * into `DCCRoll.createRoll`'s `Compound` term for chat rendering
    * parity with legacy. Per-term flavors (`1d6[fire]+1d6[cold]`) —
    * where a die is immediately followed by `[` — still fall to legacy.
+   * D2 damage sub-slice (a) accepts unparseable formulas (e.g. lance
+   * `(1d8)*2+3` with `doubleIfMounted`, custom `damageOverride`
+   * formulas, multi-die `1d8+1d4`) as a lossless passthrough —
+   * `_rollDamageViaAdapter` evaluates the Foundry Roll normally but
+   * skips the lib call and surfaces a passthrough `libDamageResult`
+   * carrying just `total` + `passthrough: true`.
    *
    * @param {Object} weapon
    * @param {string} damageRollFormula
@@ -2962,9 +2968,8 @@ class DCCActor extends Actor {
   _canRouteDamageViaAdapter (weapon, damageRollFormula, attackRollResult, options = {}) {
     if (!attackRollResult?.libResult) return false
     if (typeof damageRollFormula !== 'string') return false
+    if (damageRollFormula.trim() === '') return false
     if (/\d+d\d+\[/.test(damageRollFormula)) return false
-    const { formula } = peelTrailingFlavor(damageRollFormula)
-    if (parseDamageFormula(formula) === null) return false
     if (extractWeaponMagicBonus(weapon) === null) return false
     return true
   }
@@ -3004,18 +3009,9 @@ class DCCActor extends Actor {
     }
 
     const parsed = parseDamageFormula(peeledFormula)
-    const magicBonus = extractWeaponMagicBonus(weapon) ?? 0
-    const damageInput = buildDamageInput(parsed, {
-      npcDamageAdjustment: options.npcDamageAdjustment,
-      magicBonus
-    })
-    const naturalDamage = damageRoll.dice[0]?.total ?? damageRoll.total
-    const libResult = libRollDamage(damageInput, () => naturalDamage)
-
-    // Foundry clamps `damageRoll.total` at 1 (line above); lib doesn't,
-    // so compare post-clamp on both sides to avoid a spurious warn on
-    // negative-modifier damage that's just riding the floor.
-    warnIfDivergent('rollDamage', damageRoll.total, Math.max(1, libResult.total), { weapon: weapon?.name })
+    const libDamageResult = parsed === null
+      ? buildPassthroughDamageResult(damageRoll)
+      : this._buildLibDamageResult(parsed, weapon, damageRoll, options)
 
     let damageInlineRoll = damageRoll.toAnchor({
       classes: ['damage-applyable', 'inline-dsn-hidden'],
@@ -3031,14 +3027,41 @@ class DCCActor extends Actor {
       damageRoll,
       damageInlineRoll,
       damagePrompt: game.i18n.localize('DCC.Damage'),
-      libDamageResult: {
-        damageDie: libResult.roll.formula,
-        natural: naturalDamage,
-        baseDamage: libResult.baseDamage,
-        modifierDamage: libResult.modifierDamage,
-        total: libResult.total,
-        breakdown: libResult.breakdown
-      }
+      libDamageResult
+    }
+  }
+
+  /**
+   * Build a lib-native `libDamageResult` from a parsed formula. Extracted
+   * from `_rollDamageViaAdapter` so the passthrough branch (sub-slice a)
+   * can skip the lib call cleanly without duplicating the anchor-build
+   * logic. Any weapon with dice-bearing / cursed `damageWeaponBonus`
+   * can't reach here — the gate (`extractWeaponMagicBonus === null`)
+   * still rejects that case.
+   *
+   * @private
+   */
+  _buildLibDamageResult (parsed, weapon, damageRoll, options) {
+    const magicBonus = extractWeaponMagicBonus(weapon) ?? 0
+    const damageInput = buildDamageInput(parsed, {
+      npcDamageAdjustment: options.npcDamageAdjustment,
+      magicBonus
+    })
+    const naturalDamage = damageRoll.dice[0]?.total ?? damageRoll.total
+    const libResult = libRollDamage(damageInput, () => naturalDamage)
+
+    // Foundry clamps `damageRoll.total` at 1 above; lib doesn't, so
+    // compare post-clamp on both sides to avoid a spurious warn on
+    // negative-modifier damage that's just riding the floor.
+    warnIfDivergent('rollDamage', damageRoll.total, Math.max(1, libResult.total), { weapon: weapon?.name })
+
+    return {
+      damageDie: libResult.roll.formula,
+      natural: naturalDamage,
+      baseDamage: libResult.baseDamage,
+      modifierDamage: libResult.modifierDamage,
+      total: libResult.total,
+      breakdown: libResult.breakdown
     }
   }
 
