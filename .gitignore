@@ -71,6 +71,11 @@ packs/**/MANIFEST*
 # Playwright MCP temporary files
 .playwright-mcp/
 
+# Playwright artifacts when test runner is invoked from project root
+# (browser-tests/e2e/.gitignore covers the canonical location)
+test-results/
+playwright-report/
+
 # Environment files with secrets
 .env
 browser-tests/**/.env
