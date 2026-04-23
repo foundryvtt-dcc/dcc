@@ -2409,6 +2409,30 @@ and should be scheduled into Phase 4+ work.
 
 **Resilience (low-risk, nice-to-have):**
 
+- **Chat doesn't surface the per-modifier breakdown the adapter
+  already captures.** The lib emits each contributing modifier with
+  rich origin metadata (`{ kind, value, origin: { category, id,
+  label }, applied }`) and the adapter persists the array onto the
+  ChatMessage as `flags.dcc.libResult.modifiers` (see
+  `module/adapter/chat-renderer.mjs` — every renderer projects it).
+  Nothing currently renders it: chat templates don't reference
+  `libResult.modifiers`, and because the adapter builds the Foundry
+  Roll from the lib's flat formula string (`new Roll(plan.formula)`),
+  Foundry's native term-tooltip is unlabelled too — a regression vs.
+  the legacy `module/roll-modifier.js` path, which set per-term
+  `label` (e.g. "Strength", "Stamina") that Foundry's tooltip
+  surfaced. Cheapest fix: a small chat-template partial under the
+  rolled formula that lists each `applied` modifier as
+  `<origin.label> <signed value>` (e.g. "STA modifier +1, Save bonus
+  +0"). More invasive alternative: reconstruct the Roll term-by-term
+  in the adapter so the native Foundry tooltip works again — keeps
+  parity with the legacy path's UX without adding a chat partial,
+  but requires every renderer / dispatcher to thread structured
+  terms instead of a string formula. Surfaced 2026-04-23 during the
+  Cheesemaker save-bonus debugging session — modifier metadata is
+  available to downstream modules (`dcc-qol` etc.) and to debugger
+  scripts via the flag, but invisible to the player reading chat.
+
 - **Dispatcher gate style inconsistency.** Attack / damage / crit /
   fumble use named `_canRouteXxxViaAdapter` predicates; ability /
   save / skill / spell / init inline their gates as

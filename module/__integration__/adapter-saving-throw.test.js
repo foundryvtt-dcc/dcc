@@ -108,58 +108,58 @@ describe('save id remap (round-trip)', () => {
 })
 
 describeIfDice('adapter two-pass flow for saves (real Foundry dice)', () => {
-  test('Reflex save formula combines agility modifier and save bonus', async () => {
-    // agl 15 = +1 mod in DCC. Save bonus +2 → d20 + 1 + 2 = d20 + 3.
-    // Exact formula shape (collapsed vs. separate terms) is a lib
-    // implementation detail; we assert the total instead.
+  // The Foundry actor stores `saves.{ref,frt,wil}.value` as the FULL
+  // save total (class + ability mod, baked together by
+  // actor.js#computeSaves). The lib now treats `state.saves.*` as that
+  // same final value — see dcc-core-lib createSaveDefinition (no
+  // `roll.ability`). So the rolled bonus is just the saves value;
+  // ability is NOT layered on top.
+
+  test('Reflex save formula uses the stored save total', async () => {
     const actor = makeActor({ agl: 15, saves: { ref: 2, frt: 0, wil: 0 } })
     const { plan, libSaveId, foundryRoll, natural } =
       await runAdapterSavingThrow(actor, 'ref')
 
     expect(libSaveId).toBe('reflex')
     expect(plan.formula).toMatch(/^1d20/)
-    expect(foundryRoll.total).toBe(natural + 3)
+    expect(foundryRoll.total).toBe(natural + 2)
   })
 
-  test('Fortitude save formula uses stamina modifier and save bonus', async () => {
-    // sta 13 = +1. Save bonus +3 → d20 + 4.
+  test('Fortitude save formula uses the stored save total', async () => {
     const actor = makeActor({ sta: 13, saves: { frt: 3, ref: 0, wil: 0 } })
     const { plan, libSaveId, foundryRoll, natural } =
       await runAdapterSavingThrow(actor, 'frt')
 
     expect(libSaveId).toBe('fortitude')
     expect(plan.formula).toMatch(/^1d20/)
-    expect(foundryRoll.total).toBe(natural + 4)
+    expect(foundryRoll.total).toBe(natural + 3)
   })
 
-  test('Will save formula uses personality modifier and save bonus', async () => {
-    // per 17 = +2. Save bonus +1 → d20 + 3.
+  test('Will save formula uses the stored save total', async () => {
     const actor = makeActor({ per: 17, saves: { wil: 1, ref: 0, frt: 0 } })
     const { plan, libSaveId, foundryRoll, natural } =
       await runAdapterSavingThrow(actor, 'wil')
 
     expect(libSaveId).toBe('will')
     expect(plan.formula).toMatch(/^1d20/)
-    expect(foundryRoll.total).toBe(natural + 3)
+    expect(foundryRoll.total).toBe(natural + 1)
   })
 
   test('formula omits zero modifiers', async () => {
-    // agl 10 = 0 mod, save bonus 0 → just 1d20.
     const actor = makeActor({ agl: 10, saves: { ref: 0, frt: 0, wil: 0 } })
     const { plan } = await runAdapterSavingThrow(actor, 'ref')
 
     expect(plan.formula).toBe('1d20')
   })
 
-  test('Foundry Roll total equals natural + ability mod + save bonus', async () => {
-    // per 17 (+2), will save +3 → d20 + 2 + 3 = natural + 5
+  test('Foundry Roll total equals natural + stored save total', async () => {
     const actor = makeActor({ per: 17, saves: { wil: 3, ref: 0, frt: 0 } })
     for (let i = 0; i < 40; i++) {
       const { foundryRoll, natural } = await runAdapterSavingThrow(actor, 'wil')
 
       expect(natural).toBeGreaterThanOrEqual(1)
       expect(natural).toBeLessThanOrEqual(20)
-      expect(foundryRoll.total).toBe(natural + 5)
+      expect(foundryRoll.total).toBe(natural + 3)
     }
   })
 
@@ -195,17 +195,14 @@ describeIfDice('adapter two-pass flow for saves (real Foundry dice)', () => {
     expect(result.fumble).toBe(true)
   })
 
-  test('modifier breakdown carries both ability and save-bonus origins', async () => {
-    // Reflex: ability = agl. agl 15 → +1. Save bonus +2.
+  test('modifier breakdown carries the save total once, no ability layered on', async () => {
+    // Saves are added by the lib via a single `save-bonus` modifier.
+    // The save check definition deliberately omits `roll.ability`, so
+    // the resolver does NOT also stack a `category: 'ability'` modifier
+    // on top — that would double-count the ability mod (already baked
+    // into the stored save total).
     const actor = makeActor({ agl: 15, saves: { ref: 2, frt: 0, wil: 0 } })
     const { result } = await runAdapterSavingThrow(actor, 'ref')
-
-    const abilityMod = result.modifiers.find((m) => m.origin?.category === 'ability')
-    expect(abilityMod).toBeDefined()
-    expect(abilityMod.origin.id).toBe('agl')
-    expect(abilityMod.kind).toBe('add')
-    expect(abilityMod.value).toBe(1)
-    expect(abilityMod.applied).toBe(true)
 
     const saveBonusMod = result.modifiers.find(
       (m) => m.origin?.category === 'other' && m.origin?.id === 'save-bonus'
@@ -214,5 +211,8 @@ describeIfDice('adapter two-pass flow for saves (real Foundry dice)', () => {
     expect(saveBonusMod.kind).toBe('add')
     expect(saveBonusMod.value).toBe(2)
     expect(saveBonusMod.applied).toBe(true)
+
+    const abilityMod = result.modifiers.find((m) => m.origin?.category === 'ability')
+    expect(abilityMod).toBeUndefined()
   })
 })

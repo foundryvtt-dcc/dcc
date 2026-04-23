@@ -95,9 +95,9 @@ export interface CharacterAccessors {
  * | 'per'       | state.abilities.per.current            |
  * | 'int'       | state.abilities.int.current            |
  * | 'lck'       | state.abilities.lck.current            |
- * | 'reflex'    | state.saves.reflex (bonus only)        |
- * | 'fortitude' | state.saves.fortitude (bonus only)     |
- * | 'will'      | state.saves.will (bonus only)          |
+ * | 'reflex'    | state.saves.reflex (total: class+agl)  |
+ * | 'fortitude' | state.saves.fortitude (total: class+sta)|
+ * | 'will'      | state.saves.will (total: class+per)    |
  * | level       | classInfo?.level ?? 0                  |
  * | classId     | classInfo?.classId                     |
  */

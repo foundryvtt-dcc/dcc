@@ -3,14 +3,16 @@
  *
  * Pre-defined SkillDefinitions for standard DCC checks:
  * - Ability checks (d20 + ability modifier)
- * - Saving throws (d20 + ability modifier + class bonus)
+ * - Saving throws (d20 + state.saves[id], where the stored value is
+ *   already the full save total — class bonus + ability mod, see
+ *   `character/saving-throws.ts#calculateSavingThrows`)
  *
  * All definitions are registered with namespaced IDs:
  * - "ability:str" for ability checks
  * - "save:reflex" for saving throws
  * - "skill:backstab" for thief skills (future)
  */
-import { SAVE_ABILITY_MAP, CheckNamespace, createCheckId, } from "./constants.js";
+import { CheckNamespace, createCheckId, } from "./constants.js";
 // =============================================================================
 // Ability Check Definitions
 // =============================================================================
@@ -45,7 +47,15 @@ export const ABILITY_CHECK_DEFINITIONS = {
 // Saving Throw Definitions
 // =============================================================================
 /**
- * Create a saving throw definition
+ * Create a saving throw definition.
+ *
+ * Note: deliberately does NOT set `roll.ability`. The save bonus
+ * surfaced via `accessors.getSaveBonus()` (which reads
+ * `state.saves[saveId]`) is the FULL effective bonus per
+ * `calculateSavingThrows` — class bonus + ability modifier already
+ * combined. If we also set `roll.ability` here, the resolver would add
+ * the governing ability modifier a second time (see
+ * `skills/resolve.ts#getAbilityMod`), double-counting it.
  */
 function createSaveDefinition(saveId, name) {
     return {
@@ -54,7 +64,6 @@ function createSaveDefinition(saveId, name) {
         type: "check",
         roll: {
             die: "d20",
-            ability: SAVE_ABILITY_MAP[saveId],
             levelModifier: "none",
         },
         tags: ["saving-throw"],

@@ -236,12 +236,12 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(line, 'legacy', { saveId: 'frt' })
     })
 
-    // Cheesemaker repro — sheet shows Fortitude +1 (sta 14 → mod +1, no
-    // class bonus at level 0) but the rolled formula came out as `1d20 + 2`
-    // because the adapter passes the FULL `saves.frt.value` (which already
-    // bakes in the Stamina mod) into the lib, and the lib's check
-    // definition then adds the Stamina mod on top. Bonus must equal the
-    // displayed save value.
+    // Cheesemaker repro — sheet shows Fortitude +1 (sta 14 → mod +1,
+    // no class bonus at level 0); the rolled bonus must also equal +1.
+    // Previously, the lib's save definition auto-added the governing
+    // ability mod on top of `state.saves.*` (which already includes
+    // it), producing `1d20 + 2`. Fixed in dcc-core-lib by dropping
+    // `roll.ability` from save definitions.
     test('Fortitude roll bonus equals displayed save (no ability double-count)', async ({ page }) => {
       await page.evaluate(async () => {
         await Actor.create({

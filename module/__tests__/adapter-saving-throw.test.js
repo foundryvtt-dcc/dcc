@@ -31,14 +31,9 @@ const actor = new DCCActor()
 test('actor → character maps saves (frt/ref/wil → fortitude/reflex/will)', () => {
   const character = actorToCharacter(actor)
 
-  // Adapter passes save values with the governing ability mod subtracted
-  // out, to compensate for dcc-core-lib re-adding it via the save check
-  // definition's `roll.ability`. Mock actor: sta 12 → mod 0, agl 8 → mod
-  // -1, per 16 → mod +2; stored saves frt='-1' / ref='0' / wil='+2'.
-  // After subtracting ability mod: -1−0=-1, 0−(-1)=1, 2−2=0.
   expect(character.state.saves.fortitude).toBe(-1)
-  expect(character.state.saves.reflex).toBe(1)
-  expect(character.state.saves.will).toBe(0)
+  expect(character.state.saves.reflex).toBe(0)
+  expect(character.state.saves.will).toBe(2)
 })
 
 test('foundrySaveIdToLib round-trips the three save ids', () => {
@@ -113,13 +108,11 @@ test('adapter path returns the Foundry Roll (preserves legacy return shape)', as
   expect(result.total).toBeDefined()
 })
 
-// Regression: Cheesemaker repro — sheet shows Fortitude +1 but the rolled
-// formula was `1d20 + 2`. The Foundry actor stores `saves.frt.value` as the
-// FULL effective bonus (staMod + classBonus + otherBonus baked in by
-// actor.js#computeSaves). The lib's check definition for a save also pulls
-// the ability mod from `state.abilities.sta` and adds it on top of
-// `state.saves.fortitude`, so passing the full Foundry value double-counts
-// the ability mod. Roll bonus must equal the displayed save value.
+// Regression: Cheesemaker repro — sheet shows Fortitude +1, rolled
+// formula must be `1d20 + 1`. Previously the lib's save definition
+// auto-added the governing ability mod on top of `state.saves.*` (which
+// already includes it), producing `1d20 + 2`; fixed in dcc-core-lib by
+// dropping `roll.ability` from save definitions.
 test('adapter formula does not double-count ability mod into save bonus', async () => {
   // Cheesemaker: sta 14 → +1, level 0 (no class bonus), saves.frt = '+1'
   // (the +1 IS the Stamina mod — there is no class component).

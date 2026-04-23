@@ -3,7 +3,9 @@
  *
  * Pre-defined SkillDefinitions for standard DCC checks:
  * - Ability checks (d20 + ability modifier)
- * - Saving throws (d20 + ability modifier + class bonus)
+ * - Saving throws (d20 + state.saves[id], where the stored value is
+ *   already the full save total — class bonus + ability mod, see
+ *   `character/saving-throws.ts#calculateSavingThrows`)
  *
  * All definitions are registered with namespaced IDs:
  * - "ability:str" for ability checks

@@ -35,6 +35,35 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 - **FoundryVTT v14**: Target version (v14-only, ApplicationV2 API)
 - **Check dependent modules**: Before PRs, verify no breakage in `../../modules/dcc-qol`, `../../modules/xcc`, `../../mcc-classes`, `../../dcc-crawl-classes`
 
+## Working with dcc-core-lib
+
+We own `@moonloch/dcc-core-lib` (the upstream library is at
+`/Users/timwhite/WebstormProjects/dcc-core-lib`, repo
+`moonloch/dcc-core-lib`). When investigating roll/check/save/combat
+behavior and the bug appears to be in the lib (not just an adapter
+translation issue):
+
+- **Fix it in dcc-core-lib.** Open a PR against `moonloch/dcc-core-lib`
+  with the fix + a regression test. Do not paper over lib bugs with
+  adapter-side compensation as a permanent solution. (Short-lived
+  workarounds in the adapter are OK while the lib PR is in flight,
+  but the workaround must be removed once the fix lands.)
+- **Vendor sync.** The lib's compiled output lives at
+  `module/vendor/dcc-core-lib/` and is committed to the system repo
+  (Foundry has no bundler). After the lib PR merges and you've pulled
+  `main` in the lib checkout, run `npm run sync-core-lib` from the
+  system repo. The script (`scripts/sync-core-lib.mjs`) builds the
+  lib via `npm run build`, copies `dist/` into the vendor directory,
+  and writes `module/vendor/dcc-core-lib/VERSION.json` with the
+  source commit SHA + timestamp. Override the source path with
+  `DCC_CORE_LIB_SRC=/path/to/dcc-core-lib npm run sync-core-lib`.
+  Commit the resulting vendor diff with a message like
+  `vendor: sync dcc-core-lib to <version> (<sha7>)`.
+- **Adapter cleanup follows the sync.** Once the new vendor copy is
+  in place, remove any temporary adapter workaround you added while
+  the lib fix was in flight, and update tests that were asserting
+  the workaround's compensated values back to the natural contract.
+
 ## Standing authorizations
 
 These override the default "never commit/push without being asked"

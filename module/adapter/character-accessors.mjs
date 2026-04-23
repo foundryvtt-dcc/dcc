@@ -54,22 +54,10 @@ export function actorToCharacter (actor) {
   const abilities = actor.system.abilities ?? {}
   const saves = actor.system.saves ?? {}
 
-  // Workaround for dcc-core-lib double-counting the save's ability mod:
-  // the lib's save check definition has `roll.ability` set (Fort→sta,
-  // Ref→agl, Will→per), so the resolver auto-adds the ability modifier.
-  // The lib *also* adds `getSaveBonus(state.saves[id])` on top — and
-  // Foundry's `saves.{frt,ref,wil}.value` already bakes the ability mod
-  // into the displayed total (see actor.js#computeSaves). Subtract the
-  // ability mod here so the lib's auto-add restores the correct total.
-  // Remove this once dcc-core-lib treats `state.saves` as the final
-  // bonus and stops auto-adding ability via `roll.ability` on saves.
-  const aglMod = Number(abilities.agl?.mod) || 0
-  const staMod = Number(abilities.sta?.mod) || 0
-  const perMod = Number(abilities.per?.mod) || 0
   const libSaves = {
-    reflex: parseSaveValue(saves.ref?.value) - aglMod,
-    fortitude: parseSaveValue(saves.frt?.value) - staMod,
-    will: parseSaveValue(saves.wil?.value) - perMod
+    reflex: parseSaveValue(saves.ref?.value),
+    fortitude: parseSaveValue(saves.frt?.value),
+    will: parseSaveValue(saves.wil?.value)
   }
 
   const libAbilities = {}
