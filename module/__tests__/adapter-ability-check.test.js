@@ -33,10 +33,15 @@ test('actor → character accessor shape', () => {
   expect(character.state.abilities.lck.current).toBe(18)
   expect(character.state.abilities.per.current).toBe(16)
 
-  // Save ids are remapped frt/ref/wil → fortitude/reflex/will
+  // Save ids are remapped frt/ref/wil → fortitude/reflex/will. Adapter
+  // subtracts the save's governing ability mod from the stored Foundry
+  // value to compensate for dcc-core-lib re-adding it via the save check
+  // definition's `roll.ability` (see character-accessors.mjs). Mock
+  // values: sta 12 → 0, agl 8 → -1, per 16 → +2; stored frt='-1' /
+  // ref='0' / wil='+2'; result: -1−0=-1, 0−(-1)=1, 2−2=0.
   expect(character.state.saves.fortitude).toBe(-1)
-  expect(character.state.saves.reflex).toBe(0)
-  expect(character.state.saves.will).toBe(2)
+  expect(character.state.saves.reflex).toBe(1)
+  expect(character.state.saves.will).toBe(0)
 
   // Level + classInfo
   expect(character.classInfo.level).toBe(1)

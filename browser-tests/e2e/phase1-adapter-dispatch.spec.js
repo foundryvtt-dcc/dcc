@@ -235,6 +235,50 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       const line = await waitForAdapterLog('rollSavingThrow')
       assertPath(line, 'legacy', { saveId: 'frt' })
     })
+
+    // Cheesemaker repro — sheet shows Fortitude +1 (sta 14 → mod +1, no
+    // class bonus at level 0) but the rolled formula came out as `1d20 + 2`
+    // because the adapter passes the FULL `saves.frt.value` (which already
+    // bakes in the Stamina mod) into the lib, and the lib's check
+    // definition then adds the Stamina mod on top. Bonus must equal the
+    // displayed save value.
+    test('Fortitude roll bonus equals displayed save (no ability double-count)', async ({ page }) => {
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'P1 Save FortBonus',
+          type: 'Player',
+          system: {
+            abilities: {
+              str: { value: 15, max: 15 },
+              agl: { value: 11, max: 11 },
+              sta: { value: 14, max: 14 },
+              per: { value: 17, max: 17 },
+              int: { value: 16, max: 16 },
+              lck: { value: 16, max: 16 }
+            },
+            details: { level: { value: 0 } }
+          }
+        })
+      })
+
+      const { displayedFort, formula, total, natural } = await page.evaluate(async () => {
+        const actor = game.actors.getName('P1 Save FortBonus')
+        const displayedFort = actor.system.saves.frt.value
+        const roll = await actor.rollSavingThrow('frt')
+        const die = roll.dice?.[0]
+        return {
+          displayedFort,
+          formula: roll.formula,
+          total: roll.total,
+          natural: die?.total ?? null
+        }
+      })
+
+      // Sanity: with sta 14 and no class, sheet should show +1.
+      expect(displayedFort).toBe('+1')
+      // Bonus = total - natural; must equal +1 (not +2).
+      expect(total - natural, `formula=${formula} natural=${natural} total=${total}`).toBe(1)
+    })
   })
 
   // ── rollSkillCheck ──────────────────────────────────────────────────
