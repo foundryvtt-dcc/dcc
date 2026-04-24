@@ -359,6 +359,43 @@ test('adapter path fires for a cleric-castingMode item on a Cleric actor', async
   findSpy.mockRestore()
 })
 
+test('adapter path fires for a cleric-castingMode item on a className-only Cleric (no sheetClass)', async () => {
+  // Regression: pre-fix the dispatcher gated `isCleric` on
+  // `details.sheetClass` alone, so a PC created with
+  // `class.className: 'Cleric'` but no `sheetClass` (anything other than
+  // the level-change dialog) fell through to the legacy path — which
+  // silently no-ops for cleric-castingMode items on
+  // non-sheetClass-Cleric actors (DCCItem.rollSpellCheck delegates back
+  // with no handler).
+  rollToMessageMock.mockClear()
+  const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.class.disapproval = 1
+  // Intentionally leave details.sheetClass unset (undefined / not 'Cleric').
+  actor.system.details.sheetClass = ''
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Cure Light Wounds' })
+
+  // Adapter path — not the silent-no-op legacy delegate.
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('SpellCheck')
+
+  itemSpy.mockRestore()
+  chatMessageCreateSpy.mockRestore()
+  findSpy.mockRestore()
+})
+
 test('cleric-castingMode item on a patron-bound actor routes to legacy', async () => {
   rollToMessageMock.mockClear()
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)

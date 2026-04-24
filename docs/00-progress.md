@@ -2409,22 +2409,25 @@ and should be scheduled into Phase 4+ work.
 
 **Resilience (low-risk, nice-to-have):**
 
-- **`rollSpellCheck`'s cleric branch silently no-ops without
-  `details.sheetClass = 'Cleric'`.** `actor.js:1916` gates
-  `isCleric` on `system.details.sheetClass === 'Cleric'`, not on
-  `system.class.className`. A PC with `class.className: 'Cleric'`
-  but missing sheetClass (e.g. created by anything other than the
-  level-change dialog) skips the cleric branch, falls through to
-  `_rollSpellCheckLegacy`, which delegates to
-  `spellItem.rollSpellCheck` — and produces no chat message and no
-  console error. Same family as the silent-fallback issue above
-  ("Silent adapter→legacy fallbacks missing a logged reason"), but
-  worse: the legacy fallback here is itself a no-op for this shape.
-  Either the dispatcher should treat `class.className === 'Cleric'`
-  as the cleric signal (and let `sheetClass` remain a UI hint), or
-  emit a clear notification when the legacy spell-cast path can't
-  find a viable handler. Surfaced 2026-04-23 during exhaustive
-  manual-testing of programmatically-created class PCs.
+- ~~**`rollSpellCheck`'s cleric branch silently no-ops without
+  `details.sheetClass = 'Cleric'`.**~~ **Fixed 2026-04-23.** The
+  dispatcher's `isCleric` gate in `module/actor.js` now accepts
+  either `system.details.sheetClass === 'Cleric'` OR
+  `system.class.className === 'Cleric'` — programmatic PCs (anything
+  not routed through the level-change dialog) route via the cleric
+  adapter path instead of silently no-oping on the legacy
+  `spellItem.rollSpellCheck` delegate. Matches the class-identity
+  key `resolveCasterProfile` (`spell-input.mjs:194`) already uses.
+  Symmetric effect: wizard / generic branches on a
+  className-only-Cleric actor now correctly route to legacy
+  (preserving the "wizard spell on cleric → legacy side-effect set"
+  contract). Coverage: unit test
+  `adapter path fires for a cleric-castingMode item on a
+  className-only Cleric (no sheetClass)` in
+  `module/__tests__/adapter-spell-check.test.js`; Playwright case
+  `cleric-castingMode spell on className-only Cleric (no sheetClass)
+  → adapter + chat` in
+  `browser-tests/e2e/phase1-adapter-dispatch.spec.js`.
 
 - **Programmatic PC creation produces inconsistent class config —
   the system relies on the level-change dialog to populate it.**

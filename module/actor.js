@@ -1923,7 +1923,19 @@ class DCCActor extends Actor {
 
     const castingMode = spellItem?.system?.config?.castingMode
     const hasPatron = !!this.system.class?.patron
-    const isCleric = this.system.details?.sheetClass === 'Cleric'
+    // Widened 2026-04-23: accept `class.className === 'Cleric'` as the
+    // cleric signal, not just `details.sheetClass`. Programmatic PCs
+    // (anything not routed through the level-change dialog) can have
+    // `className: 'Cleric'` without `sheetClass` populated; pre-fix the
+    // cleric-castingMode branch fell through to `_rollSpellCheckLegacy`,
+    // which delegates to `spellItem.rollSpellCheck` — a silent no-op
+    // for this shape (no chat, no error). `resolveCasterProfile` in
+    // `spell-input.mjs` already keys on `className`, so widening here
+    // also fixes the symmetric "Wizard spell on cleric-by-className-only
+    // actor" routing (kept on legacy instead of misrouting via adapter).
+    const isCleric =
+      this.system.details?.sheetClass === 'Cleric' ||
+      this.system.class?.className === 'Cleric'
 
     if (spellItem) {
       if (castingMode === 'generic' && !isCleric && !hasPatron) {

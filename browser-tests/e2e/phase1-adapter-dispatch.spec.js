@@ -531,6 +531,68 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(after, `patronTaintChance should bump from ${beforeChance} to ${before + 1}%, got ${afterChance}`).toBe(before + 1)
     })
 
+    // Regression: programmatic PC with `class.className: 'Cleric'` but
+    // no `details.sheetClass` (skips the level-change dialog) must still
+    // route a cleric-castingMode cast through the adapter. Pre-fix the
+    // dispatcher's `isCleric` gate keyed only on `sheetClass`, so this
+    // shape fell through to the legacy path — and `DCCItem.rollSpellCheck`
+    // silently no-ops for cleric-mode items without a recognized handler
+    // (no chat, no error, user-facing cast vanishes).
+    test('cleric-castingMode spell on className-only Cleric (no sheetClass) → adapter + chat', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell ClericNoSheetClass',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1 }
+            // details.sheetClass intentionally omitted — simulates
+            // programmatic creation without the level-change dialog.
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Cleric-Spell-NoSheet',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'cleric', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' }
+          }
+        }])
+      })
+
+      const { newMessages, errors, sheetClass } = await page.evaluate(async () => {
+        const actor = game.actors.getName('P1 Spell ClericNoSheetClass')
+        const sheetClass = actor.system.details?.sheetClass || ''
+        const before = game.messages.contents.length
+        const errs = []
+        const onError = (e) => errs.push(String(e?.error || e))
+        window.addEventListener('error', onError)
+        try {
+          await actor.rollSpellCheck({ spell: 'P1-Cleric-Spell-NoSheet' })
+        } catch (e) {
+          errs.push('THROW: ' + String(e))
+        }
+        window.removeEventListener('error', onError)
+        await new Promise(r => setTimeout(r, 300))
+        return {
+          sheetClass,
+          newMessages: game.messages.contents.length - before,
+          errors: errs
+        }
+      })
+
+      // Sanity — this test only matters if sheetClass is empty.
+      expect(sheetClass).toBe('')
+      expect(errors, `unexpected errors: ${errors.join(' | ')}`).toEqual([])
+
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P1-Cleric-Spell-NoSheet', mode: 'cleric' })
+
+      // Adapter fired a real cast — chat message posted (not the
+      // pre-fix silent no-op).
+      expect(newMessages).toBeGreaterThanOrEqual(1)
+    })
+
     test('cleric-castingMode spell item on a Cleric actor → adapter (cleric)', async ({ page }) => {
       await page.evaluate(async () => {
         const actor = await Actor.create({
