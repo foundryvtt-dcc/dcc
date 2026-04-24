@@ -31,6 +31,7 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
+import { registerActorSheet, registerItemSheet } from './extension-api.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -56,8 +57,6 @@ import {
 const { Actors } = foundry.documents.collections
 const { ActorSheetV2 } = foundry.applications.sheets
 const { loadTemplates } = foundry.applications.handlebars
-const { Items } = foundry.documents.collections
-const { ItemSheetV2 } = foundry.applications.sheets
 
 /* -------------------------------------------- */
 /*  Foundry VTT Initialization                  */
@@ -115,6 +114,8 @@ Hooks.once('init', async function () {
     TableResult,
     getSkillTable,
     processSpellCheck,
+    registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove
     getMacroOptions // This is called from macros, don't remove
@@ -128,62 +129,32 @@ Hooks.once('init', async function () {
   CONFIG.Item.documentClass = DCCItem
   CONFIG.Combatant.documentClass = DCCCombatant
 
-  // Register sheet application classes
+  // Register sheet application classes via the stable extension API
+  // we expose to modules. The legacy global `Actors.unregisterSheet`
+  // remains as a one-shot statement of intent — "this system fully
+  // replaces core actor sheets across every sub-type" — and stays
+  // here rather than being implicitly tied to any one helper call.
   Actors.unregisterSheet('core', ActorSheetV2)
 
   // NPC sheets - DCCActorSheet as default, with Generic as option
-  Actors.registerSheet('dcc', DCCActorSheet, {
-    types: ['NPC'],
-    label: 'DCC.DCCActorSheet',
-    makeDefault: true
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
-    types: ['NPC'],
-    label: 'DCC.DCCActorSheetGeneric'
-  })
+  registerActorSheet('NPC', DCCActorSheet, { label: 'DCC.DCCActorSheet', makeDefault: true })
+  registerActorSheet('NPC', DCCSheets.DCCActorSheetGeneric, { label: 'DCC.DCCActorSheetGeneric' })
 
   // PC sheets - class-specific sheets only
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetCleric, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetCleric'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetThief, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetThief'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetHalfling, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetHalfling'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWarrior, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetWarrior'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetWizard, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetWizard'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetDwarf, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetDwarf'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetElf, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetElf'
-  })
-  Actors.registerSheet('dcc', DCCSheets.DCCActorSheetGeneric, {
-    types: ['Player'],
-    label: 'DCC.DCCActorSheetGeneric'
-  })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetCleric, { label: 'DCC.DCCActorSheetCleric' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetThief, { label: 'DCC.DCCActorSheetThief' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetHalfling, { label: 'DCC.DCCActorSheetHalfling' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetWarrior, { label: 'DCC.DCCActorSheetWarrior' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetWizard, { label: 'DCC.DCCActorSheetWizard' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetDwarf, { label: 'DCC.DCCActorSheetDwarf' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetElf, { label: 'DCC.DCCActorSheetElf' })
+  registerActorSheet('Player', DCCSheets.DCCActorSheetGeneric, { label: 'DCC.DCCActorSheetGeneric' })
 
-  Items.unregisterSheet('core', ItemSheetV2)
-  Actors.registerSheet('dcc', DCCPartySheet, {
-    makeDefault: true,
-    types: ['Party'],
-    label: 'DCC.DCCPartySheet'
-  })
+  registerActorSheet('Party', DCCPartySheet, { label: 'DCC.DCCPartySheet', makeDefault: true })
 
-  Items.registerSheet('dcc', DCCItemSheet, {
+  // Use the stable extension API we expose to modules — folds the
+  // unregister-default + register dance into a single call.
+  registerItemSheet(undefined, DCCItemSheet, {
     label: 'DCC.DCCItemSheet',
     makeDefault: true
   })
@@ -415,17 +386,24 @@ function setupCoreBookCompendiumLinks () {
 }
 
 function checkMigrations () {
-  // Determine whether a system migration is required and feasible
+  if (!game.user.isGM) return
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  // Version that triggers migration - set this to the version that introduced breaking changes
-  // After migration completes, we save this version to prevent repeated migrations
-  const NEEDS_MIGRATION_VERSION = 0.67
-  const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
-
-  // Perform the migration
-  if (needMigration && game.user.isGM) {
-    migrations.migrateWorld()
+  const decision = migrations.classifyMigrationDecision(currentVersion)
+  if (decision === 'skip') return
+  if (decision === 'block') {
+    // Toggles to a dot-separated string so the decimal separator doesn't
+    // drift between interpolated and literal tokens in locales that format
+    // numbers with a comma.
+    ui.notifications.error(
+      game.i18n.format('DCC.MigrationUnsupportedVersion', {
+        currentVersion: currentVersion.toFixed(2),
+        minimumVersion: migrations.MINIMUM_SUPPORTED_VERSION.toFixed(2)
+      }),
+      { permanent: true }
+    )
+    return
   }
+  migrations.migrateWorld()
 }
 
 function registerTables () {
@@ -481,6 +459,18 @@ function registerTables () {
   // Create manager for critical hit table packs and register the system setting
   CONFIG.DCC.criticalHitPacks = new TablePackManager()
   CONFIG.DCC.criticalHitPacks.addPack(game.settings.get('dcc', 'critsCompendium'), true)
+
+  // D3b — manager for patron-taint manifestation table packs. Seeded
+  // with the core + xcc side-effect packs; sibling modules that ship
+  // their own patron content can push additional packs via
+  // `CONFIG.DCC.patronTaintPacks.addPack(packName)`. The adapter's
+  // `loadPatronTaintTable` walks this list looking for a RollTable
+  // named `Patron Taint: ${actor.system.class.patron}`. Unknown pack
+  // names are ignored by `loadPatronTaintTable` (null-safe walk), so
+  // listing packs whose modules aren't installed is harmless.
+  CONFIG.DCC.patronTaintPacks = new TablePackManager()
+  CONFIG.DCC.patronTaintPacks.addPack('dcc-core-book.dcc-core-spell-side-effect-tables')
+  CONFIG.DCC.patronTaintPacks.addPack('xcc-core-book.xcc-core-spell-side-effect-tables')
 
   // Set divine aid table from the system setting
   const divineAidTable = game.settings.get('dcc', 'divineAidTable')

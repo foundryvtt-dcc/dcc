@@ -4,11 +4,14 @@ const { test, expect } = require('@playwright/test')
  * E2E tests for DCC TypeDataModels
  * Tests actual data validation and persistence in a live Foundry instance
  *
- * PREREQUISITES:
- * 1. Start Foundry: npx @foundryvtt/foundryvtt-cli launch --world=automated_testing
- * 2. Run tests: npm test
+ * Setup: see docs/dev/TESTING.md#browser-tests-playwright for Node 24,
+ * fvtt CLI installPath/dataPath, and launch command. TL;DR:
+ *   nvm use 24 && npx @foundryvtt/foundryvtt-cli launch --world=v14
+ *   npm test
  *
- * The tests will automatically log in as Gamemaster (no password).
+ * Tests auto-log in as Gamemaster (no password). Close any manual
+ * Foundry browser tab first — a logged-in Gamemaster disables the
+ * join-page select option and the spec will time out.
  */
 
 test.describe('DCC TypeDataModels E2E Tests', () => {

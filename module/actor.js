@@ -5,6 +5,27 @@ import { ensurePlus, getCritTableResult, getCritTableLink, getFumbleTableResult,
 import DCCActiveEffect from './active-effect.js'
 import DCCActorLevelChange from './actor-level-change.js'
 import DiceChain from './dice-chain.js'
+import {
+  rollAbilityCheck as libRollAbilityCheck,
+  rollCheck as libRollCheck,
+  rollSavingThrow as libRollSavingThrow,
+  castSpell as libCastSpell,
+  calculateSpellCheck as libCalculateSpellCheck,
+  rollMercurialMagic as libRollMercurialMagic,
+  makeAttackRoll as libMakeAttackRoll,
+  rollDamage as libRollDamage,
+  rollCritical as libRollCritical,
+  rollFumble as libRollFumble
+} from './vendor/dcc-core-lib/index.js'
+import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
+import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable } from './adapter/spell-input.mjs'
+import { createSpellEvents } from './adapter/spell-events.mjs'
+import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
+import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
+import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from './adapter/damage-input.mjs'
+import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
+import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
 
@@ -762,6 +783,13 @@ class DCCActor extends Actor {
       this.system.skills.layOnHands.value = this.system.class.spellCheck
       this.system.skills.layOnHands.ability = ''
     }
+
+    // Stable extension hook — modules can adjust `system.class.spellCheck`
+    // (and any related skill mirror fields) here without subclassing
+    // DCCActor. Closes ARCHITECTURE_REIMAGINED.md §2.5 "Actor document
+    // class customization" for XCC's blaster-die / elf-trickster
+    // computation. See docs/dev/EXTENSION_API.md.
+    Hooks.callAll('dcc.afterComputeSpellCheck', this)
   }
 
   /**
@@ -783,11 +811,101 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll an Ability Check
-   * @param {String} abilityId    The ability ID (e.g. "str")
-   * @param {Object} options      Options which configure how ability checks are rolled
+   * Roll an Ability Check.
+   *
+   * Phase 1 of the adapter refactor: the simple path (no dialog,
+   * no rollUnder) flows through the lib via character-accessors →
+   * two-pass `libRollAbilityCheck` (mode: 'formula' / 'evaluate') →
+   * chat-renderer. The dialog / rollUnder / CheckPenalty-display
+   * paths fall through to the legacy implementation below, which
+   * remains the source of truth for those UX flows until later
+   * phases migrate them.
+   *
+   * Signature and emitted chat-message flags are preserved — dcc-qol
+   * and token-action-hud-dcc depend on the public shape of this
+   * method.
+   *
+   * @param {String} abilityId  The ability ID (e.g. "str")
+   * @param {Object} options    Options which configure how ability checks are rolled
    */
   async rollAbilityCheck (abilityId, options = {}) {
+    const checkPenaltyValue = parseInt(this.system.attributes?.ac?.checkPenalty ?? 0)
+    const hasNonZeroCheckPenalty =
+      this.system.config?.computeCheckPenalty &&
+      (abilityId === 'str' || abilityId === 'agl') &&
+      checkPenaltyValue !== 0
+
+    // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
+    // which returns 0 or 1, not true/false. Strict === would miss those.
+    const needsLegacyPath =
+      !!options.rollUnder ||
+      !!options.showModifierDialog ||
+      hasNonZeroCheckPenalty
+
+    if (needsLegacyPath) {
+      return this._rollAbilityCheckLegacy(abilityId, options)
+    }
+
+    return this._rollAbilityCheckViaAdapter(abilityId, options)
+  }
+
+  /**
+   * Adapter path for ability checks. Two-pass sync flow:
+   * pass 1 asks the lib for the formula (no evaluation), Foundry
+   * rolls it, pass 2 classifies against the same natural for crit
+   * / fumble and emits the chat message via the renderer.
+   * @private
+   */
+  async _rollAbilityCheckViaAdapter (abilityId, options) {
+    logDispatch('rollAbilityCheck', 'adapter', { abilityId })
+    const abilityLabel = game.i18n.localize(CONFIG.DCC.abilities[abilityId])
+
+    const character = actorToCharacter(this)
+
+    // Pass 1: ask the lib for the formula it wants rolled (no evaluation).
+    const plan = libRollAbilityCheck(abilityId, character, {
+      mode: 'formula',
+      luckBurn: options.luckBurn
+    })
+
+    // Foundry rolls the FULL formula so the Roll object has the correct
+    // display-total (dice + modifiers), not just the naked dice total.
+    // Keep the Roll reference; .evaluate() returns `this` in real Foundry
+    // but returns a plain object in some test mocks.
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    // Extract the natural die value from the Foundry Roll so the lib's
+    // second pass classifies against the same dice outcome we'll display.
+    const primaryDie = foundryRoll.dice?.[0]
+    const natural = primaryDie?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies the rolled result (crit / fumble / resources /
+    // applied flags on modifiers). The sync roller returns the pre-rolled
+    // natural so the lib doesn't re-roll.
+    const result = libRollAbilityCheck(abilityId, character, {
+      mode: 'evaluate',
+      roller: () => natural,
+      luckBurn: options.luckBurn
+    })
+
+    return renderAbilityCheck({
+      actor: this,
+      abilityId,
+      abilityLabel,
+      result,
+      foundryRoll
+    })
+  }
+
+  /**
+   * Legacy ability-check path. Used when the options flags require
+   * structured terms (modifier dialog, rollUnder, check-penalty
+   * display). Preserved verbatim until later phases migrate these.
+   * @private
+   */
+  async _rollAbilityCheckLegacy (abilityId, options = {}) {
+    logDispatch('rollAbilityCheck', 'legacy', { abilityId })
     const ability = this.system.abilities[abilityId]
     ability.mod = CONFIG.DCC.abilityModifiers[ability.value] || 0
     ability.label = CONFIG.DCC.abilities[abilityId]
@@ -909,16 +1027,110 @@ class DCCActor extends Actor {
 
   // noinspection JSUnusedGlobalSymbols
   /**
-   * Generate Initiative Roll formula
-   * This is used by the core Foundry methods
+   * Generate Initiative Roll formula. Invoked by Foundry's core init
+   * flow via `DCCCombatant.getInitiativeRoll`, and by `rollInit` when
+   * a modifier dialog is requested.
+   *
+   * Phase 1 adapter dispatcher. The default (no-dialog) path flows
+   * through the lib via `rollCheck(mode: 'formula')` — the lib builds
+   * the formula string, Foundry evaluates it. Init has no gameplay
+   * crit/fumble semantics, so there's no pass-2 classification; the
+   * chat message is emitted by Foundry's core `Combat#rollInitiative`
+   * (with the `core.initiativeRoll` flag that `emoteInitiativeRoll`
+   * gates on). The dialog path falls through to the legacy body below,
+   * which preserves the structured-term shape the modifier dialog
+   * relies on.
+   *
+   * Return shape is unchanged: a Foundry `Roll` the combat tracker
+   * evaluates.
    */
   getInitiativeRoll (formula, options = {}) {
-    // Handle coming back from a modifier dialog with a roll
+    // Handle coming back from a modifier dialog with a pre-built Roll.
     if (formula instanceof Roll) {
       return formula
     }
 
-    // Set up the roll
+    if (options.showModifierDialog) {
+      return this._getInitiativeRollLegacy(options)
+    }
+
+    return this._getInitiativeRollViaAdapter(options)
+  }
+
+  /**
+   * Adapter path for initiative. Builds a lib `SkillDefinition` with
+   * no ability (init.value already bakes in agl mod + otherMod + class
+   * level from `computeInitiative`), emits init.value as a single
+   * aggregate `add` modifier, and asks the lib for the formula string.
+   * Weapon-die overrides (two-handed / custom init die) are applied
+   * Foundry-side because the `[Two-Handed]` / `[Weapon]` die label is
+   * a Foundry display idiom the lib doesn't model.
+   * @private
+   */
+  _getInitiativeRollViaAdapter (options = {}) {
+    let dieFormula = this.system.attributes.init.die || '1d20'
+    let weaponLabel = null
+
+    const twoHandedWeapon = this.items.find(t => t.system.twoHanded && t.system.equipped)
+    if (twoHandedWeapon) {
+      dieFormula = twoHandedWeapon.system.initiativeDie
+      weaponLabel = game.i18n.localize('DCC.WeaponPropertiesTwoHanded')
+    }
+    const customInitDieWeapon = this.items.find(t => (t.system.config?.initiativeDieOverride || '') && t.system.equipped)
+    if (customInitDieWeapon) {
+      dieFormula = customInitDieWeapon.system.initiativeDie
+      weaponLabel = game.i18n.localize('DCC.Weapon')
+    }
+
+    logDispatch('rollInit', 'adapter', { die: dieFormula })
+
+    const libDie = this._stripDieCount(dieFormula) || 'd20'
+    const initValue = parseInt(this.system.attributes.init.value) || 0
+
+    const definition = {
+      id: 'initiative',
+      name: game.i18n.localize('DCC.Initiative'),
+      type: 'check',
+      roll: {
+        die: libDie,
+        levelModifier: 'none'
+      }
+    }
+
+    const modifiers = initValue !== 0
+      ? [{
+          kind: 'add',
+          value: initValue,
+          origin: {
+            category: 'other',
+            id: 'initiative-total',
+            label: game.i18n.localize('DCC.Initiative')
+          }
+        }]
+      : []
+
+    const character = actorToCharacter(this)
+    const plan = libRollCheck(definition, character, {
+      mode: 'formula',
+      modifiers
+    })
+
+    // Re-inject the Foundry `[Two-Handed]` / `[Weapon]` die label so the
+    // Roll Breakdown surfaces where the die came from.
+    const finalFormula = weaponLabel
+      ? plan.formula.replace(/^(1d\d+)/i, `$1[${weaponLabel}]`)
+      : plan.formula
+
+    return new Roll(finalFormula, this.getRollData())
+  }
+
+  /**
+   * Legacy initiative path. Builds structured `DCCRoll.createRoll`
+   * terms — required by the roll-modifier dialog's preset handling,
+   * which the adapter path doesn't support.
+   * @private
+   */
+  _getInitiativeRollLegacy (options = {}) {
     let die = this.system.attributes.init.die || '1d20'
     const init = ensurePlus(this.system.attributes.init.value)
     options.title = game.i18n.localize('DCC.RollModifierTitleInitiative')
@@ -932,7 +1144,8 @@ class DCCActor extends Actor {
       die = `${customInitDieWeapon.system.initiativeDie}[${game.i18n.localize('DCC.Weapon')}]`
     }
 
-    // Collate terms for the roll
+    logDispatch('rollInit', 'legacy', { die })
+
     const terms = [
       {
         type: 'Die',
@@ -1040,11 +1253,85 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a Saving Throw
-   * @param {String} saveId       The save ID (e.g. "ref")
-   * @param options
+   * Roll a Saving Throw.
+   *
+   * Phase 1 of the adapter refactor: the simple path (no dialog) flows
+   * through the lib via character-accessors → two-pass formula/evaluate
+   * → chat-renderer. The dialog path falls through to the legacy
+   * implementation below, preserved verbatim until later phases.
+   *
+   * Signature and emitted chat-message flags are preserved — downstream
+   * modules depend on the public shape of this method.
+   *
+   * @param {String} saveId       The save ID (e.g. "ref"/"frt"/"wil")
+   * @param {Object} options      Roll options
    */
   async rollSavingThrow (saveId, options = {}) {
+    // Truthy checks — the sheet's fillRollOptions uses bitwise XOR,
+    // which returns 0 or 1, not true/false. Strict === would miss those.
+    const needsLegacyPath =
+      !!options.showModifierDialog ||
+      !!options.rollUnder
+
+    if (needsLegacyPath) {
+      return this._rollSavingThrowLegacy(saveId, options)
+    }
+
+    return this._rollSavingThrowViaAdapter(saveId, options)
+  }
+
+  /**
+   * Adapter path for saving throws. Two-pass sync flow:
+   * Pass 1 asks the lib for the formula, Foundry evaluates the full
+   * formula so its Roll.total includes modifiers, Pass 2 classifies
+   * against the same natural for crit/fumble/resources.
+   * @private
+   */
+  async _rollSavingThrowViaAdapter (saveId, options) {
+    logDispatch('rollSavingThrow', 'adapter', { saveId })
+    const saveLabel = game.i18n.localize(CONFIG.DCC.saves[saveId])
+    const character = actorToCharacter(this)
+    const libSaveId = foundrySaveIdToLib(saveId)
+
+    // Pass 1: ask the lib for the formula (no evaluation).
+    const plan = libRollSavingThrow(libSaveId, character, {
+      mode: 'formula'
+    })
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const primaryDie = foundryRoll.dice?.[0]
+    const natural = primaryDie?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies the rolled result.
+    const result = libRollSavingThrow(libSaveId, character, {
+      mode: 'evaluate',
+      roller: () => natural
+    })
+
+    await renderSavingThrow({
+      actor: this,
+      saveId,
+      saveLabel,
+      result,
+      foundryRoll,
+      options
+    })
+
+    // Legacy rollSavingThrow returned the evaluated Roll; preserve
+    // that contract for downstream macros / tests.
+    return foundryRoll
+  }
+
+  /**
+   * Legacy saving-throw path. Used when the options flags require
+   * structured terms (modifier dialog, rollUnder). Preserved verbatim
+   * until later phases migrate those flows.
+   * @private
+   */
+  async _rollSavingThrowLegacy (saveId, options = {}) {
+    logDispatch('rollSavingThrow', 'legacy', { saveId })
     const save = this.system.saves[saveId]
     const die = '1d20'
     save.label = CONFIG.DCC.saves[saveId]
@@ -1104,11 +1391,61 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a Skill Check
-   * @param {String}  skillId       The skill ID (e.g. "sneakSilently")
-   * @param {Object}  options       Roll options
+   * Roll a Skill Check.
+   *
+   * Phase 1 adapter dispatcher. Ordinary skill rolls (built-in skills
+   * and skill items with a die, no dialog / no disapproval / no skill
+   * table) flow through the lib via the two-pass formula/evaluate
+   * pattern. Dialog, cleric disapproval, skill-table routing, and
+   * description-only fallbacks stay on the legacy path.
+   *
+   * Signature and emitted chat-message flags are preserved —
+   * downstream modules depend on this public surface.
+   *
+   * @param {String} skillId  The skill ID (e.g. "sneakSilently")
+   * @param {Object} options  Roll options
    */
   async rollSkillCheck (skillId, options = {}) {
+    const resolved = this._resolveSkill(skillId)
+
+    // Unknown skill — no built-in slot, no skill item with this name.
+    // Without this guard the legacy fallback path crashes on
+    // `skill.value` (`_rollSkillCheckLegacy`) because the dispatcher
+    // routes to legacy whenever `!hasDie`. Mirror the
+    // `rollSpellCheck` "no owned item" notification shape so the user
+    // sees a clear warning rather than a console TypeError.
+    if (!resolved.skill) {
+      return ui.notifications.warn(
+        game.i18n.format('DCC.SkillCheckUnknownSkillWarning', { skill: skillId })
+      )
+    }
+
+    // Title for the roll modifier dialog — legacy mutates options,
+    // keep the behavior so the dialog path still sees it.
+    options.title = game.i18n.localize(resolved.skill.label) ||
+      (game.i18n.localize('DCC.AbilityCheck') + resolved.abilityLabel)
+
+    const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
+    const needsLegacyPath =
+      !!options.showModifierDialog ||
+      !!resolved.skill?.useDisapprovalRange ||
+      hasSkillTable ||
+      !resolved.hasDie
+
+    if (needsLegacyPath) {
+      return this._rollSkillCheckLegacy(skillId, options, resolved)
+    }
+
+    return this._rollSkillCheckViaAdapter(skillId, options, resolved)
+  }
+
+  /**
+   * Normalize a skill reference (built-in slot or skill item) to the
+   * shared bundle both dispatch paths consume. Extracted from the
+   * legacy dispatcher so the adapter can reuse the same resolution.
+   * @private
+   */
+  _resolveSkill (skillId) {
     let skill = this.system.skills ? this.system.skills[skillId] : null
     let skillItem = null
     if (!skill) {
@@ -1132,40 +1469,229 @@ class DCCActor extends Actor {
       }
     }
 
-    // Check if skill should use level (for built-in skills)
     if (skill?.config?.useLevel) {
       skill.level = `+${this.system.details.level.value ?? 0}`
     }
 
-    let die = (skill.die && skill.die.trim()) ? skill.die : null
+    let die = (skill?.die && skill.die.trim()) ? skill.die : null
     let hasDie = !!die
 
-    // Handle Override Die for special Cleric Skills
-    if (skill.useDisapprovalRange && this.system.class.spellCheckOverrideDie) {
+    if (skill?.useDisapprovalRange && this.system.class.spellCheckOverrideDie) {
       die = this.system.class.spellCheckOverrideDie
       hasDie = true
     }
 
-    // If no die is specified and no override, fall back to action dice for backward compatibility with built-in skills
-    if (!hasDie && !skillItem) {
+    if (!hasDie && !skillItem && skill) {
       die = this.getActionDice()[0].formula || '1d20'
       hasDie = true
     }
 
-    const ability = skill.ability && skill.ability.trim() ? skill.ability : null
-    let abilityLabel = ''
-    let abilityMod = 0
-    if (ability) {
-      abilityLabel = ` (${game.i18n.localize(CONFIG.DCC.abilities[ability])})`
-      abilityMod = parseInt(this.system.abilities[ability]?.mod || '0')
+    const abilityId = skill?.ability && skill.ability.trim() ? skill.ability : null
+    const abilityLabel = abilityId
+      ? ` (${game.i18n.localize(CONFIG.DCC.abilities[abilityId])})`
+      : ''
+    const abilityMod = abilityId
+      ? parseInt(this.system.abilities[abilityId]?.mod || '0')
+      : 0
+
+    return {
+      skill,
+      skillItem,
+      abilityId,
+      abilityLabel,
+      abilityMod,
+      die,
+      hasDie
+    }
+  }
+
+  /**
+   * Adapter path for skill checks. Two-pass sync flow mirroring
+   * `_rollSavingThrowViaAdapter`: pass 1 asks the lib for the formula,
+   * Foundry evaluates it (so Roll.total includes every modifier),
+   * pass 2 classifies against the same natural for crit/fumble.
+   * @private
+   */
+  async _rollSkillCheckViaAdapter (skillId, options, resolved) {
+    logDispatch('rollSkillCheck', 'adapter', { skillId })
+    const { skill, skillItem, abilityId, abilityLabel } = resolved
+
+    const character = actorToCharacter(this)
+    const definition = this._buildSkillDefinition(skillId, resolved)
+    const modifiers = this._buildSkillCheckModifiers(skillId, resolved)
+
+    // Pass 1: lib builds the formula (no evaluation).
+    const plan = libRollCheck(definition, character, {
+      mode: 'formula',
+      modifiers
+    })
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+    // Pass 2: lib classifies against the rolled natural.
+    const result = libRollCheck(definition, character, {
+      mode: 'evaluate',
+      roller: () => natural,
+      modifiers
+    })
+
+    const skillLabel = game.i18n.localize(skill.label)
+
+    await renderSkillCheck({
+      actor: this,
+      skillId,
+      skillLabel,
+      abilityId,
+      abilityLabel,
+      skillItem,
+      result,
+      foundryRoll
+    })
+
+    if (skillItem && skillItem.system.config.showLastResult) {
+      skillItem.update({ 'system.lastResult': foundryRoll.total })
     }
 
-    // Title for the roll modifier dialog
-    options.title = game.i18n.localize(skill.label) || (game.i18n.localize('DCC.AbilityCheck') + abilityLabel)
-    // Collate terms for the roll
+    return foundryRoll
+  }
+
+  /**
+   * Build a lib `SkillDefinition` for a resolved skill. Ability
+   * modifier and level are added by the lib from the character
+   * (see `roll.ability` / `roll.levelModifier`). Other Foundry-side
+   * modifiers (skill value, deed, check penalty) are emitted as
+   * situational modifiers in `_buildSkillCheckModifiers`.
+   * @private
+   */
+  _buildSkillDefinition (skillId, { skill, die, abilityId }) {
+    // Foundry stores `1d14`; lib's DieType is just `d14`.
+    const libDie = this._stripDieCount(die) || 'd20'
+
+    const definition = {
+      id: `skill:${skillId}`,
+      name: game.i18n.localize(skill.label),
+      type: 'check',
+      roll: {
+        die: libDie,
+        levelModifier: 'none'
+      }
+    }
+
+    if (abilityId) {
+      definition.roll.ability = abilityId
+    }
+
+    return definition
+  }
+
+  /**
+   * Emit the situational modifiers the lib needs to produce the same
+   * total the legacy term list would have: skill value, level (when
+   * useLevel is true), Mighty Deed's last attack bonus, and the
+   * armor check penalty for skills that honor it.
+   * @private
+   */
+  _buildSkillCheckModifiers (skillId, { skill, abilityMod }) {
+    const modifiers = []
+    const skillLabel = game.i18n.localize(skill.label)
+
+    if (skill.value !== undefined) {
+      const valueNum = parseInt(String(skill.value), 10) || 0
+      // Legacy folded ability mod into the same Compound term as skill
+      // value. The lib adds ability mod on its own from roll.ability,
+      // so we emit just skill.value here — total arithmetic matches.
+      if (valueNum !== 0 || abilityMod === 0) {
+        modifiers.push({
+          kind: 'add',
+          value: valueNum,
+          origin: {
+            category: 'other',
+            id: 'skill-value',
+            label: skillLabel
+          }
+        })
+      }
+    }
+
+    if (skill.level !== undefined && skill.level !== 0) {
+      const levelNum = parseInt(String(skill.level), 10) || 0
+      if (levelNum !== 0) {
+        modifiers.push({
+          kind: 'add',
+          value: levelNum,
+          origin: {
+            category: 'level',
+            id: 'level',
+            label: game.i18n.localize('DCC.Level')
+          }
+        })
+      }
+    }
+
+    if (skill.useDeed && this.system.details.lastRolledAttackBonus) {
+      const deedNum = parseInt(String(this.system.details.lastRolledAttackBonus), 10)
+      if (Number.isFinite(deedNum) && deedNum !== 0) {
+        modifiers.push({
+          kind: 'add',
+          value: deedNum,
+          origin: {
+            category: 'class-feature',
+            id: 'mighty-deed',
+            label: game.i18n.localize('DCC.DeedRoll')
+          }
+        })
+      }
+    }
+
+    const checkPenaltyCouldApply =
+      ['sneakSilently', 'climbSheerSurfaces'].includes(skillId) ||
+      !!skill.config?.applyCheckPenalty
+    if (checkPenaltyCouldApply) {
+      const penaltyNum = parseInt(String(this.system.attributes.ac.checkPenalty || '0'), 10)
+      if (Number.isFinite(penaltyNum) && penaltyNum !== 0) {
+        modifiers.push({
+          kind: 'add',
+          value: penaltyNum,
+          origin: {
+            category: 'penalty',
+            id: 'armor-check-penalty',
+            label: game.i18n.localize('DCC.CheckPenalty')
+          }
+        })
+      }
+    }
+
+    return modifiers
+  }
+
+  /**
+   * Turn a Foundry die formula like `'1d14'` into the bare die type
+   * `'d14'` the lib's SkillDefinition wants. Returns null when the
+   * input can't be parsed.
+   * @private
+   */
+  _stripDieCount (formula) {
+    if (!formula) return null
+    const match = /^(?:\d+)?(d\d+)$/i.exec(formula.trim())
+    return match ? match[1].toLowerCase() : null
+  }
+
+  /**
+   * Legacy skill-check path. Used when the dispatcher detects a
+   * modifier dialog, cleric disapproval, a skill-table lookup, or
+   * a no-die / description-only case — all paths the adapter does
+   * not yet cover. Preserved verbatim from the pre-migration logic.
+   * @private
+   */
+  async _rollSkillCheckLegacy (skillId, options, resolved) {
+    logDispatch('rollSkillCheck', 'legacy', { skillId })
+    const { skill, skillItem, abilityLabel, abilityMod, die, hasDie } = resolved
+
     const terms = []
 
-    // Only add a die term if a die is specified
     if (hasDie) {
       terms.push({
         type: 'Die',
@@ -1222,7 +1748,6 @@ class DCCActor extends Actor {
       })
     }
 
-    // If no meaningful terms, just show the description without a roll
     const hasMeaningfulTerms = terms.some(term => term.formula && term.formula.trim() !== '')
     if (terms.length === 0 || !hasMeaningfulTerms) {
       if (skillItem && skillItem.system.description.value) {
@@ -1245,7 +1770,6 @@ class DCCActor extends Actor {
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
-    // Handle special cleric spellchecks that are treated as skills
     if (skill.useDisapprovalRange) {
       if (roll.dice.length > 0) {
         roll.dice[0].options.dcc = {
@@ -1254,11 +1778,8 @@ class DCCActor extends Actor {
       }
     }
 
-    // Check if there's a special RollTable for this skill
     const skillTable = await game.dcc.getSkillTable(skillId)
     if (skillTable || skill.useDisapprovalRange) {
-      // Route through processSpellCheck for skills with tables or cleric abilities
-      // processSpellCheck handles pass/fail display, disapproval range checks, and disapproval increase
       await game.dcc.processSpellCheck(this, {
         rollTable: skillTable,
         roll,
@@ -1266,15 +1787,12 @@ class DCCActor extends Actor {
         flavor: `${game.i18n.localize(skill.label)}${abilityLabel}`
       })
 
-      // Divine aid always increases disapproval by its cost (e.g. +10), separate from
-      // the standard +1 on failure that processSpellCheck handles
       if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
         await this.applyDisapproval(skill.drainDisapproval)
       }
     } else {
       await roll.evaluate()
 
-      // Generate flags for the roll
       const flags = {
         'dcc.RollType': 'SkillCheck',
         'dcc.ItemId': skillId,
@@ -1283,7 +1801,6 @@ class DCCActor extends Actor {
       }
       game.dcc.FleetingLuck.updateFlags(flags, roll)
 
-      // Convert the roll to a chat message
       const systemData = { skillId }
       const messageData = {
         speaker: ChatMessage.getSpeaker({ actor: this }),
@@ -1301,7 +1818,6 @@ class DCCActor extends Actor {
       roll.toMessage(messageData)
     }
 
-    // Store last result if required
     if (skillItem && skillItem.system.config.showLastResult) {
       skillItem.update({ 'system.lastResult': roll.total })
     }
@@ -1347,7 +1863,46 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a Spell Check
+   * Roll a Spell Check.
+   *
+   * Dispatcher. Phase 2 scope — as sessions land, more casting modes
+   * peel off onto the adapter:
+   *   - Session 1: generic-castingMode items on non-cleric, non-patron-bound
+   *     actors (no side effects).
+   *   - Session 2: wizard-castingMode items on non-cleric, non-patron-bound
+   *     actors; wizard spell loss via the lib's `onSpellLost` event.
+   *     Pre-check for already-lost spells (mirrors
+   *     `DCCItem.rollSpellCheck:260`) fires adapter-side.
+   *   - Session 3: cleric-castingMode items on cleric actors without
+   *     patrons; cleric disapproval via the lib's
+   *     `onDisapprovalIncreased` event (replaces
+   *     `actor.applyDisapproval()` + `actor.rollDisapproval()`).
+   *   - Session 4: wizard-castingMode items on patron-bound wizard /
+   *     elf actors flow through the adapter. The patron field populates
+   *     `character.state.classState.<type>.patron` so the lib records
+   *     `castInput.patron`. D3a (2026-04-24) extended this to feed the
+   *     RAW patron-taint pipeline: `patronTaintChance` + `isPatronSpell`
+   *     on `castInput`; the lib runs creeping-chance + result-table
+   *     triggers; this method persists `result.newPatronTaintChance`
+   *     back to `system.class.patronTaintChance` each cast (see below).
+   *     The `onPatronTaint` event (spell-events.mjs) posts a chat
+   *     EMOTE on acquisition.
+   *   - Session 5: spellburn + mercurial magic on wizard / elf
+   *     casts. `input.spellburn` is forwarded from `options.spellburn`
+   *     when the caller provides a `SpellburnCommitment`; the
+   *     `onSpellburnApplied` bridge subtracts the burn from
+   *     `system.abilities.<str|agl|sta>.value`. Mercurial magic
+   *     pre-rolls via `_rollMercurialIfNeeded` when the spell item
+   *     has no stored effect — updates the item and attaches the
+   *     effect to the in-flight spellbook entry so the lib's
+   *     `onMercurialEffect` fires with the fresh result.
+   *
+   * Everything else (wizard on cleric, cleric on non-cleric,
+   * patron-bound clerics, naked spell checks, unknown casting modes)
+   * stays on the legacy path. The item lookup is hoisted here so the
+   * existing actor.test.js `collectionFindMock` call-count assertions
+   * still match.
+   *
    * @param options
    */
   async rollSpellCheck (options = {}) {
@@ -1355,14 +1910,12 @@ class DCCActor extends Actor {
       options.abilityId = this.system.class.spellCheckAbility || ''
     }
 
-    // If a spell name is provided attempt to look up an item with that name for the roll
+    let spellItem = null
     if (options.spell) {
       const item = this.items.find(i => i.name === options.spell)
       if (item) {
         if (item.type === 'spell') {
-          // Roll through the item and return, so we don't also roll a basic spell check
-          item.rollSpellCheck(options.abilityId, options)
-          return
+          spellItem = item
         } else {
           return ui.notifications.warn(game.i18n.localize('DCC.SpellCheckNonSpellWarning'))
         }
@@ -1371,7 +1924,452 @@ class DCCActor extends Actor {
       }
     }
 
-    // Otherwise fall back to a raw dice roll with appropriate flavor
+    const castingMode = spellItem?.system?.config?.castingMode
+    const hasPatron = !!this.system.class?.patron
+    // Widened 2026-04-23: accept `class.className === 'Cleric'` as the
+    // cleric signal, not just `details.sheetClass`. Programmatic PCs
+    // (anything not routed through the level-change dialog) can have
+    // `className: 'Cleric'` without `sheetClass` populated; pre-fix the
+    // cleric-castingMode branch fell through to `_rollSpellCheckLegacy`,
+    // which delegates to `spellItem.rollSpellCheck` — a silent no-op
+    // for this shape (no chat, no error). `resolveCasterProfile` in
+    // `spell-input.mjs` already keys on `className`, so widening here
+    // also fixes the symmetric "Wizard spell on cleric-by-className-only
+    // actor" routing (kept on legacy instead of misrouting via adapter).
+    const isCleric =
+      this.system.details?.sheetClass === 'Cleric' ||
+      this.system.class?.className === 'Cleric'
+
+    if (spellItem) {
+      if (castingMode === 'generic' && !isCleric && !hasPatron) {
+        return this._rollSpellCheckViaAdapter(spellItem, options)
+      }
+      if (castingMode === 'wizard' && !isCleric) {
+        // Adapter-side spell-loss pre-check — mirrors the legacy
+        // `DCCItem.rollSpellCheck:260` gate that would otherwise warn
+        // and abort. Once the cast reaches the adapter the item has
+        // already been looked up, so this is the natural place.
+        if (spellItem.system.lost && game.settings.get('dcc', 'automateWizardSpellLoss')) {
+          return ui.notifications.warn(game.i18n.format('DCC.SpellLostWarning', {
+            actor: this.name,
+            spell: spellItem.name
+          }))
+        }
+        // Spellburn dialog bridge (open question #6, resolved Phase 3
+        // session 1). The adapter path bypasses `DCCRoll.createRoll`,
+        // so the legacy `RollModifierDialog`'s Spellburn term never
+        // surfaces. When the caller asks for the modifier dialog and
+        // hasn't already committed a burn programmatically, prompt
+        // for it adapter-side and forward as `options.spellburn` —
+        // the lib then adds the Spellburn modifier to the roll and
+        // fires `onSpellburnApplied` so the adapter can deduct the
+        // ability points (see `spell-events.mjs`). NPCs don't burn
+        // (the legacy dialog never offered it to them either).
+        if (options.showModifierDialog && !options.spellburn && !this.isNPC) {
+          const commitment = await promptSpellburnCommitment(this, spellItem)
+          if (commitment === null) return
+          options.spellburn = commitment
+        }
+        return this._rollSpellCheckViaAdapter(spellItem, options)
+      }
+      if (castingMode === 'cleric' && isCleric && !hasPatron) {
+        return this._rollSpellCheckViaAdapter(spellItem, options)
+      }
+    }
+
+    return this._rollSpellCheckLegacy(options, spellItem)
+  }
+
+  /**
+   * Adapter path for spell checks. Dispatches to the lib entry point
+   * appropriate for the item's casting mode:
+   *   - Generic: `castSpell` with a synthetic side-effect-free profile.
+   *     No spellbook lookup, no events wired.
+   *   - Wizard: `calculateSpellCheck` with the real wizard caster
+   *     profile + a single-entry spellbook built from the item's
+   *     `system.lost` / `system.timesPreparedOrCast`. `onSpellLost`
+   *     fires when the lib marks the spell lost; the event bridge in
+   *     `spell-events.mjs` mirrors that to the Foundry item via
+   *     `item.update({ 'system.lost': true })`, replacing the
+   *     `actor.loseSpell(item)` side effect `processSpellCheck`
+   *     performs on the legacy path.
+   *
+   * Two-pass formula/evaluate pattern established by the Phase 1
+   * adapter methods: pass 1 yields a formula, Foundry rolls it, pass
+   * 2 classifies against the pre-rolled natural.
+   * @private
+   */
+  async _rollSpellCheckViaAdapter (spellItem, options) {
+    const castingMode = spellItem?.system?.config?.castingMode || 'generic'
+    logDispatch('rollSpellCheck', 'adapter', {
+      spell: spellItem?.name ?? '',
+      mode: castingMode
+    })
+
+    if (castingMode === 'wizard' || castingMode === 'cleric') {
+      const args = buildSpellCheckArgs(this, spellItem, options)
+      // No lib-side profile for this actor's class — drop back to legacy
+      // so spinoff classes with wizard/cleric-castingMode spells still work.
+      if (!args) {
+        return this._rollSpellCheckLegacy(options, spellItem, 'noCasterProfile')
+      }
+      return this._castViaCalculateSpellCheck(args, spellItem, options)
+    }
+
+    return this._castViaCastSpell(spellItem, options)
+  }
+
+  /**
+   * Generic-castingMode adapter branch. Side-effect-free cast via the
+   * lib's `castSpell`.
+   * @private
+   */
+  async _castViaCastSpell (spellItem, options) {
+    const input = buildSpellCastInput(this, spellItem, options)
+
+    const plan = libCastSpell(input, { mode: 'formula' })
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+    const result = libCastSpell(input, {
+      mode: 'evaluate',
+      roller: () => natural
+    })
+
+    const flavor = this._buildSpellCheckFlavor(spellItem, options)
+    await renderSpellCheck({
+      actor: this,
+      spellItem,
+      flavor,
+      result,
+      foundryRoll
+    })
+
+    return foundryRoll
+  }
+
+  /**
+   * Wizard / cleric-castingMode adapter branch. Routes through
+   * `calculateSpellCheck` so the lib's spell-loss bookkeeping (wizard)
+   * and disapproval handling (cleric) drive the cast. Event callbacks
+   * in `spell-events.mjs` bridge lib events to Foundry side effects:
+   * `onSpellLost` → `item.update({system.lost: true})`,
+   * `onDisapprovalIncreased` → `actor.update({system.class.disapproval:
+   * newRange})` + gain chat. The disapproval sub-roll chat is posted
+   * here (the lib doesn't pass `disapprovalResult` to the callback).
+   *
+   * Two-pass formula/evaluate pattern. The pass-2 roller is
+   * formula-dispatching: returns the pre-rolled spell-check natural
+   * for the action-die formula, and a pre-rolled 1d4 for the
+   * disapproval sub-roll (only when cleric + natural is inside the
+   * range — the lib's `handleClericDisapproval` is the only sub-roll
+   * path today).
+   * @private
+   */
+  async _castViaCalculateSpellCheck (args, spellItem, options) {
+    const { character, input, profile } = args
+    const events = createSpellEvents({ actor: this, spellItem })
+
+    // Cleric path needs a disapproval table so the lib's
+    // `handleClericDisapproval` runs the full table draw (lib skips
+    // the draw if the table is missing — matching legacy behavior
+    // when no table is configured).
+    if (profile?.type === 'cleric') {
+      const disapprovalTable = await loadDisapprovalTable(this)
+      if (disapprovalTable) {
+        input.disapprovalTable = disapprovalTable
+      } else {
+        // Telemetry for a silent adapter degradation: the cleric cast
+        // continues through the lib, but `handleClericDisapproval` skips
+        // the sub-roll because no table is plumbed in. Matches legacy
+        // behavior when no table is configured — but previously invisible.
+        logDispatch('rollSpellCheck', 'adapter', { reason: 'noDisapprovalTable' })
+      }
+    }
+
+    // Wizard / elf path — if the spell item doesn't yet carry a
+    // rolled mercurial effect, pre-roll one via the lib's
+    // `rollMercurialMagic`, persist it to the Foundry item, and
+    // attach it to the lib's spellbook entry so the cast's
+    // `onMercurialEffect` event fires with the freshly rolled
+    // effect. When a table isn't configured (setting unset, unit-test
+    // env), skip the pre-roll — matches legacy `DCCItem.rollSpellCheck`
+    // behavior (the legacy path only displays an existing mercurial
+    // effect and leaves first-cast rolling to the user-triggered
+    // `DCCItem.rollMercurialMagic` item-sheet button).
+    if (profile && profile.usesMercurial && spellItem) {
+      const spellbookEntry = character.state?.classState?.[profile.type]?.spellbook?.spells?.[0]
+      if (spellbookEntry && !spellbookEntry.mercurialEffect) {
+        await this._rollMercurialIfNeeded(spellItem, spellbookEntry)
+      }
+    }
+
+    // D3b — wizard / elf patron-taint manifestation table. Loaded
+    // when the cast qualifies for the creeping-chance check (patron-
+    // bound + patron-based spell); the lib's
+    // `applyPatronTaintAcquisition` indexes a d6 on this table when
+    // acquisition fires (either path). When no table resolves for
+    // the actor's patron, the lib falls back to the minimal
+    // "Patron taint from ${patronId}" event — matches legacy
+    // behavior for unauthored patrons.
+    if (
+      (profile?.type === 'wizard' || profile?.type === 'elf') &&
+      input.isPatronSpell &&
+      this.system.class?.patron
+    ) {
+      const patronTaintTable = await loadPatronTaintTable(this)
+      if (patronTaintTable) {
+        input.patronTaintTable = patronTaintTable
+      }
+    }
+
+    // Pass 1: build the formula without rolling. Events are omitted
+    // here — the lib fires `onSpellburnApplied` + `onMercurialEffect`
+    // unconditionally when their inputs are set (see `cast.js:339-343`),
+    // so passing `events` to pass 1 would double-apply the burn / emit
+    // duplicate mercurial chat. Pass 2 is the authoritative side-effect
+    // pass. `onSpellLost` / `onDisapprovalIncreased` are gated on
+    // pass-2-only conditions (spell lost / natural roll), so earlier
+    // sessions could pass events to both passes without issue; the
+    // unconditional events introduced by session 5 force the split.
+    const plan = libCalculateSpellCheck(character, input, { mode: 'formula' }, {})
+    if (plan.error) {
+      ui.notifications.warn(plan.error)
+      return
+    }
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+
+    // Pre-roll the disapproval 1d4 via Foundry so the pass-2 roller
+    // has a value to hand back when the lib calls `options.roller('1d4')`
+    // inside `rollDisapproval`. Only needed when cleric + natural is
+    // in the disapproval range; avoids a spurious d4 roll otherwise.
+    let disapprovalD4 = null
+    if (
+      profile?.type === 'cleric' &&
+      input.disapprovalTable &&
+      natural <= (character.state.classState?.cleric?.disapprovalRange ?? 0)
+    ) {
+      const d4Roll = new Roll('1d4')
+      await d4Roll.evaluate()
+      disapprovalD4 = d4Roll.total
+    }
+
+    // D3a — pre-roll the patron-taint 1d100 for the lib's creeping-chance
+    // check. Only fired when this cast qualifies for the check (patron-
+    // bound wizard/elf casting a patron-related spell); avoids a spurious
+    // d100 roll otherwise. D3b adds the paired 1d6 pre-roll for the
+    // manifestation lookup — only when a `patronTaintTable` resolved
+    // for this patron (otherwise the lib skips the sub-roll and emits
+    // a minimal "Patron taint from <patron>" event).
+    let patronTaintD100 = null
+    let patronTaintD6 = null
+    if (
+      (profile?.type === 'wizard' || profile?.type === 'elf') &&
+      input.isPatronSpell &&
+      this.system.class?.patron
+    ) {
+      const d100Roll = new Roll('1d100')
+      await d100Roll.evaluate()
+      patronTaintD100 = d100Roll.total
+
+      if (input.patronTaintTable) {
+        const d6Roll = new Roll('1d6')
+        await d6Roll.evaluate()
+        patronTaintD6 = d6Roll.total
+      }
+    }
+
+    // Pass 2 runs twice to avoid partial-failure mutations. The probe
+    // runs with an empty events object so any `result.error` the lib
+    // surfaces (misconfigured spell definition, wrong casterTypes,
+    // corrupted spellbook entry) is detected BEFORE `onSpellburnApplied`
+    // / `onSpellLost` / `onDisapprovalIncreased` / `onPatronTaint` mutate
+    // actor+item state. Only when the probe is clean do we replay with
+    // the real events wired — the roller is deterministic (pre-rolled
+    // natural, disapproval d4, creeping-chance d100, and manifestation
+    // d6), so both passes return identical results and no sub-roll is
+    // consumed twice.
+    const roller = (formula) => {
+      if (formula === '1d4' && disapprovalD4 !== null) return disapprovalD4
+      if (formula === '1d100' && patronTaintD100 !== null) return patronTaintD100
+      if (formula === '1d6' && patronTaintD6 !== null) return patronTaintD6
+      return natural
+    }
+
+    const probe = libCalculateSpellCheck(
+      character,
+      input,
+      { mode: 'evaluate', roller },
+      {}
+    )
+    if (probe.error) {
+      console.error('[DCC adapter] calculateSpellCheck pass-2 error', { actor: this.name, spell: spellItem?.name, error: probe.error })
+      ui.notifications.warn(probe.error)
+      return
+    }
+
+    const result = libCalculateSpellCheck(
+      character,
+      input,
+      { mode: 'evaluate', roller },
+      events
+    )
+
+    warnIfDivergent('rollSpellCheck', foundryRoll.total, result.total, { actor: this.name, spell: spellItem?.name })
+
+    const flavor = this._buildSpellCheckFlavor(spellItem, options, profile)
+    await renderSpellCheck({
+      actor: this,
+      spellItem,
+      flavor,
+      result,
+      foundryRoll
+    })
+
+    // Post the disapproval roll chat after the main spell-check chat,
+    // mirroring the legacy two-message ordering (spell check, then
+    // disapproval roll, then gained-range emote from the callback).
+    if (result.disapprovalResult) {
+      await renderDisapprovalRoll({
+        actor: this,
+        disapprovalResult: result.disapprovalResult
+      })
+    }
+
+    // Session 5 — mercurial display chat. Rendered directly from
+    // `result.mercurialEffect` rather than via the lib's
+    // `onMercurialEffect` event because that event fires on both
+    // formula + evaluate passes (unconditional when the spellbook
+    // entry carries an effect) and its Promise return isn't
+    // awaitable through the lib. Legacy parity: the effect's
+    // `displayOnCast` gate mirrors the item's `displayInChat` flag
+    // (`DCCItem.rollSpellCheck:382`).
+    if (spellItem && result.mercurialEffect && result.mercurialEffect.displayOnCast !== false) {
+      await renderMercurialEffect({
+        actor: this,
+        spellItem,
+        effect: result.mercurialEffect
+      })
+    }
+
+    // D3a (2026-04-24) — persist the lib's per-cast patron-taint chance
+    // update. The lib runs the RAW creeping-chance check + result-table
+    // detection inside `calculateSpellCheck`; when the check ran this
+    // cast, `result.newPatronTaintChance` carries the updated value
+    // (1 on acquisition, currentChance + 1 on miss). The actor stores
+    // the chance as a percent string (`"3%"`), so format before writing.
+    // NPCs bail — matches the legacy `processSpellCheck:601-637`
+    // PC-only mechanic.
+    if (
+      !this.isNPC &&
+      result.patronTaintChecked &&
+      Number.isFinite(result.newPatronTaintChance)
+    ) {
+      await this.update({
+        'system.class.patronTaintChance': `${result.newPatronTaintChance}%`
+      })
+    }
+
+    return foundryRoll
+  }
+
+  /**
+   * Pre-roll a mercurial magic effect for a wizard / elf spell whose
+   * Foundry item doesn't yet carry one. Mirrors the lib-spec flow in
+   * `dcc-core-lib/spells/mercurial.js`: d100 + (luckMod × 10) lookup
+   * on a mercurial table. The rolled effect is persisted to the
+   * Foundry item so later casts display it without re-rolling, and
+   * attached to the supplied `spellbookEntry` so the same cast's
+   * `onMercurialEffect` event fires with the fresh effect. Silent
+   * no-op when no mercurial magic table is configured — matches the
+   * legacy `DCCItem.rollMercurialMagic:564` fall-back.
+   *
+   * @private
+   */
+  async _rollMercurialIfNeeded (spellItem, spellbookEntry) {
+    const mercurialTable = await loadMercurialMagicTable()
+    if (!mercurialTable) {
+      // Telemetry for the silent skip: the cast continues but without
+      // a fresh mercurial effect, matching the legacy
+      // `DCCItem.rollMercurialMagic:564` no-table fall-back.
+      logDispatch('rollSpellCheck', 'adapter', { reason: 'noMercurialTable' })
+      return
+    }
+
+    // Foundry-side d100 so Dice So Nice + chat breakdown show a real
+    // roll. The lib's roller receives '1d100' and we hand back the
+    // Foundry total; the luck modifier is applied inside the lib.
+    const d100Roll = new Roll('1d100')
+    await d100Roll.evaluate()
+    const luckMod = Number(this.system?.abilities?.lck?.mod) || 0
+
+    const effect = libRollMercurialMagic(luckMod, mercurialTable, {
+      roller: () => d100Roll.total
+    })
+
+    await spellItem.update({
+      'system.mercurialEffect.value': effect.rollValue,
+      'system.mercurialEffect.summary': effect.summary || '',
+      'system.mercurialEffect.description': effect.description || '',
+      'system.mercurialEffect.displayInChat': effect.displayOnCast !== false
+    })
+
+    // Attach to the in-flight spellbookEntry so the lib's pass-2
+    // `castSpell` surfaces the mercurial effect on the result, and
+    // `_castViaCalculateSpellCheck`'s post-cast render sees it.
+    spellbookEntry.mercurialEffect = effect
+  }
+
+  /**
+   * Build the chat flavor line shared by both adapter branches.
+   * @private
+   */
+  _buildSpellCheckFlavor (spellItem, options, profile) {
+    const abilityId = options.abilityId || profile?.spellCheckAbility
+    const abilityLabel = abilityId ? CONFIG.DCC.abilities[abilityId] : undefined
+    let flavor = spellItem?.name ?? game.i18n.localize('DCC.SpellCheck')
+    if (abilityLabel) {
+      flavor += ` (${game.i18n.localize(abilityLabel)})`
+    }
+    return flavor
+  }
+
+  /**
+   * Legacy spell-check path. Preserves the pre-adapter behavior for
+   * every dispatch that doesn't meet the session-1 adapter gate —
+   * spell items delegate to `DCCItem.rollSpellCheck`, naked checks
+   * build DCCRoll terms and hand off to `game.dcc.processSpellCheck`
+   * (still the source of truth for wizard spell loss, cleric
+   * disapproval, patron taint, spellburn, and mercurial magic).
+   * @private
+   */
+  async _rollSpellCheckLegacy (options, spellItem, reason = null) {
+    // `reason` captures why the adapter path declined and routed here —
+    // e.g. `noCasterProfile` when `buildSpellCheckArgs` returns null for
+    // a custom class the lib doesn't know. Surfaces an otherwise-silent
+    // fallback in the dispatch log so debugging doesn't need a code read.
+    const details = { spell: options.spell ?? '' }
+    if (reason) details.reason = reason
+    logDispatch('rollSpellCheck', 'legacy', details)
+
+    if (spellItem) {
+      // Fire-and-forget — matches the pre-dispatcher contract. The
+      // item's rollSpellCheck performs its own chat + processSpellCheck
+      // orchestration; awaiting here would change the public return
+      // shape and surface errors the original path swallowed.
+      spellItem.rollSpellCheck(options.abilityId, options)
+      return
+    }
+
+    // Naked spell-check path (no item): retained verbatim from the
+    // pre-dispatcher rollSpellCheck body.
     const ability = this.system.abilities[options.abilityId] || {}
     ability.label = CONFIG.DCC.abilities[options.abilityId]
     const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
@@ -1545,61 +2543,26 @@ class DCCActor extends Actor {
 
     // Add damage bonus adjustment for NPCs (from Active Effects)
     // For PCs, this is already incorporated via computeMeleeAndMissileAttackAndDamage()
+    let npcDamageAdjustment = 0
     if (this.isNPC && damageRollFormula) {
       const isMeleeWeapon = weapon.system?.melee !== false
-      const damageAdjustment = isMeleeWeapon
+      npcDamageAdjustment = isMeleeWeapon
         ? parseInt(this.system.details.attackDamageBonus?.melee?.adjustment) || 0
         : parseInt(this.system.details.attackDamageBonus?.missile?.adjustment) || 0
-      if (damageAdjustment !== 0) {
-        damageRollFormula = `${damageRollFormula}${damageAdjustment >= 0 ? '+' : ''}${damageAdjustment}`
+      if (npcDamageAdjustment !== 0) {
+        damageRollFormula = `${damageRollFormula}${npcDamageAdjustment >= 0 ? '+' : ''}${npcDamageAdjustment}`
       }
     }
 
-    let damageRoll, damageInlineRoll, damagePrompt
+    let damageRoll, damageInlineRoll, damagePrompt, libDamageResult
+    let libCritResult, libFumbleResult
     if (automateDamageFumblesCrits && damageRollFormula) {
-      // Check if the formula has per-term flavors like 1d6[fire] or 1d6+1d6[cold]
-      // Per-term flavors have brackets immediately after a die expression
-      const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
-
-      if (hasPerTermFlavors) {
-        // Use Foundry's native Roll to preserve per-term flavors
-        damageRoll = new Roll(damageRollFormula, this.getRollData())
-        await damageRoll.evaluate()
-      } else {
-        // Use DCCRoll for simple formulas (may have a single trailing flavor)
-        const flavorMatch = damageRollFormula.match(/\[(.*)]/)
-        let flavor = ''
-        if (flavorMatch) {
-          flavor = flavorMatch[1]
-          damageRollFormula = damageRollFormula.replace(/\[.*]/, '')
-        }
-        damageRoll = game.dcc.DCCRoll.createRoll([
-          {
-            type: 'Compound',
-            dieLabel: game.i18n.localize('DCC.Damage'),
-            flavor,
-            formula: damageRollFormula
-          }
-        ])
-        await damageRoll.evaluate()
-      }
-      foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
-      if (damageRoll.total < 1) {
-        damageRoll._total = 1
-      }
+      const damageDispatch = await this._rollDamage(weapon, damageRollFormula, attackRollResult, { ...options, npcDamageAdjustment })
+      damageRoll = damageDispatch.damageRoll
+      damageInlineRoll = damageDispatch.damageInlineRoll
+      damagePrompt = damageDispatch.damagePrompt
+      libDamageResult = damageDispatch.libDamageResult
       rolls.push(damageRoll)
-      damageInlineRoll = damageRoll.toAnchor({
-        classes: ['damage-applyable', 'inline-dsn-hidden'],
-        dataset: { damage: damageRoll.total }
-      }).outerHTML
-
-      // Build damage breakdown if there are multiple damage types
-      const damageBreakdown = this._buildDamageBreakdown(damageRoll)
-      if (damageBreakdown) {
-        damageInlineRoll += ` <span class="damage-breakdown">(${damageBreakdown})</span>`
-      }
-
-      damagePrompt = game.i18n.localize('DCC.Damage')
     } else if (damageRollFormula) {
       damageInlineRoll = await TextEditor.enrichHTML(`[[/r ${damageRollFormula} # Damage]]`)
       damagePrompt = game.i18n.localize('DCC.RollDamage')
@@ -1621,33 +2584,19 @@ class DCCActor extends Actor {
     let critRollTotal = null
     const luckMod = ensurePlus(this.system.abilities.lck.mod)
     if (attackRollResult.crit) {
-      critRollFormula = `${weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'}${luckMod}`
-      const criticalText = game.i18n.localize('DCC.Critical')
-      const critTableText = game.i18n.localize('DCC.CritTable')
-      const critTableDisplayText = `${critTableText} ${critTableName}`
-      const critTableLink = await getCritTableLink(critTableName, critTableDisplayText)
-      critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableDisplayText})]] (${critTableLink})`)
-      if (automateDamageFumblesCrits) {
-        critPrompt = game.i18n.localize('DCC.Critical')
-        critRoll = game.dcc.DCCRoll.createRoll([
-          {
-            type: 'Compound',
-            dieLabel: game.i18n.localize('DCC.Critical'),
-            formula: critRollFormula
-          }
-        ])
-        await critRoll.evaluate()
-        foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
-        rolls.push(critRoll)
-        critRollTotal = critRoll.total
-        const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
-        if (critResultObj) {
-          critResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResultObj.description))
-        }
-        const critResultPrompt = game.i18n.localize('DCC.CritResult')
-        const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
-        critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableLink})`)
-      }
+      const critDispatch = await this._rollCritical(weapon, attackRollResult, {
+        automate: automateDamageFumblesCrits,
+        luckMod,
+        critTableName
+      })
+      critRollFormula = critDispatch.critRollFormula
+      critInlineRoll = critDispatch.critInlineRoll
+      critPrompt = critDispatch.critPrompt
+      critRoll = critDispatch.critRoll
+      critResult = critDispatch.critResult
+      critRollTotal = critDispatch.critRollTotal
+      libCritResult = critDispatch.libCritResult
+      if (critRoll) rolls.push(critRoll)
     }
 
     // Fumble roll
@@ -1669,40 +2618,24 @@ class DCCActor extends Actor {
     let isNPCFumble = false
     const inverseLuckMod = ensurePlus((parseInt(this.system.abilities.lck.mod) * -1).toString())
     if (attackRollResult.fumble) {
-      fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
-      if (this.isNPC && useNPCFumbles) {
-        fumbleRollFormula = '1d10'
-      }
-      fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble (${fumbleTableName})]] (${fumbleTableName})`)
-      fumblePrompt = game.i18n.localize('DCC.RollFumble')
-      if (automateDamageFumblesCrits) {
-        fumblePrompt = game.i18n.localize('DCC.Fumble')
-        fumbleRoll = game.dcc.DCCRoll.createRoll([
-          {
-            type: 'Compound',
-            dieLabel: game.i18n.localize('DCC.Fumble'),
-            formula: fumbleRollFormula
-          }
-        ])
-        await fumbleRoll.evaluate()
-        foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
-        rolls.push(fumbleRoll)
-        fumbleRollTotal = fumbleRoll.total
-        let fumbleResultObj
-        if (this.isPC || !useNPCFumbles) {
-          fumbleResultObj = await getFumbleTableResult(fumbleRoll)
-        } else {
-          isNPCFumble = true
-          fumbleResultObj = await getNPCFumbleTableResult(fumbleRoll, originalFumbleTableName)
-        }
-        if (fumbleResultObj) {
-          fumbleTableName = `${fumbleResultObj?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
-          fumbleResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResultObj.description))
-        }
-        const onPrep = game.i18n.localize('DCC.on')
-        const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
-        fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor} ${onPrep} ${fumbleTableName}`)
-      }
+      const fumbleDispatch = await this._rollFumble(weapon, attackRollResult, {
+        automate: automateDamageFumblesCrits,
+        luckMod,
+        inverseLuckMod,
+        useNPCFumbles,
+        fumbleTableName,
+        originalFumbleTableName
+      })
+      fumbleRollFormula = fumbleDispatch.fumbleRollFormula
+      fumbleInlineRoll = fumbleDispatch.fumbleInlineRoll
+      fumblePrompt = fumbleDispatch.fumblePrompt
+      fumbleRoll = fumbleDispatch.fumbleRoll
+      fumbleResult = fumbleDispatch.fumbleResult
+      fumbleRollTotal = fumbleDispatch.fumbleRollTotal
+      fumbleTableName = fumbleDispatch.fumbleTableName
+      isNPCFumble = fumbleDispatch.isNPCFumble
+      libFumbleResult = fumbleDispatch.libFumbleResult
+      if (fumbleRoll) rolls.push(fumbleRoll)
     }
 
     const flags = {
@@ -1712,6 +2645,18 @@ class DCCActor extends Actor {
       'dcc.isCrit': attackRollResult.crit,
       'dcc.isNaturalCrit': attackRollResult.naturalCrit,
       'dcc.isMelee': weapon.system?.melee
+    }
+    if (attackRollResult.libResult) {
+      flags['dcc.libResult'] = attackRollResult.libResult
+    }
+    if (libDamageResult) {
+      flags['dcc.libDamageResult'] = libDamageResult
+    }
+    if (libCritResult) {
+      flags['dcc.libCritResult'] = libCritResult
+    }
+    if (libFumbleResult) {
+      flags['dcc.libFumbleResult'] = libFumbleResult
     }
     game.dcc.FleetingLuck.updateFlags(flags, attackRollResult.roll)
 
@@ -1744,7 +2689,6 @@ class DCCActor extends Actor {
         critRoll,
         critRollFormula,
         critResult,
-        critText: critResult, // Legacy name for dcc-qol compatibility
         critRollTotal,
         ...(attackRollResult.crit ? { critTableName } : {}),
         critDieOverride: weapon.system?.config?.critDieOverride,
@@ -1758,7 +2702,6 @@ class DCCActor extends Actor {
         fumbleRoll,
         fumbleRollFormula,
         fumbleResult,
-        fumbleText: fumbleResult, // Legacy name for dcc-qol compatibility
         fumbleRollTotal,
         fumbleTableName,
         originalFumbleTableName,
@@ -1798,30 +2741,34 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Roll a weapon's attack roll
+   * Roll a weapon attack through the lib's `makeAttackRoll`. Foundry's
+   * `DCCRoll.createRoll` owns the chat render + the `dcc.modifyAttackRollTerms`
+   * hook contract verbatim; after the Roll evaluates, the natural d20
+   * (and deed die when present) feed the lib via a sequenced roller so
+   * the lib owns the classification + `appliedModifiers` list that
+   * downstream chat flags surface as `dcc.libResult`.
+   *
+   * D1 (Phase 3 session 15) retired the `_rollToHitLegacy` branch —
+   * the Phase 3 gate (`_canRouteAttackViaAdapter`) had already reached
+   * exhaustiveness at A7 (session 14), and the legacy body became dead
+   * code. This is the single path now.
+   *
    * @param {Object} weapon      The weapon object being used for the roll
    * @param {Object} options     Options which configure how attacks are rolled E.g. Backstab
    * @return {Object}            Object representing the results of the attack roll
    */
   async rollToHit (weapon, options = {}) {
-    /* Grab the To Hit modifier */
-    const toHit = weapon.system?.toHit.replaceAll('@ab', this.system.details.attackBonus)
+    logDispatch('rollWeaponAttack', 'adapter', { weapon: weapon?.name || 'unknown' })
 
+    const toHit = (weapon.system?.toHit ?? '').replaceAll('@ab', this.system.details.attackBonus)
     const actorActionDice = this.getActionDice({ includeUntrained: true })[0].formula
-
     const die = weapon.system?.actionDie || actorActionDice
-
     let critRange = parseInt(weapon.system?.critRange || this.system.details.critRange || 20)
 
-    /* If we don't have a valid formula, bail out here */
     if (!Roll.validate(toHit)) {
-      return {
-        rolled: false,
-        formula: toHit
-      }
+      return { rolled: false, formula: toHit }
     }
 
-    // Collate terms for the roll
     const terms = [
       {
         type: 'Die',
@@ -1837,18 +2784,22 @@ class DCCActor extends Actor {
       }
     ]
 
-    // Add backstab bonus if required
+    // Session 9: thief backstab — push the Table 1-9 bonus term
+    // identically to the legacy path, then surface the bonus to the
+    // lib via `attackInput.bonuses` below so `libResult.total` matches
+    // the Foundry Roll total.
+    const backstabBonus = options.backstab
+      ? (parseInt(this.system?.class?.backstab || '0') || 0)
+      : 0
     if (options.backstab) {
       terms.push({
         type: 'Modifier',
         label: game.i18n.localize('DCC.Backstab'),
         presets: [],
-        formula: parseInt(this.system?.class?.backstab || '0')
+        formula: backstabBonus
       })
     }
 
-    // Add attack hit bonus adjustment for NPCs (from Active Effects)
-    // For PCs, this is already incorporated via computeMeleeAndMissileAttackAndDamage()
     if (this.isNPC) {
       const isMelee = weapon.system?.melee !== false
       const attackAdjustment = isMelee
@@ -1863,19 +2814,19 @@ class DCCActor extends Actor {
       }
     }
 
-    // Allow modules to modify the terms before the roll is created
+    const termsLengthBefore = terms.length
     const proceed = Hooks.call('dcc.modifyAttackRollTerms', terms, this, weapon, options)
-    if (!proceed) return // Cancel the attack roll if any listener returns false
+    if (!proceed) return
+    const hookAddedTerms = terms.slice(termsLengthBefore)
 
-    /* Roll the Attack */
-    const rollOptions = Object.assign(
-      {
-        title: game.i18n.localize('DCC.ToHit')
-      },
-      options
-    )
+    const rollOptions = Object.assign({ title: game.i18n.localize('DCC.ToHit') }, options)
 
-    // Add damage terms if showing the modifier dialog
+    // Session 13 (A6): when the modifier dialog is shown, pass the
+    // damage terms through so the user can modify both attack and
+    // damage in one dialog. Legacy parity — same shape, same fields.
+    // `modifiedDamageFormula` lands on `attackRoll.options` after the
+    // dialog resolves; the `modifiedDamageFormula` read below picks it
+    // up identically to legacy.
     if (options.showModifierDialog && weapon.system?.damage) {
       rollOptions.damageTerms = [
         {
@@ -1890,56 +2841,107 @@ class DCCActor extends Actor {
     const attackRoll = await game.dcc.DCCRoll.createRoll(terms, Object.assign({ critical: critRange }, this.getRollData()), rollOptions)
     await attackRoll.evaluate()
 
-    // Adjust crit range if the die size was adjusted
     const strictCrits = game.settings.get('dcc', 'strictCriticalHits')
     if (strictCrits) {
-      // Extract die sizes from the original and adjusted formulas
       const originalDieMatch = die.match(/(\d+)d(\d+)/)
       const adjustedDieMatch = attackRoll.formula.match(/(\d+)d(\d+)/)
       if (originalDieMatch && adjustedDieMatch) {
         const originalDieSize = parseInt(originalDieMatch[2])
         const adjustedDieSize = parseInt(adjustedDieMatch[2])
         if (originalDieSize !== adjustedDieSize) {
-          // Use proportional crit range calculation
           critRange = game.dcc.DiceChain.calculateProportionalCritRange(critRange, originalDieSize, adjustedDieSize)
         }
       }
     } else {
-      // Use the original logic (expand crit range)
       critRange += parseInt(game.dcc.DiceChain.calculateCritAdjustment(die, attackRoll.formula))
     }
 
     const d20RollResult = attackRoll.dice[0].total
-    attackRoll.dice[0].options.dcc = {
-      upperThreshold: critRange
+    attackRoll.dice[0].options.dcc = { upperThreshold: critRange }
+
+    const attackInput = buildAttackInput(this, weapon)
+    attackInput.threatRange = critRange
+    // Reflect in-place mutations of the action-die term (e.g. dcc-qol's
+    // long-range `DiceChain.bumpDie` rewriting `terms[0].formula` from
+    // 1d20 to 1d16). Without this the lib's `actionDie` stays on the
+    // pre-hook die while the Foundry Roll evaluates on the bumped one.
+    const dieAfterHook = terms[0]?.formula
+    if (dieAfterHook && dieAfterHook !== die) {
+      attackInput.actionDie = normalizeLibDie(dieAfterHook)
     }
-    let deedDieRoll
-    let deedDieRollResult = ''
-    let deedDieFormula = ''
-    let deedSucceed = false
-    if (attackRoll.dice.length > 1) {
-      attackRoll.dice[1].options.dcc = {
-        lowerThreshold: 2,
-        upperThreshold: 3
+    const bonuses = []
+    if (options.backstab) {
+      attackInput.isBackstab = true
+      if (backstabBonus !== 0) {
+        bonuses.push({
+          id: 'class:backstab',
+          label: game.i18n.localize('DCC.Backstab'),
+          source: { type: 'class', id: 'thief' },
+          category: 'inherent',
+          effect: { type: 'modifier', value: backstabBonus }
+        })
       }
+    }
+    const hookBonuses = hookTermsToBonuses(hookAddedTerms)
+    if (hookBonuses.length > 0) bonuses.push(...hookBonuses)
+    if (bonuses.length > 0) attackInput.bonuses = bonuses
+
+    // Session 10 (A3): warrior / dwarf deed die. Foundry's Roll already
+    // evaluated both the action die (`dice[0]`) and the deed die
+    // (`dice[1]`); build a roller closure that hands those naturals to
+    // the lib in order — `evaluateRoll` consumes the first call (action
+    // die), `rollDeedDie` consumes the second.
+    let deedDieRoll
+    let deedDieFormula = ''
+    let deedDieRollResult = ''
+    let deedSucceed = false
+    const naturals = [d20RollResult]
+    if (attackInput.deedDie) {
+      // Gate said deedDie applies; the Foundry Roll's Compound term
+      // must have produced a second dice entry. If it didn't (parser
+      // regression, hook removed the deed term, lib formula change),
+      // failing loud beats silently failing every deed forever.
+      if (attackRoll.dice.length <= 1) {
+        throw new Error(`[DCC adapter] deed-die expected on attackRoll.dice[1] but only ${attackRoll.dice.length} dice term(s) present (weapon=${weapon?.name})`)
+      }
+      const deedTotal = attackRoll.dice[1].total
+      naturals.push(deedTotal)
+      attackRoll.dice[1].options.dcc = { lowerThreshold: 2, upperThreshold: 3 }
+      deedDieRollResult = deedTotal
       deedDieFormula = attackRoll.dice[1].formula
-      if (!this.system.details.attackBonus.startsWith('+1')) {
+      if (!String(this.system.details.attackBonus).startsWith('+1')) {
         deedDieFormula = deedDieFormula.replace(/^1/, '')
       }
-      // Create a proper Roll object for the deed die
       deedDieRoll = Roll.fromTerms([attackRoll.dice[1]])
-      deedDieRoll._total = attackRoll.dice[1].total
+      deedDieRoll._total = deedTotal
       deedDieRoll._evaluated = true
-      deedDieRollResult = attackRoll.dice[1].total
-      deedSucceed = deedDieRollResult > 2
+      deedSucceed = deedTotal > 2
     }
+    let rollerIdx = 0
+    // Throw on over-consumption rather than silently feeding 0 — a future
+    // lib that adds a third internal roll would otherwise silently get a
+    // nat-1 (deterministic fumble) and `warnIfDivergent` might miss it
+    // if the totals coincidentally agree.
+    const sequencedRoller = () => {
+      if (rollerIdx >= naturals.length) {
+        throw new Error(`[DCC adapter] sequencedRoller exhausted: lib requested ${rollerIdx + 1} rolls, ${naturals.length} natural(s) available (weapon=${weapon?.name})`)
+      }
+      return naturals[rollerIdx++]
+    }
+    const libResult = libMakeAttackRoll(attackInput, sequencedRoller)
 
-    /* Check for crit or fumble */
-    const fumble = (d20RollResult === 1)
-    const naturalCrit = d20RollResult >= critRange
-    const crit = !fumble && (naturalCrit || options.backstab)
+    // `hookTermsToBonuses` silently drops dice-bearing hook terms
+    // (documented in `attack-input.mjs`), so divergence here is
+    // expected when a hook injects a bonus die (e.g. dcc-qol's
+    // stressful-range `-1d2`). Warn so the case is visible rather
+    // than hidden in chat flags — and so a genuine lib-version
+    // regression shows up immediately.
+    warnIfDivergent('rollToHit', attackRoll.total, libResult.total, { weapon: weapon?.name })
 
-    // Use modified damage formula from roll modifier dialog if available
+    const fumble = libResult.isFumble
+    const naturalCrit = libResult.isCriticalThreat
+    const crit = !fumble && naturalCrit
+
     const modifiedDamageFormula = attackRoll.options?.modifiedDamageFormula
 
     return {
@@ -1955,7 +2957,414 @@ class DCCActor extends Actor {
       naturalCrit,
       roll: attackRoll,
       rolled: true,
-      weaponDamageFormula: modifiedDamageFormula || weapon.system?.damage || weapon.damage
+      weaponDamageFormula: modifiedDamageFormula || weapon.system?.damage || weapon.damage,
+      libResult: {
+        die: attackInput.actionDie,
+        natural: d20RollResult,
+        total: libResult.total,
+        totalBonus: libResult.totalBonus,
+        isHit: libResult.isHit,
+        isCriticalThreat: libResult.isCriticalThreat,
+        critSource: libResult.critSource,
+        isFumble: libResult.isFumble,
+        modifiers: libResult.appliedModifiers,
+        bonuses: attackInput.bonuses || [],
+        deedDie: attackInput.deedDie,
+        deedNatural: libResult.deedRoll?.natural,
+        deedSuccess: libResult.deedSuccess,
+        isTwoWeaponPrimary: !!weapon.system?.twoWeaponPrimary,
+        isTwoWeaponSecondary: !!weapon.system?.twoWeaponSecondary
+      }
+    }
+  }
+
+  /**
+   * Damage-roll route. Single path after Phase 3 session 19 (D2 damage
+   * retirement): the gate is exhaustive thanks to multi-type /
+   * dice-bearing / cursed support plus passthrough fallback for
+   * unparseable formulas.
+   *
+   * Rendering branches on whether the formula has per-term flavors
+   * (`1d6[fire]+1d6[cold]`):
+   *   - Per-term flavor → native `new Roll` so Foundry preserves the
+   *     per-term labels in the chat breakdown (matches legacy's
+   *     `hasPerTermFlavors` branch).
+   *   - Otherwise → `DCCRoll.createRoll` with a Compound term, peeling
+   *     any single trailing `[flavor]` off the formula.
+   *
+   * After evaluation, `_buildLibDamageResult` structures the input for
+   * the lib (multi-type split, dice-bearing magic-bonus strip, cursed
+   * flat negative, or simple flat) or falls back to a lossless
+   * passthrough. Foundry remains authoritative for the displayed total
+   * + chat anchor — `libDamageResult` only populates `dcc.libDamageResult`
+   * on chat flags.
+   *
+   * @param {Object} weapon
+   * @param {string} damageRollFormula
+   * @param {Object} attackRollResult unused post-session-19 but kept for
+   *   API stability with `rollWeaponAttack` + external callers.
+   * @param {Object} options
+   * @private
+   */
+  async _rollDamage (weapon, damageRollFormula, attackRollResult, options = {}) {
+    logDispatch('rollDamage', 'adapter', { weapon: weapon?.name || 'unknown' })
+
+    const hasPerTermFlavors = /\d+d\d+\[/.test(damageRollFormula)
+
+    let damageRoll
+    if (hasPerTermFlavors) {
+      damageRoll = new Roll(damageRollFormula, this.getRollData())
+      await damageRoll.evaluate()
+    } else {
+      const { formula: peeledFormula, flavor } = peelTrailingFlavor(damageRollFormula)
+      damageRoll = game.dcc.DCCRoll.createRoll([
+        {
+          type: 'Compound',
+          dieLabel: game.i18n.localize('DCC.Damage'),
+          flavor,
+          formula: peeledFormula
+        }
+      ])
+      await damageRoll.evaluate()
+    }
+    foundry.utils.mergeObject(damageRoll.options, { 'dcc.isDamageRoll': true })
+    if (damageRoll.total < 1) {
+      damageRoll._total = 1
+    }
+
+    const libDamageResult = this._buildLibDamageResult(weapon, damageRollFormula, damageRoll, options)
+
+    let damageInlineRoll = damageRoll.toAnchor({
+      classes: ['damage-applyable', 'inline-dsn-hidden'],
+      dataset: { damage: damageRoll.total }
+    }).outerHTML
+
+    const damageBreakdown = this._buildDamageBreakdown(damageRoll)
+    if (damageBreakdown) {
+      damageInlineRoll += ` <span class="damage-breakdown">(${damageBreakdown})</span>`
+    }
+
+    return {
+      damageRoll,
+      damageInlineRoll,
+      damagePrompt: game.i18n.localize('DCC.Damage'),
+      libDamageResult
+    }
+  }
+
+  /**
+   * Build a lib-native `libDamageResult` from a Foundry-evaluated
+   * damage Roll. Routes the raw formula + weapon through the
+   * appropriate structurer (multi-type, dice-bearing magic, simple
+   * flat) and feeds a sequenced-natural roller into the lib's
+   * `rollDamage`. Falls back to a passthrough shape when no
+   * structurer can digest the inputs.
+   *
+   * @private
+   */
+  _buildLibDamageResult (weapon, damageRollFormula, damageRoll, options) {
+    const structured = this._structureDamageInput(weapon, damageRollFormula, options)
+    if (!structured) return buildPassthroughDamageResult(damageRoll)
+
+    // Sequence the naturals from Foundry's evaluated dice so the lib's
+    // evaluateRoll calls (one per extraDamageDice term, plus the base)
+    // line up with what Foundry rolled. For single-die formulas,
+    // `naturals` has one entry and the closure returns it once.
+    const naturals = damageRoll.dice.map(d => d?.total ?? 0)
+    let idx = 0
+    const sequencedRoller = () => naturals[idx++] ?? 0
+
+    const libResult = libRollDamage(structured, sequencedRoller)
+
+    // Foundry clamps `damageRoll.total` at 1 above; lib doesn't, so
+    // compare post-clamp on both sides to avoid a spurious warn on
+    // negative-modifier damage that's just riding the floor.
+    warnIfDivergent('rollDamage', damageRoll.total, Math.max(1, libResult.total), { weapon: weapon?.name })
+
+    return {
+      damageDie: libResult.roll.formula,
+      natural: naturals[0] ?? null,
+      baseDamage: libResult.baseDamage,
+      modifierDamage: libResult.modifierDamage,
+      total: libResult.total,
+      breakdown: libResult.breakdown
+    }
+  }
+
+  /**
+   * Choose a parsing strategy for a Foundry damage formula + weapon and
+   * return a lib `DamageInput`, or `null` when no strategy applies and
+   * the caller should fall back to the passthrough shape.
+   *
+   * Strategies tried in order:
+   *   1. Multi-type per-term flavor formula (`1d6[fire]+1d6[cold]`) →
+   *      `parseMultiTypeFormula` splits into base + extras. The base
+   *      term's flavor is dropped (lib breakdown hardcodes
+   *      `source: 'weapon'`); Foundry's chat render preserves it.
+   *   2. Simple formula + dice-bearing magic bonus (`damageWeaponBonus:
+   *      '+1d4'`) → strip the suffix item.js appended, parse the base
+   *      via `parseDamageFormula`, feed the dice as `extraDamageDice[]`.
+   *   3. Simple formula + flat magic bonus (positive = magic, negative
+   *      = cursed) → `parseDamageFormula` + `buildDamageInput` with
+   *      `magicBonus`.
+   *   4. Simple formula, non-magical → same as 3 with `magicBonus: 0`.
+   *
+   * @private
+   */
+  _structureDamageInput (weapon, damageRollFormula, options) {
+    if (/\d+d\d+\[/.test(damageRollFormula)) {
+      const parsed = parseMultiTypeFormula(damageRollFormula)
+      if (!parsed) return null
+      const input = {
+        damageDie: parsed.base.die,
+        diceCount: parsed.base.diceCount,
+        strengthModifier: parsed.modifier || 0
+      }
+      if (parsed.extras.length > 0) {
+        input.extraDamageDice = parsed.extras.map(e => {
+          const entry = { count: e.count, die: e.die }
+          if (e.flavor !== undefined) {
+            entry.flavor = e.flavor
+            entry.source = e.flavor
+          }
+          return entry
+        })
+      }
+      return input
+    }
+
+    const { formula: peeledFormula } = peelTrailingFlavor(damageRollFormula)
+
+    const magic = parseWeaponMagicBonus(weapon)
+    let baseFormula = peeledFormula
+    let extraFromMagic = null
+    let flatMagicBonus = 0
+
+    if (magic === null) return null
+    if (magic.kind === 'dice') {
+      // item.js concatenates the raw damageWeaponBonus onto the derived
+      // damage formula verbatim for dice-bearing bonuses. Strip that
+      // exact suffix so the remaining formula parses via parseDamageFormula.
+      const raw = weapon.system.damageWeaponBonus.trim()
+      const suffix = /^[+-]/.test(raw) ? raw : `+${raw}`
+      if (peeledFormula.endsWith(suffix)) {
+        baseFormula = peeledFormula.slice(0, peeledFormula.length - suffix.length)
+      } else if (peeledFormula.endsWith(raw)) {
+        baseFormula = peeledFormula.slice(0, peeledFormula.length - raw.length)
+      }
+      const entry = { count: magic.count, die: magic.die, source: 'magic' }
+      if (magic.flavor !== undefined) {
+        entry.flavor = magic.flavor
+        entry.source = magic.flavor
+      }
+      extraFromMagic = entry
+    } else if (magic.kind === 'flat') {
+      flatMagicBonus = magic.value
+    }
+
+    const parsed = parseDamageFormula(baseFormula)
+    if (!parsed) return null
+
+    const input = buildDamageInput(parsed, {
+      npcDamageAdjustment: options.npcDamageAdjustment,
+      magicBonus: flatMagicBonus
+    })
+    if (extraFromMagic) {
+      input.extraDamageDice = [extraFromMagic]
+    }
+    return input
+  }
+
+  /**
+   * Crit-finisher route. Builds the Foundry Roll (when `automate` is on),
+   * feeds the natural die into the lib's `rollCritical`, and returns the
+   * chat-ready shape for `rollWeaponAttack` to stitch into the message.
+   *
+   * With `automate` off, no Roll is evaluated — the caller renders an
+   * inline `[[/r ...]]` template the user clicks to roll manually. No
+   * `libCritResult` is produced in that mode (nothing rolled to feed the
+   * lib). Otherwise the lib owns classification + total that surface as
+   * `dcc.libCritResult` on the chat flags.
+   *
+   * D2 (Phase 3 session 16) retired the `_rollCriticalLegacy` branch
+   * when the crit gate went exhaustive — the `!automate` path was the
+   * only remaining non-adapter case and it had no lib work to do, so it
+   * folded into this body directly.
+   *
+   * @param {Object} weapon
+   * @param {Object} attackRollResult
+   * @param {{automate: boolean, luckMod: string, critTableName: string}} ctx
+   * @private
+   */
+  async _rollCritical (weapon, attackRollResult, ctx) {
+    logDispatch('rollCritical', 'adapter', { weapon: weapon?.name || 'unknown' })
+
+    const { automate, luckMod, critTableName } = ctx
+    const critDie = weapon.system?.critDie || this.system.attributes.critical?.die || '1d10'
+    const critRollFormula = `${critDie}${luckMod}`
+    const criticalText = game.i18n.localize('DCC.Critical')
+    const critTableText = game.i18n.localize('DCC.CritTable')
+    const critTableDisplayText = `${critTableText} ${critTableName}`
+    const critTableLink = await getCritTableLink(critTableName, critTableDisplayText)
+
+    if (!automate) {
+      const critInlineRoll = await TextEditor.enrichHTML(`[[/r ${critRollFormula} # ${criticalText} (${critTableDisplayText})]] (${critTableLink})`)
+      return {
+        critRollFormula,
+        critInlineRoll,
+        critPrompt: game.i18n.localize('DCC.RollCritical'),
+        critRoll: undefined,
+        critResult: '',
+        critRollTotal: null
+      }
+    }
+
+    const critPrompt = criticalText
+    const critRoll = game.dcc.DCCRoll.createRoll([
+      {
+        type: 'Compound',
+        dieLabel: criticalText,
+        formula: critRollFormula
+      }
+    ])
+    await critRoll.evaluate()
+    foundry.utils.mergeObject(critRoll.options, { 'dcc.isCritRoll': true })
+    const critRollTotal = critRoll.total
+
+    const naturalCrit = critRoll.dice[0]?.total ?? critRoll.total
+    const critInput = buildCriticalInput({
+      critDie,
+      luckModifier: parseInt(this.system.abilities.lck.mod) || 0,
+      critTableName
+    })
+    const libResult = libRollCritical(critInput, () => naturalCrit)
+
+    warnIfDivergent('rollCritical', critRoll.total, libResult.total, { weapon: weapon?.name })
+
+    let critResult = ''
+    const critResultObj = await getCritTableResult(critRoll, `Crit Table ${critTableName}`)
+    if (critResultObj) {
+      critResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(critResultObj.description))
+    }
+    const critResultPrompt = game.i18n.localize('DCC.CritResult')
+    const critRollAnchor = critRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: critRoll.total } }).outerHTML
+    const critInlineRoll = await TextEditor.enrichHTML(`${critResultPrompt} ${critRollAnchor} (${critTableLink})`)
+
+    return {
+      critRollFormula,
+      critInlineRoll,
+      critPrompt,
+      critRoll,
+      critResult,
+      critRollTotal,
+      libCritResult: {
+        critDie: libResult.roll.formula,
+        natural: naturalCrit,
+        total: libResult.total,
+        critTable: libResult.critTable,
+        modifiers: libResult.roll.modifiers
+      }
+    }
+  }
+
+  /**
+   * Fumble-finisher route. Builds the Foundry Roll (when `automate` is
+   * on), feeds the natural die into the lib's `rollFumble`, and returns
+   * the chat-ready shape for `rollWeaponAttack` to stitch into the
+   * message.
+   *
+   * With `automate` off, no Roll is evaluated — the caller renders an
+   * inline `[[/r ...]]` template the user clicks to roll manually. No
+   * `libFumbleResult` is produced in that mode. Otherwise the lib owns
+   * the result that surfaces as `dcc.libFumbleResult` on the chat flags.
+   *
+   * D2 (Phase 3 session 16) retired the `_rollFumbleLegacy` branch when
+   * the fumble gate went exhaustive — same rationale as the crit route
+   * above.
+   *
+   * @param {Object} weapon
+   * @param {Object} attackRollResult
+   * @param {Object} ctx
+   * @private
+   */
+  async _rollFumble (weapon, attackRollResult, ctx) {
+    logDispatch('rollFumble', 'adapter', { weapon: weapon?.name || 'unknown' })
+
+    const { automate, inverseLuckMod, useNPCFumbles, originalFumbleTableName } = ctx
+    let fumbleTableName = ctx.fumbleTableName
+    let fumbleRollFormula = `${this.system.attributes.fumble.die}${inverseLuckMod}`
+    if (this.isNPC && useNPCFumbles) {
+      fumbleRollFormula = '1d10'
+    }
+
+    if (!automate) {
+      const fumbleInlineRoll = await TextEditor.enrichHTML(`[[/r ${fumbleRollFormula} # Fumble (${fumbleTableName})]] (${fumbleTableName})`)
+      return {
+        fumbleRollFormula,
+        fumbleInlineRoll,
+        fumblePrompt: game.i18n.localize('DCC.RollFumble'),
+        fumbleRoll: undefined,
+        fumbleResult: '',
+        fumbleRollTotal: null,
+        fumbleTableName,
+        isNPCFumble: false
+      }
+    }
+
+    const fumblePrompt = game.i18n.localize('DCC.Fumble')
+    const fumbleRoll = game.dcc.DCCRoll.createRoll([
+      {
+        type: 'Compound',
+        dieLabel: fumblePrompt,
+        formula: fumbleRollFormula
+      }
+    ])
+    await fumbleRoll.evaluate()
+    foundry.utils.mergeObject(fumbleRoll.options, { 'dcc.isFumbleRoll': true })
+    const fumbleRollTotal = fumbleRoll.total
+
+    const naturalFumble = fumbleRoll.dice[0]?.total ?? fumbleRoll.total
+    const fumbleDie = this.isNPC && useNPCFumbles ? '1d10' : this.system.attributes.fumble.die
+    const fumbleInput = buildFumbleInput({
+      fumbleDie,
+      luckModifier: parseInt(this.system.abilities.lck.mod) || 0
+    })
+    const libResult = libRollFumble(fumbleInput, () => naturalFumble)
+
+    warnIfDivergent('rollFumble', fumbleRoll.total, libResult.total, { weapon: weapon?.name })
+
+    let isNPCFumble = false
+    let fumbleResultObj
+    if (this.isPC || !useNPCFumbles) {
+      fumbleResultObj = await getFumbleTableResult(fumbleRoll)
+    } else {
+      isNPCFumble = true
+      fumbleResultObj = await getNPCFumbleTableResult(fumbleRoll, originalFumbleTableName)
+    }
+    let fumbleResult = ''
+    if (fumbleResultObj) {
+      fumbleTableName = `${fumbleResultObj?.parent?.link}:<br>`.replace('Fumble Table ', '').replace('Crit/', '')
+      fumbleResult = await TextEditor.enrichHTML(addDamageFlavorToRolls(fumbleResultObj.description))
+    }
+    const onPrep = game.i18n.localize('DCC.on')
+    const fumbleRollAnchor = fumbleRoll.toAnchor({ classes: ['inline-dsn-hidden'], dataset: { damage: fumbleRoll.total } }).outerHTML
+    const fumbleInlineRoll = await TextEditor.enrichHTML(`${fumbleRollAnchor} ${onPrep} ${fumbleTableName}`)
+
+    return {
+      fumbleRollFormula,
+      fumbleInlineRoll,
+      fumblePrompt,
+      fumbleRoll,
+      fumbleResult,
+      fumbleRollTotal,
+      fumbleTableName,
+      isNPCFumble,
+      libFumbleResult: {
+        fumbleDie: libResult.fumbleDie,
+        natural: naturalFumble,
+        total: libResult.total,
+        modifiers: libResult.roll.modifiers
+      }
     }
   }
 
@@ -2008,7 +3417,6 @@ class DCCActor extends Actor {
         actorId: this.id,
         critPrompt,
         critResult,
-        critText: critResult, // Legacy name for dcc-qol compatibility
         critRollFormula,
         critRollTotal: critRoll.total,
         critTableName,
