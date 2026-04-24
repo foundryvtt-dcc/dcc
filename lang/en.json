@@ -670,6 +670,7 @@
   "DCC.SpellCheckSuccessNoTable": "Success.",
   "DCC.SpellCheckNoOwnedItemWarning": "Cannot roll a spell check with a spell you don't own",
   "DCC.SpellCheckNonSpellWarning": "Cannot roll a spell check with a non-spell item",
+  "DCC.SkillCheckUnknownSkillWarning": "Cannot roll a skill check for unknown skill: {skill}",
   "DCC.SpellCheckOtherMod": "Other Modifier",
   "DCC.SpellCheckOtherModHint": "Modifier to Spell Checks that is not from ability or level that should be included in the auto calculation",
   "DCC.SpellCheckAbility": "Spell Check Ability",

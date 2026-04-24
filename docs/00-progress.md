@@ -2409,6 +2409,46 @@ and should be scheduled into Phase 4+ work.
 
 **Resilience (low-risk, nice-to-have):**
 
+- **`rollSpellCheck`'s cleric branch silently no-ops without
+  `details.sheetClass = 'Cleric'`.** `actor.js:1916` gates
+  `isCleric` on `system.details.sheetClass === 'Cleric'`, not on
+  `system.class.className`. A PC with `class.className: 'Cleric'`
+  but missing sheetClass (e.g. created by anything other than the
+  level-change dialog) skips the cleric branch, falls through to
+  `_rollSpellCheckLegacy`, which delegates to
+  `spellItem.rollSpellCheck` — and produces no chat message and no
+  console error. Same family as the silent-fallback issue above
+  ("Silent adapter→legacy fallbacks missing a logged reason"), but
+  worse: the legacy fallback here is itself a no-op for this shape.
+  Either the dispatcher should treat `class.className === 'Cleric'`
+  as the cleric signal (and let `sheetClass` remain a UI hint), or
+  emit a clear notification when the legacy spell-cast path can't
+  find a viable handler. Surfaced 2026-04-23 during exhaustive
+  manual-testing of programmatically-created class PCs.
+
+- **Programmatic PC creation produces inconsistent class config —
+  the system relies on the level-change dialog to populate it.**
+  `Actor.create({..., system: { class: { className: 'Wizard' } } })`
+  does NOT set `class.spellCheckAbility` (defaults to `'per'` for
+  every class — Wizards then cast with Personality, formula AND
+  flavor), `details.sheetClass` (cleric branch above won't fire),
+  `saves.{ref,frt,wil}.classBonus` (saves drop to ability-mod-only),
+  or class-appropriate crit die / luck die / etc. Real users get
+  these via the level-change dialog (which applies a class-specific
+  level item from `CONFIG.DCC.levelDataPacks`), so end-users don't
+  hit this — it bites browser-test fixtures, the PC parser when a
+  field is missing, and any future "quick PC" tooling. Two paths to
+  resolve: (a) document the level-change-dialog dependency
+  prominently and have programmatic creators call into the same
+  apply-level-data routine, or (b) register the standard DCC class
+  progressions with the lib (`registerClassProgression`) and have
+  the system auto-derive defaults from `class.className` + level on
+  prepare. The lib already has `getSavingThrows("warrior", 3)` etc.
+  — currently returns zeros because no class is registered. Option
+  (b) is more invasive but eliminates a whole class of "PC silently
+  has wrong stats because user skipped the level-up dialog" bugs.
+  Surfaced 2026-04-23 during exhaustive manual-testing.
+
 - **Chat doesn't surface the per-modifier breakdown the adapter
   already captures.** The lib emits each contributing modifier with
   rich origin metadata (`{ kind, value, origin: { category, id,

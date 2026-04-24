@@ -352,6 +352,38 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       const line = await waitForAdapterLog('rollSkillCheck')
       assertPath(line, 'legacy', { skillId: 'sneakSilently' })
     })
+
+    // Regression: unknown skillId must NOT crash. Pre-fix the legacy
+    // path dereferenced an undefined `skill.value`; now `rollSkillCheck`
+    // warns and returns when `_resolveSkill` finds nothing — neither
+    // adapter nor legacy fires, no chat is posted.
+    test('unknown skill id warns and posts no chat', async ({ page }) => {
+      await makePlayer(page, 'P1 Skill Unknown')
+      const result = await page.evaluate(async () => {
+        const before = game.messages.contents.length
+        const errors = []
+        const onError = (e) => errors.push(String(e?.error || e))
+        window.addEventListener('error', onError)
+        try {
+          await game.actors.getName('P1 Skill Unknown').rollSkillCheck('thisSkillDoesNotExistAnywhere')
+        } catch (e) {
+          errors.push('THROW: ' + String(e))
+        }
+        window.removeEventListener('error', onError)
+        await new Promise(r => setTimeout(r, 300))
+        return {
+          newMessages: game.messages.contents.length - before,
+          errors,
+          warnings: Array.from(document.querySelectorAll('#notifications .notification.warning'))
+            .map(n => n.textContent.trim())
+        }
+      })
+
+      expect(result.errors, `unexpected errors: ${result.errors.join(' | ')}`).toEqual([])
+      expect(result.newMessages).toBe(0)
+      expect(result.warnings.some(w => w.includes('thisSkillDoesNotExistAnywhere')),
+        `expected warning mentioning the unknown skill; got: ${result.warnings.join(' | ')}`).toBe(true)
+    })
   })
 
   // ── getInitiativeRoll ───────────────────────────────────────────────

@@ -180,3 +180,26 @@ test('description-only skill item routes to the legacy path', async () => {
   chatMessageCreateSpy.mockRestore()
   global.itemTypesMock.mockReset()
 })
+
+// Regression: rollSkillCheck must NOT crash when the requested skill
+// can't be resolved. Pre-fix, an unknown id (no built-in slot, no
+// matching skill item) routed to legacy and crashed on
+// `_rollSkillCheckLegacy:1694` (`skill.value` on an undefined skill).
+// Now mirrors the rollSpellCheck shape: warns the user and returns
+// without rolling.
+test('rollSkillCheck warns and returns when the skill is unknown', async () => {
+  rollToMessageMock.mockClear()
+  global.uiNotificationsWarnMock.mockClear()
+  // Make sure no skill item shadows the request.
+  global.itemTypesMock.mockReturnValue({ skill: { find: vi.fn().mockReturnValue(undefined) } })
+
+  await expect(actor.rollSkillCheck('thisSkillDoesNotExist')).resolves.toBeUndefined()
+
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+  expect(global.uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+  // Localized message — mock's i18n.format returns the key + interpolated args.
+  const [msg] = global.uiNotificationsWarnMock.mock.calls[0]
+  expect(msg).toContain('thisSkillDoesNotExist')
+
+  global.itemTypesMock.mockReset()
+})

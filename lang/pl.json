@@ -670,6 +670,7 @@
   "DCC.SpellCheckSuccessNoTable": "Sukces.",
   "DCC.SpellCheckNoOwnedItemWarning": "Nie można rzucić testu czaru z czarem którego nie posiadasz",
   "DCC.SpellCheckNonSpellWarning": "Nie można rzucić testu czaru z przedmiotem nie będącym czarem",
+  "DCC.SkillCheckUnknownSkillWarning": "Nie można rzucić testu umiejętności dla nieznanej umiejętności: {skill}",
   "DCC.SpellCheckOtherMod": "Inny Modyfikator",
   "DCC.SpellCheckOtherModHint": "Modyfikator do Rzutów na Czary niepochodzący z cechy lub poziomu, który powinien być uwzględniony w auto-obliczeniach",
   "DCC.SpellCheckAbility": "Cecha Rzutu na Czar",

@@ -1408,12 +1408,22 @@ class DCCActor extends Actor {
   async rollSkillCheck (skillId, options = {}) {
     const resolved = this._resolveSkill(skillId)
 
+    // Unknown skill — no built-in slot, no skill item with this name.
+    // Without this guard the legacy fallback path crashes on
+    // `skill.value` (`_rollSkillCheckLegacy`) because the dispatcher
+    // routes to legacy whenever `!hasDie`. Mirror the
+    // `rollSpellCheck` "no owned item" notification shape so the user
+    // sees a clear warning rather than a console TypeError.
+    if (!resolved.skill) {
+      return ui.notifications.warn(
+        game.i18n.format('DCC.SkillCheckUnknownSkillWarning', { skill: skillId })
+      )
+    }
+
     // Title for the roll modifier dialog — legacy mutates options,
     // keep the behavior so the dialog path still sees it.
-    if (resolved.skill) {
-      options.title = game.i18n.localize(resolved.skill.label) ||
-        (game.i18n.localize('DCC.AbilityCheck') + resolved.abilityLabel)
-    }
+    options.title = game.i18n.localize(resolved.skill.label) ||
+      (game.i18n.localize('DCC.AbilityCheck') + resolved.abilityLabel)
 
     const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
     const needsLegacyPath =
