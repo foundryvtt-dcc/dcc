@@ -235,34 +235,22 @@ is surfaced for downstream crit-table routing.
   ~40 s thanks to the session-reuse fixture; full Playwright suite
   runs in ~8 min.
 
-**This session's goal:** **Session 22 / D3b-α landed patron-taint
-manifestation table loader (2026-04-24).** Investigation surfaced
-that 10 patron-taint `RollTable` documents are already authored as
-compendium content in `dcc-core-book/packs/dcc-core-spell-side-effect-tables`
-(5 core patrons: Azi Dahaka, Bobugbubilz, Sezrekan, the King of
-Elfland, Three Fates) and `xcc-core-book/packs/xcc-core-spell-side-effect-tables`
-(5 XCC patrons: Barzodi, Circe, Medea, Prometheus Firebringer,
-Amazing Rando). No content authoring needed — just a loader. New
-`loadPatronTaintTable(actor)` in `module/adapter/spell-input.mjs`
-(mirror of `loadDisapprovalTable`) walks `CONFIG.DCC.patronTaintPacks`
-(a `TablePackManager` seeded with both packs in `module/dcc.js:462-472`)
-matching `Patron Taint: ${actor.system.class.patron}` with
-case-insensitive tail fallback, falls back to world tables.
-Loader threaded in `_castViaCalculateSpellCheck`; the paired 1d6
-manifestation pre-roll extends the two-pass deterministic roller
-when a table is present (lib's `rollPatronTaint` indexes d6 on
-acquisition). 924 Vitest + 98 Playwright.
+**This session's goal:** **Session 23 / D3c retired the dormant
+`SpellFumbleResult.patronTaint` flag (2026-04-24).** Lib PR to
+`dcc-core-lib@0.8.0` (breaking change) dropped `.patronTaint` from
+`SpellFumbleResult` and the `effect.type === 'patron-taint'` /
+`effect.data.patronTaint === true` parsing from `rollSpellFumble` /
+`rollSpellFumbleWithModifier`. Audit confirmed zero consumers across
+lib orchestration, DCC system, sibling modules, and compendium
+content. Pure dead-code removal; no runtime behavior change. Vendor-
+synced; +1 vitest guard asserting the flag is absent. 925 Vitest +
+98 Playwright green. Lib commit in `dcc-core-lib` pending Tim's
+cadence; vendored 0.8.0 `dist/` is in-place but `VERSION.json` has
+`dirty: true` + old SHA until refresh.
 
-**D3b-β authored cross-repo** (awaiting commit in `dcc-official-data`
-— different repo, different cadence; no DCC-system runtime change).
-**D3b-γ closed** as a no-op (sibling modules ship no patron-taint
-content; default `CONFIG.DCC.patronTaintPacks` seed is exhaustive).
-
-**Remaining backlog candidates** (all STOP AND ASK): D3c retire
-the now-dead `SpellFumbleResult.patronTaint` flag + fumble-entry
-tag convention (lib cleanup, breaking change); D4 fold
-direct-reimpl spell-check branches (per-branch design); Group E
-vertical slice for XCC/MCC validation (explicit pick required).
+**Phase 3 backlog (all STOP AND ASK)**: D4 fold direct-reimpl
+spell-check branches (per-branch design); Group E vertical slice
+for XCC/MCC validation (explicit pick required).
 `docs/02-slice-backlog.md` has the full inventory. Ask Tim which
 to pick before executing.
 
@@ -307,21 +295,16 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**D3b-α landed 2026-04-24 — patron-taint manifestation table loader.**
-Session-22 follow-ons closed D3b-γ (sibling audit no-op) and
-authored D3b-β cross-repo (commit pending in `dcc-official-data`).
-Pick the next slice from `docs/02-slice-backlog.md`; the remaining
-candidates are:
+**Session 23 / D3c retired `SpellFumbleResult.patronTaint` via
+`dcc-core-lib@0.8.0`.** The entire D3 arc (RAW alignment → loader
+→ cross-repo content mirror → sibling audit → dead-flag removal) is
+closed. Remaining Phase 3 candidates:
 
-1. **D3c retire dormant `SpellFumbleResult.patronTaint`** — lib
-   breaking change to remove the flag + tag-parsing now that the
-   fumble path no longer consumes it. Needs sibling-module +
-   content audit first. **STOP AND ASK**.
-2. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
+1. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
    still has branches for pre-built Roll + RollTable, `forceCrit`,
    skill-table spells (Turn Unholy). Each branch evaluated
    separately. **STOP AND ASK per branch**.
-3. **Group E vertical slice** (placeholder — needs explicit pick):
+2. **Group E vertical slice** (placeholder — needs explicit pick):
    halfling, mercurial-magic, or homebrew single-class. Would
    exercise Phase 4 + 5 + 6 end-to-end.
 

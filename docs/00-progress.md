@@ -77,13 +77,13 @@ Amazing Rando manifestation tables shipped in `dcc-core-book` +
 `xcc-core-book` light up the `onPatronTaint` chat emote. Session
 22 follow-ons closed D3b-γ (sibling-pack audit — no
 `dcc-crawl-classes` / `mcc-classes` patron content exists; default
-seed is exhaustive) and authored D3b-β (new
-`src/spells/patron-taints.ts` in `dcc-official-data` mirroring the
-5 core tables; awaiting commit on that repo, which has its own
-commit/push cadence). Remaining Phase 3 backlog is D3c (retire the
+seed is exhaustive) and authored D3b-β (content mirror in
+`dcc-official-data`). Session 23 / D3c (2026-04-24) retired the
 dormant `SpellFumbleResult.patronTaint` flag + fumble-entry tag
-convention), D4 (fold direct-reimpl spell-check branches — per-branch
-design), each **STOP AND ASK**. See
+parsing via `dcc-core-lib@0.8.0` (breaking change, audit-clean dead-
+code removal). Remaining Phase 3 backlog is D4 (fold direct-reimpl
+spell-check branches — per-branch design, **STOP AND ASK per branch**).
+See
 [`docs/02-slice-backlog.md`](02-slice-backlog.md) for the full
 inventory. Phase 4 (schema slimming) has not started.
 
@@ -92,6 +92,20 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-04-24 — Session 23 / D3c: retire dormant
+  `SpellFumbleResult.patronTaint` flag.** Lib PR to
+  `dcc-core-lib@0.8.0` (breaking change) removed `.patronTaint` from
+  `SpellFumbleResult` + the `effect.type === 'patron-taint'` /
+  `effect.data.patronTaint === true` parsing in `rollSpellFumble` /
+  `rollSpellFumbleWithModifier`. Pre-exec audit confirmed zero
+  consumers (lib orchestration never read the flag; DCC system +
+  siblings + compendium content had none). Vendor-synced; +1 vitest
+  regression guard asserting the flag is absent from both fumble
+  rollers. 925 Vitest + 98 Playwright green. Lib build: 1407 tests
+  green. (Lib commit in `dcc-core-lib` pending Tim's cadence;
+  vendored `dist/` is 0.8.0 but `VERSION.json.commit` still points
+  at `e8ecabe` (0.7.0) with `dirty: true` — will refresh post lib
+  commit.)
 - **2026-04-24 — Session 22 follow-ons: D3b-γ closed, D3b-β
   authored cross-repo.** Sibling audit: `mcc-classes` ships no
   packs; `dcc-crawl-classes/packs/` has no patron-taint JSONs.

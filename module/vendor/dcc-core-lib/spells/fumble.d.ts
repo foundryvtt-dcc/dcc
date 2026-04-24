@@ -2,7 +2,11 @@
  * Spell Fumble Module
  *
  * Pure functions for handling spell fumbles (natural 1 on spell checks).
- * Spell fumbles can result in misfires, corruption, or patron taint.
+ * Spell fumbles can result in misfires or trigger corruption. Patron
+ * taint is NOT produced by fumble tables in RAW — those triggers live
+ * in `patron-taint-check.ts` (per-cast creeping chance + spell-result-
+ * table entries tagged via `effect.type === 'patron-taint'` or
+ * `effect.data.patronTaint === true`).
  */
 import type { RollOptions } from "../types/dice.js";
 import type { SimpleTable } from "../tables/types.js";

@@ -344,21 +344,20 @@ module ships patron content, it can push its own pack via
 `EXTENSION_API.md` alongside the existing `disapprovalPacks`
 precedent when relevant.
 
-#### D3c. Retire `SpellFumbleResult.patronTaint` flag + fumble-entry tag convention
-- **Scope:** After D3a, the lib still emits
-  `SpellFumbleResult.patronTaint: boolean` parsed from any fumble-
-  table entry tagged `effect.type === 'patron-taint'` or
-  `effect.data.patronTaint === true`. Nothing in the orchestration
-  consumes this flag — it's dead in practice. Removal is a small
-  lib-side breaking change (remove flag from result shape + remove
-  tag parsing in `rollSpellFumble` / `rollSpellFumbleWithModifier`).
-- **Stop-and-ask trigger:** audit sibling modules for any consumer
-  reading `SpellFumbleResult.patronTaint` (none expected, but
-  verify) AND audit `dcc-core-book` / `xcc-core-book` compendium
-  fumble tables for any entry tagged with the taint effect (strip
-  if found — the semantic never matched RAW).
-- **Commit:** single lib PR + vendor sync + CHANGELOG breaking-
-  change entry. No DCC-side adapter work needed.
+#### ~~D3c. Retire `SpellFumbleResult.patronTaint` flag + fumble-entry tag convention.~~ **CLOSED 2026-04-24 (session 23)**.
+Lib PR to `dcc-core-lib@0.8.0` (breaking change) removed
+`SpellFumbleResult.patronTaint` + the `effect.type === 'patron-taint'`
+/ `effect.data.patronTaint === true` parsing in `rollSpellFumble` /
+`rollSpellFumbleWithModifier`. Audit confirmed zero consumers:
+lib orchestration (`spell-check.ts`) never reads the flag; DCC
+system has no consumer; XCC's `fumbleResult` hits are combat-path
+(unrelated); `dcc-qol` / `mcc-classes` / `dcc-crawl-classes` have
+none; compendium content in `dcc-core-book` + `xcc-core-book`
+has no fumble-table entry tagging taint. Pure dead-code removal.
+DCC side: vendor-synced; +1 vitest guard asserting the flag is
+absent from `rollSpellFumble` / `rollSpellFumbleWithModifier`
+output (catches any regression if the parsing re-sneaks in). 925
+Vitest + 98 Playwright green.
 
 #### D4. Fold direct-reimpl spell-check branches
 - **Scope:** `rollSpellCheck` dispatcher has direct-reimpl branches

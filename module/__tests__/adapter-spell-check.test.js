@@ -25,7 +25,7 @@ import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
 import { buildSpellCheckArgs, loadPatronTaintTable } from '../adapter/spell-input.mjs'
 import { promptSpellburnCommitment } from '../adapter/roll-dialog.mjs'
-import { calculateSpellCheck as libCalcSpellCheckMock } from '../vendor/dcc-core-lib/index.js'
+import { calculateSpellCheck as libCalcSpellCheckMock, rollSpellFumble, rollSpellFumbleWithModifier } from '../vendor/dcc-core-lib/index.js'
 
 // Mock actor-level-change like actor.test.js does
 vi.mock('../actor-level-change.js')
@@ -1331,6 +1331,42 @@ test('loadPatronTaintTable continues pack walk when one pack throws', async () =
   CONFIG.DCC.patronTaintPacks = originalPacks
   game.packs = originalGamePacks
 })
+
+// ---------------------------------------------------------------------------
+// D3c — SpellFumbleResult.patronTaint flag retired (dcc-core-lib@0.8.0)
+// ---------------------------------------------------------------------------
+
+test('D3c: SpellFumbleResult no longer carries a patronTaint flag', () => {
+  // Construct a fumble table whose roll-1 entry is tagged with the old
+  // `patron-taint` effect type + the legacy `data.patronTaint: true`
+  // flag. Pre-0.8.0 the lib used these tags to set `result.patronTaint
+  // = true`. Post-0.8.0 the lib ignores them entirely and the flag is
+  // absent from the result shape. This regression guard keeps the
+  // vendor sync honest: if the old parsing sneaks back in, this test
+  // fails immediately.
+  const fumbleTable = {
+    id: 'd3c-guard',
+    name: 'D3c Fumble Guard',
+    entries: [
+      {
+        min: 1,
+        max: 1,
+        text: 'Tagged taint outcome',
+        effect: { type: 'patron-taint', data: { patronTaint: true } }
+      }
+    ]
+  }
+
+  const result = rollSpellFumble(1, fumbleTable, { roller: () => 1 })
+  expect('patronTaint' in result).toBe(false)
+  expect(result.misfire).toBe(false)
+  expect(result.corruption).toBe(false)
+
+  const modResult = rollSpellFumbleWithModifier(1, 0, fumbleTable, { roller: () => 1 })
+  expect('patronTaint' in modResult).toBe(false)
+})
+
+// ---------------------------------------------------------------------------
 
 test('adapter wizard patron-cast with a resolvable taint table posts manifestation chat on acquisition', async () => {
   rollToMessageMock.mockClear()
