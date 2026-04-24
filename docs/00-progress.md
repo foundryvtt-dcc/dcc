@@ -2347,19 +2347,29 @@ and should be scheduled into Phase 4+ work.
 
 **Blocking for Phase 4 start (pick up before broadening the adapter):**
 
-- **Silent adapter→legacy fallbacks missing a logged reason.** When
-  `buildSpellCheckArgs` returns `null` (custom-class caster with no
-  lib profile), or when `loadDisapprovalTable` /
-  `loadMercurialMagicTable` silently return `null` (unconfigured
-  setting, missing pack), the dispatcher falls through to the legacy
-  body with no indication *why*. Fix requires a coordinated
-  Playwright-spec + adapter-code change — the spec currently asserts
-  on a specific log shape per dispatch, so inserting a new
-  `logDispatch(rollType, 'legacy', { reason })` line at the fallback
-  site needs the spec updated in the same commit.
-  Locations: `module/actor.js:1980-1982` (spell-check), `module/
-  adapter/spell-input.mjs:386, 440`, `module/actor.js:2067-2069,
-  2048-2051`.
+- ~~**Silent adapter→legacy fallbacks missing a logged reason.**~~
+  **Fixed 2026-04-23.** Each silent-fallback site now emits a
+  `reason=<tag>` field on the dispatch log so the code path is
+  readable from the console without opening the source.
+    - `buildSpellCheckArgs` returns `null` (custom-class caster with
+      no lib profile) → `_rollSpellCheckLegacy` called with
+      `reason: 'noCasterProfile'`; the legacy dispatch log carries
+      `reason=noCasterProfile` alongside the `spell=…` field.
+    - `loadDisapprovalTable` returns `null` (cleric actor without a
+      disapproval table configured) → a second
+      `logDispatch('rollSpellCheck', 'adapter', { reason: 'noDisapprovalTable' })`
+      line fires from `_castViaCalculateSpellCheck`. The adapter path
+      continues (degradation, not legacy fall-back) but the silent
+      sub-roll skip is now observable.
+    - `loadMercurialMagicTable` returns `null` (wizard/elf first-cast
+      with no mercurial table) → `_rollMercurialIfNeeded` emits a
+      `logDispatch('rollSpellCheck', 'adapter', { reason: 'noMercurialTable' })`
+      line and bails; the cast continues without a fresh effect.
+  Coverage: three new unit tests in
+  `module/__tests__/adapter-spell-check.test.js` (`…reason=noCasterProfile`,
+  `…reason=noDisapprovalTable`, `…reason=noMercurialTable`) and three
+  matching Playwright cases in
+  `browser-tests/e2e/phase1-adapter-dispatch.spec.js`.
 - **Partial-failure state when `_castViaCalculateSpellCheck`'s pass-2
   returns `result.error`** (`module/actor.js:2122-2126`). Events
   already fired during pass 2 (`onSpellLost`, `onDisapprovalIncreased`,

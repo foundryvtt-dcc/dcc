@@ -729,6 +729,155 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       // string at save time — normalize before the numeric assertion.
       expect(Number(mercurialValue), 'mercurial effect should be rolled and stored on first cast').toBeGreaterThan(0)
     })
+
+    // ── reason=... telemetry for silent adapter→legacy fallbacks ──
+    // Each test below asserts a reason-code dispatch log fires at a
+    // previously-silent fall-back site so debugging doesn't need a
+    // code read. Mirrored 1:1 by vitest cases in
+    // `module/__tests__/adapter-spell-check.test.js`.
+
+    test('wizard-castingMode spell on a class the lib does not know → legacy with reason=noCasterProfile', async ({ page }) => {
+      // Warrior isn't in the lib's caster-profile registry, so
+      // `buildSpellCheckArgs` returns null and the dispatcher falls
+      // back to the legacy path — `reason=noCasterProfile` on the
+      // legacy log is the only signal that tells us why.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell NoCasterProfile',
+          type: 'Player',
+          system: {
+            class: { className: 'Warrior' },
+            details: { sheetClass: 'Warrior' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Orphan-Wizard-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell NoCasterProfile').rollSpellCheck({ spell: 'P1-Orphan-Wizard-Spell' })
+      })
+
+      // `_rollSpellCheckViaAdapter` logs `adapter` FIRST (it tries the
+      // adapter route), then `buildSpellCheckArgs` returns null and
+      // `_rollSpellCheckLegacy` logs the legacy fallback with a
+      // reason. The default `waitForAdapterLog` grabs the first match;
+      // scan for the legacy line specifically.
+      await waitForAdapterLog('rollSpellCheck')
+      const legacyLine = adapterLogs.find(l =>
+        l.startsWith(`${ADAPTER_TAG} rollSpellCheck`) &&
+        l.includes('LEGACY path')
+      )
+      expect(legacyLine,
+        `expected a legacy-fallback log; adapterLogs=\n${adapterLogs.join('\n')}`
+      ).toBeTruthy()
+      expect(legacyLine).toContain('reason=noCasterProfile')
+      expect(legacyLine).toContain('spell=P1-Orphan-Wizard-Spell')
+    })
+
+    test('cleric cast without a configured disapproval table emits reason=noDisapprovalTable', async ({ page }) => {
+      // Cleric actor with `disapproval: 1` but no `disapprovalTable`
+      // set — adapter path continues (not legacy) but silently skips
+      // the disapproval sub-roll. The reason log is the telemetry.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell NoDisapproval',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1 },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-NoDisapproval-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'cleric', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' }
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell NoDisapproval').rollSpellCheck({ spell: 'P1-NoDisapproval-Spell' })
+      })
+
+      // The first rollSpellCheck log is the adapter dispatch; the
+      // reason=noDisapprovalTable telemetry is a second adapter log.
+      await waitForAdapterLog('rollSpellCheck')
+      const reasonLine = adapterLogs.find(l =>
+        l.startsWith(`${ADAPTER_TAG} rollSpellCheck`) &&
+        l.includes('reason=noDisapprovalTable')
+      )
+      expect(reasonLine,
+        `expected noDisapprovalTable log; adapterLogs=\n${adapterLogs.join('\n')}`
+      ).toBeTruthy()
+      expect(reasonLine).toContain('via adapter')
+    })
+
+    test('wizard first-cast without a configured mercurial table emits reason=noMercurialTable', async ({ page }) => {
+      // Temporarily clear the world's mercurial-magic table so the
+      // first-cast pre-roll can't resolve it. Restored after the cast
+      // so later tests see the original config.
+      const savedTable = await page.evaluate(() => {
+        const original = CONFIG.DCC.mercurialMagicTable
+        CONFIG.DCC.mercurialMagicTable = null
+        return original
+      })
+
+      try {
+        await page.evaluate(async () => {
+          const actor = await Actor.create({
+            name: 'P1 Spell NoMercurial',
+            type: 'Player',
+            system: { class: { className: 'Wizard' } }
+          })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: 'P1-NoMercurial-Spell',
+            type: 'spell',
+            system: {
+              level: 1,
+              config: { castingMode: 'wizard', inheritCheckPenalty: true },
+              spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+              lost: false
+            }
+          }])
+        })
+        await page.evaluate(async () => {
+          await game.actors.getName('P1 Spell NoMercurial').rollSpellCheck({ spell: 'P1-NoMercurial-Spell' })
+        })
+
+        await waitForAdapterLog('rollSpellCheck')
+        const reasonLine = adapterLogs.find(l =>
+          l.startsWith(`${ADAPTER_TAG} rollSpellCheck`) &&
+          l.includes('reason=noMercurialTable')
+        )
+        expect(reasonLine,
+          `expected noMercurialTable log; adapterLogs=\n${adapterLogs.join('\n')}`
+        ).toBeTruthy()
+        expect(reasonLine).toContain('via adapter')
+
+        // Spell item wasn't updated with a rolled mercurial effect
+        // (the silent skip the reason log makes observable).
+        const mercurialValue = await page.evaluate(() => {
+          const actor = game.actors.getName('P1 Spell NoMercurial')
+          const item = actor.items.getName('P1-NoMercurial-Spell')
+          return item?.system?.mercurialEffect?.value
+        })
+        expect(Number(mercurialValue) || 0).toBe(0)
+      } finally {
+        await page.evaluate((saved) => {
+          CONFIG.DCC.mercurialMagicTable = saved
+        }, savedTable)
+      }
+    })
   })
 
   // ── rollWeaponAttack (Phase 3 session 2) ────────────────────────────

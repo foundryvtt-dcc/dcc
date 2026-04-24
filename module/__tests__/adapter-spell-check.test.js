@@ -932,3 +932,119 @@ test('wizard cast on an NPC actor bypasses the spellburn dialog', async () => {
 
   findSpy.mockRestore()
 })
+
+// ── dispatch-log reason codes for silent adapter→legacy fallbacks ─────────
+// These assert the `reason=<tag>` telemetry emitted at otherwise-silent
+// fallback sites. The Playwright dispatch spec mirrors each case
+// end-to-end against a live Foundry; both are the regression net for
+// the observability contract.
+
+test('wizard-castingMode item on a class the lib does not know → legacy log carries reason=noCasterProfile', async () => {
+  rollToMessageMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+  const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  // Warrior isn't in `getCasterProfile`'s registry → buildSpellCheckArgs
+  // returns null → dispatcher falls back to _rollSpellCheckLegacy.
+  actor.system.class.className = 'Warrior'
+  actor.system.details.sheetClass = 'Warrior'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // Legacy delegation (the fallback actually happened) + reason log.
+  expect(itemSpy).toHaveBeenCalledTimes(1)
+
+  const legacyLog = consoleSpy.mock.calls.find(([line]) =>
+    typeof line === 'string' &&
+    line.includes('[DCC adapter] rollSpellCheck') &&
+    line.includes('LEGACY path') &&
+    line.includes('reason=noCasterProfile')
+  )
+  expect(legacyLog, `expected reason=noCasterProfile legacy log; got:\n${consoleSpy.mock.calls.map(c => c[0]).join('\n')}`).toBeDefined()
+
+  itemSpy.mockRestore()
+  findSpy.mockRestore()
+  consoleSpy.mockRestore()
+})
+
+test('cleric cast without a configured disapproval table emits reason=noDisapprovalTable', async () => {
+  rollToMessageMock.mockClear()
+  const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.class.disapproval = 1
+  // Intentionally no `class.disapprovalTable` — loadDisapprovalTable
+  // returns null on the empty-tableName guard.
+  actor.system.details.sheetClass = 'Cleric'
+
+  const spellItem = makeClericSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Cure Light Wounds' })
+
+  // The cleric cast still runs via the adapter — this is a degradation,
+  // not a legacy fallback.
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+
+  const reasonLog = consoleSpy.mock.calls.find(([line]) =>
+    typeof line === 'string' &&
+    line.includes('[DCC adapter] rollSpellCheck') &&
+    line.includes('via adapter') &&
+    line.includes('reason=noDisapprovalTable')
+  )
+  expect(reasonLog, `expected reason=noDisapprovalTable log; got:\n${consoleSpy.mock.calls.map(c => c[0]).join('\n')}`).toBeDefined()
+
+  findSpy.mockRestore()
+  consoleSpy.mockRestore()
+})
+
+test('wizard first-cast without a configured mercurial table emits reason=noMercurialTable', async () => {
+  rollToMessageMock.mockClear()
+  const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+  // Foundry unit-test config defaults `CONFIG.DCC.mercurialMagicTable`
+  // to `null`, so `loadMercurialMagicTable` early-returns. Defensive
+  // assertion in case that default drifts.
+  const originalTable = CONFIG.DCC.mercurialMagicTable
+  CONFIG.DCC.mercurialMagicTable = null
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  // Spell item with no mercurial effect → _rollMercurialIfNeeded runs,
+  // loadMercurialMagicTable returns null, reason log fires.
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // Spell item update was NOT called with mercurial keys (no roll happened).
+  const mercurialUpdates = spellItem.update.mock.calls.filter(([data]) =>
+    Object.keys(data || {}).some((k) => k.startsWith('system.mercurialEffect'))
+  )
+  expect(mercurialUpdates).toHaveLength(0)
+
+  const reasonLog = consoleSpy.mock.calls.find(([line]) =>
+    typeof line === 'string' &&
+    line.includes('[DCC adapter] rollSpellCheck') &&
+    line.includes('via adapter') &&
+    line.includes('reason=noMercurialTable')
+  )
+  expect(reasonLog, `expected reason=noMercurialTable log; got:\n${consoleSpy.mock.calls.map(c => c[0]).join('\n')}`).toBeDefined()
+
+  CONFIG.DCC.mercurialMagicTable = originalTable
+  findSpy.mockRestore()
+  consoleSpy.mockRestore()
+})

@@ -2008,7 +2008,7 @@ class DCCActor extends Actor {
       // No lib-side profile for this actor's class — drop back to legacy
       // so spinoff classes with wizard/cleric-castingMode spells still work.
       if (!args) {
-        return this._rollSpellCheckLegacy(options, spellItem)
+        return this._rollSpellCheckLegacy(options, spellItem, 'noCasterProfile')
       }
       return this._castViaCalculateSpellCheck(args, spellItem, options)
     }
@@ -2078,6 +2078,12 @@ class DCCActor extends Actor {
       const disapprovalTable = await loadDisapprovalTable(this)
       if (disapprovalTable) {
         input.disapprovalTable = disapprovalTable
+      } else {
+        // Telemetry for a silent adapter degradation: the cleric cast
+        // continues through the lib, but `handleClericDisapproval` skips
+        // the sub-roll because no table is plumbed in. Matches legacy
+        // behavior when no table is configured — but previously invisible.
+        logDispatch('rollSpellCheck', 'adapter', { reason: 'noDisapprovalTable' })
       }
     }
 
@@ -2261,7 +2267,13 @@ class DCCActor extends Actor {
    */
   async _rollMercurialIfNeeded (spellItem, spellbookEntry) {
     const mercurialTable = await loadMercurialMagicTable()
-    if (!mercurialTable) return
+    if (!mercurialTable) {
+      // Telemetry for the silent skip: the cast continues but without
+      // a fresh mercurial effect, matching the legacy
+      // `DCCItem.rollMercurialMagic:564` no-table fall-back.
+      logDispatch('rollSpellCheck', 'adapter', { reason: 'noMercurialTable' })
+      return
+    }
 
     // Foundry-side d100 so Dice So Nice + chat breakdown show a real
     // roll. The lib's roller receives '1d100' and we hand back the
@@ -2310,8 +2322,14 @@ class DCCActor extends Actor {
    * disapproval, patron taint, spellburn, and mercurial magic).
    * @private
    */
-  async _rollSpellCheckLegacy (options, spellItem) {
-    logDispatch('rollSpellCheck', 'legacy', { spell: options.spell ?? '' })
+  async _rollSpellCheckLegacy (options, spellItem, reason = null) {
+    // `reason` captures why the adapter path declined and routed here —
+    // e.g. `noCasterProfile` when `buildSpellCheckArgs` returns null for
+    // a custom class the lib doesn't know. Surfaces an otherwise-silent
+    // fallback in the dispatch log so debugging doesn't need a code read.
+    const details = { spell: options.spell ?? '' }
+    if (reason) details.reason = reason
+    logDispatch('rollSpellCheck', 'legacy', details)
 
     if (spellItem) {
       // Fire-and-forget — matches the pre-dispatcher contract. The
