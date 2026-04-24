@@ -670,6 +670,7 @@
   "DCC.SpellCheckSuccessNoTable": "Successo.",
   "DCC.SpellCheckNoOwnedItemWarning": "Non è possibile effettuare un Tiro Incantesimo con un Incantesimo che non possiedi",
   "DCC.SpellCheckNonSpellWarning": "Non è possibile effettuare un Tiro Incantesimo con un oggetto che non sia un Incantesimo.",
+  "DCC.SkillCheckUnknownSkillWarning": "Non è possibile effettuare un Tiro Abilità per un'Abilità sconosciuta: {skill}",
   "DCC.SpellCheckOtherMod": "Altro Modificatore",
   "DCC.SpellCheckOtherModHint": "Modificatore alle Prove d'Incantesimo che non proviene da abilità o livello e che dovrebbe essere incluso nel calcolo automatico",
   "DCC.SpellCheckAbility": "Caratteristica per Incantesimi",

@@ -661,6 +661,7 @@
   "DCC.SpellCheckSuccessNoTable": "Succès.",
   "DCC.SpellCheckNoOwnedItemWarning": "Impossible de lancer un test d'incantation pour un sort que vous ne possedez pas.",
   "DCC.SpellCheckNonSpellWarning": "Impossible de lancer un test d'incantation sur un objet qui n'est pas un sort.",
+  "DCC.SkillCheckUnknownSkillWarning": "Impossible de lancer un test de compétence pour une compétence inconnue : {skill}.",
   "DCC.SpellCheckOtherMod": "Autre Modificateur",
   "DCC.SpellCheckOtherModHint": "Modificateur aux Tests d'Incantation qui ne provient pas de la caractéristique ou du niveau et qui devrait être inclus dans le calcul automatique",
   "DCC.SpellCheckAbility": "Caractéristique d'Incantation",

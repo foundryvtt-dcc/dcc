@@ -670,6 +670,7 @@
   "DCC.SpellCheckSuccessNoTable": "成功。",
   "DCC.SpellCheckNoOwnedItemWarning": "无法投骰不具有的法术检定",
   "DCC.SpellCheckNonSpellWarning": "无法投骰非法术物品的法术检定",
+  "DCC.SkillCheckUnknownSkillWarning": "无法投骰未知技能的检定：{skill}",
   "DCC.SpellCheckOtherMod": "其他调整值",
   "DCC.SpellCheckOtherModHint": "用于自动计算且非属性非等级的法术检定修正值",
   "DCC.SpellCheckAbility": "法术检定属性",

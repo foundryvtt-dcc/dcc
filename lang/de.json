@@ -670,6 +670,7 @@
   "DCC.SpellCheckSuccessNoTable": "Erfolg.",
   "DCC.SpellCheckNoOwnedItemWarning": "Zauberwurf nicht möglich: der Zauber gehört dir nicht.",
   "DCC.SpellCheckNonSpellWarning": "Zauberwurf nicht möglich: Gegenstand ist nichtmagisch.",
+  "DCC.SkillCheckUnknownSkillWarning": "Fertigkeitsprobe nicht möglich: unbekannte Fertigkeit: {skill}",
   "DCC.SpellCheckOtherMod": "Sonstiger Modifikator",
   "DCC.SpellCheckOtherModHint": "Modifikator für Zauberwürfe, der nicht von Attributen oder Stufe stammt und in die automatische Berechnung einbezogen werden soll",
   "DCC.SpellCheckAbility": "Zauberwurf-Attribut",

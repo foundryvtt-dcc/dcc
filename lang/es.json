@@ -670,6 +670,7 @@
   "DCC.SpellCheckSuccessNoTable": "Éxito.",
   "DCC.SpellCheckNoOwnedItemWarning": "No puedes tirar un chequeo de hechizo con un hechizo que no posees",
   "DCC.SpellCheckNonSpellWarning": "No puedes tirar un chequeo de hechizo con un objeto que no es un hechizo",
+  "DCC.SkillCheckUnknownSkillWarning": "No puedes tirar un chequeo de habilidad para una habilidad desconocida: {skill}",
   "DCC.SpellCheckOtherMod": "Otro modific.",
   "DCC.SpellCheckOtherModHint": "Modificador a chequeos de hechizo que no proviene de atributo o nivel y debe incluirse en el cálculo automático",
   "DCC.SpellCheckAbility": "Atributo de Chequeo de Hechizo",
