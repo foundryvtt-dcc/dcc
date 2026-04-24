@@ -2603,6 +2603,29 @@ and should be scheduled into Phase 4+ work.
   crit. Module-level `Map` cache keyed on `tableName`, cleared on
   world reload, is plenty. The caching opportunity was already
   flagged in `spell-input.mjs:399`.
+- **`migrateWorld` per-doc catches swallow silently** (C2 review,
+  2026-04-24). Four `catch (err) { console.error(err) }` sites in
+  `module/migrations.js` (`migrateWorld`'s actors/items/scenes loops
+  + `migrateCompendium`) log to console and keep going. A
+  migration that fails on every document still stamps the world at
+  `NEEDS_MIGRATION_VERSION` and shows the green "complete"
+  notification, so the GM has no signal. Align with the
+  `9e79459 feat(adapter): reason codes for silent adapter→legacy
+  fallbacks` pattern: accumulate failures into a `failedMigrations[]`
+  array, surface a `ui.notifications.warn` with the count at the
+  end, and only stamp the version when the run was clean.
+- **`migrateWorld` fire-and-forget from a sync ready hook** (C2
+  review, 2026-04-24). `checkMigrations` calls `migrations.migrateWorld()`
+  without `await` from a non-async ready callback, so the rest of
+  the ready chain (`registerTables`, `FleetingLuck.init`,
+  `SpellDuel.init`, `defineStatusIcons`, welcome dialog,
+  `Hooks.callAll('dcc.ready')`) runs concurrently with the async
+  per-document mutations. Third-party modules listening on
+  `dcc.ready` can fire against a half-migrated world. Pre-existing;
+  elevated by C2 because the guard-up-front approach now means
+  ordering is the only remaining correctness lever. Fix: make
+  `checkMigrations` async, `await migrations.migrateWorld()`, and
+  thread a `{ migrationComplete: true }` payload on `dcc.ready`.
 
 **Test coverage gaps (pr-test-analyzer severity ≥ 6):**
 
@@ -2631,6 +2654,23 @@ and should be scheduled into Phase 4+ work.
 - `__mocks__/dcc-roll.js` declares `createRoll` as `static async`
   while production is sync; tests install local sync stubs to
   paper over the mismatch — fix the shared mock, delete the stubs.
+- **Surviving data-driven migration branches have no fixture
+  tests** (C2 review, 2026-04-24). `migrateActorData` /
+  `migrateItemData` retain the V14 ActiveEffect numeric-mode →
+  string-type converter, the `sheetClass`-from-localized-`className`
+  inverse helper, `critRange` / `disapproval` string→number
+  coercion, `luckyRoll` → `birthAugur`, and default alignment.
+  None have direct Vitest coverage; they're exercised only
+  transitively when Foundry boots a real world. The V14 AE
+  converter is particularly V14-critical — if it silently stops
+  running, every pre-V14 active effect fails to apply on upgrade.
+  Proposed: `migrations-data-driven.test.js` with one fixture per
+  branch (numeric-mode effect → string-type, localized
+  `className: 'Zwerg'` → `sheetClass: 'Dwarf'`, stringy
+  `critRange: '20'` → number, unaligned actor → alignment `'l'`,
+  `luckyRoll: '…'` → `birthAugur`). Requires exporting
+  `migrateActorData` / `migrateItemData` (currently module-local
+  `const`) or a test-only export.
 
 **Documentation / comment hygiene:**
 
