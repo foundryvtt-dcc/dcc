@@ -183,34 +183,12 @@ const migrateCompendium = async function (pack) {
 const migrateActorData = async function (actor) {
   const updateData = {}
 
-  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-
-  // If migrating from 0.17 or earlier add useDisapprovalRange to cleric skills
-  if ((currentVersion <= 0.17) || (currentVersion == null)) {
-    updateData['system.skills.divineAid.useDisapprovalRange'] = true
-    updateData['system.skills.turnUnholy.useDisapprovalRange'] = true
-    updateData['system.skills.layOnHands.useDisapprovalRange'] = true
-  }
-
-  // If migrating from earlier than 0.50.0 copy attackBonus to attackHitBonus
-  if ((currentVersion <= 0.50) || (currentVersion == null)) {
-    updateData['system.details.attackHitBonus.melee.value'] = actor.system.details.attackBonus
-    updateData['system.details.attackHitBonus.missile.value'] = actor.system.details.attackBonus
-  }
-
   if (actor.system.details.luckyRoll) {
     updateData['system.details.birthAugur'] = actor.system.details.luckyRoll
   }
 
   if (!actor.system?.details?.alignment) {
     updateData['system.details.alignment'] = 'l'
-  }
-
-  // If migrating from earlier than 0.65.0, set base speed from current speed if not present
-  if (currentVersion < 0.65) {
-    if (!actor.system?.attributes?.speed?.base && actor.system?.attributes?.speed?.value) {
-      updateData['system.attributes.speed.base'] = actor.system.attributes.speed.value
-    }
   }
 
   // Convert critRange and disapproval from string to number if needed (data-driven check)
@@ -304,46 +282,7 @@ const migrateActorData = async function (actor) {
  * @param item
  */
 const migrateItemData = function (item) {
-  let updateData = {}
-
-  const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-
-  // If migrating from 0.11 mark all physicalItems as equipped
-  if ((currentVersion <= 0.11) || (currentVersion == null)) {
-    if (item.equipped !== undefined) {
-      updateData = { equipped: true }
-    }
-  }
-
-  // If migrating from 0.21 mark all spells as inheritActionDie
-  if ((currentVersion <= 0.21) || (currentVersion == null)) {
-    if (item.type === 'spell' && !item.config.inheritActionDie) {
-      updateData = {
-        config: {
-          inheritActionDie: true
-        }
-      }
-    }
-  }
-
-  // If migrating from 0.22 mark all spells as castingMode: wizard
-  if ((currentVersion <= 0.22) || (currentVersion == null)) {
-    if (item.type === 'spell' && !item.config.castingMode) {
-      updateData = {
-        config: {
-          castingMode: 'wizard'
-        }
-      }
-    }
-  }
-
-  if (currentVersion < 0.51) {
-    if (item.type === 'weapon') {
-      if (item.damage && !item.damageWeapon) {
-        item.config.damageOverride = item.damage
-      }
-    }
-  }
+  const updateData = {}
 
   // Convert ActiveEffect changes for v14 compatibility (data-driven check)
   // - Convert numeric mode to string type

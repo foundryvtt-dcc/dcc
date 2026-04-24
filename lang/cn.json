@@ -420,6 +420,7 @@
   "DCC.MigrationComplete": "完成迁移 DCC 系统版本至 {systemVersion}！",
   "DCC.MigrationInfo": "开始迁移 DCC 系统版本至 {systemVersion}。请耐心等待，不要关闭游戏或服务器",
   "DCC.MigrationMessage": "迁移 {type} 实体 {name}",
+  "DCC.MigrationUnsupportedVersion": "DCC 世界数据版本 ({currentVersion}) 低于最低支持版本 ({minimumVersion})。请先在 V14 之前的 DCC 版本 (0.65.x) 中打开此世界以完成前置迁移，然后再返回当前系统。",
   "DCC.MissileAttack": "投射<br\/>攻击",
   "DCC.MissileAttackAdjustment": "投射攻击奖励调整",
   "DCC.MissileAttackHint": "计算攻击奖励+灵巧奖励",

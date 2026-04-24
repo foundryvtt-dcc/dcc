@@ -420,6 +420,7 @@
   "DCC.MigrationComplete": "Migration beendet. Neue Version des DCC Systems {systemVersion}!",
   "DCC.MigrationInfo": "Starte Migration des DCC Systems auf Version {systemVersion}. Sei bitte geduldig und beende weder das Spiel noch den Server.",
   "DCC.MigrationMessage": "Migriere {type} entity {name}",
+  "DCC.MigrationUnsupportedVersion": "Die Weltdaten-Version von DCC ({currentVersion}) liegt unter der minimal unterstützten Version ({minimumVersion}). Öffne diese Welt zuerst in einer DCC-Version vor V14 (0.65.x), um die Migration abzuschließen, und kehre dann zum aktuellen System zurück.",
   "DCC.MissileAttack": "Fernkampf-<br/>Angriff",
   "DCC.MissileAttackAdjustment": "Fernkampf-Angriffsbonus-Anpassung",
   "DCC.MissileAttackHint": "Berechnet aus Angriffsbonus + Geschicklichkeitsbonus",

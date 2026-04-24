@@ -191,14 +191,28 @@ the shims are absent while the canonical fields remain. 883
 Vitest (unchanged — no vitest referenced the shim fields) +
 87 Playwright (was 86, +1 regression guard).
 
-#### C2. Prune pre-V14 migrations
-- **Scope:** Review `module/dcc.js` migration block (referenced as
-  "418 lines of cumulative migrations" in §2.7). Identify migrations
-  that ran before a minimum data version we can now require. Delete
-  them; bump the minimum-data-version constant.
-- **Stop-and-ask trigger:** if any active DCC world could still need
-  a migration, do NOT delete — pause and ask.
-- **Commit:** `chore(cruft): prune pre-V14 migrations`
+#### ~~C2. Prune pre-V14 migrations~~ — **DONE 2026-04-23**
+Landed as a chore(cruft) slice. V14 landed at DCC `0.66.0`
+(`86eb440`, 2025-12-04); `0.66` is the confirmed supported floor.
+Seven version-gated branches deleted from `module/migrations.js`
+(3 actor: `<= 0.17` cleric disapproval flags, `<= 0.50`
+attackHitBonus copy, `< 0.65` speed.base; 4 item: `<= 0.11`
+equipped, `<= 0.21` inheritActionDie, `<= 0.22` castingMode wizard,
+`< 0.51` damageOverride). Both helpers dropped their now-unused
+`currentVersion` reads. Data-driven branches stay: `luckyRoll` →
+`birthAugur`, default alignment, `critRange` / `disapproval`
+string→number, `sheetClass`-from-`className` (the legitimate
+inverse-direction helper protected by C3's guard), V14 AE
+numeric-mode → string-type conversion. New explicit lower-bound
+guard in `module/dcc.js`'s `checkMigrations`:
+`MINIMUM_SUPPORTED_VERSION = 0.66`; pre-0.66 worlds trigger a
+permanent `ui.notifications.error` (new i18n key
+`DCC.MigrationUnsupportedVersion`, translated cn/de/es/fr/it/pl)
+and bail before `migrations.migrateWorld` so they can't silently
+skip deleted migrations. `NEEDS_MIGRATION_VERSION` stays at `0.67`.
+New regression guard `migrations-version-gate-guard.test.js`
+greps `migrations.js` for `currentVersion` comparisons against
+literals below `0.66` (mirrors C3's pattern).
 
 #### ~~C3. Delete halfling i18n-localize dispatch remnants~~ — **DONE 2026-04-20**
 Landed as a chore(cruft) slice. Audit confirmed zero residual

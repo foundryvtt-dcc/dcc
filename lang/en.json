@@ -420,6 +420,7 @@
   "DCC.MigrationComplete": "Finished migration to DCC System version {systemVersion}!",
   "DCC.MigrationInfo": "Beginning DCC System Migration to version {systemVersion}. Please be patient and do not close your game or shut down your server",
   "DCC.MigrationMessage": "Migrating {type} entity {name}",
+  "DCC.MigrationUnsupportedVersion": "DCC world data version ({currentVersion}) is below the minimum supported version ({minimumVersion}). Open this world in a pre-V14 DCC release (0.65.x) first to migrate forward, then return to the current system.",
   "DCC.MissileAttack": "Missile<br/>Attack",
   "DCC.MissileAttackAdjustment": "Missile Attack Bonus Adjustment",
   "DCC.MissileAttackHint": "Calculated from Attack Bonus + Agility Bonus",

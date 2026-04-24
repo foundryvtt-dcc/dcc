@@ -370,7 +370,7 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
           errors.push('THROW: ' + String(e))
         }
         window.removeEventListener('error', onError)
-        await new Promise(r => setTimeout(r, 300))
+        await new Promise(resolve => setTimeout(resolve, 300))
         return {
           newMessages: game.messages.contents.length - before,
           errors,
@@ -573,7 +573,7 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
           errs.push('THROW: ' + String(e))
         }
         window.removeEventListener('error', onError)
-        await new Promise(r => setTimeout(r, 300))
+        await new Promise(resolve => setTimeout(resolve, 300))
         return {
           sheetClass,
           newMessages: game.messages.contents.length - before,

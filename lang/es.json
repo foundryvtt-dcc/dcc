@@ -420,6 +420,7 @@
   "DCC.MigrationComplete": "¡Migración al sistema DCC versión {systemVersion} finalizada!",
   "DCC.MigrationInfo": "Iniciando migración del sistema DCC a la versión {systemVersion}. Por favor, sea paciente y no cierre el juego ni apague el servidor",
   "DCC.MigrationMessage": "Migrando entidad {type} {name}",
+  "DCC.MigrationUnsupportedVersion": "La versión de los datos del mundo DCC ({currentVersion}) es inferior a la versión mínima compatible ({minimumVersion}). Abre primero este mundo en una versión de DCC anterior a V14 (0.65.x) para migrarlo y luego vuelve al sistema actual.",
   "DCC.MissileAttack": "Ataque<br/>a distancia",
   "DCC.MissileAttackAdjustment": "Ajuste de bono de ataque a distancia",
   "DCC.MissileAttackHint": "Calculado desde bono de ataque + bono de agilidad",

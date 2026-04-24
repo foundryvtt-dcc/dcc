@@ -221,20 +221,28 @@ is surfaced for downstream crit-table routing.
   `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
   ...)`, and `logDispatch('rollFumble', ...)` in both branches.
   Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
-- **Baseline (post-session-20 / C1 cruft):** 883 Vitest tests
-  pass, 87 Playwright e2e tests pass against live v14 Foundry.
-  Dispatch-spec subset runs in ~40 s thanks to the session-reuse
-  fixture; full Playwright suite runs in ~8.5 min.
+- **Baseline (post-C2 / 2026-04-23):** 892 Vitest tests pass (was
+  883 at session-20 close; +8 from post-session-20 ad-hoc fixes /
+  silent-fallback reason-codes / spell-cast partial-failure rollback
+  / lib 0.6.0 sync follow-on, +1 from C2's regression guard), 94
+  Playwright e2e tests pass against live v14 Foundry (full suite
+  ~7.7 min). Dispatch-spec subset runs in ~40 s thanks to the
+  session-reuse fixture.
 
-**This session's goal:** **Group D retirements complete (attack /
-crit / fumble / damage) AND C1 cruft landed (session 20, shim
-removal). Next candidates from the backlog are: D3 patron-taint
-RAW alignment (STOP AND ASK — cross-repo design decision); D4
-fold direct-reimpl spell-check branches (STOP AND ASK per branch);
-C2 prune pre-V14 migrations (cruft, parallel-safe); Group E
-vertical slice for XCC/MCC validation (requires explicit pick).
-`docs/02-slice-backlog.md` has the full inventory.** Ask Tim
-which to pick before executing.
+**This session's goal:** **C2 pruned pre-V14 migrations (2026-04-23).**
+All Group D retirements + all cruft slices (C1 critText/fumbleText
+shims, C2 pre-V14 migrations, C3 halfling i18n-localize audit) are
+now landed. `module/migrations.js` version-gated branches are all
+gone; worlds at `currentVersion < 0.66` get an actionable
+`ui.notifications.error` (new i18n key
+`DCC.MigrationUnsupportedVersion`, translated across all 7 langs)
+telling them to open the world in a pre-V14 DCC release first.
+
+**Remaining backlog candidates** (all STOP AND ASK): D3 patron-taint
+RAW alignment (cross-repo design); D4 fold direct-reimpl spell-check
+branches (per-branch design); Group E vertical slice for XCC/MCC
+validation (explicit pick required). `docs/02-slice-backlog.md` has
+the full inventory. Ask Tim which to pick before executing.
 
 Sessions 2–14 landed all of Group A (simplest-weapon, backstab,
 deed dice, two-weapon, automate-off, modifier dialog, dice-bearing
@@ -277,27 +285,19 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**Group D `rollWeaponAttack` retirements are fully complete AND C1
-cruft landed (session 20).** Pick the next slice from
-`docs/02-slice-backlog.md`; the remaining candidates are:
+**C2 landed 2026-04-23 — all three cruft slices (C1 + C2 + C3)
+closed.** Pick the next slice from `docs/02-slice-backlog.md`;
+the remaining candidates are:
 
-1. **C2 prune pre-V14 migrations** (cruft, parallel-safe) — review
-   the `module/dcc.js` migration block (referenced as "418 lines of
-   cumulative migrations" in §2.7). Identify migrations that ran
-   before a minimum data version we can now require; delete them;
-   bump the minimum-data-version constant. **STOP AND ASK** before
-   deleting: confirm with Tim which minimum data version is safe
-   (tied to the earliest world he'd still expect to upgrade).
-   Mechanical once that decision lands.
-2. **D3 patron-taint RAW alignment** — cross-repo design decision
+1. **D3 patron-taint RAW alignment** — cross-repo design decision
    requiring coordination with `dcc-core-book` + `xcc-core-book`
    for fumble-table `effect.type === 'patron-taint'` tagging. The
    blocker, not a silent-to-execute slice. **STOP AND ASK**.
-3. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
+2. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
    still has branches for pre-built Roll + RollTable, `forceCrit`,
    skill-table spells (Turn Unholy). Each branch evaluated
    separately. **STOP AND ASK per branch**.
-4. **Group E vertical slice** (placeholder — needs explicit pick):
+3. **Group E vertical slice** (placeholder — needs explicit pick):
    halfling, mercurial-magic, or homebrew single-class. Would
    exercise Phase 4 + 5 + 6 end-to-end.
 

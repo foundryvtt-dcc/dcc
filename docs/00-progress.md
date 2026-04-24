@@ -84,6 +84,48 @@ additions (`dcc.registerItemSheet`, `registerClassMixin`,
 relieve §2.11 module-extension pressure. Pure-docs slice; no test
 changes.
 
+**Cruft (2026-04-23, C2) — pruned pre-V14 version-gated migration
+branches.** V14 landed at DCC `0.66.0` (commit `86eb440`,
+2025-12-04); the V13/ApplicationV2 upgrade was `0.60.0`. The floor
+Tim confirmed for this slice is `0.66` — V14-only systems never need
+to migrate worlds below that point because a pre-V14 DCC release is
+required to open them anyway. Deleted all seven version-gated branches
+from `module/migrations.js` (3 in `migrateActorData`: `<= 0.17`
+cleric disapproval flags, `<= 0.50` attackHitBonus copy, `< 0.65`
+speed.base; 4 in `migrateItemData`: `<= 0.11` equipped, `<= 0.21`
+inheritActionDie, `<= 0.22` castingMode wizard, `< 0.51`
+damageOverride). Both helpers dropped their now-unused
+`currentVersion` reads. `migrateItemData`'s `let updateData = {}`
+tightened to `const` (only remaining mutation is
+`updateData.effects = migratedEffects` in the V14 AE conversion,
+which is property assignment not reassignment). **Data-driven checks
+stay** — `luckyRoll` → `birthAugur` backfill, default alignment,
+`critRange` / `disapproval` string→number coercion, the
+`sheetClass`-from-`className` legitimate inverse-direction helper
+(line ~205, protected by C3's `class-dispatch-i18n-guard.test.js`),
+and the V14 AE numeric-mode → string-type conversion. Added explicit
+lower-bound guard in `module/dcc.js`'s `checkMigrations`: a new
+`MINIMUM_SUPPORTED_VERSION = 0.66` constant; if `currentVersion !== null
+&& currentVersion < MINIMUM_SUPPORTED_VERSION`, we emit a permanent
+`ui.notifications.error` (new i18n key
+`DCC.MigrationUnsupportedVersion`) directing the user to open the
+world in a pre-V14 DCC release (0.65.x) first, then return to the
+current system — and bail out before calling `migrations.migrateWorld`
+(so a pre-V14 world can't silently skip the deleted migrations and
+wind up with partially-shaped data). `NEEDS_MIGRATION_VERSION` stays
+at `0.67` (a fresh V14-era 0.66 world still runs `migrateWorld` once
+to pick up the data-driven fixes). i18n key translated across all 7
+languages (cn/de/es/fr/it/pl + en source); `npm run compare-lang`
+clean (0 missing, 0 extra across all 7). New regression guard
+`module/__tests__/migrations-version-gate-guard.test.js` greps
+`migrations.js` for any `currentVersion` numeric comparison against a
+literal below `0.66` and fails the suite if one reappears — mirrors
+the pattern established by C3's `class-dispatch-i18n-guard.test.js`.
+892 Vitest tests pass (was 891 pre-slice; +1 regression guard).
+94 Playwright e2e pass (full suite, 7.7 min) against live v14
+Foundry — zero regressions from the pruned branches (they were all
+version-gated and unreachable with `currentVersion >= 0.66` anyway).
+
 **Cruft (2026-04-20, C1) — retired `critText` / `fumbleText`
 compatibility shims on `rollWeaponAttack` / `rollCritical`
 messageData.** Three lines in `module/actor.js` (2 in
@@ -2627,76 +2669,26 @@ and should be scheduled into Phase 4+ work.
 
 ## Next steps
 
-**Phase 3 — session 11 (two-weapon adapter route, A4) complete.**
-Two-weapon fighting routes via the adapter for both primary and
-off-hand weapons. **Group A is closed.** Session 12 picks up
-either Group D (`_rollToHitLegacy` retirement, now unblocked) or
-one of the remaining attack-side enhancements (attack-modifier
-dialog, crit-result lookup in lib, dice-bearing damageWeaponBonus,
-NPC attack-hit lib bonus).
+**Post-C2 (2026-04-23) — all of Group A closed, all Group D
+retirements landed (sessions 15 / 16 / 19), C1 + C3 cruft
+retired (session 20 + 2026-04-20), C2 pre-V14 migrations pruned
+(2026-04-23).** `rollWeaponAttack` + all four chained calls
+(`rollToHit` / `rollDamage` / `rollCritical` / `rollFumble`) are
+single-path via the adapter; `module/migrations.js` now targets
+V14-era (0.66+) worlds only. Remaining backlog candidates — all
+marked **STOP AND ASK** because each carries a design decision
+the code alone can't settle:
 
-**Phase 3 scope** (per `ARCHITECTURE_REIMAGINED.md §7`):
-- Port `rollWeaponAttack` → `makeAttackRoll(attackInput)` + `rollDamage`
-  + `rollCritical` + `rollFumble` from the lib. **All four core calls
-  now have adapter paths for the simplest-weapon happy-path** —
-  remaining slices broaden the gate (backstab, deed die, two-weapon,
-  modifier dialog, magic bonus).
-- Preserve `dcc.modifyAttackRollTerms` (dcc-qol's main hook integration
-  point). Sessions 3–4 fully bridged it for the simplest-weapon
-  happy-path: pushed `Modifier` terms → `libResult.bonuses` +
-  `{source:'bonuses',…}` aggregate; in-place `terms[0].formula`
-  mutations → `libResult.die`. Action-die threat-range math already
-  lives in the existing `strictCriticalHits` / `calculateCritAdjustment`
-  branches (re-read from `attackRoll.formula` post-evaluate).
-- Wave 3 modifier migration on the lib side (combat subsystems) lands
-  alongside Phase 3 sessions. Session 2's attack bridge emits
-  `LegacyRollModifier[]` (Phase 2 precedent); session 5's damage
-  bridge uses `DamageResult.breakdown[]` (the lib's native shape);
-  session 6's crit/fumble bridges use `CriticalResult.roll.modifiers`
-  / `FumbleResult.roll.modifiers` (lib-native `RollModifier[]`).
-  Flag lib-side gaps early; sync via `npm run sync-core-lib` when
-  the lib ships a wave-3 release.
-
-**Session 12 pick-up** — Options:
-(a) **Group D retirement — `_rollToHitLegacy`.** Group A is closed
-   (A1–A4 all route via adapter for the common case). The
-   dispatcher gate now returns `true` for every high-traffic
-   attack path — backstab, deed die, two-weapon, simplest weapon.
-   Per §8.6 retirement principle, `_rollToHitLegacy` can collapse
-   into a single adapter call. Test regressions: every existing
-   `_rollToHitLegacy` assertion either moves to the adapter path
-   or gets deleted. **Recommended next slice** — closes the
-   biggest legacy branch on actor.js.
-(b) **Group D retirement — `_rollDamageLegacy`,
-   `_rollCriticalLegacy`, `_rollFumbleLegacy`.** Same pattern as
-   (a) once each gate is exhaustive. Damage gate excludes per-term
-   flavors (`1d6[fire]+1d6[cold]`) and dice-bearing magic bonuses
-   — those need broadening or formal acceptance as edge cases
-   before retirement.
-(c) **Attack-modifier dialog** (open question #7 tie-in): extend
-   `module/adapter/roll-dialog.mjs` with an attack-modifier prompt
-   before driving a broader adapter path.
-(d) **Crit-result lookup in the lib.** The adapter currently
-   delegates crit-table lookups to Foundry's `getCritTableResult`;
-   lib's `parseCritExtraDamage` could classify the table result
-   into extra damage, letting `libCritResult` carry a fully
-   structured breakdown instead of just natural/total. Session 9
-   added `critSource: 'backstab-auto'` to `libResult` — the
-   natural anchor for routing backstab auto-crits to Crit Table II
-   lib-side.
-(e) **Dice-bearing / cursed damageWeaponBonus.** Session 8 handles
-   positive integer bonuses; dice-bearing (e.g. `+1d4` fire rider)
-   and cursed (negative) still fall to legacy.
-(f) **NPC attack-hit adjustment through lib bonuses.** Pre-existing
-   divergence: NPC `attackHitBonus.melee.adjustment` is pushed as
-   a pre-hook `Modifier` term (so Foundry Roll sees it) but NOT
-   translated into `attackInput.bonuses` (lib total misses it).
-   Session 9 fixed this for the Backstab case; session 10's
-   sequenced-roller scaffold is reusable for any future multi-die
-   attack flows. Cheap follow-up.
-
-Lean (a) Group D `_rollToHitLegacy` retirement — Group A's
-exit criterion is met and the legacy branch is now dead weight.
+1. **D3 patron-taint RAW alignment** — cross-repo design. Needs
+   `dcc-core-book` + `xcc-core-book` coordination for
+   fumble-table `effect.type === 'patron-taint'` tagging.
+2. **D4 fold direct-reimpl spell-check branches** — pre-built
+   Roll + RollTable, `forceCrit`, skill-table spells (Turn
+   Unholy). Each branch evaluated separately; stop-and-ask per
+   branch.
+3. **Group E vertical slice** (placeholder — needs explicit
+   pick): halfling, mercurial-magic, or homebrew single-class.
+   Would exercise Phase 4 + 5 + 6 end-to-end.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with
