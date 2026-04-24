@@ -878,6 +878,90 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
         }, savedTable)
       }
     })
+
+    test('wizard cast on a lost spell with automateWizardSpellLoss off → probe surfaces lib error, no mutations', async ({ page }) => {
+      // Reachable-from-Foundry error-path coverage for the pass-2
+      // probe. With `automateWizardSpellLoss` off the adapter's
+      // pre-check lets the cast continue into the lib; the lib's
+      // `buildSpellCastInput` then returns `{ error: 'Spell "X" is
+      // lost for the day' }` inside `calculateSpellCheck`. The probe
+      // pass catches this BEFORE `onSpellburnApplied` would have
+      // deducted the str/sta commitment — the whole point of the
+      // probe/commit split. ui.notifications.warn fires with the
+      // lib's error string, no chat posts, ability scores unchanged.
+      const priorSetting = await page.evaluate(async () => {
+        const prev = game.settings.get('dcc', 'automateWizardSpellLoss')
+        await game.settings.set('dcc', 'automateWizardSpellLoss', false)
+        return prev
+      })
+
+      try {
+        await page.evaluate(async () => {
+          const actor = await Actor.create({
+            name: 'P1 Spell LostProbe',
+            type: 'Player',
+            system: {
+              class: { className: 'Wizard' },
+              abilities: {
+                str: { value: 14, max: 14 },
+                agl: { value: 12, max: 12 },
+                sta: { value: 13, max: 13 },
+                per: { value: 10, max: 10 },
+                int: { value: 16, max: 16 },
+                lck: { value: 10, max: 10 }
+              }
+            }
+          })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: 'P1-LostProbe-Spell',
+            type: 'spell',
+            system: {
+              level: 1,
+              config: { castingMode: 'wizard', inheritCheckPenalty: true },
+              spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+              lost: true
+            }
+          }])
+        })
+
+        // Capture chat message count + any notifications around the cast.
+        const before = await page.evaluate(() => game.messages.size)
+
+        await page.evaluate(async () => {
+          await game.actors.getName('P1 Spell LostProbe').rollSpellCheck({
+            spell: 'P1-LostProbe-Spell',
+            spellburn: { str: 2, agl: 0, sta: 1 }
+          })
+        })
+
+        // Allow any async side effects to settle — we WANT to confirm
+        // none actually fire, so give them time to misbehave if the
+        // probe/commit split regresses.
+        await page.waitForTimeout(300)
+
+        // No spell-check chat posted (probe returned error before
+        // renderSpellCheck ran).
+        const after = await page.evaluate(() => game.messages.size)
+        expect(after).toBe(before)
+
+        // Ability scores unchanged — onSpellburnApplied never fired.
+        const { str, agl, sta } = await page.evaluate(() => {
+          const actor = game.actors.getName('P1 Spell LostProbe')
+          return {
+            str: actor.system.abilities.str.value,
+            agl: actor.system.abilities.agl.value,
+            sta: actor.system.abilities.sta.value
+          }
+        })
+        expect(str).toBe(14)
+        expect(agl).toBe(12)
+        expect(sta).toBe(13)
+      } finally {
+        await page.evaluate(async (prev) => {
+          await game.settings.set('dcc', 'automateWizardSpellLoss', prev)
+        }, priorSetting)
+      }
+    })
   })
 
   // ── rollWeaponAttack (Phase 3 session 2) ────────────────────────────

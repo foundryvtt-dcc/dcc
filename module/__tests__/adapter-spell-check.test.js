@@ -25,6 +25,7 @@ import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
 import { buildSpellCheckArgs } from '../adapter/spell-input.mjs'
 import { promptSpellburnCommitment } from '../adapter/roll-dialog.mjs'
+import { calculateSpellCheck as libCalcSpellCheckMock } from '../vendor/dcc-core-lib/index.js'
 
 // Mock actor-level-change like actor.test.js does
 vi.mock('../actor-level-change.js')
@@ -35,6 +36,20 @@ vi.mock('../actor-level-change.js')
 vi.mock('../adapter/roll-dialog.mjs', () => ({
   promptSpellburnCommitment: vi.fn()
 }))
+
+// Passthrough mock over the vendor lib so a single test can force
+// `calculateSpellCheck` into the error path on demand. Every other
+// test still exercises the real lib behavior via the passthrough
+// default — `libMocks.actualCalc` holds the genuine implementation.
+const libMocks = vi.hoisted(() => ({ actualCalc: null }))
+vi.mock('../vendor/dcc-core-lib/index.js', async (importOriginal) => {
+  const actual = await importOriginal()
+  libMocks.actualCalc = actual.calculateSpellCheck
+  return {
+    ...actual,
+    calculateSpellCheck: vi.fn((...args) => libMocks.actualCalc(...args))
+  }
+})
 
 function makeGenericSpellItem (overrides = {}) {
   const spell = new DCCItem({ name: 'Generic Cantrip', type: 'spell' }, {})
@@ -1047,4 +1062,125 @@ test('wizard first-cast without a configured mercurial table emits reason=noMerc
   CONFIG.DCC.mercurialMagicTable = originalTable
   findSpy.mockRestore()
   consoleSpy.mockRestore()
+})
+
+// ── partial-failure rollback for _castViaCalculateSpellCheck pass 2 ─────
+// Pass 2 is run twice: a probe (no events wired) to detect
+// `result.error`, then a commit (events wired) only when the probe
+// is clean. The probe absorbs the error before `onSpellburnApplied`
+// / `onSpellLost` / `onDisapprovalIncreased` can mutate actor+item
+// state. The roller is deterministic (pre-rolled Foundry values), so
+// the two passes return identical results with no double-rolling.
+
+function makeProbeErrorResult () {
+  return {
+    spellId: 'Magic Missile',
+    die: 'd20',
+    formula: '',
+    modifiers: [],
+    critical: false,
+    fumble: false,
+    spellLost: false,
+    corruptionTriggered: false,
+    disapprovalIncrease: 0,
+    luckBurned: 0,
+    error: 'test probe error'
+  }
+}
+
+function isProbeCall (options, events) {
+  return options?.mode === 'evaluate' && (!events || Object.keys(events).length === 0)
+}
+
+test('pass-2 probe error aborts before spellburn / spell-lost mutations', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
+  libCalcSpellCheckMock.mockClear()
+  const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 14
+  actor.system.abilities.agl.value = 12
+  actor.system.abilities.sta.value = 13
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  // Formula pass (mode === 'formula') + commit pass (mode ==='evaluate'
+  // with events) pass through. Probe pass returns an error.
+  libCalcSpellCheckMock.mockImplementation((character, input, options, events) => {
+    if (isProbeCall(options, events)) {
+      return makeProbeErrorResult()
+    }
+    return libMocks.actualCalc(character, input, options, events)
+  })
+
+  try {
+    await actor.rollSpellCheck({
+      spell: 'Magic Missile',
+      spellburn: { str: 2, agl: 0, sta: 1 }
+    })
+
+    // User-facing warn with the lib-surfaced error text.
+    expect(uiNotificationsWarnMock).toHaveBeenCalledTimes(1)
+    expect(uiNotificationsWarnMock).toHaveBeenCalledWith('test probe error')
+    // Diagnostic console.error is still useful signal.
+    expect(consoleErrorSpy).toHaveBeenCalled()
+
+    // Crucial: no mutations, no chat. The probe caught the error
+    // BEFORE onSpellburnApplied / onSpellLost fired.
+    expect(actorUpdateMock).not.toHaveBeenCalled()
+    expect(spellItem.update).not.toHaveBeenCalled()
+    expect(rollToMessageMock).not.toHaveBeenCalled()
+
+    // Call pattern: pass 1 formula + pass 2 probe = 2 calls; commit
+    // is never reached because the probe returned error.
+    expect(libCalcSpellCheckMock).toHaveBeenCalledTimes(2)
+  } finally {
+    libCalcSpellCheckMock.mockImplementation((...args) => libMocks.actualCalc(...args))
+    consoleErrorSpy.mockRestore()
+    findSpy.mockRestore()
+  }
+})
+
+test('pass-2 probe clean → commit pass fires events and posts chat', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+  uiNotificationsWarnMock.mockClear()
+  // Reset call count so we can assert probe+commit=3 total calls.
+  libCalcSpellCheckMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  actor.system.abilities.str.value = 14
+  actor.system.abilities.agl.value = 12
+  actor.system.abilities.sta.value = 13
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({
+    spell: 'Magic Missile',
+    spellburn: { str: 1, agl: 0, sta: 0 }
+  })
+
+  // No error path — warn does not fire.
+  expect(uiNotificationsWarnMock).not.toHaveBeenCalled()
+  // Normal post-cast flow: chat posts + spellburn commits adapter-side.
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  expect(actorUpdateMock).toHaveBeenCalledWith({
+    'system.abilities.str.value': 13
+  })
+  // Call pattern: pass 1 formula + pass 2 probe + pass 2 commit = 3.
+  expect(libCalcSpellCheckMock).toHaveBeenCalledTimes(3)
+
+  findSpy.mockRestore()
 })

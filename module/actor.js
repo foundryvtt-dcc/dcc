@@ -2139,27 +2139,38 @@ class DCCActor extends Actor {
       disapprovalD4 = d4Roll.total
     }
 
-    // Pass 2: classify against the pre-rolled natural. Fires
-    // `onSpellLost` when the total lands in a lost tier and
-    // `onDisapprovalIncreased` when the cleric roll triggers
-    // disapproval; the event bridges update the Foundry item / actor.
+    // Pass 2 runs twice to avoid partial-failure mutations. The probe
+    // runs with an empty events object so any `result.error` the lib
+    // surfaces (misconfigured spell definition, wrong casterTypes,
+    // corrupted spellbook entry) is detected BEFORE `onSpellburnApplied`
+    // / `onSpellLost` / `onDisapprovalIncreased` mutate actor+item
+    // state. Only when the probe is clean do we replay with the real
+    // events wired — the roller is deterministic (pre-rolled natural
+    // and disapproval d4), so both passes return identical results and
+    // no sub-roll is consumed twice.
+    const roller = (formula) => {
+      if (formula === '1d4' && disapprovalD4 !== null) return disapprovalD4
+      return natural
+    }
+
+    const probe = libCalculateSpellCheck(
+      character,
+      input,
+      { mode: 'evaluate', roller },
+      {}
+    )
+    if (probe.error) {
+      console.error('[DCC adapter] calculateSpellCheck pass-2 error', { actor: this.name, spell: spellItem?.name, error: probe.error })
+      ui.notifications.warn(probe.error)
+      return
+    }
+
     const result = libCalculateSpellCheck(
       character,
       input,
-      {
-        mode: 'evaluate',
-        roller: (formula) => {
-          if (formula === '1d4' && disapprovalD4 !== null) return disapprovalD4
-          return natural
-        }
-      },
+      { mode: 'evaluate', roller },
       events
     )
-    if (result.error) {
-      console.error('[DCC adapter] calculateSpellCheck pass-2 error', { actor: this.name, spell: spellItem?.name, error: result.error })
-      ui.notifications.warn(result.error)
-      return
-    }
 
     warnIfDivergent('rollSpellCheck', foundryRoll.total, result.total, { actor: this.name, spell: spellItem?.name })
 
