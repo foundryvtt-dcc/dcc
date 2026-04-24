@@ -2512,5 +2512,23 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(captured.hasCritText, 'messageData.system.critText shim retired in C1').toBe(false)
       expect(captured.hasFumbleText, 'messageData.system.fumbleText shim retired in C1').toBe(false)
     })
+
+    test('C2 cruft: V14 world boots past the MINIMUM_SUPPORTED_VERSION floor without a block', async ({ page }) => {
+      // C2 added a floor-guard in `checkMigrations` that refuses worlds
+      // below the V14 era (< 0.66). A live v14 world either skips
+      // migrations (setting already >= 0.67) or runs them (fresh world
+      // stamp-bumps to 0.67). Either way, no `DCC.MigrationUnsupportedVersion`
+      // error notification should appear. This guard pins the invariant.
+      const state = await page.evaluate(() => {
+        const version = game.settings.get('dcc', 'systemMigrationVersion')
+        const unsupportedNote = Array.from(
+          document.querySelectorAll('#notifications .notification.error')
+        ).map(n => n.textContent)
+          .find(text => text.includes('below the minimum supported version'))
+        return { version, unsupportedNote: unsupportedNote || null }
+      })
+      expect(state.unsupportedNote, 'no MigrationUnsupportedVersion error should be visible on a V14 world').toBeNull()
+      expect(state.version, 'V14 worlds store systemMigrationVersion at or above the V14 floor').toBeGreaterThanOrEqual(0.66)
+    })
   })
 })

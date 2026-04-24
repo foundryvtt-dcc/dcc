@@ -121,10 +121,51 @@ clean (0 missing, 0 extra across all 7). New regression guard
 `migrations.js` for any `currentVersion` numeric comparison against a
 literal below `0.66` and fails the suite if one reappears — mirrors
 the pattern established by C3's `class-dispatch-i18n-guard.test.js`.
-892 Vitest tests pass (was 891 pre-slice; +1 regression guard).
-94 Playwright e2e pass (full suite, 7.7 min) against live v14
-Foundry — zero regressions from the pruned branches (they were all
-version-gated and unreachable with `currentVersion >= 0.66` anyway).
+917 Vitest tests pass (was 891 pre-slice; +26 from the expanded
+regression + behavioral guard — see below). 95 Playwright e2e pass
+(full suite) against live v14 Foundry — zero regressions from the
+pruned branches (they were all version-gated and unreachable with
+`currentVersion >= 0.66` anyway).
+
+**Post-review hardening (same session, after automated review
+flagged two issues):**
+
+1. **Fresh-world false-positive (P0).** The setting's registered
+   default at `module/settings.js:20` is `default: 0` (not `null`),
+   so `game.settings.get` returns `0` for a brand-new world. The
+   initial guard used `currentVersion !== null && currentVersion <
+   MINIMUM_SUPPORTED_VERSION`, which fires on `0` and blocks the
+   data-driven fixes that a fresh V14 world still legitimately
+   needs. Since `migrateWorld` is the only place that stamps the
+   setting up to `0.67`, the scary notification would have
+   recurred on every world open. Fixed by treating `0` and `null`
+   equivalently as "fresh / never migrated" and only blocking
+   non-zero pre-0.66 versions.
+2. **Regex gap (P1).** The anti-pattern regex used
+   `(?:<=?|>=?|==|!=)` which misses strict-equality operators —
+   a future `currentVersion === 0.50` / `!== 0.22` would slip
+   through. Tightened to `(?:<=?|>=?|===?|!==?)` and added
+   positive-sample + negative-sample meta-tests so the regex
+   itself is tested rather than trusted-by-inspection.
+
+Beyond the fixes: the policy decision was extracted into a pure
+`classifyMigrationDecision(currentVersion)` helper in
+`migrations.js` (returns `'skip' | 'block' | 'run'`); the two
+version constants are now exported from the same module as the
+single source of truth. `checkMigrations` in `dcc.js` is now a
+thin orchestrator that calls the helper and routes the
+'block' decision through the notification. That split enabled
+the behavioral unit tests the original slice was missing (8
+cases covering fresh / pre-V14 / V14-floor / ceiling). The
+notification's interpolated values now use `.toFixed(2)` so the
+decimal separator doesn't drift in locales that format numbers
+with a comma. Added +1 Playwright assertion: a live v14 world
+boots past the floor without emitting a
+`DCC.MigrationUnsupportedVersion` error.
+
+Tests: 917 Vitest (891 pre-slice + 8 behavioral classifier + 11
+positive-regex + 6 negative-regex + 1 file-scan = 26 net new).
+95 Playwright e2e.
 
 **Cruft (2026-04-20, C1) — retired `critText` / `fumbleText`
 compatibility shims on `rollWeaponAttack` / `rollCritical`

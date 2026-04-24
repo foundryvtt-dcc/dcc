@@ -59,6 +59,41 @@ async function buildClassNameLookup () {
 }
 
 /**
+ * Version that triggers migration — set to the version that introduced
+ * breaking changes. After migration completes we stamp the world at this
+ * value to prevent repeated migrations.
+ */
+export const NEEDS_MIGRATION_VERSION = 0.67
+
+/**
+ * Floor for V14-era worlds. Worlds at or above this value can be migrated
+ * forward by the surviving data-driven branches; worlds below it predate
+ * V14 and must first upgrade through a pre-V14 DCC release.
+ */
+export const MINIMUM_SUPPORTED_VERSION = 0.66
+
+/**
+ * Classify what `checkMigrations` should do for a stored migration
+ * version. Pure function — no Foundry globals — so it's unit-testable.
+ *
+ * @param {number|null} currentVersion  The stored `systemMigrationVersion`
+ *   (Foundry returns 0 by default for never-stored settings, which maps
+ *   to the same "fresh world" bucket as `null`).
+ * @returns {'skip'|'block'|'run'}
+ *   - `'skip'`: already migrated (>= ceiling), nothing to do.
+ *   - `'block'`: known pre-V14 world, refuse and tell the user to upgrade
+ *     through a pre-V14 release first.
+ *   - `'run'`: fresh or V14-era world that still needs data-driven fixes;
+ *     run `migrateWorld`.
+ */
+export function classifyMigrationDecision (currentVersion) {
+  const needsMigration = (currentVersion == null) || (currentVersion < NEEDS_MIGRATION_VERSION)
+  if (!needsMigration) return 'skip'
+  if (currentVersion && currentVersion < MINIMUM_SUPPORTED_VERSION) return 'block'
+  return 'run'
+}
+
+/**
  * Migrate the current world to the current version of the system
  *
  * @return {Promise}    A promise which resolves once the migration is completed
@@ -113,10 +148,9 @@ export const migrateWorld = async function () {
     await migrateCompendium(p)
   }
 
-  // Set the migration as complete
-  // Save the target migration version to prevent repeated migrations
-  // This must match NEEDS_MIGRATION_VERSION in dcc.js
-  game.settings.set('dcc', 'systemMigrationVersion', 0.67)
+  // Stamp the world with the post-migration version so subsequent loads
+  // classify as 'skip' in `classifyMigrationDecision`.
+  game.settings.set('dcc', 'systemMigrationVersion', NEEDS_MIGRATION_VERSION)
   ui.notifications.info(game.i18n.format('DCC.MigrationComplete', { systemVersion: game.system.version }, { permanent: true }))
 }
 

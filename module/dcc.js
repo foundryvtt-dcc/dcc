@@ -386,29 +386,24 @@ function setupCoreBookCompendiumLinks () {
 }
 
 function checkMigrations () {
-  // Determine whether a system migration is required and feasible
+  if (!game.user.isGM) return
   const currentVersion = game.settings.get('dcc', 'systemMigrationVersion')
-  // Version that triggers migration - set this to the version that introduced breaking changes
-  // After migration completes, we save this version to prevent repeated migrations
-  const NEEDS_MIGRATION_VERSION = 0.67
-  // Worlds below this floor predate V14; they must be upgraded through a
-  // pre-V14 DCC release before opening in the current system.
-  const MINIMUM_SUPPORTED_VERSION = 0.66
-  const needMigration = (currentVersion < NEEDS_MIGRATION_VERSION) || (currentVersion === null)
-
-  if (needMigration && game.user.isGM) {
-    if (currentVersion !== null && currentVersion < MINIMUM_SUPPORTED_VERSION) {
-      ui.notifications.error(
-        game.i18n.format('DCC.MigrationUnsupportedVersion', {
-          currentVersion,
-          minimumVersion: MINIMUM_SUPPORTED_VERSION
-        }),
-        { permanent: true }
-      )
-      return
-    }
-    migrations.migrateWorld()
+  const decision = migrations.classifyMigrationDecision(currentVersion)
+  if (decision === 'skip') return
+  if (decision === 'block') {
+    // Toggles to a dot-separated string so the decimal separator doesn't
+    // drift between interpolated and literal tokens in locales that format
+    // numbers with a comma.
+    ui.notifications.error(
+      game.i18n.format('DCC.MigrationUnsupportedVersion', {
+        currentVersion: currentVersion.toFixed(2),
+        minimumVersion: migrations.MINIMUM_SUPPORTED_VERSION.toFixed(2)
+      }),
+      { permanent: true }
+    )
+    return
   }
+  migrations.migrateWorld()
 }
 
 function registerTables () {
