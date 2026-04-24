@@ -221,13 +221,11 @@ is surfaced for downstream crit-table routing.
   `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
   ...)`, and `logDispatch('rollFumble', ...)` in both branches.
   Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
-- **Baseline (post-C2 / 2026-04-23):** 917 Vitest tests pass (was
-  883 at session-20 close; +8 from post-session-20 ad-hoc fixes /
-  silent-fallback reason-codes / spell-cast partial-failure rollback
-  / lib 0.6.0 sync follow-on, +26 from C2's expanded
-  regression-guard + behavioral classifier tests), 95 Playwright
-  e2e tests pass against live v14 Foundry. Dispatch-spec subset
-  runs in ~40 s thanks to the session-reuse fixture.
+- **Test suites are green at branch HEAD.** Run `npm test` (Vitest)
+  and the full Playwright e2e suite (see "Browser tests" below) to
+  confirm before touching anything. Dispatch-spec subset runs in
+  ~40 s thanks to the session-reuse fixture; full Playwright suite
+  runs in ~8 min.
 
 **This session's goal:** **C2 pruned pre-V14 migrations (2026-04-23).**
 All Group D retirements + all cruft slices (C1 critText/fumbleText
@@ -322,8 +320,8 @@ rules divergence — surface it instead.
 
 **Before touching Phase 3 code, confirm the repo is green:**
 
-- `npm test` — 883 Vitest tests + dice-gated integration at
-  session 20 close. Final check before any commit.
+- `npm test` — Vitest unit + integration suites. Final check
+  before any commit.
 - `npm run test:unit` — mock-only; runs in every environment.
 - `npm run test:integration` — integration project. Skips if Foundry
   isn't detected (via `FOUNDRY_PATH`, `.foundry-dev/`, or
@@ -333,8 +331,7 @@ rules divergence — surface it instead.
   `npm run setup:foundry` once. Otherwise the dice cases **skip**
   (not fail); the status line shows `N passed | M skipped`.
 
-**Browser tests (required for refactor slices — 87 Playwright
-e2e pass at session 20 close):** see
+**Browser tests (required for refactor slices):** see
 `docs/dev/TESTING.md#browser-tests-playwright` for the full recipe.
 TL;DR — with the fvtt CLI's `installPath` / `dataPath` pointed at
 `foundry-14` / `FoundryVTT-Next` (verify via
