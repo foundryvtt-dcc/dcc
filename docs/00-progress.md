@@ -94,18 +94,16 @@ archives linked above.
 
 - **2026-04-24 — Session 23 / D3c: retire dormant
   `SpellFumbleResult.patronTaint` flag.** Lib PR to
-  `dcc-core-lib@0.8.0` (breaking change) removed `.patronTaint` from
-  `SpellFumbleResult` + the `effect.type === 'patron-taint'` /
-  `effect.data.patronTaint === true` parsing in `rollSpellFumble` /
-  `rollSpellFumbleWithModifier`. Pre-exec audit confirmed zero
-  consumers (lib orchestration never read the flag; DCC system +
-  siblings + compendium content had none). Vendor-synced; +1 vitest
+  `dcc-core-lib@0.8.0` (commit `842e89a`, breaking change) removed
+  `.patronTaint` from `SpellFumbleResult` + the
+  `effect.type === 'patron-taint'` / `effect.data.patronTaint === true`
+  parsing in `rollSpellFumble` / `rollSpellFumbleWithModifier`.
+  Pre-exec audit confirmed zero consumers (lib orchestration never
+  read the flag; DCC system + siblings + compendium content had
+  none). Vendor-synced clean (`842e89a`, `dirty: false`); +1 vitest
   regression guard asserting the flag is absent from both fumble
   rollers. 925 Vitest + 98 Playwright green. Lib build: 1407 tests
-  green. (Lib commit in `dcc-core-lib` pending Tim's cadence;
-  vendored `dist/` is 0.8.0 but `VERSION.json.commit` still points
-  at `e8ecabe` (0.7.0) with `dirty: true` — will refresh post lib
-  commit.)
+  green.
 - **2026-04-24 — Session 22 follow-ons: D3b-γ closed, D3b-β
   authored cross-repo.** Sibling audit: `mcc-classes` ships no
   packs; `dcc-crawl-classes/packs/` has no patron-taint JSONs.
@@ -116,10 +114,9 @@ archives linked above.
   manifestation tables with Foundry `[[/roll XdY]]` markup
   stripped to plain `[XdY]` dice notation; exports
   `PATRON_TAINT_TABLES` + `getPatronTaintTable(patron)` lookup
-  helper; `tsc --noEmit` clean. Commit in `dcc-official-data`
-  pending (different repo, auto-commit authorization scoped to
-  DCC refactor branch only). No runtime DCC change — the
-  compendium RollTables remain authoritative.
+  helper; `tsc --noEmit` clean. Tim committed + pushed in the
+  `dcc-official-data` repo on its own cadence. No runtime DCC
+  change — the compendium RollTables remain authoritative.
 - **2026-04-24 — Session 22 / D3b-α: patron-taint manifestation
   table loader.** New `loadPatronTaintTable(actor)` in
   `module/adapter/spell-input.mjs` (mirror of `loadDisapprovalTable`):
@@ -139,7 +136,7 @@ archives linked above.
   authored in `dcc-core-book/packs/dcc-core-spell-side-effect-tables`;
   Barzodi / Circe / Medea / Prometheus Firebringer / Amazing Rando
   in the equivalent `xcc-core-book` pack. All 10 light up the
-  `onPatronTaint` chat emote automatically. 805 Vitest + 98
+  `onPatronTaint` chat emote automatically. 924 Vitest + 98
   Playwright (+7 new vitest for loader paths + full integration
   acquisition; +1 new Playwright asserting compendium-resolved
   manifestation text reaches chat).
@@ -158,28 +155,12 @@ archives linked above.
   persists `result.newPatronTaintChance`, and deletes
   `_runLegacyPatronTaint` (36 lines). 917 Vitest + 97 Playwright
   (+2 new: high-chance acquisition reset, non-patron spell no-op).
-  A new D3c backlog entry tracks the follow-up cleanup of the
-  now-dead `SpellFumbleResult.patronTaint` flag + fumble-entry tag.
 - **2026-04-23 — C2 cruft: prune pre-V14 migrations.** Seven
   version-gated branches in `module/migrations.js` deleted; new
   `MINIMUM_SUPPORTED_VERSION = 0.66` guard in `dcc.js`'s
   `checkMigrations` with i18n key `DCC.MigrationUnsupportedVersion`
   (7 langs). Fresh-world guard treats `0` + `null` as "never
   migrated". 917 Vitest + 95 Playwright.
-- **2026-04-20 — Session 20 / C1 cruft: retire `critText` /
-  `fumbleText` compat shims.** 3 lines dropped from `actor.js`;
-  dcc-qol rename documented as migration recipe in
-  `EXTENSION_API.md`. 883 Vitest + 87 Playwright.
-- **2026-04-20 — Session 19 / D2 damage retirement.** Retired
-  `_rollDamageLegacy` + gate + via-adapter alias in a combined
-  sub-slice (c)+(d) collapse after `@moonloch/dcc-core-lib@0.6.0`
-  extended `DamageInput` with negative `magicBonus` + new
-  `extraDamageDice[]`. All three D2 retirements (attack / crit /
-  fumble / damage) now complete.
-- **2026-04-20 — Session 18 / D2 damage sub-slice a.**
-  `buildPassthroughDamageResult` accepts unparseable formulas
-  (lance `doubleIfMounted`, homebrew `damageOverride`, multi-die)
-  through the adapter with `libDamageResult.passthrough: true`.
 
 ## Closed questions
 
@@ -187,8 +168,10 @@ archives linked above.
    Session 21 / D3a: `dcc-core-lib@0.7.0` models the two RAW triggers
    (creeping chance + patron-spell result-table entries) plus the
    natural-1-forces-row-1 rule; `_runLegacyPatronTaint` deleted.
-   D3b (content authoring) + D3c (fumble-entry tag cleanup) tracked
-   in the backlog but neither blocks Phase 3 close.**
+   D3b (manifestation table loader + cross-repo content mirror) closed
+   at session 22; D3b-γ (sibling audit) closed as a no-op; D3c
+   (dead-flag cleanup) closed at session 23 via `dcc-core-lib@0.8.0`.
+   Entire D3 arc complete.**
 
 6. ~~**Spellburn dialog integration.**~~ **Resolved 2026-04-18 at
    Phase 3 session 1: adapter-side `promptSpellburnCommitment` dialog
@@ -593,24 +576,23 @@ and should be scheduled into Phase 4+ work.
 
 ## Next steps
 
-**Post-C2 (2026-04-23) — all of Group A closed, all Group D
-retirements landed (sessions 15 / 16 / 19), C1 + C3 cruft
-retired (session 20 + 2026-04-20), C2 pre-V14 migrations pruned
-(2026-04-23).** `rollWeaponAttack` + all four chained calls
-(`rollToHit` / `rollDamage` / `rollCritical` / `rollFumble`) are
-single-path via the adapter; `module/migrations.js` now targets
-V14-era (0.66+) worlds only. Remaining backlog candidates — all
-marked **STOP AND ASK** because each carries a design decision
-the code alone can't settle:
+**Post-D3 (2026-04-24) — the full D3 arc (a/b-α/b-β/b-γ/c) is
+closed.** `rollWeaponAttack` + all four chained calls are
+single-path via the adapter; `module/migrations.js` targets
+V14-era (0.66+) worlds only; patron-taint matches DCC RAW
+end-to-end with manifestation text flowing from authored
+`dcc-core-book` + `xcc-core-book` RollTables to the
+`onPatronTaint` chat emote, and the dead
+`SpellFumbleResult.patronTaint` flag is retired in
+`dcc-core-lib@0.8.0`. Remaining backlog candidates — both marked
+**STOP AND ASK** because each carries a design decision the code
+alone can't settle:
 
-1. **D3 patron-taint RAW alignment** — cross-repo design. Needs
-   `dcc-core-book` + `xcc-core-book` coordination for
-   fumble-table `effect.type === 'patron-taint'` tagging.
-2. **D4 fold direct-reimpl spell-check branches** — pre-built
+1. **D4 fold direct-reimpl spell-check branches** — pre-built
    Roll + RollTable, `forceCrit`, skill-table spells (Turn
    Unholy). Each branch evaluated separately; stop-and-ask per
    branch.
-3. **Group E vertical slice** (placeholder — needs explicit
+2. **Group E vertical slice** (placeholder — needs explicit
    pick): halfling, mercurial-magic, or homebrew single-class.
    Would exercise Phase 4 + 5 + 6 end-to-end.
 
