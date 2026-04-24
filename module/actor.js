@@ -1877,13 +1877,16 @@ class DCCActor extends Actor {
    *     patrons; cleric disapproval via the lib's
    *     `onDisapprovalIncreased` event (replaces
    *     `actor.applyDisapproval()` + `actor.rollDisapproval()`).
-   *   - Session 4 (current): wizard-castingMode items on patron-bound
-   *     wizard / elf actors flow through the adapter. The patron field
-   *     populates `character.state.classState.<type>.patron` so the lib
-   *     records `castInput.patron`; the RAW lib taint pipeline stays
-   *     dormant (no fumbleTable plumbed in), and the adapter calls
-   *     `_runLegacyPatronTaint` after the cast to preserve the legacy
-   *     d100-vs-chance creeping mechanic verbatim.
+   *   - Session 4: wizard-castingMode items on patron-bound wizard /
+   *     elf actors flow through the adapter. The patron field populates
+   *     `character.state.classState.<type>.patron` so the lib records
+   *     `castInput.patron`. D3a (2026-04-24) extended this to feed the
+   *     RAW patron-taint pipeline: `patronTaintChance` + `isPatronSpell`
+   *     on `castInput`; the lib runs creeping-chance + result-table
+   *     triggers; this method persists `result.newPatronTaintChance`
+   *     back to `system.class.patronTaintChance` each cast (see below).
+   *     The `onPatronTaint` event (spell-events.mjs) posts a chat
+   *     EMOTE on acquisition.
    *   - Session 5: spellburn + mercurial magic on wizard / elf
    *     casts. `input.spellburn` is forwarded from `options.spellburn`
    *     when the caller provides a `SpellburnCommitment`; the
@@ -2139,17 +2142,36 @@ class DCCActor extends Actor {
       disapprovalD4 = d4Roll.total
     }
 
+    // D3a — pre-roll the patron-taint 1d100 for the lib's creeping-chance
+    // check. Only fired when this cast qualifies for the check (patron-
+    // bound wizard/elf casting a patron-related spell); avoids a spurious
+    // d100 roll otherwise. The lib also rolls 1d6 on the manifestation
+    // table when taint is acquired AND a `patronTaintTable` is provided —
+    // currently no content modules ship such tables, so the manifestation
+    // sub-roll is dormant.
+    let patronTaintD100 = null
+    if (
+      (profile?.type === 'wizard' || profile?.type === 'elf') &&
+      input.isPatronSpell &&
+      this.system.class?.patron
+    ) {
+      const d100Roll = new Roll('1d100')
+      await d100Roll.evaluate()
+      patronTaintD100 = d100Roll.total
+    }
+
     // Pass 2 runs twice to avoid partial-failure mutations. The probe
     // runs with an empty events object so any `result.error` the lib
     // surfaces (misconfigured spell definition, wrong casterTypes,
     // corrupted spellbook entry) is detected BEFORE `onSpellburnApplied`
-    // / `onSpellLost` / `onDisapprovalIncreased` mutate actor+item
-    // state. Only when the probe is clean do we replay with the real
-    // events wired — the roller is deterministic (pre-rolled natural
-    // and disapproval d4), so both passes return identical results and
-    // no sub-roll is consumed twice.
+    // / `onSpellLost` / `onDisapprovalIncreased` / `onPatronTaint` mutate
+    // actor+item state. Only when the probe is clean do we replay with
+    // the real events wired — the roller is deterministic (pre-rolled
+    // natural, disapproval d4, and patron-taint d100), so both passes
+    // return identical results and no sub-roll is consumed twice.
     const roller = (formula) => {
       if (formula === '1d4' && disapprovalD4 !== null) return disapprovalD4
+      if (formula === '1d100' && patronTaintD100 !== null) return patronTaintD100
       return natural
     }
 
@@ -2209,58 +2231,25 @@ class DCCActor extends Actor {
       })
     }
 
-    // Session 4 — patron taint. Adapter-side preservation of the
-    // legacy `processSpellCheck:623-660` mechanic for wizard / elf
-    // patron casters. The lib's RAW patron-taint pipeline is dormant
-    // (no `input.fumbleTable` plumbed in), so this runs the d100-vs-
-    // chance creeping mechanic verbatim instead. See
-    // `_runLegacyPatronTaint` for the rationale and the migration
-    // hand-off plan.
-    if ((profile?.type === 'wizard' || profile?.type === 'elf') && this.system.class?.patron) {
-      await this._runLegacyPatronTaint(spellItem)
+    // D3a (2026-04-24) — persist the lib's per-cast patron-taint chance
+    // update. The lib runs the RAW creeping-chance check + result-table
+    // detection inside `calculateSpellCheck`; when the check ran this
+    // cast, `result.newPatronTaintChance` carries the updated value
+    // (1 on acquisition, currentChance + 1 on miss). The actor stores
+    // the chance as a percent string (`"3%"`), so format before writing.
+    // NPCs bail — matches the legacy `processSpellCheck:601-637`
+    // PC-only mechanic.
+    if (
+      !this.isNPC &&
+      result.patronTaintChecked &&
+      Number.isFinite(result.newPatronTaintChance)
+    ) {
+      await this.update({
+        'system.class.patronTaintChance': `${result.newPatronTaintChance}%`
+      })
     }
 
     return foundryRoll
-  }
-
-  /**
-   * Adapter-side preservation of the legacy patron-taint mechanic from
-   * `processSpellCheck` (`module/dcc.js:623-660`). DCC-system-as-shipped
-   * has a creeping-chance model: every patron-related cast on a patron-
-   * bound actor rolls 1d100 vs `system.class.patronTaintChance` and then
-   * bumps that chance by 1%, regardless of outcome. The chat indication
-   * only renders when the spell has a result table (the chat-card path);
-   * for table-less spells (the adapter's current scope) the chance bump
-   * is silent — exactly mirroring the legacy no-table fallback.
-   *
-   * **Permanent adapter infrastructure** (Phase 2 close decision,
-   * 2026-04-18). The lib's RAW model (`spells/spell-check.js:241`
-   * `handleWizardFumble`) is gated on a fumble (natural 1) AND a
-   * fumble-table entry tagged with `effect.type === 'patron-taint'` —
-   * Foundry-side fumble tables don't carry those tags, so the lib's
-   * pipeline stays dormant for this system. RAW alignment would
-   * require fumble-table effect-tag migration across sibling content
-   * modules (`dcc-core-book`, `xcc-core-book`) plus per-patron taint-
-   * table resolution; tracked as backlog, not a phase gate. This
-   * method is the authoritative patron-taint implementation for
-   * wizard / elf adapter casts indefinitely. See `00-progress.md`
-   * Phase 2 close-out (Gate 2) for the full rationale.
-   *
-   * @private
-   */
-  async _runLegacyPatronTaint (spellItem) {
-    if (!spellItem) return
-    const patronField = this.system.class?.patron
-    if (!patronField) return
-
-    const spellName = spellItem.name || ''
-    const associatedPatron = spellItem.system?.associatedPatron || ''
-    if (!spellName.includes('Patron') && !associatedPatron) return
-
-    const currentChance = parseInt(this.system.class?.patronTaintChance) || 1
-    const newChance = currentChance + 1
-
-    await this.update({ 'system.class.patronTaintChance': `${newChance}%` })
   }
 
   /**

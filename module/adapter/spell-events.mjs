@@ -14,9 +14,12 @@
  *     `actor.loseSpell(item)` call in `processSpellCheck`).
  *   - Session 3: `onDisapprovalIncreased` drives cleric disapproval
  *     (replaces `actor.applyDisapproval()`).
- *   - Session 4: patron-taint creeping-chance mechanic preserved
- *     adapter-side by `_runLegacyPatronTaint` (the lib's RAW
- *     `onPatronTaint` is dormant — see `00-progress.md` open q5).
+ *   - Session 4 / D3a (2026-04-24): patron-taint routed fully through
+ *     the lib's RAW pipeline. The `onPatronTaint` event posts a chat
+ *     EMOTE announcing the acquisition; the updated
+ *     `patronTaintChance` is persisted back to
+ *     `system.class.patronTaintChance` by
+ *     `_castViaCalculateSpellCheck` from `result.newPatronTaintChance`.
  *   - Session 5 (current): `onSpellburnApplied` subtracts the burn
  *     commitment from the actor's physical abilities. Mercurial
  *     display chat is posted directly by `_castViaCalculateSpellCheck`
@@ -137,6 +140,42 @@ export function createSpellEvents ({ actor, spellItem }) {
           console.error('[DCC adapter] onSpellburnApplied: actor.update rejected', { actor: actor?.name, updates, err })
         })
       }
+    }
+
+    /**
+     * Lib reports patron taint was acquired for this cast — either via
+     * creeping-chance (d100 <= patronTaintChance) or a patron-spell
+     * result-table entry tagged with patron taint. Post an EMOTE chat
+     * indicating the acquisition. The manifestation, when the lib
+     * rolled one on a supplied `patronTaintTable`, is included in the
+     * chat text.
+     *
+     * The `patronTaintChance` reset to 1 is persisted by
+     * `_castViaCalculateSpellCheck` reading `result.newPatronTaintChance`.
+     * That flow runs for every patron-based cast; this event fires only
+     * on acquisition. NPC actors bail — the legacy `processSpellCheck`
+     * mechanic was PC-only.
+     */
+    events.onPatronTaint = (_result, taint) => {
+      if (actor.isNPC) return
+      if (typeof ChatMessage === 'undefined' || !CONFIG?.ChatMessage?.documentClass) return
+
+      const manifestation = taint?.description || ''
+      const content = manifestation
+        ? `<strong>${game.i18n.localize('DCC.PatronTaintChance')}!</strong> ${manifestation}`
+        : `<strong>${game.i18n.localize('DCC.PatronTaintChance')}!</strong>`
+
+      const messageData = {
+        user: game.user?.id,
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flags: { 'dcc.isPatronTaint': true },
+        style: CONST?.CHAT_MESSAGE_STYLES?.EMOTE,
+        content
+      }
+      ChatMessage.applyMode?.(messageData, game.settings?.get?.('core', 'messageMode'))
+      Promise.resolve(CONFIG.ChatMessage.documentClass.create(messageData)).catch((err) => {
+        console.error('[DCC adapter] onPatronTaint: ChatMessage.create rejected', { err })
+      })
     }
   }
 

@@ -135,15 +135,6 @@ export function fumbleRequiresCorruption(fumbleResult, profile) {
     return fumbleResult.corruption;
 }
 /**
- * Check if a fumble result requires a patron taint roll.
- */
-export function fumbleRequiresPatronTaint(fumbleResult, hasPatron) {
-    if (!hasPatron) {
-        return false;
-    }
-    return fumbleResult.patronTaint;
-}
-/**
  * Determine misfire type from fumble result.
  * This is a helper for systems that want to parse misfire effects.
  */

@@ -356,8 +356,23 @@ export interface SpellCastInput {
     spellburn?: SpellburnCommitment;
     /** Current disapproval range (cleric only, starts at 1) */
     disapprovalRange?: number;
-    /** Patron ID (for patron taint on fumbles) */
+    /** Patron ID (for patron taint acquisition) */
     patron?: string;
+    /**
+     * Current patron-taint chance as an integer percent (1-100).
+     * RAW (DCC core): every patron-based cast rolls d100 vs this value;
+     * on acquisition the chance resets to 1, otherwise it increments by 1.
+     * Defaults to 1 when omitted.
+     */
+    patronTaintChance?: number;
+    /**
+     * Caller override for "is this cast a patron-based spell?" When set, the
+     * lib honors it directly. When omitted, the lib falls back to
+     * `spell.tags?.includes('patron')`. Foundry-style systems that detect
+     * patron spells by name prefix ("Patron Bond", "Invoke Patron") or by a
+     * per-item flag should pass this explicitly.
+     */
+    isPatronSpell?: boolean;
     /** Situational modifiers to apply */
     situationalModifiers?: LegacyRollModifier[];
     /** Action die override (if not d20) */
@@ -405,7 +420,32 @@ export interface SpellCastResult {
     corruptionResult?: CorruptionResult;
     /** Fumble result (if applicable) */
     fumbleResult?: SpellFumbleResult;
-    /** Patron taint result (if applicable) */
+    /**
+     * Did the per-cast creeping-chance patron-taint check fire this cast?
+     * True when `patron` is set AND `isPatronCast` returns true — regardless
+     * of spell outcome (success, failure, fumble all still check).
+     */
+    patronTaintChecked: boolean;
+    /** The d100 rolled for the creeping-chance check (only present when checked). */
+    patronTaintRoll?: number;
+    /**
+     * Was patron taint acquired on this cast? True when either:
+     * 1. Creeping-chance check hit (roll <= chance), OR
+     * 2. The spell's result-table entry carries a patron-taint outcome
+     *    (`effect.type === 'patron-taint'` or `effect.data.patronTaint === true`).
+     */
+    patronTaintAcquired: boolean;
+    /** Which trigger acquired the taint (only present when acquired). */
+    patronTaintSource?: "creeping-chance" | "result-table";
+    /**
+     * Post-cast patron-taint chance. Only set when `patronTaintChecked`.
+     * RAW: resets to 1 on acquisition, else currentChance + 1.
+     */
+    newPatronTaintChance?: number;
+    /**
+     * Patron-taint manifestation (only present when acquired AND a
+     * `patronTaintTable` was provided). Rolled via `rollPatronTaint`.
+     */
     patronTaintResult?: PatronTaintResult;
     /** Disapproval increase amount (cleric) */
     disapprovalIncrease: number;

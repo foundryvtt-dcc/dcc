@@ -238,11 +238,20 @@ export function castSpell(input, options = {}, events) {
             rollResult.total = rollResult.total - rollResult.natural + options.forceNatural;
         }
     }
-    // Calculate total (natural may have been overridden)
-    const total = rollResult.total;
     // Determine critical/fumble
     const critical = natural !== undefined && natural === getDieFaces(die);
     const fumble = natural !== undefined && natural === 1;
+    // Natural 1 on a spell check is a fumble. Per DCC RAW (core rulebook,
+    // spell-check chapter), a fumble eliminates modifiers — the total used
+    // for result-table lookup is exactly 1, not `natural + modifiers`. This
+    // is what allows patron-spell entries like Bobugbubilz's Tadpole
+    // Transformation "roll 1: Lost, failure, and patron taint" to fire for
+    // high-modifier wizards; without this rule the +5 INT mod would push
+    // the effective roll off the taint row.
+    let total = rollResult.total;
+    if (fumble && total !== undefined) {
+        total = 1;
+    }
     // Determine result tier
     let tier;
     let resultText;
@@ -293,6 +302,8 @@ export function castSpell(input, options = {}, events) {
         corruptionTriggered,
         disapprovalIncrease,
         luckBurned: input.luckBurn ?? 0,
+        patronTaintChecked: false,
+        patronTaintAcquired: false,
     };
     // Add optional fields only if they have values (exactOptionalPropertyTypes)
     if (natural !== undefined) {

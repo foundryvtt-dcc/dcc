@@ -87,11 +87,12 @@ Phase 3 session 20 (C1, 2026-04-20) **retired the `critText` /
 `module/actor.js`; the canonical `critResult` / `fumbleResult`
 fields stay emitted. dcc-qol fix (2-line rename, documented as a
 migration recipe in `EXTENSION_API.md`) pending dcc-qol release.
-Phase 2 close-out pinned two
-decisions: (a) `game.dcc.processSpellCheck` is permanent stable API
-— no deprecation, no shim, route migration is per-call-site and
-incremental; (b) `_runLegacyPatronTaint` is permanent adapter
-infrastructure — RAW alignment deferred to backlog. Phase 3
+Phase 2 close-out pinned `game.dcc.processSpellCheck` as permanent
+stable API — no deprecation, no shim, route migration is per-call-
+site and incremental. (The original Phase 2 close-out also deferred
+patron-taint RAW alignment as "permanent adapter infrastructure";
+session 21 / D3a resolved that lib-side on 2026-04-24 and retired
+`_runLegacyPatronTaint`.) Phase 3
 session 1 closed open question #6 via a dialog-adapter
 (`module/adapter/roll-dialog.mjs` + `promptSpellburnCommitment`).
 Phase 3 session 2 split `DCCActor.rollToHit` into a dispatcher +
@@ -227,17 +228,25 @@ is surfaced for downstream crit-table routing.
   ~40 s thanks to the session-reuse fixture; full Playwright suite
   runs in ~8 min.
 
-**This session's goal:** **C2 pruned pre-V14 migrations (2026-04-23).**
-All Group D retirements + all cruft slices (C1 critText/fumbleText
-shims, C2 pre-V14 migrations, C3 halfling i18n-localize audit) are
-now landed. `module/migrations.js` version-gated branches are all
-gone; worlds at `currentVersion < 0.66` get an actionable
-`ui.notifications.error` (new i18n key
-`DCC.MigrationUnsupportedVersion`, translated across all 7 langs)
-telling them to open the world in a pre-V14 DCC release first.
+**This session's goal:** **Session 21 / D3a landed patron-taint RAW
+alignment (2026-04-24).** `dcc-core-lib@0.7.0` replaced the fumble-
+gated taint mechanic with the two RAW triggers (creeping-chance d100
+vs `patronTaintChance`, +1% per miss / reset to 1 on acquisition;
+patron-spell result-table entry detection via `effect.type ===
+'patron-taint'` or `effect.data.patronTaint === true`) plus the
+natural-1-forces-result-table-row-1 rule. Adapter side threads
+`patronTaintChance` + `isPatronSpell` onto `castInput`, pre-rolls
+the 1d100 via Foundry in the two-pass roller (same pattern as
+disapproval d4), wires `onPatronTaint` chat render, and persists
+`newPatronTaintChance` post-cast. `_runLegacyPatronTaint` deleted
+(36 lines). 917 Vitest + 97 Playwright (+2 new acquisition /
+non-patron-spell assertions).
 
-**Remaining backlog candidates** (all STOP AND ASK): D3 patron-taint
-RAW alignment (cross-repo design); D4 fold direct-reimpl spell-check
+**Remaining backlog candidates** (all STOP AND ASK): D3b per-patron
+taint manifestation tables (cross-repo content authoring in
+`dcc-core-book` / `xcc-core-book`); D3c retire the now-dead
+`SpellFumbleResult.patronTaint` flag + fumble-entry tag convention
+(lib cleanup, breaking change); D4 fold direct-reimpl spell-check
 branches (per-branch design); Group E vertical slice for XCC/MCC
 validation (explicit pick required). `docs/02-slice-backlog.md` has
 the full inventory. Ask Tim which to pick before executing.
@@ -283,19 +292,24 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**C2 landed 2026-04-23 — all three cruft slices (C1 + C2 + C3)
-closed.** Pick the next slice from `docs/02-slice-backlog.md`;
-the remaining candidates are:
+**D3a landed 2026-04-24 — patron-taint RAW alignment via
+`dcc-core-lib@0.7.0`.** Pick the next slice from
+`docs/02-slice-backlog.md`; the remaining candidates are:
 
-1. **D3 patron-taint RAW alignment** — cross-repo design decision
-   requiring coordination with `dcc-core-book` + `xcc-core-book`
-   for fumble-table `effect.type === 'patron-taint'` tagging. The
-   blocker, not a silent-to-execute slice. **STOP AND ASK**.
-2. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
+1. **D3b per-patron taint manifestation tables** — cross-repo
+   content authoring in `dcc-core-book` + `xcc-core-book` plus a
+   per-patron table-loader pattern on the adapter. The lib supports
+   `patronTaintTable` on `CastSpellInput` already; today the chat
+   EMOTE falls back to a generic message. **STOP AND ASK**.
+2. **D3c retire dormant `SpellFumbleResult.patronTaint`** — lib
+   breaking change to remove the flag + tag-parsing now that the
+   fumble path no longer consumes it. Needs sibling-module +
+   content audit first. **STOP AND ASK**.
+3. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
    still has branches for pre-built Roll + RollTable, `forceCrit`,
    skill-table spells (Turn Unholy). Each branch evaluated
    separately. **STOP AND ASK per branch**.
-3. **Group E vertical slice** (placeholder — needs explicit pick):
+4. **Group E vertical slice** (placeholder — needs explicit pick):
    halfling, mercurial-magic, or homebrew single-class. Would
    exercise Phase 4 + 5 + 6 end-to-end.
 
@@ -374,7 +388,10 @@ disables the Playwright login and tests hang for 11 s each.
 - #4 stabilizing undocumented `game.dcc.*` pieces — **Phase 3 is when
   this matters**; formal stabilization should land alongside the
   first attack-migration session.
-- ~~#5 patron-taint RAW alignment~~ — closed at Phase 2 close.
+- ~~#5 patron-taint RAW alignment~~ — closed at session 21 / D3a
+  (2026-04-24). `dcc-core-lib@0.7.0` landed the two RAW triggers;
+  `_runLegacyPatronTaint` retired. D3b (manifestation content) +
+  D3c (fumble-flag cleanup) tracked in `02-slice-backlog.md`.
 - ~~#6 spellburn dialog integration~~ — closed at Phase 3 session 1.
 - #7 wizard adapter-path modifier-dialog coverage beyond Spellburn
   — revisit after attack/damage dialog slice generalizes the

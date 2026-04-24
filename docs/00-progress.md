@@ -66,9 +66,13 @@ chained calls (`rollToHit` / `rollDamage` / `rollCritical` /
 `rollFumble`) are single-path via the adapter (sessions 15 / 16 /
 19 retired the respective `_xxxLegacy` branches). Groups A
 (attack-gate broadening) and C (parallel cruft slices) are closed.
-Remaining Phase 3 backlog is D3 (patron-taint RAW alignment — cross-
-repo design), D4 (fold direct-reimpl spell-check branches — per-
-branch design), each **STOP AND ASK**. See
+Session 21 / D3a (2026-04-24) retired `_runLegacyPatronTaint` by
+bringing patron taint in line with DCC RAW lib-side
+(`dcc-core-lib@0.7.0`). Remaining Phase 3 backlog is D3b (per-patron
+taint-table content authoring in `dcc-core-book` / `xcc-core-book`),
+D3c (retire the dormant `SpellFumbleResult.patronTaint` flag +
+fumble-entry tag convention), D4 (fold direct-reimpl spell-check
+branches — per-branch design), each **STOP AND ASK**. See
 [`docs/02-slice-backlog.md`](02-slice-backlog.md) for the full
 inventory. Phase 4 (schema slimming) has not started.
 
@@ -77,6 +81,23 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-04-24 — Session 21 / D3a: patron-taint RAW alignment +
+  retire `_runLegacyPatronTaint`.** Lib PR #6 (`dcc-core-lib@0.7.0`,
+  commit `e8ecabe`) replaced the fumble-gated taint mechanic with the
+  two RAW triggers: per-cast creeping chance (1d100 vs
+  `patronTaintChance`, +1% per miss, reset to 1 on acquisition) + per-
+  spell result-table entry (`effect.type === 'patron-taint'` or
+  `effect.data.patronTaint === true`). Also fixed natural-1 forcing
+  result-table lookup to row 1 (discards modifiers per RAW). Adapter
+  side: `spell-input.mjs` threads `patronTaintChance` +
+  `isPatronSpell` onto `castInput`; `spell-events.mjs` wires
+  `onPatronTaint` chat render; `actor.js` pre-rolls the 1d100 via
+  Foundry (same two-pass determinism pattern as disapproval d4),
+  persists `result.newPatronTaintChance`, and deletes
+  `_runLegacyPatronTaint` (36 lines). 917 Vitest + 97 Playwright
+  (+2 new: high-chance acquisition reset, non-patron spell no-op).
+  A new D3c backlog entry tracks the follow-up cleanup of the
+  now-dead `SpellFumbleResult.patronTaint` flag + fumble-entry tag.
 - **2026-04-23 — C2 cruft: prune pre-V14 migrations.** Seven
   version-gated branches in `module/migrations.js` deleted; new
   `MINIMUM_SUPPORTED_VERSION = 0.66` guard in `dcc.js`'s
@@ -97,18 +118,15 @@ archives linked above.
   `buildPassthroughDamageResult` accepts unparseable formulas
   (lance `doubleIfMounted`, homebrew `damageOverride`, multi-die)
   through the adapter with `libDamageResult.passthrough: true`.
-- **2026-04-20 — Sessions 16 + 17.** Retired `_rollCriticalLegacy` +
-  `_rollFumbleLegacy` (paired gate + legacy body + via-adapter alias
-  collapse); broadened damage gate for trailing bracket-flavor
-  formulas (`1d6+2[Slashing]`) via `peelTrailingFlavor` helper.
 
 ## Closed questions
 
-5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-18 at
-   Phase 2 close: keep `_runLegacyPatronTaint` as permanent adapter
-   infrastructure.** **Superseded** (per §8.6 retirement principle
-   added post-close): RAW alignment is back on the critical path as
-   D3, not permanent.
+5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at
+   Session 21 / D3a: `dcc-core-lib@0.7.0` models the two RAW triggers
+   (creeping chance + patron-spell result-table entries) plus the
+   natural-1-forces-row-1 rule; `_runLegacyPatronTaint` deleted.
+   D3b (content authoring) + D3c (fumble-entry tag cleanup) tracked
+   in the backlog but neither blocks Phase 3 close.**
 
 6. ~~**Spellburn dialog integration.**~~ **Resolved 2026-04-18 at
    Phase 3 session 1: adapter-side `promptSpellburnCommitment` dialog

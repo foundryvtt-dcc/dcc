@@ -23,10 +23,11 @@
  *     world), or `null` when unavailable.
  *
  * Session 4 populates `wizard.patron` / `elf.patron` so
- * `getPatronId(character)` resolves; the lib's RAW patron-taint
- * pipeline stays dormant (no fumbleTable loaded) and
- * `_runLegacyPatronTaint` adapter-side preserves the legacy
- * d100-vs-chance creeping mechanic verbatim.
+ * `getPatronId(character)` resolves; D3a (2026-04-24) additionally
+ * threads `input.patronTaintChance` + `input.isPatronSpell` so the
+ * lib's RAW creeping-chance + result-table triggers fire. Post-cast,
+ * `_castViaCalculateSpellCheck` persists `result.newPatronTaintChance`
+ * back to `system.class.patronTaintChance`.
  *
  * Session 5 adds spellburn + mercurial wiring:
  *   - `input.spellburn` is forwarded from `options.spellburn` when the
@@ -254,15 +255,12 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
   }
 
   // Wizard / elf profiles can be patron-bound. Populate the patron id
-  // so `getPatronId(character)` (spell-check.js:72) returns the actor's
-  // bound patron and the lib records `castInput.patron` on the result.
-  // Session 4 routes patron-bound wizards/elves through the adapter for
-  // the spell check itself, but the patron-taint side effect is still
-  // handled adapter-side (`_runLegacyPatronTaint`) — populating the
-  // field here is harmless because the lib's `handleWizardFumble`
-  // pipeline is gated on `input.fumbleTable`, which the adapter never
-  // sets. Future migration of the RAW patron-taint pipeline picks up
-  // this state without further plumbing.
+  // so `getPatronId(character)` returns the actor's bound patron and the
+  // lib records `castInput.patron`. D3a (2026-04-24) routes patron taint
+  // fully through the lib's RAW pipeline — creeping-chance + result-table
+  // triggers — and the adapter persists `newPatronTaintChance` via
+  // `_castViaCalculateSpellCheck`'s post-cast update. No Foundry-side
+  // mechanic remains.
   if (profile.type === 'wizard' || profile.type === 'elf') {
     const patron = actor.system.class?.patron
     if (patron) {
@@ -310,6 +308,26 @@ export function buildSpellCheckArgs (actor, spellItem, options = {}) {
     if (str > 0 || agl > 0 || sta > 0) {
       input.spellburn = { str, agl, sta }
     }
+  }
+
+  // D3a — patron-taint plumbing for wizard / elf.
+  // `patronTaintChance`: parsed from `system.class.patronTaintChance`
+  //   (stored on the actor as a percent string like "3%"; defaults to 1
+  //   when absent or unparseable).
+  // `isPatronSpell`: derived from the Foundry item's legacy-patron
+  //   detection — name prefix "Patron" OR a configured
+  //   `system.associatedPatron` string. Matches the detection
+  //   `processSpellCheck` uses at `module/dcc.js:609`.
+  if (profile.type === 'wizard' || profile.type === 'elf') {
+    const chanceStr = actor.system.class?.patronTaintChance
+    const parsedChance = parseInt(chanceStr, 10)
+    input.patronTaintChance = Number.isFinite(parsedChance) && parsedChance >= 1
+      ? parsedChance
+      : 1
+
+    const spellName = spellItem?.name || ''
+    const associatedPatron = spellItem?.system?.associatedPatron || ''
+    input.isPatronSpell = spellName.includes('Patron') || !!associatedPatron
   }
 
   return { character, input, profile, abilityId }

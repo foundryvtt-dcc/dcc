@@ -247,10 +247,10 @@ export async function renderSkillCheck ({
  * path emits (so downstream consumers keep working), plus a
  * structured `dcc.libResult` payload carrying the lib's spell-check
  * outcome. Side effects (spell loss, cleric disapproval, spellburn,
- * mercurial magic) land via `createSpellEvents` in `spell-events.mjs`
- * and are not re-applied here. Patron-taint is preserved adapter-side
- * via `_runLegacyPatronTaint` in `actor.js` (permanent — see Phase 2
- * close-out).
+ * mercurial magic, patron taint) land via `createSpellEvents` in
+ * `spell-events.mjs` and are not re-applied here. Patron taint is
+ * RAW-aligned in the lib (D3a, 2026-04-24); this path no longer
+ * runs a Foundry-side taint mechanic.
  *
  * @param {Object} params
  * @param {Object} params.actor - The DCCActor that cast.

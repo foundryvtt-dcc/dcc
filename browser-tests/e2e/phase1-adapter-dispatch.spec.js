@@ -521,14 +521,102 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       const line = await waitForAdapterLog('rollSpellCheck')
       assertPath(line, 'adapter', { spell: 'P1-Patron-Spell', mode: 'wizard' })
 
-      // Adapter-side legacy patron-taint bump: chance increments by 1%
-      // for any patron-related cast (associatedPatron set here).
+      // D3a — lib-driven creeping-chance bump. Starting chance is 1%
+      // (template default); a d100 roll rarely hits 1, so almost always
+      // misses and the chance increments to 2%. Very occasionally the
+      // chance hits and resets to 1% — both outcomes are acceptable
+      // (the bump-on-miss behavior is what we're exercising; accept
+      // either value to keep the test flake-free).
       const afterChance = await page.evaluate(() => {
         return game.actors.getName('P1 Spell WizardPatron').system.class.patronTaintChance
       })
       const before = parseInt(beforeChance) || 1
       const after = parseInt(afterChance) || 1
-      expect(after, `patronTaintChance should bump from ${beforeChance} to ${before + 1}%, got ${afterChance}`).toBe(before + 1)
+      const acceptable = after === before + 1 || after === 1
+      expect(acceptable, `patronTaintChance after cast should be ${before + 1}% (miss) or 1% (acquisition reset), got ${afterChance}`).toBe(true)
+    })
+
+    // D3a — patron-taint acquisition path. Seeding a high starting
+    // chance (99%) means a d100 roll almost certainly hits; the lib
+    // returns `newPatronTaintChance = 1` per RAW and the adapter
+    // persists it.
+    test('patron-bound wizard with high taint chance → acquisition resets chance to 1%', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell WizardPatronHigh',
+          type: 'Player',
+          system: {
+            class: {
+              className: 'Wizard',
+              patron: 'Bobugbubilz',
+              // 99% — virtually any d100 roll (1..99) acquires.
+              patronTaintChance: '99%'
+            }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Patron-Spell-High',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            associatedPatron: 'Bobugbubilz'
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell WizardPatronHigh').rollSpellCheck({ spell: 'P1-Patron-Spell-High' })
+      })
+      await waitForAdapterLog('rollSpellCheck')
+
+      const afterChance = await page.evaluate(() => {
+        return game.actors.getName('P1 Spell WizardPatronHigh').system.class.patronTaintChance
+      })
+      // With 99% chance, d100 roll 1..99 acquires → chance resets to 1%.
+      // Only a roll of exactly 100 misses → chance increments to 100%.
+      // 99/100 ≈ 1% flake rate; accept either for resilience.
+      const acceptable = afterChance === '1%' || afterChance === '100%'
+      expect(acceptable, `expected chance to reset to 1% (near-certain acquisition with 99% starting chance) or increment to 100% (100-roll miss), got ${afterChance}`).toBe(true)
+    })
+
+    // D3a — non-patron spell on a patron-bound wizard skips the taint
+    // check entirely. Starting chance stays unchanged regardless of
+    // outcome.
+    test('patron-bound wizard casting a non-patron spell → patronTaintChance unchanged', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell WizardPatronNonPatronSpell',
+          type: 'Player',
+          system: {
+            class: {
+              className: 'Wizard',
+              patron: 'Bobugbubilz',
+              patronTaintChance: '5%'
+            }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          // Plain spell name (no "Patron") + no associatedPatron → not
+          // a patron-based cast per the adapter's `isPatronSpell` heuristic.
+          name: 'P1-Mundane-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' }
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell WizardPatronNonPatronSpell').rollSpellCheck({ spell: 'P1-Mundane-Spell' })
+      })
+      await waitForAdapterLog('rollSpellCheck')
+
+      const afterChance = await page.evaluate(() => {
+        return game.actors.getName('P1 Spell WizardPatronNonPatronSpell').system.class.patronTaintChance
+      })
+      expect(afterChance, 'non-patron casts must not touch patronTaintChance').toBe('5%')
     })
 
     // Regression: programmatic PC with `class.className: 'Cleric'` but

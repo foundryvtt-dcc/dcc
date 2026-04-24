@@ -547,34 +547,34 @@ describe("calculateSpellCheck", () => {
 // =============================================================================
 describe("isSpellCheckSuccess", () => {
     it("returns true for success tiers", () => {
-        expect(isSpellCheckSuccess({ tier: "success", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(true);
-        expect(isSpellCheckSuccess({ tier: "success-minor", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(true);
-        expect(isSpellCheckSuccess({ tier: "success-major", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(true);
-        expect(isSpellCheckSuccess({ tier: "success-critical", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(true);
+        expect(isSpellCheckSuccess({ tier: "success", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(true);
+        expect(isSpellCheckSuccess({ tier: "success-minor", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(true);
+        expect(isSpellCheckSuccess({ tier: "success-major", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(true);
+        expect(isSpellCheckSuccess({ tier: "success-critical", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(true);
     });
     it("returns false for failure tiers", () => {
-        expect(isSpellCheckSuccess({ tier: "failure", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(false);
-        expect(isSpellCheckSuccess({ tier: "lost", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(false);
+        expect(isSpellCheckSuccess({ tier: "failure", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(false);
+        expect(isSpellCheckSuccess({ tier: "lost", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(false);
     });
     it("returns false for error results", () => {
-        expect(isSpellCheckSuccess({ error: "test error", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(false);
+        expect(isSpellCheckSuccess({ error: "test error", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(false);
     });
 });
 describe("isSpellCheckFailure", () => {
     it("returns true for failure tiers", () => {
-        expect(isSpellCheckFailure({ tier: "failure", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(true);
-        expect(isSpellCheckFailure({ tier: "lost", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(true);
+        expect(isSpellCheckFailure({ tier: "failure", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(true);
+        expect(isSpellCheckFailure({ tier: "lost", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(true);
     });
     it("returns false for success tiers", () => {
-        expect(isSpellCheckFailure({ tier: "success", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(false);
+        expect(isSpellCheckFailure({ tier: "success", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(false);
     });
     it("returns true for error results", () => {
-        expect(isSpellCheckFailure({ error: "test error", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 })).toBe(true);
+        expect(isSpellCheckFailure({ error: "test error", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false })).toBe(true);
     });
 });
 describe("getSpellCheckSummary", () => {
     it("shows error message for errors", () => {
-        const result = { error: "Something went wrong", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0 };
+        const result = { error: "Something went wrong", spellId: "test", die: "d20", formula: "", modifiers: [], critical: false, fumble: false, spellLost: false, corruptionTriggered: false, disapprovalIncrease: 0, luckBurned: 0, patronTaintChecked: false, patronTaintAcquired: false };
         expect(getSpellCheckSummary(result)).toContain("Error: Something went wrong");
     });
     it("shows roll info", () => {
@@ -592,6 +592,8 @@ describe("getSpellCheckSummary", () => {
             corruptionTriggered: false,
             disapprovalIncrease: 0,
             luckBurned: 0,
+            patronTaintChecked: false,
+            patronTaintAcquired: false,
         };
         const summary = getSpellCheckSummary(result);
         expect(summary).toContain("Roll: 15 → 20");
@@ -612,6 +614,8 @@ describe("getSpellCheckSummary", () => {
             corruptionTriggered: false,
             disapprovalIncrease: 0,
             luckBurned: 0,
+            patronTaintChecked: false,
+            patronTaintAcquired: false,
         };
         expect(getSpellCheckSummary(result)).toContain("CRITICAL!");
     });
@@ -630,10 +634,278 @@ describe("getSpellCheckSummary", () => {
             corruptionTriggered: false,
             disapprovalIncrease: 0,
             luckBurned: 0,
+            patronTaintChecked: false,
+            patronTaintAcquired: false,
         };
         const summary = getSpellCheckSummary(result);
         expect(summary).toContain("FUMBLE!");
         expect(summary).toContain("Spell Lost");
+    });
+});
+// =============================================================================
+// Patron Taint Tests (RAW-aligned: creeping chance + result-table trigger)
+// =============================================================================
+describe("Patron Taint", () => {
+    const patronSpell = {
+        id: "invoke-patron",
+        name: "Invoke Patron",
+        level: 1,
+        casterTypes: ["wizard", "elf"],
+        description: "Invokes the patron for aid.",
+        tags: ["patron"],
+    };
+    // Patron spell with a row-1 result-table entry tagged for patron taint,
+    // modelled after Bobugbubilz's Tadpole Transformation roll-of-1:
+    // "Lost, failure, and patron taint."
+    const taintedResultTable = {
+        id: "tadpole-results",
+        name: "Tadpole Transformation",
+        type: "tiered",
+        entries: [
+            {
+                min: 1,
+                max: 1,
+                tier: "lost",
+                text: "Lost, failure, and patron taint.",
+                effect: { type: "lost", data: { patronTaint: true } },
+            },
+            { min: 2, max: 11, tier: "failure", text: "Lost. Failure." },
+            { min: 12, max: 13, tier: "success-minor", text: "Minor effect." },
+            { min: 14, max: 17, tier: "success", text: "Normal effect." },
+            { min: 18, max: 999, tier: "success-major", text: "Major effect." },
+        ],
+    };
+    const patronTaintTable = {
+        id: "bobugbubilz-taint",
+        name: "Bobugbubilz Taint",
+        type: "simple",
+        entries: [
+            { min: 1, max: 2, text: "Skin turns slightly amphibian." },
+            { min: 3, max: 4, text: "Eyes become frog-like." },
+            { min: 5, max: 6, text: "Voice takes on a croaking quality." },
+        ],
+    };
+    function wizardWithSpellbook() {
+        const wizard = createTestWizard();
+        wizard.state.classState = {
+            wizard: {
+                corruption: [],
+                patron: "bobugbubilz",
+                spellbook: { spells: [{ spellId: "invoke-patron", lost: false }] },
+            },
+        };
+        return wizard;
+    }
+    describe("creeping-chance trigger", () => {
+        it("runs on every patron cast regardless of outcome", () => {
+            const wizard = wizardWithSpellbook();
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: mockSpellResultTable,
+                patronTaintChance: 3,
+            }, { roller: (formula) => (formula === "1d100" ? 50 : 15) });
+            expect(result.patronTaintChecked).toBe(true);
+            expect(result.patronTaintRoll).toBe(50);
+            expect(result.patronTaintAcquired).toBe(false);
+            expect(result.newPatronTaintChance).toBe(4);
+        });
+        it("acquires taint when roll <= chance, resetting chance to 1", () => {
+            const wizard = wizardWithSpellbook();
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: mockSpellResultTable,
+                patronTaintChance: 3,
+                patronTaintTable,
+            }, { roller: (formula) => (formula === "1d100" ? 3 : 15) });
+            expect(result.patronTaintAcquired).toBe(true);
+            expect(result.patronTaintSource).toBe("creeping-chance");
+            expect(result.newPatronTaintChance).toBe(1);
+            expect(result.patronTaintResult).toBeDefined();
+            expect(result.patronTaintResult?.patronId).toBe("bobugbubilz");
+        });
+        it("increments chance by 1 on miss", () => {
+            const wizard = wizardWithSpellbook();
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: mockSpellResultTable,
+                patronTaintChance: 7,
+            }, { roller: (formula) => (formula === "1d100" ? 42 : 15) });
+            expect(result.patronTaintAcquired).toBe(false);
+            expect(result.newPatronTaintChance).toBe(8);
+        });
+        it("defaults chance to 1 when patronTaintChance omitted", () => {
+            const wizard = wizardWithSpellbook();
+            const hit = calculateSpellCheck(wizard, { spell: patronSpell, resultTable: mockSpellResultTable }, { roller: (formula) => (formula === "1d100" ? 1 : 15) });
+            expect(hit.patronTaintAcquired).toBe(true);
+            expect(hit.newPatronTaintChance).toBe(1);
+            const miss = calculateSpellCheck(wizard, { spell: patronSpell, resultTable: mockSpellResultTable }, { roller: (formula) => (formula === "1d100" ? 2 : 15) });
+            expect(miss.patronTaintAcquired).toBe(false);
+            expect(miss.newPatronTaintChance).toBe(2);
+        });
+        it("surfaces minimal patron-taint event when no table provided", () => {
+            const wizard = wizardWithSpellbook();
+            const taintEvents = [];
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: mockSpellResultTable,
+                patronTaintChance: 50,
+            }, { roller: (formula) => (formula === "1d100" ? 10 : 15) }, {
+                onPatronTaint: (_r, taint) => {
+                    taintEvents.push(taint);
+                },
+            });
+            expect(result.patronTaintAcquired).toBe(true);
+            expect(result.patronTaintResult).toBeUndefined();
+            expect(taintEvents).toHaveLength(1);
+            expect(taintEvents[0]?.patronId).toBe("bobugbubilz");
+        });
+    });
+    describe("gate: no check without patron or non-patron spell", () => {
+        it("skips when patron is unset", () => {
+            const wizard = createTestWizard();
+            // Remove patron
+            if (wizard.state.classState?.wizard) {
+                delete wizard.state.classState.wizard.patron;
+            }
+            const result = calculateSpellCheck(wizard, { spell: patronSpell, resultTable: mockSpellResultTable, patronTaintChance: 50 }, { roller: () => 1 });
+            expect(result.patronTaintChecked).toBe(false);
+            expect(result.newPatronTaintChance).toBeUndefined();
+        });
+        it("skips when spell is not patron-based", () => {
+            const wizard = wizardWithSpellbook();
+            // Re-use testSpell (magic-missile) but replace spellbook
+            if (wizard.state.classState?.wizard) {
+                wizard.state.classState.wizard.spellbook = {
+                    spells: [{ spellId: "magic-missile", lost: false }],
+                };
+            }
+            const result = calculateSpellCheck(wizard, { spell: testSpell, resultTable: mockSpellResultTable, patronTaintChance: 50 }, { roller: () => 1 });
+            expect(result.patronTaintChecked).toBe(false);
+        });
+        it("honors explicit isPatronSpell override", () => {
+            const wizard = wizardWithSpellbook();
+            if (wizard.state.classState?.wizard) {
+                wizard.state.classState.wizard.spellbook = {
+                    spells: [{ spellId: "magic-missile", lost: false }],
+                };
+            }
+            const result = calculateSpellCheck(wizard, {
+                // testSpell has no `patron` tag; explicit override should force a check
+                spell: testSpell,
+                resultTable: mockSpellResultTable,
+                patronTaintChance: 50,
+                isPatronSpell: true,
+            }, { roller: (formula) => (formula === "1d100" ? 99 : 15) });
+            expect(result.patronTaintChecked).toBe(true);
+            expect(result.patronTaintAcquired).toBe(false);
+        });
+    });
+    describe("result-table trigger", () => {
+        it("acquires taint when result-table entry is tagged (data.patronTaint)", () => {
+            const wizard = wizardWithSpellbook();
+            // Natural 1 forces result-table lookup to row 1 regardless of modifiers.
+            // Tadpole row 1 has effect.data.patronTaint = true.
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: taintedResultTable,
+                patronTaintChance: 1,
+                patronTaintTable,
+            }, { roller: (formula) => (formula === "1d100" ? 99 : 1) });
+            expect(result.fumble).toBe(true);
+            expect(result.total).toBe(1);
+            expect(result.tier).toBe("lost");
+            expect(result.patronTaintAcquired).toBe(true);
+            expect(result.patronTaintSource).toBe("result-table");
+            expect(result.newPatronTaintChance).toBe(1);
+            expect(result.patronTaintResult).toBeDefined();
+        });
+        it("acquires taint when result-table entry uses effect.type === 'patron-taint'", () => {
+            const wizard = wizardWithSpellbook();
+            const primaryTypeTable = {
+                id: "explicit-taint",
+                name: "Explicit Taint",
+                type: "tiered",
+                entries: [
+                    {
+                        min: 1,
+                        max: 1,
+                        tier: "lost",
+                        text: "Patron taint manifests.",
+                        effect: { type: "patron-taint" },
+                    },
+                    { min: 2, max: 999, tier: "success", text: "OK." },
+                ],
+            };
+            const result = calculateSpellCheck(wizard, { spell: patronSpell, resultTable: primaryTypeTable, patronTaintChance: 1 }, { roller: (formula) => (formula === "1d100" ? 99 : 1) });
+            expect(result.patronTaintAcquired).toBe(true);
+            expect(result.patronTaintSource).toBe("result-table");
+        });
+        it("does not acquire via result-table when entry has no patron-taint tag", () => {
+            const wizard = wizardWithSpellbook();
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: mockSpellResultTable,
+                patronTaintChance: 1,
+            }, { roller: (formula) => (formula === "1d100" ? 99 : 1) });
+            expect(result.fumble).toBe(true);
+            expect(result.patronTaintAcquired).toBe(false);
+        });
+    });
+    describe("fumble forces result-table lookup to row 1", () => {
+        it("uses 1 for tier lookup on natural 1 regardless of modifiers", () => {
+            const wizard = wizardWithSpellbook();
+            // Natural 1 with wizard int-mod +2, level 3 → unmodified total 1+5 = 6
+            // (would hit row 2-11 "Lost. Failure." on Tadpole table). With RAW
+            // fumble rule applied, total is forced to 1 and the row-1 entry is
+            // used instead.
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: taintedResultTable,
+                patronTaintChance: 1,
+            }, { roller: (formula) => (formula === "1d100" ? 99 : 1) });
+            expect(result.natural).toBe(1);
+            expect(result.total).toBe(1);
+            expect(result.resultText).toBe("Lost, failure, and patron taint.");
+        });
+    });
+    describe("precedence and ordering", () => {
+        it("marks creeping-chance as source when both triggers hit", () => {
+            const wizard = wizardWithSpellbook();
+            // chance 50 + d100 roll 1 → creeping-chance hits.
+            // natural 1 also lands on tainted row-1 → result-table would also hit.
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: taintedResultTable,
+                patronTaintChance: 50,
+                patronTaintTable,
+            }, { roller: (formula) => (formula === "1d100" ? 1 : 1) });
+            expect(result.patronTaintAcquired).toBe(true);
+            expect(result.patronTaintSource).toBe("creeping-chance");
+        });
+    });
+    describe("fumble tables no longer trigger taint", () => {
+        it("ignores patron-taint tag on fumble-table entries (regression guard)", () => {
+            const wizard = wizardWithSpellbook();
+            const fumbleWithTaintTag = {
+                id: "fumble-with-taint-tag",
+                name: "Fumble with Taint Tag",
+                type: "simple",
+                entries: [
+                    { min: 1, max: 999, text: "Taint tag is cruft.", effect: { type: "patron-taint" } },
+                ],
+            };
+            const result = calculateSpellCheck(wizard, {
+                spell: patronSpell,
+                resultTable: mockSpellResultTable,
+                fumbleTable: fumbleWithTaintTag,
+                patronTaintChance: 1,
+                patronTaintTable,
+            }, { roller: (formula) => (formula === "1d100" ? 99 : 1) });
+            // Creeping-chance missed (99 > 1), result table row-1 has no taint
+            // tag, fumble table's spurious tag must be ignored.
+            expect(result.fumble).toBe(true);
+            expect(result.patronTaintAcquired).toBe(false);
+        });
     });
 });
 //# sourceMappingURL=spell-check.test.js.map

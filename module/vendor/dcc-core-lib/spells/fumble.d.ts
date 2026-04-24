@@ -49,10 +49,6 @@ export declare function isSpellFumble(natural: number): boolean;
  */
 export declare function fumbleRequiresCorruption(fumbleResult: SpellFumbleResult, profile: CasterProfile): boolean;
 /**
- * Check if a fumble result requires a patron taint roll.
- */
-export declare function fumbleRequiresPatronTaint(fumbleResult: SpellFumbleResult, hasPatron: boolean): boolean;
-/**
  * Misfire result - spell goes wrong in some way
  */
 export interface MisfireResult {

@@ -12,9 +12,10 @@
 import { getAbilityModifier } from "../data/ability-modifiers.js";
 import { castSpell, getCasterProfile } from "./cast.js";
 import { findSpellEntry, markSpellLost } from "./spellbook.js";
-import { rollSpellFumble, fumbleRequiresCorruption, fumbleRequiresPatronTaint } from "./fumble.js";
-import { rollCorruption, determineCorruptionTier, rollPatronTaint } from "./corruption.js";
+import { rollSpellFumble, fumbleRequiresCorruption } from "./fumble.js";
+import { rollCorruption, determineCorruptionTier } from "./corruption.js";
 import { checkAndRollDisapproval, rollTriggersDisapproval, increaseDisapprovalRange } from "./disapproval.js";
+import { applyPatronTaintAcquisition, effectTriggersTaint, isPatronCast, rollPatronTaintChanceCheck, } from "./patron-taint-check.js";
 // =============================================================================
 // Character State Extraction
 // =============================================================================
@@ -139,6 +140,12 @@ export function buildSpellCastInput(character, input, profile) {
     if (input.situationalModifiers !== undefined) {
         castInput.situationalModifiers = input.situationalModifiers;
     }
+    if (input.patronTaintChance !== undefined) {
+        castInput.patronTaintChance = input.patronTaintChance;
+    }
+    if (input.isPatronSpell !== undefined) {
+        castInput.isPatronSpell = input.isPatronSpell;
+    }
     // Add cleric-specific fields
     if (profile.usesDisapproval) {
         castInput.disapprovalRange = getDisapprovalRange(character);
@@ -196,10 +203,28 @@ export function calculateSpellCheck(character, input, options = {}, events) {
     const result = { ...baseResult };
     // Handle fumble for wizard/elf
     if (baseResult.fumble && profile.usesCorruption && !options.skipFumble) {
-        const fumbleResult = handleWizardFumble(input.spell.level, profile, castInput.patron, input.fumbleTable, input.corruptionTable, input.patronTaintTable, options, events, result);
+        const fumbleResult = handleWizardFumble(input.spell.level, profile, input.fumbleTable, input.corruptionTable, options, events, result);
         if (fumbleResult !== undefined) {
             result.fumbleResult = fumbleResult;
         }
+    }
+    // Handle patron taint. RAW has two independent triggers:
+    //   1. Creeping chance — every patron-based cast rolls d100 vs the
+    //      caster's `patronTaintChance`; on hit, taint is acquired and the
+    //      chance resets to 1. On miss, chance increments by 1.
+    //   2. Result-table entry — some patron-spell result-table rows list
+    //      taint as an outcome (e.g. "Lost, failure, and patron taint"),
+    //      tagged by content via `effect.type === 'patron-taint'` or
+    //      `effect.data.patronTaint === true`. These acquire taint
+    //      unconditionally when the row is hit. Fumble's forcing of the
+    //      result-table lookup to row 1 (handled in castSpell) is what
+    //      makes this path fire on natural 1s for high-modifier wizards.
+    //
+    // Both triggers run; either acquires. The fumble-gated taint path that
+    // previously lived in handleWizardFumble has been removed — patron taint
+    // has no RAW connection to spell or combat fumble tables.
+    if (castInput.patron && isPatronCast(input.spell, castInput)) {
+        handlePatronTaintTriggers(castInput, result, input.patronTaintTable, options, events);
     }
     // Handle corruption trigger (separate from fumble)
     if (baseResult.corruptionTriggered &&
@@ -236,9 +261,15 @@ export function calculateSpellCheck(character, input, options = {}, events) {
 // Follow-up Roll Handlers
 // =============================================================================
 /**
- * Handle fumble for wizard/elf
+ * Handle fumble for wizard/elf.
+ *
+ * Rolls on the spell fumble table and — when a fumble entry is tagged
+ * for corruption — rolls on the corruption table. Patron taint is NOT
+ * handled here: RAW routes taint through the creeping-chance check and
+ * patron-spell result-table entries, neither of which is the spell
+ * fumble table. See `handlePatronTaintTriggers`.
  */
-function handleWizardFumble(spellLevel, profile, patron, fumbleTable, corruptionTable, patronTaintTable, options, events, result) {
+function handleWizardFumble(spellLevel, profile, fumbleTable, corruptionTable, options, events, result) {
     if (!fumbleTable)
         return undefined;
     const fumbleResult = rollSpellFumble(spellLevel, fumbleTable, options);
@@ -249,13 +280,46 @@ function handleWizardFumble(spellLevel, profile, patron, fumbleTable, corruption
         result.corruptionResult = corruptionResult;
         events?.onCorruptionTriggered?.(result, corruptionResult);
     }
-    // Check if fumble triggers patron taint
-    if (fumbleRequiresPatronTaint(fumbleResult, !!patron) && patron && patronTaintTable) {
-        const taintResult = rollPatronTaint(patron, patronTaintTable, options);
-        result.patronTaintResult = taintResult;
-        events?.onPatronTaint?.(result, taintResult);
-    }
     return fumbleResult;
+}
+/**
+ * Run patron-taint checks for a patron-based cast. Merges the two RAW
+ * acquisition paths (creeping chance, result-table entry) and populates
+ * the corresponding fields on `result`:
+ *
+ *   - `patronTaintChecked`: always true when this function runs (callers
+ *     must gate on `castInput.patron && isPatronCast(...)`).
+ *   - `patronTaintRoll`: the creeping-chance d100.
+ *   - `patronTaintAcquired`: true if either trigger fired.
+ *   - `patronTaintSource`: which trigger fired first-wins order is
+ *     creeping-chance, then result-table.
+ *   - `newPatronTaintChance`: 1 on acquisition (RAW reset), else
+ *     `currentChance + 1`.
+ *   - `patronTaintResult`: populated when acquired AND a
+ *     `patronTaintTable` is provided (via `applyPatronTaintAcquisition`).
+ */
+function handlePatronTaintTriggers(castInput, result, patronTaintTable, options, events) {
+    const patron = castInput.patron;
+    if (patron === undefined)
+        return; // caller-gated; defensive only
+    const currentChance = castInput.patronTaintChance ?? 1;
+    const chanceCheck = rollPatronTaintChanceCheck(currentChance, options);
+    const resultTableTriggered = effectTriggersTaint(result.effect);
+    result.patronTaintChecked = true;
+    result.patronTaintRoll = chanceCheck.roll;
+    const acquired = chanceCheck.acquired || resultTableTriggered;
+    result.patronTaintAcquired = acquired;
+    if (acquired) {
+        result.patronTaintSource = chanceCheck.acquired ? "creeping-chance" : "result-table";
+        result.newPatronTaintChance = 1;
+        const taintResult = applyPatronTaintAcquisition(patron, patronTaintTable, options, events, result);
+        if (taintResult !== undefined) {
+            result.patronTaintResult = taintResult;
+        }
+    }
+    else {
+        result.newPatronTaintChance = currentChance + 1;
+    }
 }
 /**
  * Handle corruption (non-fumble trigger)
@@ -304,6 +368,8 @@ function createErrorResult(spellId, error) {
         corruptionTriggered: false,
         disapprovalIncrease: 0,
         luckBurned: 0,
+        patronTaintChecked: false,
+        patronTaintAcquired: false,
         error,
     };
 }

@@ -39,6 +39,16 @@ export interface SpellCheckInput {
     disapprovalTable?: SimpleTable;
     /** Patron taint table (pre-loaded, if applicable) */
     patronTaintTable?: SimpleTable;
+    /**
+     * Current patron-taint chance as integer percent. Defaults to 1 when
+     * omitted. See `SpellCastInput.patronTaintChance`.
+     */
+    patronTaintChance?: number;
+    /**
+     * Caller override for "is this cast a patron-based spell?". When omitted,
+     * the lib falls back to `spell.tags?.includes('patron')`.
+     */
+    isPatronSpell?: boolean;
 }
 /**
  * Complete result of a spell check including all follow-up rolls

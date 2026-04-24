@@ -281,19 +281,47 @@ crit / fumble / damage retirements all complete**. Vitest 883
 cursed, dice-bearing, D2 damage retirement guard; rewrote
 `multi-damage-type → legacy` test).
 
-#### D3. Resolve RAW patron-taint alignment → retire `_runLegacyPatronTaint`
-- **Scope:** The Phase 2 close-out deferred RAW alignment for patron
-  taint. Per the new retirement principle, this is now critical
-  path. Either (a) the lib's RAW patron-taint replaces the legacy
-  d100-vs-chance mechanic — requires fumble-table effect-tag
-  migration across sibling content modules (`dcc-core-book`,
-  `xcc-core-book`); or (b) we formally accept the legacy mechanic
-  as a DCC-system-specific divergence and port it into the lib
-  (lib's combat rules get a variant flag).
-- **Stop-and-ask trigger:** this is a design decision with
-  cross-repo scope — always pause and ask. This entry documents
-  the blocker, not a silent-to-execute slice.
-- **Commit:** depends on decision outcome.
+#### ~~D3a. Patron-taint RAW alignment + retire `_runLegacyPatronTaint`.~~ **CLOSED 2026-04-24 (session 21)**.
+Lib PR #6 / `dcc-core-lib@0.7.0` landed the two RAW triggers
+(creeping chance + result-table-entry detection) plus the natural-1-
+forces-row-1 rule; adapter wired `onPatronTaint` + persistence of
+`newPatronTaintChance`; `_runLegacyPatronTaint` deleted. The
+original D3 scope correctly noted the trigger ambiguity; D3a
+resolved it in favor of RAW after reviewing the rulebook text +
+example patron-spell result tables (Bobugbubilz's Tadpole
+Transformation roll 1). 917 Vitest + 97 Playwright green.
+
+#### D3b. Per-patron taint manifestation tables (content)
+- **Scope:** D3a established the lib-side detection path. When
+  taint is acquired and a `patronTaintTable` is supplied, the lib
+  rolls manifestation via `rollPatronTaint`. Today no content
+  module ships per-patron taint tables — the chat EMOTE falls back
+  to a generic "Patron Taint!" message. Authoring tables in
+  `dcc-core-book` and `xcc-core-book` (per the rulebook examples)
+  plus adapter plumbing to load the correct table per
+  `actor.system.class.patron` would fill out the manifestation UX.
+- **Stop-and-ask trigger:** cross-repo content authoring — always
+  pause and ask before starting. Also needs a per-patron table
+  naming convention (e.g. `dcc-core-book.patron-taint-bobugbubilz`)
+  + a registry the adapter can look up.
+- **Commit:** scoped per-patron once the naming convention + loader
+  pattern land.
+
+#### D3c. Retire `SpellFumbleResult.patronTaint` flag + fumble-entry tag convention
+- **Scope:** After D3a, the lib still emits
+  `SpellFumbleResult.patronTaint: boolean` parsed from any fumble-
+  table entry tagged `effect.type === 'patron-taint'` or
+  `effect.data.patronTaint === true`. Nothing in the orchestration
+  consumes this flag — it's dead in practice. Removal is a small
+  lib-side breaking change (remove flag from result shape + remove
+  tag parsing in `rollSpellFumble` / `rollSpellFumbleWithModifier`).
+- **Stop-and-ask trigger:** audit sibling modules for any consumer
+  reading `SpellFumbleResult.patronTaint` (none expected, but
+  verify) AND audit `dcc-core-book` / `xcc-core-book` compendium
+  fumble tables for any entry tagged with the taint effect (strip
+  if found — the semantic never matched RAW).
+- **Commit:** single lib PR + vendor sync + CHANGELOG breaking-
+  change entry. No DCC-side adapter work needed.
 
 #### D4. Fold direct-reimpl spell-check branches
 - **Scope:** `rollSpellCheck` dispatcher has direct-reimpl branches
