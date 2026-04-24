@@ -253,11 +253,12 @@ manifestation pre-roll extends the two-pass deterministic roller
 when a table is present (lib's `rollPatronTaint` indexes d6 on
 acquisition). 924 Vitest + 98 Playwright.
 
-**Remaining backlog candidates** (all STOP AND ASK): D3b-β mirror
-the 5 core patron-taint tables into `dcc-official-data/src/spells/patron-taints.ts`
-(content-only copy-paste from compendium JSON → TS; XCC has no
-equivalent source repo); D3b-γ sibling-pack audit for
-`dcc-crawl-classes` / `mcc-classes` patron content; D3c retire
+**D3b-β authored cross-repo** (awaiting commit in `dcc-official-data`
+— different repo, different cadence; no DCC-system runtime change).
+**D3b-γ closed** as a no-op (sibling modules ship no patron-taint
+content; default `CONFIG.DCC.patronTaintPacks` seed is exhaustive).
+
+**Remaining backlog candidates** (all STOP AND ASK): D3c retire
 the now-dead `SpellFumbleResult.patronTaint` flag + fumble-entry
 tag convention (lib cleanup, breaking change); D4 fold
 direct-reimpl spell-check branches (per-branch design); Group E
@@ -307,27 +308,20 @@ observationally faithful through the adapter path.
 ### Next-session guidance
 
 **D3b-α landed 2026-04-24 — patron-taint manifestation table loader.**
+Session-22 follow-ons closed D3b-γ (sibling audit no-op) and
+authored D3b-β cross-repo (commit pending in `dcc-official-data`).
 Pick the next slice from `docs/02-slice-backlog.md`; the remaining
 candidates are:
 
-1. **D3b-β mirror core patron-taint tables into `dcc-official-data`**
-   — content-only copy-paste from `dcc-core-book`'s compendium JSON
-   into `dcc-official-data/src/spells/patron-taints.ts` (pattern:
-   `corruption.ts`). XCC has no equivalent source repo. No adapter
-   work. **STOP AND ASK**.
-2. **D3b-γ sibling-pack audit** — check `dcc-crawl-classes` /
-   `mcc-classes` for patron-taint RollTables; if present, either
-   sibling calls `CONFIG.DCC.patronTaintPacks.addPack(…)` on init
-   (preferred) or DCC's default seed list grows. **STOP AND ASK**.
-3. **D3c retire dormant `SpellFumbleResult.patronTaint`** — lib
+1. **D3c retire dormant `SpellFumbleResult.patronTaint`** — lib
    breaking change to remove the flag + tag-parsing now that the
    fumble path no longer consumes it. Needs sibling-module +
    content audit first. **STOP AND ASK**.
-4. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
+2. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
    still has branches for pre-built Roll + RollTable, `forceCrit`,
    skill-table spells (Turn Unholy). Each branch evaluated
    separately. **STOP AND ASK per branch**.
-5. **Group E vertical slice** (placeholder — needs explicit pick):
+3. **Group E vertical slice** (placeholder — needs explicit pick):
    halfling, mercurial-magic, or homebrew single-class. Would
    exercise Phase 4 + 5 + 6 end-to-end.
 

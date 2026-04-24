@@ -74,13 +74,16 @@ patron-taint manifestation table loader: the adapter now routes
 so the 10 authored Bobugbubilz / Azi Dahaka / Sezrekan / the King
 of Elfland / Three Fates / Barzodi / Circe / Medea / Prometheus /
 Amazing Rando manifestation tables shipped in `dcc-core-book` +
-`xcc-core-book` light up the `onPatronTaint` chat emote. Remaining
-Phase 3 backlog is D3b-β (mirror core tables into
-`dcc-official-data` source), D3b-γ (sibling-pack audit for
-`dcc-crawl-classes` / `mcc-classes`), D3c (retire the dormant
-`SpellFumbleResult.patronTaint` flag + fumble-entry tag convention),
-D4 (fold direct-reimpl spell-check branches — per-branch design),
-each **STOP AND ASK**. See
+`xcc-core-book` light up the `onPatronTaint` chat emote. Session
+22 follow-ons closed D3b-γ (sibling-pack audit — no
+`dcc-crawl-classes` / `mcc-classes` patron content exists; default
+seed is exhaustive) and authored D3b-β (new
+`src/spells/patron-taints.ts` in `dcc-official-data` mirroring the
+5 core tables; awaiting commit on that repo, which has its own
+commit/push cadence). Remaining Phase 3 backlog is D3c (retire the
+dormant `SpellFumbleResult.patronTaint` flag + fumble-entry tag
+convention), D4 (fold direct-reimpl spell-check branches — per-branch
+design), each **STOP AND ASK**. See
 [`docs/02-slice-backlog.md`](02-slice-backlog.md) for the full
 inventory. Phase 4 (schema slimming) has not started.
 
@@ -89,6 +92,20 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-04-24 — Session 22 follow-ons: D3b-γ closed, D3b-β
+  authored cross-repo.** Sibling audit: `mcc-classes` ships no
+  packs; `dcc-crawl-classes/packs/` has no patron-taint JSONs.
+  `CONFIG.DCC.patronTaintPacks` default seed (core + xcc side-
+  effect packs) is exhaustive — no adapter change needed (γ).
+  D3b-β authored new `src/spells/patron-taints.ts` in
+  `dcc-official-data` mirroring the 5 core `dcc-core-book`
+  manifestation tables with Foundry `[[/roll XdY]]` markup
+  stripped to plain `[XdY]` dice notation; exports
+  `PATRON_TAINT_TABLES` + `getPatronTaintTable(patron)` lookup
+  helper; `tsc --noEmit` clean. Commit in `dcc-official-data`
+  pending (different repo, auto-commit authorization scoped to
+  DCC refactor branch only). No runtime DCC change — the
+  compendium RollTables remain authoritative.
 - **2026-04-24 — Session 22 / D3b-α: patron-taint manifestation
   table loader.** New `loadPatronTaintTable(actor)` in
   `module/adapter/spell-input.mjs` (mirror of `loadDisapprovalTable`):

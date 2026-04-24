@@ -312,28 +312,37 @@ when a table is present. 924 Vitest (+7 new: 5 loader paths +
 98 Playwright (+1 new: compendium manifestation reaches chat).
 Sibling-module packs can push `addPack(…)` on init.
 
-#### D3b-β. Mirror core patron-taint tables into `dcc-official-data` source
-- **Scope:** The 5 `dcc-core-book` tables exist only as compendium
-  JSON under `packs/dcc-core-spell-side-effect-tables/src/` —
-  `dcc-official-data/src/spells/` doesn't yet carry the canonical
-  TypeScript source. New `patron-taints.ts` (pattern: `corruption.ts`)
-  would keep the source of truth aligned and rebuildable through
-  the normal content pipeline. No adapter changes.
-- **Stop-and-ask trigger:** Content-authoring slice (copy-paste
-  from compendium JSON → TS); confirm the user wants it before
-  executing. XCC has no equivalent `xcc-official-data` repo — the
-  `xcc-core-book` compendium JSON IS the source.
-- **Commit:** content-only, no adapter touch.
+#### ~~D3b-β. Mirror core patron-taint tables into `dcc-official-data` source.~~ **AUTHORED 2026-04-24 (session 22 follow-on), awaiting commit in the `dcc-official-data` repo.**
+New `src/spells/patron-taints.ts` + a 3-line re-export in
+`src/spells/index.ts` mirror the 5 core `dcc-core-book`
+manifestation tables (Azi Dahaka, Bobugbubilz, Sezrekan, the King
+of Elfland, Three Fates) as `PatronTaintTable` records keyed by
+slug. Foundry's `[[/roll XdY]]` markup stripped back to plain
+`[XdY]` dice notation; `<br />` and whitespace collapsed. New
+`getPatronTaintTable(patron: string)` lookup helper (case-
+insensitive + whitespace-tolerant). `tsc --noEmit` clean. No DCC-
+system-side change needed — `dcc-core-book`'s compendium
+RollTable documents remain the runtime source via
+`CONFIG.DCC.patronTaintPacks`. Tim to commit on the
+`dcc-official-data` side (auto-commit authorization scoped to the
+DCC refactor branch doesn't extend to other repos). XCC has no
+equivalent `xcc-official-data` source repo — the `xcc-core-book`
+compendium JSON IS the source of truth there, so no β equivalent
+for XCC.
 
-#### D3b-γ. Sibling-pack audit for patron-taint content
-- **Scope:** Audit `dcc-crawl-classes` + `mcc-classes` for patron-
-  taint RollTables they might ship. If any exist, either (a) add
-  the pack name to `CONFIG.DCC.patronTaintPacks` via an on-init
-  `addPack(…)` call in the sibling (preferred, content-module owns
-  registration), or (b) add the pack to DCC's default seed list
-  in `module/dcc.js` if it's a core dependency.
-- **Stop-and-ask trigger:** Discovery depends on what sibling
-  modules actually ship; confirm scope once audit results are in.
+#### ~~D3b-γ. Sibling-pack audit for patron-taint content.~~ **CLOSED 2026-04-24 (session 22 follow-on)**.
+Audited both sibling modules:
+- `mcc-classes` ships no compendium packs (class code only).
+- `dcc-crawl-classes/packs/` contains no patron-taint RollTable
+  JSON files.
+
+No additional packs to register. The default
+`CONFIG.DCC.patronTaintPacks` seed in `module/dcc.js` (core + xcc
+side-effect packs) covers the full ecosystem. If a future sibling
+module ships patron content, it can push its own pack via
+`CONFIG.DCC.patronTaintPacks.addPack(…)` on init — documented in
+`EXTENSION_API.md` alongside the existing `disapprovalPacks`
+precedent when relevant.
 
 #### D3c. Retire `SpellFumbleResult.patronTaint` flag + fumble-entry tag convention
 - **Scope:** After D3a, the lib still emits
