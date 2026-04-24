@@ -23,7 +23,7 @@ import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
-import { buildSpellCheckArgs } from '../adapter/spell-input.mjs'
+import { buildSpellCheckArgs, loadPatronTaintTable } from '../adapter/spell-input.mjs'
 import { promptSpellburnCommitment } from '../adapter/roll-dialog.mjs'
 import { calculateSpellCheck as libCalcSpellCheckMock } from '../vendor/dcc-core-lib/index.js'
 
@@ -1182,5 +1182,206 @@ test('pass-2 probe clean → commit pass fires events and posts chat', async () 
   // Call pattern: pass 1 formula + pass 2 probe + pass 2 commit = 3.
   expect(libCalcSpellCheckMock).toHaveBeenCalledTimes(3)
 
+  findSpy.mockRestore()
+})
+
+// ---------------------------------------------------------------------------
+// D3b — patron-taint manifestation table loader
+// ---------------------------------------------------------------------------
+
+function makePatronTaintActor (patron) {
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = patron
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+  return actor
+}
+
+test('loadPatronTaintTable returns null when actor has no patron', async () => {
+  expect(await loadPatronTaintTable(makePatronTaintActor(''))).toBeNull()
+  expect(await loadPatronTaintTable(makePatronTaintActor(null))).toBeNull()
+  expect(await loadPatronTaintTable(makePatronTaintActor('   '))).toBeNull()
+})
+
+test('loadPatronTaintTable returns null when nothing resolves', async () => {
+  const originalPacks = CONFIG.DCC.patronTaintPacks
+  const originalTables = game.tables
+  CONFIG.DCC.patronTaintPacks = { packs: [] }
+  game.tables = { find: () => null }
+
+  expect(await loadPatronTaintTable(makePatronTaintActor('Bobugbubilz'))).toBeNull()
+
+  CONFIG.DCC.patronTaintPacks = originalPacks
+  game.tables = originalTables
+})
+
+test('loadPatronTaintTable resolves an exact-name match from a compendium pack', async () => {
+  const originalPacks = CONFIG.DCC.patronTaintPacks
+  const originalGamePacks = game.packs
+  const fakeTable = {
+    id: 'bob-taint',
+    name: 'Patron Taint: Bobugbubilz',
+    results: [{ range: [1, 1], description: 'Buzzing flies' }]
+  }
+  const fakePack = {
+    index: [{ _id: 'e1', name: 'Patron Taint: Bobugbubilz' }],
+    getDocument: vi.fn().mockResolvedValue(fakeTable)
+  }
+  CONFIG.DCC.patronTaintPacks = { packs: ['dcc-core-book.dcc-core-spell-side-effect-tables'] }
+  game.packs = {
+    get: (name) => (name === 'dcc-core-book.dcc-core-spell-side-effect-tables' ? fakePack : null)
+  }
+
+  const libTable = await loadPatronTaintTable(makePatronTaintActor('Bobugbubilz'))
+
+  expect(libTable).toMatchObject({
+    name: 'Patron Taint: Bobugbubilz',
+    entries: [{ min: 1, max: 1, text: 'Buzzing flies' }]
+  })
+  expect(fakePack.getDocument).toHaveBeenCalledWith('e1')
+
+  CONFIG.DCC.patronTaintPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
+test('loadPatronTaintTable case-insensitive fallback resolves "The King of Elfland" against lowercase "the"', async () => {
+  // The official dcc-core-book table is named
+  // "Patron Taint: the King of Elfland" (lowercase "the"), but actors
+  // commonly record "The King of Elfland" (capitalized). The loader's
+  // second-pass scan normalizes case so both spellings resolve.
+  const originalPacks = CONFIG.DCC.patronTaintPacks
+  const originalGamePacks = game.packs
+  const fakeTable = {
+    id: 'elfland-taint',
+    name: 'Patron Taint: the King of Elfland',
+    results: [{ range: [1, 1], description: 'Fey antlers sprout' }]
+  }
+  const fakePack = {
+    index: [{ _id: 'e2', name: 'Patron Taint: the King of Elfland' }],
+    getDocument: vi.fn().mockResolvedValue(fakeTable)
+  }
+  CONFIG.DCC.patronTaintPacks = { packs: ['dcc-core-book.dcc-core-spell-side-effect-tables'] }
+  game.packs = {
+    get: () => fakePack
+  }
+
+  const libTable = await loadPatronTaintTable(makePatronTaintActor('The King of Elfland'))
+
+  expect(libTable?.name).toBe('Patron Taint: the King of Elfland')
+  expect(libTable?.entries).toHaveLength(1)
+
+  CONFIG.DCC.patronTaintPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
+test('loadPatronTaintTable falls back to world tables when compendium lookup misses', async () => {
+  const originalPacks = CONFIG.DCC.patronTaintPacks
+  const originalTables = game.tables
+  const originalGamePacks = game.packs
+  CONFIG.DCC.patronTaintPacks = { packs: ['not-installed.not-installed'] }
+  game.packs = { get: () => null }
+  const worldTable = {
+    id: 'world-sezrekan',
+    name: 'Patron Taint: Sezrekan',
+    results: [{ range: [1, 6], description: 'Withered hand' }]
+  }
+  game.tables = {
+    find: (predicate) => (predicate(worldTable) ? worldTable : null)
+  }
+
+  const libTable = await loadPatronTaintTable(makePatronTaintActor('Sezrekan'))
+
+  expect(libTable?.name).toBe('Patron Taint: Sezrekan')
+  expect(libTable?.entries[0]).toMatchObject({ min: 1, max: 6, text: 'Withered hand' })
+
+  CONFIG.DCC.patronTaintPacks = originalPacks
+  game.packs = originalGamePacks
+  game.tables = originalTables
+})
+
+test('loadPatronTaintTable continues pack walk when one pack throws', async () => {
+  const originalPacks = CONFIG.DCC.patronTaintPacks
+  const originalGamePacks = game.packs
+  const brokenPack = {
+    index: [{ _id: 'broken', name: 'Patron Taint: Bobugbubilz' }],
+    getDocument: vi.fn().mockRejectedValue(new Error('socket dropped'))
+  }
+  const goodTable = {
+    id: 'bob-taint',
+    name: 'Patron Taint: Bobugbubilz',
+    results: [{ range: [1, 1], description: 'Flies' }]
+  }
+  const goodPack = {
+    index: [{ _id: 'good', name: 'Patron Taint: Bobugbubilz' }],
+    getDocument: vi.fn().mockResolvedValue(goodTable)
+  }
+  CONFIG.DCC.patronTaintPacks = { packs: ['broken.pack', 'good.pack'] }
+  game.packs = {
+    get: (name) => (name === 'broken.pack' ? brokenPack : goodPack)
+  }
+  const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+  const libTable = await loadPatronTaintTable(makePatronTaintActor('Bobugbubilz'))
+
+  expect(libTable?.name).toBe('Patron Taint: Bobugbubilz')
+  expect(warnSpy).toHaveBeenCalled()
+
+  warnSpy.mockRestore()
+  CONFIG.DCC.patronTaintPacks = originalPacks
+  game.packs = originalGamePacks
+})
+
+test('adapter wizard patron-cast with a resolvable taint table posts manifestation chat on acquisition', async () => {
+  rollToMessageMock.mockClear()
+  actorUpdateMock.mockClear()
+  CONFIG.ChatMessage.documentClass.create.mockClear()
+
+  // Configure a world-scoped taint table the loader can resolve. One
+  // entry covering 1-6 so any d6 hits it. Starting chance 100%
+  // guarantees creeping-chance acquisition (d100 1..100 all qualify
+  // since roll <= chance).
+  const originalPacks = CONFIG.DCC.patronTaintPacks
+  const originalTables = game.tables
+  const originalGamePacks = game.packs
+  CONFIG.DCC.patronTaintPacks = { packs: [] }
+  game.packs = { get: () => null }
+  // Roll mock fixes `total = 10` for every Roll; widen the range so
+  // the d6 manifestation lookup ([1..6] in RAW) hits this entry in
+  // the mock env even though the pre-rolled d6 is synthetically 10.
+  const taintTable = {
+    id: 'world-bob-taint',
+    name: 'Patron Taint: Bobugbubilz',
+    results: [{ range: [1, 100], description: 'Buzzing, biting flies appear when the caster casts any spell.' }]
+  }
+  game.tables = {
+    find: (predicate) => (predicate(taintTable) ? taintTable : null)
+  }
+
+  const actor = makePatronTaintActor('Bobugbubilz')
+  actor.system.class.patronTaintChance = '100%'
+
+  const spellItem = makeWizardSpellItem({ associatedPatron: 'Bobugbubilz' })
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // Main spell-check chat fires; the patron-taint manifestation
+  // message is posted via `CONFIG.ChatMessage.documentClass.create`
+  // from the `onPatronTaint` event bridge (not through
+  // `rollToMessage`) — see `spell-events.mjs`. Its content carries
+  // the manifestation text the lib's `rollPatronTaint` pulled off
+  // the table entry.
+  const chatCalls = CONFIG.ChatMessage.documentClass.create.mock.calls
+  const taintCall = chatCalls.find(([data]) => data?.flags?.['dcc.isPatronTaint'] === true)
+  expect(taintCall).toBeDefined()
+  expect(taintCall[0].content).toContain('Buzzing, biting flies')
+
+  // Per RAW, acquisition resets the chance to 1%.
+  expect(actorUpdateMock).toHaveBeenCalledWith({ 'system.class.patronTaintChance': '1%' })
+
+  CONFIG.DCC.patronTaintPacks = originalPacks
+  game.packs = originalGamePacks
+  game.tables = originalTables
   findSpy.mockRestore()
 })

@@ -291,21 +291,49 @@ resolved it in favor of RAW after reviewing the rulebook text +
 example patron-spell result tables (Bobugbubilz's Tadpole
 Transformation roll 1). 917 Vitest + 97 Playwright green.
 
-#### D3b. Per-patron taint manifestation tables (content)
-- **Scope:** D3a established the lib-side detection path. When
-  taint is acquired and a `patronTaintTable` is supplied, the lib
-  rolls manifestation via `rollPatronTaint`. Today no content
-  module ships per-patron taint tables — the chat EMOTE falls back
-  to a generic "Patron Taint!" message. Authoring tables in
-  `dcc-core-book` and `xcc-core-book` (per the rulebook examples)
-  plus adapter plumbing to load the correct table per
-  `actor.system.class.patron` would fill out the manifestation UX.
-- **Stop-and-ask trigger:** cross-repo content authoring — always
-  pause and ask before starting. Also needs a per-patron table
-  naming convention (e.g. `dcc-core-book.patron-taint-bobugbubilz`)
-  + a registry the adapter can look up.
-- **Commit:** scoped per-patron once the naming convention + loader
-  pattern land.
+#### ~~D3b-α. Per-patron taint manifestation table loader (adapter).~~ **CLOSED 2026-04-24 (session 22)**.
+Investigation surfaced that 10 patron-taint `RollTable` documents
+were already authored as compendium content:
+`dcc-core-book/packs/dcc-core-spell-side-effect-tables` ships Azi
+Dahaka / Bobugbubilz / Sezrekan / the King of Elfland / Three
+Fates; `xcc-core-book/packs/xcc-core-spell-side-effect-tables`
+ships Barzodi / Circe / Medea / Prometheus Firebringer / The
+Amazing Rando. No content authoring needed — just a loader. New
+`loadPatronTaintTable(actor)` in `module/adapter/spell-input.mjs`
+(mirror of `loadDisapprovalTable`) walks `CONFIG.DCC.patronTaintPacks`
+(a `TablePackManager` seeded with both packs in `module/dcc.js`)
+matching `Patron Taint: ${actor.system.class.patron}` with a
+case-insensitive tail fallback ("The King of Elfland" →
+"the King of Elfland"), falls back to world tables. Loader
+threaded into `_castViaCalculateSpellCheck`; paired `1d6`
+manifestation pre-roll extends the two-pass deterministic roller
+when a table is present. 924 Vitest (+7 new: 5 loader paths +
+1 full acquisition integration + 1 existing-test restructure) +
+98 Playwright (+1 new: compendium manifestation reaches chat).
+Sibling-module packs can push `addPack(…)` on init.
+
+#### D3b-β. Mirror core patron-taint tables into `dcc-official-data` source
+- **Scope:** The 5 `dcc-core-book` tables exist only as compendium
+  JSON under `packs/dcc-core-spell-side-effect-tables/src/` —
+  `dcc-official-data/src/spells/` doesn't yet carry the canonical
+  TypeScript source. New `patron-taints.ts` (pattern: `corruption.ts`)
+  would keep the source of truth aligned and rebuildable through
+  the normal content pipeline. No adapter changes.
+- **Stop-and-ask trigger:** Content-authoring slice (copy-paste
+  from compendium JSON → TS); confirm the user wants it before
+  executing. XCC has no equivalent `xcc-official-data` repo — the
+  `xcc-core-book` compendium JSON IS the source.
+- **Commit:** content-only, no adapter touch.
+
+#### D3b-γ. Sibling-pack audit for patron-taint content
+- **Scope:** Audit `dcc-crawl-classes` + `mcc-classes` for patron-
+  taint RollTables they might ship. If any exist, either (a) add
+  the pack name to `CONFIG.DCC.patronTaintPacks` via an on-init
+  `addPack(…)` call in the sibling (preferred, content-module owns
+  registration), or (b) add the pack to DCC's default seed list
+  in `module/dcc.js` if it's a core dependency.
+- **Stop-and-ask trigger:** Discovery depends on what sibling
+  modules actually ship; confirm scope once audit results are in.
 
 #### D3c. Retire `SpellFumbleResult.patronTaint` flag + fumble-entry tag convention
 - **Scope:** After D3a, the lib still emits

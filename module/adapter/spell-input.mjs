@@ -17,10 +17,11 @@
  *     orchestration finds the entry. Returns `null` when the actor's
  *     class has no lib-side caster profile — callers should fall
  *     back to the legacy path.
- *   - `loadDisapprovalTable(actor)` / `loadMercurialMagicTable(actor)` —
- *     async. Each returns a lib `SimpleTable` / `MercurialTable`
- *     loaded from a configured Foundry `RollTable` (compendium or
- *     world), or `null` when unavailable.
+ *   - `loadDisapprovalTable(actor)` / `loadMercurialMagicTable(actor)` /
+ *     `loadPatronTaintTable(actor)` — async. Each returns a lib
+ *     `SimpleTable` / `MercurialTable` loaded from a configured
+ *     Foundry `RollTable` (compendium or world), or `null` when
+ *     unavailable.
  *
  * Session 4 populates `wizard.patron` / `elf.patron` so
  * `getPatronId(character)` resolves; D3a (2026-04-24) additionally
@@ -510,6 +511,82 @@ export async function loadMercurialMagicTable () {
   const worldTable = game.tables?.getName?.(worldTableName)
   if (worldTable) {
     const libTable = toLibMercurialTable(worldTable)
+    if (libTable) return libTable
+  }
+
+  return null
+}
+
+/**
+ * Load the patron-taint manifestation table for the actor's bound
+ * patron. The DCC core rulebook (pp. 320-346) lists a d6 manifestation
+ * table per patron; both `dcc-core-book` and `xcc-core-book` ship
+ * these as `RollTable` documents named `Patron Taint: ${patron}`.
+ *
+ * Adapter walks `CONFIG.DCC.patronTaintPacks` (a `TablePackManager`
+ * seeded in `module/dcc.js` with the core + xcc side-effect packs;
+ * sibling modules can push their own packs too) looking for a table
+ * whose name matches `Patron Taint: ${actor.system.class.patron}`.
+ * Falls back to world tables. Returns a lib `SimpleTable` for the
+ * lib's `rollPatronTaint` to index against.
+ *
+ * Graceful null: returns `null` when the actor has no patron set,
+ * no pack is registered, no matching table is found, or we're in the
+ * Vitest mock env. Callers drop `input.patronTaintTable`; the lib's
+ * `applyPatronTaintAcquisition` then falls back to the minimal
+ * "Patron taint from ${patronId}" event message (see the `onPatronTaint`
+ * bridge in `spell-events.mjs`).
+ *
+ * Match is exact on `Patron Taint: ${patron}` first, then case-
+ * insensitive on the tail — the official Bobugbubilz / Azi Dahaka /
+ * Sezrekan tables use capitalized patron names, but "the King of
+ * Elfland" (note: lowercase "the") needs the case-insensitive pass
+ * so an actor whose `system.class.patron` is "The King of Elfland"
+ * still resolves.
+ *
+ * @param {Object} actor - DCCActor (reads `system.class.patron`).
+ * @returns {Promise<Object|null>}
+ */
+export async function loadPatronTaintTable (actor) {
+  const patron = actor?.system?.class?.patron
+  if (!patron || typeof patron !== 'string' || !patron.trim()) return null
+
+  const expectedName = `Patron Taint: ${patron.trim()}`
+  const expectedLower = expectedName.toLowerCase()
+
+  const packManager = (typeof CONFIG !== 'undefined' && CONFIG?.DCC?.patronTaintPacks) || null
+  const packs = packManager?.packs || []
+
+  for (const packName of packs) {
+    if (!packName) continue
+    const pack = game.packs?.get?.(packName)
+    if (!pack) continue
+    const entry =
+      pack.index?.find?.((e) => e.name === expectedName) ||
+      pack.index?.find?.((e) => typeof e.name === 'string' && e.name.toLowerCase() === expectedLower)
+    if (!entry) continue
+    let doc
+    try {
+      doc = await pack.getDocument(entry._id)
+    } catch (err) {
+      // Corrupted pack entry, permission error, or socket failure —
+      // continue the walk so remaining packs (and the world-table
+      // fallback) can take over instead of crashing the cast with an
+      // unhandled rejection.
+      console.warn('[DCC adapter] loadPatronTaintTable: pack.getDocument rejected', { packName, entryId: entry._id, err })
+      continue
+    }
+    const libTable = toLibSimpleTable(doc)
+    if (libTable) return libTable
+  }
+
+  // World-table fallback — match the full `Patron Taint: <patron>`
+  // name, with case-insensitive fallback as above.
+  const worldTable =
+    game.tables?.find?.((t) => t.name === expectedName) ||
+    game.tables?.find?.((t) => typeof t.name === 'string' && t.name.toLowerCase() === expectedLower)
+  if (worldTable) {
+    const libTable = toLibSimpleTable(worldTable)
     if (libTable) return libTable
   }
 

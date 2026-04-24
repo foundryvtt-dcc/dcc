@@ -460,6 +460,18 @@ function registerTables () {
   CONFIG.DCC.criticalHitPacks = new TablePackManager()
   CONFIG.DCC.criticalHitPacks.addPack(game.settings.get('dcc', 'critsCompendium'), true)
 
+  // D3b — manager for patron-taint manifestation table packs. Seeded
+  // with the core + xcc side-effect packs; sibling modules that ship
+  // their own patron content can push additional packs via
+  // `CONFIG.DCC.patronTaintPacks.addPack(packName)`. The adapter's
+  // `loadPatronTaintTable` walks this list looking for a RollTable
+  // named `Patron Taint: ${actor.system.class.patron}`. Unknown pack
+  // names are ignored by `loadPatronTaintTable` (null-safe walk), so
+  // listing packs whose modules aren't installed is harmless.
+  CONFIG.DCC.patronTaintPacks = new TablePackManager()
+  CONFIG.DCC.patronTaintPacks.addPack('dcc-core-book.dcc-core-spell-side-effect-tables')
+  CONFIG.DCC.patronTaintPacks.addPack('xcc-core-book.xcc-core-spell-side-effect-tables')
+
   // Set divine aid table from the system setting
   const divineAidTable = game.settings.get('dcc', 'divineAidTable')
   if (divineAidTable) {

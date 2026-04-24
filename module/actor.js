@@ -19,7 +19,7 @@ import {
 } from './vendor/dcc-core-lib/index.js'
 import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-accessors.mjs'
 import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
-import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable } from './adapter/spell-input.mjs'
+import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
 import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
@@ -2107,6 +2107,25 @@ class DCCActor extends Actor {
       }
     }
 
+    // D3b — wizard / elf patron-taint manifestation table. Loaded
+    // when the cast qualifies for the creeping-chance check (patron-
+    // bound + patron-based spell); the lib's
+    // `applyPatronTaintAcquisition` indexes a d6 on this table when
+    // acquisition fires (either path). When no table resolves for
+    // the actor's patron, the lib falls back to the minimal
+    // "Patron taint from ${patronId}" event — matches legacy
+    // behavior for unauthored patrons.
+    if (
+      (profile?.type === 'wizard' || profile?.type === 'elf') &&
+      input.isPatronSpell &&
+      this.system.class?.patron
+    ) {
+      const patronTaintTable = await loadPatronTaintTable(this)
+      if (patronTaintTable) {
+        input.patronTaintTable = patronTaintTable
+      }
+    }
+
     // Pass 1: build the formula without rolling. Events are omitted
     // here — the lib fires `onSpellburnApplied` + `onMercurialEffect`
     // unconditionally when their inputs are set (see `cast.js:339-343`),
@@ -2145,11 +2164,12 @@ class DCCActor extends Actor {
     // D3a — pre-roll the patron-taint 1d100 for the lib's creeping-chance
     // check. Only fired when this cast qualifies for the check (patron-
     // bound wizard/elf casting a patron-related spell); avoids a spurious
-    // d100 roll otherwise. The lib also rolls 1d6 on the manifestation
-    // table when taint is acquired AND a `patronTaintTable` is provided —
-    // currently no content modules ship such tables, so the manifestation
-    // sub-roll is dormant.
+    // d100 roll otherwise. D3b adds the paired 1d6 pre-roll for the
+    // manifestation lookup — only when a `patronTaintTable` resolved
+    // for this patron (otherwise the lib skips the sub-roll and emits
+    // a minimal "Patron taint from <patron>" event).
     let patronTaintD100 = null
+    let patronTaintD6 = null
     if (
       (profile?.type === 'wizard' || profile?.type === 'elf') &&
       input.isPatronSpell &&
@@ -2158,6 +2178,12 @@ class DCCActor extends Actor {
       const d100Roll = new Roll('1d100')
       await d100Roll.evaluate()
       patronTaintD100 = d100Roll.total
+
+      if (input.patronTaintTable) {
+        const d6Roll = new Roll('1d6')
+        await d6Roll.evaluate()
+        patronTaintD6 = d6Roll.total
+      }
     }
 
     // Pass 2 runs twice to avoid partial-failure mutations. The probe
@@ -2167,11 +2193,13 @@ class DCCActor extends Actor {
     // / `onSpellLost` / `onDisapprovalIncreased` / `onPatronTaint` mutate
     // actor+item state. Only when the probe is clean do we replay with
     // the real events wired — the roller is deterministic (pre-rolled
-    // natural, disapproval d4, and patron-taint d100), so both passes
-    // return identical results and no sub-roll is consumed twice.
+    // natural, disapproval d4, creeping-chance d100, and manifestation
+    // d6), so both passes return identical results and no sub-roll is
+    // consumed twice.
     const roller = (formula) => {
       if (formula === '1d4' && disapprovalD4 !== null) return disapprovalD4
       if (formula === '1d100' && patronTaintD100 !== null) return patronTaintD100
+      if (formula === '1d6' && patronTaintD6 !== null) return patronTaintD6
       return natural
     }
 

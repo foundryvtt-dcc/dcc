@@ -619,6 +619,85 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(afterChance, 'non-patron casts must not touch patronTaintChance').toBe('5%')
     })
 
+    // D3b — patron-taint manifestation table end-to-end. With
+    // `dcc-core-book` installed (it ships 5 core patron-taint
+    // manifestation RollTables in `dcc-core-spell-side-effect-tables`
+    // and the adapter's `CONFIG.DCC.patronTaintPacks` registers that
+    // pack by default), the adapter resolves Bobugbubilz's authored
+    // table and the lib's `rollPatronTaint` indexes a d6 on it. A
+    // starting chance of 100% guarantees creeping-chance acquisition
+    // (d100 roll 1..100 all hit), and the resulting manifestation
+    // text surfaces in the `onPatronTaint` chat emote.
+    //
+    // The loader also accepts a world-level RollTable as fallback;
+    // the `loadPatronTaintTable` unit tests cover that path. This
+    // integration guard focuses on the default real-content path.
+    test('wizard patron-cast with compendium taint table → manifestation text in chat', async ({ page }) => {
+      // Skip cleanly when dcc-core-book isn't installed in this world —
+      // the adapter wiring is proved by the unit tests in that case.
+      const hasCoreBookPack = await page.evaluate(() => {
+        return !!game.packs.get('dcc-core-book.dcc-core-spell-side-effect-tables')
+      })
+      test.skip(!hasCoreBookPack, 'dcc-core-book pack not installed in this world')
+
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell WizardTaintManifest',
+          type: 'Player',
+          system: {
+            class: {
+              className: 'Wizard',
+              patron: 'Bobugbubilz',
+              patronTaintChance: '100%'
+            }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Taint-Manifest-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            associatedPatron: 'Bobugbubilz'
+          }
+        }])
+      })
+
+      const before = await page.evaluate(() => game.messages.contents.length)
+
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell WizardTaintManifest').rollSpellCheck({ spell: 'P1-Taint-Manifest-Spell' })
+      })
+      await waitForAdapterLog('rollSpellCheck')
+
+      // Let the onPatronTaint chat message post.
+      await page.waitForTimeout(300)
+
+      const { taintMessageContent, isPatronTaintFlag, afterChance } = await page.evaluate((beforeCount) => {
+        const newMessages = game.messages.contents.slice(beforeCount)
+        const taintMsg = newMessages.find(m => m.flags?.dcc?.isPatronTaint === true)
+        return {
+          taintMessageContent: taintMsg?.content || null,
+          isPatronTaintFlag: !!taintMsg,
+          afterChance: game.actors.getName('P1 Spell WizardTaintManifest').system.class.patronTaintChance
+        }
+      }, before)
+
+      expect(isPatronTaintFlag, 'onPatronTaint chat emote must post when taint is acquired').toBe(true)
+      // Every entry on the Bobugbubilz d6 manifestation table mentions
+      // "the caster" — the shared anchor lets the assertion stay
+      // robust across whichever row the lib rolls.
+      expect(taintMessageContent, 'chat emote must carry manifestation text from the compendium table').toMatch(/caster/i)
+      // The fallback "Patron taint from Bobugbubilz" message (emitted
+      // by the lib when no table resolves) must NOT appear — that
+      // would mean the loader didn't find the pack.
+      expect(taintMessageContent, 'loader must resolve the compendium table, not fall through to the minimal event')
+        .not.toMatch(/Patron taint from Bobugbubilz/i)
+      // 100% chance acquires (d100 1..100) → RAW reset to 1%.
+      expect(afterChance, 'acquisition must reset chance to 1%').toBe('1%')
+    })
+
     // Regression: programmatic PC with `class.className: 'Cleric'` but
     // no `details.sheetClass` (skips the level-change dialog) must still
     // route a cleric-castingMode cast through the adapter. Pre-fix the

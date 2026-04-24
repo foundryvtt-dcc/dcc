@@ -68,11 +68,19 @@ chained calls (`rollToHit` / `rollDamage` / `rollCritical` /
 (attack-gate broadening) and C (parallel cruft slices) are closed.
 Session 21 / D3a (2026-04-24) retired `_runLegacyPatronTaint` by
 bringing patron taint in line with DCC RAW lib-side
-(`dcc-core-lib@0.7.0`). Remaining Phase 3 backlog is D3b (per-patron
-taint-table content authoring in `dcc-core-book` / `xcc-core-book`),
-D3c (retire the dormant `SpellFumbleResult.patronTaint` flag +
-fumble-entry tag convention), D4 (fold direct-reimpl spell-check
-branches — per-branch design), each **STOP AND ASK**. See
+(`dcc-core-lib@0.7.0`). Session 22 / D3b-α (2026-04-24) landed the
+patron-taint manifestation table loader: the adapter now routes
+`CastSpellInput.patronTaintTable` via `CONFIG.DCC.patronTaintPacks`
+so the 10 authored Bobugbubilz / Azi Dahaka / Sezrekan / the King
+of Elfland / Three Fates / Barzodi / Circe / Medea / Prometheus /
+Amazing Rando manifestation tables shipped in `dcc-core-book` +
+`xcc-core-book` light up the `onPatronTaint` chat emote. Remaining
+Phase 3 backlog is D3b-β (mirror core tables into
+`dcc-official-data` source), D3b-γ (sibling-pack audit for
+`dcc-crawl-classes` / `mcc-classes`), D3c (retire the dormant
+`SpellFumbleResult.patronTaint` flag + fumble-entry tag convention),
+D4 (fold direct-reimpl spell-check branches — per-branch design),
+each **STOP AND ASK**. See
 [`docs/02-slice-backlog.md`](02-slice-backlog.md) for the full
 inventory. Phase 4 (schema slimming) has not started.
 
@@ -81,6 +89,29 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-04-24 — Session 22 / D3b-α: patron-taint manifestation
+  table loader.** New `loadPatronTaintTable(actor)` in
+  `module/adapter/spell-input.mjs` (mirror of `loadDisapprovalTable`):
+  walks `CONFIG.DCC.patronTaintPacks` looking for a `RollTable`
+  named `Patron Taint: ${actor.system.class.patron}`, case-
+  insensitive-fallback on the tail (lets actors storing "The King
+  of Elfland" resolve the `dcc-core-book` table named with lowercase
+  "the King of Elfland"), falls back to world tables. New `CONFIG.DCC.patronTaintPacks`
+  `TablePackManager` seeded in `module/dcc.js:462-472` with the core
+  + xcc side-effect packs; sibling modules can push additional packs
+  via `addPack`. `_castViaCalculateSpellCheck` threads the resolved
+  `SimpleTable` onto `input.patronTaintTable`, pre-rolls the paired
+  manifestation 1d6 (only when a table is present, matching the
+  existing creeping-chance d100 pattern), and the roller closure now
+  returns the pre-rolled d6 for `1d6` formulas. Bobugbubilz / Azi
+  Dahaka / Sezrekan / the King of Elfland / Three Fates tables ship
+  authored in `dcc-core-book/packs/dcc-core-spell-side-effect-tables`;
+  Barzodi / Circe / Medea / Prometheus Firebringer / Amazing Rando
+  in the equivalent `xcc-core-book` pack. All 10 light up the
+  `onPatronTaint` chat emote automatically. 805 Vitest + 98
+  Playwright (+7 new vitest for loader paths + full integration
+  acquisition; +1 new Playwright asserting compendium-resolved
+  manifestation text reaches chat).
 - **2026-04-24 — Session 21 / D3a: patron-taint RAW alignment +
   retire `_runLegacyPatronTaint`.** Lib PR #6 (`dcc-core-lib@0.7.0`,
   commit `e8ecabe`) replaced the fumble-gated taint mechanic with the
