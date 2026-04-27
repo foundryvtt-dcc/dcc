@@ -18,13 +18,12 @@ export class BaseItemData extends foundry.abstract.TypeDataModel {
    * @returns {object} - Migrated data
    */
   static migrateData (source) {
-    // Ensure description structure exists
-    if (!source.description) {
-      source.description = {}
-    }
-
-    // Ensure judge sub-object exists
-    if (!source.description.judge) {
+    // Backfill the judge sub-object on legacy items that already have a
+    // description but pre-date the judge field. Guarded so partial-update
+    // diffs (e.g. `{ container: 'abc' }`) are not mutated to add an empty
+    // description.judge — Foundry persists the cleaned diff, which would
+    // otherwise wipe the existing judge text on disk (see #722).
+    if (source.description && typeof source.description === 'object' && !source.description.judge) {
       source.description.judge = { value: '' }
     }
 
