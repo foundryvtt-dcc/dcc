@@ -315,6 +315,33 @@ describe('Data Migration (real Foundry migration pipeline)', () => {
     expect(typeof migrated.weight).toBe('number')
     expect(migrated.weight).toBe(3.5)
   })
+
+  // Regression for #722: dropping an item into a container would wipe the
+  // judge-only description. The cause was migrateData adding an empty
+  // description.judge to the partial update diff Foundry persists.
+  test('BaseItemData migrateData does not add description on partial updates', () => {
+    const source = { container: 'abc' }
+    const migrated = BaseItemData.migrateData(source)
+    expect(migrated.description).toBeUndefined()
+  })
+
+  test('PhysicalItemData migrateData does not add description on partial updates', () => {
+    const source = { container: 'abc' }
+    const migrated = PhysicalItemData.migrateData(source)
+    expect(migrated.description).toBeUndefined()
+  })
+
+  test('BaseItemData migrateData backfills judge for legacy descriptions missing it', () => {
+    const source = { description: { value: '<p>visible</p>' } }
+    const migrated = BaseItemData.migrateData(source)
+    expect(migrated.description.judge).toEqual({ value: '' })
+  })
+
+  test('BaseItemData migrateData preserves an existing judge description', () => {
+    const source = { description: { judge: { value: '<p>secret</p>' } } }
+    const migrated = BaseItemData.migrateData(source)
+    expect(migrated.description.judge).toEqual({ value: '<p>secret</p>' })
+  })
 })
 
 // ============================================================================
