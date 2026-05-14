@@ -1,4 +1,4 @@
-/* global game, getProperty, Item */
+/* global foundry, game, Item */
 export async function setupItemPilesForDCC () {
   const baseConfig = {
     VERSION: '1.2.0',
@@ -39,7 +39,7 @@ export async function setupItemPilesForDCC () {
     ITEM_COST_TRANSFORMER: (item, currencies) => {
       let overallCost = 0
       currencies.forEach((currency, index) => {
-        const denominationCost = Number(getProperty(item, currency.data.path.replace('system.currency.', 'system.value.')))
+        const denominationCost = Number(foundry.utils.getProperty(item, currency.data.path.replace('system.currency.', 'system.value.')))
         if (!isNaN(denominationCost)) {
           overallCost += denominationCost * currency.exchangeRate
         }
