@@ -583,6 +583,30 @@ already proven; sheet / parser dependencies need surfacing).
   collapse the class-specific sheets' tab/template definitions into
   `dcc.registerSheetPart({ classId, tab, template })` registrations.
   Out of scope for Phase 4.
+- **Class-defaults registry, Phase 5 candidate.** Each class sheet's
+  `_prepareContext` first-open block in `module/actor-sheets-dcc.js`
+  bundles four distinct concerns: class identity (`className`,
+  `classLink`, `sheetClass`, `mightyDeedsLink`), class mechanical
+  defaults (`critRange`, `class.disapproval`, `attackBonusMode`,
+  `addClassLevelToInitiative`, `spellCheckAbility`, `showBackstab`),
+  skill activation (`skills.shieldBash.useDeed=true` for dwarves,
+  `useDeed=false` for everyone else — the cross-class lines at
+  `actor-sheets-dcc.js:72/141/213/282/359/531/606`), and starting
+  items (the auto-created `ShieldBash` weapon at
+  `actor-sheets-dcc.js:443-454`). These are sheet-first-open
+  concerns, not schema concerns — they should NOT fold into
+  `registerClassMixin` (which is correctly scoped to schema fields
+  only). Natural target: a sibling `dcc.registerClassDefaults`
+  registry (or equivalent) landing alongside `registerSheetPart` in
+  Phase 5. Mechanical defaults will partly come from the lib's
+  `registerClassProgression` once it's wired in Phase 6 (save
+  bonuses / crit dies / action dies); the Foundry-side registry
+  covers what's left (`sheetClass`, `attackBonusMode`, etc.) plus
+  the "auto-create class starting items" surface that today is
+  hardcoded per class sheet (a `registerClassStartingItems`
+  registry could be split out, or rolled into the same defaults
+  registry). Surfaced 2026-05-18 during the Phase 4 session 2
+  conversation about the dwarf mixin's scope.
 - **Halfling / dwarf variant-class registration with the lib
   (Phase 6 work)** — register the halfling / dwarf class
   progressions with `dcc-core-lib`'s class registry so save bonuses
