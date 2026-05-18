@@ -372,41 +372,46 @@ every `libCalculateSpellCheck` call (no-op when override matches
 derived profile). +3 vitest tests flipped, +2 Playwright cases.
 930 Vitest + Playwright suite extended.
 
-#### D4. Remaining direct-reimpl spell-check branches
-- **Scope:** Three pre-Phase-2 direct-reimpl branches still sit on
-  `processSpellCheck`-substrate paths the adapter doesn't yet cover:
-  - **Naked spell check (no spell item).** Inline DCCRoll terms in
-    `_rollSpellCheckLegacy:2371-2479` → `processSpellCheck({rollTable:
-    null})`. Could route via a new `_castNakedViaAdapter` using
-    `libCastSpell` + a no-table chat renderer; spellburn-via-
-    `RollModifierDialog` would need the adapter spellburn prompt
-    extended.
-  - **`options.forceCrit` (shift-click GM testing).** Mutates
-    `roll.terms[0].results[0].result = 20` at `dcc.js:605` after the
-    natural rolls. No current adapter route consumes it; could
-    fold via roller-closure override (`roller: () => 20` in pass 2)
-    once an adapter route owns it.
-  - **Skill-table spells (Turn Unholy).** `_rollSkillCheckLegacy`
-    line 1781-1792 → `processSpellCheck({rollTable: skillTable})`.
-    Lib's `rollCheck` doesn't yet have a `RollTable` integration —
-    would need either a lib feature
-    (`SkillResultTable` / `rollCheck` table-lookup) or accepting
-    that `processSpellCheck` stays as the table-lookup engine for
-    skills.
-- **Intentionally on legacy** (closed-out at session 24):
-  - **Generic castingMode + patron-bound or Cleric actor.** The lib's
-    generic profile has no patron-taint or cleric-disapproval code-
-    path — legacy `DCCItem.rollSpellCheck` treats `generic` as a
-    wizard-default that DOES walk through `processSpellCheck`'s
-    patron-taint d100 trigger (if applicable). Routing through
-    `_castViaCastSpell` would silently drop that. Stays legacy
-    until the lib grows a generic-with-patron-taint codepath.
-    Tests `adapter-spell-check.test.js:321` ("generic item on a
-    Cleric actor routes to legacy") + `:458` ("generic item on a
-    patron-bound actor routes to legacy (taint side-effects
-    preserved)") document the intent.
-- **Stop-and-ask trigger:** each remaining branch evaluated
-  separately — pause and ask for each.
+#### ~~D4(remainder). Naked spell-check + forceCrit + skill-table folds.~~ **DONE 2026-05-17 (session 25)**
+Lib PR (`dcc-core-lib@0.10.0`, commit `77c95e2`) made
+`SpellCastInput.spellbookEntry` optional — `castSpell` now runs
+without a spellbook slot (skips manifestation override + mercurial
+attach). All three remaining direct-reimpl branches folded:
+- **Naked spell check** → new `_castNakedViaAdapter`. Routes
+  through `libCastSpell` with a synthetic SpellDefinition + no
+  spellbookEntry. Honors spellburn dialog (non-cleric / non-NPC),
+  cleric disapproval, and `applyForceCritToFoundryRoll`. Chat emit
+  via `renderSpellCheck` extended with `buildNakedSpellResultHtml`
+  for the SpellCheck*NoTable indicator.
+- **`options.forceCrit` (shift-click GM testing)** → shared
+  `applyForceCritToFoundryRoll` helper. Mutates the Foundry Roll's
+  natural to 20 (chat-visible) and the lib roller closure feeds
+  the same value. Threaded through every adapter spell-check
+  route.
+- **Skill-table / disapproval-range skills (Turn Unholy,
+  divineAid, layOnHands)** → new `_skillTableViaAdapter`. Re-uses
+  the legacy term-builder (DCCRoll.createRoll), Foundry's
+  RollTable lookup, and `SpellResult.addChatMessage` for the
+  table-driven cases; the no-table disapproval-only path emits
+  its own SpellCheck*NoTable indicator. `drainDisapproval` still
+  applies via `actor.applyDisapproval(N)`.
+
+Dispatcher updates: `!spellItem` routes to `_castNakedViaAdapter`
+unconditionally; `rollSkillCheck` routes
+`hasSkillTable || useDisapprovalRange` to `_skillTableViaAdapter`
+(showModifierDialog + description-only stay legacy).
+`_rollSpellCheckLegacy`'s naked branch removed (~110 lines).
+933 Vitest + Playwright extended.
+
+**Remaining `processSpellCheck` callers:**
+- `DCCItem.rollSpellCheck` (line 376) — fires when the adapter
+  declines for `noCasterProfile` or unknown castingMode. Spell-item
+  + result-table path stays. Permanent stable surface per Phase 2
+  close-out — no further fold planned.
+- `_rollSkillCheckLegacy` (line 1809) — fires only for
+  `showModifierDialog && (hasSkillTable || useDisapprovalRange)`.
+  Will be foldable once the generalized roll-modifier dialog
+  adapter lands (open question #7).
 
 ---
 

@@ -71,11 +71,19 @@ full D3 arc (a / b-α / b-β / b-γ / c) closed 2026-04-24. Session
 24 / D4(profile-override) (2026-05-17) landed
 `dcc-core-lib@0.9.0`'s `SpellCheckOptions.profileOverride` and
 folded the wizard-mode-on-cleric + cleric-mode-on-non-cleric
-dispatcher gates through the adapter. Remaining Phase 3 backlog
-is D4 sub-cases that intentionally stay on legacy (generic
-castingMode on patron-bound / cleric actors — `processSpellCheck`
-substrate) plus the still-unstarted naked-spell-check and
-skill-table (Turn Unholy) branches. See
+dispatcher gates through the adapter. Session 25 / D4(remainder)
+(2026-05-17) landed `dcc-core-lib@0.10.0`'s optional
+`SpellCastInput.spellbookEntry` and folded the three remaining
+direct-reimpl branches: naked spell check (no item) →
+`_castNakedViaAdapter`, `options.forceCrit` (shift-click GM
+testing) → shared `applyForceCritToFoundryRoll` helper threaded
+through every adapter spell-check route, and skill-table /
+disapproval-range skills (Turn Unholy, divineAid, layOnHands)
+→ `_skillTableViaAdapter`. The remaining `processSpellCheck`
+substrate is now only reachable from `DCCItem.rollSpellCheck`
+delegations (the `noCasterProfile` + unknown-castingMode
+fallbacks) plus the `showModifierDialog`-gated skill-table
+path. See
 [`docs/02-slice-backlog.md`](02-slice-backlog.md) for the full
 inventory. Phase 4 (schema slimming) has not started.
 
@@ -84,6 +92,37 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-17 — Session 25 / D4(remainder): naked spell check +
+  forceCrit + skill-table folds.** Lib PR (`dcc-core-lib@0.10.0`,
+  commit `77c95e2`) made `SpellCastInput.spellbookEntry` optional —
+  `castSpell` now runs without a spellbook slot, skipping the
+  manifestation override + mercurial attach when absent. +5 lib
+  tests (1416 green). Adapter side: shared
+  `applyForceCritToFoundryRoll` helper mutates the Foundry Roll's
+  natural to 20 (chat-visible) and the lib roller closure feeds
+  the same value, threaded through `_castViaCastSpell` /
+  `_castViaCalculateSpellCheck` / `_castNakedViaAdapter`. New
+  `_castNakedViaAdapter` builds a synthetic SpellDefinition + cleric/
+  wizard profile based on actor class, threads spellburn dialog +
+  disapproval mechanics, and emits chat via `renderSpellCheck`
+  (extended with a `buildNakedSpellResultHtml` helper for the
+  pass/fail/crit/fumble HTML indicator). New `_skillTableViaAdapter`
+  re-uses the legacy term-builder (DCCRoll.createRoll), Foundry's
+  RollTable lookup, and `SpellResult.addChatMessage` for the
+  table-driven cases; the no-table disapproval-only path emits its
+  own SpellCheck*NoTable indicator. Dispatcher updates: `!spellItem`
+  routes to `_castNakedViaAdapter` unconditionally; `rollSkillCheck`
+  routes `hasSkillTable || useDisapprovalRange` to
+  `_skillTableViaAdapter` (showModifierDialog + description-only
+  stay legacy). `_rollSpellCheckLegacy`'s naked branch removed
+  (~110 lines deleted). Test changes: 5 actor.test.js naked-spell
+  tests flipped, 4 actor.test.js skill-table tests flipped, +3 new
+  adapter-spell-check.test.js cases (naked wizard, naked cleric,
+  skill-table turnUnholy), +3 new Playwright cases (naked adapter,
+  naked cleric adapter, forceCrit + libResult.natural=20), +1
+  flipped Playwright case (divineAid legacy → adapter). 933 Vitest
+  green (was 930, +3 net). Lib commit local-only on `main` until
+  Tim pushes.
 - **2026-05-17 — Session 24 / D4(profile-override): cross-class
   castingMode routing via `SpellCheckOptions.profileOverride`.** Two-
   repo slice. Lib PR (`dcc-core-lib@0.9.0`, commit `a453473`) added

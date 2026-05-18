@@ -457,338 +457,67 @@ test('roll luck die', async () => {
   )
 })
 
-test('roll spell check', async () => {
+test('roll spell check routes naked check via adapter (Phase 3 session 25 / D4 naked)', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockReset()
   uiNotificationsWarnMock.mockReset()
   game.dcc.processSpellCheck.mockClear()
+  rollToMessageMock.mockClear()
 
-  // Spell check with ability from actor data
+  // Naked spell check (no `options.spell`) now routes through
+  // `_castNakedViaAdapter` instead of `_rollSpellCheckLegacy` →
+  // `processSpellCheck`. Legacy term-builder and processSpellCheck
+  // are no longer reachable for the no-item case.
   await actor.rollSpellCheck()
-  expect(dccRollCreateRollMock).toHaveBeenCalledTimes(1)
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: 'Action Die',
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        formula: '+1',
-        modifierLabel: 'Level'
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        formula: '+1',
-        modifierLabel: 'Ability Modifier'
-      },
-      {
-        dieLabel: 'RollModifierDieTerm',
-        formula: '',
-        modifierLabel: 'Other Modifier',
-        type: 'Compound'
-      },
-      {
-        type: 'CheckPenalty',
-        apply: true,
-        formula: '+0',
-        label: 'Check Penalty'
-      },
-      {
-        type: 'Spellburn',
-        formula: '+0',
-        str: 6,
-        sta: 12,
-        agl: 8,
-        callback: expect.any(Function)
-      }
-    ],
-    actor.getRollData(),
-    {
-      abilityId: 'int',
-      title: 'Spell Check'
-    }
-  )
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledTimes(1)
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
-    actor,
-    {
-      rollTable: null,
-      roll: expect.objectContaining({
-        dice: [
-          expect.objectContaining({
-            results: [
-              10
-            ]
-          })
-        ]
-      }),
-      item: null,
-      flavor: 'Spell Check (Intelligence)'
-    }
-  )
+
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 })
 
-test('roll spell check int', async () => {
+test('roll spell check int routes naked check via adapter (D4 naked)', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockReset()
   uiNotificationsWarnMock.mockReset()
   game.dcc.processSpellCheck.mockClear()
-  // Force int for display purposes
+  rollToMessageMock.mockClear()
+
   await actor.rollSpellCheck({ abilityId: 'int' })
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: 'Action Die',
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        formula: '+1',
-        modifierLabel: 'Level'
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        formula: '+1',
-        modifierLabel: 'Ability Modifier'
-      },
-      {
-        dieLabel: 'RollModifierDieTerm',
-        formula: '',
-        modifierLabel: 'Other Modifier',
-        type: 'Compound'
-      },
-      {
-        type: 'CheckPenalty',
-        apply: true,
-        formula: '+0',
-        label: 'Check Penalty'
-      },
-      {
-        type: 'Spellburn',
-        formula: '+0',
-        str: 6,
-        sta: 12,
-        agl: 8,
-        callback: expect.any(Function)
-      }
-    ],
-    actor.getRollData(),
-    {
-      abilityId: 'int',
-      title: 'Spell Check'
-    }
-  )
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
-    actor,
-    {
-      rollTable: null,
-      roll: expect.objectContaining({
-        dice: [
-          expect.objectContaining({
-            results: [
-              10
-            ]
-          })
-        ]
-      }),
-      item: null,
-      flavor: 'Spell Check (Intelligence)'
-    }
-  )
+
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 })
 
-test('roll spell check per', async () => {
+test('roll spell check per routes naked check via adapter (D4 naked)', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockReset()
   uiNotificationsWarnMock.mockReset()
   game.dcc.processSpellCheck.mockClear()
-  // Force personality for display purposes
+  rollToMessageMock.mockClear()
+
   await actor.rollSpellCheck({ abilityId: 'per' })
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: 'Action Die',
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        formula: '+1',
-        modifierLabel: 'Level'
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        formula: '+2',
-        modifierLabel: 'Ability Modifier'
-      },
-      {
-        dieLabel: 'RollModifierDieTerm',
-        formula: '',
-        modifierLabel: 'Other Modifier',
-        type: 'Compound'
-      },
-      {
-        type: 'CheckPenalty',
-        apply: true,
-        formula: '+0',
-        label: 'Check Penalty'
-      },
-      {
-        type: 'Spellburn',
-        formula: '+0',
-        str: 6,
-        sta: 12,
-        agl: 8,
-        callback: expect.any(Function)
-      }
-    ],
-    actor.getRollData(),
-    {
-      abilityId: 'per',
-      title: 'Spell Check'
-    }
-  )
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
-    actor,
-    {
-      rollTable: null,
-      roll: expect.objectContaining({
-        dice: [
-          expect.objectContaining({
-            results: [
-              10
-            ]
-          })
-        ]
-      }),
-      item: null,
-      flavor: 'Spell Check (Personality)'
-    }
-  )
+
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 })
 
-test('roll spell check sta', async () => {
+test('roll spell check sta routes naked check via adapter (D4 naked)', async () => {
   dccRollCreateRollMock.mockClear()
   collectionFindMock.mockReset()
   uiNotificationsWarnMock.mockReset()
   game.dcc.processSpellCheck.mockClear()
-  // Force stamina for display purposes (e.g. for a stamina-based caster)
+  rollToMessageMock.mockClear()
+
   await actor.rollSpellCheck({ abilityId: 'sta' })
-  expect(dccRollCreateRollMock).toHaveBeenCalledWith(
-    [
-      {
-        type: 'Die',
-        label: 'Action Die',
-        formula: '1d20',
-        presets: [
-          {
-            formula: '1d20',
-            label: '1d20'
-          },
-          {
-            formula: '1d10',
-            label: 'Untrained'
-          }
-        ]
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        formula: '+1',
-        modifierLabel: 'Level'
-      },
-      {
-        type: 'Compound',
-        dieLabel: 'RollModifierDieTerm',
-        formula: '+0',
-        modifierLabel: 'Ability Modifier'
-      },
-      {
-        dieLabel: 'RollModifierDieTerm',
-        formula: '',
-        modifierLabel: 'Other Modifier',
-        type: 'Compound'
-      },
-      {
-        type: 'CheckPenalty',
-        apply: true,
-        formula: '+0',
-        label: 'Check Penalty'
-      },
-      {
-        type: 'Spellburn',
-        formula: '+0',
-        str: 6,
-        sta: 12,
-        agl: 8,
-        callback: expect.any(Function)
-      }
-    ],
-    actor.getRollData(),
-    {
-      abilityId: 'sta',
-      title: 'Spell Check'
-    }
-  )
-  expect(game.dcc.processSpellCheck).toHaveBeenCalledWith(
-    actor,
-    {
-      rollTable: null,
-      roll: expect.objectContaining({
-        dice: [
-          expect.objectContaining({
-            results: [
-              10
-            ]
-          })
-        ]
-      }),
-      item: null,
-      flavor: 'Spell Check (Stamina)'
-    }
-  )
+
+  expect(dccRollCreateRollMock).not.toHaveBeenCalled()
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
   expect(collectionFindMock).toHaveBeenCalledTimes(0)
 })
 
@@ -1355,15 +1084,18 @@ test('rollSkillCheck with disapproval range for cleric', async () => {
   expect(rollCall[2].title).toBe('Lay on Hands')
 })
 
-test('rollSkillCheck routes cleric abilities through processSpellCheck even without a table', async () => {
+test('rollSkillCheck routes cleric disapproval-range abilities via adapter (D4 skill-table)', async () => {
+  // Phase 3 session 25 / D4(skill-table): turnUnholy etc. route
+  // through `_skillTableViaAdapter` (not `processSpellCheck`). The
+  // adapter handles the table lookup + chat emit + drainDisapproval
+  // inline, mirroring the legacy behavior without the dcc.js detour.
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
   game.dcc.getSkillTable.mockClear()
+  rollToMessageMock.mockClear()
 
-  // Ensure no table is returned
   game.dcc.getSkillTable.mockResolvedValue(null)
 
-  // Set up cleric with disapproval
   actor.system.details.sheetClass = 'Cleric'
   actor.system.class.disapproval = 1
   actor.system.skills.turnUnholy = {
@@ -1375,17 +1107,20 @@ test('rollSkillCheck routes cleric abilities through processSpellCheck even with
 
   await actor.rollSkillCheck('turnUnholy')
 
-  // processSpellCheck should be called even without a table
-  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
-  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
-  expect(spellCheckCall[0]).toBe(actor)
-  expect(spellCheckCall[1].rollTable).toBeNull()
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  // Adapter still uses DCCRoll.createRoll for the underlying skill roll
+  // (terms, dialog, lower-threshold display) — preserved from legacy.
+  expect(dccRollCreateRollMock).toHaveBeenCalled()
+  // Disapproval-only-no-table path emits chat via roll.toMessage with
+  // the SpellCheck*NoTable HTML indicator.
+  expect(rollToMessageMock).toHaveBeenCalled()
 })
 
-test('rollSkillCheck routes layOnHands through processSpellCheck without a table', async () => {
+test('rollSkillCheck routes layOnHands via adapter (D4 skill-table)', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
   game.dcc.getSkillTable.mockClear()
+  rollToMessageMock.mockClear()
 
   game.dcc.getSkillTable.mockResolvedValue(null)
 
@@ -1400,14 +1135,12 @@ test('rollSkillCheck routes layOnHands through processSpellCheck without a table
 
   await actor.rollSkillCheck('layOnHands')
 
-  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
-  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
-  expect(spellCheckCall[0]).toBe(actor)
-  expect(spellCheckCall[1].rollTable).toBeNull()
-  expect(spellCheckCall[1].item).toBeNull()
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(dccRollCreateRollMock).toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
 })
 
-test('rollSkillCheck routes divineAid through processSpellCheck and applies +10 disapproval', async () => {
+test('rollSkillCheck routes divineAid via adapter and applies +10 disapproval (D4 skill-table)', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
   game.dcc.getSkillTable.mockClear()
@@ -1435,13 +1168,10 @@ test('rollSkillCheck routes divineAid through processSpellCheck and applies +10 
 
   await actor.rollSkillCheck('divineAid')
 
-  // processSpellCheck should be called
-  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
-  const spellCheckCall = game.dcc.processSpellCheck.mock.calls[0]
-  expect(spellCheckCall[0]).toBe(actor)
-  expect(spellCheckCall[1].rollTable).toBeNull()
-
-  // Divine aid should always apply +10 disapproval per DCC rules
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  // drainDisapproval still applies via the adapter's
+  // `actor.applyDisapproval(skill.drainDisapproval)` call — mirrors
+  // the legacy _rollSkillCheckLegacy:1816-1818 post-step.
   expect(actorUpdateMock).toHaveBeenCalledWith({
     'system.class.disapproval': 11
   })
@@ -1450,7 +1180,7 @@ test('rollSkillCheck routes divineAid through processSpellCheck and applies +10 
   game.settings.get = originalGet
 })
 
-test('rollSkillCheck does not apply drainDisapproval for turnUnholy', async () => {
+test('rollSkillCheck does not apply drainDisapproval for turnUnholy (D4 skill-table)', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
   game.dcc.getSkillTable.mockClear()
@@ -1469,10 +1199,9 @@ test('rollSkillCheck does not apply drainDisapproval for turnUnholy', async () =
 
   await actor.rollSkillCheck('turnUnholy')
 
-  // processSpellCheck should be called
-  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
-
-  // Turn unholy should NOT apply extra disapproval (no drainDisapproval property)
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  // Turn unholy has no `drainDisapproval` key, so no
+  // `applyDisapproval` mutation should fire.
   expect(actorUpdateMock).not.toHaveBeenCalled()
 })
 
@@ -1530,9 +1259,10 @@ test('rollLuckDie with negative luck modifier', async () => {
   })
 })
 
-test('rollSpellCheck calls processSpellCheck', async () => {
+test('rollSpellCheck routes naked check via adapter (replaces calls-processSpellCheck assertion)', async () => {
   dccRollCreateRollMock.mockClear()
   game.dcc.processSpellCheck.mockClear()
+  rollToMessageMock.mockClear()
 
   // Reset spell check ability to ensure consistent behavior
   actor.system.class.spellCheckAbility = 'int'
@@ -1541,8 +1271,11 @@ test('rollSpellCheck calls processSpellCheck', async () => {
 
   await actor.rollSpellCheck({ abilityId: 'int' })
 
-  // Check that processSpellCheck was called
-  expect(game.dcc.processSpellCheck).toHaveBeenCalled()
+  // D4(naked) replaced the legacy term-builder + processSpellCheck
+  // flow with the adapter's `_castNakedViaAdapter`. processSpellCheck
+  // is no longer reachable from naked spell-check paths.
+  expect(game.dcc.processSpellCheck).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
 })
 
 test('rollWeaponAttack creates attack roll', async () => {

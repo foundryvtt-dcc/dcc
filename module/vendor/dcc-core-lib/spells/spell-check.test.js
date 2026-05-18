@@ -2,6 +2,7 @@
  * Spell Check Orchestration Tests
  */
 import { describe, it, expect } from "vitest";
+import { castSpell } from "./cast.js";
 import { calculateSpellCheck, getCasterLevel, getCasterProfileFromCharacter, getSpellCheckAbility, getCurrentLuck, getStartingLuck, getLuckMultiplier, getDisapprovalRange, getPatronId, getSpellbookEntry, buildSpellCastInput, isSpellCheckSuccess, isSpellCheckFailure, getSpellCheckSummary, } from "./spell-check.js";
 import { CASTER_PROFILES } from "../types/spells.js";
 // =============================================================================
@@ -626,6 +627,92 @@ describe("calculateSpellCheck with profileOverride", () => {
         const result = calculateSpellCheck(cleric, { spell: clericSpell }, { profileOverride: CASTER_PROFILES.wizard });
         expect(result.error).toBeDefined();
         expect(result.error).toContain("wizard cannot cast");
+    });
+});
+describe("castSpell with optional spellbookEntry", () => {
+    // Synthetic spell-check definition used by naked / GM-arbitrated /
+    // skill-table-borrowed casts where the caster carries no spellbook
+    // slot. Mirrors what the Foundry adapter would assemble for a
+    // `rollSpellCheck()` with no spellItem argument.
+    const nakedSpell = {
+        id: "naked-spell-check",
+        name: "Spell Check",
+        level: 1,
+        casterTypes: ["wizard", "elf", "cleric"],
+        description: "Ad-hoc spell check with no underlying spellbook entry",
+    };
+    it("runs without a spellbookEntry (manifestation override + mercurial attach skipped)", () => {
+        const result = castSpell({
+            spell: nakedSpell,
+            casterProfile: CASTER_PROFILES.wizard,
+            casterLevel: 3,
+            abilityScore: 16,
+            abilityModifier: 2,
+        }, { roller: () => 15 });
+        expect(result.natural).toBe(15);
+        // 15 (roll) + 2 (INT mod) + 3 (level) = 20
+        expect(result.total).toBe(20);
+        expect(result.manifestation).toBeUndefined();
+        expect(result.mercurialEffect).toBeUndefined();
+    });
+    it("still detects fumble on natural 1 without a spellbookEntry", () => {
+        const result = castSpell({
+            spell: nakedSpell,
+            casterProfile: CASTER_PROFILES.wizard,
+            casterLevel: 3,
+            abilityScore: 16,
+            abilityModifier: 2,
+        }, { roller: () => 1 });
+        expect(result.fumble).toBe(true);
+        expect(result.critical).toBe(false);
+        // RAW fumble rule: total clamps to 1 (modifiers discarded for table
+        // lookup) even with no spellbookEntry. `determineSpellResult` then
+        // applies the default tier ladder (total <= 1 → "lost").
+        expect(result.total).toBe(1);
+        expect(result.tier).toBe("lost");
+    });
+    it("still detects crit on natural 20 without a spellbookEntry", () => {
+        const result = castSpell({
+            spell: nakedSpell,
+            casterProfile: CASTER_PROFILES.wizard,
+            casterLevel: 3,
+            abilityScore: 16,
+            abilityModifier: 2,
+        }, { roller: () => 20 });
+        expect(result.critical).toBe(true);
+        expect(result.fumble).toBe(false);
+    });
+    it("forceNatural still applies without a spellbookEntry", () => {
+        // Exercises the `forceCrit` shift-click path the adapter routes
+        // through `forceNatural: 20`.
+        const result = castSpell({
+            spell: nakedSpell,
+            casterProfile: CASTER_PROFILES.wizard,
+            casterLevel: 3,
+            abilityScore: 16,
+            abilityModifier: 2,
+        }, { roller: () => 5, forceNatural: 20 });
+        expect(result.natural).toBe(20);
+        expect(result.critical).toBe(true);
+        // Total recalculated: original (5+2+3=10) - 5 + 20 = 25
+        expect(result.total).toBe(25);
+    });
+    it("cleric disapproval increment still calculates without a spellbookEntry", () => {
+        // Cleric naked fumble (natural 1) ticks the disapproval-range
+        // counter by 1 even without a spellbookEntry — `castSpell`'s
+        // `calculateDisapprovalIncrease` keys on `profile.usesDisapproval`
+        // + `natural === 1`, not on spellbook state.
+        const result = castSpell({
+            spell: { ...nakedSpell, casterTypes: ["cleric"] },
+            casterProfile: CASTER_PROFILES.cleric,
+            casterLevel: 2,
+            abilityScore: 14,
+            abilityModifier: 1,
+            disapprovalRange: 2,
+        }, { roller: () => 1 });
+        expect(result.fumble).toBe(true);
+        expect(result.disapprovalIncrease).toBe(1);
+        expect(result.newDisapprovalRange).toBe(3);
     });
 });
 // =============================================================================

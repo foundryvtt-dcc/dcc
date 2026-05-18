@@ -293,17 +293,59 @@ export async function renderSpellCheck ({
     game.dcc.FleetingLuck.updateFlags(flags, foundryRoll)
   }
 
-  const messageData = await foundryRoll.toMessage(
-    {
-      speaker: ChatMessage.getSpeaker({ actor }),
-      flavor,
-      flags,
-      system: { spellId: spellItem?.id }
-    },
-    { create: false }
-  )
+  // Naked spell-check chat indicator. Mirrors the legacy
+  // `processSpellCheck:702-710` no-table emit (the four
+  // `DCC.SpellCheck*NoTable` strings) — the chat content carries a
+  // pass/fail/crit/fumble HTML emote so players see a verdict without
+  // a result table. Item-bound casts (with a result table) skip this
+  // and let the lib's `result.resultText` surface through the
+  // downstream SpellResult.addChatMessage path that the item-aware
+  // dispatchers use.
+  const nakedHtml = !spellItem ? buildNakedSpellResultHtml(result) : null
+
+  const toMessagePayload = {
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor,
+    flags,
+    system: { spellId: spellItem?.id }
+  }
+
+  if (nakedHtml) {
+    flags['dcc.spellResult'] = nakedHtml
+    const rollHTML = await foundryRoll.render()
+    toMessagePayload.content = `${rollHTML}${nakedHtml}`
+  }
+
+  const messageData = await foundryRoll.toMessage(toMessagePayload, { create: false })
 
   return ChatMessage.create(messageData)
+}
+
+/**
+ * Build the inline pass/fail/crit/fumble HTML for naked spell checks.
+ * Mirrors the four `DCC.SpellCheck*NoTable` strings the legacy
+ * `processSpellCheck` emits for item-less casts. The lib's tier
+ * classification drives the verdict (tier from the default ladder
+ * inside `determineSpellResult`); crit/fumble override the tier-based
+ * pick.
+ */
+function buildNakedSpellResultHtml (result) {
+  if (result.fumble) {
+    return `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</p>`
+  }
+  if (result.critical) {
+    return `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</p>`
+  }
+  // Any tier above 'failure' / 'lost' is treated as success; mirrors
+  // legacy threshold check `roll.total >= 10 + level * 2`. The lib's
+  // default tier ladder (cast.ts:165) maps total ≥ 12 to
+  // success-minor or higher for level-1 spells, which is the same
+  // boundary.
+  const successTiers = ['success', 'success-minor', 'success-major', 'success-critical']
+  if (result.tier && successTiers.includes(result.tier)) {
+    return `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckSuccessNoTable')}</p>`
+  }
+  return `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFailureNoTable')}</p>`
 }
 
 /**

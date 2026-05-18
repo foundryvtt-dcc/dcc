@@ -340,8 +340,22 @@ export interface PatronTaintResult {
 export interface SpellCastInput {
     /** The spell being cast (definition) */
     spell: SpellDefinition;
-    /** The spellbook entry (character-specific data) */
-    spellbookEntry: SpellbookEntry;
+    /**
+     * The spellbook entry (character-specific data).
+     *
+     * Optional to support "naked" spell-check casts where the caster has
+     * no spellbook entry — e.g. ad-hoc divine arbitration checks, GM-
+     * triggered checks, or skill-table mechanics (Turn Unholy) that
+     * borrow the spell-check pipeline without owning a spellbook slot.
+     * When omitted:
+     *   - `castSpell` skips the spellbook-entry manifestation override
+     *     (`spellbookEntry.manifestation`).
+     *   - `castSpell` skips the spellbook-entry mercurial-effect
+     *     attachment (`spellbookEntry.mercurialEffect`).
+     *   - `spellLost` semantics still fire but the caller has nothing
+     *     to mark lost; treat the field as advisory.
+     */
+    spellbookEntry?: SpellbookEntry;
     /** Caster's profile (determines mechanics) */
     casterProfile: CasterProfile;
     /** Caster level */

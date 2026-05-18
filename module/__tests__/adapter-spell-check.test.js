@@ -528,6 +528,87 @@ test('generic item on a patron-bound actor routes to legacy (taint side-effects 
   findSpy.mockRestore()
 })
 
+test('naked spell check (no item) routes via adapter through libCastSpell (D4 naked)', async () => {
+  // Phase 3 session 25 / D4(naked) — naked checks no longer hit
+  // legacy `processSpellCheck`. The adapter calls `libCastSpell` with
+  // a synthetic SpellDefinition + no spellbookEntry (lib 0.10.0) and
+  // emits chat via `renderSpellCheck`.
+  rollToMessageMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  await actor.rollSpellCheck()
+
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('SpellCheck')
+  expect(messageData.flags['dcc.isSpellCheck']).toBe(true)
+  // Naked-mode chat carries the SpellCheck*NoTable HTML indicator on
+  // both the flag and the message content.
+  expect(messageData.flags['dcc.spellResult']).toBeDefined()
+  expect(messageData.content).toContain(messageData.flags['dcc.spellResult'])
+
+  itemSpy.mockRestore()
+})
+
+test('naked spell check on a Cleric actor uses cleric profile (D4 naked)', async () => {
+  // Cleric naked check: actor's `sheetClass = 'Cleric'` selects the
+  // cleric profile (no spellburn, idol-magic check, disapproval-
+  // increment book-keeping). The lib's `castSpell` consumes the
+  // synthetic disapprovalRange the adapter populates from
+  // `system.class.disapproval`.
+  rollToMessageMock.mockClear()
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+
+  await actor.rollSpellCheck({ abilityId: 'per' })
+
+  expect(rollToMessageMock).toHaveBeenCalled()
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  expect(messageData.flags['dcc.RollType']).toBe('SpellCheck')
+  // Cleric naked check still emits the no-table HTML indicator.
+  expect(messageData.flags['dcc.spellResult']).toBeDefined()
+})
+
+test('rollSkillCheck routes turnUnholy via adapter skill-table path (D4 skill-table)', async () => {
+  // Phase 3 session 25 / D4(skill-table) — `useDisapprovalRange`
+  // skills (Turn Unholy, layOnHands, divineAid) flow through
+  // `_skillTableViaAdapter` instead of legacy `processSpellCheck`.
+  rollToMessageMock.mockClear()
+  const processSpellCheckMock = global.processSpellCheckMock
+  processSpellCheckMock.mockClear()
+  global.getDCCSkillTableMock.mockResolvedValue(null)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.disapproval = 1
+  actor.system.skills.turnUnholy = {
+    label: 'DCC.TurnUnholy',
+    die: '1d20',
+    value: 0,
+    useDisapprovalRange: true
+  }
+
+  await actor.rollSkillCheck('turnUnholy')
+
+  expect(processSpellCheckMock).not.toHaveBeenCalled()
+  expect(rollToMessageMock).toHaveBeenCalled()
+})
+
 test('createSpellEvents onSpellLost bridges to spellItem.update({ system.lost: true })', () => {
   const actor = {}
   const spellItem = { update: vi.fn() }

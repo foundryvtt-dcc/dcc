@@ -293,15 +293,17 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { skillId: 'sneakSilently' })
     })
 
-    test('cleric skill with useDisapprovalRange + skillTable → legacy', async ({ page }) => {
+    test('cleric skill with useDisapprovalRange + skillTable → adapter (D4 skill-table)', async ({ page }) => {
+      // Phase 3 session 25 / D4(skill-table): divineAid (table +
+      // useDisapprovalRange) now routes via `_skillTableViaAdapter`
+      // instead of legacy `processSpellCheck`. The skillTable lookup,
+      // chat emit, and drainDisapproval all live in the adapter.
       await makePlayer(page, 'P1 Skill Cleric')
       await page.evaluate(async () => {
-        // divineAid is both in CONFIG.DCC.skillTables AND carries
-        // useDisapprovalRange: true. Either alone routes to legacy.
         await game.actors.getName('P1 Skill Cleric').rollSkillCheck('divineAid')
       })
       const line = await waitForAdapterLog('rollSkillCheck')
-      assertPath(line, 'legacy', { skillId: 'divineAid' })
+      assertPath(line, 'adapter', { skillId: 'divineAid', mode: 'skillTable' })
     })
 
     test('skill item with die → adapter', async ({ page }) => {
@@ -855,13 +857,77 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       })
     })
 
-    test('naked spell check (no item) → legacy', async ({ page }) => {
+    test('naked spell check (no item) → adapter (D4 naked)', async ({ page }) => {
+      // Phase 3 session 25 / D4(naked): naked spell-check rolls now
+      // route through `_castNakedViaAdapter` (mode=naked) instead of
+      // the legacy term-builder + `processSpellCheck({rollTable:null})`.
       await makePlayer(page, 'P1 Spell Naked')
       await page.evaluate(async () => {
         await game.actors.getName('P1 Spell Naked').rollSpellCheck()
       })
       const line = await waitForAdapterLog('rollSpellCheck')
-      assertPath(line, 'legacy')
+      assertPath(line, 'adapter', { mode: 'naked' })
+    })
+
+    test('naked spell check on a Cleric actor → adapter cleric profile (D4 naked)', async ({ page }) => {
+      await page.evaluate(async () => {
+        await Actor.create({
+          name: 'P1 Spell Naked Cleric',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1, spellCheckAbility: 'per' },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell Naked Cleric').rollSpellCheck()
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { mode: 'naked' })
+    })
+
+    test('forceCrit shift-click flag pushes natural to 20 on the adapter route (D4 forceCrit)', async ({ page }) => {
+      // Phase 3 session 25 / D4(forceCrit): `options.forceCrit` flows
+      // through every spell-check adapter route via the shared
+      // `applyForceCritToFoundryRoll` helper — the Foundry Roll's
+      // natural mutates to 20 (shown in chat) and the lib reads the
+      // same value (so its tier classification matches).
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell ForceCrit',
+          type: 'Player',
+          system: {
+            class: { className: 'Wizard', spellCheckAbility: 'int' },
+            details: { sheetClass: 'Wizard' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-ForceCrit-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' }
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell ForceCrit').rollSpellCheck({
+          spell: 'P1-ForceCrit-Spell',
+          forceCrit: true
+        })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { spell: 'P1-ForceCrit-Spell', mode: 'wizard' })
+      // The chat message should carry a libResult with natural === 20
+      // because `applyForceCritToFoundryRoll` mutates the Foundry Roll
+      // and the lib roller closure feeds 20 back into pass-2.
+      const libNatural = await page.evaluate(() => {
+        const msg = game.messages.contents[game.messages.contents.length - 1]
+        return msg?.flags?.dcc?.libResult?.natural
+      })
+      expect(libNatural).toBe(20)
     })
 
     test('wizard cast with options.spellburn reduces physical ability scores (session 5)', async ({ page }) => {

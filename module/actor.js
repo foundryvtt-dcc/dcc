@@ -11,6 +11,7 @@ import {
   rollSavingThrow as libRollSavingThrow,
   castSpell as libCastSpell,
   calculateSpellCheck as libCalculateSpellCheck,
+  getCasterProfile as libGetCasterProfile,
   rollMercurialMagic as libRollMercurialMagic,
   makeAttackRoll as libMakeAttackRoll,
   rollDamage as libRollDamage,
@@ -28,6 +29,31 @@ import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-inpu
 import { logDispatch, warnIfDivergent } from './adapter/debug.mjs'
 
 const { TextEditor } = foundry.applications.ux
+
+/**
+ * Apply the legacy `options.forceCrit` shift-click GM-testing mutation
+ * to a Foundry Roll. When forceCrit is set and the rolled natural is
+ * not a 1 (can't force-crit a fumble), mutates the Roll so chat shows
+ * a natural 20 and returns 20 so the adapter feeds the same value to
+ * the lib's roller closure. Mirrors `processSpellCheck:605-611`'s
+ * legacy mutation so both code paths produce identical chat output.
+ *
+ * When forceCrit is unset or the natural is 1, returns the natural
+ * unchanged.
+ *
+ * @param {Roll} foundryRoll - The evaluated Foundry Roll.
+ * @param {number} natural - The pre-mutation natural die result.
+ * @param {Object} options - Spell-check options bag. Reads `forceCrit`.
+ * @returns {number} The natural value the lib should classify against.
+ */
+function applyForceCritToFoundryRoll (foundryRoll, natural, options) {
+  if (!options?.forceCrit || natural === 1) return natural
+  const original = natural
+  foundryRoll.terms[0].results[0].result = 20
+  foundryRoll.terms[0]._total = 20
+  foundryRoll._total += 20 - original
+  return 20
+}
 
 // noinspection JSUnusedGlobalSymbols
 /**
@@ -1426,14 +1452,20 @@ class DCCActor extends Actor {
       (game.i18n.localize('DCC.AbilityCheck') + resolved.abilityLabel)
 
     const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
-    const needsLegacyPath =
-      !!options.showModifierDialog ||
-      !!resolved.skill?.useDisapprovalRange ||
-      hasSkillTable ||
-      !resolved.hasDie
+    const useDisapprovalRange = !!resolved.skill?.useDisapprovalRange
 
-    if (needsLegacyPath) {
+    // Phase 3 session 25 / D4(skill-table) — skill-table + disapproval-
+    // range routes (Turn Unholy, divine aid) flow through
+    // `_skillTableViaAdapter` instead of legacy `processSpellCheck`.
+    // The modifier-dialog and description-only branches stay on the
+    // legacy path until the adapter spellburn/roll-dialog scaffold
+    // generalizes (open question #7).
+    if (!resolved.hasDie || !!options.showModifierDialog) {
       return this._rollSkillCheckLegacy(skillId, options, resolved)
+    }
+
+    if (hasSkillTable || useDisapprovalRange) {
+      return this._skillTableViaAdapter(skillId, options, resolved)
     }
 
     return this._rollSkillCheckViaAdapter(skillId, options, resolved)
@@ -1556,6 +1588,202 @@ class DCCActor extends Actor {
     }
 
     return foundryRoll
+  }
+
+  /**
+   * Skill-table + disapproval-range adapter branch
+   * (Phase 3 session 25 / D4(skill-table)).
+   *
+   * Replaces the legacy `_rollSkillCheckLegacy` →
+   * `processSpellCheck({rollTable: skillTable})` flow for skills that
+   * carry a result table (Turn Unholy, divine aid) or a cleric
+   * disapproval range. The roll itself still flows through
+   * `DCCRoll.createRoll` so per-class skill terms (skill die, value,
+   * level, deed roll, check penalty) render identically; the lookup +
+   * chat emit + drainDisapproval mirror the legacy `processSpellCheck`
+   * cleric/skill-table branch (`module/dcc.js:665-693, 781-792`).
+   *
+   * Mechanics preserved from legacy:
+   *   - Term-builder matches `_rollSkillCheckLegacy` (die / value /
+   *     level / useDeed / check penalty) so a Turn Unholy roll
+   *     displays the same modifier breakdown.
+   *   - `useDisapprovalRange` annotates the die's `lowerThreshold` so
+   *     the chat shows the cleric's disapproval band.
+   *   - `forceCrit` (shift-click GM testing) is honored via the same
+   *     Foundry-Roll mutation helper as the spell-check routes.
+   *   - Natural 1 / Natural 20 detection drives the table lookup row:
+   *     fumble → row 1; PC crit → roll.total + level (with the +level
+   *     compound term appended to the roll for chat display).
+   *   - Chat emit uses `SpellResult.addChatMessage` for the table path
+   *     and the four `DCC.SpellCheck*NoTable` strings for the
+   *     disapproval-range-only-no-table fallback (rare; mirror
+   *     legacy).
+   *   - `skill.drainDisapproval` increments the actor's disapproval
+   *     range by N when `automateClericDisapproval` is on (Turn
+   *     Unholy's documented cost).
+   *   - `skillItem.system.config.showLastResult` updates `lastResult`
+   *     on the skill item so the sheet displays the latest total.
+   * @private
+   */
+  async _skillTableViaAdapter (skillId, options, resolved) {
+    logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'skillTable' })
+    const { skill, skillItem, abilityLabel, abilityMod, die, hasDie } = resolved
+
+    const terms = []
+
+    if (hasDie) {
+      terms.push({
+        type: 'Die',
+        label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
+        formula: die,
+        presets: this.getActionDice({ includeUntrained: true })
+      })
+    }
+
+    if (skill.value !== undefined) {
+      let formula = skill.value.toString()
+      if (abilityMod !== 0) {
+        formula = `${skill.value} + ${abilityMod}`
+      }
+      terms.push({
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
+        formula
+      })
+    }
+
+    if (skill.level && skill.level !== 0) {
+      terms.push({
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize('DCC.Level'),
+        formula: `${skill.level}`
+      })
+    }
+
+    if (skill.useDeed && this.system.details.lastRolledAttackBonus) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.DeedRoll'),
+        formula: parseInt(this.system.details.lastRolledAttackBonus)
+      })
+    }
+
+    let checkPenaltyCouldApply = false
+    if (['sneakSilently', 'climbSheerSurfaces'].includes(skillId)) {
+      checkPenaltyCouldApply = true
+    }
+    if (skill.config?.applyCheckPenalty) {
+      checkPenaltyCouldApply = true
+    }
+    const checkPenalty = ensurePlus(this.system.attributes.ac.checkPenalty || '0')
+    if (checkPenaltyCouldApply && checkPenalty !== '+0') {
+      terms.push({
+        type: 'CheckPenalty',
+        formula: checkPenalty,
+        apply: checkPenaltyCouldApply
+      })
+    }
+
+    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
+
+    if (skill.useDisapprovalRange && roll.dice.length > 0) {
+      roll.dice[0].options.dcc = {
+        lowerThreshold: this.system.class.disapproval
+      }
+    }
+
+    if (!roll._evaluated) {
+      await roll.evaluate()
+    }
+
+    const skillTable = await game.dcc.getSkillTable(skillId)
+
+    // forceCrit (shift-click GM testing) — same Foundry-Roll mutation
+    // helper as the spell-check adapter routes. Mirrors legacy
+    // `processSpellCheck:605-611`.
+    const naturalRoll = applyForceCritToFoundryRoll(
+      roll,
+      roll.dice[0]?.total ?? roll.total,
+      options
+    )
+
+    const fumble = naturalRoll === 1
+    const crit = naturalRoll === 20 && this.type === 'Player'
+    const actorLevel = parseInt(this.system.details?.level?.value || 0, 10) || 0
+
+    const flavor = `${game.i18n.localize(skill.label)}${abilityLabel}`
+
+    if (skillTable) {
+      let result
+      if (fumble) {
+        result = skillTable.getResultsForRoll(1)
+      } else if (crit) {
+        const critRoll = roll.total + actorLevel
+        result = skillTable.getResultsForRoll(critRoll)
+        roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }))
+        roll.terms.push(new foundry.dice.terms.NumericTerm({ number: actorLevel }))
+        roll._formula += ` + ${actorLevel}`
+        roll._total += actorLevel
+      } else {
+        result = skillTable.getResultsForRoll(roll.total)
+      }
+
+      await game.dcc.SpellResult.addChatMessage(roll, skillTable, result, {
+        crit, fumble, item: skillItem
+      })
+    } else {
+      // `useDisapprovalRange` without a table: emit the same
+      // pass/fail/crit/fumble HTML indicator as the legacy no-table
+      // processSpellCheck branch. `level` for the threshold defaults
+      // to 1 (skill items typically don't carry a spell level).
+      const noTableLevel = skillItem?.system?.level || 1
+      const noTableSuccess = roll.total >= 10 + noTableLevel * 2
+      let spellResultHtml
+      if (fumble) {
+        spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFumbleNoTable')}</p>`
+      } else if (crit) {
+        spellResultHtml = `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckCritNoTable')}</p>`
+      } else if (noTableSuccess) {
+        spellResultHtml = `<p class="emote-alert critical">${game.i18n.localize('DCC.SpellCheckSuccessNoTable')}</p>`
+      } else {
+        spellResultHtml = `<p class="emote-alert fumble">${game.i18n.localize('DCC.SpellCheckFailureNoTable')}</p>`
+      }
+
+      const flags = {
+        'dcc.RollType': 'SpellCheck',
+        'dcc.isSpellCheck': true,
+        'dcc.isSkillCheck': true,
+        'dcc.ItemId': skillItem?.id,
+        'dcc.SkillId': skillId,
+        'dcc.spellResult': spellResultHtml
+      }
+      if (game.dcc?.FleetingLuck?.updateFlags) {
+        game.dcc.FleetingLuck.updateFlags(flags, roll)
+      }
+
+      const rollHTML = await roll.render()
+      await roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        flavor,
+        flags,
+        system: { spellId: skillItem?.id, skillId },
+        content: `${rollHTML}${spellResultHtml}`
+      })
+    }
+
+    // Skill-driven disapproval drain (Turn Unholy etc.) — preserves
+    // the legacy `_rollSkillCheckLegacy:1816-1818` post-step.
+    if (skill.drainDisapproval && game.settings.get('dcc', 'automateClericDisapproval')) {
+      await this.applyDisapproval(skill.drainDisapproval)
+    }
+
+    if (skillItem && skillItem.system.config.showLastResult) {
+      skillItem.update({ 'system.lastResult': roll.total })
+    }
+
+    return roll
   }
 
   /**
@@ -1940,6 +2168,15 @@ class DCCActor extends Actor {
       this.system.details?.sheetClass === 'Cleric' ||
       this.system.class?.className === 'Cleric'
 
+    if (!spellItem) {
+      // Phase 3 session 25 / D4(naked) — no spell item supplied (no
+      // `options.spell` or the actor doesn't own the named item).
+      // Routes through the adapter via `castSpell` with an optional
+      // spellbookEntry (lib 0.10.0); replaces the inline term-builder
+      // + `processSpellCheck({rollTable: null})` legacy path.
+      return this._castNakedViaAdapter(options)
+    }
+
     if (spellItem) {
       if (castingMode === 'generic' && !isCleric && !hasPatron) {
         return this._rollSpellCheckViaAdapter(spellItem, options)
@@ -2056,6 +2293,208 @@ class DCCActor extends Actor {
   }
 
   /**
+   * Naked spell-check adapter branch (Phase 3 session 25 / D4(naked)).
+   *
+   * Routes ad-hoc spell-check rolls (no spellItem — `rollSpellCheck()`
+   * with no `options.spell`, or `options.spell` referencing an item the
+   * actor doesn't own) through the lib's `castSpell` with an optional
+   * `spellbookEntry` (lib 0.10.0). Replaces the inline term-builder +
+   * `processSpellCheck({rollTable: null})` legacy flow.
+   *
+   * Behavior parity with legacy `_rollSpellCheckLegacy`'s no-item branch:
+   *   - Action die from `system.attributes.actionDice.value`, overridden
+   *     by `system.class.spellCheckOverrideDie` when set.
+   *   - When `system.class.spellCheckOverride` is set, that string
+   *     replaces level + abilityMod + otherMod as the sole modifier
+   *     (matches the legacy Compound term that hides the breakdown).
+   *   - When unset, level + abilityMod + spellCheckOtherMod combine as
+   *     situational modifiers.
+   *   - Check penalty applies for non-cleric actors (Idol-magic
+   *     clerics skip).
+   *   - Spellburn dialog prompts non-NPC non-cleric casters when
+   *     `options.showModifierDialog` is set and no commitment is
+   *     pre-attached, mirroring the item-bound wizard adapter route.
+   *   - Foundry rolls the d20; `applyForceCritToFoundryRoll` honors
+   *     shift-click GM forceCrit.
+   *   - Cleric disapproval mechanics fire through the existing
+   *     `actor.rollDisapproval` + `actor.applyDisapproval` system
+   *     methods when natural ≤ disapprovalRange (mirrors legacy
+   *     `processSpellCheck` cleric branch).
+   *   - Chat emit uses the existing `renderSpellCheck` adapter helper;
+   *     the no-table pass/fail/crit/fumble HTML indicator lives in
+   *     chat-renderer.mjs and surfaces on `flags['dcc.spellResult']`.
+   * @private
+   */
+  async _castNakedViaAdapter (options) {
+    logDispatch('rollSpellCheck', 'adapter', { spell: options.spell ?? '', mode: 'naked' })
+
+    const abilityId = options.abilityId || this.system.class.spellCheckAbility || ''
+    const ability = this.system.abilities[abilityId] || { value: 10, mod: 0 }
+
+    const isIdolMagic = this.system.details.sheetClass === 'Cleric'
+    const profileType = isIdolMagic ? 'cleric' : 'wizard'
+    const casterProfile = libGetCasterProfile(profileType) || libGetCasterProfile('wizard')
+
+    let actionDie = this.system.attributes?.actionDice?.value || '1d20'
+    if (this.system.class.spellCheckOverrideDie) {
+      actionDie = this.system.class.spellCheckOverrideDie
+    }
+
+    // Spellburn dialog parity with the wizard item route (open question
+    // #6, session 1). NPCs and clerics skip — legacy never offered
+    // spellburn to either.
+    if (options.showModifierDialog && !options.spellburn && !this.isNPC && !isIdolMagic) {
+      const commitment = await promptSpellburnCommitment(this, null)
+      if (commitment === null) return
+      options.spellburn = commitment
+    }
+
+    const casterLevel = Number(this.system.details?.level?.value || 0)
+    const abilityModifier = parseInt(ability.mod || 0, 10) || 0
+    const situationalModifiers = []
+
+    if (this.system.class.spellCheckOverride) {
+      // Legacy parity: when this class-level override is set, level +
+      // abilityMod + otherMod are SUPPRESSED and a single bonus replaces
+      // them. Surface it as a situational modifier and zero out the
+      // ability+level contributions.
+      const overrideValue = parseInt(this.system.class.spellCheckOverride, 10) || 0
+      situationalModifiers.push({
+        source: 'spell-check-override',
+        value: overrideValue,
+        label: game.i18n.localize('DCC.SpellCheck')
+      })
+    } else if (this.system.class.spellCheckOtherMod) {
+      const otherMod = parseInt(this.system.class.spellCheckOtherMod, 10) || 0
+      if (otherMod !== 0) {
+        situationalModifiers.push({
+          source: 'spell-check-other-mod',
+          value: otherMod,
+          label: game.i18n.localize('DCC.SpellCheckOtherMod')
+        })
+      }
+    }
+
+    // Idol-magic clerics skip the AC check penalty (matches the
+    // legacy `applyCheckPenalty = !isIdolMagic` switch).
+    if (!isIdolMagic) {
+      const checkPenalty = parseInt(this.system?.attributes?.ac?.checkPenalty || 0, 10) || 0
+      if (checkPenalty !== 0) {
+        situationalModifiers.push({
+          source: 'check-penalty',
+          value: checkPenalty,
+          label: game.i18n.localize('DCC.CheckPenalty')
+        })
+      }
+    }
+
+    const spell = {
+      id: 'naked-spell-check',
+      name: options.spell || game.i18n.localize('DCC.SpellCheck'),
+      level: 1,
+      casterTypes: ['wizard', 'cleric', 'elf'],
+      description: ''
+    }
+
+    const input = {
+      spell,
+      casterProfile,
+      // When `spellCheckOverride` replaces the full modifier breakdown,
+      // zero out the lib's automatic level + ability contributions so
+      // the override stands alone (matches legacy term ordering).
+      casterLevel: this.system.class.spellCheckOverride ? 0 : casterLevel,
+      abilityScore: parseInt(ability.value || 10, 10) || 10,
+      abilityModifier: this.system.class.spellCheckOverride ? 0 : abilityModifier,
+      actionDie: normalizeLibDie(actionDie)
+    }
+
+    if (situationalModifiers.length > 0) {
+      input.situationalModifiers = situationalModifiers
+    }
+
+    if (options.spellburn && typeof options.spellburn === 'object') {
+      const burn = options.spellburn
+      const str = Number(burn.str) || 0
+      const agl = Number(burn.agl) || 0
+      const sta = Number(burn.sta) || 0
+      if (str > 0 || agl > 0 || sta > 0) {
+        input.spellburn = { str, agl, sta }
+      }
+    }
+
+    // Cleric disapproval range — the lib's `castSpell` reads
+    // `input.disapprovalRange` for its `calculateDisapprovalIncrease`
+    // book-keeping. Adapter handles the actual disapproval roll +
+    // chat below via `actor.rollDisapproval` (legacy parity).
+    if (isIdolMagic) {
+      const disapprovalRange = parseInt(this.system.class?.disapproval || 1, 10) || 1
+      input.disapprovalRange = disapprovalRange
+    }
+
+    const plan = libCastSpell(input, { mode: 'formula' })
+
+    const foundryRoll = new Roll(plan.formula)
+    await foundryRoll.evaluate()
+
+    const natural = applyForceCritToFoundryRoll(
+      foundryRoll,
+      foundryRoll.dice?.[0]?.total ?? foundryRoll.total,
+      options
+    )
+
+    const result = libCastSpell(input, {
+      mode: 'evaluate',
+      roller: () => natural
+    })
+
+    // Spellburn applied via the lib's event in item-bound routes; for
+    // naked we just deduct here since there's no `createSpellEvents`
+    // wiring (no spellItem to mutate). Matches the legacy
+    // `DCCSpellburnTerm` callback at `_rollSpellCheckLegacy:2495-2500`.
+    if (input.spellburn) {
+      const burn = input.spellburn
+      await this.update({
+        'system.abilities.str.value': Math.max(1, this.system.abilities.str.value - (burn.str || 0)),
+        'system.abilities.agl.value': Math.max(1, this.system.abilities.agl.value - (burn.agl || 0)),
+        'system.abilities.sta.value': Math.max(1, this.system.abilities.sta.value - (burn.sta || 0))
+      })
+    }
+
+    const abilityLabel = abilityId ? CONFIG.DCC.abilities[abilityId] : undefined
+    let flavor = options.spell || game.i18n.localize('DCC.SpellCheck')
+    if (abilityLabel) {
+      flavor += ` (${game.i18n.localize(abilityLabel)})`
+    }
+
+    await renderSpellCheck({
+      actor: this,
+      spellItem: null,
+      flavor,
+      result,
+      foundryRoll
+    })
+
+    // Cleric disapproval: legacy parity. When natural is in the
+    // disapproval range and automation is enabled, draw the
+    // disapproval table + emit chat. Failed casts (no `success` tier
+    // hit) increment the disapproval range via `applyDisapproval`.
+    if (isIdolMagic && game.settings.get('dcc', 'automateClericDisapproval')) {
+      const disapprovalRange = parseInt(this.system.class?.disapproval || 1, 10) || 1
+      const inRange = natural <= disapprovalRange
+      const successTiers = ['success', 'success-minor', 'success-major', 'success-critical']
+      const success = result.tier && successTiers.includes(result.tier)
+      if (inRange) {
+        await this.rollDisapproval(natural)
+      }
+      if (!success) {
+        await this.applyDisapproval()
+      }
+    }
+
+    return foundryRoll
+  }
+
+  /**
    * Generic-castingMode adapter branch. Side-effect-free cast via the
    * lib's `castSpell`.
    * @private
@@ -2068,7 +2507,11 @@ class DCCActor extends Actor {
     const foundryRoll = new Roll(plan.formula)
     await foundryRoll.evaluate()
 
-    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+    const natural = applyForceCritToFoundryRoll(
+      foundryRoll,
+      foundryRoll.dice?.[0]?.total ?? foundryRoll.total,
+      options
+    )
 
     const result = libCastSpell(input, {
       mode: 'evaluate',
@@ -2188,7 +2631,11 @@ class DCCActor extends Actor {
     const foundryRoll = new Roll(plan.formula)
     await foundryRoll.evaluate()
 
-    const natural = foundryRoll.dice?.[0]?.total ?? foundryRoll.total
+    const natural = applyForceCritToFoundryRoll(
+      foundryRoll,
+      foundryRoll.dice?.[0]?.total ?? foundryRoll.total,
+      options
+    )
 
     // Pre-roll the disapproval 1d4 via Foundry so the pass-2 roller
     // has a value to hand back when the lib calls `options.roller('1d4')`
@@ -2386,12 +2833,16 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Legacy spell-check path. Preserves the pre-adapter behavior for
-   * every dispatch that doesn't meet the session-1 adapter gate —
-   * spell items delegate to `DCCItem.rollSpellCheck`, naked checks
-   * build DCCRoll terms and hand off to `game.dcc.processSpellCheck`
-   * (still the source of truth for wizard spell loss, cleric
-   * disapproval, patron taint, spellburn, and mercurial magic).
+   * Legacy spell-check fallback for spell items the adapter can't
+   * route. Delegates to `DCCItem.rollSpellCheck`, which builds its own
+   * Foundry roll + chat + `processSpellCheck` flow. Hit when the
+   * adapter declines for `noCasterProfile` (custom class with no
+   * lib-side profile) or an unrecognized castingMode.
+   *
+   * Pre-D4(naked) (session 25) the naked branch lived here too;
+   * `_castNakedViaAdapter` now owns ad-hoc spell-check rolls. This
+   * method is spell-item-only by construction — the dispatcher
+   * routes the no-item case to the adapter unconditionally.
    * @private
    */
   async _rollSpellCheckLegacy (options, spellItem, reason = null) {
@@ -2403,124 +2854,11 @@ class DCCActor extends Actor {
     if (reason) details.reason = reason
     logDispatch('rollSpellCheck', 'legacy', details)
 
-    if (spellItem) {
-      // Fire-and-forget — matches the pre-dispatcher contract. The
-      // item's rollSpellCheck performs its own chat + processSpellCheck
-      // orchestration; awaiting here would change the public return
-      // shape and surface errors the original path swallowed.
-      spellItem.rollSpellCheck(options.abilityId, options)
-      return
-    }
-
-    // Naked spell-check path (no item): retained verbatim from the
-    // pre-dispatcher rollSpellCheck body.
-    const ability = this.system.abilities[options.abilityId] || {}
-    ability.label = CONFIG.DCC.abilities[options.abilityId]
-    const spell = options.spell ? options.spell : game.i18n.localize('DCC.SpellCheck')
-    let die = this.system.attributes.actionDice.value || '1d20'
-    if (this.system.class.spellCheckOverrideDie) {
-      die = this.system.class.spellCheckOverrideDie
-    }
-    const level = ensurePlus(this.system.details.level.value)
-    const abilityMod = ensurePlus(ability?.mod || 0) || +0
-    let otherMod = ''
-    if (this.system.class.spellCheckOtherMod) {
-      otherMod = ensurePlus(this.system.class.spellCheckOtherMod)
-    }
-    let bonus = ''
-    if (this.system.class.spellCheckOverride) {
-      bonus = this.system.class.spellCheckOverride
-    }
-    const checkPenalty = ensurePlus(this.system?.attributes?.ac?.checkPenalty || '0')
-    const isIdolMagic = this.system.details.sheetClass === 'Cleric'
-    const applyCheckPenalty = !isIdolMagic
-    options.title = game.i18n.localize('DCC.SpellCheck')
-
-    // Collate terms for the roll
-    const terms = [
-      {
-        type: 'Die',
-        label: game.i18n.localize('DCC.ActionDie'),
-        formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
-      }
-    ]
-
-    if (bonus) {
-      terms.push({
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-        modifierLabel: game.i18n.localize('DCC.SpellCheck'),
-        formula: bonus
-      })
-    } else {
-      terms.push({
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-        modifierLabel: game.i18n.localize('DCC.Level'),
-        formula: level
-      })
-      terms.push({
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-        modifierLabel: game.i18n.localize('DCC.AbilityMod'),
-        formula: abilityMod
-      })
-      terms.push({
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-        modifierLabel: game.i18n.localize('DCC.SpellCheckOtherMod'),
-        formula: otherMod
-      })
-    }
-
-    terms.push({
-      type: 'CheckPenalty',
-      formula: checkPenalty,
-      label: game.i18n.localize('DCC.CheckPenalty'),
-      apply: applyCheckPenalty
-    })
-
-    // If we're a non-cleric show the spellburn UI
-    if (!isIdolMagic) {
-      terms.push({
-        type: 'Spellburn',
-        formula: '+0',
-        str: this.system.abilities.str.value,
-        agl: this.system.abilities.agl.value,
-        sta: this.system.abilities.sta.value,
-        callback: (formula, term) => {
-          // Apply the spellburn
-          this.update({
-            'system.abilities.str.value': term.str,
-            'system.abilities.agl.value': term.agl,
-            'system.abilities.sta.value': term.sta
-          })
-        }
-      })
-    }
-
-    const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
-
-    if (roll.dice.length > 0) {
-      roll.dice[0].options.dcc = {
-        lowerThreshold: this.system.class.disapproval
-      }
-    }
-
-    let flavor = spell
-    if (ability.label) {
-      flavor += ` (${game.i18n.localize(ability.label)})`
-    }
-
-    // Tell the system to handle the spell check result
-    await game.dcc.processSpellCheck(this, {
-      rollTable: null,
-      roll,
-      item: null,
-      flavor,
-      forceCrit: options.forceCrit
-    })
+    // Fire-and-forget — matches the pre-dispatcher contract. The
+    // item's rollSpellCheck performs its own chat + processSpellCheck
+    // orchestration; awaiting here would change the public return
+    // shape and surface errors the original path swallowed.
+    spellItem.rollSpellCheck(options.abilityId, options)
   }
 
   /**
