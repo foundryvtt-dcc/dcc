@@ -725,30 +725,36 @@ and should be scheduled into Phase 4+ work.
 
 ## Next steps
 
-**Post-D3 (2026-04-24) — the full D3 arc (a/b-α/b-β/b-γ/c) is
-closed.** `rollWeaponAttack` + all four chained calls are
-single-path via the adapter; `module/migrations.js` targets
-V14-era (0.66+) worlds only; patron-taint matches DCC RAW
-end-to-end with manifestation text flowing from authored
-`dcc-core-book` + `xcc-core-book` RollTables to the
-`onPatronTaint` chat emote, and the dead
-`SpellFumbleResult.patronTaint` flag is retired in
-`dcc-core-lib@0.8.0`. Remaining backlog candidates — both marked
-**STOP AND ASK** because each carries a design decision the code
-alone can't settle:
+**Post-Q7-phase2 (2026-05-17) — Groups A, C, and D are fully
+closed; open question #7 fully closed; open question #3 closed
+2026-05-18 via XCC coordination.** `rollWeaponAttack` + all four
+chained calls are single-path via the adapter; `module/migrations.js`
+targets V14-era (0.66+) worlds only; patron-taint matches DCC RAW
+end-to-end; the unified roll-modifier dialog covers wizard / cleric
+/ naked spell checks + skill checks. Only one backlog candidate
+remains:
 
-1. **D4 fold direct-reimpl spell-check branches** — pre-built
-   Roll + RollTable, `forceCrit`, skill-table spells (Turn
-   Unholy). Each branch evaluated separately; stop-and-ask per
-   branch.
-2. **Group E vertical slice** (placeholder — needs explicit
+1. **Group E vertical slice** (placeholder — needs explicit
    pick): halfling, mercurial-magic, or homebrew single-class.
-   Would exercise Phase 4 + 5 + 6 end-to-end.
+   Would exercise Phase 4 + 5 + 6 end-to-end. Phase 4 (schema
+   slimming) has not started; Group E's halfling candidate is
+   the most natural Phase 4 starter.
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with
 `allowLuck` needing dice-chain bumps), land the lib change first in
 its own PR in `dcc-core-lib`, then sync via `npm run sync-core-lib`.
+
+**Sibling-module status:** XCC has consumed the
+`dcc.afterComputeSpellCheck` hook + `game.dcc.registerActorSheet`
+recipes shipped in B1-followup / B1-followup-2; PR pending on
+`foundryvtt-dcc/xcc` branch `chore/migrate-to-dcc-extension-api`.
+Same branch also retires 9 XCC-side redefinitions of DCC class
+schema fields (luckDie, backstab, knownSpells, maxSpellLevel,
+disapproval, disapprovalTable, deity, corruption,
+spellCheckAbility) that were silently clobbering DCC defaults.
+Phase 4 schema-mixin design needs to coordinate with the XCC field
+consumption documented in this PR.
 
 ## Notes for future sessions
 

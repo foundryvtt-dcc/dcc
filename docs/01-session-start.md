@@ -456,23 +456,24 @@ disables the Playwright login and tests hang for 11 s each.
 **Remaining open questions** (tracked in `00-progress.md`):
 - #2 package-name discrepancy — resolved in spirit by vendoring, can
   be closed out.
-- #3 dead `dcc.update` hook — coordinate with XCC maintainer before
-  Phase 4.
-- #4 stabilizing undocumented `game.dcc.*` pieces — **Phase 3 is when
-  this matters**; formal stabilization should land alongside the
-  first attack-migration session.
+- ~~#3 dead `dcc.update` hook~~ — closed 2026-05-18. XCC removed
+  the speculative listener on `chore/migrate-to-dcc-extension-api`;
+  DCC's `EXTENSION_API.md` Dead-hooks table cleared. Decision: don't
+  emit; no real consumer existed.
+- #4 stabilizing undocumented `game.dcc.*` pieces — Phase 3 is
+  largely complete and these exports still stand; can be closed
+  once `EXTENSION_API.md` is re-audited.
 - ~~#5 patron-taint RAW alignment~~ — closed at session 21 / D3a
   (2026-04-24). `dcc-core-lib@0.7.0` landed the two RAW triggers;
-  `_runLegacyPatronTaint` retired. D3b (manifestation content) +
-  D3c (fumble-flag cleanup) tracked in `02-slice-backlog.md`.
+  `_runLegacyPatronTaint` retired. D3 arc (a/b-α/b-β/b-γ/c) fully
+  closed at session 23.
 - ~~#6 spellburn dialog integration~~ — closed at Phase 3 session 1.
-- #7 wizard adapter-path modifier-dialog coverage beyond Spellburn
-  — **partially closed at session 26 / Q7-phase1 (2026-05-17):**
-  scaffold landed (`promptRollModifierDialog` +
-  `parseRollIntoDieAndModifier`), skill-check route folded.
-  Q7-phase2 (combining Spellburn + general modifiers in one
-  unified dialog for spell-check) tracked in
-  `02-slice-backlog.md`.
+- ~~#7 wizard adapter-path modifier-dialog coverage beyond
+  Spellburn~~ — **fully closed across sessions 26 + 27
+  (2026-05-17).** Q7-phase1 landed `promptRollModifierDialog` +
+  skill-check fold; Q7-phase2 extended the wrapper with a spellburn
+  descriptor and folded wizard / cleric / naked spell-check routes,
+  retiring the bespoke `promptSpellburnCommitment` helper.
 
 Start by reading the five docs above, then run `npm test` to confirm
 the repo is green before touching anything.
