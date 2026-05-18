@@ -653,27 +653,27 @@ Phase 5 territory:
    ShieldBash weapon auto-create at
    `module/actor-sheets-dcc.js:434-454`.
 
-Phase 4 still has **two non-class-extraction sub-slices** open per
-the original "Phase 4 sub-arc" inventory:
+Phase 4's class-id dispatch sub-slice landed in session 7 (see
+Completed). Remaining non-class-extraction work is Phase 5 territory:
 
-- **Class-id dispatch helper** — replace the remaining
-  `system.details.sheetClass === 'Halfling'` string checks in
-  `module/actor.js:3265-3266` + `module/item.js:70-103` with a
-  single `actor.classId` accessor reading the canonical lowercase
-  ID. Quick win; could land as a Phase 4 closer or roll into
-  Phase 5.
+- ~~**Class-id dispatch helper**~~ — **DONE 2026-05-18 (Phase 4
+  session 7).** `DCCActor.classId` getter normalizes
+  `system.details.sheetClass` to lowercase canonical ID
+  (`'halfling'`, …); two halfling sites in `module/actor.js:3281`
+  + `module/item.js:70` migrated. Remaining capitalized
+  `sheetClass` comparisons (Elf / Cleric — `actor.js:182`,
+  `actor.js:2180`, `actor.js:2481`, `dcc.js:746`) intentionally
+  left for the Phase 5 `registerClassDefaults` work to migrate
+  alongside the writer-side rewrite of `sheetClass`.
 - **Class-defaults registry**, Phase 5 candidate — see
   `docs/dev/CLASS_DECOMPOSITION.md` §3.3 for the design notes
   (already documented).
 
 #### Phase 4 session 4+ (future).
-- **Class-id dispatch helper** — replace the remaining
-  `system.details.sheetClass === 'Halfling'` string checks in
-  `actor.js:3265-3266` + `item.js:70-103` with a single
-  `actor.classId` accessor reading the canonical lowercase ID.
-  Tied to the eventual `Character.classId` projection from the lib.
-  Appendix C tracks this as the post-Phase-1 form of the halfling
-  i18n stopgap.
+- ~~**Class-id dispatch helper**~~ — **DONE 2026-05-18 (Phase 4
+  session 7).** `DCCActor.classId` getter; two halfling sites
+  migrated. Future Elf / Cleric migrations bundled with the Phase
+  5 `registerClassDefaults` writer-side rewrite of `sheetClass`.
 - **Halfling / dwarf sheet-tab composition (Phase 5 work)** —
   collapse the class-specific sheets' tab/template definitions into
   `dcc.registerSheetPart({ classId, tab, template })` registrations.
@@ -764,6 +764,22 @@ Move entries here as they land; keep the active queue scannable.
   mixin-source their fields** — component 1 of the Class
   Decomposition complete. +2 Playwright cases. 966 Vitest
   unchanged; 116 Playwright passed (was 114, +2 wizard/elf).
+- Phase 4 session 7 (2026-05-18): `DCCActor.classId` getter
+  normalizes `system.details.sheetClass` to the lowercase canonical
+  identifier (`'halfling'`, …); returns `null` when unset. Two
+  halfling-keyed string comparisons migrated to the accessor —
+  `module/actor.js:3281` (rollWeaponAttack halfling two-weapon
+  fumble note) and `module/item.js:70` (halfling agility-floor
+  branch in two-weapon dice-penalty computation). Other capitalized
+  `sheetClass` comparisons (Elf / Cleric in `actor.js:182`,
+  `actor.js:2180`, `actor.js:2481`, `dcc.js:746`) left untouched
+  — out of slice scope; they migrate opportunistically with the
+  Phase 5 `registerClassDefaults` writer-side rewrite. +4 Vitest
+  in `actor.test.js`, +1 Playwright case in `extension-api.spec.js`
+  exercising the accessor end-to-end. 970 Vitest (was 966, +4); 117
+  Playwright (was 116, +1). Closes the Phase 4 non-class-extraction
+  sub-arc; Phase 5 work (sheet composition + class defaults +
+  starting items) remains.
 
 ### Phase 3 sessions 1–9 (2026-04-18 → 2026-04-19)
 

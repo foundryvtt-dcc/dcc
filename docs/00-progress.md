@@ -62,6 +62,29 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 4 session 7 (2026-05-18)** closed the Phase 4 active sub-arc
+with the class-id dispatch helper. New `DCCActor.classId` getter on
+`module/actor.js` returns the canonical lowercase identifier
+(`'halfling'`, `'wizard'`, …) by lowercasing `system.details.sheetClass`,
+or `null` when unset. The two halfling-keyed string comparisons noted
+in the backlog (`actor.js:3265-3266` halfling two-weapon fumble note,
+`item.js:70` halfling agility floor) migrate to
+`this.classId === 'halfling'` / `this.actor?.classId === 'halfling'`.
+The accessor matches the lib's `character.classInfo.classId`
+convention and the `registerClassMixin` / `registerMercurialMagicTable`
+documented dispatch key. Other capitalized `sheetClass` comparisons
+(Elf in `actor.js:182`, Cleric in `actor.js:2180`/`actor.js:2481`/
+`dcc.js:746`) intentionally stay on the raw field for now —
+out-of-scope for this slice; the Phase 5 `registerClassDefaults`
+work will restructure the writer side of `sheetClass` and is the
+natural moment to migrate the remaining readers. 970 Vitest + 117
+Playwright green (+4 vitest / +1 playwright). With component 1
+(schema mixins) complete for all seven DCC classes and the
+class-id dispatch helper landed, the Phase 4 active sub-arc is
+closed; remaining work in `02-slice-backlog.md` is Phase 5 territory
+(sheet composition, class defaults, starting items) plus the
+deferred Phase 6 lib `registerClassProgression` + variant registry.
+
 **Phase 4 session 6 (2026-05-18)** closed the per-class extraction
 arc with wizard + elf. New `'wizard'` and `'elf'` entries in the
 `BUILT_IN_CLASS_MIXINS` table both call a shared
@@ -213,6 +236,38 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 4 session 7: `DCCActor.classId` accessor for
+  class dispatch.** Closes the non-class-extraction sub-slice that
+  was open in the Phase 4 sub-arc: replace `system.details.sheetClass
+  === 'Halfling'` string comparisons with a normalized
+  `actor.classId === 'halfling'` accessor reading the canonical
+  lowercase ID. New getter on `DCCActor` (`module/actor.js:65-74`)
+  returns `system.details.sheetClass?.toLowerCase()` or `null` when
+  unset. Backing store stays `system.details.sheetClass` (still the
+  capitalized sheet label that `_prepareContext` writes on first
+  open — sheet-side rewrite is Phase 5 territory); the accessor
+  exists so caller-side dispatch matches the lib's
+  `character.classInfo.classId` convention and is robust to future
+  sheetClass-shape shifts. Two call sites migrated: the halfling
+  two-weapon fumble note in `module/actor.js:3281` (rollWeaponAttack
+  message-building) and the halfling agility-floor branch in
+  `module/item.js:70` (two-weapon dice-penalty + crit-range
+  computation). Other capitalized sheetClass comparisons (Elf at
+  `actor.js:182`, Cleric at `actor.js:2180/2481` + `dcc.js:746`)
+  left untouched — out of slice scope; they can migrate
+  opportunistically alongside the Phase 5 `registerClassDefaults`
+  work where the writer side of `sheetClass` gets restructured. +4
+  Vitest tests in `actor.test.js` (null when unset / null when
+  missing / lowercases canonical labels for halfling/wizard/dwarf /
+  idempotent when already lowercase). +1 Playwright case in
+  `extension-api.spec.js` exercising the accessor end-to-end against
+  a live Player document (default null → 'halfling' → 'warrior' →
+  null on clear). 970 Vitest green (was 966, +4); 117 Playwright
+  passed (was 116, +1 classId case), 1 latent failure (xcc-core-book
+  DCCItemSheet override, unchanged baseline). With component 1
+  (schema mixins) complete and the class-id dispatch helper in
+  place, Phase 4's active sub-arc is closed; remaining work is
+  Phase 5 (sheet composition + class defaults).
 - **2026-05-18 — Phase 4 session 6: wizard + elf class-mixin
   extraction (closes per-class arc).** New `'wizard'` + `'elf'`
   entries in `BUILT_IN_CLASS_MIXINS` (`module/built-in-class-mixins.mjs`)
@@ -347,58 +402,6 @@ archives linked above.
   (unchanged from session 1). 110 Playwright passed (was 109, +1
   dwarf case); same single pre-existing environmental flake as
   session 1 (`xcc-core-book` unregistering DCCItemSheet).
-- **2026-05-18 — Phase 4 session 1: halfling vertical kickoff —
-  `registerClassMixin` infrastructure + sneakAndHide extraction.**
-  New stable extension helper `game.dcc.registerClassMixin(classId,
-  mixinFn)` in `module/extension-api.mjs` (alongside companion
-  `applyClassMixins(schema)` used by `defineSchema`).
-  `CONFIG.DCC.classMixins = {}` initialized in `module/config.js`;
-  mutators run in sorted-classId order during
-  `PlayerData.defineSchema()` **before** the existing
-  `dcc.definePlayerSchema` hook fires so external handlers see
-  mixin-contributed fields. `module/dcc.js`'s init registers a
-  built-in `'halfling'` mixin (right after `CONFIG.DCC = DCC`,
-  before `CONFIG.Actor.dataModels`) that contributes
-  `skills.sneakAndHide` (`StringField initial '+3'`,
-  `label initial 'DCC.SneakAndHide'`) — identical to the static
-  definition it replaces. The static `player-data.mjs` halfling
-  block is removed; the field is no longer hardcoded in the
-  monolithic schema body. Last-write-wins on duplicate `classId`
-  registration (matches mercurial-magic registry semantic) — lets a
-  sibling module fully replace a DCC built-in mixin instead of
-  having to additively patch. EXTENSION_API.md gains the new helper
-  in the Stable `game.dcc.*` exports table, refreshes the
-  `dcc.definePlayerSchema` row to call out the new sibling registry,
-  and adds a "Homebrew / sibling-module recipe: registerClassMixin"
-  migration entry. +11 Vitest tests in `extension-api.test.js`
-  (registry mechanics: stores under classId, self-heals missing
-  registry, last-write-wins, throws on bad inputs;
-  `applyClassMixins`: deterministic sort order, no-op on empty /
-  missing registry, defensive against malformed entries). +3
-  Playwright cases in `extension-api.spec.js` (helper exposed on
-  `game.dcc`, built-in halfling mixin produces `sneakAndHide` on a
-  live Player document, last-write-wins survives a round-trip
-  restore). 966 Vitest green (was 955, +11); 109 Playwright passed.
-  **Two pre-existing environmental Playwright failures observed
-  (unrelated to slice, pin-pointed):**
-  (1) `extension-api.spec.js:78 › registerItemSheet adds a sheet
-  option…` asserts `sheetCtorName === 'DCCItemSheet'` but resolves
-  to `'XCCItemSheet'` — `xcc-core-book/module/dccModule.js:14-16`
-  unregisters DCC's item sheet and registers XCCItemSheet as
-  default at init; the assertion has been latent since the test
-  landed 2026-04-19 (`907cfaf`) and only fires when xcc-core-book
-  is enabled in the test world. Fix is one of: relax to
-  `expect(['DCCItemSheet', 'XCCItemSheet']).toContain(…)`, or
-  disable xcc-core-book in the v14 world for the test run.
-  (2) `v14-features.spec.js:659 › Status Icons › can toggle…`
-  hit a "You have lost connection to the server" console error
-  mid-suite — environmental Foundry connection flake during the
-  long v14-features run, not a test-logic failure. Neither is
-  introduced by this slice. First chip away at
-  §2.1; Foundry-smelling shape (`system.skills.sneakAndHide`) stays
-  intact per §2.12. Subsequent halfling-vertical sessions: extract
-  remaining class-bound fields (Phase 4 cont.), halfling sheet-tab
-  composition (Phase 5), variant registration (Phase 6).
 - **2026-05-18 — Group E session 1: per-class mercurial-magic table
   registry.** New `dcc.registerMercurialMagicTable(classKey,
   tableName)` Stable hook + `CONFIG.DCC.mercurialMagicTables`

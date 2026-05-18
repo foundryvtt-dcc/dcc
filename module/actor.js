@@ -62,6 +62,22 @@ function applyForceCritToFoundryRoll (foundryRoll, natural, options) {
  * @extends {Actor}
  */
 class DCCActor extends Actor {
+  /**
+   * Canonical lowercase class identifier for this actor, or `null` if
+   * `system.details.sheetClass` is empty. Use this for class dispatch
+   * (e.g. `actor.classId === 'halfling'`) instead of comparing the
+   * raw `sheetClass` field, which stores the capitalized sheet label
+   * and may shift form when the lib's `Character.classId` projection
+   * lands in a later phase.
+   * @returns {string | null}
+   */
+  get classId () {
+    const sheetClass = this.system?.details?.sheetClass
+    return typeof sheetClass === 'string' && sheetClass.length > 0
+      ? sheetClass.toLowerCase()
+      : null
+  }
+
   /** @override */
   prepareBaseData () {
     super.prepareBaseData()
@@ -3262,7 +3278,7 @@ class DCCActor extends Actor {
     let twoWeaponNote = ''
     if (attackRollResult.fumble &&
       (weapon.system?.twoWeaponPrimary || weapon.system?.twoWeaponSecondary) &&
-      this.system?.details?.sheetClass === 'Halfling') {
+      this.classId === 'halfling') {
       twoWeaponNote = game.i18n.localize('DCC.HalflingTwoWeaponFumbleNote')
     }
 

@@ -40,6 +40,38 @@ test('prepareData sets ability modifiers', () => {
   expect(abilities.lck.mod).toEqual(3)
 })
 
+test('classId returns null when sheetClass is unset', () => {
+  const blankActor = new DCCActor()
+  blankActor.system.details.sheetClass = ''
+  expect(blankActor.classId).toBeNull()
+})
+
+test('classId returns null when sheetClass is missing entirely', () => {
+  const blankActor = new DCCActor()
+  delete blankActor.system.details.sheetClass
+  expect(blankActor.classId).toBeNull()
+})
+
+test('classId lowercases the canonical sheetClass label', () => {
+  const halflingActor = new DCCActor()
+  halflingActor.system.details.sheetClass = 'Halfling'
+  expect(halflingActor.classId).toEqual('halfling')
+
+  const wizardActor = new DCCActor()
+  wizardActor.system.details.sheetClass = 'Wizard'
+  expect(wizardActor.classId).toEqual('wizard')
+
+  const dwarfActor = new DCCActor()
+  dwarfActor.system.details.sheetClass = 'Dwarf'
+  expect(dwarfActor.classId).toEqual('dwarf')
+})
+
+test('classId is idempotent when sheetClass is already lowercase', () => {
+  const already = new DCCActor()
+  already.system.details.sheetClass = 'halfling'
+  expect(already.classId).toEqual('halfling')
+})
+
 test('roll ability check', async () => {
   dccRollCreateRollMock.mockClear()
   const chatMessageCreateSpy = vi.spyOn(ChatMessage, 'create')

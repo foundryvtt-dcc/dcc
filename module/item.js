@@ -67,7 +67,7 @@ class DCCItem extends Item {
       // Two-Weapon Fighting Dice Modifications
       if (this.system.twoWeaponPrimary || this.system.twoWeaponSecondary) {
         const agilityScore = this.actor?.system?.abilities?.agl?.value || 0
-        const isHalfling = this.actor?.system?.details?.sheetClass === 'Halfling'
+        const isHalfling = this.actor?.classId === 'halfling'
 
         // Calculate dice penalty based on agility and weapon hand
         let dicePenalty = 0

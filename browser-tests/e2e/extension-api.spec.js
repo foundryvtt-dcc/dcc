@@ -598,6 +598,41 @@ test.describe('DCC Extension API', () => {
     expect(result.detectValue).toBe('+4')
   })
 
+  // -------------------------------------------------------------------
+  // DCCActor.classId accessor (Phase 4 closer — class-id dispatch helper)
+  // -------------------------------------------------------------------
+
+  test('DCCActor.classId returns lowercase canonical class identifier', async ({ page }) => {
+    // Phase 4 closer — `actor.classId` is the canonical accessor for
+    // class dispatch. Backing store is `system.details.sheetClass`,
+    // which currently holds the capitalized sheet label. The getter
+    // normalizes to the lowercase canonical ID the lib uses for
+    // `character.classInfo.classId` and that the registry helpers
+    // (`registerClassMixin`, `registerMercurialMagicTable`) document
+    // as the dispatch key.
+    const result = await page.evaluate(async () => {
+      const player = await Actor.create({ name: 'P4-Closer classId Probe', type: 'Player' })
+
+      const initial = player.classId
+
+      await player.update({ 'system.details.sheetClass': 'Halfling' })
+      const asHalfling = player.classId
+
+      await player.update({ 'system.details.sheetClass': 'Warrior' })
+      const asWarrior = player.classId
+
+      await player.update({ 'system.details.sheetClass': '' })
+      const cleared = player.classId
+
+      await player.delete()
+      return { initial, asHalfling, asWarrior, cleared }
+    })
+    expect(result.initial).toBeNull()
+    expect(result.asHalfling).toBe('halfling')
+    expect(result.asWarrior).toBe('warrior')
+    expect(result.cleared).toBeNull()
+  })
+
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
     // The mercurial-magic registry's last-write-wins semantic
     // matters for sibling modules that want to fully replace a

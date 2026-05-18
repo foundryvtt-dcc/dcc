@@ -32,26 +32,37 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 4 session 6 (2026-05-18) closed the per-class
-extraction arc with wizard + elf.** New `'wizard'` + `'elf'` entries
+**Status:** **Phase 4 session 7 (2026-05-18) closed the Phase 4
+active sub-arc with the class-id dispatch helper.** New
+`DCCActor.classId` getter on `module/actor.js:65-74` returns the
+canonical lowercase identifier (`'halfling'`, `'wizard'`, …) by
+lowercasing `system.details.sheetClass`, or `null` when unset.
+Matches the lib's `character.classInfo.classId` convention and the
+dispatch key documented for `registerClassMixin` /
+`registerMercurialMagicTable`. Two halfling-keyed string comparisons
+migrated: `module/actor.js:3281` (rollWeaponAttack two-weapon
+fumble note) and `module/item.js:70` (two-weapon agility-floor
+branch). Other capitalized `sheetClass` comparisons (Elf at
+`actor.js:182`; Cleric at `actor.js:2180`, `actor.js:2481`,
+`dcc.js:746`) intentionally left for the Phase 5
+`registerClassDefaults` writer-side rewrite to migrate alongside.
++4 Vitest in `actor.test.js`, +1 Playwright case in
+`extension-api.spec.js`. 970 Vitest green (was 966, +4); 117
+Playwright passed (was 116, +1), 1 latent failure (xcc-core-book
+DCCItemSheet override — unchanged baseline).
+
+**Phase 4 session 6 (2026-05-18)** closed the per-class
+extraction arc with wizard + elf. New `'wizard'` + `'elf'` entries
 in the shared `BUILT_IN_CLASS_MIXINS` table
 (`module/built-in-class-mixins.mjs`) both call a new
 `attachWizardFields(schema)` helper that contributes the 9 wizard
-class fields (`knownSpells` / `maxSpellLevel` / `spellCheckOtherMod`
-/ `spellCheckDieOverride` / `spellCheckOverride` / `patron` /
-`patronTaintChance` / `familiar` / `corruption` HTMLField). The
-elf mixin **also** overrides `skills.detectSecretDoors` with the
-HeightenedSenses defaults (`label='DCC.HeightenedSenses'` /
-`ability='int'` / `value='+4'`). Static `class` block in
-`module/data/actor/player-data.mjs` collapsed to a single
-`className` StringField; static `skills` block carries only the
-base `detectSecretDoors`. `HTMLField` + `NumberField` imports
-dropped from `player-data.mjs`. **All seven DCC classes
-(halfling, dwarf, thief, cleric, warrior, wizard, elf) now
-mixin-source their fields** — component 1 of the Class Decomposition
-(schema mixins) is complete for every built-in. +2 Playwright cases.
-966 Vitest unchanged; 116 Playwright passed (was 114, +2 wizard/elf
-cases), 1 latent failure (xcc-core-book DCCItemSheet override).
+class fields. Elf mixin **also** overrides `skills.detectSecretDoors`
+with the HeightenedSenses defaults
+(`label='DCC.HeightenedSenses'` / `ability='int'` / `value='+4'`).
+Static `class` block in `player-data.mjs` collapsed to a single
+`className` StringField. **All seven DCC classes now mixin-source
+their fields** — component 1 of the Class Decomposition (schema
+mixins) is complete for every built-in.
 
 **Phase 4 session 5 (2026-05-18)** extended the vertical to warrior
 (class.luckyWeapon + class.luckyWeaponMod). Smallest remaining
@@ -480,39 +491,28 @@ mercurial-magic registry's behavior. EXTENSION_API.md grew a new
 Stable `game.dcc.registerClassMixin` row + homebrew migration
 recipe.
 
-**Remaining Phase 4 (halfling vertical) candidates:**
+**Phase 4 active sub-arc is now closed** (per-class schema extraction
+done in sessions 1–6; class-id dispatch helper landed session 7).
+**Start Phase 5 — sheet composition + class defaults.** Per
+`docs/dev/CLASS_DECOMPOSITION.md` §3.2 / §3.3 / §3.4:
 
-1. **Phase 4 closer slices** (per-class schema extraction is done):
-   - **Class-id dispatch helper** — replace the remaining
-     `system.details.sheetClass === 'Halfling'` string checks in
-     `module/actor.js:3265-3266` + `module/item.js:70-103` with a
-     single `actor.classId` accessor reading the canonical
-     lowercase ID. Tied to the eventual `Character.classId`
-     projection from the lib. Appendix C tracks the post-Phase-1
-     form of the halfling i18n stopgap. Quick win that could land
-     as a Phase 4 closer.
-2. **Start Phase 5 — sheet composition + class defaults.** Per
-   `docs/dev/CLASS_DECOMPOSITION.md` §3.2 / §3.3 / §3.4:
-   - **Sheet parts registry** (`game.dcc.registerSheetPart({
-     classId, tab, template, condition })`) — collapse the 7
-     class sheets in `module/actor-sheets-dcc.js` (+ partials at
-     `templates/actor-partial-*.html`) into one `DCCSheet` that
-     composes per `character.classId`.
-   - **Class defaults registry** (`registerClassDefaults`) —
-     extract the `_prepareContext` first-open blocks (lines
-     `60 / 128 / 201 / 269 / 346 / 518 / 595` in
-     `actor-sheets-dcc.js`) bundling class identity + mechanical
-     defaults + skill activation toggles (notably the
-     `skills.shieldBash.useDeed` cross-class toggle).
-   - **Starting items registry** — extract the dwarf ShieldBash
-     auto-create from `module/actor-sheets-dcc.js:434-454`.
-2. **Class-id dispatch helper** — replace the remaining
-   `system.details.sheetClass === 'Halfling'` string checks in
-   `actor.js:3265-3266` + `item.js:70-103` with a single
-   `actor.classId` accessor. Appendix C tracks the post-Phase-1
-   form of the halfling i18n stopgap.
-3. **Phase 5 work (halfling / dwarf sheet-tab composition)** — out
-   of scope for Phase 4 sessions; tracked in the backlog for later.
+1. **Sheet parts registry** (`game.dcc.registerSheetPart({
+   classId, tab, template, condition })`) — collapse the 7
+   class sheets in `module/actor-sheets-dcc.js` (+ partials at
+   `templates/actor-partial-*.html`) into one `DCCSheet` that
+   composes per `character.classId`.
+2. **Class defaults registry** (`registerClassDefaults`) —
+   extract the `_prepareContext` first-open blocks (lines
+   `60 / 128 / 201 / 269 / 346 / 518 / 595` in
+   `actor-sheets-dcc.js`) bundling class identity + mechanical
+   defaults + skill activation toggles (notably the
+   `skills.shieldBash.useDeed` cross-class toggle). When this
+   lands, also migrate the remaining capitalized `sheetClass`
+   readers (Elf at `actor.js:182`; Cleric at `actor.js:2180` /
+   `actor.js:2481` / `dcc.js:746`) to the `actor.classId`
+   accessor that session 7 introduced.
+3. **Starting items registry** — extract the dwarf ShieldBash
+   auto-create from `module/actor-sheets-dcc.js:434-454`.
 
 **Other still-viable Group E candidates** (independent of halfling):
 
