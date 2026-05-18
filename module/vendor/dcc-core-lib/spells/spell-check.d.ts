@@ -97,9 +97,16 @@ export declare function getDisapprovalRange(character: Character): number;
  */
 export declare function getPatronId(character: Character): string | undefined;
 /**
- * Get spellbook entry for a spell
+ * Get spellbook entry for a spell.
+ *
+ * When `profile` is supplied, the lookup is restricted to that profile's
+ * classState slot — important for the `profileOverride` flow, where the
+ * character may have a populated spellbook for its actual class but the
+ * caller wants the override's spellbook to take precedence. When omitted,
+ * the historical `wizard ?? cleric ?? elf` walk preserves backward
+ * compatibility for callers that don't know which profile is active.
  */
-export declare function getSpellbookEntry(character: Character, spellId: string): SpellbookEntry | undefined;
+export declare function getSpellbookEntry(character: Character, spellId: string, profile?: CasterProfile): SpellbookEntry | undefined;
 /**
  * Build the full SpellCastInput from character state and simplified input
  */

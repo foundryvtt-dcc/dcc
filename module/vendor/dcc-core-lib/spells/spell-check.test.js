@@ -542,6 +542,92 @@ describe("calculateSpellCheck", () => {
         expect(result.luckBurned).toBe(2);
     });
 });
+describe("calculateSpellCheck with profileOverride", () => {
+    it("uses the override profile in place of the character's class-derived profile", () => {
+        // Cleric character (PER 15, level 2) casts a wizard spell with a
+        // wizard profile override. Mechanics that follow the override:
+        //   - spell-check ability becomes INT (cleric INT = 10, mod +0)
+        //   - casterTypes validation passes (wizard ∈ ["wizard","elf"])
+        //   - usesCorruption: true → fumble would trigger corruption flow,
+        //     but with roll 15 there is no fumble
+        //   - usesDisapproval: false → no disapproval triggered even on a
+        //     low natural would have rolled
+        const cleric = createTestCleric();
+        cleric.state.classState = {
+            ...cleric.state.classState,
+            wizard: {
+                corruption: [],
+                spellbook: { spells: [{ spellId: testSpell.id, lost: false }] },
+            },
+        };
+        const result = calculateSpellCheck(cleric, { spell: testSpell }, {
+            profileOverride: CASTER_PROFILES.wizard,
+            roller: () => 15,
+        });
+        expect(result.error).toBeUndefined();
+        expect(result.natural).toBe(15);
+        // 15 (roll) + 0 (INT mod via wizard profile) + 2 (level) = 17
+        expect(result.total).toBe(17);
+        expect(result.disapprovalResult).toBeUndefined();
+        expect(result.spellLost).toBe(false);
+    });
+    it("triggers disapproval when override is cleric on a wizard character", () => {
+        // Wizard character (PER 10, level 3) casts a cleric spell with a
+        // cleric profile override. The wizard now follows cleric mechanics:
+        //   - usesDisapproval: true → natural ≤ disapprovalRange triggers
+        //   - usesCorruption: false → no corruption / patron-taint flow
+        //   - canSpellburn: false → spellburn ignored if supplied
+        // The adapter is responsible for populating
+        // `state.classState.cleric.disapprovalRange` since the wizard has no
+        // cleric state by default.
+        const wizard = createTestWizard();
+        wizard.state.classState = {
+            ...wizard.state.classState,
+            cleric: {
+                disapprovalRange: 2,
+                spellbook: { spells: [{ spellId: clericSpell.id, lost: false }] },
+            },
+        };
+        const result = calculateSpellCheck(wizard, {
+            spell: clericSpell,
+            resultTable: mockSpellResultTable,
+            disapprovalTable: mockDisapprovalTable,
+        }, {
+            profileOverride: CASTER_PROFILES.cleric,
+            roller: () => 2, // within disapprovalRange
+        });
+        expect(result.error).toBeUndefined();
+        expect(result.natural).toBe(2);
+        expect(result.disapprovalResult).toBeDefined();
+    });
+    it("falls back to character-derived profile when override is omitted", () => {
+        // Regression guard: existing baseline must not change when
+        // profileOverride is absent. Mirrors the established
+        // "performs wizard spell check with seeded roller" expectation.
+        const wizard = createTestWizard();
+        const result = calculateSpellCheck(wizard, { spell: testSpell, resultTable: mockSpellResultTable }, { roller: () => 15 });
+        expect(result.error).toBeUndefined();
+        // 15 + 2 (INT) + 3 (level) = 20
+        expect(result.total).toBe(20);
+    });
+    it("override profile validates casterTypes — non-castable spell errors out", () => {
+        // Cleric character with wizard override tries to cast a cleric-only
+        // spell. The override's type is `wizard`, which is not in
+        // clericSpell.casterTypes (`["cleric"]`), so the validation should
+        // surface an error mentioning the override type.
+        const cleric = createTestCleric();
+        cleric.state.classState = {
+            ...cleric.state.classState,
+            wizard: {
+                corruption: [],
+                spellbook: { spells: [{ spellId: clericSpell.id, lost: false }] },
+            },
+        };
+        const result = calculateSpellCheck(cleric, { spell: clericSpell }, { profileOverride: CASTER_PROFILES.wizard });
+        expect(result.error).toBeDefined();
+        expect(result.error).toContain("wizard cannot cast");
+    });
+});
 // =============================================================================
 // Result Utility Tests
 // =============================================================================

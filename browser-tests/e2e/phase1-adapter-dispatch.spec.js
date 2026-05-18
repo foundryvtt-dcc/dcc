@@ -787,6 +787,74 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(line, 'adapter', { spell: 'P1-Cleric-Spell', mode: 'cleric' })
     })
 
+    // Phase 3 session 24 / D4 — gate-widen via lib `profileOverride`.
+    // Wizard-castingMode spell cast by a Cleric actor (and the symmetric
+    // cleric-mode-on-non-cleric case) now route through the adapter with
+    // a profile override so the lib applies the spell's mechanic-class
+    // behavior (spellburn / spell-loss / patron-taint for wizard,
+    // disapproval for cleric) regardless of the actor's class.
+    test('wizard-castingMode spell on a Cleric actor → adapter (D4 profile override)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell D4 WizardOnCleric',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1, spellCheckAbility: 'per' },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-D4-Wizard-On-Cleric',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' }
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell D4 WizardOnCleric').rollSpellCheck({ spell: 'P1-D4-Wizard-On-Cleric' })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', {
+        spell: 'P1-D4-Wizard-On-Cleric',
+        mode: 'wizard',
+        profileOverride: 'wizard'
+      })
+    })
+
+    test('cleric-castingMode spell on a non-Cleric actor → adapter (D4 profile override)', async ({ page }) => {
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell D4 ClericOnWizard',
+          type: 'Player',
+          system: {
+            class: { className: 'Wizard', spellCheckAbility: 'int' },
+            details: { sheetClass: 'Wizard' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-D4-Cleric-On-Wizard',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'cleric', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' }
+          }
+        }])
+      })
+      await page.evaluate(async () => {
+        await game.actors.getName('P1 Spell D4 ClericOnWizard').rollSpellCheck({ spell: 'P1-D4-Cleric-On-Wizard' })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', {
+        spell: 'P1-D4-Cleric-On-Wizard',
+        mode: 'cleric',
+        profileOverride: 'cleric'
+      })
+    })
+
     test('naked spell check (no item) → legacy', async ({ page }) => {
       await makePlayer(page, 'P1 Spell Naked')
       await page.evaluate(async () => {

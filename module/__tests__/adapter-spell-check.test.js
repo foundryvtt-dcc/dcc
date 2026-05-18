@@ -411,8 +411,15 @@ test('adapter path fires for a cleric-castingMode item on a className-only Cleri
   findSpy.mockRestore()
 })
 
-test('cleric-castingMode item on a patron-bound actor routes to legacy', async () => {
+test('cleric-castingMode item on a patron-bound cleric routes to adapter with cleric profile override (Phase 3 session 24 / D4)', async () => {
+  // Pre-D4 this case routed to legacy because the dispatcher excluded
+  // `hasPatron` from the cleric branch (clerics are anomalous when
+  // patron-bound). D4 routes it via the adapter with an explicit
+  // cleric `profileOverride` — the profile is harmless (matches the
+  // derived cleric profile) and the patron is dropped by the cleric
+  // profile (no `usesCorruption`, so no patron-taint plumbing fires).
   rollToMessageMock.mockClear()
+  libCalcSpellCheckMock.mockClear()
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
 
   // noinspection JSCheckFunctionSignatures
@@ -420,21 +427,32 @@ test('cleric-castingMode item on a patron-bound actor routes to legacy', async (
   actor.system.class.patron = 'Bobugbubilz'
   actor.system.class.className = 'Cleric'
   actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.spellCheckAbility = 'per'
 
   const spellItem = makeClericSpellItem()
   const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
 
   await actor.rollSpellCheck({ spell: 'Cure Light Wounds' })
 
-  expect(itemSpy).toHaveBeenCalledTimes(1)
-  expect(rollToMessageMock).not.toHaveBeenCalled()
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(libCalcSpellCheckMock).toHaveBeenCalled()
+  const libOptions = libCalcSpellCheckMock.mock.calls[0][2]
+  expect(libOptions.profileOverride?.type).toBe('cleric')
 
   itemSpy.mockRestore()
   findSpy.mockRestore()
 })
 
-test('cleric-castingMode item on a non-Cleric actor routes to legacy', async () => {
+test('cleric-castingMode item on a non-Cleric actor routes to adapter with cleric profile override (Phase 3 session 24 / D4)', async () => {
+  // Pre-D4 this case routed to legacy because the actor's class
+  // profile (wizard) doesn't match the spell's mechanic class
+  // (cleric). D4 unlocks it via `SpellCheckOptions.profileOverride`:
+  // the adapter resolves the cleric profile from the spell's
+  // castingMode, synthesizes a cleric classState slot, and the lib
+  // applies cleric mechanics (disapproval, no spellburn) to the
+  // wizard actor's cast.
   rollToMessageMock.mockClear()
+  libCalcSpellCheckMock.mockClear()
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
 
   // noinspection JSCheckFunctionSignatures
@@ -442,14 +460,48 @@ test('cleric-castingMode item on a non-Cleric actor routes to legacy', async () 
   actor.system.class.patron = ''
   actor.system.class.className = 'Wizard'
   actor.system.details.sheetClass = 'Wizard'
+  actor.system.class.spellCheckAbility = 'int'
 
   const spellItem = makeClericSpellItem()
   const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
 
   await actor.rollSpellCheck({ spell: 'Cure Light Wounds' })
 
-  expect(itemSpy).toHaveBeenCalledTimes(1)
-  expect(rollToMessageMock).not.toHaveBeenCalled()
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(libCalcSpellCheckMock).toHaveBeenCalled()
+  const libOptions = libCalcSpellCheckMock.mock.calls[0][2]
+  expect(libOptions.profileOverride?.type).toBe('cleric')
+
+  itemSpy.mockRestore()
+  findSpy.mockRestore()
+})
+
+test('wizard-castingMode item on a Cleric actor routes to adapter with wizard profile override (Phase 3 session 24 / D4)', async () => {
+  // Symmetric to the cleric-mode-on-non-cleric case: a cleric actor
+  // casting a wizard-mode spell gets wizard mechanics (spellburn,
+  // spell-loss, patron-taint if a patron is bound) via the override.
+  // Pre-D4 the dispatcher gated this on `!isCleric` and fell to
+  // legacy.
+  rollToMessageMock.mockClear()
+  libCalcSpellCheckMock.mockClear()
+  const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Cleric'
+  actor.system.details.sheetClass = 'Cleric'
+  actor.system.class.spellCheckAbility = 'per'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  expect(itemSpy).not.toHaveBeenCalled()
+  expect(libCalcSpellCheckMock).toHaveBeenCalled()
+  const libOptions = libCalcSpellCheckMock.mock.calls[0][2]
+  expect(libOptions.profileOverride?.type).toBe('wizard')
 
   itemSpy.mockRestore()
   findSpy.mockRestore()

@@ -519,5 +519,28 @@ export interface SpellCheckOptions extends RollOptions {
     forceTier?: ResultTier;
     /** Override the natural die roll (for testing/GM override) */
     forceNatural?: number;
+    /**
+     * Override the caster profile derived from `character.classInfo.classId`.
+     *
+     * When a spell's mechanic class differs from the actor's actual class
+     * (e.g. a cleric-style spell cast by a wizard, or a wizard-style spell
+     * cast by a cleric), the caller supplies the profile that should drive
+     * behavior selection. When omitted, the profile is derived from
+     * `character.classInfo.classId` via `getCasterProfile`.
+     *
+     * The override governs:
+     *   - Spell `casterTypes` validation (must include the override's `type`)
+     *   - Spellburn allowance (`canSpellburn`)
+     *   - Disapproval trigger (`usesDisapproval`)
+     *   - Corruption / patron-taint trigger (`usesCorruption`)
+     *   - Spell-loss recovery (`lostSpellRecovery`)
+     *   - Spell-check ability (`spellCheckAbility`)
+     *
+     * Class-bound state continues to be read from
+     * `character.state.classState`, keyed by the override's `type` — callers
+     * are responsible for populating `state.classState.<override.type>` with
+     * the appropriate spellbook, disapproval range, patron, etc.
+     */
+    profileOverride?: CasterProfile;
 }
 //# sourceMappingURL=spells.d.ts.map

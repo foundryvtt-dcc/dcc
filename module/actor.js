@@ -1944,7 +1944,7 @@ class DCCActor extends Actor {
       if (castingMode === 'generic' && !isCleric && !hasPatron) {
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }
-      if (castingMode === 'wizard' && !isCleric) {
+      if (castingMode === 'wizard') {
         // Adapter-side spell-loss pre-check — mirrors the legacy
         // `DCCItem.rollSpellCheck:260` gate that would otherwise warn
         // and abort. Once the cast reaches the adapter the item has
@@ -1970,9 +1970,28 @@ class DCCActor extends Actor {
           if (commitment === null) return
           options.spellburn = commitment
         }
+        // Phase 3 session 24 / D4 — wizard-castingMode item on a
+        // cleric actor routes through the adapter with an explicit
+        // wizard `profileOverride` so the lib applies wizard
+        // mechanics (spellburn, spell-loss, patron-taint) even though
+        // the actor's class is cleric. Pre-D4 this fell to legacy via
+        // `DCCItem.rollSpellCheck` → `processSpellCheck`.
+        if (isCleric) {
+          return this._rollSpellCheckViaAdapter(spellItem, options, { castingModeOverride: 'wizard' })
+        }
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }
-      if (castingMode === 'cleric' && isCleric && !hasPatron) {
+      if (castingMode === 'cleric') {
+        // Phase 3 session 24 / D4 — cleric-castingMode item on a
+        // non-cleric or patron-bound actor routes through the adapter
+        // with an explicit cleric `profileOverride` so cleric
+        // mechanics (disapproval, no spellburn) drive the cast. The
+        // override is harmless for the canonical "cleric actor, no
+        // patron" case (it matches the derived profile) so the
+        // dispatcher passes it uniformly.
+        if (!isCleric || hasPatron) {
+          return this._rollSpellCheckViaAdapter(spellItem, options, { castingModeOverride: 'cleric' })
+        }
         return this._rollSpellCheckViaAdapter(spellItem, options)
       }
     }
@@ -1999,15 +2018,32 @@ class DCCActor extends Actor {
    * 2 classifies against the pre-rolled natural.
    * @private
    */
-  async _rollSpellCheckViaAdapter (spellItem, options) {
+  async _rollSpellCheckViaAdapter (spellItem, options, dispatch = {}) {
     const castingMode = spellItem?.system?.config?.castingMode || 'generic'
-    logDispatch('rollSpellCheck', 'adapter', {
+    const logDetails = {
       spell: spellItem?.name ?? '',
       mode: castingMode
-    })
+    }
+    if (dispatch.castingModeOverride) {
+      logDetails.profileOverride = dispatch.castingModeOverride
+    }
+    logDispatch('rollSpellCheck', 'adapter', logDetails)
 
     if (castingMode === 'wizard' || castingMode === 'cleric') {
-      const args = buildSpellCheckArgs(this, spellItem, options)
+      // Phase 3 session 24 / D4 — `dispatch.castingModeOverride` lets
+      // the dispatcher request a profile that diverges from the
+      // actor's class (wizard spell on cleric, cleric spell on
+      // non-cleric). `buildSpellCheckArgs` resolves the override
+      // profile via the lib and populates the synthetic classState
+      // slot; the resulting `args.profile` flows into
+      // `_castViaCalculateSpellCheck`, which forwards it as the lib's
+      // `SpellCheckOptions.profileOverride` so the lib uses it for
+      // every behavior switch (casterTypes validation, spellburn,
+      // disapproval, patron-taint, spell-loss recovery).
+      const args = buildSpellCheckArgs(this, spellItem, {
+        ...options,
+        castingModeOverride: dispatch.castingModeOverride
+      })
       // No lib-side profile for this actor's class — drop back to legacy
       // so spinoff classes with wizard/cleric-castingMode spells still work.
       if (!args) {
@@ -2135,7 +2171,15 @@ class DCCActor extends Actor {
     // pass-2-only conditions (spell lost / natural roll), so earlier
     // sessions could pass events to both passes without issue; the
     // unconditional events introduced by session 5 force the split.
-    const plan = libCalculateSpellCheck(character, input, { mode: 'formula' }, {})
+    // Pass `profileOverride` on every lib call so the lib uses the
+    // adapter-resolved profile regardless of `character.classInfo.classId`.
+    // This is a no-op when the override matches the character-derived
+    // profile (canonical Wizard / Cleric / Elf cases) and is load-bearing
+    // for the D4 cross-class cases (wizard spell on cleric actor, cleric
+    // spell on non-cleric actor) where the lib would otherwise pick the
+    // actor's class profile and misroute behavior.
+    const libOptions = { profileOverride: profile }
+    const plan = libCalculateSpellCheck(character, input, { mode: 'formula', ...libOptions }, {})
     if (plan.error) {
       ui.notifications.warn(plan.error)
       return
@@ -2206,7 +2250,7 @@ class DCCActor extends Actor {
     const probe = libCalculateSpellCheck(
       character,
       input,
-      { mode: 'evaluate', roller },
+      { mode: 'evaluate', roller, ...libOptions },
       {}
     )
     if (probe.error) {
@@ -2218,7 +2262,7 @@ class DCCActor extends Actor {
     const result = libCalculateSpellCheck(
       character,
       input,
-      { mode: 'evaluate', roller },
+      { mode: 'evaluate', roller, ...libOptions },
       events
     )
 

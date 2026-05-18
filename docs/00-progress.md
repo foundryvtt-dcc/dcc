@@ -66,24 +66,16 @@ chained calls (`rollToHit` / `rollDamage` / `rollCritical` /
 `rollFumble`) are single-path via the adapter (sessions 15 / 16 /
 19 retired the respective `_xxxLegacy` branches). Groups A
 (attack-gate broadening) and C (parallel cruft slices) are closed.
-Session 21 / D3a (2026-04-24) retired `_runLegacyPatronTaint` by
-bringing patron taint in line with DCC RAW lib-side
-(`dcc-core-lib@0.7.0`). Session 22 / D3b-α (2026-04-24) landed the
-patron-taint manifestation table loader: the adapter now routes
-`CastSpellInput.patronTaintTable` via `CONFIG.DCC.patronTaintPacks`
-so the 10 authored Bobugbubilz / Azi Dahaka / Sezrekan / the King
-of Elfland / Three Fates / Barzodi / Circe / Medea / Prometheus /
-Amazing Rando manifestation tables shipped in `dcc-core-book` +
-`xcc-core-book` light up the `onPatronTaint` chat emote. Session
-22 follow-ons closed D3b-γ (sibling-pack audit — no
-`dcc-crawl-classes` / `mcc-classes` patron content exists; default
-seed is exhaustive) and authored D3b-β (content mirror in
-`dcc-official-data`). Session 23 / D3c (2026-04-24) retired the
-dormant `SpellFumbleResult.patronTaint` flag + fumble-entry tag
-parsing via `dcc-core-lib@0.8.0` (breaking change, audit-clean dead-
-code removal). Remaining Phase 3 backlog is D4 (fold direct-reimpl
-spell-check branches — per-branch design, **STOP AND ASK per branch**).
-See
+Session 21 / D3a (2026-04-24) retired `_runLegacyPatronTaint`; the
+full D3 arc (a / b-α / b-β / b-γ / c) closed 2026-04-24. Session
+24 / D4(profile-override) (2026-05-17) landed
+`dcc-core-lib@0.9.0`'s `SpellCheckOptions.profileOverride` and
+folded the wizard-mode-on-cleric + cleric-mode-on-non-cleric
+dispatcher gates through the adapter. Remaining Phase 3 backlog
+is D4 sub-cases that intentionally stay on legacy (generic
+castingMode on patron-bound / cleric actors — `processSpellCheck`
+substrate) plus the still-unstarted naked-spell-check and
+skill-table (Turn Unholy) branches. See
 [`docs/02-slice-backlog.md`](02-slice-backlog.md) for the full
 inventory. Phase 4 (schema slimming) has not started.
 
@@ -92,6 +84,33 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-17 — Session 24 / D4(profile-override): cross-class
+  castingMode routing via `SpellCheckOptions.profileOverride`.** Two-
+  repo slice. Lib PR (`dcc-core-lib@0.9.0`, commit `a453473`) added
+  `SpellCheckOptions.profileOverride?: CasterProfile` — when supplied,
+  the lib uses the override profile instead of deriving it from
+  `character.classInfo.classId`. Override governs `casterTypes`
+  validation, spellburn / disapproval / corruption / patron-taint
+  triggers, spell-check ability, and spell-loss recovery; class-bound
+  state (spellbook / disapprovalRange / patron) is read from
+  `character.state.classState[override.type]`, which the caller
+  populates. `getSpellbookEntry` + `markSpellLost` writeback both
+  re-keyed by the active profile so the override flow looks up against
+  the synthetic spellbook the adapter built. +4 lib tests (1411 green).
+  Adapter side: `buildSpellCheckArgs` accepts
+  `options.castingModeOverride`; `_rollSpellCheckViaAdapter` accepts a
+  `dispatch.castingModeOverride` argument; `_castViaCalculateSpellCheck`
+  threads `profileOverride: profile` onto every `libCalculateSpellCheck`
+  call (no-op when override matches the derived profile, load-bearing
+  for cross-class). Dispatcher widens two gates: `wizard` castingMode
+  on `isCleric` → adapter with `castingModeOverride: 'wizard'`;
+  `cleric` castingMode on `!isCleric || hasPatron` → adapter with
+  `castingModeOverride: 'cleric'`. Three vitest tests flipped (cleric-
+  on-patron, cleric-on-non-cleric, +1 new wizard-on-cleric case); +2
+  Playwright cases covering both cross-class routes. 930 Vitest green
+  (+1 net). Remaining D4 sub-branches (naked spell check + skill-table
+  Turn Unholy + generic-on-patron-or-cleric staying legacy) tracked
+  in `02-slice-backlog.md`.
 - **2026-04-24 — Session 23 / D3c: retire dormant
   `SpellFumbleResult.patronTaint` flag.** Lib PR to
   `dcc-core-lib@0.8.0` (commit `842e89a`, breaking change) removed

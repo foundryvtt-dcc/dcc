@@ -235,24 +235,33 @@ is surfaced for downstream crit-table routing.
   ~40 s thanks to the session-reuse fixture; full Playwright suite
   runs in ~8 min.
 
-**This session's goal:** **Session 23 / D3c retired the dormant
-`SpellFumbleResult.patronTaint` flag (2026-04-24).** Lib PR to
-`dcc-core-lib@0.8.0` (breaking change) dropped `.patronTaint` from
-`SpellFumbleResult` and the `effect.type === 'patron-taint'` /
-`effect.data.patronTaint === true` parsing from `rollSpellFumble` /
-`rollSpellFumbleWithModifier`. Audit confirmed zero consumers across
-lib orchestration, DCC system, sibling modules, and compendium
-content. Pure dead-code removal; no runtime behavior change. Vendor-
-synced; +1 vitest guard asserting the flag is absent. 925 Vitest +
-98 Playwright green. Lib commit in `dcc-core-lib` pending Tim's
-cadence; vendored 0.8.0 `dist/` is in-place but `VERSION.json` has
-`dirty: true` + old SHA until refresh.
+**This session's goal:** **Session 24 / D4(profile-override) folded
+the two cross-class castingMode dispatcher gates via a lib PR + adapter
+slice (2026-05-17).** Lib PR `dcc-core-lib@0.9.0` (commit `a453473`)
+added `SpellCheckOptions.profileOverride?: CasterProfile` — when
+supplied, the lib uses the override profile instead of deriving it
+from `character.classInfo.classId`. `getSpellbookEntry` +
+`markSpellLost` writeback both re-keyed by the active profile.
+Adapter: `buildSpellCheckArgs` accepts `options.castingModeOverride`;
+`_rollSpellCheckViaAdapter` accepts a `dispatch.castingModeOverride`
+argument; `_castViaCalculateSpellCheck` threads
+`profileOverride: profile` onto every `libCalculateSpellCheck` call.
+Dispatcher widens: `wizard` castingMode on a Cleric actor → adapter
+with wizard override; `cleric` castingMode on `!isCleric || hasPatron`
+→ adapter with cleric override. 3 vitest tests flipped (cleric-on-
+patron, cleric-on-non-cleric, +1 new wizard-on-cleric); +2 Playwright
+cases. 930 Vitest + 100 Playwright (was 98). Vendored 0.9.0 `dist/`
+in-place, `VERSION.json` clean (`dirty: false`, `commit: a453473`).
+Lib commit local-only in `/Users/timwhite/WebstormProjects/dcc-core-lib`
+on `main`; push at Tim's cadence.
 
-**Phase 3 backlog (all STOP AND ASK)**: D4 fold direct-reimpl
-spell-check branches (per-branch design); Group E vertical slice
-for XCC/MCC validation (explicit pick required).
-`docs/02-slice-backlog.md` has the full inventory. Ask Tim which
-to pick before executing.
+**Phase 3 backlog (all STOP AND ASK)**: D4 remaining sub-branches —
+naked spell check, `options.forceCrit`, skill-table (Turn Unholy);
+generic-castingMode + patron-bound / cleric actor stays legacy by
+intent (lib has no generic-with-patron-taint codepath). Group E
+vertical slice for XCC/MCC validation (explicit pick required).
+`docs/02-slice-backlog.md` has the full inventory. Ask Tim which to
+pick before executing.
 
 Sessions 2–14 landed all of Group A (simplest-weapon, backstab,
 deed dice, two-weapon, automate-off, modifier dialog, dice-bearing
@@ -295,15 +304,27 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**Session 23 / D3c retired `SpellFumbleResult.patronTaint` via
-`dcc-core-lib@0.8.0`.** The entire D3 arc (RAW alignment → loader
-→ cross-repo content mirror → sibling audit → dead-flag removal) is
-closed. Remaining Phase 3 candidates:
+**Session 24 / D4(profile-override) closed the cross-class castingMode
+gates.** Wizard-mode-on-cleric + cleric-mode-on-non-cleric (+ cleric-
+mode-on-patron-bound-cleric) now route through the adapter via the
+new lib `SpellCheckOptions.profileOverride`. Remaining Phase 3
+candidates:
 
-1. **D4 fold direct-reimpl spell-check branches** — `rollSpellCheck`
-   still has branches for pre-built Roll + RollTable, `forceCrit`,
-   skill-table spells (Turn Unholy). Each branch evaluated
-   separately. **STOP AND ASK per branch**.
+1. **D4 remaining sub-branches** — each STOP AND ASK:
+   - **Naked spell check (no item).** `_rollSpellCheckLegacy:2371-2479`
+     inline DCCRoll terms + `processSpellCheck({rollTable: null})`.
+     Routable via a new `_castNakedViaAdapter` using `libCastSpell`
+     + a no-table chat renderer; spellburn-via-`RollModifierDialog`
+     would need the adapter spellburn prompt extended.
+   - **`options.forceCrit` (shift-click GM testing).** Mutates
+     `roll.terms[0].results[0].result = 20` at `dcc.js:605`. No
+     current adapter route consumes it; fold via roller-closure
+     override (`roller: () => 20`) once an adapter route owns it.
+   - **Skill-table spells (Turn Unholy).** `_rollSkillCheckLegacy:
+     1781-1792` → `processSpellCheck({rollTable: skillTable})`. Lib's
+     `rollCheck` has no `RollTable` integration; would need a lib
+     feature OR accept `processSpellCheck` as the table-lookup
+     engine for skills.
 2. **Group E vertical slice** (placeholder — needs explicit pick):
    halfling, mercurial-magic, or homebrew single-class. Would
    exercise Phase 4 + 5 + 6 end-to-end.

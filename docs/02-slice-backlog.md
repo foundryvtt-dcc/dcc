@@ -359,14 +359,54 @@ absent from `rollSpellFumble` / `rollSpellFumbleWithModifier`
 output (catches any regression if the parsing re-sneaks in). 925
 Vitest + 98 Playwright green.
 
-#### D4. Fold direct-reimpl spell-check branches
-- **Scope:** `rollSpellCheck` dispatcher has direct-reimpl branches
-  for routes the adapter's two-pass pipeline didn't cover at Phase 2
-  close (pre-built Roll + RollTable, forceCrit, skill-table spells
-  like Turn Unholy). Evaluate which can route through the adapter
-  now; retire the rest only after their specific capability lands.
-- **Stop-and-ask trigger:** each branch evaluated separately —
-  pause and ask for each.
+#### ~~D4(profile-override). Cross-class castingMode routing via lib `profileOverride`.~~ **DONE 2026-05-17 (session 24)**
+Landed via `dcc-core-lib@0.9.0` (`SpellCheckOptions.profileOverride`,
+commit `a453473`). Adapter folds two previously-excluded dispatcher
+gates: wizard-castingMode spell on a Cleric actor (now routes via
+adapter with wizard profile override), cleric-castingMode spell on a
+non-cleric OR patron-bound actor (routes with cleric override).
+`buildSpellCheckArgs` accepts `options.castingModeOverride` and
+populates the synthetic classState slot for the override type.
+`_castViaCalculateSpellCheck` threads `profileOverride: profile` on
+every `libCalculateSpellCheck` call (no-op when override matches
+derived profile). +3 vitest tests flipped, +2 Playwright cases.
+930 Vitest + Playwright suite extended.
+
+#### D4. Remaining direct-reimpl spell-check branches
+- **Scope:** Three pre-Phase-2 direct-reimpl branches still sit on
+  `processSpellCheck`-substrate paths the adapter doesn't yet cover:
+  - **Naked spell check (no spell item).** Inline DCCRoll terms in
+    `_rollSpellCheckLegacy:2371-2479` → `processSpellCheck({rollTable:
+    null})`. Could route via a new `_castNakedViaAdapter` using
+    `libCastSpell` + a no-table chat renderer; spellburn-via-
+    `RollModifierDialog` would need the adapter spellburn prompt
+    extended.
+  - **`options.forceCrit` (shift-click GM testing).** Mutates
+    `roll.terms[0].results[0].result = 20` at `dcc.js:605` after the
+    natural rolls. No current adapter route consumes it; could
+    fold via roller-closure override (`roller: () => 20` in pass 2)
+    once an adapter route owns it.
+  - **Skill-table spells (Turn Unholy).** `_rollSkillCheckLegacy`
+    line 1781-1792 → `processSpellCheck({rollTable: skillTable})`.
+    Lib's `rollCheck` doesn't yet have a `RollTable` integration —
+    would need either a lib feature
+    (`SkillResultTable` / `rollCheck` table-lookup) or accepting
+    that `processSpellCheck` stays as the table-lookup engine for
+    skills.
+- **Intentionally on legacy** (closed-out at session 24):
+  - **Generic castingMode + patron-bound or Cleric actor.** The lib's
+    generic profile has no patron-taint or cleric-disapproval code-
+    path — legacy `DCCItem.rollSpellCheck` treats `generic` as a
+    wizard-default that DOES walk through `processSpellCheck`'s
+    patron-taint d100 trigger (if applicable). Routing through
+    `_castViaCastSpell` would silently drop that. Stays legacy
+    until the lib grows a generic-with-patron-taint codepath.
+    Tests `adapter-spell-check.test.js:321` ("generic item on a
+    Cleric actor routes to legacy") + `:458` ("generic item on a
+    patron-bound actor routes to legacy (taint side-effects
+    preserved)") document the intent.
+- **Stop-and-ask trigger:** each remaining branch evaluated
+  separately — pause and ask for each.
 
 ---
 

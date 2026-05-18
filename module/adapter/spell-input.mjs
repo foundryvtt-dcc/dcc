@@ -213,16 +213,29 @@ function resolveCasterProfile (actor) {
  *     field; marking-lost is a result-of-cast effect handled via
  *     `onSpellLost` in `spell-events.mjs`.
  *
- * Returns `null` when the actor's class has no lib-side caster
- * profile.
+ * Profile selection:
+ *   - When `options.castingModeOverride` is supplied (Phase 3
+ *     session 24 / D4 — wizard-castingMode spell on a cleric actor,
+ *     cleric-castingMode spell on a non-cleric actor), the lib-side
+ *     `getCasterProfile(override)` resolves the override profile,
+ *     classState is keyed by the override's `type`, and the
+ *     `_castViaCalculateSpellCheck` caller passes the profile as
+ *     `SpellCheckOptions.profileOverride` so the lib's behavior
+ *     follows the spell's mechanic class rather than the actor's.
+ *   - Without an override, the actor's class profile is resolved via
+ *     `resolveCasterProfile(actor)`. Returns `null` when the actor's
+ *     class has no lib-side caster profile (legacy fallback signal).
  *
  * @param {Object} actor - DCCActor
  * @param {Object} spellItem - Foundry spell item
- * @param {Object} [options] - Call-site options. Reads `abilityId`.
+ * @param {Object} [options] - Call-site options. Reads `abilityId`,
+ *   `castingModeOverride`.
  * @returns {Object|null}
  */
 export function buildSpellCheckArgs (actor, spellItem, options = {}) {
-  const profile = resolveCasterProfile(actor)
+  const profile = options.castingModeOverride
+    ? (getCasterProfile(options.castingModeOverride) ?? null)
+    : resolveCasterProfile(actor)
   if (!profile) return null
 
   const spell = buildSpellDefinition(spellItem)
