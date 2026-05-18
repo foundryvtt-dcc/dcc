@@ -346,13 +346,45 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       assertPath(line, 'legacy', { skillId: 'P1-Lore' })
     })
 
-    test('showModifierDialog flag → legacy', async ({ page }) => {
+    test('showModifierDialog flag → adapter (session 26 / Q7)', async ({ page }) => {
+      // Phase 3 session 26 (open question #7): the
+      // `showModifierDialog` clause no longer routes to legacy. The
+      // adapter path opens the existing `RollModifierDialog` via
+      // `promptRollModifierDialog`, then folds the user's choice into
+      // the lib pass. Dispatch fires at the start of
+      // `_rollSkillCheckViaAdapter` before the (blocking) dialog
+      // shows — fireAndForget dismisses the dialog with Escape so
+      // the test run continues. The cancel resolves the prompt with
+      // null and the adapter returns without rolling, which is fine
+      // for this test — we're asserting on the dispatch path, not
+      // the chat output.
       await makePlayer(page, 'P1 Skill Dialog')
       await fireAndForget(page, async () => {
         game.actors.getName('P1 Skill Dialog').rollSkillCheck('sneakSilently', { showModifierDialog: true })
       })
       const line = await waitForAdapterLog('rollSkillCheck')
-      assertPath(line, 'legacy', { skillId: 'sneakSilently' })
+      assertPath(line, 'adapter', { skillId: 'sneakSilently' })
+    })
+
+    test('skill-table + showModifierDialog → adapter (session 26 / Q7)', async ({ page }) => {
+      // Q7 parallel: skill-table routes (divineAid etc.) already
+      // forwarded `options` through `DCCRoll.createRoll`, so the
+      // dialog has always worked for them — but the dispatcher's
+      // `!!options.showModifierDialog → legacy` clause shadowed
+      // that. Now the dispatcher routes skill-table dialog calls
+      // to `_skillTableViaAdapter` like any other skill-table
+      // invocation. Verify the dispatch mode field still carries
+      // `skillTable` so downstream telemetry / debugging can tell
+      // them apart from plain skill checks.
+      await makePlayer(page, 'P1 Skill Cleric Dialog', {
+        class: { className: 'Cleric', disapproval: 1 },
+        details: { sheetClass: 'Cleric' }
+      })
+      await fireAndForget(page, async () => {
+        game.actors.getName('P1 Skill Cleric Dialog').rollSkillCheck('divineAid', { showModifierDialog: true })
+      })
+      const line = await waitForAdapterLog('rollSkillCheck')
+      assertPath(line, 'adapter', { skillId: 'divineAid', mode: 'skillTable' })
     })
 
     // Regression: unknown skillId must NOT crash. Pre-fix the legacy
@@ -920,12 +952,21 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       })
       const line = await waitForAdapterLog('rollSpellCheck')
       assertPath(line, 'adapter', { spell: 'P1-ForceCrit-Spell', mode: 'wizard' })
-      // The chat message should carry a libResult with natural === 20
-      // because `applyForceCritToFoundryRoll` mutates the Foundry Roll
-      // and the lib roller closure feeds 20 back into pass-2.
+      // The spell-check chat message should carry a libResult with
+      // natural === 20 because `applyForceCritToFoundryRoll` mutates
+      // the Foundry Roll and the lib roller closure feeds 20 back
+      // into pass-2. The forceCrit success can trigger a follow-up
+      // Mercurial Magic chat message (success-major tier on a
+      // first-cast wizard spell), so we look for the spell-check
+      // message explicitly via its `RollType` flag rather than
+      // reading the last message.
       const libNatural = await page.evaluate(() => {
-        const msg = game.messages.contents[game.messages.contents.length - 1]
-        return msg?.flags?.dcc?.libResult?.natural
+        const messages = game.messages.contents
+        const spellMsg = [...messages].reverse().find(m =>
+          m.flags?.dcc?.RollType === 'SpellCheck' &&
+          m.flags?.dcc?.libResult
+        )
+        return spellMsg?.flags?.dcc?.libResult?.natural
       })
       expect(libNatural).toBe(20)
     })

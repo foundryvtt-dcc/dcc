@@ -408,10 +408,54 @@ unconditionally; `rollSkillCheck` routes
   declines for `noCasterProfile` or unknown castingMode. Spell-item
   + result-table path stays. Permanent stable surface per Phase 2
   close-out — no further fold planned.
-- `_rollSkillCheckLegacy` (line 1809) — fires only for
-  `showModifierDialog && (hasSkillTable || useDisapprovalRange)`.
-  Will be foldable once the generalized roll-modifier dialog
-  adapter lands (open question #7).
+- ~~`_rollSkillCheckLegacy` (line 1809) — fires only for
+  `showModifierDialog && (hasSkillTable || useDisapprovalRange)`.~~
+  **Closed 2026-05-17 at session 26 / Q7-phase1.** The dispatcher
+  dropped its `!!options.showModifierDialog → legacy` clause;
+  skill-table-with-dialog now routes through
+  `_skillTableViaAdapter` (which has always forwarded `options`
+  through `DCCRoll.createRoll`). Plain skill-with-dialog routes
+  through `_rollSkillCheckViaAdapter`'s new
+  `promptRollModifierDialog` branch.
+
+#### ~~Q7-phase1. Generalized roll-modifier-dialog adapter scaffold + skill-check fold.~~ **DONE 2026-05-17 (session 26)**
+New `promptRollModifierDialog(terms, opts)` in
+`module/adapter/roll-dialog.mjs` — thin wrapper over
+`game.dcc.DCCRoll.createRoll({ showModifierDialog: true })` that
+reuses the existing `RollModifierDialog` UI. Returns
+`{ actionDie, modifierTotal, formula, roll } | null` (null on
+user cancel). Companion `parseRollIntoDieAndModifier` walks the
+returned Foundry Roll's `terms[]`, picking the first Die as the
+action die and summing signed numerics as a flat total.
+`_rollSkillCheckViaAdapter` consumes it for the
+`options.showModifierDialog` branch: overrides `definition.roll.die`
+with the dialog's selection, suppresses `definition.roll.ability`
+(the legacy Compound term already bakes ability mod into the
+total), and feeds the user's flat total as a single
+`dialog-modifier` situational modifier. `_buildSkillCheckLegacyTerms`
+extracted as a shared helper consumed by the dialog branch, the
+skill-table adapter, and `_rollSkillCheckLegacy` (eliminates the
+term-builder duplication across all three call sites).
+`_rollSkillCheckLegacy` is now strictly the no-die / description-
+only fallback. 945 Vitest (+12 new) + Playwright extended (1 case
+flipped, 1 new).
+
+#### Q7-phase2. Wizard / cleric spell-check modifier-dialog generalization. **TODO**
+Open question #7 follow-up. The wizard / cleric adapter spell-
+check routes currently surface only the Spellburn input via
+`promptSpellburnCommitment`; the legacy `RollModifierDialog`
+showed Spellburn alongside die / modifier / CheckPenalty in one
+dialog. Pragmatic path: extend `promptRollModifierDialog` to
+accept an optional Spellburn term descriptor (callback captures
+`str / agl / sta`); update the wizard / cleric adapter routes
+(`_rollSpellCheckViaAdapter` dispatcher block,
+`_castNakedViaAdapter`) to call the unified prompt with the
+Spellburn descriptor included when `showModifierDialog && !isNPC
+&& !isIdolMagic`. Eliminates the bespoke
+`promptSpellburnCommitment` helper. Tests: extend
+`adapter-roll-dialog.test.js` with a Spellburn term case +
+flip the spell-check Playwright dialog cases to assert the
+unified prompt.
 
 ---
 

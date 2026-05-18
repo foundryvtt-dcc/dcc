@@ -181,6 +181,76 @@ test('description-only skill item routes to the legacy path', async () => {
   global.itemTypesMock.mockReset()
 })
 
+test('adapter path opens RollModifierDialog when showModifierDialog is true', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // Simulate the user submitting the dialog with a bumped die (1d24)
+  // and an extra +3 bonus on top of the skill's modifiers. The mock
+  // Roll returned here is the same shape the real dialog yields.
+  global.dccRollCreateRollMock.mockImplementationOnce(() => {
+    return {
+      formula: '1d24+3',
+      total: 14,
+      dice: [{ results: [11], total: 11, options: {} }],
+      options: { dcc: {} },
+      terms: [
+        { class: 'Die', formula: '1d24', number: 1, faces: 24 },
+        { class: 'OperatorTerm', operator: '+' },
+        { class: 'NumericTerm', number: 3 }
+      ],
+      _evaluated: true
+    }
+  })
+
+  await actor.rollSkillCheck('customDieAndValueSkill', { showModifierDialog: true })
+
+  expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+  const createCall = global.dccRollCreateRollMock.mock.calls[0]
+  // First arg is the term descriptors; verify the skill-value
+  // compound term is present so the dialog could surface it.
+  const termsArg = createCall[0]
+  expect(Array.isArray(termsArg)).toBe(true)
+  expect(termsArg.some(t => t.type === 'Die' && t.formula === '1d14')).toBe(true)
+  expect(termsArg.some(t => t.type === 'Compound' && t.formula === '3')).toBe(true)
+  // Third arg is the options bag — must request the dialog adapter-side.
+  expect(createCall[2].showModifierDialog).toBe(true)
+
+  expect(rollToMessageMock).toHaveBeenCalledTimes(1)
+  const [messageData] = rollToMessageMock.mock.calls[0]
+  const libResult = messageData.flags['dcc.libResult']
+  expect(libResult).toBeDefined()
+  // Die was bumped to d24 by the dialog.
+  expect(libResult.die).toBe('d24')
+  // The skill-value modifier was REPLACED by a single flat user total
+  // (the dialog flattens per-source attribution). No 'skill-value'
+  // origin remains; instead one 'dialog-modifier' origin carries the
+  // entire post-dialog total.
+  const skillValueMod = libResult.modifiers.find(
+    (m) => m.origin?.id === 'skill-value'
+  )
+  expect(skillValueMod).toBeUndefined()
+  const dialogMod = libResult.modifiers.find(
+    (m) => m.origin?.id === 'dialog-modifier'
+  )
+  expect(dialogMod).toBeDefined()
+  expect(dialogMod.kind).toBe('add')
+  expect(dialogMod.value).toBe(3)
+})
+
+test('adapter path returns undefined when user cancels the dialog', async () => {
+  rollToMessageMock.mockClear()
+  global.dccRollCreateRollMock.mockClear()
+
+  // RollModifierDialog cancel resolves with `null`.
+  global.dccRollCreateRollMock.mockImplementationOnce(() => null)
+
+  const result = await actor.rollSkillCheck('customDieAndValueSkill', { showModifierDialog: true })
+
+  expect(result).toBeUndefined()
+  expect(rollToMessageMock).not.toHaveBeenCalled()
+})
+
 // Regression: rollSkillCheck must NOT crash when the requested skill
 // can't be resolved. Pre-fix, an unknown id (no built-in slot, no
 // matching skill item) routed to legacy and crashed on

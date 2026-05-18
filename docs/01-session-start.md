@@ -94,7 +94,13 @@ patron-taint RAW alignment as "permanent adapter infrastructure";
 session 21 / D3a resolved that lib-side on 2026-04-24 and retired
 `_runLegacyPatronTaint`; session 22 / D3b-α wired the per-patron
 manifestation table loader against the existing compendium
-content.) Phase 3
+content.) Phase 3 session 26 (Q7-phase1, 2026-05-17) landed the
+generalized roll-modifier-dialog adapter scaffold
+(`promptRollModifierDialog` + `parseRollIntoDieAndModifier` in
+`module/adapter/roll-dialog.mjs`) and folded the
+`showModifierDialog` clause into both skill-check adapter routes;
+dispatcher dropped its `showModifierDialog → legacy` clause.
+Phase 3
 session 1 closed open question #6 via a dialog-adapter
 (`module/adapter/roll-dialog.mjs` + `promptSpellburnCommitment`).
 Phase 3 session 2 split `DCCActor.rollToHit` into a dispatcher +
@@ -235,40 +241,59 @@ is surfaced for downstream crit-table routing.
   ~40 s thanks to the session-reuse fixture; full Playwright suite
   runs in ~8 min.
 
-**This session's goal:** **Session 25 / D4(remainder) folded the
-three remaining direct-reimpl spell-check branches (2026-05-17).**
-Lib PR `dcc-core-lib@0.10.0` (commit `77c95e2`) made
-`SpellCastInput.spellbookEntry` optional — `castSpell` runs without
-a spellbook slot. Adapter changes:
-- **Naked spell-check** → new `_castNakedViaAdapter`. Routes through
-  `libCastSpell` with a synthetic SpellDefinition. Honors spellburn
-  dialog, cleric disapproval, and forceCrit.
-- **forceCrit (shift-click GM testing)** → shared
-  `applyForceCritToFoundryRoll` helper threaded through every
-  adapter spell-check route. Mutates the Foundry Roll natural to
-  20 AND feeds 20 to the lib's roller closure.
-- **Skill-table / disapproval-range skills (Turn Unholy, divineAid,
-  layOnHands)** → new `_skillTableViaAdapter`. Uses the legacy
-  term-builder + Foundry RollTable lookup + `SpellResult.addChatMessage`.
+**This session's goal:** **Session 26 / Q7-phase1 landed the
+generalized roll-modifier-dialog adapter scaffold + skill-check
+fold (2026-05-17).** New `promptRollModifierDialog(terms, opts)`
+in `module/adapter/roll-dialog.mjs` is a thin wrapper over
+`game.dcc.DCCRoll.createRoll({ showModifierDialog: true })` —
+reuses the existing `RollModifierDialog` UI and returns
+`{ actionDie, modifierTotal, formula, roll } | null` (null on
+cancel). Companion `parseRollIntoDieAndModifier` walks the returned
+Foundry Roll's `terms[]`, picking the first Die as the action die
+and summing signed numerics as a flat total. Attribution is
+intentionally flat: the dialog reduces every non-die term to one
+Roll.formula on submit, so per-source attribution is unrecoverable
+(matches legacy behavior).
 
-Dispatcher updates: `!spellItem` routes to `_castNakedViaAdapter`;
-`rollSkillCheck` routes `hasSkillTable || useDisapprovalRange` to
-`_skillTableViaAdapter`. `_rollSpellCheckLegacy`'s naked branch
-removed (~110 lines). 933 Vitest + Playwright extended (3 new
-Playwright cases + 1 flipped divineAid case). Vendored 0.10.0
-`dist/` in-place, `VERSION.json` clean (`dirty: false`,
-`commit: 77c95e2`). Lib commit local-only on `main`; push at Tim's
-cadence.
+Adapter changes:
+- **`_rollSkillCheckViaAdapter`** grew a `showModifierDialog`
+  branch. Builds the legacy-shaped term descriptor via the new
+  shared `_buildSkillCheckLegacyTerms` helper, prompts adapter-
+  side, overrides `definition.roll.die` with the user's choice,
+  suppresses `definition.roll.ability` (the legacy Compound term
+  bakes ability mod into the visible total), and feeds the user's
+  flat total as a single `dialog-modifier` situational modifier.
+- **`_buildSkillCheckLegacyTerms`** extracted as a shared helper
+  consumed by the dialog branch, `_skillTableViaAdapter`, and the
+  description-only `_rollSkillCheckLegacy` fallback. Eliminates the
+  term-builder duplication that existed across all three call
+  sites.
+- **Dispatcher** dropped the `!!options.showModifierDialog → legacy`
+  clause. Skill-table-with-dialog now flows through
+  `_skillTableViaAdapter` (which has always forwarded `options`
+  through `DCCRoll.createRoll`). Plain skill-with-dialog flows
+  through `_rollSkillCheckViaAdapter`. `_rollSkillCheckLegacy` is
+  now strictly the no-die / description-only fallback.
 
-**Phase 3 backlog (all STOP AND ASK)**: All major spell-check folds
-landed. Remaining `processSpellCheck` callers are stable-surface
-or dialog-gated:
+Tests: 945 Vitest (+12 new — 2 in `adapter-skill-check.test.js`
+for the dialog round-trip + cancel; 10 in new
+`adapter-roll-dialog.test.js` covering the parser + wrapper).
+Playwright: 1 case flipped (skill `showModifierDialog` legacy →
+adapter, session 26 / Q7), 1 new case (skill-table +
+showModifierDialog → adapter with `mode=skillTable`).
+
+**Open question #7 partially closed.** Spell-check generalization
+(combining `promptSpellburnCommitment` with general modifier
+terms in a single unified dialog — Q7-phase2) tracked in
+`02-slice-backlog.md`.
+
+**Phase 3 backlog (all STOP AND ASK)**: Remaining
+`processSpellCheck` callers are stable-surface or item-fallback:
 - `DCCItem.rollSpellCheck` — `noCasterProfile` + unknown
   castingMode fallbacks. Permanent stable surface per Phase 2
   close-out.
-- `_rollSkillCheckLegacy` — `showModifierDialog && skill-table`.
-  Foldable once the roll-modifier dialog adapter generalizes
-  (open question #7).
+- `_rollSkillCheckLegacy` — strictly the no-die / description-only
+  fallback (the showModifierDialog clauses retired at session 26).
 
 Group E vertical slice for XCC/MCC validation is the next
 substantive arc (explicit pick required — halfling /
@@ -316,27 +341,33 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**Session 25 / D4(remainder) closed the three remaining
-direct-reimpl spell-check branches.** Naked spell-check, forceCrit,
-and skill-table (Turn Unholy etc.) all route through the adapter
-now. Remaining Phase 3 candidates:
+**Session 26 / Q7-phase1 landed the generalized roll-modifier-
+dialog adapter scaffold + skill-check fold.** Remaining Phase 3
+candidates:
 
-1. **Roll-modifier dialog adapter generalization** (open question
-   #7). The `showModifierDialog` legacy holdouts —
-   `_rollSpellCheckLegacy` (wizard/cleric with dialog) +
-   `_rollSkillCheckLegacy` (any skill with dialog) — would fold once
-   the adapter has a general dialog scaffold beyond
-   `promptSpellburnCommitment`. STOP AND ASK to design.
+1. **Q7-phase2: spell-check modifier-dialog generalization.** The
+   wizard / cleric adapter spell-check routes still only surface
+   Spellburn via `promptSpellburnCommitment`; the legacy dialog
+   showed Spellburn inline with die / modifier / CheckPenalty in a
+   single form. Extend `promptRollModifierDialog` to accept an
+   optional Spellburn term descriptor (callback captures
+   str / agl / sta), then update `_rollSpellCheckViaAdapter`'s
+   dispatcher block + `_castNakedViaAdapter` to call the unified
+   prompt with the Spellburn descriptor when `showModifierDialog
+   && !isNPC && !isIdolMagic`. Retires the bespoke
+   `promptSpellburnCommitment` helper. Tests: extend
+   `adapter-roll-dialog.test.js` with a Spellburn term case + flip
+   the spell-check Playwright dialog cases to assert the unified
+   prompt.
 2. **Group E vertical slice** (placeholder — needs explicit pick):
    halfling, mercurial-magic, or homebrew single-class. Would
    exercise Phase 4 + 5 + 6 end-to-end.
 3. **`game.dcc.processSpellCheck` audit + retirement decision.**
    The function is pinned as permanent stable API but is now only
-   reached via `DCCItem.rollSpellCheck` fallbacks +
-   `_rollSkillCheckLegacy`'s dialog branch. Could be slimmed
+   reached via `DCCItem.rollSpellCheck` fallbacks. Could be slimmed
    significantly (patron-taint codepath is dead post-D3, the
    `forceCrit` mutation is dead post-D4(remainder), and the
-   no-table HTML emit can be retired once dialog folds land).
+   no-table HTML emit is dead post-Q7-phase1).
 
 **Also pending — dcc-qol sibling-fix coordination.** Session 20's
 shim removal on the DCC side leaves dcc-qol's
@@ -419,8 +450,12 @@ disables the Playwright login and tests hang for 11 s each.
   D3c (fumble-flag cleanup) tracked in `02-slice-backlog.md`.
 - ~~#6 spellburn dialog integration~~ — closed at Phase 3 session 1.
 - #7 wizard adapter-path modifier-dialog coverage beyond Spellburn
-  — revisit after attack/damage dialog slice generalizes the
-  `roll-dialog.mjs` scaffold.
+  — **partially closed at session 26 / Q7-phase1 (2026-05-17):**
+  scaffold landed (`promptRollModifierDialog` +
+  `parseRollIntoDieAndModifier`), skill-check route folded.
+  Q7-phase2 (combining Spellburn + general modifiers in one
+  unified dialog for spell-check) tracked in
+  `02-slice-backlog.md`.
 
 Start by reading the five docs above, then run `npm test` to confirm
 the repo is green before touching anything.

@@ -22,7 +22,7 @@ import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-access
 import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
-import { promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
+import { promptRollModifierDialog, promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
@@ -1454,13 +1454,15 @@ class DCCActor extends Actor {
     const hasSkillTable = !!CONFIG.DCC?.skillTables?.[skillId]
     const useDisapprovalRange = !!resolved.skill?.useDisapprovalRange
 
-    // Phase 3 session 25 / D4(skill-table) — skill-table + disapproval-
-    // range routes (Turn Unholy, divine aid) flow through
-    // `_skillTableViaAdapter` instead of legacy `processSpellCheck`.
-    // The modifier-dialog and description-only branches stay on the
-    // legacy path until the adapter spellburn/roll-dialog scaffold
-    // generalizes (open question #7).
-    if (!resolved.hasDie || !!options.showModifierDialog) {
+    // Description-only skill items (no die, no value, no roll) stay on
+    // legacy — that path emits a description chat message rather than a
+    // roll. Phase 3 session 26 (Q7) folded the previous
+    // `!!options.showModifierDialog` clause into the adapter routes:
+    // `_rollSkillCheckViaAdapter` calls `promptRollModifierDialog`
+    // adapter-side, and `_skillTableViaAdapter` already threads
+    // `options` through `DCCRoll.createRoll` which honours
+    // `showModifierDialog` on its own.
+    if (!resolved.hasDie) {
       return this._rollSkillCheckLegacy(skillId, options, resolved)
     }
 
@@ -1542,15 +1544,69 @@ class DCCActor extends Actor {
    * `_rollSavingThrowViaAdapter`: pass 1 asks the lib for the formula,
    * Foundry evaluates it (so Roll.total includes every modifier),
    * pass 2 classifies against the same natural for crit/fumble.
+   *
+   * Roll-modifier-dialog branch (Phase 3 session 26 / Q7): when the
+   * caller passes `options.showModifierDialog`, the legacy
+   * `RollModifierDialog` is surfaced adapter-side via
+   * `promptRollModifierDialog`. The dialog's term list mirrors the
+   * legacy `_rollSkillCheckLegacy` builder; on submit we override
+   * `definition.roll.die` with the user-selected die and replace the
+   * per-source modifier list with a single flat user total (the
+   * dialog's term flattening already loses per-source attribution,
+   * so the lib breakdown collapses to one `dialog-modifier` line).
    * @private
    */
   async _rollSkillCheckViaAdapter (skillId, options, resolved) {
     logDispatch('rollSkillCheck', 'adapter', { skillId })
-    const { skill, skillItem, abilityId, abilityLabel } = resolved
+    const { skill, skillItem, abilityId, abilityLabel, abilityMod } = resolved
 
     const character = actorToCharacter(this)
     const definition = this._buildSkillDefinition(skillId, resolved)
-    const modifiers = this._buildSkillCheckModifiers(skillId, resolved)
+    let modifiers = this._buildSkillCheckModifiers(skillId, resolved)
+
+    if (options.showModifierDialog) {
+      const dialogTerms = this._buildSkillCheckLegacyTerms(skillId, resolved)
+      const prompt = await promptRollModifierDialog(dialogTerms, {
+        rollData: this.getRollData(),
+        title: options.title,
+        rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+      })
+      if (prompt === null) return
+      if (prompt.actionDie) {
+        const libDie = this._stripDieCount(prompt.actionDie)
+        if (libDie) definition.roll.die = libDie
+      }
+      // Replace per-source modifiers with a single flat total (the
+      // dialog's submit step reduces every non-die term to a numeric
+      // sum). Suppress the lib's auto-ability add since the dialog
+      // total already includes ability mod (legacy compound term was
+      // `skill.value + abilityMod`).
+      if (definition.roll.ability) delete definition.roll.ability
+      modifiers = []
+      const flatTotal = prompt.modifierTotal
+      if (flatTotal !== 0) {
+        modifiers.push({
+          kind: 'add',
+          value: flatTotal,
+          origin: {
+            category: 'other',
+            id: 'dialog-modifier',
+            label: options.title || game.i18n.localize('DCC.RollModifierTitle')
+          }
+        })
+      }
+      // Capture the dialog choice in the dispatch log so the e2e
+      // assertion can verify the prompt actually fired.
+      logDispatch('rollSkillCheck', 'adapter', {
+        skillId,
+        dialog: true,
+        actionDie: prompt.actionDie,
+        modifierTotal: flatTotal
+      })
+      // Keep abilityMod referenced so the destructure isn't an unused
+      // var; the value lives on in the flat total above.
+      void abilityMod
+    }
 
     // Pass 1: lib builds the formula (no evaluation).
     const plan = libRollCheck(definition, character, {
@@ -1627,64 +1683,9 @@ class DCCActor extends Actor {
    */
   async _skillTableViaAdapter (skillId, options, resolved) {
     logDispatch('rollSkillCheck', 'adapter', { skillId, mode: 'skillTable' })
-    const { skill, skillItem, abilityLabel, abilityMod, die, hasDie } = resolved
+    const { skill, skillItem, abilityLabel } = resolved
 
-    const terms = []
-
-    if (hasDie) {
-      terms.push({
-        type: 'Die',
-        label: skill.die ? null : game.i18n.localize('DCC.ActionDie'),
-        formula: die,
-        presets: this.getActionDice({ includeUntrained: true })
-      })
-    }
-
-    if (skill.value !== undefined) {
-      let formula = skill.value.toString()
-      if (abilityMod !== 0) {
-        formula = `${skill.value} + ${abilityMod}`
-      }
-      terms.push({
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-        modifierLabel: game.i18n.localize(skill.label) + abilityLabel,
-        formula
-      })
-    }
-
-    if (skill.level && skill.level !== 0) {
-      terms.push({
-        type: 'Compound',
-        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
-        modifierLabel: game.i18n.localize('DCC.Level'),
-        formula: `${skill.level}`
-      })
-    }
-
-    if (skill.useDeed && this.system.details.lastRolledAttackBonus) {
-      terms.push({
-        type: 'Modifier',
-        label: game.i18n.localize('DCC.DeedRoll'),
-        formula: parseInt(this.system.details.lastRolledAttackBonus)
-      })
-    }
-
-    let checkPenaltyCouldApply = false
-    if (['sneakSilently', 'climbSheerSurfaces'].includes(skillId)) {
-      checkPenaltyCouldApply = true
-    }
-    if (skill.config?.applyCheckPenalty) {
-      checkPenaltyCouldApply = true
-    }
-    const checkPenalty = ensurePlus(this.system.attributes.ac.checkPenalty || '0')
-    if (checkPenaltyCouldApply && checkPenalty !== '+0') {
-      terms.push({
-        type: 'CheckPenalty',
-        formula: checkPenalty,
-        apply: checkPenaltyCouldApply
-      })
-    }
+    const terms = this._buildSkillCheckLegacyTerms(skillId, resolved)
 
     const roll = await game.dcc.DCCRoll.createRoll(terms, this.getRollData(), options)
 
@@ -1908,16 +1909,17 @@ class DCCActor extends Actor {
   }
 
   /**
-   * Legacy skill-check path. Used when the dispatcher detects a
-   * modifier dialog, cleric disapproval, a skill-table lookup, or
-   * a no-die / description-only case — all paths the adapter does
-   * not yet cover. Preserved verbatim from the pre-migration logic.
+   * Build the legacy `DCCRoll.createRoll` term-descriptor array for a
+   * resolved skill. Shared by `_rollSkillCheckLegacy` (description-only
+   * fallback), `_skillTableViaAdapter` (table + disapproval-range
+   * lookups), and `_rollSkillCheckViaAdapter`'s `showModifierDialog`
+   * branch (open question #7). Pre-Q7 the term-build was duplicated
+   * across the legacy + skill-table paths verbatim; this method is
+   * the canonical version.
    * @private
    */
-  async _rollSkillCheckLegacy (skillId, options, resolved) {
-    logDispatch('rollSkillCheck', 'legacy', { skillId })
-    const { skill, skillItem, abilityLabel, abilityMod, die, hasDie } = resolved
-
+  _buildSkillCheckLegacyTerms (skillId, resolved) {
+    const { skill, abilityLabel, abilityMod, die, hasDie } = resolved
     const terms = []
 
     if (hasDie) {
@@ -1943,12 +1945,11 @@ class DCCActor extends Actor {
     }
 
     if (skill.level && skill.level !== 0) {
-      const formula = `${skill.level}`
       terms.push({
         type: 'Compound',
         dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
         modifierLabel: game.i18n.localize('DCC.Level'),
-        formula
+        formula: `${skill.level}`
       })
     }
 
@@ -1960,13 +1961,9 @@ class DCCActor extends Actor {
       })
     }
 
-    let checkPenaltyCouldApply = false
-    if (['sneakSilently', 'climbSheerSurfaces'].includes(skillId)) {
-      checkPenaltyCouldApply = true
-    }
-    if (skill.config?.applyCheckPenalty) {
-      checkPenaltyCouldApply = true
-    }
+    const checkPenaltyCouldApply =
+      ['sneakSilently', 'climbSheerSurfaces'].includes(skillId) ||
+      !!skill.config?.applyCheckPenalty
     const checkPenalty = ensurePlus(this.system.attributes.ac.checkPenalty || '0')
     if (checkPenaltyCouldApply && checkPenalty !== '+0') {
       terms.push({
@@ -1976,7 +1973,24 @@ class DCCActor extends Actor {
       })
     }
 
-    const hasMeaningfulTerms = terms.some(term => term.formula && term.formula.trim() !== '')
+    return terms
+  }
+
+  /**
+   * Legacy skill-check path. Used when the dispatcher detects a
+   * no-die / description-only case (no skill.die config + no fallback
+   * action-die slot, i.e. a skill item with `useDie: false`). Phase 3
+   * session 26 (Q7) folded the `showModifierDialog` branch into the
+   * adapter routes — both `_rollSkillCheckViaAdapter` and
+   * `_skillTableViaAdapter` now handle the dialog adapter-side.
+   * @private
+   */
+  async _rollSkillCheckLegacy (skillId, options, resolved) {
+    logDispatch('rollSkillCheck', 'legacy', { skillId })
+    const { skill, skillItem, abilityLabel } = resolved
+
+    const terms = this._buildSkillCheckLegacyTerms(skillId, resolved)
+    const hasMeaningfulTerms = terms.some(term => term.formula && term.formula.toString().trim() !== '')
     if (terms.length === 0 || !hasMeaningfulTerms) {
       if (skillItem && skillItem.system.description.value) {
         ChatMessage.create({
