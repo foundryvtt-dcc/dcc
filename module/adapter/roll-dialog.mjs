@@ -1,129 +1,24 @@
 /* global foundry, game */
 
 /**
- * Adapter-side roll-modifier dialogs.
+ * Adapter-side roll-modifier dialog.
  *
  * Companion to the legacy `RollModifierDialog` (`module/roll-modifier.js`),
  * which is wired to the Foundry `DCCRoll.createRoll` path. The adapter
  * path bypasses `DCCRoll.createRoll` and therefore never surfaces that
- * dialog, so it needs its own lightweight prompts for the input that
- * dialog used to collect.
+ * dialog, so it needs its own thin wrapper to surface the same UI when
+ * an adapter-routed roll requests `showModifierDialog`.
  *
- * Two scaffolds live here:
- *   - `promptSpellburnCommitment` — bespoke modal that asks a wizard /
- *     elf caster how much Str / Agl / Sta to burn. Returns a lib
- *     `SpellburnCommitment`. `DCCActor.rollSpellCheck` forwards it
- *     through to the adapter as `options.spellburn` and the lib's
- *     `onSpellburnApplied` bridge (see `spell-events.mjs`) deducts the
- *     burn from the actor after the cast resolves.
- *   - `promptRollModifierDialog` (session 26, open question #7) — thin
- *     wrapper over `game.dcc.DCCRoll.createRoll({ showModifierDialog })`
- *     so adapter routes can surface the same general-purpose modifier
- *     dialog the legacy `DCCRoll.createRoll` path used. Parses the
- *     resulting Foundry Roll into an `actionDie` + flat `modifierTotal`
- *     pair the adapter can fold into its lib pass. Used by
- *     `_rollSkillCheckViaAdapter` for skill checks with
- *     `showModifierDialog: true`.
+ * `promptRollModifierDialog` (session 26, open question #7) wraps
+ * `game.dcc.DCCRoll.createRoll({ showModifierDialog })` so adapter
+ * routes can surface the same general-purpose modifier dialog the
+ * legacy `DCCRoll.createRoll` path used. Parses the resulting Foundry
+ * Roll into an `actionDie` + flat `modifierTotal` pair the adapter
+ * folds into its lib pass. Q7-phase2 (session 27) extended it with
+ * an optional Spellburn descriptor so the wizard / naked adapter
+ * spell-check routes can collect Str/Agl/Sta burn in the same dialog
+ * the legacy path used (retiring the bespoke spellburn pop-up).
  */
-
-/**
- * Prompt the user to commit Spellburn (Str / Agl / Sta) to a wizard
- * or elf spell check.
- *
- * Returns `null` if the user cancels or closes the dialog, so the
- * dispatcher can abort the cast. Returns the zero commitment
- * `{ str: 0, agl: 0, sta: 0 }` if the user confirms without
- * allocating any burn — this lets the adapter path drop the
- * all-zero case before it reaches `buildSpellCheckArgs` (which in
- * turn avoids a no-op Spellburn modifier in the lib's result).
- *
- * Each input is clamped to `[0, currentAbilityValue]` so the user
- * cannot burn more than they have. Stamina below 1 is allowed in
- * principle (RAW has no floor), but the adapter's
- * `onSpellburnApplied` bridge clamps `system.abilities.*.value` at
- * 1 when it applies the burn, so final stats never drop to 0.
- *
- * @param {DCCActor} actor     The casting actor
- * @param {DCCItem}  spellItem The spell being cast (used for the
- *                             dialog title; may be null for naked
- *                             callers, though none exist today)
- * @returns {Promise<{str: number, agl: number, sta: number} | null>}
- */
-export async function promptSpellburnCommitment (actor, spellItem) {
-  const str = parseInt(actor.system.abilities.str.value) || 0
-  const agl = parseInt(actor.system.abilities.agl.value) || 0
-  const sta = parseInt(actor.system.abilities.sta.value) || 0
-
-  const title = spellItem
-    ? game.i18n.format('DCC.SpellburnDialogTitleForSpell', { spell: spellItem.name })
-    : game.i18n.localize('DCC.SpellburnDialogTitle')
-
-  const prompt = game.i18n.localize('DCC.SpellburnDialogPrompt')
-  const strLabel = game.i18n.localize('DCC.AbilityStr')
-  const aglLabel = game.i18n.localize('DCC.AbilityAgl')
-  const staLabel = game.i18n.localize('DCC.AbilitySta')
-
-  const content = `
-    <form class="dcc spellburn-dialog">
-      <p>${prompt}</p>
-      <div class="form-group">
-        <label>${strLabel} (${str})</label>
-        <input type="number" name="str" value="0" min="0" max="${str}"/>
-      </div>
-      <div class="form-group">
-        <label>${aglLabel} (${agl})</label>
-        <input type="number" name="agl" value="0" min="0" max="${agl}"/>
-      </div>
-      <div class="form-group">
-        <label>${staLabel} (${sta})</label>
-        <input type="number" name="sta" value="0" min="0" max="${sta}"/>
-      </div>
-    </form>
-  `
-
-  try {
-    const result = await foundry.applications.api.DialogV2.wait({
-      window: { title },
-      position: { width: 360 },
-      content,
-      buttons: [
-        {
-          action: 'commit',
-          label: game.i18n.localize('DCC.SpellburnCommit'),
-          default: true,
-          callback: (_event, button) => ({
-            str: clampBurn(button.form.elements.str.value, str),
-            agl: clampBurn(button.form.elements.agl.value, agl),
-            sta: clampBurn(button.form.elements.sta.value, sta)
-          })
-        },
-        {
-          action: 'cancel',
-          label: game.i18n.localize('Cancel'),
-          callback: () => null
-        }
-      ],
-      rejectClose: false
-    })
-
-    return result ?? null
-  } catch (err) {
-    // `rejectClose: false` usually resolves to `null` on close instead
-    // of throwing — an actual exception here is unexpected (DialogV2
-    // API change, malformed template, localization error in a button
-    // callback). Log before returning `null` so broken-build failures
-    // don't present as indistinguishable "user cancelled the dialog"
-    // no-ops.
-    console.warn('[DCC adapter] promptSpellburnCommitment: dialog threw', { actor: actor?.name, spell: spellItem?.name, err })
-    return null
-  }
-}
-
-function clampBurn (raw, max) {
-  const value = Math.trunc(Number(raw))
-  if (!Number.isFinite(value) || value <= 0) return 0
-  return Math.min(value, Math.max(0, max))
-}
 
 /**
  * Open the legacy `RollModifierDialog` as an adapter-side prompt.
@@ -145,6 +40,16 @@ function clampBurn (raw, max) {
  * edit to any value, so the post-dialog modifier-list contract was
  * always "trust the user's total."
  *
+ * Q7-phase2 (session 27) added the optional `spellburn` descriptor.
+ * When set, a Spellburn term is appended to the dialog so the user
+ * can allocate Str/Agl/Sta burn alongside the other modifiers; the
+ * returned `spellburn` object holds the chosen BURN amounts (current
+ * ability − final ability). The burn formula contribution is
+ * deliberately removed from `modifierTotal` so callers can forward
+ * the commitment through the lib's `input.spellburn` without
+ * double-counting (the lib also injects a "spellburn" modifier into
+ * its computed total).
+ *
  * @param {Array<Object>} terms       Term descriptors. Same shape the
  *                                    legacy callers pass to
  *                                    `DCCRoll.createRoll`.
@@ -153,23 +58,68 @@ function clampBurn (raw, max) {
  *                                             `@`-substitutions.
  * @param {string}        [options.title]      Dialog window title.
  * @param {string}        [options.rollLabel]  Submit button label.
+ * @param {{str: number, agl: number, sta: number}} [options.spellburn]
+ *                                             Current ability values
+ *                                             for the casting actor.
+ *                                             When set, the dialog
+ *                                             surfaces a Spellburn
+ *                                             term and the result
+ *                                             carries a `spellburn`
+ *                                             field with the chosen
+ *                                             burn amounts.
  *
  * @returns {Promise<{
  *   actionDie: string | null,
  *   modifierTotal: number,
  *   formula: string,
- *   roll: Roll
+ *   roll: Roll,
+ *   spellburn: {str: number, agl: number, sta: number} | null
  * } | null>}
  *   Returns `null` if the user cancelled (closed without submitting).
  *   Otherwise returns the user's final action die (e.g. `'1d20'`,
- *   `'1d24'`) and the signed flat sum of every non-die term in the
- *   resulting roll, plus the underlying Foundry Roll for callers that
- *   want the raw formula.
+ *   `'1d24'`), the signed flat sum of every non-die / non-spellburn
+ *   term in the resulting roll, the underlying Foundry Roll for
+ *   callers that want the raw formula, and (when `options.spellburn`
+ *   was requested) the chosen burn commitment.
  */
 export async function promptRollModifierDialog (terms, options = {}) {
+  let spellburnCapture = null
+  let effectiveTerms = terms
+
+  if (options.spellburn && typeof options.spellburn === 'object') {
+    const sb = options.spellburn
+    const originalStr = Number(sb.str) || 0
+    const originalAgl = Number(sb.agl) || 0
+    const originalSta = Number(sb.sta) || 0
+
+    spellburnCapture = {
+      str: originalStr,
+      agl: originalAgl,
+      sta: originalSta
+    }
+
+    const spellburnTerm = {
+      type: 'Spellburn',
+      formula: '+0',
+      str: originalStr,
+      agl: originalAgl,
+      sta: originalSta,
+      callback: (_formula, term) => {
+        // `term.str/agl/sta` hold the final (post-burn) ability values
+        // after the user clicks the dialog's +/- buttons. The dialog
+        // mutates them in `#modifySpellburn` (see roll-modifier.js).
+        spellburnCapture.str = Number(term.str) || 0
+        spellburnCapture.agl = Number(term.agl) || 0
+        spellburnCapture.sta = Number(term.sta) || 0
+      }
+    }
+
+    effectiveTerms = [...terms, spellburnTerm]
+  }
+
   let roll
   try {
-    roll = await game.dcc.DCCRoll.createRoll(terms, options.rollData ?? {}, {
+    roll = await game.dcc.DCCRoll.createRoll(effectiveTerms, options.rollData ?? {}, {
       showModifierDialog: true,
       title: options.title,
       rollLabel: options.rollLabel
@@ -181,11 +131,31 @@ export async function promptRollModifierDialog (terms, options = {}) {
   if (!roll) return null
 
   const parsed = parseRollIntoDieAndModifier(roll)
+  let modifierTotal = parsed.modifierTotal
+  let spellburnResult = null
+
+  if (spellburnCapture) {
+    const sb = options.spellburn
+    const burn = {
+      str: Math.max(0, (Number(sb.str) || 0) - spellburnCapture.str),
+      agl: Math.max(0, (Number(sb.agl) || 0) - spellburnCapture.agl),
+      sta: Math.max(0, (Number(sb.sta) || 0) - spellburnCapture.sta)
+    }
+    spellburnResult = burn
+    // Subtract the spellburn formula contribution from `modifierTotal`.
+    // The dialog wrote `+(str+agl+sta)` into the Roll's formula, but
+    // callers forward the commitment through `input.spellburn` and the
+    // lib injects its own "spellburn" modifier — keeping both would
+    // double-count.
+    modifierTotal -= burn.str + burn.agl + burn.sta
+  }
+
   return {
     actionDie: parsed.actionDie,
-    modifierTotal: parsed.modifierTotal,
+    modifierTotal,
     formula: roll.formula,
-    roll
+    roll,
+    spellburn: spellburnResult
   }
 }
 

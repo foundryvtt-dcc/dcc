@@ -88,6 +88,11 @@ instead of routing `showModifierDialog` to legacy. The dispatcher
 gate dropped its `!!options.showModifierDialog` clause; skill-
 table-with-dialog naturally flows through `_skillTableViaAdapter`
 (it already forwarded `options` through `DCCRoll.createRoll`).
+Session 27 / Q7-phase2 (2026-05-17) extended the same scaffold to
+spell-check: the unified prompt now surfaces Die / Compound /
+CheckPenalty / Spellburn / Other Bonus for wizard / cleric /
+naked routes, and the bespoke `promptSpellburnCommitment` helper
+retired. Open question #7 is now fully closed.
 The remaining `processSpellCheck` substrate is now only reachable
 from `DCCItem.rollSpellCheck` delegations (the `noCasterProfile`
 + unknown-castingMode fallbacks). See
@@ -99,6 +104,41 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-17 — Session 27 / Q7-phase2: spell-check modifier-
+  dialog generalization.** Extended the session-26
+  `promptRollModifierDialog` wrapper with an optional `spellburn`
+  descriptor — when set, a Spellburn term is appended internally
+  and the term's callback captures final str/agl/sta values; the
+  wrapper computes burn amounts (original − final) and subtracts
+  the burn total from `modifierTotal` so callers can forward
+  `input.spellburn` without double-counting the lib's auto-injected
+  spellburn modifier. The bespoke `promptSpellburnCommitment`
+  helper retired entirely. New `_promptSpellCheckDialog(spellItem,
+  ctx)` + `_applySpellCheckDialogToOptions(prompt, options)`
+  helpers on `DCCActor` build the term list (Die / Compound /
+  CheckPenalty / Other Bonus / Spellburn) and fold the result back
+  into `options` (spellburn → `options.spellburn`; action die →
+  `options.actionDieOverride`; flat modifier total →
+  `options.dialogModifierTotal`). `_rollSpellCheckViaAdapter` now
+  invokes the unified prompt for both wizard and cleric branches
+  post-dispatch-log (cleric showModifierDialog previously fell
+  through silently — fixed). `_castNakedViaAdapter` mirrors the
+  same; `suppressLibAuto` zeroes `input.casterLevel` +
+  `input.abilityModifier` when the dialog drives the modifier list
+  so the lib's auto level + ability don't double-count.
+  `_castViaCalculateSpellCheck` honors the new options by
+  overriding `input.actionDie` and feeding
+  `dialogModifierTotal - (casterLevel + libGetAbilityModifier(score))`
+  as a single `dialog-modifier` situational — the subtraction is
+  load-bearing because the lib re-derives `casterLevel +
+  abilityModifier` from `character` inside `buildSpellCastInput`.
+  +4 Vitest tests in `adapter-roll-dialog.test.js` covering the
+  spellburn descriptor (zero commitment, mid burn, no descriptor,
+  clamped negative); 4 spell-check tests in
+  `adapter-spell-check.test.js` flipped to assert against the
+  unified prompt. 949 Vitest green (was 945, +4). +3 new
+  Playwright cases (wizard / cleric / naked showModifierDialog →
+  adapter dispatch). Open question #7 is now fully closed.
 - **2026-05-17 — Session 26 / Q7-phase1: generalized roll-modifier-
   dialog adapter scaffold + skill-check fold.** New
   `promptRollModifierDialog(terms, opts)` in
@@ -316,19 +356,20 @@ archives linked above.
    `EXTENSION_API.md` is re-audited.
 
 7. **Wizard / elf adapter-path modifier-dialog coverage beyond
-   Spellburn.** **Partially resolved 2026-05-17 at session 26 / Q7-
-   phase1:** `promptRollModifierDialog` is in place as the general
-   scaffold and `_rollSkillCheckViaAdapter` consumes it — die
-   tweak + flat modifier + CheckPenalty all surface on the skill
-   route now. Still open for spell-check: combining
-   `promptSpellburnCommitment` with general modifier terms in a
-   single dialog (the legacy flow showed Spellburn inline with
-   die / modifier / CheckPenalty in one form). Pragmatic path is
-   to extend `promptRollModifierDialog` to accept an optional
-   Spellburn term descriptor and have the wizard / cleric adapter
-   routes call the unified prompt instead of the bespoke
-   `promptSpellburnCommitment`. Tracked as Q7-phase2 in
-   `02-slice-backlog.md`.
+   Spellburn.** **Fully resolved 2026-05-17 across sessions 26 +
+   27.** Session 26 / Q7-phase1 landed
+   `promptRollModifierDialog` + the skill-check fold; session 27 /
+   Q7-phase2 extended the wrapper with an optional spellburn
+   descriptor and folded wizard / cleric / naked spell-check
+   routes onto it (retiring the bespoke
+   `promptSpellburnCommitment` helper). The unified prompt now
+   surfaces Die / Compound / CheckPenalty / Spellburn / Other
+   Bonus in one dialog for both skill checks and spell checks,
+   matching the legacy `DCCItem.rollSpellCheck` term layout.
+   `_castViaCalculateSpellCheck` subtracts the lib's auto level +
+   ability from the dialog total to avoid double-counting when
+   feeding the user's flat modifier as a situational. Can be
+   closed.
 
 ## PR #720 review backlog (2026-04-19)
 

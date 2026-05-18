@@ -163,3 +163,104 @@ describe('promptRollModifierDialog', () => {
     expect(game).toBeDefined()
   })
 })
+
+describe('promptRollModifierDialog spellburn descriptor (Q7-phase2)', () => {
+  test('appends a Spellburn term and returns the zero commitment when callback is never invoked', async () => {
+    global.dccRollCreateRollMock.mockClear()
+    global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+      formula: '1d20',
+      terms: [{ class: 'Die', formula: '1d20' }]
+    }))
+
+    const result = await promptRollModifierDialog([{ type: 'Die', formula: '1d20' }], {
+      spellburn: { str: 14, agl: 12, sta: 13 }
+    })
+
+    expect(global.dccRollCreateRollMock).toHaveBeenCalledTimes(1)
+    const [termsArg] = global.dccRollCreateRollMock.mock.calls[0]
+    expect(termsArg).toHaveLength(2)
+    expect(termsArg[1]).toMatchObject({
+      type: 'Spellburn',
+      str: 14,
+      agl: 12,
+      sta: 13
+    })
+    expect(typeof termsArg[1].callback).toBe('function')
+
+    // No callback fired → spellburn capture stays at the original
+    // values → burn computed as zeros.
+    expect(result.spellburn).toEqual({ str: 0, agl: 0, sta: 0 })
+  })
+
+  test('returns the chosen burn amounts and subtracts them from modifierTotal', async () => {
+    global.dccRollCreateRollMock.mockClear()
+    global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+      // The Spellburn term carries a callback the dialog's submit step
+      // invokes with the final str/agl/sta on `term`. Simulate the user
+      // burning 1 str and 2 sta (14→13, 13→11) and adding the resulting
+      // `+3` to the rolled formula.
+      const spellburnTerm = terms[terms.length - 1]
+      spellburnTerm.callback('+3', { str: 13, agl: 12, sta: 11 })
+      return {
+        formula: '1d20+5+3',
+        terms: [
+          { class: 'Die', formula: '1d20' },
+          { class: 'OperatorTerm', operator: '+' },
+          { class: 'NumericTerm', number: 5 },
+          { class: 'OperatorTerm', operator: '+' },
+          { class: 'NumericTerm', number: 3 }
+        ]
+      }
+    })
+
+    const result = await promptRollModifierDialog([{ type: 'Die', formula: '1d20' }], {
+      spellburn: { str: 14, agl: 12, sta: 13 }
+    })
+
+    expect(result.spellburn).toEqual({ str: 1, agl: 0, sta: 2 })
+    // Raw modifierTotal would be 5 + 3 = 8; subtracting the 3 of
+    // spellburn contribution yields 5 (the spell-check bonus the user
+    // didn't change).
+    expect(result.modifierTotal).toBe(5)
+  })
+
+  test('returns spellburn: null when no descriptor is requested', async () => {
+    global.dccRollCreateRollMock.mockClear()
+    global.dccRollCreateRollMock.mockImplementationOnce(() => ({
+      formula: '1d20+4',
+      terms: [
+        { class: 'Die', formula: '1d20' },
+        { class: 'OperatorTerm', operator: '+' },
+        { class: 'NumericTerm', number: 4 }
+      ]
+    }))
+
+    const result = await promptRollModifierDialog([{ type: 'Die', formula: '1d20' }])
+    expect(result.spellburn).toBeNull()
+    // No spellburn descriptor → no term appended.
+    const [termsArg] = global.dccRollCreateRollMock.mock.calls[0]
+    expect(termsArg).toHaveLength(1)
+  })
+
+  test('clamps negative burn amounts to zero (lib never sees a partial restoration)', async () => {
+    // A buggy/edge-case dialog could theoretically hand back a final
+    // ability score HIGHER than the original (e.g. the user added
+    // points instead of burning them). The promptRollModifierDialog
+    // wrapper clamps each burn at zero so the lib's spellburn modifier
+    // can't go negative.
+    global.dccRollCreateRollMock.mockClear()
+    global.dccRollCreateRollMock.mockImplementationOnce((terms) => {
+      const spellburnTerm = terms[terms.length - 1]
+      spellburnTerm.callback('+0', { str: 16, agl: 12, sta: 13 }) // str went UP
+      return {
+        formula: '1d20',
+        terms: [{ class: 'Die', formula: '1d20' }]
+      }
+    })
+
+    const result = await promptRollModifierDialog([{ type: 'Die', formula: '1d20' }], {
+      spellburn: { str: 14, agl: 12, sta: 13 }
+    })
+    expect(result.spellburn).toEqual({ str: 0, agl: 0, sta: 0 })
+  })
+})

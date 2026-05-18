@@ -12,6 +12,7 @@ import {
   castSpell as libCastSpell,
   calculateSpellCheck as libCalculateSpellCheck,
   getCasterProfile as libGetCasterProfile,
+  getAbilityModifier as libGetAbilityModifier,
   rollMercurialMagic as libRollMercurialMagic,
   makeAttackRoll as libMakeAttackRoll,
   rollDamage as libRollDamage,
@@ -22,7 +23,7 @@ import { actorToCharacter, foundrySaveIdToLib } from './adapter/character-access
 import { renderAbilityCheck, renderSavingThrow, renderSkillCheck, renderSpellCheck, renderDisapprovalRoll, renderMercurialEffect } from './adapter/chat-renderer.mjs'
 import { buildSpellCastInput, buildSpellCheckArgs, loadDisapprovalTable, loadMercurialMagicTable, loadPatronTaintTable } from './adapter/spell-input.mjs'
 import { createSpellEvents } from './adapter/spell-events.mjs'
-import { promptRollModifierDialog, promptSpellburnCommitment } from './adapter/roll-dialog.mjs'
+import { promptRollModifierDialog } from './adapter/roll-dialog.mjs'
 import { buildAttackInput, hookTermsToBonuses, normalizeLibDie } from './adapter/attack-input.mjs'
 import { buildDamageInput, buildPassthroughDamageResult, parseDamageFormula, parseMultiTypeFormula, parseWeaponMagicBonus, peelTrailingFlavor } from './adapter/damage-input.mjs'
 import { buildCriticalInput, buildFumbleInput } from './adapter/crit-fumble-input.mjs'
@@ -2203,21 +2204,6 @@ class DCCActor extends Actor {
             spell: spellItem.name
           }))
         }
-        // Spellburn dialog bridge (open question #6, resolved Phase 3
-        // session 1). The adapter path bypasses `DCCRoll.createRoll`,
-        // so the legacy `RollModifierDialog`'s Spellburn term never
-        // surfaces. When the caller asks for the modifier dialog and
-        // hasn't already committed a burn programmatically, prompt
-        // for it adapter-side and forward as `options.spellburn` —
-        // the lib then adds the Spellburn modifier to the roll and
-        // fires `onSpellburnApplied` so the adapter can deduct the
-        // ability points (see `spell-events.mjs`). NPCs don't burn
-        // (the legacy dialog never offered it to them either).
-        if (options.showModifierDialog && !options.spellburn && !this.isNPC) {
-          const commitment = await promptSpellburnCommitment(this, spellItem)
-          if (commitment === null) return
-          options.spellburn = commitment
-        }
         // Phase 3 session 24 / D4 — wizard-castingMode item on a
         // cleric actor routes through the adapter with an explicit
         // wizard `profileOverride` so the lib applies wizard
@@ -2245,6 +2231,133 @@ class DCCActor extends Actor {
     }
 
     return this._rollSpellCheckLegacy(options, spellItem)
+  }
+
+  /**
+   * Q7-phase2 (session 27) — surface the unified roll-modifier dialog
+   * for an adapter-routed spell check. Builds the same term list
+   * `DCCItem.rollSpellCheck` constructs for the legacy
+   * `DCCRoll.createRoll` path: Die / Compound (spell-check bonus) /
+   * CheckPenalty (when applicable) / Other Bonus (when set) /
+   * Spellburn (when eligible).
+   *
+   * Returns the parsed dialog result `{actionDie, modifierTotal,
+   * spellburn}` or `null` on user-cancel. Callers feed the result back
+   * into `options` via `_applySpellCheckDialogToOptions`, then route
+   * through the same `_rollSpellCheckViaAdapter` / `_castNakedViaAdapter`
+   * path the no-dialog case takes.
+   *
+   * `ctx.castingMode` (one of `'wizard'` / `'cleric'` / `'naked'`)
+   * drives the CheckPenalty `apply` flag — `castingMode === 'wizard'`
+   * applies it by default (matches legacy DCCItem.rollSpellCheck:307).
+   * `ctx.isIdolMagic` skips the CheckPenalty term entirely (idol-magic
+   * clerics don't pay check penalty in any form). `ctx.spellburnEligible`
+   * adds the Spellburn descriptor so the user can allocate burn in the
+   * same dialog (clerics / NPCs are ineligible).
+   * @private
+   */
+  async _promptSpellCheckDialog (spellItem, ctx = {}) {
+    const { castingMode = 'wizard', isIdolMagic = false, spellburnEligible = false } = ctx
+
+    const die =
+      spellItem?.system?.spellCheck?.die ||
+      this.system.class?.spellCheckOverrideDie ||
+      this.system.attributes?.actionDice?.value ||
+      '1d20'
+
+    let bonus
+    if (spellItem) {
+      bonus = (spellItem.system?.spellCheck?.value ?? '+0').toString()
+      // Mirror DCCItem.rollSpellCheck:276 — consolidate `@`-substituted
+      // bonuses so the modifier dialog doesn't show an unevaluated
+      // formula. Falls back to the raw string if `Roll.safeEval` rejects.
+      if (bonus.includes('@')) {
+        try {
+          bonus = Roll.safeEval(bonus)
+        } catch {
+          // Leave the raw `@`-formula; the lib's `Roll` parser will
+          // substitute when it evaluates.
+        }
+      }
+    } else {
+      bonus = this.system.class?.spellCheck ?? '+0'
+    }
+
+    const terms = [
+      {
+        type: 'Die',
+        label: game.i18n.localize('DCC.ActionDie'),
+        formula: die
+      },
+      {
+        type: 'Compound',
+        dieLabel: game.i18n.localize('DCC.RollModifierDieTerm'),
+        modifierLabel: game.i18n.localize('DCC.SpellCheck'),
+        formula: bonus
+      }
+    ]
+
+    if (!isIdolMagic) {
+      const checkPenalty = spellItem?.system?.config?.inheritCheckPenalty
+        ? parseInt(this.system.attributes?.ac?.checkPenalty || '0')
+        : parseInt(spellItem?.system?.spellCheck?.penalty || '0')
+      terms.push({
+        type: 'CheckPenalty',
+        formula: checkPenalty,
+        apply: castingMode === 'wizard' || castingMode === 'generic'
+      })
+    }
+
+    const otherBonus = spellItem?.system?.spellCheck?.otherBonus
+    if (otherBonus) {
+      terms.push({
+        type: 'Modifier',
+        label: game.i18n.localize('DCC.SpellOtherBonus'),
+        formula: otherBonus
+      })
+    }
+
+    const promptOptions = {
+      rollData: this.getRollData(),
+      title: spellItem
+        ? game.i18n.format('DCC.RollModifierTitleCasting', { spell: spellItem.name })
+        : game.i18n.localize('DCC.SpellCheck'),
+      rollLabel: game.i18n.localize('DCC.RollModifierRoll')
+    }
+
+    if (spellburnEligible) {
+      promptOptions.spellburn = {
+        str: parseInt(this.system.abilities?.str?.value) || 0,
+        agl: parseInt(this.system.abilities?.agl?.value) || 0,
+        sta: parseInt(this.system.abilities?.sta?.value) || 0
+      }
+    }
+
+    return promptRollModifierDialog(terms, promptOptions)
+  }
+
+  /**
+   * Q7-phase2 (session 27) — fold a `_promptSpellCheckDialog` result
+   * back into the `options` bag the adapter routes consume:
+   *   - `spellburn` (when the dialog included the descriptor) becomes
+   *     `options.spellburn`; the lib's `castSpell` adds it as a
+   *     modifier and the `onSpellburnApplied` bridge deducts ability
+   *     points (see `spell-events.mjs`).
+   *   - `actionDie` becomes `options.actionDieOverride`; the adapter
+   *     swaps it into `input.actionDie` so the lib's formula honors
+   *     the user's dice-chain bump.
+   *   - `modifierTotal` becomes `options.dialogModifierTotal`; the
+   *     adapter subtracts the lib's auto-computed `casterLevel +
+   *     abilityModifier` and feeds the net as a single
+   *     `dialog-modifier` situational so the rolled total matches the
+   *     legacy "trust the user's total" contract without double-
+   *     counting the level + ability the lib re-adds from `character`.
+   * @private
+   */
+  _applySpellCheckDialogToOptions (prompt, options) {
+    if (prompt.spellburn) options.spellburn = prompt.spellburn
+    if (prompt.actionDie) options.actionDieOverride = prompt.actionDie
+    options.dialogModifierTotal = prompt.modifierTotal
   }
 
   /**
@@ -2276,6 +2389,29 @@ class DCCActor extends Actor {
       logDetails.profileOverride = dispatch.castingModeOverride
     }
     logDispatch('rollSpellCheck', 'adapter', logDetails)
+
+    // Q7-phase2 (session 27) — surface the unified roll-modifier
+    // dialog adapter-side. Replaces the bespoke spellburn pop-up from
+    // session 1 / open question #6: wizard / cleric branches now show
+    // Die / Compound / CheckPenalty / Spellburn / Other Bonus in one
+    // dialog (same shape `DCCItem.rollSpellCheck` builds for the
+    // legacy path). NPCs and pre-committed burns skip the dialog
+    // (legacy parity). Wizard-castingMode spells route Spellburn
+    // through `input.spellburn`; cleric-castingMode (idol magic) drops
+    // both Spellburn and CheckPenalty per RAW. The dispatch log
+    // already fired above so a cancel still leaves a traceable adapter
+    // path in the log.
+    if ((castingMode === 'wizard' || castingMode === 'cleric') &&
+        options.showModifierDialog && !options.spellburn && !this.isNPC) {
+      const isCleric = castingMode === 'cleric' || dispatch.castingModeOverride === 'cleric'
+      const prompt = await this._promptSpellCheckDialog(spellItem, {
+        castingMode: isCleric ? 'cleric' : 'wizard',
+        isIdolMagic: isCleric,
+        spellburnEligible: !isCleric
+      })
+      if (prompt === null) return
+      this._applySpellCheckDialogToOptions(prompt, options)
+    }
 
     if (castingMode === 'wizard' || castingMode === 'cleric') {
       // Phase 3 session 24 / D4 — `dispatch.castingModeOverride` lets
@@ -2351,20 +2487,45 @@ class DCCActor extends Actor {
       actionDie = this.system.class.spellCheckOverrideDie
     }
 
-    // Spellburn dialog parity with the wizard item route (open question
-    // #6, session 1). NPCs and clerics skip — legacy never offered
-    // spellburn to either.
-    if (options.showModifierDialog && !options.spellburn && !this.isNPC && !isIdolMagic) {
-      const commitment = await promptSpellburnCommitment(this, null)
-      if (commitment === null) return
-      options.spellburn = commitment
+    // Q7-phase2 (session 27) — surface the unified modifier dialog
+    // for naked checks too. Spellburn eligibility mirrors the
+    // wizard-item route (NPCs + idol-magic clerics skip — legacy
+    // never offered it to them). Idol-magic clerics still get the
+    // dialog without Spellburn / CheckPenalty so they can override
+    // the die / Compound bonus.
+    if (options.showModifierDialog && !options.spellburn && !this.isNPC) {
+      const prompt = await this._promptSpellCheckDialog(null, {
+        castingMode: isIdolMagic ? 'cleric' : 'wizard',
+        isIdolMagic,
+        spellburnEligible: !isIdolMagic
+      })
+      if (prompt === null) return
+      this._applySpellCheckDialogToOptions(prompt, options)
+    }
+
+    if (options.actionDieOverride) {
+      actionDie = options.actionDieOverride
     }
 
     const casterLevel = Number(this.system.details?.level?.value || 0)
     const abilityModifier = parseInt(ability.mod || 0, 10) || 0
     const situationalModifiers = []
+    const dialogModifierTotal = typeof options.dialogModifierTotal === 'number'
+      ? options.dialogModifierTotal
+      : null
 
-    if (this.system.class.spellCheckOverride) {
+    if (dialogModifierTotal !== null) {
+      // Q7-phase2 — the dialog's flat total subsumes spellCheckOverride
+      // / spellCheckOtherMod / check-penalty (the user saw and edited
+      // them in the Compound + CheckPenalty terms). Lib level + ability
+      // get zeroed out below so the rolled total = die + dialogTotal +
+      // spellburn (matches the legacy "trust the user's total" contract).
+      situationalModifiers.push({
+        source: 'dialog-modifier',
+        value: dialogModifierTotal,
+        label: game.i18n.localize('DCC.RollModifierTitle')
+      })
+    } else if (this.system.class.spellCheckOverride) {
       // Legacy parity: when this class-level override is set, level +
       // abilityMod + otherMod are SUPPRESSED and a single bonus replaces
       // them. Surface it as a situational modifier and zero out the
@@ -2387,8 +2548,10 @@ class DCCActor extends Actor {
     }
 
     // Idol-magic clerics skip the AC check penalty (matches the
-    // legacy `applyCheckPenalty = !isIdolMagic` switch).
-    if (!isIdolMagic) {
+    // legacy `applyCheckPenalty = !isIdolMagic` switch). When the
+    // dialog is in play the user toggled it in the CheckPenalty term;
+    // skip the auto-append.
+    if (!isIdolMagic && dialogModifierTotal === null) {
       const checkPenalty = parseInt(this.system?.attributes?.ac?.checkPenalty || 0, 10) || 0
       if (checkPenalty !== 0) {
         situationalModifiers.push({
@@ -2407,15 +2570,18 @@ class DCCActor extends Actor {
       description: ''
     }
 
+    // Suppress lib's auto-additive level + ability when the dialog's
+    // flat total drives the modifier list, OR when the legacy
+    // `spellCheckOverride` shim replaces them. Both paths feed the
+    // full bonus through `situationalModifiers`.
+    const suppressLibAuto = dialogModifierTotal !== null || !!this.system.class.spellCheckOverride
+
     const input = {
       spell,
       casterProfile,
-      // When `spellCheckOverride` replaces the full modifier breakdown,
-      // zero out the lib's automatic level + ability contributions so
-      // the override stands alone (matches legacy term ordering).
-      casterLevel: this.system.class.spellCheckOverride ? 0 : casterLevel,
+      casterLevel: suppressLibAuto ? 0 : casterLevel,
       abilityScore: parseInt(ability.value || 10, 10) || 10,
-      abilityModifier: this.system.class.spellCheckOverride ? 0 : abilityModifier,
+      abilityModifier: suppressLibAuto ? 0 : abilityModifier,
       actionDie: normalizeLibDie(actionDie)
     }
 
@@ -2562,6 +2728,36 @@ class DCCActor extends Actor {
   async _castViaCalculateSpellCheck (args, spellItem, options) {
     const { character, input, profile } = args
     const events = createSpellEvents({ actor: this, spellItem })
+
+    // Q7-phase2 (session 27) — fold dialog overrides into the lib
+    // input. The dispatcher captured them in `options` (see
+    // `_applySpellCheckDialogToOptions`). Action die maps directly to
+    // `input.actionDie`; the user's flat modifier total flows in as a
+    // `dialog-modifier` situational AFTER subtracting the lib's
+    // auto-additive `casterLevel + abilityModifier` so the rolled
+    // total matches the legacy "trust the user's total" contract
+    // without double-counting (the lib re-adds level + ability from
+    // `character` inside `buildSpellCastInput`).
+    if (options.actionDieOverride) {
+      input.actionDie = normalizeLibDie(options.actionDieOverride)
+    }
+    if (typeof options.dialogModifierTotal === 'number') {
+      const casterLevel = character.classInfo?.level ?? 0
+      const abilityId = profile.spellCheckAbility
+      const abilityScore = character.state?.abilities?.[abilityId]?.current ?? 10
+      const libAutoTotal = casterLevel + libGetAbilityModifier(abilityScore)
+      const netSituational = options.dialogModifierTotal - libAutoTotal
+      if (netSituational !== 0) {
+        input.situationalModifiers = [
+          ...(input.situationalModifiers ?? []),
+          {
+            source: 'dialog-modifier',
+            value: netSituational,
+            label: game.i18n.localize('DCC.RollModifierTitle')
+          }
+        ]
+      }
+    }
 
     // Cleric path needs a disapproval table so the lib's
     // `handleClericDisapproval` runs the full table draw (lib skips

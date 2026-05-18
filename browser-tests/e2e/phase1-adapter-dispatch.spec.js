@@ -1027,6 +1027,100 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
       expect(sta).toBe(12)
     })
 
+    test('wizard cast with showModifierDialog → adapter unified prompt (session 27 / Q7-phase2)', async ({ page }) => {
+      // Q7-phase2 (2026-05-17): the bespoke `promptSpellburnCommitment`
+      // pop-up retired in favor of `promptRollModifierDialog`. Wizard
+      // spell-check with `showModifierDialog` now surfaces the same
+      // legacy `RollModifierDialog` (Die / Compound / CheckPenalty /
+      // Spellburn) the legacy `DCCItem.rollSpellCheck` path showed —
+      // adapter-side, with the user's choices threaded through the lib.
+      // Dispatch fires at the start of `_rollSpellCheckViaAdapter`
+      // before the (blocking) dialog opens; fireAndForget dismisses the
+      // dialog with Escape so the test run continues.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell Wizard Dialog',
+          type: 'Player',
+          system: { class: { className: 'Wizard' } }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Wizard-Dialog-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'wizard', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+      })
+      await fireAndForget(page, async () => {
+        game.actors.getName('P1 Spell Wizard Dialog').rollSpellCheck({
+          spell: 'P1-Wizard-Dialog-Spell',
+          showModifierDialog: true
+        })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', {
+        spell: 'P1-Wizard-Dialog-Spell',
+        mode: 'wizard'
+      })
+    })
+
+    test('cleric cast with showModifierDialog → adapter unified prompt (session 27 / Q7-phase2)', async ({ page }) => {
+      // Q7-phase2 — cleric branch in the dispatcher now opens the
+      // unified `RollModifierDialog` too (no Spellburn, no CheckPenalty
+      // since idol-magic clerics skip both). Pre-Q7-phase2 the cleric
+      // showModifierDialog path silently routed through the adapter
+      // without surfacing any dialog.
+      await page.evaluate(async () => {
+        const actor = await Actor.create({
+          name: 'P1 Spell Cleric Dialog',
+          type: 'Player',
+          system: {
+            class: { className: 'Cleric', disapproval: 1, spellCheckAbility: 'per' },
+            details: { sheetClass: 'Cleric' }
+          }
+        })
+        await actor.createEmbeddedDocuments('Item', [{
+          name: 'P1-Cleric-Dialog-Spell',
+          type: 'spell',
+          system: {
+            level: 1,
+            config: { castingMode: 'cleric', inheritCheckPenalty: true },
+            spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+            lost: false
+          }
+        }])
+      })
+      await fireAndForget(page, async () => {
+        game.actors.getName('P1 Spell Cleric Dialog').rollSpellCheck({
+          spell: 'P1-Cleric-Dialog-Spell',
+          showModifierDialog: true
+        })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', {
+        spell: 'P1-Cleric-Dialog-Spell',
+        mode: 'cleric'
+      })
+    })
+
+    test('naked cast with showModifierDialog → adapter unified prompt (session 27 / Q7-phase2)', async ({ page }) => {
+      // Naked path mirrors the wizard / cleric branches — the adapter's
+      // showModifierDialog clause now calls `promptRollModifierDialog`
+      // with a Spellburn descriptor for non-cleric actors. Cancel via
+      // Escape; the adapter returns without rolling.
+      await makePlayer(page, 'P1 Spell Naked Dialog')
+      await fireAndForget(page, async () => {
+        game.actors.getName('P1 Spell Naked Dialog').rollSpellCheck({
+          showModifierDialog: true
+        })
+      })
+      const line = await waitForAdapterLog('rollSpellCheck')
+      assertPath(line, 'adapter', { mode: 'naked' })
+    })
+
     test('wizard first-cast pre-rolls mercurial magic (session 5)', async ({ page }) => {
       // CONFIG.DCC.mercurialMagicTable is set from a world setting at
       // init. Skip gracefully when no table is configured in this world

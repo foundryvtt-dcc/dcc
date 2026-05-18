@@ -440,22 +440,37 @@ term-builder duplication across all three call sites).
 only fallback. 945 Vitest (+12 new) + Playwright extended (1 case
 flipped, 1 new).
 
-#### Q7-phase2. Wizard / cleric spell-check modifier-dialog generalization. **TODO**
-Open question #7 follow-up. The wizard / cleric adapter spell-
-check routes currently surface only the Spellburn input via
-`promptSpellburnCommitment`; the legacy `RollModifierDialog`
-showed Spellburn alongside die / modifier / CheckPenalty in one
-dialog. Pragmatic path: extend `promptRollModifierDialog` to
-accept an optional Spellburn term descriptor (callback captures
-`str / agl / sta`); update the wizard / cleric adapter routes
-(`_rollSpellCheckViaAdapter` dispatcher block,
-`_castNakedViaAdapter`) to call the unified prompt with the
-Spellburn descriptor included when `showModifierDialog && !isNPC
-&& !isIdolMagic`. Eliminates the bespoke
-`promptSpellburnCommitment` helper. Tests: extend
-`adapter-roll-dialog.test.js` with a Spellburn term case +
-flip the spell-check Playwright dialog cases to assert the
-unified prompt.
+#### ~~Q7-phase2. Wizard / cleric spell-check modifier-dialog generalization.~~ **DONE 2026-05-17 (session 27)**
+Landed via the same `promptRollModifierDialog` scaffold session 26
+introduced. `roll-dialog.mjs` extended with an optional `spellburn`
+descriptor that appends a Spellburn term to the dialog and captures
+the chosen burn via the term's callback; the bespoke
+`promptSpellburnCommitment` helper retired (was only consumed by the
+wizard / naked spell-check routes, and the unified prompt now
+surfaces Spellburn alongside Die / Compound / CheckPenalty / Other
+Bonus — same shape `DCCItem.rollSpellCheck` builds for the legacy
+path). New `_promptSpellCheckDialog` + `_applySpellCheckDialogToOptions`
+helpers on `DCCActor` build the term list and fold the dialog result
+back into `options` (Spellburn → `options.spellburn`; action die →
+`options.actionDieOverride`; flat modifier total →
+`options.dialogModifierTotal`). `_rollSpellCheckViaAdapter` invokes
+the prompt for both wizard and cleric branches (post-dispatch-log so
+cancels stay observable). `_castNakedViaAdapter` does the same for
+naked checks. `_castViaCalculateSpellCheck` honors the new options by
+overriding `input.actionDie` and feeding the user's modifier total as
+a single `dialog-modifier` situational AFTER subtracting the lib's
+auto-additive `casterLevel + abilityModifier` — keeps the rolled
+total matching the legacy "trust the user's total" contract without
+double-counting the level + ability the lib re-adds from `character`.
+Naked path mirrors the same suppression: `suppressLibAuto` zeroes
+`input.casterLevel` + `input.abilityModifier` when the dialog drives
+the modifier list, and the existing `class.spellCheckOverride` shim
+shares the same code path. 953 Vitest (+4 new in
+`adapter-roll-dialog.test.js` covering the spellburn descriptor +
+modifierTotal subtraction; 4 spell-check tests flipped to assert
+against the unified prompt). Playwright +3 new cases (wizard /
+cleric / naked showModifierDialog → adapter dispatch). Open question
+#7 is now fully closed.
 
 ---
 

@@ -24,7 +24,7 @@ import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
 import { buildSpellCheckArgs, loadPatronTaintTable } from '../adapter/spell-input.mjs'
-import { promptSpellburnCommitment } from '../adapter/roll-dialog.mjs'
+import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { calculateSpellCheck as libCalcSpellCheckMock, rollSpellFumble, rollSpellFumbleWithModifier } from '../vendor/dcc-core-lib/index.js'
 
 // Mock actor-level-change like actor.test.js does
@@ -32,9 +32,12 @@ vi.mock('../actor-level-change.js')
 
 // Mock the dialog-adapter so the dispatcher's showModifierDialog branch
 // can drive the code path deterministically. Tests override the return
-// value per-case via `promptSpellburnCommitment.mockResolvedValue(...)`.
+// value per-case via `promptRollModifierDialog.mockResolvedValue(...)`.
+// Q7-phase2 (session 27): the bespoke `promptSpellburnCommitment` pop-up
+// retired in favor of the unified `promptRollModifierDialog`, which now
+// surfaces Spellburn alongside die / modifier / CheckPenalty in one form.
 vi.mock('../adapter/roll-dialog.mjs', () => ({
-  promptSpellburnCommitment: vi.fn()
+  promptRollModifierDialog: vi.fn()
 }))
 
 // Passthrough mock over the vendor lib so a single test can force
@@ -959,11 +962,17 @@ test('adapter wizard cast with options.spellburn reduces ability scores adapter-
   findSpy.mockRestore()
 })
 
-test('wizard cast with showModifierDialog prompts spellburn and forwards the commitment', async () => {
+test('wizard cast with showModifierDialog prompts the unified dialog and forwards spellburn (Q7-phase2)', async () => {
   rollToMessageMock.mockClear()
   actorUpdateMock.mockClear()
-  promptSpellburnCommitment.mockReset()
-  promptSpellburnCommitment.mockResolvedValue({ str: 1, agl: 0, sta: 2 })
+  promptRollModifierDialog.mockReset()
+  promptRollModifierDialog.mockResolvedValue({
+    actionDie: '1d20',
+    modifierTotal: 0,
+    formula: '1d20',
+    roll: { formula: '1d20', terms: [] },
+    spellburn: { str: 1, agl: 0, sta: 2 }
+  })
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -982,8 +991,16 @@ test('wizard cast with showModifierDialog prompts spellburn and forwards the com
     showModifierDialog: true
   })
 
-  expect(promptSpellburnCommitment).toHaveBeenCalledTimes(1)
-  expect(promptSpellburnCommitment).toHaveBeenCalledWith(actor, spellItem)
+  expect(promptRollModifierDialog).toHaveBeenCalledTimes(1)
+  // The unified prompt receives a term list (Die / Compound / CheckPenalty)
+  // and a spellburn descriptor pre-loaded with the actor's current
+  // ability values.
+  const [termsArg, optsArg] = promptRollModifierDialog.mock.calls[0]
+  expect(Array.isArray(termsArg)).toBe(true)
+  expect(termsArg[0]).toMatchObject({ type: 'Die' })
+  expect(termsArg.some((t) => t.type === 'Compound')).toBe(true)
+  expect(optsArg.spellburn).toEqual({ str: 14, agl: 12, sta: 13 })
+
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
   // The prompted commitment reaches the onSpellburnApplied bridge:
   // 14-1=13 (str), 13-2=11 (sta); agl unchanged so dropped.
@@ -995,11 +1012,11 @@ test('wizard cast with showModifierDialog prompts spellburn and forwards the com
   findSpy.mockRestore()
 })
 
-test('wizard cast with showModifierDialog aborts when the dialog is canceled', async () => {
+test('wizard cast with showModifierDialog aborts when the dialog is canceled (Q7-phase2)', async () => {
   rollToMessageMock.mockClear()
   actorUpdateMock.mockClear()
-  promptSpellburnCommitment.mockReset()
-  promptSpellburnCommitment.mockResolvedValue(null)
+  promptRollModifierDialog.mockReset()
+  promptRollModifierDialog.mockResolvedValue(null)
   const itemSpy = vi.spyOn(DCCItem.prototype, 'rollSpellCheck').mockResolvedValue(undefined)
 
   // noinspection JSCheckFunctionSignatures
@@ -1016,7 +1033,7 @@ test('wizard cast with showModifierDialog aborts when the dialog is canceled', a
     showModifierDialog: true
   })
 
-  expect(promptSpellburnCommitment).toHaveBeenCalledTimes(1)
+  expect(promptRollModifierDialog).toHaveBeenCalledTimes(1)
   // Neither the adapter nor the legacy path continued with the cast.
   expect(rollToMessageMock).not.toHaveBeenCalled()
   expect(itemSpy).not.toHaveBeenCalled()
@@ -1028,7 +1045,7 @@ test('wizard cast with showModifierDialog aborts when the dialog is canceled', a
 
 test('wizard cast with preset options.spellburn bypasses the dialog', async () => {
   rollToMessageMock.mockClear()
-  promptSpellburnCommitment.mockReset()
+  promptRollModifierDialog.mockReset()
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -1048,15 +1065,15 @@ test('wizard cast with preset options.spellburn bypasses the dialog', async () =
     spellburn: { str: 0, agl: 0, sta: 1 }
   })
 
-  expect(promptSpellburnCommitment).not.toHaveBeenCalled()
+  expect(promptRollModifierDialog).not.toHaveBeenCalled()
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
 
   findSpy.mockRestore()
 })
 
-test('wizard cast on an NPC actor bypasses the spellburn dialog', async () => {
+test('wizard cast on an NPC actor bypasses the modifier dialog', async () => {
   rollToMessageMock.mockClear()
-  promptSpellburnCommitment.mockReset()
+  promptRollModifierDialog.mockReset()
 
   // noinspection JSCheckFunctionSignatures
   const actor = new DCCActor()
@@ -1075,7 +1092,7 @@ test('wizard cast on an NPC actor bypasses the spellburn dialog', async () => {
     showModifierDialog: true
   })
 
-  expect(promptSpellburnCommitment).not.toHaveBeenCalled()
+  expect(promptRollModifierDialog).not.toHaveBeenCalled()
   expect(rollToMessageMock).toHaveBeenCalledTimes(1)
 
   findSpy.mockRestore()
