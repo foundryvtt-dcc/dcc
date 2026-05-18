@@ -322,6 +322,16 @@ archives linked above.
    remain absent on the adapter path and will be revisited once the
    attack / damage dialog work generalizes the roll-dialog scaffold.
 
+3. ~~**Dead hook `dcc.update`.**~~ **Resolved 2026-05-18: don't emit.**
+   Git history showed the DCC system never emitted the hook; XCC's
+   listener was speculative from its initial commit (`24b68b1`) and
+   its body was a debug-only `console.log` gated on `isDebug` —
+   redundant with the adjacent Foundry-native `updateActor` listener
+   doing the same thing. Inventing an emission contract from nothing
+   would add coupling without a real consumer. XCC removed the
+   listener on `chore/drop-dead-dcc-update-hook`; `EXTENSION_API.md`
+   Dead-hook table cleared.
+
 ## Blockers / open questions
 
 1. ~~**Runtime loading strategy.**~~ **Resolved 2026-04-17: vendor
@@ -337,13 +347,6 @@ archives linked above.
    name. The unscoped name is not currently published, so CI currently
    *cannot* `npm install` the lib — only `npm link` works. Resolved
    in spirit by vendoring; can be closed out.
-
-3. **Dead hook `dcc.update`.** XCC listens for this hook
-   (`modules/xcc/module/xcc.js:525`), but nothing in the DCC system
-   emits it. Either it was removed at some point, or XCC added it
-   speculatively. Decide: add the emission back, or coordinate with
-   XCC maintainers to remove the listener. Documented in
-   `EXTENSION_API.md §Dead`.
 
 4. **Undocumented `game.dcc.*` pieces with heavy XCC usage.** XCC
    reaches into `game.dcc.DCCRoll.cleanFormula`, `game.dcc.DiceChain.

@@ -81,9 +81,7 @@ audited sibling modules for the path before slimming.
 
 ### Dead
 
-| Hook | Where it fails | Notes |
-|---|---|---|
-| `dcc.update` | Listener at `modules/xcc/module/xcc.js:525`; no emission in the DCC system | Either dropped during an earlier refactor or speculatively added by XCC. Requires a decision: re-introduce the emit, or ask XCC to remove the listener. |
+None identified. (`dcc.update` was an XCC-side speculative listener with no DCC emission; removed from XCC on `chore/drop-dead-dcc-update-hook` 2026-05-18.)
 
 ---
 
@@ -135,9 +133,10 @@ None identified.
    hit a wall with it. The lib's per-class `CasterProfile.type`
    (`@moonloch/dcc-core-lib` `spells/cast.ts`) plus a per-class table
    registration gives the needed flexibility. (Addresses §2.4 + §2.11.)
-3. **Resolve `dcc.update`** before Phase 4 (schema slimming). Either
-   re-introduce the emission point or coordinate with XCC to drop the
-   listener. (Tracked as open question #3 in `00-progress.md`.)
+3. ~~**Resolve `dcc.update`**~~ **Resolved 2026-05-18.** Listener was
+   speculative (XCC initial commit, no DCC emission ever). XCC
+   `chore/drop-dead-dcc-update-hook` removes the listener; nothing
+   re-introduced DCC-side.
 4. **"Stabilize" `DCCRoll.cleanFormula` and the three `DiceChain`
    utilities** as the de-facto API surface XCC depends on. They're
    currently undocumented; the refactor should add JSDoc treating them
