@@ -488,15 +488,21 @@ full-stack approach works end-to-end with a real sibling consumer.
    (Phase 5 slice), register halfling as a class-mixin consumed by
    `mcc-classes`' halfling equivalent. Most architecturally
    informative — touches data model + sheet composition + mixin API.
-2. **Mercurial-magic vertical** — fix the XCC "2 tables vs 1"
-   problem (§2.4) by making mercurial table lookup variant-aware via
-   a Phase 6-style variant config. Small, targeted XCC win.
+2. ~~**Mercurial-magic vertical**~~ — **DONE 2026-05-18 (Group E
+   session 1).** New `dcc.registerMercurialMagicTable(classKey,
+   tableName)` Stable hook + `CONFIG.DCC.mercurialMagicTables`
+   registry. Resolver shared between adapter cast path and legacy
+   item-sheet button; xcc-core-book migration recipe in
+   `EXTENSION_API.md` retires the per-roll monkey-patch. +5
+   Vitest, +2 Playwright. Did NOT require Phase 4 schema work or
+   Phase 5 sheet composition — purely an extension-surface fix that
+   resolved the §2.4 critique.
 3. **Single-class homebrew vertical** — pick a fan-made class (e.g.,
    from `dcc-crawl-classes`), rewire it as a class-mixin + sheet-part
    registration. Validates §2.8 homebrew extensibility.
 
-**This entry is a placeholder** — pick the specific vertical via
-explicit user decision before drafting its concrete slice list.
+Halfling or homebrew is the natural next pick to actually exercise
+Phase 4 + 5 + 6 end-to-end.
 
 ---
 

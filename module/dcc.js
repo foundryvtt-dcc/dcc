@@ -918,11 +918,33 @@ Hooks.on('dcc.registerLevelDataPack', (value, fromSystemSetting = false) => {
   CONFIG.DCC.levelDataPacks.addPack(value, fromSystemSetting)
 })
 
-// Mercurial Magic table
+// Mercurial Magic — per-class table registry. Modules call
+// `registerMercurialMagicTable(classKey, tableName)` at `dcc.ready`
+// to attach a class-specific table; the cast / item-sheet code resolves
+// per-class with a fallback to the world-setting default. `classKey`
+// is the lowercase `system.details.sheetClass` (`'wizard'`, `'elf'`,
+// `'blaster'`, `'gnome'`, …) or the literal string `'default'`.
+Hooks.on('dcc.registerMercurialMagicTable', (classKey, value) => {
+  if (!classKey || !value) return
+  CONFIG.DCC.mercurialMagicTables ??= {}
+  CONFIG.DCC.mercurialMagicTables[classKey] = value
+  if (classKey === 'default') {
+    CONFIG.DCC.mercurialMagicTable = value
+  }
+})
+
+// Legacy single-table setter — preserved for back-compat. Writes to
+// the registry's `'default'` slot AND the legacy `mercurialMagicTable`
+// field. First-write-wins unless the system setting fires
+// (`fromSystemSetting=true`), which always overrides — same semantics
+// as before. dcc-core-book and similar content modules continue to
+// call this; modules that need per-class registration use the new
+// `dcc.registerMercurialMagicTable` hook above.
 Hooks.on('dcc.setMercurialMagicTable', (value, fromSystemSetting = false) => {
-  // Set mercurial magic table if unset, or if applying the system setting (which takes precedence)
   if (fromSystemSetting || !CONFIG.DCC.mercurialMagicTable) {
     CONFIG.DCC.mercurialMagicTable = value
+    CONFIG.DCC.mercurialMagicTables ??= {}
+    CONFIG.DCC.mercurialMagicTables.default = value
   }
 })
 

@@ -371,15 +371,31 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**Session 27 / Q7-phase2 closed open question #7 in full** (both
-skill-check + spell-check now invoke the unified
-`promptRollModifierDialog` adapter-side; `promptSpellburnCommitment`
-retired). Remaining Phase 3 candidates:
+**Group E session 1 (2026-05-18) landed the per-class mercurial-
+magic table registry** — closed the §2.4 generalization promise
+that's been open since before Phase 0. New
+`dcc.registerMercurialMagicTable(classKey, tableName)` Stable
+hook + `CONFIG.DCC.mercurialMagicTables` registry; resolver
+shared between the adapter cast path and the legacy
+`DCCItem.rollMercurialMagic` item-sheet button. Legacy
+`setMercurialMagicTable` hook shims through `register('default',
+value)` for back-compat — existing dcc-core-book / world-setting
+callers unchanged. xcc-core-book has a migration recipe in
+`EXTENSION_API.md` to drop its per-roll
+`CONFIG.DCC.mercurialMagicTable = …` monkey-patch in favor of two
+`register` calls at `dcc.ready`; that's a sibling-side PR, not a
+DCC change.
 
-1. **Group E vertical slice** (placeholder — needs explicit pick):
-   halfling, mercurial-magic, or homebrew single-class. Would
-   exercise Phase 4 + 5 + 6 end-to-end.
-2. **`game.dcc.processSpellCheck` audit + retirement decision.**
+**Remaining Group E candidates** (mercurial-magic landed as
+session 1):
+
+1. **Halfling vertical slice** — most natural Phase 4 starter
+   because it concentrates the schema-slimming question on one
+   class. Exercises §2.1 (monolithic Player schema) directly.
+2. **Homebrew single-class slice** — most ambitious; exercises
+   Phase 4 + 5 + 6 end-to-end via `registerClassMixin` +
+   `registerSheetPart` + variant-aware data loading.
+3. **`game.dcc.processSpellCheck` audit + retirement decision.**
    The function is pinned as permanent stable API but is now only
    reached via `DCCItem.rollSpellCheck` fallbacks. Could be slimmed
    significantly (patron-taint codepath is dead post-D3, the

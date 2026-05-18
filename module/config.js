@@ -617,6 +617,14 @@ DCC.levelDataPacks = null
 DCC.fumbleTable = null
 DCC.layOnHandsTable = null
 DCC.mercurialMagicTable = null
+
+// Per-class mercurial magic table registry, keyed by lowercase
+// `system.details.sheetClass` (e.g. `'wizard'`, `'elf'`, `'blaster'`,
+// `'gnome'`). The `'default'` key carries the world-setting value and
+// stays mirrored in `mercurialMagicTable` above for back-compat
+// readers. Populated via the `dcc.registerMercurialMagicTable` hook.
+DCC.mercurialMagicTables = {}
+
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks

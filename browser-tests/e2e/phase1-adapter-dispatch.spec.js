@@ -1260,11 +1260,21 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
 
     test('wizard first-cast without a configured mercurial table emits reason=noMercurialTable', async ({ page }) => {
       // Temporarily clear the world's mercurial-magic table so the
-      // first-cast pre-roll can't resolve it. Restored after the cast
-      // so later tests see the original config.
+      // first-cast pre-roll can't resolve it. Group E session 1
+      // introduced `CONFIG.DCC.mercurialMagicTables` (registry) as a
+      // second source the resolver consults before the legacy single
+      // field — the `setMercurialMagicTable` back-compat shim mirrors
+      // the world-setting value into `mercurialMagicTables.default`
+      // (when the legacy field was previously unset), so clearing only
+      // the legacy field is no longer sufficient. Clear both; restore
+      // both after the test so later tests see the original config.
       const savedTable = await page.evaluate(() => {
-        const original = CONFIG.DCC.mercurialMagicTable
+        const original = {
+          legacy: CONFIG.DCC.mercurialMagicTable,
+          tables: { ...(CONFIG.DCC.mercurialMagicTables || {}) }
+        }
         CONFIG.DCC.mercurialMagicTable = null
+        CONFIG.DCC.mercurialMagicTables = {}
         return original
       })
 
@@ -1310,8 +1320,146 @@ test.describe('DCC Phase 1 — Adapter Dispatch Validation', () => {
         expect(Number(mercurialValue) || 0).toBe(0)
       } finally {
         await page.evaluate((saved) => {
-          CONFIG.DCC.mercurialMagicTable = saved
+          CONFIG.DCC.mercurialMagicTable = saved.legacy
+          CONFIG.DCC.mercurialMagicTables = saved.tables
         }, savedTable)
+      }
+    })
+
+    // ── Group E session 1: per-class mercurial-magic table registry ──
+    // `dcc.registerMercurialMagicTable(classKey, value)` lands the
+    // sibling-module-facing API that retires XCC's
+    // `CONFIG.DCC.mercurialMagicTable = …` monkey-patch
+    // (`xcc-core-book/module/xcc-item-sheet.js:49-58`). End-to-end:
+    // register a wizard-keyed table via the hook, clear the legacy
+    // default-table mirror, then cast a wizard spell — the resolver
+    // walks the per-class slot first, so the cast pre-rolls a mercurial
+    // effect using the registered table even though no `'default'`
+    // entry exists.
+    test('registerMercurialMagicTable: per-class registration drives wizard first-cast (Group E session 1)', async ({ page }) => {
+      const tableConfigured = await page.evaluate(() => !!CONFIG.DCC.mercurialMagicTable)
+      test.skip(!tableConfigured, 'No mercurialMagicTable configured in this world')
+
+      // Capture original registry + legacy field, then swap the world
+      // setting into a per-class registration so we can prove the
+      // class-keyed lookup picked it (rather than the legacy mirror).
+      const saved = await page.evaluate(() => {
+        const snapshot = {
+          tables: { ...(CONFIG.DCC.mercurialMagicTables || {}) },
+          legacy: CONFIG.DCC.mercurialMagicTable
+        }
+        const tableName = CONFIG.DCC.mercurialMagicTable
+        CONFIG.DCC.mercurialMagicTables = {}
+        CONFIG.DCC.mercurialMagicTable = null
+        Hooks.callAll('dcc.registerMercurialMagicTable', 'wizard', tableName)
+        return {
+          snapshot,
+          registered: CONFIG.DCC.mercurialMagicTables?.wizard
+        }
+      })
+
+      expect(saved.registered,
+        'hook should have populated CONFIG.DCC.mercurialMagicTables.wizard'
+      ).toBeTruthy()
+      expect(saved.registered).toBe(saved.snapshot.legacy)
+
+      try {
+        await page.evaluate(async () => {
+          const actor = await Actor.create({
+            name: 'P1 Spell RegistryWizard',
+            type: 'Player',
+            system: { class: { className: 'Wizard' } }
+          })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: 'P1-Registry-Wizard-Spell',
+            type: 'spell',
+            system: {
+              level: 1,
+              config: { castingMode: 'wizard', inheritCheckPenalty: true },
+              spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+              lost: false
+            }
+          }])
+        })
+        await page.evaluate(async () => {
+          await game.actors.getName('P1 Spell RegistryWizard')
+            .rollSpellCheck({ spell: 'P1-Registry-Wizard-Spell' })
+        })
+
+        const line = await waitForAdapterLog('rollSpellCheck')
+        assertPath(line, 'adapter', { spell: 'P1-Registry-Wizard-Spell', mode: 'wizard' })
+
+        // Let the async item.update land before reading mercurialEffect.
+        await page.waitForTimeout(400)
+        const mercurialValue = await page.evaluate(() => {
+          const actor = game.actors.getName('P1 Spell RegistryWizard')
+          const item = actor.items.getName('P1-Registry-Wizard-Spell')
+          return item?.system?.mercurialEffect?.value
+        })
+        expect(Number(mercurialValue),
+          'wizard-keyed registration should have driven the mercurial pre-roll'
+        ).toBeGreaterThan(0)
+      } finally {
+        await page.evaluate((s) => {
+          CONFIG.DCC.mercurialMagicTables = s.tables
+          CONFIG.DCC.mercurialMagicTable = s.legacy
+        }, saved.snapshot)
+      }
+    })
+
+    test('registerMercurialMagicTable: class registration that does not match falls through to noMercurialTable (Group E session 1)', async ({ page }) => {
+      // Symmetric coverage for the negative case: a gnome-keyed
+      // registration with no `'default'` entry and a cleared legacy
+      // mirror produces a `reason=noMercurialTable` log when a wizard
+      // casts — the resolver walks `wizard → default → legacy → null`
+      // and stops without picking the unrelated gnome table.
+      const saved = await page.evaluate(() => {
+        const snapshot = {
+          tables: { ...(CONFIG.DCC.mercurialMagicTables || {}) },
+          legacy: CONFIG.DCC.mercurialMagicTable
+        }
+        CONFIG.DCC.mercurialMagicTables = {}
+        CONFIG.DCC.mercurialMagicTable = null
+        Hooks.callAll('dcc.registerMercurialMagicTable', 'gnome', 'fake.pack.Gnome Mercurial')
+        return snapshot
+      })
+
+      try {
+        await page.evaluate(async () => {
+          const actor = await Actor.create({
+            name: 'P1 Spell RegistryGnomeOnly',
+            type: 'Player',
+            system: { class: { className: 'Wizard' } }
+          })
+          await actor.createEmbeddedDocuments('Item', [{
+            name: 'P1-RegistryGnomeOnly-Spell',
+            type: 'spell',
+            system: {
+              level: 1,
+              config: { castingMode: 'wizard', inheritCheckPenalty: true },
+              spellCheck: { die: '1d20', value: '+0', penalty: '-0' },
+              lost: false
+            }
+          }])
+        })
+        await page.evaluate(async () => {
+          await game.actors.getName('P1 Spell RegistryGnomeOnly')
+            .rollSpellCheck({ spell: 'P1-RegistryGnomeOnly-Spell' })
+        })
+
+        await waitForAdapterLog('rollSpellCheck')
+        const reasonLine = adapterLogs.find(l =>
+          l.startsWith(`${ADAPTER_TAG} rollSpellCheck`) &&
+          l.includes('reason=noMercurialTable')
+        )
+        expect(reasonLine,
+          `expected noMercurialTable log; adapterLogs=\n${adapterLogs.join('\n')}`
+        ).toBeTruthy()
+      } finally {
+        await page.evaluate((s) => {
+          CONFIG.DCC.mercurialMagicTables = s.tables
+          CONFIG.DCC.mercurialMagicTable = s.legacy
+        }, saved)
       }
     })
 

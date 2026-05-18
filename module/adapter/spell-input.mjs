@@ -17,11 +17,14 @@
  *     orchestration finds the entry. Returns `null` when the actor's
  *     class has no lib-side caster profile — callers should fall
  *     back to the legacy path.
- *   - `loadDisapprovalTable(actor)` / `loadMercurialMagicTable(actor)` /
+ *   - `loadDisapprovalTable(actor)` / `loadMercurialMagicTable(classKey)` /
  *     `loadPatronTaintTable(actor)` — async. Each returns a lib
  *     `SimpleTable` / `MercurialTable` loaded from a configured
  *     Foundry `RollTable` (compendium or world), or `null` when
- *     unavailable.
+ *     unavailable. `loadMercurialMagicTable` takes a lowercase class
+ *     key (e.g. `'wizard'`, `'elf'`, `'gnome'`) and walks the
+ *     per-class registry via `resolveMercurialMagicTableName` — see
+ *     `dcc.registerMercurialMagicTable` (Group E session 1).
  *
  * Session 4 populates `wizard.patron` / `elf.patron` so
  * `getPatronId(character)` resolves; D3a (2026-04-24) additionally
@@ -479,21 +482,44 @@ export async function loadDisapprovalTable (actor) {
 }
 
 /**
- * Load the configured mercurial magic table and convert it to the
- * lib's `MercurialTable` shape. Reads `CONFIG.DCC.mercurialMagicTable`
- * (wired from the `dcc.mercurialMagicTable` world setting in
- * `module/dcc.js:503-507`) using the same pack-then-world resolution
- * the legacy `DCCItem.rollMercurialMagic:531-558` walks.
+ * Resolve the mercurial-magic table name for a given class key, walking
+ * the per-class registry → `'default'` registration → legacy single-table
+ * field → null. `classKey` is the lowercase `system.details.sheetClass`
+ * (`'wizard'`, `'elf'`, `'blaster'`, `'gnome'`, …) or `undefined` to
+ * resolve only against the default. The legacy-field fallback covers
+ * callers that pre-date the registry hook (`dcc.registerMercurialMagicTable`,
+ * Group E session 1) or environments where only the world setting is
+ * configured.
  *
- * Returns `null` when no table is resolvable (setting unset, pack
+ * @param {string} [classKey]
+ * @returns {string|null}
+ */
+export function resolveMercurialMagicTableName (classKey) {
+  if (typeof CONFIG === 'undefined') return null
+  const registry = CONFIG?.DCC?.mercurialMagicTables || {}
+  if (classKey && registry[classKey]) return registry[classKey]
+  if (registry.default) return registry.default
+  return CONFIG?.DCC?.mercurialMagicTable || null
+}
+
+/**
+ * Load the configured mercurial magic table and convert it to the
+ * lib's `MercurialTable` shape. Resolves via `resolveMercurialMagicTableName`
+ * — per-class registry first (`CONFIG.DCC.mercurialMagicTables[classKey]`),
+ * then the `'default'` slot, then the legacy `CONFIG.DCC.mercurialMagicTable`
+ * world-setting mirror. Pack lookup then world-table fallback mirror
+ * the legacy `DCCItem.rollMercurialMagic:531-558` walk.
+ *
+ * Returns `null` when no table is resolvable (nothing registered, pack
  * missing, unit-test env). Callers should skip mercurial pre-rolling
  * in that case — matches legacy "fall back to just displaying the
  * roll" behavior at `DCCItem.rollMercurialMagic:564`.
  *
+ * @param {string} [classKey] - Lowercase `sheetClass` for per-class lookup.
  * @returns {Promise<Object|null>}
  */
-export async function loadMercurialMagicTable () {
-  const tableName = (typeof CONFIG !== 'undefined' && CONFIG?.DCC?.mercurialMagicTable) || null
+export async function loadMercurialMagicTable (classKey) {
+  const tableName = resolveMercurialMagicTableName(classKey)
   if (!tableName) return null
 
   // Compendium lookup — `packId.collectionName.tableName` (3 parts).

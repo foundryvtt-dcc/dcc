@@ -2789,7 +2789,7 @@ class DCCActor extends Actor {
     if (profile && profile.usesMercurial && spellItem) {
       const spellbookEntry = character.state?.classState?.[profile.type]?.spellbook?.spells?.[0]
       if (spellbookEntry && !spellbookEntry.mercurialEffect) {
-        await this._rollMercurialIfNeeded(spellItem, spellbookEntry)
+        await this._rollMercurialIfNeeded(spellItem, spellbookEntry, profile.type)
       }
     }
 
@@ -2989,10 +2989,16 @@ class DCCActor extends Actor {
    * no-op when no mercurial magic table is configured — matches the
    * legacy `DCCItem.rollMercurialMagic:564` fall-back.
    *
+   * `classKey` is the lowercase caster profile type (`'wizard'`,
+   * `'elf'`, …) and selects the per-class registration first; the
+   * resolver falls back to `'default'` then the legacy single-table
+   * field. See `dcc.registerMercurialMagicTable` (Group E session 1)
+   * for the registry contract.
+   *
    * @private
    */
-  async _rollMercurialIfNeeded (spellItem, spellbookEntry) {
-    const mercurialTable = await loadMercurialMagicTable()
+  async _rollMercurialIfNeeded (spellItem, spellbookEntry, classKey) {
+    const mercurialTable = await loadMercurialMagicTable(classKey)
     if (!mercurialTable) {
       // Telemetry for the silent skip: the cast continues but without
       // a fresh mercurial effect, matching the legacy

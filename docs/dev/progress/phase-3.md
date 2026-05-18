@@ -838,3 +838,18 @@ emitting a `DCC.MigrationUnsupportedVersion` error.
 Tests: 917 Vitest (891 pre-slice + 8 behavioral classifier + 11
 positive-regex + 6 negative-regex + 1 file-scan = 26 net new).
 95 Playwright e2e.
+
+---
+
+## Session 23 — 2026-04-24 (D3c: retire dormant `SpellFumbleResult.patronTaint` flag)
+
+Lib PR to `dcc-core-lib@0.8.0` (commit `842e89a`, breaking change)
+removed `.patronTaint` from `SpellFumbleResult` + the
+`effect.type === 'patron-taint'` / `effect.data.patronTaint === true`
+parsing in `rollSpellFumble` / `rollSpellFumbleWithModifier`.
+Pre-exec audit confirmed zero consumers (lib orchestration never
+read the flag; DCC system + siblings + compendium content had
+none). Vendor-synced clean (`842e89a`, `dirty: false`); +1 vitest
+regression guard asserting the flag is absent from both fumble
+rollers. 925 Vitest + 98 Playwright green. Lib build: 1407 tests
+green.

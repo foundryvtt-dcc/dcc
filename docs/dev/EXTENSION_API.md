@@ -43,6 +43,15 @@ sites) and dcc-crawl-classes (9 sites) still call
 deadline. No undocumented `game.dcc.*` or `dcc.*` hook usage
 detected. The tables below reflect the re-audit.
 
+**Group E session 1 — 2026-05-18** added
+`dcc.registerMercurialMagicTable(classKey, tableName)` as a Stable
+hook from day one (see the table below). It lands the
+generalization that the §2.4 critique (and
+xcc-core-book's "DCC only supports one" comment) called for.
+Migration recipe for xcc-core-book in the "Sibling-module
+migration recipes" section below; the legacy `setMercurialMagicTable`
+hook stays Stable as a back-compat shim through the new registry.
+
 ## Stated contract: Foundry-smelling surface (§2.12)
 
 Per `ARCHITECTURE_REIMAGINED.md §2.12`, the DCC system must keep its
@@ -84,7 +93,8 @@ audited sibling modules for the path before slimming.
 | `dcc.setFumbleTable` | `module/settings.js:108` | `dcc-core-book`, `xcc-core-book` (emitters) | §2.10 | |
 | `dcc.setDivineAidTable` | `module/settings.js:172` | `dcc-core-book` (emitter) | §2.10 | |
 | `dcc.setLayOnHandsTable` | `module/settings.js:156` | `dcc-core-book` (emitter) | §2.10 | |
-| `dcc.setMercurialMagicTable` | `module/settings.js:188` | `dcc-core-book` (emitter); XCC explicitly cannot use this (see ARCHITECTURE_REIMAGINED.md §2.4) | §2.4 (hardcoded wizard/cleric magic system), §2.11 | Phase 2 needs to generalize this so XCC's two mercurial tables work without fighting the hook. |
+| `dcc.setMercurialMagicTable` | `module/settings.js:188` | `dcc-core-book` (emitter) | §2.4 (hardcoded wizard/cleric magic system), §2.11 | Single-table back-compat setter, kept stable. Now shims through `dcc.registerMercurialMagicTable('default', value)`; existing emitters keep working with no change. Modules that need per-class tables use the new hook below. |
+| `dcc.registerMercurialMagicTable` | `module/dcc.js` | `xcc-core-book` (after migration recipe below) | §2.4, §2.11 | `(classKey, tableName)` — register a mercurial-magic table for a specific class. `classKey` is the lowercase `system.details.sheetClass` (`'wizard'`, `'elf'`, `'blaster'`, `'gnome'`, …) or the literal `'default'`. Resolver walks per-class → `'default'` → legacy `CONFIG.DCC.mercurialMagicTable` mirror; first hit wins. Lands the Group E session 1 generalization that retires XCC's per-roll `CONFIG.DCC.mercurialMagicTable = …` monkey-patch (see migration recipe below). Stable from day one. |
 | `dcc.setTurnUnholyTable` | `module/settings.js:140` | `dcc-core-book` (emitter) | §2.10 | |
 | `dcc.afterComputeSpellCheck` | `module/actor.js:786` | `xcc` (consumed since 2026-05-18; `xcc/module/xcc.js:42` — XCC retired the `XCCActor` subclass + global `CONFIG.Actor.documentClass` replacement in favor of this hook) | §2.5 (Actor document class customization) | Fires at the end of `DCCActor.computeSpellCheck()` with `(actor)` after `system.class.spellCheck` has been populated by the default DCC computation. Listeners can observe or overwrite the result. Only fires when DCC actually computed something (the `!this.system.class` early-return path skips the hook so listeners don't have to defensively re-check). Stable from day one. |
 
@@ -144,10 +154,17 @@ None identified.
 1. **Preserve every "Stable" item verbatim** through Phases 1–3. Thin
    wrappers are fine; signatures and hook names are not negotiable
    without a deprecation window.
-2. **Generalize** `dcc.setMercurialMagicTable` in Phase 2. XCC already
-   hit a wall with it. The lib's per-class `CasterProfile.type`
-   (`@moonloch/dcc-core-lib` `spells/cast.ts`) plus a per-class table
-   registration gives the needed flexibility. (Addresses §2.4 + §2.11.)
+2. ~~**Generalize** `dcc.setMercurialMagicTable`~~ **Landed 2026-05-18
+   (Group E session 1).** New `dcc.registerMercurialMagicTable(classKey,
+   tableName)` hook + per-class registry at
+   `CONFIG.DCC.mercurialMagicTables`. The old `setMercurialMagicTable`
+   hook shims through `register('default', value)`, so existing
+   emitters (dcc-core-book etc.) keep working with no change. Resolver
+   walks per-class → `'default'` → legacy single-table mirror; both
+   the adapter spell-check path and the legacy `DCCItem.rollMercurialMagic`
+   item-sheet button use the same resolver, which is what lets XCC's
+   per-roll `CONFIG.DCC.mercurialMagicTable = …` monkey-patch retire.
+   See the XCC migration recipe below. (Addressed §2.4 + §2.11.)
 3. ~~**Resolve `dcc.update`**~~ **Resolved 2026-05-18.** Listener was
    speculative (XCC initial commit, no DCC emission ever). XCC
    `chore/drop-dead-dcc-update-hook` removes the listener; nothing
@@ -334,6 +351,79 @@ XCC currently does not register custom item sheets, so
 adds a future item sheet, the recipe mirrors the actor-sheet one
 above (substitute `registerItemSheet` for `registerActorSheet` and
 the appropriate item sub-types).
+
+### xcc-core-book migration: retiring the mercurial-magic monkey-patch
+
+**Goal:** Drop the per-roll `CONFIG.DCC.mercurialMagicTable = …`
+mutation in `xcc-core-book/module/xcc-item-sheet.js:49-58` (both
+`_rollMercurialMagic` and `_lookupMercurialMagic`) in favor of
+registering each XCC mercurial table once at `dcc.ready`. Before
+this migration, XCC sets the global mercurial-magic table on every
+roll based on `sheetClass`, which works but textbook-monkey-patches
+a piece of system state. Comment in
+`xcc-core-book/module/dccModule.js:66-67` ("XCC has 2 Mercurial
+tables and DCC only supports one. We don't call
+'setMercurialMagicTable' hook") was the long-standing tracking
+issue.
+
+**Why it's safe to retire:** the DCC system now keeps a per-class
+registry (`CONFIG.DCC.mercurialMagicTables`) populated via the new
+`dcc.registerMercurialMagicTable(classKey, tableName)` hook. Both
+the adapter cast path AND the legacy `DCCItem.rollMercurialMagic`
+item-sheet button use the same resolver, which walks the per-class
+slot first. Once XCC's two tables are registered against `'blaster'`
+and `'gnome'`, the item-sheet button looks up the right table by
+`actor.system.details.sheetClass` without any caller-side mutation.
+
+**Step 1 — register the tables.** In
+`xcc-core-book/module/dccModule.js`, replace the existing comment
+block (which currently explains *why* the registration is skipped)
+with the two `register` calls inside the existing `dcc.ready`
+handler:
+
+```js
+Hooks.once('dcc.ready', async function () {
+  // ...existing pack registrations...
+  Hooks.callAll('dcc.registerMercurialMagicTable', 'blaster',
+    'xcc-core-book.xcc-core-tables.Table 7-1: Blaster Mercurial Effects')
+  Hooks.callAll('dcc.registerMercurialMagicTable', 'gnome',
+    'xcc-core-book.xcc-core-tables.Table 7-2: Gnome Mercurial Effects')
+})
+```
+
+**Step 2 — drop the monkey-patch.** In
+`xcc-core-book/module/xcc-item-sheet.js:49-58`, delete the
+`CONFIG.DCC.mercurialMagicTable = sheetClass === 'gnome' ? … : …`
+line at the top of both `_rollMercurialMagic` and
+`_lookupMercurialMagic`. Each method becomes a pass-through:
+
+```js
+async _rollMercurialMagic (event, options) {
+  await this.document.rollMercurialMagic(undefined, options)
+}
+
+async _lookupMercurialMagic () {
+  await this.document.rollMercurialMagic(this.document.system.mercurialEffect.value)
+}
+```
+
+`DCCItem.rollMercurialMagic` now resolves the table via the registry
+keyed on `actor.system.details.sheetClass`, which for XCC actors
+is `'blaster'` or `'gnome'` — matching the registrations above.
+
+**Step 3 — verify.** Open an XCC PC with a blaster sheet, roll
+mercurial on a spell, confirm the rolled effect comes from Table
+7-1. Repeat with a gnome PC, confirm Table 7-2. Confirm DCC core
+wizard / elf casts on a vanilla world still resolve the
+core-book mercurial table (via the `'default'` slot the legacy
+`setMercurialMagicTable` shim populates).
+
+**No DCC system change required for this migration** — the registry
+hook ships stable on 2026-05-18 (see the "Stable" hooks table). The
+xcc-core-book maintainer can land both steps in a single PR on their
+own schedule. Until the migration lands, the legacy monkey-patch
+keeps working: it still writes to `CONFIG.DCC.mercurialMagicTable`,
+which is the last fallback in the resolver chain.
 
 ### dcc-qol migration: `critText` / `fumbleText` → `critResult` / `fumbleResult`
 

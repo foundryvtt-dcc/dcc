@@ -61,6 +61,15 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Group E session 1 (2026-05-18)** landed the per-class mercurial-
+magic table registry — new `dcc.registerMercurialMagicTable(classKey,
+tableName)` stable-from-day-one hook, `CONFIG.DCC.mercurialMagicTables`
+registry, resolver shared between the adapter cast path and the
+legacy `DCCItem.rollMercurialMagic` item-sheet button. Closes the
+§2.4 critique that XCC has been fighting since before Phase 0; the
+xcc-core-book monkey-patch (mutating `CONFIG.DCC.mercurialMagicTable`
+per roll) gets a migration recipe to retire it.
+
 Phase 3 is active but now narrow. `rollWeaponAttack` + all four
 chained calls (`rollToHit` / `rollDamage` / `rollCritical` /
 `rollFumble`) are single-path via the adapter (sessions 15 / 16 /
@@ -104,6 +113,31 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Group E session 1: per-class mercurial-magic table
+  registry.** New `dcc.registerMercurialMagicTable(classKey,
+  tableName)` Stable hook + `CONFIG.DCC.mercurialMagicTables`
+  registry. The legacy `setMercurialMagicTable` shim writes through
+  `register('default', value)`, so dcc-core-book / system-setting
+  callers keep working with no API change. Both the adapter cast
+  path (`_rollMercurialIfNeeded`, now taking `profile.type` from
+  `_castViaCalculateSpellCheck`) and the legacy
+  `DCCItem.rollMercurialMagic` item-sheet button go through the same
+  resolver (`spell-input.mjs:resolveMercurialMagicTableName`), which
+  walks per-class → `'default'` → legacy single-table mirror →
+  null. EXTENSION_API.md picks up the new Stable row + an
+  xcc-core-book migration recipe that retires the per-roll
+  `CONFIG.DCC.mercurialMagicTable = …` monkey-patch in
+  `xcc-core-book/module/xcc-item-sheet.js:49-58`. +5 Vitest tests in
+  `adapter-spell-check.test.js` (resolver cascade: per-class wins,
+  unregistered falls to default, empty registry falls to legacy
+  field then null; loader uses classKey end-to-end; wizard cast skips
+  when nothing matches). +2 Playwright cases in the dispatch spec
+  exercising the hook end-to-end against live Foundry (wizard-keyed
+  registration drives the cast; gnome-only registration with no
+  default produces `reason=noMercurialTable` for a wizard).
+  Closed `ARCHITECTURE_REIMAGINED.md` §2.4 generalization promise
+  ("XCC has 2 Mercurial tables and DCC only supports one" —
+  no longer true). 955 Vitest green (was 949, +6).
 - **2026-05-17 — Session 27 / Q7-phase2: spell-check modifier-
   dialog generalization.** Extended the session-26
   `promptRollModifierDialog` wrapper with an optional `spellburn`
@@ -231,18 +265,6 @@ archives linked above.
   (+1 net). Remaining D4 sub-branches (naked spell check + skill-table
   Turn Unholy + generic-on-patron-or-cleric staying legacy) tracked
   in `02-slice-backlog.md`.
-- **2026-04-24 — Session 23 / D3c: retire dormant
-  `SpellFumbleResult.patronTaint` flag.** Lib PR to
-  `dcc-core-lib@0.8.0` (commit `842e89a`, breaking change) removed
-  `.patronTaint` from `SpellFumbleResult` + the
-  `effect.type === 'patron-taint'` / `effect.data.patronTaint === true`
-  parsing in `rollSpellFumble` / `rollSpellFumbleWithModifier`.
-  Pre-exec audit confirmed zero consumers (lib orchestration never
-  read the flag; DCC system + siblings + compendium content had
-  none). Vendor-synced clean (`842e89a`, `dirty: false`); +1 vitest
-  regression guard asserting the flag is absent from both fumble
-  rollers. 925 Vitest + 98 Playwright green. Lib build: 1407 tests
-  green.
 - **2026-04-24 — Session 22 follow-ons: D3b-γ closed, D3b-β
   authored cross-repo.** Sibling audit: `mcc-classes` ships no
   packs; `dcc-crawl-classes/packs/` has no patron-taint JSONs.
@@ -745,20 +767,27 @@ and should be scheduled into Phase 4+ work.
 
 ## Next steps
 
-**Post-Q7-phase2 (2026-05-17) — Groups A, C, and D are fully
-closed; open question #7 fully closed; open question #3 closed
-2026-05-18 via XCC coordination.** `rollWeaponAttack` + all four
-chained calls are single-path via the adapter; `module/migrations.js`
-targets V14-era (0.66+) worlds only; patron-taint matches DCC RAW
-end-to-end; the unified roll-modifier dialog covers wizard / cleric
-/ naked spell checks + skill checks. Only one backlog candidate
-remains:
+**Post-Group-E-session-1 (2026-05-18) — Groups A, C, and D are
+fully closed; open questions #2, #3, #4, and #7 all closed
+2026-05-18.** `rollWeaponAttack` + all four chained calls are
+single-path via the adapter; `module/migrations.js` targets V14-era
+(0.66+) worlds only; patron-taint matches DCC RAW end-to-end; the
+unified roll-modifier dialog covers wizard / cleric / naked spell
+checks + skill checks. Group E session 1 added the per-class
+mercurial-magic table registry, closing the long-standing §2.4
+generalization promise. Remaining Group E candidates (any are
+viable next):
 
-1. **Group E vertical slice** (placeholder — needs explicit
-   pick): halfling, mercurial-magic, or homebrew single-class.
-   Would exercise Phase 4 + 5 + 6 end-to-end. Phase 4 (schema
-   slimming) has not started; Group E's halfling candidate is
-   the most natural Phase 4 starter.
+1. **Halfling vertical slice** — most natural Phase 4 starter
+   because it concentrates the schema-slimming question on one
+   class. Exercises §2.1 (monolithic Player schema) directly.
+2. **Homebrew single-class slice** — most ambitious; exercises
+   Phase 4 + 5 + 6 end-to-end via `registerClassMixin` +
+   `registerSheetPart` + variant-aware data loading. Largest blast
+   radius but lays the most pattern down.
+
+(Mercurial-magic, originally listed here as the third candidate,
+landed as Group E session 1 — see Recent slices.)
 
 **Cross-repo coordination:** if any migration uncovers a missing
 feature in the lib's tagged-union modifier (e.g. skill items with

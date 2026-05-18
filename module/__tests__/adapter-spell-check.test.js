@@ -23,7 +23,7 @@ import '../__mocks__/foundry.js'
 import DCCActor from '../actor.js'
 import DCCItem from '../item.js'
 import { createSpellEvents } from '../adapter/spell-events.mjs'
-import { buildSpellCheckArgs, loadPatronTaintTable } from '../adapter/spell-input.mjs'
+import { buildSpellCheckArgs, loadMercurialMagicTable, loadPatronTaintTable, resolveMercurialMagicTableName } from '../adapter/spell-input.mjs'
 import { promptRollModifierDialog } from '../adapter/roll-dialog.mjs'
 import { calculateSpellCheck as libCalcSpellCheckMock, rollSpellFumble, rollSpellFumbleWithModifier } from '../vendor/dcc-core-lib/index.js'
 
@@ -927,6 +927,204 @@ test('adapter wizard cast on a spell item that already has mercurial does not re
 
   CONFIG.DCC.mercurialMagicTable = originalTable
   game.tables = originalTables
+  findSpy.mockRestore()
+})
+
+// =========================================================================
+// Group E session 1 — per-class mercurial-magic table registry
+// =========================================================================
+//
+// `resolveMercurialMagicTableName(classKey)` walks the per-class
+// registry (`CONFIG.DCC.mercurialMagicTables`) first, then the
+// `'default'` slot, then the legacy `CONFIG.DCC.mercurialMagicTable`
+// world-setting mirror. These tests assert each step of the cascade
+// in isolation; the integration coverage that the resolver actually
+// drives `loadMercurialMagicTable` is the third test below.
+
+test('resolveMercurialMagicTableName: per-class registration wins over default', () => {
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+
+  CONFIG.DCC.mercurialMagicTables = {
+    default: 'core.tables.Default Mercurial',
+    blaster: 'xcc-core-book.xcc-core-tables.Table 7-1: Blaster Mercurial Effects',
+    gnome: 'xcc-core-book.xcc-core-tables.Table 7-2: Gnome Mercurial Effects'
+  }
+  CONFIG.DCC.mercurialMagicTable = 'core.tables.Default Mercurial'
+
+  expect(resolveMercurialMagicTableName('blaster')).toBe(
+    'xcc-core-book.xcc-core-tables.Table 7-1: Blaster Mercurial Effects'
+  )
+  expect(resolveMercurialMagicTableName('gnome')).toBe(
+    'xcc-core-book.xcc-core-tables.Table 7-2: Gnome Mercurial Effects'
+  )
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
+})
+
+test('resolveMercurialMagicTableName: unregistered class falls back to default registration', () => {
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+
+  CONFIG.DCC.mercurialMagicTables = {
+    default: 'core.tables.Default Mercurial',
+    blaster: 'xcc-core-book.xcc-core-tables.Table 7-1: Blaster Mercurial Effects'
+  }
+  CONFIG.DCC.mercurialMagicTable = 'legacy-mirror'
+
+  // Wizard isn't class-registered → falls to default.
+  expect(resolveMercurialMagicTableName('wizard')).toBe('core.tables.Default Mercurial')
+  // No classKey at all → also default.
+  expect(resolveMercurialMagicTableName()).toBe('core.tables.Default Mercurial')
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
+})
+
+test('resolveMercurialMagicTableName: empty registry falls back to legacy field, then null', () => {
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+
+  // Empty registry, legacy field set — legacy wins.
+  CONFIG.DCC.mercurialMagicTables = {}
+  CONFIG.DCC.mercurialMagicTable = 'legacy-mirror'
+  expect(resolveMercurialMagicTableName('wizard')).toBe('legacy-mirror')
+
+  // Empty registry, legacy field unset — null.
+  CONFIG.DCC.mercurialMagicTable = null
+  expect(resolveMercurialMagicTableName('wizard')).toBe(null)
+  expect(resolveMercurialMagicTableName()).toBe(null)
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
+})
+
+test('loadMercurialMagicTable: classKey selects the class-specific world table', async () => {
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+  const originalGameTables = game.tables
+
+  CONFIG.DCC.mercurialMagicTables = {
+    default: 'Default Mercurial',
+    blaster: 'Blaster Mercurial'
+  }
+  CONFIG.DCC.mercurialMagicTable = 'Default Mercurial'
+
+  const blasterTable = {
+    id: 'blaster',
+    name: 'Blaster Mercurial',
+    results: [{ range: [-20, 130], description: 'Energy crackles.' }]
+  }
+  const defaultTable = {
+    id: 'default',
+    name: 'Default Mercurial',
+    results: [{ range: [-20, 130], description: 'Blue aura.' }]
+  }
+  game.tables = {
+    getName: (name) => {
+      if (name === 'Blaster Mercurial') return blasterTable
+      if (name === 'Default Mercurial') return defaultTable
+      return null
+    },
+    find: () => null
+  }
+
+  const blasterLib = await loadMercurialMagicTable('blaster')
+  expect(blasterLib?.name).toBe('Blaster Mercurial')
+  expect(blasterLib?.entries?.[0]?.summary).toBe('Energy crackles')
+
+  const wizardLib = await loadMercurialMagicTable('wizard')
+  expect(wizardLib?.name).toBe('Default Mercurial')
+  expect(wizardLib?.entries?.[0]?.summary).toBe('Blue aura')
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
+  game.tables = originalGameTables
+})
+
+test('adapter wizard first-cast threads profile.type through to loadMercurialMagicTable', async () => {
+  rollToMessageMock.mockClear()
+
+  // Register a wizard-specific table; leave 'default' unset so we can
+  // assert the class-keyed slot is what got picked. The cleanup also
+  // restores the original registry so other tests in this file are
+  // unaffected.
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+  const originalGameTables = game.tables
+  CONFIG.DCC.mercurialMagicTables = {
+    wizard: 'Wizard-only Mercurial'
+  }
+  CONFIG.DCC.mercurialMagicTable = null
+
+  const wizardTable = {
+    id: 'wiz-merc',
+    name: 'Wizard-only Mercurial',
+    results: [{ range: [-20, 130], description: 'Wizard sparkle. Spell tingles.' }]
+  }
+  game.tables = {
+    getName: (name) => (name === 'Wizard-only Mercurial' ? wizardTable : null),
+    find: () => null
+  }
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // The wizard-class-specific table was the one used — summary is the
+  // leading sentence-fragment of the wizard-table row.
+  expect(spellItem.update).toHaveBeenCalledWith(expect.objectContaining({
+    'system.mercurialEffect.summary': 'Wizard sparkle'
+  }))
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
+  game.tables = originalGameTables
+  findSpy.mockRestore()
+})
+
+test('adapter wizard first-cast skips mercurial when neither class nor default registered', async () => {
+  rollToMessageMock.mockClear()
+
+  // Registry has 'blaster' only — wizard cast finds neither 'wizard'
+  // nor 'default', legacy field is null → resolver returns null →
+  // adapter logs `reason=noMercurialTable` and skips the pre-roll.
+  // Proves the fallback chain terminates instead of silently picking
+  // an unrelated class's table.
+  const originalTables = CONFIG.DCC.mercurialMagicTables
+  const originalDefault = CONFIG.DCC.mercurialMagicTable
+  CONFIG.DCC.mercurialMagicTables = {
+    blaster: 'Blaster Mercurial'
+  }
+  CONFIG.DCC.mercurialMagicTable = null
+
+  // noinspection JSCheckFunctionSignatures
+  const actor = new DCCActor()
+  actor.system.class.patron = ''
+  actor.system.class.className = 'Wizard'
+  actor.system.details.sheetClass = 'Wizard'
+
+  const spellItem = makeWizardSpellItem()
+  const findSpy = vi.spyOn(actor.items, 'find').mockReturnValue(spellItem)
+
+  await actor.rollSpellCheck({ spell: 'Magic Missile' })
+
+  // No mercurialEffect.* update happened — the pre-roll was skipped.
+  const mercurialUpdates = spellItem.update.mock.calls.filter(([data]) =>
+    Object.keys(data || {}).some((k) => k.startsWith('system.mercurialEffect'))
+  )
+  expect(mercurialUpdates).toHaveLength(0)
+
+  CONFIG.DCC.mercurialMagicTables = originalTables
+  CONFIG.DCC.mercurialMagicTable = originalDefault
   findSpy.mockRestore()
 })
 

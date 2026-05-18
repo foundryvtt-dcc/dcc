@@ -528,9 +528,18 @@ class DCCItem extends Item {
       roll = await game.dcc.DCCRoll.createRoll(terms, {}, options)
     }
 
-    // Lookup the mercurial magic table if available
+    // Lookup the mercurial magic table if available — per-class
+    // registry first (via `dcc.registerMercurialMagicTable`), then the
+    // `'default'` registration, then the legacy single-table mirror.
+    // Variants like XCC's blaster / gnome register their own tables
+    // and get class-keyed lookups; canonical DCC casters keep using
+    // the world-setting default.
     let mercurialMagicResult = null
-    const mercurialMagicTableName = CONFIG.DCC.mercurialMagicTable
+    const classKey = actor.system?.details?.sheetClass || undefined
+    const registry = CONFIG.DCC.mercurialMagicTables || {}
+    const mercurialMagicTableName = (classKey && registry[classKey]) ||
+      registry.default ||
+      CONFIG.DCC.mercurialMagicTable
     if (mercurialMagicTableName) {
       const mercurialMagicTablePath = mercurialMagicTableName.split('.')
       let pack
