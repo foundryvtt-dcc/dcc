@@ -28,7 +28,19 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 1 closed. Phase 2 CLOSED 2026-04-18. Phase 3
+**Status:** **Phase 4 session 1 (2026-05-18) opened the halfling
+vertical with the `game.dcc.registerClassMixin(classId, mixinFn)`
+infrastructure** — new stable extension helper, `CONFIG.DCC.classMixins`
+registry, deterministic-sorted application during
+`PlayerData.defineSchema()` (before the existing
+`dcc.definePlayerSchema` hook). DCC dogfoods its own seed by
+registering a built-in `'halfling'` mixin in `module/dcc.js:init` that
+contributes `skills.sneakAndHide`; the static halfling block in
+`module/data/actor/player-data.mjs` is deleted. First chip away at
+§2.1's monolithic Player schema; Foundry-smelling shape
+(`system.skills.sneakAndHide`) intact per §2.12. +11 Vitest, +3
+Playwright. 966 Vitest green (was 955). **Phase 1 closed. Phase 2
+CLOSED 2026-04-18. Phase 3
 sessions 1–4 all CLOSED 2026-04-18. Phase 3 sessions 5 (first
 damage-migration slice), 6 (crit + fumble migration), 7 (NPC
 damage-bonus adapter route with proper attribution), 8 (PC magic-
@@ -371,31 +383,50 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**Group E session 1 (2026-05-18) landed the per-class mercurial-
-magic table registry** — closed the §2.4 generalization promise
-that's been open since before Phase 0. New
-`dcc.registerMercurialMagicTable(classKey, tableName)` Stable
-hook + `CONFIG.DCC.mercurialMagicTables` registry; resolver
-shared between the adapter cast path and the legacy
-`DCCItem.rollMercurialMagic` item-sheet button. Legacy
-`setMercurialMagicTable` hook shims through `register('default',
-value)` for back-compat — existing dcc-core-book / world-setting
-callers unchanged. xcc-core-book has a migration recipe in
-`EXTENSION_API.md` to drop its per-roll
-`CONFIG.DCC.mercurialMagicTable = …` monkey-patch in favor of two
-`register` calls at `dcc.ready`; that's a sibling-side PR, not a
-DCC change.
+**Phase 4 session 1 (2026-05-18) opened the halfling vertical** —
+new `game.dcc.registerClassMixin(classId, mixinFn)` stable
+extension helper + `CONFIG.DCC.classMixins` registry. Mixins run
+in deterministic-sorted classId order during
+`PlayerData.defineSchema()`, **before** the existing
+`dcc.definePlayerSchema` hook (so external handlers still see
+mixin-contributed fields). `module/dcc.js`'s init registers a
+built-in `'halfling'` mixin contributing
+`skills.sneakAndHide` (`StringField`, initial `'+3'`); the static
+halfling block in `module/data/actor/player-data.mjs` is deleted.
+Last-write-wins semantics on duplicate `classId` matches the
+mercurial-magic registry's behavior — siblings can fully replace a
+DCC built-in instead of additively patching. First chip away at
+§2.1's monolithic schema. EXTENSION_API.md grew a new Stable
+`game.dcc.registerClassMixin` row, refreshed the
+`dcc.definePlayerSchema` row, and added a homebrew migration
+recipe. +11 Vitest (`extension-api.test.js`), +3 Playwright
+(`extension-api.spec.js`).
 
-**Remaining Group E candidates** (mercurial-magic landed as
-session 1):
+**Remaining Phase 4 (halfling vertical) candidates:**
 
-1. **Halfling vertical slice** — most natural Phase 4 starter
-   because it concentrates the schema-slimming question on one
-   class. Exercises §2.1 (monolithic Player schema) directly.
-2. **Homebrew single-class slice** — most ambitious; exercises
-   Phase 4 + 5 + 6 end-to-end via `registerClassMixin` +
-   `registerSheetPart` + variant-aware data loading.
-3. **`game.dcc.processSpellCheck` audit + retirement decision.**
+1. **Extract a second class's fields onto its mixin.** Recommended
+   pick: dwarf `shieldBash` (single field, mixed types — `DiceField`
+   + `BooleanField` + `StringField` — low blast radius, exercises
+   the registry across non-trivial field shapes). Thief block
+   (13 skills + 2 class fields) and cleric block (disapproval +
+   spells + 3 skills) are bigger §2.1 wins per slice but warrant
+   later sessions when the pattern is well-exercised. See
+   `docs/02-slice-backlog.md` "Phase 4 — Active sub-arc" for the
+   inventory.
+2. **Class-id dispatch helper** — replace the remaining
+   `system.details.sheetClass === 'Halfling'` string checks in
+   `actor.js:3265-3266` + `item.js:70-103` with a single
+   `actor.classId` accessor. Appendix C tracks the post-Phase-1
+   form of the halfling i18n stopgap.
+3. **Phase 5 work (halfling sheet-tab composition)** — out of scope
+   for Phase 4 sessions; tracked in the backlog for later.
+
+**Other still-viable Group E candidates** (independent of halfling):
+
+4. **Homebrew single-class slice** — with `registerClassMixin` now
+   in place, this becomes a thinner exercise. Still validates §2.8
+   end-to-end once Phase 5 sheet composition lands.
+5. **`game.dcc.processSpellCheck` audit + retirement decision.**
    The function is pinned as permanent stable API but is now only
    reached via `DCCItem.rollSpellCheck` fallbacks. Could be slimmed
    significantly (patron-taint codepath is dead post-D3, the

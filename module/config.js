@@ -625,6 +625,17 @@ DCC.mercurialMagicTable = null
 // readers. Populated via the `dcc.registerMercurialMagicTable` hook.
 DCC.mercurialMagicTables = {}
 
+// Per-class schema-mixin registry, keyed by lowercase canonical class
+// identifier (`'halfling'`, `'warrior'`, `'cleric'`, …). Each entry is
+// a mutator function invoked during `PlayerData.defineSchema()` to
+// contribute class-specific fields onto the schema (typically into
+// `schema.skills.fields` or `schema.class.fields`). Populated via the
+// `game.dcc.registerClassMixin` extension helper. Phase 4 §2.1 — the
+// long-term direction is for every class-bound field on the monolithic
+// Player schema to relocate to its class mixin; session 1 ships the
+// infrastructure plus a built-in `'halfling'` mixin for `sneakAndHide`.
+DCC.classMixins = {}
+
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks

@@ -2,10 +2,15 @@
 /**
  * Data model for Player actors
  * Players use all class templates merged together:
- * common, config, player, cleric, thief, halfling, warrior, wizard, dwarf, elf
+ * common, config, player, cleric, thief, warrior, wizard, dwarf, elf.
+ * Class-specific fields (starting with halfling's `sneakAndHide` as of
+ * Phase 4 session 1) are contributed via the `game.dcc.registerClassMixin`
+ * registry instead of living in the static schema body — see
+ * `applyClassMixins` below and `docs/dev/EXTENSION_API.md`.
  */
 import { BaseActorData } from './base-actor.mjs'
 import { DiceField, isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
+import { applyClassMixins } from '../../extension-api.mjs'
 
 const { SchemaField, StringField, NumberField, BooleanField, HTMLField } = foundry.data.fields
 
@@ -183,11 +188,11 @@ export class PlayerData extends BaseActorData {
           value: new StringField({ initial: '0' })
         }),
 
-        // Halfling skills
-        sneakAndHide: new SchemaField({
-          label: new StringField({ initial: 'DCC.SneakAndHide' }),
-          value: new StringField({ initial: '+3' })
-        }),
+        // Halfling skills contributed via the `'halfling'` entry in
+        // `CONFIG.DCC.classMixins` (see `module/dcc.js`'s built-in
+        // registration). Phase 4 session 1 relocation — keeps the
+        // Foundry-smelling shape (`skills.sneakAndHide`) intact while
+        // moving the source-of-truth onto the per-class registry.
 
         // Dwarf skills
         shieldBash: new SchemaField({
@@ -221,6 +226,15 @@ export class PlayerData extends BaseActorData {
         showSwimFlySpeed: new BooleanField({ initial: false })
       })
     }
+
+    /**
+     * Apply registered class mixins BEFORE the public extension hook
+     * fires so `dcc.definePlayerSchema` handlers can observe (and
+     * further mutate) mixin-contributed fields. Order within the
+     * registry is deterministic (sorted classId keys) — see
+     * `applyClassMixins`.
+     */
+    applyClassMixins(schema)
 
     /**
      * Allow modules to extend the Player schema by adding fields to existing SchemaFields

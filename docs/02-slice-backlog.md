@@ -483,11 +483,13 @@ full-stack approach works end-to-end with a real sibling consumer.
 
 **Candidates (pick one at slice time):**
 
-1. **Halfling vertical** — slim halfling-specific fields out of
-   Player schema (Phase 4 slice), add halfling-tab sheet composition
-   (Phase 5 slice), register halfling as a class-mixin consumed by
-   `mcc-classes`' halfling equivalent. Most architecturally
-   informative — touches data model + sheet composition + mixin API.
+1. **Halfling vertical** — **STARTED 2026-05-18 (Phase 4 session 1).**
+   Session 1 landed the `game.dcc.registerClassMixin` infrastructure +
+   relocated `skills.sneakAndHide` off the monolithic Player schema
+   onto a built-in DCC `'halfling'` mixin (see "Phase 4 — Active
+   sub-arc" below for remaining sub-slices: more class-bound fields,
+   class-id dispatch, halfling sheet-tab composition, variant
+   registration).
 2. ~~**Mercurial-magic vertical**~~ — **DONE 2026-05-18 (Group E
    session 1).** New `dcc.registerMercurialMagicTable(classKey,
    tableName)` Stable hook + `CONFIG.DCC.mercurialMagicTables`
@@ -499,16 +501,82 @@ full-stack approach works end-to-end with a real sibling consumer.
    resolved the §2.4 critique.
 3. **Single-class homebrew vertical** — pick a fan-made class (e.g.,
    from `dcc-crawl-classes`), rewire it as a class-mixin + sheet-part
-   registration. Validates §2.8 homebrew extensibility.
+   registration. Validates §2.8 homebrew extensibility. With the
+   `registerClassMixin` infrastructure now in place, this becomes a
+   thinner exercise — just register the mixin + add the sheet part.
 
-Halfling or homebrew is the natural next pick to actually exercise
-Phase 4 + 5 + 6 end-to-end.
+---
+
+### Phase 4 — Active sub-arc (halfling vertical, in progress)
+
+#### ~~Phase 4 session 1. `registerClassMixin` infrastructure + halfling `sneakAndHide` extraction.~~ **DONE 2026-05-18**
+New stable extension helper `game.dcc.registerClassMixin(classId,
+mixinFn)` in `module/extension-api.mjs` (companion
+`applyClassMixins(schema)` invoked by `PlayerData.defineSchema()` in
+deterministic-sorted classId order, **before** the existing
+`dcc.definePlayerSchema` hook). `CONFIG.DCC.classMixins = {}` seeded
+in `module/config.js`. `module/dcc.js`'s init registers a built-in
+`'halfling'` mixin contributing `skills.sneakAndHide`; the static
+halfling block in `player-data.mjs` is deleted. Foundry-smelling shape
+(`system.skills.sneakAndHide`) stays intact (preserves §2.12).
+Last-write-wins semantics match the mercurial-magic registry's
+behavior. +11 Vitest, +3 Playwright. EXTENSION_API.md grew a new
+Stable `game.dcc.registerClassMixin` row, refreshed the
+`dcc.definePlayerSchema` row, and added a "Homebrew / sibling-module
+recipe: registerClassMixin" migration entry.
+
+#### Phase 4 session 2 (next). Extract a second class's fields onto its mixin.
+Candidates (pick when starting):
+- **Dwarf `shieldBash` skill** — single-field move analogous to
+  halfling. Lowest-risk dogfood of the pattern with a different
+  field shape (uses `DiceField`, `BooleanField`, `StringField`
+  ability instead of just `StringField`). Confirms the registry
+  handles non-trivial field types.
+- **Thief skill block** — 13 skills + `class.luckDie` + `class.backstab`.
+  Largest single-class block on the schema; biggest §2.1 win in one
+  go but also the highest surface-area-touched (sheets, parsers,
+  migrations, browser-test baselines reference these fields). Better
+  as a later slice when the pattern is exercised.
+- **Cleric block** — disapproval + spells 1–5 + deity + 3 skills
+  (`divineAid` / `turnUnholy` / `layOnHands`). Mid-size; some fields
+  are read by adapter spell-check code (`spellCheckAbility`,
+  `disapproval`, `disapprovalTable`) — needs care that the mixin is
+  registered before any spell-check path reads them.
+
+Recommend dwarf for session 2 (single field, mixed types, low blast
+radius). Defer thief / cleric until the pattern is well-exercised.
+
+#### Phase 4 session 3+ (future).
+- **Class-id dispatch helper** — replace the remaining
+  `system.details.sheetClass === 'Halfling'` string checks in
+  `actor.js:3265-3266` + `item.js:70-103` with a single
+  `actor.classId` accessor reading the canonical lowercase ID.
+  Tied to the eventual `Character.classId` projection from the lib.
+  Appendix C tracks this as the post-Phase-1 form of the halfling
+  i18n stopgap.
+- **Halfling sheet-tab composition (Phase 5 work)** — collapse
+  `DCCActorSheetHalfling`'s class-specific tab/template into a
+  `dcc.registerSheetPart({ classId: 'halfling', tab, template })`
+  registration. Out of scope for Phase 4.
+- **Halfling variant-class registration with the lib (Phase 6
+  work)** — register the halfling class progression with
+  `dcc-core-lib`'s class registry so save bonuses / crit dies /
+  action dies derive from `lib.getSavingThrows('halfling', level)`
+  etc., not from `levelData` packs alone. Out of scope for Phase 4.
 
 ---
 
 ## Completed slices
 
 Move entries here as they land; keep the active queue scannable.
+
+### Phase 4 (Halfling vertical kickoff)
+
+- Phase 4 session 1 (2026-05-18): `game.dcc.registerClassMixin` +
+  `applyClassMixins` shipped; `'halfling'` mixin contributes
+  `skills.sneakAndHide`; static schema body slimmed by one block.
+  +11 Vitest, +3 Playwright; EXTENSION_API.md entries + homebrew
+  recipe added.
 
 ### Phase 3 sessions 1–9 (2026-04-18 → 2026-04-19)
 

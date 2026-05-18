@@ -31,7 +31,7 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
-import { registerActorSheet, registerItemSheet } from './extension-api.mjs'
+import { registerActorSheet, registerClassMixin, registerItemSheet } from './extension-api.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -65,6 +65,21 @@ Hooks.once('init', async function () {
   console.log(`DCC | Initializing Dungeon Crawl Classics System\n${DCC.ASCII}`)
 
   CONFIG.DCC = DCC
+
+  // Register built-in DCC class mixins before the Player schema is
+  // first constructed. Phase 4 session 1 — `sneakAndHide` is the
+  // first class-bound field relocated off the monolithic
+  // `module/data/actor/player-data.mjs` static body and onto its
+  // class's mixin. Subsequent slices extract additional fields the
+  // same way; sibling modules contribute their own classes' mixins
+  // via `game.dcc.registerClassMixin` (see `docs/dev/EXTENSION_API.md`).
+  registerClassMixin('halfling', (schema) => {
+    const fields = foundry.data.fields
+    schema.skills.fields.sneakAndHide = new fields.SchemaField({
+      label: new fields.StringField({ initial: 'DCC.SneakAndHide' }),
+      value: new fields.StringField({ initial: '+3' })
+    })
+  })
 
   // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
@@ -115,6 +130,7 @@ Hooks.once('init', async function () {
     getSkillTable,
     processSpellCheck,
     registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerClassMixin, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove

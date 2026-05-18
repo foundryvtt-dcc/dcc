@@ -259,4 +259,65 @@ test.describe('DCC Extension API', () => {
     // pulled the prior default and our register replaced it.
     expect(result.otherDefaults).toEqual([])
   })
+
+  // -------------------------------------------------------------------
+  // registerClassMixin (Phase 4 session 1)
+  // -------------------------------------------------------------------
+
+  test('game.dcc.registerClassMixin is exposed and is a function', async ({ page }) => {
+    const result = await page.evaluate(() => ({
+      hasFn: typeof game.dcc.registerClassMixin === 'function',
+      keys: Object.keys(game.dcc).filter(k => k === 'registerClassMixin')
+    }))
+    expect(result.hasFn).toBe(true)
+    expect(result.keys).toEqual(['registerClassMixin'])
+  })
+
+  test('built-in halfling mixin contributes sneakAndHide to a Player actor schema', async ({ page }) => {
+    // Proves the registry is actually plumbed into PlayerData.defineSchema()
+    // end-to-end against live Foundry — not just stored in CONFIG.DCC.classMixins.
+    // The built-in halfling mixin registers in module/dcc.js's init hook before
+    // any document is constructed, so every Player in the world resolves the field.
+    const result = await page.evaluate(async () => {
+      const halflingMixin = CONFIG.DCC?.classMixins?.halfling
+      const player = await Actor.create({ name: 'P4S1 Halfling Probe', type: 'Player' })
+      const skillsField = player.system.schema.fields.skills
+      const sneakAndHideField = skillsField?.fields?.sneakAndHide ?? null
+      const sneakAndHideValue = player.system.skills?.sneakAndHide?.value ?? null
+      const sneakAndHideLabel = player.system.skills?.sneakAndHide?.label ?? null
+      await player.delete()
+      return {
+        mixinIsFunction: typeof halflingMixin === 'function',
+        hasSchemaField: sneakAndHideField !== null,
+        sneakAndHideValue,
+        sneakAndHideLabel
+      }
+    })
+    expect(result.mixinIsFunction).toBe(true)
+    expect(result.hasSchemaField).toBe(true)
+    expect(result.sneakAndHideValue).toBe('+3')
+    expect(result.sneakAndHideLabel).toBe('DCC.SneakAndHide')
+  })
+
+  test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
+    // The mercurial-magic registry's last-write-wins semantic
+    // matters for sibling modules that want to fully replace a
+    // DCC built-in (e.g. an XCC halfling variant). Restore the
+    // original after — the live world relies on it for every
+    // subsequent Player document.
+    const result = await page.evaluate(() => {
+      const original = CONFIG.DCC.classMixins.halfling
+      const replacement = (schema) => { schema.__probe = 'replaced' }
+      game.dcc.registerClassMixin('halfling', replacement)
+      const after = CONFIG.DCC.classMixins.halfling
+      // Restore so subsequent tests / world state stay correct.
+      game.dcc.registerClassMixin('halfling', original)
+      return {
+        replaced: after === replacement,
+        restored: CONFIG.DCC.classMixins.halfling === original
+      }
+    })
+    expect(result.replaced).toBe(true)
+    expect(result.restored).toBe(true)
+  })
 })

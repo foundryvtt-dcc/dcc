@@ -144,3 +144,85 @@ export function registerActorSheet (types, SheetClass, options = {}, deps = {}) 
   if (normalizedTypes) registerOptions.types = normalizedTypes
   ActorsImpl.registerSheet(scope, SheetClass, registerOptions)
 }
+
+/**
+ * Register a class-specific schema mixin for the Player document type.
+ * Closes the §2.1 (monolithic Player schema) pain point: today every
+ * Player carries every official DCC class's fields hardcoded in
+ * `module/data/actor/player-data.mjs`, and sibling modules can only
+ * *add* via `dcc.definePlayerSchema` — they cannot relocate the
+ * built-in fields. `registerClassMixin` lets the system itself
+ * contribute class-specific schema fields through the same registry
+ * that sibling modules will use for homebrew classes (Phase 4 / §2.8).
+ *
+ * The mixin function is invoked during `PlayerData.defineSchema()`
+ * (after the static base body, **before** the existing
+ * `dcc.definePlayerSchema` hook fires) with the in-progress schema
+ * object. Mixins typically attach fresh `SchemaField` instances onto
+ * `schema.skills.fields` or `schema.class.fields` — each call must
+ * build new field instances because Foundry's TypeDataModel may
+ * re-invoke `defineSchema()` and field objects are not shareable
+ * across schemas.
+ *
+ * Phase 4 session 1 ships this hook alongside a built-in `'halfling'`
+ * mixin that contributes the `sneakAndHide` skill. Subsequent phases
+ * relocate additional class-bound fields (thief skills, cleric
+ * disapproval, wizard patron, etc.) onto their respective mixins.
+ *
+ * `classId` is the lowercase canonical class identifier (`'halfling'`,
+ * `'warrior'`, `'cleric'`, …) — the same convention `EXTENSION_API.md`
+ * documents for class dispatch. Re-registering an existing `classId`
+ * silently overwrites the prior mixin (matches the mercurial-magic
+ * registry's last-write-wins semantic).
+ *
+ * Stable from day one (per `EXTENSION_API.md` recommendation 7).
+ *
+ * @param {string} classId - lowercase canonical class identifier.
+ * @param {(schema: object) => void} mixinFn - mutator invoked with the
+ *   in-progress Player schema; expected to add fields under
+ *   `schema.skills.fields` / `schema.class.fields` / etc.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - `CONFIG` namespace (defaults to
+ *   `globalThis.CONFIG`).
+ */
+export function registerClassMixin (classId, mixinFn, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  if (!classId || typeof classId !== 'string') {
+    throw new Error('registerClassMixin: classId must be a non-empty string')
+  }
+  if (typeof mixinFn !== 'function') {
+    throw new Error('registerClassMixin: mixinFn must be a function')
+  }
+  if (!CONFIGImpl?.DCC) {
+    throw new Error('registerClassMixin: CONFIG.DCC unavailable')
+  }
+  CONFIGImpl.DCC.classMixins ??= {}
+  CONFIGImpl.DCC.classMixins[classId] = mixinFn
+}
+
+/**
+ * Apply all registered class mixins to a Player schema in deterministic
+ * order. Used by `PlayerData.defineSchema()`; the deterministic-order
+ * guarantee (sorted classId keys) makes the resulting schema shape
+ * reproducible regardless of mixin registration order, which matters
+ * for migration replay + test determinism. Exported for tests; not
+ * part of the public `game.dcc.*` surface.
+ *
+ * @param {object} schema - the in-progress Player schema being built.
+ * @param {object} [deps] - Dependency injection for tests.
+ * @param {object} [deps.CONFIG] - `CONFIG` namespace (defaults to
+ *   `globalThis.CONFIG`).
+ */
+export function applyClassMixins (schema, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  const registry = CONFIGImpl?.DCC?.classMixins
+  if (!registry) return
+  const classIds = Object.keys(registry).sort()
+  for (const classId of classIds) {
+    const mixinFn = registry[classId]
+    if (typeof mixinFn === 'function') {
+      mixinFn(schema)
+    }
+  }
+}

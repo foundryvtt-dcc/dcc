@@ -83,7 +83,7 @@ audited sibling modules for the path before slimming.
 |---|---|---|---|---|
 | `dcc.ready` | `module/dcc.js:347` | `xcc`, `dcc-annual-1`, `xcc-core-book`, `dcc-core-book` | §2.10 (content packs are the hand-off boundary between rules + data) | Content modules register their packs on this hook. Any change breaks every content module. |
 | `dcc.defineBaseActorSchema` | `module/data/actor/base-actor.mjs:282` | `xcc`, `mcc-classes`, `dcc-crawl-classes` | §2.1 (monolithic Player schema), §2.8 (homebrew classes) | Fires inside `defineSchema()` to let variants extend the base actor schema. |
-| `dcc.definePlayerSchema` | `module/data/actor/player-data.mjs:245` | `xcc`, `mcc-classes`, `dcc-crawl-classes` | §2.1, §2.8, §2.11 (relieves module-extension pressure) | Same as above, for the Player schema. Phase 4 plans to *supplement* this with `dcc.registerClassMixin` but keep the hook. |
+| `dcc.definePlayerSchema` | `module/data/actor/player-data.mjs` | `xcc`, `mcc-classes`, `dcc-crawl-classes` | §2.1, §2.8, §2.11 (relieves module-extension pressure) | Same as above, for the Player schema. **Phase 4 session 1 (2026-05-18)** added a sibling `game.dcc.registerClassMixin` registry that runs *before* this hook so class-bound fields can move off the monolithic static body; the hook stays the public extension surface for arbitrary cross-cutting schema extensions that aren't naturally class-keyed (rewards, world-specific config blocks, etc.). |
 | `dcc.modifyAttackRollTerms` | `module/actor.js:1867` | `dcc-qol` (3 handlers), `xcc` (self-emission) | §2.5 (extension surface), §2.11 | Lets modules modify the terms of an attack roll before it's evaluated. `dcc-qol`'s primary integration point. Phase 3 sessions 3–4 fully bridged it through the adapter (pushed `Modifier` terms surface as `libResult.bonuses`; in-place `terms[0].formula` mutations reflect into `libResult.die`). |
 | `dcc.rollWeaponAttack` | `module/actor.js:1782` | `dcc-qol`, `xcc` (several sheets emit + listen) | §2.5, §2.11 | Fired after a weapon attack resolves. Carries `rolls` and `messageData`. |
 | `dcc.postActorImport` | `module/parser.js:273` | `xcc` (self-emission) | §2.5 | Fired after Purple Sorcerer / stat-block import. |
@@ -124,6 +124,7 @@ Set in `module/dcc.js:108–121`.
 | `game.dcc.processSpellCheck` | function | `xcc` (`xcc-actor-sheet.js` for wizard + cleric spells) | §2.4 (magic system), §2.5, §2.11 | Post-roll spell-check orchestrator: pre-built `Roll` + optional `RollTable` → patron taint check + crit/fumble classification + result-table lookup + level-added crit totaling + `SpellResult` chat render + wizard spell loss / cleric disapproval gating. **Phase 2 close (2026-04-18) finalized this as a permanent stable API** — not a deprecation target. The adapter dispatcher (`DCCActor.rollSpellCheck`) routes the happy-path generic / wizard / cleric / patron-bound casts through `_castViaCastSpell` / `_castViaCalculateSpellCheck`; everything else (result-table spells, naked pre-built-Roll calls, skill-table spells like Turn Unholy, XCC sheet paths with elf-trickster / blaster tweaks) continues to invoke `processSpellCheck`. Future adapter capability growth (result-table rendering, manifestation, forceCrit, mercurial display w/o race condition) can progressively migrate routes; `processSpellCheck` stays as the fallback orchestrator indefinitely. See `docs/00-progress.md` Phase 2 close-out for the inventory and rationale. |
 | `game.dcc.registerItemSheet` | function | (none yet — stable from day one per recommendation 7) | §2.5 (extension surface), §2.11 | `(types, SheetClass, options?)` — single declarative call that folds the `Items.unregisterSheet('core', ItemSheetV2) + Items.registerSheet(scope, SheetClass, …)` boilerplate. `types` is `string \| string[] \| undefined` (undefined → all sub-types). `options.makeDefault: true` (the common case) also unregisters Foundry's core `ItemSheetV2` for the same `types` so the new sheet wins the default-pick. Source: `module/extension-api.mjs`. Added 2026-04-19 (Group B1). DCC's own `DCCItemSheet` registration was migrated to dogfood the helper — see `module/dcc.js`. |
 | `game.dcc.registerActorSheet` | function | `xcc` (all 19 sites migrated; `xcc/module/xcc.js:178–286`). MCC (7 sites) + dcc-crawl-classes (9 sites) still on `Actors.registerSheet`; migration opt-in. | §2.5 (extension surface), §2.11 | `(types, SheetClass, options?)` — Actor-side mirror of `registerItemSheet`. Same signature shape; defaults `options.scope` to `'dcc'` (sibling modules pass their own scope: `'xcc'`, `'mcc-healer'`, `'dcc-crawl-classes-bard'`, etc.). Closes the 19 `Actors.registerSheet('xcc', ...)` calls in XCC (migrated 2026-05-18), 7 in MCC, 9 in dcc-crawl-classes, and 11 in DCC's own code (the latter migrated 2026-04-19 to dogfood the helper). The legacy global `Actors.unregisterSheet('core', ActorSheetV2)` line in `module/dcc.js` is kept as a one-shot system-replaces-core gesture, separate from any single helper call. Source: `module/extension-api.mjs`. Added 2026-04-19. |
+| `game.dcc.registerClassMixin` | function | (none yet — stable from day one per recommendation 7) | §2.1 (monolithic Player schema), §2.8 (homebrew classes), §2.11 | `(classId, mixinFn)` — register a class-specific schema mixin invoked during `PlayerData.defineSchema()` (deterministic-sorted classId order, **before** the `dcc.definePlayerSchema` hook). `classId` is the lowercase canonical class identifier (`'halfling'`, `'warrior'`, `'cleric'`, …). The mixin receives the in-progress schema and typically attaches fresh `SchemaField` instances onto `schema.skills.fields` or `schema.class.fields`. Last-write-wins on duplicate `classId` (lets a sibling fully replace a DCC built-in, e.g. an XCC halfling variant). Phase 4 §2.1 — the system relocates class-bound fields off `player-data.mjs`'s monolithic body onto per-class mixins; session 1 ships the infrastructure plus a built-in `'halfling'` mixin for `sneakAndHide` (DCC's own dogfooding seed). Source: `module/extension-api.mjs`. Added 2026-05-18 (Group E session 2 / Phase 4 session 1). |
 
 ### Internal
 
@@ -192,7 +193,10 @@ None identified.
    into core: `dcc.registerItemSheet` (closes §2.5 — Group B1, landed
    2026-04-19), `dcc.registerActorSheet` (mirror; closes ~46 sibling
    call sites across XCC + MCC + dcc-crawl-classes — landed
-   2026-04-19), `dcc.registerClassMixin` (Phase 4),
+   2026-04-19), `dcc.registerClassMixin` (closes §2.1 monolithic
+   Player schema — Phase 4 session 1, landed 2026-05-18 with a
+   built-in `'halfling'` mixin for `sneakAndHide`; subsequent slices
+   relocate additional class-bound fields the same way),
    `dcc.registerSheetPart` + `dcc.registerVariant` (Phase 5/6). Each
    ships **stable** the moment it lands; document under the table above
    rather than waiting for downstream consumers to materialize.
@@ -424,6 +428,68 @@ xcc-core-book maintainer can land both steps in a single PR on their
 own schedule. Until the migration lands, the legacy monkey-patch
 keeps working: it still writes to `CONFIG.DCC.mercurialMagicTable`,
 which is the last fallback in the resolver chain.
+
+### Homebrew / sibling-module recipe: registerClassMixin
+
+**Goal:** Contribute class-specific schema fields without touching the
+DCC system's `module/data/actor/player-data.mjs` static body. Sibling
+modules adding their own classes (homebrew, MCC class packs, XCC
+specialists) use this in place of mutating
+`schema.skills.fields.*` blindly inside `dcc.definePlayerSchema`.
+
+**Why:** Direct mutation of the shared schema via `definePlayerSchema`
+works but spreads class-bound knowledge across every consumer.
+`registerClassMixin` keyed by `classId` puts each class's schema
+extension under a name that can be inspected, removed, or replaced —
+sibling modules can fully override a built-in DCC class mixin by
+re-registering the same `classId` (last-write-wins), and Phase 4's
+direction is to drive every class-bound field through this registry.
+
+**Recipe:**
+
+```js
+Hooks.once('init', () => {
+  game.dcc.registerClassMixin('steampunk-inventor', (schema) => {
+    const fields = foundry.data.fields
+    // New skill specific to the homebrew class.
+    schema.skills.fields.tinker = new fields.SchemaField({
+      label: new fields.StringField({ initial: 'Homebrew.Tinker' }),
+      ability: new fields.StringField({ initial: 'int' }),
+      value: new fields.StringField({ initial: '+0' })
+    })
+    // Class-bound progression field on the class block.
+    schema.class.fields.contraptionCharges = new fields.NumberField({
+      initial: 1, integer: true, min: 0
+    })
+  })
+})
+```
+
+**Caller contract:**
+
+- `classId` is the lowercase canonical identifier used elsewhere for
+  class dispatch (the same string `system.details.sheetClass` should
+  hold for a character of this class — see the "Conventions for
+  modules reading actor data" section above).
+- The mixin function is invoked during `PlayerData.defineSchema()`.
+  Each call must construct **fresh `SchemaField` instances** —
+  Foundry caches field objects per schema and may re-invoke
+  `defineSchema()`; reusing field instances across schemas corrupts
+  state.
+- Mixin order is deterministic (sorted `classId`). Don't rely on
+  registration order; if you need to override another mixin's
+  contribution, register the same `classId` after it (last-write-wins
+  on the registry entry, but field-level merges still depend on the
+  schema state when your mixin runs).
+- `dcc.definePlayerSchema` fires **after** all registered mixins;
+  use the hook for cross-class extensions (rewards, world-config
+  blocks) and the mixin registry for class-keyed ones.
+
+**No DCC system change required for sibling adoption** — the helper
+ships stable on 2026-05-18 (see the "Stable" `game.dcc.*` exports
+table). DCC dogfoods its own seed by registering the `'halfling'`
+mixin (which contributes `skills.sneakAndHide`) at
+`module/dcc.js:init`.
 
 ### dcc-qol migration: `critText` / `fumbleText` → `critResult` / `fumbleResult`
 

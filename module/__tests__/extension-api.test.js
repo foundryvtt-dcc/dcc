@@ -7,7 +7,7 @@
  */
 
 import { expect, test, vi } from 'vitest'
-import { registerActorSheet, registerItemSheet } from '../extension-api.mjs'
+import { applyClassMixins, registerActorSheet, registerClassMixin, registerItemSheet } from '../extension-api.mjs'
 
 class FakeSheet {}
 class FakeDefaultItemSheetV2 {}
@@ -172,4 +172,118 @@ test('registerActorSheet skips unregister when makeDefault is true but ActorShee
 
   expect(Actors.unregisterSheet).not.toHaveBeenCalled()
   expect(Actors.registerSheet).toHaveBeenCalledTimes(1)
+})
+
+// ---------------------------------------------------------------------
+// registerClassMixin / applyClassMixins (Phase 4 session 1)
+// ---------------------------------------------------------------------
+
+function makeMockConfig () {
+  return { DCC: { classMixins: {} } }
+}
+
+test('registerClassMixin stores the mixin under the classId key on CONFIG.DCC.classMixins', () => {
+  const CONFIG = makeMockConfig()
+  const mixin = vi.fn()
+  registerClassMixin('halfling', mixin, { CONFIG })
+
+  expect(CONFIG.DCC.classMixins.halfling).toBe(mixin)
+})
+
+test('registerClassMixin initializes CONFIG.DCC.classMixins when missing', () => {
+  // A fresh world / mid-init call site can land before
+  // module/config.js seeds the registry — the helper must self-heal.
+  const CONFIG = { DCC: {} }
+  registerClassMixin('halfling', () => {}, { CONFIG })
+
+  expect(CONFIG.DCC.classMixins).toBeDefined()
+  expect(typeof CONFIG.DCC.classMixins.halfling).toBe('function')
+})
+
+test('registerClassMixin overwrites a prior registration for the same classId', () => {
+  // Last-write-wins matches the mercurial-magic registry's semantic.
+  // Lets a sibling module ship a halfling-variant mixin that fully
+  // replaces the DCC built-in, instead of having to additively patch.
+  const CONFIG = makeMockConfig()
+  const first = vi.fn()
+  const second = vi.fn()
+  registerClassMixin('halfling', first, { CONFIG })
+  registerClassMixin('halfling', second, { CONFIG })
+
+  expect(CONFIG.DCC.classMixins.halfling).toBe(second)
+})
+
+test('registerClassMixin throws on an empty / non-string classId', () => {
+  const CONFIG = makeMockConfig()
+  expect(() => registerClassMixin('', () => {}, { CONFIG })).toThrow(/non-empty string/)
+  expect(() => registerClassMixin(null, () => {}, { CONFIG })).toThrow(/non-empty string/)
+})
+
+test('registerClassMixin throws when the mixin is not a function', () => {
+  const CONFIG = makeMockConfig()
+  expect(() => registerClassMixin('halfling', null, { CONFIG })).toThrow(/must be a function/)
+  expect(() => registerClassMixin('halfling', { skills: {} }, { CONFIG })).toThrow(/must be a function/)
+})
+
+test('registerClassMixin throws when CONFIG.DCC is unavailable', () => {
+  expect(() => registerClassMixin('halfling', () => {}, { CONFIG: {} })).toThrow(/CONFIG\.DCC unavailable/)
+})
+
+test('applyClassMixins runs each registered mixin against the supplied schema', () => {
+  const CONFIG = makeMockConfig()
+  const schema = { skills: { fields: {} } }
+  const halflingMixin = vi.fn((s) => { s.skills.fields.sneakAndHide = { kind: 'SchemaField' } })
+  const thiefMixin = vi.fn((s) => { s.skills.fields.sneakSilently = { kind: 'SchemaField' } })
+  registerClassMixin('halfling', halflingMixin, { CONFIG })
+  registerClassMixin('thief', thiefMixin, { CONFIG })
+
+  applyClassMixins(schema, { CONFIG })
+
+  expect(halflingMixin).toHaveBeenCalledTimes(1)
+  expect(halflingMixin).toHaveBeenCalledWith(schema)
+  expect(thiefMixin).toHaveBeenCalledTimes(1)
+  expect(thiefMixin).toHaveBeenCalledWith(schema)
+  expect(schema.skills.fields.sneakAndHide).toEqual({ kind: 'SchemaField' })
+  expect(schema.skills.fields.sneakSilently).toEqual({ kind: 'SchemaField' })
+})
+
+test('applyClassMixins visits classIds in sorted order for deterministic schema shape', () => {
+  // Registration order shouldn't influence the final schema. Future
+  // slices may key behavior on mixin ordering (e.g. an `'elf'` mixin
+  // overriding a `'player'` baseline detectSecretDoors override),
+  // and a sort makes the resulting shape reproducible regardless of
+  // load-order across sibling modules.
+  const CONFIG = makeMockConfig()
+  const visited = []
+  registerClassMixin('warrior', () => visited.push('warrior'), { CONFIG })
+  registerClassMixin('halfling', () => visited.push('halfling'), { CONFIG })
+  registerClassMixin('cleric', () => visited.push('cleric'), { CONFIG })
+
+  applyClassMixins({}, { CONFIG })
+
+  expect(visited).toEqual(['cleric', 'halfling', 'warrior'])
+})
+
+test('applyClassMixins is a no-op when no mixins are registered', () => {
+  const CONFIG = makeMockConfig()
+  const schema = { skills: { fields: {} } }
+  expect(() => applyClassMixins(schema, { CONFIG })).not.toThrow()
+  expect(schema.skills.fields).toEqual({})
+})
+
+test('applyClassMixins is a no-op when CONFIG.DCC.classMixins is missing', () => {
+  // Defensive: if module/config.js's seed regresses or a test
+  // tear-down stripped it, mixin application must stay quiet, not
+  // raise — `defineSchema()` is on the boot-critical path.
+  const schema = { skills: { fields: {} } }
+  expect(() => applyClassMixins(schema, { CONFIG: { DCC: {} } })).not.toThrow()
+  expect(() => applyClassMixins(schema, { CONFIG: {} })).not.toThrow()
+})
+
+test('applyClassMixins skips registry entries that are not functions', () => {
+  // Defensive against malformed registrations (someone bypassing
+  // registerClassMixin's type check and writing directly to the
+  // registry). Calling a non-function would crash schema definition.
+  const CONFIG = { DCC: { classMixins: { halfling: 'not-a-function', warrior: () => {} } } }
+  expect(() => applyClassMixins({}, { CONFIG })).not.toThrow()
 })
