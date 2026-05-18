@@ -1558,7 +1558,7 @@ class DCCActor extends Actor {
    */
   async _rollSkillCheckViaAdapter (skillId, options, resolved) {
     logDispatch('rollSkillCheck', 'adapter', { skillId })
-    const { skill, skillItem, abilityId, abilityLabel, abilityMod } = resolved
+    const { skill, skillItem, abilityId, abilityLabel } = resolved
 
     const character = actorToCharacter(this)
     const definition = this._buildSkillDefinition(skillId, resolved)
@@ -1603,9 +1603,6 @@ class DCCActor extends Actor {
         actionDie: prompt.actionDie,
         modifierTotal: flatTotal
       })
-      // Keep abilityMod referenced so the destructure isn't an unused
-      // var; the value lives on in the flat total above.
-      void abilityMod
     }
 
     // Pass 1: lib builds the formula (no evaluation).
