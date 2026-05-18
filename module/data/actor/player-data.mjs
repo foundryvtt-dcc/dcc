@@ -66,18 +66,6 @@ export class PlayerData extends BaseActorData {
       class: new SchemaField({
         className: new StringField({ initial: 'Zero-Level' }),
 
-        // Cleric fields
-        spellCheck: new NumberField({ initial: 1, integer: true }),
-        spellCheckAbility: new StringField({ initial: 'per' }),
-        spellsLevel1: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellsLevel2: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellsLevel3: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellsLevel4: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellsLevel5: new NumberField({ initial: 0, integer: true, min: 0 }),
-        deity: new StringField({ nullable: true, initial: null }),
-        disapproval: new NumberField({ initial: 1, integer: true, min: 1, max: 20 }),
-        disapprovalTable: new StringField({ initial: 'Disapproval' }),
-
         // Warrior fields
         luckyWeapon: new StringField({ nullable: true, initial: null }),
         luckyWeaponMod: new StringField({ initial: '+0' }),
@@ -102,37 +90,22 @@ export class PlayerData extends BaseActorData {
           label: new StringField({ initial: 'DCC.DetectSecretDoors' }),
           ability: new StringField({ initial: '' }), // Empty for non-Elf, 'int' for Elf
           value: new StringField({ initial: '+0' })
-        }),
-
-        // Cleric skills
-        divineAid: new SchemaField({
-          label: new StringField({ initial: 'DCC.DivineAid' }),
-          value: new NumberField({ initial: 0, integer: true }),
-          useDisapprovalRange: new BooleanField({ initial: true }),
-          drainDisapproval: new NumberField({ initial: 10, integer: true })
-        }),
-        turnUnholy: new SchemaField({
-          label: new StringField({ initial: 'DCC.TurnUnholy' }),
-          value: new NumberField({ initial: 0, integer: true }),
-          useDisapprovalRange: new BooleanField({ initial: true })
-        }),
-        layOnHands: new SchemaField({
-          label: new StringField({ initial: 'DCC.LayOnHands' }),
-          value: new NumberField({ initial: 0, integer: true }),
-          useDisapprovalRange: new BooleanField({ initial: true })
         })
 
+        // Cleric skills (`divineAid` / `turnUnholy` / `layOnHands`) +
         // Thief skills (sneakSilently / hideInShadows / pickPockets /
         // climbSheerSurfaces / pickLock / findTrap / disableTrap /
         // forgeDocument / disguiseSelf / readLanguages / handlePoison /
-        // castSpellFromScroll) + Thief class fields (luckDie / backstab)
-        // + Halfling skills (`skills.sneakAndHide`) + Dwarf skills
-        // (`skills.shieldBash`) contributed via the `'thief'` /
-        // `'halfling'` / `'dwarf'` entries in `CONFIG.DCC.classMixins`
-        // — see `module/dcc.js`'s built-in registrations. Phase 4
-        // sessions 1 / 2 / 3 relocations — keep the Foundry-smelling
-        // shapes intact while moving source-of-truth onto the
-        // per-class registry.
+        // castSpellFromScroll) + Thief class fields (luckDie / backstab) +
+        // Cleric class fields (spellCheck / spellCheckAbility /
+        // spellsLevel1–5 / deity / disapproval / disapprovalTable) +
+        // Halfling skills (`skills.sneakAndHide`) + Dwarf skills
+        // (`skills.shieldBash`) contributed via the `'cleric'` /
+        // `'thief'` / `'halfling'` / `'dwarf'` entries in
+        // `CONFIG.DCC.classMixins` — see `module/dcc.js`'s built-in
+        // registrations. Phase 4 sessions 1 / 2 / 3 / 4 relocations —
+        // keep the Foundry-smelling shapes intact while moving
+        // source-of-truth onto the per-class registry.
       }),
 
       // Configuration (from config template)

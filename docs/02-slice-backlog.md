@@ -572,17 +572,39 @@ types+initials. 966 Vitest green (unchanged); 112 Playwright passed
 (was 110, +1 thief + 1 dwarf-flake recovered), 1 latent failure
 (xcc-core-book DCCItemSheet override — unchanged from baseline).
 
-#### Phase 4 session 4 (next). Extract another class's fields onto its mixin.
-Three-of-seven DCC classes (halfling, dwarf, thief) now use mixins.
-Remaining candidates:
-- **Cleric block** — `class.{spellCheck, spellCheckAbility,
-  spellsLevel1–5, deity, disapproval, disapprovalTable}` +
-  `skills.{divineAid, turnUnholy, layOnHands}`. Mid-size; some
-  fields are read by adapter spell-check code (`spellCheckAbility`,
-  `disapproval`, `disapprovalTable`) — needs care that the mixin is
-  registered before any spell-check path reads them, but
-  `module/dcc.js:init` already runs before any document construction
-  so the timing constraint is satisfied.
+#### ~~Phase 4 session 4. Cleric class-mixin extraction + shared built-in mixin table.~~ **DONE 2026-05-18**
+Cleric mixin contributes 8 class fields (`spellCheck` NumberField,
+`spellCheckAbility` StringField, `spellsLevel1–5` NumberFields,
+`deity` nullable StringField, `disapproval` NumberField min=1 max=20,
+`disapprovalTable` StringField) + 3 disapproval-range skills
+(`divineAid` / `turnUnholy` / `layOnHands`) — `divineAid` extends
+the shared `disapprovalSkill(label, extra)` helper with its own
+`drainDisapproval` NumberField slot. Surfaced a latent gap: the
+integration tests in `module/__integration__/data-models.test.js`
+construct `PlayerData` directly without going through Foundry's
+`init` hook, so the inline mixin registrations in `module/dcc.js`
+weren't running for them. Three pre-existing assertions broke
+(`class.disapproval=1`, `class.deity=null`, NumberField min/max).
+Closed by extracting **all four built-in mixin functions** out of
+`module/dcc.js` and into a new `module/built-in-class-mixins.mjs`
+table + `registerBuiltInClassMixins(register)` helper consumed by
+both the production init hook and the integration-test setup. Single
+source of truth for built-in mixins; future sessions only edit the
+table. +1 Playwright case in `extension-api.spec.js` reads from
+`player.system._source` (raw, not derived) so the field-value
+assertions stay valid even though `prepareDerivedData` overwrites
+`class.spellCheck` and the cleric skills' `.value` with computed
+strings. Field-type assertions confirm `NumberField` /
+`StringField` / `BooleanField` survival through the mixin path. 966
+Vitest unchanged; 113 Playwright passed (was 112, +1 cleric case);
+1 latent failure (xcc-core-book DCCItemSheet override, unchanged
+baseline).
+
+#### Phase 4 session 5 (next). Extract another class's fields onto its mixin.
+Four-of-seven DCC classes (halfling, dwarf, thief, cleric) now use
+mixins. Remaining candidates:
+- **Warrior block** — `class.{luckyWeapon, luckyWeaponMod}` (small —
+  lowest-volume remaining class). Quickest win; ideal session 5.
 - **Wizard / elf block** — `class.{knownSpells, maxSpellLevel,
   spellCheckOtherMod, spellCheckDieOverride, spellCheckOverride,
   patron, patronTaintChance, familiar, corruption}`. Wizards + elves
@@ -593,14 +615,11 @@ Remaining candidates:
   no-op as long as both build identical instances). Elf's mixin also
   overrides `skills.detectSecretDoors` (`label = 'DCC.HeightenedSenses'`,
   `ability = 'int'`, `value = '+4'`) — the base body defines it as
-  the non-Elf default, the elf mixin replaces it.
-- **Warrior block** — `class.{luckyWeapon, luckyWeaponMod}` (small —
-  lowest-volume remaining class).
+  the non-Elf default, the elf mixin replaces it. Save for session 6.
 
-Recommend cleric for session 4 (medium-size; flushes out the "field
-read by adapter code" timing assumption); warrior for session 5
-(quick win); wizard+elf together for session 6 (resolves the
-shared-fields design call in one slice).
+Recommend warrior for session 5 (cheapest); wizard+elf together for
+session 6 (resolves the shared-fields design call in one slice +
+closes the per-class extraction arc).
 
 #### Phase 4 session 4+ (future).
 - **Class-id dispatch helper** — replace the remaining
@@ -675,6 +694,16 @@ Move entries here as they land; keep the active queue scannable.
   omission, `castSpellFromScroll.die` DiceField type, and the class
   fields' types+initials. 966 Vitest unchanged; 112 Playwright
   passed (was 110, +1 thief +1 dwarf-flake recovered).
+- Phase 4 session 4 (2026-05-18): `'cleric'` mixin contributes 8
+  class fields + 3 disapproval-range skills. **Also** extracted all
+  built-in mixin registrations from `module/dcc.js:init` into a new
+  `module/built-in-class-mixins.mjs` table + `registerBuiltInClassMixins`
+  helper consumed by both the production init hook AND the
+  integration-test setup — closes a latent gap where mixin fields
+  weren't reaching integration tests that construct `PlayerData`
+  directly. +1 Playwright case (read from `_source` to dodge
+  `prepareDerivedData` overwrites). 966 Vitest unchanged; 113
+  Playwright passed (was 112, +1 cleric).
 
 ### Phase 3 sessions 1–9 (2026-04-18 → 2026-04-19)
 

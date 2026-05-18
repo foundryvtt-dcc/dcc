@@ -62,6 +62,25 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 4 session 4 (2026-05-18)** extended the vertical to cleric —
+8 class fields (`spellCheck` / `spellCheckAbility` / `spellsLevel1–5`
+/ `deity` / `disapproval` / `disapprovalTable`) + 3 disapproval-
+range skills (`divineAid` / `turnUnholy` / `layOnHands`) relocated
+off `player-data.mjs`'s static body onto a built-in `'cleric'` class
+mixin. Surfaced a latent gap: integration tests in
+`module/__integration__/data-models.test.js` construct `PlayerData`
+directly without invoking the Foundry `init` hook, so the existing
+`module/dcc.js:init` mixin registrations weren't running for them —
+the cleric block's removal broke three pre-existing assertions
+(`class.disapproval=1`, `class.deity=null`). Closed by extracting
+all built-in mixin registrations into the new
+`module/built-in-class-mixins.mjs` table + `registerBuiltInClassMixins`
+helper, consumed by **both** the production init hook and the
+integration-test setup. Single source of truth; future sessions
+only edit the table. Four-of-seven DCC classes (halfling, dwarf,
+thief, cleric) now mixin-source their fields; warrior / wizard /
+elf remain on the static body.
+
 **Phase 4 session 3 (2026-05-18)** extended the vertical to thief —
 the largest single-class relocation so far. Built-in `'thief'` mixin
 in `module/dcc.js:init` contributes the 12-skill block (sneakSilently
@@ -160,6 +179,42 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 4 session 4: cleric class-mixin extraction +
+  shared `built-in-class-mixins.mjs` table.** Built-in `'cleric'`
+  mixin contributes 8 class fields (`spellCheck` NumberField,
+  `spellCheckAbility` StringField, `spellsLevel1–5` NumberFields,
+  `deity` nullable StringField, `disapproval` NumberField min=1
+  max=20, `disapprovalTable` StringField) + 3 disapproval-range
+  skills (`divineAid` / `turnUnholy` / `layOnHands`) sharing a
+  `disapprovalSkill(label, extra)` helper inside the mixin body —
+  `divineAid` extends with a NumberField `drainDisapproval` slot.
+  All four built-in mixin registrations relocated from
+  `module/dcc.js:init` inline `registerClassMixin('halfling', …)`
+  calls to a single `BUILT_IN_CLASS_MIXINS` table in
+  `module/built-in-class-mixins.mjs` plus a
+  `registerBuiltInClassMixins(register)` helper consumed by both
+  production (init hook) and the integration-test setup
+  (`module/__integration__/setup-foundry.js`). The latter additions
+  fix three pre-existing assertions in
+  `module/__integration__/data-models.test.js` that broke when the
+  cleric block left the static schema body
+  (`class.disapproval=1` / `class.deity=null` / NumberField min/max
+  validation) — integration tests construct `PlayerData` directly
+  without invoking the Foundry `init` hook, so the inline registrations
+  in `dcc.js` weren't running for them. Net diff in `dcc.js`: −76
+  lines of inline mixin code → +1 helper call (kept the rest of the
+  init logic untouched). +1 Playwright case in
+  `extension-api.spec.js` asserts schema-defaults + field types,
+  reading from `player.system._source` so the assertions stay valid
+  even though `prepareDerivedData` overwrites `class.spellCheck` and
+  the cleric skill `.value` slots with computed strings. Field-type
+  assertions confirm `disapproval`→NumberField, `deity`→StringField,
+  `useDisapprovalRange`→BooleanField, `drainDisapproval`→NumberField,
+  and that `turnUnholy` / `layOnHands` do NOT carry the
+  divineAid-specific `drainDisapproval` slot. 966 Vitest green
+  (unchanged); 113 Playwright passed (was 112, +1 cleric case), 1
+  latent failure (xcc-core-book DCCItemSheet override — unchanged
+  from baseline).
 - **2026-05-18 — Phase 4 session 3: thief class-mixin extraction (12
   skills + `class.luckDie` + `class.backstab`).** Largest single-
   class relocation so far. New `'thief'` entry in `CONFIG.DCC.classMixins`

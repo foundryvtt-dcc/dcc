@@ -52,7 +52,7 @@ at Phase 6.
 | Halfling | ✅ P4-1 (`skills.sneakAndHide`) | pending | pending | pending |
 | Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | pending — incl. `useDeed = true` override + ShieldBash weapon auto-create | pending |
 | Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | pending | pending | pending |
-| Cleric | pending — `class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` | pending | pending | pending |
+| Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | pending | pending | pending |
 | Wizard | pending — `class.{knownSpells, maxSpellLevel, spellCheckOtherMod, spellCheckDieOverride, spellCheckOverride, patron, patronTaintChance, familiar, corruption}` | pending | pending | pending |
 | Elf | pending — shares wizard field shape **AND** overrides `skills.detectSecretDoors` (`label: 'DCC.HeightenedSenses'`, `ability: 'int'`, `value: '+4'`) — see §3.1 design note | pending | pending | pending |
 | Warrior | pending — `class.{luckyWeapon, luckyWeaponMod}` (smallest remaining block) | pending | pending | pending |
@@ -69,9 +69,18 @@ in deterministic sorted-classId order during
 `PlayerData.defineSchema()`, **before** the `dcc.definePlayerSchema`
 hook fires (so external handlers see the contributed fields).
 
-**Where built-in registrations live:** `module/dcc.js`'s `init` hook,
+**Where built-in registrations live:** `module/built-in-class-mixins.mjs`
+defines the `BUILT_IN_CLASS_MIXINS` table + a
+`registerBuiltInClassMixins(registerClassMixin)` helper. Two entry
+points consume it: `module/dcc.js`'s `init` hook (production, runs
 between `CONFIG.DCC = DCC` and `CONFIG.Actor.dataModels = …` —
-must register before the Player schema is first constructed.
+must register before the Player schema is first constructed) and
+`module/__integration__/setup-foundry.js` (integration-test setup,
+runs after `globalThis.CONFIG` is attached so that integration tests
+constructing `PlayerData` directly — bypassing the Foundry `init`
+hook — still see the contributed fields). Adding a new built-in
+class mixin means editing one file; both environments stay in sync
+automatically.
 
 **Mutator pattern:**
 

@@ -32,7 +32,7 @@ import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
 import { registerActorSheet, registerClassMixin, registerItemSheet } from './extension-api.mjs'
-import { DiceField } from './data/fields/_module.mjs'
+import { registerBuiltInClassMixins } from './built-in-class-mixins.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -70,56 +70,13 @@ Hooks.once('init', async function () {
   // Register built-in DCC class mixins before the Player schema is
   // first constructed. Phase 4 sessions 1+ relocate class-bound
   // fields off the monolithic `module/data/actor/player-data.mjs`
-  // static body and onto their respective class mixins. Sibling
-  // modules contribute their own classes' mixins via
-  // `game.dcc.registerClassMixin` (see `docs/dev/EXTENSION_API.md`).
-  registerClassMixin('halfling', (schema) => {
-    const fields = foundry.data.fields
-    schema.skills.fields.sneakAndHide = new fields.SchemaField({
-      label: new fields.StringField({ initial: 'DCC.SneakAndHide' }),
-      value: new fields.StringField({ initial: '+3' })
-    })
-  })
-  registerClassMixin('dwarf', (schema) => {
-    const fields = foundry.data.fields
-    schema.skills.fields.shieldBash = new fields.SchemaField({
-      label: new fields.StringField({ initial: 'DCC.ShieldBash' }),
-      ability: new fields.StringField({ initial: 'str' }),
-      die: new DiceField({ initial: '1d14' }),
-      value: new fields.StringField({ initial: '+0' }),
-      useDeed: new fields.BooleanField({ initial: true })
-    })
-  })
-  registerClassMixin('thief', (schema) => {
-    const fields = foundry.data.fields
-    schema.class.fields.luckDie = new DiceField({ initial: '1d3' })
-    schema.class.fields.backstab = new fields.StringField({ initial: '0' })
-    const thiefSkill = (label, ability) => new fields.SchemaField({
-      label: new fields.StringField({ initial: label }),
-      ability: new fields.StringField({ initial: ability }),
-      value: new fields.StringField({ initial: '0' })
-    })
-    schema.skills.fields.sneakSilently = thiefSkill('DCC.SneakSilently', 'agl')
-    schema.skills.fields.hideInShadows = thiefSkill('DCC.HideInShadows', 'agl')
-    schema.skills.fields.pickPockets = thiefSkill('DCC.PickPocket', 'agl')
-    schema.skills.fields.climbSheerSurfaces = thiefSkill('DCC.ClimbSheerSurfaces', 'agl')
-    schema.skills.fields.pickLock = thiefSkill('DCC.PickLock', 'agl')
-    schema.skills.fields.findTrap = thiefSkill('DCC.FindTrap', 'int')
-    schema.skills.fields.disableTrap = thiefSkill('DCC.DisableTrap', 'agl')
-    schema.skills.fields.forgeDocument = thiefSkill('DCC.ForgeDocument', 'agl')
-    schema.skills.fields.disguiseSelf = thiefSkill('DCC.DisguiseSelf', 'per')
-    schema.skills.fields.readLanguages = thiefSkill('DCC.ReadLanguages', 'int')
-    schema.skills.fields.handlePoison = new fields.SchemaField({
-      label: new fields.StringField({ initial: 'DCC.HandlePoison' }),
-      value: new fields.StringField({ initial: '0' })
-    })
-    schema.skills.fields.castSpellFromScroll = new fields.SchemaField({
-      label: new fields.StringField({ initial: 'DCC.CastSpellFromScroll' }),
-      ability: new fields.StringField({ initial: 'int' }),
-      die: new DiceField({ initial: '1d10' }),
-      value: new fields.StringField({ initial: '0' })
-    })
-  })
+  // static body and onto their respective class mixins. The
+  // registration table lives in `module/built-in-class-mixins.mjs`
+  // so the integration-test setup can register the same set without
+  // duplicating mixin bodies. Sibling modules contribute their own
+  // classes' mixins via `game.dcc.registerClassMixin` (see
+  // `docs/dev/EXTENSION_API.md` + `docs/dev/CLASS_DECOMPOSITION.md`).
+  registerBuiltInClassMixins(registerClassMixin)
 
   // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect

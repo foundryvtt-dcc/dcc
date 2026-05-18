@@ -393,6 +393,79 @@ test.describe('DCC Extension API', () => {
     expect(result.luckDieFieldType).toBe('DiceField')
   })
 
+  test('built-in cleric mixin contributes the disapproval/spells/skills block to a Player actor schema', async ({ page }) => {
+    // Phase 4 session 4 — cleric block: 8 class fields (spellCheck +
+    // spellCheckAbility + spellsLevel1–5 + deity + disapproval +
+    // disapprovalTable) + 3 disapproval-range skills (divineAid /
+    // turnUnholy / layOnHands). Exercises (a) NumberField with min/max
+    // (`disapproval` clamps 1–20), (b) nullable StringField (`deity`),
+    // (c) per-skill BooleanField (`useDisapprovalRange`), (d) a
+    // skill-specific NumberField extension (`divineAid.drainDisapproval`),
+    // and (e) the timing assumption that adapter spell-check code
+    // reading `spellCheckAbility` / `disapproval` / `disapprovalTable`
+    // sees these fields as soon as the cleric mixin runs in
+    // `module/dcc.js:init`.
+    const result = await page.evaluate(async () => {
+      const clericMixin = CONFIG.DCC?.classMixins?.cleric
+      const player = await Actor.create({ name: 'P4S4 Cleric Probe', type: 'Player' })
+      // Read from `_source` because `prepareDerivedData` overwrites some
+      // class fields (`spellCheck`, the `divineAid`/`turnUnholy`/`layOnHands`
+      // `.value` slots) with computed strings — schema defaults are
+      // assertable on the source, but the derived values are not.
+      const src = player.system._source ?? {}
+      const cls = src.class ?? {}
+      const skills = src.skills ?? {}
+      const classFields = player.system.schema.fields.class
+      const skillsFields = player.system.schema.fields.skills
+      const disapprovalFieldType = classFields?.fields?.disapproval?.constructor?.name ?? null
+      const deityFieldType = classFields?.fields?.deity?.constructor?.name ?? null
+      const divineAidUseDisapprovalRangeFieldType =
+        skillsFields?.fields?.divineAid?.fields?.useDisapprovalRange?.constructor?.name ?? null
+      const divineAidDrainFieldType =
+        skillsFields?.fields?.divineAid?.fields?.drainDisapproval?.constructor?.name ?? null
+      const turnUnholyHasDrain = skillsFields?.fields?.turnUnholy?.fields?.drainDisapproval != null
+      await player.delete()
+      return {
+        mixinIsFunction: typeof clericMixin === 'function',
+        spellCheck: cls.spellCheck ?? null,
+        spellCheckAbility: cls.spellCheckAbility ?? null,
+        spellsLevels: [cls.spellsLevel1, cls.spellsLevel2, cls.spellsLevel3, cls.spellsLevel4, cls.spellsLevel5],
+        deity: cls.deity,
+        disapproval: cls.disapproval,
+        disapprovalTable: cls.disapprovalTable,
+        divineAidLabel: skills.divineAid?.label ?? null,
+        divineAidUseDisapprovalRange: skills.divineAid?.useDisapprovalRange ?? null,
+        divineAidDrain: skills.divineAid?.drainDisapproval ?? null,
+        turnUnholyValue: skills.turnUnholy?.value ?? null,
+        layOnHandsLabel: skills.layOnHands?.label ?? null,
+        disapprovalFieldType,
+        deityFieldType,
+        divineAidUseDisapprovalRangeFieldType,
+        divineAidDrainFieldType,
+        turnUnholyHasDrain
+      }
+    })
+    expect(result.mixinIsFunction).toBe(true)
+    expect(result.spellCheck).toBe(1)
+    expect(result.spellCheckAbility).toBe('per')
+    expect(result.spellsLevels).toEqual([0, 0, 0, 0, 0])
+    expect(result.deity).toBeNull()
+    expect(result.disapproval).toBe(1)
+    expect(result.disapprovalTable).toBe('Disapproval')
+    expect(result.divineAidLabel).toBe('DCC.DivineAid')
+    expect(result.divineAidUseDisapprovalRange).toBe(true)
+    expect(result.divineAidDrain).toBe(10)
+    expect(result.turnUnholyValue).toBe(0)
+    expect(result.layOnHandsLabel).toBe('DCC.LayOnHands')
+    expect(result.disapprovalFieldType).toBe('NumberField')
+    expect(result.deityFieldType).toBe('StringField')
+    expect(result.divineAidUseDisapprovalRangeFieldType).toBe('BooleanField')
+    expect(result.divineAidDrainFieldType).toBe('NumberField')
+    // `turnUnholy` and `layOnHands` share the disapprovalSkill helper
+    // but only `divineAid` extends it with `drainDisapproval`.
+    expect(result.turnUnholyHasDrain).toBe(false)
+  })
+
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
     // The mercurial-magic registry's last-write-wins semantic
     // matters for sibling modules that want to fully replace a
