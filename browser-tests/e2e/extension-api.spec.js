@@ -466,6 +466,41 @@ test.describe('DCC Extension API', () => {
     expect(result.turnUnholyHasDrain).toBe(false)
   })
 
+  test('built-in warrior mixin contributes class.luckyWeapon + class.luckyWeaponMod to a Player actor schema', async ({ page }) => {
+    // Phase 4 session 5 — smallest remaining class block. Verifies the
+    // nullable StringField initial (`luckyWeapon = null`) and the
+    // signed-string default (`luckyWeaponMod = '+0'`) survive the
+    // mixin path against a live Player document.
+    const result = await page.evaluate(async () => {
+      const warriorMixin = CONFIG.DCC?.classMixins?.warrior
+      const player = await Actor.create({ name: 'P4S5 Warrior Probe', type: 'Player' })
+      const src = player.system._source ?? {}
+      const cls = src.class ?? {}
+      const classFields = player.system.schema.fields.class
+      const luckyWeaponField = classFields?.fields?.luckyWeapon ?? null
+      const luckyWeaponFieldType = luckyWeaponField?.constructor?.name ?? null
+      const luckyWeaponIsNullable = luckyWeaponField?.options?.nullable === true
+      const luckyWeaponModFieldType = classFields?.fields?.luckyWeaponMod?.constructor?.name ?? null
+      await player.delete()
+      return {
+        mixinIsFunction: typeof warriorMixin === 'function',
+        hasLuckyWeapon: luckyWeaponField !== null,
+        luckyWeapon: cls.luckyWeapon,
+        luckyWeaponMod: cls.luckyWeaponMod ?? null,
+        luckyWeaponFieldType,
+        luckyWeaponIsNullable,
+        luckyWeaponModFieldType
+      }
+    })
+    expect(result.mixinIsFunction).toBe(true)
+    expect(result.hasLuckyWeapon).toBe(true)
+    expect(result.luckyWeapon).toBeNull()
+    expect(result.luckyWeaponMod).toBe('+0')
+    expect(result.luckyWeaponFieldType).toBe('StringField')
+    expect(result.luckyWeaponIsNullable).toBe(true)
+    expect(result.luckyWeaponModFieldType).toBe('StringField')
+  })
+
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
     // The mercurial-magic registry's last-write-wins semantic
     // matters for sibling modules that want to fully replace a

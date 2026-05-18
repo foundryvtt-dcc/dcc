@@ -66,10 +66,6 @@ export class PlayerData extends BaseActorData {
       class: new SchemaField({
         className: new StringField({ initial: 'Zero-Level' }),
 
-        // Warrior fields
-        luckyWeapon: new StringField({ nullable: true, initial: null }),
-        luckyWeaponMod: new StringField({ initial: '+0' }),
-
         // Wizard fields
         knownSpells: new NumberField({ initial: 0, integer: true, min: 0 }),
         maxSpellLevel: new NumberField({ initial: 0, integer: true, min: 0 }),

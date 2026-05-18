@@ -62,6 +62,16 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 4 session 5 (2026-05-18)** extended the vertical to warrior —
+smallest remaining class block. Built-in `'warrior'` mixin in the
+`BUILT_IN_CLASS_MIXINS` table contributes `class.luckyWeapon`
+(nullable StringField, initial null) + `class.luckyWeaponMod`
+(StringField, initial `'+0'`). No skills. Five-of-seven DCC classes
+(halfling, dwarf, thief, cleric, warrior) now mixin-source their
+fields; only wizard + elf remain (deferred to session 6 because
+they share field shapes and need a design call on registration
+pattern).
+
 **Phase 4 session 4 (2026-05-18)** extended the vertical to cleric —
 8 class fields (`spellCheck` / `spellCheckAbility` / `spellsLevel1–5`
 / `deity` / `disapproval` / `disapprovalTable`) + 3 disapproval-
@@ -179,6 +189,23 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 4 session 5: warrior class-mixin extraction.**
+  Smallest remaining class block. New `'warrior'` entry in the
+  `BUILT_IN_CLASS_MIXINS` table (`module/built-in-class-mixins.mjs`)
+  contributes `class.luckyWeapon` (nullable StringField, initial
+  null) + `class.luckyWeaponMod` (StringField, initial `'+0'`). No
+  skills — warrior is the only DCC class whose contribution is
+  pure class-fields. Static block deleted from
+  `module/data/actor/player-data.mjs`. +1 Playwright case in
+  `extension-api.spec.js` asserts the nullable StringField initial
+  (`luckyWeapon === null`) + the signed-string default
+  (`luckyWeaponMod === '+0'`) + field types
+  (`StringField` for both, `nullable: true` for `luckyWeapon`)
+  reading from `_source`. 966 Vitest unchanged; 114 Playwright
+  passed (was 113, +1 warrior case), 1 latent failure (xcc-core-book
+  DCCItemSheet override, unchanged baseline). Six-of-seven DCC
+  classes (halfling, dwarf, thief, cleric, warrior) now mixin-source;
+  wizard + elf remain together for session 6.
 - **2026-05-18 — Phase 4 session 4: cleric class-mixin extraction +
   shared `built-in-class-mixins.mjs` table.** Built-in `'cleric'`
   mixin contributes 8 class fields (`spellCheck` NumberField,

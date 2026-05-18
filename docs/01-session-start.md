@@ -32,9 +32,20 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 4 session 4 (2026-05-18) extended the vertical to
-cleric AND extracted the built-in mixin registrations into a shared
-module.** New `'cleric'` mixin contributes 8 class fields (`spellCheck`
+**Status:** **Phase 4 session 5 (2026-05-18) extended the vertical
+to warrior** — smallest remaining class block. New `'warrior'`
+mixin in the shared `BUILT_IN_CLASS_MIXINS` table
+(`module/built-in-class-mixins.mjs`) contributes `class.luckyWeapon`
+(nullable StringField, initial null) + `class.luckyWeaponMod`
+(StringField, initial `'+0'`). No skills — warrior is the only
+class whose contribution is pure class-fields. Six-of-seven classes
+now mixin-source; only wizard + elf remain (session 6, will be
+landed together since they share field shapes). +1 Playwright case.
+966 Vitest unchanged; 114 Playwright passed (was 113, +1 warrior),
+1 latent failure (xcc-core-book DCCItemSheet override).
+
+**Phase 4 session 4 (2026-05-18)** extended the vertical to cleric
+AND extracted the built-in mixin registrations into a shared module. New `'cleric'` mixin contributes 8 class fields (`spellCheck`
 NumberField, `spellCheckAbility` StringField, `spellsLevel1–5`
 NumberFields, `deity` nullable StringField, `disapproval` NumberField
 min=1 max=20, `disapprovalTable` StringField) + 3 disapproval-range
@@ -458,18 +469,21 @@ recipe.
 
 **Remaining Phase 4 (halfling vertical) candidates:**
 
-1. **Extract a fifth class's fields onto its mixin.** Four-of-seven
-   classes (halfling, dwarf, thief, cleric) now use mixins. Two
-   remaining candidates per `docs/dev/CLASS_DECOMPOSITION.md`:
-   **warrior block** (`class.{luckyWeapon, luckyWeaponMod}` — the
-   smallest remaining; recommended for session 5 as a quick win)
-   and **wizard / elf block** (9 wizard class fields, plus elf's
-   `skills.detectSecretDoors` override — resolves the shared-fields
-   design call per CLASS_DECOMPOSITION.md §3.1; recommended for
-   session 6 to close the per-class extraction arc). Add new built-in
-   mixins to the `BUILT_IN_CLASS_MIXINS` table in
-   `module/built-in-class-mixins.mjs` — both production init and
-   integration test setup pick them up automatically.
+1. **Close the per-class extraction arc with wizard + elf.**
+   Six-of-seven DCC classes now mixin-source their fields; only
+   wizard + elf remain. Per `docs/dev/CLASS_DECOMPOSITION.md` §3.1
+   and §2: register them as two separate mixins both attaching the
+   same 9 wizard class fields (`knownSpells`, `maxSpellLevel`,
+   `spellCheckOtherMod`, `spellCheckDieOverride`,
+   `spellCheckOverride`, `patron`, `patronTaintChance`, `familiar`,
+   `corruption` HTMLField). Elf's mixin **also** overrides
+   `skills.detectSecretDoors` with `label='DCC.HeightenedSenses'`,
+   `ability='int'`, `value='+4'` — the base body keeps it as the
+   non-Elf default. After this lands, `HTMLField` import drops from
+   `player-data.mjs` and the static body holds only common /
+   config / `className` / `detectSecretDoors` defaults. Add the
+   two mixins to the `BUILT_IN_CLASS_MIXINS` table in
+   `module/built-in-class-mixins.mjs`.
 2. **Class-id dispatch helper** — replace the remaining
    `system.details.sheetClass === 'Halfling'` string checks in
    `actor.js:3265-3266` + `item.js:70-103` with a single

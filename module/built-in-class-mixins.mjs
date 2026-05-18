@@ -65,6 +65,11 @@ export const BUILT_IN_CLASS_MIXINS = {
       value: new fields.StringField({ initial: '+3' })
     })
   },
+  warrior (schema) {
+    const fields = foundry.data.fields
+    schema.class.fields.luckyWeapon = new fields.StringField({ nullable: true, initial: null })
+    schema.class.fields.luckyWeaponMod = new fields.StringField({ initial: '+0' })
+  },
   thief (schema) {
     const fields = foundry.data.fields
     schema.class.fields.luckDie = new DiceField({ initial: '1d3' })

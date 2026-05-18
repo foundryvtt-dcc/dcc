@@ -600,26 +600,48 @@ Vitest unchanged; 113 Playwright passed (was 112, +1 cleric case);
 1 latent failure (xcc-core-book DCCItemSheet override, unchanged
 baseline).
 
-#### Phase 4 session 5 (next). Extract another class's fields onto its mixin.
-Four-of-seven DCC classes (halfling, dwarf, thief, cleric) now use
-mixins. Remaining candidates:
-- **Warrior block** — `class.{luckyWeapon, luckyWeaponMod}` (small —
-  lowest-volume remaining class). Quickest win; ideal session 5.
-- **Wizard / elf block** — `class.{knownSpells, maxSpellLevel,
-  spellCheckOtherMod, spellCheckDieOverride, spellCheckOverride,
-  patron, patronTaintChance, familiar, corruption}`. Wizards + elves
-  share the field shape (elves cast as wizards in DCC) but the lib's
-  `'wizard'` / `'elf'` profiles are distinct. Per
-  `docs/dev/CLASS_DECOMPOSITION.md` §3.1: register two mixins that
-  both attach the same fields (last-write-wins makes the second a
-  no-op as long as both build identical instances). Elf's mixin also
-  overrides `skills.detectSecretDoors` (`label = 'DCC.HeightenedSenses'`,
-  `ability = 'int'`, `value = '+4'`) — the base body defines it as
-  the non-Elf default, the elf mixin replaces it. Save for session 6.
+#### ~~Phase 4 session 5. Warrior class-mixin extraction.~~ **DONE 2026-05-18**
+Smallest remaining class block. New `'warrior'` entry in the
+`BUILT_IN_CLASS_MIXINS` table contributes `class.luckyWeapon`
+(nullable StringField, initial null) + `class.luckyWeaponMod`
+(StringField, initial `'+0'`). No skills — warrior is the only DCC
+class whose contribution is pure class-fields. +1 Playwright case
+asserts the nullable initial, signed-string default, and field
+types via `_source`. 966 Vitest unchanged; 114 Playwright passed
+(was 113, +1 warrior).
 
-Recommend warrior for session 5 (cheapest); wizard+elf together for
-session 6 (resolves the shared-fields design call in one slice +
-closes the per-class extraction arc).
+#### Phase 4 session 6 (next). Wizard + elf class-mixin extraction.
+Closes the per-class extraction arc. Five-of-seven DCC classes
+(halfling, dwarf, thief, cleric, warrior) now use mixins; wizard
+and elf are the last two. Per `docs/dev/CLASS_DECOMPOSITION.md` §3.1
++ §2:
+
+- **Wizard fields to extract** (currently in the static body):
+  `class.{knownSpells NumberField, maxSpellLevel NumberField,
+  spellCheckOtherMod nullable StringField, spellCheckDieOverride
+  nullable StringField, spellCheckOverride nullable StringField,
+  patron nullable StringField, patronTaintChance StringField '1%',
+  familiar nullable StringField, corruption HTMLField ''}`. Wizard
+  mixin builds these.
+- **Elf gets its own mixin**. Elves cast as wizards in DCC so the
+  wizard field shape applies — register `'elf'` as a separate mixin
+  that builds identical instances (last-write-wins on duplicate
+  attaches makes the order-determined second registration a no-op
+  in practice, but having both mixins documents that elf has these
+  fields too).
+- **Elf also overrides `skills.detectSecretDoors`** with
+  `label='DCC.HeightenedSenses'`, `ability='int'`, `value='+4'`. The
+  static body defines `detectSecretDoors` as the non-Elf default
+  (`label='DCC.DetectSecretDoors'`, `ability=''`, `value='+0'`); the
+  elf mixin can either replace the SchemaField entirely or mutate
+  field options. Replacing is simpler — pick at slice time.
+- **`HTMLField` import dropped from `player-data.mjs`** once wizard
+  fields move (only consumer is `corruption: HTMLField`).
+- Add Playwright case asserting wizard mixin fields + the elf
+  `detectSecretDoors` override.
+
+Recommend wizard + elf in the same slice (closes the arc with
+shared design context).
 
 #### Phase 4 session 4+ (future).
 - **Class-id dispatch helper** — replace the remaining
@@ -704,6 +726,11 @@ Move entries here as they land; keep the active queue scannable.
   directly. +1 Playwright case (read from `_source` to dodge
   `prepareDerivedData` overwrites). 966 Vitest unchanged; 113
   Playwright passed (was 112, +1 cleric).
+- Phase 4 session 5 (2026-05-18): `'warrior'` mixin contributes
+  `class.luckyWeapon` (nullable StringField, initial null) +
+  `class.luckyWeaponMod` (StringField, initial `'+0'`). Smallest
+  remaining class block — no skills. +1 Playwright case. 966
+  Vitest unchanged; 114 Playwright passed (was 113, +1 warrior).
 
 ### Phase 3 sessions 1–9 (2026-04-18 → 2026-04-19)
 

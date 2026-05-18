@@ -55,7 +55,7 @@ at Phase 6.
 | Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | pending | pending | pending |
 | Wizard | pending — `class.{knownSpells, maxSpellLevel, spellCheckOtherMod, spellCheckDieOverride, spellCheckOverride, patron, patronTaintChance, familiar, corruption}` | pending | pending | pending |
 | Elf | pending — shares wizard field shape **AND** overrides `skills.detectSecretDoors` (`label: 'DCC.HeightenedSenses'`, `ability: 'int'`, `value: '+4'`) — see §3.1 design note | pending | pending | pending |
-| Warrior | pending — `class.{luckyWeapon, luckyWeaponMod}` (smallest remaining block) | pending | pending | pending |
+| Warrior | ✅ P4-5 (`class.{luckyWeapon nullable StringField, luckyWeaponMod StringField '+0'}` — smallest block; no skills) | pending | pending | pending |
 | Zero-Level | not class-bound (`class.className = 'Zero-Level'` default; no class-specific fields) | n/a | n/a | n/a |
 
 ## 3. Component design notes
