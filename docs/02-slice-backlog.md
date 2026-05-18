@@ -525,28 +525,53 @@ Stable `game.dcc.registerClassMixin` row, refreshed the
 `dcc.definePlayerSchema` row, and added a "Homebrew / sibling-module
 recipe: registerClassMixin" migration entry.
 
-#### Phase 4 session 2 (next). Extract a second class's fields onto its mixin.
-Candidates (pick when starting):
-- **Dwarf `shieldBash` skill** — single-field move analogous to
-  halfling. Lowest-risk dogfood of the pattern with a different
-  field shape (uses `DiceField`, `BooleanField`, `StringField`
-  ability instead of just `StringField`). Confirms the registry
-  handles non-trivial field types.
+#### ~~Phase 4 session 2. Dwarf `shieldBash` class-mixin extraction.~~ **DONE 2026-05-18**
+New `'dwarf'` mixin in `module/dcc.js:init` contributes
+`skills.shieldBash` (StringField label/ability/value + DiceField die
++ BooleanField useDeed). Mixed-field-type slice — confirms
+`applyClassMixins` handles non-trivial shapes identically to the
+static definition. `DiceField` imported into `dcc.js` from
+`module/data/fields/_module.mjs`; static `shieldBash` block in
+`player-data.mjs` removed (comment near the removed block now
+documents both halfling + dwarf mixin-sourced fields together).
++1 Playwright case in `extension-api.spec.js` asserts both
+default values AND resolved field types
+(`dieFieldType === 'DiceField'`, `useDeedFieldType === 'BooleanField'`)
+on a live Player document. 110 Playwright passed (was 109, +1);
+966 Vitest unchanged (the registry mechanic was already covered in
+session 1).
+
+#### Phase 4 session 3 (next). Extract a third class's fields onto its mixin.
+Two-of-seven DCC classes (halfling, dwarf) now use mixins. Remaining
+candidates (pick when starting):
 - **Thief skill block** — 13 skills + `class.luckDie` + `class.backstab`.
   Largest single-class block on the schema; biggest §2.1 win in one
   go but also the highest surface-area-touched (sheets, parsers,
-  migrations, browser-test baselines reference these fields). Better
-  as a later slice when the pattern is exercised.
+  migrations, browser-test baselines reference these fields). Now
+  that mixed field types are exercised (session 2), the next big
+  win is a high-volume mixin; thief is the natural pick. If scope
+  feels tight, split into "thief skills" + "thief class fields"
+  (the 13-skill block alone is one half-day slice).
 - **Cleric block** — disapproval + spells 1–5 + deity + 3 skills
   (`divineAid` / `turnUnholy` / `layOnHands`). Mid-size; some fields
   are read by adapter spell-check code (`spellCheckAbility`,
   `disapproval`, `disapprovalTable`) — needs care that the mixin is
-  registered before any spell-check path reads them.
+  registered before any spell-check path reads them. Subtle.
+- **Wizard / elf block** — `patron` / `patronTaintChance` /
+  `familiar` / `corruption` / `knownSpells` / `maxSpellLevel` /
+  `spellCheckOtherMod` / `spellCheckDieOverride` /
+  `spellCheckOverride`. Wizards + elves share the field shape (elves
+  cast as wizards in DCC) but the lib's `'wizard'` / `'elf'` profiles
+  are distinct. Decide before this slice whether to register two
+  separate mixins that both write the same fields (last-write-wins
+  makes the second a no-op) or a single shared key.
+- **Warrior block** — `luckyWeapon` / `luckyWeaponMod` (small).
+  Lowest-volume remaining class.
 
-Recommend dwarf for session 2 (single field, mixed types, low blast
-radius). Defer thief / cleric until the pattern is well-exercised.
+Recommend thief for session 3 (biggest §2.1 win; mixed types
+already proven; sheet / parser dependencies need surfacing).
 
-#### Phase 4 session 3+ (future).
+#### Phase 4 session 4+ (future).
 - **Class-id dispatch helper** — replace the remaining
   `system.details.sheetClass === 'Halfling'` string checks in
   `actor.js:3265-3266` + `item.js:70-103` with a single
@@ -554,15 +579,16 @@ radius). Defer thief / cleric until the pattern is well-exercised.
   Tied to the eventual `Character.classId` projection from the lib.
   Appendix C tracks this as the post-Phase-1 form of the halfling
   i18n stopgap.
-- **Halfling sheet-tab composition (Phase 5 work)** — collapse
-  `DCCActorSheetHalfling`'s class-specific tab/template into a
-  `dcc.registerSheetPart({ classId: 'halfling', tab, template })`
-  registration. Out of scope for Phase 4.
-- **Halfling variant-class registration with the lib (Phase 6
-  work)** — register the halfling class progression with
-  `dcc-core-lib`'s class registry so save bonuses / crit dies /
-  action dies derive from `lib.getSavingThrows('halfling', level)`
-  etc., not from `levelData` packs alone. Out of scope for Phase 4.
+- **Halfling / dwarf sheet-tab composition (Phase 5 work)** —
+  collapse the class-specific sheets' tab/template definitions into
+  `dcc.registerSheetPart({ classId, tab, template })` registrations.
+  Out of scope for Phase 4.
+- **Halfling / dwarf variant-class registration with the lib
+  (Phase 6 work)** — register the halfling / dwarf class
+  progressions with `dcc-core-lib`'s class registry so save bonuses
+  / crit dies / action dies derive from
+  `lib.getSavingThrows('halfling', level)` etc., not from
+  `levelData` packs alone. Out of scope for Phase 4.
 
 ---
 
@@ -577,6 +603,12 @@ Move entries here as they land; keep the active queue scannable.
   `skills.sneakAndHide`; static schema body slimmed by one block.
   +11 Vitest, +3 Playwright; EXTENSION_API.md entries + homebrew
   recipe added.
+- Phase 4 session 2 (2026-05-18): `'dwarf'` mixin contributes
+  `skills.shieldBash` (StringField + DiceField + BooleanField mix).
+  Exercises mixed field types via the registry; static schema body
+  slimmed by another block. +1 Playwright (no new Vitest needed —
+  registry mechanic covered in session 1). 966 Vitest unchanged;
+  110 Playwright passed.
 
 ### Phase 3 sessions 1–9 (2026-04-18 → 2026-04-19)
 

@@ -32,6 +32,7 @@ import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
 import { registerActorSheet, registerClassMixin, registerItemSheet } from './extension-api.mjs'
+import { DiceField } from './data/fields/_module.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -67,17 +68,26 @@ Hooks.once('init', async function () {
   CONFIG.DCC = DCC
 
   // Register built-in DCC class mixins before the Player schema is
-  // first constructed. Phase 4 session 1 — `sneakAndHide` is the
-  // first class-bound field relocated off the monolithic
-  // `module/data/actor/player-data.mjs` static body and onto its
-  // class's mixin. Subsequent slices extract additional fields the
-  // same way; sibling modules contribute their own classes' mixins
-  // via `game.dcc.registerClassMixin` (see `docs/dev/EXTENSION_API.md`).
+  // first constructed. Phase 4 sessions 1+ relocate class-bound
+  // fields off the monolithic `module/data/actor/player-data.mjs`
+  // static body and onto their respective class mixins. Sibling
+  // modules contribute their own classes' mixins via
+  // `game.dcc.registerClassMixin` (see `docs/dev/EXTENSION_API.md`).
   registerClassMixin('halfling', (schema) => {
     const fields = foundry.data.fields
     schema.skills.fields.sneakAndHide = new fields.SchemaField({
       label: new fields.StringField({ initial: 'DCC.SneakAndHide' }),
       value: new fields.StringField({ initial: '+3' })
+    })
+  })
+  registerClassMixin('dwarf', (schema) => {
+    const fields = foundry.data.fields
+    schema.skills.fields.shieldBash = new fields.SchemaField({
+      label: new fields.StringField({ initial: 'DCC.ShieldBash' }),
+      ability: new fields.StringField({ initial: 'str' }),
+      die: new DiceField({ initial: '1d14' }),
+      value: new fields.StringField({ initial: '+0' }),
+      useDeed: new fields.BooleanField({ initial: true })
     })
   })
 

@@ -62,6 +62,19 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 4 session 2 (2026-05-18)** extended the halfling vertical to
+dwarf — `skills.shieldBash` relocated off `player-data.mjs`'s static
+body onto a built-in `'dwarf'` class mixin registered in
+`module/dcc.js:init`. Exercises the registry across mixed field types
+(StringField for label/ability/value + DiceField for die +
+BooleanField for useDeed) — confirms `applyClassMixins` handles
+non-trivial field shapes identically to the static definition.
+`DiceField` imported into `dcc.js` from `module/data/fields/_module.mjs`
+to keep the mixin self-contained. Two of the seven DCC classes
+(halfling, dwarf) now contribute fields via mixins; thief / cleric /
+wizard / warrior / elf remain on the static body for future
+sessions.
+
 **Phase 4 session 1 (2026-05-18)** opened the halfling vertical with
 the `game.dcc.registerClassMixin(classId, mixinFn)` infrastructure —
 new stable-from-day-one extension helper, `CONFIG.DCC.classMixins`
@@ -131,6 +144,29 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 4 session 2: dwarf `shieldBash` class-mixin
+  extraction.** Second halfling-vertical slice, same pattern as
+  session 1 but with mixed field types. New `'dwarf'` entry in
+  `CONFIG.DCC.classMixins` registered in `module/dcc.js:init`
+  contributes `skills.shieldBash` (`label` / `ability` / `value`
+  StringFields + `die` DiceField + `useDeed` BooleanField). The
+  static `shieldBash` block in `player-data.mjs` is deleted; the
+  comment near the removed block is updated to document both
+  halfling + dwarf mixin-sourced fields together. `DiceField`
+  imported into `dcc.js` from `module/data/fields/_module.mjs` so the
+  mixin can reference it without further plumbing. +1 Playwright
+  case in `extension-api.spec.js` asserts the built-in dwarf mixin
+  produces all five fields with the expected defaults AND verifies
+  `dieFieldType === 'DiceField'` + `useDeedFieldType === 'BooleanField'`
+  on the resolved schema — proves mixed field types survive the
+  mixin path identically to a static definition. No new Vitest test
+  needed; the registry mechanics tested in session 1
+  (`applyClassMixins` sort order, last-write-wins, etc.) cover the
+  dwarf mixin's plumbing — only the schema-shape claim is new and
+  it's best exercised against live Foundry. 966 Vitest green
+  (unchanged from session 1). 110 Playwright passed (was 109, +1
+  dwarf case); same single pre-existing environmental flake as
+  session 1 (`xcc-core-book` unregistering DCCItemSheet).
 - **2026-05-18 — Phase 4 session 1: halfling vertical kickoff —
   `registerClassMixin` infrastructure + sneakAndHide extraction.**
   New stable extension helper `game.dcc.registerClassMixin(classId,

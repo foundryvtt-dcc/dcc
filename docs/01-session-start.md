@@ -28,9 +28,22 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 4 session 1 (2026-05-18) opened the halfling
-vertical with the `game.dcc.registerClassMixin(classId, mixinFn)`
-infrastructure** — new stable extension helper, `CONFIG.DCC.classMixins`
+**Status:** **Phase 4 session 2 (2026-05-18) extended the halfling
+vertical to dwarf** — `skills.shieldBash` relocated off
+`player-data.mjs`'s static body onto a built-in `'dwarf'` class
+mixin in `module/dcc.js:init`. Exercises mixed field types
+(StringField label/ability/value + DiceField die + BooleanField
+useDeed) through the registry — confirms `applyClassMixins` handles
+non-trivial shapes identically to a static definition. `DiceField`
+imported into `dcc.js` from `module/data/fields/_module.mjs`. +1
+Playwright case asserts both default values AND resolved field
+types on a live Player document; no new Vitest needed (the registry
+mechanic was covered in session 1). 966 Vitest green (unchanged
+from session 1); 110 Playwright passed (was 109, +1 dwarf case).
+
+Phase 4 session 1 (2026-05-18) shipped the
+`game.dcc.registerClassMixin(classId, mixinFn)` infrastructure —
+new stable extension helper, `CONFIG.DCC.classMixins`
 registry, deterministic-sorted application during
 `PlayerData.defineSchema()` (before the existing
 `dcc.definePlayerSchema` hook). DCC dogfoods its own seed by
@@ -39,7 +52,9 @@ contributes `skills.sneakAndHide`; the static halfling block in
 `module/data/actor/player-data.mjs` is deleted. First chip away at
 §2.1's monolithic Player schema; Foundry-smelling shape
 (`system.skills.sneakAndHide`) intact per §2.12. +11 Vitest, +3
-Playwright. 966 Vitest green (was 955). **Phase 1 closed. Phase 2
+Playwright.
+
+**Phase 1 closed. Phase 2
 CLOSED 2026-04-18. Phase 3
 sessions 1–4 all CLOSED 2026-04-18. Phase 3 sessions 5 (first
 damage-migration slice), 6 (crit + fumble migration), 7 (NPC
@@ -383,43 +398,47 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**Phase 4 session 1 (2026-05-18) opened the halfling vertical** —
-new `game.dcc.registerClassMixin(classId, mixinFn)` stable
-extension helper + `CONFIG.DCC.classMixins` registry. Mixins run
-in deterministic-sorted classId order during
+**Phase 4 session 2 (2026-05-18) extended the halfling vertical to
+dwarf** — `skills.shieldBash` relocated off `player-data.mjs`'s
+static body onto a built-in `'dwarf'` class mixin in
+`module/dcc.js:init`. Exercises mixed field types (StringField
+label/ability/value + DiceField die + BooleanField useDeed) through
+the registry — confirms `applyClassMixins` handles non-trivial
+shapes identically to a static definition. `DiceField` imported
+into `dcc.js`. +1 Playwright case asserts default values AND
+resolved field types (`dieFieldType === 'DiceField'`,
+`useDeedFieldType === 'BooleanField'`). 110 Playwright passed.
+
+Phase 4 session 1 (2026-05-18) shipped the
+`game.dcc.registerClassMixin(classId, mixinFn)` stable extension
+helper + `CONFIG.DCC.classMixins` registry. Mixins run in
+deterministic-sorted classId order during
 `PlayerData.defineSchema()`, **before** the existing
-`dcc.definePlayerSchema` hook (so external handlers still see
-mixin-contributed fields). `module/dcc.js`'s init registers a
-built-in `'halfling'` mixin contributing
-`skills.sneakAndHide` (`StringField`, initial `'+3'`); the static
-halfling block in `module/data/actor/player-data.mjs` is deleted.
-Last-write-wins semantics on duplicate `classId` matches the
-mercurial-magic registry's behavior — siblings can fully replace a
-DCC built-in instead of additively patching. First chip away at
-§2.1's monolithic schema. EXTENSION_API.md grew a new Stable
-`game.dcc.registerClassMixin` row, refreshed the
-`dcc.definePlayerSchema` row, and added a homebrew migration
-recipe. +11 Vitest (`extension-api.test.js`), +3 Playwright
-(`extension-api.spec.js`).
+`dcc.definePlayerSchema` hook. `module/dcc.js`'s init registers a
+built-in `'halfling'` mixin contributing `skills.sneakAndHide`
+(`StringField`, initial `'+3'`). Last-write-wins semantics on
+duplicate `classId` matches the mercurial-magic registry's
+behavior. EXTENSION_API.md grew a new Stable
+`game.dcc.registerClassMixin` row + homebrew migration recipe.
++11 Vitest, +3 Playwright.
 
 **Remaining Phase 4 (halfling vertical) candidates:**
 
-1. **Extract a second class's fields onto its mixin.** Recommended
-   pick: dwarf `shieldBash` (single field, mixed types — `DiceField`
-   + `BooleanField` + `StringField` — low blast radius, exercises
-   the registry across non-trivial field shapes). Thief block
-   (13 skills + 2 class fields) and cleric block (disapproval +
-   spells + 3 skills) are bigger §2.1 wins per slice but warrant
-   later sessions when the pattern is well-exercised. See
-   `docs/02-slice-backlog.md` "Phase 4 — Active sub-arc" for the
-   inventory.
+1. **Extract a third class's fields onto its mixin.** Two-of-seven
+   classes (halfling, dwarf) now use mixins. Recommended pick:
+   **thief skill block** (13 skills + `class.luckDie` +
+   `class.backstab`) — biggest §2.1 win in one slice; mixed types
+   already proven (session 2); biggest sheet/parser dependency
+   surface to flush out. Cleric / wizard-elf / warrior blocks are
+   smaller alternatives. See `docs/02-slice-backlog.md` "Phase 4 —
+   Active sub-arc" Phase 4 session 3 entry for the full inventory.
 2. **Class-id dispatch helper** — replace the remaining
    `system.details.sheetClass === 'Halfling'` string checks in
    `actor.js:3265-3266` + `item.js:70-103` with a single
    `actor.classId` accessor. Appendix C tracks the post-Phase-1
    form of the halfling i18n stopgap.
-3. **Phase 5 work (halfling sheet-tab composition)** — out of scope
-   for Phase 4 sessions; tracked in the backlog for later.
+3. **Phase 5 work (halfling / dwarf sheet-tab composition)** — out
+   of scope for Phase 4 sessions; tracked in the backlog for later.
 
 **Other still-viable Group E candidates** (independent of halfling):
 

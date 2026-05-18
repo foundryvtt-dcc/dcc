@@ -186,22 +186,15 @@ export class PlayerData extends BaseActorData {
           ability: new StringField({ initial: 'int' }),
           die: new DiceField({ initial: '1d10' }),
           value: new StringField({ initial: '0' })
-        }),
-
-        // Halfling skills contributed via the `'halfling'` entry in
-        // `CONFIG.DCC.classMixins` (see `module/dcc.js`'s built-in
-        // registration). Phase 4 session 1 relocation — keeps the
-        // Foundry-smelling shape (`skills.sneakAndHide`) intact while
-        // moving the source-of-truth onto the per-class registry.
-
-        // Dwarf skills
-        shieldBash: new SchemaField({
-          label: new StringField({ initial: 'DCC.ShieldBash' }),
-          ability: new StringField({ initial: 'str' }),
-          die: new DiceField({ initial: '1d14' }),
-          value: new StringField({ initial: '+0' }),
-          useDeed: new BooleanField({ initial: true })
         })
+
+        // Halfling skills (`skills.sneakAndHide`) + Dwarf skills
+        // (`skills.shieldBash`) contributed via the `'halfling'` /
+        // `'dwarf'` entries in `CONFIG.DCC.classMixins` — see
+        // `module/dcc.js`'s built-in registrations. Phase 4
+        // sessions 1 + 2 relocations — keep the Foundry-smelling
+        // shapes intact while moving source-of-truth onto the
+        // per-class registry.
       }),
 
       // Configuration (from config template)

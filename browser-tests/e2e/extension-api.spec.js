@@ -299,6 +299,45 @@ test.describe('DCC Extension API', () => {
     expect(result.sneakAndHideLabel).toBe('DCC.SneakAndHide')
   })
 
+  test('built-in dwarf mixin contributes shieldBash with mixed field types to a Player actor schema', async ({ page }) => {
+    // Phase 4 session 2 — exercises the registry across mixed field
+    // types (StringField label/ability/value + DiceField die +
+    // BooleanField useDeed). Halfling's session 1 mixin was
+    // StringField-only; session 2 confirms `DiceField` and
+    // `BooleanField` survive the mixin path identically to how they
+    // landed when defined statically in `player-data.mjs`.
+    const result = await page.evaluate(async () => {
+      const dwarfMixin = CONFIG.DCC?.classMixins?.dwarf
+      const player = await Actor.create({ name: 'P4S2 Dwarf Probe', type: 'Player' })
+      const skillsField = player.system.schema.fields.skills
+      const shieldBashField = skillsField?.fields?.shieldBash ?? null
+      const sb = player.system.skills?.shieldBash ?? null
+      const dieFieldType = shieldBashField?.fields?.die?.constructor?.name ?? null
+      const useDeedFieldType = shieldBashField?.fields?.useDeed?.constructor?.name ?? null
+      await player.delete()
+      return {
+        mixinIsFunction: typeof dwarfMixin === 'function',
+        hasSchemaField: shieldBashField !== null,
+        label: sb?.label ?? null,
+        ability: sb?.ability ?? null,
+        die: sb?.die ?? null,
+        value: sb?.value ?? null,
+        useDeed: sb?.useDeed ?? null,
+        dieFieldType,
+        useDeedFieldType
+      }
+    })
+    expect(result.mixinIsFunction).toBe(true)
+    expect(result.hasSchemaField).toBe(true)
+    expect(result.label).toBe('DCC.ShieldBash')
+    expect(result.ability).toBe('str')
+    expect(result.die).toBe('1d14')
+    expect(result.value).toBe('+0')
+    expect(result.useDeed).toBe(true)
+    expect(result.dieFieldType).toBe('DiceField')
+    expect(result.useDeedFieldType).toBe('BooleanField')
+  })
+
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
     // The mercurial-magic registry's last-write-wins semantic
     // matters for sibling modules that want to fully replace a
