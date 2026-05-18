@@ -37,11 +37,17 @@ Quick reference for Claude Code working with the DCC system for FoundryVTT.
 
 ## Working with dcc-core-lib
 
-We own `@moonloch/dcc-core-lib` (the upstream library is at
-`/Users/timwhite/WebstormProjects/dcc-core-lib`, repo
-`moonloch/dcc-core-lib`). When investigating roll/check/save/combat
-behavior and the bug appears to be in the lib (not just an adapter
-translation issue):
+We own **`@moonloch/dcc-core-lib`** (scoped npm name — the unscoped
+`dcc-core-lib` is **not** published; never `npm install dcc-core-lib`).
+The upstream library is at `/Users/timwhite/WebstormProjects/dcc-core-lib`,
+GitHub repo `moonloch/dcc-core-lib`, vendored into this repo at
+`module/vendor/dcc-core-lib/`. When the doc/branch/path uses the bare
+`dcc-core-lib` token (branch `refactor/dcc-core-lib-adapter`, vendor
+directory, repo identifier), it's referring to one of those local
+identifiers — the npm package is always the scoped form.
+
+When investigating roll/check/save/combat behavior and the bug appears
+to be in the lib (not just an adapter translation issue):
 
 - **Fix it in dcc-core-lib.** Open a PR against `moonloch/dcc-core-lib`
   with the fix + a regression test. Do not paper over lib bugs with

@@ -4,8 +4,12 @@ The DCC FoundryVTT system exposes a surface to downstream modules through
 two channels: **Foundry hooks** (`Hooks.on('dcc.*', …)`) and the global
 **`game.dcc` namespace**. This document categorizes every item on that
 surface so module authors know what they can rely on and so the refactor
-to an adapter over [dcc-core-lib](ARCHITECTURE_REIMAGINED.md) knows what
-it must preserve.
+to an adapter over [`@moonloch/dcc-core-lib`](ARCHITECTURE_REIMAGINED.md)
+knows what it must preserve.
+
+> The library is published on npm as **`@moonloch/dcc-core-lib`** (scoped).
+> The unscoped name is not published; install / import / link with the
+> scoped name only.
 
 **Categories:**
 
@@ -22,11 +26,22 @@ it must preserve.
   for removal in coordination with downstream maintainers.
 
 Audit method: `Hooks.(call|callAll|on|once)\(['"]dcc\.` and
-`game\.dcc\.*` across sibling modules at `/Users/timwhite/FoundryVTT/
-Data/modules/`. Audit performed 2026-04-17 against the commit on
-`main` at the time (`2337ec0`). Cross-reference pass against
-`ARCHITECTURE_REIMAGINED.md §2.8–§2.12` performed 2026-04-19 (Phase
-3 session 8); pain-point columns added to the tables below.
+`game\.dcc\.*` across sibling modules at
+`/Users/timwhite/FoundryVTT-Next/Data/modules/`. Audit performed
+2026-04-17 against the commit on `main` at the time (`2337ec0`).
+Cross-reference pass against `ARCHITECTURE_REIMAGINED.md
+§2.8–§2.12` performed 2026-04-19 (Phase 3 session 8); pain-point
+columns added to the tables below. **Re-audit 2026-05-18** (closing
+open question #4) confirmed XCC, MCC, dcc-crawl-classes, dcc-qol,
+dcc-core-book, xcc-core-book, dcc-annual-1, and
+token-action-hud-dcc against the current stable surface. Findings:
+XCC retired the `XCCActor` subclass and migrated all 19
+actor-sheet registrations to `game.dcc.registerActorSheet` (so
+`dcc.afterComputeSpellCheck` now has a live consumer); MCC (7
+sites) and dcc-crawl-classes (9 sites) still call
+`Actors.registerSheet` directly — migration is opt-in, no
+deadline. No undocumented `game.dcc.*` or `dcc.*` hook usage
+detected. The tables below reflect the re-audit.
 
 ## Stated contract: Foundry-smelling surface (§2.12)
 
@@ -71,7 +86,7 @@ audited sibling modules for the path before slimming.
 | `dcc.setLayOnHandsTable` | `module/settings.js:156` | `dcc-core-book` (emitter) | §2.10 | |
 | `dcc.setMercurialMagicTable` | `module/settings.js:188` | `dcc-core-book` (emitter); XCC explicitly cannot use this (see ARCHITECTURE_REIMAGINED.md §2.4) | §2.4 (hardcoded wizard/cleric magic system), §2.11 | Phase 2 needs to generalize this so XCC's two mercurial tables work without fighting the hook. |
 | `dcc.setTurnUnholyTable` | `module/settings.js:140` | `dcc-core-book` (emitter) | §2.10 | |
-| `dcc.afterComputeSpellCheck` | `module/actor.js:786` | (none yet — replaces XCC's `XCCActor` subclass once its maintainer migrates; see "XCC migration: retiring `xcc-actor.js`" below) | §2.5 (Actor document class customization) | Fires at the end of `DCCActor.computeSpellCheck()` with `(actor)` after `system.class.spellCheck` has been populated by the default DCC computation. Listeners can observe or overwrite the result. Only fires when DCC actually computed something (the `!this.system.class` early-return path skips the hook so listeners don't have to defensively re-check). Stable from day one. |
+| `dcc.afterComputeSpellCheck` | `module/actor.js:786` | `xcc` (consumed since 2026-05-18; `xcc/module/xcc.js:42` — XCC retired the `XCCActor` subclass + global `CONFIG.Actor.documentClass` replacement in favor of this hook) | §2.5 (Actor document class customization) | Fires at the end of `DCCActor.computeSpellCheck()` with `(actor)` after `system.class.spellCheck` has been populated by the default DCC computation. Listeners can observe or overwrite the result. Only fires when DCC actually computed something (the `!this.system.class` early-return path skips the hook so listeners don't have to defensively re-check). Stable from day one. |
 
 ### Internal
 
@@ -98,7 +113,7 @@ Set in `module/dcc.js:108–121`.
 | `game.dcc.FleetingLuck` | class | `xcc` (`init`, `updateFlags`, `give`, `enabled`, `automationEnabled`) | §2.5 | XCC uses `Object.defineProperty` on `enabled` and `automationEnabled` — so those must remain configurable properties, not frozen. |
 | `game.dcc.processSpellCheck` | function | `xcc` (`xcc-actor-sheet.js` for wizard + cleric spells) | §2.4 (magic system), §2.5, §2.11 | Post-roll spell-check orchestrator: pre-built `Roll` + optional `RollTable` → patron taint check + crit/fumble classification + result-table lookup + level-added crit totaling + `SpellResult` chat render + wizard spell loss / cleric disapproval gating. **Phase 2 close (2026-04-18) finalized this as a permanent stable API** — not a deprecation target. The adapter dispatcher (`DCCActor.rollSpellCheck`) routes the happy-path generic / wizard / cleric / patron-bound casts through `_castViaCastSpell` / `_castViaCalculateSpellCheck`; everything else (result-table spells, naked pre-built-Roll calls, skill-table spells like Turn Unholy, XCC sheet paths with elf-trickster / blaster tweaks) continues to invoke `processSpellCheck`. Future adapter capability growth (result-table rendering, manifestation, forceCrit, mercurial display w/o race condition) can progressively migrate routes; `processSpellCheck` stays as the fallback orchestrator indefinitely. See `docs/00-progress.md` Phase 2 close-out for the inventory and rationale. |
 | `game.dcc.registerItemSheet` | function | (none yet — stable from day one per recommendation 7) | §2.5 (extension surface), §2.11 | `(types, SheetClass, options?)` — single declarative call that folds the `Items.unregisterSheet('core', ItemSheetV2) + Items.registerSheet(scope, SheetClass, …)` boilerplate. `types` is `string \| string[] \| undefined` (undefined → all sub-types). `options.makeDefault: true` (the common case) also unregisters Foundry's core `ItemSheetV2` for the same `types` so the new sheet wins the default-pick. Source: `module/extension-api.mjs`. Added 2026-04-19 (Group B1). DCC's own `DCCItemSheet` registration was migrated to dogfood the helper — see `module/dcc.js`. |
-| `game.dcc.registerActorSheet` | function | (none yet — stable from day one; sibling-module migration is opt-in) | §2.5 (extension surface), §2.11 | `(types, SheetClass, options?)` — Actor-side mirror of `registerItemSheet`. Same signature shape; defaults `options.scope` to `'dcc'` (sibling modules pass their own scope: `'xcc'`, `'mcc-healer'`, `'dcc-crawl-classes-bard'`, etc.). Closes the 19 `Actors.registerSheet('xcc', ...)` calls in XCC, 7 in MCC, 9 in dcc-crawl-classes, and 11 in DCC's own code (the latter migrated 2026-04-19 to dogfood the helper). The legacy global `Actors.unregisterSheet('core', ActorSheetV2)` line in `module/dcc.js` is kept as a one-shot system-replaces-core gesture, separate from any single helper call. Source: `module/extension-api.mjs`. Added 2026-04-19. |
+| `game.dcc.registerActorSheet` | function | `xcc` (all 19 sites migrated; `xcc/module/xcc.js:178–286`). MCC (7 sites) + dcc-crawl-classes (9 sites) still on `Actors.registerSheet`; migration opt-in. | §2.5 (extension surface), §2.11 | `(types, SheetClass, options?)` — Actor-side mirror of `registerItemSheet`. Same signature shape; defaults `options.scope` to `'dcc'` (sibling modules pass their own scope: `'xcc'`, `'mcc-healer'`, `'dcc-crawl-classes-bard'`, etc.). Closes the 19 `Actors.registerSheet('xcc', ...)` calls in XCC (migrated 2026-05-18), 7 in MCC, 9 in dcc-crawl-classes, and 11 in DCC's own code (the latter migrated 2026-04-19 to dogfood the helper). The legacy global `Actors.unregisterSheet('core', ActorSheetV2)` line in `module/dcc.js` is kept as a one-shot system-replaces-core gesture, separate from any single helper call. Source: `module/extension-api.mjs`. Added 2026-04-19. |
 
 ### Internal
 
@@ -212,17 +227,24 @@ multi-repo change) so they can land the migration on their own
 timeline. The system stays backward-compatible: nothing here is
 required for a sibling module to keep working.
 
-### XCC migration: retiring `xcc-actor.js`
+### XCC migration: retiring `xcc-actor.js` — **completed 2026-05-18**
 
-**Goal:** Drop the `XCCActor` subclass + the global
-`CONFIG.Actor.documentClass = XCCActor` replacement in
-`xcc/module/xcc.js:171`. Before this migration, XCC pays for one
-method override (`computeSpellCheck`) by replacing the entire actor
-document class globally — a textbook §2.5 monkey-patch.
+**Status:** done. XCC landed the migration; `xcc/module/xcc-actor.js`
+no longer exists and there is no `CONFIG.Actor.documentClass`
+override in `xcc/module/xcc.js`. The `dcc.afterComputeSpellCheck`
+listener now lives at `xcc/module/xcc.js:42` and consumes the hook
+DCC ships. Recipe retained below for reference / for other modules
+considering a similar Actor-subclass retirement.
 
-**Why it's safe to retire:** `xcc-actor.js` overrides exactly one
-method, and that override is purely additive (calls `super` first,
-then conditionally overwrites `system.class.spellCheck`). The new
+**Original goal:** Drop the `XCCActor` subclass + the global
+`CONFIG.Actor.documentClass = XCCActor` replacement. Before this
+migration, XCC paid for one method override (`computeSpellCheck`) by
+replacing the entire actor document class globally — a textbook §2.5
+monkey-patch.
+
+**Why it was safe to retire:** `xcc-actor.js` overrode exactly one
+method, and that override was purely additive (called `super` first,
+then conditionally overwrote `system.class.spellCheck`). The
 `dcc.afterComputeSpellCheck` hook fires at the same point with
 identical pre-/post-state.
 
@@ -247,8 +269,7 @@ Hooks.on('dcc.afterComputeSpellCheck', (actor) => {
 
 - Delete `xcc/module/xcc-actor.js` entirely.
 - Remove `import XCCActor from './xcc-actor.js'` from `xcc.js`.
-- Remove the `CONFIG.Actor.documentClass = XCCActor` line at
-  `xcc/module/xcc.js:171`.
+- Remove the `CONFIG.Actor.documentClass = XCCActor` line.
 
 **Step 3 — verify.** Open an XCC PC, confirm `system.class.spellCheck`
 matches the pre-migration value (DCC computes first, XCC's hook
@@ -257,10 +278,9 @@ trickster actors (luck mod folded in), actors with a string
 `spellCheckOtherMod`. The XCC test suite (if present) should pass
 unchanged.
 
-**No DCC system change required for this migration** — the hook is
-already shipped (2026-04-19, see the "Stable" hooks table). The XCC
-maintainer can land all three steps in a single XCC PR on their own
-schedule.
+**No DCC system change was required for this migration** — the hook
+shipped 2026-04-19 (see the "Stable" hooks table) and XCC adopted it
+on its own schedule.
 
 ### XCC / MCC / dcc-crawl-classes migration: actor-sheet boilerplate
 
@@ -270,12 +290,15 @@ schedule.
 label: '…' })`. Identical behavior; one line shorter; no need to
 import `Actors` from `foundry.documents.collections`.
 
-**Per-module call counts (audited 2026-04-19):**
-- XCC: 19 call sites in `xcc/module/xcc.js` (lines 174–286)
+**Per-module call counts (audited 2026-04-19; re-confirmed 2026-05-18):**
+- ~~XCC: 19 call sites in `xcc/module/xcc.js`~~ — **migrated
+  2026-05-18.** All 19 sites now call `game.dcc.registerActorSheet`
+  at `xcc/module/xcc.js:178–286`.
 - MCC: 7 call sites in `mcc-classes/module/mcc-classes.js` (lines
-  122–146)
+  122–146) — **not yet migrated.**
 - dcc-crawl-classes: 9 call sites in
   `dcc-crawl-classes/module/dcc-crawl-classes.js` (lines 137–145)
+  — **not yet migrated.**
 
 **Recipe (per call site):**
 

@@ -1,8 +1,16 @@
 # DCC Architecture — Reimagined
 
 **Status:** Discussion draft · 2026-04-17 (revised)
-**Audience:** System maintainers, `dcc-core-lib` authors, module authors considering DCC spinoffs
-**Scope:** Strategic refactor directions, centered on the existing `dcc-core-lib` package
+**Audience:** System maintainers, `@moonloch/dcc-core-lib` authors, module authors considering DCC spinoffs
+**Scope:** Strategic refactor directions, centered on the existing `@moonloch/dcc-core-lib` package
+
+> Throughout this document, references to "the lib" or "`dcc-core-lib`" mean the
+> npm package published as **`@moonloch/dcc-core-lib`** (scoped). The unscoped
+> name `dcc-core-lib` is not published — use the scoped name when installing,
+> importing, or linking. In the Foundry system the lib is consumed by vendoring
+> its built `dist/` into `module/vendor/dcc-core-lib/` (see "Working with
+> dcc-core-lib" in the top-level `CLAUDE.md`); the unscoped path segment is
+> only the local directory name.
 
 ---
 
@@ -289,7 +297,7 @@ Seven phases. Each ends with the Foundry system working and shippable. No big-ba
 
 ### Phase 0 — Prep (1–2 weeks)
 - Fix the halfling i18n bug in `actor.js:1725` and `item.js:71` (compare to an internal key or canonical English string, not to `game.i18n.localize('DCC.Halfling')`).
-- Add the `dcc-core-lib` package as a peer dep (`npm install dcc-core-lib`) and confirm it bundles / Foundry can import it.
+- Add the `@moonloch/dcc-core-lib` package as a peer dep (`npm install @moonloch/dcc-core-lib`) and confirm it bundles / Foundry can import it. (Phase 0 superseded this with the vendor approach — see `00-progress.md` open question #1 — but the original plan is preserved here for historical context.)
 - Write the adapter scaffolding: `character-accessors.mjs`, `foundry-roller.mjs`, `foundry-data-loader.mjs`, `chat-renderer.mjs` as empty stubs.
 - Document every currently-emitted DCC Foundry hook and every `game.dcc.X` export as **stable** or **internal**. Publish the list.
 - **Ships as:** patch release. No behavior change except the i18n bug fix.

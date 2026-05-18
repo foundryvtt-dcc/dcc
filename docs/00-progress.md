@@ -341,22 +341,42 @@ archives linked above.
    (`../vendor/dcc-core-lib/index.js`). No bundler added. One sync
    command (`npm run sync-core-lib`) + one commit per lib-version bump.
 
-2. **Package name discrepancy.** The architecture doc and setup
-   instructions refer to `dcc-core-lib`, but the actual npm package
-   name is `@moonloch/dcc-core-lib` (scoped). Imports use the scoped
-   name. The unscoped name is not currently published, so CI currently
-   *cannot* `npm install` the lib — only `npm link` works. Resolved
-   in spirit by vendoring; can be closed out.
+2. ~~**Package name discrepancy.**~~ **Closed 2026-05-18.** The
+   underlying issue (the unscoped `dcc-core-lib` cannot be `npm
+   install`ed because only the scoped `@moonloch/dcc-core-lib` is
+   published) was rendered moot by the vendor approach (open question
+   #1, resolved 2026-04-17) — the system imports from
+   `module/vendor/dcc-core-lib/` and never `npm install`s the lib at
+   all. The documentation cleanup (2026-05-18) updated the top of
+   `ARCHITECTURE_REIMAGINED.md`, the install step in Phase 0, the
+   `EXTENSION_API.md` header, and the "Working with dcc-core-lib"
+   section in `CLAUDE.md` to call out the scoped name explicitly and
+   note that the bare `dcc-core-lib` token in branch / vendor / repo
+   identifiers refers to local-only paths, not the npm package.
+   Historical session-handoff prose that says e.g. "synced
+   dcc-core-lib@0.7.0" is unchanged — it refers to lib versions, not
+   install instructions, and the context is unambiguous.
 
-4. **Undocumented `game.dcc.*` pieces with heavy XCC usage.** XCC
-   reaches into `game.dcc.DCCRoll.cleanFormula`, `game.dcc.DiceChain.
-   bumpDie`, `calculateCritAdjustment`,
-   `calculateProportionalCritRange`, and the full `FleetingLuck` class
-   (`init`, `updateFlags`, `give`, `enabled`, `automationEnabled`).
-   These are now tagged **stable** in `EXTENSION_API.md`. Formal
-   stabilization before Phase 3 was the original ask; Phase 3 is
-   largely complete and these exports still stand. Can be closed once
-   `EXTENSION_API.md` is re-audited.
+4. ~~**Undocumented `game.dcc.*` pieces with heavy XCC usage.**~~
+   **Closed 2026-05-18.** Re-audit of XCC, MCC, dcc-crawl-classes,
+   dcc-qol, and the four content-pack modules against the current
+   stable surface confirmed: every `game.dcc.*` symbol XCC actually
+   touches (`DCCRoll.createRoll` / `DCCRoll.cleanFormula`,
+   `DiceChain.bumpDie` / `calculateCritAdjustment` /
+   `calculateProportionalCritRange`, the five-method `FleetingLuck`
+   surface — `init`, `updateFlags`, `give`, `enabled`,
+   `automationEnabled`, the latter two consumed via
+   `Object.defineProperty`, so they must remain configurable —
+   `processSpellCheck`, and `registerActorSheet`) appears in
+   `EXTENSION_API.md`'s Stable table. No undocumented usage and no
+   gaps. The audit also caught two doc-rot items, both fixed in the
+   same pass: `dcc.afterComputeSpellCheck` now has a live XCC
+   consumer (XCC retired `xcc-actor.js` + `CONFIG.Actor.documentClass`
+   override 2026-05-18 in favor of the hook) and XCC migrated all 19
+   actor-sheet registrations to `game.dcc.registerActorSheet`. MCC
+   (7 sites) and dcc-crawl-classes (9 sites) have not migrated yet;
+   that's opt-in with no deadline. See `EXTENSION_API.md` re-audit
+   header dated 2026-05-18.
 
 7. **Wizard / elf adapter-path modifier-dialog coverage beyond
    Spellburn.** **Fully resolved 2026-05-17 across sessions 26 +

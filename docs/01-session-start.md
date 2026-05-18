@@ -454,15 +454,24 @@ disables the Playwright login and tests hang for 11 s each.
   them first.
 
 **Remaining open questions** (tracked in `00-progress.md`):
-- #2 package-name discrepancy — resolved in spirit by vendoring, can
-  be closed out.
+- ~~#2 package-name discrepancy~~ — closed 2026-05-18. Vendor
+  approach made the original "can't `npm install` the unscoped name"
+  problem moot; documentation cleanup landed the same day to call
+  out the scoped `@moonloch/dcc-core-lib` name in
+  `ARCHITECTURE_REIMAGINED.md`, `EXTENSION_API.md`, and
+  `CLAUDE.md`.
 - ~~#3 dead `dcc.update` hook~~ — closed 2026-05-18. XCC removed
   the speculative listener on `chore/migrate-to-dcc-extension-api`;
   DCC's `EXTENSION_API.md` Dead-hooks table cleared. Decision: don't
   emit; no real consumer existed.
-- #4 stabilizing undocumented `game.dcc.*` pieces — Phase 3 is
-  largely complete and these exports still stand; can be closed
-  once `EXTENSION_API.md` is re-audited.
+- ~~#4 stabilizing undocumented `game.dcc.*` pieces~~ — closed
+  2026-05-18 via `EXTENSION_API.md` re-audit. Every symbol XCC
+  touches is in the Stable table; no gaps. Audit also flipped
+  `dcc.afterComputeSpellCheck` from "none yet" to a live XCC
+  consumer (XCC retired `xcc-actor.js` + `CONFIG.Actor.documentClass`
+  same day) and recorded XCC's actor-sheet-helper migration as
+  complete (19/19 sites). MCC + dcc-crawl-classes haven't migrated
+  the helper yet — opt-in, no deadline.
 - ~~#5 patron-taint RAW alignment~~ — closed at session 21 / D3a
   (2026-04-24). `dcc-core-lib@0.7.0` landed the two RAW triggers;
   `_runLegacyPatronTaint` retired. D3 arc (a/b-α/b-β/b-γ/c) fully
