@@ -32,18 +32,28 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 4 session 2 (2026-05-18) extended the halfling
-vertical to dwarf** — `skills.shieldBash` relocated off
-`player-data.mjs`'s static body onto a built-in `'dwarf'` class
-mixin in `module/dcc.js:init`. Exercises mixed field types
-(StringField label/ability/value + DiceField die + BooleanField
-useDeed) through the registry — confirms `applyClassMixins` handles
-non-trivial shapes identically to a static definition. `DiceField`
-imported into `dcc.js` from `module/data/fields/_module.mjs`. +1
-Playwright case asserts both default values AND resolved field
-types on a live Player document; no new Vitest needed (the registry
-mechanic was covered in session 1). 966 Vitest green (unchanged
-from session 1); 110 Playwright passed (was 109, +1 dwarf case).
+**Status:** **Phase 4 session 3 (2026-05-18) extended the halfling
+vertical to thief — the largest single-class relocation so far.** New
+`'thief'` mixin in `module/dcc.js:init` contributes the 12-skill block
+(sneakSilently / hideInShadows / pickPockets / climbSheerSurfaces /
+pickLock / findTrap / disableTrap / forgeDocument / disguiseSelf /
+readLanguages / handlePoison / castSpellFromScroll) **plus** two
+`schema.class.fields` mutations (`luckDie` DiceField '1d3', `backstab`
+StringField '0'). First mixin to touch BOTH `schema.class.fields` and
+`schema.skills.fields` on the same registration — also the first to
+use an inline factory helper (`thiefSkill(label, ability)`) to
+compact the repeated label/ability/value triples. `handlePoison`
+deliberately omits `ability` to match the static body shape;
+`castSpellFromScroll` carries its own DiceField die ('1d10').
+`DiceField` import dropped from `player-data.mjs` (was only used by
+the two now-relocated thief fields). Three-of-seven DCC classes
+(halfling, dwarf, thief) now mixin-source their fields. +1 Playwright
+case asserts all 12 skill fields, non-`agl` abilities,
+`handlePoison.ability` omission, the DiceField type+initial on
+`castSpellFromScroll.die`, and the class fields' types+initials.
+966 Vitest green (unchanged from session 1); 112 Playwright passed
+(was 110, +1 thief +1 dwarf-flake recovered), 1 latent failure
+(documented xcc-core-book DCCItemSheet override).
 
 Phase 4 session 1 (2026-05-18) shipped the
 `game.dcc.registerClassMixin(classId, mixinFn)` infrastructure —
@@ -402,16 +412,29 @@ observationally faithful through the adapter path.
 
 ### Next-session guidance
 
-**Phase 4 session 2 (2026-05-18) extended the halfling vertical to
-dwarf** — `skills.shieldBash` relocated off `player-data.mjs`'s
+**Phase 4 session 3 (2026-05-18) extended the vertical to thief** —
+the largest single-class relocation so far. New `'thief'` mixin in
+`module/dcc.js:init` contributes the 12-skill block (sneakSilently /
+hideInShadows / pickPockets / climbSheerSurfaces / pickLock /
+findTrap / disableTrap / forgeDocument / disguiseSelf /
+readLanguages / handlePoison / castSpellFromScroll) **plus**
+`schema.class.fields.luckDie` (DiceField '1d3') +
+`schema.class.fields.backstab` (StringField '0'). First mixin to
+touch BOTH `schema.class.fields` and `schema.skills.fields` on the
+same registration, and first to use an inline factory helper
+(`thiefSkill(label, ability)`) to compact 10 skills sharing the
+label/ability/value triple. `handlePoison` deliberately omits
+`ability`; `castSpellFromScroll` carries its own DiceField die.
+`DiceField` import dropped from `player-data.mjs` (was only used by
+the two now-relocated thief fields). +1 Playwright case;
+966 Vitest unchanged; 112 Playwright passed.
+
+Phase 4 session 2 (2026-05-18) extended the halfling vertical to
+dwarf — `skills.shieldBash` relocated off `player-data.mjs`'s
 static body onto a built-in `'dwarf'` class mixin in
 `module/dcc.js:init`. Exercises mixed field types (StringField
 label/ability/value + DiceField die + BooleanField useDeed) through
-the registry — confirms `applyClassMixins` handles non-trivial
-shapes identically to a static definition. `DiceField` imported
-into `dcc.js`. +1 Playwright case asserts default values AND
-resolved field types (`dieFieldType === 'DiceField'`,
-`useDeedFieldType === 'BooleanField'`). 110 Playwright passed.
+the registry.
 
 Phase 4 session 1 (2026-05-18) shipped the
 `game.dcc.registerClassMixin(classId, mixinFn)` stable extension
@@ -419,23 +442,26 @@ helper + `CONFIG.DCC.classMixins` registry. Mixins run in
 deterministic-sorted classId order during
 `PlayerData.defineSchema()`, **before** the existing
 `dcc.definePlayerSchema` hook. `module/dcc.js`'s init registers a
-built-in `'halfling'` mixin contributing `skills.sneakAndHide`
-(`StringField`, initial `'+3'`). Last-write-wins semantics on
-duplicate `classId` matches the mercurial-magic registry's
-behavior. EXTENSION_API.md grew a new Stable
-`game.dcc.registerClassMixin` row + homebrew migration recipe.
-+11 Vitest, +3 Playwright.
+built-in `'halfling'` mixin contributing `skills.sneakAndHide`.
+Last-write-wins semantics on duplicate `classId` matches the
+mercurial-magic registry's behavior. EXTENSION_API.md grew a new
+Stable `game.dcc.registerClassMixin` row + homebrew migration
+recipe.
 
 **Remaining Phase 4 (halfling vertical) candidates:**
 
-1. **Extract a third class's fields onto its mixin.** Two-of-seven
-   classes (halfling, dwarf) now use mixins. Recommended pick:
-   **thief skill block** (13 skills + `class.luckDie` +
-   `class.backstab`) — biggest §2.1 win in one slice; mixed types
-   already proven (session 2); biggest sheet/parser dependency
-   surface to flush out. Cleric / wizard-elf / warrior blocks are
-   smaller alternatives. See `docs/02-slice-backlog.md` "Phase 4 —
-   Active sub-arc" Phase 4 session 3 entry for the full inventory.
+1. **Extract a fourth class's fields onto its mixin.** Three-of-seven
+   classes (halfling, dwarf, thief) now use mixins. Recommended pick:
+   **cleric block** (`class.{spellCheck, spellCheckAbility,
+   spellsLevel1–5, deity, disapproval, disapprovalTable}` +
+   `skills.{divineAid, turnUnholy, layOnHands}`) — flushes out the
+   "field read by adapter spell-check code" timing assumption.
+   Warrior (smallest: `luckyWeapon` / `luckyWeaponMod`) and
+   wizard+elf (shared field shape, design call resolved per
+   CLASS_DECOMPOSITION.md §3.1 — register two mixins both attaching
+   the same fields) are the other candidates. See
+   `docs/02-slice-backlog.md` "Phase 4 session 4 (next)" for the
+   full inventory.
 2. **Class-id dispatch helper** — replace the remaining
    `system.details.sheetClass === 'Halfling'` string checks in
    `actor.js:3265-3266` + `item.js:70-103` with a single

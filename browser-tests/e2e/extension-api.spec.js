@@ -338,6 +338,61 @@ test.describe('DCC Extension API', () => {
     expect(result.useDeedFieldType).toBe('BooleanField')
   })
 
+  test('built-in thief mixin contributes the 12-skill block + class.luckDie / class.backstab to a Player actor schema', async ({ page }) => {
+    // Phase 4 session 3 — largest single-class relocation so far.
+    // Exercises the registry across (a) a SchemaField fan-out (12
+    // thief skills built via a shared helper inside the mixin), (b)
+    // skipping the `ability` field on `handlePoison` (intentional —
+    // matches the legacy static body which has no ability), (c) the
+    // DiceField on `castSpellFromScroll.die`, and (d) class-field
+    // (`schema.class.fields`) mutations (`luckDie` / `backstab`) on
+    // the same mixin alongside skill-field mutations.
+    const result = await page.evaluate(async () => {
+      const thiefMixin = CONFIG.DCC?.classMixins?.thief
+      const player = await Actor.create({ name: 'P4S3 Thief Probe', type: 'Player' })
+      const skillsField = player.system.schema.fields.skills
+      const classField = player.system.schema.fields.class
+      const has = (name) => skillsField?.fields?.[name] != null
+      const skills = player.system.skills ?? {}
+      const cls = player.system.class ?? {}
+      const cssField = skillsField?.fields?.castSpellFromScroll ?? null
+      const luckDieFieldType = classField?.fields?.luckDie?.constructor?.name ?? null
+      const cssDieFieldType = cssField?.fields?.die?.constructor?.name ?? null
+      const handlePoisonHasAbility = skillsField?.fields?.handlePoison?.fields?.ability != null
+      await player.delete()
+      return {
+        mixinIsFunction: typeof thiefMixin === 'function',
+        allSkillsPresent: [
+          'sneakSilently', 'hideInShadows', 'pickPockets', 'climbSheerSurfaces',
+          'pickLock', 'findTrap', 'disableTrap', 'forgeDocument',
+          'disguiseSelf', 'readLanguages', 'handlePoison', 'castSpellFromScroll'
+        ].every(has),
+        sneakAblility: skills.sneakSilently?.ability ?? null,
+        findTrapAbility: skills.findTrap?.ability ?? null,
+        disguiseSelfAbility: skills.disguiseSelf?.ability ?? null,
+        handlePoisonHasAbility,
+        handlePoisonValue: skills.handlePoison?.value ?? null,
+        castSpellDieValue: skills.castSpellFromScroll?.die ?? null,
+        cssDieFieldType,
+        luckDie: cls.luckDie ?? null,
+        backstab: cls.backstab ?? null,
+        luckDieFieldType
+      }
+    })
+    expect(result.mixinIsFunction).toBe(true)
+    expect(result.allSkillsPresent).toBe(true)
+    expect(result.sneakAblility).toBe('agl')
+    expect(result.findTrapAbility).toBe('int')
+    expect(result.disguiseSelfAbility).toBe('per')
+    expect(result.handlePoisonHasAbility).toBe(false)
+    expect(result.handlePoisonValue).toBe('0')
+    expect(result.castSpellDieValue).toBe('1d10')
+    expect(result.cssDieFieldType).toBe('DiceField')
+    expect(result.luckDie).toBe('1d3')
+    expect(result.backstab).toBe('0')
+    expect(result.luckDieFieldType).toBe('DiceField')
+  })
+
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
     // The mercurial-magic registry's last-write-wins semantic
     // matters for sibling modules that want to fully replace a

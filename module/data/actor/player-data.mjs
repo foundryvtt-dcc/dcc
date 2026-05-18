@@ -9,7 +9,7 @@
  * `applyClassMixins` below and `docs/dev/EXTENSION_API.md`.
  */
 import { BaseActorData } from './base-actor.mjs'
-import { DiceField, isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
+import { isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
 import { applyClassMixins } from '../../extension-api.mjs'
 
 const { SchemaField, StringField, NumberField, BooleanField, HTMLField } = foundry.data.fields
@@ -78,10 +78,6 @@ export class PlayerData extends BaseActorData {
         disapproval: new NumberField({ initial: 1, integer: true, min: 1, max: 20 }),
         disapprovalTable: new StringField({ initial: 'Disapproval' }),
 
-        // Thief fields
-        luckDie: new DiceField({ initial: '1d3' }),
-        backstab: new StringField({ initial: '0' }),
-
         // Warrior fields
         luckyWeapon: new StringField({ nullable: true, initial: null }),
         luckyWeaponMod: new StringField({ initial: '+0' }),
@@ -124,75 +120,17 @@ export class PlayerData extends BaseActorData {
           label: new StringField({ initial: 'DCC.LayOnHands' }),
           value: new NumberField({ initial: 0, integer: true }),
           useDisapprovalRange: new BooleanField({ initial: true })
-        }),
-
-        // Thief skills
-        sneakSilently: new SchemaField({
-          label: new StringField({ initial: 'DCC.SneakSilently' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        hideInShadows: new SchemaField({
-          label: new StringField({ initial: 'DCC.HideInShadows' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        pickPockets: new SchemaField({
-          label: new StringField({ initial: 'DCC.PickPocket' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        climbSheerSurfaces: new SchemaField({
-          label: new StringField({ initial: 'DCC.ClimbSheerSurfaces' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        pickLock: new SchemaField({
-          label: new StringField({ initial: 'DCC.PickLock' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        findTrap: new SchemaField({
-          label: new StringField({ initial: 'DCC.FindTrap' }),
-          ability: new StringField({ initial: 'int' }),
-          value: new StringField({ initial: '0' })
-        }),
-        disableTrap: new SchemaField({
-          label: new StringField({ initial: 'DCC.DisableTrap' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        forgeDocument: new SchemaField({
-          label: new StringField({ initial: 'DCC.ForgeDocument' }),
-          ability: new StringField({ initial: 'agl' }),
-          value: new StringField({ initial: '0' })
-        }),
-        disguiseSelf: new SchemaField({
-          label: new StringField({ initial: 'DCC.DisguiseSelf' }),
-          ability: new StringField({ initial: 'per' }),
-          value: new StringField({ initial: '0' })
-        }),
-        readLanguages: new SchemaField({
-          label: new StringField({ initial: 'DCC.ReadLanguages' }),
-          ability: new StringField({ initial: 'int' }),
-          value: new StringField({ initial: '0' })
-        }),
-        handlePoison: new SchemaField({
-          label: new StringField({ initial: 'DCC.HandlePoison' }),
-          value: new StringField({ initial: '0' })
-        }),
-        castSpellFromScroll: new SchemaField({
-          label: new StringField({ initial: 'DCC.CastSpellFromScroll' }),
-          ability: new StringField({ initial: 'int' }),
-          die: new DiceField({ initial: '1d10' }),
-          value: new StringField({ initial: '0' })
         })
 
-        // Halfling skills (`skills.sneakAndHide`) + Dwarf skills
-        // (`skills.shieldBash`) contributed via the `'halfling'` /
-        // `'dwarf'` entries in `CONFIG.DCC.classMixins` — see
-        // `module/dcc.js`'s built-in registrations. Phase 4
-        // sessions 1 + 2 relocations — keep the Foundry-smelling
+        // Thief skills (sneakSilently / hideInShadows / pickPockets /
+        // climbSheerSurfaces / pickLock / findTrap / disableTrap /
+        // forgeDocument / disguiseSelf / readLanguages / handlePoison /
+        // castSpellFromScroll) + Thief class fields (luckDie / backstab)
+        // + Halfling skills (`skills.sneakAndHide`) + Dwarf skills
+        // (`skills.shieldBash`) contributed via the `'thief'` /
+        // `'halfling'` / `'dwarf'` entries in `CONFIG.DCC.classMixins`
+        // — see `module/dcc.js`'s built-in registrations. Phase 4
+        // sessions 1 / 2 / 3 relocations — keep the Foundry-smelling
         // shapes intact while moving source-of-truth onto the
         // per-class registry.
       }),

@@ -548,35 +548,59 @@ on a live Player document. 110 Playwright passed (was 109, +1);
 966 Vitest unchanged (the registry mechanic was already covered in
 session 1).
 
-#### Phase 4 session 3 (next). Extract a third class's fields onto its mixin.
-Two-of-seven DCC classes (halfling, dwarf) now use mixins. Remaining
-candidates (pick when starting):
-- **Thief skill block** — 13 skills + `class.luckDie` + `class.backstab`.
-  Largest single-class block on the schema; biggest §2.1 win in one
-  go but also the highest surface-area-touched (sheets, parsers,
-  migrations, browser-test baselines reference these fields). Now
-  that mixed field types are exercised (session 2), the next big
-  win is a high-volume mixin; thief is the natural pick. If scope
-  feels tight, split into "thief skills" + "thief class fields"
-  (the 13-skill block alone is one half-day slice).
-- **Cleric block** — disapproval + spells 1–5 + deity + 3 skills
-  (`divineAid` / `turnUnholy` / `layOnHands`). Mid-size; some fields
-  are read by adapter spell-check code (`spellCheckAbility`,
-  `disapproval`, `disapprovalTable`) — needs care that the mixin is
-  registered before any spell-check path reads them. Subtle.
-- **Wizard / elf block** — `patron` / `patronTaintChance` /
-  `familiar` / `corruption` / `knownSpells` / `maxSpellLevel` /
-  `spellCheckOtherMod` / `spellCheckDieOverride` /
-  `spellCheckOverride`. Wizards + elves share the field shape (elves
-  cast as wizards in DCC) but the lib's `'wizard'` / `'elf'` profiles
-  are distinct. Decide before this slice whether to register two
-  separate mixins that both write the same fields (last-write-wins
-  makes the second a no-op) or a single shared key.
-- **Warrior block** — `luckyWeapon` / `luckyWeaponMod` (small).
-  Lowest-volume remaining class.
+#### ~~Phase 4 session 3. Thief class-mixin extraction.~~ **DONE 2026-05-18**
+Largest single-class relocation so far. New `'thief'` mixin in
+`module/dcc.js:init` contributes the 12-skill block (sneakSilently /
+hideInShadows / pickPockets / climbSheerSurfaces / pickLock /
+findTrap / disableTrap / forgeDocument / disguiseSelf /
+readLanguages / handlePoison / castSpellFromScroll) **plus** two
+class-field mutations (`schema.class.fields.luckDie` =
+`DiceField('1d3')`, `schema.class.fields.backstab` =
+`StringField('0')`) — first mixin to touch both `schema.class.fields`
+and `schema.skills.fields` on the same registration. An inline
+`thiefSkill(label, ability)` helper compacts the 10 agl/int/per
+skills that share the standard label/ability/value triple;
+`handlePoison` deliberately omits `ability` (matches static body);
+`castSpellFromScroll` carries its own DiceField die (`'1d10'`).
+Static thief blocks (~62 lines for skills + 2 lines for class
+fields) removed from `module/data/actor/player-data.mjs`; `DiceField`
+import dropped from that file (was only used by the two now-relocated
+thief fields). +1 Playwright case asserts all 12 skill fields, the
+non-`agl` abilities, `handlePoison.ability` absence, the DiceField
+type+initial on `castSpellFromScroll.die`, and the class fields'
+types+initials. 966 Vitest green (unchanged); 112 Playwright passed
+(was 110, +1 thief + 1 dwarf-flake recovered), 1 latent failure
+(xcc-core-book DCCItemSheet override — unchanged from baseline).
 
-Recommend thief for session 3 (biggest §2.1 win; mixed types
-already proven; sheet / parser dependencies need surfacing).
+#### Phase 4 session 4 (next). Extract another class's fields onto its mixin.
+Three-of-seven DCC classes (halfling, dwarf, thief) now use mixins.
+Remaining candidates:
+- **Cleric block** — `class.{spellCheck, spellCheckAbility,
+  spellsLevel1–5, deity, disapproval, disapprovalTable}` +
+  `skills.{divineAid, turnUnholy, layOnHands}`. Mid-size; some
+  fields are read by adapter spell-check code (`spellCheckAbility`,
+  `disapproval`, `disapprovalTable`) — needs care that the mixin is
+  registered before any spell-check path reads them, but
+  `module/dcc.js:init` already runs before any document construction
+  so the timing constraint is satisfied.
+- **Wizard / elf block** — `class.{knownSpells, maxSpellLevel,
+  spellCheckOtherMod, spellCheckDieOverride, spellCheckOverride,
+  patron, patronTaintChance, familiar, corruption}`. Wizards + elves
+  share the field shape (elves cast as wizards in DCC) but the lib's
+  `'wizard'` / `'elf'` profiles are distinct. Per
+  `docs/dev/CLASS_DECOMPOSITION.md` §3.1: register two mixins that
+  both attach the same fields (last-write-wins makes the second a
+  no-op as long as both build identical instances). Elf's mixin also
+  overrides `skills.detectSecretDoors` (`label = 'DCC.HeightenedSenses'`,
+  `ability = 'int'`, `value = '+4'`) — the base body defines it as
+  the non-Elf default, the elf mixin replaces it.
+- **Warrior block** — `class.{luckyWeapon, luckyWeaponMod}` (small —
+  lowest-volume remaining class).
+
+Recommend cleric for session 4 (medium-size; flushes out the "field
+read by adapter code" timing assumption); warrior for session 5
+(quick win); wizard+elf together for session 6 (resolves the
+shared-fields design call in one slice).
 
 #### Phase 4 session 4+ (future).
 - **Class-id dispatch helper** — replace the remaining
@@ -640,6 +664,17 @@ Move entries here as they land; keep the active queue scannable.
   slimmed by another block. +1 Playwright (no new Vitest needed —
   registry mechanic covered in session 1). 966 Vitest unchanged;
   110 Playwright passed.
+- Phase 4 session 3 (2026-05-18): `'thief'` mixin contributes 12
+  skill SchemaFields (via inline `thiefSkill(label, ability)`
+  helper) + two `schema.class.fields` mutations (`luckDie` DiceField
+  '1d3', `backstab` StringField '0'). First mixin to touch both the
+  skills and class field namespaces on the same registration.
+  `DiceField` import dropped from `player-data.mjs` (was only
+  needed for the two now-relocated thief fields). +1 Playwright
+  asserting field presence, non-`agl` abilities, `handlePoison.ability`
+  omission, `castSpellFromScroll.die` DiceField type, and the class
+  fields' types+initials. 966 Vitest unchanged; 112 Playwright
+  passed (was 110, +1 thief +1 dwarf-flake recovered).
 
 ### Phase 3 sessions 1–9 (2026-04-18 → 2026-04-19)
 

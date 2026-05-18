@@ -90,6 +90,36 @@ Hooks.once('init', async function () {
       useDeed: new fields.BooleanField({ initial: true })
     })
   })
+  registerClassMixin('thief', (schema) => {
+    const fields = foundry.data.fields
+    schema.class.fields.luckDie = new DiceField({ initial: '1d3' })
+    schema.class.fields.backstab = new fields.StringField({ initial: '0' })
+    const thiefSkill = (label, ability) => new fields.SchemaField({
+      label: new fields.StringField({ initial: label }),
+      ability: new fields.StringField({ initial: ability }),
+      value: new fields.StringField({ initial: '0' })
+    })
+    schema.skills.fields.sneakSilently = thiefSkill('DCC.SneakSilently', 'agl')
+    schema.skills.fields.hideInShadows = thiefSkill('DCC.HideInShadows', 'agl')
+    schema.skills.fields.pickPockets = thiefSkill('DCC.PickPocket', 'agl')
+    schema.skills.fields.climbSheerSurfaces = thiefSkill('DCC.ClimbSheerSurfaces', 'agl')
+    schema.skills.fields.pickLock = thiefSkill('DCC.PickLock', 'agl')
+    schema.skills.fields.findTrap = thiefSkill('DCC.FindTrap', 'int')
+    schema.skills.fields.disableTrap = thiefSkill('DCC.DisableTrap', 'agl')
+    schema.skills.fields.forgeDocument = thiefSkill('DCC.ForgeDocument', 'agl')
+    schema.skills.fields.disguiseSelf = thiefSkill('DCC.DisguiseSelf', 'per')
+    schema.skills.fields.readLanguages = thiefSkill('DCC.ReadLanguages', 'int')
+    schema.skills.fields.handlePoison = new fields.SchemaField({
+      label: new fields.StringField({ initial: 'DCC.HandlePoison' }),
+      value: new fields.StringField({ initial: '0' })
+    })
+    schema.skills.fields.castSpellFromScroll = new fields.SchemaField({
+      label: new fields.StringField({ initial: 'DCC.CastSpellFromScroll' }),
+      ability: new fields.StringField({ initial: 'int' }),
+      die: new DiceField({ initial: '1d10' }),
+      value: new fields.StringField({ initial: '0' })
+    })
+  })
 
   // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect

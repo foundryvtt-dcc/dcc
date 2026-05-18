@@ -62,6 +62,25 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 4 session 3 (2026-05-18)** extended the vertical to thief —
+the largest single-class relocation so far. Built-in `'thief'` mixin
+in `module/dcc.js:init` contributes the 12-skill block (sneakSilently
+/ hideInShadows / pickPockets / climbSheerSurfaces / pickLock /
+findTrap / disableTrap / forgeDocument / disguiseSelf / readLanguages
+/ handlePoison / castSpellFromScroll) plus `class.luckDie` (DiceField
+'1d3') + `class.backstab` (StringField '0'). First mixin to touch
+**both** `schema.class.fields` and `schema.skills.fields` in one
+registration — and the first to use an inline factory helper
+(`thiefSkill(label, ability)`) to compact the repeated agl/int/per
+skill shapes. `castSpellFromScroll.die` (DiceField '1d10') exercises
+the DiceField path a second time (dwarf's `shieldBash.die` was the
+first). `handlePoison` deliberately omits `ability` to match the
+static body's shape. `DiceField` import dropped from `player-data.mjs`
+since the only class fields needing it (`luckDie` + `castSpellFromScroll.die`)
+now live on the thief mixin. Three of seven DCC classes (halfling,
+dwarf, thief) now mixin-source their fields; cleric / warrior /
+wizard / elf remain on the static body.
+
 **Phase 4 session 2 (2026-05-18)** extended the halfling vertical to
 dwarf — `skills.shieldBash` relocated off `player-data.mjs`'s static
 body onto a built-in `'dwarf'` class mixin registered in
@@ -70,10 +89,7 @@ body onto a built-in `'dwarf'` class mixin registered in
 BooleanField for useDeed) — confirms `applyClassMixins` handles
 non-trivial field shapes identically to the static definition.
 `DiceField` imported into `dcc.js` from `module/data/fields/_module.mjs`
-to keep the mixin self-contained. Two of the seven DCC classes
-(halfling, dwarf) now contribute fields via mixins; thief / cleric /
-wizard / warrior / elf remain on the static body for future
-sessions.
+to keep the mixin self-contained.
 
 **Phase 4 session 1 (2026-05-18)** opened the halfling vertical with
 the `game.dcc.registerClassMixin(classId, mixinFn)` infrastructure —
@@ -144,6 +160,33 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 4 session 3: thief class-mixin extraction (12
+  skills + `class.luckDie` + `class.backstab`).** Largest single-
+  class relocation so far. New `'thief'` entry in `CONFIG.DCC.classMixins`
+  registered in `module/dcc.js:init` builds 12 skill SchemaFields via
+  a shared inline `thiefSkill(label, ability)` helper plus two class-
+  field mutations (`schema.class.fields.luckDie` =
+  `DiceField('1d3')`, `schema.class.fields.backstab` =
+  `StringField('0')`). First mixin to touch BOTH `schema.class.fields`
+  and `schema.skills.fields` on the same registration. `handlePoison`
+  deliberately omits `ability` to match the static body's shape;
+  `castSpellFromScroll` carries its own DiceField die (`'1d10'`)
+  alongside the standard label/ability/value triple. The static
+  thief-skills block (~62 lines) + the two thief class-field lines
+  in `module/data/actor/player-data.mjs` are deleted; the trailing
+  comment near the removed skill block now documents thief alongside
+  halfling/dwarf mixins. `DiceField` import dropped from
+  `player-data.mjs` (was only used by the two now-relocated thief
+  fields). +1 Playwright case in `extension-api.spec.js` asserts (a)
+  all 12 skill fields are present, (b) `findTrap`/`disguiseSelf`
+  carry their non-`agl` abilities, (c) `handlePoison` lacks the
+  `ability` field, (d) `castSpellFromScroll.die`'s field type is
+  `DiceField` with initial `'1d10'`, and (e) `class.luckDie` /
+  `class.backstab` are present with correct types + initials. No new
+  Vitest needed (registry mechanics covered session 1). 966 Vitest
+  green (unchanged); 112 Playwright passed (was 110, +1 thief + 1
+  dwarf-flake recovered), 1 latent failure (xcc-core-book DCCItemSheet
+  override — unchanged).
 - **2026-05-18 — Phase 4 session 2: dwarf `shieldBash` class-mixin
   extraction.** Second halfling-vertical slice, same pattern as
   session 1 but with mixed field types. New `'dwarf'` entry in
@@ -422,13 +465,6 @@ archives linked above.
   persists `result.newPatronTaintChance`, and deletes
   `_runLegacyPatronTaint` (36 lines). 917 Vitest + 97 Playwright
   (+2 new: high-chance acquisition reset, non-patron spell no-op).
-- **2026-04-23 — C2 cruft: prune pre-V14 migrations.** Seven
-  version-gated branches in `module/migrations.js` deleted; new
-  `MINIMUM_SUPPORTED_VERSION = 0.66` guard in `dcc.js`'s
-  `checkMigrations` with i18n key `DCC.MigrationUnsupportedVersion`
-  (7 langs). Fresh-world guard treats `0` + `null` as "never
-  migrated". 917 Vitest + 95 Playwright.
-
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at

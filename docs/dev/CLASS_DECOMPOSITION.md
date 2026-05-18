@@ -51,7 +51,7 @@ at Phase 6.
 |---|---|---|---|---|
 | Halfling | ✅ P4-1 (`skills.sneakAndHide`) | pending | pending | pending |
 | Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | pending — incl. `useDeed = true` override + ShieldBash weapon auto-create | pending |
-| Thief | pending (recommended next: P4-3) — `skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` | pending | pending | pending |
+| Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | pending | pending | pending |
 | Cleric | pending — `class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` | pending | pending | pending |
 | Wizard | pending — `class.{knownSpells, maxSpellLevel, spellCheckOtherMod, spellCheckDieOverride, spellCheckOverride, patron, patronTaintChance, familiar, corruption}` | pending | pending | pending |
 | Elf | pending — shares wizard field shape **AND** overrides `skills.detectSecretDoors` (`label: 'DCC.HeightenedSenses'`, `ability: 'int'`, `value: '+4'`) — see §3.1 design note | pending | pending | pending |
