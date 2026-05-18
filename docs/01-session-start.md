@@ -21,10 +21,14 @@ pins Node 24.
    `_xxxLegacy` branches retire once gate is exhaustive).
 4. `docs/dev/EXTENSION_API.md` — what sibling modules consume (stable /
    internal / dead).
-5. `docs/dev/TESTING.md` — testing tiers; `#browser-tests-playwright`
+5. `docs/dev/CLASS_DECOMPOSITION.md` — per-class component map for the
+   Phase 4–6 arc (which extension API owns schema mixins, sheet parts,
+   defaults, starting items, lib progression, variants — plus per-class
+   status table). Read before relocating any class-bound concern.
+6. `docs/dev/TESTING.md` — testing tiers; `#browser-tests-playwright`
    covers the e2e launch recipe (fvtt CLI installPath / dataPath /
    Node 24 / world name gotchas).
-6. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md`
+7. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md`
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 

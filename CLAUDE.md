@@ -121,6 +121,9 @@ don't commit.
 
 ### Developer Guides
 - [Architecture](docs/dev/ARCHITECTURE.md) - System structure, classes, data model
+- [Architecture (reimagined)](docs/dev/ARCHITECTURE_REIMAGINED.md) - 7-phase refactor plan + pain points
+- [Class Decomposition](docs/dev/CLASS_DECOMPOSITION.md) - Per-class component map (schema mixin / sheet part / defaults / starting items / lib progression / variant) — read before relocating any class-bound concern
+- [Extension API](docs/dev/EXTENSION_API.md) - Stable / internal / dead extension surface
 - [Development](docs/dev/DEVELOPMENT.md) - Workflow, commands, code standards
 - [Testing](docs/dev/TESTING.md) - Test suite, mocks, coverage
 - [Pack Management](docs/dev/PACKS.md) - Compendium JSON/LevelDB workflow

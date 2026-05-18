@@ -509,6 +509,13 @@ full-stack approach works end-to-end with a real sibling consumer.
 
 ### Phase 4 — Active sub-arc (halfling vertical, in progress)
 
+> **Per-class component map:** `docs/dev/CLASS_DECOMPOSITION.md` —
+> single-source doc explaining which extension API owns each class
+> component (schema mixin / sheet part / defaults / starting items /
+> lib progression / variant) and the per-class status. Read before
+> relocating any class-bound concern; sessions 3+ all touch component
+> 1 (schema mixin) only.
+
 #### ~~Phase 4 session 1. `registerClassMixin` infrastructure + halfling `sneakAndHide` extraction.~~ **DONE 2026-05-18**
 New stable extension helper `game.dcc.registerClassMixin(classId,
 mixinFn)` in `module/extension-api.mjs` (companion

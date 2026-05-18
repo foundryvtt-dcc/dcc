@@ -12,6 +12,9 @@ This directory contains developer documentation for the DCC system for FoundryVT
 | Document | Description |
 |----------|-------------|
 | [Architecture](ARCHITECTURE.md) | System structure, classes, data model, DCC features |
+| [Architecture (reimagined)](ARCHITECTURE_REIMAGINED.md) | 7-phase refactor plan splitting Foundry adapter from `dcc-core-lib` engine |
+| [Class Decomposition](CLASS_DECOMPOSITION.md) | Per-class component map: which extension API owns schema mixins, sheet parts, defaults, starting items, lib progression, variants |
+| [Extension API](EXTENSION_API.md) | Stable / internal / dead surface that sibling modules consume |
 | [Development](DEVELOPMENT.md) | Commands, code standards, project structure |
 | [Testing](TESTING.md) | Test suite, mocks, writing tests |
 | [Pack Management](PACKS.md) | Compendium JSON/LevelDB workflow |
