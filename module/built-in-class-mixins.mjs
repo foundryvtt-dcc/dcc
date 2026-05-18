@@ -17,6 +17,29 @@
 import { DiceField } from './data/fields/_module.mjs'
 
 /**
+ * Attach the shared wizard/elf class-field block to `schema.class.fields`.
+ * Wizards and elves cast on the same field shape in DCC; the wizard
+ * and elf mixins both call this helper so the field declarations live
+ * in one place. Each call builds **fresh** field instances — Foundry
+ * forbids reusing field objects across schemas, and the wizard mixin
+ * runs once before the elf mixin which then runs `attachWizardFields`
+ * again. Both attachments are identical, so the second is functionally
+ * a no-op (last-write-wins, matching the rest of the registry).
+ */
+function attachWizardFields (schema) {
+  const fields = foundry.data.fields
+  schema.class.fields.knownSpells = new fields.NumberField({ initial: 0, integer: true, min: 0 })
+  schema.class.fields.maxSpellLevel = new fields.NumberField({ initial: 0, integer: true, min: 0 })
+  schema.class.fields.spellCheckOtherMod = new fields.StringField({ nullable: true, initial: null })
+  schema.class.fields.spellCheckDieOverride = new fields.StringField({ nullable: true, initial: null })
+  schema.class.fields.spellCheckOverride = new fields.StringField({ nullable: true, initial: null })
+  schema.class.fields.patron = new fields.StringField({ nullable: true, initial: null })
+  schema.class.fields.patronTaintChance = new fields.StringField({ initial: '1%' })
+  schema.class.fields.familiar = new fields.StringField({ nullable: true, initial: null })
+  schema.class.fields.corruption = new fields.HTMLField({ initial: '' })
+}
+
+/**
  * Map of `classId → mixinFn`. Each function takes the in-progress
  * Player schema and attaches fresh field instances under
  * `schema.skills.fields` / `schema.class.fields`.
@@ -58,17 +81,27 @@ export const BUILT_IN_CLASS_MIXINS = {
       useDeed: new fields.BooleanField({ initial: true })
     })
   },
+  elf (schema) {
+    // Elves cast as wizards (same field shape) — attach the shared
+    // wizard fields, then override detectSecretDoors with the elf-
+    // specific HeightenedSenses shape. The base body declares
+    // detectSecretDoors as the non-Elf default
+    // (`label='DCC.DetectSecretDoors'`, `ability=''`, `value='+0'`);
+    // the elf mixin replaces the SchemaField entirely.
+    attachWizardFields(schema)
+    const fields = foundry.data.fields
+    schema.skills.fields.detectSecretDoors = new fields.SchemaField({
+      label: new fields.StringField({ initial: 'DCC.HeightenedSenses' }),
+      ability: new fields.StringField({ initial: 'int' }),
+      value: new fields.StringField({ initial: '+4' })
+    })
+  },
   halfling (schema) {
     const fields = foundry.data.fields
     schema.skills.fields.sneakAndHide = new fields.SchemaField({
       label: new fields.StringField({ initial: 'DCC.SneakAndHide' }),
       value: new fields.StringField({ initial: '+3' })
     })
-  },
-  warrior (schema) {
-    const fields = foundry.data.fields
-    schema.class.fields.luckyWeapon = new fields.StringField({ nullable: true, initial: null })
-    schema.class.fields.luckyWeaponMod = new fields.StringField({ initial: '+0' })
   },
   thief (schema) {
     const fields = foundry.data.fields
@@ -99,6 +132,14 @@ export const BUILT_IN_CLASS_MIXINS = {
       die: new DiceField({ initial: '1d10' }),
       value: new fields.StringField({ initial: '0' })
     })
+  },
+  warrior (schema) {
+    const fields = foundry.data.fields
+    schema.class.fields.luckyWeapon = new fields.StringField({ nullable: true, initial: null })
+    schema.class.fields.luckyWeaponMod = new fields.StringField({ initial: '+0' })
+  },
+  wizard (schema) {
+    attachWizardFields(schema)
   }
 }
 

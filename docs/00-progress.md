@@ -62,6 +62,30 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 4 session 6 (2026-05-18)** closed the per-class extraction
+arc with wizard + elf. New `'wizard'` and `'elf'` entries in the
+`BUILT_IN_CLASS_MIXINS` table both call a shared
+`attachWizardFields(schema)` helper (defined in the same file)
+that contributes the 9 wizard class fields (`knownSpells` /
+`maxSpellLevel` / `spellCheckOtherMod` / `spellCheckDieOverride` /
+`spellCheckOverride` / `patron` / `patronTaintChance` / `familiar`
+/ `corruption` HTMLField). The elf mixin **also** overrides
+`skills.detectSecretDoors` with the HeightenedSenses defaults
+(`label='DCC.HeightenedSenses'`, `ability='int'`, `value='+4'`) —
+the base body keeps the non-Elf default; the elf mixin replaces
+the SchemaField entirely so the Foundry-smelling path
+(`system.skills.detectSecretDoors`) resolves to the elf shape on
+the constructed schema. Static `class` block in
+`module/data/actor/player-data.mjs` shrunk to a single `className`
+field; static `skills` block carries only the base-body
+`detectSecretDoors`. `HTMLField` import dropped (and `NumberField`
++ `BooleanField` reduced to `BooleanField` only — `NumberField`
+is now unused in `player-data.mjs`). **All seven DCC classes
+(halfling, dwarf, thief, cleric, warrior, wizard, elf) now
+mixin-source their fields.** Component 1 of the Class Decomposition
+(schema mixins) is complete for every built-in class; Phase 5
+sheet composition + class defaults remain.
+
 **Phase 4 session 5 (2026-05-18)** extended the vertical to warrior —
 smallest remaining class block. Built-in `'warrior'` mixin in the
 `BUILT_IN_CLASS_MIXINS` table contributes `class.luckyWeapon`
@@ -189,6 +213,37 @@ inventory. Phase 4 (schema slimming) has not started.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 4 session 6: wizard + elf class-mixin
+  extraction (closes per-class arc).** New `'wizard'` + `'elf'`
+  entries in `BUILT_IN_CLASS_MIXINS` (`module/built-in-class-mixins.mjs`)
+  both call a shared `attachWizardFields(schema)` helper that
+  contributes 9 wizard class fields (`knownSpells` /
+  `maxSpellLevel` / `spellCheckOtherMod` / `spellCheckDieOverride`
+  / `spellCheckOverride` / `patron` / `patronTaintChance` /
+  `familiar` / `corruption` HTMLField). Wizard mixin attaches them
+  via the helper; elf mixin **also** calls the helper (last-
+  write-wins makes the second-running mixin's pass functionally a
+  no-op as long as both build identical instances) **and** then
+  overrides `skills.detectSecretDoors` with the HeightenedSenses
+  defaults (`label='DCC.HeightenedSenses'` / `ability='int'` /
+  `value='+4'`). Base body kept the non-Elf default; the elf mixin
+  replaces the entire SchemaField. Static `class` block in
+  `module/data/actor/player-data.mjs` collapsed to a single
+  `className` StringField; static `skills` block to just the
+  base `detectSecretDoors`. `HTMLField` + `NumberField` imports
+  dropped (only `SchemaField`, `StringField`, `BooleanField`
+  remain — the wizard/cleric `NumberField` usages all moved to
+  their respective mixins). **All seven DCC classes mixin-source
+  their fields** — component 1 of the Class Decomposition is
+  complete for every built-in. +2 Playwright cases
+  (`built-in wizard mixin` asserts all 9 wizard class-field
+  initials + key types reading from `_source`; `built-in elf mixin
+  attaches wizard fields AND overrides detectSecretDoors`
+  asserts the same wizard fields are present plus the elf
+  detectSecretDoors override). 966 Vitest unchanged; 116
+  Playwright passed (was 114, +2 wizard/elf cases), 1 latent
+  failure (xcc-core-book DCCItemSheet override, unchanged
+  baseline).
 - **2026-05-18 — Phase 4 session 5: warrior class-mixin extraction.**
   Smallest remaining class block. New `'warrior'` entry in the
   `BUILT_IN_CLASS_MIXINS` table (`module/built-in-class-mixins.mjs`)

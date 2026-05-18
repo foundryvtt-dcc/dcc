@@ -610,38 +610,61 @@ asserts the nullable initial, signed-string default, and field
 types via `_source`. 966 Vitest unchanged; 114 Playwright passed
 (was 113, +1 warrior).
 
-#### Phase 4 session 6 (next). Wizard + elf class-mixin extraction.
-Closes the per-class extraction arc. Five-of-seven DCC classes
-(halfling, dwarf, thief, cleric, warrior) now use mixins; wizard
-and elf are the last two. Per `docs/dev/CLASS_DECOMPOSITION.md` §3.1
-+ §2:
+#### ~~Phase 4 session 6. Wizard + elf class-mixin extraction (closes per-class arc).~~ **DONE 2026-05-18**
+New `'wizard'` + `'elf'` entries in `BUILT_IN_CLASS_MIXINS` both
+call a shared `attachWizardFields(schema)` helper that contributes
+9 wizard class fields (knownSpells / maxSpellLevel /
+spellCheckOtherMod / spellCheckDieOverride / spellCheckOverride /
+patron / patronTaintChance / familiar / corruption HTMLField). The
+elf mixin additionally replaces `skills.detectSecretDoors` with the
+HeightenedSenses overrides (label='DCC.HeightenedSenses',
+ability='int', value='+4') — the base body keeps the non-Elf
+default; the elf mixin runs after the base body so the override
+wins on the constructed schema. Static `class` block in
+`module/data/actor/player-data.mjs` shrunk to a single `className`
+StringField; static `skills` block to just `detectSecretDoors`.
+`HTMLField` + `NumberField` imports dropped from `player-data.mjs`.
+**All seven DCC classes mixin-source their fields** — component 1
+of the Class Decomposition is complete. +2 Playwright cases. 966
+Vitest unchanged; 116 Playwright passed (was 114, +2 wizard/elf
+cases).
 
-- **Wizard fields to extract** (currently in the static body):
-  `class.{knownSpells NumberField, maxSpellLevel NumberField,
-  spellCheckOtherMod nullable StringField, spellCheckDieOverride
-  nullable StringField, spellCheckOverride nullable StringField,
-  patron nullable StringField, patronTaintChance StringField '1%',
-  familiar nullable StringField, corruption HTMLField ''}`. Wizard
-  mixin builds these.
-- **Elf gets its own mixin**. Elves cast as wizards in DCC so the
-  wizard field shape applies — register `'elf'` as a separate mixin
-  that builds identical instances (last-write-wins on duplicate
-  attaches makes the order-determined second registration a no-op
-  in practice, but having both mixins documents that elf has these
-  fields too).
-- **Elf also overrides `skills.detectSecretDoors`** with
-  `label='DCC.HeightenedSenses'`, `ability='int'`, `value='+4'`. The
-  static body defines `detectSecretDoors` as the non-Elf default
-  (`label='DCC.DetectSecretDoors'`, `ability=''`, `value='+0'`); the
-  elf mixin can either replace the SchemaField entirely or mutate
-  field options. Replacing is simpler — pick at slice time.
-- **`HTMLField` import dropped from `player-data.mjs`** once wizard
-  fields move (only consumer is `corruption: HTMLField`).
-- Add Playwright case asserting wizard mixin fields + the elf
-  `detectSecretDoors` override.
+#### Phase 4 closure note
+Component 1 of `docs/dev/CLASS_DECOMPOSITION.md` (schema mixins) is
+done for every built-in DCC class. Phase 4 also delivered the
+shared `module/built-in-class-mixins.mjs` table consumed by both
+production init and integration-test setup (session 4). Per the
+class-decomposition plan, the next per-class concerns to move are
+Phase 5 territory:
 
-Recommend wizard + elf in the same slice (closes the arc with
-shared design context).
+1. **Sheet parts** — collapse the 7 class sheets in
+   `module/actor-sheets-dcc.js` (+ partials at
+   `templates/actor-partial-*.html`) into one `DCCSheet` that
+   composes parts based on `character.classId`. New
+   `game.dcc.registerSheetPart({ classId, tab, template,
+   condition })` helper.
+2. **Class identity + mechanical defaults** — extract the
+   `_prepareContext` first-open blocks (lines `60 / 128 / 201 / 269
+   / 346 / 518 / 595` in `actor-sheets-dcc.js`) into a
+   `registerClassDefaults` registry. Includes the cross-class
+   `useDeed` toggles for `skills.shieldBash`.
+3. **Starting items** — `registerClassStartingItems` or fold into
+   defaults registry. Today's only built-in case is the dwarf
+   ShieldBash weapon auto-create at
+   `module/actor-sheets-dcc.js:434-454`.
+
+Phase 4 still has **two non-class-extraction sub-slices** open per
+the original "Phase 4 sub-arc" inventory:
+
+- **Class-id dispatch helper** — replace the remaining
+  `system.details.sheetClass === 'Halfling'` string checks in
+  `module/actor.js:3265-3266` + `module/item.js:70-103` with a
+  single `actor.classId` accessor reading the canonical lowercase
+  ID. Quick win; could land as a Phase 4 closer or roll into
+  Phase 5.
+- **Class-defaults registry**, Phase 5 candidate — see
+  `docs/dev/CLASS_DECOMPOSITION.md` §3.3 for the design notes
+  (already documented).
 
 #### Phase 4 session 4+ (future).
 - **Class-id dispatch helper** — replace the remaining
@@ -731,6 +754,16 @@ Move entries here as they land; keep the active queue scannable.
   `class.luckyWeaponMod` (StringField, initial `'+0'`). Smallest
   remaining class block — no skills. +1 Playwright case. 966
   Vitest unchanged; 114 Playwright passed (was 113, +1 warrior).
+- Phase 4 session 6 (2026-05-18): `'wizard'` + `'elf'` mixins both
+  call a shared `attachWizardFields(schema)` helper (defined in
+  `module/built-in-class-mixins.mjs`) contributing 9 wizard class
+  fields. Elf mixin additionally replaces `skills.detectSecretDoors`
+  with HeightenedSenses defaults. Static `class` block in
+  `player-data.mjs` shrunk to `{ className }`; `HTMLField` +
+  `NumberField` imports dropped. **All seven DCC classes
+  mixin-source their fields** — component 1 of the Class
+  Decomposition complete. +2 Playwright cases. 966 Vitest
+  unchanged; 116 Playwright passed (was 114, +2 wizard/elf).
 
 ### Phase 3 sessions 1–9 (2026-04-18 → 2026-04-19)
 

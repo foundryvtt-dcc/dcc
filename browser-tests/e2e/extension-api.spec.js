@@ -501,6 +501,103 @@ test.describe('DCC Extension API', () => {
     expect(result.luckyWeaponModFieldType).toBe('StringField')
   })
 
+  test('built-in wizard mixin contributes the spell-flavor class-field block to a Player actor schema', async ({ page }) => {
+    // Phase 4 session 6 — closes the per-class extraction arc. Wizards
+    // and elves share the same 9-field shape (elves cast as wizards in
+    // DCC); the wizard and elf mixins both call `attachWizardFields`
+    // so the declarations live in one place. This case verifies the
+    // wizard side; the next case verifies the elf side plus the
+    // detectSecretDoors override.
+    const result = await page.evaluate(async () => {
+      const wizardMixin = CONFIG.DCC?.classMixins?.wizard
+      const player = await Actor.create({ name: 'P4S6 Wizard Probe', type: 'Player' })
+      const src = player.system._source ?? {}
+      const cls = src.class ?? {}
+      const classFields = player.system.schema.fields.class
+      const ft = (name) => classFields?.fields?.[name]?.constructor?.name ?? null
+      const isNullable = (name) => classFields?.fields?.[name]?.options?.nullable === true
+      await player.delete()
+      return {
+        mixinIsFunction: typeof wizardMixin === 'function',
+        knownSpells: cls.knownSpells,
+        maxSpellLevel: cls.maxSpellLevel,
+        spellCheckOtherMod: cls.spellCheckOtherMod,
+        spellCheckDieOverride: cls.spellCheckDieOverride,
+        spellCheckOverride: cls.spellCheckOverride,
+        patron: cls.patron,
+        patronTaintChance: cls.patronTaintChance ?? null,
+        familiar: cls.familiar,
+        corruption: cls.corruption ?? null,
+        knownSpellsFieldType: ft('knownSpells'),
+        patronFieldType: ft('patron'),
+        patronIsNullable: isNullable('patron'),
+        corruptionFieldType: ft('corruption')
+      }
+    })
+    expect(result.mixinIsFunction).toBe(true)
+    expect(result.knownSpells).toBe(0)
+    expect(result.maxSpellLevel).toBe(0)
+    expect(result.spellCheckOtherMod).toBeNull()
+    expect(result.spellCheckDieOverride).toBeNull()
+    expect(result.spellCheckOverride).toBeNull()
+    expect(result.patron).toBeNull()
+    expect(result.patronTaintChance).toBe('1%')
+    expect(result.familiar).toBeNull()
+    expect(result.corruption).toBe('')
+    expect(result.knownSpellsFieldType).toBe('NumberField')
+    expect(result.patronFieldType).toBe('StringField')
+    expect(result.patronIsNullable).toBe(true)
+    expect(result.corruptionFieldType).toBe('HTMLField')
+  })
+
+  test('built-in elf mixin attaches wizard fields AND overrides detectSecretDoors with HeightenedSenses defaults', async ({ page }) => {
+    // Phase 4 session 6 — elf side of the per-class extraction arc.
+    // The elf mixin (a) re-attaches the shared wizard fields via
+    // `attachWizardFields` (last-write-wins on duplicate registrations
+    // — second pass is a no-op shape-wise because both mixins build
+    // identical instances), and (b) overrides
+    // `skills.detectSecretDoors` with the elf-specific defaults
+    // (label='DCC.HeightenedSenses', ability='int', value='+4'). The
+    // base body declares `detectSecretDoors` as the non-Elf default;
+    // because the elf mixin runs **after** the base body, the
+    // override wins on the schema actually constructed for every
+    // Player document — Foundry-smelling shape per §2.12 still
+    // resolves the path `system.skills.detectSecretDoors` identically.
+    const result = await page.evaluate(async () => {
+      const elfMixin = CONFIG.DCC?.classMixins?.elf
+      const player = await Actor.create({ name: 'P4S6 Elf Probe', type: 'Player' })
+      const src = player.system._source ?? {}
+      const skills = src.skills ?? {}
+      const cls = src.class ?? {}
+      const skillsFields = player.system.schema.fields.skills
+      const detect = skillsFields?.fields?.detectSecretDoors ?? null
+      await player.delete()
+      return {
+        mixinIsFunction: typeof elfMixin === 'function',
+        // Wizard fields attached via the shared helper:
+        knownSpells: cls.knownSpells,
+        patron: cls.patron,
+        patronTaintChance: cls.patronTaintChance ?? null,
+        // detectSecretDoors override:
+        hasDetect: detect !== null,
+        detectLabel: skills.detectSecretDoors?.label ?? null,
+        detectAbility: skills.detectSecretDoors?.ability ?? null,
+        detectValue: skills.detectSecretDoors?.value ?? null
+      }
+    })
+    expect(result.mixinIsFunction).toBe(true)
+    // Wizard fields landed on Player via either the 'wizard' or 'elf'
+    // registration (deterministic-sorted order applies both):
+    expect(result.knownSpells).toBe(0)
+    expect(result.patron).toBeNull()
+    expect(result.patronTaintChance).toBe('1%')
+    // detectSecretDoors carries the elf override defaults:
+    expect(result.hasDetect).toBe(true)
+    expect(result.detectLabel).toBe('DCC.HeightenedSenses')
+    expect(result.detectAbility).toBe('int')
+    expect(result.detectValue).toBe('+4')
+  })
+
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
     // The mercurial-magic registry's last-write-wins semantic
     // matters for sibling modules that want to fully replace a

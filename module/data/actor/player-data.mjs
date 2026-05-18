@@ -12,7 +12,7 @@ import { BaseActorData } from './base-actor.mjs'
 import { isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
 import { applyClassMixins } from '../../extension-api.mjs'
 
-const { SchemaField, StringField, NumberField, BooleanField, HTMLField } = foundry.data.fields
+const { SchemaField, StringField, BooleanField } = foundry.data.fields
 
 export class PlayerData extends BaseActorData {
   /**
@@ -62,46 +62,33 @@ export class PlayerData extends BaseActorData {
     const schema = {
       ...super.defineSchema(),
 
-      // Class information
+      // Class information. After Phase 4 sessions 1–6, every
+      // class-specific field on `system.class.*` lives on its
+      // respective `CONFIG.DCC.classMixins` entry — only `className`
+      // (the cross-class identity field) remains in the static body.
+      // Wizard + elf class fields (knownSpells / maxSpellLevel /
+      // spellCheckOtherMod / spellCheckDieOverride / spellCheckOverride
+      // / patron / patronTaintChance / familiar / corruption) are
+      // attached by the `'wizard'` and `'elf'` mixins; cleric /
+      // thief / warrior fields by their respective mixins. See
+      // `module/built-in-class-mixins.mjs` for the full table.
       class: new SchemaField({
-        className: new StringField({ initial: 'Zero-Level' }),
-
-        // Wizard fields
-        knownSpells: new NumberField({ initial: 0, integer: true, min: 0 }),
-        maxSpellLevel: new NumberField({ initial: 0, integer: true, min: 0 }),
-        spellCheckOtherMod: new StringField({ nullable: true, initial: null }),
-        spellCheckDieOverride: new StringField({ nullable: true, initial: null }),
-        spellCheckOverride: new StringField({ nullable: true, initial: null }),
-        patron: new StringField({ nullable: true, initial: null }),
-        patronTaintChance: new StringField({ initial: '1%' }),
-        familiar: new StringField({ nullable: true, initial: null }),
-        corruption: new HTMLField({ initial: '' })
+        className: new StringField({ initial: 'Zero-Level' })
       }),
 
-      // Skills - all class skills in one place
+      // Skills. Only `detectSecretDoors` is a base-body skill —
+      // every other class skill lives on a class mixin (cleric:
+      // divineAid/turnUnholy/layOnHands; thief: 12-skill block;
+      // halfling: sneakAndHide; dwarf: shieldBash). The base shape
+      // here is the non-Elf default; the `'elf'` mixin replaces it
+      // with the HeightenedSenses overrides (label / ability='int'
+      // / value='+4').
       skills: new SchemaField({
-        // Player skill (from player template)
-        // Note: Elf template overrides with label=DCC.HeightenedSenses, ability=int, value=+4
         detectSecretDoors: new SchemaField({
           label: new StringField({ initial: 'DCC.DetectSecretDoors' }),
-          ability: new StringField({ initial: '' }), // Empty for non-Elf, 'int' for Elf
+          ability: new StringField({ initial: '' }),
           value: new StringField({ initial: '+0' })
         })
-
-        // Cleric skills (`divineAid` / `turnUnholy` / `layOnHands`) +
-        // Thief skills (sneakSilently / hideInShadows / pickPockets /
-        // climbSheerSurfaces / pickLock / findTrap / disableTrap /
-        // forgeDocument / disguiseSelf / readLanguages / handlePoison /
-        // castSpellFromScroll) + Thief class fields (luckDie / backstab) +
-        // Cleric class fields (spellCheck / spellCheckAbility /
-        // spellsLevel1–5 / deity / disapproval / disapprovalTable) +
-        // Halfling skills (`skills.sneakAndHide`) + Dwarf skills
-        // (`skills.shieldBash`) contributed via the `'cleric'` /
-        // `'thief'` / `'halfling'` / `'dwarf'` entries in
-        // `CONFIG.DCC.classMixins` — see `module/dcc.js`'s built-in
-        // registrations. Phase 4 sessions 1 / 2 / 3 / 4 relocations —
-        // keep the Foundry-smelling shapes intact while moving
-        // source-of-truth onto the per-class registry.
       }),
 
       // Configuration (from config template)

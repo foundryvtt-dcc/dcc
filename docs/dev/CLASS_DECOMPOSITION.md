@@ -53,8 +53,8 @@ at Phase 6.
 | Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | pending — incl. `useDeed = true` override + ShieldBash weapon auto-create | pending |
 | Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | pending | pending | pending |
 | Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | pending | pending | pending |
-| Wizard | pending — `class.{knownSpells, maxSpellLevel, spellCheckOtherMod, spellCheckDieOverride, spellCheckOverride, patron, patronTaintChance, familiar, corruption}` | pending | pending | pending |
-| Elf | pending — shares wizard field shape **AND** overrides `skills.detectSecretDoors` (`label: 'DCC.HeightenedSenses'`, `ability: 'int'`, `value: '+4'`) — see §3.1 design note | pending | pending | pending |
+| Wizard | ✅ P4-6 (9 class fields attached via shared `attachWizardFields(schema)` helper in `module/built-in-class-mixins.mjs`) | pending | pending | pending |
+| Elf | ✅ P4-6 (re-uses `attachWizardFields(schema)` AND overrides `skills.detectSecretDoors` with HeightenedSenses defaults — closes the per-class extraction arc) | pending | pending | pending |
 | Warrior | ✅ P4-5 (`class.{luckyWeapon nullable StringField, luckyWeaponMod StringField '+0'}` — smallest block; no skills) | pending | pending | pending |
 | Zero-Level | not class-bound (`class.className = 'Zero-Level'` default; no class-specific fields) | n/a | n/a | n/a |
 
@@ -117,26 +117,25 @@ semantic (§3.7).
   `source.class.*` and `source.skills.{divineAid,turnUnholy,
   layOnHands}.*`.
 
-**Elf design call (open for session 6):** elves cast as wizards in
-DCC, so the wizard field shape (`knownSpells`, `patron`, etc.)
-applies to both. Two options:
-- (a) Two mixins (`'wizard'` + `'elf'`) that both attach the same
-  fields — last-write-wins makes the second registration a no-op as
-  long as both build identical field instances. Cleanest mental
-  model: each class explicitly declares its fields.
-- (b) One shared key (e.g. `'wizard'` registers; elf mixin re-uses by
-  not registering its own). Smaller registry, but obscures that elf
-  *has* these fields.
+**Elf design call (resolved P4-6, 2026-05-18):** option (a) — both
+mixins explicitly attach the wizard field shape via a shared
+`attachWizardFields(schema)` helper inside
+`module/built-in-class-mixins.mjs`. The helper builds fresh field
+instances each call; the second pass (whichever runs later in
+deterministic-sorted classId order — `elf` runs before `wizard` so
+the wizard mixin's pass is the "second" one for the wizard fields)
+re-attaches identical instances and the result is functionally a
+no-op. Registry stays self-documenting (both classes appear);
+declarations live in one place.
 
-Recommend (a) for symmetry with how cleric/wizard/etc. work and to
-keep the registry self-documenting. Elf's mixin should also override
-`skills.detectSecretDoors` per the current player-data.mjs comment:
-`label = 'DCC.HeightenedSenses'`, `ability = 'int'`, `value = '+4'`.
-That field is **defined** in the base body (as a "player skill,
-non-Elf default") and **overridden** for elves — the elf mixin's job
-is to mutate the existing field's options, which means it can either
-replace the SchemaField entirely or use Foundry's field option setters.
-Pick at slice time.
+Elf also overrides `skills.detectSecretDoors`: the base body keeps
+it as the non-Elf default (`label='DCC.DetectSecretDoors'`,
+`ability=''`, `value='+0'`), and the elf mixin replaces the
+SchemaField entirely with the HeightenedSenses defaults
+(`label='DCC.HeightenedSenses'`, `ability='int'`, `value='+4'`).
+Because mixins run after the base body, the override wins on the
+constructed schema, but the path readers see (`system.skills.detectSecretDoors`)
+stays identical per §2.12.
 
 ### 3.2 Sheet parts (Phase 5)
 

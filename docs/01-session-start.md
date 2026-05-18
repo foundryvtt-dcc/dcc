@@ -32,17 +32,30 @@ pins Node 24.
    — lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 4 session 5 (2026-05-18) extended the vertical
-to warrior** — smallest remaining class block. New `'warrior'`
-mixin in the shared `BUILT_IN_CLASS_MIXINS` table
-(`module/built-in-class-mixins.mjs`) contributes `class.luckyWeapon`
-(nullable StringField, initial null) + `class.luckyWeaponMod`
-(StringField, initial `'+0'`). No skills — warrior is the only
-class whose contribution is pure class-fields. Six-of-seven classes
-now mixin-source; only wizard + elf remain (session 6, will be
-landed together since they share field shapes). +1 Playwright case.
-966 Vitest unchanged; 114 Playwright passed (was 113, +1 warrior),
-1 latent failure (xcc-core-book DCCItemSheet override).
+**Status:** **Phase 4 session 6 (2026-05-18) closed the per-class
+extraction arc with wizard + elf.** New `'wizard'` + `'elf'` entries
+in the shared `BUILT_IN_CLASS_MIXINS` table
+(`module/built-in-class-mixins.mjs`) both call a new
+`attachWizardFields(schema)` helper that contributes the 9 wizard
+class fields (`knownSpells` / `maxSpellLevel` / `spellCheckOtherMod`
+/ `spellCheckDieOverride` / `spellCheckOverride` / `patron` /
+`patronTaintChance` / `familiar` / `corruption` HTMLField). The
+elf mixin **also** overrides `skills.detectSecretDoors` with the
+HeightenedSenses defaults (`label='DCC.HeightenedSenses'` /
+`ability='int'` / `value='+4'`). Static `class` block in
+`module/data/actor/player-data.mjs` collapsed to a single
+`className` StringField; static `skills` block carries only the
+base `detectSecretDoors`. `HTMLField` + `NumberField` imports
+dropped from `player-data.mjs`. **All seven DCC classes
+(halfling, dwarf, thief, cleric, warrior, wizard, elf) now
+mixin-source their fields** — component 1 of the Class Decomposition
+(schema mixins) is complete for every built-in. +2 Playwright cases.
+966 Vitest unchanged; 116 Playwright passed (was 114, +2 wizard/elf
+cases), 1 latent failure (xcc-core-book DCCItemSheet override).
+
+**Phase 4 session 5 (2026-05-18)** extended the vertical to warrior
+(class.luckyWeapon + class.luckyWeaponMod). Smallest remaining
+block; no skills.
 
 **Phase 4 session 4 (2026-05-18)** extended the vertical to cleric
 AND extracted the built-in mixin registrations into a shared module. New `'cleric'` mixin contributes 8 class fields (`spellCheck`
@@ -469,21 +482,30 @@ recipe.
 
 **Remaining Phase 4 (halfling vertical) candidates:**
 
-1. **Close the per-class extraction arc with wizard + elf.**
-   Six-of-seven DCC classes now mixin-source their fields; only
-   wizard + elf remain. Per `docs/dev/CLASS_DECOMPOSITION.md` §3.1
-   and §2: register them as two separate mixins both attaching the
-   same 9 wizard class fields (`knownSpells`, `maxSpellLevel`,
-   `spellCheckOtherMod`, `spellCheckDieOverride`,
-   `spellCheckOverride`, `patron`, `patronTaintChance`, `familiar`,
-   `corruption` HTMLField). Elf's mixin **also** overrides
-   `skills.detectSecretDoors` with `label='DCC.HeightenedSenses'`,
-   `ability='int'`, `value='+4'` — the base body keeps it as the
-   non-Elf default. After this lands, `HTMLField` import drops from
-   `player-data.mjs` and the static body holds only common /
-   config / `className` / `detectSecretDoors` defaults. Add the
-   two mixins to the `BUILT_IN_CLASS_MIXINS` table in
-   `module/built-in-class-mixins.mjs`.
+1. **Phase 4 closer slices** (per-class schema extraction is done):
+   - **Class-id dispatch helper** — replace the remaining
+     `system.details.sheetClass === 'Halfling'` string checks in
+     `module/actor.js:3265-3266` + `module/item.js:70-103` with a
+     single `actor.classId` accessor reading the canonical
+     lowercase ID. Tied to the eventual `Character.classId`
+     projection from the lib. Appendix C tracks the post-Phase-1
+     form of the halfling i18n stopgap. Quick win that could land
+     as a Phase 4 closer.
+2. **Start Phase 5 — sheet composition + class defaults.** Per
+   `docs/dev/CLASS_DECOMPOSITION.md` §3.2 / §3.3 / §3.4:
+   - **Sheet parts registry** (`game.dcc.registerSheetPart({
+     classId, tab, template, condition })`) — collapse the 7
+     class sheets in `module/actor-sheets-dcc.js` (+ partials at
+     `templates/actor-partial-*.html`) into one `DCCSheet` that
+     composes per `character.classId`.
+   - **Class defaults registry** (`registerClassDefaults`) —
+     extract the `_prepareContext` first-open blocks (lines
+     `60 / 128 / 201 / 269 / 346 / 518 / 595` in
+     `actor-sheets-dcc.js`) bundling class identity + mechanical
+     defaults + skill activation toggles (notably the
+     `skills.shieldBash.useDeed` cross-class toggle).
+   - **Starting items registry** — extract the dwarf ShieldBash
+     auto-create from `module/actor-sheets-dcc.js:434-454`.
 2. **Class-id dispatch helper** — replace the remaining
    `system.details.sheetClass === 'Halfling'` string checks in
    `actor.js:3265-3266` + `item.js:70-103` with a single
