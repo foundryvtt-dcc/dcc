@@ -651,6 +651,16 @@ DCC.classMixins = {}
 // data-side half of that collapse.
 DCC.classDefaults = {}
 
+// Per-class starting-items registry, keyed by lowercase canonical class
+// identifier. Each entry is an array of `{ nameKey, type, img?, system? }`
+// item-data descriptors auto-created on a Player document the first time
+// its class sheet opens (gated on `applyClassDefaults` returning
+// `'initialized'`). Today only `dwarf` has an entry (the ShieldBash
+// weapon); the registry exists for homebrew classes that need
+// auto-created starting equipment. Populated by the
+// `game.dcc.registerClassStartingItems` extension helper.
+DCC.classStartingItems = {}
+
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks

@@ -7,7 +7,7 @@
  */
 
 import { expect, test, vi } from 'vitest'
-import { applyClassDefaults, applyClassMixins, registerActorSheet, registerClassDefaults, registerClassMixin, registerItemSheet } from '../extension-api.mjs'
+import { applyClassDefaults, applyClassMixins, applyClassStartingItems, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerItemSheet } from '../extension-api.mjs'
 
 class FakeSheet {}
 class FakeDefaultItemSheetV2 {}
@@ -494,4 +494,195 @@ test('applyClassDefaults handles entries with no localize / enrichHtml / literal
 
   expect(result).toBe('initialized')
   expect(actor.update).toHaveBeenCalledWith({ 'system.details.sheetClass': 'Halfling' })
+})
+
+// ---------------------------------------------------------------------
+// registerClassStartingItems / applyClassStartingItems (Phase 5 session 2)
+// ---------------------------------------------------------------------
+
+function makeMockConfigStartingItems () {
+  return { DCC: { classStartingItems: {} } }
+}
+
+function makeMockActorWithItems (existingItems = []) {
+  return {
+    items: existingItems,
+    createEmbeddedDocuments: vi.fn(async (collection, docs) => docs.map((d, i) => ({ ...d, id: `created-${i}` })))
+  }
+}
+
+const DWARF_STARTING_ITEMS = [{
+  nameKey: 'DCC.ShieldBash',
+  type: 'weapon',
+  img: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
+  system: { melee: true, damage: '1d3', config: { actionDieOverride: '1d14' } }
+}]
+
+test('registerClassStartingItems stores the items array under the classId key', () => {
+  const CONFIG = makeMockConfigStartingItems()
+  registerClassStartingItems('dwarf', DWARF_STARTING_ITEMS, { CONFIG })
+
+  expect(CONFIG.DCC.classStartingItems.dwarf).toBe(DWARF_STARTING_ITEMS)
+})
+
+test('registerClassStartingItems initializes CONFIG.DCC.classStartingItems when missing', () => {
+  const CONFIG = { DCC: {} }
+  registerClassStartingItems('dwarf', DWARF_STARTING_ITEMS, { CONFIG })
+
+  expect(CONFIG.DCC.classStartingItems).toBeDefined()
+  expect(CONFIG.DCC.classStartingItems.dwarf).toBe(DWARF_STARTING_ITEMS)
+})
+
+test('registerClassStartingItems overwrites a prior registration (last-write-wins)', () => {
+  const CONFIG = makeMockConfigStartingItems()
+  const first = [{ nameKey: 'DCC.OldItem', type: 'weapon' }]
+  const second = [{ nameKey: 'DCC.NewItem', type: 'weapon' }]
+  registerClassStartingItems('dwarf', first, { CONFIG })
+  registerClassStartingItems('dwarf', second, { CONFIG })
+
+  expect(CONFIG.DCC.classStartingItems.dwarf).toBe(second)
+})
+
+test('registerClassStartingItems throws on empty / non-string classId', () => {
+  const CONFIG = makeMockConfigStartingItems()
+  expect(() => registerClassStartingItems('', DWARF_STARTING_ITEMS, { CONFIG })).toThrow(/non-empty string/)
+  expect(() => registerClassStartingItems(null, DWARF_STARTING_ITEMS, { CONFIG })).toThrow(/non-empty string/)
+})
+
+test('registerClassStartingItems throws on non-array items', () => {
+  const CONFIG = makeMockConfigStartingItems()
+  expect(() => registerClassStartingItems('dwarf', null, { CONFIG })).toThrow(/must be an array/)
+  expect(() => registerClassStartingItems('dwarf', { nameKey: 'X' }, { CONFIG })).toThrow(/must be an array/)
+})
+
+test('registerClassStartingItems throws when CONFIG.DCC is unavailable', () => {
+  expect(() => registerClassStartingItems('dwarf', DWARF_STARTING_ITEMS, { CONFIG: {} })).toThrow(/CONFIG\.DCC unavailable/)
+})
+
+test('applyClassStartingItems creates missing items as embedded documents', async () => {
+  const CONFIG = makeMockConfigStartingItems()
+  registerClassStartingItems('dwarf', DWARF_STARTING_ITEMS, { CONFIG })
+  const i18n = makeMockI18n({ 'DCC.ShieldBash': 'Shield Bash' })
+  const actor = makeMockActorWithItems([])
+
+  const created = await applyClassStartingItems(actor, 'dwarf', { CONFIG, i18n })
+
+  expect(actor.createEmbeddedDocuments).toHaveBeenCalledTimes(1)
+  expect(actor.createEmbeddedDocuments).toHaveBeenCalledWith('Item', [{
+    name: 'Shield Bash',
+    type: 'weapon',
+    img: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
+    system: { melee: true, damage: '1d3', config: { actionDieOverride: '1d14' } }
+  }])
+  expect(created).toHaveLength(1)
+  expect(created[0].name).toBe('Shield Bash')
+})
+
+test('applyClassStartingItems skips items the actor already has (idempotent on second open)', async () => {
+  // The "already-have-it" check matches (type, localized-name). Once the
+  // shield bash exists on the actor, subsequent sheet opens with the
+  // 'initialized' branch shouldn't duplicate it. This matters because
+  // the dispatch trigger fires whenever `sheetClass` doesn't match —
+  // e.g., a class-change flip would re-fire the branch on a dwarf with
+  // an existing ShieldBash.
+  const CONFIG = makeMockConfigStartingItems()
+  registerClassStartingItems('dwarf', DWARF_STARTING_ITEMS, { CONFIG })
+  const i18n = makeMockI18n({ 'DCC.ShieldBash': 'Shield Bash' })
+  const actor = makeMockActorWithItems([{ type: 'weapon', name: 'Shield Bash' }])
+
+  const created = await applyClassStartingItems(actor, 'dwarf', { CONFIG, i18n })
+
+  expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled()
+  expect(created).toEqual([])
+})
+
+test('applyClassStartingItems partial-creates only the missing items (mixed-state actor)', async () => {
+  // Multi-item registration where the actor already has one but not the
+  // other. The single createEmbeddedDocuments call should batch only
+  // the missing ones — matches Foundry's preferred API shape (one bulk
+  // create over multiple per-doc creates).
+  const CONFIG = makeMockConfigStartingItems()
+  registerClassStartingItems('squire', [
+    { nameKey: 'DCC.Longsword', type: 'weapon' },
+    { nameKey: 'DCC.Shield', type: 'armor' }
+  ], { CONFIG })
+  const i18n = makeMockI18n({ 'DCC.Longsword': 'Longsword', 'DCC.Shield': 'Shield' })
+  const actor = makeMockActorWithItems([{ type: 'weapon', name: 'Longsword' }])
+
+  const created = await applyClassStartingItems(actor, 'squire', { CONFIG, i18n })
+
+  expect(actor.createEmbeddedDocuments).toHaveBeenCalledWith('Item', [
+    { name: 'Shield', type: 'armor' }
+  ])
+  expect(created).toHaveLength(1)
+})
+
+test('applyClassStartingItems returns [] and never throws for an unregistered classId', async () => {
+  // Sibling modules registering homebrew starting items may load after
+  // the built-in sheets first render. The helper must degrade to a
+  // no-op when the classId isn't registered yet (matches the
+  // applyClassDefaults convention).
+  const CONFIG = makeMockConfigStartingItems()
+  const actor = makeMockActorWithItems([])
+
+  const created = await applyClassStartingItems(actor, 'unknown-class', {
+    CONFIG, i18n: makeMockI18n()
+  })
+
+  expect(created).toEqual([])
+  expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled()
+})
+
+test('applyClassStartingItems returns [] when the registered list is empty', async () => {
+  const CONFIG = makeMockConfigStartingItems()
+  registerClassStartingItems('dwarf', [], { CONFIG })
+  const actor = makeMockActorWithItems([])
+
+  const created = await applyClassStartingItems(actor, 'dwarf', {
+    CONFIG, i18n: makeMockI18n()
+  })
+
+  expect(created).toEqual([])
+  expect(actor.createEmbeddedDocuments).not.toHaveBeenCalled()
+})
+
+test('applyClassStartingItems skips entries missing nameKey or type', async () => {
+  // Defensive against malformed registrations. A partial entry would
+  // create an embedded doc with `name: 'DCC.SomeKey'` (the literal i18n
+  // key, since localize returns the key when not found) or
+  // `name: undefined`, neither of which is helpful — drop the entry
+  // entirely rather than create garbage.
+  const CONFIG = makeMockConfigStartingItems()
+  registerClassStartingItems('dwarf', [
+    { nameKey: 'DCC.ShieldBash', type: 'weapon' },
+    { type: 'weapon' }, // missing nameKey
+    { nameKey: 'DCC.Other' }, // missing type
+    null // garbage entry
+  ], { CONFIG })
+  const i18n = makeMockI18n({ 'DCC.ShieldBash': 'Shield Bash' })
+  const actor = makeMockActorWithItems([])
+
+  await applyClassStartingItems(actor, 'dwarf', { CONFIG, i18n })
+
+  // Only the well-formed entry should reach createEmbeddedDocuments.
+  expect(actor.createEmbeddedDocuments).toHaveBeenCalledWith('Item', [
+    { name: 'Shield Bash', type: 'weapon' }
+  ])
+})
+
+test('applyClassStartingItems omits img/system when not provided in the entry', async () => {
+  // Lean payload: an entry with only nameKey + type should produce a
+  // create doc with only name + type, not `img: undefined` or
+  // `system: undefined` (Foundry's validator can choke on undefined).
+  const CONFIG = makeMockConfigStartingItems()
+  registerClassStartingItems('squire', [{ nameKey: 'DCC.Longsword', type: 'weapon' }], { CONFIG })
+  const i18n = makeMockI18n({ 'DCC.Longsword': 'Longsword' })
+  const actor = makeMockActorWithItems([])
+
+  await applyClassStartingItems(actor, 'squire', { CONFIG, i18n })
+
+  const callArgs = actor.createEmbeddedDocuments.mock.calls[0][1][0]
+  expect(callArgs).toEqual({ name: 'Longsword', type: 'weapon' })
+  expect(callArgs).not.toHaveProperty('img')
+  expect(callArgs).not.toHaveProperty('system')
 })

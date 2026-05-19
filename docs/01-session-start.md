@@ -42,38 +42,40 @@ session's context):
 
 ## Status (2026-05-18)
 
-**Phase 5 session 1 opened Phase 5 with the `registerClassDefaults`
-registry + helper.** New stable extension hook
-`game.dcc.registerClassDefaults(classId, defaults)` and companion
-`applyClassDefaults(actor, classId)` helper in
-`module/extension-api.mjs`. `CONFIG.DCC.classDefaults = {}` seeded in
-`module/config.js`. Each entry packages the `_prepareContext` first-open
-writes the legacy class-sheet subclasses inlined: `sheetClass`
-(capitalized sentinel that drives the initial-setup-vs-maintenance
-dispatch), `localize` (i18n keys for `class.className`), `enrichHtml`
-(i18n keys for `class.classLink` + optional `mightyDeedsLink` /
-`spellcastingLink` / `spellburnLink`), and `literal` (scalar mechanical
-defaults — critRange, attackBonusMode, addClassLevelToInitiative,
-spellCheckAbility, showBackstab / showSpells,
-`skills.shieldBash.useDeed`). `applyClassDefaults` returns
-`'initialized' | 'regenerated' | 'unchanged'` so the dwarf sheet's
-still-inline ShieldBash auto-create gates on `'initialized'`. Seven
-built-in PC entries (cleric/dwarf/elf/halfling/thief/warrior/wizard)
-seeded via `module/built-in-class-defaults.mjs` consumed by
-`module/dcc.js:init` only. All 7 PC sheets in
-`module/actor-sheets-dcc.js` shrunk to a single
-`applyClassDefaults(this.options.document, '<classId>')` call — net
-156 lines deleted; `TextEditor` import dropped. Generic sheet stays
-untouched. **983 Vitest green**, **122 Playwright passed** (1 latent
-xcc-core-book failure, unchanged baseline).
+**Phase 5 session 2 shipped `registerClassStartingItems`.** New
+stable extension hook `game.dcc.registerClassStartingItems(classId,
+items)` and `applyClassStartingItems(actor, classId)` helper in
+`module/extension-api.mjs`; `CONFIG.DCC.classStartingItems = {}`
+seeded in `module/config.js`. Entries are
+`{ nameKey, type, img?, system? }` factory descriptors — the helper
+localizes `nameKey` at apply time, dedupes against existing
+`(type, name)` matches, batches missing items into a single
+`createEmbeddedDocuments('Item', [...])` call, returns created docs.
+Dwarf ShieldBash seed in new
+`module/built-in-class-starting-items.mjs` table consumed by
+`module/dcc.js:init`. Dwarf's inline ShieldBash block in
+`module/actor-sheets-dcc.js` collapsed to the same 2-line uniform
+pattern shared by all 7 PC sheets: `if (result === 'initialized')`
+→ `applyClassStartingItems` → `render(false)` when items created.
+Homebrew classes registering items through any PC sheet subclass
+get them applied automatically via this uniform pattern. **996
+Vitest green** (was 983, +13). **127 Playwright passed** (was 122,
++5 new; 1 latent xcc-core-book failure, unchanged baseline).
 
-**Latent gap surfaced (NOT fixed):** warrior + dwarf
+**Phase 5 session 1 (2026-05-18)** shipped `registerClassDefaults`
++ `applyClassDefaults`, lifting the per-class `_prepareContext`
+first-open default-write blocks onto a per-class registry. All 7
+PC sheets in `module/actor-sheets-dcc.js` shrunk to a single helper
+call (net 156 lines deleted). Detail in
+[phase-5.md](dev/progress/phase-5.md) when it rotates.
+
+**Latent gap (pre-existing, NOT fixed):** warrior + dwarf
 `class.mightyDeedsLink` and wizard `class.spellcastingLink` /
-`class.spellburnLink` writes don't surface on `system.class.*` because
-no schema field registers them (only `class.classLink` is, via a
-sibling `dcc.definePlayerSchema` hook). The legacy sheets have been
-writing these stripped values forever; refactor is byte-for-byte
-equivalent. Follow-up in `02-slice-backlog.md`.
+`class.spellburnLink` writes don't surface on `system.class.*`
+because no schema field registers them (only `class.classLink` is,
+via a sibling `dcc.definePlayerSchema` hook). The legacy sheets
+have been writing these stripped values forever; refactor is
+byte-for-byte equivalent. Follow-up in `02-slice-backlog.md`.
 
 **Phase 4 (data-model slimming, closed 2026-05-18):** all 7 DCC
 classes mixin-source their fields via the
@@ -135,29 +137,27 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 5 session 1 (2026-05-18) opened Phase 5.** Pick one of these
-candidates (Tim picks; default is the smallest blast radius first):
+**Phase 5 session 2 (2026-05-18) shipped
+`registerClassStartingItems`.** Pick one of these candidates (Tim
+picks; default is the smallest blast radius first):
 
-1. **`registerClassStartingItems` for the dwarf ShieldBash
-   (smallest scope).** Lift the still-inline dwarf ShieldBash
-   auto-create at `module/actor-sheets-dcc.js` (gated on the
-   `'initialized'` return from `applyClassDefaults`) onto a new
-   `registerClassStartingItems({ classId, items })` registry. May
-   fold into `registerClassDefaults` instead — decide at slice time.
-2. **Add the link fields to the base Player schema (smallest scope).**
+1. **Add the link fields to the base Player schema (smallest scope).**
    Fix the latent gap surfaced by Phase 5 session 1: add
    `classLink`, `mightyDeedsLink`, `spellcastingLink`, `spellburnLink`
    as base-body fields in `module/data/actor/player-data.mjs`. After
    that, the `applyClassDefaults` writes surface on `system.class.*`
    and templates render correctly. Low risk; pure schema add.
-3. **`registerSheetPart` + `DCCSheet` collapse (largest scope).**
+2. **`registerSheetPart` + `DCCSheet` collapse (largest scope).**
    Collapse the 7 PC sheet subclasses (each with `CLASS_PARTS` +
    `CLASS_TABS` statics) into a single composable `DCCSheet`
    consuming a new `game.dcc.registerSheetPart` registry. Sheet
-   markup changes — run visual regression alongside.
-4. **Migrate the remaining capitalized `sheetClass` readers** (Elf
+   markup changes — run visual regression alongside. After this
+   lands, the per-sheet `_prepareContext` body (now identical
+   across all 7 PC sheets after Phase 5 sessions 1 + 2) collapses
+   into a single base-class method on `DCCSheet`.
+3. **Migrate the remaining capitalized `sheetClass` readers** (Elf
    at `actor.js:182`; Cleric at `actor.js:2180` / `actor.js:2481` /
-   `dcc.js:746`) to `actor.classId`. Bundle with #3.
+   `dcc.js:746`) to `actor.classId`. Bundle with #2.
 
 **Also pending — dcc-qol sibling-fix coordination.** Session 20
 shim removal leaves dcc-qol's `attackRollHooks.js:283-284` reading

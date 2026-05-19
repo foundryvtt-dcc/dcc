@@ -825,4 +825,137 @@ test.describe('DCC Extension API', () => {
     expect(result.replaced).toBe(true)
     expect(result.restored).toBe(true)
   })
+
+  // -------------------------------------------------------------------
+  // registerClassStartingItems / applyClassStartingItems (Phase 5 session 2)
+  // -------------------------------------------------------------------
+
+  test('game.dcc.registerClassStartingItems is exposed and is a function', async ({ page }) => {
+    const result = await page.evaluate(() => ({
+      hasFn: typeof game.dcc.registerClassStartingItems === 'function',
+      keys: Object.keys(game.dcc).filter(k => k === 'registerClassStartingItems')
+    }))
+    expect(result.hasFn).toBe(true)
+    expect(result.keys).toEqual(['registerClassStartingItems'])
+  })
+
+  test('built-in dwarf starting-items entry seeds the ShieldBash weapon', async ({ page }) => {
+    // Validates that the seed table in module/built-in-class-starting-items.mjs
+    // registered the dwarf at init. Assert on entry shape so a future
+    // table-format change has a regression guard.
+    const result = await page.evaluate(() => {
+      const entries = CONFIG.DCC?.classStartingItems?.dwarf ?? []
+      return {
+        present: entries.length > 0,
+        firstEntry: entries[0] ?? null,
+        otherClassesPresent: ['cleric', 'thief', 'halfling', 'warrior', 'wizard', 'elf']
+          .filter(c => Array.isArray(CONFIG.DCC?.classStartingItems?.[c]))
+      }
+    })
+    expect(result.present).toBe(true)
+    expect(result.firstEntry).toMatchObject({
+      nameKey: 'DCC.ShieldBash',
+      type: 'weapon',
+      img: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
+      system: {
+        melee: true,
+        damage: '1d3',
+        config: { actionDieOverride: '1d14' }
+      }
+    })
+    // No other DCC built-in class should have starting items today.
+    expect(result.otherClassesPresent).toEqual([])
+  })
+
+  test('applyClassStartingItems creates the dwarf ShieldBash on a fresh actor', async ({ page }) => {
+    // End-to-end check: register-time entry → apply-time embedded doc
+    // create against a live Player document. Mirrors what the dwarf
+    // sheet's `_prepareContext` now does (the `'initialized'` branch
+    // delegates to applyClassStartingItems).
+    const result = await page.evaluate(async () => {
+      const { applyClassStartingItems } = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
+      const player = await Actor.create({ name: 'P5S2 Dwarf StartingItems Probe', type: 'Player' })
+
+      const before = player.items.size
+      const created = await applyClassStartingItems(player, 'dwarf')
+      const after = {
+        size: player.items.size,
+        hasShieldBash: player.items.some(item => item.type === 'weapon' && item.name === game.i18n.localize('DCC.ShieldBash'))
+      }
+
+      await player.delete()
+      return { before, createdCount: created.length, after }
+    })
+
+    expect(result.before).toBe(0)
+    expect(result.createdCount).toBe(1)
+    expect(result.after.size).toBe(1)
+    expect(result.after.hasShieldBash).toBe(true)
+  })
+
+  test('applyClassStartingItems is idempotent — calling twice does not duplicate', async ({ page }) => {
+    // The "already-have-it" duplicate check matches (type, localized
+    // name). A dwarf sheet reopen (or a class-change re-fire) shouldn't
+    // create a second ShieldBash weapon.
+    const result = await page.evaluate(async () => {
+      const { applyClassStartingItems } = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
+      const player = await Actor.create({ name: 'P5S2 Dwarf Idempotent Probe', type: 'Player' })
+
+      const first = await applyClassStartingItems(player, 'dwarf')
+      const second = await applyClassStartingItems(player, 'dwarf')
+      const finalSize = player.items.size
+
+      await player.delete()
+      return {
+        firstCount: first.length,
+        secondCount: second.length,
+        finalSize
+      }
+    })
+
+    expect(result.firstCount).toBe(1)
+    expect(result.secondCount).toBe(0)
+    expect(result.finalSize).toBe(1)
+  })
+
+  test('homebrew class registered via game.dcc.registerClassStartingItems gets items applied through the same code path', async ({ page }) => {
+    // Validates the registry's homebrew use case: a sibling module
+    // registers starting items for its own classId; the existing
+    // applyClassStartingItems helper picks them up without any
+    // sheet-side change. Restore the empty state after so subsequent
+    // tests / world state stay correct.
+    const result = await page.evaluate(async () => {
+      const { applyClassStartingItems } = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
+      const original = CONFIG.DCC.classStartingItems.squire
+      game.dcc.registerClassStartingItems('squire', [{
+        nameKey: 'DCC.Longsword',
+        type: 'weapon',
+        system: { melee: true, damage: '1d8' }
+      }])
+
+      const player = await Actor.create({ name: 'P5S2 Squire Homebrew Probe', type: 'Player' })
+      const created = await applyClassStartingItems(player, 'squire')
+      const after = {
+        createdCount: created.length,
+        createdName: created[0]?.name ?? null,
+        createdType: created[0]?.type ?? null
+      }
+      await player.delete()
+
+      // Restore the registry to its original state so other tests
+      // can assume no 'squire' entry exists.
+      if (original === undefined) {
+        delete CONFIG.DCC.classStartingItems.squire
+      } else {
+        CONFIG.DCC.classStartingItems.squire = original
+      }
+
+      return after
+    })
+
+    expect(result.createdCount).toBe(1)
+    expect(result.createdType).toBe('weapon')
+    expect(typeof result.createdName).toBe('string')
+    expect(result.createdName.length).toBeGreaterThan(0)
+  })
 })

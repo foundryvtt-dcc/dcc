@@ -6,7 +6,7 @@
  */
 
 import DCCActorSheet from './actor-sheet.js'
-import { applyClassDefaults } from './extension-api.mjs'
+import { applyClassDefaults, applyClassStartingItems } from './extension-api.mjs'
 
 /**
  * Extend the zero-level/NPC sheet for a Cleric
@@ -55,7 +55,11 @@ class DCCActorSheetCleric extends DCCActorSheet {
   /** @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-    await applyClassDefaults(this.options.document, 'cleric')
+    const result = await applyClassDefaults(this.options.document, 'cleric')
+    if (result === 'initialized') {
+      const created = await applyClassStartingItems(this.options.document, 'cleric')
+      if (created.length > 0) this.render(false)
+    }
     return context
   }
 }
@@ -102,7 +106,11 @@ class DCCActorSheetThief extends DCCActorSheet {
   /** @override */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-    await applyClassDefaults(this.options.document, 'thief')
+    const result = await applyClassDefaults(this.options.document, 'thief')
+    if (result === 'initialized') {
+      const created = await applyClassStartingItems(this.options.document, 'thief')
+      if (created.length > 0) this.render(false)
+    }
     return context
   }
 }
@@ -153,7 +161,11 @@ class DCCActorSheetHalfling extends DCCActorSheet {
   /** @override */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-    await applyClassDefaults(this.options.document, 'halfling')
+    const result = await applyClassDefaults(this.options.document, 'halfling')
+    if (result === 'initialized') {
+      const created = await applyClassStartingItems(this.options.document, 'halfling')
+      if (created.length > 0) this.render(false)
+    }
     return context
   }
 }
@@ -200,7 +212,11 @@ class DCCActorSheetWarrior extends DCCActorSheet {
   /** @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-    await applyClassDefaults(this.options.document, 'warrior')
+    const result = await applyClassDefaults(this.options.document, 'warrior')
+    if (result === 'initialized') {
+      const created = await applyClassStartingItems(this.options.document, 'warrior')
+      if (created.length > 0) this.render(false)
+    }
     return context
   }
 }
@@ -252,7 +268,11 @@ class DCCActorSheetWizard extends DCCActorSheet {
   /** @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-    await applyClassDefaults(this.options.document, 'wizard')
+    const result = await applyClassDefaults(this.options.document, 'wizard')
+    if (result === 'initialized') {
+      const created = await applyClassStartingItems(this.options.document, 'wizard')
+      if (created.length > 0) this.render(false)
+    }
     return context
   }
 }
@@ -300,35 +320,10 @@ class DCCActorSheetDwarf extends DCCActorSheet {
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
     const result = await applyClassDefaults(this.options.document, 'dwarf')
-
-    // Auto-create the Dwarf ShieldBash weapon on initial class setup.
-    // Stays inline until the Phase 5 `registerClassStartingItems`
-    // slice lands — dwarf is the only built-in class with an auto-
-    // created starting item today.
     if (result === 'initialized') {
-      const shieldBashName = game.i18n.localize('DCC.ShieldBash')
-      const hasBashWeapon = this.options.document.items.some(item =>
-        item.type === 'weapon' &&
-        item.name === shieldBashName
-      )
-      if (!hasBashWeapon) {
-        await this.options.document.createEmbeddedDocuments('Item', [{
-          name: shieldBashName,
-          type: 'weapon',
-          img: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
-          system: {
-            melee: true,
-            damage: '1d3',
-            config: {
-              actionDieOverride: '1d14'
-            }
-          }
-        }])
-        // Explicitly trigger a re-render to show the new item
-        this.render(false)
-      }
+      const created = await applyClassStartingItems(this.options.document, 'dwarf')
+      if (created.length > 0) this.render(false)
     }
-
     return context
   }
 }
@@ -380,7 +375,11 @@ class DCCActorSheetElf extends DCCActorSheet {
   /** @inheritDoc */
   async _prepareContext (options) {
     const context = await super._prepareContext(options)
-    await applyClassDefaults(this.options.document, 'elf')
+    const result = await applyClassDefaults(this.options.document, 'elf')
+    if (result === 'initialized') {
+      const created = await applyClassStartingItems(this.options.document, 'elf')
+      if (created.length > 0) this.render(false)
+    }
     return context
   }
 }

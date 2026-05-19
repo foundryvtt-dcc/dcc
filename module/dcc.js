@@ -31,9 +31,10 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
-import { registerActorSheet, registerClassDefaults, registerClassMixin, registerItemSheet } from './extension-api.mjs'
+import { registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerItemSheet } from './extension-api.mjs'
 import { registerBuiltInClassMixins } from './built-in-class-mixins.mjs'
 import { registerBuiltInClassDefaults } from './built-in-class-defaults.mjs'
+import { registerBuiltInClassStartingItems } from './built-in-class-starting-items.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -86,6 +87,14 @@ Hooks.once('init', async function () {
   // instead. See `module/built-in-class-defaults.mjs` for the table.
   registerBuiltInClassDefaults(registerClassDefaults)
 
+  // Register built-in DCC class starting items. Phase 5 session 2 lifts
+  // the dwarf ShieldBash auto-create off the dwarf sheet subclass and
+  // onto this registry; class sheets call
+  // `applyClassStartingItems(actor, classId)` when `applyClassDefaults`
+  // returns `'initialized'`. See `module/built-in-class-starting-items.mjs`
+  // for the table.
+  registerBuiltInClassStartingItems(registerClassStartingItems)
+
   // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
@@ -137,6 +146,7 @@ Hooks.once('init', async function () {
     registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassDefaults, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassMixin, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerClassStartingItems, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove

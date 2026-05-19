@@ -371,3 +371,113 @@ export async function applyClassDefaults (actor, classId, deps = {}) {
   }
   return 'unchanged'
 }
+
+/**
+ * Register class-specific starting items that the sheet auto-creates on
+ * a new character's first open. Sibling to `registerClassDefaults`:
+ * defaults writes scalar fields, starting items create embedded
+ * documents. Both fire on the same first-open dispatch (the sheet calls
+ * `applyClassDefaults` and, when the return is `'initialized'`, calls
+ * `applyClassStartingItems`).
+ *
+ * Today the only built-in case is the dwarf ShieldBash weapon — the
+ * registry exists so homebrew classes can ship their own auto-created
+ * starting equipment (a "Squire" class's starting longsword, a
+ * "Cultist" class's holy symbol, etc.) without subclassing or
+ * monkey-patching the sheet.
+ *
+ * Each entry shape:
+ *
+ * - `nameKey` (string, required) — i18n key resolved via `game.i18n.localize`
+ *   at apply time. Item documents are created with `name: localize(nameKey)`.
+ * - `type` (string, required) — Foundry Item sub-type (`'weapon'`, `'armor'`,
+ *   `'equipment'`, …). Used both in the create-payload and in the
+ *   "do I already have this item?" check.
+ * - `img` (string, optional) — passed through to the create payload.
+ * - `system` (object, optional) — passed through as `system: {...}`.
+ *
+ * The "already have it" check matches on `(type, name-after-localize)`,
+ * so the same registered item won't be re-created on subsequent sheet
+ * opens even if the user renamed or modified it (the rename simply
+ * disables the auto-create for that actor).
+ *
+ * `classId` is the lowercase canonical class identifier (`'dwarf'`,
+ * `'warrior'`, `'cleric'`, …) — same convention as the other Phase 4/5
+ * registries. Re-registering an existing `classId` silently overwrites
+ * the prior entry (last-write-wins).
+ *
+ * Stable from day one (per `EXTENSION_API.md` recommendation 7).
+ *
+ * @param {string} classId - lowercase canonical class identifier.
+ * @param {Array<object>} items - registration payload as documented.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - `CONFIG` namespace (defaults to
+ *   `globalThis.CONFIG`).
+ */
+export function registerClassStartingItems (classId, items, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  if (!classId || typeof classId !== 'string') {
+    throw new Error('registerClassStartingItems: classId must be a non-empty string')
+  }
+  if (!Array.isArray(items)) {
+    throw new Error('registerClassStartingItems: items must be an array')
+  }
+  if (!CONFIGImpl?.DCC) {
+    throw new Error('registerClassStartingItems: CONFIG.DCC unavailable')
+  }
+  CONFIGImpl.DCC.classStartingItems ??= {}
+  CONFIGImpl.DCC.classStartingItems[classId] = items
+}
+
+/**
+ * Apply registered starting items to an actor. Mirrors the legacy
+ * dwarf-sheet ShieldBash auto-create block that fired inside
+ * `_prepareContext` whenever the sheetClass-doesn't-match branch ran.
+ *
+ * For each registered entry, checks whether the actor already has an
+ * embedded item with the matching `type` + localized `name`. Missing
+ * entries are batched into a single `createEmbeddedDocuments('Item',
+ * [...])` call. Returns the array of created documents (or `[]` if
+ * nothing was created) so the caller can decide whether to re-render
+ * the sheet — Foundry's automatic re-render from the item creation
+ * usually arrives, but the dwarf sheet has historically forced an
+ * explicit `this.render(false)` to avoid a race during the
+ * still-running `_prepareContext`, and that pattern carries forward.
+ *
+ * No-op (returns `[]`) when the classId isn't registered. The helper
+ * itself never throws on a missing registry — `_prepareContext` is on
+ * a UI hot path and a missing registration should degrade to the
+ * legacy "no auto-create" behavior rather than crash the sheet.
+ *
+ * @param {object} actor - DCCActor (Player) to populate.
+ * @param {string} classId - lowercase canonical class identifier.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - defaults to `globalThis.CONFIG`.
+ * @param {object} [deps.i18n] - defaults to `globalThis.game?.i18n`.
+ * @returns {Promise<Array<object>>} created embedded item documents.
+ */
+export async function applyClassStartingItems (actor, classId, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  const i18n = deps.i18n ?? globalThis.game?.i18n
+  const entries = CONFIGImpl?.DCC?.classStartingItems?.[classId]
+  if (!Array.isArray(entries) || entries.length === 0) return []
+
+  const toCreate = []
+  for (const entry of entries) {
+    if (!entry?.nameKey || !entry?.type) continue
+    const name = i18n.localize(entry.nameKey)
+    const alreadyHas = actor?.items?.some(item =>
+      item.type === entry.type && item.name === name
+    )
+    if (alreadyHas) continue
+    const docData = { name, type: entry.type }
+    if (entry.img) docData.img = entry.img
+    if (entry.system) docData.system = entry.system
+    toCreate.push(docData)
+  }
+
+  if (toCreate.length === 0) return []
+  return await actor.createEmbeddedDocuments('Item', toCreate)
+}

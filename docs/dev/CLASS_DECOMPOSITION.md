@@ -50,7 +50,7 @@ at Phase 6.
 | Class | Schema mixin (1, P4) | Sheet part (2, P5) | Defaults + skill toggles (3+4, P5) | Starting items (5, P5) |
 |---|---|---|---|---|
 | Halfling | ✅ P4-1 (`skills.sneakAndHide`) | pending | ✅ P5-1 | n/a (no starting items) |
-| Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | ✅ P5-1 (`useDeed = true` override included) | pending — ShieldBash auto-create still inline pending P5-2 starting-items slice |
+| Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | ✅ P5-1 (`useDeed = true` override included) | ✅ P5-2 (`ShieldBash` weapon auto-created via `registerClassStartingItems`) |
 | Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | pending | ✅ P5-1 | n/a |
 | Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 | n/a |
 | Wizard | ✅ P4-6 (9 class fields attached via shared `attachWizardFields(schema)` helper in `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 (`spellcastingLink`, `spellburnLink` extra enrichHtml — but writes silently stripped today, see "follow-up: register link fields") | n/a |
@@ -238,20 +238,82 @@ sheet-config booleans.
 
 ### 3.4 Starting items (Phase 5)
 
-**Planned:** `game.dcc.registerClassStartingItems({ classId, items
-})` — or fold into `registerClassDefaults`.
+**Shipped Phase 5 session 2 (2026-05-18):**
+`game.dcc.registerClassStartingItems(classId, items)` —
+[`EXTENSION_API.md` Stable surface](EXTENSION_API.md). Companion
+internal helper `applyClassStartingItems(actor, classId)` auto-creates
+the registered items on a Player document, deduping against existing
+`(type, localized-name)` matches. Returns the array of created docs
+so callers (sheet `_prepareContext`) can decide whether to re-render.
 
-Today the only built-in case is the dwarf sheet auto-creating a
-`ShieldBash` weapon on first open. Phase 5 session 1 lifted the
-default-write path onto the new `registerClassDefaults` registry but
-left the dwarf's starting-item branch inline — it now gates on the
-`applyClassDefaults` return value (`'initialized'`) instead of the
-legacy `if (sheetClass !== 'Dwarf')` check. Phase 5 session 2 lifts
-that branch onto a registry. Decide at slice time whether to split a
-sibling `registerClassStartingItems` or fold into the existing
-defaults entry — depends on whether other classes pick up similar
-auto-create needs (warrior "luckyWeapon" prompt, cleric "holy
-symbol," etc.).
+**Design decision:** kept the registry separate from
+`registerClassDefaults` rather than folding into it. Rationale: the
+sub-bag shapes are conceptually distinct — defaults writes scalar
+field values (`actor.update({...})`), starting items create embedded
+documents (`actor.createEmbeddedDocuments('Item', [...])`). Future
+homebrew classes might want either contribution without the other
+(e.g., a homebrew "Squire" class extending warrior defaults but
+shipping its own starting longsword). Two registrations stay cheap
+because both helpers expose `register…(classId, …)` parity API.
+
+**Where built-in registrations live:**
+`module/built-in-class-starting-items.mjs` defines
+`BUILT_IN_CLASS_STARTING_ITEMS` and the
+`registerBuiltInClassStartingItems(register)` helper consumed by
+`module/dcc.js:init`. Mirrors the mixins/defaults pattern.
+
+**Entry shape:**
+
+```js
+dwarf: [
+  {
+    nameKey: 'DCC.ShieldBash',
+    type: 'weapon',
+    img: 'systems/dcc/styles/images/game-icons-net/shield-bash.svg',
+    system: {
+      melee: true,
+      damage: '1d3',
+      config: { actionDieOverride: '1d14' }
+    }
+  }
+]
+```
+
+`applyClassStartingItems` localizes `nameKey` at apply time (so
+templates and chat messages see the user's localized weapon name) and
+the duplicate check matches on `(type, localized-name)` — renaming
+the auto-created item suppresses re-creation. Missing entries batch
+into a single `createEmbeddedDocuments` call for Foundry-preferred
+bulk-create semantics.
+
+**Sheet integration:** all 7 PC sheets in
+`module/actor-sheets-dcc.js` share the same `_prepareContext` body
+(only the classId literal differs):
+
+```js
+async _prepareContext (options) {
+  const context = await super._prepareContext(options)
+  const result = await applyClassDefaults(this.options.document, '<classId>')
+  if (result === 'initialized') {
+    const created = await applyClassStartingItems(this.options.document, '<classId>')
+    if (created.length > 0) this.render(false)
+  }
+  return context
+}
+```
+
+The render-after-create is dwarf-historical — Foundry's automatic
+re-render after embedded-document creation usually arrives, but the
+explicit call avoids a race during the still-running
+`_prepareContext`. Other PC sheets get the same call for the homebrew
+case (a sibling-module classId registered through any PC sheet
+subclass gets items applied through the same code path).
+
+Today the only built-in case is dwarf. The registry is ready for
+homebrew classes (warrior "luckyWeapon" prompt → starting weapon,
+cleric "holy symbol," etc.) and the Phase 5 session 3 `DCCSheet`
+collapse will dedupe the `_prepareContext` boilerplate across the 7
+sheets.
 
 ### 3.5 Class progression (Phase 6, lib-driven)
 
@@ -339,8 +401,9 @@ For a sibling module shipping a new class (homebrew or commercial):
 4. **(Phase 5 ✅ shipped P5-1)** `registerClassDefaults({ classId,
    defaults })` — contribute identity + mechanical defaults applied
    on first-open.
-5. **(Phase 5)** `registerClassStartingItems({ classId, items })` —
-   if your class needs auto-created starting equipment. Pending.
+5. **(Phase 5 ✅ shipped P5-2)** `registerClassStartingItems({
+   classId, items })` — if your class needs auto-created starting
+   equipment.
 6. **(Phase 6)** Lib `registerClassProgression(classId, progression)`
    — saves, crit dies, action dies per level.
 7. **(Phase 6)** `registerVariant({ id, classes })` only if you ship

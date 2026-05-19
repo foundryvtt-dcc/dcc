@@ -743,17 +743,21 @@ schema (only `class.classLink` is, via a sibling `dcc.definePlayerSchema`
 hook). The legacy code wrote them anyway → silently stripped → my
 refactor matches byte-for-byte. Follow-up tracked below.
 
-#### Phase 5 session 2 (next). `registerClassStartingItems` for dwarf ShieldBash.
-Lift the inline dwarf ShieldBash auto-create at
-`module/actor-sheets-dcc.js:DCCActorSheetDwarf` (the
-`result === 'initialized'` branch added in session 1) onto a new
-`registerClassStartingItems({ classId, items })` registry. Today
-the dwarf is the only built-in class with a starting item, but the
-registry sets the pattern for homebrew classes (warrior "lucky
-weapon," cleric "holy symbol," etc.). May fold into
-`registerClassDefaults` instead — decide at slice time based on
-whether dwarf is the long-term only consumer or whether a
-homebrew-friendly registry is worth the second hook.
+#### ~~Phase 5 session 2. `registerClassStartingItems` for dwarf ShieldBash.~~ **DONE 2026-05-18**
+New stable hook `game.dcc.registerClassStartingItems(classId, items)`
++ `applyClassStartingItems(actor, classId)` helper in
+`module/extension-api.mjs`; `CONFIG.DCC.classStartingItems = {}`
+seeded in `module/config.js`. Entry shape:
+`{ nameKey, type, img?, system? }` — helper localizes `nameKey`
+at apply time, dedupes against existing `(type, name)` matches,
+batches missing entries into one `createEmbeddedDocuments` call,
+returns created docs. Dwarf ShieldBash seed in
+`module/built-in-class-starting-items.mjs`. All 7 PC sheets now
+share identical `_prepareContext` shape (only the classId literal
+differs); homebrew classes registering items through any PC sheet
+subclass get them applied automatically. +13 Vitest, +5 Playwright.
+996 Vitest green, 127 Playwright passed (1 latent xcc-core-book
+failure, unchanged baseline).
 
 #### Phase 5 session 3 (planned). `registerSheetPart` + `DCCSheet` collapse.
 Each of the 7 PC sheet subclasses still carries `CLASS_PARTS` +
@@ -794,6 +798,14 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 5 (Sheet composition + class defaults)
 
+- Phase 5 session 2 (2026-05-18): `game.dcc.registerClassStartingItems`
+  + `applyClassStartingItems` shipped;
+  `module/built-in-class-starting-items.mjs` seeds the dwarf
+  ShieldBash. Dwarf's inline ShieldBash auto-create block collapsed
+  to a 2-line uniform pattern; all 7 PC sheets now share identical
+  `_prepareContext` shape (only classId literal differs). +13 Vitest,
+  +5 Playwright. 996 Vitest green; 127 Playwright passed (1 latent
+  xcc-core-book failure, unchanged baseline).
 - Phase 5 session 1 (2026-05-18): `game.dcc.registerClassDefaults` +
   `applyClassDefaults` shipped; `module/built-in-class-defaults.mjs`
   seeds 7 PC entries; all 7 PC sheets in `module/actor-sheets-dcc.js`
