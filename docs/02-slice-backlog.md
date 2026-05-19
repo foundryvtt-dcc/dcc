@@ -840,17 +840,23 @@ scope; touches the actor-class selection UI / level-change
 dialog. Depends on session 1's classProgression plumbing being
 in place.
 
-#### Phase 6 follow-up: content-module sample registration.
-Once a content module ships class progression data (likely a
-future `dcc-core-book` update following the §8.1 "Option C"
-mirror approach — TS exports + Foundry pack JSON sourced from
-the same files in `dcc-official-data`), the system's
-`module/adapter/foundry-data-loader.mjs` placeholder can grow a
-compendium walker that detects pack-level progression data and
-calls `registerClassProgressions` automatically at `dcc.ready`.
-This is the "make `getSavingThrows("warrior", 3)` actually
-return non-zero" closure of PR #720's item. Not blocked by any
-DCC-system slice; blocked on content-module data ship.
+#### ~~Phase 6 session 2. Compendium → lib-registry foundry-data-loader.~~ **DONE 2026-05-19**
+`registerClassProgressionsFromPacks` in
+`module/adapter/foundry-data-loader.mjs` walks
+`CONFIG.DCC.levelDataPacks` at `dcc.ready`, parses each
+`{ClassName}-{level}` item's `system.levelData` text, maps the
+Foundry-system-paths onto the lib's `ProgressionLevelData`
+shape, and calls `registerClassProgressions(...)`. Single
+source of truth — content creators ship level data in their own
+compendium packs via `CONFIG.DCC.levelDataPacks.addPack(...)`,
+and both the level-change dialog AND the lib registry pick them
+up automatically. Closes the remaining half of PR #720's
+class-config item — `getSavingThrows`, `getCritDie`, etc. now
+return non-zero values for actors in worlds where a content
+module ships level data. +15 Vitest, +1 Playwright. 1020
+Vitest green; 136 Playwright passed (was 135, +1 new). No class progression data
+shipped from core (per §8.1; data stays in user-installed
+content modules).
 
 ---
 
@@ -860,6 +866,17 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 6 (Lib-side class progression + variant)
 
+- Phase 6 session 2 (2026-05-19): compendium → lib-registry
+  loader.
+  `registerClassProgressionsFromPacks` in
+  `module/adapter/foundry-data-loader.mjs` walks
+  `CONFIG.DCC.levelDataPacks` at `dcc.ready`, parses each
+  `{Class}-{level}` item's `system.levelData` text, builds
+  `ClassProgression` objects, and registers them with the
+  vendored lib. Closes the remaining half of PR #720's
+  class-config item. +15 Vitest (parser, mapper, assembler —
+  all with fictional placeholder values), +1 Playwright
+  (structural-shape assertions only). 1020 Vitest green.
 - Phase 6 session 1 (2026-05-19): expose
   `registerClassProgression` + `registerClassProgressions` on
   `game.dcc.*` via two new entries in `module/dcc.js`. The lib's

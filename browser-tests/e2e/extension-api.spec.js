@@ -623,14 +623,23 @@ test.describe('DCC Extension API', () => {
   })
 
   test('registerClassProgression round-trips against the live lib registry (fictional class)', async ({ page }) => {
-    // End-to-end smoke: register a tiny fictional class (NOT a
-    // Goodman Games progression) and verify the lib's
-    // `getSavingThrows` consumer returns the registered values.
-    // Cleans up via the lib's own `clearClassProgressions` so a
-    // sibling-loaded real progression isn't disturbed.
+    // End-to-end smoke: register a tiny fictional class (NOT from any
+    // official source) and verify the lib's `getSavingThrows`
+    // consumer returns the registered values.
+    //
+    // Save+restore the prior registry state around the test so a
+    // sibling-loaded real progression (registered at `dcc.ready` by
+    // `foundry-data-loader.mjs` when a level pack is installed)
+    // isn't wiped. A naive `clearClassProgressions()` cleanup would
+    // empty the entire registry, including the production entries —
+    // breaking downstream tests that expect the post-init state.
     const result = await page.evaluate(async () => {
       const lib = await import('../../../../../../../../systems/dcc/module/vendor/dcc-core-lib/index.js')
       const utils = await import('../../../../../../../../systems/dcc/module/vendor/dcc-core-lib/data/classes/progression-utils.js')
+
+      // Snapshot prior registry so we can restore it post-test.
+      const priorIds = utils.getRegisteredClassIds()
+      const priorEntries = priorIds.map(id => utils.getClassProgression(id))
 
       const probe = {
         classId: 'p6s1-live-tinker',
@@ -654,23 +663,110 @@ test.describe('DCC Extension API', () => {
       const savesAt3 = lib.getSavingThrows ? lib.getSavingThrows('p6s1-live-tinker', 3) : null
       const willAt3 = utils.getSaveBonus('p6s1-live-tinker', 3, 'wil')
 
-      // Cleanup so the registry doesn't leak.
+      // Restore: clear, then re-register each prior entry. The
+      // fictional probe is dropped, prior production entries return.
       utils.clearClassProgressions()
-      const afterClear = utils.getClassProgression('p6s1-live-tinker')
+      for (const entry of priorEntries) {
+        if (entry) utils.registerClassProgression(entry)
+      }
+      const afterCleanup = utils.getClassProgression('p6s1-live-tinker')
+      const restoredCount = utils.getRegisteredClassIds().length
 
       return {
         registeredName: fetched?.name ?? null,
         registeredRefSave: fetched?.levels[3]?.saves?.ref ?? null,
         willAt3,
         savesAt3Type: savesAt3 ? typeof savesAt3 : null,
-        cleared: afterClear === undefined
+        probeRemoved: afterCleanup === undefined,
+        priorCount: priorIds.length,
+        restoredCount
       }
     })
 
     expect(result.registeredName).toBe('Live Tinker')
     expect(result.registeredRefSave).toBe(2)
     expect(result.willAt3).toBe(3)
-    expect(result.cleared).toBe(true)
+    expect(result.probeRemoved).toBe(true)
+    // The restored registry should match the prior count (production
+    // progressions are back, fictional probe is gone).
+    expect(result.restoredCount).toBe(result.priorCount)
+  })
+
+  // -------------------------------------------------------------------
+  // foundry-data-loader (Phase 6 session 2)
+  // -------------------------------------------------------------------
+
+  test('foundry-data-loader walks level packs and registers progressions for each discovered class', async ({ page }) => {
+    // Validates `module/adapter/foundry-data-loader.mjs`'s
+    // `registerClassProgressionsFromPacks` end-to-end against a
+    // live Foundry world. Invokes the loader directly (rather than
+    // asserting on the init-hook side-effect) so the test is robust
+    // against Foundry-server restarts: the production init runs the
+    // loader at `dcc.ready`, but the running test world may have
+    // started before that wiring landed. A direct invocation
+    // confirms the loader logic itself works against real
+    // compendium packs.
+    //
+    // Save+restore the registry state around the test so any
+    // sibling-loaded prior progressions aren't disturbed (matches
+    // the session-1 round-trip test's pattern).
+    //
+    // Content-pack-dependent: when no level pack is installed, the
+    // loader is a no-op and the test asserts the empty-array
+    // return shape. When dcc-core-book (or similar) is installed,
+    // the loader registers at least one of the seven canonical
+    // class IDs and the registered entries each have a populated
+    // `levels` map. Specific progression values are NOT asserted —
+    // those are pack-content-dependent.
+    const result = await page.evaluate(async () => {
+      const utils = await import('../../../../../../../../systems/dcc/module/vendor/dcc-core-lib/data/classes/progression-utils.js')
+      const loader = await import('../../../../../../../../systems/dcc/module/adapter/foundry-data-loader.mjs')
+
+      // Save prior state so we can restore.
+      const priorIds = utils.getRegisteredClassIds()
+      const priorEntries = priorIds.map(id => utils.getClassProgression(id))
+
+      // Clear and re-run the loader so we know its output isn't
+      // mixed with whatever was already in the registry.
+      utils.clearClassProgressions()
+      const registered = await loader.registerClassProgressionsFromPacks()
+      const postIds = utils.getRegisteredClassIds().sort()
+      const knownClassIds = ['cleric', 'dwarf', 'elf', 'halfling', 'thief', 'warrior', 'wizard']
+      const intersection = postIds.filter(id => knownClassIds.includes(id))
+      const sample = intersection.length > 0
+        ? utils.getClassProgression(intersection[0])
+        : null
+
+      // Restore prior registry state.
+      utils.clearClassProgressions()
+      for (const entry of priorEntries) {
+        if (entry) utils.registerClassProgression(entry)
+      }
+
+      return {
+        levelPacksConfigured: Array.isArray(CONFIG.DCC?.levelDataPacks?.packs) &&
+          CONFIG.DCC.levelDataPacks.packs.length > 0,
+        registered,
+        postIds,
+        intersection,
+        sampleHasLevels: sample ? Object.keys(sample.levels ?? {}).length > 0 : null,
+        sampleClassId: sample?.classId ?? null,
+        sampleName: sample?.name ?? null
+      }
+    })
+
+    if (!result.levelPacksConfigured) {
+      // No level pack installed in this world — loader is a no-op.
+      expect(result.registered).toEqual([])
+      return
+    }
+
+    // Level pack is installed → loader registered at least one of
+    // the seven canonical PC classes.
+    expect(result.intersection.length).toBeGreaterThan(0)
+    expect(result.sampleHasLevels).toBe(true)
+    expect(typeof result.sampleClassId).toBe('string')
+    expect(typeof result.sampleName).toBe('string')
   })
 
   // -------------------------------------------------------------------

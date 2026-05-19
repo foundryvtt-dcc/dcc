@@ -37,6 +37,7 @@ import { registerBuiltInClassDefaults } from './built-in-class-defaults.mjs'
 import { registerBuiltInClassStartingItems } from './built-in-class-starting-items.mjs'
 import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
+import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -358,6 +359,20 @@ Hooks.once('ready', async function () {
 
   // Set up compendium links for the equipment tab if dcc-core-book is active
   setupCoreBookCompendiumLinks()
+
+  // Load class progressions from registered level-data packs and
+  // register them with the lib so consumer APIs (`getSavingThrows`,
+  // `getCritDie`, `getSaveBonus`, `getClassProgression`) return
+  // non-zero values for actors. Reads from `CONFIG.DCC.levelDataPacks`
+  // (populated by dcc-core-book and similar content modules). Safe
+  // no-op when no packs are configured. Runs BEFORE `dcc.ready`
+  // fires so sibling-module listeners see the populated registry.
+  // See `module/adapter/foundry-data-loader.mjs`.
+  try {
+    await registerClassProgressionsFromPacks()
+  } catch (err) {
+    console.error('DCC | Failed to load class progressions from level-data packs', err)
+  }
 
   // Let modules know the DCC system is ready
   Hooks.callAll('dcc.ready')

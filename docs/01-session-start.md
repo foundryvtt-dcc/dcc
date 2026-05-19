@@ -42,6 +42,47 @@ session's context):
 
 ## Status (2026-05-19)
 
+**Phase 6 session 2 wired the compendium → lib-registry loader.**
+New `registerClassProgressionsFromPacks(...)` in
+`module/adapter/foundry-data-loader.mjs` walks
+`CONFIG.DCC.levelDataPacks` at `dcc.ready`, parses each
+`{ClassName}-{level}` item's `system.levelData` text, maps the
+Foundry-system-paths onto the lib's `ProgressionLevelData` shape,
+and calls `registerClassProgressions(...)`. The lib's consumer
+APIs (`getSavingThrows`, `getCritDie`, `getSaveBonus`,
+`getClassProgression`) now return non-zero values for actors in
+worlds where a content module ships level data (dcc-core-book
+ships one for the 7 canonical PC classes; sibling content
+modules can ship their own).
+
+The loader uses the existing level-data-items extensibility
+mechanism — single source of truth between the level-change
+dialog and the lib registry. Homebrew classes that ship their
+own level packs (registered via
+`CONFIG.DCC.levelDataPacks.addPack(...)`) get picked up
+automatically once a name→classId entry is added to
+`BUILT_IN_CLASS_LEVEL_NAMES` (or via a future
+`registerHomebrewClassForProgressionLoad`-style helper landing
+alongside `registerVariant`).
+
+Closes the remaining half of PR #720's "programmatic PC
+creation produces inconsistent class config" item. +15 Vitest
+tests in new `module/__tests__/foundry-data-loader.test.js`
+(parser, mapper, assembler — all fixtures use unambiguously
+placeholder values like `d13`, save bonuses 7/9/11, 'TEST' crit
+table — values that obviously don't match any official
+progression). +1 Playwright case in `extension-api.spec.js`
+(structural-shape assertions only, no value claims). **1020
+Vitest green** (was 1005, +15). **136 Playwright passed** (was
+135, +1 new from this slice). One new suite-only flake observed
+(`extension-api.spec.js:553 built-in elf mixin attaches…` —
+passes in isolation; not slice-caused). Latent xcc-core-book
+DCCItemSheet override unchanged baseline.
+
+The open-source DCC system continues to ship no class
+progression data; data lives in user-installed content modules
+per `ARCHITECTURE_REIMAGINED.md §8.1`.
+
 **Phase 6 session 1 opened Phase 6** by exposing the vendored
 lib's class-progression registration helpers on `game.dcc.*`.
 Two-line addition to `module/dcc.js` imports
@@ -179,12 +220,11 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 6 session 1 (2026-05-19) shipped the
-`registerClassProgression` re-export.** PR #720's class-config
-item is now partially closed (plumbing ready); full closure
-waits on a content module to invoke the helper. Remaining:
+**Phase 6 session 2 (2026-05-19) closed PR #720's class-config
+item** by wiring the compendium → lib-registry loader. Remaining
+Phase 6 work:
 
-1. **Phase 6: `registerVariant` for variant-class modules.** Per
+1. **`registerVariant` for variant-class modules.** Per
    `CLASS_DECOMPOSITION.md` §3.6 /
    `ARCHITECTURE_REIMAGINED.md §7`. New
    `game.dcc.registerVariant({ id, classes, sheetTheme })` so
@@ -193,18 +233,20 @@ waits on a content module to invoke the helper. Remaining:
    World setting selects active variant (defaults to `dcc`).
    Larger scope; touches the actor-class selection UI / level-
    change dialog.
-2. **Phase 6 follow-up: compendium → lib-registry
-   foundry-data-loader.** Once a content module ships class
-   progression data (likely a future `dcc-core-book` update
-   following §8.1 "Option C" — TS exports + Foundry pack JSON
-   sourced from `dcc-official-data`), grow
-   `module/adapter/foundry-data-loader.mjs` to detect pack-level
-   progression data at `dcc.ready` and call
-   `registerClassProgressions` automatically. This is the
-   full-closure half of PR #720's item. Blocked on content-module
-   data ship.
+2. **`registerHomebrewClassForProgressionLoad` helper.** Today
+   the foundry-data-loader's `BUILT_IN_CLASS_LEVEL_NAMES` is
+   hardcoded — adding a homebrew class requires editing that
+   table. A simple registration helper would let homebrew
+   modules contribute their classId → capitalized-prefix mapping
+   from their own `init`. Small scope; can land standalone or
+   bundle with #1.
+3. **Investigate the forceCrit suite-flake** observed during
+   Phase 6 session 1's Playwright run
+   (`phase1-adapter-dispatch.spec.js:922`). State pollution
+   between tests in the shared Foundry world. Worth chasing
+   while it's recent.
 
-Tim picks #1 or #2.
+Tim picks #1, #2, or #3.
 
 **Also pending — dcc-qol sibling-fix coordination.** Session 20
 shim removal leaves dcc-qol's `attackRollHooks.js:283-284` reading
