@@ -107,6 +107,16 @@ describe('Data Model Construction (real Foundry TypeDataModel)', () => {
     // Class defaults
     expect(data.class.className).toBe('Zero-Level')
     expect(data.class.disapproval).toBe(1)
+    // Link fields registered in Phase 5 session 3 — these used to be
+    // ad-hoc strings the class sheet wrote that Foundry silently
+    // stripped (only `classLink` survived, via a sibling
+    // `dcc.definePlayerSchema` hook). Now part of the base schema so
+    // writes from `applyClassDefaults` actually persist on
+    // `system.class.*`.
+    expect(data.class.classLink).toBe('')
+    expect(data.class.mightyDeedsLink).toBe('')
+    expect(data.class.spellcastingLink).toBe('')
+    expect(data.class.spellburnLink).toBe('')
     // Config defaults
     expect(data.config.computeAC).toBe(true)
     expect(data.config.sortInventory).toBe(true)

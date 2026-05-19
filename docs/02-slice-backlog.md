@@ -777,18 +777,17 @@ restructuring the writer side of `sheetClass` (probably the
 class an actor is becomes the `applyClassDefaults` write, and
 readers can switch to `actor.classId` uniformly).
 
-#### Phase 5 follow-up: register the link fields on the base schema.
-Surface latent gap from session 1: `class.mightyDeedsLink` /
-`class.spellcastingLink` / `class.spellburnLink` aren't registered
-schema fields, so the `applyClassDefaults` writes are silently
-stripped by Foundry. Same gap existed in legacy `_prepareContext`
-code — templates render `{{{system.class.mightyDeedsLink}}}` → empty.
-Two paths: (a) add the link fields to the static `class` SchemaField
-in `module/data/actor/player-data.mjs`, or (b) require sibling modules
-to register them via `dcc.definePlayerSchema`. Option (a) is the
-correct system-side fix; option (b) is a documentation-only patch
-plus the gap stays in core. Lowest-risk slice; can land independently
-of the rest of Phase 5.
+#### ~~Phase 5 follow-up: register the link fields on the base schema.~~ **DONE 2026-05-18 (Phase 5 session 3)**
+Closed by Phase 5 session 3. `classLink`, `mightyDeedsLink`,
+`spellcastingLink`, `spellburnLink` added as `HTMLField({ initial:
+'' })` to the static `class` SchemaField in `player-data.mjs`. The
+sibling module's `classLink` registration via `dcc.definePlayerSchema`
+still runs (last-write-wins) but the base-body declaration ensures
+all four fields survive schema validation in every world
+configuration. Templates `{{{system.class.<linkField>}}}` now render
+the enriched HTML written by `applyClassDefaults`. +4 assertions in
+integration test; +2 Playwright cases (end-to-end gap closure +
+fresh-schema empty-string defaults).
 
 ---
 
@@ -798,6 +797,16 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 5 (Sheet composition + class defaults)
 
+- Phase 5 session 3 (2026-05-18): register the four link fields
+  (`classLink`, `mightyDeedsLink`, `spellcastingLink`, `spellburnLink`)
+  as `HTMLField({ initial: '' })` on the base Player schema in
+  `player-data.mjs`. Closes the Phase 5 session 1 latent gap —
+  `applyClassDefaults`'s `enrichHtml` writes now persist on
+  `system.class.*` in every world configuration. Pure schema add.
+  +4 assertions in integration test, +2 Playwright cases. 996
+  Vitest green (unchanged — assertions extend an existing test);
+  Playwright extended with end-to-end gap closure + fresh-schema
+  empty-string defaults.
 - Phase 5 session 2 (2026-05-18): `game.dcc.registerClassStartingItems`
   + `applyClassStartingItems` shipped;
   `module/built-in-class-starting-items.mjs` seeds the dwarf

@@ -63,6 +63,27 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 5 session 3 (2026-05-18)** closed the latent gap surfaced
+in session 1 by registering the four link fields (`classLink`,
+`mightyDeedsLink`, `spellcastingLink`, `spellburnLink`) as
+`HTMLField({ initial: '' })` on the base Player schema in
+`module/data/actor/player-data.mjs`. Pre-session-3 the static
+`class` SchemaField carried only `className`; only `classLink`
+worked at runtime (a sibling `dcc.definePlayerSchema` hook in
+xcc-core-book registered it). Warrior + dwarf `mightyDeedsLink`,
+wizard `spellcastingLink` / `spellburnLink` writes from
+`applyClassDefaults` were silently stripped → templates rendered
+empty. With the schema add, all four `enrichHtml` paths persist
+on `system.class.*` in every world configuration. `HTMLField`
+re-imported (was dropped at Phase 4 session 6 when the
+`corruption` field moved to the wizard mixin). +4 assertions
+in the existing integration test
+`module/__integration__/data-models.test.js` (PlayerData defaults
+include all four link fields at `''`). +2 Playwright cases in
+`extension-api.spec.js` (warrior + wizard + dwarf end-to-end link
+fields surface as non-empty strings; fresh Player initializes the
+four fields to empty strings).
+
 **Phase 5 session 2 (2026-05-18)** shipped the
 `registerClassStartingItems` registry — the third Phase 5
 extension hook alongside session 1's `registerClassDefaults`. New
@@ -102,26 +123,16 @@ classes. All 7 PC `_prepareContext` blocks shrunk from ~22 lines
 to a single helper call (156 lines deleted). Detail rotates to
 Recent slices below.
 
-**Latent gap (pre-existing, NOT fixed by session 1 or 2):** the
-warrior + dwarf `class.mightyDeedsLink` and wizard
-`class.spellcastingLink` / `class.spellburnLink` writes don't
-surface on `system.class.*` because no schema field registers them.
-Sibling modules contribute `classLink` via `dcc.definePlayerSchema`
-(and a slew of other class-extras like `archaicAlignment`,
-`aiPatron`, `blasterDie`), but no module covers Mighty Deeds or
-the wizard links. Templates render those fields → empty. The
-legacy sheets have been writing these stripped values forever; the
-refactor is byte-for-byte equivalent. Follow-up tracked in the
-slice backlog.
+**Latent gap closed at session 3 (2026-05-18):** the four link
+fields are now base-schema citizens; all `applyClassDefaults`
+`enrichHtml` writes persist on `system.class.*`.
 
 Remaining Phase 5 work: (a) `registerSheetPart` for the
-`CLASS_PARTS` / `CLASS_TABS` collapse (§3.2), (b) add the link
-fields to the base Player schema to close the latent gap above
-(low-risk pure schema slice), (c) migrate the remaining
-capitalized `sheetClass` readers (Elf at `actor.js:182`; Cleric at
-`actor.js:2180` / `actor.js:2481` / `dcc.js:746`) to
-`actor.classId` — bundle with the `DCCSheet` collapse since that
-restructures the writer side.
+`CLASS_PARTS` / `CLASS_TABS` collapse (§3.2), (b) migrate the
+remaining capitalized `sheetClass` readers (Elf at
+`actor.js:182`; Cleric at `actor.js:2180` / `actor.js:2481` /
+`dcc.js:746`) to `actor.classId` — bundle with the `DCCSheet`
+collapse since that restructures the writer side.
 
 **Phase 4 (data-model slimming + class-mixin registry, closed
 2026-05-18)** lifted per-class schema fields off the monolithic
@@ -149,6 +160,51 @@ XCC critique. Detail rotated to the Recent slices section below.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 5 session 3: register the four link fields
+  on the base Player schema (closes Phase 5-1 latent gap).** Pure
+  schema add — re-import `HTMLField` in
+  `module/data/actor/player-data.mjs` (was dropped at Phase 4
+  session 6 when `corruption` moved to the wizard mixin) and add
+  four `HTMLField({ initial: '' })` declarations to the static
+  `class` SchemaField alongside `className`: `classLink`,
+  `mightyDeedsLink`, `spellcastingLink`, `spellburnLink`. Closes
+  the latent gap surfaced at Phase 5 session 1: pre-Phase-5-3,
+  only `classLink` survived schema validation (a sibling
+  `dcc.definePlayerSchema` hook in xcc-core-book registered it),
+  so `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`
+  writes from `applyClassDefaults`'s `enrichHtml` bag were
+  silently stripped by Foundry. Templates rendered
+  `{{{system.class.mightyDeedsLink}}}` → empty for warrior /
+  dwarf actors and similarly for wizard's spellcasting / spellburn
+  fields. Post-slice, all four `enrichHtml` paths persist on
+  `system.class.*` in every world configuration (including
+  clean DCC-only worlds without xcc-core-book). The sibling
+  module's `classLink` registration via `dcc.definePlayerSchema`
+  still runs and overrides the base-body declaration on its own
+  schedule (last-write-wins as before) — no breakage for existing
+  worlds. +4 assertions added to the existing integration test
+  `module/__integration__/data-models.test.js` (`PlayerData
+  constructs with defaults` now also asserts `class.classLink`,
+  `class.mightyDeedsLink`, `class.spellcastingLink`,
+  `class.spellburnLink` initialize to `''`). +2 Playwright cases
+  in `extension-api.spec.js`: (a) `Phase 5 session 3 link fields
+  surface on system.class.* (latent gap closed)` exercises
+  warrior + wizard + dwarf via `applyClassDefaults` and asserts
+  every registered enrichHtml path resolves to a non-empty string
+  on `system.class.*` post-write — regression guard catching any
+  future schema strip; (b) `fresh Player schema initializes the
+  four link fields to empty strings` asserts the empty-string
+  default on a brand-new Player document. 996 Vitest green
+  (unchanged from session 2 — the +4 assertions extend an
+  existing test rather than adding new test cases). The earlier
+  warrior `applyClassDefaults` test's "latent gap" comment trimmed
+  to point at the new sibling regression guard instead. **Phase 5
+  active sub-arc:** halfling/dwarf/thief/cleric/warrior/wizard/elf
+  all have ✅ schema mixin (Phase 4) + ✅ class defaults (Phase 5
+  session 1) + ✅ working enriched-HTML link fields (Phase 5
+  session 3). Dwarf adds ✅ starting items (Phase 5 session 2).
+  Remaining: `registerSheetPart` collapse + sheetClass-reader
+  migration (next sessions).
 - **2026-05-18 — Phase 5 session 2: `registerClassStartingItems`
   registry + dwarf ShieldBash migrated.** New stable extension
   hook `game.dcc.registerClassStartingItems(classId, items)` and

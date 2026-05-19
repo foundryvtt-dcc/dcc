@@ -12,7 +12,7 @@ import { BaseActorData } from './base-actor.mjs'
 import { isValidDiceNotation, migrateFieldsToInteger } from '../fields/_module.mjs'
 import { applyClassMixins } from '../../extension-api.mjs'
 
-const { SchemaField, StringField, BooleanField } = foundry.data.fields
+const { SchemaField, StringField, BooleanField, HTMLField } = foundry.data.fields
 
 export class PlayerData extends BaseActorData {
   /**
@@ -72,8 +72,25 @@ export class PlayerData extends BaseActorData {
       // attached by the `'wizard'` and `'elf'` mixins; cleric /
       // thief / warrior fields by their respective mixins. See
       // `module/built-in-class-mixins.mjs` for the full table.
+      //
+      // The four link fields (`classLink` + per-class
+      // `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`)
+      // are cross-class enriched-HTML blobs the sheet's `_prepareContext`
+      // writes via `registerClassDefaults`'s `enrichHtml` bag. Pre-Phase
+      // 5 session 3 these weren't registered in the schema — sibling
+      // modules (xcc-core-book et al.) had been contributing `classLink`
+      // via `dcc.definePlayerSchema`, so writes survived only when a
+      // sibling was loaded; `mightyDeedsLink` / `spellcastingLink` /
+      // `spellburnLink` writes were always stripped, and the templates
+      // `{{{system.class.<field>}}}` rendered empty. Registering them
+      // here closes the latent gap so the sheet writes survive in
+      // every world configuration.
       class: new SchemaField({
-        className: new StringField({ initial: 'Zero-Level' })
+        className: new StringField({ initial: 'Zero-Level' }),
+        classLink: new HTMLField({ initial: '' }),
+        mightyDeedsLink: new HTMLField({ initial: '' }),
+        spellcastingLink: new HTMLField({ initial: '' }),
+        spellburnLink: new HTMLField({ initial: '' })
       }),
 
       // Skills. Only `detectSecretDoors` is a base-body skill —

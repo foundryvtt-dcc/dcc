@@ -765,18 +765,10 @@ test.describe('DCC Extension API', () => {
     // live Player document — the cleanup of the per-class
     // `_prepareContext` blocks must preserve mechanical behavior.
     //
-    // Note: the warrior entry also seeds `class.mightyDeedsLink` in
-    // its `enrichHtml` bag, mirroring the legacy sheet's write. That
-    // path isn't registered on the constructed Player schema (only
-    // `classLink` is, contributed by a sibling module's
-    // `dcc.definePlayerSchema` hook), so the write surfaces nowhere
-    // observable on `system.class.mightyDeedsLink` even though the
-    // helper emits it — same pre-existing latent gap the legacy
-    // warrior sheet had. Tracked as a follow-up; this slice is a
-    // byte-for-byte refactor. The mocked-update vitest case
-    // (`applyClassDefaults regenerates every enrichHtml path on the
-    // maintenance branch (warrior mightyDeedsLink)`) covers the
-    // helper-side dual-write shape independently.
+    // The mightyDeedsLink-surfaces-on-system check is in a sibling
+    // test below — Phase 5 session 3 registered the four link fields
+    // on the base Player schema so writes from `applyClassDefaults`
+    // actually persist, closing the latent gap surfaced by session 1.
     const result = await page.evaluate(async () => {
       const { applyClassDefaults } = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
       const player = await Actor.create({ name: 'P5S1 Warrior Defaults Probe', type: 'Player' })
@@ -802,6 +794,94 @@ test.describe('DCC Extension API', () => {
     expect(result.after.addClassLevelToInitiative).toBe(true)
     expect(result.after.critRange).toBe(20)
     expect(result.after.showBackstab).toBe(false)
+  })
+
+  test('Phase 5 session 3 link fields surface on system.class.* (latent gap closed)', async ({ page }) => {
+    // Pre-P5S3, only `class.classLink` survived on the constructed
+    // Player schema (a sibling `dcc.definePlayerSchema` hook added it).
+    // Warrior + dwarf `mightyDeedsLink` writes were silently stripped;
+    // wizard `spellcastingLink` + `spellburnLink` writes too. Now those
+    // four fields live on the base `class` SchemaField as `HTMLField`s
+    // with `initial: ''`, so the `applyClassDefaults` enrichHtml writes
+    // persist and `{{{system.class.<field>}}}` template references
+    // render the actual link HTML.
+    //
+    // Validates by transitioning a warrior + wizard end-to-end and
+    // asserting every registered enrichHtml path surfaces as a non-empty
+    // string on `system.class.*`. A regression that re-strips the
+    // fields would flip these to empty strings.
+    const result = await page.evaluate(async () => {
+      const { applyClassDefaults } = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
+
+      const warrior = await Actor.create({ name: 'P5S3 Warrior LinkField Probe', type: 'Player' })
+      await applyClassDefaults(warrior, 'warrior')
+      const warriorState = {
+        classLink: warrior.system.class.classLink,
+        mightyDeedsLink: warrior.system.class.mightyDeedsLink
+      }
+      await warrior.delete()
+
+      const wizard = await Actor.create({ name: 'P5S3 Wizard LinkField Probe', type: 'Player' })
+      await applyClassDefaults(wizard, 'wizard')
+      const wizardState = {
+        classLink: wizard.system.class.classLink,
+        spellcastingLink: wizard.system.class.spellcastingLink,
+        spellburnLink: wizard.system.class.spellburnLink
+      }
+      await wizard.delete()
+
+      const dwarf = await Actor.create({ name: 'P5S3 Dwarf LinkField Probe', type: 'Player' })
+      await applyClassDefaults(dwarf, 'dwarf')
+      const dwarfState = {
+        classLink: dwarf.system.class.classLink,
+        mightyDeedsLink: dwarf.system.class.mightyDeedsLink
+      }
+      await dwarf.delete()
+
+      return { warriorState, wizardState, dwarfState }
+    })
+
+    // Warrior — classLink + mightyDeedsLink both write through
+    expect(typeof result.warriorState.classLink).toBe('string')
+    expect(result.warriorState.classLink.length).toBeGreaterThan(0)
+    expect(typeof result.warriorState.mightyDeedsLink).toBe('string')
+    expect(result.warriorState.mightyDeedsLink.length).toBeGreaterThan(0)
+
+    // Wizard — three enrichHtml slots (no mightyDeeds)
+    expect(result.wizardState.classLink.length).toBeGreaterThan(0)
+    expect(result.wizardState.spellcastingLink.length).toBeGreaterThan(0)
+    expect(result.wizardState.spellburnLink.length).toBeGreaterThan(0)
+
+    // Dwarf — mirrors warrior's pair shape
+    expect(result.dwarfState.classLink.length).toBeGreaterThan(0)
+    expect(result.dwarfState.mightyDeedsLink.length).toBeGreaterThan(0)
+  })
+
+  test('fresh Player schema initializes the four link fields to empty strings', async ({ page }) => {
+    // Pure schema-shape assertion: a brand-new Player document
+    // (no class assigned yet) should carry `classLink`,
+    // `mightyDeedsLink`, `spellcastingLink`, `spellburnLink` as
+    // present-but-empty HTMLField values. This catches schema
+    // regressions where the field declarations get dropped from
+    // `player-data.mjs`'s static body.
+    const result = await page.evaluate(async () => {
+      const player = await Actor.create({ name: 'P5S3 LinkField Schema Probe', type: 'Player' })
+      const shape = {
+        classLink: player.system.class.classLink,
+        mightyDeedsLink: player.system.class.mightyDeedsLink,
+        spellcastingLink: player.system.class.spellcastingLink,
+        spellburnLink: player.system.class.spellburnLink
+      }
+      await player.delete()
+      return shape
+    })
+    // All four fields should exist on a brand-new Player with
+    // empty-string defaults. The HTMLField type allows non-string
+    // values via raw assignment, so be explicit: assert exactly ''.
+    expect(result.classLink).toBe('')
+    expect(result.mightyDeedsLink).toBe('')
+    expect(result.spellcastingLink).toBe('')
+    expect(result.spellburnLink).toBe('')
   })
 
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {

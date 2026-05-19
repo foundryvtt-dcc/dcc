@@ -53,9 +53,9 @@ at Phase 6.
 | Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | ✅ P5-1 (`useDeed = true` override included) | ✅ P5-2 (`ShieldBash` weapon auto-created via `registerClassStartingItems`) |
 | Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | pending | ✅ P5-1 | n/a |
 | Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 | n/a |
-| Wizard | ✅ P4-6 (9 class fields attached via shared `attachWizardFields(schema)` helper in `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 (`spellcastingLink`, `spellburnLink` extra enrichHtml — but writes silently stripped today, see "follow-up: register link fields") | n/a |
+| Wizard | ✅ P4-6 (9 class fields attached via shared `attachWizardFields(schema)` helper in `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 (`spellcastingLink`, `spellburnLink` extra enrichHtml — registered on the base schema at Phase 5 session 3, all writes persist) | n/a |
 | Elf | ✅ P4-6 (re-uses `attachWizardFields(schema)` AND overrides `skills.detectSecretDoors` with HeightenedSenses defaults — closes the per-class extraction arc) | pending | ✅ P5-1 | n/a |
-| Warrior | ✅ P4-5 (`class.{luckyWeapon nullable StringField, luckyWeaponMod StringField '+0'}` — smallest block; no skills) | pending | ✅ P5-1 (`mightyDeedsLink` extra enrichHtml — writes silently stripped today, see "follow-up: register link fields") | n/a |
+| Warrior | ✅ P4-5 (`class.{luckyWeapon nullable StringField, luckyWeaponMod StringField '+0'}` — smallest block; no skills) | pending | ✅ P5-1 (`mightyDeedsLink` extra enrichHtml — registered on the base schema at Phase 5 session 3, all writes persist) | n/a |
 | Zero-Level | not class-bound (`class.className = 'Zero-Level'` default; no class-specific fields) | n/a | n/a | n/a |
 | Generic (upper-level fallback) | not class-bound | n/a | n/a — stays inline in `actor-sheets-dcc.js`; no maintenance branch | n/a |
 
@@ -216,18 +216,17 @@ warrior: {
   `false` for every other class (the cross-class lines that used to
   live at `actor-sheets-dcc.js:72/141/213/282/359/531/606`)
 
-**Latent gap (NOT fixed in P5-1, tracked as follow-up):** the warrior
-+ dwarf `class.mightyDeedsLink` and wizard `class.spellcastingLink` /
-`class.spellburnLink` writes don't surface on `system.class.*` because
-those paths aren't registered on the Player schema. Only `class.classLink`
-is, contributed by a sibling module's `dcc.definePlayerSchema` hook.
-The legacy sheet code has been writing the stripped values forever,
-templates render `{{{system.class.mightyDeedsLink}}}` → empty. Two
-fix options: (a) add the link fields to the static `class` SchemaField
-in `module/data/actor/player-data.mjs`, or (b) require sibling modules
-to register them. Option (a) is the correct system-side fix. See the
-[slice backlog](../02-slice-backlog.md) "follow-up: register link
-fields" entry.
+**Link fields (closed Phase 5 session 3, 2026-05-18):** all four
+enriched-HTML link fields (`classLink`, `mightyDeedsLink`,
+`spellcastingLink`, `spellburnLink`) are now `HTMLField({ initial:
+'' })` declarations on the static `class` SchemaField in
+`module/data/actor/player-data.mjs`. Pre-Phase-5-3 only `classLink`
+survived schema validation (via a sibling `dcc.definePlayerSchema`
+hook in xcc-core-book registering it); the others were silently
+stripped by Foundry. With the schema add, all four `applyClassDefaults`
+`enrichHtml` writes persist on `system.class.*` in every world
+configuration. The sibling-module `classLink` registration still
+runs (last-write-wins) — no breakage.
 
 **Partial overlap with lib progression (component 6):** save bonuses,
 crit dies, and action dies will derive from
