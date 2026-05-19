@@ -759,15 +759,24 @@ subclass get them applied automatically. +13 Vitest, +5 Playwright.
 996 Vitest green, 127 Playwright passed (1 latent xcc-core-book
 failure, unchanged baseline).
 
-#### Phase 5 session 3 (planned). `registerSheetPart` + `DCCSheet` collapse.
-Each of the 7 PC sheet subclasses still carries `CLASS_PARTS` +
-`CLASS_TABS` statics (sheet-tab + template definitions). Collapse
-into a single composable `DCCSheet` that consults
-`game.dcc.registerSheetPart({ classId, tab, template, condition })`
-based on `actor.classId`. Largest remaining Phase 5 task — touches
-sheet markup, visual regression worth running afterwards.
+#### ~~Phase 5 session 4. `registerSheetPart` + `DCCSheet` collapse.~~ **DONE 2026-05-18**
+New stable hook `game.dcc.registerSheetPart(classId, descriptor)` in
+`module/extension-api.mjs`; `CONFIG.DCC.sheetParts = {}` seeded in
+`module/config.js`. Each entry is `{ parts, tabs }` mirroring
+ApplicationV2's `PARTS` + `TABS` shape. Seeded for all 7 PC classes
+via `module/built-in-sheet-parts.mjs`. New `DCCSheet` intermediate
+base class in `module/actor-sheets-dcc.js` exposes inherited static
+getters that resolve `CLASS_PARTS` + `CLASS_TABS` from
+`CONFIG.DCC.sheetParts[this.CLASS_ID]`; the per-class subclasses
+collapse to 4-line stubs pinning `static CLASS_ID`. All 7 sheet
+classes stay registered (no UX regression for the "Configure
+Sheet" picker). Sheet markup output unchanged (templates resolve
+identically through the new mechanism). +6 Vitest, +5 Playwright.
+1002 Vitest green; 134 Playwright passed (1 latent xcc-core-book
+failure, unchanged baseline). Visual regression unrunnable in this
+session's env (expects v12 baseline world).
 
-#### Phase 5 session 4+ (planned). Migrate remaining capitalized `sheetClass` readers.
+#### Phase 5 session 5 (next). Migrate remaining capitalized `sheetClass` readers.
 Elf at `module/actor.js:182`; Cleric at `module/actor.js:2180`,
 `module/actor.js:2481`, `module/dcc.js:746`. The Phase 4 session 7
 slice migrated the two halfling-keyed string comparisons but left
@@ -797,6 +806,13 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 5 (Sheet composition + class defaults)
 
+- Phase 5 session 4 (2026-05-18):
+  `game.dcc.registerSheetPart` + `applyClassDefaults`-aware
+  `DCCSheet` intermediate base. 7 PC sheet subclasses collapsed to
+  4-line stubs pinning `static CLASS_ID`. New
+  `module/built-in-sheet-parts.mjs` seeds all 7. `actor-sheets-dcc.js`
+  466 → 235 lines (-49%). All 7 sheet classes stay registered; no
+  UX regression. +6 Vitest, +5 Playwright. 1002 Vitest green.
 - Phase 5 session 3 (2026-05-18): register the four link fields
   (`classLink`, `mightyDeedsLink`, `spellcastingLink`, `spellburnLink`)
   as `HTMLField({ initial: '' })` on the base Player schema in

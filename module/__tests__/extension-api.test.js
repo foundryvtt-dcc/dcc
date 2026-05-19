@@ -7,7 +7,7 @@
  */
 
 import { expect, test, vi } from 'vitest'
-import { applyClassDefaults, applyClassMixins, applyClassStartingItems, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerItemSheet } from '../extension-api.mjs'
+import { applyClassDefaults, applyClassMixins, applyClassStartingItems, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerItemSheet, registerSheetPart } from '../extension-api.mjs'
 
 class FakeSheet {}
 class FakeDefaultItemSheetV2 {}
@@ -685,4 +685,71 @@ test('applyClassStartingItems omits img/system when not provided in the entry', 
   expect(callArgs).toEqual({ name: 'Longsword', type: 'weapon' })
   expect(callArgs).not.toHaveProperty('img')
   expect(callArgs).not.toHaveProperty('system')
+})
+
+// ---------------------------------------------------------------------
+// registerSheetPart (Phase 5 session 4)
+// ---------------------------------------------------------------------
+
+function makeMockConfigSheetParts () {
+  return { DCC: { sheetParts: {} } }
+}
+
+const CLERIC_SHEET_PARTS = {
+  parts: {
+    character: { id: 'character', template: 'systems/dcc/templates/actor-partial-pc-common.html' },
+    cleric: { id: 'cleric', template: 'systems/dcc/templates/actor-partial-cleric.html' }
+  },
+  tabs: {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'cleric', group: 'sheet', label: 'DCC.Cleric' }
+      ]
+    }
+  }
+}
+
+test('registerSheetPart stores the descriptor under the classId key', () => {
+  const CONFIG = makeMockConfigSheetParts()
+  registerSheetPart('cleric', CLERIC_SHEET_PARTS, { CONFIG })
+
+  expect(CONFIG.DCC.sheetParts.cleric).toBe(CLERIC_SHEET_PARTS)
+})
+
+test('registerSheetPart initializes CONFIG.DCC.sheetParts when missing', () => {
+  // Mirrors the self-healing pattern from registerClassMixin /
+  // registerClassDefaults — mid-init callers may land before
+  // module/config.js seeds the registry.
+  const CONFIG = { DCC: {} }
+  registerSheetPart('cleric', CLERIC_SHEET_PARTS, { CONFIG })
+
+  expect(CONFIG.DCC.sheetParts).toBeDefined()
+  expect(CONFIG.DCC.sheetParts.cleric).toBe(CLERIC_SHEET_PARTS)
+})
+
+test('registerSheetPart overwrites a prior registration (last-write-wins)', () => {
+  const CONFIG = makeMockConfigSheetParts()
+  const first = { parts: { x: { id: 'x', template: 'a.html' } } }
+  const second = { parts: { x: { id: 'x', template: 'b.html' } } }
+  registerSheetPart('cleric', first, { CONFIG })
+  registerSheetPart('cleric', second, { CONFIG })
+
+  expect(CONFIG.DCC.sheetParts.cleric).toBe(second)
+})
+
+test('registerSheetPart throws on empty / non-string classId', () => {
+  const CONFIG = makeMockConfigSheetParts()
+  expect(() => registerSheetPart('', CLERIC_SHEET_PARTS, { CONFIG })).toThrow(/non-empty string/)
+  expect(() => registerSheetPart(null, CLERIC_SHEET_PARTS, { CONFIG })).toThrow(/non-empty string/)
+})
+
+test('registerSheetPart throws on non-object descriptor', () => {
+  const CONFIG = makeMockConfigSheetParts()
+  expect(() => registerSheetPart('cleric', null, { CONFIG })).toThrow(/must be an object/)
+  expect(() => registerSheetPart('cleric', 'not-an-object', { CONFIG })).toThrow(/must be an object/)
+})
+
+test('registerSheetPart throws when CONFIG.DCC is unavailable', () => {
+  expect(() => registerSheetPart('cleric', CLERIC_SHEET_PARTS, { CONFIG: {} })).toThrow(/CONFIG\.DCC unavailable/)
 })

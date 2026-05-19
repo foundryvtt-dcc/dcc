@@ -49,13 +49,13 @@ at Phase 6.
 
 | Class | Schema mixin (1, P4) | Sheet part (2, P5) | Defaults + skill toggles (3+4, P5) | Starting items (5, P5) |
 |---|---|---|---|---|
-| Halfling | ✅ P4-1 (`skills.sneakAndHide`) | pending | ✅ P5-1 | n/a (no starting items) |
-| Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | ✅ P5-1 (`useDeed = true` override included) | ✅ P5-2 (`ShieldBash` weapon auto-created via `registerClassStartingItems`) |
-| Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | pending | ✅ P5-1 | n/a |
-| Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 | n/a |
-| Wizard | ✅ P4-6 (9 class fields attached via shared `attachWizardFields(schema)` helper in `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 (`spellcastingLink`, `spellburnLink` extra enrichHtml — registered on the base schema at Phase 5 session 3, all writes persist) | n/a |
-| Elf | ✅ P4-6 (re-uses `attachWizardFields(schema)` AND overrides `skills.detectSecretDoors` with HeightenedSenses defaults — closes the per-class extraction arc) | pending | ✅ P5-1 | n/a |
-| Warrior | ✅ P4-5 (`class.{luckyWeapon nullable StringField, luckyWeaponMod StringField '+0'}` — smallest block; no skills) | pending | ✅ P5-1 (`mightyDeedsLink` extra enrichHtml — registered on the base schema at Phase 5 session 3, all writes persist) | n/a |
+| Halfling | ✅ P4-1 (`skills.sneakAndHide`) | ✅ P5-4 | ✅ P5-1 | n/a (no starting items) |
+| Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | ✅ P5-4 | ✅ P5-1 (`useDeed = true` override included) | ✅ P5-2 (`ShieldBash` weapon auto-created via `registerClassStartingItems`) |
+| Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | ✅ P5-4 | ✅ P5-1 | n/a |
+| Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | ✅ P5-4 | ✅ P5-1 | n/a |
+| Wizard | ✅ P4-6 (9 class fields attached via shared `attachWizardFields(schema)` helper in `module/built-in-class-mixins.mjs`) | ✅ P5-4 | ✅ P5-1 (`spellcastingLink`, `spellburnLink` extra enrichHtml — registered on the base schema at Phase 5 session 3, all writes persist) | n/a |
+| Elf | ✅ P4-6 (re-uses `attachWizardFields(schema)` AND overrides `skills.detectSecretDoors` with HeightenedSenses defaults — closes the per-class extraction arc) | ✅ P5-4 | ✅ P5-1 | n/a |
+| Warrior | ✅ P4-5 (`class.{luckyWeapon nullable StringField, luckyWeaponMod StringField '+0'}` — smallest block; no skills) | ✅ P5-4 | ✅ P5-1 (`mightyDeedsLink` extra enrichHtml — registered on the base schema at Phase 5 session 3, all writes persist) | n/a |
 | Zero-Level | not class-bound (`class.className = 'Zero-Level'` default; no class-specific fields) | n/a | n/a | n/a |
 | Generic (upper-level fallback) | not class-bound | n/a | n/a — stays inline in `actor-sheets-dcc.js`; no maintenance branch | n/a |
 
@@ -138,24 +138,99 @@ Because mixins run after the base body, the override wins on the
 constructed schema, but the path readers see (`system.skills.detectSecretDoors`)
 stays identical per §2.12.
 
-### 3.2 Sheet parts (Phase 5)
+### 3.2 Sheet parts (Phase 5 — shipped session 4)
 
-**Planned:** `game.dcc.registerSheetPart({ classId, tab, template,
-condition })`.
+**Shipped Phase 5 session 4 (2026-05-18):**
+`game.dcc.registerSheetPart(classId, descriptor)` —
+[`EXTENSION_API.md` Stable surface](EXTENSION_API.md). Descriptor
+shape: `{ parts, tabs }` mirroring ApplicationV2's `PARTS` + `TABS`
+statics. New `DCCSheet` intermediate base class in
+`module/actor-sheets-dcc.js` between `DCCActorSheet` (NPC base) and
+the per-class subclasses; it exposes inherited static getters
+`CLASS_PARTS` + `CLASS_TABS` that resolve from
+`CONFIG.DCC.sheetParts[this.CLASS_ID]` at lookup time. The per-class
+subclasses collapse to 4-line stubs that pin `static CLASS_ID`.
+`module/built-in-sheet-parts.mjs` seeds all 7 PC classes; consumed
+by `module/dcc.js:init` via `registerBuiltInSheetParts`.
 
-Goal: collapse the 7 class sheets in `module/actor-sheets-dcc.js`
-(plus the partials at `templates/actor-partial-*.html`) into one
-`DCCSheet` that composes parts based on `character.classId`. Auto-
-select the default active tab from the actor's class.
+**Where built-in registrations live:** `module/built-in-sheet-parts.mjs`
+defines the `BUILT_IN_SHEET_PARTS` table + a
+`registerBuiltInSheetParts(register)` helper consumed by
+`module/dcc.js:init` only — integration tests don't open sheets, so
+the registry has no observable effect outside of sheet-render paths.
 
-Today: per-class `ActorSheetV2` subclass in `actor-sheets-dcc.js`,
-each with its own `PARTS` declaration and an
-`actor-partial-<class>.html` template registered via `loadTemplates`
-at `module/dcc.js:198-200`. XCC ships its own variants that subclass
-the DCC class sheets and override at registration time.
+**Entry shape:**
 
-Out of scope for Phase 4. The dwarf-shieldBash and halfling-sneakAndHide
-mixin extractions deliberately don't touch sheet markup.
+```js
+cleric: {
+  parts: {
+    character: { id: 'character', template: 'systems/dcc/templates/actor-partial-pc-common.html' },
+    equipment: { id: 'equipment', template: 'systems/dcc/templates/actor-partial-pc-equipment.html' },
+    clericSpells: { id: 'clericSpells', template: 'systems/dcc/templates/actor-partial-cleric-spells.html' },
+    cleric: { id: 'cleric', template: 'systems/dcc/templates/actor-partial-cleric.html' }
+  },
+  tabs: {
+    sheet: {
+      tabs: [
+        { id: 'character', group: 'sheet', label: 'DCC.Character' },
+        { id: 'equipment', group: 'sheet', label: 'DCC.Equipment' },
+        { id: 'cleric', group: 'sheet', label: 'DCC.Cleric' },
+        { id: 'clericSpells', group: 'sheet', label: 'DCC.ClericSpells' }
+      ]
+    }
+  }
+}
+```
+
+The `parts` keys override the base `DCCActorSheet.PARTS` (which uses
+NPC-flavored templates) with PC-flavored ones, plus add class-specific
+parts.
+
+**Backward compat:** all 7 sheet classes
+(`DCCActorSheetCleric`, etc.) stay registered with their original
+names so:
+- The "Configure Sheet" picker still shows 7 labeled options
+  (`DCCActorSheetCleric.label === 'DCC.DCCActorSheetCleric'`, etc.)
+- Existing actors with `flags.core.sheetClass === 'dcc.DCCActorSheetCleric'`
+  resolve correctly post-collapse
+- Sibling modules that subclass a per-class sheet (e.g., XCC's
+  class-specific overrides) keep working — their parent class still
+  exists, just with much less code in its body.
+
+The collapse is internal: each per-class subclass is now a 4-line
+stub:
+
+```js
+class DCCActorSheetCleric extends DCCSheet {
+  static CLASS_ID = 'cleric'
+}
+```
+
+The Generic sheet (`DCCActorSheetGeneric`) stays as a direct
+`DCCActorSheet` subclass with its own static `PARTS` — different
+shape, not class-bound, doesn't fit the DCCSheet pattern.
+
+**Homebrew use case:** sibling modules register a sheet part via
+`game.dcc.registerSheetPart` for their classId, then ship a tiny
+sheet subclass extending `DCCSheet`:
+
+```js
+// In init hook
+game.dcc.registerSheetPart('my-druid', {
+  parts: { druid: { id: 'druid', template: 'modules/my-class/templates/druid.html' } },
+  tabs: { sheet: { tabs: [{ id: 'druid', group: 'sheet', label: 'MyClass.Druid' }] } }
+})
+
+// Sheet subclass
+class MyDruidSheet extends DCCSheet {
+  static CLASS_ID = 'my-druid'
+}
+game.dcc.registerActorSheet('Player', MyDruidSheet, { label: 'MyClass.DruidSheet' })
+```
+
+That's everything — no `_prepareContext` override, no CLASS_PARTS
+hardcode, no `_configureRenderParts` plumbing. The base class
+handles the rest.
 
 ### 3.3 Class identity + mechanical defaults (Phase 5)
 
@@ -393,10 +468,10 @@ For a sibling module shipping a new class (homebrew or commercial):
 1. **`registerClassMixin('<classId>', mixinFn)`** during `init` —
    contribute schema fields (skills, class fields).
 2. **`registerActorSheet('Player', YourClassSheet, { label: '…' })`**
-   during `init` — register your class-specific sheet. *(Will collapse
-   into a single `registerSheetPart` call in Phase 5.)*
-3. **(Phase 5)** `registerSheetPart({ classId, tab, template })` —
-   contribute sheet markup (tabs, partials). Pending.
+   during `init` — register your class-specific sheet (a 4-line stub
+   extending `DCCSheet` that pins `static CLASS_ID`).
+3. **(Phase 5 ✅ shipped P5-4)** `registerSheetPart(classId,
+   descriptor)` — contribute sheet markup (parts + tabs).
 4. **(Phase 5 ✅ shipped P5-1)** `registerClassDefaults({ classId,
    defaults })` — contribute identity + mechanical defaults applied
    on first-open.

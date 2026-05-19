@@ -884,6 +884,187 @@ test.describe('DCC Extension API', () => {
     expect(result.spellburnLink).toBe('')
   })
 
+  // -------------------------------------------------------------------
+  // registerSheetPart (Phase 5 session 4)
+  // -------------------------------------------------------------------
+
+  test('game.dcc.registerSheetPart is exposed and is a function', async ({ page }) => {
+    const result = await page.evaluate(() => ({
+      hasFn: typeof game.dcc.registerSheetPart === 'function',
+      keys: Object.keys(game.dcc).filter(k => k === 'registerSheetPart')
+    }))
+    expect(result.hasFn).toBe(true)
+    expect(result.keys).toEqual(['registerSheetPart'])
+  })
+
+  test('all 7 built-in PC classes have a CONFIG.DCC.sheetParts entry with the expected shape', async ({ page }) => {
+    // Validates that the seed table in
+    // module/built-in-sheet-parts.mjs registered each PC class at
+    // init. Asserts on structural invariants — the class-specific
+    // part key (e.g. `cleric` for cleric, `wizard` for wizard) is
+    // present in `parts`, and the matching tab id appears in
+    // `tabs.sheet.tabs`. Catches a regression that drops a class
+    // entry from the seed.
+    const result = await page.evaluate(() => {
+      const expected = {
+        cleric: 'cleric',
+        dwarf: 'dwarf',
+        elf: 'elf',
+        halfling: 'halfling',
+        thief: 'thief',
+        warrior: 'warrior',
+        wizard: 'wizard'
+      }
+      const registry = CONFIG.DCC?.sheetParts ?? {}
+      const shape = {}
+      for (const [classId, partKey] of Object.entries(expected)) {
+        const entry = registry[classId]
+        const tabIds = (entry?.tabs?.sheet?.tabs ?? []).map(t => t.id)
+        shape[classId] = {
+          present: !!entry,
+          hasClassPart: !!entry?.parts?.[partKey],
+          classPartTemplate: entry?.parts?.[partKey]?.template ?? null,
+          tabIncludesClassTab: tabIds.includes(partKey)
+        }
+      }
+      return shape
+    })
+
+    expect(result.cleric).toEqual({
+      present: true,
+      hasClassPart: true,
+      classPartTemplate: 'systems/dcc/templates/actor-partial-cleric.html',
+      tabIncludesClassTab: true
+    })
+    expect(result.dwarf.hasClassPart).toBe(true)
+    expect(result.elf.hasClassPart).toBe(true)
+    expect(result.halfling.hasClassPart).toBe(true)
+    expect(result.thief.hasClassPart).toBe(true)
+    expect(result.warrior.hasClassPart).toBe(true)
+    expect(result.wizard.hasClassPart).toBe(true)
+  })
+
+  test('cleric + wizard + elf entries carry their extra spell-related parts (clericSpells / wizardSpells)', async ({ page }) => {
+    // Three of the seven classes ship extra parts on top of the
+    // class-specific one:
+    // - cleric: clericSpells
+    // - wizard: wizardSpells
+    // - elf: wizardSpells (elves cast as wizards)
+    // The other four (halfling, thief, warrior, dwarf) don't. Catches
+    // a regression that confuses which class gets the spell parts.
+    const result = await page.evaluate(() => {
+      const registry = CONFIG.DCC?.sheetParts ?? {}
+      return {
+        cleric: {
+          clericSpells: !!registry.cleric?.parts?.clericSpells,
+          wizardSpells: !!registry.cleric?.parts?.wizardSpells
+        },
+        wizard: {
+          clericSpells: !!registry.wizard?.parts?.clericSpells,
+          wizardSpells: !!registry.wizard?.parts?.wizardSpells
+        },
+        elf: {
+          clericSpells: !!registry.elf?.parts?.clericSpells,
+          wizardSpells: !!registry.elf?.parts?.wizardSpells
+        },
+        halfling: {
+          clericSpells: !!registry.halfling?.parts?.clericSpells,
+          wizardSpells: !!registry.halfling?.parts?.wizardSpells
+        }
+      }
+    })
+    expect(result.cleric).toEqual({ clericSpells: true, wizardSpells: false })
+    expect(result.wizard).toEqual({ clericSpells: false, wizardSpells: true })
+    expect(result.elf).toEqual({ clericSpells: false, wizardSpells: true })
+    expect(result.halfling).toEqual({ clericSpells: false, wizardSpells: false })
+  })
+
+  test('DCCSheet base inherited static getters resolve CLASS_PARTS + CLASS_TABS by CLASS_ID', async ({ page }) => {
+    // Validates the inherited-static-getter mechanism: each per-class
+    // PC sheet subclass pins `static CLASS_ID = '<id>'` and inherits
+    // the getter from DCCSheet, which reads from
+    // `CONFIG.DCC.sheetParts[this.CLASS_ID]`. Asserts that each of the
+    // 7 PC sheet classes resolves to the same shape its predecessor
+    // hardcoded as a `static CLASS_PARTS = { … }` block.
+    const result = await page.evaluate(() => {
+      // Find sheets via the CONFIG.Actor.sheetClasses entries we
+      // registered in `module/dcc.js`. Each entry's `.cls` is the
+      // sheet class constructor.
+      const playerSheets = CONFIG.Actor.sheetClasses?.Player ?? {}
+      const sheetClassByName = {}
+      for (const entry of Object.values(playerSheets)) {
+        sheetClassByName[entry.cls.name] = entry.cls
+      }
+      const probe = (name, classId, expectedPartKey, expectedTabId) => {
+        const cls = sheetClassByName[name]
+        if (!cls) return { name, missing: true }
+        return {
+          name,
+          missing: false,
+          classId: cls.CLASS_ID,
+          partsHasClassKey: !!cls.CLASS_PARTS?.[expectedPartKey],
+          partsTemplate: cls.CLASS_PARTS?.[expectedPartKey]?.template ?? null,
+          tabsHaveClassTab: (cls.CLASS_TABS?.sheet?.tabs ?? []).some(t => t.id === expectedTabId)
+        }
+      }
+      return {
+        cleric: probe('DCCActorSheetCleric', 'cleric', 'cleric', 'cleric'),
+        thief: probe('DCCActorSheetThief', 'thief', 'thief', 'thief'),
+        halfling: probe('DCCActorSheetHalfling', 'halfling', 'halfling', 'halfling'),
+        warrior: probe('DCCActorSheetWarrior', 'warrior', 'warrior', 'warrior'),
+        wizard: probe('DCCActorSheetWizard', 'wizard', 'wizard', 'wizard'),
+        dwarf: probe('DCCActorSheetDwarf', 'dwarf', 'dwarf', 'dwarf'),
+        elf: probe('DCCActorSheetElf', 'elf', 'elf', 'elf')
+      }
+    })
+
+    for (const [classId, probe] of Object.entries(result)) {
+      expect(probe.missing, `${probe.name} should be registered`).toBe(false)
+      expect(probe.classId, `${probe.name}.CLASS_ID`).toBe(classId)
+      expect(probe.partsHasClassKey, `${probe.name}.CLASS_PARTS.${classId}`).toBe(true)
+      expect(typeof probe.partsTemplate).toBe('string')
+      expect(probe.tabsHaveClassTab, `${probe.name}.CLASS_TABS.sheet.tabs includes ${classId}`).toBe(true)
+    }
+  })
+
+  test('homebrew classId registered via game.dcc.registerSheetPart propagates through inherited getter', async ({ page }) => {
+    // A sibling module registering a homebrew class's sheet parts
+    // should be picked up by any sheet subclass pinning that CLASS_ID
+    // — without any other DCC system change. This is the §2.8
+    // (homebrew) promise. Restore the empty state after so subsequent
+    // tests stay correct.
+    const result = await page.evaluate(async () => {
+      const original = CONFIG.DCC.sheetParts['p5s4-squire']
+      game.dcc.registerSheetPart('p5s4-squire', {
+        parts: {
+          squire: { id: 'squire', template: 'systems/dcc/templates/actor-partial-warrior.html' }
+        },
+        tabs: {
+          sheet: { tabs: [{ id: 'squire', group: 'sheet', label: 'P5S4.Squire' }] }
+        }
+      })
+
+      const after = {
+        registered: !!CONFIG.DCC.sheetParts['p5s4-squire'],
+        partTemplate: CONFIG.DCC.sheetParts['p5s4-squire']?.parts?.squire?.template ?? null,
+        tabLabel: CONFIG.DCC.sheetParts['p5s4-squire']?.tabs?.sheet?.tabs?.[0]?.label ?? null
+      }
+
+      // Restore the empty state.
+      if (original === undefined) {
+        delete CONFIG.DCC.sheetParts['p5s4-squire']
+      } else {
+        CONFIG.DCC.sheetParts['p5s4-squire'] = original
+      }
+
+      return after
+    })
+
+    expect(result.registered).toBe(true)
+    expect(result.partTemplate).toBe('systems/dcc/templates/actor-partial-warrior.html')
+    expect(result.tabLabel).toBe('P5S4.Squire')
+  })
+
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
     // The mercurial-magic registry's last-write-wins semantic
     // matters for sibling modules that want to fully replace a

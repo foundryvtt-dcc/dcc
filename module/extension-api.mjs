@@ -481,3 +481,59 @@ export async function applyClassStartingItems (actor, classId, deps = {}) {
   if (toCreate.length === 0) return []
   return await actor.createEmbeddedDocuments('Item', toCreate)
 }
+
+/**
+ * Register per-class sheet parts (Handlebars template fragments) and
+ * tab labels that the class sheet renders. Closes the §2.11 (class
+ * sheets fight Foundry) pain point: today each per-class PC sheet in
+ * `module/actor-sheets-dcc.js` carries its own
+ * `static CLASS_PARTS = { … }` and `static CLASS_TABS = { … }` block.
+ * Sibling modules that want to ship a homebrew class have to either
+ * subclass one of the built-in sheets (inheriting the wrong parts) or
+ * register their own sheet (rewriting the part-registration plumbing).
+ *
+ * Phase 5 session 4 lifts those blocks onto the registry. The DCC
+ * system dogfoods its own helper by registering one entry per built-in
+ * PC class through this hook; the per-class sheet subclasses collapse
+ * to thin stubs that just pin `static CLASS_ID = '<classId>'`. The
+ * shared `DCCSheet` base resolves the parts + tabs from the registry
+ * via inherited static getters.
+ *
+ * Each entry shape:
+ *
+ * - `parts` (object) — `partKey → { id, template }`. Merged into the
+ *   sheet's `_configureRenderParts` output. Templates must be
+ *   pre-registered via `loadTemplates` in `module/dcc.js:init` (or
+ *   the sibling module's equivalent).
+ * - `tabs` (object) — `group → { tabs: [{ id, group, label }, …] }`.
+ *   Inserted between the base TABS (character + equipment) and the
+ *   END_TABS (effects + notes) via `_getTabsConfig`.
+ *
+ * `classId` is the lowercase canonical class identifier (`'cleric'`,
+ * `'thief'`, `'halfling'`, …) — same convention as the rest of the
+ * Phase 4/5 registries. Re-registering an existing `classId` silently
+ * overwrites (last-write-wins, matching the other registries).
+ *
+ * Stable from day one (per `EXTENSION_API.md` recommendation 7).
+ *
+ * @param {string} classId - lowercase canonical class identifier.
+ * @param {object} descriptor - `{ parts, tabs }` registration payload.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - `CONFIG` namespace (defaults to
+ *   `globalThis.CONFIG`).
+ */
+export function registerSheetPart (classId, descriptor, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  if (!classId || typeof classId !== 'string') {
+    throw new Error('registerSheetPart: classId must be a non-empty string')
+  }
+  if (!descriptor || typeof descriptor !== 'object') {
+    throw new Error('registerSheetPart: descriptor must be an object')
+  }
+  if (!CONFIGImpl?.DCC) {
+    throw new Error('registerSheetPart: CONFIG.DCC unavailable')
+  }
+  CONFIGImpl.DCC.sheetParts ??= {}
+  CONFIGImpl.DCC.sheetParts[classId] = descriptor
+}

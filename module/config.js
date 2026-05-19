@@ -661,6 +661,18 @@ DCC.classDefaults = {}
 // `game.dcc.registerClassStartingItems` extension helper.
 DCC.classStartingItems = {}
 
+// Per-class sheet-parts registry, keyed by lowercase canonical class
+// identifier. Each entry packages the per-class Handlebars part
+// definitions (CLASS_PARTS-shaped: `partKey → { id, template }`) and
+// tab declarations (CLASS_TABS-shaped: `group → { tabs: [...] }`) that
+// the class sheet renders. The shared `DCCSheet` base class consumes
+// this registry via inherited static getters keyed on
+// `this.CLASS_ID`, so the per-class subclasses in
+// `module/actor-sheets-dcc.js` collapse to thin stubs that just pin
+// `static CLASS_ID`. Populated by the `game.dcc.registerSheetPart`
+// extension helper. Phase 5 §2.11 — sheet markup composition.
+DCC.sheetParts = {}
+
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks

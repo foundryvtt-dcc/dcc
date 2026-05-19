@@ -42,30 +42,33 @@ session's context):
 
 ## Status (2026-05-18)
 
-**Phase 5 session 3 closed the latent link-field gap.** Pure schema
-add: `classLink`, `mightyDeedsLink`, `spellcastingLink`,
-`spellburnLink` registered as `HTMLField({ initial: '' })` on the
-static `class` SchemaField in `module/data/actor/player-data.mjs`.
-Pre-Phase-5-3 only `classLink` worked (via a sibling
-`dcc.definePlayerSchema` hook in xcc-core-book); the other three
-`applyClassDefaults` `enrichHtml` writes were silently stripped.
-With the schema add, all four paths persist on `system.class.*` in
-every world configuration. Sibling-module `classLink` registration
-still runs and overrides the base declaration on its own schedule
-(last-write-wins) — no breakage. +4 assertions in
-`module/__integration__/data-models.test.js`; +2 Playwright cases
-in `extension-api.spec.js` (end-to-end gap closure + fresh-schema
-empty-string defaults). **996 Vitest green** (unchanged — assertions
-extend an existing test). **129 Playwright passed** (was 127, +2;
-1 latent xcc-core-book failure, unchanged baseline).
+**Phase 5 session 4 shipped `registerSheetPart` + collapsed the 7
+PC sheets onto a `DCCSheet` base.** New
+`game.dcc.registerSheetPart(classId, descriptor)` in
+`module/extension-api.mjs`; `CONFIG.DCC.sheetParts = {}` seeded.
+Each entry is `{ parts, tabs }` mirroring ApplicationV2's `PARTS`
++ `TABS` statics. Seeded for all 7 PC classes via
+`module/built-in-sheet-parts.mjs`. New `DCCSheet` intermediate
+base class in `module/actor-sheets-dcc.js` exposes inherited
+static getters that resolve `CLASS_PARTS` + `CLASS_TABS` from
+`CONFIG.DCC.sheetParts[this.CLASS_ID]`; each per-class subclass
+shrinks to a 4-line stub pinning `static CLASS_ID = '<classId>'`.
+`actor-sheets-dcc.js` 466 → 235 lines (-49%). All 7 sheet classes
+stay registered with original names — no UX regression for the
+"Configure Sheet" picker, existing `flags.core.sheetClass` values
+still resolve. Generic sheet stays separate (different shape,
+not class-bound). +6 Vitest, +5 Playwright. **1002 Vitest green**
+(was 996, +6). **134 Playwright passed** (was 129, +5; 1 latent
+xcc-core-book failure, unchanged baseline). Visual regression
+suite couldn't run in this session's environment (expects a v12
+baseline world per its `start-foundry` script, not v14).
 
-**Phase 5 session 2 (2026-05-18)** shipped `registerClassStartingItems`
-+ `applyClassStartingItems`, lifting dwarf's inline ShieldBash
-auto-create onto a registry. All 7 PC sheets now share identical
-`_prepareContext` shape. **Phase 5 session 1 (2026-05-18)** shipped
-`registerClassDefaults` + `applyClassDefaults`, lifting per-class
-`_prepareContext` first-open default-write blocks onto a registry.
-Detail in [phase-5.md](dev/progress/phase-5.md) when entries rotate.
+**Phase 5 sessions 1–3 (2026-05-18)** shipped the
+`registerClassMixin` / `registerClassDefaults` /
+`registerClassStartingItems` registries + link-field schema add.
+All four Phase 5 per-class extension hooks are now live; all 7
+DCC built-in classes use the registries end-to-end. Detail in
+[phase-5.md](dev/progress/phase-5.md) when entries rotate.
 
 **Phase 4 (data-model slimming, closed 2026-05-18):** all 7 DCC
 classes mixin-source their fields via the
@@ -127,22 +130,34 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 5 session 3 (2026-05-18) closed the link-field latent gap.**
-Pick one of these candidates (Tim picks):
+**Phase 5 session 4 (2026-05-18) shipped `registerSheetPart` +
+collapsed 7 PC sheets onto `DCCSheet` base.** All four Phase 5
+per-class extension registries (mixin / defaults / starting items /
+sheet parts) are now live. The Phase 5 sub-arc is effectively
+complete — what remains:
 
-1. **`registerSheetPart` + `DCCSheet` collapse (large scope, big
-   win).** Collapse the 7 PC sheet subclasses in
-   `module/actor-sheets-dcc.js` (each with `CLASS_PARTS` +
-   `CLASS_TABS` statics) into a single composable `DCCSheet`
-   consuming a new `game.dcc.registerSheetPart` registry. Since
-   sessions 1 + 2 made all 7 `_prepareContext` bodies identical
-   (only the classId literal differs), the boilerplate dedupes
-   for free into a single base-class method on `DCCSheet`. Sheet
-   markup changes — run visual regression alongside.
-2. **Migrate the remaining capitalized `sheetClass` readers** (Elf
-   at `actor.js:182`; Cleric at `actor.js:2180` / `actor.js:2481` /
-   `dcc.js:746`) to `actor.classId`. Bundle with #1 (the `DCCSheet`
-   collapse restructures the writer side).
+1. **Migrate remaining capitalized `sheetClass` readers (small
+   scope).** Elf at `actor.js:182`; Cleric at `actor.js:2180` /
+   `actor.js:2481` / `dcc.js:746`. These string comparisons against
+   capitalized `system.details.sheetClass` should switch to
+   `actor.classId === '<lowercase>'` for consistency with Phase 4
+   session 7's introduced accessor. Pure mechanical migration; no
+   behavior change. Closes the last out-of-scope item from Phase 4.
+2. **Phase 6: lib-side class progression registry.** Per
+   `CLASS_DECOMPOSITION.md` §3.5 / `ARCHITECTURE_REIMAGINED.md §7`.
+   Wire `dcc-core-lib`'s `registerClassProgression(classId, …)` for
+   each built-in DCC class so `getSavingThrows / getCritDie /
+   getActionDice` return non-zero values. This will close PR #720's
+   "programmatic PC creation produces inconsistent class config"
+   item. Lib-side work — start with a PR against
+   `moonloch/dcc-core-lib` adding the registration shape, then
+   wire from `module/dcc.js:init` after vendor sync.
+3. **Phase 6: variant registry.** `game.dcc.registerVariant({ id,
+   classes, sheetTheme })` so XCC ships as a variant module
+   instead of overriding `CONFIG.Actor.documentClass` globally.
+   Larger scope; depends on §3.5 work landing first.
+
+Tim picks #1, #2, or #3.
 
 **Also pending — dcc-qol sibling-fix coordination.** Session 20
 shim removal leaves dcc-qol's `attackRollHooks.js:283-284` reading

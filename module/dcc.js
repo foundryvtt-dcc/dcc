@@ -31,10 +31,11 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
-import { registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerItemSheet } from './extension-api.mjs'
+import { registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerItemSheet, registerSheetPart } from './extension-api.mjs'
 import { registerBuiltInClassMixins } from './built-in-class-mixins.mjs'
 import { registerBuiltInClassDefaults } from './built-in-class-defaults.mjs'
 import { registerBuiltInClassStartingItems } from './built-in-class-starting-items.mjs'
+import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -95,6 +96,14 @@ Hooks.once('init', async function () {
   // for the table.
   registerBuiltInClassStartingItems(registerClassStartingItems)
 
+  // Register built-in DCC sheet parts. Phase 5 session 4 lifts the
+  // per-class `CLASS_PARTS` + `CLASS_TABS` statics off the sheet
+  // subclasses in `module/actor-sheets-dcc.js` and onto this registry;
+  // the shared `DCCSheet` base resolves parts + tabs via inherited
+  // static getters keyed on `this.CLASS_ID`. See
+  // `module/built-in-sheet-parts.mjs` for the table.
+  registerBuiltInSheetParts(registerSheetPart)
+
   // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
@@ -148,6 +157,7 @@ Hooks.once('init', async function () {
     registerClassMixin, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassStartingItems, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerSheetPart, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove
     getMacroOptions // This is called from macros, don't remove

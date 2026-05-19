@@ -63,6 +63,29 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 5 session 4 (2026-05-18)** shipped the
+`registerSheetPart` registry — the fourth and final per-class
+extension hook for Phase 5. New stable hook
+`game.dcc.registerSheetPart(classId, descriptor)` in
+`module/extension-api.mjs`; `CONFIG.DCC.sheetParts = {}` seeded in
+`module/config.js`. Each entry is `{ parts, tabs }` where `parts`
+mirrors ApplicationV2's `PARTS` shape (`partKey → { id, template }`)
+and `tabs` mirrors `TABS` (`group → { tabs: [{ id, group, label }] }`).
+Seeded for all 7 PC classes via new
+`module/built-in-sheet-parts.mjs`. New `DCCSheet` intermediate base
+class in `module/actor-sheets-dcc.js` exposes inherited static
+getters `CLASS_PARTS` + `CLASS_TABS` that resolve from
+`CONFIG.DCC.sheetParts[this.CLASS_ID]`; the per-class subclasses
+collapse to 4-line stubs that just pin `static CLASS_ID =
+'<classId>'` and inherit everything else (DEFAULT_OPTIONS,
+_prepareContext with applyClassDefaults + applyClassStartingItems,
+all part / tab resolution). `module/actor-sheets-dcc.js` shrunk
+from 466 → 235 lines (-49%). All 7 sheet classes still registered
+(no UX regression for the "Configure Sheet" picker) — only the
+internals collapsed. Generic sheet stays separate (different shape,
+not class-bound). Sibling modules registering a homebrew class now
+do four `register*` calls + a 4-line sheet subclass.
+
 **Phase 5 session 3 (2026-05-18)** closed the latent gap surfaced
 in session 1 by registering the four link fields (`classLink`,
 `mightyDeedsLink`, `spellcastingLink`, `spellburnLink`) as
@@ -160,6 +183,67 @@ XCC critique. Detail rotated to the Recent slices section below.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 5 session 4: `registerSheetPart` registry +
+  7 PC sheets collapsed onto `DCCSheet` base.** New stable extension
+  hook `game.dcc.registerSheetPart(classId, descriptor)` in
+  `module/extension-api.mjs`; `CONFIG.DCC.sheetParts = {}` seeded in
+  `module/config.js`. Each entry shape:
+  `{ parts: { partKey: { id, template } }, tabs: { group: { tabs:
+  [{ id, group, label }] } } }` — mirrors ApplicationV2's `PARTS` +
+  `TABS` statics so the registry is a drop-in for the previously
+  hardcoded per-class `CLASS_PARTS` + `CLASS_TABS`. Seeded for all 7
+  PC classes via new `module/built-in-sheet-parts.mjs` table
+  consumed by `module/dcc.js:init` (mirror of the
+  mixins/defaults/starting-items pattern). New `DCCSheet`
+  intermediate base class in `module/actor-sheets-dcc.js` between
+  `DCCActorSheet` (NPC base) and the per-class subclasses:
+  exposes inherited static getters `CLASS_PARTS` + `CLASS_TABS`
+  that resolve from `CONFIG.DCC.sheetParts[this.CLASS_ID]` at
+  lookup time (`this` in a static getter is the class the getter is
+  accessed on — `DCCActorSheetCleric.CLASS_PARTS` evaluates with
+  `this === DCCActorSheetCleric` → `this.CLASS_ID === 'cleric'` →
+  registry lookup). DCCSheet's `_prepareContext` runs the shared
+  `applyClassDefaults` + `applyClassStartingItems` pair gated on
+  `this.constructor.CLASS_ID` resolving. Each per-class subclass
+  collapses to a 4-line stub: just pin `static CLASS_ID =
+  '<classId>'` and inherit everything else. `module/actor-sheets-dcc.js`
+  shrunk from 466 → 235 lines (-49%). All 7 PC sheet classes stay
+  registered with their existing class names (`DCCActorSheetCleric`
+  etc.) so the "Configure Sheet" picker still has 7 labeled
+  options and existing `flags.core.sheetClass` values continue to
+  resolve — only the internals collapsed. Generic sheet
+  (`DCCActorSheetGeneric`) stays separate: it has a fully-static
+  `PARTS` declaration (different shape from class sheets), no
+  CLASS_ID, and its initial-setup logic isn't class-bound.
+  Sibling-module recipe for homebrew classes is now four
+  `register*` calls (mixin / defaults / starting items / sheet
+  part) + a 4-line sheet subclass extending DCCSheet —
+  documented in EXTENSION_API.md. +6 Vitest tests in
+  `extension-api.test.js` (registration storage / self-heal /
+  last-write-wins / validation throws on bad classId / non-object
+  descriptor / missing CONFIG.DCC). 1002 Vitest green (was 996,
+  +6). +5 Playwright cases in `extension-api.spec.js`: hook
+  exposed on `game.dcc`; all 7 built-in PC classes present in
+  the registry with the expected class-specific part key and tab
+  id; cleric / wizard / elf carry their extra
+  `clericSpells` / `wizardSpells` parts while halfling / thief /
+  warrior / dwarf don't; inherited static getters on each PC
+  sheet class resolve to the registry-keyed shape; homebrew
+  classId registration propagates through. **134 Playwright
+  passed** (was 129, +5), 1 latent failure (xcc-core-book
+  DCCItemSheet override, unchanged baseline). Visual regression
+  suite couldn't run in this session's environment — its
+  `start-foundry` script in
+  `browser-tests/visual-regression/package.json` launches a
+  `baselinev12` world, not the v14 world this slice was tested
+  against; the test-actor folders and selectors expect that v12
+  baseline. Slice doesn't change templates or CSS, so screenshots
+  should be byte-identical when the v12 baseline is available. **Phase 5 complete for all 7 built-in
+  PC classes**: schema mixin (P4) + class defaults (P5-1) +
+  starting items (P5-2 dwarf) + link fields (P5-3) + sheet parts
+  (P5-4). Remaining work in this arc is the migration of the
+  remaining capitalized `sheetClass` readers (Elf / Cleric in
+  `actor.js` + `dcc.js`) to `actor.classId` — small follow-up.
 - **2026-05-18 — Phase 5 session 3: register the four link fields
   on the base Player schema (closes Phase 5-1 latent gap).** Pure
   schema add — re-import `HTMLField` in
