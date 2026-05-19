@@ -63,6 +63,43 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
+**Phase 6 session 1 (2026-05-19)** opened Phase 6 by exposing the
+lib's class-progression registration helpers on `game.dcc.*`. The
+vendored `dcc-core-lib` already implements
+`registerClassProgression(progression)` and
+`registerClassProgressions(progressions)` in
+`module/vendor/dcc-core-lib/data/classes/progression-utils.js`,
+plus the consumer APIs (`getSavingThrows`, `getCritDie`,
+`getSaveBonus`, etc.) that read from the populated registry. The
+DCC system now imports those two registration helpers and
+re-exports them via `game.dcc.*` alongside the other Phase 4/5
+registries. No class progression *data* is shipped from the
+open-source system — that payload is copyrighted Goodman Games
+material living in the private `dcc-official-data` repo (per
+`ARCHITECTURE_REIMAGINED.md §8.1`). Content modules (a future
+`dcc-core-book` update, sibling content packs) call the helpers
+on their own schedule with their own data; this slice ships the
+registration surface so they can.
+
+PR #720's "programmatic PC creation produces inconsistent class
+config" item is *partially* closed by this slice: the lib API is
+now reachable from Foundry. The full closure waits on a content
+module to actually invoke it with a complete progression payload.
+Until that lands, `getSavingThrows("warrior", 3)` continues to
+return zeros for actors in worlds without a registering content
+module — same as today. +2 Vitest tests (import shape + fictional
+round-trip), +2 Playwright cases (helpers exposed on `game.dcc`;
+live round-trip against the lib registry using an arbitrary
+fictional class). 1005 Vitest green (was 1003, +2). 135
+Playwright passed (was 134, +2 from this slice). One new
+suite-only flake observed:
+`phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag…`
+fails under the full-suite run but passes in isolation (re-ran
+the single test, green). State pollution between tests in the
+shared Foundry world; not caused by this slice (which adds no
+chat / roll / spell logic). Latent xcc-core-book DCCItemSheet
+override failure unchanged baseline.
+
 **Phase 5 session 5 (2026-05-19)** completed Phase 5 by migrating
 the four remaining capitalized `sheetClass` readers in module
 source to the `actor.classId` accessor (Phase 4 session 7's
@@ -213,6 +250,43 @@ XCC critique. Detail rotated to the Recent slices section below.
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-19 — Phase 6 session 1: expose
+  `registerClassProgression` / `registerClassProgressions` on
+  `game.dcc.*`.** Two-line addition to `module/dcc.js`: import the
+  helpers from the vendored lib
+  (`module/vendor/dcc-core-lib/data/classes/progression-utils.js`)
+  and add them to the `game.dcc` object alongside the other
+  Phase 4/5 registry helpers. The lib already implements the
+  registry + consumer APIs (`getSavingThrows`, `getCritDie`,
+  `getSaveBonus`, `getClassProgression`) — they've been there since
+  before the vendor sync; this slice just makes the registration
+  surface reachable from sibling content modules without forcing
+  them to import a vendored-lib internal path. PR #720's
+  "programmatic PC creation produces inconsistent class config"
+  item is *partially* closed: the registration plumbing is now
+  available. Full closure waits on a content module (a future
+  `dcc-core-book` update, or sibling) to invoke the helper with
+  a complete progression payload. The class progression data
+  itself is copyrighted Goodman Games material living in the
+  private `dcc-official-data` repo (per
+  `ARCHITECTURE_REIMAGINED.md §8.1`); the open-source DCC system
+  ships only the registration surface. +2 Vitest tests in
+  `extension-api.test.js` (helpers importable from vendored lib;
+  fictional round-trip with `clearClassProgressions` cleanup).
+  1005 Vitest green (was 1003, +2). +2 Playwright cases in
+  `extension-api.spec.js` (helpers exposed on live `game.dcc`;
+  end-to-end round-trip registering a fictional class and reading
+  it back via the lib's `getSavingThrows` consumer, with cleanup).
+  EXTENSION_API.md gains a Stable row pair for both helpers +
+  documents the "data lives in content modules, not core" pattern.
+  No copyrighted material reproduced in this repo. 135 Playwright
+  passed (was 134, +2 from this slice). One new suite-only flake
+  observed: `phase1-adapter-dispatch.spec.js:922 forceCrit
+  shift-click flag…` fails under the full-suite run but passes
+  in isolation (verified by re-running the single test). State
+  pollution between tests in the shared Foundry world; this slice
+  adds no chat / roll / spell logic so it can't have caused the
+  flake.
 - **2026-05-19 — Phase 5 session 5: migrate remaining capitalized
   `sheetClass` readers to `actor.classId` (closes Phase 5
   sub-arc).** Four mechanical rewrites of

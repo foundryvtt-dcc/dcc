@@ -599,6 +599,81 @@ test.describe('DCC Extension API', () => {
   })
 
   // -------------------------------------------------------------------
+  // Lib re-exports — registerClassProgression / registerClassProgressions
+  // (Phase 6 session 1)
+  // -------------------------------------------------------------------
+
+  test('game.dcc.registerClassProgression + registerClassProgressions are exposed as functions', async ({ page }) => {
+    // The DCC system re-exports the lib's registration helpers via
+    // `game.dcc.*`. Content modules (a future `dcc-core-book` update
+    // and similar) load their class progression payload through
+    // these helpers. The progression data itself stays in the
+    // private `dcc-official-data` repo; the open-source system
+    // ships only the registration surface.
+    const result = await page.evaluate(() => ({
+      registerSingle: typeof game.dcc.registerClassProgression === 'function',
+      registerMany: typeof game.dcc.registerClassProgressions === 'function',
+      registerSingleKey: Object.keys(game.dcc).includes('registerClassProgression'),
+      registerManyKey: Object.keys(game.dcc).includes('registerClassProgressions')
+    }))
+    expect(result.registerSingle).toBe(true)
+    expect(result.registerMany).toBe(true)
+    expect(result.registerSingleKey).toBe(true)
+    expect(result.registerManyKey).toBe(true)
+  })
+
+  test('registerClassProgression round-trips against the live lib registry (fictional class)', async ({ page }) => {
+    // End-to-end smoke: register a tiny fictional class (NOT a
+    // Goodman Games progression) and verify the lib's
+    // `getSavingThrows` consumer returns the registered values.
+    // Cleans up via the lib's own `clearClassProgressions` so a
+    // sibling-loaded real progression isn't disturbed.
+    const result = await page.evaluate(async () => {
+      const lib = await import('../../../../../../../../systems/dcc/module/vendor/dcc-core-lib/index.js')
+      const utils = await import('../../../../../../../../systems/dcc/module/vendor/dcc-core-lib/data/classes/progression-utils.js')
+
+      const probe = {
+        classId: 'p6s1-live-tinker',
+        name: 'Live Tinker',
+        skills: [],
+        levels: {
+          3: {
+            attackBonus: 2,
+            criticalDie: 'd6',
+            criticalTable: 'II',
+            actionDice: ['1d20'],
+            hitDie: 'd6',
+            saves: { ref: 2, frt: 1, wil: 3 }
+          }
+        }
+      }
+      game.dcc.registerClassProgression(probe)
+
+      // Read back via the lib's consumer APIs.
+      const fetched = utils.getClassProgression('p6s1-live-tinker')
+      const savesAt3 = lib.getSavingThrows ? lib.getSavingThrows('p6s1-live-tinker', 3) : null
+      const willAt3 = utils.getSaveBonus('p6s1-live-tinker', 3, 'wil')
+
+      // Cleanup so the registry doesn't leak.
+      utils.clearClassProgressions()
+      const afterClear = utils.getClassProgression('p6s1-live-tinker')
+
+      return {
+        registeredName: fetched?.name ?? null,
+        registeredRefSave: fetched?.levels[3]?.saves?.ref ?? null,
+        willAt3,
+        savesAt3Type: savesAt3 ? typeof savesAt3 : null,
+        cleared: afterClear === undefined
+      }
+    })
+
+    expect(result.registeredName).toBe('Live Tinker')
+    expect(result.registeredRefSave).toBe(2)
+    expect(result.willAt3).toBe(3)
+    expect(result.cleared).toBe(true)
+  })
+
+  // -------------------------------------------------------------------
   // DCCActor.classId accessor (Phase 4 closer — class-id dispatch helper)
   // -------------------------------------------------------------------
 

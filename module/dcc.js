@@ -36,6 +36,7 @@ import { registerBuiltInClassMixins } from './built-in-class-mixins.mjs'
 import { registerBuiltInClassDefaults } from './built-in-class-defaults.mjs'
 import { registerBuiltInClassStartingItems } from './built-in-class-starting-items.mjs'
 import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
+import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -155,6 +156,8 @@ Hooks.once('init', async function () {
     registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassDefaults, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassMixin, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerClassProgression, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerClassProgressions, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassStartingItems, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerSheetPart, // Stable extension API — see docs/dev/EXTENSION_API.md

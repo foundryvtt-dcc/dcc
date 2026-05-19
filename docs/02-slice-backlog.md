@@ -803,9 +803,72 @@ fresh-schema empty-string defaults).
 
 ---
 
+### Phase 6 — Active sub-arc (lib-side class progression, in progress)
+
+> Phase 6 wires `dcc-core-lib`'s class-progression registry from
+> the Foundry system, so the lib's consumer APIs
+> (`getSavingThrows`, `getCritDie`, `getSaveBonus`, etc.) return
+> non-zero values for actors. The lib API has been there since
+> before the vendor sync; the work is exposing it from the system
+> + getting class progression payloads registered. Per
+> `ARCHITECTURE_REIMAGINED.md §8.1`, the class progression data
+> is copyrighted Goodman Games material living in the private
+> `dcc-official-data` repo — the open-source DCC system ships
+> only the registration surface. Content modules call it on their
+> own schedule with their own data.
+
+#### ~~Phase 6 session 1. Expose `registerClassProgression` / `registerClassProgressions` on `game.dcc.*`.~~ **DONE 2026-05-19**
+Two-line addition to `module/dcc.js` importing the helpers from
+the vendored lib
+(`module/vendor/dcc-core-lib/data/classes/progression-utils.js`)
+and adding them to the `game.dcc` object alongside the other
+Phase 4/5 registry helpers. PR #720's "programmatic PC creation
+produces inconsistent class config" item is *partially* closed:
+plumbing ready. Full closure waits on a content module to invoke
+the helper with a complete progression payload. +2 Vitest, +2
+Playwright (uses fictional class data, no copyrighted material).
+EXTENSION_API.md gets a paired Stable row. 1005 Vitest green.
+
+#### Phase 6 session 2 (next). `registerVariant` for variant-class modules.
+Per `CLASS_DECOMPOSITION.md` §3.6 and
+`ARCHITECTURE_REIMAGINED.md §7`. New
+`game.dcc.registerVariant({ id, classes, sheetTheme })` so XCC,
+MCC, and similar variant rulesets can ship as a module rather
+than overriding `CONFIG.Actor.documentClass` globally. World
+setting selects active variant (defaults to `dcc`). Larger
+scope; touches the actor-class selection UI / level-change
+dialog. Depends on session 1's classProgression plumbing being
+in place.
+
+#### Phase 6 follow-up: content-module sample registration.
+Once a content module ships class progression data (likely a
+future `dcc-core-book` update following the §8.1 "Option C"
+mirror approach — TS exports + Foundry pack JSON sourced from
+the same files in `dcc-official-data`), the system's
+`module/adapter/foundry-data-loader.mjs` placeholder can grow a
+compendium walker that detects pack-level progression data and
+calls `registerClassProgressions` automatically at `dcc.ready`.
+This is the "make `getSavingThrows("warrior", 3)` actually
+return non-zero" closure of PR #720's item. Not blocked by any
+DCC-system slice; blocked on content-module data ship.
+
+---
+
 ## Completed slices
 
 Move entries here as they land; keep the active queue scannable.
+
+### Phase 6 (Lib-side class progression + variant)
+
+- Phase 6 session 1 (2026-05-19): expose
+  `registerClassProgression` + `registerClassProgressions` on
+  `game.dcc.*` via two new entries in `module/dcc.js`. The lib's
+  registry + consumer APIs are already in the vendored bundle;
+  this slice just makes the registration surface reachable from
+  sibling content modules. No class progression data shipped from
+  core (copyrighted Goodman Games material per §8.1; stays in
+  private `dcc-official-data`). +2 Vitest, +2 Playwright (fictional
+  test class). 1005 Vitest green.
 
 ### Phase 5 (Sheet composition + class defaults)
 

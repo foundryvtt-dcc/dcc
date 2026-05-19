@@ -42,6 +42,39 @@ session's context):
 
 ## Status (2026-05-19)
 
+**Phase 6 session 1 opened Phase 6** by exposing the vendored
+lib's class-progression registration helpers on `game.dcc.*`.
+Two-line addition to `module/dcc.js` imports
+`registerClassProgression` + `registerClassProgressions` from
+`module/vendor/dcc-core-lib/data/classes/progression-utils.js`
+and adds them alongside the other Phase 4/5 registry helpers.
+The lib's consumer APIs (`getSavingThrows`, `getCritDie`,
+`getSaveBonus`, `getClassProgression`) have been in the vendored
+bundle since before the vendor sync; this slice just makes the
+*registration* surface reachable from sibling content modules
+without forcing them to import a vendored-lib internal path.
+
+The class progression data itself is copyrighted Goodman Games
+material that lives in the private `dcc-official-data` repo
+(per `ARCHITECTURE_REIMAGINED.md §8.1`). The open-source DCC
+system ships only the registration surface; content modules
+(a future `dcc-core-book` update, sibling content packs)
+register their data on their own schedule. PR #720's
+"programmatic PC creation produces inconsistent class config"
+item is *partially* closed by this slice — full closure waits
+on a content module to actually invoke the helper with a
+complete progression payload. +2 Vitest tests (helpers
+importable from vendored lib; fictional round-trip with
+cleanup), +2 Playwright cases (helpers exposed on live
+`game.dcc`; end-to-end round-trip using a fictional class).
+**1005 Vitest green** (was 1003, +2). **135 Playwright passed**
+(was 134, +2 new from this slice; one new flake observed —
+`phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag…`
+fails under the full-suite run but passes in isolation. State
+pollution between tests in the shared Foundry world; not caused
+by this slice. Latent xcc-core-book DCCItemSheet override
+failure unchanged baseline).
+
 **Phase 5 session 5 closed the Phase 5 sub-arc** by migrating the
 four remaining capitalized `system.details.sheetClass ===
 '<Class>'` readers in module source to the lowercase canonical
@@ -146,24 +179,30 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 5 session 5 (2026-05-19) closed the Phase 5 sub-arc.** All
-five Phase 5 refactor concerns are landed (schema mixins /
-defaults / starting items / link fields / sheet parts /
-classId-reader migration). Remaining work is Phase 6 (lib-side):
+**Phase 6 session 1 (2026-05-19) shipped the
+`registerClassProgression` re-export.** PR #720's class-config
+item is now partially closed (plumbing ready); full closure
+waits on a content module to invoke the helper. Remaining:
 
-1. **Phase 6: lib-side class progression registry.** Per
-   `CLASS_DECOMPOSITION.md` §3.5 / `ARCHITECTURE_REIMAGINED.md §7`.
-   Wire `dcc-core-lib`'s `registerClassProgression(classId, …)` for
-   each built-in DCC class so `getSavingThrows / getCritDie /
-   getActionDice` return non-zero values. This will close PR #720's
-   "programmatic PC creation produces inconsistent class config"
-   item. Lib-side work — start with a PR against
-   `moonloch/dcc-core-lib` adding the registration shape, then
-   wire from `module/dcc.js:init` after vendor sync.
-2. **Phase 6: variant registry.** `game.dcc.registerVariant({ id,
-   classes, sheetTheme })` so XCC ships as a variant module
-   instead of overriding `CONFIG.Actor.documentClass` globally.
-   Larger scope; depends on #1 landing first.
+1. **Phase 6: `registerVariant` for variant-class modules.** Per
+   `CLASS_DECOMPOSITION.md` §3.6 /
+   `ARCHITECTURE_REIMAGINED.md §7`. New
+   `game.dcc.registerVariant({ id, classes, sheetTheme })` so
+   XCC, MCC, and similar variant rulesets can ship as a module
+   rather than overriding `CONFIG.Actor.documentClass` globally.
+   World setting selects active variant (defaults to `dcc`).
+   Larger scope; touches the actor-class selection UI / level-
+   change dialog.
+2. **Phase 6 follow-up: compendium → lib-registry
+   foundry-data-loader.** Once a content module ships class
+   progression data (likely a future `dcc-core-book` update
+   following §8.1 "Option C" — TS exports + Foundry pack JSON
+   sourced from `dcc-official-data`), grow
+   `module/adapter/foundry-data-loader.mjs` to detect pack-level
+   progression data at `dcc.ready` and call
+   `registerClassProgressions` automatically. This is the
+   full-closure half of PR #720's item. Blocked on content-module
+   data ship.
 
 Tim picks #1 or #2.
 

@@ -753,3 +753,59 @@ test('registerSheetPart throws on non-object descriptor', () => {
 test('registerSheetPart throws when CONFIG.DCC is unavailable', () => {
   expect(() => registerSheetPart('cleric', CLERIC_SHEET_PARTS, { CONFIG: {} })).toThrow(/CONFIG\.DCC unavailable/)
 })
+
+// ---------------------------------------------------------------------
+// Lib re-exports — registerClassProgression / registerClassProgressions
+// (Phase 6 session 1)
+// ---------------------------------------------------------------------
+
+test('registerClassProgression + registerClassProgressions are importable from the vendored lib', async () => {
+  // The DCC system re-exports the lib's registration helpers via
+  // `game.dcc.*` in `module/dcc.js`'s init hook. This unit test
+  // confirms the import path resolves and the imports are functions.
+  // Sibling content modules (e.g., a future `dcc-core-book` update)
+  // load their class progression payload through these helpers.
+  //
+  // The actual class progression payload (level-by-level saves,
+  // crit dies, action dice, etc.) is copyrighted Goodman Games
+  // material and lives in the private `dcc-official-data` repo —
+  // the open-source DCC system ships only the registration surface.
+  const mod = await import('../vendor/dcc-core-lib/data/classes/progression-utils.js')
+  expect(typeof mod.registerClassProgression).toBe('function')
+  expect(typeof mod.registerClassProgressions).toBe('function')
+  expect(typeof mod.clearClassProgressions).toBe('function')
+  expect(typeof mod.getClassProgression).toBe('function')
+})
+
+test('registerClassProgression round-trips a fictional minimal progression', async () => {
+  // End-to-end confirmation that the re-exported registration path
+  // actually populates the registry. Uses an entirely fictional
+  // class ("p6s1-test-tinker") with arbitrary placeholder numbers,
+  // NOT any data from `dcc-official-data` or DCC RAW. Clears the
+  // registry afterward so the assertion stays isolated from any
+  // other test that might load real class data.
+  const mod = await import('../vendor/dcc-core-lib/data/classes/progression-utils.js')
+  const probeProgression = {
+    classId: 'p6s1-test-tinker',
+    name: 'Test Tinker',
+    skills: [],
+    levels: {
+      1: {
+        attackBonus: 0,
+        criticalDie: 'd4',
+        criticalTable: 'I',
+        actionDice: ['1d20'],
+        hitDie: 'd6',
+        saves: { ref: 1, frt: 1, wil: 0 }
+      }
+    }
+  }
+  mod.registerClassProgression(probeProgression)
+  const fetched = mod.getClassProgression('p6s1-test-tinker')
+  expect(fetched).toBeDefined()
+  expect(fetched.name).toBe('Test Tinker')
+  expect(fetched.levels[1].saves.ref).toBe(1)
+  // Cleanup so the registry doesn't leak into other tests.
+  mod.clearClassProgressions()
+  expect(mod.getClassProgression('p6s1-test-tinker')).toBeUndefined()
+})
