@@ -7,7 +7,7 @@
  */
 
 import { expect, test, vi } from 'vitest'
-import { applyClassMixins, registerActorSheet, registerClassMixin, registerItemSheet } from '../extension-api.mjs'
+import { applyClassDefaults, applyClassMixins, registerActorSheet, registerClassDefaults, registerClassMixin, registerItemSheet } from '../extension-api.mjs'
 
 class FakeSheet {}
 class FakeDefaultItemSheetV2 {}
@@ -286,4 +286,212 @@ test('applyClassMixins skips registry entries that are not functions', () => {
   // registry). Calling a non-function would crash schema definition.
   const CONFIG = { DCC: { classMixins: { halfling: 'not-a-function', warrior: () => {} } } }
   expect(() => applyClassMixins({}, { CONFIG })).not.toThrow()
+})
+
+// ---------------------------------------------------------------------
+// registerClassDefaults / applyClassDefaults (Phase 5 session 1)
+// ---------------------------------------------------------------------
+
+function makeMockConfigDefaults () {
+  return { DCC: { classDefaults: {} } }
+}
+
+function makeMockI18n (overrides = {}) {
+  return {
+    localize: vi.fn((key) => overrides[key] ?? `LOCALIZED:${key}`)
+  }
+}
+
+function makeMockTextEditor () {
+  return {
+    enrichHTML: vi.fn(async (content) => `ENRICHED(${content})`)
+  }
+}
+
+function makeMockActor (overrides = {}) {
+  const system = {
+    details: { sheetClass: null },
+    class: { classLink: null },
+    ...overrides
+  }
+  return {
+    system,
+    update: vi.fn(async () => {})
+  }
+}
+
+const HALFLING_ENTRY = {
+  sheetClass: 'Halfling',
+  localize: { 'class.className': 'DCC.Halfling' },
+  enrichHtml: { 'class.classLink': 'DCC.HalflingClassLink' },
+  literal: {
+    'details.critRange': 20,
+    'config.attackBonusMode': 'flat',
+    'skills.shieldBash.useDeed': false
+  }
+}
+
+test('registerClassDefaults stores the entry under the classId key', () => {
+  const CONFIG = makeMockConfigDefaults()
+  registerClassDefaults('halfling', HALFLING_ENTRY, { CONFIG })
+
+  expect(CONFIG.DCC.classDefaults.halfling).toBe(HALFLING_ENTRY)
+})
+
+test('registerClassDefaults initializes CONFIG.DCC.classDefaults when missing', () => {
+  // Mirrors registerClassMixin's self-healing behavior — a mid-init
+  // call site can land before module/config.js seeds the registry.
+  const CONFIG = { DCC: {} }
+  registerClassDefaults('halfling', HALFLING_ENTRY, { CONFIG })
+
+  expect(CONFIG.DCC.classDefaults).toBeDefined()
+  expect(CONFIG.DCC.classDefaults.halfling).toBe(HALFLING_ENTRY)
+})
+
+test('registerClassDefaults overwrites a prior registration (last-write-wins)', () => {
+  const CONFIG = makeMockConfigDefaults()
+  const first = { sheetClass: 'Halfling', literal: { 'details.critRange': 18 } }
+  const second = { sheetClass: 'Halfling', literal: { 'details.critRange': 20 } }
+  registerClassDefaults('halfling', first, { CONFIG })
+  registerClassDefaults('halfling', second, { CONFIG })
+
+  expect(CONFIG.DCC.classDefaults.halfling).toBe(second)
+})
+
+test('registerClassDefaults throws on empty / non-string classId', () => {
+  const CONFIG = makeMockConfigDefaults()
+  expect(() => registerClassDefaults('', HALFLING_ENTRY, { CONFIG })).toThrow(/non-empty string/)
+  expect(() => registerClassDefaults(null, HALFLING_ENTRY, { CONFIG })).toThrow(/non-empty string/)
+})
+
+test('registerClassDefaults throws on non-object defaults', () => {
+  const CONFIG = makeMockConfigDefaults()
+  expect(() => registerClassDefaults('halfling', null, { CONFIG })).toThrow(/must be an object/)
+  expect(() => registerClassDefaults('halfling', 'not-an-object', { CONFIG })).toThrow(/must be an object/)
+})
+
+test('registerClassDefaults throws on missing sheetClass', () => {
+  // sheetClass is load-bearing — applyClassDefaults uses it as the
+  // initial-setup dispatch sentinel. Reject early rather than letting
+  // a malformed entry silently no-op every sheet open.
+  const CONFIG = makeMockConfigDefaults()
+  expect(() => registerClassDefaults('halfling', { localize: {} }, { CONFIG })).toThrow(/sheetClass must be a non-empty string/)
+  expect(() => registerClassDefaults('halfling', { sheetClass: '' }, { CONFIG })).toThrow(/sheetClass must be a non-empty string/)
+})
+
+test('registerClassDefaults throws when CONFIG.DCC is unavailable', () => {
+  expect(() => registerClassDefaults('halfling', HALFLING_ENTRY, { CONFIG: {} })).toThrow(/CONFIG\.DCC unavailable/)
+})
+
+test('applyClassDefaults runs the initial-setup branch when sheetClass does not match', async () => {
+  const CONFIG = makeMockConfigDefaults()
+  registerClassDefaults('halfling', HALFLING_ENTRY, { CONFIG })
+  const i18n = makeMockI18n({ 'DCC.Halfling': 'Halfling', 'DCC.HalflingClassLink': '@UUID[…]{Halfling}' })
+  const TextEditor = makeMockTextEditor()
+  const actor = makeMockActor({ details: { sheetClass: null }, class: { classLink: null } })
+
+  const result = await applyClassDefaults(actor, 'halfling', { CONFIG, i18n, TextEditor })
+
+  expect(result).toBe('initialized')
+  expect(actor.update).toHaveBeenCalledTimes(1)
+  expect(actor.update).toHaveBeenCalledWith({
+    'system.details.sheetClass': 'Halfling',
+    'system.class.className': 'Halfling',
+    'system.class.classLink': 'ENRICHED(@UUID[…]{Halfling})',
+    'system.details.critRange': 20,
+    'system.config.attackBonusMode': 'flat',
+    'system.skills.shieldBash.useDeed': false
+  })
+})
+
+test('applyClassDefaults runs the maintenance branch when classLink is missing and sheetClass matches', async () => {
+  // Mirrors the legacy `else if (!classLink)` guard — happens when a
+  // user opens the sheet before the compendium link target is
+  // available (e.g. dcc-core-book installed after first character
+  // creation). Should re-run enrichHTML so the link resolves, leaving
+  // the literal mechanical defaults untouched.
+  const CONFIG = makeMockConfigDefaults()
+  registerClassDefaults('halfling', HALFLING_ENTRY, { CONFIG })
+  const i18n = makeMockI18n({ 'DCC.HalflingClassLink': '@UUID[…]{Halfling}' })
+  const TextEditor = makeMockTextEditor()
+  const actor = makeMockActor({ details: { sheetClass: 'Halfling' }, class: { classLink: '' } })
+
+  const result = await applyClassDefaults(actor, 'halfling', { CONFIG, i18n, TextEditor })
+
+  expect(result).toBe('regenerated')
+  expect(actor.update).toHaveBeenCalledTimes(1)
+  expect(actor.update).toHaveBeenCalledWith({
+    'system.class.classLink': 'ENRICHED(@UUID[…]{Halfling})'
+  })
+})
+
+test('applyClassDefaults regenerates every enrichHtml path on the maintenance branch (warrior mightyDeedsLink)', async () => {
+  // Warrior carries an extra `mightyDeedsLink` enriched-HTML slot
+  // alongside classLink. Legacy code regenerated BOTH when classLink
+  // was missing — preserve that.
+  const CONFIG = makeMockConfigDefaults()
+  registerClassDefaults('warrior', {
+    sheetClass: 'Warrior',
+    enrichHtml: {
+      'class.classLink': 'DCC.WarriorClassLink',
+      'class.mightyDeedsLink': 'DCC.MightyDeedsLink'
+    }
+  }, { CONFIG })
+  const i18n = makeMockI18n()
+  const TextEditor = makeMockTextEditor()
+  const actor = makeMockActor({ details: { sheetClass: 'Warrior' }, class: { classLink: null } })
+
+  await applyClassDefaults(actor, 'warrior', { CONFIG, i18n, TextEditor })
+
+  expect(actor.update).toHaveBeenCalledWith({
+    'system.class.classLink': 'ENRICHED(LOCALIZED:DCC.WarriorClassLink)',
+    'system.class.mightyDeedsLink': 'ENRICHED(LOCALIZED:DCC.MightyDeedsLink)'
+  })
+})
+
+test('applyClassDefaults returns "unchanged" when sheetClass matches and classLink is present', async () => {
+  const CONFIG = makeMockConfigDefaults()
+  registerClassDefaults('halfling', HALFLING_ENTRY, { CONFIG })
+  const actor = makeMockActor({
+    details: { sheetClass: 'Halfling' },
+    class: { classLink: 'ENRICHED(prior-render)' }
+  })
+
+  const result = await applyClassDefaults(actor, 'halfling', {
+    CONFIG, i18n: makeMockI18n(), TextEditor: makeMockTextEditor()
+  })
+
+  expect(result).toBe('unchanged')
+  expect(actor.update).not.toHaveBeenCalled()
+})
+
+test('applyClassDefaults returns "unchanged" and never throws for an unregistered classId', async () => {
+  // Sibling modules registering homebrew classes may load after the
+  // built-in sheets render once — the helper must degrade to a no-op
+  // when the classId isn't registered yet, not crash the sheet open.
+  const CONFIG = makeMockConfigDefaults()
+  const actor = makeMockActor()
+
+  const result = await applyClassDefaults(actor, 'unknown-class', {
+    CONFIG, i18n: makeMockI18n(), TextEditor: makeMockTextEditor()
+  })
+
+  expect(result).toBe('unchanged')
+  expect(actor.update).not.toHaveBeenCalled()
+})
+
+test('applyClassDefaults handles entries with no localize / enrichHtml / literal sub-bags', async () => {
+  // Defensive against partial registrations. An entry with only
+  // sheetClass should still successfully transition the actor — just
+  // writing the sheetClass sentinel.
+  const CONFIG = makeMockConfigDefaults()
+  registerClassDefaults('halfling', { sheetClass: 'Halfling' }, { CONFIG })
+  const actor = makeMockActor({ details: { sheetClass: null }, class: { classLink: null } })
+
+  const result = await applyClassDefaults(actor, 'halfling', {
+    CONFIG, i18n: makeMockI18n(), TextEditor: makeMockTextEditor()
+  })
+
+  expect(result).toBe('initialized')
+  expect(actor.update).toHaveBeenCalledWith({ 'system.details.sheetClass': 'Halfling' })
 })

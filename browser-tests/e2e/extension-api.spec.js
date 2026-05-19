@@ -633,6 +633,177 @@ test.describe('DCC Extension API', () => {
     expect(result.cleared).toBeNull()
   })
 
+  // -------------------------------------------------------------------
+  // registerClassDefaults / applyClassDefaults (Phase 5 session 1)
+  // -------------------------------------------------------------------
+
+  test('game.dcc.registerClassDefaults is exposed and is a function', async ({ page }) => {
+    const result = await page.evaluate(() => ({
+      hasFn: typeof game.dcc.registerClassDefaults === 'function',
+      keys: Object.keys(game.dcc).filter(k => k === 'registerClassDefaults')
+    }))
+    expect(result.hasFn).toBe(true)
+    expect(result.keys).toEqual(['registerClassDefaults'])
+  })
+
+  test('all 7 built-in PC classes have a CONFIG.DCC.classDefaults entry with the expected shape', async ({ page }) => {
+    // Validates that the seed table in module/built-in-class-defaults.mjs
+    // registered each PC class at init. Asserts on the structural
+    // invariants — capitalized sheetClass sentinel, an enrichHtml
+    // classLink path, and a literal critRange=20. Other per-class
+    // details are exercised by the end-to-end test below.
+    const result = await page.evaluate(() => {
+      const expected = ['halfling', 'dwarf', 'thief', 'cleric', 'warrior', 'wizard', 'elf']
+      const registry = CONFIG.DCC?.classDefaults ?? {}
+      const shape = {}
+      for (const classId of expected) {
+        const entry = registry[classId]
+        shape[classId] = {
+          present: !!entry,
+          sheetClass: entry?.sheetClass ?? null,
+          hasClassLinkKey: !!entry?.enrichHtml?.['class.classLink'],
+          critRange: entry?.literal?.['details.critRange'] ?? null,
+          attackBonusMode: entry?.literal?.['config.attackBonusMode'] ?? null
+        }
+      }
+      return shape
+    })
+    expect(result.halfling).toEqual({ present: true, sheetClass: 'Halfling', hasClassLinkKey: true, critRange: 20, attackBonusMode: 'flat' })
+    expect(result.dwarf).toEqual({ present: true, sheetClass: 'Dwarf', hasClassLinkKey: true, critRange: 20, attackBonusMode: 'autoPerAttack' })
+    expect(result.thief).toEqual({ present: true, sheetClass: 'Thief', hasClassLinkKey: true, critRange: 20, attackBonusMode: 'flat' })
+    expect(result.cleric).toEqual({ present: true, sheetClass: 'Cleric', hasClassLinkKey: true, critRange: 20, attackBonusMode: 'flat' })
+    expect(result.warrior).toEqual({ present: true, sheetClass: 'Warrior', hasClassLinkKey: true, critRange: 20, attackBonusMode: 'autoPerAttack' })
+    expect(result.wizard).toEqual({ present: true, sheetClass: 'Wizard', hasClassLinkKey: true, critRange: 20, attackBonusMode: 'flat' })
+    expect(result.elf).toEqual({ present: true, sheetClass: 'Elf', hasClassLinkKey: true, critRange: 20, attackBonusMode: 'flat' })
+  })
+
+  test('warrior + dwarf class-defaults entries carry the mightyDeedsLink enriched-HTML slot', async ({ page }) => {
+    // Mighty Deeds is a warrior/dwarf-specific concept; the legacy
+    // sheet subclasses wrote `class.mightyDeedsLink` only for these
+    // two. Sanity-check the seed table reflects that.
+    const result = await page.evaluate(() => {
+      const registry = CONFIG.DCC?.classDefaults ?? {}
+      return {
+        warrior: registry.warrior?.enrichHtml?.['class.mightyDeedsLink'] ?? null,
+        dwarf: registry.dwarf?.enrichHtml?.['class.mightyDeedsLink'] ?? null,
+        halfling: registry.halfling?.enrichHtml?.['class.mightyDeedsLink'] ?? null,
+        wizard: registry.wizard?.enrichHtml?.['class.spellcastingLink'] ?? null,
+        wizardSpellburn: registry.wizard?.enrichHtml?.['class.spellburnLink'] ?? null
+      }
+    })
+    expect(result.warrior).toBe('DCC.MightyDeedsLink')
+    expect(result.dwarf).toBe('DCC.MightyDeedsLink')
+    expect(result.halfling).toBeNull()
+    expect(result.wizard).toBe('DCC.SpellcastingLink')
+    expect(result.wizardSpellburn).toBe('DCC.SpellburnLink')
+  })
+
+  test('applyClassDefaults transitions a fresh Player actor onto a registered class end-to-end', async ({ page }) => {
+    // Mirrors what the migrated halfling sheet now does on first open.
+    // Drives the helper directly so the test doesn't need the
+    // ApplicationV2 render lifecycle — but exercises the lib registry
+    // + Foundry's TextEditor + i18n end-to-end against live state.
+    const result = await page.evaluate(async () => {
+      const { applyClassDefaults } = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
+      const player = await Actor.create({ name: 'P5S1 ClassDefaults Probe', type: 'Player' })
+
+      const before = {
+        sheetClass: player.system.details.sheetClass,
+        critRange: player.system.details.critRange
+      }
+
+      const firstResult = await applyClassDefaults(player, 'halfling')
+      const after = {
+        sheetClass: player.system.details.sheetClass,
+        className: player.system.class.className,
+        classLinkPresent: !!player.system.class.classLink,
+        critRange: player.system.details.critRange,
+        attackBonusMode: player.system.config.attackBonusMode,
+        addClassLevelToInitiative: player.system.config.addClassLevelToInitiative,
+        showBackstab: player.system.config.showBackstab
+      }
+
+      // Second call: sheetClass matches AND classLink is present → unchanged.
+      const secondResult = await applyClassDefaults(player, 'halfling')
+
+      // Wipe classLink to force the maintenance branch.
+      await player.update({ 'system.class.classLink': '' })
+      const thirdResult = await applyClassDefaults(player, 'halfling')
+      const afterRegenerate = {
+        classLinkPresent: !!player.system.class.classLink,
+        // sheetClass shouldn't change on the maintenance branch.
+        sheetClass: player.system.details.sheetClass
+      }
+
+      await player.delete()
+      return { before, firstResult, after, secondResult, thirdResult, afterRegenerate }
+    })
+
+    expect(result.before.sheetClass).toBeFalsy()
+    expect(result.firstResult).toBe('initialized')
+    expect(result.after.sheetClass).toBe('Halfling')
+    expect(typeof result.after.className).toBe('string')
+    expect(result.after.className.length).toBeGreaterThan(0)
+    expect(result.after.classLinkPresent).toBe(true)
+    expect(result.after.critRange).toBe(20)
+    expect(result.after.attackBonusMode).toBe('flat')
+    expect(result.after.addClassLevelToInitiative).toBe(false)
+    expect(result.after.showBackstab).toBe(false)
+
+    expect(result.secondResult).toBe('unchanged')
+
+    expect(result.thirdResult).toBe('regenerated')
+    expect(result.afterRegenerate.classLinkPresent).toBe(true)
+    expect(result.afterRegenerate.sheetClass).toBe('Halfling')
+  })
+
+  test('applyClassDefaults transitions a warrior with its mechanical defaults end-to-end', async ({ page }) => {
+    // Warrior is the canonical example of a class whose `literal`
+    // bag includes config-mode values that differ from base defaults
+    // (`attackBonusMode='autoPerAttack'`, `addClassLevelToInitiative=true`).
+    // Validates that the registry-driven write lands those onto a
+    // live Player document — the cleanup of the per-class
+    // `_prepareContext` blocks must preserve mechanical behavior.
+    //
+    // Note: the warrior entry also seeds `class.mightyDeedsLink` in
+    // its `enrichHtml` bag, mirroring the legacy sheet's write. That
+    // path isn't registered on the constructed Player schema (only
+    // `classLink` is, contributed by a sibling module's
+    // `dcc.definePlayerSchema` hook), so the write surfaces nowhere
+    // observable on `system.class.mightyDeedsLink` even though the
+    // helper emits it — same pre-existing latent gap the legacy
+    // warrior sheet had. Tracked as a follow-up; this slice is a
+    // byte-for-byte refactor. The mocked-update vitest case
+    // (`applyClassDefaults regenerates every enrichHtml path on the
+    // maintenance branch (warrior mightyDeedsLink)`) covers the
+    // helper-side dual-write shape independently.
+    const result = await page.evaluate(async () => {
+      const { applyClassDefaults } = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
+      const player = await Actor.create({ name: 'P5S1 Warrior Defaults Probe', type: 'Player' })
+
+      const status = await applyClassDefaults(player, 'warrior')
+      const after = {
+        sheetClass: player.system.details.sheetClass,
+        classLinkPresent: !!player.system.class.classLink,
+        attackBonusMode: player.system.config.attackBonusMode,
+        addClassLevelToInitiative: player.system.config.addClassLevelToInitiative,
+        critRange: player.system.details.critRange,
+        showBackstab: player.system.config.showBackstab
+      }
+
+      await player.delete()
+      return { status, after }
+    })
+
+    expect(result.status).toBe('initialized')
+    expect(result.after.sheetClass).toBe('Warrior')
+    expect(result.after.classLinkPresent).toBe(true)
+    expect(result.after.attackBonusMode).toBe('autoPerAttack')
+    expect(result.after.addClassLevelToInitiative).toBe(true)
+    expect(result.after.critRange).toBe(20)
+    expect(result.after.showBackstab).toBe(false)
+  })
+
   test('registerClassMixin survives last-write-wins on the same classId', async ({ page }) => {
     // The mercurial-magic registry's last-write-wins semantic
     // matters for sibling modules that want to fully replace a

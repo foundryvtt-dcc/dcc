@@ -226,3 +226,148 @@ export function applyClassMixins (schema, deps = {}) {
     }
   }
 }
+
+/**
+ * Register class identity + mechanical defaults that a sheet writes
+ * onto an actor the first time it opens. Closes the §2.11 (class sheets
+ * fight Foundry) pain point: today every class sheet subclass in
+ * `module/actor-sheets-dcc.js` carries a near-identical
+ * `_prepareContext` first-open block that writes ~10 `system.*` fields
+ * onto the document — class identity (className, classLink, sheetClass,
+ * optional enriched-HTML link blobs), mechanical defaults (critRange,
+ * disapproval, attackBonusMode, addClassLevelToInitiative,
+ * spellCheckAbility, showBackstab, showSpells), and skill-activation
+ * toggles (notably `skills.shieldBash.useDeed`).
+ *
+ * Phase 5 session 1 lifts those blocks onto a per-class registry. The
+ * sheet subclasses call `applyClassDefaults(actor, classId)` instead;
+ * the per-class data lives in `module/built-in-class-defaults.mjs`
+ * and sibling modules contribute homebrew entries via this helper.
+ *
+ * The `defaults` payload is a plain object with three sub-bags so the
+ * helper can localize / enrich-HTML / pass-through without baking the
+ * Foundry text-pipeline knowledge into every registration:
+ *
+ * - `defaults.sheetClass` (string, required) — capitalized canonical
+ *   sheet-class label written onto `system.details.sheetClass`. Also
+ *   serves as the dispatch sentinel: the initial-setup branch fires
+ *   when `actor.system.details.sheetClass !== defaults.sheetClass`.
+ * - `defaults.localize` (object) — paths under `system.` mapped to
+ *   i18n keys. `applyClassDefaults` resolves each via `i18n.localize`.
+ *   Typically `{ 'class.className': 'DCC.<Class>' }`.
+ * - `defaults.enrichHtml` (object) — paths under `system.` mapped to
+ *   i18n keys whose localized value is run through `TextEditor.enrichHTML`
+ *   before writing. Typically `{ 'class.classLink': 'DCC.<Class>ClassLink' }`
+ *   plus optional `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`.
+ * - `defaults.literal` (object) — paths under `system.` mapped to
+ *   pre-resolved scalar values (numbers, booleans, strings, null).
+ *   Written verbatim.
+ *
+ * `classId` is the lowercase canonical class identifier (`'halfling'`,
+ * `'warrior'`, `'cleric'`, …) matching the convention used by
+ * `registerClassMixin` and the `DCCActor.classId` accessor. Re-registering
+ * an existing `classId` silently overwrites the prior entry
+ * (last-write-wins, matching `registerClassMixin`'s semantic).
+ *
+ * Stable from day one (per `EXTENSION_API.md` recommendation 7).
+ *
+ * @param {string} classId - lowercase canonical class identifier.
+ * @param {object} defaults - registration payload as documented above.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - `CONFIG` namespace (defaults to
+ *   `globalThis.CONFIG`).
+ */
+export function registerClassDefaults (classId, defaults, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  if (!classId || typeof classId !== 'string') {
+    throw new Error('registerClassDefaults: classId must be a non-empty string')
+  }
+  if (!defaults || typeof defaults !== 'object') {
+    throw new Error('registerClassDefaults: defaults must be an object')
+  }
+  if (typeof defaults.sheetClass !== 'string' || !defaults.sheetClass) {
+    throw new Error('registerClassDefaults: defaults.sheetClass must be a non-empty string')
+  }
+  if (!CONFIGImpl?.DCC) {
+    throw new Error('registerClassDefaults: CONFIG.DCC unavailable')
+  }
+  CONFIGImpl.DCC.classDefaults ??= {}
+  CONFIGImpl.DCC.classDefaults[classId] = defaults
+}
+
+/**
+ * Apply a registered class-defaults entry to an actor. Mirrors the
+ * legacy `_prepareContext` first-open + classLink-regenerate logic each
+ * class sheet used to inline.
+ *
+ * Returns a status string so callers (notably the dwarf sheet, which
+ * still inlines a starting-items auto-create until the
+ * `registerClassStartingItems` slice lands) can branch on whether the
+ * initial-setup write fired:
+ *
+ * - `'initialized'` — `system.details.sheetClass` did not match the
+ *   registered `sheetClass`; the helper wrote the full update payload.
+ * - `'regenerated'` — `sheetClass` matched but `system.class.classLink`
+ *   was empty (compendium link target wasn't installed when the actor
+ *   was first created); the helper re-ran `enrichHtml` for every
+ *   registered enriched-HTML path.
+ * - `'unchanged'` — no write occurred (either the registry entry is
+ *   missing or both branches' preconditions failed).
+ *
+ * No-op (returns `'unchanged'`) if the classId isn't registered. The
+ * helper itself never throws on a missing registry — sheet open is a
+ * boot-critical path and a missing registration should degrade to the
+ * legacy "no first-open setup" behavior rather than crash the sheet.
+ *
+ * @param {object} actor - DCCActor (Player) to apply defaults onto.
+ * @param {string} classId - lowercase canonical class identifier.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - defaults to `globalThis.CONFIG`.
+ * @param {object} [deps.i18n] - defaults to `globalThis.game?.i18n`.
+ * @param {object} [deps.TextEditor] - defaults to
+ *   `globalThis.foundry?.applications?.ux?.TextEditor`.
+ * @returns {Promise<'initialized' | 'regenerated' | 'unchanged'>}
+ */
+export async function applyClassDefaults (actor, classId, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  const i18n = deps.i18n ?? globalThis.game?.i18n
+  const TextEditor = deps.TextEditor ??
+    globalThis.foundry?.applications?.ux?.TextEditor
+  const entry = CONFIGImpl?.DCC?.classDefaults?.[classId]
+  if (!entry) return 'unchanged'
+
+  if (actor?.system?.details?.sheetClass !== entry.sheetClass) {
+    const updates = { 'system.details.sheetClass': entry.sheetClass }
+    for (const [path, key] of Object.entries(entry.localize ?? {})) {
+      updates[`system.${path}`] = i18n.localize(key)
+    }
+    for (const [path, key] of Object.entries(entry.enrichHtml ?? {})) {
+      updates[`system.${path}`] = await TextEditor.enrichHTML(i18n.localize(key))
+    }
+    for (const [path, value] of Object.entries(entry.literal ?? {})) {
+      updates[`system.${path}`] = value
+    }
+    await actor.update(updates)
+    return 'initialized'
+  }
+
+  // Maintenance branch: regenerate every registered enrichHtml field
+  // when `system.class.classLink` is empty. Matches the legacy sheet
+  // guard `else if (!this.options.document.system.class.classLink)` —
+  // the trigger is classLink alone, but every registered enrichHtml
+  // path gets regenerated so e.g. a warrior whose mightyDeedsLink got
+  // stale alongside classLink picks both up in one pass.
+  if (!actor?.system?.class?.classLink) {
+    const updates = {}
+    for (const [path, key] of Object.entries(entry.enrichHtml ?? {})) {
+      updates[`system.${path}`] = await TextEditor.enrichHTML(i18n.localize(key))
+    }
+    if (Object.keys(updates).length > 0) {
+      await actor.update(updates)
+      return 'regenerated'
+    }
+  }
+  return 'unchanged'
+}

@@ -633,9 +633,10 @@ cases).
 Component 1 of `docs/dev/CLASS_DECOMPOSITION.md` (schema mixins) is
 done for every built-in DCC class. Phase 4 also delivered the
 shared `module/built-in-class-mixins.mjs` table consumed by both
-production init and integration-test setup (session 4). Per the
-class-decomposition plan, the next per-class concerns to move are
-Phase 5 territory:
+production init and integration-test setup (session 4). Phase 5
+opened 2026-05-18 with the `registerClassDefaults` registry (see
+"Phase 5 — Active sub-arc" below). Per the class-decomposition
+plan, the per-class concerns moving in Phase 5:
 
 1. **Sheet parts** — collapse the 7 class sheets in
    `module/actor-sheets-dcc.js` (+ partials at
@@ -711,9 +712,98 @@ Completed). Remaining non-class-extraction work is Phase 5 territory:
 
 ---
 
+### Phase 5 — Active sub-arc (sheet composition, in progress)
+
+> **Per-class component map:** `docs/dev/CLASS_DECOMPOSITION.md` —
+> single-source doc; Phase 5 covers components 2 (sheet parts), 3
+> (class identity + mechanical defaults), 4 (skill activation toggles
+> — folded into component 3 today), and 5 (starting items). Read
+> before relocating any class-bound sheet concern.
+
+#### ~~Phase 5 session 1. `registerClassDefaults` registry + 7 PC sheets migrated.~~ **DONE 2026-05-18**
+New stable extension hook `game.dcc.registerClassDefaults(classId,
+defaults)` + companion `applyClassDefaults(actor, classId)` helper
+in `module/extension-api.mjs`; `CONFIG.DCC.classDefaults = {}` seeded
+in `module/config.js`. Each entry packages `sheetClass` (capitalized
+sentinel), `localize` (i18n keys), `enrichHtml` (i18n keys passed
+through `TextEditor.enrichHTML`), and `literal` (scalar mechanical
+defaults). `applyClassDefaults` returns `'initialized' | 'regenerated'
+| 'unchanged'` so the dwarf sheet's still-inline ShieldBash
+auto-create can gate on `'initialized'`. Seven built-in PC entries
+seeded via `module/built-in-class-defaults.mjs`; all 7 PC sheets in
+`module/actor-sheets-dcc.js` reduced to a single helper call (156
+lines deleted). Generic sheet stays untouched (not class-bound, no
+maintenance branch). +11 Vitest, +5 Playwright (helper exposure,
+seed-table shape, lifecycle including maintenance regen).
+983 Vitest green, 122 Playwright passed. **Latent gap surfaced
+(NOT fixed):** the warrior + dwarf `class.mightyDeedsLink` and wizard
+`class.spellcastingLink` / `class.spellburnLink` writes don't surface
+on `system.class.*` because those fields aren't on the base Player
+schema (only `class.classLink` is, via a sibling `dcc.definePlayerSchema`
+hook). The legacy code wrote them anyway → silently stripped → my
+refactor matches byte-for-byte. Follow-up tracked below.
+
+#### Phase 5 session 2 (next). `registerClassStartingItems` for dwarf ShieldBash.
+Lift the inline dwarf ShieldBash auto-create at
+`module/actor-sheets-dcc.js:DCCActorSheetDwarf` (the
+`result === 'initialized'` branch added in session 1) onto a new
+`registerClassStartingItems({ classId, items })` registry. Today
+the dwarf is the only built-in class with a starting item, but the
+registry sets the pattern for homebrew classes (warrior "lucky
+weapon," cleric "holy symbol," etc.). May fold into
+`registerClassDefaults` instead — decide at slice time based on
+whether dwarf is the long-term only consumer or whether a
+homebrew-friendly registry is worth the second hook.
+
+#### Phase 5 session 3 (planned). `registerSheetPart` + `DCCSheet` collapse.
+Each of the 7 PC sheet subclasses still carries `CLASS_PARTS` +
+`CLASS_TABS` statics (sheet-tab + template definitions). Collapse
+into a single composable `DCCSheet` that consults
+`game.dcc.registerSheetPart({ classId, tab, template, condition })`
+based on `actor.classId`. Largest remaining Phase 5 task — touches
+sheet markup, visual regression worth running afterwards.
+
+#### Phase 5 session 4+ (planned). Migrate remaining capitalized `sheetClass` readers.
+Elf at `module/actor.js:182`; Cleric at `module/actor.js:2180`,
+`module/actor.js:2481`, `module/dcc.js:746`. The Phase 4 session 7
+slice migrated the two halfling-keyed string comparisons but left
+these as out-of-scope. Bundle with whichever Phase 5 slice ends up
+restructuring the writer side of `sheetClass` (probably the
+`DCCSheet` collapse — at that point the source-of-truth for which
+class an actor is becomes the `applyClassDefaults` write, and
+readers can switch to `actor.classId` uniformly).
+
+#### Phase 5 follow-up: register the link fields on the base schema.
+Surface latent gap from session 1: `class.mightyDeedsLink` /
+`class.spellcastingLink` / `class.spellburnLink` aren't registered
+schema fields, so the `applyClassDefaults` writes are silently
+stripped by Foundry. Same gap existed in legacy `_prepareContext`
+code — templates render `{{{system.class.mightyDeedsLink}}}` → empty.
+Two paths: (a) add the link fields to the static `class` SchemaField
+in `module/data/actor/player-data.mjs`, or (b) require sibling modules
+to register them via `dcc.definePlayerSchema`. Option (a) is the
+correct system-side fix; option (b) is a documentation-only patch
+plus the gap stays in core. Lowest-risk slice; can land independently
+of the rest of Phase 5.
+
+---
+
 ## Completed slices
 
 Move entries here as they land; keep the active queue scannable.
+
+### Phase 5 (Sheet composition + class defaults)
+
+- Phase 5 session 1 (2026-05-18): `game.dcc.registerClassDefaults` +
+  `applyClassDefaults` shipped; `module/built-in-class-defaults.mjs`
+  seeds 7 PC entries; all 7 PC sheets in `module/actor-sheets-dcc.js`
+  reduced to a single helper call (156 lines deleted, 623 → 467).
+  Dwarf's inline ShieldBash auto-create kept (`result === 'initialized'`
+  gate) pending the session-2 starting-items registry. +11 Vitest,
+  +5 Playwright. 983 Vitest green; 122 Playwright passed (1 latent
+  xcc-core-book DCCItemSheet override, unchanged baseline). Latent
+  schema gap surfaced for the warrior/dwarf/wizard link-fields →
+  follow-up slice in active queue.
 
 ### Phase 4 (Halfling vertical kickoff)
 

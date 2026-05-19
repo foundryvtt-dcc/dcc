@@ -853,3 +853,209 @@ none). Vendor-synced clean (`842e89a`, `dirty: false`); +1 vitest
 regression guard asserting the flag is absent from both fumble
 rollers. 925 Vitest + 98 Playwright green. Lib build: 1407 tests
 green.
+
+---
+
+## Session 21 — 2026-04-24 (D3a: patron-taint RAW alignment + retire `_runLegacyPatronTaint`)
+
+Lib PR #6 (`dcc-core-lib@0.7.0`, commit `e8ecabe`) replaced the
+fumble-gated taint mechanic with the two RAW triggers: per-cast
+creeping chance (1d100 vs `patronTaintChance`, +1% per miss, reset
+to 1 on acquisition) + per-spell result-table entry
+(`effect.type === 'patron-taint'` or
+`effect.data.patronTaint === true`). Also fixed natural-1 forcing
+result-table lookup to row 1 (discards modifiers per RAW). Adapter
+side: `spell-input.mjs` threads `patronTaintChance` +
+`isPatronSpell` onto `castInput`; `spell-events.mjs` wires
+`onPatronTaint` chat render; `actor.js` pre-rolls the 1d100 via
+Foundry (same two-pass determinism pattern as disapproval d4),
+persists `result.newPatronTaintChance`, and deletes
+`_runLegacyPatronTaint` (36 lines). 917 Vitest + 97 Playwright
+(+2 new: high-chance acquisition reset, non-patron spell no-op).
+
+---
+
+## Session 22 — 2026-04-24 (D3b-α: patron-taint manifestation table loader)
+
+New `loadPatronTaintTable(actor)` in `module/adapter/spell-input.mjs`
+(mirror of `loadDisapprovalTable`): walks `CONFIG.DCC.patronTaintPacks`
+looking for a `RollTable` named
+`Patron Taint: ${actor.system.class.patron}`, case-insensitive-fallback
+on the tail (lets actors storing "The King of Elfland" resolve the
+`dcc-core-book` table named with lowercase "the King of Elfland"),
+falls back to world tables. New `CONFIG.DCC.patronTaintPacks`
+`TablePackManager` seeded in `module/dcc.js:462-472` with the core +
+xcc side-effect packs; sibling modules can push additional packs via
+`addPack`. `_castViaCalculateSpellCheck` threads the resolved
+`SimpleTable` onto `input.patronTaintTable`, pre-rolls the paired
+manifestation 1d6 (only when a table is present, matching the
+existing creeping-chance d100 pattern), and the roller closure now
+returns the pre-rolled d6 for `1d6` formulas. Bobugbubilz / Azi
+Dahaka / Sezrekan / the King of Elfland / Three Fates tables ship
+authored in `dcc-core-book/packs/dcc-core-spell-side-effect-tables`;
+Barzodi / Circe / Medea / Prometheus Firebringer / Amazing Rando in
+the equivalent `xcc-core-book` pack. All 10 light up the
+`onPatronTaint` chat emote automatically. 924 Vitest + 98 Playwright
+(+7 new vitest for loader paths + full integration acquisition; +1
+new Playwright asserting compendium-resolved manifestation text
+reaches chat).
+
+---
+
+## Session 22 follow-ons — 2026-04-24 (D3b-γ closed, D3b-β authored cross-repo)
+
+Sibling audit: `mcc-classes` ships no packs; `dcc-crawl-classes/packs/`
+has no patron-taint JSONs. `CONFIG.DCC.patronTaintPacks` default seed
+(core + xcc side-effect packs) is exhaustive — no adapter change
+needed (γ). D3b-β authored new `src/spells/patron-taints.ts` in
+`dcc-official-data` mirroring the 5 core `dcc-core-book` manifestation
+tables with Foundry `[[/roll XdY]]` markup stripped to plain `[XdY]`
+dice notation; exports `PATRON_TAINT_TABLES` +
+`getPatronTaintTable(patron)` lookup helper; `tsc --noEmit` clean.
+Tim committed + pushed in the `dcc-official-data` repo on its own
+cadence. No runtime DCC change — the compendium RollTables remain
+authoritative.
+
+---
+
+## Session 24 — 2026-05-17 (D4(profile-override): cross-class castingMode routing via lib `profileOverride`)
+
+Two-repo slice. Lib PR (`dcc-core-lib@0.9.0`, commit `a453473`) added
+`SpellCheckOptions.profileOverride?: CasterProfile` — when supplied,
+the lib uses the override profile instead of deriving it from
+`character.classInfo.classId`. Override governs `casterTypes`
+validation, spellburn / disapproval / corruption / patron-taint
+triggers, spell-check ability, and spell-loss recovery; class-bound
+state (spellbook / disapprovalRange / patron) is read from
+`character.state.classState[override.type]`, which the caller
+populates. `getSpellbookEntry` + `markSpellLost` writeback both
+re-keyed by the active profile so the override flow looks up against
+the synthetic spellbook the adapter built. +4 lib tests (1411 green).
+Adapter side: `buildSpellCheckArgs` accepts
+`options.castingModeOverride`; `_rollSpellCheckViaAdapter` accepts a
+`dispatch.castingModeOverride` argument; `_castViaCalculateSpellCheck`
+threads `profileOverride: profile` onto every `libCalculateSpellCheck`
+call (no-op when override matches the derived profile, load-bearing
+for cross-class). Dispatcher widens two gates: `wizard` castingMode
+on `isCleric` → adapter with `castingModeOverride: 'wizard'`;
+`cleric` castingMode on `!isCleric || hasPatron` → adapter with
+`castingModeOverride: 'cleric'`. Three vitest tests flipped
+(cleric-on-patron, cleric-on-non-cleric, +1 new wizard-on-cleric
+case); +2 Playwright cases covering both cross-class routes. 930
+Vitest green (+1 net).
+
+---
+
+## Session 25 — 2026-05-17 (D4(remainder): naked spell check + forceCrit + skill-table folds)
+
+Lib PR (`dcc-core-lib@0.10.0`, commit `77c95e2`) made
+`SpellCastInput.spellbookEntry` optional — `castSpell` now runs
+without a spellbook slot, skipping the manifestation override +
+mercurial attach when absent. +5 lib tests (1416 green). Adapter
+side: shared `applyForceCritToFoundryRoll` helper mutates the
+Foundry Roll's natural to 20 (chat-visible) and the lib roller
+closure feeds the same value, threaded through `_castViaCastSpell` /
+`_castViaCalculateSpellCheck` / `_castNakedViaAdapter`. New
+`_castNakedViaAdapter` builds a synthetic SpellDefinition + cleric /
+wizard profile based on actor class, threads spellburn dialog +
+disapproval mechanics, and emits chat via `renderSpellCheck`
+(extended with a `buildNakedSpellResultHtml` helper for the
+pass/fail/crit/fumble HTML indicator). New `_skillTableViaAdapter`
+re-uses the legacy term-builder (`DCCRoll.createRoll`), Foundry's
+RollTable lookup, and `SpellResult.addChatMessage` for the
+table-driven cases; the no-table disapproval-only path emits its own
+SpellCheck*NoTable indicator. Dispatcher updates: `!spellItem` routes
+to `_castNakedViaAdapter` unconditionally; `rollSkillCheck` routes
+`hasSkillTable || useDisapprovalRange` to `_skillTableViaAdapter`
+(showModifierDialog + description-only stay legacy).
+`_rollSpellCheckLegacy`'s naked branch removed (~110 lines deleted).
+Test changes: 5 actor.test.js naked-spell tests flipped, 4
+actor.test.js skill-table tests flipped, +3 new
+adapter-spell-check.test.js cases (naked wizard, naked cleric,
+skill-table turnUnholy), +3 new Playwright cases (naked adapter,
+naked cleric adapter, forceCrit + libResult.natural=20), +1 flipped
+Playwright case (divineAid legacy → adapter). 933 Vitest green (was
+930, +3 net).
+
+---
+
+## Session 26 — 2026-05-17 (Q7-phase1: generalized roll-modifier-dialog adapter scaffold + skill-check fold)
+
+New `promptRollModifierDialog(terms, opts)` in
+`module/adapter/roll-dialog.mjs` — thin wrapper over
+`game.dcc.DCCRoll.createRoll({ showModifierDialog: true })` that
+returns `{ actionDie, modifierTotal, formula, roll } | null`. The
+parser (`parseRollIntoDieAndModifier`, also exported) walks the
+resulting Foundry Roll's `terms[]`, picking the first Die term as
+the action die and summing all signed numerics as a flat modifier
+total. Attribution flattens to match legacy — the dialog reduces
+every non-die term to a single formula, so per-source attribution is
+unrecoverable on submit. `_rollSkillCheckViaAdapter` grew a
+`showModifierDialog` branch: builds the legacy-shaped term descriptor
+via the new shared `_buildSkillCheckLegacyTerms` helper (also used
+by `_skillTableViaAdapter` + the description-only legacy path —
+eliminates the term-builder duplication), prompts adapter-side,
+overrides `definition.roll.die` with the user's selection,
+suppresses `definition.roll.ability` (the dialog total already
+includes ability mod via the legacy Compound term), and feeds the
+user's flat total as a single `dialog-modifier` situational modifier.
+Dispatcher dropped the `!!options.showModifierDialog → legacy`
+clause; `_rollSkillCheckLegacy` is now strictly the no-die /
+description-only fallback path. Skill-table-with-dialog routes
+naturally through `_skillTableViaAdapter` (which has always forwarded
+`options` through `DCCRoll.createRoll`). +12 Vitest tests (945 total).
++1 flipped Playwright case + 1 new. Open question #7 partially closed.
+
+---
+
+## Session 27 — 2026-05-17 (Q7-phase2: spell-check modifier-dialog generalization)
+
+Extended the session-26 `promptRollModifierDialog` wrapper with an
+optional `spellburn` descriptor — when set, a Spellburn term is
+appended internally and the term's callback captures final
+str/agl/sta values; the wrapper computes burn amounts (original −
+final) and subtracts the burn total from `modifierTotal` so callers
+can forward `input.spellburn` without double-counting the lib's
+auto-injected spellburn modifier. The bespoke
+`promptSpellburnCommitment` helper retired entirely. New
+`_promptSpellCheckDialog(spellItem, ctx)` +
+`_applySpellCheckDialogToOptions(prompt, options)` helpers on
+`DCCActor` build the term list (Die / Compound / CheckPenalty /
+Other Bonus / Spellburn) and fold the result back into `options`
+(spellburn → `options.spellburn`; action die →
+`options.actionDieOverride`; flat modifier total →
+`options.dialogModifierTotal`). `_rollSpellCheckViaAdapter` now
+invokes the unified prompt for both wizard and cleric branches
+post-dispatch-log (cleric showModifierDialog previously fell through
+silently — fixed). `_castNakedViaAdapter` mirrors the same;
+`suppressLibAuto` zeroes `input.casterLevel` + `input.abilityModifier`
+when the dialog drives the modifier list so the lib's auto level +
+ability don't double-count. `_castViaCalculateSpellCheck` honors the
+new options by overriding `input.actionDie` and feeding
+`dialogModifierTotal - (casterLevel + libGetAbilityModifier(score))`
+as a single `dialog-modifier` situational — the subtraction is
+load-bearing because the lib re-derives `casterLevel +
+abilityModifier` from `character` inside `buildSpellCastInput`. +4
+Vitest tests; 4 spell-check tests flipped. 949 Vitest green. +3 new
+Playwright cases. Open question #7 fully closed.
+
+---
+
+## Group E session 1 — 2026-05-18 (per-class mercurial-magic table registry)
+
+New `dcc.registerMercurialMagicTable(classKey, tableName)` Stable
+hook + `CONFIG.DCC.mercurialMagicTables` registry. The legacy
+`setMercurialMagicTable` shim writes through
+`register('default', value)`, so dcc-core-book / system-setting
+callers keep working with no API change. Both the adapter cast path
+(`_rollMercurialIfNeeded`, now taking `profile.type` from
+`_castViaCalculateSpellCheck`) and the legacy
+`DCCItem.rollMercurialMagic` item-sheet button go through the same
+resolver (`spell-input.mjs:resolveMercurialMagicTableName`), which
+walks per-class → `'default'` → legacy single-table mirror → null.
+EXTENSION_API.md picks up the new Stable row + an xcc-core-book
+migration recipe that retires the per-roll
+`CONFIG.DCC.mercurialMagicTable = …` monkey-patch. +5 Vitest tests +
++2 Playwright cases. Closed `ARCHITECTURE_REIMAGINED.md` §2.4
+generalization promise ("XCC has 2 Mercurial tables and DCC only
+supports one" — no longer true). 955 Vitest green (was 949, +6).

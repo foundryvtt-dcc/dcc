@@ -28,538 +28,161 @@ pins Node 24.
 6. `docs/dev/TESTING.md` — testing tiers; `#browser-tests-playwright`
    covers the e2e launch recipe (fvtt CLI installPath / dataPath /
    Node 24 / world name gotchas).
-7. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md`
-   — lib-side design doc for the tagged-union `RollModifier` type the
+7. `/Users/timwhite/WebstormProjects/dcc-core-lib/docs/MODIFIERS.md` —
+   lib-side design doc for the tagged-union `RollModifier` type the
    adapter emits and consumes.
 
-**Status:** **Phase 4 session 7 (2026-05-18) closed the Phase 4
-active sub-arc with the class-id dispatch helper.** New
-`DCCActor.classId` getter on `module/actor.js:65-74` returns the
-canonical lowercase identifier (`'halfling'`, `'wizard'`, …) by
-lowercasing `system.details.sheetClass`, or `null` when unset.
-Matches the lib's `character.classInfo.classId` convention and the
-dispatch key documented for `registerClassMixin` /
-`registerMercurialMagicTable`. Two halfling-keyed string comparisons
-migrated: `module/actor.js:3281` (rollWeaponAttack two-weapon
-fumble note) and `module/item.js:70` (two-weapon agility-floor
-branch). Other capitalized `sheetClass` comparisons (Elf at
-`actor.js:182`; Cleric at `actor.js:2180`, `actor.js:2481`,
-`dcc.js:746`) intentionally left for the Phase 5
-`registerClassDefaults` writer-side rewrite to migrate alongside.
-+4 Vitest in `actor.test.js`, +1 Playwright case in
-`extension-api.spec.js`. 970 Vitest green (was 966, +4); 117
-Playwright passed (was 116, +1), 1 latent failure (xcc-core-book
-DCCItemSheet override — unchanged baseline).
+**Detailed phase histories** (don't read unless you need a specific
+session's context):
+- [phase-0-1.md](dev/progress/phase-0-1.md) scaffolding + simple rolls
+- [phase-2.md](dev/progress/phase-2.md) spell-check migration
+- [phase-3.md](dev/progress/phase-3.md) attacks/damage/crit/fumble + cruft
+- [phase-4.md](dev/progress/phase-4.md) data-model slimming
+- [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-**Phase 4 session 6 (2026-05-18)** closed the per-class
-extraction arc with wizard + elf. New `'wizard'` + `'elf'` entries
-in the shared `BUILT_IN_CLASS_MIXINS` table
-(`module/built-in-class-mixins.mjs`) both call a new
-`attachWizardFields(schema)` helper that contributes the 9 wizard
-class fields. Elf mixin **also** overrides `skills.detectSecretDoors`
-with the HeightenedSenses defaults
-(`label='DCC.HeightenedSenses'` / `ability='int'` / `value='+4'`).
-Static `class` block in `player-data.mjs` collapsed to a single
-`className` StringField. **All seven DCC classes now mixin-source
-their fields** — component 1 of the Class Decomposition (schema
-mixins) is complete for every built-in.
+## Status (2026-05-18)
 
-**Phase 4 session 5 (2026-05-18)** extended the vertical to warrior
-(class.luckyWeapon + class.luckyWeaponMod). Smallest remaining
-block; no skills.
+**Phase 5 session 1 opened Phase 5 with the `registerClassDefaults`
+registry + helper.** New stable extension hook
+`game.dcc.registerClassDefaults(classId, defaults)` and companion
+`applyClassDefaults(actor, classId)` helper in
+`module/extension-api.mjs`. `CONFIG.DCC.classDefaults = {}` seeded in
+`module/config.js`. Each entry packages the `_prepareContext` first-open
+writes the legacy class-sheet subclasses inlined: `sheetClass`
+(capitalized sentinel that drives the initial-setup-vs-maintenance
+dispatch), `localize` (i18n keys for `class.className`), `enrichHtml`
+(i18n keys for `class.classLink` + optional `mightyDeedsLink` /
+`spellcastingLink` / `spellburnLink`), and `literal` (scalar mechanical
+defaults — critRange, attackBonusMode, addClassLevelToInitiative,
+spellCheckAbility, showBackstab / showSpells,
+`skills.shieldBash.useDeed`). `applyClassDefaults` returns
+`'initialized' | 'regenerated' | 'unchanged'` so the dwarf sheet's
+still-inline ShieldBash auto-create gates on `'initialized'`. Seven
+built-in PC entries (cleric/dwarf/elf/halfling/thief/warrior/wizard)
+seeded via `module/built-in-class-defaults.mjs` consumed by
+`module/dcc.js:init` only. All 7 PC sheets in
+`module/actor-sheets-dcc.js` shrunk to a single
+`applyClassDefaults(this.options.document, '<classId>')` call — net
+156 lines deleted; `TextEditor` import dropped. Generic sheet stays
+untouched. **983 Vitest green**, **122 Playwright passed** (1 latent
+xcc-core-book failure, unchanged baseline).
 
-**Phase 4 session 4 (2026-05-18)** extended the vertical to cleric
-AND extracted the built-in mixin registrations into a shared module. New `'cleric'` mixin contributes 8 class fields (`spellCheck`
-NumberField, `spellCheckAbility` StringField, `spellsLevel1–5`
-NumberFields, `deity` nullable StringField, `disapproval` NumberField
-min=1 max=20, `disapprovalTable` StringField) + 3 disapproval-range
-skills (`divineAid` / `turnUnholy` / `layOnHands`) sharing an inline
-`disapprovalSkill(label, extra)` helper — `divineAid` extends with a
-`drainDisapproval` NumberField. Mixin extraction surfaced a latent
-gap: the integration tests in
-`module/__integration__/data-models.test.js` construct `PlayerData`
-directly without going through Foundry's `init` hook, so the inline
-mixin registrations in `module/dcc.js` weren't running for them.
-**All four built-in mixin functions (halfling / dwarf / thief /
-cleric) moved into a new `module/built-in-class-mixins.mjs` table +
-`registerBuiltInClassMixins(register)` helper consumed by both the
-production init hook AND the integration-test setup** — single source
-of truth for built-in mixins; future Phase 4 sessions only edit the
-table. +1 Playwright case in `extension-api.spec.js` reads from
-`player.system._source` (raw, not derived) since `prepareDerivedData`
-overwrites `class.spellCheck` and the cleric skills' `.value` slots
-with computed strings. 966 Vitest green (unchanged from session 1);
-113 Playwright passed (was 112, +1 cleric case), 1 latent failure
-(documented xcc-core-book DCCItemSheet override).
+**Latent gap surfaced (NOT fixed):** warrior + dwarf
+`class.mightyDeedsLink` and wizard `class.spellcastingLink` /
+`class.spellburnLink` writes don't surface on `system.class.*` because
+no schema field registers them (only `class.classLink` is, via a
+sibling `dcc.definePlayerSchema` hook). The legacy sheets have been
+writing these stripped values forever; refactor is byte-for-byte
+equivalent. Follow-up in `02-slice-backlog.md`.
 
-Phase 4 session 1 (2026-05-18) shipped the
-`game.dcc.registerClassMixin(classId, mixinFn)` infrastructure —
-new stable extension helper, `CONFIG.DCC.classMixins`
-registry, deterministic-sorted application during
-`PlayerData.defineSchema()` (before the existing
-`dcc.definePlayerSchema` hook). DCC dogfoods its own seed by
-registering a built-in `'halfling'` mixin in `module/dcc.js:init` that
-contributes `skills.sneakAndHide`; the static halfling block in
-`module/data/actor/player-data.mjs` is deleted. First chip away at
-§2.1's monolithic Player schema; Foundry-smelling shape
-(`system.skills.sneakAndHide`) intact per §2.12. +11 Vitest, +3
-Playwright.
+**Phase 4 (data-model slimming, closed 2026-05-18):** all 7 DCC
+classes mixin-source their fields via the
+`BUILT_IN_CLASS_MIXINS` table; `DCCActor.classId` getter normalizes
+`system.details.sheetClass` to lowercase canonical ID for dispatch.
+Detail in [phase-4.md](dev/progress/phase-4.md).
 
-**Phase 1 closed. Phase 2
-CLOSED 2026-04-18. Phase 3
-sessions 1–4 all CLOSED 2026-04-18. Phase 3 sessions 5 (first
-damage-migration slice), 6 (crit + fumble migration), 7 (NPC
-damage-bonus adapter route with proper attribution), 8 (PC magic-
-weapon-bonus damage adapter route), 9 (thief backstab adapter
-route — A2), 10 (warrior / dwarf deed-die adapter route — A3),
-and 11 (two-weapon adapter route — A4, closes Group A) all
-CLOSED 2026-04-19. Vendor sync to
-`@moonloch/dcc-core-lib@0.4.1` (backstab fix + post-review API
-cleanup) landed 2026-04-19. Group B1 (`dcc.registerItemSheet`
-extension hook) + B2 (`EXTENSION_API.md` pain-point cross-reference
-+ §2.12 stated contract) CLOSED 2026-04-19. Phase 3 session 12
-(A5, 2026-04-19) dropped the `automateDamageFumblesCrits` gate
-check. Phase 3 session 13 (A6, 2026-04-19) routed the
-`options.showModifierDialog` path through the adapter —
-`damageTerms` now thread through to `DCCRoll.createRoll` so the
-dialog can modify attack + damage in one step. Phase 3 session 14
-(A7, 2026-04-19) dropped the non-deed dice-bearing
-`attackBonus` / `toHit` exclusion: `_canRouteAttackViaAdapter`
-returns `true` unconditionally. Phase 3 session 15 (D1,
-2026-04-19) **retired `_rollToHitLegacy`** — mechanical collapse:
-gate + legacy body deleted; `_rollToHitViaAdapter`'s body folded
-into `rollToHit`. First Group-D retirement landed. Phase 3 session
-16 (D2 crit + fumble, 2026-04-20) **retired `_rollCriticalLegacy`
-+ `_rollFumbleLegacy`** — paired collapse: both gates were
-defensive-only (the `!automate` case was the real non-adapter
-branch, and it had no lib call to do), so both legacy bodies +
-both `_canRoute…` gates + both `_rollXxxViaAdapter` aliases folded
-into unified `_rollCritical` / `_rollFumble` methods that branch
-on `ctx.automate` internally. Second Group-D retirement landed.
-Phase 3 session 17 (D2 damage sub-slice b, 2026-04-20) **broadened
-the damage gate to accept trailing bracket-flavor formulas**
-(`1d6+2[Slashing]`, `2d4-1[Piercing]`) via the new
-`peelTrailingFlavor` helper. Phase 3 session 18 (D2 damage sub-
-slice a, 2026-04-20) **accepted unparseable formulas as a
-lossless passthrough** — lance `(1d8)*2+3`, multi-die `1d8+1d4`,
-custom `damageOverride` homebrew shapes. Vendor sync to
-`@moonloch/dcc-core-lib@0.6.0` landed 2026-04-20 (commit
-`b751ae4`) with richer `DamageInput` — explicit negative
-`magicBonus` (cursed) + new `extraDamageDice[]` slot for
-dice-bearing magic + per-term flavors. Phase 3 session 19
-(D2 damage c + d, 2026-04-20) **retired `_rollDamageLegacy`** —
-combined slice broadening the gate for multi-type per-term
-formulas (`1d6[fire]+1d6[cold]` via `parseMultiTypeFormula`) AND
-dice-bearing / cursed `damageWeaponBonus` (via the structured
-`parseWeaponMagicBonus` helper + `buildDamageInput`'s extended
-`extraDamageDice` / negative-`magicBonus` handling). Gate +
-legacy body + via-adapter alias all deleted; `_rollDamage` is now
-a single path. `_buildLibDamageResult` uses a sequenced-natural
-roller closure so multi-die damage formulas map each lib
-`evaluateRoll` call to its corresponding `damageRoll.dice[i]`.
-**All three D2 retirements are now complete** — Group D legacy-
-branch retirement for attack / crit / fumble / damage landed.
-Phase 3 session 20 (C1, 2026-04-20) **retired the `critText` /
-`fumbleText` compatibility shims** on `rollWeaponAttack` /
-`rollCritical` messageData — 3 lines dropped from
-`module/actor.js`; the canonical `critResult` / `fumbleResult`
-fields stay emitted. dcc-qol fix (2-line rename, documented as a
-migration recipe in `EXTENSION_API.md`) pending dcc-qol release.
-Phase 2 close-out pinned `game.dcc.processSpellCheck` as permanent
-stable API — no deprecation, no shim, route migration is per-call-
-site and incremental. (The original Phase 2 close-out also deferred
-patron-taint RAW alignment as "permanent adapter infrastructure";
-session 21 / D3a resolved that lib-side on 2026-04-24 and retired
-`_runLegacyPatronTaint`; session 22 / D3b-α wired the per-patron
-manifestation table loader against the existing compendium
-content.) Phase 3 session 26 (Q7-phase1, 2026-05-17) landed the
-generalized roll-modifier-dialog adapter scaffold
-(`promptRollModifierDialog` + `parseRollIntoDieAndModifier` in
-`module/adapter/roll-dialog.mjs`) and folded the
-`showModifierDialog` clause into both skill-check adapter routes;
-dispatcher dropped its `showModifierDialog → legacy` clause.
-**Phase 3 session 27 (Q7-phase2, 2026-05-17) extended that scaffold
-to spell-check.** `promptRollModifierDialog` gained an optional
-`spellburn` descriptor (callback captures str/agl/sta and the
-wrapper subtracts the burn from `modifierTotal` so callers can
-forward `input.spellburn` without double-counting); the bespoke
-`promptSpellburnCommitment` helper retired. New
-`_promptSpellCheckDialog` + `_applySpellCheckDialogToOptions`
-helpers on `DCCActor` build the term list and fold the result
-back into `options`; `_rollSpellCheckViaAdapter` and
-`_castNakedViaAdapter` invoke the unified prompt post-dispatch-
-log. `_castViaCalculateSpellCheck` honors the new options
-(`actionDieOverride`, `dialogModifierTotal`) by subtracting the
-lib's auto-additive `casterLevel + abilityModifier` from the
-dialog total and feeding the net as a single `dialog-modifier`
-situational. Open question #7 is now fully closed.
-Phase 3
-session 1 closed open question #6 via a dialog-adapter
-(`module/adapter/roll-dialog.mjs` + `promptSpellburnCommitment`).
-Phase 3 session 2 split `DCCActor.rollToHit` into a dispatcher +
-`_rollToHitLegacy` + `_rollToHitViaAdapter`; the adapter path
-routes the simplest-weapon happy-path through the lib's
-`makeAttackRoll` while preserving `dcc.modifyAttackRollTerms` and
-the Foundry chat render path. Phase 3 session 3 added
-`hookTermsToBonuses` in `module/adapter/attack-input.mjs` — pushed
-`Modifier` terms with pure signed-integer formulas flow into
-`attackInput.bonuses` and surface as `libResult.bonuses` + an
-aggregate `{source:'bonuses',…}` entry in `libResult.modifiers`.
-Phase 3 session 4 closed the long-range gap:
-`_rollToHitViaAdapter` re-reads `terms[0].formula` post-hook and
-assigns it to `attackInput.actionDie` via `normalizeLibDie`, so
-dcc-qol's `DiceChain.bumpDie` in-place mutation is reflected in
-`libResult.die`. Phase 3 session 5 split
-`DCCActor.rollWeaponAttack`'s inline damage block into
-`_rollDamage` + `_canRouteDamageViaAdapter` + `_rollDamageViaAdapter`
-+ `_rollDamageLegacy`. Simplest-damage happy-path (single-die
-`NdM[+K]` + adapter-routed attack + no backstab + no per-term
-flavors) flows through the lib's `rollDamage`; Foundry keeps the
-Roll + chat total; the lib-owned breakdown surfaces as
-`flags['dcc.libDamageResult']`. Phase 3 session 6 split the inline
-crit + fumble blocks the same way: `_rollCritical` /
-`_rollFumble` dispatchers gate on (attack-via-adapter + automate
-on) and route through `_rollCriticalViaAdapter` /
-`_rollFumbleViaAdapter`, which call the lib's `rollCritical` /
-`rollFumble` after Foundry evaluates — results surface as
-`flags['dcc.libCritResult']` / `flags['dcc.libFumbleResult']`. See
-`docs/00-progress.md` for full rationale.
+**Phase 3 (attacks/damage/crit/fumble, closed 2026-05-17):** every
+`rollWeaponAttack` downstream call is single-path through
+`dcc-core-lib`; `_xxxLegacy` retired for attack/crit/fumble/damage. A
+generalized `promptRollModifierDialog` adapter scaffold (skill +
+spell-check, including spellburn) shipped in sessions 26/27. Detail
+in [phase-3.md](dev/progress/phase-3.md).
 
-**Phase 3 session 7 (2026-04-19) routed NPC damage-bonus
-adjustments through the adapter.** `rollWeaponAttack` still bakes
-`npcDamageAdjustment` into the formula string (for legacy
-compatibility) and threads the raw value as an option into
-`_rollDamage`. `buildDamageInput` peels it back off
-`strengthModifier` and surfaces it as a `RollBonus` on `bonuses[]`
-(`source: { type: 'other', id: 'npc-attack-damage-bonus' }`), so
-the lib's breakdown attributes it correctly rather than
-misattributing as Strength.
+## Standing infrastructure the next session builds on
 
-**Phase 3 session 8 (2026-04-19) routed PC magic weapon bonuses
-through the adapter.** `parseDamageFormula` extended to sum any
-number of trailing flat integer modifiers (PC with +1 sword
-produces `1d8+2+1`). New `extractWeaponMagicBonus(weapon)` helper
-returns 0 for non-magical weapons, a positive integer for
-`damageWeaponBonus: '+N'`, and `null` for dice-bearing (`+1d4`) or
-cursed (negative) bonuses — the latter two fall to legacy.
-`_canRouteDamageViaAdapter` gates on the helper;
-`_rollDamageViaAdapter` passes the bonus as an option into
-`buildDamageInput`, which peels it off `strengthModifier` and
-sets `input.magicBonus`. The lib surfaces it as
-`{ source: 'magic', amount: N }` on `libDamageResult.breakdown`
-alongside (not merged with) the Strength entry.
-
-**Phase 3 session 9 (2026-04-19) routed thief backstab through
-the adapter.** Followed on from the `dcc-core-lib@0.4.1` sync:
-`AttackInput.isBackstab: true` drives the lib's auto-crit
-(matches legacy Foundry's `crit = !fumble && options.backstab`
-semantic); `DamageResult.subtotal` + `.multiplier` removed
-(the new damage pipeline has no multiplier concept);
-`AttackResult.critSource` added. `_canRouteAttackViaAdapter` +
-`_canRouteDamageViaAdapter` dropped their `options.backstab →
-false` gates. `_rollToHitViaAdapter` pushes the Table 1-9 bonus
-term pre-hook (same as legacy) then surfaces it as a RollBonus
-with `id: 'class:backstab'`, `source: { type: 'class', id:
-'thief' }` on `attackInput.bonuses`. `rollWeaponAttack` already
-swaps `damageRollFormula = weapon.system.backstabDamage` before
-reaching `_rollDamage`, so the damage adapter sees the alternate
-die naturally. Chat flag: `libResult.bonuses` now carries the
-full bonuses list (was hook-added only); `libResult.critSource`
-is surfaced for downstream crit-table routing.
-
-**Standing infrastructure the next session builds on:**
-
-- `DCCActor.rollSpellCheck` + `DCCActor.rollToHit` +
-  `DCCActor._rollDamage` + `DCCActor._rollCritical` +
-  `DCCActor._rollFumble` are all dispatchers. The two-pass
-  formula/evaluate pattern (spell side) and the adapter-path-with-
-  legacy-roll pattern (attack side, session 2; damage side, session
-  5; crit + fumble side, session 6) are the templates for future
-  slices.
-- Adapter modules: `module/adapter/{character-accessors,
+- **Dispatchers** (`DCCActor.rollSpellCheck`, `rollToHit`,
+  `_rollDamage`, `_rollCritical`, `_rollFumble`): all single-path
+  through adapter for the common case; legacy fallbacks gated by
+  `reason=…` log codes.
+- **Adapter modules**: `module/adapter/{character-accessors,
   foundry-roller, chat-renderer, spell-input, spell-events,
   attack-input, attack-events, damage-input, crit-fumble-input,
-  roll-dialog, debug}.mjs`. Session 2 added `attack-input.mjs`
-  (buildAttackInput) + `attack-events.mjs` (stub — combat events
-  wire later). Session 3 extended `attack-input.mjs` with
-  `hookTermsToBonuses` (translator for hook-pushed Modifier
-  terms). Session 4 exported `normalizeLibDie` so the dispatcher
-  can normalize post-hook `terms[0].formula` mutations. Session 5
-  added `damage-input.mjs` (`parseDamageFormula` +
-  `buildDamageInput` — translates a Foundry weapon damage formula
-  into the lib's `DamageInput`). Session 6 added
-  `crit-fumble-input.mjs` (`buildCriticalInput` +
-  `buildFumbleInput` — translate weapon + luck state into the
-  lib's `CriticalInput` / `FumbleInput`). Session 8 extended
-  `damage-input.mjs` with `extractWeaponMagicBonus` + multi-mod
-  `parseDamageFormula` so `DamageInput.magicBonus` gets
-  populated for PC +N magic weapons. Session 22 added
-  `loadPatronTaintTable(actor)` to `spell-input.mjs` (mirror of
-  `loadDisapprovalTable`) + seeded `CONFIG.DCC.patronTaintPacks`
-  in `module/dcc.js` with `dcc-core-book` + `xcc-core-book`
-  side-effect packs (default); sibling content modules can push
-  `addPack(…)` on init.
-- `module/adapter/roll-dialog.mjs` (added session 1) currently
-  exports `promptSpellburnCommitment` only. When the attack /
-  damage dialog needs its own prompt, **extend this file** — don't
-  add a parallel `attack-dialog.mjs`. Open question #7 tracks the
-  eventual generalization into a full roll-modifier dialog.
-- `@moonloch/dcc-core-lib@0.4.0` vendored at
-  `module/vendor/dcc-core-lib/`. Wave-1 modifier redesign covers
-  checks / skills / dice / cleric; **combat subsystems still use
-  `LegacyRollModifier` pending wave 3.** Session 2's attack bridge
-  emits `LegacyRollModifier[]` via `makeAttackRoll`'s
-  `appliedModifiers`; downstream consumers surface it through
-  `flags['dcc.libResult'].modifiers`. Session 3 surfaces the
-  per-bonus breakdown as `flags['dcc.libResult'].bonuses` so
-  hook-injected penalties retain their labels. Session 4 keeps
-  `flags['dcc.libResult'].die` in sync with the Foundry-evaluated
-  die when hooks bump `terms[0].formula` in place. Session 5's
-  damage bridge uses the lib's native `DamageResult.breakdown[]`
-  shape — no legacy-modifier translation needed — and surfaces it
-  as `flags['dcc.libDamageResult']`. Session 6's crit + fumble
-  bridges surface `CriticalResult.roll.modifiers` /
-  `FumbleResult.roll.modifiers` (lib-native `RollModifier[]`) on
-  `flags['dcc.libCritResult'].modifiers` /
-  `flags['dcc.libFumbleResult'].modifiers`.
-- `module/adapter/debug.mjs` + `logDispatch('rollXxx',
-  'adapter'|'legacy', details)` is PERMANENT. Sessions 2 + 5 + 6
-  wired `logDispatch('rollWeaponAttack', ...)`,
-  `logDispatch('rollDamage', ...)`, `logDispatch('rollCritical',
-  ...)`, and `logDispatch('rollFumble', ...)` in both branches.
-  Every future `_xxxViaAdapter` / `_xxxLegacy` must do the same.
-- **Test suites are green at branch HEAD.** Run `npm test` (Vitest)
-  and the full Playwright e2e suite (see "Browser tests" below) to
-  confirm before touching anything. Dispatch-spec subset runs in
-  ~40 s thanks to the session-reuse fixture; full Playwright suite
-  runs in ~8 min.
+  roll-dialog, debug}.mjs`. `roll-dialog.mjs` carries the unified
+  `promptRollModifierDialog` for both skill + spell checks.
+- **Extension API** (`module/extension-api.mjs`): `registerItemSheet`,
+  `registerActorSheet`, `registerClassMixin` + `applyClassMixins`,
+  `registerClassDefaults` + `applyClassDefaults` (Phase 5 session 1
+  addition). All stable; see `docs/dev/EXTENSION_API.md`.
+- **Built-in registrations**: `module/built-in-class-mixins.mjs` (schema
+  fields), `module/built-in-class-defaults.mjs` (sheet defaults). New
+  classes/changes edit these tables; production init + integration-test
+  setup (mixins only) consume them through shared helpers.
+- **Dispatch logging** (`module/adapter/debug.mjs` +
+  `logDispatch(rollType, 'adapter'|'legacy', details)`) is PERMANENT —
+  the Playwright adapter-dispatch spec asserts on the log lines. Every
+  `_xxxViaAdapter` / `_xxxLegacy` must `logDispatch(...)` as its first
+  line. Silent fallbacks emit a `reason=<camelCaseTag>` field so the
+  Foundry console is self-documenting.
+- **`@moonloch/dcc-core-lib`** vendored at `module/vendor/dcc-core-lib/`.
+  Lib updates: bump in `/Users/timwhite/WebstormProjects/dcc-core-lib`,
+  then `npm run sync-core-lib` here (commit the vendor delta separately).
+- **`dcc.modifyAttackRollTerms`** is dcc-qol's primary integration
+  point. Fires inside `rollToHit` (single-path adapter body) before the
+  Roll evaluates. Pushed Modifier terms + in-place die-bumps both
+  surface on the lib's `libResult.bonuses` / `libResult.die`. Do NOT
+  break this hook — dcc-qol depends on it.
 
-**This session's goal:** **Session 27 / Q7-phase2 extended the
-roll-modifier-dialog scaffold to spell-check (2026-05-17).** The
-`promptRollModifierDialog(terms, opts)` wrapper in
-`module/adapter/roll-dialog.mjs` gained an optional `spellburn`
-descriptor — when set, a Spellburn term is appended to the dialog
-and the returned object carries `spellburn: { str, agl, sta }` with
-the chosen burn amounts (original - final ability values). The
-wrapper subtracts the burn from `modifierTotal` so callers can
-forward the commitment through `input.spellburn` without
-double-counting (the lib injects its own "spellburn" modifier).
-The bespoke `promptSpellburnCommitment` helper retired entirely
-(only consumers were wizard / naked spell-check routes).
+## Lib-vs-rules divergence rule (canonical example)
 
-Adapter changes:
-- **`_promptSpellCheckDialog(spellItem, ctx)`** + companion
-  **`_applySpellCheckDialogToOptions(prompt, options)`** on
-  `DCCActor` build the spell-check term list (Die / Compound /
-  CheckPenalty / Other Bonus / Spellburn) and fold the prompt
-  result back into `options` (spellburn → `options.spellburn`;
-  action die → `options.actionDieOverride`; flat modifier total →
-  `options.dialogModifierTotal`). `ctx.castingMode` drives
-  CheckPenalty `apply`, `ctx.isIdolMagic` skips CheckPenalty
-  entirely, and `ctx.spellburnEligible` adds the Spellburn term.
-- **`_rollSpellCheckViaAdapter`** now invokes the unified prompt
-  for both `wizard` and `cleric` casting modes (post-dispatch-log
-  so cancels stay observable). The cleric branch in the dispatcher
-  used to fall through without a dialog; now it gets one (no
-  Spellburn, no CheckPenalty for idol-magic). NPCs and pre-
-  committed burns still bypass.
-- **`_castNakedViaAdapter`** mirrors the same: unified prompt
-  replaces the bespoke spellburn pop-up; `suppressLibAuto` zeroes
-  `input.casterLevel` + `input.abilityModifier` when the dialog
-  drives the modifier list so the lib's auto level + ability don't
-  double-count with the user's flat total.
-- **`_castViaCalculateSpellCheck`** honors `options.actionDieOverride`
-  + `options.dialogModifierTotal` by overriding `input.actionDie`
-  and feeding `dialogModifierTotal - (casterLevel + libGetAbilityModifier(score))`
-  as a single `dialog-modifier` situational modifier. The
-  subtraction is load-bearing: the lib re-derives `casterLevel +
-  abilityModifier` from `character` inside `buildSpellCastInput`,
-  so unsubtracted dialogTotal would double-count.
+The lib's `getTwoWeaponPenalty` returns flat `-1`/`-2`, but DCC RAW
+uses dice-chain reductions on the action die instead. We deliberately
+do NOT set `AttackInput.twoWeaponPenalty`; the bumped `actionDie` from
+`item.js:prepareBaseData` flows through, and the lib computes the
+attack on the bumped die. **Don't silently translate divergence —
+surface it instead.** If a lib contract contradicts a rule already
+correctly implemented in Foundry, stop the slice and surface to Tim
+(memory `feedback_lib_vs_rules_stop_and_verify`).
 
-Tests: 949 Vitest (+4 new in `adapter-roll-dialog.test.js`
-covering the spellburn descriptor + modifierTotal subtraction; 4
-spell-check tests flipped to assert against the unified prompt).
-Playwright: +3 new cases (wizard / cleric / naked
-showModifierDialog → adapter dispatch).
+## Next-session guidance
 
-**Open question #7 is now fully closed.** Both Q7-phase1 (skill
-check) and Q7-phase2 (spell check) have folded the
-`showModifierDialog` clause into the adapter routes.
+**Phase 5 session 1 (2026-05-18) opened Phase 5.** Pick one of these
+candidates (Tim picks; default is the smallest blast radius first):
 
-Session 26 (Q7-phase1) landed the skill-check fold:
-- **`_rollSkillCheckViaAdapter`** grew a `showModifierDialog`
-  branch using `promptRollModifierDialog`; `_buildSkillCheckLegacyTerms`
-  extracted as a shared term-builder; dispatcher dropped its
-  `!!options.showModifierDialog → legacy` clause.
+1. **`registerClassStartingItems` for the dwarf ShieldBash
+   (smallest scope).** Lift the still-inline dwarf ShieldBash
+   auto-create at `module/actor-sheets-dcc.js` (gated on the
+   `'initialized'` return from `applyClassDefaults`) onto a new
+   `registerClassStartingItems({ classId, items })` registry. May
+   fold into `registerClassDefaults` instead — decide at slice time.
+2. **Add the link fields to the base Player schema (smallest scope).**
+   Fix the latent gap surfaced by Phase 5 session 1: add
+   `classLink`, `mightyDeedsLink`, `spellcastingLink`, `spellburnLink`
+   as base-body fields in `module/data/actor/player-data.mjs`. After
+   that, the `applyClassDefaults` writes surface on `system.class.*`
+   and templates render correctly. Low risk; pure schema add.
+3. **`registerSheetPart` + `DCCSheet` collapse (largest scope).**
+   Collapse the 7 PC sheet subclasses (each with `CLASS_PARTS` +
+   `CLASS_TABS` statics) into a single composable `DCCSheet`
+   consuming a new `game.dcc.registerSheetPart` registry. Sheet
+   markup changes — run visual regression alongside.
+4. **Migrate the remaining capitalized `sheetClass` readers** (Elf
+   at `actor.js:182`; Cleric at `actor.js:2180` / `actor.js:2481` /
+   `dcc.js:746`) to `actor.classId`. Bundle with #3.
 
-Session 27 (Q7-phase2) closed the spell-check side (see the
-"This session's goal" block above for the full inventory).
-
-**Phase 3 backlog (all STOP AND ASK)**: Remaining
-`processSpellCheck` callers are stable-surface or item-fallback:
-- `DCCItem.rollSpellCheck` — `noCasterProfile` + unknown
-  castingMode fallbacks. Permanent stable surface per Phase 2
-  close-out.
-- `_rollSkillCheckLegacy` — strictly the no-die / description-only
-  fallback (the showModifierDialog clauses retired at session 26).
-
-Group E vertical slice for XCC/MCC validation is the next
-substantive arc (explicit pick required — halfling /
-mercurial-magic / homebrew single-class).
-`docs/02-slice-backlog.md` has the full inventory.
-
-Sessions 2–14 landed all of Group A (simplest-weapon, backstab,
-deed dice, two-weapon, automate-off, modifier dialog, dice-bearing
-toHit). Every common-case attack surfaces a lib-native result on
-chat flags (`dcc.libResult` / `dcc.libDamageResult` /
-`dcc.libCritResult` / `dcc.libFumbleResult`). Sessions 15 (D1) +
-16 (D2 crit + fumble) + 19 (D2 damage) retired the attack / crit
-/ fumble / damage legacy branches and collapsed their dispatchers
-into single paths. `_rollToHit` / `_rollCritical` / `_rollFumble`
-/ `_rollDamage` are all single paths now.
-
-**A4 design note (lib-vs-rules, relevant precedent):** the lib's
-`getTwoWeaponPenalty` returns flat `-1`/`-2`, but DCC RAW uses
-dice-chain reductions on the action die instead. We deliberately
-do NOT set `AttackInput.twoWeaponPenalty`; the bumped `actionDie`
-from `item.js:prepareBaseData` flows through, and the lib computes
-the attack on the bumped die. This is the canonical example of the
-"don't silently translate divergence" rule. The D2 damage slice has
-several similar forks — surface each one.
-
-Phase 3 as a whole is the largest migration so far:
-`rollWeaponAttack` → `makeAttackRoll` + `rollDamage` + `rollCritical`
-+ `rollFumble`. All four core lib calls have adapter paths, AND all
-four are now **single paths** (legacy retired at sessions 15 / 16 /
-19). Session 20 (C1) then dropped the `critText` / `fumbleText`
-dcc-qol-compat shims — the messageData shape is now slimmed to its
-canonical field set on both `rollWeaponAttack` and `rollCritical`.
-
-**Critical integration point:** `dcc.modifyAttackRollTerms` is
-dcc-qol's main hook. Since D1 it fires only inside `rollToHit`
-(the single-path adapter body), before the Roll evaluates. Phase 3
-has fully bridged it: pushed `Modifier` terms reflect into
-`attackInput.bonuses` (`libResult.bonuses` + the `{source:'bonuses',…}`
-aggregate on `libResult.modifiers`), and in-place mutations of
-`terms[0].formula` reflect into `attackInput.actionDie`
-(`libResult.die`). dcc-qol's two active handlers
-(`applyFiringIntoMeleePenalty`, `applyRangeChecksAndPenalties` at
-`../../modules/dcc-qol/scripts/hooks/listeners.js:25-27`) are both
-observationally faithful through the adapter path.
-
-### Next-session guidance
-
-**Phase 4 session 4 (2026-05-18)** added the cleric mixin (8 class
-fields + 3 disapproval-range skills) and consolidated all four
-built-in mixin registrations into a shared
-`module/built-in-class-mixins.mjs` table — both `module/dcc.js:init`
-and `module/__integration__/setup-foundry.js` now call
-`registerBuiltInClassMixins(register)`. Closed a latent integration-
-test gap where mixin fields weren't reaching tests that construct
-`PlayerData` directly. +1 Playwright; 113 Playwright passed.
-
-Phase 4 session 3 (2026-05-18) extended the vertical to thief —
-the largest single-class relocation so far. New `'thief'` mixin
-contributes the 12-skill block (sneakSilently / hideInShadows /
-pickPockets / climbSheerSurfaces / pickLock / findTrap / disableTrap
-/ forgeDocument / disguiseSelf / readLanguages / handlePoison /
-castSpellFromScroll) **plus** `schema.class.fields.luckDie`
-(DiceField '1d3') + `schema.class.fields.backstab` (StringField
-'0'). First mixin to touch BOTH `schema.class.fields` and
-`schema.skills.fields` on the same registration, and first to use
-an inline factory helper (`thiefSkill(label, ability)`) to compact
-10 skills sharing the label/ability/value triple. `DiceField`
-import dropped from `player-data.mjs`. +1 Playwright; 112 Playwright
-passed at session-3 close.
-
-Phase 4 session 2 (2026-05-18) extended the halfling vertical to
-dwarf — `skills.shieldBash` relocated off `player-data.mjs`'s
-static body onto a built-in `'dwarf'` class mixin in
-`module/dcc.js:init`. Exercises mixed field types (StringField
-label/ability/value + DiceField die + BooleanField useDeed) through
-the registry.
-
-Phase 4 session 1 (2026-05-18) shipped the
-`game.dcc.registerClassMixin(classId, mixinFn)` stable extension
-helper + `CONFIG.DCC.classMixins` registry. Mixins run in
-deterministic-sorted classId order during
-`PlayerData.defineSchema()`, **before** the existing
-`dcc.definePlayerSchema` hook. `module/dcc.js`'s init registers a
-built-in `'halfling'` mixin contributing `skills.sneakAndHide`.
-Last-write-wins semantics on duplicate `classId` matches the
-mercurial-magic registry's behavior. EXTENSION_API.md grew a new
-Stable `game.dcc.registerClassMixin` row + homebrew migration
-recipe.
-
-**Phase 4 active sub-arc is now closed** (per-class schema extraction
-done in sessions 1–6; class-id dispatch helper landed session 7).
-**Start Phase 5 — sheet composition + class defaults.** Per
-`docs/dev/CLASS_DECOMPOSITION.md` §3.2 / §3.3 / §3.4:
-
-1. **Sheet parts registry** (`game.dcc.registerSheetPart({
-   classId, tab, template, condition })`) — collapse the 7
-   class sheets in `module/actor-sheets-dcc.js` (+ partials at
-   `templates/actor-partial-*.html`) into one `DCCSheet` that
-   composes per `character.classId`.
-2. **Class defaults registry** (`registerClassDefaults`) —
-   extract the `_prepareContext` first-open blocks (lines
-   `60 / 128 / 201 / 269 / 346 / 518 / 595` in
-   `actor-sheets-dcc.js`) bundling class identity + mechanical
-   defaults + skill activation toggles (notably the
-   `skills.shieldBash.useDeed` cross-class toggle). When this
-   lands, also migrate the remaining capitalized `sheetClass`
-   readers (Elf at `actor.js:182`; Cleric at `actor.js:2180` /
-   `actor.js:2481` / `dcc.js:746`) to the `actor.classId`
-   accessor that session 7 introduced.
-3. **Starting items registry** — extract the dwarf ShieldBash
-   auto-create from `module/actor-sheets-dcc.js:434-454`.
-
-**Other still-viable Group E candidates** (independent of halfling):
-
-4. **Homebrew single-class slice** — with `registerClassMixin` now
-   in place, this becomes a thinner exercise. Still validates §2.8
-   end-to-end once Phase 5 sheet composition lands.
-5. **`game.dcc.processSpellCheck` audit + retirement decision.**
-   The function is pinned as permanent stable API but is now only
-   reached via `DCCItem.rollSpellCheck` fallbacks. Could be slimmed
-   significantly (patron-taint codepath is dead post-D3, the
-   `forceCrit` mutation is dead post-D4(remainder), and the
-   no-table HTML emit is dead post-Q7-phase1).
-
-**Also pending — dcc-qol sibling-fix coordination.** Session 20's
-shim removal on the DCC side leaves dcc-qol's
-`scripts/hooks/attackRollHooks.js:283-284` reading fields that no
-longer emit. A 2-line rename (`critText`→`critResult`,
-`fumbleText`→`fumbleResult`) is documented as a migration recipe in
-`EXTENSION_API.md` under "Sibling-module migration recipes →
-dcc-qol migration". Tim is landing the dcc-qol PR on his schedule;
-do NOT edit that repo from this session. If Tim signals it's landed,
-next slice can optionally include a follow-up assertion in
-`../../modules/dcc-qol` verifying the rename (observational only —
-no DCC-side change needed).
+**Also pending — dcc-qol sibling-fix coordination.** Session 20
+shim removal leaves dcc-qol's `attackRollHooks.js:283-284` reading
+fields that no longer emit. A 2-line rename is documented as a
+migration recipe in `EXTENSION_API.md`. Tim is landing the dcc-qol
+PR on his schedule — do NOT edit that repo from this session.
 
 Ask Tim which to pick.
 
-Do NOT: touch data-model slimming (Phase 4) or sheet composition
-(Phase 5). Do NOT break `dcc.modifyAttackRollTerms` — it has
-external consumers in dcc-qol. Do NOT silently translate lib-vs-
-rules divergence — surface it instead.
+**Do NOT:** touch lib-side internals (Phase 6 work); break
+`dcc.modifyAttackRollTerms` (dcc-qol consumer); silently translate
+lib-vs-rules divergence — surface it instead.
 
-**Before touching Phase 3 code, confirm the repo is green:**
+## Before touching code, confirm the repo is green
 
-- `npm test` — Vitest unit + integration suites. Final check
-  before any commit.
-- `npm run test:unit` — mock-only; runs in every environment.
-- `npm run test:integration` — integration project. Skips if Foundry
-  isn't detected (via `FOUNDRY_PATH`, `.foundry-dev/`, or
-  `~/Applications/foundry-14`).
+- `npm test` — Vitest unit + integration suites.
+- `npm run test:unit` — mock-only; runs everywhere.
+- `npm run test:integration` — skips if Foundry isn't detected.
 - **Dice-engine-gated tests** only run if `.foundry-dev/client/dice/`
-  exists. `ls .foundry-dev/client/dice` — missing → run
-  `npm run setup:foundry` once. Otherwise the dice cases **skip**
-  (not fail); the status line shows `N passed | M skipped`.
+  exists. If missing, run `npm run setup:foundry` once; otherwise the
+  dice cases skip (not fail).
 
-**Browser tests (required for refactor slices):** see
-`docs/dev/TESTING.md#browser-tests-playwright` for the full recipe.
+## Browser tests (required for refactor slices)
+
+See `docs/dev/TESTING.md#browser-tests-playwright` for the full recipe.
 TL;DR — with the fvtt CLI's `installPath` / `dataPath` pointed at
 `foundry-14` / `FoundryVTT-Next` (verify via
 `npx @foundryvtt/foundryvtt-cli configure view`):
@@ -574,55 +197,32 @@ cd browser-tests/e2e && npm test
 Close any manual Foundry browser tab first — a logged-in Gamemaster
 disables the Playwright login and tests hang for 11 s each.
 
-**Constraints for Phase 3 work:**
+**Refactor-slice rules** (per `CLAUDE.md`):
+- Run the FULL Playwright suite each session (not just the dispatch
+  spec). Visual regression too if the slice touches sheet markup or
+  chat templates.
+- Every slice adds at least one new browser-test assertion exercising
+  the new behavior end-to-end.
+
+## Constraints
 
 - Small commits; each leaves the system in a working state.
 - Four sibling modules must keep working:
   `../../modules/{dcc-qol,xcc,mcc-classes,dcc-crawl-classes}`. The
-  stable surface in `EXTENSION_API.md` is load-bearing —
-  `dcc.modifyAttackRollTerms` is dcc-qol's primary integration point;
-  `game.dcc.DCCRoll.cleanFormula` + `game.dcc.DiceChain.{bumpDie,
-  calculateCritAdjustment, calculateProportionalCritRange}` are
-  XCC's attack/crit scaffolding. Preserve all of it.
-- Attack / crit / fumble / damage gates + legacy bodies are **all
-  retired** (sessions 15 + 16 + 19). Every `rollWeaponAttack`
-  downstream is single-path. Any new test assertions for damage
-  structuring go in `module/__tests__/adapter-weapon-damage.test.js`
-  + `browser-tests/e2e/phase1-adapter-dispatch.spec.js`.
+  stable surface in `EXTENSION_API.md` is load-bearing.
 - The pre-commit hook runs `npm run format && git add . && npm test`
   — the `git add .` sweeps untracked files; stash or `.gitignore`
   them first.
+- Standing authorization on this branch (per `CLAUDE.md`): auto-commit
+  + push refactor slices when tests are green using the format
+  `feat(adapter): Phase <N> session <M> — <slice>`.
 
-**Remaining open questions** (tracked in `00-progress.md`):
-- ~~#2 package-name discrepancy~~ — closed 2026-05-18. Vendor
-  approach made the original "can't `npm install` the unscoped name"
-  problem moot; documentation cleanup landed the same day to call
-  out the scoped `@moonloch/dcc-core-lib` name in
-  `ARCHITECTURE_REIMAGINED.md`, `EXTENSION_API.md`, and
-  `CLAUDE.md`.
-- ~~#3 dead `dcc.update` hook~~ — closed 2026-05-18. XCC removed
-  the speculative listener on `chore/migrate-to-dcc-extension-api`;
-  DCC's `EXTENSION_API.md` Dead-hooks table cleared. Decision: don't
-  emit; no real consumer existed.
-- ~~#4 stabilizing undocumented `game.dcc.*` pieces~~ — closed
-  2026-05-18 via `EXTENSION_API.md` re-audit. Every symbol XCC
-  touches is in the Stable table; no gaps. Audit also flipped
-  `dcc.afterComputeSpellCheck` from "none yet" to a live XCC
-  consumer (XCC retired `xcc-actor.js` + `CONFIG.Actor.documentClass`
-  same day) and recorded XCC's actor-sheet-helper migration as
-  complete (19/19 sites). MCC + dcc-crawl-classes haven't migrated
-  the helper yet — opt-in, no deadline.
-- ~~#5 patron-taint RAW alignment~~ — closed at session 21 / D3a
-  (2026-04-24). `dcc-core-lib@0.7.0` landed the two RAW triggers;
-  `_runLegacyPatronTaint` retired. D3 arc (a/b-α/b-β/b-γ/c) fully
-  closed at session 23.
-- ~~#6 spellburn dialog integration~~ — closed at Phase 3 session 1.
-- ~~#7 wizard adapter-path modifier-dialog coverage beyond
-  Spellburn~~ — **fully closed across sessions 26 + 27
-  (2026-05-17).** Q7-phase1 landed `promptRollModifierDialog` +
-  skill-check fold; Q7-phase2 extended the wrapper with a spellburn
-  descriptor and folded wizard / cleric / naked spell-check routes,
-  retiring the bespoke `promptSpellburnCommitment` helper.
+## Open questions
 
-Start by reading the five docs above, then run `npm test` to confirm
-the repo is green before touching anything.
+All closed as of 2026-05-18. See `docs/00-progress.md` "Closed
+questions" for the ticks (#1 runtime loading, #2 package name, #3 dead
+hook, #4 undocumented game.dcc.*, #5 patron taint, #6 spellburn
+dialog, #7 wizard modifier-dialog).
+
+Start by reading the docs above, then run `npm test` to confirm the
+repo is green before touching anything.

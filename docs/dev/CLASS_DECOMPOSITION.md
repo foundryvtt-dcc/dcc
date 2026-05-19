@@ -49,14 +49,15 @@ at Phase 6.
 
 | Class | Schema mixin (1, P4) | Sheet part (2, P5) | Defaults + skill toggles (3+4, P5) | Starting items (5, P5) |
 |---|---|---|---|---|
-| Halfling | ✅ P4-1 (`skills.sneakAndHide`) | pending | pending | pending |
-| Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | pending — incl. `useDeed = true` override + ShieldBash weapon auto-create | pending |
-| Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | pending | pending | pending |
-| Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | pending | pending | pending |
-| Wizard | ✅ P4-6 (9 class fields attached via shared `attachWizardFields(schema)` helper in `module/built-in-class-mixins.mjs`) | pending | pending | pending |
-| Elf | ✅ P4-6 (re-uses `attachWizardFields(schema)` AND overrides `skills.detectSecretDoors` with HeightenedSenses defaults — closes the per-class extraction arc) | pending | pending | pending |
-| Warrior | ✅ P4-5 (`class.{luckyWeapon nullable StringField, luckyWeaponMod StringField '+0'}` — smallest block; no skills) | pending | pending | pending |
+| Halfling | ✅ P4-1 (`skills.sneakAndHide`) | pending | ✅ P5-1 | n/a (no starting items) |
+| Dwarf | ✅ P4-2 (`skills.shieldBash` — mixed-type) | pending | ✅ P5-1 (`useDeed = true` override included) | pending — ShieldBash auto-create still inline pending P5-2 starting-items slice |
+| Thief | ✅ P4-3 (`skills.{sneakSilently, hideInShadows, pickPockets, climbSheerSurfaces, pickLock, findTrap, disableTrap, forgeDocument, disguiseSelf, readLanguages, handlePoison, castSpellFromScroll}` + `class.{luckDie, backstab}` — first mixin to touch both `schema.class.fields` and `schema.skills.fields`) | pending | ✅ P5-1 | n/a |
+| Cleric | ✅ P4-4 (`class.{spellCheck, spellCheckAbility, spellsLevel1–5, deity, disapproval, disapprovalTable}` + `skills.{divineAid, turnUnholy, layOnHands}` — flushed out the integration-test mixin-bootstrap gap, now shared via `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 | n/a |
+| Wizard | ✅ P4-6 (9 class fields attached via shared `attachWizardFields(schema)` helper in `module/built-in-class-mixins.mjs`) | pending | ✅ P5-1 (`spellcastingLink`, `spellburnLink` extra enrichHtml — but writes silently stripped today, see "follow-up: register link fields") | n/a |
+| Elf | ✅ P4-6 (re-uses `attachWizardFields(schema)` AND overrides `skills.detectSecretDoors` with HeightenedSenses defaults — closes the per-class extraction arc) | pending | ✅ P5-1 | n/a |
+| Warrior | ✅ P4-5 (`class.{luckyWeapon nullable StringField, luckyWeaponMod StringField '+0'}` — smallest block; no skills) | pending | ✅ P5-1 (`mightyDeedsLink` extra enrichHtml — writes silently stripped today, see "follow-up: register link fields") | n/a |
 | Zero-Level | not class-bound (`class.className = 'Zero-Level'` default; no class-specific fields) | n/a | n/a | n/a |
+| Generic (upper-level fallback) | not class-bound | n/a | n/a — stays inline in `actor-sheets-dcc.js`; no maintenance branch | n/a |
 
 ## 3. Component design notes
 
@@ -158,26 +159,75 @@ mixin extractions deliberately don't touch sheet markup.
 
 ### 3.3 Class identity + mechanical defaults (Phase 5)
 
-**Planned:** `game.dcc.registerClassDefaults({ classId, … })` — name
-TBD.
+**Shipped Phase 5 session 1 (2026-05-18):**
+`game.dcc.registerClassDefaults(classId, defaults)` —
+[`EXTENSION_API.md` Stable surface](EXTENSION_API.md). Companion
+internal helper `applyClassDefaults(actor, classId)` runs the
+"initial-setup if `system.details.sheetClass` doesn't match" branch
+plus the "regenerate enriched HTML if `system.class.classLink` is
+missing" maintenance branch from the legacy sheet code. Returns
+`'initialized' | 'regenerated' | 'unchanged'` so callers can gate
+follow-on logic (the dwarf sheet's still-inline ShieldBash auto-create
+keys off the `'initialized'` return).
 
-Today, every class sheet's `_prepareContext` first-open block in
-`module/actor-sheets-dcc.js` writes a bundle of defaults if the
-actor doesn't already have `details.sheetClass = '<Class>'`:
+**Where built-in registrations live:**
+`module/built-in-class-defaults.mjs` defines the `BUILT_IN_CLASS_DEFAULTS`
+table plus a `registerBuiltInClassDefaults(register)` helper consumed
+by `module/dcc.js:init`. The integration-test setup does NOT need to
+register these — integration tests construct PlayerData directly and
+don't open sheets, so the registry has no observable effect outside
+of sheet-render paths.
 
-- Class identity: `class.className`, `class.classLink` (i18n'd
-  enriched HTML), `details.sheetClass`, `details.mightyDeedsLink`
+**Entry shape (each value is a path → key/literal):**
+
+```js
+warrior: {
+  sheetClass: 'Warrior',                        // capitalized sentinel
+  localize: { 'class.className': 'DCC.Warrior' },
+  enrichHtml: {
+    'class.classLink': 'DCC.WarriorClassLink',
+    'class.mightyDeedsLink': 'DCC.MightyDeedsLink'
+  },
+  literal: {
+    'details.critRange': 20,
+    'class.disapproval': 1,
+    'config.attackBonusMode': 'autoPerAttack',
+    'config.addClassLevelToInitiative': true,
+    'class.spellCheckAbility': null,
+    'config.showBackstab': false,
+    'skills.shieldBash.useDeed': false
+  }
+}
+```
+
+`applyClassDefaults` builds the update payload from all three sub-bags
++ writes `system.details.sheetClass`. Re-registering an existing
+`classId` silently overwrites (last-write-wins, matches `registerClassMixin`).
+
+**Legacy concerns now landed in this registry:**
+
+- Class identity: `class.className`, `class.classLink` (enriched HTML),
+  `details.sheetClass`, plus warrior/dwarf `class.mightyDeedsLink` and
+  wizard `class.spellcastingLink` / `class.spellburnLink`
 - Mechanical defaults: `details.critRange`, `class.disapproval`,
   `config.attackBonusMode`, `config.addClassLevelToInitiative`,
-  `class.spellCheckAbility`, `config.showBackstab`
+  `class.spellCheckAbility`, `config.showBackstab`, `config.showSpells`
 - Skill activation: `skills.shieldBash.useDeed = true` for dwarves,
-  `false` for every other class — cross-class lines at
-  `actor-sheets-dcc.js:72/141/213/282/359/531/606`
+  `false` for every other class (the cross-class lines that used to
+  live at `actor-sheets-dcc.js:72/141/213/282/359/531/606`)
 
-These are **sheet-first-open concerns**, not schema concerns — they
-should NOT fold into `registerClassMixin` (which is correctly scoped
-to schema field definitions only). The natural target is a sibling
-registry shipping in Phase 5 alongside `registerSheetPart`.
+**Latent gap (NOT fixed in P5-1, tracked as follow-up):** the warrior
++ dwarf `class.mightyDeedsLink` and wizard `class.spellcastingLink` /
+`class.spellburnLink` writes don't surface on `system.class.*` because
+those paths aren't registered on the Player schema. Only `class.classLink`
+is, contributed by a sibling module's `dcc.definePlayerSchema` hook.
+The legacy sheet code has been writing the stripped values forever,
+templates render `{{{system.class.mightyDeedsLink}}}` → empty. Two
+fix options: (a) add the link fields to the static `class` SchemaField
+in `module/data/actor/player-data.mjs`, or (b) require sibling modules
+to register them. Option (a) is the correct system-side fix. See the
+[slice backlog](../02-slice-backlog.md) "follow-up: register link
+fields" entry.
 
 **Partial overlap with lib progression (component 6):** save bonuses,
 crit dies, and action dies will derive from
@@ -192,11 +242,16 @@ sheet-config booleans.
 })` — or fold into `registerClassDefaults`.
 
 Today the only built-in case is the dwarf sheet auto-creating a
-`ShieldBash` weapon on first open at
-`module/actor-sheets-dcc.js:434-454`. Could split out for clarity or
-roll into the defaults registry; decide at Phase 5 slice time based
-on whether other classes pick up similar auto-create needs (warrior
-"luckyWeapon" prompt, cleric "holy symbol", etc.).
+`ShieldBash` weapon on first open. Phase 5 session 1 lifted the
+default-write path onto the new `registerClassDefaults` registry but
+left the dwarf's starting-item branch inline — it now gates on the
+`applyClassDefaults` return value (`'initialized'`) instead of the
+legacy `if (sheetClass !== 'Dwarf')` check. Phase 5 session 2 lifts
+that branch onto a registry. Decide at slice time whether to split a
+sibling `registerClassStartingItems` or fold into the existing
+defaults entry — depends on whether other classes pick up similar
+auto-create needs (warrior "luckyWeapon" prompt, cleric "holy
+symbol," etc.).
 
 ### 3.5 Class progression (Phase 6, lib-driven)
 
@@ -280,11 +335,12 @@ For a sibling module shipping a new class (homebrew or commercial):
    during `init` — register your class-specific sheet. *(Will collapse
    into a single `registerSheetPart` call in Phase 5.)*
 3. **(Phase 5)** `registerSheetPart({ classId, tab, template })` —
-   contribute sheet markup (tabs, partials).
-4. **(Phase 5)** `registerClassDefaults({ classId, … })` —
-   contribute identity + mechanical defaults applied on first-open.
+   contribute sheet markup (tabs, partials). Pending.
+4. **(Phase 5 ✅ shipped P5-1)** `registerClassDefaults({ classId,
+   defaults })` — contribute identity + mechanical defaults applied
+   on first-open.
 5. **(Phase 5)** `registerClassStartingItems({ classId, items })` —
-   if your class needs auto-created starting equipment.
+   if your class needs auto-created starting equipment. Pending.
 6. **(Phase 6)** Lib `registerClassProgression(classId, progression)`
    — saves, crit dies, action dies per level.
 7. **(Phase 6)** `registerVariant({ id, classes })` only if you ship

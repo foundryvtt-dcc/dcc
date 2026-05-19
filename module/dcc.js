@@ -31,8 +31,9 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
-import { registerActorSheet, registerClassMixin, registerItemSheet } from './extension-api.mjs'
+import { registerActorSheet, registerClassDefaults, registerClassMixin, registerItemSheet } from './extension-api.mjs'
 import { registerBuiltInClassMixins } from './built-in-class-mixins.mjs'
+import { registerBuiltInClassDefaults } from './built-in-class-defaults.mjs'
 
 import { setupItemPilesForDCC } from './item-piles-support.js'
 
@@ -77,6 +78,13 @@ Hooks.once('init', async function () {
   // classes' mixins via `game.dcc.registerClassMixin` (see
   // `docs/dev/EXTENSION_API.md` + `docs/dev/CLASS_DECOMPOSITION.md`).
   registerBuiltInClassMixins(registerClassMixin)
+
+  // Register built-in DCC class defaults. Phase 5 session 1 lifts the
+  // per-class `_prepareContext` first-open default-write blocks off
+  // each sheet subclass in `module/actor-sheets-dcc.js` and onto this
+  // registry; the sheets call `applyClassDefaults(actor, classId)`
+  // instead. See `module/built-in-class-defaults.mjs` for the table.
+  registerBuiltInClassDefaults(registerClassDefaults)
 
   // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
@@ -127,6 +135,7 @@ Hooks.once('init', async function () {
     getSkillTable,
     processSpellCheck,
     registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerClassDefaults, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassMixin, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove

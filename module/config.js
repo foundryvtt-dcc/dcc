@@ -636,6 +636,21 @@ DCC.mercurialMagicTables = {}
 // infrastructure plus a built-in `'halfling'` mixin for `sneakAndHide`.
 DCC.classMixins = {}
 
+// Per-class identity + mechanical defaults registry, keyed by lowercase
+// canonical class identifier (`'halfling'`, `'warrior'`, `'cleric'`, …).
+// Each entry packages the `system.*` writes that the legacy class-sheet
+// subclasses inlined into their `_prepareContext` first-open block:
+// localized `class.className` / `details.sheetClass`, enriched-HTML
+// `classLink` (and optional `mightyDeedsLink` / `spellcastingLink` /
+// `spellburnLink`), plus scalar mechanical defaults (critRange,
+// attackBonusMode, addClassLevelToInitiative, etc.). Applied via the
+// `applyClassDefaults` helper exported alongside the registration hook.
+// Populated by the `game.dcc.registerClassDefaults` extension helper.
+// Phase 5 §2.11 — the long-term direction is to collapse per-class sheet
+// subclasses into a single composable `DCCSheet`; this registry is the
+// data-side half of that collapse.
+DCC.classDefaults = {}
+
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks

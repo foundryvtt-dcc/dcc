@@ -8,6 +8,7 @@
 > - [Phase 2 — spell check migration](dev/progress/phase-2.md)
 > - [Phase 3 — attacks, damage, crit, fumble + cruft](dev/progress/phase-3.md)
 > - [Phase 4 — data-model slimming + class-mixin extension surface](dev/progress/phase-4.md)
+> - [Phase 5 — sheet composition + class defaults + starting items](dev/progress/phase-5.md)
 
 ## Archive discipline
 
@@ -62,180 +63,155 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 4 session 7 (2026-05-18)** closed the Phase 4 active sub-arc
-with the class-id dispatch helper. New `DCCActor.classId` getter on
-`module/actor.js` returns the canonical lowercase identifier
-(`'halfling'`, `'wizard'`, …) by lowercasing `system.details.sheetClass`,
-or `null` when unset. The two halfling-keyed string comparisons noted
-in the backlog (`actor.js:3265-3266` halfling two-weapon fumble note,
-`item.js:70` halfling agility floor) migrate to
-`this.classId === 'halfling'` / `this.actor?.classId === 'halfling'`.
-The accessor matches the lib's `character.classInfo.classId`
-convention and the `registerClassMixin` / `registerMercurialMagicTable`
-documented dispatch key. Other capitalized `sheetClass` comparisons
-(Elf in `actor.js:182`, Cleric in `actor.js:2180`/`actor.js:2481`/
-`dcc.js:746`) intentionally stay on the raw field for now —
-out-of-scope for this slice; the Phase 5 `registerClassDefaults`
-work will restructure the writer side of `sheetClass` and is the
-natural moment to migrate the remaining readers. 970 Vitest + 117
-Playwright green (+4 vitest / +1 playwright). With component 1
-(schema mixins) complete for all seven DCC classes and the
-class-id dispatch helper landed, the Phase 4 active sub-arc is
-closed; remaining work in `02-slice-backlog.md` is Phase 5 territory
-(sheet composition, class defaults, starting items) plus the
-deferred Phase 6 lib `registerClassProgression` + variant registry.
+**Phase 5 session 1 (2026-05-18)** opened Phase 5 with the
+`registerClassDefaults` registry — the sheet-side counterpart to
+Phase 4's `registerClassMixin`. New stable extension hook
+`game.dcc.registerClassDefaults(classId, defaults)` + companion
+`applyClassDefaults(actor, classId)` helper in
+`module/extension-api.mjs`. `CONFIG.DCC.classDefaults = {}` seeded
+in `module/config.js`. Per-class identity (className i18n,
+classLink + optional mightyDeedsLink/spellcastingLink/spellburnLink
+enriched-HTML), mechanical defaults (critRange, attackBonusMode,
+addClassLevelToInitiative, spellCheckAbility, showBackstab /
+showSpells), and skill toggles (`shieldBash.useDeed`) packaged into
+a single per-class entry. Seven built-in PC entries
+(cleric/dwarf/elf/halfling/thief/warrior/wizard) seeded via the new
+`module/built-in-class-defaults.mjs` table consumed by
+`module/dcc.js:init`. All seven PC sheets in
+`module/actor-sheets-dcc.js` shrunk from ~22-line `_prepareContext`
+blocks to a single `applyClassDefaults(this.options.document,
+'<classId>')` call — 156 lines deleted (623 → 467); `TextEditor` /
+`foundry.applications.ux` import dropped from the sheet module.
+Dwarf's ShieldBash auto-create stays inline pending the
+`registerClassStartingItems` slice (gated on the new
+`'initialized'` return from `applyClassDefaults` so semantic stays
+byte-for-byte). Generic sheet stays untouched (not class-bound, has
+no maintenance branch). 983 Vitest green (was 970, +13: 11 new
+`registerClassDefaults` / `applyClassDefaults` tests + 2 happy-path
+flippers). Playwright: +5 new cases in `extension-api.spec.js`
+(helper exposed; seed table shape across all 7 classes; warrior +
+dwarf carry mightyDeedsLink; warrior + wizard enrichHtml extras;
+applyClassDefaults full lifecycle — initial / unchanged / regenerate;
+warrior literal-defaults end-to-end). 122 Playwright passed (was
+117, +5), 1 latent failure (xcc-core-book DCCItemSheet override,
+unchanged baseline).
 
-**Phase 4 session 6 (2026-05-18)** closed the per-class extraction
-arc with wizard + elf. New `'wizard'` and `'elf'` entries in the
-`BUILT_IN_CLASS_MIXINS` table both call a shared
-`attachWizardFields(schema)` helper (defined in the same file)
-that contributes the 9 wizard class fields (`knownSpells` /
-`maxSpellLevel` / `spellCheckOtherMod` / `spellCheckDieOverride` /
-`spellCheckOverride` / `patron` / `patronTaintChance` / `familiar`
-/ `corruption` HTMLField). The elf mixin **also** overrides
-`skills.detectSecretDoors` with the HeightenedSenses defaults
-(`label='DCC.HeightenedSenses'`, `ability='int'`, `value='+4'`) —
-the base body keeps the non-Elf default; the elf mixin replaces
-the SchemaField entirely so the Foundry-smelling path
-(`system.skills.detectSecretDoors`) resolves to the elf shape on
-the constructed schema. Static `class` block in
-`module/data/actor/player-data.mjs` shrunk to a single `className`
-field; static `skills` block carries only the base-body
-`detectSecretDoors`. `HTMLField` import dropped (and `NumberField`
-+ `BooleanField` reduced to `BooleanField` only — `NumberField`
-is now unused in `player-data.mjs`). **All seven DCC classes
-(halfling, dwarf, thief, cleric, warrior, wizard, elf) now
-mixin-source their fields.** Component 1 of the Class Decomposition
-(schema mixins) is complete for every built-in class; Phase 5
-sheet composition + class defaults remain.
+**Note (latent gap, pre-existing):** the warrior + dwarf
+`class.mightyDeedsLink` write doesn't surface on `system.class.*`
+because no schema field registers `mightyDeedsLink`. Sibling
+modules contribute `classLink` via `dcc.definePlayerSchema` (and a
+slew of other class-extras like `archaicAlignment`, `aiPatron`,
+`blasterDie`), but no module covers Mighty Deeds. Same for wizard's
+`spellcastingLink` / `spellburnLink`. The templates render
+`{{{system.class.mightyDeedsLink}}}` → empty. The legacy sheets
+have been writing these stripped values forever; my refactor is
+byte-for-byte equivalent. Follow-up: either add the link fields to
+the static `class` SchemaField in `player-data.mjs`, or document
+this as a sibling-contract item in `EXTENSION_API.md`. Not in
+scope for Phase 5 session 1.
 
-**Phase 4 session 5 (2026-05-18)** extended the vertical to warrior —
-smallest remaining class block. Built-in `'warrior'` mixin in the
-`BUILT_IN_CLASS_MIXINS` table contributes `class.luckyWeapon`
-(nullable StringField, initial null) + `class.luckyWeaponMod`
-(StringField, initial `'+0'`). No skills. Five-of-seven DCC classes
-(halfling, dwarf, thief, cleric, warrior) now mixin-source their
-fields; only wizard + elf remain (deferred to session 6 because
-they share field shapes and need a design call on registration
-pattern).
+Remaining Phase 5 work: (a) `registerSheetPart` for the `CLASS_PARTS`
+/ `CLASS_TABS` collapse (§3.2), (b) `registerClassStartingItems` to
+retire the dwarf inline ShieldBash auto-create (§3.4), (c) migrate
+the remaining capitalized `sheetClass` readers (Elf at
+`actor.js:182`; Cleric at `actor.js:2180` / `actor.js:2481` /
+`dcc.js:746`) to `actor.classId` once the writer side gets
+restructured — could land in any later Phase 5 slice.
 
-**Phase 4 session 4 (2026-05-18)** extended the vertical to cleric —
-8 class fields (`spellCheck` / `spellCheckAbility` / `spellsLevel1–5`
-/ `deity` / `disapproval` / `disapprovalTable`) + 3 disapproval-
-range skills (`divineAid` / `turnUnholy` / `layOnHands`) relocated
-off `player-data.mjs`'s static body onto a built-in `'cleric'` class
-mixin. Surfaced a latent gap: integration tests in
-`module/__integration__/data-models.test.js` construct `PlayerData`
-directly without invoking the Foundry `init` hook, so the existing
-`module/dcc.js:init` mixin registrations weren't running for them —
-the cleric block's removal broke three pre-existing assertions
-(`class.disapproval=1`, `class.deity=null`). Closed by extracting
-all built-in mixin registrations into the new
-`module/built-in-class-mixins.mjs` table + `registerBuiltInClassMixins`
-helper, consumed by **both** the production init hook and the
-integration-test setup. Single source of truth; future sessions
-only edit the table. Four-of-seven DCC classes (halfling, dwarf,
-thief, cleric) now mixin-source their fields; warrior / wizard /
-elf remain on the static body.
+**Phase 4 (data-model slimming + class-mixin registry, closed
+2026-05-18)** lifted per-class schema fields off the monolithic
+`module/data/actor/player-data.mjs` body onto a single
+`BUILT_IN_CLASS_MIXINS` table consumed via `registerClassMixin`.
+All seven DCC classes (halfling, dwarf, thief, cleric, warrior,
+wizard, elf) mixin-source their fields. The Phase 4 closer added
+`DCCActor.classId` for normalized dispatch. Detail in
+[`dev/progress/phase-4.md`](dev/progress/phase-4.md).
 
-**Phase 4 session 3 (2026-05-18)** extended the vertical to thief —
-the largest single-class relocation so far. Built-in `'thief'` mixin
-in `module/dcc.js:init` contributes the 12-skill block (sneakSilently
-/ hideInShadows / pickPockets / climbSheerSurfaces / pickLock /
-findTrap / disableTrap / forgeDocument / disguiseSelf / readLanguages
-/ handlePoison / castSpellFromScroll) plus `class.luckDie` (DiceField
-'1d3') + `class.backstab` (StringField '0'). First mixin to touch
-**both** `schema.class.fields` and `schema.skills.fields` in one
-registration — and the first to use an inline factory helper
-(`thiefSkill(label, ability)`) to compact the repeated agl/int/per
-skill shapes. `castSpellFromScroll.die` (DiceField '1d10') exercises
-the DiceField path a second time (dwarf's `shieldBash.die` was the
-first). `handlePoison` deliberately omits `ability` to match the
-static body's shape. `DiceField` import dropped from `player-data.mjs`
-since the only class fields needing it (`luckDie` + `castSpellFromScroll.die`)
-now live on the thief mixin. Three of seven DCC classes (halfling,
-dwarf, thief) now mixin-source their fields; cleric / warrior /
-wizard / elf remain on the static body.
+**Phase 3 (attacks, damage, crit, fumble — closed 2026-05-17)**
+took every `rollWeaponAttack` downstream call to single-path
+adapter via `dcc-core-lib`; the bespoke `promptSpellburnCommitment`
+also retired in favor of a unified `promptRollModifierDialog`. Open
+question #7 (modifier-dialog generalization) closed at session 27.
+Detail in [`dev/progress/phase-3.md`](dev/progress/phase-3.md).
 
-**Phase 4 session 2 (2026-05-18)** extended the halfling vertical to
-dwarf — `skills.shieldBash` relocated off `player-data.mjs`'s static
-body onto a built-in `'dwarf'` class mixin registered in
-`module/dcc.js:init`. Exercises the registry across mixed field types
-(StringField for label/ability/value + DiceField for die +
-BooleanField for useDeed) — confirms `applyClassMixins` handles
-non-trivial field shapes identically to the static definition.
-`DiceField` imported into `dcc.js` from `module/data/fields/_module.mjs`
-to keep the mixin self-contained.
-
-**Phase 4 session 1 (2026-05-18)** opened the halfling vertical with
-the `game.dcc.registerClassMixin(classId, mixinFn)` infrastructure —
-new stable-from-day-one extension helper, `CONFIG.DCC.classMixins`
-registry, deterministic-sorted application during
-`PlayerData.defineSchema()`. The system dogfoods its own seed by
-registering a `'halfling'` mixin in `module/dcc.js:init` that
-contributes `skills.sneakAndHide`; the static `player-data.mjs` body
-loses its hardcoded halfling block. First chip away at §2.1's
-monolithic Player schema — every Player document still resolves
-`sneakAndHide` identically (preserves §2.12's Foundry-smelling
-contract), but the source of truth has moved off the static body and
-onto the per-class registry. Subsequent slices relocate additional
-class-bound fields (thief skills, cleric disapproval, wizard patron,
-dwarf shieldBash, etc.) the same way. Sibling modules registering
-their own classes use the same helper (see EXTENSION_API.md
-"Homebrew / sibling-module recipe: registerClassMixin").
-
-**Group E session 1 (2026-05-18)** landed the per-class mercurial-
-magic table registry — new `dcc.registerMercurialMagicTable(classKey,
-tableName)` stable-from-day-one hook, `CONFIG.DCC.mercurialMagicTables`
-registry, resolver shared between the adapter cast path and the
-legacy `DCCItem.rollMercurialMagic` item-sheet button. Closes the
-§2.4 critique that XCC has been fighting since before Phase 0; the
-xcc-core-book monkey-patch (mutating `CONFIG.DCC.mercurialMagicTable`
-per roll) gets a migration recipe to retire it.
-
-Phase 3 is active but now narrow. `rollWeaponAttack` + all four
-chained calls (`rollToHit` / `rollDamage` / `rollCritical` /
-`rollFumble`) are single-path via the adapter (sessions 15 / 16 /
-19 retired the respective `_xxxLegacy` branches). Groups A
-(attack-gate broadening) and C (parallel cruft slices) are closed.
-Session 21 / D3a (2026-04-24) retired `_runLegacyPatronTaint`; the
-full D3 arc (a / b-α / b-β / b-γ / c) closed 2026-04-24. Session
-24 / D4(profile-override) (2026-05-17) landed
-`dcc-core-lib@0.9.0`'s `SpellCheckOptions.profileOverride` and
-folded the wizard-mode-on-cleric + cleric-mode-on-non-cleric
-dispatcher gates through the adapter. Session 25 / D4(remainder)
-(2026-05-17) landed `dcc-core-lib@0.10.0`'s optional
-`SpellCastInput.spellbookEntry` and folded the three remaining
-direct-reimpl branches: naked spell check (no item) →
-`_castNakedViaAdapter`, `options.forceCrit` (shift-click GM
-testing) → shared `applyForceCritToFoundryRoll` helper threaded
-through every adapter spell-check route, and skill-table /
-disapproval-range skills (Turn Unholy, divineAid, layOnHands)
-→ `_skillTableViaAdapter`. Session 26 / Q7-phase1 (2026-05-17)
-landed the generalized roll-modifier-dialog adapter scaffold —
-new `promptRollModifierDialog` in `module/adapter/roll-dialog.mjs`
-is a thin wrapper over the existing `RollModifierDialog`, and
-`_rollSkillCheckViaAdapter` now folds the dialog adapter-side
-instead of routing `showModifierDialog` to legacy. The dispatcher
-gate dropped its `!!options.showModifierDialog` clause; skill-
-table-with-dialog naturally flows through `_skillTableViaAdapter`
-(it already forwarded `options` through `DCCRoll.createRoll`).
-Session 27 / Q7-phase2 (2026-05-17) extended the same scaffold to
-spell-check: the unified prompt now surfaces Die / Compound /
-CheckPenalty / Spellburn / Other Bonus for wizard / cleric /
-naked routes, and the bespoke `promptSpellburnCommitment` helper
-retired. Open question #7 is now fully closed.
-The remaining `processSpellCheck` substrate is now only reachable
-from `DCCItem.rollSpellCheck` delegations (the `noCasterProfile`
-+ unknown-castingMode fallbacks). See
-[`docs/02-slice-backlog.md`](02-slice-backlog.md) for the full
-inventory. Phase 4 (schema slimming) has not started.
+**Group E session 1 (2026-05-18)** landed the per-class
+mercurial-magic table registry — `dcc.registerMercurialMagicTable`
+hook + `CONFIG.DCC.mercurialMagicTables` registry. Closes the §2.4
+XCC critique. Detail rotated to the Recent slices section below.
 
 ## Recent slices
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-18 — Phase 5 session 1: `registerClassDefaults` registry
+  + 7 PC sheets migrated.** New stable extension hook
+  `game.dcc.registerClassDefaults(classId, defaults)` and companion
+  `applyClassDefaults(actor, classId)` helper in
+  `module/extension-api.mjs`. Each entry packages the
+  `_prepareContext` first-open writes the legacy class-sheet subclasses
+  inlined: `sheetClass` (capitalized sentinel that drives the
+  initial-setup-vs-maintenance dispatch), `localize` (i18n keys for
+  `class.className`), `enrichHtml` (i18n keys for `class.classLink` +
+  optional `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`),
+  and `literal` (scalar mechanical defaults — critRange,
+  attackBonusMode, addClassLevelToInitiative, spellCheckAbility,
+  showBackstab / showSpells, `skills.shieldBash.useDeed`).
+  `applyClassDefaults` returns `'initialized' | 'regenerated' |
+  'unchanged'` so the dwarf sheet can still gate its inline
+  ShieldBash auto-create on the `'initialized'` branch — that
+  starting-item logic stays inline pending a follow-up
+  `registerClassStartingItems` slice. Seven built-in PC entries
+  (cleric/dwarf/elf/halfling/thief/warrior/wizard) seeded via the
+  new `module/built-in-class-defaults.mjs` table consumed by
+  `module/dcc.js:init` only (integration tests don't open sheets,
+  so the shared production-and-test registration pattern the mixin
+  table uses isn't needed here). All 7 PC sheets in
+  `module/actor-sheets-dcc.js` shrunk from ~22-line
+  `_prepareContext` blocks to a single
+  `applyClassDefaults(this.options.document, '<classId>')` call —
+  net 156 lines deleted (623 → 467); `TextEditor` import dropped
+  alongside (it was only used by the now-extracted blocks). Generic
+  sheet stays untouched (not class-bound, has no maintenance branch
+  in the legacy code either). +11 Vitest in `extension-api.test.js`
+  covering both helpers (registration storage, self-heal on missing
+  registry, last-write-wins, validation throws on bad classId /
+  bad defaults / missing sheetClass / missing CONFIG.DCC; helper
+  initial-setup payload shape, maintenance-branch enrichHtml-only
+  payload, dual-enrichHtml mightyDeedsLink path, `unchanged` /
+  `initialized` / `regenerated` returns, defensive partial-entry
+  handling). 983 Vitest green (was 970, +13: 11 new helper tests
+  + 2 happy-path flippers). +5 Playwright cases in
+  `extension-api.spec.js` exercising the new helper end-to-end
+  against live Foundry: hook exposed on `game.dcc`; seed table
+  shape across all 7 PC classes asserting sheetClass + classLink
+  presence + critRange/attackBonusMode literal correctness; warrior
+  + dwarf carry the mightyDeedsLink slot AND wizard carries
+  spellcastingLink + spellburnLink; `applyClassDefaults` full
+  lifecycle on a halfling Player (initial → unchanged on second
+  call → regenerate after classLink wipe); warrior literal-defaults
+  end-to-end (`attackBonusMode='autoPerAttack'`,
+  `addClassLevelToInitiative=true`). 122 Playwright passed (was
+  117, +5), 1 latent failure (xcc-core-book DCCItemSheet override,
+  unchanged baseline). **Latent gap surfaced, NOT fixed in this
+  slice:** the warrior + dwarf `class.mightyDeedsLink` and wizard
+  `class.spellcastingLink` / `class.spellburnLink` writes don't
+  surface on `system.class.*` because those paths aren't registered
+  on the Player schema (only `class.classLink` is, contributed by
+  a sibling module's `dcc.definePlayerSchema` hook — the test
+  world also adds dozens of XCC/MCC extras like `archaicAlignment`,
+  `aiPatron`, `blasterDie`). Templates render
+  `{{{system.class.mightyDeedsLink}}}` → empty. Legacy sheets have
+  been writing these stripped values forever; my refactor matches
+  byte-for-byte. Tracked as a follow-up: either register the link
+  fields in the static `class` SchemaField in `player-data.mjs` or
+  document the missing sibling contribution in `EXTENSION_API.md`.
+  Opens Phase 5; remaining work is the `registerSheetPart` collapse
+  (§3.2), `registerClassStartingItems` (§3.4), and the
+  remaining-capitalized-`sheetClass`-readers migration (Elf at
+  `actor.js:182`; Cleric at `actor.js:2180`/`actor.js:2481`/
+  `dcc.js:746` — bundled with whichever later Phase 5 slice touches
+  the writer side).
 - **2026-05-18 — Phase 4 session 7: `DCCActor.classId` accessor for
   class dispatch.** Closes the non-class-extraction sub-slice that
   was open in the Phase 4 sub-arc: replace `system.details.sheetClass
@@ -352,259 +328,7 @@ archives linked above.
   (unchanged); 113 Playwright passed (was 112, +1 cleric case), 1
   latent failure (xcc-core-book DCCItemSheet override — unchanged
   from baseline).
-- **2026-05-18 — Phase 4 session 3: thief class-mixin extraction (12
-  skills + `class.luckDie` + `class.backstab`).** Largest single-
-  class relocation so far. New `'thief'` entry in `CONFIG.DCC.classMixins`
-  registered in `module/dcc.js:init` builds 12 skill SchemaFields via
-  a shared inline `thiefSkill(label, ability)` helper plus two class-
-  field mutations (`schema.class.fields.luckDie` =
-  `DiceField('1d3')`, `schema.class.fields.backstab` =
-  `StringField('0')`). First mixin to touch BOTH `schema.class.fields`
-  and `schema.skills.fields` on the same registration. `handlePoison`
-  deliberately omits `ability` to match the static body's shape;
-  `castSpellFromScroll` carries its own DiceField die (`'1d10'`)
-  alongside the standard label/ability/value triple. The static
-  thief-skills block (~62 lines) + the two thief class-field lines
-  in `module/data/actor/player-data.mjs` are deleted; the trailing
-  comment near the removed skill block now documents thief alongside
-  halfling/dwarf mixins. `DiceField` import dropped from
-  `player-data.mjs` (was only used by the two now-relocated thief
-  fields). +1 Playwright case in `extension-api.spec.js` asserts (a)
-  all 12 skill fields are present, (b) `findTrap`/`disguiseSelf`
-  carry their non-`agl` abilities, (c) `handlePoison` lacks the
-  `ability` field, (d) `castSpellFromScroll.die`'s field type is
-  `DiceField` with initial `'1d10'`, and (e) `class.luckDie` /
-  `class.backstab` are present with correct types + initials. No new
-  Vitest needed (registry mechanics covered session 1). 966 Vitest
-  green (unchanged); 112 Playwright passed (was 110, +1 thief + 1
-  dwarf-flake recovered), 1 latent failure (xcc-core-book DCCItemSheet
-  override — unchanged).
-- **2026-05-18 — Phase 4 session 2: dwarf `shieldBash` class-mixin
-  extraction.** Second halfling-vertical slice, same pattern as
-  session 1 but with mixed field types. New `'dwarf'` entry in
-  `CONFIG.DCC.classMixins` registered in `module/dcc.js:init`
-  contributes `skills.shieldBash` (`label` / `ability` / `value`
-  StringFields + `die` DiceField + `useDeed` BooleanField). The
-  static `shieldBash` block in `player-data.mjs` is deleted; the
-  comment near the removed block is updated to document both
-  halfling + dwarf mixin-sourced fields together. `DiceField`
-  imported into `dcc.js` from `module/data/fields/_module.mjs` so the
-  mixin can reference it without further plumbing. +1 Playwright
-  case in `extension-api.spec.js` asserts the built-in dwarf mixin
-  produces all five fields with the expected defaults AND verifies
-  `dieFieldType === 'DiceField'` + `useDeedFieldType === 'BooleanField'`
-  on the resolved schema — proves mixed field types survive the
-  mixin path identically to a static definition. No new Vitest test
-  needed; the registry mechanics tested in session 1
-  (`applyClassMixins` sort order, last-write-wins, etc.) cover the
-  dwarf mixin's plumbing — only the schema-shape claim is new and
-  it's best exercised against live Foundry. 966 Vitest green
-  (unchanged from session 1). 110 Playwright passed (was 109, +1
-  dwarf case); same single pre-existing environmental flake as
-  session 1 (`xcc-core-book` unregistering DCCItemSheet).
-- **2026-05-18 — Group E session 1: per-class mercurial-magic table
-  registry.** New `dcc.registerMercurialMagicTable(classKey,
-  tableName)` Stable hook + `CONFIG.DCC.mercurialMagicTables`
-  registry. The legacy `setMercurialMagicTable` shim writes through
-  `register('default', value)`, so dcc-core-book / system-setting
-  callers keep working with no API change. Both the adapter cast
-  path (`_rollMercurialIfNeeded`, now taking `profile.type` from
-  `_castViaCalculateSpellCheck`) and the legacy
-  `DCCItem.rollMercurialMagic` item-sheet button go through the same
-  resolver (`spell-input.mjs:resolveMercurialMagicTableName`), which
-  walks per-class → `'default'` → legacy single-table mirror →
-  null. EXTENSION_API.md picks up the new Stable row + an
-  xcc-core-book migration recipe that retires the per-roll
-  `CONFIG.DCC.mercurialMagicTable = …` monkey-patch in
-  `xcc-core-book/module/xcc-item-sheet.js:49-58`. +5 Vitest tests in
-  `adapter-spell-check.test.js` (resolver cascade: per-class wins,
-  unregistered falls to default, empty registry falls to legacy
-  field then null; loader uses classKey end-to-end; wizard cast skips
-  when nothing matches). +2 Playwright cases in the dispatch spec
-  exercising the hook end-to-end against live Foundry (wizard-keyed
-  registration drives the cast; gnome-only registration with no
-  default produces `reason=noMercurialTable` for a wizard).
-  Closed `ARCHITECTURE_REIMAGINED.md` §2.4 generalization promise
-  ("XCC has 2 Mercurial tables and DCC only supports one" —
-  no longer true). 955 Vitest green (was 949, +6).
-- **2026-05-17 — Session 27 / Q7-phase2: spell-check modifier-
-  dialog generalization.** Extended the session-26
-  `promptRollModifierDialog` wrapper with an optional `spellburn`
-  descriptor — when set, a Spellburn term is appended internally
-  and the term's callback captures final str/agl/sta values; the
-  wrapper computes burn amounts (original − final) and subtracts
-  the burn total from `modifierTotal` so callers can forward
-  `input.spellburn` without double-counting the lib's auto-injected
-  spellburn modifier. The bespoke `promptSpellburnCommitment`
-  helper retired entirely. New `_promptSpellCheckDialog(spellItem,
-  ctx)` + `_applySpellCheckDialogToOptions(prompt, options)`
-  helpers on `DCCActor` build the term list (Die / Compound /
-  CheckPenalty / Other Bonus / Spellburn) and fold the result back
-  into `options` (spellburn → `options.spellburn`; action die →
-  `options.actionDieOverride`; flat modifier total →
-  `options.dialogModifierTotal`). `_rollSpellCheckViaAdapter` now
-  invokes the unified prompt for both wizard and cleric branches
-  post-dispatch-log (cleric showModifierDialog previously fell
-  through silently — fixed). `_castNakedViaAdapter` mirrors the
-  same; `suppressLibAuto` zeroes `input.casterLevel` +
-  `input.abilityModifier` when the dialog drives the modifier list
-  so the lib's auto level + ability don't double-count.
-  `_castViaCalculateSpellCheck` honors the new options by
-  overriding `input.actionDie` and feeding
-  `dialogModifierTotal - (casterLevel + libGetAbilityModifier(score))`
-  as a single `dialog-modifier` situational — the subtraction is
-  load-bearing because the lib re-derives `casterLevel +
-  abilityModifier` from `character` inside `buildSpellCastInput`.
-  +4 Vitest tests in `adapter-roll-dialog.test.js` covering the
-  spellburn descriptor (zero commitment, mid burn, no descriptor,
-  clamped negative); 4 spell-check tests in
-  `adapter-spell-check.test.js` flipped to assert against the
-  unified prompt. 949 Vitest green (was 945, +4). +3 new
-  Playwright cases (wizard / cleric / naked showModifierDialog →
-  adapter dispatch). Open question #7 is now fully closed.
-- **2026-05-17 — Session 26 / Q7-phase1: generalized roll-modifier-
-  dialog adapter scaffold + skill-check fold.** New
-  `promptRollModifierDialog(terms, opts)` in
-  `module/adapter/roll-dialog.mjs` — thin wrapper over
-  `game.dcc.DCCRoll.createRoll({ showModifierDialog: true })` that
-  returns `{ actionDie, modifierTotal, formula, roll } | null`. The
-  parser (`parseRollIntoDieAndModifier`, also exported) walks the
-  resulting Foundry Roll's `terms[]`, picking the first Die term as
-  the action die and summing all signed numerics as a flat modifier
-  total. Attribution flattens to match legacy — the dialog reduces
-  every non-die term to a single formula, so per-source attribution
-  is unrecoverable on submit. `_rollSkillCheckViaAdapter` grew a
-  `showModifierDialog` branch: builds the legacy-shaped term
-  descriptor via the new shared `_buildSkillCheckLegacyTerms`
-  helper (also used by `_skillTableViaAdapter` + the
-  description-only legacy path — eliminates the term-builder
-  duplication), prompts adapter-side, overrides `definition.roll.die`
-  with the user's selection, suppresses `definition.roll.ability`
-  (the dialog total already includes ability mod via the legacy
-  Compound term), and feeds the user's flat total as a single
-  `dialog-modifier` situational modifier. Dispatcher dropped the
-  `!!options.showModifierDialog → legacy` clause; `_rollSkillCheckLegacy`
-  is now strictly the no-die / description-only fallback path.
-  Skill-table-with-dialog routes naturally through
-  `_skillTableViaAdapter` (which has always forwarded `options`
-  through `DCCRoll.createRoll`). +12 Vitest tests (945 total: 2 new
-  in adapter-skill-check.test.js for the dialog round-trip + cancel,
-  10 new in adapter-roll-dialog.test.js covering the parser + the
-  wrapper). +1 flipped Playwright case (skill `showModifierDialog`
-  legacy → adapter) + 1 new Playwright case (skill-table + dialog →
-  adapter with `mode=skillTable`). Open question #7 partially
-  closed: the scaffold exists. Spell-check generalization
-  (combining `promptSpellburnCommitment` with general modifier
-  terms in one dialog) deferred to the next slice.
-- **2026-05-17 — Session 25 / D4(remainder): naked spell check +
-  forceCrit + skill-table folds.** Lib PR (`dcc-core-lib@0.10.0`,
-  commit `77c95e2`) made `SpellCastInput.spellbookEntry` optional —
-  `castSpell` now runs without a spellbook slot, skipping the
-  manifestation override + mercurial attach when absent. +5 lib
-  tests (1416 green). Adapter side: shared
-  `applyForceCritToFoundryRoll` helper mutates the Foundry Roll's
-  natural to 20 (chat-visible) and the lib roller closure feeds
-  the same value, threaded through `_castViaCastSpell` /
-  `_castViaCalculateSpellCheck` / `_castNakedViaAdapter`. New
-  `_castNakedViaAdapter` builds a synthetic SpellDefinition + cleric/
-  wizard profile based on actor class, threads spellburn dialog +
-  disapproval mechanics, and emits chat via `renderSpellCheck`
-  (extended with a `buildNakedSpellResultHtml` helper for the
-  pass/fail/crit/fumble HTML indicator). New `_skillTableViaAdapter`
-  re-uses the legacy term-builder (DCCRoll.createRoll), Foundry's
-  RollTable lookup, and `SpellResult.addChatMessage` for the
-  table-driven cases; the no-table disapproval-only path emits its
-  own SpellCheck*NoTable indicator. Dispatcher updates: `!spellItem`
-  routes to `_castNakedViaAdapter` unconditionally; `rollSkillCheck`
-  routes `hasSkillTable || useDisapprovalRange` to
-  `_skillTableViaAdapter` (showModifierDialog + description-only
-  stay legacy). `_rollSpellCheckLegacy`'s naked branch removed
-  (~110 lines deleted). Test changes: 5 actor.test.js naked-spell
-  tests flipped, 4 actor.test.js skill-table tests flipped, +3 new
-  adapter-spell-check.test.js cases (naked wizard, naked cleric,
-  skill-table turnUnholy), +3 new Playwright cases (naked adapter,
-  naked cleric adapter, forceCrit + libResult.natural=20), +1
-  flipped Playwright case (divineAid legacy → adapter). 933 Vitest
-  green (was 930, +3 net). Lib commit local-only on `main` until
-  Tim pushes.
-- **2026-05-17 — Session 24 / D4(profile-override): cross-class
-  castingMode routing via `SpellCheckOptions.profileOverride`.** Two-
-  repo slice. Lib PR (`dcc-core-lib@0.9.0`, commit `a453473`) added
-  `SpellCheckOptions.profileOverride?: CasterProfile` — when supplied,
-  the lib uses the override profile instead of deriving it from
-  `character.classInfo.classId`. Override governs `casterTypes`
-  validation, spellburn / disapproval / corruption / patron-taint
-  triggers, spell-check ability, and spell-loss recovery; class-bound
-  state (spellbook / disapprovalRange / patron) is read from
-  `character.state.classState[override.type]`, which the caller
-  populates. `getSpellbookEntry` + `markSpellLost` writeback both
-  re-keyed by the active profile so the override flow looks up against
-  the synthetic spellbook the adapter built. +4 lib tests (1411 green).
-  Adapter side: `buildSpellCheckArgs` accepts
-  `options.castingModeOverride`; `_rollSpellCheckViaAdapter` accepts a
-  `dispatch.castingModeOverride` argument; `_castViaCalculateSpellCheck`
-  threads `profileOverride: profile` onto every `libCalculateSpellCheck`
-  call (no-op when override matches the derived profile, load-bearing
-  for cross-class). Dispatcher widens two gates: `wizard` castingMode
-  on `isCleric` → adapter with `castingModeOverride: 'wizard'`;
-  `cleric` castingMode on `!isCleric || hasPatron` → adapter with
-  `castingModeOverride: 'cleric'`. Three vitest tests flipped (cleric-
-  on-patron, cleric-on-non-cleric, +1 new wizard-on-cleric case); +2
-  Playwright cases covering both cross-class routes. 930 Vitest green
-  (+1 net). Remaining D4 sub-branches (naked spell check + skill-table
-  Turn Unholy + generic-on-patron-or-cleric staying legacy) tracked
-  in `02-slice-backlog.md`.
-- **2026-04-24 — Session 22 follow-ons: D3b-γ closed, D3b-β
-  authored cross-repo.** Sibling audit: `mcc-classes` ships no
-  packs; `dcc-crawl-classes/packs/` has no patron-taint JSONs.
-  `CONFIG.DCC.patronTaintPacks` default seed (core + xcc side-
-  effect packs) is exhaustive — no adapter change needed (γ).
-  D3b-β authored new `src/spells/patron-taints.ts` in
-  `dcc-official-data` mirroring the 5 core `dcc-core-book`
-  manifestation tables with Foundry `[[/roll XdY]]` markup
-  stripped to plain `[XdY]` dice notation; exports
-  `PATRON_TAINT_TABLES` + `getPatronTaintTable(patron)` lookup
-  helper; `tsc --noEmit` clean. Tim committed + pushed in the
-  `dcc-official-data` repo on its own cadence. No runtime DCC
-  change — the compendium RollTables remain authoritative.
-- **2026-04-24 — Session 22 / D3b-α: patron-taint manifestation
-  table loader.** New `loadPatronTaintTable(actor)` in
-  `module/adapter/spell-input.mjs` (mirror of `loadDisapprovalTable`):
-  walks `CONFIG.DCC.patronTaintPacks` looking for a `RollTable`
-  named `Patron Taint: ${actor.system.class.patron}`, case-
-  insensitive-fallback on the tail (lets actors storing "The King
-  of Elfland" resolve the `dcc-core-book` table named with lowercase
-  "the King of Elfland"), falls back to world tables. New `CONFIG.DCC.patronTaintPacks`
-  `TablePackManager` seeded in `module/dcc.js:462-472` with the core
-  + xcc side-effect packs; sibling modules can push additional packs
-  via `addPack`. `_castViaCalculateSpellCheck` threads the resolved
-  `SimpleTable` onto `input.patronTaintTable`, pre-rolls the paired
-  manifestation 1d6 (only when a table is present, matching the
-  existing creeping-chance d100 pattern), and the roller closure now
-  returns the pre-rolled d6 for `1d6` formulas. Bobugbubilz / Azi
-  Dahaka / Sezrekan / the King of Elfland / Three Fates tables ship
-  authored in `dcc-core-book/packs/dcc-core-spell-side-effect-tables`;
-  Barzodi / Circe / Medea / Prometheus Firebringer / Amazing Rando
-  in the equivalent `xcc-core-book` pack. All 10 light up the
-  `onPatronTaint` chat emote automatically. 924 Vitest + 98
-  Playwright (+7 new vitest for loader paths + full integration
-  acquisition; +1 new Playwright asserting compendium-resolved
-  manifestation text reaches chat).
-- **2026-04-24 — Session 21 / D3a: patron-taint RAW alignment +
-  retire `_runLegacyPatronTaint`.** Lib PR #6 (`dcc-core-lib@0.7.0`,
-  commit `e8ecabe`) replaced the fumble-gated taint mechanic with the
-  two RAW triggers: per-cast creeping chance (1d100 vs
-  `patronTaintChance`, +1% per miss, reset to 1 on acquisition) + per-
-  spell result-table entry (`effect.type === 'patron-taint'` or
-  `effect.data.patronTaint === true`). Also fixed natural-1 forcing
-  result-table lookup to row 1 (discards modifiers per RAW). Adapter
-  side: `spell-input.mjs` threads `patronTaintChance` +
-  `isPatronSpell` onto `castInput`; `spell-events.mjs` wires
-  `onPatronTaint` chat render; `actor.js` pre-rolls the 1d100 via
-  Foundry (same two-pass determinism pattern as disapproval d4),
-  persists `result.newPatronTaintChance`, and deletes
-  `_runLegacyPatronTaint` (36 lines). 917 Vitest + 97 Playwright
-  (+2 new: high-chance acquisition reset, non-patron spell no-op).
+
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at
