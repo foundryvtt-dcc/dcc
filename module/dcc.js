@@ -772,7 +772,7 @@ async function processSpellCheck (actor, spellData) {
 
     // Determine casting mode from the item or actor - default to wizard
     let castingMode = item ? item.system.config.castingMode : 'wizard'
-    if (!item && actor.system.details.sheetClass === 'Cleric') {
+    if (!item && actor.classId === 'cleric') {
       // Cleric sheets will use the cleric casting mode if not set by the item
       castingMode = 'cleric'
     }

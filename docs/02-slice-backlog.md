@@ -776,15 +776,18 @@ identically through the new mechanism). +6 Vitest, +5 Playwright.
 failure, unchanged baseline). Visual regression unrunnable in this
 session's env (expects v12 baseline world).
 
-#### Phase 5 session 5 (next). Migrate remaining capitalized `sheetClass` readers.
-Elf at `module/actor.js:182`; Cleric at `module/actor.js:2180`,
-`module/actor.js:2481`, `module/dcc.js:746`. The Phase 4 session 7
-slice migrated the two halfling-keyed string comparisons but left
-these as out-of-scope. Bundle with whichever Phase 5 slice ends up
-restructuring the writer side of `sheetClass` (probably the
-`DCCSheet` collapse — at that point the source-of-truth for which
-class an actor is becomes the `applyClassDefaults` write, and
-readers can switch to `actor.classId` uniformly).
+#### ~~Phase 5 session 5. Migrate remaining capitalized `sheetClass` readers.~~ **DONE 2026-05-19**
+Four mechanical rewrites of
+`system.details.sheetClass === '<CapitalizedClass>'` →
+`actor.classId === '<lowercase>'`: Elf at `module/actor.js:198`;
+Cleric at `module/actor.js:2196`, `module/actor.js:2497`,
+`module/dcc.js:775`. `actor-sheets-dcc.js` keeps its
+`sheetClass !== 'Generic'` first-open check (Generic isn't
+class-bound). Pure-refactor — `actor.classId` resolves to
+`sheetClass.toLowerCase()`. +1 Vitest regression-guard test in
+`class-dispatch-i18n-guard.test.js` that fails the suite if any
+`sheetClass === '<CapitalizedClass>'` pattern re-appears in
+module source. 1003 Vitest green.
 
 #### ~~Phase 5 follow-up: register the link fields on the base schema.~~ **DONE 2026-05-18 (Phase 5 session 3)**
 Closed by Phase 5 session 3. `classLink`, `mightyDeedsLink`,
@@ -806,6 +809,11 @@ Move entries here as they land; keep the active queue scannable.
 
 ### Phase 5 (Sheet composition + class defaults)
 
+- Phase 5 session 5 (2026-05-19): migrate remaining capitalized
+  `sheetClass` readers to `actor.classId`. Four sites (Elf at
+  `actor.js:198`; Cleric at `actor.js:2196`, `actor.js:2497`,
+  `dcc.js:775`) flipped. +1 Vitest regression guard. Phase 5
+  sub-arc closes; remaining refactor work is Phase 6.
 - Phase 5 session 4 (2026-05-18):
   `game.dcc.registerSheetPart` + `applyClassDefaults`-aware
   `DCCSheet` intermediate base. 7 PC sheet subclasses collapsed to

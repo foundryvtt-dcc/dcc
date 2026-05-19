@@ -40,10 +40,26 @@ session's context):
 - [phase-4.md](dev/progress/phase-4.md) data-model slimming
 - [phase-5.md](dev/progress/phase-5.md) sheet composition (in progress)
 
-## Status (2026-05-18)
+## Status (2026-05-19)
 
-**Phase 5 session 4 shipped `registerSheetPart` + collapsed the 7
-PC sheets onto a `DCCSheet` base.** New
+**Phase 5 session 5 closed the Phase 5 sub-arc** by migrating the
+four remaining capitalized `system.details.sheetClass ===
+'<Class>'` readers in module source to the lowercase canonical
+`actor.classId` accessor. Mechanical: elf at `actor.js:198`,
+cleric at `actor.js:2196` (sheetClass leg only — keeps the
+`className === 'Cleric'` widening), `actor.js:2497`, and
+`dcc.js:775`. `actor-sheets-dcc.js` retains its
+`sheetClass !== 'Generic'` first-open check (Generic isn't
+class-bound; can't use classId). +1 Vitest regression guard in
+`class-dispatch-i18n-guard.test.js` walks module source and
+fails on any future re-introduction of the
+`sheetClass === '<CapitalizedClass>'` pattern. **1003 Vitest
+green** (was 1002, +1). **134 Playwright passed** (unchanged
+from session 4; this slice's only new test is the Vitest
+regression guard).
+
+**Phase 5 session 4 (2026-05-18) shipped `registerSheetPart` +
+collapsed the 7 PC sheets onto a `DCCSheet` base.** New
 `game.dcc.registerSheetPart(classId, descriptor)` in
 `module/extension-api.mjs`; `CONFIG.DCC.sheetParts = {}` seeded.
 Each entry is `{ parts, tabs }` mirroring ApplicationV2's `PARTS`
@@ -130,20 +146,12 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 5 session 4 (2026-05-18) shipped `registerSheetPart` +
-collapsed 7 PC sheets onto `DCCSheet` base.** All four Phase 5
-per-class extension registries (mixin / defaults / starting items /
-sheet parts) are now live. The Phase 5 sub-arc is effectively
-complete — what remains:
+**Phase 5 session 5 (2026-05-19) closed the Phase 5 sub-arc.** All
+five Phase 5 refactor concerns are landed (schema mixins /
+defaults / starting items / link fields / sheet parts /
+classId-reader migration). Remaining work is Phase 6 (lib-side):
 
-1. **Migrate remaining capitalized `sheetClass` readers (small
-   scope).** Elf at `actor.js:182`; Cleric at `actor.js:2180` /
-   `actor.js:2481` / `dcc.js:746`. These string comparisons against
-   capitalized `system.details.sheetClass` should switch to
-   `actor.classId === '<lowercase>'` for consistency with Phase 4
-   session 7's introduced accessor. Pure mechanical migration; no
-   behavior change. Closes the last out-of-scope item from Phase 4.
-2. **Phase 6: lib-side class progression registry.** Per
+1. **Phase 6: lib-side class progression registry.** Per
    `CLASS_DECOMPOSITION.md` §3.5 / `ARCHITECTURE_REIMAGINED.md §7`.
    Wire `dcc-core-lib`'s `registerClassProgression(classId, …)` for
    each built-in DCC class so `getSavingThrows / getCritDie /
@@ -152,12 +160,12 @@ complete — what remains:
    item. Lib-side work — start with a PR against
    `moonloch/dcc-core-lib` adding the registration shape, then
    wire from `module/dcc.js:init` after vendor sync.
-3. **Phase 6: variant registry.** `game.dcc.registerVariant({ id,
+2. **Phase 6: variant registry.** `game.dcc.registerVariant({ id,
    classes, sheetTheme })` so XCC ships as a variant module
    instead of overriding `CONFIG.Actor.documentClass` globally.
-   Larger scope; depends on §3.5 work landing first.
+   Larger scope; depends on #1 landing first.
 
-Tim picks #1, #2, or #3.
+Tim picks #1 or #2.
 
 **Also pending — dcc-qol sibling-fix coordination.** Session 20
 shim removal leaves dcc-qol's `attackRollHooks.js:283-284` reading

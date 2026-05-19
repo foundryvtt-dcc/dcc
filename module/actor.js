@@ -195,7 +195,7 @@ class DCCActor extends Actor {
       }
     }
 
-    if (this.system.details.sheetClass === 'Elf') {
+    if (this.classId === 'elf') {
       this.system.skills.detectSecretDoors.value = '+4'
     }
 
@@ -2193,7 +2193,7 @@ class DCCActor extends Actor {
     // also fixes the symmetric "Wizard spell on cleric-by-className-only
     // actor" routing (kept on legacy instead of misrouting via adapter).
     const isCleric =
-      this.system.details?.sheetClass === 'Cleric' ||
+      this.classId === 'cleric' ||
       this.system.class?.className === 'Cleric'
 
     if (!spellItem) {
@@ -2494,7 +2494,7 @@ class DCCActor extends Actor {
     const abilityId = options.abilityId || this.system.class.spellCheckAbility || ''
     const ability = this.system.abilities[abilityId] || { value: 10, mod: 0 }
 
-    const isIdolMagic = this.system.details.sheetClass === 'Cleric'
+    const isIdolMagic = this.classId === 'cleric'
     const profileType = isIdolMagic ? 'cleric' : 'wizard'
     const casterProfile = libGetCasterProfile(profileType) || libGetCasterProfile('wizard')
 
