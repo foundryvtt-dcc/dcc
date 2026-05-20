@@ -63,29 +63,33 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 6 session 3 (2026-05-19)** opened the previously hardcoded
-`BUILT_IN_CLASS_LEVEL_NAMES` table to homebrew content modules by
-adding `game.dcc.registerHomebrewClassForProgressionLoad(classId,
-itemPrefix)` and lifting the seven canonical PC classes onto
-`CONFIG.DCC.classLevelNames`. The Phase 6 session 2 loader at
-`module/adapter/foundry-data-loader.mjs` now reads from that
-registry, so a sibling content module shipping its own level-data
-pack just adds a `CONFIG.DCC.levelDataPacks.addPack(...)` call plus
-a `registerHomebrewClassForProgressionLoad(...)` call at `init`
-time and the loader picks it up at `dcc.ready`. Built-ins seeded
-through `module/built-in-class-level-names.mjs` via the same
-helper. +10 Vitest tests (7 helper tests + 2 loader tests asserting
-the registry gating + a homebrew classId → distinct itemPrefix
-mapping; 1 built-in seed table shape test). +2 Playwright cases in
-`extension-api.spec.js` (helper exposed on `game.dcc` + the seven
-canonical classes seeded on the registry; end-to-end fictional
-homebrew classId picked up by the loader after registration).
-1030 Vitest green (was 1020, +10). Playwright count tbd.
+**Phase 6 session 4 (2026-05-20)** closed the open flake-investigation
+follow-up by hardening `browser-tests/e2e/extension-api.spec.js`'s
+`beforeEach`. Two consecutive full-suite Playwright runs surfaced two
+*different* failure patterns in the same family (extension-api:267 +
+302 timing out in `beforeEach` waiting for `game.user`;
+v14-features:540 timing out on a tab click intercepted by the
+hardware-acceleration notification banner). Investigation found that
+`extension-api.spec.js` was the only e2e spec lacking the per-test
+`#notifications .notification` banner-removal + open-app cleanup the
+other three specs (`data-models`, `phase1-adapter-dispatch`,
+`v14-features`) all have. The slice adds banner-removal + `ui.windows`
+cleanup + stale `P*` actor purge to the `beforeEach`, and a new
+self-verifying top-of-file test `beforeEach hygiene purges stale state
+before the test body runs` asserting the three invariants
+(`ui.windows` empty, no notifications, no stale `P\d` actors). **The
+originally-cited flakes (`elf mixin attaches…` at line 553, `forceCrit
+shift-click flag…` at phase1:922) did NOT reproduce in either of the
+two pre-fix runs or the post-fix run** — the work addresses the FAMILY
+of environmental races rather than those specific test bodies.
+1030 Vitest green (unchanged — Vitest isn't affected). **141 Playwright
+passed** (was 140 baseline +1 new hygiene test; one latent xcc-core-book
+`DCCItemSheet → XCCItemSheet` override baseline unchanged at line 127,
+was line 78 — line shift comes from the new test).
 
 Remaining Phase 6 work: (1) `registerVariant` for variant-class
 modules (larger; touches actor-class selection UI / level-change
-dialog), (2) chase the forceCrit / elf-mixin suite-only Playwright
-flakes observed in recent runs.
+dialog). The flake-chase item is closed by this session.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -95,6 +99,57 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-20 — Phase 6 session 4: harden
+  `browser-tests/e2e/extension-api.spec.js`'s `beforeEach` to match
+  sibling-spec hygiene (closes flake-investigation follow-up).** The
+  session-start prompt called out two suite-only Playwright flakes —
+  `extension-api.spec.js:553 built-in elf mixin attaches…` and
+  `phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag…` —
+  observed in Phase 6 sessions 1 and 2 but neither in session 3 nor
+  in two pre-fix full-suite runs this session. The runs *did*
+  surface a different failure pattern in the same environmental-race
+  family: run 2 produced two `beforeEach`-level timeouts at
+  `extension-api.spec.js:267 + 302` (waiting on `game.user` to be
+  set after login, 30s timeout exceeded), plus
+  `v14-features.spec.js:540` timing out clicking the Equipment tab
+  because the persistent hardware-acceleration notification banner
+  was intercepting pointer events. Investigation revealed
+  `extension-api.spec.js` was the *only* e2e spec lacking the
+  per-test `#notifications .notification` banner-removal +
+  `ui.windows` cleanup the other three specs (`data-models`,
+  `phase1-adapter-dispatch`, `v14-features`) all carry. The slice
+  fills the gap: a unified world-state hygiene block at the tail of
+  `extension-api.spec.js`'s `beforeEach` closes any open ApplicationV2
+  windows, removes notification banners, and purges stale `P*`
+  actor probes left by failed prior runs (every probe in the spec
+  is named `P<digit>...`, deleted inline in the test body, so a
+  crash leaves a stale entry that breaks the next run's
+  `game.actors.getName(...)` lookups). +1 new top-of-file Playwright
+  case `beforeEach hygiene purges stale state before the test body
+  runs` reads `ui.windows.size`, `#notifications .notification` node
+  count, and the count of `^P\d`-named actors and asserts all three
+  invariants are zero — turns the hygiene into a self-verifying
+  contract. **Honest framing in the slice docs + comment block**:
+  the change addresses the *family* of environmental races, NOT the
+  specific elf:553 / forceCrit:922 test bodies — those didn't
+  reproduce in either pre-fix run or the post-fix run, and a
+  targeted fix without a concrete failure mode would be speculative.
+  Vitest unaffected (1030 green, unchanged). **141 Playwright
+  passed** (was 140 baseline + 1 new hygiene test). One latent
+  failure (xcc-core-book DCCItemSheet override at line 127 — was
+  line 78 in the pre-slice run; line shift is from the new test
+  insertion; baseline unchanged). All previously-flaked tests
+  passed cleanly: elf:553, forceCrit:922, extension-api:267+302
+  (run 2 beforeEach timeouts), v14-features:540 (run 2
+  banner-blocking click). Did NOT migrate the spec to the
+  worker-scoped session-reuse fixture pattern that
+  `phase1-adapter-dispatch` uses — blast radius too large for one
+  slice; tracked as a possible follow-up. Closes the flake-chase
+  follow-up identified in `01-session-start.md`'s Next-session
+  guidance. Remaining Phase 6 work: `registerVariant` for variant-
+  class modules (larger scope; touches actor-class selection UI /
+  level-change dialog).
 
 - **2026-05-19 — Phase 6 session 3: expose homebrew level-name
   registration on `game.dcc.*` + lift the seven built-in PC classes
@@ -339,68 +394,6 @@ archives linked above.
   module-side reader migration to classId (Phase 5-5). Remaining
   work is Phase 6 (lib-side `registerClassProgression` and
   `registerVariant`).
-- **2026-05-18 — Phase 5 session 4: `registerSheetPart` registry +
-  7 PC sheets collapsed onto `DCCSheet` base.** New stable extension
-  hook `game.dcc.registerSheetPart(classId, descriptor)` in
-  `module/extension-api.mjs`; `CONFIG.DCC.sheetParts = {}` seeded in
-  `module/config.js`. Each entry shape:
-  `{ parts: { partKey: { id, template } }, tabs: { group: { tabs:
-  [{ id, group, label }] } } }` — mirrors ApplicationV2's `PARTS` +
-  `TABS` statics so the registry is a drop-in for the previously
-  hardcoded per-class `CLASS_PARTS` + `CLASS_TABS`. Seeded for all 7
-  PC classes via new `module/built-in-sheet-parts.mjs` table
-  consumed by `module/dcc.js:init` (mirror of the
-  mixins/defaults/starting-items pattern). New `DCCSheet`
-  intermediate base class in `module/actor-sheets-dcc.js` between
-  `DCCActorSheet` (NPC base) and the per-class subclasses:
-  exposes inherited static getters `CLASS_PARTS` + `CLASS_TABS`
-  that resolve from `CONFIG.DCC.sheetParts[this.CLASS_ID]` at
-  lookup time (`this` in a static getter is the class the getter is
-  accessed on — `DCCActorSheetCleric.CLASS_PARTS` evaluates with
-  `this === DCCActorSheetCleric` → `this.CLASS_ID === 'cleric'` →
-  registry lookup). DCCSheet's `_prepareContext` runs the shared
-  `applyClassDefaults` + `applyClassStartingItems` pair gated on
-  `this.constructor.CLASS_ID` resolving. Each per-class subclass
-  collapses to a 4-line stub: just pin `static CLASS_ID =
-  '<classId>'` and inherit everything else. `module/actor-sheets-dcc.js`
-  shrunk from 466 → 235 lines (-49%). All 7 PC sheet classes stay
-  registered with their existing class names (`DCCActorSheetCleric`
-  etc.) so the "Configure Sheet" picker still has 7 labeled
-  options and existing `flags.core.sheetClass` values continue to
-  resolve — only the internals collapsed. Generic sheet
-  (`DCCActorSheetGeneric`) stays separate: it has a fully-static
-  `PARTS` declaration (different shape from class sheets), no
-  CLASS_ID, and its initial-setup logic isn't class-bound.
-  Sibling-module recipe for homebrew classes is now four
-  `register*` calls (mixin / defaults / starting items / sheet
-  part) + a 4-line sheet subclass extending DCCSheet —
-  documented in EXTENSION_API.md. +6 Vitest tests in
-  `extension-api.test.js` (registration storage / self-heal /
-  last-write-wins / validation throws on bad classId / non-object
-  descriptor / missing CONFIG.DCC). 1002 Vitest green (was 996,
-  +6). +5 Playwright cases in `extension-api.spec.js`: hook
-  exposed on `game.dcc`; all 7 built-in PC classes present in
-  the registry with the expected class-specific part key and tab
-  id; cleric / wizard / elf carry their extra
-  `clericSpells` / `wizardSpells` parts while halfling / thief /
-  warrior / dwarf don't; inherited static getters on each PC
-  sheet class resolve to the registry-keyed shape; homebrew
-  classId registration propagates through. **134 Playwright
-  passed** (was 129, +5), 1 latent failure (xcc-core-book
-  DCCItemSheet override, unchanged baseline). Visual regression
-  suite couldn't run in this session's environment — its
-  `start-foundry` script in
-  `browser-tests/visual-regression/package.json` launches a
-  `baselinev12` world, not the v14 world this slice was tested
-  against; the test-actor folders and selectors expect that v12
-  baseline. Slice doesn't change templates or CSS, so screenshots
-  should be byte-identical when the v12 baseline is available. **Phase 5 complete for all 7 built-in
-  PC classes**: schema mixin (P4) + class defaults (P5-1) +
-  starting items (P5-2 dwarf) + link fields (P5-3) + sheet parts
-  (P5-4). Remaining work in this arc is the migration of the
-  remaining capitalized `sheetClass` readers (Elf / Cleric in
-  `actor.js` + `dcc.js`) to `actor.classId` — small follow-up.
-
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at

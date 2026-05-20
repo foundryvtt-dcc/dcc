@@ -55,6 +55,55 @@ test.describe('DCC Extension API', () => {
         await page.keyboard.press('Escape')
       }
     }
+
+    // World-state hygiene. Mirrors `data-models.spec.js` / `phase1-adapter-dispatch.spec.js`
+    // / `v14-features.spec.js` beforeEach handlers:
+    //   - Close any open ApplicationV2 windows from prior tests (sheets,
+    //     dialogs) that would otherwise intercept clicks in this test.
+    //   - Remove notification banners (e.g. the hardware-acceleration
+    //     warning) that float at high z-index and intercept pointer
+    //     events. v14-features.spec.js:540 caught this exact failure mode
+    //     in the Phase 6 session 4 run — the banner reappeared mid-test
+    //     and blocked a tab click.
+    //   - Purge stale `P*` actor probes left behind by failed prior runs.
+    //     Every test in this file names its probe actor `P<digit>...`
+    //     (P1 SheetProbe, P4S1 Halfling Probe, P5S1 ClassDefaults Probe,
+    //     P6S1 round-trip, etc.) and deletes it inline; a crash mid-test
+    //     leaves the probe behind and the next run's `Actor.create` with
+    //     the same name produces ambiguous `game.actors.getName(...)`
+    //     lookups.
+    await page.evaluate(async () => {
+      for (const app of Object.values(ui.windows)) {
+        try { await app.close() } catch {}
+      }
+      document.querySelectorAll('#notifications .notification').forEach(n => n.remove())
+      const stale = game.actors.filter(a => /^P\d/i.test(a.name))
+      for (const actor of stale) {
+        try { await actor.delete() } catch {}
+      }
+    }).catch(() => {})
+  })
+
+  test('beforeEach hygiene purges stale state before the test body runs', async ({ page }) => {
+    // Phase 6 session 4: this spec previously lacked the per-test
+    // cleanup other e2e specs have, so a notification banner or an
+    // open app window from a prior test could intercept clicks in the
+    // current one. The Phase 6 session 4 run-2 surfaced two failure
+    // modes attributable to that gap: extension-api.spec.js:267 + 302
+    // timed out in beforeEach (deeper world-load race, not directly
+    // blocked here but symptomatic), and v14-features.spec.js:540
+    // timed out clicking a tab the hardware-acceleration banner was
+    // covering. The enhanced beforeEach mirrors data-models /
+    // phase1-adapter-dispatch / v14-features hygiene; this test
+    // asserts the invariants every downstream test depends on.
+    const state = await page.evaluate(() => ({
+      openWindowCount: Object.keys(ui.windows ?? {}).length,
+      notificationCount: document.querySelectorAll('#notifications .notification').length,
+      stalePProbeCount: game.actors.filter(a => /^P\d/i.test(a.name)).length
+    }))
+    expect(state.openWindowCount).toBe(0)
+    expect(state.notificationCount).toBe(0)
+    expect(state.stalePProbeCount).toBe(0)
   })
 
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
