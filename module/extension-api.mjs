@@ -537,3 +537,62 @@ export function registerSheetPart (classId, descriptor, deps = {}) {
   CONFIGImpl.DCC.sheetParts ??= {}
   CONFIGImpl.DCC.sheetParts[classId] = descriptor
 }
+
+/**
+ * Register a class's level-data-pack item-name prefix so the Phase 6
+ * `registerClassProgressionsFromPacks` loader picks it up.
+ *
+ * The loader at `module/adapter/foundry-data-loader.mjs` walks
+ * `CONFIG.DCC.levelDataPacks` looking for items named
+ * `{itemPrefix}-{level}` for each registered class — the seven
+ * built-in DCC classes are seeded via `module/built-in-class-level-names.mjs`
+ * at `init` time; this helper is the contribution surface for homebrew
+ * classes that ship their own level-data packs.
+ *
+ * `classId` is the lowercase canonical class identifier used by every
+ * other registry (`registerClassMixin`, `registerClassDefaults`,
+ * `registerClassStartingItems`, `registerSheetPart`,
+ * `registerClassProgression`). `itemPrefix` is the leading token of
+ * the level-data item names inside the homebrew pack — for the
+ * built-ins it happens to match the classId (`'cleric-1'`,
+ * `'warrior-3'`) but homebrew packs may choose a different prefix
+ * (e.g., classId `'my-druid'` → itemPrefix `'druid'`).
+ *
+ * Sibling-module recipe:
+ *
+ * ```js
+ * Hooks.once('init', () => {
+ *   CONFIG.DCC.levelDataPacks.addPack('my-homebrew.druid-levels')
+ *   game.dcc.registerHomebrewClassForProgressionLoad('druid', 'druid')
+ * })
+ * ```
+ *
+ * The loader runs at `dcc.ready` time, after `init`, so any
+ * registration that lands in `init` is picked up automatically.
+ * Re-registering an existing `classId` overwrites the prior
+ * itemPrefix (last-write-wins, matching the other class registries).
+ *
+ * Stable from day one (per `EXTENSION_API.md` recommendation 7).
+ *
+ * @param {string} classId - lowercase canonical class identifier.
+ * @param {string} itemPrefix - item-name prefix used inside the
+ *   level-data packs (`'{itemPrefix}-{level}'`).
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - `CONFIG` namespace (defaults to
+ *   `globalThis.CONFIG`).
+ */
+export function registerHomebrewClassForProgressionLoad (classId, itemPrefix, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  if (!classId || typeof classId !== 'string') {
+    throw new Error('registerHomebrewClassForProgressionLoad: classId must be a non-empty string')
+  }
+  if (!itemPrefix || typeof itemPrefix !== 'string') {
+    throw new Error('registerHomebrewClassForProgressionLoad: itemPrefix must be a non-empty string')
+  }
+  if (!CONFIGImpl?.DCC) {
+    throw new Error('registerHomebrewClassForProgressionLoad: CONFIG.DCC unavailable')
+  }
+  CONFIGImpl.DCC.classLevelNames ??= {}
+  CONFIGImpl.DCC.classLevelNames[classId] = itemPrefix
+}

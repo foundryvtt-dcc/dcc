@@ -31,10 +31,11 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
-import { registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerItemSheet, registerSheetPart } from './extension-api.mjs'
+import { registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerHomebrewClassForProgressionLoad, registerItemSheet, registerSheetPart } from './extension-api.mjs'
 import { registerBuiltInClassMixins } from './built-in-class-mixins.mjs'
 import { registerBuiltInClassDefaults } from './built-in-class-defaults.mjs'
 import { registerBuiltInClassStartingItems } from './built-in-class-starting-items.mjs'
+import { registerBuiltInClassLevelNames } from './built-in-class-level-names.mjs'
 import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
@@ -106,6 +107,16 @@ Hooks.once('init', async function () {
   // `module/built-in-sheet-parts.mjs` for the table.
   registerBuiltInSheetParts(registerSheetPart)
 
+  // Register built-in DCC class level-name prefixes. Phase 6 session 3
+  // lifted the previously hardcoded `BUILT_IN_CLASS_LEVEL_NAMES` table
+  // out of `module/adapter/foundry-data-loader.mjs` and onto this
+  // registry so homebrew content modules can register their own
+  // classId → itemPrefix mappings without editing system code. The
+  // loader at `registerClassProgressionsFromPacks` reads from
+  // `CONFIG.DCC.classLevelNames` at `dcc.ready` time. See
+  // `module/built-in-class-level-names.mjs` for the table.
+  registerBuiltInClassLevelNames(registerHomebrewClassForProgressionLoad)
+
   // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
@@ -160,6 +171,7 @@ Hooks.once('init', async function () {
     registerClassProgression, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassProgressions, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassStartingItems, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerHomebrewClassForProgressionLoad, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerSheetPart, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove

@@ -17,9 +17,13 @@
  * (registered via `CONFIG.DCC.levelDataPacks.addPack(...)`). This
  * loader uses the same mechanism: dcc-core-book's level pack
  * populates the seven built-in classes; homebrew packs adding their
- * own `{ClassName}-{level}` items get loaded too — just add the
- * className to `BUILT_IN_CLASS_LEVEL_NAMES` (or extend later via a
- * registerHomebrewClassForProgressionLoad-style helper).
+ * own `{ClassName}-{level}` items get loaded too — content modules
+ * register their classId → itemPrefix mapping via
+ * `game.dcc.registerHomebrewClassForProgressionLoad(...)`, which
+ * writes onto `CONFIG.DCC.classLevelNames`. The seven built-in
+ * entries are seeded from `module/built-in-class-level-names.mjs`
+ * during system `init`; this loader reads whatever the registry
+ * contains at `dcc.ready` time.
  *
  * The open-source DCC system ships only this loader — no class
  * progression *data*. The data lives in user-installed content
@@ -35,24 +39,6 @@
  */
 
 import { registerClassProgressions } from '../vendor/dcc-core-lib/data/classes/progression-utils.js'
-
-/**
- * Lowercase canonical classId → item-name prefix used in the level
- * packs. The pack convention is lowercase: `warrior-1`, `cleric-3`,
- * `dwarf-7`, etc. — matching the lowercase classId 1:1 today. The
- * mapping is kept as a separate table so a future homebrew pack
- * with a non-classId prefix can override (e.g., classId
- * `'my-druid'` → item-prefix `'druid'`).
- */
-const BUILT_IN_CLASS_LEVEL_NAMES = {
-  cleric: 'cleric',
-  dwarf: 'dwarf',
-  elf: 'elf',
-  halfling: 'halfling',
-  thief: 'thief',
-  warrior: 'warrior',
-  wizard: 'wizard'
-}
 
 /**
  * Maximum level to attempt loading. DCC tops out at 10 (the lib's
@@ -221,8 +207,10 @@ async function loadLevelsForClass (className, deps = {}) {
  * @returns {Promise<Array<string>>} array of registered classIds.
  */
 export async function registerClassProgressionsFromPacks (deps = {}) {
+  const CONFIG = deps.CONFIG ?? globalThis.CONFIG
+  const classLevelNames = CONFIG?.DCC?.classLevelNames ?? {}
   const progressions = []
-  for (const [classId, itemPrefix] of Object.entries(BUILT_IN_CLASS_LEVEL_NAMES)) {
+  for (const [classId, itemPrefix] of Object.entries(classLevelNames)) {
     // eslint-disable-next-line no-await-in-loop
     const levels = await loadLevelsForClass(itemPrefix, deps)
     if (!levels) continue

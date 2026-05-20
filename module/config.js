@@ -673,6 +673,18 @@ DCC.classStartingItems = {}
 // extension helper. Phase 5 §2.11 — sheet markup composition.
 DCC.sheetParts = {}
 
+// Per-class level-data-pack item-name prefix registry, keyed by
+// lowercase canonical class identifier (`'cleric'`, `'warrior'`, …).
+// Each value is the capitalized-or-lowercase prefix that appears on
+// the `{prefix}-{level}` items inside the level-data compendium
+// packs registered via `CONFIG.DCC.levelDataPacks.addPack(...)`.
+// Phase 6 session 3 added this registry so the
+// `registerClassProgressionsFromPacks` loader at
+// `module/adapter/foundry-data-loader.mjs` knows which classIds to
+// walk; homebrew content modules contribute their own entries via
+// `game.dcc.registerHomebrewClassForProgressionLoad(classId, itemPrefix)`.
+DCC.classLevelNames = {}
+
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks

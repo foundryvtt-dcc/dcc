@@ -42,6 +42,31 @@ session's context):
 
 ## Status (2026-05-19)
 
+**Phase 6 session 3 opened the level-name registry to homebrew
+modules.** New stable extension hook
+`game.dcc.registerHomebrewClassForProgressionLoad(classId, itemPrefix)`
+in `module/extension-api.mjs`; `CONFIG.DCC.classLevelNames = {}`
+seeded in `module/config.js`. The Phase 6 session 2 loader at
+`module/adapter/foundry-data-loader.mjs` previously hardcoded the
+seven canonical PC classes in a module-private
+`BUILT_IN_CLASS_LEVEL_NAMES` const — that table is gone, the
+loader reads `CONFIG.DCC.classLevelNames` instead. New
+`module/built-in-class-level-names.mjs` seeds the seven built-ins
+through the same helper at `init` time. Sibling content modules
+with homebrew classes ship a level-data pack via
+`CONFIG.DCC.levelDataPacks.addPack(...)` + a
+`registerHomebrewClassForProgressionLoad(...)` call from their own
+`init` hook; the loader picks them up at `dcc.ready` without
+editing system source. classId → itemPrefix indirection lets a
+homebrew classId like `'my-druid'` map onto a pack whose items
+ship under a different prefix (e.g. `'druid-1'`). +10 Vitest tests
+(7 helper + 3 loader-gating). +2 Playwright cases. **1030 Vitest
+green** (was 1020, +10). **137 Playwright passed** with 3 failures
+(none from this slice): two `data-models.spec.js` Gamemaster
+select-option timeouts caused by a mid-run logout race, and the
+latent xcc-core-book `DCCItemSheet → XCCItemSheet` override
+baseline. All three pass in isolation.
+
 **Phase 6 session 2 wired the compendium → lib-registry loader.**
 New `registerClassProgressionsFromPacks(...)` in
 `module/adapter/foundry-data-loader.mjs` walks
@@ -220,9 +245,8 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 6 session 2 (2026-05-19) closed PR #720's class-config
-item** by wiring the compendium → lib-registry loader. Remaining
-Phase 6 work:
+**Phase 6 session 3 (2026-05-19) closed the homebrew level-name
+helper follow-up.** Remaining Phase 6 work:
 
 1. **`registerVariant` for variant-class modules.** Per
    `CLASS_DECOMPOSITION.md` §3.6 /
@@ -233,20 +257,14 @@ Phase 6 work:
    World setting selects active variant (defaults to `dcc`).
    Larger scope; touches the actor-class selection UI / level-
    change dialog.
-2. **`registerHomebrewClassForProgressionLoad` helper.** Today
-   the foundry-data-loader's `BUILT_IN_CLASS_LEVEL_NAMES` is
-   hardcoded — adding a homebrew class requires editing that
-   table. A simple registration helper would let homebrew
-   modules contribute their classId → capitalized-prefix mapping
-   from their own `init`. Small scope; can land standalone or
-   bundle with #1.
-3. **Investigate the forceCrit suite-flake** observed during
-   Phase 6 session 1's Playwright run
-   (`phase1-adapter-dispatch.spec.js:922`). State pollution
-   between tests in the shared Foundry world. Worth chasing
-   while it's recent.
+2. **Investigate the forceCrit / elf-mixin suite-flakes** observed
+   during the Phase 6 session 1 / session 2 Playwright runs
+   (`phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag`,
+   `extension-api.spec.js:553 built-in elf mixin attaches…`). Each
+   fails under the full-suite run but passes in isolation — state
+   pollution between tests in the shared Foundry world.
 
-Tim picks #1, #2, or #3.
+Tim picks #1 or #2.
 
 **Also pending — dcc-qol sibling-fix coordination.** Session 20
 shim removal leaves dcc-qol's `attackRollHooks.js:283-284` reading

@@ -27,4 +27,162 @@
 
 ---
 
-<!-- Sessions will land here as they rotate out of Recent slices. -->
+- **2026-05-18 — Phase 5 session 1: `registerClassDefaults` registry
+  + 7 PC sheets migrated.** New stable extension hook
+  `game.dcc.registerClassDefaults(classId, defaults)` and companion
+  `applyClassDefaults(actor, classId)` helper in
+  `module/extension-api.mjs`. Each entry packages the
+  `_prepareContext` first-open writes the legacy class-sheet subclasses
+  inlined: `sheetClass` (capitalized sentinel that drives the
+  initial-setup-vs-maintenance dispatch), `localize` (i18n keys for
+  `class.className`), `enrichHtml` (i18n keys for `class.classLink` +
+  optional `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`),
+  and `literal` (scalar mechanical defaults — critRange,
+  attackBonusMode, addClassLevelToInitiative, spellCheckAbility,
+  showBackstab / showSpells, `skills.shieldBash.useDeed`).
+  `applyClassDefaults` returns `'initialized' | 'regenerated' |
+  'unchanged'` so the dwarf sheet can still gate its inline
+  ShieldBash auto-create on the `'initialized'` branch — that
+  starting-item logic stays inline pending a follow-up
+  `registerClassStartingItems` slice. Seven built-in PC entries
+  (cleric/dwarf/elf/halfling/thief/warrior/wizard) seeded via the
+  new `module/built-in-class-defaults.mjs` table consumed by
+  `module/dcc.js:init` only (integration tests don't open sheets,
+  so the shared production-and-test registration pattern the mixin
+  table uses isn't needed here). All 7 PC sheets in
+  `module/actor-sheets-dcc.js` shrunk from ~22-line
+  `_prepareContext` blocks to a single
+  `applyClassDefaults(this.options.document, '<classId>')` call —
+  net 156 lines deleted (623 → 467); `TextEditor` import dropped
+  alongside (it was only used by the now-extracted blocks). Generic
+  sheet stays untouched (not class-bound, has no maintenance branch
+  in the legacy code either). +11 Vitest in `extension-api.test.js`
+  covering both helpers (registration storage, self-heal on missing
+  registry, last-write-wins, validation throws on bad classId /
+  bad defaults / missing sheetClass / missing CONFIG.DCC; helper
+  initial-setup payload shape, maintenance-branch enrichHtml-only
+  payload, dual-enrichHtml mightyDeedsLink path, `unchanged` /
+  `initialized` / `regenerated` returns, defensive partial-entry
+  handling). 983 Vitest green (was 970, +13: 11 new helper tests
+  + 2 happy-path flippers). +5 Playwright cases in
+  `extension-api.spec.js` exercising the new helper end-to-end
+  against live Foundry: hook exposed on `game.dcc`; seed table
+  shape across all 7 PC classes asserting sheetClass + classLink
+  presence + critRange/attackBonusMode literal correctness; warrior
+  + dwarf carry the mightyDeedsLink slot AND wizard carries
+  spellcastingLink + spellburnLink; `applyClassDefaults` full
+  lifecycle on a halfling Player (initial → unchanged on second
+  call → regenerate after classLink wipe); warrior literal-defaults
+  end-to-end (`attackBonusMode='autoPerAttack'`,
+  `addClassLevelToInitiative=true`). 122 Playwright passed (was
+  117, +5), 1 latent failure (xcc-core-book DCCItemSheet override,
+  unchanged baseline). **Latent gap surfaced, NOT fixed in this
+  slice:** the warrior + dwarf `class.mightyDeedsLink` and wizard
+  `class.spellcastingLink` / `class.spellburnLink` writes don't
+  surface on `system.class.*` because those paths aren't registered
+  on the Player schema (only `class.classLink` is, contributed by
+  a sibling module's `dcc.definePlayerSchema` hook — the test
+  world also adds dozens of XCC/MCC extras like `archaicAlignment`,
+  `aiPatron`, `blasterDie`). Templates render
+  `{{{system.class.mightyDeedsLink}}}` → empty. Legacy sheets have
+  been writing these stripped values forever; my refactor matches
+  byte-for-byte. Tracked as a follow-up: either register the link
+  fields in the static `class` SchemaField in `player-data.mjs` or
+  document the missing sibling contribution in `EXTENSION_API.md`.
+  Opens Phase 5; remaining work is the `registerSheetPart` collapse
+  (§3.2), `registerClassStartingItems` (§3.4), and the
+  remaining-capitalized-`sheetClass`-readers migration (Elf at
+  `actor.js:182`; Cleric at `actor.js:2180`/`actor.js:2481`/
+  `dcc.js:746` — bundled with whichever later Phase 5 slice touches
+  the writer side).
+- **2026-05-18 — Phase 5 session 2: `registerClassStartingItems`
+  registry + dwarf ShieldBash migrated.** New stable extension
+  hook `game.dcc.registerClassStartingItems(classId, items)` and
+  companion `applyClassStartingItems(actor, classId)` helper in
+  `module/extension-api.mjs`. `CONFIG.DCC.classStartingItems = {}`
+  seeded in `module/config.js`. Each entry shape is a
+  `{ nameKey, type, img?, system? }` factory descriptor — the
+  helper localizes `nameKey` at apply time (item documents are
+  created with `name: localize(nameKey)`), and the duplicate check
+  matches on `(type, localized-name)` so renaming an existing
+  auto-created item suppresses re-creation. Created items batch
+  into a single `createEmbeddedDocuments('Item', [...])` call so
+  multi-item registrations (future homebrew "Cultist" with multiple
+  starting items) get the Foundry-preferred bulk-create shape, and
+  the helper returns the created docs array so callers can decide
+  whether to re-render. Dwarf ShieldBash seed registered via new
+  `module/built-in-class-starting-items.mjs` table consumed by
+  `module/dcc.js:init` (mirror of the mixins/defaults table
+  pattern). The dwarf sheet's inline ~21-line ShieldBash
+  auto-create block in `module/actor-sheets-dcc.js` collapsed to
+  the same 2-line uniform pattern used by every other PC sheet:
+  `if (result === 'initialized')` → `applyClassStartingItems` →
+  `render(false)` when created.length>0. All 7 PC sheets now share
+  identical `_prepareContext` shape — only the `classId` literal
+  differs. Future-homebrew benefit: a sibling module registering
+  starting items for its own classId gets them applied
+  automatically through any PC sheet subclass that uses the
+  uniform pattern (no monkey-patching, no subclassing needed).
+  +13 Vitest tests in `extension-api.test.js` covering both helpers
+  (registration storage / self-heal / last-write-wins / validation
+  throws; helper create-missing / skip-existing /
+  partial-create-mixed-state / unregistered no-op / empty-list
+  no-op / malformed-entry defense / lean-payload omits img+system).
+  996 Vitest green (was 983, +13). +5 Playwright cases in
+  `extension-api.spec.js` exercising the hook end-to-end against
+  live Foundry: hook exposed on `game.dcc`; built-in dwarf entry
+  seeded with the expected shape AND no other DCC class has
+  entries; live dwarf actor gets ShieldBash created via
+  `applyClassStartingItems`; idempotent on second call (no
+  duplicate); homebrew classId registered mid-test propagates
+  through the helper. **Phase 5 active sub-arc progress:** schema
+  mixins (component 1, Phase 4) + class defaults (component 3,
+  Phase 5-1) + starting items (component 5, Phase 5-2) all
+  complete for the dwarf vertical. Remaining: sheet parts
+  (component 2, registerSheetPart — Phase 5 session 3 territory)
+  and lib progression (component 6, Phase 6).
+- **2026-05-18 — Phase 5 session 3: register the four link fields
+  on the base Player schema (closes Phase 5-1 latent gap).** Pure
+  schema add — re-import `HTMLField` in
+  `module/data/actor/player-data.mjs` (was dropped at Phase 4
+  session 6 when `corruption` moved to the wizard mixin) and add
+  four `HTMLField({ initial: '' })` declarations to the static
+  `class` SchemaField alongside `className`: `classLink`,
+  `mightyDeedsLink`, `spellcastingLink`, `spellburnLink`. Closes
+  the latent gap surfaced at Phase 5 session 1: pre-Phase-5-3,
+  only `classLink` survived schema validation (a sibling
+  `dcc.definePlayerSchema` hook in xcc-core-book registered it),
+  so `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`
+  writes from `applyClassDefaults`'s `enrichHtml` bag were
+  silently stripped by Foundry. Templates rendered
+  `{{{system.class.mightyDeedsLink}}}` → empty for warrior /
+  dwarf actors and similarly for wizard's spellcasting / spellburn
+  fields. Post-slice, all four `enrichHtml` paths persist on
+  `system.class.*` in every world configuration (including
+  clean DCC-only worlds without xcc-core-book). The sibling
+  module's `classLink` registration via `dcc.definePlayerSchema`
+  still runs and overrides the base-body declaration on its own
+  schedule (last-write-wins as before) — no breakage for existing
+  worlds. +4 assertions added to the existing integration test
+  `module/__integration__/data-models.test.js` (`PlayerData
+  constructs with defaults` now also asserts `class.classLink`,
+  `class.mightyDeedsLink`, `class.spellcastingLink`,
+  `class.spellburnLink` initialize to `''`). +2 Playwright cases
+  in `extension-api.spec.js`: (a) `Phase 5 session 3 link fields
+  surface on system.class.* (latent gap closed)` exercises
+  warrior + wizard + dwarf via `applyClassDefaults` and asserts
+  every registered enrichHtml path resolves to a non-empty string
+  on `system.class.*` post-write — regression guard catching any
+  future schema strip; (b) `fresh Player schema initializes the
+  four link fields to empty strings` asserts the empty-string
+  default on a brand-new Player document. 996 Vitest green
+  (unchanged from session 2 — the +4 assertions extend an
+  existing test rather than adding new test cases). The earlier
+  warrior `applyClassDefaults` test's "latent gap" comment trimmed
+  to point at the new sibling regression guard instead. **Phase 5
+  active sub-arc:** halfling/dwarf/thief/cleric/warrior/wizard/elf
+  all have ✅ schema mixin (Phase 4) + ✅ class defaults (Phase 5
+  session 1) + ✅ working enriched-HTML link fields (Phase 5
+  session 3). Dwarf adds ✅ starting items (Phase 5 session 2).
+  Remaining: `registerSheetPart` collapse + sheetClass-reader
+  migration (next sessions).

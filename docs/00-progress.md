@@ -63,252 +63,113 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 6 session 2 (2026-05-19)** wired the cross-domain
-compendium → lib-registry loader. New
-`registerClassProgressionsFromPacks(...)` in
-`module/adapter/foundry-data-loader.mjs` walks
-`CONFIG.DCC.levelDataPacks` at `dcc.ready` time, looking for
-`{ClassName}-{level}` items for each of the 7 built-in DCC class
-IDs (`cleric`, `dwarf`, `elf`, `halfling`, `thief`, `warrior`,
-`wizard`) up to level 10. For each item found, parses the
-`system.levelData` text (newline-separated `key=value`,
-numeric-coerced) via the new `parseLevelDataText` helper —
-mirrors the existing parser in `actor-level-change.js`. Then
-maps Foundry-system-paths onto the lib's `ProgressionLevelData`
-shape via `buildProgressionLevelFromParsed`: saves
-(`system.saves.{ref,frt,wil}.value` → `saves.{ref,frt,wil}`),
-attack bonus (`system.details.attackHitBonus`), crit die/table/range,
-action dice (comma-separated string → array), hit die
-(strips `LdN → dN`), luck die. Per-class `ClassProgression`
-objects assembled from all discoverable levels and registered via
-`registerClassProgressions(...)` from the vendored lib. Wired
-into `module/dcc.js`'s `dcc.ready` hook handler BEFORE
-`Hooks.callAll('dcc.ready')` so sibling-module listeners on
-`dcc.ready` see the populated registry. Errors during loading
-caught + logged; doesn't break system init.
+**Phase 6 session 3 (2026-05-19)** opened the previously hardcoded
+`BUILT_IN_CLASS_LEVEL_NAMES` table to homebrew content modules by
+adding `game.dcc.registerHomebrewClassForProgressionLoad(classId,
+itemPrefix)` and lifting the seven canonical PC classes onto
+`CONFIG.DCC.classLevelNames`. The Phase 6 session 2 loader at
+`module/adapter/foundry-data-loader.mjs` now reads from that
+registry, so a sibling content module shipping its own level-data
+pack just adds a `CONFIG.DCC.levelDataPacks.addPack(...)` call plus
+a `registerHomebrewClassForProgressionLoad(...)` call at `init`
+time and the loader picks it up at `dcc.ready`. Built-ins seeded
+through `module/built-in-class-level-names.mjs` via the same
+helper. +10 Vitest tests (7 helper tests + 2 loader tests asserting
+the registry gating + a homebrew classId → distinct itemPrefix
+mapping; 1 built-in seed table shape test). +2 Playwright cases in
+`extension-api.spec.js` (helper exposed on `game.dcc` + the seven
+canonical classes seeded on the registry; end-to-end fictional
+homebrew classId picked up by the loader after registration).
+1030 Vitest green (was 1020, +10). Playwright count tbd.
 
-This closes the remaining half of PR #720's "programmatic PC
-creation produces inconsistent class config" item: the lib's
-`getSavingThrows("warrior", 3)`, `getCritDie("cleric", 5)`,
-etc. now return non-zero values for actors in worlds where a
-content module (dcc-core-book and similar) ships level data.
+Remaining Phase 6 work: (1) `registerVariant` for variant-class
+modules (larger; touches actor-class selection UI / level-change
+dialog), (2) chase the forceCrit / elf-mixin suite-only Playwright
+flakes observed in recent runs.
 
-The loader uses the existing level-data-items extensibility
-mechanism — content modules ship their own compendium packs of
-`{Class}-{level}` items (registered via
-`CONFIG.DCC.levelDataPacks.addPack(...)`) and the loader picks
-them up automatically. Single source of truth; no duplicate
-registration call needed alongside the level-change dialog
-consumption. Homebrew classes that ship their own level packs
-just need to add a name → classId entry to
-`BUILT_IN_CLASS_LEVEL_NAMES` (or a future
-`registerHomebrewClassForProgressionLoad` helper).
-
-+15 Vitest tests in new
-`module/__tests__/foundry-data-loader.test.js` (5 for the parser
-including empty-rhs guard + dice-notation preservation; 7 for
-the mapper including path → field assertions, level-count strip,
-numeric action-dice fallback, sparse-saves coercion, non-numeric
-critRange drop, empty-token filter; 3 for the assembler including
-no-packs / empty-packs / populated). All test data is
-unambiguously placeholder content — `d13` hit die, save bonuses
-7-12, `TEST` crit table — values that obviously don't match any
-official progression. The open-source DCC system ships no class
-progression data; data lives in user-installed content modules
-(per `ARCHITECTURE_REIMAGINED.md §8.1`). +1 Playwright case that
-inspects `CONFIG.DCC.levelDataPacks` + `getRegisteredClassIds()`
-post-init and asserts structural shape only (registered IDs
-intersect the canonical set; sample progression has populated
-`levels` map; no value assertions). 1020 Vitest green (was 1005,
-+15). Playwright count tbd.
-
-**Phase 6 session 1 (2026-05-19)** opened Phase 6 by exposing the
-lib's class-progression registration helpers on `game.dcc.*`. The
-vendored `dcc-core-lib` already implements
-`registerClassProgression(progression)` and
-`registerClassProgressions(progressions)` in
-`module/vendor/dcc-core-lib/data/classes/progression-utils.js`,
-plus the consumer APIs (`getSavingThrows`, `getCritDie`,
-`getSaveBonus`, etc.) that read from the populated registry. The
-DCC system now imports those two registration helpers and
-re-exports them via `game.dcc.*` alongside the other Phase 4/5
-registries. No class progression *data* is shipped from the
-open-source system — that payload is copyrighted Goodman Games
-material living in the private `dcc-official-data` repo (per
-`ARCHITECTURE_REIMAGINED.md §8.1`). Content modules (a future
-`dcc-core-book` update, sibling content packs) call the helpers
-on their own schedule with their own data; this slice ships the
-registration surface so they can.
-
-PR #720's "programmatic PC creation produces inconsistent class
-config" item is *partially* closed by this slice: the lib API is
-now reachable from Foundry. The full closure waits on a content
-module to actually invoke it with a complete progression payload.
-Until that lands, `getSavingThrows("warrior", 3)` continues to
-return zeros for actors in worlds without a registering content
-module — same as today. +2 Vitest tests (import shape + fictional
-round-trip), +2 Playwright cases (helpers exposed on `game.dcc`;
-live round-trip against the lib registry using an arbitrary
-fictional class). 1005 Vitest green (was 1003, +2). 135
-Playwright passed (was 134, +2 from this slice). One new
-suite-only flake observed:
-`phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag…`
-fails under the full-suite run but passes in isolation (re-ran
-the single test, green). State pollution between tests in the
-shared Foundry world; not caused by this slice (which adds no
-chat / roll / spell logic). Latent xcc-core-book DCCItemSheet
-override failure unchanged baseline.
-
-**Phase 5 session 5 (2026-05-19)** completed Phase 5 by migrating
-the four remaining capitalized `sheetClass` readers in module
-source to the `actor.classId` accessor (Phase 4 session 7's
-addition). Mechanical, pure-refactor: `system.details.sheetClass
-=== 'Cleric'` → `this.classId === 'cleric'`, etc. Sites migrated:
-`module/actor.js:198` (elf detect-secret-doors derived prepare),
-`module/actor.js:2196` (cleric branch in `rollSpellCheck`,
-preserving the existing `className === 'Cleric'` widening for
-programmatic PCs), `module/actor.js:2497` (idol-magic flag in
-`_castNakedViaAdapter`), `module/dcc.js:775` (cleric-castingMode
-default in `processSpellCheck`). New regression-guard Vitest test
-in `class-dispatch-i18n-guard.test.js` walks `module/` source and
-fails on any future re-introduction of the
-`sheetClass === '<CapitalizedClass>'` pattern (with documented
-exceptions for the Generic sheet's first-open sentinel and the
-migrations.js writer-side helper). The `sheetClass !== 'Generic'`
-check in the Generic sheet stays — Generic isn't class-bound (no
-CLASS_ID, no class registries) so it can't dispatch via classId;
-the regression guard whitelists `actor-sheets-dcc.js` for that
-reason. 1003 Vitest green (was 1002, +1 new guard). 134 Playwright
-passed (unchanged from session 4; this slice's only new test is
-the Vitest regression guard).
-
-**Phase 5 closure note:** with session 5 landing, all per-class
-extension hooks (mixin / defaults / starting items / sheet parts)
-are live AND every module-side reader dispatches on the canonical
-lowercase `classId`. The slice backlog "Phase 5 active sub-arc"
-section can close out — what remains is Phase 6 (lib-side class
-progression + variant registry).
-
-**Phase 5 session 4 (2026-05-18)** shipped the
-`registerSheetPart` registry — the fourth and final per-class
-extension hook for Phase 5. New stable hook
-`game.dcc.registerSheetPart(classId, descriptor)` in
-`module/extension-api.mjs`; `CONFIG.DCC.sheetParts = {}` seeded in
-`module/config.js`. Each entry is `{ parts, tabs }` where `parts`
-mirrors ApplicationV2's `PARTS` shape (`partKey → { id, template }`)
-and `tabs` mirrors `TABS` (`group → { tabs: [{ id, group, label }] }`).
-Seeded for all 7 PC classes via new
-`module/built-in-sheet-parts.mjs`. New `DCCSheet` intermediate base
-class in `module/actor-sheets-dcc.js` exposes inherited static
-getters `CLASS_PARTS` + `CLASS_TABS` that resolve from
-`CONFIG.DCC.sheetParts[this.CLASS_ID]`; the per-class subclasses
-collapse to 4-line stubs that just pin `static CLASS_ID =
-'<classId>'` and inherit everything else (DEFAULT_OPTIONS,
-_prepareContext with applyClassDefaults + applyClassStartingItems,
-all part / tab resolution). `module/actor-sheets-dcc.js` shrunk
-from 466 → 235 lines (-49%). All 7 sheet classes still registered
-(no UX regression for the "Configure Sheet" picker) — only the
-internals collapsed. Generic sheet stays separate (different shape,
-not class-bound). Sibling modules registering a homebrew class now
-do four `register*` calls + a 4-line sheet subclass.
-
-**Phase 5 session 3 (2026-05-18)** closed the latent gap surfaced
-in session 1 by registering the four link fields (`classLink`,
-`mightyDeedsLink`, `spellcastingLink`, `spellburnLink`) as
-`HTMLField({ initial: '' })` on the base Player schema in
-`module/data/actor/player-data.mjs`. Pre-session-3 the static
-`class` SchemaField carried only `className`; only `classLink`
-worked at runtime (a sibling `dcc.definePlayerSchema` hook in
-xcc-core-book registered it). Warrior + dwarf `mightyDeedsLink`,
-wizard `spellcastingLink` / `spellburnLink` writes from
-`applyClassDefaults` were silently stripped → templates rendered
-empty. With the schema add, all four `enrichHtml` paths persist
-on `system.class.*` in every world configuration. `HTMLField`
-re-imported (was dropped at Phase 4 session 6 when the
-`corruption` field moved to the wizard mixin). +4 assertions
-in the existing integration test
-`module/__integration__/data-models.test.js` (PlayerData defaults
-include all four link fields at `''`). +2 Playwright cases in
-`extension-api.spec.js` (warrior + wizard + dwarf end-to-end link
-fields surface as non-empty strings; fresh Player initializes the
-four fields to empty strings).
-
-**Phase 5 session 2 (2026-05-18)** shipped the
-`registerClassStartingItems` registry — the third Phase 5
-extension hook alongside session 1's `registerClassDefaults`. New
-stable hook `game.dcc.registerClassStartingItems(classId, items)`
-+ `applyClassStartingItems(actor, classId)` helper in
-`module/extension-api.mjs`. `CONFIG.DCC.classStartingItems = {}`
-seeded in `module/config.js`. Each registered entry is a
-`{ nameKey, type, img?, system? }` factory descriptor; the helper
-localizes `nameKey` at apply time, checks the actor for a
-matching `(type, name)` doc (idempotent on re-open), batches
-missing entries into a single `createEmbeddedDocuments('Item',
-[...])` call, and returns the created docs array.
-`module/built-in-class-starting-items.mjs` carries the dwarf
-ShieldBash seed (today's only built-in starting item); wired into
-`module/dcc.js:init` via `registerBuiltInClassStartingItems`. The
-dwarf sheet's inline ~21-line ShieldBash block in
-`module/actor-sheets-dcc.js` collapsed to a 2-line uniform pattern
-matched by all 7 PC sheets — `if (result === 'initialized')` →
-`applyClassStartingItems` → `render(false)` when items created.
-The other 6 sheets pick up the same call (no-op today since they
-have no built-in entries) so homebrew classes registering items
-through any PC sheet subclass get them applied automatically.
-996 Vitest green (was 983, +13: 13 new `registerClassStartingItems`
-/ `applyClassStartingItems` tests). +5 Playwright cases in
-`extension-api.spec.js` (hook exposed on game.dcc; dwarf seed
-shape; live end-to-end dwarf ShieldBash creation; idempotent on
-second call; homebrew classId registration applied through the
-same code path).
-
-**Phase 5 session 1 (2026-05-18)** opened Phase 5 with the
-`registerClassDefaults` registry — class identity (className,
-classLink + optional mightyDeedsLink/spellcastingLink/spellburnLink
-enriched-HTML), mechanical defaults (critRange, attackBonusMode,
-…), and skill toggles (`shieldBash.useDeed`) packaged per class
-and seeded via `module/built-in-class-defaults.mjs` for all 7 PC
-classes. All 7 PC `_prepareContext` blocks shrunk from ~22 lines
-to a single helper call (156 lines deleted). Detail rotates to
-Recent slices below.
-
-**Latent gap closed at session 3 (2026-05-18):** the four link
-fields are now base-schema citizens; all `applyClassDefaults`
-`enrichHtml` writes persist on `system.class.*`.
-
-Remaining Phase 5 work: (a) `registerSheetPart` for the
-`CLASS_PARTS` / `CLASS_TABS` collapse (§3.2), (b) migrate the
-remaining capitalized `sheetClass` readers (Elf at
-`actor.js:182`; Cleric at `actor.js:2180` / `actor.js:2481` /
-`dcc.js:746`) to `actor.classId` — bundle with the `DCCSheet`
-collapse since that restructures the writer side.
-
-**Phase 4 (data-model slimming + class-mixin registry, closed
-2026-05-18)** lifted per-class schema fields off the monolithic
-`module/data/actor/player-data.mjs` body onto a single
-`BUILT_IN_CLASS_MIXINS` table consumed via `registerClassMixin`.
-All seven DCC classes (halfling, dwarf, thief, cleric, warrior,
-wizard, elf) mixin-source their fields. The Phase 4 closer added
-`DCCActor.classId` for normalized dispatch. Detail in
-[`dev/progress/phase-4.md`](dev/progress/phase-4.md).
-
-**Phase 3 (attacks, damage, crit, fumble — closed 2026-05-17)**
-took every `rollWeaponAttack` downstream call to single-path
-adapter via `dcc-core-lib`; the bespoke `promptSpellburnCommitment`
-also retired in favor of a unified `promptRollModifierDialog`. Open
-question #7 (modifier-dialog generalization) closed at session 27.
-Detail in [`dev/progress/phase-3.md`](dev/progress/phase-3.md).
-
-**Group E session 1 (2026-05-18)** landed the per-class
-mercurial-magic table registry — `dcc.registerMercurialMagicTable`
-hook + `CONFIG.DCC.mercurialMagicTables` registry. Closes the §2.4
-XCC critique. Detail rotated to the Recent slices section below.
+<!-- Detailed prior-phase narrative removed — archived in
+`dev/progress/phase-{3,4,5}.md`. The Recent slices section below
+keeps the five most-recent entries. -->
 
 ## Recent slices
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
 
+- **2026-05-19 — Phase 6 session 3: expose homebrew level-name
+  registration on `game.dcc.*` + lift the seven built-in PC classes
+  onto `CONFIG.DCC.classLevelNames`.** New stable extension hook
+  `game.dcc.registerHomebrewClassForProgressionLoad(classId,
+  itemPrefix)` in `module/extension-api.mjs`;
+  `CONFIG.DCC.classLevelNames = {}` seeded in `module/config.js`.
+  The Phase 6 session 2 loader at
+  `module/adapter/foundry-data-loader.mjs` previously carried a
+  module-private `BUILT_IN_CLASS_LEVEL_NAMES` const — that table is
+  gone, the loader now reads `CONFIG.DCC.classLevelNames` via the
+  same `deps.CONFIG ?? globalThis.CONFIG` injection it already
+  used for `levelDataPacks`. New `module/built-in-class-level-names.mjs`
+  table seeds the seven canonical PC classes
+  (cleric/dwarf/elf/halfling/thief/warrior/wizard, all mapping
+  classId → itemPrefix 1:1 because the dcc-core-book level pack
+  uses lowercase item names) via
+  `registerBuiltInClassLevelNames(register)`, consumed by
+  `module/dcc.js:init` alongside the other Phase 4/5
+  `registerBuiltInXxx` calls. The helper is exposed on the
+  `game.dcc` object alongside the other stable registry helpers;
+  `EXTENSION_API.md` gains a new Stable row documenting the
+  sibling-module recipe (`addPack(...)` +
+  `registerHomebrewClassForProgressionLoad(...)`).
+  Sibling modules with homebrew classes no longer need to edit
+  system source to teach the lib about their progression — they
+  register from their own `init` hook and the loader picks them
+  up at `dcc.ready`. The indirection between classId and
+  itemPrefix means a homebrew classId like `'my-druid'` can map
+  onto a pack that ships its items under a different prefix
+  (`'druid-1'`, `'druid-2'`), without forcing the homebrew author
+  to rename items to match. Validation throws on empty / non-string
+  classId / itemPrefix and missing CONFIG.DCC; storage is
+  last-write-wins on duplicate classId, matching the other class
+  registries. +10 Vitest tests in
+  `module/__tests__/extension-api.test.js` (7 covering the helper
+  itself — storage / self-heal / last-write-wins / classId
+  validation / itemPrefix validation / missing CONFIG.DCC throw /
+  built-in seed table shape) +
+  `module/__tests__/foundry-data-loader.test.js` (2 new assembler
+  tests asserting the loader skips classIds not present in the
+  registry AND a homebrew classId → distinct itemPrefix mapping
+  is honored; existing 3 loader tests updated to populate
+  `classLevelNames` in the mock CONFIG; 1 new defensive
+  registry-not-yet-seeded test). +2 Playwright cases in
+  `extension-api.spec.js`: hook exposed on `game.dcc` AND
+  `CONFIG.DCC.classLevelNames` carries exactly the 7 canonical
+  PC classIds post-init with the expected itemPrefix values;
+  end-to-end fictional homebrew classId registered mid-test gets
+  picked up by the loader (with full save+restore of the
+  classLevelNames registry AND the lib's progression registry).
+  Closes the second of the three Phase 6 follow-ups identified in
+  `01-session-start.md` (homebrew level-name extension hook).
+  Remaining Phase 6 work: `registerVariant` (larger scope) +
+  forceCrit / elf-mixin suite-only Playwright flake investigation.
+  **1030 Vitest green** (was 1020, +10). **137 Playwright passed**
+  (was 136 baseline + 2 new cases from this slice, expected 138;
+  one data-models test dropped to a login race — see flakes below).
+  Three Playwright failures this run, none caused by this slice:
+  (1) `data-models.spec.js:120 can create a new Player actor with
+  default values` — Gamemaster select-option timed out
+  ("option being selected is not enabled"); login race; (2)
+  `data-models.spec.js:157 can create a new NPC actor` — same
+  Gamemaster select-option timeout; same race; (3)
+  `extension-api.spec.js:78 registerItemSheet adds a sheet option
+  Foundry can resolve for the item type` — expected `DCCItemSheet`,
+  received `XCCItemSheet`. (3) is the **latent xcc-core-book
+  DCCItemSheet override baseline** flagged in every prior session.
+  (1) + (2) are new — the running Foundry world had a logged-in
+  Gamemaster when the suite started; Tim logged out mid-run and
+  the early Gamemaster-selecting tests caught the transition.
+  Both data-models tests pass in isolation and on rerun. Worth
+  pulling into the flake-investigation queue alongside forceCrit
+  / elf-mixin, but not caused by this slice (no chat / actor /
+  sheet logic touched).
 - **2026-05-19 — Phase 6 session 2: load class progressions from
   `levelDataPacks` at `dcc.ready` (closes PR #720 class-config
   item).** New `registerClassProgressionsFromPacks(...)` +
@@ -539,281 +400,6 @@ archives linked above.
   (P5-4). Remaining work in this arc is the migration of the
   remaining capitalized `sheetClass` readers (Elf / Cleric in
   `actor.js` + `dcc.js`) to `actor.classId` — small follow-up.
-- **2026-05-18 — Phase 5 session 3: register the four link fields
-  on the base Player schema (closes Phase 5-1 latent gap).** Pure
-  schema add — re-import `HTMLField` in
-  `module/data/actor/player-data.mjs` (was dropped at Phase 4
-  session 6 when `corruption` moved to the wizard mixin) and add
-  four `HTMLField({ initial: '' })` declarations to the static
-  `class` SchemaField alongside `className`: `classLink`,
-  `mightyDeedsLink`, `spellcastingLink`, `spellburnLink`. Closes
-  the latent gap surfaced at Phase 5 session 1: pre-Phase-5-3,
-  only `classLink` survived schema validation (a sibling
-  `dcc.definePlayerSchema` hook in xcc-core-book registered it),
-  so `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`
-  writes from `applyClassDefaults`'s `enrichHtml` bag were
-  silently stripped by Foundry. Templates rendered
-  `{{{system.class.mightyDeedsLink}}}` → empty for warrior /
-  dwarf actors and similarly for wizard's spellcasting / spellburn
-  fields. Post-slice, all four `enrichHtml` paths persist on
-  `system.class.*` in every world configuration (including
-  clean DCC-only worlds without xcc-core-book). The sibling
-  module's `classLink` registration via `dcc.definePlayerSchema`
-  still runs and overrides the base-body declaration on its own
-  schedule (last-write-wins as before) — no breakage for existing
-  worlds. +4 assertions added to the existing integration test
-  `module/__integration__/data-models.test.js` (`PlayerData
-  constructs with defaults` now also asserts `class.classLink`,
-  `class.mightyDeedsLink`, `class.spellcastingLink`,
-  `class.spellburnLink` initialize to `''`). +2 Playwright cases
-  in `extension-api.spec.js`: (a) `Phase 5 session 3 link fields
-  surface on system.class.* (latent gap closed)` exercises
-  warrior + wizard + dwarf via `applyClassDefaults` and asserts
-  every registered enrichHtml path resolves to a non-empty string
-  on `system.class.*` post-write — regression guard catching any
-  future schema strip; (b) `fresh Player schema initializes the
-  four link fields to empty strings` asserts the empty-string
-  default on a brand-new Player document. 996 Vitest green
-  (unchanged from session 2 — the +4 assertions extend an
-  existing test rather than adding new test cases). The earlier
-  warrior `applyClassDefaults` test's "latent gap" comment trimmed
-  to point at the new sibling regression guard instead. **Phase 5
-  active sub-arc:** halfling/dwarf/thief/cleric/warrior/wizard/elf
-  all have ✅ schema mixin (Phase 4) + ✅ class defaults (Phase 5
-  session 1) + ✅ working enriched-HTML link fields (Phase 5
-  session 3). Dwarf adds ✅ starting items (Phase 5 session 2).
-  Remaining: `registerSheetPart` collapse + sheetClass-reader
-  migration (next sessions).
-- **2026-05-18 — Phase 5 session 2: `registerClassStartingItems`
-  registry + dwarf ShieldBash migrated.** New stable extension
-  hook `game.dcc.registerClassStartingItems(classId, items)` and
-  companion `applyClassStartingItems(actor, classId)` helper in
-  `module/extension-api.mjs`. `CONFIG.DCC.classStartingItems = {}`
-  seeded in `module/config.js`. Each entry shape is a
-  `{ nameKey, type, img?, system? }` factory descriptor — the
-  helper localizes `nameKey` at apply time (item documents are
-  created with `name: localize(nameKey)`), and the duplicate check
-  matches on `(type, localized-name)` so renaming an existing
-  auto-created item suppresses re-creation. Created items batch
-  into a single `createEmbeddedDocuments('Item', [...])` call so
-  multi-item registrations (future homebrew "Cultist" with multiple
-  starting items) get the Foundry-preferred bulk-create shape, and
-  the helper returns the created docs array so callers can decide
-  whether to re-render. Dwarf ShieldBash seed registered via new
-  `module/built-in-class-starting-items.mjs` table consumed by
-  `module/dcc.js:init` (mirror of the mixins/defaults table
-  pattern). The dwarf sheet's inline ~21-line ShieldBash
-  auto-create block in `module/actor-sheets-dcc.js` collapsed to
-  the same 2-line uniform pattern used by every other PC sheet:
-  `if (result === 'initialized')` → `applyClassStartingItems` →
-  `render(false)` when created.length>0. All 7 PC sheets now share
-  identical `_prepareContext` shape — only the `classId` literal
-  differs. Future-homebrew benefit: a sibling module registering
-  starting items for its own classId gets them applied
-  automatically through any PC sheet subclass that uses the
-  uniform pattern (no monkey-patching, no subclassing needed).
-  +13 Vitest tests in `extension-api.test.js` covering both helpers
-  (registration storage / self-heal / last-write-wins / validation
-  throws; helper create-missing / skip-existing /
-  partial-create-mixed-state / unregistered no-op / empty-list
-  no-op / malformed-entry defense / lean-payload omits img+system).
-  996 Vitest green (was 983, +13). +5 Playwright cases in
-  `extension-api.spec.js` exercising the hook end-to-end against
-  live Foundry: hook exposed on `game.dcc`; built-in dwarf entry
-  seeded with the expected shape AND no other DCC class has
-  entries; live dwarf actor gets ShieldBash created via
-  `applyClassStartingItems`; idempotent on second call (no
-  duplicate); homebrew classId registered mid-test propagates
-  through the helper. **Phase 5 active sub-arc progress:** schema
-  mixins (component 1, Phase 4) + class defaults (component 3,
-  Phase 5-1) + starting items (component 5, Phase 5-2) all
-  complete for the dwarf vertical. Remaining: sheet parts
-  (component 2, registerSheetPart — Phase 5 session 3 territory)
-  and lib progression (component 6, Phase 6).
-- **2026-05-18 — Phase 5 session 1: `registerClassDefaults` registry
-  + 7 PC sheets migrated.** New stable extension hook
-  `game.dcc.registerClassDefaults(classId, defaults)` and companion
-  `applyClassDefaults(actor, classId)` helper in
-  `module/extension-api.mjs`. Each entry packages the
-  `_prepareContext` first-open writes the legacy class-sheet subclasses
-  inlined: `sheetClass` (capitalized sentinel that drives the
-  initial-setup-vs-maintenance dispatch), `localize` (i18n keys for
-  `class.className`), `enrichHtml` (i18n keys for `class.classLink` +
-  optional `mightyDeedsLink` / `spellcastingLink` / `spellburnLink`),
-  and `literal` (scalar mechanical defaults — critRange,
-  attackBonusMode, addClassLevelToInitiative, spellCheckAbility,
-  showBackstab / showSpells, `skills.shieldBash.useDeed`).
-  `applyClassDefaults` returns `'initialized' | 'regenerated' |
-  'unchanged'` so the dwarf sheet can still gate its inline
-  ShieldBash auto-create on the `'initialized'` branch — that
-  starting-item logic stays inline pending a follow-up
-  `registerClassStartingItems` slice. Seven built-in PC entries
-  (cleric/dwarf/elf/halfling/thief/warrior/wizard) seeded via the
-  new `module/built-in-class-defaults.mjs` table consumed by
-  `module/dcc.js:init` only (integration tests don't open sheets,
-  so the shared production-and-test registration pattern the mixin
-  table uses isn't needed here). All 7 PC sheets in
-  `module/actor-sheets-dcc.js` shrunk from ~22-line
-  `_prepareContext` blocks to a single
-  `applyClassDefaults(this.options.document, '<classId>')` call —
-  net 156 lines deleted (623 → 467); `TextEditor` import dropped
-  alongside (it was only used by the now-extracted blocks). Generic
-  sheet stays untouched (not class-bound, has no maintenance branch
-  in the legacy code either). +11 Vitest in `extension-api.test.js`
-  covering both helpers (registration storage, self-heal on missing
-  registry, last-write-wins, validation throws on bad classId /
-  bad defaults / missing sheetClass / missing CONFIG.DCC; helper
-  initial-setup payload shape, maintenance-branch enrichHtml-only
-  payload, dual-enrichHtml mightyDeedsLink path, `unchanged` /
-  `initialized` / `regenerated` returns, defensive partial-entry
-  handling). 983 Vitest green (was 970, +13: 11 new helper tests
-  + 2 happy-path flippers). +5 Playwright cases in
-  `extension-api.spec.js` exercising the new helper end-to-end
-  against live Foundry: hook exposed on `game.dcc`; seed table
-  shape across all 7 PC classes asserting sheetClass + classLink
-  presence + critRange/attackBonusMode literal correctness; warrior
-  + dwarf carry the mightyDeedsLink slot AND wizard carries
-  spellcastingLink + spellburnLink; `applyClassDefaults` full
-  lifecycle on a halfling Player (initial → unchanged on second
-  call → regenerate after classLink wipe); warrior literal-defaults
-  end-to-end (`attackBonusMode='autoPerAttack'`,
-  `addClassLevelToInitiative=true`). 122 Playwright passed (was
-  117, +5), 1 latent failure (xcc-core-book DCCItemSheet override,
-  unchanged baseline). **Latent gap surfaced, NOT fixed in this
-  slice:** the warrior + dwarf `class.mightyDeedsLink` and wizard
-  `class.spellcastingLink` / `class.spellburnLink` writes don't
-  surface on `system.class.*` because those paths aren't registered
-  on the Player schema (only `class.classLink` is, contributed by
-  a sibling module's `dcc.definePlayerSchema` hook — the test
-  world also adds dozens of XCC/MCC extras like `archaicAlignment`,
-  `aiPatron`, `blasterDie`). Templates render
-  `{{{system.class.mightyDeedsLink}}}` → empty. Legacy sheets have
-  been writing these stripped values forever; my refactor matches
-  byte-for-byte. Tracked as a follow-up: either register the link
-  fields in the static `class` SchemaField in `player-data.mjs` or
-  document the missing sibling contribution in `EXTENSION_API.md`.
-  Opens Phase 5; remaining work is the `registerSheetPart` collapse
-  (§3.2), `registerClassStartingItems` (§3.4), and the
-  remaining-capitalized-`sheetClass`-readers migration (Elf at
-  `actor.js:182`; Cleric at `actor.js:2180`/`actor.js:2481`/
-  `dcc.js:746` — bundled with whichever later Phase 5 slice touches
-  the writer side).
-- **2026-05-18 — Phase 4 session 7: `DCCActor.classId` accessor for
-  class dispatch.** Closes the non-class-extraction sub-slice that
-  was open in the Phase 4 sub-arc: replace `system.details.sheetClass
-  === 'Halfling'` string comparisons with a normalized
-  `actor.classId === 'halfling'` accessor reading the canonical
-  lowercase ID. New getter on `DCCActor` (`module/actor.js:65-74`)
-  returns `system.details.sheetClass?.toLowerCase()` or `null` when
-  unset. Backing store stays `system.details.sheetClass` (still the
-  capitalized sheet label that `_prepareContext` writes on first
-  open — sheet-side rewrite is Phase 5 territory); the accessor
-  exists so caller-side dispatch matches the lib's
-  `character.classInfo.classId` convention and is robust to future
-  sheetClass-shape shifts. Two call sites migrated: the halfling
-  two-weapon fumble note in `module/actor.js:3281` (rollWeaponAttack
-  message-building) and the halfling agility-floor branch in
-  `module/item.js:70` (two-weapon dice-penalty + crit-range
-  computation). Other capitalized sheetClass comparisons (Elf at
-  `actor.js:182`, Cleric at `actor.js:2180/2481` + `dcc.js:746`)
-  left untouched — out of slice scope; they can migrate
-  opportunistically alongside the Phase 5 `registerClassDefaults`
-  work where the writer side of `sheetClass` gets restructured. +4
-  Vitest tests in `actor.test.js` (null when unset / null when
-  missing / lowercases canonical labels for halfling/wizard/dwarf /
-  idempotent when already lowercase). +1 Playwright case in
-  `extension-api.spec.js` exercising the accessor end-to-end against
-  a live Player document (default null → 'halfling' → 'warrior' →
-  null on clear). 970 Vitest green (was 966, +4); 117 Playwright
-  passed (was 116, +1 classId case), 1 latent failure (xcc-core-book
-  DCCItemSheet override, unchanged baseline). With component 1
-  (schema mixins) complete and the class-id dispatch helper in
-  place, Phase 4's active sub-arc is closed; remaining work is
-  Phase 5 (sheet composition + class defaults).
-- **2026-05-18 — Phase 4 session 6: wizard + elf class-mixin
-  extraction (closes per-class arc).** New `'wizard'` + `'elf'`
-  entries in `BUILT_IN_CLASS_MIXINS` (`module/built-in-class-mixins.mjs`)
-  both call a shared `attachWizardFields(schema)` helper that
-  contributes 9 wizard class fields (`knownSpells` /
-  `maxSpellLevel` / `spellCheckOtherMod` / `spellCheckDieOverride`
-  / `spellCheckOverride` / `patron` / `patronTaintChance` /
-  `familiar` / `corruption` HTMLField). Wizard mixin attaches them
-  via the helper; elf mixin **also** calls the helper (last-
-  write-wins makes the second-running mixin's pass functionally a
-  no-op as long as both build identical instances) **and** then
-  overrides `skills.detectSecretDoors` with the HeightenedSenses
-  defaults (`label='DCC.HeightenedSenses'` / `ability='int'` /
-  `value='+4'`). Base body kept the non-Elf default; the elf mixin
-  replaces the entire SchemaField. Static `class` block in
-  `module/data/actor/player-data.mjs` collapsed to a single
-  `className` StringField; static `skills` block to just the
-  base `detectSecretDoors`. `HTMLField` + `NumberField` imports
-  dropped (only `SchemaField`, `StringField`, `BooleanField`
-  remain — the wizard/cleric `NumberField` usages all moved to
-  their respective mixins). **All seven DCC classes mixin-source
-  their fields** — component 1 of the Class Decomposition is
-  complete for every built-in. +2 Playwright cases
-  (`built-in wizard mixin` asserts all 9 wizard class-field
-  initials + key types reading from `_source`; `built-in elf mixin
-  attaches wizard fields AND overrides detectSecretDoors`
-  asserts the same wizard fields are present plus the elf
-  detectSecretDoors override). 966 Vitest unchanged; 116
-  Playwright passed (was 114, +2 wizard/elf cases), 1 latent
-  failure (xcc-core-book DCCItemSheet override, unchanged
-  baseline).
-- **2026-05-18 — Phase 4 session 5: warrior class-mixin extraction.**
-  Smallest remaining class block. New `'warrior'` entry in the
-  `BUILT_IN_CLASS_MIXINS` table (`module/built-in-class-mixins.mjs`)
-  contributes `class.luckyWeapon` (nullable StringField, initial
-  null) + `class.luckyWeaponMod` (StringField, initial `'+0'`). No
-  skills — warrior is the only DCC class whose contribution is
-  pure class-fields. Static block deleted from
-  `module/data/actor/player-data.mjs`. +1 Playwright case in
-  `extension-api.spec.js` asserts the nullable StringField initial
-  (`luckyWeapon === null`) + the signed-string default
-  (`luckyWeaponMod === '+0'`) + field types
-  (`StringField` for both, `nullable: true` for `luckyWeapon`)
-  reading from `_source`. 966 Vitest unchanged; 114 Playwright
-  passed (was 113, +1 warrior case), 1 latent failure (xcc-core-book
-  DCCItemSheet override, unchanged baseline). Six-of-seven DCC
-  classes (halfling, dwarf, thief, cleric, warrior) now mixin-source;
-  wizard + elf remain together for session 6.
-- **2026-05-18 — Phase 4 session 4: cleric class-mixin extraction +
-  shared `built-in-class-mixins.mjs` table.** Built-in `'cleric'`
-  mixin contributes 8 class fields (`spellCheck` NumberField,
-  `spellCheckAbility` StringField, `spellsLevel1–5` NumberFields,
-  `deity` nullable StringField, `disapproval` NumberField min=1
-  max=20, `disapprovalTable` StringField) + 3 disapproval-range
-  skills (`divineAid` / `turnUnholy` / `layOnHands`) sharing a
-  `disapprovalSkill(label, extra)` helper inside the mixin body —
-  `divineAid` extends with a NumberField `drainDisapproval` slot.
-  All four built-in mixin registrations relocated from
-  `module/dcc.js:init` inline `registerClassMixin('halfling', …)`
-  calls to a single `BUILT_IN_CLASS_MIXINS` table in
-  `module/built-in-class-mixins.mjs` plus a
-  `registerBuiltInClassMixins(register)` helper consumed by both
-  production (init hook) and the integration-test setup
-  (`module/__integration__/setup-foundry.js`). The latter additions
-  fix three pre-existing assertions in
-  `module/__integration__/data-models.test.js` that broke when the
-  cleric block left the static schema body
-  (`class.disapproval=1` / `class.deity=null` / NumberField min/max
-  validation) — integration tests construct `PlayerData` directly
-  without invoking the Foundry `init` hook, so the inline registrations
-  in `dcc.js` weren't running for them. Net diff in `dcc.js`: −76
-  lines of inline mixin code → +1 helper call (kept the rest of the
-  init logic untouched). +1 Playwright case in
-  `extension-api.spec.js` asserts schema-defaults + field types,
-  reading from `player.system._source` so the assertions stay valid
-  even though `prepareDerivedData` overwrites `class.spellCheck` and
-  the cleric skill `.value` slots with computed strings. Field-type
-  assertions confirm `disapproval`→NumberField, `deity`→StringField,
-  `useDisapprovalRange`→BooleanField, `drainDisapproval`→NumberField,
-  and that `turnUnholy` / `layOnHands` do NOT carry the
-  divineAid-specific `drainDisapproval` slot. 966 Vitest green
-  (unchanged); 113 Playwright passed (was 112, +1 cleric case), 1
-  latent failure (xcc-core-book DCCItemSheet override — unchanged
-  from baseline).
 
 ## Closed questions
 

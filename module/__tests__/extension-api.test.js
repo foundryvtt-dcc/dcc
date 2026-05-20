@@ -7,7 +7,7 @@
  */
 
 import { expect, test, vi } from 'vitest'
-import { applyClassDefaults, applyClassMixins, applyClassStartingItems, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerItemSheet, registerSheetPart } from '../extension-api.mjs'
+import { applyClassDefaults, applyClassMixins, applyClassStartingItems, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerHomebrewClassForProgressionLoad, registerItemSheet, registerSheetPart } from '../extension-api.mjs'
 
 class FakeSheet {}
 class FakeDefaultItemSheetV2 {}
@@ -808,4 +808,75 @@ test('registerClassProgression round-trips a fictional minimal progression', asy
   // Cleanup so the registry doesn't leak into other tests.
   mod.clearClassProgressions()
   expect(mod.getClassProgression('p6s1-test-tinker')).toBeUndefined()
+})
+
+// ---------------------------------------------------------------------
+// registerHomebrewClassForProgressionLoad (Phase 6 session 3)
+// ---------------------------------------------------------------------
+
+function makeMockConfigClassLevelNames () {
+  return { DCC: { classLevelNames: {} } }
+}
+
+test('registerHomebrewClassForProgressionLoad stores the itemPrefix under the classId key', () => {
+  const CONFIG = makeMockConfigClassLevelNames()
+  registerHomebrewClassForProgressionLoad('my-druid', 'druid', { CONFIG })
+
+  expect(CONFIG.DCC.classLevelNames['my-druid']).toBe('druid')
+})
+
+test('registerHomebrewClassForProgressionLoad initializes CONFIG.DCC.classLevelNames when missing', () => {
+  // Mirrors the self-healing pattern from the other class registries —
+  // mid-init callers may land before module/config.js seeds the
+  // registry. The helper must not crash; it should create the bucket.
+  const CONFIG = { DCC: {} }
+  registerHomebrewClassForProgressionLoad('my-druid', 'druid', { CONFIG })
+
+  expect(CONFIG.DCC.classLevelNames).toBeDefined()
+  expect(CONFIG.DCC.classLevelNames['my-druid']).toBe('druid')
+})
+
+test('registerHomebrewClassForProgressionLoad overwrites a prior registration (last-write-wins)', () => {
+  const CONFIG = makeMockConfigClassLevelNames()
+  registerHomebrewClassForProgressionLoad('my-druid', 'druid', { CONFIG })
+  registerHomebrewClassForProgressionLoad('my-druid', 'forest-druid', { CONFIG })
+
+  expect(CONFIG.DCC.classLevelNames['my-druid']).toBe('forest-druid')
+})
+
+test('registerHomebrewClassForProgressionLoad throws on empty / non-string classId', () => {
+  const CONFIG = makeMockConfigClassLevelNames()
+  expect(() => registerHomebrewClassForProgressionLoad('', 'druid', { CONFIG })).toThrow(/classId must be a non-empty string/)
+  expect(() => registerHomebrewClassForProgressionLoad(null, 'druid', { CONFIG })).toThrow(/classId must be a non-empty string/)
+  expect(() => registerHomebrewClassForProgressionLoad(42, 'druid', { CONFIG })).toThrow(/classId must be a non-empty string/)
+})
+
+test('registerHomebrewClassForProgressionLoad throws on empty / non-string itemPrefix', () => {
+  const CONFIG = makeMockConfigClassLevelNames()
+  expect(() => registerHomebrewClassForProgressionLoad('my-druid', '', { CONFIG })).toThrow(/itemPrefix must be a non-empty string/)
+  expect(() => registerHomebrewClassForProgressionLoad('my-druid', null, { CONFIG })).toThrow(/itemPrefix must be a non-empty string/)
+  expect(() => registerHomebrewClassForProgressionLoad('my-druid', 42, { CONFIG })).toThrow(/itemPrefix must be a non-empty string/)
+})
+
+test('registerHomebrewClassForProgressionLoad throws when CONFIG.DCC is unavailable', () => {
+  expect(() => registerHomebrewClassForProgressionLoad('my-druid', 'druid', { CONFIG: {} })).toThrow(/CONFIG\.DCC unavailable/)
+})
+
+test('registerBuiltInClassLevelNames seeds all 7 canonical DCC classes', async () => {
+  // The built-in table is consumed by `module/dcc.js`'s init hook to
+  // seed `CONFIG.DCC.classLevelNames` with the 7 canonical classes
+  // before the loader runs. Verify the table shape directly.
+  const { BUILT_IN_CLASS_LEVEL_NAMES, registerBuiltInClassLevelNames } =
+    await import('../built-in-class-level-names.mjs')
+  expect(Object.keys(BUILT_IN_CLASS_LEVEL_NAMES).sort()).toEqual([
+    'cleric', 'dwarf', 'elf', 'halfling', 'thief', 'warrior', 'wizard'
+  ])
+  // The helper drives a supplied register callback once per entry.
+  const calls = []
+  registerBuiltInClassLevelNames((classId, itemPrefix) => {
+    calls.push([classId, itemPrefix])
+  })
+  expect(calls).toHaveLength(7)
+  expect(calls).toContainEqual(['cleric', 'cleric'])
+  expect(calls).toContainEqual(['wizard', 'wizard'])
 })

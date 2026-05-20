@@ -770,6 +770,96 @@ test.describe('DCC Extension API', () => {
   })
 
   // -------------------------------------------------------------------
+  // registerHomebrewClassForProgressionLoad (Phase 6 session 3)
+  // -------------------------------------------------------------------
+
+  test('game.dcc.registerHomebrewClassForProgressionLoad is exposed and CONFIG.DCC.classLevelNames is seeded with the 7 built-ins', async ({ page }) => {
+    // Phase 6 session 3 lifted the previously hardcoded
+    // BUILT_IN_CLASS_LEVEL_NAMES table out of the loader and onto
+    // CONFIG.DCC.classLevelNames, contributed via the new homebrew
+    // registration helper. The DCC system dogfoods its own helper
+    // at init time by seeding the 7 canonical PC classes.
+    const result = await page.evaluate(() => {
+      const reg = game.dcc.registerHomebrewClassForProgressionLoad
+      const names = CONFIG.DCC?.classLevelNames ?? {}
+      return {
+        isFunction: typeof reg === 'function',
+        exposedKey: Object.keys(game.dcc).includes('registerHomebrewClassForProgressionLoad'),
+        registeredIds: Object.keys(names).sort(),
+        clericPrefix: names.cleric,
+        warriorPrefix: names.warrior
+      }
+    })
+
+    expect(result.isFunction).toBe(true)
+    expect(result.exposedKey).toBe(true)
+    expect(result.registeredIds).toEqual([
+      'cleric', 'dwarf', 'elf', 'halfling', 'thief', 'warrior', 'wizard'
+    ])
+    expect(result.clericPrefix).toBe('cleric')
+    expect(result.warriorPrefix).toBe('warrior')
+  })
+
+  test('registerHomebrewClassForProgressionLoad enables the loader to pick up a homebrew classId', async ({ page }) => {
+    // End-to-end: register a fictional homebrew classId mapping its
+    // itemPrefix onto the 'cleric' items the production pack already
+    // ships (so we can verify the loader picked up the new
+    // registration without depending on a homebrew pack actually
+    // being installed). Save+restore the lib registry AND the
+    // classLevelNames registry around the test.
+    const result = await page.evaluate(async () => {
+      const utils = await import('../../../../../../../../systems/dcc/module/vendor/dcc-core-lib/data/classes/progression-utils.js')
+      const loader = await import('../../../../../../../../systems/dcc/module/adapter/foundry-data-loader.mjs')
+
+      // Save state.
+      const priorIds = utils.getRegisteredClassIds()
+      const priorEntries = priorIds.map(id => utils.getClassProgression(id))
+      const priorNames = { ...(CONFIG.DCC.classLevelNames ?? {}) }
+      const levelPacksConfigured = Array.isArray(CONFIG.DCC?.levelDataPacks?.packs) &&
+        CONFIG.DCC.levelDataPacks.packs.length > 0
+
+      // Register a fictional homebrew classId that maps to the existing
+      // cleric item-prefix so the loader can find live level data.
+      game.dcc.registerHomebrewClassForProgressionLoad('p6s3-fake-homebrew', 'cleric')
+
+      // Reset the lib registry so we know the loader's output is fresh.
+      utils.clearClassProgressions()
+      const registered = await loader.registerClassProgressionsFromPacks()
+      const homebrewProgression = utils.getClassProgression('p6s3-fake-homebrew')
+
+      // Restore both registries.
+      utils.clearClassProgressions()
+      for (const entry of priorEntries) {
+        if (entry) utils.registerClassProgression(entry)
+      }
+      delete CONFIG.DCC.classLevelNames['p6s3-fake-homebrew']
+      // Defensive: re-seed any built-ins that somehow got dropped.
+      CONFIG.DCC.classLevelNames = { ...priorNames }
+
+      return {
+        levelPacksConfigured,
+        registeredIncludesHomebrew: registered.includes('p6s3-fake-homebrew'),
+        homebrewName: homebrewProgression?.name ?? null,
+        homebrewHasLevels: homebrewProgression
+          ? Object.keys(homebrewProgression.levels ?? {}).length > 0
+          : false
+      }
+    })
+
+    if (!result.levelPacksConfigured) {
+      // No level pack installed in this world — loader is a no-op.
+      expect(result.registeredIncludesHomebrew).toBe(false)
+      return
+    }
+
+    // The loader picked up the homebrew classId via the registry and
+    // assembled a progression from the cleric-prefixed items.
+    expect(result.registeredIncludesHomebrew).toBe(true)
+    expect(result.homebrewName).toBe('P6s3-fake-homebrew')
+    expect(result.homebrewHasLevels).toBe(true)
+  })
+
+  // -------------------------------------------------------------------
   // DCCActor.classId accessor (Phase 4 closer — class-id dispatch helper)
   // -------------------------------------------------------------------
 

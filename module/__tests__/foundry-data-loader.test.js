@@ -205,15 +205,19 @@ describe('registerClassProgressionsFromPacks', () => {
   }
 
   test('registers per-class progressions and the lib registry sees them', async () => {
-    // Mocks `CONFIG.DCC.levelDataPacks` + `game.packs.get(packName)`
-    // and asserts the registered progression has the expected
-    // sparse-level shape. The class-name prefix is 'Cleric' (the
-    // dispatch key from `BUILT_IN_CLASS_LEVEL_NAMES`) but every
-    // value in the fixture is unambiguously placeholder
-    // (`d13` / save bonuses 7-12 / `TEST` crit table).
+    // Mocks `CONFIG.DCC.levelDataPacks` + `CONFIG.DCC.classLevelNames`
+    // + `game.packs.get(packName)` and asserts the registered
+    // progression has the expected sparse-level shape. The item-name
+    // prefix is `'cleric'` (the classId → itemPrefix mapping from
+    // `CONFIG.DCC.classLevelNames`); every value in the fixture is
+    // unambiguously placeholder (`d13` / save bonuses 7-12 /
+    // `TEST` crit table).
     const { packName, pack } = makeMockPackWithTestData()
     const CONFIG = {
-      DCC: { levelDataPacks: { packs: [packName] } }
+      DCC: {
+        levelDataPacks: { packs: [packName] },
+        classLevelNames: { cleric: 'cleric' }
+      }
     }
     const gameImpl = {
       packs: { get: (name) => (name === packName ? pack : null) }
@@ -238,7 +242,7 @@ describe('registerClassProgressionsFromPacks', () => {
 
   test('returns [] and registers nothing when no level packs are configured', async () => {
     const registered = await registerClassProgressionsFromPacks({
-      CONFIG: { DCC: {} },
+      CONFIG: { DCC: { classLevelNames: { cleric: 'cleric' } } },
       game: { packs: { get: () => null } }
     })
     expect(registered).toEqual([])
@@ -251,9 +255,84 @@ describe('registerClassProgressionsFromPacks', () => {
       async getDocument () { return null }
     }
     const registered = await registerClassProgressionsFromPacks({
-      CONFIG: { DCC: { levelDataPacks: { packs: ['test.empty-pack'] } } },
+      CONFIG: {
+        DCC: {
+          levelDataPacks: { packs: ['test.empty-pack'] },
+          classLevelNames: { cleric: 'cleric' }
+        }
+      },
       game: { packs: { get: () => emptyPack } }
     })
     expect(registered).toEqual([])
+  })
+
+  test('only walks classIds that are present in CONFIG.DCC.classLevelNames', async () => {
+    // The loader is opted-in per classId: a pack that ships level data
+    // for an unregistered classId is silently skipped. Phase 6 session 3
+    // moved the seven canonical classes onto the
+    // `registerHomebrewClassForProgressionLoad` registry; homebrew
+    // packs whose classId isn't registered shouldn't surprise users
+    // by auto-registering against the lib.
+    const { packName, pack } = makeMockPackWithTestData()
+    const CONFIG = {
+      DCC: {
+        levelDataPacks: { packs: [packName] },
+        // Cleric *items* exist in the pack but classLevelNames only
+        // exposes "wizard" — the loader should not pick the cleric
+        // items up.
+        classLevelNames: { wizard: 'wizard' }
+      }
+    }
+    const gameImpl = {
+      packs: { get: (name) => (name === packName ? pack : null) }
+    }
+
+    const registered = await registerClassProgressionsFromPacks({ CONFIG, game: gameImpl })
+
+    expect(registered).toEqual([])
+    expect(getClassProgression('cleric')).toBeUndefined()
+    expect(getClassProgression('wizard')).toBeUndefined()
+  })
+
+  test('returns [] when CONFIG.DCC.classLevelNames is unset (registry not yet seeded)', async () => {
+    // Defensive against system init wiring drifting — if the built-in
+    // seed call ever stops running, the loader should no-op rather
+    // than crash.
+    const { packName, pack } = makeMockPackWithTestData()
+    const CONFIG = { DCC: { levelDataPacks: { packs: [packName] } } }
+    const gameImpl = {
+      packs: { get: (name) => (name === packName ? pack : null) }
+    }
+
+    const registered = await registerClassProgressionsFromPacks({ CONFIG, game: gameImpl })
+
+    expect(registered).toEqual([])
+  })
+
+  test('respects a homebrew classId → distinct itemPrefix mapping', async () => {
+    // The classId → itemPrefix indirection lets a homebrew classId
+    // like `'my-druid'` map onto a pack that ships its items under
+    // a different prefix (`'druid-1'`, `'druid-2'`). The mock pack
+    // here uses the `'cleric-…'` items; we register classId
+    // `'my-druid'` mapped to itemPrefix `'cleric'` to prove the
+    // dispatch reads from the registry, not from the classId.
+    const { packName, pack } = makeMockPackWithTestData()
+    const CONFIG = {
+      DCC: {
+        levelDataPacks: { packs: [packName] },
+        classLevelNames: { 'my-druid': 'cleric' }
+      }
+    }
+    const gameImpl = {
+      packs: { get: (name) => (name === packName ? pack : null) }
+    }
+
+    const registered = await registerClassProgressionsFromPacks({ CONFIG, game: gameImpl })
+
+    expect(registered).toEqual(['my-druid'])
+    const progression = getClassProgression('my-druid')
+    expect(progression).toBeDefined()
+    expect(progression.name).toBe('My-druid')
+    expect(progression.levels[1].hitDie).toBe('d13')
   })
 })
