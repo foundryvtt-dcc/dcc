@@ -942,19 +942,37 @@ the prior CONFIG state, fires each hook with a probe value, asserts
 the matching mutation lands, then restores so downstream tests are
 unaffected).
 
-#### Phase 7 session 4 candidate. Extract `processSpellCheck` to `module/spell-check-processor.mjs`.
-The public stable API `game.dcc.processSpellCheck` (line 664–866,
-~200 lines). Foundry-facing per §8.6, stays as a thin wrapper at
-the init hook (re-export onto `game.dcc.processSpellCheck`); the
-implementation moves to a focused module. Heavier slice because
-the function consumes module-local imports (`SpellResult`,
-`TableResult`, `parser`, etc.); the destination module needs them
-all. Vitest: existing spell-check coverage continues to pass.
-Playwright: existing `phase1-adapter-dispatch.spec.js` cases for
-spell checks continue to pass (they exercise `processSpellCheck`
-end-to-end). Verify `EXTENSION_API.md` records the function as
-Stable and that XCC's consumption pattern survives the extraction
-unchanged.
+#### ~~Phase 7 session 4. Extract `processSpellCheck` to `module/spell-check-processor.mjs`.~~ **DONE 2026-05-21**
+Pure refactor — relocates the ~200-line public stable-API function
+`processSpellCheck` (was `dcc.js:637–842`) into a focused module.
+The function is exported as a named symbol; `module/dcc.js` keeps
+the `game.dcc.processSpellCheck` re-publication at init time
+(Foundry-facing stable surface per §8.6, no contract change, no
+deprecation path). The destination module reads
+`game.dcc.SpellResult` / `game.dcc.FleetingLuck` rather than
+importing them directly — mirrors the pattern in `module/actor.js`'s
+spell-check paths and preserves the init-time `game.dcc`
+registration order. `module/dcc.js` shrinks from 1172 → 970 lines
+(-202 net including the new import line, the 5-line replacement
+marker comment, and dropping `Roll` from the `/* global */`
+declaration since the patron-taint `new Roll('1d100')` moved with
+the function). +23 Vitest tests in new
+`module/__tests__/spell-check-processor.test.js` (roll evaluation,
+forceCrit mutation, fumble/crit detection per Player-only rule,
+no-table HTML indicators, rollTable branches including the
+crit-level-boost parseInt regression, patron taint roll path,
+wizard/cleric automation side-effects, item.lastResult write-back).
++1 Playwright case in `extension-api.spec.js` (`DCC processSpellCheck
+survives spell-check-processor.mjs extraction`) creates a temporary
+Player, fires `game.dcc.processSpellCheck` against a real `1d20+5`
+roll, asserts the resulting chat message carries the expected dcc.*
+flags. **1150 Vitest green** (was 1127, +23); **145 Playwright
+passed** + 2 failures (latent xcc-core-book DCCItemSheet override
+at `extension-api.spec.js:420` — unchanged baseline, line shifted
+from 320 because of new test insertion; NEW environmental flake
+at `data-models.spec.js:138` from `mcc-core-book-welcome-dialog`
+intercepting pointer events — sibling-module dialog state, not
+slice-caused).
 
 #### Phase 7 session 5 candidate. Extract chat / hook wiring to `module/chat-hooks.mjs`.
 `renderChatMessageHTML` hook handler + `getChatMessageContextOptions`
@@ -988,6 +1006,41 @@ stylesheets have stable variables to override.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 4 (2026-05-21): extract `processSpellCheck` from
+  `dcc.js` to `module/spell-check-processor.mjs`. Pure refactor —
+  moves the ~200-line public stable-API function (was
+  `dcc.js:637–842`) into a focused module; the function stays
+  re-published on `game.dcc.processSpellCheck` at init time
+  (Foundry-facing stable per §8.6, no contract change). The
+  extracted module reads `game.dcc.SpellResult` /
+  `game.dcc.FleetingLuck` rather than importing them directly,
+  mirroring the pattern in `module/actor.js`'s spell-check paths.
+  `module/dcc.js` shrinks from 1172 → 970 lines (-202). +23
+  Vitest in new `module/__tests__/spell-check-processor.test.js`,
+  +1 Playwright case in `extension-api.spec.js` (`DCC
+  processSpellCheck survives spell-check-processor.mjs extraction`)
+  exercising the no-table flag/HTML branch end-to-end against a
+  temporary Player. **1150 Vitest green** (was 1127, +23). **145
+  Playwright passed** + 2 failures (latent xcc-core-book
+  DCCItemSheet override baseline; NEW environmental flake from
+  `mcc-core-book-welcome-dialog` intercepting pointer events on
+  `data-models.spec.js:138` — sibling-module dialog state, not
+  slice-caused).
+
+- Phase 7 session 3 (2026-05-20): extract settings-table hooks
+  from `dcc.js` to `module/settings-table-hooks.mjs`. Pure
+  refactor — relocates the nine top-level
+  `Hooks.on('dcc.{register,set}Xxx{Pack,Table}', ...)` handlers
+  (was `dcc.js:932–1019`) into a focused module exporting each
+  handler individually + a frozen `SETTINGS_TABLE_HOOKS` dispatch
+  table + a `registerSettingsTableHooks()` entry-point. Hook
+  names + semantics preserved verbatim. +25 Vitest in new
+  `module/__tests__/settings-table-hooks.test.js`, +1 Playwright
+  in `extension-api.spec.js`. **1127 Vitest green** (was 1102,
+  +25); **145 Playwright passed** + 1 latent xcc-core-book
+  failure (unchanged baseline). `module/dcc.js` shrinks from
+  1254 → 1172 lines (-82).
 
 - Phase 7 session 2 (2026-05-20): extract macro factories from
   `dcc.js` to `module/macros.mjs`. Pure refactor — moves the 13

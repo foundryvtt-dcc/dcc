@@ -65,48 +65,62 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 3 (2026-05-20)** continues the Phase 7 cleanup arc
-by extracting the settings-table hook block out of `module/dcc.js`
-into a focused module `module/settings-table-hooks.mjs`. The
-relocated surface is the nine top-level
-`Hooks.on('dcc.{register,set}Xxx{Pack,Table}', ...)` handlers (was
-`dcc.js:932–1019`, ~88 lines) covering disapproval / critical-hit
-packs, the divine-aid / fumble / lay-on-hands / turn-unholy
-single-value settings, the lazy-init level-data-pack manager, the
-per-class mercurial-magic registry, and the legacy
-`setMercurialMagicTable` first-write-wins setter. Each handler is
-exported individually plus a frozen `SETTINGS_TABLE_HOOKS`
-dispatch table + a `registerSettingsTableHooks()` entry-point the
-top-level body calls in place of the inline `Hooks.on(...)` blocks.
-`module/dcc.js` shrinks from 1254 → 1172 lines (-82 net including
-the new import line). Pure refactor — every hook name, every
-mutation semantics (first-write-wins, system-setting override,
-per-class registry mirroring onto legacy default slot) is preserved
-verbatim. +25 Vitest tests in new
-`module/__tests__/settings-table-hooks.test.js` (per-handler value
-tests, first-write-wins + system-override coverage, the per-class
-mercurial registry's no-legacy-touch contract, lazy-init of
-`CONFIG.DCC.levelDataPacks` via `TablePackManager`, the
-`SETTINGS_TABLE_HOOKS` dispatch-table assertion covering all nine
-entries, and a `registerSettingsTableHooks` wiring test). +1
-Playwright case in `extension-api.spec.js` (`DCC settings-table
-hooks … survive settings-table-hooks.mjs extraction`) snapshots the
-current `CONFIG.DCC.*` state, fires each hook through
-`Hooks.callAll` with a probe value, asserts the matching mutation
-landed on the live world, then restores the snapshot so downstream
-tests aren't affected. **1127 Vitest green** (was 1102, +25);
-**145 Playwright passed** (was 143 — +1 new test + 1 forceCrit
-flake recovered; same documented suite-only environmental race that
-fired in Phase 6 sessions 1, 2, 4 and Phase 7 session 2 stayed
-quiet this run). One failure: the latent xcc-core-book DCCItemSheet
-override at `extension-api.spec.js:320` (unchanged baseline,
-flagged every prior session — line shifted from 213 because this
-slice inserted a new test earlier in the file). Next slice
-candidates from [02-slice-backlog.md](02-slice-backlog.md):
-`processSpellCheck` (~200 lines, public stable API extraction),
-chat / hook wiring, or table loading. The `dcc.js` body is still
-~1172 lines — 2-3 more focused extractions to reach the §Appendix
-A target.
+**Phase 7 session 4 (2026-05-21)** continues the Phase 7 cleanup arc
+by extracting `processSpellCheck` out of `module/dcc.js` into a
+focused module `module/spell-check-processor.mjs`. The relocated
+surface is the ~200-line stable-API function (was `dcc.js:637–842`)
+that handles every spell-check cast — evaluates the roll, applies
+forceCrit (shift-click GM testing), rolls patron taint when the
+spell is patron-related, branches on rollTable presence (table
+lookup with natural-20-on-Player crit level-boost + natural-1
+fumble row-1 lookup vs. no-table HTML indicator + flag emission),
+routes wizard / cleric automation side-effects (`loseSpell`,
+`rollDisapproval`, `applyDisapproval`), and writes back
+`item.system.lastResult` for the spells tab. The function is
+exported as a named symbol from the new module and re-published on
+`game.dcc.processSpellCheck` at init time — Foundry-facing stable
+surface per §8.6, no contract change. `module/dcc.js` shrinks from
+1172 → 970 lines (-202 net including the new import line, the
+five-line replacement marker comment, and dropping `Roll` from the
+`/* global */` declaration since the patron-taint `new Roll('1d100')`
+moved with the function). Pure refactor — every branch, every flag
+key, every chat-message envelope is preserved verbatim. +23 Vitest
+tests in new `module/__tests__/spell-check-processor.test.js`
+covering roll evaluation, forceCrit mutation (including the natural-1
+no-op), natural-1/20 fumble/crit detection (Player-only crit rule),
+no-table HTML indicators for fumble / crit / success / failure
+branches, rollTable lookup branches including the crit level-boost
+(with `parseInt` string-level coercion regression coverage), patron
+taint roll + persisted `patronTaintChance` update, wizard `loseSpell`
+gated on `automateWizardSpellLoss`, cleric disapproval gated on
+`automateClericDisapproval` with both the natural-roll-inside-range
+and threshold-failure paths, the no-item cleric `actor.classId`
+casting-mode inference, and the `item.lastResult` write-back. +1
+Playwright case in `extension-api.spec.js` (`DCC processSpellCheck
+survives spell-check-processor.mjs extraction`) creates a temporary
+Player, evaluates a real `1d20+5` roll, fires
+`game.dcc.processSpellCheck` with no item and no rollTable, asserts
+the resulting chat message carries the expected `dcc.{RollType,
+isSpellCheck, isSkillCheck, spellResult}` flags, then cleans up the
+created chat messages so downstream tests aren't affected. **1150
+Vitest green** (was 1127, +23). **145 Playwright passed** + 2
+failures: (1) the latent xcc-core-book DCCItemSheet override at
+`extension-api.spec.js:420` — unchanged baseline, line shifted from
+320 because this slice inserted a new test earlier in the file; (2)
+NEW environmental flake at `data-models.spec.js:138` where the
+`mcc-core-book-welcome-dialog` aside intercepts pointer events on
+the new-Player-actor form's OK button — sibling-module dialog
+state in the FoundryVTT-Next world data dir, not slice-caused
+(this slice touches no actor-sheet code, no MCC interaction, no
+welcome-dialog wiring). The documented forceCrit shift-click
+suite-only flake stayed quiet this run. Net pass count math: prior
+session post-baseline 145 + this slice's +1 new test - 1
+environmental mcc-welcome flake = 145. Next slice candidates
+from [02-slice-backlog.md](02-slice-backlog.md): chat / hook
+wiring (~mid-sized, mid-risk — some handlers reference
+module-local helpers that may need re-exporting first) or table
+loading (boundary clean). The `dcc.js` body is now ~970 lines —
+2 more focused extractions land the §Appendix A target.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -116,6 +130,118 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-21 — Phase 7 session 4: extract `processSpellCheck` from
+  `dcc.js` into `module/spell-check-processor.mjs`.** Fourth
+  piecemeal Phase 7 extraction — relocates the ~200-line public
+  stable-API function `processSpellCheck` (was `dcc.js:637–842`)
+  into a focused module. The function handles every spell-check
+  cast routed through `game.dcc.processSpellCheck` — evaluates the
+  roll (lazy `roll._evaluated` check), applies the shift-click GM
+  `forceCrit` mutation (rewrites natural to 20 + recomputes total;
+  no-op when natural is already 1), rolls patron taint when the
+  actor has a `class.patron` field and the spell name contains
+  `'Patron'` OR carries an `associatedPatron` (d100 vs.
+  `patronTaintChance`, persists `+1%` chance increment back to the
+  actor), branches on `rollTable` presence (with-table path:
+  natural-20-on-Player crit boosts result lookup by level AND
+  mutates the roll with `OperatorTerm('+')` + `NumericTerm(level)`
+  + `_formula += ' + N'` + `_total += N`; natural-1 fumble looks
+  up row 1; otherwise lookup by `roll.total`; routes through
+  `game.dcc.SpellResult.addChatMessage` with `{crit, fumble, item,
+  patronTaint, messageData}`; no-table path: emits one of four
+  `<p class="emote-alert ...">DCC.SpellCheck{Fumble,Crit,Success,
+  Failure}NoTable</p>` indicators based on natural roll and
+  threshold-check, generates the `dcc.{RollType, isSpellCheck,
+  isSkillCheck, ItemId, spellResult}` flag block,
+  `FleetingLuck.updateFlags`-amends it, and emits via
+  `roll.toMessage`), determines casting mode from
+  `item.system.config.castingMode` OR — for item-less casts —
+  defaults to `'wizard'` with a `'cleric'` override when
+  `actor.classId === 'cleric'`, routes side-effects (wizard:
+  `await actor.loseSpell(item)` when `automateWizardSpellLoss` ON
+  and threshold-failed; cleric: `rollDisapproval(naturalRoll)`
+  when `automateClericDisapproval` ON and natural inside
+  `class.disapproval` range, then `applyDisapproval()` if the
+  cast failed either via disapproval-forces-failure or
+  threshold), and finally writes `roll.total` back to
+  `item.system.lastResult` for the spells-tab display. The
+  function is exported as a named symbol; `module/dcc.js` keeps
+  the `game.dcc.processSpellCheck` re-publication at init time
+  (Foundry-facing stable surface per `EXTENSION_API.md` /
+  `00-progress.md` Decision #6 — no contract change, no
+  deprecation path). `module/dcc.js` shrinks from 1172 → 970
+  lines (-202 net including the new `import` line, the 5-line
+  replacement marker comment, and dropping `Roll` from the
+  `/* global */` declaration since the patron-taint `new
+  Roll('1d100')` moved with the function). Pure refactor —
+  continues to read `game.dcc.SpellResult` / `game.dcc.FleetingLuck`
+  rather than importing them directly, mirroring the pattern in
+  `module/actor.js`'s spell-check paths and preserving the
+  init-time `game.dcc` registration order. +23 Vitest tests in
+  new `module/__tests__/spell-check-processor.test.js`: 3
+  evaluation/forceCrit cases (lazy evaluate, forceCrit total
+  recompute, natural-1 forceCrit no-op preserves fumble), 5
+  natural fumble/crit detection cases (natural-1 fumble HTML +
+  flag shape, natural-20 Player crit HTML, natural-20 NPC does
+  NOT crit per Player-only rule, success indicator path, failure
+  indicator path), 5 rollTable branch cases (non-crit lookup by
+  roll.total, natural-1 forces row-1 lookup, natural-20 Player
+  boosts lookup by level and mutates roll, string-level coerced
+  via parseInt (regression of the spell-check-crit fix),
+  no-item flavor + speaker forwarded in messageData), 5
+  casting-mode side-effect cases (wizard automation OFF skips
+  loseSpell, wizard automation ON fires loseSpell on threshold
+  failure, cleric automation natural-inside-disapproval-range
+  fires both rollDisapproval + applyDisapproval, cleric
+  automation natural-outside-range with threshold-failure still
+  applies disapproval, no-item cleric inference from
+  `actor.classId === 'cleric'`), 3 patron-taint branch cases
+  (patron-bound actor on Patron-named spell rolls d100 +
+  updates patronTaintChance "1%" → "2%", actor without patron
+  does NOT update, patronTaint object forwarded into
+  SpellResult.addChatMessage with tainted/oldChance/newChance/roll
+  fields), 2 item.lastResult cases (writes roll.total when item
+  present, no-item path skips lastResult). Test file stubs
+  `game`, `ChatMessage`, `foundry`, `Roll` per `beforeEach` and
+  restores per `afterEach` — same pattern as Phase 7 sessions
+  1, 2, 3. +1 Playwright case in `extension-api.spec.js` (`DCC
+  processSpellCheck survives spell-check-processor.mjs extraction`)
+  — creates a temporary `P_SpellProc Probe` Player, evaluates a
+  real `1d20+5` roll, snapshots existing chat-message IDs, fires
+  `game.dcc.processSpellCheck(actor, { roll, flavor:
+  'P_SpellProc probe', forceCrit: false })`, asserts the new
+  chat message carries `dcc.RollType === 'SpellCheck'` +
+  `isSpellCheck === true` + `isSkillCheck === true` and a
+  `spellResult` HTML envelope matching
+  `^<p class="emote-alert (fumble|critical)">[^<]+</p>$`
+  (specific branch depends on the natural roll; envelope is
+  fixed and the localized text is non-empty), then cleans up
+  the created chat messages so downstream tests start from the
+  prior snapshot. **1150 Vitest green** (was 1127, +23). **145
+  Playwright passed** + 2 failures: (1) the latent xcc-core-book
+  DCCItemSheet override at `extension-api.spec.js:420` —
+  unchanged baseline, flagged every prior session as pre-existing
+  (line shifted from 320 because this slice inserted a new test
+  earlier in the file); (2) NEW environmental flake at
+  `data-models.spec.js:138` — the `mcc-core-book-welcome-dialog`
+  aside intercepts pointer events on the new-Player-actor form's
+  OK button (Test timeout of 60000ms exceeded waiting for the
+  click to succeed); sibling-module dialog state in the
+  FoundryVTT-Next world data dir, NOT slice-caused (this slice
+  touches no actor-sheet code, no MCC interaction, no
+  welcome-dialog wiring). The documented `forceCrit
+  shift-click flag` suite-only environmental race that fired in
+  Phase 6 sessions 1, 2, 4 and Phase 7 session 2 stayed quiet
+  this run. Pre-slice baseline was 145 passes (Phase 7 session
+  3 close); this slice's +1 new test minus the mcc-welcome
+  flake nets to 145 — same as the prior session count, with
+  one passing test swapped for one environmental flake. The
+  mcc-welcome-dialog pattern is worth pulling into the
+  flake-investigation queue (extend the
+  `extension-api.spec.js`-style `beforeEach` hygiene to
+  `data-models.spec.js`'s opening setup) but is out of slice
+  scope; tracked as a follow-up.
 
 - **2026-05-20 — Phase 7 session 3: extract settings-table hooks
   from `dcc.js` into `module/settings-table-hooks.mjs`.** Third
@@ -342,57 +468,6 @@ archives linked above.
   +23). Playwright count to be confirmed by post-slice full-suite run.
   Closes the last Phase 6 work item; `ARCHITECTURE_REIMAGINED.md §7`
   next phase is Phase 7 (cleanup).
-
-- **2026-05-20 — Phase 6 session 4: harden
-  `browser-tests/e2e/extension-api.spec.js`'s `beforeEach` to match
-  sibling-spec hygiene (closes flake-investigation follow-up).** The
-  session-start prompt called out two suite-only Playwright flakes —
-  `extension-api.spec.js:553 built-in elf mixin attaches…` and
-  `phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag…` —
-  observed in Phase 6 sessions 1 and 2 but neither in session 3 nor
-  in two pre-fix full-suite runs this session. The runs *did*
-  surface a different failure pattern in the same environmental-race
-  family: run 2 produced two `beforeEach`-level timeouts at
-  `extension-api.spec.js:267 + 302` (waiting on `game.user` to be
-  set after login, 30s timeout exceeded), plus
-  `v14-features.spec.js:540` timing out clicking the Equipment tab
-  because the persistent hardware-acceleration notification banner
-  was intercepting pointer events. Investigation revealed
-  `extension-api.spec.js` was the *only* e2e spec lacking the
-  per-test `#notifications .notification` banner-removal +
-  `ui.windows` cleanup the other three specs (`data-models`,
-  `phase1-adapter-dispatch`, `v14-features`) all carry. The slice
-  fills the gap: a unified world-state hygiene block at the tail of
-  `extension-api.spec.js`'s `beforeEach` closes any open ApplicationV2
-  windows, removes notification banners, and purges stale `P*`
-  actor probes left by failed prior runs (every probe in the spec
-  is named `P<digit>...`, deleted inline in the test body, so a
-  crash leaves a stale entry that breaks the next run's
-  `game.actors.getName(...)` lookups). +1 new top-of-file Playwright
-  case `beforeEach hygiene purges stale state before the test body
-  runs` reads `ui.windows.size`, `#notifications .notification` node
-  count, and the count of `^P\d`-named actors and asserts all three
-  invariants are zero — turns the hygiene into a self-verifying
-  contract. **Honest framing in the slice docs + comment block**:
-  the change addresses the *family* of environmental races, NOT the
-  specific elf:553 / forceCrit:922 test bodies — those didn't
-  reproduce in either pre-fix run or the post-fix run, and a
-  targeted fix without a concrete failure mode would be speculative.
-  Vitest unaffected (1030 green, unchanged). **141 Playwright
-  passed** (was 140 baseline + 1 new hygiene test). One latent
-  failure (xcc-core-book DCCItemSheet override at line 127 — was
-  line 78 in the pre-slice run; line shift is from the new test
-  insertion; baseline unchanged). All previously-flaked tests
-  passed cleanly: elf:553, forceCrit:922, extension-api:267+302
-  (run 2 beforeEach timeouts), v14-features:540 (run 2
-  banner-blocking click). Did NOT migrate the spec to the
-  worker-scoped session-reuse fixture pattern that
-  `phase1-adapter-dispatch` uses — blast radius too large for one
-  slice; tracked as a possible follow-up. Closes the flake-chase
-  follow-up identified in `01-session-start.md`'s Next-session
-  guidance. Remaining Phase 6 work: `registerVariant` for variant-
-  class modules (larger scope; touches actor-class selection UI /
-  level-change dialog).
 
 ## Closed questions
 

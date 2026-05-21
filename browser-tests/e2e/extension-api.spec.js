@@ -299,6 +299,71 @@ test.describe('DCC Extension API', () => {
     expect(result.mercurialDefaultSlotMirrored).toBe(true)
   })
 
+  test('DCC processSpellCheck survives spell-check-processor.mjs extraction', async ({ page }) => {
+    // Phase 7 session 4: the ~200-line processSpellCheck function was
+    // moved out of `module/dcc.js` into `module/spell-check-processor.mjs`.
+    // It remains published on `game.dcc.processSpellCheck` (Stable
+    // extension surface per `docs/dev/EXTENSION_API.md`) and is consumed
+    // by `DCCItem.rollSpellCheck` + the adapter-declined paths in
+    // `DCCActor.rollSpellCheck`.
+    //
+    // End-to-end probe: stand up a temporary Player, fire a deterministic
+    // d20 roll through `processSpellCheck` (no item, no rollTable so we
+    // exercise the no-table flag/HTML branch), confirm a chat message
+    // lands carrying the expected dcc.* flags, then clean up.
+    const result = await page.evaluate(async () => {
+      const tmpActor = await Actor.create({ name: 'P_SpellProc Probe', type: 'Player' })
+      try {
+        // Mint a deterministic roll: 1d20 + 5 = N + 5.
+        const roll = new Roll('1d20+5')
+        await roll.evaluate()
+        const naturalRoll = roll.dice[0].total
+
+        // Snapshot existing dcc-flagged chat messages so the new one can be
+        // identified post-call without depending on message ordering.
+        const beforeIds = new Set(game.messages.contents.map(m => m.id))
+
+        await game.dcc.processSpellCheck(tmpActor, {
+          roll,
+          flavor: 'P_SpellProc probe',
+          forceCrit: false
+        })
+
+        const created = game.messages.contents.filter(m => !beforeIds.has(m.id))
+        const createdMatch = created.find(m => m.getFlag('dcc', 'RollType') === 'SpellCheck')
+
+        const observed = {
+          processSpellCheckType: typeof game.dcc.processSpellCheck,
+          createdCount: created.length,
+          rollType: createdMatch?.getFlag('dcc', 'RollType') ?? null,
+          isSpellCheck: createdMatch?.getFlag('dcc', 'isSpellCheck') ?? null,
+          isSkillCheck: createdMatch?.getFlag('dcc', 'isSkillCheck') ?? null,
+          spellResultHtml: createdMatch?.getFlag('dcc', 'spellResult') ?? null,
+          naturalRoll
+        }
+
+        // Clean up the chat messages we generated so downstream tests
+        // start from the same snapshot.
+        if (created.length) {
+          await ChatMessage.deleteDocuments(created.map(m => m.id))
+        }
+        return observed
+      } finally {
+        await tmpActor.delete()
+      }
+    })
+    expect(result.processSpellCheckType).toBe('function')
+    expect(result.createdCount).toBeGreaterThanOrEqual(1)
+    expect(result.rollType).toBe('SpellCheck')
+    expect(result.isSpellCheck).toBe(true)
+    expect(result.isSkillCheck).toBe(true)
+    // The no-table HTML branch matches one of the four indicator messages.
+    // Specific branch depends on naturalRoll; envelope (`emote-alert
+    // fumble|critical` wrapper) is fixed and the localized text is
+    // non-empty.
+    expect(result.spellResultHtml).toMatch(/^<p class="emote-alert (fumble|critical)">[^<]+<\/p>$/)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

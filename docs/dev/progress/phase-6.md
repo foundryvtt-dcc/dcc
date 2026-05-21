@@ -221,3 +221,54 @@
   / elf-mixin, but not caused by this slice (no chat / actor /
   sheet logic touched).
 
+
+- **2026-05-20 — Phase 6 session 4: harden
+  `browser-tests/e2e/extension-api.spec.js`'s `beforeEach` to match
+  sibling-spec hygiene (closes flake-investigation follow-up).** The
+  session-start prompt called out two suite-only Playwright flakes —
+  `extension-api.spec.js:553 built-in elf mixin attaches…` and
+  `phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag…` —
+  observed in Phase 6 sessions 1 and 2 but neither in session 3 nor
+  in two pre-fix full-suite runs this session. The runs *did*
+  surface a different failure pattern in the same environmental-race
+  family: run 2 produced two `beforeEach`-level timeouts at
+  `extension-api.spec.js:267 + 302` (waiting on `game.user` to be
+  set after login, 30s timeout exceeded), plus
+  `v14-features.spec.js:540` timing out clicking the Equipment tab
+  because the persistent hardware-acceleration notification banner
+  was intercepting pointer events. Investigation revealed
+  `extension-api.spec.js` was the *only* e2e spec lacking the
+  per-test `#notifications .notification` banner-removal +
+  `ui.windows` cleanup the other three specs (`data-models`,
+  `phase1-adapter-dispatch`, `v14-features`) all carry. The slice
+  fills the gap: a unified world-state hygiene block at the tail of
+  `extension-api.spec.js`'s `beforeEach` closes any open ApplicationV2
+  windows, removes notification banners, and purges stale `P*`
+  actor probes left by failed prior runs (every probe in the spec
+  is named `P<digit>...`, deleted inline in the test body, so a
+  crash leaves a stale entry that breaks the next run's
+  `game.actors.getName(...)` lookups). +1 new top-of-file Playwright
+  case `beforeEach hygiene purges stale state before the test body
+  runs` reads `ui.windows.size`, `#notifications .notification` node
+  count, and the count of `^P\d`-named actors and asserts all three
+  invariants are zero — turns the hygiene into a self-verifying
+  contract. **Honest framing in the slice docs + comment block**:
+  the change addresses the *family* of environmental races, NOT the
+  specific elf:553 / forceCrit:922 test bodies — those didn't
+  reproduce in either pre-fix run or the post-fix run, and a
+  targeted fix without a concrete failure mode would be speculative.
+  Vitest unaffected (1030 green, unchanged). **141 Playwright
+  passed** (was 140 baseline + 1 new hygiene test). One latent
+  failure (xcc-core-book DCCItemSheet override at line 127 — was
+  line 78 in the pre-slice run; line shift is from the new test
+  insertion; baseline unchanged). All previously-flaked tests
+  passed cleanly: elf:553, forceCrit:922, extension-api:267+302
+  (run 2 beforeEach timeouts), v14-features:540 (run 2
+  banner-blocking click). Did NOT migrate the spec to the
+  worker-scoped session-reuse fixture pattern that
+  `phase1-adapter-dispatch` uses — blast radius too large for one
+  slice; tracked as a possible follow-up. Closes the flake-chase
+  follow-up identified in `01-session-start.md`'s Next-session
+  guidance. Remaining Phase 6 work: `registerVariant` for variant-
+  class modules (larger scope; touches actor-class selection UI /
+  level-change dialog).
