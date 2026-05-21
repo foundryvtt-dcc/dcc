@@ -65,34 +65,48 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 1 (2026-05-20)** opens the Phase 7 cleanup arc by
-extracting the four Handlebars helpers (`add`, `stringify`,
-`distanceFormat`, `dccPackExists`) out of `module/dcc.js`'s `init`
-hook into a new focused module `module/handlebars-helpers.mjs`.
-Each helper is exported individually plus a `registerDCCHandlebarsHelpers()`
-entry-point that the init hook calls in place of the four inline
-`Handlebars.registerHelper(...)` blocks. Pure refactor — every
-template that uses these helpers sees identical behavior; the
-production Playwright run picks up the helpers off the live
-`Handlebars.helpers` table and asserts the same outputs the inline
-definitions would have produced. The session also reconciled the
-Phase 7 work list against the source: items 1 (`critText`/`fumbleText`
-shim retirement) and 2 (pre-V14 migration pruning) were already done
-in 2026-04 (C1 + C2 chore slices); item 5 (extract `module/ruleset/`)
-is a no-op because the directory doesn't exist on this branch.
-Remaining Phase 7 work is items 3 (`dcc.js` split — this slice is the
-first piecemeal extraction) and 4 (`styles/dcc.scss` partials).
-+12 Vitest tests on new `module/__tests__/handlebars-helpers.test.js`
-(per-helper unit coverage + a `registerDCCHandlebarsHelpers` mock-
-based registration assertion). +1 Playwright case in
-`extension-api.spec.js` asserting the four helpers survive the
-extraction and produce identical outputs against the live
-`Handlebars.helpers` table. **1065 Vitest green** (was 1053, +12);
-**143 Playwright passed** + 1 latent xcc-core-book DCCItemSheet
-override (unchanged baseline). Next slice candidates: macro
-factories (~380 lines), settings-table hooks (~90 lines),
-`processSpellCheck` (~200 lines), or chat / hook wiring — pick at
-session-start by Tim.
+**Phase 7 session 2 (2026-05-20)** continues the Phase 7 cleanup arc
+by extracting the hotbar-macro block out of `module/dcc.js` into a
+focused module `module/macros.mjs`. The relocated surface is the
+13 `_createDCCXxxMacro` factories, the `MACRO_FACTORIES` dispatch
+table, the `createDCCMacro` dispatcher, `rollDCCWeaponMacro`,
+`getMacroActor`, and `getMacroOptions` (~380 lines). `module/dcc.js`
+shrinks from 1655 → 1255 lines (-400 lines net including the
+extra `import` and the elimination of the inline `handlers` map —
+the dispatch table is now module-scoped). The init hook keeps the
+three end-user macro surface entries on `game.dcc.*` (per
+`EXTENSION_API.md`'s "internal but de-facto stable" classification);
+the `hotbarDrop` hook still calls `createDCCMacro(data, slot)` —
+just imported now instead of inlined. Pure refactor — every macro
+shape (name / command / img triple) and runtime behavior is
+preserved verbatim. +37 Vitest tests in new
+`module/__tests__/macros.test.js` (3 ability-macro cases + 1 per
+single-shape factory + 4 weapon-icon-fallback cases + 4 item-macro
+branches + 1 dispatch-table assertion + 5 dispatcher cases
+covering `dccType`/`dccData` rewriting, Macro / non-Macro / unknown
+type returns, missing-data return, and the reuse-existing-macro
+branch + 1 `rollDCCWeaponMacro` delegation + 4 `getMacroActor`
+resolution paths + 2 `getMacroOptions` XOR-and-setting-read
+assertions). +1 Playwright case in `extension-api.spec.js`
+(`DCC macro factories … survive macros.mjs extraction`) asserts
+the three `game.dcc.*` surface entries are still functions, that
+`rollDCCWeaponMacro` delegates to `actor.rollWeaponAttack` with the
+forwarded `(itemId, options)` pair, and that `getMacroOptions()`
+returns a `{ showModifierDialog }` object. **1102 Vitest green**
+(was 1065, +37); **143 Playwright passed** (same as Phase 7
+session 1's post-slice count — my new test passed, and the
+`phase1-adapter-dispatch.spec.js:922 forceCrit` test flaked this
+run, matching the documented suite-only environmental race observed
+in Phase 6 sessions 1, 2, 4). Two failures: (1) the latent
+xcc-core-book DCCItemSheet override at `extension-api.spec.js:213`
+(unchanged baseline, flagged every prior session); (2) the
+forceCrit shift-click flake (passes in isolation; not slice-
+caused). Next slice candidates from
+[02-slice-backlog.md](02-slice-backlog.md): settings-table hooks
+(~90 lines, smallest), `processSpellCheck` (~200 lines, public
+stable API extraction), chat / hook wiring, or table loading. The
+`dcc.js` body is still ~1255 lines — 3-4 more focused extractions
+to reach the §Appendix A target.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -102,6 +116,85 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-20 — Phase 7 session 2: extract macro factories from
+  `dcc.js` into `module/macros.mjs`.** Second piecemeal Phase 7
+  extraction — relocates the largest cohesive block in `dcc.js`
+  (~380 lines, was `dcc.js:1255–1634`) into a focused module. The
+  relocated surface is the 13 `_createDCCXxxMacro` factories
+  (Ability / Initiative / Hit Dice / Save / Skill / Luck Die /
+  Spell Check / Attack Bonus / Action Dice / Weapon / Item /
+  Apply Disapproval / Roll Disapproval), the `MACRO_FACTORIES`
+  dispatch table, the `createDCCMacro` dispatcher, the
+  `rollDCCWeaponMacro` weapon-roll bridge, `getMacroActor`, and
+  `getMacroOptions`. `module/dcc.js` shrinks from 1655 → 1255
+  lines (-400 lines net including the new `import` and the
+  factoring-out of the inline `handlers` map that lived inside
+  `createDCCMacro`). The init hook keeps the three end-user macro
+  surface entries on `game.dcc.*` (`rollDCCWeaponMacro`,
+  `getMacroActor`, `getMacroOptions` — internal but de-facto
+  stable per `EXTENSION_API.md`'s "macro-surface functions are
+  internal to modules but published to end-user macro scripts"
+  classification); the `hotbarDrop` hook still calls
+  `createDCCMacro(data, slot)` — now imported from `macros.mjs`
+  instead of inlined. Pure refactor — every macro shape
+  (`{ name, command, img }` triple) and the runtime behavior of
+  every factory + dispatcher branch is preserved verbatim. Only
+  structural change: the `handlers` map that lived inside
+  `createDCCMacro` is lifted to module scope as `MACRO_FACTORIES`
+  + exported so the dispatch table can be unit-tested
+  independently of the dispatcher body. +37 Vitest tests in new
+  `module/__tests__/macros.test.js`: 2 ability-macro cases
+  (roll-over default with type-mismatch undefined return, roll-
+  under variant wrapping), 1 case per single-shape factory
+  (initiative / hitDice / save / skill / luckDie / attackBonus /
+  actionDice / applyDisapproval / rollDisapproval), 3
+  spellCheck-macro branches (itemId / spell-name fallback / bare),
+  4 weapon-icon-fallback cases (explicit / missing → item-type /
+  mystery-man → item-type / backstab → backstab.svg), 4 item-macro
+  branches (spell / non-spell + image-fallback / system.item
+  preference / null payload), 1 `MACRO_FACTORIES` dispatch-table
+  assertion (all 14 entries route to the right factory, including
+  `Item` and `DCC Item` both → `_createDCCItemMacro`), 5
+  dispatcher cases covering `dccType` / `dccData` rewriting,
+  `type === 'Macro'` returns `true`, unknown-type returns `true`,
+  missing `data` payload returns `true`, and the reuse-existing-
+  macro branch where `game.macros.contents.find(...)` hits, 1
+  `rollDCCWeaponMacro` delegation test (asserts `game.actors.get`
+  + `actor.rollWeaponAttack` are called with the forwarded
+  `(itemId, options)` pair), 4 `getMacroActor` resolution paths
+  (explicit actorId / speaker.token / speaker.actor fallback /
+  no-token warns via `ui.notifications`), and 2 `getMacroOptions`
+  cases (XOR of setting and ctrlKey produces 0/1/0/1 across the
+  four input combinations + the setting-read uses
+  `('dcc', 'showRollModifierByDefault')`). The test file stubs
+  `game` / `CONFIG.DCC.{abilities, saves, macroImages,
+  defaultItemImages}` / `ChatMessage.getSpeaker` / `ui` / `Macro`
+  per `beforeEach` and restores per `afterEach` — same pattern as
+  Phase 7 session 1's handlebars-helpers test. +1 Playwright case
+  in `extension-api.spec.js` (`DCC macro factories
+  (createDCCMacro / rollDCCWeaponMacro / getMacroActor /
+  getMacroOptions) survive macros.mjs extraction`) — exercises
+  the runtime macro surface end-to-end by stubbing a fake
+  actor + speaker temporarily, calling
+  `game.dcc.rollDCCWeaponMacro('W1', 'macroProbe', { backstab:
+  true })`, and asserting the delegation reached
+  `actor.rollWeaponAttack` with `(itemId='W1', opts={ backstab:
+  true })`. Also asserts the three `game.dcc.*` entries are
+  functions and `getMacroOptions()` returns a
+  `{ showModifierDialog }` object. **1102 Vitest green** (was
+  1065, +37). **143 Playwright passed** + 2 failures: (1) the
+  latent xcc-core-book DCCItemSheet override at
+  `extension-api.spec.js:213` — unchanged baseline, flagged every
+  prior session as pre-existing; (2)
+  `phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag`
+  — got `natural=1` instead of `20`; documented suite-only
+  environmental race that fired in Phase 6 sessions 1, 2, 4
+  (passes in isolation; not slice-caused — this slice touches no
+  spell-check or attack code, only relocates the macros block).
+  Pre-slice baseline was 143 passed; my new test added +1
+  passing, the forceCrit flake fired this run for -1, net 143 —
+  same as Phase 7 session 1's post-slice count.
 
 - **2026-05-20 — Phase 7 session 1: extract Handlebars helpers from
   `dcc.js` into `module/handlebars-helpers.mjs` (opens Phase 7).**
@@ -298,87 +391,6 @@ archives linked above.
   pulling into the flake-investigation queue alongside forceCrit
   / elf-mixin, but not caused by this slice (no chat / actor /
   sheet logic touched).
-- **2026-05-19 — Phase 6 session 2: load class progressions from
-  `levelDataPacks` at `dcc.ready` (closes PR #720 class-config
-  item).** New `registerClassProgressionsFromPacks(...)` +
-  `parseLevelDataText` + `buildProgressionLevelFromParsed` in
-  `module/adapter/foundry-data-loader.mjs` (previously a Phase 0
-  placeholder stub). Walks `CONFIG.DCC.levelDataPacks` for
-  `{ClassName}-{level}` items for each of 7 built-in PC class IDs
-  up to level 10, parses each `system.levelData` text (newline
-  `key=value` pairs, numeric-coerced), and maps Foundry-system-paths
-  onto the lib's `ProgressionLevelData` shape:
-  `system.saves.{ref,frt,wil}.value` → `saves.{ref,frt,wil}`;
-  `system.details.attackHitBonus` → `attackBonus`;
-  `system.details.critDie` / `critTable` / `critRange` →
-  `criticalDie` / `criticalTable` / `critRange`;
-  `system.attributes.actionDice.value` (comma-separated string) →
-  `actionDice` array; `system.attributes.hitDice.value` strips
-  `LdN → dN` to recover the class hit die; `system.class.luckDie`
-  → `luckDie`. Per-class `ClassProgression` objects assembled +
-  registered via the vendored lib's `registerClassProgressions`.
-  Wired into `module/dcc.js`'s `dcc.ready` hook handler BEFORE
-  `Hooks.callAll('dcc.ready')` so sibling-module listeners see
-  the populated registry; load errors are caught + logged
-  defensively (system init can't be broken by malformed pack
-  data). The slice closes the remaining half of PR #720's
-  "programmatic PC creation produces inconsistent class config"
-  item: the lib's `getSavingThrows("warrior", 3)`,
-  `getCritDie("cleric", 5)`, etc. now return non-zero values for
-  actors in worlds where a level-data pack is installed
-  (dcc-core-book ships one for the 7 canonical classes; sibling
-  content modules can ship their own). The level-data-items
-  extensibility mechanism stays single-source-of-truth — content
-  creators ship `{Class}-{level}` items in their own compendium
-  packs, register the pack via
-  `CONFIG.DCC.levelDataPacks.addPack(...)`, and both the
-  level-change dialog AND the lib registry pick them up
-  automatically. Homebrew classes that ship their own level packs
-  add a name → classId entry to `BUILT_IN_CLASS_LEVEL_NAMES`
-  (or a future `registerHomebrewClassForProgressionLoad`-style
-  helper landing alongside `registerVariant`). +15 Vitest tests
-  in new `module/__tests__/foundry-data-loader.test.js` covering
-  the parser (empty-rhs guard, dice-notation preservation), the
-  mapper (path → field, level-count strip, numeric action-dice
-  fallback, sparse-saves coercion, non-numeric critRange drop,
-  empty-token filter), and the assembler (no-packs / empty-packs
-  / populated). All test fixtures use unambiguously placeholder
-  values — `d13` hit die, save bonuses `7`/`9`/`11`, `TEST` crit
-  table — values that obviously don't match any official
-  progression. The open-source DCC system ships no class
-  progression data; data lives in user-installed content modules.
-  +1 Playwright case in `extension-api.spec.js` that
-  direct-invokes `registerClassProgressionsFromPacks()` against
-  the live world (with save+restore of the prior registry around
-  the call) and asserts structural shape only: at least one of
-  the canonical class IDs registered, sample progression has a
-  populated `levels` map. Specific progression values are NOT
-  asserted — those are pack-content-dependent. The session-1
-  round-trip test also updated to use save+restore (previously
-  `clearClassProgressions()` would have wiped the production
-  entries that the init-time loader registers). 1020 Vitest green
-  (was 1005, +15).
-
-  **Production-init verification deferred to next Foundry restart:**
-  the running test world started before this slice's `dcc.ready`
-  wiring landed on disk, so the init-hook side-effect couldn't
-  be asserted in this run. The direct-invoke assertion proves the
-  loader works correctly against real compendium packs (verified
-  against `dcc-core-book.dcc-class-level-data` — 70 items,
-  lowercase `{classId}-{level}` convention, all 7 PC classes
-  registered successfully). When Foundry restarts, the production
-  init hook will load these automatically.
-
-  136 Playwright passed (was 135, +1 from this slice). Two failures
-  this run: the latent xcc-core-book DCCItemSheet override
-  (unchanged baseline) and one new suite-only flake observed:
-  `extension-api.spec.js:553 built-in elf mixin attaches wizard
-  fields…` (Phase 4 session 6 test) — passes in isolation, fails
-  under the full-suite run. State pollution between tests in the
-  shared Foundry world; this slice didn't touch elf code or the
-  classMixins registry so it can't have caused the flake. The
-  forceCrit flake observed in Phase 6 session 1's run didn't fire
-  this run.
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at

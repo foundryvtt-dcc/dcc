@@ -141,6 +141,57 @@ test.describe('DCC Extension API', () => {
     expect(result.dccPackExistsFalse).toBe('NO')
   })
 
+  test('DCC macro factories (createDCCMacro / rollDCCWeaponMacro / getMacroActor / getMacroOptions) survive macros.mjs extraction', async ({ page }) => {
+    // Phase 7 session 2: the 13 _createDCCXxxMacro factories, the
+    // createDCCMacro dispatcher, and the three runtime macro-surface
+    // functions (rollDCCWeaponMacro, getMacroActor, getMacroOptions)
+    // were moved out of dcc.js into module/macros.mjs. The Foundry-
+    // facing surface stays the three game.dcc.* entries (de-facto-
+    // stable per EXTENSION_API.md) plus the hotbarDrop hook wiring.
+    const result = await page.evaluate(async () => {
+      // Stub a fake actor so getMacroActor + rollDCCWeaponMacro have
+      // something to look up without dragging in a real Player document.
+      const fakeActor = { id: 'macroProbe', rollWeaponAttack (itemId, opts) { return { itemId, opts, called: true } } }
+      const realGet = game.actors.get.bind(game.actors)
+      const realGetSpeaker = ChatMessage.getSpeaker
+      let weaponRollResult
+      try {
+        game.actors.get = (id) => (id === 'macroProbe' ? fakeActor : realGet(id))
+        ChatMessage.getSpeaker = () => ({ token: null, actor: 'macroProbe' })
+
+        weaponRollResult = game.dcc.rollDCCWeaponMacro('W1', 'macroProbe', { backstab: true })
+      } finally {
+        game.actors.get = realGet
+        ChatMessage.getSpeaker = realGetSpeaker
+      }
+
+      // getMacroOptions: smoke-check the returned shape; XOR behavior
+      // depends on system settings + KeyState which we don't touch here.
+      const opts = game.dcc.getMacroOptions()
+      return {
+        // game.dcc.* exposure
+        rollDCCWeaponMacroType: typeof game.dcc.rollDCCWeaponMacro,
+        getMacroActorType: typeof game.dcc.getMacroActor,
+        getMacroOptionsType: typeof game.dcc.getMacroOptions,
+        // rollDCCWeaponMacro delegates to actor.rollWeaponAttack
+        weaponItemId: weaponRollResult.itemId,
+        weaponOptsBackstab: weaponRollResult.opts.backstab,
+        weaponCalled: weaponRollResult.called,
+        // getMacroOptions returns a plain object with showModifierDialog
+        optsKeys: Object.keys(opts).sort(),
+        optsHasShowDialog: 'showModifierDialog' in opts
+      }
+    })
+    expect(result.rollDCCWeaponMacroType).toBe('function')
+    expect(result.getMacroActorType).toBe('function')
+    expect(result.getMacroOptionsType).toBe('function')
+    expect(result.weaponItemId).toBe('W1')
+    expect(result.weaponOptsBackstab).toBe(true)
+    expect(result.weaponCalled).toBe(true)
+    expect(result.optsKeys).toEqual(['showModifierDialog'])
+    expect(result.optsHasShowDialog).toBe(true)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

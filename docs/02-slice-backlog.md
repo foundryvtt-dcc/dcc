@@ -895,29 +895,27 @@ override (unchanged baseline). Phase 6 session 5's "Playwright count
 to be confirmed by post-slice full-suite run" retroactively closed at
 142 pre-slice → 143 post-slice.
 
-#### Phase 7 session 2 candidate. Extract macro factories to `module/macros.mjs`.
-Largest cohesive block in `dcc.js` — `createDCCMacro` +
-`_createDCCAbilityMacro` / `_createDCCInitiativeMacro` /
-`_createDCCHitDiceMacro` / `_createDCCSaveMacro` /
-`_createDCCSkillMacro` / `_createDCCLuckDieMacro` /
-`_createDCCSpellCheckMacro` / `_createDCCAttackBonusMacro` /
-`_createDCCActionDiceMacro` / `_createDCCWeaponMacro` /
-`_createDCCItemMacro` / `_createDCCApplyDisapprovalMacro` /
-`_createDCCRollDisapprovalMacro` + `rollDCCWeaponMacro` +
-`getMacroActor` + `getMacroOptions` (~380 lines, dcc.js:1289–1671).
-Each `_createDCCXxxMacro` is a small pure function returning an
-`Item` config object via `Macro.create`; the dispatcher
-`createDCCMacro` matches on `data.type` + delegates. Self-contained
-(no init-time coupling). Suggested destination: `module/macros.mjs`
-exporting `createDCCMacro`, `rollDCCWeaponMacro`, `getMacroActor`,
-`getMacroOptions`; init hook keeps a single `game.dcc.createDCCMacro`
-/ `game.dcc.rollDCCWeaponMacro` exposure. Vitest coverage: per-factory
-unit tests asserting the returned Macro config matches the expected
-shape for each macro type. Playwright: assert the
-`game.dcc.createDCCMacro` exposure survives and one end-to-end drag
-of a known item type still creates a macro. Verify no external
-consumers expect a different name layout in `EXTENSION_API.md`
-before extracting.
+#### ~~Phase 7 session 2. Extract macro factories to `module/macros.mjs`.~~ **DONE 2026-05-20**
+Pure refactor — moves the 13 `_createDCCXxxMacro` factories, the
+`MACRO_FACTORIES` dispatch table (lifted out of the inline
+`handlers` map inside the old `createDCCMacro` body so it can be
+unit-tested independently), the `createDCCMacro` dispatcher,
+`rollDCCWeaponMacro`, `getMacroActor`, and `getMacroOptions` out of
+`module/dcc.js`'s body and into a focused module. `module/dcc.js`
+shrinks from 1655 → 1255 lines (-400). The init hook keeps the
+three end-user macro surface entries on `game.dcc.*` (de-facto-
+stable per `EXTENSION_API.md`); `hotbarDrop` still calls
+`createDCCMacro(data, slot)` — imported now instead of inlined.
++37 Vitest in new `module/__tests__/macros.test.js`. +1 Playwright
+in `extension-api.spec.js` (`DCC macro factories
+(createDCCMacro / rollDCCWeaponMacro / getMacroActor /
+getMacroOptions) survive macros.mjs extraction`) — exercises the
+runtime macro surface end-to-end via a stubbed
+`actor.rollWeaponAttack`. **1102 Vitest green** (was 1065, +37);
+**143 Playwright passed** + 2 failures (the latent xcc-core-book
+DCCItemSheet override; the documented forceCrit shift-click
+suite-only flake — passes in isolation, fired this run as it has
+in Phase 6 sessions 1, 2, 4).
 
 #### Phase 7 session 3 candidate. Extract settings-table hooks to `module/settings-table-hooks.mjs`.
 Eight `Hooks.on('dcc.registerXxxPack', ...)` /
@@ -977,6 +975,22 @@ stylesheets have stable variables to override.
 Move entries here as they land; keep the active queue scannable.
 
 ### Phase 7 (Cleanup)
+
+- Phase 7 session 2 (2026-05-20): extract macro factories from
+  `dcc.js` to `module/macros.mjs`. Pure refactor — moves the 13
+  `_createDCCXxxMacro` factories, the `MACRO_FACTORIES` dispatch
+  table, `createDCCMacro`, `rollDCCWeaponMacro`, `getMacroActor`,
+  and `getMacroOptions` out of `module/dcc.js`'s body and into a
+  focused module. `module/dcc.js` shrinks from 1655 → 1255 lines
+  (-400). Init hook keeps the three end-user macro surface
+  entries on `game.dcc.*`; `hotbarDrop` still calls
+  `createDCCMacro(data, slot)` — imported now instead of inlined.
+  +37 Vitest in new `module/__tests__/macros.test.js`, +1
+  Playwright in `extension-api.spec.js`. **1102 Vitest green**
+  (was 1065, +37); **143 Playwright passed** + 2 failures (the
+  latent xcc-core-book DCCItemSheet override + the documented
+  forceCrit shift-click suite-only flake — passes in isolation,
+  not slice-caused).
 
 - Phase 7 session 1 (2026-05-20): extract Handlebars helpers from
   `dcc.js` to `module/handlebars-helpers.mjs`. Pure refactor — moves
