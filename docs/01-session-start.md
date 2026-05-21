@@ -42,31 +42,49 @@ session's context):
 
 ## Status (2026-05-20)
 
-**Phase 7 session 2 continued the Phase 7 cleanup arc** by extracting
-the hotbar-macro block out of `module/dcc.js` into a focused module
-`module/macros.mjs`. The relocated surface is the 13
-`_createDCCXxxMacro` factories, the `MACRO_FACTORIES` dispatch table
-(lifted out of the inline `handlers` map inside the old
-`createDCCMacro` body so it can be unit-tested independently), the
-`createDCCMacro` dispatcher itself, `rollDCCWeaponMacro`,
-`getMacroActor`, and `getMacroOptions`. `module/dcc.js` shrinks from
-1655 → 1255 lines (-400 lines net). The init hook keeps the three
-end-user macro surface entries on `game.dcc.*` (per
-`EXTENSION_API.md`'s "internal but de-facto stable" classification);
-`hotbarDrop` still calls `createDCCMacro(data, slot)` — just
-imported now instead of inlined. Pure refactor. +37 Vitest tests in
-new `module/__tests__/macros.test.js` (per-factory coverage +
-dispatcher branching + `getMacroActor` resolution paths +
-`getMacroOptions` XOR cases); +1 Playwright case in
-`extension-api.spec.js` (`DCC macro factories … survive macros.mjs
-extraction`) exercises `game.dcc.rollDCCWeaponMacro`'s delegation to
-`actor.rollWeaponAttack` end-to-end. **1102 Vitest green** (was
-1065, +37). **143 Playwright passed** + 2 failures: (1) the latent
-xcc-core-book DCCItemSheet override at `extension-api.spec.js:213`
-(unchanged baseline); (2) the documented
-`phase1-adapter-dispatch.spec.js:922 forceCrit shift-click flag`
-suite-only flake (passes in isolation; not slice-caused — same
-environmental race seen in Phase 6 sessions 1, 2, 4).
+**Phase 7 session 3 continued the Phase 7 cleanup arc** by
+extracting the settings-table hook block out of `module/dcc.js`
+into a focused module `module/settings-table-hooks.mjs`. The
+relocated surface is the nine top-level
+`Hooks.on('dcc.{register,set}Xxx{Pack,Table}', ...)` handlers
+(`dcc.registerDisapprovalPack`, `dcc.registerCriticalHitsPack`,
+`dcc.setDivineAidTable`, `dcc.setFumbleTable`,
+`dcc.setLayOnHandsTable`, `dcc.registerLevelDataPack`,
+`dcc.registerMercurialMagicTable`, `dcc.setMercurialMagicTable`,
+`dcc.setTurnUnholyTable`) — ~88 lines, was `dcc.js:932–1019`.
+Each handler is exported individually as a plain function
+(`onRegisterDisapprovalPack`, …) plus a frozen
+`SETTINGS_TABLE_HOOKS` dispatch table and a
+`registerSettingsTableHooks()` entry-point that iterates the
+table and registers each via `Hooks.on`. `module/dcc.js` shrinks
+from 1254 → 1172 lines (-82 net). Pure refactor — hook names,
+parameter shapes, defaults (`fromSystemSetting = false`), and
+mutation semantics (first-write-wins, system-setting override,
+mercurial per-class-vs-default mirroring, lazy-init of
+`CONFIG.DCC.levelDataPacks`) are preserved verbatim. +25 Vitest
+tests in new `module/__tests__/settings-table-hooks.test.js`
+(per-handler value coverage + dispatch-table assertion +
+`registerSettingsTableHooks` wiring test). +1 Playwright case in
+`extension-api.spec.js` (`DCC settings-table hooks … survive
+settings-table-hooks.mjs extraction`) fires each hook via
+`Hooks.callAll(...)` against the live world with a probe value,
+asserts the matching `CONFIG.DCC.*` mutation lands, then restores
+a snapshot of seven CONFIG slots so downstream tests aren't
+affected. **1127 Vitest green** (was 1102, +25). **145 Playwright
+passed** + 1 failure: the latent xcc-core-book DCCItemSheet
+override at `extension-api.spec.js:320` (unchanged baseline —
+line shifted from 213 because this slice inserted a new test
+earlier in the file). The documented forceCrit shift-click
+suite-only flake stayed quiet this run.
+
+**Phase 7 session 2 (extract macro factories — closed 2026-05-20).**
+Hotbar-macro block (~380 lines, 13 `_createDCCXxxMacro` factories +
+`MACRO_FACTORIES` dispatch table + `createDCCMacro` /
+`rollDCCWeaponMacro` / `getMacroActor` / `getMacroOptions`)
+relocated from `dcc.js` to `module/macros.mjs`. `dcc.js` 1655 →
+1255 lines (-400). +37 Vitest, +1 Playwright. 1102 Vitest /
+143 Playwright at close. Detail in `dev/progress/phase-7.md`
+when the entry rotates out of `00-progress.md` Recent slices.
 
 **Phase 7 session 1 opened the Phase 7 cleanup arc** by extracting
 the four Handlebars helpers (`add`, `stringify`, `distanceFormat`,
@@ -328,27 +346,33 @@ from `module/dcc.js` (lines 1255–1634 in the pre-slice file) into
 `module/macros.mjs`. `module/dcc.js` is now ~1255 lines (was 1655);
 2-3 more focused extractions land the `dcc.js` split target.
 
-**Next-slice candidates for `module/dcc.js` split** (~1255 lines
+**Phase 7 session 3 (2026-05-20) extracted the settings-table hook
+block** from `module/dcc.js` (was lines 932–1019 in the pre-slice
+file) into `module/settings-table-hooks.mjs`. `module/dcc.js` is
+now ~1172 lines (was 1254); 2-3 more focused extractions land the
+`dcc.js` split target.
+
+**Next-slice candidates for `module/dcc.js` split** (~1172 lines
 remaining; per `ARCHITECTURE_REIMAGINED.md Appendix A`, target
 ~4–5 focused modules). Pick one per session — do NOT bundle
-multiple into one slice. Line numbers below are pre-slice (relative
-to `c8932da`); the next session should re-confirm against the
-current file before extracting.
+multiple into one slice. Line numbers below are approximate (the
+prior pre-slice anchors are stale because the settings-table
+extraction shifted the file); re-confirm against the current file
+before extracting.
 
-1. **Settings-table hooks** (lines 954–1041 — ~90 lines, smallest
-   well-scoped). The eight `Hooks.on('dcc.registerXxxPack')` /
-   `Hooks.on('dcc.setXxxTable')` handlers. Self-contained hook
-   wiring; suggested destination: `module/settings-table-hooks.mjs`.
-2. **`processSpellCheck`** (lines 664–866 — ~200 lines). The
-   public stable API (`game.dcc.processSpellCheck`). Self-contained
-   but touches more downstream behavior — confirm sibling-module
-   consumption pattern survives before extracting.
-3. **Chat / hook wiring** (lines 873–946 + scattered `Hooks.on(...)`
-   blocks). `renderChatMessageHTML`, context-menu options.
-4. **Table loading** (lines 442–650).
-   `setupCoreBookCompendiumLinks`, `registerTables`,
-   `getSkillTable`, related `diceSoNiceReady` / `importAdventure`
-   hooks.
+1. **`processSpellCheck`** (~200 lines). The public stable API
+   (`game.dcc.processSpellCheck`). Self-contained but touches more
+   downstream behavior — confirm sibling-module consumption
+   pattern survives before extracting. Per §8.6, the Foundry-
+   facing name stays on `game.dcc` as a thin wrapper.
+2. **Chat / hook wiring**. `renderChatMessageHTML`, context-menu
+   options, scattered `Hooks.on(...)` blocks for actor/item
+   lifecycle. Mid-sized, mid-risk — some handlers reference
+   module-local helpers that may need re-exporting first.
+3. **Table loading**. `setupCoreBookCompendiumLinks`,
+   `registerTables`, `getSkillTable`, related `diceSoNiceReady` /
+   `importAdventure` hooks. Boundary clean (no overlap with
+   macros / spell-check / chat).
 
 After the `dcc.js` split lands its biggest chunks, item 4 (split
 `styles/dcc.scss` ~2979 lines into partials + theme layer) opens up
@@ -369,10 +393,13 @@ migration recipe in `EXTENSION_API.md`. Tim is landing the dcc-qol
 PR on his schedule — do NOT edit that repo from this session.
 
 Pick a Phase 7 dcc.js extraction from the candidates above and
-confirm with Tim before starting. The settings-table hooks (1) are
-the smallest well-scoped next-slice. `processSpellCheck` (2) is the
+confirm with Tim before starting. `processSpellCheck` (1) is the
 public-stable API extraction — landing it preserves
-`game.dcc.processSpellCheck` as a thin wrapper per §8.6.
+`game.dcc.processSpellCheck` as a thin wrapper per §8.6. Chat /
+hook wiring (2) or table loading (3) are alternative starting
+points; table loading is the lowest-coupling option if the
+sibling-module-consumption check for `processSpellCheck` raises
+concerns.
 
 **Do NOT:** touch lib-side internals (Phase 6/7 work is
 adapter-side cleanup, not lib changes); break

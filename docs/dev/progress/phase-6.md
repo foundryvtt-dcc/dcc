@@ -146,3 +146,78 @@
   forceCrit flake observed in Phase 6 session 1's run didn't fire
   this run.
 
+- **2026-05-19 — Phase 6 session 3: expose homebrew level-name
+  registration on `game.dcc.*` + lift the seven built-in PC classes
+  onto `CONFIG.DCC.classLevelNames`.** New stable extension hook
+  `game.dcc.registerHomebrewClassForProgressionLoad(classId,
+  itemPrefix)` in `module/extension-api.mjs`;
+  `CONFIG.DCC.classLevelNames = {}` seeded in `module/config.js`.
+  The Phase 6 session 2 loader at
+  `module/adapter/foundry-data-loader.mjs` previously carried a
+  module-private `BUILT_IN_CLASS_LEVEL_NAMES` const — that table is
+  gone, the loader now reads `CONFIG.DCC.classLevelNames` via the
+  same `deps.CONFIG ?? globalThis.CONFIG` injection it already
+  used for `levelDataPacks`. New `module/built-in-class-level-names.mjs`
+  table seeds the seven canonical PC classes
+  (cleric/dwarf/elf/halfling/thief/warrior/wizard, all mapping
+  classId → itemPrefix 1:1 because the dcc-core-book level pack
+  uses lowercase item names) via
+  `registerBuiltInClassLevelNames(register)`, consumed by
+  `module/dcc.js:init` alongside the other Phase 4/5
+  `registerBuiltInXxx` calls. The helper is exposed on the
+  `game.dcc` object alongside the other stable registry helpers;
+  `EXTENSION_API.md` gains a new Stable row documenting the
+  sibling-module recipe (`addPack(...)` +
+  `registerHomebrewClassForProgressionLoad(...)`).
+  Sibling modules with homebrew classes no longer need to edit
+  system source to teach the lib about their progression — they
+  register from their own `init` hook and the loader picks them
+  up at `dcc.ready`. The indirection between classId and
+  itemPrefix means a homebrew classId like `'my-druid'` can map
+  onto a pack that ships its items under a different prefix
+  (`'druid-1'`, `'druid-2'`), without forcing the homebrew author
+  to rename items to match. Validation throws on empty / non-string
+  classId / itemPrefix and missing CONFIG.DCC; storage is
+  last-write-wins on duplicate classId, matching the other class
+  registries. +10 Vitest tests in
+  `module/__tests__/extension-api.test.js` (7 covering the helper
+  itself — storage / self-heal / last-write-wins / classId
+  validation / itemPrefix validation / missing CONFIG.DCC throw /
+  built-in seed table shape) +
+  `module/__tests__/foundry-data-loader.test.js` (2 new assembler
+  tests asserting the loader skips classIds not present in the
+  registry AND a homebrew classId → distinct itemPrefix mapping
+  is honored; existing 3 loader tests updated to populate
+  `classLevelNames` in the mock CONFIG; 1 new defensive
+  registry-not-yet-seeded test). +2 Playwright cases in
+  `extension-api.spec.js`: hook exposed on `game.dcc` AND
+  `CONFIG.DCC.classLevelNames` carries exactly the 7 canonical
+  PC classIds post-init with the expected itemPrefix values;
+  end-to-end fictional homebrew classId registered mid-test gets
+  picked up by the loader (with full save+restore of the
+  classLevelNames registry AND the lib's progression registry).
+  Closes the second of the three Phase 6 follow-ups identified in
+  `01-session-start.md` (homebrew level-name extension hook).
+  Remaining Phase 6 work: `registerVariant` (larger scope) +
+  forceCrit / elf-mixin suite-only Playwright flake investigation.
+  **1030 Vitest green** (was 1020, +10). **137 Playwright passed**
+  (was 136 baseline + 2 new cases from this slice, expected 138;
+  one data-models test dropped to a login race — see flakes below).
+  Three Playwright failures this run, none caused by this slice:
+  (1) `data-models.spec.js:120 can create a new Player actor with
+  default values` — Gamemaster select-option timed out
+  ("option being selected is not enabled"); login race; (2)
+  `data-models.spec.js:157 can create a new NPC actor` — same
+  Gamemaster select-option timeout; same race; (3)
+  `extension-api.spec.js:78 registerItemSheet adds a sheet option
+  Foundry can resolve for the item type` — expected `DCCItemSheet`,
+  received `XCCItemSheet`. (3) is the **latent xcc-core-book
+  DCCItemSheet override baseline** flagged in every prior session.
+  (1) + (2) are new — the running Foundry world had a logged-in
+  Gamemaster when the suite started; Tim logged out mid-run and
+  the early Gamemaster-selecting tests caught the transition.
+  Both data-models tests pass in isolation and on rerun. Worth
+  pulling into the flake-investigation queue alongside forceCrit
+  / elf-mixin, but not caused by this slice (no chat / actor /
+  sheet logic touched).
+

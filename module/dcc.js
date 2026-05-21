@@ -40,6 +40,7 @@ import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 import { registerBuiltInVariant } from './built-in-variant.mjs'
 import { registerDCCHandlebarsHelpers } from './handlebars-helpers.mjs'
 import { createDCCMacro, getMacroActor, getMacroOptions, rollDCCWeaponMacro } from './macros.mjs'
+import { registerSettingsTableHooks } from './settings-table-hooks.mjs'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
 
@@ -929,94 +930,11 @@ Hooks.on('renderActorDirectory', (app, html) => {
   parser.onRenderActorDirectory(app, html)
 })
 
-// Disapproval table packs
-Hooks.on('dcc.registerDisapprovalPack', (value, fromSystemSetting = false) => {
-  const disapprovalPacks = CONFIG.DCC.disapprovalPacks
-
-  if (disapprovalPacks) {
-    disapprovalPacks.addPack(value, fromSystemSetting)
-  }
-})
-
-// Critical hit table packs
-Hooks.on('dcc.registerCriticalHitsPack', (value, fromSystemSetting = false) => {
-  const criticalHitPacks = CONFIG.DCC.criticalHitPacks
-
-  if (criticalHitPacks) {
-    criticalHitPacks.addPack(value, fromSystemSetting)
-  }
-})
-
-// Divine aid table
-Hooks.on('dcc.setDivineAidTable', (value, fromSystemSetting = false) => {
-  // Set divine aid table if unset, or if applying the system setting (which takes precedence)
-  if (fromSystemSetting || !CONFIG.DCC.divineAidTable) {
-    CONFIG.DCC.divineAidTable = value
-  }
-})
-
-// Fumble table
-Hooks.on('dcc.setFumbleTable', (value, fromSystemSetting = false) => {
-  // Set fumble table if unset, or if applying the system setting (which takes precedence)
-  if (fromSystemSetting || !CONFIG.DCC.fumbleTable) {
-    CONFIG.DCC.fumbleTable = value
-  }
-})
-
-// Lay on hands table
-Hooks.on('dcc.setLayOnHandsTable', (value, fromSystemSetting = false) => {
-  // Set lay on hands table if unset, or if applying the system setting (which takes precedence)
-  if (fromSystemSetting || !CONFIG.DCC.layOnHandsTable) {
-    CONFIG.DCC.layOnHandsTable = value
-  }
-})
-
-// Level Data packs
-Hooks.on('dcc.registerLevelDataPack', (value, fromSystemSetting = false) => {
-  if (!CONFIG.DCC.levelDataPacks) {
-    // Create manager for level data packs
-    CONFIG.DCC.levelDataPacks = new TablePackManager()
-  }
-  CONFIG.DCC.levelDataPacks.addPack(value, fromSystemSetting)
-})
-
-// Mercurial Magic — per-class table registry. Modules call
-// `registerMercurialMagicTable(classKey, tableName)` at `dcc.ready`
-// to attach a class-specific table; the cast / item-sheet code resolves
-// per-class with a fallback to the world-setting default. `classKey`
-// is the lowercase `system.details.sheetClass` (`'wizard'`, `'elf'`,
-// `'blaster'`, `'gnome'`, …) or the literal string `'default'`.
-Hooks.on('dcc.registerMercurialMagicTable', (classKey, value) => {
-  if (!classKey || !value) return
-  CONFIG.DCC.mercurialMagicTables ??= {}
-  CONFIG.DCC.mercurialMagicTables[classKey] = value
-  if (classKey === 'default') {
-    CONFIG.DCC.mercurialMagicTable = value
-  }
-})
-
-// Legacy single-table setter — preserved for back-compat. Writes to
-// the registry's `'default'` slot AND the legacy `mercurialMagicTable`
-// field. First-write-wins unless the system setting fires
-// (`fromSystemSetting=true`), which always overrides — same semantics
-// as before. dcc-core-book and similar content modules continue to
-// call this; modules that need per-class registration use the new
-// `dcc.registerMercurialMagicTable` hook above.
-Hooks.on('dcc.setMercurialMagicTable', (value, fromSystemSetting = false) => {
-  if (fromSystemSetting || !CONFIG.DCC.mercurialMagicTable) {
-    CONFIG.DCC.mercurialMagicTable = value
-    CONFIG.DCC.mercurialMagicTables ??= {}
-    CONFIG.DCC.mercurialMagicTables.default = value
-  }
-})
-
-// Turn unholy table
-Hooks.on('dcc.setTurnUnholyTable', (value, fromSystemSetting = false) => {
-  // Set turn unholy table if unset, or if applying the system setting (which takes precedence)
-  if (fromSystemSetting || !CONFIG.DCC.turnUnholyTable) {
-    CONFIG.DCC.turnUnholyTable = value
-  }
-})
+// Settings-table hooks (9 handlers covering disapproval / critical hit
+// packs, divine aid / fumble / lay on hands / turn unholy tables, level
+// data packs, and the mercurial-magic per-class registry + legacy default
+// setter). See module/settings-table-hooks.mjs for the handler bodies.
+registerSettingsTableHooks()
 
 // Entity pre-creation hooks - set default images before creation to avoid race conditions
 Hooks.on('preCreateActor', (document, data, options) => {

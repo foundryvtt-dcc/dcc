@@ -65,48 +65,48 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 2 (2026-05-20)** continues the Phase 7 cleanup arc
-by extracting the hotbar-macro block out of `module/dcc.js` into a
-focused module `module/macros.mjs`. The relocated surface is the
-13 `_createDCCXxxMacro` factories, the `MACRO_FACTORIES` dispatch
-table, the `createDCCMacro` dispatcher, `rollDCCWeaponMacro`,
-`getMacroActor`, and `getMacroOptions` (~380 lines). `module/dcc.js`
-shrinks from 1655 → 1255 lines (-400 lines net including the
-extra `import` and the elimination of the inline `handlers` map —
-the dispatch table is now module-scoped). The init hook keeps the
-three end-user macro surface entries on `game.dcc.*` (per
-`EXTENSION_API.md`'s "internal but de-facto stable" classification);
-the `hotbarDrop` hook still calls `createDCCMacro(data, slot)` —
-just imported now instead of inlined. Pure refactor — every macro
-shape (name / command / img triple) and runtime behavior is
-preserved verbatim. +37 Vitest tests in new
-`module/__tests__/macros.test.js` (3 ability-macro cases + 1 per
-single-shape factory + 4 weapon-icon-fallback cases + 4 item-macro
-branches + 1 dispatch-table assertion + 5 dispatcher cases
-covering `dccType`/`dccData` rewriting, Macro / non-Macro / unknown
-type returns, missing-data return, and the reuse-existing-macro
-branch + 1 `rollDCCWeaponMacro` delegation + 4 `getMacroActor`
-resolution paths + 2 `getMacroOptions` XOR-and-setting-read
-assertions). +1 Playwright case in `extension-api.spec.js`
-(`DCC macro factories … survive macros.mjs extraction`) asserts
-the three `game.dcc.*` surface entries are still functions, that
-`rollDCCWeaponMacro` delegates to `actor.rollWeaponAttack` with the
-forwarded `(itemId, options)` pair, and that `getMacroOptions()`
-returns a `{ showModifierDialog }` object. **1102 Vitest green**
-(was 1065, +37); **143 Playwright passed** (same as Phase 7
-session 1's post-slice count — my new test passed, and the
-`phase1-adapter-dispatch.spec.js:922 forceCrit` test flaked this
-run, matching the documented suite-only environmental race observed
-in Phase 6 sessions 1, 2, 4). Two failures: (1) the latent
-xcc-core-book DCCItemSheet override at `extension-api.spec.js:213`
-(unchanged baseline, flagged every prior session); (2) the
-forceCrit shift-click flake (passes in isolation; not slice-
-caused). Next slice candidates from
-[02-slice-backlog.md](02-slice-backlog.md): settings-table hooks
-(~90 lines, smallest), `processSpellCheck` (~200 lines, public
-stable API extraction), chat / hook wiring, or table loading. The
-`dcc.js` body is still ~1255 lines — 3-4 more focused extractions
-to reach the §Appendix A target.
+**Phase 7 session 3 (2026-05-20)** continues the Phase 7 cleanup arc
+by extracting the settings-table hook block out of `module/dcc.js`
+into a focused module `module/settings-table-hooks.mjs`. The
+relocated surface is the nine top-level
+`Hooks.on('dcc.{register,set}Xxx{Pack,Table}', ...)` handlers (was
+`dcc.js:932–1019`, ~88 lines) covering disapproval / critical-hit
+packs, the divine-aid / fumble / lay-on-hands / turn-unholy
+single-value settings, the lazy-init level-data-pack manager, the
+per-class mercurial-magic registry, and the legacy
+`setMercurialMagicTable` first-write-wins setter. Each handler is
+exported individually plus a frozen `SETTINGS_TABLE_HOOKS`
+dispatch table + a `registerSettingsTableHooks()` entry-point the
+top-level body calls in place of the inline `Hooks.on(...)` blocks.
+`module/dcc.js` shrinks from 1254 → 1172 lines (-82 net including
+the new import line). Pure refactor — every hook name, every
+mutation semantics (first-write-wins, system-setting override,
+per-class registry mirroring onto legacy default slot) is preserved
+verbatim. +25 Vitest tests in new
+`module/__tests__/settings-table-hooks.test.js` (per-handler value
+tests, first-write-wins + system-override coverage, the per-class
+mercurial registry's no-legacy-touch contract, lazy-init of
+`CONFIG.DCC.levelDataPacks` via `TablePackManager`, the
+`SETTINGS_TABLE_HOOKS` dispatch-table assertion covering all nine
+entries, and a `registerSettingsTableHooks` wiring test). +1
+Playwright case in `extension-api.spec.js` (`DCC settings-table
+hooks … survive settings-table-hooks.mjs extraction`) snapshots the
+current `CONFIG.DCC.*` state, fires each hook through
+`Hooks.callAll` with a probe value, asserts the matching mutation
+landed on the live world, then restores the snapshot so downstream
+tests aren't affected. **1127 Vitest green** (was 1102, +25);
+**145 Playwright passed** (was 143 — +1 new test + 1 forceCrit
+flake recovered; same documented suite-only environmental race that
+fired in Phase 6 sessions 1, 2, 4 and Phase 7 session 2 stayed
+quiet this run). One failure: the latent xcc-core-book DCCItemSheet
+override at `extension-api.spec.js:320` (unchanged baseline,
+flagged every prior session — line shifted from 213 because this
+slice inserted a new test earlier in the file). Next slice
+candidates from [02-slice-backlog.md](02-slice-backlog.md):
+`processSpellCheck` (~200 lines, public stable API extraction),
+chat / hook wiring, or table loading. The `dcc.js` body is still
+~1172 lines — 2-3 more focused extractions to reach the §Appendix
+A target.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -116,6 +116,83 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-20 — Phase 7 session 3: extract settings-table hooks
+  from `dcc.js` into `module/settings-table-hooks.mjs`.** Third
+  piecemeal Phase 7 extraction — relocates the nine top-level
+  `Hooks.on('dcc.{register,set}Xxx', ...)` handlers (was
+  `dcc.js:932–1019`, ~88 lines) into a focused module. The
+  handlers cover: `dcc.registerDisapprovalPack` /
+  `dcc.registerCriticalHitsPack` (delegate to
+  `CONFIG.DCC.{name}Packs.addPack`); `dcc.setDivineAidTable` /
+  `dcc.setFumbleTable` / `dcc.setLayOnHandsTable` /
+  `dcc.setTurnUnholyTable` (first-write-wins on the matching
+  `CONFIG.DCC.<name>Table` scalar, with `fromSystemSetting=true`
+  overriding); `dcc.registerLevelDataPack` (lazy-inits a
+  `TablePackManager` onto `CONFIG.DCC.levelDataPacks` if absent
+  then delegates `.addPack`); `dcc.registerMercurialMagicTable`
+  (per-class registry writing `CONFIG.DCC.mercurialMagicTables[classKey] = value`
+  + mirroring onto the legacy `mercurialMagicTable` field iff
+  `classKey === 'default'`); and `dcc.setMercurialMagicTable`
+  (legacy single-table setter — first-write-wins, system-setting
+  override, mirrors onto `mercurialMagicTables.default`). Each
+  handler is exported individually as a plain function
+  (`onRegisterDisapprovalPack`, `onSetDivineAidTable`, …) plus a
+  frozen `SETTINGS_TABLE_HOOKS` dispatch table mapping hook name
+  → handler and a `registerSettingsTableHooks()` entry-point that
+  iterates the dispatch table and registers each via `Hooks.on`.
+  `module/dcc.js` shrinks from 1254 → 1172 lines (-82 net
+  including the new `import` line and a 5-line replacement
+  comment + call). Pure refactor — hook names, parameter shapes,
+  defaults (`fromSystemSetting = false`), and mutation semantics
+  are preserved verbatim across every handler. Sibling modules
+  (dcc-core-book, xcc-core-book) emit
+  `Hooks.callAll('dcc.setFumbleTable', 'module.fumble', false)`
+  exactly as before and see the same `CONFIG.DCC.fumbleTable`
+  mutation land. **No external contract change.** +25 Vitest
+  tests in new `module/__tests__/settings-table-hooks.test.js`:
+  3 disapproval-pack cases (delegation with explicit
+  `fromSystemSetting=true`, default `false` when omitted, no-op
+  when CONFIG.DCC.disapprovalPacks is absent), 2 critical-hits-pack
+  cases (delegation, no-op when registry absent), 3 divine-aid
+  cases (first-write, first-write-wins on subsequent non-system
+  writes, system-setting override), 1 fumble + 1 layOnHands + 1
+  turnUnholy case each (same three-phase pattern), 2 levelData
+  cases (lazy-init constructs TablePackManager with the probe
+  pack stored under `_packs[name]`, reuse on subsequent calls),
+  4 per-class mercurial cases (per-class write doesn't touch
+  legacy field, `'default'` classKey mirrors onto legacy field,
+  no-op on falsy classKey, no-op on falsy value), 4 legacy
+  mercurial cases (sets when unset, first-write-wins, system
+  override touches both fields + default slot, per-class slots
+  unaffected), 1 SETTINGS_TABLE_HOOKS dispatch-table
+  one-to-one routing assertion, 1 dispatch-table-covers-exactly-9
+  assertion, 1 `registerSettingsTableHooks` wires-all-9-via-Hooks.on
+  assertion + 1 calls-Hooks.on-exactly-9-times assertion. Test
+  file stubs `CONFIG` (and per-describe `Hooks`) in `beforeEach`
+  and restores in `afterEach` — same pattern as Phase 7 sessions
+  1 & 2. +1 Playwright case in `extension-api.spec.js` (`DCC
+  settings-table hooks (disapproval / critical hits / level data
+  packs + 4 set-table hooks + mercurial registry) survive
+  settings-table-hooks.mjs extraction`) — snapshots seven
+  `CONFIG.DCC.*` slots (`divineAidTable`, `fumbleTable`,
+  `layOnHandsTable`, `turnUnholyTable`, `mercurialMagicTable`,
+  `mercurialMagicTables.default`, `levelDataPacks`), fires every
+  hook via `Hooks.callAll(...)` with a probe value, asserts each
+  expected mutation landed (pack present in `_packs[name]`, table
+  scalar updated, per-class mercurial entry written without
+  touching legacy field, lazy-init of `levelDataPacks` when
+  absent), then restores all seven snapshots in a `finally` block
+  so downstream tests in this spec see the prior state. **1127
+  Vitest green** (was 1102, +25). **145 Playwright passed** + 1
+  failure: the latent xcc-core-book DCCItemSheet override at
+  `extension-api.spec.js:320` (unchanged baseline, flagged every
+  prior session as pre-existing — line shifted from 213 because
+  this slice inserted a new test earlier in the file). The
+  documented `phase1-adapter-dispatch.spec.js:922 forceCrit
+  shift-click flag` suite-only flake did NOT fire this run, so
+  pre-slice baseline was 143 passed and post-slice is 145 (+1 new
+  test + 1 forceCrit recovered).
 
 - **2026-05-20 — Phase 7 session 2: extract macro factories from
   `dcc.js` into `module/macros.mjs`.** Second piecemeal Phase 7
@@ -317,80 +394,6 @@ archives linked above.
   class modules (larger scope; touches actor-class selection UI /
   level-change dialog).
 
-- **2026-05-19 — Phase 6 session 3: expose homebrew level-name
-  registration on `game.dcc.*` + lift the seven built-in PC classes
-  onto `CONFIG.DCC.classLevelNames`.** New stable extension hook
-  `game.dcc.registerHomebrewClassForProgressionLoad(classId,
-  itemPrefix)` in `module/extension-api.mjs`;
-  `CONFIG.DCC.classLevelNames = {}` seeded in `module/config.js`.
-  The Phase 6 session 2 loader at
-  `module/adapter/foundry-data-loader.mjs` previously carried a
-  module-private `BUILT_IN_CLASS_LEVEL_NAMES` const — that table is
-  gone, the loader now reads `CONFIG.DCC.classLevelNames` via the
-  same `deps.CONFIG ?? globalThis.CONFIG` injection it already
-  used for `levelDataPacks`. New `module/built-in-class-level-names.mjs`
-  table seeds the seven canonical PC classes
-  (cleric/dwarf/elf/halfling/thief/warrior/wizard, all mapping
-  classId → itemPrefix 1:1 because the dcc-core-book level pack
-  uses lowercase item names) via
-  `registerBuiltInClassLevelNames(register)`, consumed by
-  `module/dcc.js:init` alongside the other Phase 4/5
-  `registerBuiltInXxx` calls. The helper is exposed on the
-  `game.dcc` object alongside the other stable registry helpers;
-  `EXTENSION_API.md` gains a new Stable row documenting the
-  sibling-module recipe (`addPack(...)` +
-  `registerHomebrewClassForProgressionLoad(...)`).
-  Sibling modules with homebrew classes no longer need to edit
-  system source to teach the lib about their progression — they
-  register from their own `init` hook and the loader picks them
-  up at `dcc.ready`. The indirection between classId and
-  itemPrefix means a homebrew classId like `'my-druid'` can map
-  onto a pack that ships its items under a different prefix
-  (`'druid-1'`, `'druid-2'`), without forcing the homebrew author
-  to rename items to match. Validation throws on empty / non-string
-  classId / itemPrefix and missing CONFIG.DCC; storage is
-  last-write-wins on duplicate classId, matching the other class
-  registries. +10 Vitest tests in
-  `module/__tests__/extension-api.test.js` (7 covering the helper
-  itself — storage / self-heal / last-write-wins / classId
-  validation / itemPrefix validation / missing CONFIG.DCC throw /
-  built-in seed table shape) +
-  `module/__tests__/foundry-data-loader.test.js` (2 new assembler
-  tests asserting the loader skips classIds not present in the
-  registry AND a homebrew classId → distinct itemPrefix mapping
-  is honored; existing 3 loader tests updated to populate
-  `classLevelNames` in the mock CONFIG; 1 new defensive
-  registry-not-yet-seeded test). +2 Playwright cases in
-  `extension-api.spec.js`: hook exposed on `game.dcc` AND
-  `CONFIG.DCC.classLevelNames` carries exactly the 7 canonical
-  PC classIds post-init with the expected itemPrefix values;
-  end-to-end fictional homebrew classId registered mid-test gets
-  picked up by the loader (with full save+restore of the
-  classLevelNames registry AND the lib's progression registry).
-  Closes the second of the three Phase 6 follow-ups identified in
-  `01-session-start.md` (homebrew level-name extension hook).
-  Remaining Phase 6 work: `registerVariant` (larger scope) +
-  forceCrit / elf-mixin suite-only Playwright flake investigation.
-  **1030 Vitest green** (was 1020, +10). **137 Playwright passed**
-  (was 136 baseline + 2 new cases from this slice, expected 138;
-  one data-models test dropped to a login race — see flakes below).
-  Three Playwright failures this run, none caused by this slice:
-  (1) `data-models.spec.js:120 can create a new Player actor with
-  default values` — Gamemaster select-option timed out
-  ("option being selected is not enabled"); login race; (2)
-  `data-models.spec.js:157 can create a new NPC actor` — same
-  Gamemaster select-option timeout; same race; (3)
-  `extension-api.spec.js:78 registerItemSheet adds a sheet option
-  Foundry can resolve for the item type` — expected `DCCItemSheet`,
-  received `XCCItemSheet`. (3) is the **latent xcc-core-book
-  DCCItemSheet override baseline** flagged in every prior session.
-  (1) + (2) are new — the running Foundry world had a logged-in
-  Gamemaster when the suite started; Tim logged out mid-run and
-  the early Gamemaster-selecting tests caught the transition.
-  Both data-models tests pass in isolation and on rerun. Worth
-  pulling into the flake-investigation queue alongside forceCrit
-  / elf-mixin, but not caused by this slice (no chat / actor /
-  sheet logic touched).
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at

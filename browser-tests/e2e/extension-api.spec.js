@@ -192,6 +192,113 @@ test.describe('DCC Extension API', () => {
     expect(result.optsHasShowDialog).toBe(true)
   })
 
+  test('DCC settings-table hooks (disapproval / critical hits / level data packs + 4 set-table hooks + mercurial registry) survive settings-table-hooks.mjs extraction', async ({ page }) => {
+    // Phase 7 session 3: the nine `Hooks.on('dcc.{register,set}Xxx', …)`
+    // handlers that used to live at the top of `module/dcc.js` were
+    // moved into `module/settings-table-hooks.mjs`. The Foundry-facing
+    // contract is the hook names themselves — sibling modules
+    // (dcc-core-book, xcc-core-book, etc.) emit them via
+    // `Hooks.callAll('dcc.{register,set}Xxx', …)`. This test fires
+    // each hook with a probe value, asserts the matching CONFIG.DCC
+    // mutation landed, and restores the prior state so downstream
+    // tests aren't affected.
+    const result = await page.evaluate(async () => {
+      // Snapshot of mutable CONFIG slots we'll touch; restored at the end.
+      const snapshot = {
+        divineAidTable: CONFIG.DCC.divineAidTable,
+        fumbleTable: CONFIG.DCC.fumbleTable,
+        layOnHandsTable: CONFIG.DCC.layOnHandsTable,
+        turnUnholyTable: CONFIG.DCC.turnUnholyTable,
+        mercurialMagicTable: CONFIG.DCC.mercurialMagicTable,
+        mercurialDefaultSlot: CONFIG.DCC.mercurialMagicTables?.default,
+        levelDataPacks: CONFIG.DCC.levelDataPacks
+      }
+
+      const observed = {}
+      try {
+        // 1. Disapproval pack — fires addPack on CONFIG.DCC.disapprovalPacks.
+        const probeDisapprovalPack = 'dcc.__probe_disapproval__'
+        Hooks.callAll('dcc.registerDisapprovalPack', probeDisapprovalPack, false)
+        observed.disapprovalPackLanded = !!CONFIG.DCC.disapprovalPacks?._packs?.[probeDisapprovalPack]
+        delete CONFIG.DCC.disapprovalPacks?._packs?.[probeDisapprovalPack]
+
+        // 2. Critical hits pack — same shape.
+        const probeCritPack = 'dcc.__probe_crit__'
+        Hooks.callAll('dcc.registerCriticalHitsPack', probeCritPack, false)
+        observed.critPackLanded = !!CONFIG.DCC.criticalHitPacks?._packs?.[probeCritPack]
+        delete CONFIG.DCC.criticalHitPacks?._packs?.[probeCritPack]
+
+        // 3-5, 9. set-table hooks — fire with fromSystemSetting=true so the
+        // probe overrides any existing value; assert; restore from snapshot.
+        Hooks.callAll('dcc.setDivineAidTable', 'dcc.__probe_divineAid__', true)
+        observed.divineAidSet = CONFIG.DCC.divineAidTable === 'dcc.__probe_divineAid__'
+        Hooks.callAll('dcc.setFumbleTable', 'dcc.__probe_fumble__', true)
+        observed.fumbleSet = CONFIG.DCC.fumbleTable === 'dcc.__probe_fumble__'
+        Hooks.callAll('dcc.setLayOnHandsTable', 'dcc.__probe_layOnHands__', true)
+        observed.layOnHandsSet = CONFIG.DCC.layOnHandsTable === 'dcc.__probe_layOnHands__'
+        Hooks.callAll('dcc.setTurnUnholyTable', 'dcc.__probe_turnUnholy__', true)
+        observed.turnUnholySet = CONFIG.DCC.turnUnholyTable === 'dcc.__probe_turnUnholy__'
+
+        // 6. Level data pack — lazy-init TablePackManager on first call.
+        // If a manager is already in place we just add to it and clean up
+        // the probe key; otherwise we add, observe, and reset to undefined.
+        const probeLevelDataPack = 'dcc.__probe_levelData__'
+        const hadManager = !!CONFIG.DCC.levelDataPacks
+        Hooks.callAll('dcc.registerLevelDataPack', probeLevelDataPack, false)
+        observed.levelDataManagerExists = !!CONFIG.DCC.levelDataPacks
+        observed.levelDataPackLanded = !!CONFIG.DCC.levelDataPacks?._packs?.[probeLevelDataPack]
+        if (hadManager) {
+          delete CONFIG.DCC.levelDataPacks._packs[probeLevelDataPack]
+        } else {
+          CONFIG.DCC.levelDataPacks = undefined
+        }
+
+        // 7. Per-class mercurial-magic registry — keyed write, does NOT
+        // touch the legacy default field.
+        const beforeLegacyMercurial = CONFIG.DCC.mercurialMagicTable
+        Hooks.callAll('dcc.registerMercurialMagicTable', '__probeClass__', 'module.__probe_mercurial__')
+        observed.mercurialPerClassLanded = CONFIG.DCC.mercurialMagicTables?.__probeClass__ === 'module.__probe_mercurial__'
+        observed.mercurialLegacyUntouchedByPerClassWrite = CONFIG.DCC.mercurialMagicTable === beforeLegacyMercurial
+        delete CONFIG.DCC.mercurialMagicTables.__probeClass__
+
+        // 8. Legacy mercurial setter — system-setting override writes both
+        // the legacy field and the default-slot of the registry.
+        Hooks.callAll('dcc.setMercurialMagicTable', 'module.__probe_mercurialDefault__', true)
+        observed.mercurialLegacySet = CONFIG.DCC.mercurialMagicTable === 'module.__probe_mercurialDefault__'
+        observed.mercurialDefaultSlotMirrored = CONFIG.DCC.mercurialMagicTables?.default === 'module.__probe_mercurialDefault__'
+      } finally {
+        // Restore snapshot so later tests in this spec see the same state.
+        CONFIG.DCC.divineAidTable = snapshot.divineAidTable
+        CONFIG.DCC.fumbleTable = snapshot.fumbleTable
+        CONFIG.DCC.layOnHandsTable = snapshot.layOnHandsTable
+        CONFIG.DCC.turnUnholyTable = snapshot.turnUnholyTable
+        CONFIG.DCC.mercurialMagicTable = snapshot.mercurialMagicTable
+        if (CONFIG.DCC.mercurialMagicTables) {
+          if (snapshot.mercurialDefaultSlot === undefined) {
+            delete CONFIG.DCC.mercurialMagicTables.default
+          } else {
+            CONFIG.DCC.mercurialMagicTables.default = snapshot.mercurialDefaultSlot
+          }
+        }
+        CONFIG.DCC.levelDataPacks = snapshot.levelDataPacks
+      }
+      return observed
+    })
+
+    expect(result.disapprovalPackLanded).toBe(true)
+    expect(result.critPackLanded).toBe(true)
+    expect(result.divineAidSet).toBe(true)
+    expect(result.fumbleSet).toBe(true)
+    expect(result.layOnHandsSet).toBe(true)
+    expect(result.turnUnholySet).toBe(true)
+    expect(result.levelDataManagerExists).toBe(true)
+    expect(result.levelDataPackLanded).toBe(true)
+    expect(result.mercurialPerClassLanded).toBe(true)
+    expect(result.mercurialLegacyUntouchedByPerClassWrite).toBe(true)
+    expect(result.mercurialLegacySet).toBe(true)
+    expect(result.mercurialDefaultSlotMirrored).toBe(true)
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

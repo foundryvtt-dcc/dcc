@@ -917,17 +917,30 @@ DCCItemSheet override; the documented forceCrit shift-click
 suite-only flake — passes in isolation, fired this run as it has
 in Phase 6 sessions 1, 2, 4).
 
-#### Phase 7 session 3 candidate. Extract settings-table hooks to `module/settings-table-hooks.mjs`.
-Eight `Hooks.on('dcc.registerXxxPack', ...)` /
-`Hooks.on('dcc.setXxxTable', ...)` handlers at `dcc.js:954–1041`.
-Each handler calls `CONFIG.DCC.{pack-or-table}.addPack(...)` or
-`.set(...)` with the value the system / sibling module pushes
-through the hook. ~90 lines, fully self-contained. Suggested
-destination: `module/settings-table-hooks.mjs` exporting
-`registerSettingsTableHooks()` the init hook calls once. Vitest:
-mock `Hooks.on` + `CONFIG.DCC` and assert each handler delegates to
-the right registry method. Playwright: emit each hook event from
-the page and assert the matching `CONFIG.DCC.xxx` mutation lands.
+#### ~~Phase 7 session 3. Extract settings-table hooks to `module/settings-table-hooks.mjs`.~~ **DONE 2026-05-20**
+Pure refactor — relocates the nine top-level
+`Hooks.on('dcc.{register,set}XxxTable|Pack', ...)` handlers (was
+`dcc.js:932–1019`) into a focused module exporting each handler
+individually + a frozen `SETTINGS_TABLE_HOOKS` dispatch table + a
+`registerSettingsTableHooks()` entry-point. The handlers cover:
+`registerDisapprovalPack`, `registerCriticalHitsPack`,
+`setDivineAidTable`, `setFumbleTable`, `setLayOnHandsTable`,
+`registerLevelDataPack` (lazy-inits `CONFIG.DCC.levelDataPacks`),
+`registerMercurialMagicTable` (per-class registry), the legacy
+`setMercurialMagicTable` (first-write-wins + system-setting
+override), and `setTurnUnholyTable`. `module/dcc.js` shrinks from
+1254 → 1172 lines (-82 net including the new import line). The
+hook names + their semantics are preserved verbatim — sibling
+modules (dcc-core-book, xcc-core-book, …) emit the same hook
+events and see the same `CONFIG.DCC.*` mutations land. +25 Vitest
+tests in new `module/__tests__/settings-table-hooks.test.js`
+(per-handler value tests + dispatch-table assertion + a
+`registerSettingsTableHooks` test that wires Hooks.on for all
+nine entries). +1 Playwright case in `extension-api.spec.js`
+exercising each hook end-to-end against the live world (snapshots
+the prior CONFIG state, fires each hook with a probe value, asserts
+the matching mutation lands, then restores so downstream tests are
+unaffected).
 
 #### Phase 7 session 4 candidate. Extract `processSpellCheck` to `module/spell-check-processor.mjs`.
 The public stable API `game.dcc.processSpellCheck` (line 664–866,
