@@ -1,3 +1,5 @@
+/* global Handlebars, game */
+
 /**
  * Handlebars helpers for DCC templates.
  *

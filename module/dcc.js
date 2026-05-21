@@ -1,4 +1,4 @@
-/* global ChatMessage, CONFIG, foundry, game, Hooks, Macro, ui, Handlebars, Roll */
+/* global ChatMessage, CONFIG, foundry, game, Hooks, ui, Roll */
 
 /**
  * DCC
