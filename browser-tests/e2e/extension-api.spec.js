@@ -106,6 +106,41 @@ test.describe('DCC Extension API', () => {
     expect(state.stalePProbeCount).toBe(0)
   })
 
+  test('DCC Handlebars helpers (add / stringify / distanceFormat / dccPackExists) survive registerDCCHandlebarsHelpers extraction', async ({ page }) => {
+    // Phase 7 session 1: the four helpers were moved out of dcc.js into
+    // module/handlebars-helpers.mjs. This test guards that the init-time
+    // registration still wires them onto the global Handlebars instance
+    // — anything templated against them would render blank otherwise.
+    const result = await page.evaluate(() => {
+      const dccPack = game.packs.contents[0]?.collection ?? null
+      return {
+        addType: typeof Handlebars.helpers.add,
+        stringifyType: typeof Handlebars.helpers.stringify,
+        distanceFormatType: typeof Handlebars.helpers.distanceFormat,
+        dccPackExistsType: typeof Handlebars.helpers.dccPackExists,
+        addResult: Handlebars.helpers.add(7, 4),
+        stringifyResult: Handlebars.helpers.stringify({ a: 1 }),
+        distanceFormatResult: Handlebars.helpers.distanceFormat("30'"),
+        dccPackExistsTrue: dccPack
+          ? Handlebars.helpers.dccPackExists(dccPack, { fn: () => 'YES', inverse: () => 'NO' }).toString()
+          : 'YES',
+        dccPackExistsFalse: Handlebars.helpers.dccPackExists('dcc.definitelyNotARealPack', {
+          fn: () => 'YES',
+          inverse: () => 'NO'
+        }).toString()
+      }
+    })
+    expect(result.addType).toBe('function')
+    expect(result.stringifyType).toBe('function')
+    expect(result.distanceFormatType).toBe('function')
+    expect(result.dccPackExistsType).toBe('function')
+    expect(result.addResult).toBe(11)
+    expect(result.stringifyResult).toBe('{"a":1}')
+    expect(result.distanceFormatResult).toBe("30'")
+    expect(result.dccPackExistsTrue).toBe('YES')
+    expect(result.dccPackExistsFalse).toBe('NO')
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

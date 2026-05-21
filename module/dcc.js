@@ -38,6 +38,7 @@ import { registerBuiltInClassStartingItems } from './built-in-class-starting-ite
 import { registerBuiltInClassLevelNames } from './built-in-class-level-names.mjs'
 import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
 import { registerBuiltInVariant } from './built-in-variant.mjs'
+import { registerDCCHandlebarsHelpers } from './handlebars-helpers.mjs'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
 
@@ -267,30 +268,7 @@ Hooks.once('init', async function () {
   ]
   await loadTemplates(templatePaths)
 
-  // Handlebars helper for simple addition
-  Handlebars.registerHelper('add', function (object1, object2) {
-    return parseInt(object1) + parseInt(object2)
-  })
-
-  // Handlebars helper to stringify JSON objects for debugging
-  Handlebars.registerHelper('stringify', function (object) {
-    return JSON.stringify(object)
-  })
-
-  // Handlebars helper for distances with an apostrophe
-  Handlebars.registerHelper('distanceFormat', function (object) {
-    const fields = String(object).match(/(-?\d+)'?/)
-    if (fields) {
-      return fields[1] + '\''
-    } else {
-      return ''
-    }
-  })
-
-  // Handlebars helper to check if a pack exists
-  Handlebars.registerHelper('dccPackExists', function (pack, options) {
-    return new Handlebars.SafeString(game.packs.get(pack) ? options.fn(this) : options.inverse(this))
-  })
+  registerDCCHandlebarsHelpers()
 
   // Register Fleeting Luck setting early so it's available for getSceneControlButtons
   // which fires before the ready hook where other settings are registered

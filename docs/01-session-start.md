@@ -42,37 +42,33 @@ session's context):
 
 ## Status (2026-05-20)
 
-**Phase 6 session 5 closed Phase 6** by adding
-`game.dcc.registerVariant` as the stable extension surface for variant
-rulesets (XCC, MCC, future homebrew variants). Descriptor shape
-`{ id, label, classes, sheetTheme? }`; `id` is the lowercase slug
-stored in the new `dcc.activeVariant` world setting (defaults to
-`'dcc'`); `getActiveVariant()` resolves the setting to its registry
-entry with a `'dcc'` fallback (survives pre-ready callers where
-`game.settings.get` throws). When the active variant declares a
-`sheetTheme`, `DCCActorSheet._onRender` adds the CSS class to the
-sheet element via `applyActiveVariantSheetTheme(this.element)` —
-variants can ship a theme stylesheet without each per-class subclass
-declaring it in `DEFAULT_OPTIONS.classes`. The DCC system dogfoods
-its own helper by seeding the canonical `'dcc'` variant (7 PC
-classes, no `sheetTheme` — base CSS is already DCC) through new
-`module/built-in-variant.mjs` at `init`. Sibling variant modules
-(XCC, MCC) migrate by adding a single `registerVariant({...})` call
-from their own `init` hook declaring their class IDs + a
-`sheetTheme`; XCC's `CONFIG.Actor.documentClass` override was retired
-2026-05-18, so this was the remaining Phase 6 work. +23 Vitest tests
-on `extension-api.test.js` (registry validation, last-write-wins,
-getActiveVariant pre-ready fallback, theme apply + no-theme no-op +
-idempotency + missing-element). +2 Playwright cases in
-`extension-api.spec.js`. **1053 Vitest green** (was 1030, +23).
-Playwright count to be confirmed by post-slice full-suite run.
-
-Phase 6 closes with this slice. Phase 7 cleanup
-(`ARCHITECTURE_REIMAGINED.md §7`) is the next phase — retire
-`critText`/`fumbleText` shims, prune old migrations, split `dcc.js`
-into focused modules, split `dcc.scss` into partials + theme layer,
-extract `module/ruleset/` (what little remains) into the variant
-config for DCC core.
+**Phase 7 session 1 opened the Phase 7 cleanup arc** by extracting the
+four Handlebars helpers (`add`, `stringify`, `distanceFormat`,
+`dccPackExists`) out of `module/dcc.js`'s `init` hook into a focused
+module `module/handlebars-helpers.mjs`. Each helper is exported
+individually plus a `registerDCCHandlebarsHelpers()` entry-point the
+init hook calls in place of the four inline `Handlebars.registerHelper(...)`
+blocks. Pure refactor — every template that uses these helpers sees
+identical behavior. The session also reconciled the Phase 7 work list
+against the source at session start: items 1 (`critText`/`fumbleText`
+shim retirement) + 2 (pre-V14 migration pruning) were already done in
+2026-04 (C1 + C2 chore slices); item 5 (extract `module/ruleset/`) is
+a no-op because the directory doesn't exist on this branch. Remaining
+Phase 7 work is items 3 (`dcc.js` piecemeal split — this slice is the
+first extraction; next candidates are macros / settings-table hooks /
+`processSpellCheck` / chat-and-hook wiring / table loading) and 4
+(`styles/dcc.scss` partials + theme contract). +12 Vitest tests
+in new `module/__tests__/handlebars-helpers.test.js` (per-helper
+coverage + a registration assertion against a mocked
+`Handlebars.registerHelper`); +1 Playwright case in
+`extension-api.spec.js` asserting the four helpers survive the
+extraction and produce identical outputs against the live
+`Handlebars.helpers` table. **1065 Vitest green** (was 1053, +12);
+**143 Playwright passed** + 1 latent xcc-core-book DCCItemSheet
+override (unchanged baseline; same failure flagged every prior
+session). Phase 6 session 5's "Playwright count to be confirmed by
+post-slice full-suite run" is also retroactively closed at 142
+pre-Phase-7 → 143 post-this-slice.
 
 **Phase 6 session 4 closed the flake-investigation follow-up.**
 The session-start prompt called out two suite-only Playwright
@@ -309,41 +305,44 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 6 session 5 (2026-05-20) closed Phase 6** by shipping
-`game.dcc.registerVariant`. The phase is fully complete; the next
-phase is **Phase 7 (cleanup)** per `ARCHITECTURE_REIMAGINED.md §7`:
+**Phase 7 session 1 (2026-05-20) opened the Phase 7 cleanup arc** by
+extracting the four Handlebars helpers (`add`, `stringify`,
+`distanceFormat`, `dccPackExists`) from `module/dcc.js`'s init hook
+into `module/handlebars-helpers.mjs`. Phase 7 status reconciled
+against the source: items 1 (`critText`/`fumbleText` shim retirement)
+and 2 (pre-V14 migration pruning) were already done in 2026-04 as the
+C1 + C2 chore slices; item 5 (extract `module/ruleset/`) is a no-op
+because the directory doesn't exist on this branch. Remaining Phase 7
+work is items 3 (`dcc.js` piecemeal split) and 4 (`styles/dcc.scss`
+partials + theme contract).
 
-1. **Retire `critText` / `fumbleText` compatibility shims.** These
-   linger from before the lib-side crit/fumble path was the
-   single-path adapter body. Search `module/` for the shims, check
-   `EXTENSION_API.md` for whether they have external consumers
-   (Foundry-facing surface stays as thin wrappers per §8.6), and
-   either delete or wrap as appropriate. Stop-condition per
-   `02-slice-backlog.md`: confirm with Tim before deleting any
-   field with a documented Stable consumer in `EXTENSION_API.md`.
+**Next-slice candidates for `module/dcc.js` split** (~1655 lines
+remaining after this session's extraction; per
+`ARCHITECTURE_REIMAGINED.md Appendix A`, target ~4–5 focused modules).
+Pick one per session — do NOT bundle multiple into one slice.
 
-2. **Prune old migrations past a minimum data version.** Walk
-   `module/migrations.js` for migration steps gated below the
-   current minimum supported world version; delete and update the
-   minimum-version guard. Test that worlds at the new minimum
-   still load without re-running the deleted steps.
+1. **Macro factories** (lines 1289–1671 — ~380 lines). 13
+   `_createDCCXxxMacro` helpers + `createDCCMacro` +
+   `rollDCCWeaponMacro` + `getMacroActor` + `getMacroOptions`. Largest
+   cohesive block; isolated (no init coupling). Suggested
+   destination: `module/macros.mjs`.
+2. **Settings-table hooks** (lines 954–1041 — ~90 lines). The eight
+   `Hooks.on('dcc.registerXxxPack')` / `Hooks.on('dcc.setXxxTable')`
+   handlers. Self-contained hook wiring; suggested destination:
+   `module/settings-table-hooks.mjs`.
+3. **`processSpellCheck`** (lines 664–866 — ~200 lines). The public
+   stable API (`game.dcc.processSpellCheck`). Self-contained but
+   touches more downstream behavior — confirm sibling-module
+   consumption pattern survives before extracting.
+4. **Chat / hook wiring** (lines 873–946 + scattered `Hooks.on(...)`
+   blocks). `renderChatMessageHTML`, context-menu options.
+5. **Table loading** (lines 442–650). `setupCoreBookCompendiumLinks`,
+   `registerTables`, `getSkillTable`, related `diceSoNiceReady` /
+   `importAdventure` hooks.
 
-3. **Split `module/dcc.js` into focused modules.** The init hook
-   has grown across phases; per `ARCHITECTURE_REIMAGINED.md
-   Appendix A`, target ~4–5 files (registry initialization, hook
-   wiring, Handlebars helpers, settings + chat). Pure-refactor;
-   high blast radius if done in one slice. Consider doing it
-   piecemeal — one focused module per session.
-
-4. **Split `styles/dcc.scss` into partials + theme layer.**
-   Document CSS custom properties as a theming contract so the
-   Phase 6 `sheetTheme` mechanism has documented variables to
-   override.
-
-5. **Extract `module/ruleset/` (what little remains) into the
-   variant config for DCC core.** Tie-up — the variant-registry
-   API (Phase 6 session 5) is the destination; `module/ruleset/`
-   should fold into the canonical `'dcc'` variant declaration.
+After the `dcc.js` split lands its biggest chunks, item 4 (split
+`styles/dcc.scss` ~2979 lines into partials + theme layer) opens up
+as the second Phase 7 arc.
 
 **Possible follow-up (not on critical path):** migrate
 `extension-api.spec.js` from per-test login to the worker-scoped
@@ -359,10 +358,12 @@ fields that no longer emit. A 2-line rename is documented as a
 migration recipe in `EXTENSION_API.md`. Tim is landing the dcc-qol
 PR on his schedule — do NOT edit that repo from this session.
 
-Pick a Phase 7 slice from the list above and confirm with Tim
-before starting. The `critText`/`fumbleText` shim retirement (1)
-is the smallest, well-scoped starting point; the `dcc.js` split
-(3) is the highest leverage but largest blast radius.
+Pick a Phase 7 dcc.js extraction from the candidates above and
+confirm with Tim before starting. The macro factories (1) are the
+largest cohesive block; the settings-table hooks (2) are the
+smallest well-scoped next-slice. `processSpellCheck` (3) is the
+public-stable API extraction — landing it preserves
+`game.dcc.processSpellCheck` as a thin wrapper per §8.6.
 
 **Do NOT:** touch lib-side internals (Phase 6/7 work is
 adapter-side cleanup, not lib changes); break

@@ -9,6 +9,8 @@
 > - [Phase 3 — attacks, damage, crit, fumble + cruft](dev/progress/phase-3.md)
 > - [Phase 4 — data-model slimming + class-mixin extension surface](dev/progress/phase-4.md)
 > - [Phase 5 — sheet composition + class defaults + starting items](dev/progress/phase-5.md)
+> - [Phase 6 — lib-side class progression + variant registration](dev/progress/phase-6.md)
+> - [Phase 7 — cleanup](dev/progress/phase-7.md)
 
 ## Archive discipline
 
@@ -63,35 +65,34 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 6 session 5 (2026-05-20)** added `game.dcc.registerVariant` as
-the stable extension surface for variant rulesets (XCC, MCC, future
-homebrew variants), closing the last Phase 6 work item. Descriptor
-shape `{ id, label, classes, sheetTheme? }`; `id` is the lowercase slug
-stored in the new `dcc.activeVariant` world setting (defaults to
-`'dcc'`); `getActiveVariant()` resolves the setting to its registry
-entry with a `'dcc'` fallback. When the active variant declares a
-`sheetTheme`, `DCCActorSheet._onRender` calls
-`applyActiveVariantSheetTheme(this.element)` to add the CSS class —
-variants can ship a theme stylesheet without each per-class subclass
-declaring it in `DEFAULT_OPTIONS.classes`. The DCC system dogfoods
-its own helper by registering the canonical `'dcc'` variant (7 PC
-classes, no `sheetTheme` — base CSS is already DCC) through new
-`module/built-in-variant.mjs` at `init`. XCC retired its
-`CONFIG.Actor.documentClass` override 2026-05-18; its remaining
-migration is a single `registerVariant({...})` call from its `init`
-hook (sibling-module change, not system-side). +23 Vitest tests on
-`extension-api.test.js` (registry validation, idempotency,
-last-write-wins, getActiveVariant pre-ready fallback, theme apply +
-no-theme no-op + idempotency + missing-element). +2 Playwright cases
-in `extension-api.spec.js` (`registerVariant` + `getActiveVariant`
-exposed and the `'dcc'` variant seeded; XCC-like variant round-trips
-through `game.settings.set` and `applyActiveVariantSheetTheme`).
-**1053 Vitest green** (was 1030, +23). Playwright count to be
-confirmed by post-slice full-suite run.
-
-Phase 6 closed with this slice. Phase 7 cleanup (retire `critText`/
-`fumbleText` shims; prune old migrations; split `dcc.js` /
-`dcc.scss`) is the next phase per `ARCHITECTURE_REIMAGINED.md §7`.
+**Phase 7 session 1 (2026-05-20)** opens the Phase 7 cleanup arc by
+extracting the four Handlebars helpers (`add`, `stringify`,
+`distanceFormat`, `dccPackExists`) out of `module/dcc.js`'s `init`
+hook into a new focused module `module/handlebars-helpers.mjs`.
+Each helper is exported individually plus a `registerDCCHandlebarsHelpers()`
+entry-point that the init hook calls in place of the four inline
+`Handlebars.registerHelper(...)` blocks. Pure refactor — every
+template that uses these helpers sees identical behavior; the
+production Playwright run picks up the helpers off the live
+`Handlebars.helpers` table and asserts the same outputs the inline
+definitions would have produced. The session also reconciled the
+Phase 7 work list against the source: items 1 (`critText`/`fumbleText`
+shim retirement) and 2 (pre-V14 migration pruning) were already done
+in 2026-04 (C1 + C2 chore slices); item 5 (extract `module/ruleset/`)
+is a no-op because the directory doesn't exist on this branch.
+Remaining Phase 7 work is items 3 (`dcc.js` split — this slice is the
+first piecemeal extraction) and 4 (`styles/dcc.scss` partials).
++12 Vitest tests on new `module/__tests__/handlebars-helpers.test.js`
+(per-helper unit coverage + a `registerDCCHandlebarsHelpers` mock-
+based registration assertion). +1 Playwright case in
+`extension-api.spec.js` asserting the four helpers survive the
+extraction and produce identical outputs against the live
+`Handlebars.helpers` table. **1065 Vitest green** (was 1053, +12);
+**143 Playwright passed** + 1 latent xcc-core-book DCCItemSheet
+override (unchanged baseline). Next slice candidates: macro
+factories (~380 lines), settings-table hooks (~90 lines),
+`processSpellCheck` (~200 lines), or chat / hook wiring — pick at
+session-start by Tim.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -101,6 +102,48 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-20 — Phase 7 session 1: extract Handlebars helpers from
+  `dcc.js` into `module/handlebars-helpers.mjs` (opens Phase 7).**
+  Pure refactor — moves the four helpers (`add`, `stringify`,
+  `distanceFormat`, `dccPackExists`) out of the init hook and into
+  a focused module exporting each helper individually plus a
+  `registerDCCHandlebarsHelpers()` entry-point the init hook calls
+  in place of the four inline `Handlebars.registerHelper(...)`
+  blocks. ~20 lines removed from `dcc.js`'s init body; the file is
+  still 1655 lines pre-future-extractions but the pattern for the
+  remaining splits (macros, settings-table hooks, `processSpellCheck`,
+  chat / hook wiring, table loading) is now established. The Phase 7
+  work list was also reconciled against the source at session start:
+  items 1 (`critText`/`fumbleText` retirement) + 2 (pre-V14 migration
+  pruning) were already done as C1 + C2 chore slices in 2026-04;
+  item 5 (extract `module/ruleset/`) is a no-op because the
+  directory doesn't exist on this branch. Remaining Phase 7 work is
+  the `dcc.js` piecemeal split (this slice) + the `styles/dcc.scss`
+  partials split. +12 Vitest tests in new
+  `module/__tests__/handlebars-helpers.test.js` (3 add cases:
+  ints / string-coercion / negative; 2 stringify cases:
+  object / array; 4 distanceFormat cases: trailing apostrophe / no
+  apostrophe / negative / non-matching; 2 dccPackExists cases:
+  pack-present + fn branch / pack-missing + inverse branch;
+  1 `registerDCCHandlebarsHelpers` test asserting all four names
+  register against a mocked `Handlebars.registerHelper`). +1
+  Playwright case in `extension-api.spec.js` (`DCC Handlebars
+  helpers (add / stringify / distanceFormat / dccPackExists) survive
+  registerDCCHandlebarsHelpers extraction`) — reads
+  `Handlebars.helpers.{add, stringify, distanceFormat, dccPackExists}`
+  off the live page, invokes each (including dccPackExists with a
+  real pack collection + a missing pack name), and asserts identical
+  outputs to the pre-extraction inline definitions. **1065 Vitest
+  green** (was 1053, +12). **143 Playwright passed** + 1 latent
+  failure (the long-standing xcc-core-book DCCItemSheet override
+  baseline at `extension-api.spec.js:162`, unchanged from every
+  prior session). Phase 6 session 5's "Playwright count to be
+  confirmed by post-slice full-suite run" can also be retroactively
+  closed by this run — the pre-slice baseline was 142 passes (140
+  pre-session-4 + 1 session-4 hygiene + 2 session-5 registerVariant
+  cases minus 1 ongoing latent failure); this slice's +1 case lands
+  the post-slice count at 143 passed.
 
 - **2026-05-20 — Phase 6 session 5: `registerVariant` for variant
   rulesets (closes Phase 6).** Adds `game.dcc.registerVariant` +
@@ -336,43 +379,6 @@ archives linked above.
   classMixins registry so it can't have caused the flake. The
   forceCrit flake observed in Phase 6 session 1's run didn't fire
   this run.
-- **2026-05-19 — Phase 6 session 1: expose
-  `registerClassProgression` / `registerClassProgressions` on
-  `game.dcc.*`.** Two-line addition to `module/dcc.js`: import the
-  helpers from the vendored lib
-  (`module/vendor/dcc-core-lib/data/classes/progression-utils.js`)
-  and add them to the `game.dcc` object alongside the other
-  Phase 4/5 registry helpers. The lib already implements the
-  registry + consumer APIs (`getSavingThrows`, `getCritDie`,
-  `getSaveBonus`, `getClassProgression`) — they've been there since
-  before the vendor sync; this slice just makes the registration
-  surface reachable from sibling content modules without forcing
-  them to import a vendored-lib internal path. PR #720's
-  "programmatic PC creation produces inconsistent class config"
-  item is *partially* closed: the registration plumbing is now
-  available. Full closure waits on a content module (a future
-  `dcc-core-book` update, or sibling) to invoke the helper with
-  a complete progression payload. The class progression data
-  itself is copyrighted Goodman Games material living in the
-  private `dcc-official-data` repo (per
-  `ARCHITECTURE_REIMAGINED.md §8.1`); the open-source DCC system
-  ships only the registration surface. +2 Vitest tests in
-  `extension-api.test.js` (helpers importable from vendored lib;
-  fictional round-trip with `clearClassProgressions` cleanup).
-  1005 Vitest green (was 1003, +2). +2 Playwright cases in
-  `extension-api.spec.js` (helpers exposed on live `game.dcc`;
-  end-to-end round-trip registering a fictional class and reading
-  it back via the lib's `getSavingThrows` consumer, with cleanup).
-  EXTENSION_API.md gains a Stable row pair for both helpers +
-  documents the "data lives in content modules, not core" pattern.
-  No copyrighted material reproduced in this repo. 135 Playwright
-  passed (was 134, +2 from this slice). One new suite-only flake
-  observed: `phase1-adapter-dispatch.spec.js:922 forceCrit
-  shift-click flag…` fails under the full-suite run but passes
-  in isolation (verified by re-running the single test). State
-  pollution between tests in the shared Foundry world; this slice
-  adds no chat / roll / spell logic so it can't have caused the
-  flake.
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at

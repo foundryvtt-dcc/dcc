@@ -868,9 +868,129 @@ content modules).
 
 ---
 
+### Phase 7 — Active sub-arc (cleanup, in progress)
+
+> Per `ARCHITECTURE_REIMAGINED.md §7`. Items 1 (`critText`/`fumbleText`
+> shim retirement) and 2 (pre-V14 migration pruning) were already done
+> in 2026-04 (C1 + C2 chore slices); item 5 (extract `module/ruleset/`)
+> is a no-op because the directory doesn't exist on this branch.
+> Remaining: piecemeal split of `module/dcc.js` (items 3 — done
+> incrementally, one focused module per session) + split of
+> `styles/dcc.scss` into partials + theme contract (item 4).
+
+#### ~~Phase 7 session 1. Extract Handlebars helpers from `dcc.js`.~~ **DONE 2026-05-20**
+Pure refactor — moves `add`, `stringify`, `distanceFormat`,
+`dccPackExists` out of `module/dcc.js`'s init hook into a new focused
+module `module/handlebars-helpers.mjs` exporting each helper
+individually plus a `registerDCCHandlebarsHelpers()` entry-point the
+init hook calls in place of the four inline
+`Handlebars.registerHelper(...)` blocks. +12 Vitest tests in new
+`module/__tests__/handlebars-helpers.test.js` (per-helper coverage +
+a registration assertion against a mocked `Handlebars.registerHelper`);
++1 Playwright case in `extension-api.spec.js` asserting the four
+helpers survive the extraction and produce identical outputs against
+the live `Handlebars.helpers` table. **1065 Vitest green** (was 1053,
++12); **143 Playwright passed** + 1 latent xcc-core-book DCCItemSheet
+override (unchanged baseline). Phase 6 session 5's "Playwright count
+to be confirmed by post-slice full-suite run" retroactively closed at
+142 pre-slice → 143 post-slice.
+
+#### Phase 7 session 2 candidate. Extract macro factories to `module/macros.mjs`.
+Largest cohesive block in `dcc.js` — `createDCCMacro` +
+`_createDCCAbilityMacro` / `_createDCCInitiativeMacro` /
+`_createDCCHitDiceMacro` / `_createDCCSaveMacro` /
+`_createDCCSkillMacro` / `_createDCCLuckDieMacro` /
+`_createDCCSpellCheckMacro` / `_createDCCAttackBonusMacro` /
+`_createDCCActionDiceMacro` / `_createDCCWeaponMacro` /
+`_createDCCItemMacro` / `_createDCCApplyDisapprovalMacro` /
+`_createDCCRollDisapprovalMacro` + `rollDCCWeaponMacro` +
+`getMacroActor` + `getMacroOptions` (~380 lines, dcc.js:1289–1671).
+Each `_createDCCXxxMacro` is a small pure function returning an
+`Item` config object via `Macro.create`; the dispatcher
+`createDCCMacro` matches on `data.type` + delegates. Self-contained
+(no init-time coupling). Suggested destination: `module/macros.mjs`
+exporting `createDCCMacro`, `rollDCCWeaponMacro`, `getMacroActor`,
+`getMacroOptions`; init hook keeps a single `game.dcc.createDCCMacro`
+/ `game.dcc.rollDCCWeaponMacro` exposure. Vitest coverage: per-factory
+unit tests asserting the returned Macro config matches the expected
+shape for each macro type. Playwright: assert the
+`game.dcc.createDCCMacro` exposure survives and one end-to-end drag
+of a known item type still creates a macro. Verify no external
+consumers expect a different name layout in `EXTENSION_API.md`
+before extracting.
+
+#### Phase 7 session 3 candidate. Extract settings-table hooks to `module/settings-table-hooks.mjs`.
+Eight `Hooks.on('dcc.registerXxxPack', ...)` /
+`Hooks.on('dcc.setXxxTable', ...)` handlers at `dcc.js:954–1041`.
+Each handler calls `CONFIG.DCC.{pack-or-table}.addPack(...)` or
+`.set(...)` with the value the system / sibling module pushes
+through the hook. ~90 lines, fully self-contained. Suggested
+destination: `module/settings-table-hooks.mjs` exporting
+`registerSettingsTableHooks()` the init hook calls once. Vitest:
+mock `Hooks.on` + `CONFIG.DCC` and assert each handler delegates to
+the right registry method. Playwright: emit each hook event from
+the page and assert the matching `CONFIG.DCC.xxx` mutation lands.
+
+#### Phase 7 session 4 candidate. Extract `processSpellCheck` to `module/spell-check-processor.mjs`.
+The public stable API `game.dcc.processSpellCheck` (line 664–866,
+~200 lines). Foundry-facing per §8.6, stays as a thin wrapper at
+the init hook (re-export onto `game.dcc.processSpellCheck`); the
+implementation moves to a focused module. Heavier slice because
+the function consumes module-local imports (`SpellResult`,
+`TableResult`, `parser`, etc.); the destination module needs them
+all. Vitest: existing spell-check coverage continues to pass.
+Playwright: existing `phase1-adapter-dispatch.spec.js` cases for
+spell checks continue to pass (they exercise `processSpellCheck`
+end-to-end). Verify `EXTENSION_API.md` records the function as
+Stable and that XCC's consumption pattern survives the extraction
+unchanged.
+
+#### Phase 7 session 5 candidate. Extract chat / hook wiring to `module/chat-hooks.mjs`.
+`renderChatMessageHTML` hook handler + `getChatMessageContextOptions`
++ related `Hooks.on(...)` blocks for actor/item lifecycle. Mid-
+sized, mid-risk; some handlers reference module-local helpers that
+may need re-exporting first.
+
+#### Phase 7 session 6 candidate. Extract table loading to `module/table-loaders.mjs`.
+`setupCoreBookCompendiumLinks`, `registerTables`, `getSkillTable`,
+related `diceSoNiceReady` / `importAdventure` hooks. Boundary
+clean (no overlap with macros / spell-check / chat). Drops the
+last major `dcc.js` init concern; remaining is registry init +
+init hook scaffolding.
+
+#### Phase 7 session N candidate. Split `styles/dcc.scss` into partials + theme contract.
+Open after the `dcc.js` split lands its biggest chunks. Walk
+`styles/dcc.scss` (~2979 lines) for natural section boundaries
+(sheet partials, chat partials, dialog partials, status icons,
+status effects, theme variables). Lift each into
+`styles/_partial-xxx.scss`; convert hard-coded hex colors that
+appear in `:root` / `.dcc.sheet` declarations into CSS custom
+properties (theming contract for the Phase 6 `sheetTheme`
+mechanism). Document the contract in
+`docs/dev/ARCHITECTURE_REIMAGINED.md §7` so variant theme
+stylesheets have stable variables to override.
+
+---
+
 ## Completed slices
 
 Move entries here as they land; keep the active queue scannable.
+
+### Phase 7 (Cleanup)
+
+- Phase 7 session 1 (2026-05-20): extract Handlebars helpers from
+  `dcc.js` to `module/handlebars-helpers.mjs`. Pure refactor — moves
+  the four helpers (`add`, `stringify`, `distanceFormat`,
+  `dccPackExists`) out of the init hook into a focused module
+  exporting each helper individually plus a
+  `registerDCCHandlebarsHelpers()` entry-point the init hook calls in
+  place of the four inline `Handlebars.registerHelper(...)` blocks.
+  Opens the Phase 7 cleanup arc; reconciles the Phase 7 work list
+  (items 1+2 already done in 2026-04 C1+C2; item 5 is a no-op).
+  +12 Vitest in new `module/__tests__/handlebars-helpers.test.js`,
+  +1 Playwright in `extension-api.spec.js`. **1065 Vitest green**
+  (was 1053, +12); **143 Playwright passed** + 1 latent xcc-core-book
+  override (unchanged baseline).
 
 ### Phase 6 (Lib-side class progression + variant)
 
