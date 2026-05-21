@@ -364,6 +364,102 @@ test.describe('DCC Extension API', () => {
     expect(result.spellResultHtml).toMatch(/^<p class="emote-alert (fumble|critical)">[^<]+<\/p>$/)
   })
 
+  test('DCC table-loading surface (setupCoreBookCompendiumLinks / registerTables / getSkillTable / RollTable lifecycle hooks) survives table-loading.mjs extraction', async ({ page }) => {
+    // Phase 7 session 5: the `setupCoreBookCompendiumLinks` /
+    // `registerTables` / `getSkillTable` functions plus five hooks
+    // (`diceSoNiceReady`, `importAdventure`, `createRollTable`,
+    // `deleteRollTable`, `updateRollTable`) were relocated from
+    // `module/dcc.js` into `module/table-loading.mjs`. The init / ready
+    // sequence still installs the same CONFIG slots; `game.dcc.getSkillTable`
+    // remains published; and the three world-RollTable lifecycle hooks
+    // still keep `CONFIG.DCC.disapprovalTables` in sync.
+    //
+    // End-to-end probe: assert the registries seeded at ready time
+    // exist, then exercise the live world-RollTable lifecycle by
+    // creating + updating + deleting a RollTable named "P_TableLoad
+    // Probe Disapproval" and confirming `CONFIG.DCC.disapprovalTables`
+    // tracks the changes via the relocated hook handlers.
+    const result = await page.evaluate(async () => {
+      const observed = {}
+
+      // 1. `registerTables` seeds the three TablePackManager registries.
+      observed.disapprovalPacksType = CONFIG.DCC.disapprovalPacks?.constructor?.name ?? null
+      observed.criticalHitPacksType = CONFIG.DCC.criticalHitPacks?.constructor?.name ?? null
+      observed.patronTaintPacksType = CONFIG.DCC.patronTaintPacks?.constructor?.name ?? null
+      // Patron-taint registry is seeded with the core + xcc side-effect packs.
+      observed.patronTaintSeededDccCore = CONFIG.DCC.patronTaintPacks?.packs?.includes('dcc-core-book.dcc-core-spell-side-effect-tables') ?? false
+      observed.patronTaintSeededXccCore = CONFIG.DCC.patronTaintPacks?.packs?.includes('xcc-core-book.xcc-core-spell-side-effect-tables') ?? false
+
+      // 2. `setupCoreBookCompendiumLinks` either populates the slot
+      //    (dcc-core-book active) or sets it to null. Either is valid
+      //    depending on which modules the test world has enabled — what
+      //    matters is the slot has been touched (key exists).
+      observed.coreBookLinksKeyExists = 'coreBookCompendiumLinks' in CONFIG.DCC
+
+      // 3. `getSkillTable` is exposed on the stable surface.
+      observed.getSkillTableType = typeof game.dcc.getSkillTable
+
+      // 4. Exercise the relocated world-RollTable lifecycle hooks. Snapshot
+      //    the current `disapprovalTables` so we can restore at the end.
+      const beforeSnapshot = { ...(CONFIG.DCC.disapprovalTables ?? {}) }
+      const probeName = 'P_TableLoad Probe Disapproval'
+      let probeTable
+      try {
+        // createRollTable: world table whose name contains "Disapproval"
+        // should be registered in `CONFIG.DCC.disapprovalTables` by the
+        // relocated `onCreateRollTable` handler.
+        probeTable = await RollTable.create({ name: probeName })
+        observed.afterCreate = CONFIG.DCC.disapprovalTables?.[probeName] ?? null
+
+        // updateRollTable: rename to a non-disapproval name. The
+        // relocated `onUpdateRollTable` handler rebuilds the world half
+        // from scratch, so the old entry drops out and (since the new
+        // name does not match) no new entry appears.
+        const renamedName = 'P_TableLoad Probe Renamed'
+        await probeTable.update({ name: renamedName })
+        observed.afterRenameOldName = CONFIG.DCC.disapprovalTables?.[probeName] ?? null
+        observed.afterRenameNewName = CONFIG.DCC.disapprovalTables?.[renamedName] ?? null
+
+        // updateRollTable again: rename back to a disapproval-matching
+        // name — the world entry should reappear.
+        const restoredName = 'P_TableLoad Probe Disapproval Restored'
+        await probeTable.update({ name: restoredName })
+        observed.afterRestoreEntry = CONFIG.DCC.disapprovalTables?.[restoredName] ?? null
+
+        // deleteRollTable: removing the table drops the entry.
+        await probeTable.delete()
+        probeTable = null
+        observed.afterDelete = CONFIG.DCC.disapprovalTables?.[restoredName] ?? null
+      } finally {
+        if (probeTable) {
+          await probeTable.delete().catch(() => {})
+        }
+        // Restore the disapproval-tables snapshot so downstream tests
+        // start from the same state.
+        CONFIG.DCC.disapprovalTables = beforeSnapshot
+      }
+
+      return observed
+    })
+
+    expect(result.disapprovalPacksType).toBe('TablePackManager')
+    expect(result.criticalHitPacksType).toBe('TablePackManager')
+    expect(result.patronTaintPacksType).toBe('TablePackManager')
+    expect(result.patronTaintSeededDccCore).toBe(true)
+    expect(result.patronTaintSeededXccCore).toBe(true)
+    expect(result.coreBookLinksKeyExists).toBe(true)
+    expect(result.getSkillTableType).toBe('function')
+    // onCreateRollTable populated the entry.
+    expect(result.afterCreate).toEqual({ name: 'P_TableLoad Probe Disapproval', path: 'P_TableLoad Probe Disapproval' })
+    // After rename to a non-disapproval name, both old and new are absent.
+    expect(result.afterRenameOldName).toBeNull()
+    expect(result.afterRenameNewName).toBeNull()
+    // After rename back to a matching name, the new entry is present.
+    expect(result.afterRestoreEntry).toEqual({ name: 'P_TableLoad Probe Disapproval Restored', path: 'P_TableLoad Probe Disapproval Restored' })
+    // After delete, the entry is gone.
+    expect(result.afterDelete).toBeNull()
+  })
+
   test('game.dcc.registerItemSheet is exposed and is a function', async ({ page }) => {
     const result = await page.evaluate(() => ({
       hasFn: typeof game.dcc.registerItemSheet === 'function',

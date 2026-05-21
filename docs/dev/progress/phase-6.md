@@ -272,3 +272,31 @@
   guidance. Remaining Phase 6 work: `registerVariant` for variant-
   class modules (larger scope; touches actor-class selection UI /
   level-change dialog).
+
+- **2026-05-20 — Phase 6 session 5: `registerVariant` for variant
+  rulesets (closes Phase 6).** Adds `game.dcc.registerVariant` +
+  `game.dcc.getActiveVariant` to `module/extension-api.mjs`. Descriptor
+  shape `{ id, label, classes, sheetTheme? }`; `id` is the lowercase
+  slug stored in the new `dcc.activeVariant` world setting (defaults
+  `'dcc'`). `getActiveVariant()` resolves the setting → registry entry
+  with `'dcc'` fallback (survives pre-ready callers where
+  `game.settings.get` throws). Active variant's `sheetTheme` (if any)
+  is added to the actor sheet element via
+  `applyActiveVariantSheetTheme(this.element)` in
+  `DCCActorSheet._onRender`. New `module/built-in-variant.mjs` seeds
+  the canonical `'dcc'` variant (7 PC classes, no `sheetTheme` — base
+  CSS already is the DCC theme). Sibling variant modules like XCC ship
+  a single `registerVariant({...})` call from their own `init` hook
+  declaring their class IDs + a `sheetTheme` (sibling-module change,
+  not system-side); XCC's `CONFIG.Actor.documentClass` override was
+  retired 2026-05-18 — Phase 6's variant-API work was the remaining
+  piece. +23 Vitest tests on `extension-api.test.js` (registry
+  validation, last-write-wins, getActiveVariant pre-ready fallback,
+  theme apply / no-theme no-op / idempotency / missing-element).
+  +2 Playwright cases in `extension-api.spec.js` (`registerVariant`
+  + `getActiveVariant` exposed and the `'dcc'` variant seeded;
+  XCC-like variant round-trips through `game.settings.set` and
+  `applyActiveVariantSheetTheme`). **1053 Vitest green** (was 1030,
+  +23). Playwright count to be confirmed by post-slice full-suite run.
+  Closes the last Phase 6 work item; `ARCHITECTURE_REIMAGINED.md §7`
+  next phase is Phase 7 (cleanup).

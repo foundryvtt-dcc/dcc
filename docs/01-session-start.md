@@ -42,58 +42,72 @@ session's context):
 
 ## Status (2026-05-21)
 
-**Phase 7 session 4 continued the Phase 7 cleanup arc** by
-extracting `processSpellCheck` out of `module/dcc.js` into a
-focused module `module/spell-check-processor.mjs`. The relocated
-surface is the ~200-line public stable-API function (was
-`dcc.js:637–842`) that handles every spell-check cast — evaluates
-the roll, applies forceCrit (shift-click GM testing), rolls
-patron taint when the spell is patron-related, branches on
-rollTable presence (table lookup with natural-20-on-Player crit
-level-boost + natural-1 fumble row-1 lookup vs. no-table HTML
-indicator + flag emission), routes wizard / cleric automation
-side-effects (`loseSpell`, `rollDisapproval`, `applyDisapproval`),
-and writes back `item.system.lastResult` for the spells tab. The
-function is exported as a named symbol from the new module and
-re-published on `game.dcc.processSpellCheck` at init time —
-Foundry-facing stable surface per §8.6, no contract change.
-`module/dcc.js` shrinks from 1172 → 970 lines (-202 net including
-the new `import` line, the 5-line replacement marker comment, and
-dropping `Roll` from the `/* global */` declaration since the
-patron-taint `new Roll('1d100')` moved with the function). Pure
-refactor — continues to read `game.dcc.SpellResult` /
-`game.dcc.FleetingLuck` rather than importing them directly,
-mirroring the pattern in `module/actor.js`'s spell-check paths
-and preserving the init-time `game.dcc` registration order. +23
-Vitest tests in new `module/__tests__/spell-check-processor.test.js`
-(roll evaluation, forceCrit mutation including natural-1 no-op,
-fumble/crit detection per Player-only rule, no-table HTML
-indicators for fumble/crit/success/failure, rollTable branches
-including the crit level-boost regression covering parseInt
-string-level coercion, patron taint roll + persisted
-`patronTaintChance` update, wizard `loseSpell` gated on
-`automateWizardSpellLoss`, cleric disapproval gated on
-`automateClericDisapproval` with both range/threshold paths, the
-no-item cleric `actor.classId` casting-mode inference, and the
-`item.lastResult` write-back). +1 Playwright case in
-`extension-api.spec.js` (`DCC processSpellCheck survives
-spell-check-processor.mjs extraction`) creates a temporary
-Player, evaluates a real `1d20+5` roll, fires
-`game.dcc.processSpellCheck` with no item and no rollTable,
-asserts the resulting chat message carries `dcc.{RollType,
-isSpellCheck, isSkillCheck, spellResult}` flags, then cleans up
-the created chat messages so downstream tests aren't affected.
-**1150 Vitest green** (was 1127, +23). **145 Playwright passed**
-+ 2 failures: (1) the latent xcc-core-book DCCItemSheet override
-at `extension-api.spec.js:420` (unchanged baseline — line
-shifted from 320 because this slice inserted a new test earlier
-in the file); (2) NEW environmental flake at
-`data-models.spec.js:138` — the `mcc-core-book-welcome-dialog`
-aside intercepts pointer events on the new-Player-actor form's
-OK button (sibling-module dialog state in the FoundryVTT-Next
-world data dir, NOT slice-caused). Net pass count math: prior
-session post-baseline 145 + this slice's +1 new test - 1
-environmental mcc-welcome flake = 145.
+**Phase 7 session 5 continued the Phase 7 cleanup arc** by
+extracting the table-loading surface out of `module/dcc.js` into
+a focused module `module/table-loading.mjs`. The relocated
+surface covers `setupCoreBookCompendiumLinks` + `registerTables`
+(both called from the ready hook), `getSkillTable` (Foundry-
+facing stable surface re-published on `game.dcc.*` at init), and
+five hook handlers — `diceSoNiceReady`, `importAdventure`, plus
+the three world-RollTable lifecycle hooks
+(`createRollTable` / `deleteRollTable` / `updateRollTable`) that
+keep `CONFIG.DCC.disapprovalTables` in sync as world tables are
+added / renamed / removed. Each handler is exported individually
+plus a frozen `TABLE_LOADING_HOOKS` dispatch table (entries carry
+the handler + a `once` flag — only `importAdventure` is
+once-only) and a `registerTableLoadingHooks()` entry-point that
+iterates the table calling `Hooks.on` or `Hooks.once` per entry
+— matching the `module/settings-table-hooks.mjs` pattern from
+Phase 7 session 3. `module/dcc.js` shrinks from 970 → 737 lines
+(-233 net including the new `import` line, the dropped
+`TablePackManager` import + `ChatMessage` global, and an 8-line
+replacement marker comment). Pure refactor — every branch,
+every CONFIG slot, every `i18n.localize('DCC.Disapproval')`
+lookup is preserved verbatim. Only structural change: the three
+near-identical `isDisapprovalTable` checks that lived inline in
+`registerTables`, the `createRollTable` handler, and the
+`updateRollTable` handler are folded into one module-private
+helper that reads `game.i18n` per call (identical semantics —
+the localized string was already read at hook-fire time, not at
+module load). +34 Vitest tests in new
+`module/__tests__/table-loading.test.js` covering the three
+setup-time functions, the five hook handlers, the dispatch-
+table shape (exactly five entries with the right once-flag
+assignment), and the registration entry-point (four `Hooks.on`
++ one `Hooks.once`). +1 Playwright case in
+`extension-api.spec.js` (`DCC table-loading surface ... survives
+table-loading.mjs extraction`) — asserts the three
+TablePackManager registries (`disapprovalPacks` /
+`criticalHitPacks` / `patronTaintPacks`) are constructor-typed
+at ready time, the patron-taint registry is seeded with the
+core + xcc side-effect packs, `setupCoreBookCompendiumLinks`
+has touched the `coreBookCompendiumLinks` slot,
+`game.dcc.getSkillTable` is a function, and the relocated
+`createRollTable` / `updateRollTable` (twice — rename to
+non-matching, rename back to matching) / `deleteRollTable`
+hooks keep `CONFIG.DCC.disapprovalTables` in sync end-to-end
+against a temporary live world RollTable. **1184 Vitest green**
+(was 1150, +34). **146 Playwright passed** + 2 failures: (1)
+the latent xcc-core-book DCCItemSheet override at
+`extension-api.spec.js:481` (unchanged baseline — line shifted
+from 420 because this slice inserted a new test earlier in the
+file); (2) NEW environmental network-suspension flake at
+`v14-features.spec.js:128` (Active Effects CRUD) — Chromium
+console emitted 13 `net::ERR_NETWORK_IO_SUSPENDED` /
+`net::ERR_SOCKET_NOT_CONNECTED` errors during the 12.6-min run,
+the spec asserts zero console errors; sibling-area code, NOT
+slice-caused. The session-4 mcc-welcome-dialog flake stayed
+quiet this run. Net pass count math: prior session post-baseline
+146 + this slice's +1 new test - 1 environmental network flake
+= 146.
+
+**Phase 7 session 4 (extract `processSpellCheck` — closed
+2026-05-21).** ~200-line `processSpellCheck` function relocated
+from `dcc.js` to `module/spell-check-processor.mjs`. Stable
+extension surface preserved via re-publication on
+`game.dcc.processSpellCheck` at init. `dcc.js` 1172 → 970 lines
+(-202). +23 Vitest, +1 Playwright. 1150 Vitest / 145 Playwright
+at close.
 
 **Phase 7 session 2 (extract macro factories — closed 2026-05-20).**
 Hotbar-macro block (~380 lines, 13 `_createDCCXxxMacro` factories +
@@ -359,32 +373,38 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 7 session 4 (2026-05-21) extracted `processSpellCheck`**
-from `module/dcc.js` (lines 637–842 in the pre-slice file) into
-`module/spell-check-processor.mjs`. `module/dcc.js` is now ~970
-lines (was 1172); 2 more focused extractions land the `dcc.js`
-split target.
+**Phase 7 session 5 (2026-05-21) extracted the table-loading
+surface** from `module/dcc.js` into `module/table-loading.mjs`.
+`module/dcc.js` is now ~737 lines (was 970); one more focused
+extraction (chat / hook wiring) lands the `dcc.js` split target.
 
-**Next-slice candidates for `module/dcc.js` split** (~970 lines
+**Next-slice candidate for `module/dcc.js` split** (~737 lines
 remaining; per `ARCHITECTURE_REIMAGINED.md Appendix A`, target
-~4–5 focused modules). Pick one per session — do NOT bundle
-multiple into one slice. Line numbers below are approximate (the
-prior pre-slice anchors are stale because the processSpellCheck
+~4–5 focused modules). Line numbers below are approximate (the
+prior pre-slice anchors are stale because the table-loading
 extraction shifted the file); re-confirm against the current file
 before extracting.
 
-1. **Chat / hook wiring**. `renderChatMessageHTML`, context-menu
-   options, scattered `Hooks.on(...)` blocks for actor/item
-   lifecycle. Mid-sized, mid-risk — some handlers reference
-   module-local helpers that may need re-exporting first.
-2. **Table loading**. `setupCoreBookCompendiumLinks`,
-   `registerTables`, `getSkillTable`, related `diceSoNiceReady` /
-   `importAdventure` hooks. Boundary clean (no overlap with
-   macros / spell-check / chat).
+1. **Chat / hook wiring**. `renderChatMessageHTML`, the
+   `getChatMessageContextOptions` handler, the
+   `renderActorDirectory` parser bridge, plus the actor/item
+   lifecycle hooks (`preCreateActor`, `preCreateItem`,
+   `preUpdateActor`), `applyActiveEffect`, `updateCombat` for
+   Active Effect expiry, `item-piles-ready`, and the
+   `getProseMirrorMenuDropDowns` sidebar-style menu. Mid-sized,
+   mid-risk — several handlers reference module-local helpers
+   (`chat.*` re-exports from `module/chat.js`,
+   `SpellResult.processChatMessage`,
+   `TableResult.processChatMessage`,
+   `parser.onRenderActorDirectory`,
+   `EntityImages.imageForActor` / `imageForItem`,
+   `setupItemPilesForDCC`) that already live in separate modules
+   so the extraction is mostly a relocation of the hook wiring
+   itself.
 
-After the `dcc.js` split lands its biggest chunks, item 4 (split
-`styles/dcc.scss` ~2979 lines into partials + theme layer) opens up
-as the second Phase 7 arc.
+After the `dcc.js` split lands its final chunk, item 4 (split
+`styles/dcc.scss` ~2979 lines into partials + theme layer) opens
+up as the second Phase 7 arc.
 
 **Possible follow-up (not on critical path):** migrate
 `extension-api.spec.js` from per-test login to the worker-scoped
@@ -394,19 +414,20 @@ test login overheads + the per-test login race. Larger blast
 radius; tracked here in case future runs surface more login-race
 failures.
 
-**Possible follow-up (Playwright hygiene):** Phase 7 session 4
-surfaced a NEW environmental flake at `data-models.spec.js:138`
-where the `mcc-core-book-welcome-dialog` aside intercepts pointer
-events on the new-Player-actor form's OK button. This is the same
-sibling-module dialog-blocking family that Phase 6 session 4
-addressed for `extension-api.spec.js` via a `beforeEach` hygiene
-block (close ApplicationV2 windows, remove `#notifications
-.notification` banners, purge stale `P*` probes). The
-`data-models.spec.js` opening setup could be extended with the
-same pattern, possibly also dismissing the per-module welcome
-dialogs (`.welcome-dialog` aside) at boot. Out of slice scope for
-the dcc.js extraction work; track as a flake-investigation slice
-when the queue clears.
+**Possible follow-up (Playwright hygiene):** Phase 7 session 5
+surfaced a NEW environmental flake at `v14-features.spec.js:128`
+(Active Effects CRUD) where Chromium emitted 13
+`net::ERR_NETWORK_IO_SUSPENDED` / `net::ERR_SOCKET_NOT_CONNECTED`
+console errors during the 12.6-min full-suite run. The spec
+asserts zero console errors. Looks like a host-side network or
+sleep/wake blip mid-suite rather than a code issue. Phase 7
+session 4's mcc-welcome-dialog flake at `data-models.spec.js:138`
+stayed quiet this run; it is still worth tracking — extend the
+`extension-api.spec.js`-style `beforeEach` hygiene
+(close ApplicationV2 windows, remove `#notifications .notification`
+banners, dismiss per-module `.welcome-dialog` asides) to
+`data-models.spec.js` and `v14-features.spec.js` when the queue
+clears.
 
 **Also pending — dcc-qol sibling-fix coordination.** Session 20
 shim removal leaves dcc-qol's `attackRollHooks.js:283-284` reading
@@ -414,15 +435,14 @@ fields that no longer emit. A 2-line rename is documented as a
 migration recipe in `EXTENSION_API.md`. Tim is landing the dcc-qol
 PR on his schedule — do NOT edit that repo from this session.
 
-Pick a Phase 7 dcc.js extraction from the two remaining candidates
-above and confirm with Tim before starting. Table loading (2) is
-the lowest-coupling option and a clean boundary; chat / hook
-wiring (1) is mid-risk because several handlers reference
-module-local helpers in `dcc.js` (notably the
-`renderChatMessageHTML` body's references to `chat.*`,
-`SpellResult.processChatMessage`, `TableResult.processChatMessage`,
-`parser.onRenderActorDirectory`) that may need to be re-imported
-into the extracted module.
+The chat / hook wiring extraction is the final `dcc.js` Phase 7
+slice — confirm with Tim before starting. The handlers it
+relocates already delegate to other modules (`chat.js`,
+`spell-result.js`, `table-result.js`, `parser.js`,
+`entity-images.js`, `item-piles-support.js`), so the new
+`module/chat-and-hook-wiring.mjs` (or similarly named) module is
+mostly hook-registration thunks — same shape as
+`settings-table-hooks.mjs` and `table-loading.mjs`.
 
 **Do NOT:** touch lib-side internals (Phase 6/7 work is
 adapter-side cleanup, not lib changes); break

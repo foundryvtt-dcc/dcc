@@ -65,62 +65,69 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 7 session 4 (2026-05-21)** continues the Phase 7 cleanup arc
-by extracting `processSpellCheck` out of `module/dcc.js` into a
-focused module `module/spell-check-processor.mjs`. The relocated
-surface is the ~200-line stable-API function (was `dcc.js:637–842`)
-that handles every spell-check cast — evaluates the roll, applies
-forceCrit (shift-click GM testing), rolls patron taint when the
-spell is patron-related, branches on rollTable presence (table
-lookup with natural-20-on-Player crit level-boost + natural-1
-fumble row-1 lookup vs. no-table HTML indicator + flag emission),
-routes wizard / cleric automation side-effects (`loseSpell`,
-`rollDisapproval`, `applyDisapproval`), and writes back
-`item.system.lastResult` for the spells tab. The function is
-exported as a named symbol from the new module and re-published on
-`game.dcc.processSpellCheck` at init time — Foundry-facing stable
-surface per §8.6, no contract change. `module/dcc.js` shrinks from
-1172 → 970 lines (-202 net including the new import line, the
-five-line replacement marker comment, and dropping `Roll` from the
-`/* global */` declaration since the patron-taint `new Roll('1d100')`
-moved with the function). Pure refactor — every branch, every flag
-key, every chat-message envelope is preserved verbatim. +23 Vitest
-tests in new `module/__tests__/spell-check-processor.test.js`
-covering roll evaluation, forceCrit mutation (including the natural-1
-no-op), natural-1/20 fumble/crit detection (Player-only crit rule),
-no-table HTML indicators for fumble / crit / success / failure
-branches, rollTable lookup branches including the crit level-boost
-(with `parseInt` string-level coercion regression coverage), patron
-taint roll + persisted `patronTaintChance` update, wizard `loseSpell`
-gated on `automateWizardSpellLoss`, cleric disapproval gated on
-`automateClericDisapproval` with both the natural-roll-inside-range
-and threshold-failure paths, the no-item cleric `actor.classId`
-casting-mode inference, and the `item.lastResult` write-back. +1
-Playwright case in `extension-api.spec.js` (`DCC processSpellCheck
-survives spell-check-processor.mjs extraction`) creates a temporary
-Player, evaluates a real `1d20+5` roll, fires
-`game.dcc.processSpellCheck` with no item and no rollTable, asserts
-the resulting chat message carries the expected `dcc.{RollType,
-isSpellCheck, isSkillCheck, spellResult}` flags, then cleans up the
-created chat messages so downstream tests aren't affected. **1150
-Vitest green** (was 1127, +23). **145 Playwright passed** + 2
-failures: (1) the latent xcc-core-book DCCItemSheet override at
-`extension-api.spec.js:420` — unchanged baseline, line shifted from
-320 because this slice inserted a new test earlier in the file; (2)
-NEW environmental flake at `data-models.spec.js:138` where the
-`mcc-core-book-welcome-dialog` aside intercepts pointer events on
-the new-Player-actor form's OK button — sibling-module dialog
-state in the FoundryVTT-Next world data dir, not slice-caused
-(this slice touches no actor-sheet code, no MCC interaction, no
-welcome-dialog wiring). The documented forceCrit shift-click
-suite-only flake stayed quiet this run. Net pass count math: prior
-session post-baseline 145 + this slice's +1 new test - 1
-environmental mcc-welcome flake = 145. Next slice candidates
-from [02-slice-backlog.md](02-slice-backlog.md): chat / hook
-wiring (~mid-sized, mid-risk — some handlers reference
-module-local helpers that may need re-exporting first) or table
-loading (boundary clean). The `dcc.js` body is now ~970 lines —
-2 more focused extractions land the §Appendix A target.
+**Phase 7 session 5 (2026-05-21)** continues the Phase 7 cleanup arc
+by extracting the table-loading surface out of `module/dcc.js` into
+a focused module `module/table-loading.mjs`. The relocated surface
+covers `setupCoreBookCompendiumLinks` + `registerTables` (both
+called from the ready hook), `getSkillTable` (Foundry-facing stable
+surface re-published on `game.dcc.*` at init), and five hook
+handlers — `diceSoNiceReady`, `importAdventure`, plus the three
+world-RollTable lifecycle hooks (`createRollTable` /
+`deleteRollTable` / `updateRollTable`) that keep
+`CONFIG.DCC.disapprovalTables` in sync as world tables are added /
+renamed / removed. Each handler is exported individually plus a
+frozen `TABLE_LOADING_HOOKS` dispatch table (entries carry the
+handler + a `once` flag) and a `registerTableLoadingHooks()`
+entry-point that iterates the table calling `Hooks.on` or
+`Hooks.once` per entry — matching the
+`module/settings-table-hooks.mjs` pattern from Phase 7 session 3.
+`module/dcc.js` shrinks from 970 → 737 lines (-233 net including
+the new import line, the dropped `TablePackManager` import and
+`ChatMessage` global, and an 8-line replacement marker comment
+covering the relocated functions). Pure refactor — every branch,
+every CONFIG slot, every `i18n.localize('DCC.Disapproval')` lookup
+is preserved verbatim. Only structural change: the three near-
+identical `isDisapprovalTable` checks that lived inline in
+`registerTables`, `createRollTable` handler, and `updateRollTable`
+handler are folded into one module-private helper that reads
+`game.i18n` per call (identical semantics — the localized string
+was already read at hook-fire time, not at module load). +34
+Vitest tests in new `module/__tests__/table-loading.test.js`
+covering the three setup-time functions, the five hook handlers,
+the dispatch-table shape (exactly five entries with the right
+once-flag assignment), and the registration entry-point (four
+`Hooks.on` + one `Hooks.once`). +1 Playwright case in
+`extension-api.spec.js` (`DCC table-loading surface ... survives
+table-loading.mjs extraction`) — asserts the three
+TablePackManager registries (`disapprovalPacks` / `criticalHitPacks`
+/ `patronTaintPacks`) are constructor-typed at ready time, the
+patron-taint registry is seeded with the core + xcc side-effect
+packs, `setupCoreBookCompendiumLinks` has touched the
+`coreBookCompendiumLinks` slot, `game.dcc.getSkillTable` is a
+function, and the relocated `createRollTable` /
+`updateRollTable` (twice — rename to non-matching, rename back to
+matching) / `deleteRollTable` hooks keep
+`CONFIG.DCC.disapprovalTables` in sync end-to-end against a
+temporary live world RollTable. **1184 Vitest green** (was 1150,
++34). **146 Playwright passed** + 2 failures: (1) the latent
+xcc-core-book DCCItemSheet override at `extension-api.spec.js:481`
+— unchanged baseline, line shifted from 420 because this slice
+inserted a new test earlier in the file; (2) NEW environmental
+network-suspension flake at `v14-features.spec.js:128` — Chromium
+console emitted 13 `net::ERR_NETWORK_IO_SUSPENDED` /
+`net::ERR_SOCKET_NOT_CONNECTED` errors during the 12.6-min run, the
+spec asserts zero console errors; sibling-area code (Active
+Effects CRUD), not slice-caused (this slice touches no Active
+Effects code, no v14-features code). The mcc-welcome-dialog flake
+that fired in session 4 stayed quiet this run. Net pass count
+math: prior session post-baseline 146 + this slice's +1 new test
+- 1 environmental network flake = 146. Next slice candidates from
+[02-slice-backlog.md](02-slice-backlog.md): chat / hook wiring
+(~mid-sized, mid-risk — some handlers reference module-local
+helpers that may need re-exporting first) is the only remaining
+`dcc.js` extraction; after it lands the file should be at ~600
+lines and the §Appendix A target is met. The Phase 7 next-arc work
+is the `styles/dcc.scss` partials + theme contract split.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -130,6 +137,104 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-21 — Phase 7 session 5: extract table-loading surface
+  from `dcc.js` into `module/table-loading.mjs`.** Fifth piecemeal
+  Phase 7 extraction — relocates the table-loading surface
+  (`setupCoreBookCompendiumLinks` + `registerTables` setup-time
+  functions, `getSkillTable` stable-API lookup, five hook handlers
+  for `diceSoNiceReady` / `importAdventure` / `createRollTable` /
+  `deleteRollTable` / `updateRollTable`) into a focused module
+  following the dispatch-table-plus-entry-point pattern from
+  session 3. The five hook handlers are exported individually plus
+  a frozen `TABLE_LOADING_HOOKS` table (entries carry the handler
+  + a `once` flag — only `importAdventure` is once-only) and a
+  `registerTableLoadingHooks()` entry-point that iterates the
+  table calling `Hooks.on` or `Hooks.once` per entry.
+  `module/dcc.js` shrinks from 970 → 737 lines (-233 net
+  including the new import line, the dropped `TablePackManager`
+  import + `ChatMessage` global, and an 8-line replacement
+  marker comment). Pure refactor — every branch, every CONFIG
+  slot, every `i18n.localize('DCC.Disapproval')` lookup is
+  preserved verbatim. Only structural change: the three near-
+  identical `isDisapprovalTable` checks that lived inline in
+  `registerTables`'s closure, the `createRollTable` handler, and
+  the `updateRollTable` handler are folded into one module-
+  private helper that reads `game.i18n` per call (identical
+  semantics — the localized string was already read at hook-fire
+  time pre-extraction, not at module load). +34 Vitest tests in
+  new `module/__tests__/table-loading.test.js`: 3
+  setupCoreBookCompendiumLinks cases (active-module population,
+  inactive-module null write, missing-module null write), 7
+  registerTables cases (three TablePackManager registries seeded,
+  disapproval pack registry seeded from system setting,
+  empty-compendium fallback still scans world tables, four
+  per-table scalar copies, all-falsy scalars left unset, plus two
+  `_updateHook` cases covering pack-index population with world
+  override + non-disapproval table rejection + localized
+  "Disapproval" detection in non-English worlds), 6 getSkillTable
+  cases (null skill, unset scalar, three-segment pack-path
+  resolution, world-table fallback by name, world-table fallback
+  by localized label, world-table fallback by raw scalar), 1
+  diceSoNiceReady case, 2 importAdventure cases (multi-scene
+  thumbnail regen, no-thumb skip), 3 createRollTable cases
+  (English "Disapproval" match, localized match, non-disapproval
+  reject), 2 deleteRollTable cases (delete by name, no-op when
+  absent), 3 updateRollTable cases (no-name-change no-op,
+  rename-rebuilds-world-half + preserves compendium entries,
+  non-matching rename drops stale entries), 3
+  `TABLE_LOADING_HOOKS` dispatch-table cases (one-to-one routing,
+  exactly-5-keys, only-importAdventure-is-once), 3
+  `registerTableLoadingHooks` cases (wires four via `Hooks.on`,
+  wires importAdventure via `Hooks.once`, exact count of each).
+  The test file stubs `CONFIG` / `game` / `foundry` / `Hooks`
+  per `beforeEach` and restores per `afterEach` — same pattern as
+  Phase 7 sessions 1, 2, 3, 4. +1 Playwright case in
+  `extension-api.spec.js` (`DCC table-loading surface ... survives
+  table-loading.mjs extraction`) — asserts the three
+  TablePackManager registries are constructor-typed at ready time
+  (`disapprovalPacks` / `criticalHitPacks` / `patronTaintPacks`),
+  the patron-taint registry is seeded with both the
+  `dcc-core-book.dcc-core-spell-side-effect-tables` and
+  `xcc-core-book.xcc-core-spell-side-effect-tables` packs,
+  `setupCoreBookCompendiumLinks` has touched the
+  `coreBookCompendiumLinks` slot at ready (key exists, value is
+  null or populated depending on whether dcc-core-book is
+  active), `game.dcc.getSkillTable` is a function, and the
+  relocated world-RollTable lifecycle hooks keep
+  `CONFIG.DCC.disapprovalTables` in sync end-to-end — creates a
+  temporary live world RollTable named `P_TableLoad Probe
+  Disapproval`, asserts the entry lands via `onCreateRollTable`,
+  renames to `P_TableLoad Probe Renamed` and asserts both old +
+  new names are absent (rebuild dropped the world entry),
+  renames back to `P_TableLoad Probe Disapproval Restored` and
+  asserts the new world entry is present, then deletes the
+  table and asserts the entry is gone — restoring the
+  `disapprovalTables` snapshot in a `finally` block so downstream
+  tests start from the same state. **1184 Vitest green** (was
+  1150, +34). **146 Playwright passed** + 2 failures: (1) the
+  latent xcc-core-book DCCItemSheet override at
+  `extension-api.spec.js:481` — unchanged baseline, flagged
+  every prior session as pre-existing (line shifted from 420
+  because this slice inserted a new test earlier in the file);
+  (2) NEW environmental network-suspension flake at
+  `v14-features.spec.js:128` (`Active Effects CRUD › can create
+  a new effect on an actor via Effects tab`) — Chromium console
+  emitted 13 `net::ERR_NETWORK_IO_SUSPENDED` /
+  `net::ERR_SOCKET_NOT_CONNECTED` errors during the 12.6-min
+  run, the spec asserts zero console errors; sibling-area code,
+  NOT slice-caused (this slice touches no Active Effects code,
+  no v14-features code, no network I/O). The previously-flaky
+  `mcc-core-book-welcome-dialog` aside at `data-models.spec.js:138`
+  stayed quiet this run. Pre-slice baseline was 146 passes
+  (Phase 7 session 4 close, post-net 145 plus a recovered
+  mcc-welcome flake); this slice's +1 new test minus the new
+  network flake nets to 146 — same as the pre-slice baseline,
+  with one passing test swapped for one environmental flake.
+  The network-suspension pattern is worth tracking in the
+  flake-investigation queue (sleep/wake or DNS-resolution
+  timing window during the long e2e run) but is out of slice
+  scope.
 
 - **2026-05-21 — Phase 7 session 4: extract `processSpellCheck` from
   `dcc.js` into `module/spell-check-processor.mjs`.** Fourth
@@ -440,34 +545,6 @@ archives linked above.
   pre-session-4 + 1 session-4 hygiene + 2 session-5 registerVariant
   cases minus 1 ongoing latent failure); this slice's +1 case lands
   the post-slice count at 143 passed.
-
-- **2026-05-20 — Phase 6 session 5: `registerVariant` for variant
-  rulesets (closes Phase 6).** Adds `game.dcc.registerVariant` +
-  `game.dcc.getActiveVariant` to `module/extension-api.mjs`. Descriptor
-  shape `{ id, label, classes, sheetTheme? }`; `id` is the lowercase
-  slug stored in the new `dcc.activeVariant` world setting (defaults
-  `'dcc'`). `getActiveVariant()` resolves the setting → registry entry
-  with `'dcc'` fallback (survives pre-ready callers where
-  `game.settings.get` throws). Active variant's `sheetTheme` (if any)
-  is added to the actor sheet element via
-  `applyActiveVariantSheetTheme(this.element)` in
-  `DCCActorSheet._onRender`. New `module/built-in-variant.mjs` seeds
-  the canonical `'dcc'` variant (7 PC classes, no `sheetTheme` — base
-  CSS already is the DCC theme). Sibling variant modules like XCC ship
-  a single `registerVariant({...})` call from their own `init` hook
-  declaring their class IDs + a `sheetTheme` (sibling-module change,
-  not system-side); XCC's `CONFIG.Actor.documentClass` override was
-  retired 2026-05-18 — Phase 6's variant-API work was the remaining
-  piece. +23 Vitest tests on `extension-api.test.js` (registry
-  validation, last-write-wins, getActiveVariant pre-ready fallback,
-  theme apply / no-theme no-op / idempotency / missing-element).
-  +2 Playwright cases in `extension-api.spec.js` (`registerVariant`
-  + `getActiveVariant` exposed and the `'dcc'` variant seeded;
-  XCC-like variant round-trips through `game.settings.set` and
-  `applyActiveVariantSheetTheme`). **1053 Vitest green** (was 1030,
-  +23). Playwright count to be confirmed by post-slice full-suite run.
-  Closes the last Phase 6 work item; `ARCHITECTURE_REIMAGINED.md §7`
-  next phase is Phase 7 (cleanup).
 
 ## Closed questions
 
