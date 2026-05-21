@@ -63,33 +63,35 @@ date, then delete them entirely once a whole sub-section is cleared.
 
 ## Current phase
 
-**Phase 6 session 4 (2026-05-20)** closed the open flake-investigation
-follow-up by hardening `browser-tests/e2e/extension-api.spec.js`'s
-`beforeEach`. Two consecutive full-suite Playwright runs surfaced two
-*different* failure patterns in the same family (extension-api:267 +
-302 timing out in `beforeEach` waiting for `game.user`;
-v14-features:540 timing out on a tab click intercepted by the
-hardware-acceleration notification banner). Investigation found that
-`extension-api.spec.js` was the only e2e spec lacking the per-test
-`#notifications .notification` banner-removal + open-app cleanup the
-other three specs (`data-models`, `phase1-adapter-dispatch`,
-`v14-features`) all have. The slice adds banner-removal + `ui.windows`
-cleanup + stale `P*` actor purge to the `beforeEach`, and a new
-self-verifying top-of-file test `beforeEach hygiene purges stale state
-before the test body runs` asserting the three invariants
-(`ui.windows` empty, no notifications, no stale `P\d` actors). **The
-originally-cited flakes (`elf mixin attaches…` at line 553, `forceCrit
-shift-click flag…` at phase1:922) did NOT reproduce in either of the
-two pre-fix runs or the post-fix run** — the work addresses the FAMILY
-of environmental races rather than those specific test bodies.
-1030 Vitest green (unchanged — Vitest isn't affected). **141 Playwright
-passed** (was 140 baseline +1 new hygiene test; one latent xcc-core-book
-`DCCItemSheet → XCCItemSheet` override baseline unchanged at line 127,
-was line 78 — line shift comes from the new test).
+**Phase 6 session 5 (2026-05-20)** added `game.dcc.registerVariant` as
+the stable extension surface for variant rulesets (XCC, MCC, future
+homebrew variants), closing the last Phase 6 work item. Descriptor
+shape `{ id, label, classes, sheetTheme? }`; `id` is the lowercase slug
+stored in the new `dcc.activeVariant` world setting (defaults to
+`'dcc'`); `getActiveVariant()` resolves the setting to its registry
+entry with a `'dcc'` fallback. When the active variant declares a
+`sheetTheme`, `DCCActorSheet._onRender` calls
+`applyActiveVariantSheetTheme(this.element)` to add the CSS class —
+variants can ship a theme stylesheet without each per-class subclass
+declaring it in `DEFAULT_OPTIONS.classes`. The DCC system dogfoods
+its own helper by registering the canonical `'dcc'` variant (7 PC
+classes, no `sheetTheme` — base CSS is already DCC) through new
+`module/built-in-variant.mjs` at `init`. XCC retired its
+`CONFIG.Actor.documentClass` override 2026-05-18; its remaining
+migration is a single `registerVariant({...})` call from its `init`
+hook (sibling-module change, not system-side). +23 Vitest tests on
+`extension-api.test.js` (registry validation, idempotency,
+last-write-wins, getActiveVariant pre-ready fallback, theme apply +
+no-theme no-op + idempotency + missing-element). +2 Playwright cases
+in `extension-api.spec.js` (`registerVariant` + `getActiveVariant`
+exposed and the `'dcc'` variant seeded; XCC-like variant round-trips
+through `game.settings.set` and `applyActiveVariantSheetTheme`).
+**1053 Vitest green** (was 1030, +23). Playwright count to be
+confirmed by post-slice full-suite run.
 
-Remaining Phase 6 work: (1) `registerVariant` for variant-class
-modules (larger; touches actor-class selection UI / level-change
-dialog). The flake-chase item is closed by this session.
+Phase 6 closed with this slice. Phase 7 cleanup (retire `critText`/
+`fumbleText` shims; prune old migrations; split `dcc.js` /
+`dcc.scss`) is the next phase per `ARCHITECTURE_REIMAGINED.md §7`.
 
 <!-- Detailed prior-phase narrative removed — archived in
 `dev/progress/phase-{3,4,5}.md`. The Recent slices section below
@@ -99,6 +101,34 @@ keeps the five most-recent entries. -->
 
 Newest first. Five most recent — everything else is in the phase
 archives linked above.
+
+- **2026-05-20 — Phase 6 session 5: `registerVariant` for variant
+  rulesets (closes Phase 6).** Adds `game.dcc.registerVariant` +
+  `game.dcc.getActiveVariant` to `module/extension-api.mjs`. Descriptor
+  shape `{ id, label, classes, sheetTheme? }`; `id` is the lowercase
+  slug stored in the new `dcc.activeVariant` world setting (defaults
+  `'dcc'`). `getActiveVariant()` resolves the setting → registry entry
+  with `'dcc'` fallback (survives pre-ready callers where
+  `game.settings.get` throws). Active variant's `sheetTheme` (if any)
+  is added to the actor sheet element via
+  `applyActiveVariantSheetTheme(this.element)` in
+  `DCCActorSheet._onRender`. New `module/built-in-variant.mjs` seeds
+  the canonical `'dcc'` variant (7 PC classes, no `sheetTheme` — base
+  CSS already is the DCC theme). Sibling variant modules like XCC ship
+  a single `registerVariant({...})` call from their own `init` hook
+  declaring their class IDs + a `sheetTheme` (sibling-module change,
+  not system-side); XCC's `CONFIG.Actor.documentClass` override was
+  retired 2026-05-18 — Phase 6's variant-API work was the remaining
+  piece. +23 Vitest tests on `extension-api.test.js` (registry
+  validation, last-write-wins, getActiveVariant pre-ready fallback,
+  theme apply / no-theme no-op / idempotency / missing-element).
+  +2 Playwright cases in `extension-api.spec.js` (`registerVariant`
+  + `getActiveVariant` exposed and the `'dcc'` variant seeded;
+  XCC-like variant round-trips through `game.settings.set` and
+  `applyActiveVariantSheetTheme`). **1053 Vitest green** (was 1030,
+  +23). Playwright count to be confirmed by post-slice full-suite run.
+  Closes the last Phase 6 work item; `ARCHITECTURE_REIMAGINED.md §7`
+  next phase is Phase 7 (cleanup).
 
 - **2026-05-20 — Phase 6 session 4: harden
   `browser-tests/e2e/extension-api.spec.js`'s `beforeEach` to match
@@ -343,57 +373,6 @@ archives linked above.
   pollution between tests in the shared Foundry world; this slice
   adds no chat / roll / spell logic so it can't have caused the
   flake.
-- **2026-05-19 — Phase 5 session 5: migrate remaining capitalized
-  `sheetClass` readers to `actor.classId` (closes Phase 5
-  sub-arc).** Four mechanical rewrites of
-  `system.details.sheetClass === '<CapitalizedClass>'` to
-  `actor.classId === '<lowercase>'`:
-  - `module/actor.js:198` — elf detect-secret-doors derived
-    prepare (`prepareDerivedData` block). Switched
-    `this.system.details.sheetClass === 'Elf'` →
-    `this.classId === 'elf'`.
-  - `module/actor.js:2196` — `rollSpellCheck` dispatcher's
-    `isCleric` gate. Was `this.system.details?.sheetClass ===
-    'Cleric' || this.system.class?.className === 'Cleric'`; the
-    sheetClass leg now uses `this.classId === 'cleric'`. The
-    `className === 'Cleric'` leg stays — added 2026-04-23 to
-    accept programmatic PCs that haven't been through the
-    level-change dialog (no sheetClass populated).
-  - `module/actor.js:2497` — `_castNakedViaAdapter` idol-magic
-    flag (`isIdolMagic = this.classId === 'cleric'`).
-  - `module/dcc.js:775` — `processSpellCheck`'s default-castingMode
-    branch for naked checks on cleric actors. Uses
-    `actor.classId === 'cleric'` (the function takes an `actor`
-    parameter, not `this`).
-  Pure-refactor — `actor.classId` is implemented as
-  `system.details.sheetClass?.toLowerCase()`, so each migration is
-  a no-op behavior change but normalizes the dispatch surface to
-  the lowercase canonical IDs that `registerClassMixin` /
-  `registerClassDefaults` / `registerClassStartingItems` /
-  `registerSheetPart` use.
-  +1 Vitest regression-guard test in
-  `module/__tests__/class-dispatch-i18n-guard.test.js` (sibling
-  to the C3-era localize-on-the-right guard): walks `module/`
-  source and fails if any file re-introduces
-  `sheetClass === '<CapitalizedClass>'` for the seven built-in
-  classes. The Generic sheet's `sheetClass !== 'Generic'`
-  first-open check stays — Generic isn't class-bound (no
-  CLASS_ID, not on the class registries) so it can't dispatch via
-  classId; `actor-sheets-dcc.js` is whitelisted in the guard for
-  that reason. `migrations.js` also whitelisted (writer-side
-  helper that maps localized className → English sheetClass).
-  1003 Vitest green (was 1002, +1 new guard). 134 Playwright
-  passed (unchanged from session 4; this slice's only new test is
-  the Vitest regression guard, so the Playwright count holds
-  steady). No visual regression run — slice doesn't touch sheets
-  or templates.
-  **Phase 5 sub-arc closes with this slice.** All five
-  refactor concerns done: schema mixins (component 1, Phase 4) +
-  class defaults (Phase 5-1) + starting items (Phase 5-2 dwarf) +
-  link fields (Phase 5-3) + sheet parts (Phase 5-4) +
-  module-side reader migration to classId (Phase 5-5). Remaining
-  work is Phase 6 (lib-side `registerClassProgression` and
-  `registerVariant`).
 ## Closed questions
 
 5. ~~**Patron-taint mechanic alignment.**~~ **Resolved 2026-04-24 at

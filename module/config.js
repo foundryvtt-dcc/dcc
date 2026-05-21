@@ -685,6 +685,19 @@ DCC.sheetParts = {}
 // `game.dcc.registerHomebrewClassForProgressionLoad(classId, itemPrefix)`.
 DCC.classLevelNames = {}
 
+// Variant ruleset registry, keyed by lowercase variant id (`'dcc'`,
+// `'xcc'`, `'mcc'`). Each entry is `{ id, label, classes,
+// sheetTheme? }` — declarative metadata for the named set of classes
+// active in a world. Phase 6 session 5 added this registry so variant
+// modules (XCC, MCC, future homebrew variants) can ship as Foundry
+// modules rather than overriding `CONFIG.Actor.documentClass`
+// globally. The `dcc.activeVariant` world setting (defaults to
+// `'dcc'`) selects which entry is live; the DCC system dogfoods the
+// helper by seeding the canonical `'dcc'` variant via
+// `module/built-in-variant.mjs` at `init`. Sibling variants register
+// via `game.dcc.registerVariant({...})` from their own `init` hook.
+DCC.variants = {}
+
 DCC.turnUnholyTable = null
 
 // List of available disapproval tables for the cleric sheet, generated from disapprovalPacks

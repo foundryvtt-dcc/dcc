@@ -34,7 +34,7 @@ hardcoded inside system code**.
 | 4 | **Skill activation toggles** | `skills.shieldBash.useDeed = true` for Dwarf, `false` for every other class | Same `_prepareContext` blocks (lines `72/141/213/282/359/427/531/606` set `useDeed` per class) | Fold into `registerClassDefaults` (§3.3) | 5 |
 | 5 | **Starting items** | Dwarf auto-creates a `ShieldBash` weapon on sheet open | Hardcoded in dwarf sheet `_prepareContext` at `module/actor-sheets-dcc.js:434-454` | `registerClassStartingItems` or extension of `registerClassDefaults` (§3.4) | 5 |
 | 6 | **Lib class progression** | Warrior crit die / save bonuses / action dies per level | `levelData` packs (Foundry-side) + lib's class registry (currently empty — see §3.6) | Lib-side `registerClassProgression(classId, …)` invoked from `module/dcc.js:init` | 6 |
-| 7 | **Variant identity** | "XCC" / "MCC" — which set of classes is active in this world | Hardcoded class list + global `CONFIG.Actor.documentClass = XCCActor` override (XCC's old approach) | `game.dcc.registerVariant({ id, label, classes, sheetTheme })` (planned) | 6 |
+| 7 | **Variant identity** | "XCC" / "MCC" — which set of classes is active in this world | Hardcoded class list + global `CONFIG.Actor.documentClass = XCCActor` override (XCC's old approach, retired 2026-05-18) | `game.dcc.registerVariant({ id, label, classes, sheetTheme })` + `dcc.activeVariant` world setting + `getActiveVariant()` (shipped Phase 6 session 5) | 6 |
 
 A separate (orthogonal) component category covers **per-class roll
 tables**: mercurial magic, patron taint, cleric disapproval. These
@@ -404,13 +404,24 @@ backlog) — option (b) in that note is the Phase 6 fix.
 
 ### 3.6 Variant identity (Phase 6)
 
-**Planned:** `game.dcc.registerVariant({ id, label, classes,
-sheetTheme })`. World setting selects active variant (defaults to
-`dcc`). Allows XCC to ship as a variant module rather than overriding
-`CONFIG.Actor.documentClass` globally.
+**Shipped (Phase 6 session 5, 2026-05-20):**
+`game.dcc.registerVariant({ id, label, classes, sheetTheme })`. The
+`dcc.activeVariant` world setting selects which registered variant is
+live (defaults to `'dcc'`); `game.dcc.getActiveVariant()` resolves it
+to its registry entry with a `'dcc'` fallback. When the active variant
+declares a `sheetTheme`, the DCC actor-sheet base
+(`DCCActorSheet._onRender`) adds it to the sheet element via
+`applyActiveVariantSheetTheme(...)` — variants can ship a theme
+stylesheet without each per-class sheet subclass declaring the CSS
+class in `DEFAULT_OPTIONS.classes`.
 
-Phase 6 ships this alongside `registerClassProgression`. XCC retires
-its global override; MCC retires its parallel one.
+The DCC system dogfoods its own helper by seeding the canonical
+`'dcc'` variant (7 PC classes, no `sheetTheme` — base CSS is already
+the DCC theme) via `module/built-in-variant.mjs` at `init`. XCC has
+already retired its `CONFIG.Actor.documentClass` override (2026-05-18);
+its remaining migration is a single `registerVariant({...})` call
+declaring its 19 class IDs + a `sheetTheme` (a `dcc-qol`-style sibling-
+module migration recipe, not a system-side change).
 
 ### 3.7 Per-class roll tables (Phase 3+; component-specific status)
 

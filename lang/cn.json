@@ -591,6 +591,9 @@
   "DCC.SettingDisableDarkThemeIconFilterHint": "使用深色主题时，禁用图标的棕褐色滤镜",
   "DCC.SettingChatCardsUseAppTheme": "聊天卡片使用主题",
   "DCC.SettingChatCardsUseAppThemeHint": "启用时，聊天卡片遵循核心应用主题（明亮\/黑暗）设置。禁用时，聊天卡片改为遵循内嵌主题设置",
+  "DCC.SettingActiveVariant": "活动变体规则",
+  "DCC.SettingActiveVariantHint": "选择活动的规则变体。变体模块（XCC、MCC 等）通过 `game.dcc.registerVariant` 自行注册；当其变体被选中时，其样式和职业列表将生效。默认为基本 DCC 规则。",
+  "DCC.VariantDCC": "地下城爬行者经典",
   "DCC.SettingsLabel": "设置",
   "DCC.Settings": {
     "ShowWelcomeDialog": "显示初始欢迎台词",

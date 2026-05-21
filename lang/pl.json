@@ -591,6 +591,9 @@
   "DCC.SettingDisableDarkThemeIconFilterHint": "Wyłącza filtr sepii stosowany na ikonach podczas używania ciemnego motywu",
   "DCC.SettingChatCardsUseAppTheme": "Karty czatu używają motywu aplikacji",
   "DCC.SettingChatCardsUseAppThemeHint": "Gdy włączone, karty czatu używają motywu głównej aplikacji (jasny/ciemny). Gdy wyłączone, karty czatu używają ustawienia motywu interfejsu.",
+  "DCC.SettingActiveVariant": "Aktywny Wariant",
+  "DCC.SettingActiveVariantHint": "Wybiera aktywny wariant zasad. Moduły wariantów (XCC, MCC itp.) rejestrują się same za pomocą `game.dcc.registerVariant`; ich style i lista klas są stosowane, gdy ich wariant jest wybrany. Domyślnie jest aktywny podstawowy zestaw zasad DCC.",
+  "DCC.VariantDCC": "Dungeon Crawl Classics",
   "DCC.SettingsLabel": "Ustawienia",
   "DCC.Settings": {
     "ShowWelcomeDialog": "Pokazuj Okno Powitalne przy Uruchomieniu",

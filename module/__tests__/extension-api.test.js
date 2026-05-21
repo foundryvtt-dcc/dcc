@@ -7,7 +7,7 @@
  */
 
 import { expect, test, vi } from 'vitest'
-import { applyClassDefaults, applyClassMixins, applyClassStartingItems, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerHomebrewClassForProgressionLoad, registerItemSheet, registerSheetPart } from '../extension-api.mjs'
+import { applyActiveVariantSheetTheme, applyClassDefaults, applyClassMixins, applyClassStartingItems, getActiveVariant, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerHomebrewClassForProgressionLoad, registerItemSheet, registerSheetPart, registerVariant } from '../extension-api.mjs'
 
 class FakeSheet {}
 class FakeDefaultItemSheetV2 {}
@@ -879,4 +879,221 @@ test('registerBuiltInClassLevelNames seeds all 7 canonical DCC classes', async (
   expect(calls).toHaveLength(7)
   expect(calls).toContainEqual(['cleric', 'cleric'])
   expect(calls).toContainEqual(['wizard', 'wizard'])
+})
+
+// ---------------------------------------------------------------------
+// registerVariant + getActiveVariant + applyActiveVariantSheetTheme
+// (Phase 6 session 5)
+// ---------------------------------------------------------------------
+
+function makeMockConfigVariants () {
+  return { DCC: { variants: {} } }
+}
+
+const DCC_VARIANT = {
+  id: 'dcc',
+  label: 'DCC.VariantDCC',
+  classes: ['cleric', 'dwarf', 'elf', 'halfling', 'thief', 'warrior', 'wizard']
+}
+
+const XCC_VARIANT = {
+  id: 'xcc',
+  label: 'XCC.Variant',
+  classes: ['athlete', 'blaster', 'brawler'],
+  sheetTheme: 'theme-xcc'
+}
+
+test('registerVariant stores the descriptor under the id key', () => {
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(DCC_VARIANT, { CONFIG })
+
+  expect(CONFIG.DCC.variants.dcc).toEqual({
+    id: 'dcc',
+    label: 'DCC.VariantDCC',
+    classes: ['cleric', 'dwarf', 'elf', 'halfling', 'thief', 'warrior', 'wizard']
+  })
+})
+
+test('registerVariant preserves sheetTheme when provided', () => {
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(XCC_VARIANT, { CONFIG })
+
+  expect(CONFIG.DCC.variants.xcc.sheetTheme).toBe('theme-xcc')
+})
+
+test('registerVariant omits sheetTheme when not provided', () => {
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(DCC_VARIANT, { CONFIG })
+
+  expect(CONFIG.DCC.variants.dcc).not.toHaveProperty('sheetTheme')
+})
+
+test('registerVariant copies the classes array (caller-side mutation is harmless)', () => {
+  const CONFIG = makeMockConfigVariants()
+  const classes = ['cleric', 'thief']
+  registerVariant({ id: 'dcc', label: 'DCC.VariantDCC', classes }, { CONFIG })
+
+  classes.push('mutated')
+  expect(CONFIG.DCC.variants.dcc.classes).toEqual(['cleric', 'thief'])
+})
+
+test('registerVariant initializes CONFIG.DCC.variants when missing', () => {
+  // Mirrors the self-healing pattern from the other registries —
+  // mid-init callers may land before module/config.js seeds the slot.
+  const CONFIG = { DCC: {} }
+  registerVariant(DCC_VARIANT, { CONFIG })
+
+  expect(CONFIG.DCC.variants).toBeDefined()
+  expect(CONFIG.DCC.variants.dcc.id).toBe('dcc')
+})
+
+test('registerVariant overwrites a prior registration (last-write-wins)', () => {
+  const CONFIG = makeMockConfigVariants()
+  registerVariant({ id: 'dcc', label: 'DCC.Old', classes: ['cleric'] }, { CONFIG })
+  registerVariant({ id: 'dcc', label: 'DCC.New', classes: ['wizard'] }, { CONFIG })
+
+  expect(CONFIG.DCC.variants.dcc.label).toBe('DCC.New')
+  expect(CONFIG.DCC.variants.dcc.classes).toEqual(['wizard'])
+})
+
+test('registerVariant throws on non-object descriptor', () => {
+  const CONFIG = makeMockConfigVariants()
+  expect(() => registerVariant(null, { CONFIG })).toThrow(/descriptor must be an object/)
+  expect(() => registerVariant('not-an-object', { CONFIG })).toThrow(/descriptor must be an object/)
+})
+
+test('registerVariant throws on empty / non-string id', () => {
+  const CONFIG = makeMockConfigVariants()
+  expect(() => registerVariant({ ...DCC_VARIANT, id: '' }, { CONFIG })).toThrow(/descriptor\.id must be a non-empty string/)
+  expect(() => registerVariant({ ...DCC_VARIANT, id: 42 }, { CONFIG })).toThrow(/descriptor\.id must be a non-empty string/)
+})
+
+test('registerVariant throws on empty / non-string label', () => {
+  const CONFIG = makeMockConfigVariants()
+  expect(() => registerVariant({ ...DCC_VARIANT, label: '' }, { CONFIG })).toThrow(/descriptor\.label must be a non-empty string/)
+  expect(() => registerVariant({ ...DCC_VARIANT, label: 42 }, { CONFIG })).toThrow(/descriptor\.label must be a non-empty string/)
+})
+
+test('registerVariant throws on missing / empty / non-array classes', () => {
+  const CONFIG = makeMockConfigVariants()
+  expect(() => registerVariant({ ...DCC_VARIANT, classes: undefined }, { CONFIG })).toThrow(/classes must be a non-empty array/)
+  expect(() => registerVariant({ ...DCC_VARIANT, classes: [] }, { CONFIG })).toThrow(/classes must be a non-empty array/)
+  expect(() => registerVariant({ ...DCC_VARIANT, classes: 'cleric' }, { CONFIG })).toThrow(/classes must be a non-empty array/)
+})
+
+test('registerVariant throws on non-string class entries', () => {
+  const CONFIG = makeMockConfigVariants()
+  expect(() => registerVariant({ ...DCC_VARIANT, classes: ['cleric', 42] }, { CONFIG })).toThrow(/entries must be non-empty strings/)
+  expect(() => registerVariant({ ...DCC_VARIANT, classes: ['cleric', ''] }, { CONFIG })).toThrow(/entries must be non-empty strings/)
+})
+
+test('registerVariant throws on non-string sheetTheme (when provided)', () => {
+  const CONFIG = makeMockConfigVariants()
+  expect(() => registerVariant({ ...DCC_VARIANT, sheetTheme: '' }, { CONFIG })).toThrow(/sheetTheme.*must be a non-empty string/)
+  expect(() => registerVariant({ ...DCC_VARIANT, sheetTheme: 42 }, { CONFIG })).toThrow(/sheetTheme.*must be a non-empty string/)
+})
+
+test('registerVariant throws when CONFIG.DCC is unavailable', () => {
+  expect(() => registerVariant(DCC_VARIANT, { CONFIG: {} })).toThrow(/CONFIG\.DCC unavailable/)
+})
+
+test('getActiveVariant resolves the active id from the world setting', () => {
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(DCC_VARIANT, { CONFIG })
+  registerVariant(XCC_VARIANT, { CONFIG })
+  const game = { settings: { get: vi.fn(() => 'xcc') } }
+
+  expect(getActiveVariant({ CONFIG, game })).toEqual(CONFIG.DCC.variants.xcc)
+  expect(game.settings.get).toHaveBeenCalledWith('dcc', 'activeVariant')
+})
+
+test('getActiveVariant falls back to dcc when the configured id is not registered', () => {
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(DCC_VARIANT, { CONFIG })
+  const game = { settings: { get: vi.fn(() => 'mcc') } }
+
+  expect(getActiveVariant({ CONFIG, game })).toBe(CONFIG.DCC.variants.dcc)
+})
+
+test('getActiveVariant returns null when neither configured nor dcc is registered', () => {
+  const CONFIG = makeMockConfigVariants()
+  const game = { settings: { get: vi.fn(() => 'mcc') } }
+
+  expect(getActiveVariant({ CONFIG, game })).toBeNull()
+})
+
+test('getActiveVariant survives game.settings.get throwing (pre-ready hook callers)', () => {
+  // Foundry's settings registry isn't populated until the `setup` /
+  // `ready` hooks have run; pre-ready calls (e.g., from `init`) need
+  // to fall back gracefully without crashing.
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(DCC_VARIANT, { CONFIG })
+  const game = { settings: { get: vi.fn(() => { throw new Error('not ready') }) } }
+
+  expect(getActiveVariant({ CONFIG, game })).toBe(CONFIG.DCC.variants.dcc)
+})
+
+test('getActiveVariant returns null when no variants are registered at all', () => {
+  expect(getActiveVariant({ CONFIG: { DCC: {} }, game: {} })).toBeNull()
+})
+
+test('applyActiveVariantSheetTheme adds the variant theme class to the element', () => {
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(XCC_VARIANT, { CONFIG })
+  const game = { settings: { get: vi.fn(() => 'xcc') } }
+  const element = { classList: { add: vi.fn(), contains: vi.fn(() => false) } }
+
+  applyActiveVariantSheetTheme(element, { CONFIG, game })
+
+  expect(element.classList.add).toHaveBeenCalledWith('theme-xcc')
+})
+
+test('applyActiveVariantSheetTheme is idempotent (no duplicate add on re-render)', () => {
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(XCC_VARIANT, { CONFIG })
+  const game = { settings: { get: vi.fn(() => 'xcc') } }
+  const element = { classList: { add: vi.fn(), contains: vi.fn(() => true) } }
+
+  applyActiveVariantSheetTheme(element, { CONFIG, game })
+
+  expect(element.classList.add).not.toHaveBeenCalled()
+})
+
+test('applyActiveVariantSheetTheme is a no-op when active variant has no sheetTheme', () => {
+  // The built-in 'dcc' variant ships without sheetTheme — base CSS is
+  // already the DCC theme. Verify the helper doesn't fabricate a class.
+  const CONFIG = makeMockConfigVariants()
+  registerVariant(DCC_VARIANT, { CONFIG })
+  const game = { settings: { get: vi.fn(() => 'dcc') } }
+  const element = { classList: { add: vi.fn(), contains: vi.fn(() => false) } }
+
+  applyActiveVariantSheetTheme(element, { CONFIG, game })
+
+  expect(element.classList.add).not.toHaveBeenCalled()
+})
+
+test('applyActiveVariantSheetTheme tolerates a missing element', () => {
+  // Sheet `_onRender` can run on a torn-down sheet under some
+  // race conditions; defensive no-op rather than throw.
+  expect(() => applyActiveVariantSheetTheme(null, { CONFIG: makeMockConfigVariants(), game: {} })).not.toThrow()
+  expect(() => applyActiveVariantSheetTheme(undefined, { CONFIG: makeMockConfigVariants(), game: {} })).not.toThrow()
+  expect(() => applyActiveVariantSheetTheme({}, { CONFIG: makeMockConfigVariants(), game: {} })).not.toThrow()
+})
+
+test('registerBuiltInVariant seeds the canonical DCC variant', async () => {
+  // The built-in variant is consumed by `module/dcc.js`'s init hook to
+  // seed `CONFIG.DCC.variants.dcc`. Verify the shape directly.
+  const { BUILT_IN_VARIANT, registerBuiltInVariant } =
+    await import('../built-in-variant.mjs')
+  expect(BUILT_IN_VARIANT.id).toBe('dcc')
+  expect(BUILT_IN_VARIANT.label).toBe('DCC.VariantDCC')
+  expect(BUILT_IN_VARIANT.classes.sort()).toEqual([
+    'cleric', 'dwarf', 'elf', 'halfling', 'thief', 'warrior', 'wizard'
+  ])
+  expect(BUILT_IN_VARIANT).not.toHaveProperty('sheetTheme')
+
+  const calls = []
+  registerBuiltInVariant((descriptor) => { calls.push(descriptor) })
+  expect(calls).toHaveLength(1)
+  expect(calls[0]).toBe(BUILT_IN_VARIANT)
 })

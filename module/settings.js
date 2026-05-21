@@ -1,4 +1,4 @@
-/* global game, Hooks */
+/* global CONFIG, game, Hooks */
 
 export const pubConstants = {
   name: 'dcc',
@@ -18,6 +18,30 @@ export const registerSystemSettings = async function () {
     config: false,
     type: Number,
     default: 0
+  })
+
+  /**
+   * Active variant. Phase 6 session 5 added the variant-registry
+   * extension surface (`game.dcc.registerVariant`); this setting
+   * selects which registered variant is live. Choices are built
+   * from `CONFIG.DCC.variants` at registration time (variants register
+   * at `init`, settings register at `ready`, so the registry is fully
+   * populated). Default `'dcc'` is always registered by
+   * `module/built-in-variant.mjs`.
+   */
+  const variantChoices = {}
+  for (const v of Object.values(CONFIG?.DCC?.variants || { dcc: { id: 'dcc', label: 'DCC.VariantDCC' } })) {
+    variantChoices[v.id] = v.label
+  }
+  game.settings.register('dcc', 'activeVariant', {
+    name: 'DCC.SettingActiveVariant',
+    hint: 'DCC.SettingActiveVariantHint',
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: variantChoices,
+    default: 'dcc',
+    requiresReload: true
   })
 
   /**

@@ -31,12 +31,13 @@ import { defineStatusIcons } from './status-icons.js'
 import { pubConstants, registerSystemSettings } from './settings.js'
 import WelcomeDialog from './welcomeDialog.js'
 import DCCPartySheet from './party-sheet.js'
-import { registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerHomebrewClassForProgressionLoad, registerItemSheet, registerSheetPart } from './extension-api.mjs'
+import { getActiveVariant, registerActorSheet, registerClassDefaults, registerClassMixin, registerClassStartingItems, registerHomebrewClassForProgressionLoad, registerItemSheet, registerSheetPart, registerVariant } from './extension-api.mjs'
 import { registerBuiltInClassMixins } from './built-in-class-mixins.mjs'
 import { registerBuiltInClassDefaults } from './built-in-class-defaults.mjs'
 import { registerBuiltInClassStartingItems } from './built-in-class-starting-items.mjs'
 import { registerBuiltInClassLevelNames } from './built-in-class-level-names.mjs'
 import { registerBuiltInSheetParts } from './built-in-sheet-parts.mjs'
+import { registerBuiltInVariant } from './built-in-variant.mjs'
 import { registerClassProgression, registerClassProgressions } from './vendor/dcc-core-lib/data/classes/progression-utils.js'
 import { registerClassProgressionsFromPacks } from './adapter/foundry-data-loader.mjs'
 
@@ -117,6 +118,14 @@ Hooks.once('init', async function () {
   // `module/built-in-class-level-names.mjs` for the table.
   registerBuiltInClassLevelNames(registerHomebrewClassForProgressionLoad)
 
+  // Register the built-in DCC variant. Phase 6 session 5 added
+  // `game.dcc.registerVariant` as the stable extension surface for
+  // variant ruleset modules (XCC, MCC, future homebrew variants); the
+  // world-setting `dcc.activeVariant` selects which variant is live
+  // (defaults to `'dcc'`). See `module/built-in-variant.mjs` for the
+  // built-in payload and `docs/dev/EXTENSION_API.md` for the API.
+  registerBuiltInVariant(registerVariant)
+
   // Register custom ActiveEffect document class
   CONFIG.ActiveEffect.documentClass = DCCActiveEffect
 
@@ -165,6 +174,7 @@ Hooks.once('init', async function () {
     TableResult,
     getSkillTable,
     processSpellCheck,
+    getActiveVariant, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerActorSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassDefaults, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerClassMixin, // Stable extension API — see docs/dev/EXTENSION_API.md
@@ -174,6 +184,7 @@ Hooks.once('init', async function () {
     registerHomebrewClassForProgressionLoad, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerItemSheet, // Stable extension API — see docs/dev/EXTENSION_API.md
     registerSheetPart, // Stable extension API — see docs/dev/EXTENSION_API.md
+    registerVariant, // Stable extension API — see docs/dev/EXTENSION_API.md
     rollDCCWeaponMacro, // This is called from macros, don't remove
     getMacroActor, // This is called from macros, don't remove
     getMacroOptions // This is called from macros, don't remove

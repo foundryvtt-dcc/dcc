@@ -42,6 +42,38 @@ session's context):
 
 ## Status (2026-05-20)
 
+**Phase 6 session 5 closed Phase 6** by adding
+`game.dcc.registerVariant` as the stable extension surface for variant
+rulesets (XCC, MCC, future homebrew variants). Descriptor shape
+`{ id, label, classes, sheetTheme? }`; `id` is the lowercase slug
+stored in the new `dcc.activeVariant` world setting (defaults to
+`'dcc'`); `getActiveVariant()` resolves the setting to its registry
+entry with a `'dcc'` fallback (survives pre-ready callers where
+`game.settings.get` throws). When the active variant declares a
+`sheetTheme`, `DCCActorSheet._onRender` adds the CSS class to the
+sheet element via `applyActiveVariantSheetTheme(this.element)` —
+variants can ship a theme stylesheet without each per-class subclass
+declaring it in `DEFAULT_OPTIONS.classes`. The DCC system dogfoods
+its own helper by seeding the canonical `'dcc'` variant (7 PC
+classes, no `sheetTheme` — base CSS is already DCC) through new
+`module/built-in-variant.mjs` at `init`. Sibling variant modules
+(XCC, MCC) migrate by adding a single `registerVariant({...})` call
+from their own `init` hook declaring their class IDs + a
+`sheetTheme`; XCC's `CONFIG.Actor.documentClass` override was retired
+2026-05-18, so this was the remaining Phase 6 work. +23 Vitest tests
+on `extension-api.test.js` (registry validation, last-write-wins,
+getActiveVariant pre-ready fallback, theme apply + no-theme no-op +
+idempotency + missing-element). +2 Playwright cases in
+`extension-api.spec.js`. **1053 Vitest green** (was 1030, +23).
+Playwright count to be confirmed by post-slice full-suite run.
+
+Phase 6 closes with this slice. Phase 7 cleanup
+(`ARCHITECTURE_REIMAGINED.md §7`) is the next phase — retire
+`critText`/`fumbleText` shims, prune old migrations, split `dcc.js`
+into focused modules, split `dcc.scss` into partials + theme layer,
+extract `module/ruleset/` (what little remains) into the variant
+config for DCC core.
+
 **Phase 6 session 4 closed the flake-investigation follow-up.**
 The session-start prompt called out two suite-only Playwright
 flakes — `extension-api.spec.js:553 built-in elf mixin attaches…`
@@ -277,31 +309,48 @@ correctly implemented in Foundry, stop the slice and surface to Tim
 
 ## Next-session guidance
 
-**Phase 6 session 4 (2026-05-20) closed the flake-investigation
-follow-up** by hardening `browser-tests/e2e/extension-api.spec.js`'s
-`beforeEach`. The specific elf:553 / forceCrit:922 flakes didn't
-reproduce in either pre-fix run or the post-fix run, but the work
-addresses the *family* of environmental races (banner-blocking
-clicks, `ui.windows` pollution, stale `P*` probes) that produced
-related failures (extension-api:267+302 and v14-features:540) in
-run 2. Remaining Phase 6 work:
+**Phase 6 session 5 (2026-05-20) closed Phase 6** by shipping
+`game.dcc.registerVariant`. The phase is fully complete; the next
+phase is **Phase 7 (cleanup)** per `ARCHITECTURE_REIMAGINED.md §7`:
 
-1. **`registerVariant` for variant-class modules.** Per
-   `CLASS_DECOMPOSITION.md` §3.6 /
-   `ARCHITECTURE_REIMAGINED.md §7`. New
-   `game.dcc.registerVariant({ id, classes, sheetTheme })` so
-   XCC, MCC, and similar variant rulesets can ship as a module
-   rather than overriding `CONFIG.Actor.documentClass` globally.
-   World setting selects active variant (defaults to `dcc`).
-   Larger scope; touches the actor-class selection UI / level-
-   change dialog.
+1. **Retire `critText` / `fumbleText` compatibility shims.** These
+   linger from before the lib-side crit/fumble path was the
+   single-path adapter body. Search `module/` for the shims, check
+   `EXTENSION_API.md` for whether they have external consumers
+   (Foundry-facing surface stays as thin wrappers per §8.6), and
+   either delete or wrap as appropriate. Stop-condition per
+   `02-slice-backlog.md`: confirm with Tim before deleting any
+   field with a documented Stable consumer in `EXTENSION_API.md`.
+
+2. **Prune old migrations past a minimum data version.** Walk
+   `module/migrations.js` for migration steps gated below the
+   current minimum supported world version; delete and update the
+   minimum-version guard. Test that worlds at the new minimum
+   still load without re-running the deleted steps.
+
+3. **Split `module/dcc.js` into focused modules.** The init hook
+   has grown across phases; per `ARCHITECTURE_REIMAGINED.md
+   Appendix A`, target ~4–5 files (registry initialization, hook
+   wiring, Handlebars helpers, settings + chat). Pure-refactor;
+   high blast radius if done in one slice. Consider doing it
+   piecemeal — one focused module per session.
+
+4. **Split `styles/dcc.scss` into partials + theme layer.**
+   Document CSS custom properties as a theming contract so the
+   Phase 6 `sheetTheme` mechanism has documented variables to
+   override.
+
+5. **Extract `module/ruleset/` (what little remains) into the
+   variant config for DCC core.** Tie-up — the variant-registry
+   API (Phase 6 session 5) is the destination; `module/ruleset/`
+   should fold into the canonical `'dcc'` variant declaration.
 
 **Possible follow-up (not on critical path):** migrate
 `extension-api.spec.js` from per-test login to the worker-scoped
 session-reuse fixture pattern in `phase1-adapter-dispatch.spec.js`
 (`sessionPage` fixture, login once per worker). Eliminates ~60 per-
 test login overheads + the per-test login race. Larger blast
-radius; tracked here in case run-3+ surface more login-race
+radius; tracked here in case future runs surface more login-race
 failures.
 
 **Also pending — dcc-qol sibling-fix coordination.** Session 20
@@ -310,12 +359,13 @@ fields that no longer emit. A 2-line rename is documented as a
 migration recipe in `EXTENSION_API.md`. Tim is landing the dcc-qol
 PR on his schedule — do NOT edit that repo from this session.
 
-`registerVariant` is the only remaining Phase 6 work — confirm
-with Tim before starting because it touches the actor-class
-selection UI / level-change dialog and adds a new Foundry-facing
-`game.dcc.*` API (stop-condition per `02-slice-backlog.md`).
+Pick a Phase 7 slice from the list above and confirm with Tim
+before starting. The `critText`/`fumbleText` shim retirement (1)
+is the smallest, well-scoped starting point; the `dcc.js` split
+(3) is the highest leverage but largest blast radius.
 
-**Do NOT:** touch lib-side internals (Phase 6 work); break
+**Do NOT:** touch lib-side internals (Phase 6/7 work is
+adapter-side cleanup, not lib changes); break
 `dcc.modifyAttackRollTerms` (dcc-qol consumer); silently translate
 lib-vs-rules divergence — surface it instead.
 

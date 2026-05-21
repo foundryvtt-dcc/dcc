@@ -249,3 +249,55 @@
   arc is the migration of the remaining capitalized `sheetClass`
   readers (Elf / Cleric in `actor.js` + `dcc.js`) to
   `actor.classId` — small follow-up.
+
+- **2026-05-19 — Phase 5 session 5: migrate remaining capitalized
+  `sheetClass` readers to `actor.classId` (closes Phase 5
+  sub-arc).** Four mechanical rewrites of
+  `system.details.sheetClass === '<CapitalizedClass>'` to
+  `actor.classId === '<lowercase>'`:
+  - `module/actor.js:198` — elf detect-secret-doors derived
+    prepare (`prepareDerivedData` block). Switched
+    `this.system.details.sheetClass === 'Elf'` →
+    `this.classId === 'elf'`.
+  - `module/actor.js:2196` — `rollSpellCheck` dispatcher's
+    `isCleric` gate. Was `this.system.details?.sheetClass ===
+    'Cleric' || this.system.class?.className === 'Cleric'`; the
+    sheetClass leg now uses `this.classId === 'cleric'`. The
+    `className === 'Cleric'` leg stays — added 2026-04-23 to
+    accept programmatic PCs that haven't been through the
+    level-change dialog (no sheetClass populated).
+  - `module/actor.js:2497` — `_castNakedViaAdapter` idol-magic
+    flag (`isIdolMagic = this.classId === 'cleric'`).
+  - `module/dcc.js:775` — `processSpellCheck`'s default-castingMode
+    branch for naked checks on cleric actors. Uses
+    `actor.classId === 'cleric'` (the function takes an `actor`
+    parameter, not `this`).
+  Pure-refactor — `actor.classId` is implemented as
+  `system.details.sheetClass?.toLowerCase()`, so each migration is
+  a no-op behavior change but normalizes the dispatch surface to
+  the lowercase canonical IDs that `registerClassMixin` /
+  `registerClassDefaults` / `registerClassStartingItems` /
+  `registerSheetPart` use.
+  +1 Vitest regression-guard test in
+  `module/__tests__/class-dispatch-i18n-guard.test.js` (sibling
+  to the C3-era localize-on-the-right guard): walks `module/`
+  source and fails if any file re-introduces
+  `sheetClass === '<CapitalizedClass>'` for the seven built-in
+  classes. The Generic sheet's `sheetClass !== 'Generic'`
+  first-open check stays — Generic isn't class-bound (no
+  CLASS_ID, not on the class registries) so it can't dispatch via
+  classId; `actor-sheets-dcc.js` is whitelisted in the guard for
+  that reason. `migrations.js` also whitelisted (writer-side
+  helper that maps localized className → English sheetClass).
+  1003 Vitest green (was 1002, +1 new guard). 134 Playwright
+  passed (unchanged from session 4; this slice's only new test is
+  the Vitest regression guard, so the Playwright count holds
+  steady). No visual regression run — slice doesn't touch sheets
+  or templates.
+  **Phase 5 sub-arc closes with this slice.** All five
+  refactor concerns done: schema mixins (component 1, Phase 4) +
+  class defaults (Phase 5-1) + starting items (Phase 5-2 dwarf) +
+  link fields (Phase 5-3) + sheet parts (Phase 5-4) +
+  module-side reader migration to classId (Phase 5-5). Remaining
+  work is Phase 6 (lib-side `registerClassProgression` and
+  `registerVariant`).

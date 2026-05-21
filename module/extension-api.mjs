@@ -596,3 +596,140 @@ export function registerHomebrewClassForProgressionLoad (classId, itemPrefix, de
   CONFIGImpl.DCC.classLevelNames ??= {}
   CONFIGImpl.DCC.classLevelNames[classId] = itemPrefix
 }
+
+/**
+ * Register a variant ruleset. Variants give the system a named identity
+ * for the active set of classes ("dcc", "xcc", "mcc") so sibling content
+ * modules can ship as a Foundry module rather than overriding
+ * `CONFIG.Actor.documentClass` globally. Closes the
+ * `ARCHITECTURE_REIMAGINED.md §2.5 / §3.6` pressure point that
+ * previously forced variants like XCC to fight the system for the
+ * documentClass slot.
+ *
+ * Descriptor shape:
+ *
+ * - `id` (string, required) — lowercase slug used as the registry key
+ *   and the value stored in the `dcc.activeVariant` world setting.
+ *   Conventions match the rest of the Phase 4/5/6 registries: `'dcc'`,
+ *   `'xcc'`, `'mcc'`, etc.
+ * - `label` (string, required) — i18n key for display surfaces (the
+ *   variant-picker setting, future class-selection UI). Resolved via
+ *   `game.i18n.localize(label)` at render time; never compared.
+ * - `classes` (string[], required) — canonical lowercase classIds
+ *   declared by this variant. Declarative metadata; consumers may
+ *   filter UI surfaces against this list, but the registry itself
+ *   does not enforce membership at registration time.
+ * - `sheetTheme` (string, optional) — CSS class added to actor sheet
+ *   elements when this variant is the active one. Lets variants ship a
+ *   theme stylesheet without each per-class sheet having to remember
+ *   to declare it in `DEFAULT_OPTIONS.classes`. Resolved on render via
+ *   `applyActiveVariantSheetTheme(...)`.
+ *
+ * The DCC system dogfoods this helper by registering its own `'dcc'`
+ * variant from `module/built-in-variant.mjs` at `init` time. Sibling
+ * variant modules (XCC, MCC) register their own entry from their own
+ * `init` hook. The world-setting `dcc.activeVariant` (defaults to
+ * `'dcc'`) selects which entry is live; `getActiveVariant(...)` resolves
+ * the setting to its registry entry with a `'dcc'` fallback when the
+ * configured value is missing.
+ *
+ * Re-registering an existing `id` overwrites the prior descriptor
+ * (last-write-wins, matching the other registries).
+ *
+ * Stable from day one (per `EXTENSION_API.md` recommendation 7).
+ *
+ * @param {object} descriptor - `{ id, label, classes, sheetTheme }`.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - `CONFIG` namespace (defaults to
+ *   `globalThis.CONFIG`).
+ */
+export function registerVariant (descriptor, deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  if (!descriptor || typeof descriptor !== 'object') {
+    throw new Error('registerVariant: descriptor must be an object')
+  }
+  const { id, label, classes, sheetTheme } = descriptor
+  if (!id || typeof id !== 'string') {
+    throw new Error('registerVariant: descriptor.id must be a non-empty string')
+  }
+  if (!label || typeof label !== 'string') {
+    throw new Error('registerVariant: descriptor.label must be a non-empty string')
+  }
+  if (!Array.isArray(classes) || classes.length === 0) {
+    throw new Error('registerVariant: descriptor.classes must be a non-empty array of classIds')
+  }
+  if (!classes.every(c => typeof c === 'string' && c.length > 0)) {
+    throw new Error('registerVariant: descriptor.classes entries must be non-empty strings')
+  }
+  if (sheetTheme !== undefined && (typeof sheetTheme !== 'string' || sheetTheme.length === 0)) {
+    throw new Error('registerVariant: descriptor.sheetTheme, if provided, must be a non-empty string')
+  }
+  if (!CONFIGImpl?.DCC) {
+    throw new Error('registerVariant: CONFIG.DCC unavailable')
+  }
+  CONFIGImpl.DCC.variants ??= {}
+  CONFIGImpl.DCC.variants[id] = { id, label, classes: [...classes], ...(sheetTheme ? { sheetTheme } : {}) }
+}
+
+/**
+ * Resolve the active variant from the world setting, falling back to
+ * `'dcc'` (and finally to `null`) when the configured variant is not
+ * registered.
+ *
+ * Reads:
+ * - `game.settings.get('dcc', 'activeVariant')` for the active id.
+ * - `CONFIG.DCC.variants[id]` for the descriptor.
+ *
+ * Returns the registry descriptor (the same object stored via
+ * `registerVariant`), or `null` if neither the configured nor the
+ * `'dcc'` fallback variant is registered (defensive — the built-in
+ * registration in `module/dcc.js:init` always seeds `'dcc'`).
+ *
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ * @param {object} [deps.CONFIG] - `CONFIG` namespace (defaults to
+ *   `globalThis.CONFIG`).
+ * @param {object} [deps.game] - `game` namespace (defaults to
+ *   `globalThis.game`).
+ * @returns {object | null}
+ */
+export function getActiveVariant (deps = {}) {
+  const CONFIGImpl = deps.CONFIG ?? globalThis.CONFIG
+  const gameImpl = deps.game ?? globalThis.game
+  const variants = CONFIGImpl?.DCC?.variants
+  if (!variants) return null
+  let activeId
+  try {
+    activeId = gameImpl?.settings?.get?.('dcc', 'activeVariant')
+  } catch {
+    activeId = undefined
+  }
+  if (activeId && variants[activeId]) return variants[activeId]
+  if (variants.dcc) return variants.dcc
+  return null
+}
+
+/**
+ * Apply the active variant's `sheetTheme` CSS class to a DCC actor
+ * sheet element on render. Wired into `module/dcc.js`'s render hook so
+ * variants like XCC can ship a theme stylesheet without each per-class
+ * sheet subclass having to declare the CSS class in
+ * `DEFAULT_OPTIONS.classes`.
+ *
+ * No-op when the active variant has no `sheetTheme`, when the element
+ * is missing, or when the class is already present (idempotent so
+ * Foundry's full re-render doesn't accumulate duplicates).
+ *
+ * @param {HTMLElement} element - The sheet element to decorate.
+ * @param {object} [deps] - Dependency injection for tests; never
+ *   supplied in production.
+ */
+export function applyActiveVariantSheetTheme (element, deps = {}) {
+  if (!element?.classList?.add) return
+  const variant = getActiveVariant(deps)
+  const theme = variant?.sheetTheme
+  if (!theme) return
+  if (element.classList.contains(theme)) return
+  element.classList.add(theme)
+}

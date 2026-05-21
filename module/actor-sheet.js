@@ -4,6 +4,7 @@ import DCCActorConfig from './actor-config.js'
 import MeleeMissileBonusConfig from './melee-missile-bonus-config.js'
 import SavingThrowConfig from './saving-throw-config.js'
 import EntityImages from './entity-images.js'
+import { applyActiveVariantSheetTheme } from './extension-api.mjs'
 
 const { HandlebarsApplicationMixin } = foundry.applications.api
 // eslint-disable-next-line no-unused-vars
@@ -192,6 +193,7 @@ class DCCActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   _onRender (context, options) {
     this.#dragDrop.forEach((d) => d.bind(this.element))
     this.#setupResponsiveTabs()
+    applyActiveVariantSheetTheme(this.element)
   }
 
   /**

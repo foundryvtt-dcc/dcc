@@ -909,6 +909,119 @@ test.describe('DCC Extension API', () => {
   })
 
   // -------------------------------------------------------------------
+  // registerVariant + getActiveVariant + activeVariant world setting
+  // (Phase 6 session 5)
+  // -------------------------------------------------------------------
+
+  test('game.dcc.registerVariant + getActiveVariant are exposed and the built-in DCC variant is seeded', async ({ page }) => {
+    // Phase 6 session 5 added the variant-registry extension surface.
+    // The DCC system dogfoods its own helper at init time by seeding
+    // the canonical 'dcc' variant with the 7 PC classes; the
+    // `dcc.activeVariant` world setting selects which variant is live.
+    const result = await page.evaluate(() => {
+      const reg = game.dcc.registerVariant
+      const getter = game.dcc.getActiveVariant
+      const variants = CONFIG.DCC?.variants ?? {}
+      const dcc = variants.dcc
+      let activeSettingValue = null
+      try {
+        activeSettingValue = game.settings.get('dcc', 'activeVariant')
+      } catch {
+        activeSettingValue = null
+      }
+      const active = typeof getter === 'function' ? getter() : null
+      return {
+        registerIsFunction: typeof reg === 'function',
+        getterIsFunction: typeof getter === 'function',
+        exposedKeys: [
+          Object.keys(game.dcc).includes('registerVariant'),
+          Object.keys(game.dcc).includes('getActiveVariant')
+        ],
+        dccVariantShape: dcc
+          ? {
+              id: dcc.id,
+              label: dcc.label,
+              classes: [...dcc.classes].sort(),
+              hasSheetTheme: 'sheetTheme' in dcc
+            }
+          : null,
+        activeSettingValue,
+        activeResolvesToDcc: active?.id === 'dcc'
+      }
+    })
+
+    expect(result.registerIsFunction).toBe(true)
+    expect(result.getterIsFunction).toBe(true)
+    expect(result.exposedKeys).toEqual([true, true])
+    expect(result.dccVariantShape).toEqual({
+      id: 'dcc',
+      label: 'DCC.VariantDCC',
+      classes: ['cleric', 'dwarf', 'elf', 'halfling', 'thief', 'warrior', 'wizard'],
+      hasSheetTheme: false
+    })
+    expect(result.activeSettingValue).toBe('dcc')
+    expect(result.activeResolvesToDcc).toBe(true)
+  })
+
+  test('registerVariant round-trips a fictional XCC-like variant against the live registry', async ({ page }) => {
+    // End-to-end: register a fictional variant via game.dcc.*, verify
+    // it lands in CONFIG.DCC.variants and getActiveVariant returns it
+    // when the world-setting points at the fictional id. Save+restore
+    // both the registry entry and the setting around the test so the
+    // shared world state stays clean.
+    const result = await page.evaluate(async () => {
+      const variantId = 'p6s5-fake-xcc'
+
+      const priorSetting = game.settings.get('dcc', 'activeVariant')
+
+      game.dcc.registerVariant({
+        id: variantId,
+        label: 'TEST.FakeVariant',
+        classes: ['blaster', 'brawler'],
+        sheetTheme: 'theme-p6s5-fake'
+      })
+
+      const registered = CONFIG.DCC.variants[variantId]
+
+      // Resolve via setting too (uses world-setting value).
+      await game.settings.set('dcc', 'activeVariant', variantId)
+      const active = game.dcc.getActiveVariant()
+
+      // Apply theme to a probe element and verify it gets the class.
+      const probe = document.createElement('div')
+      const helperModule = await import('../../../../../../../../systems/dcc/module/extension-api.mjs')
+      helperModule.applyActiveVariantSheetTheme(probe)
+      const themeApplied = probe.classList.contains('theme-p6s5-fake')
+
+      // Restore.
+      await game.settings.set('dcc', 'activeVariant', priorSetting)
+      delete CONFIG.DCC.variants[variantId]
+
+      return {
+        registered: registered
+          ? {
+              id: registered.id,
+              label: registered.label,
+              classes: [...registered.classes],
+              sheetTheme: registered.sheetTheme
+            }
+          : null,
+        activeId: active?.id,
+        themeApplied
+      }
+    })
+
+    expect(result.registered).toEqual({
+      id: 'p6s5-fake-xcc',
+      label: 'TEST.FakeVariant',
+      classes: ['blaster', 'brawler'],
+      sheetTheme: 'theme-p6s5-fake'
+    })
+    expect(result.activeId).toBe('p6s5-fake-xcc')
+    expect(result.themeApplied).toBe(true)
+  })
+
+  // -------------------------------------------------------------------
   // DCCActor.classId accessor (Phase 4 closer — class-id dispatch helper)
   // -------------------------------------------------------------------
 

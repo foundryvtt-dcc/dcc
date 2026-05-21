@@ -354,12 +354,17 @@ Now that the lib is producing `Character` shapes, the Foundry Player schema no l
 
 **Ships as:** major release. Replaces sheet-subclass-per-class patterns in MCC, dcc-crawl-classes, XCC.
 
-### Phase 6 — Variant registration (2–3 weeks)
-- Add `dcc.registerVariant` hook
-- World setting: active variant (defaults to `dcc`)
-- XCC drops its `CONFIG.Actor.documentClass` override and its item-sheet unregister/register dance
+### Phase 6 — Variant registration (2–3 weeks) — **shipped 2026-05-20**
+- ✅ `dcc.registerVariant({ id, label, classes, sheetTheme? })` hook
+  (Phase 6 session 5) — `game.dcc.registerVariant`
+  + `game.dcc.getActiveVariant`. Source: `module/extension-api.mjs`.
+- ✅ World setting: `dcc.activeVariant` (defaults to `'dcc'`)
+- ✅ XCC dropped its `CONFIG.Actor.documentClass` override (2026-05-18,
+  ahead of this phase). XCC's item-sheet unregister/register dance
+  was already replaced by `registerItemSheet` in Phase 3.
 
-**Ships as:** minor release. XCC needs a companion update — a feature, not a bug.
+**Ships as:** minor release. Variant modules (XCC, MCC) migrate on
+their own schedule by adding a single `registerVariant({...})` call.
 
 ### Phase 7 — Cleanup (ongoing)
 - Retire `critText`/`fumbleText` compatibility shims
@@ -479,7 +484,7 @@ Most of what my earlier draft proposed adding is already in `dcc-core-lib` as a 
 
 - `dcc.registerClassMixin(classId, mixin)` — Phase 4, replaces `dcc.definePlayerSchema` for class-specific fields
 - `dcc.registerSheetPart({ classId, tab, template, condition })` — Phase 5
-- `dcc.registerVariant(variantConfig)` — Phase 6
+- `dcc.registerVariant({ id, label, classes, sheetTheme? })` — Phase 6 (shipped session 5, 2026-05-20)
 - `dcc.registerItemSheet(types, SheetClass)` — Phase 3 (eliminates XCC's unregister/register)
 
 ## Appendix C — The halfling i18n trap (fix this today)
